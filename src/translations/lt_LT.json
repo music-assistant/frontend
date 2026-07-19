@@ -53,7 +53,6 @@
     "play_now": "Leisti Dabar",
     "play_on": "Groti: {0}",
     "play_playlist_from": "Leisti grojaraštį iš čia",
-    "play_radio": "Pradėti radiją",
     "player_type": {
         "group": "Grupė",
         "player": "Grotuvas",
@@ -74,8 +73,6 @@
     "queue_next_items": "Kiti elementai",
     "queue_options": "Eilės parinktys",
     "queue_previous_items": "Leisti elementai",
-    "queue_radio_based_on": "Eilė dinamiškai pildoma takeliais pagal:",
-    "queue_radio_enabled": "Radijo režimas įjungtas",
     "radios": "Radijas",
     "read_more": "skaityti daugiau",
     "refresh_item": "Atnaujinti elementą",
@@ -135,7 +132,6 @@
         "tracks_in_library": "Dainos bibliotekoje",
         "playlists_in_library": "Grojaraščiai bibliotekoje",
         "radio_in_library": "Radijas bibliotekoje",
-        "server_logging": "Serverio registravimas",
         "download_log": "Atsisiųsti žurnalo failą",
         "edit_group_members": "Redaguoti grupės narius",
         "add_new_provider_button": "Pridėti {0} paslaugų teikėją",
@@ -150,10 +146,6 @@
                 "light": "Šviesa",
                 "dark": "Tamsu"
             }
-        },
-        "menu_items": {
-            "label": "Įjungti meniu elementai",
-            "description": "Konfigūruokite, kuriuos elementus rodyti meniu. \n \n Atminkite, kad išjungę nustatymus galite užsiblokuoti. \n \n Norėdami vėl gauti prieigą, turėsite rankiniu būdu įvesti kelią į nustatymus arba išvalyti naršyklės slapukus. Naudokite savo pačių rizika!"
         },
         "language": {
             "label": "Kalba",
@@ -312,8 +304,6 @@
         "view_documentation": "Peržiūrėti dokumentaciją",
         "about": "Apie",
         "about_description": "Informacija apie versiją, autoriai ir kita",
-        "system_logging": "Serverio registravimas",
-        "system_logging_description": "Peržiūrėkite ir atsisiųskite serverio žurnalus trikčių šalinimui",
         "auto_refresh_log": "Automatinis atnaujinimas",
         "log_truncated": "Rodoma paskutinė {0} eilutės. Atsisiųskite visą žurnalo failą, kad pamatytumėte visą istoriją.",
         "version_info": "Versijos informacija",
@@ -656,8 +646,6 @@
     },
     "shuffle_disable": "Išjungti maišymą",
     "shuffle_enable": "Įjungti maišymą",
-    "dont_stop_the_music_enable": "Įjunkite 'Nesustabdykite muzikos!'",
-    "dont_stop_the_music_disable": "Išjungti 'Nesustabdyk muzikos!'",
     "open_dsp_settings": "Atidaryti DSP nustatymus",
     "audiobook": "Garso knyga",
     "audiobooks": "Garso knygos",
@@ -675,10 +663,6 @@
     "podcast_episode": "Epizodas",
     "podcast_episodes": "Epizodai",
     "play_from_here": "Leisti iš čia",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (albumas)",
-    "loudness_dynamic": "Dinaminis tūrio normalizavimas",
-    "loudness_fixed": "Fiksuoto stiprinimo korekcija",
     "dsp_active": "Aktyvus",
     "currently_playing_players": "Šiuo metu grojama",
     "all_players": "Visi grotuvai",
@@ -688,40 +672,20 @@
     "streamdetails": {
         "input_header": "Įvestis",
         "output_header": "Išvestis",
-        "output_format_info": "Garsas siunčiamas į {0} formatas",
         "eq_band_count": "{0} juostos",
         "eq_band_count_singular": "1 juosta",
         "input_gain": "Įvesties stiprinimas ({0} dB)",
         "output_gain": "Išėjimo stiprinimas ({0} dB)",
         "output_limiter": "Išvesties ribotuvas",
-        "output_limiter_info": "Automatiškai sumažina labai garsius garsus, kad būtų išvengta iškraipymų ir apsaugoti garsiakalbiai",
-        "dsp_unsupported": "DSP nepalaikomas",
-        "dsp_disabled_by_unsupported_group": "Šis grotuvo tiekėjas nepalaiko DSP su sinchronizuotu atkūrimu",
         "file_info": {
             "container": "Konteineris: {0}",
             "codec": "Kodekas: {0}",
             "bit_rate": "Bitų sparta: {0} kbps",
             "sample_rate": "Imties dažnis: {0} kHz",
             "channels": "Kanalai: {0}",
-            "bit_depth": "Bitų gylis: {0}",
-            "processing_notice": "Garsas apdorojamas viduje kaip 32 bitų slankiojantis PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Tikslinis lygis: {0} LUFS",
-            "integrated_loudness": "Išmatuotas (integruotas) garsumas: {0} LUFS",
-            "integrated_album_loudness": "Albumo garsumas: {0} LUFS",
-            "applied_gain_correction": "Taikoma stiprinimo korekcija: {0} dB",
-            "mode": {
-                "dynamic": "Dinaminiame režime aktyvus garsumo normalizavimas.",
-                "measurement_only": "Garsumo normalizavimas aktyvus remiantis saugomu (integruoto) garso garsumo matavimu.",
-                "measurement_album": "Garsumo normalizavimas aktyvus remiantis išsaugotu (integruoto) albumo garsumo matavimu.",
-                "fixed_gain": "Garsumo normalizavimas aktyvus pagal fiksuotą stiprinimo korekciją."
-            }
-        },
-        "click_to_expand": "Spustelėkite, kad būtų rodomi visi grotuvai",
-        "output_format_pcm_info": "Garsas grotuvo tiekėjui perduodamas PCM formatu. Prieš siųsdamas garsą grotuvui, grotuvo tiekėjas gali jį konvertuoti į kitą formatą."
+            "bit_depth": "Bitų gylis: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Pasirinkite šaltinį",
     "play_replace_next": "Žaisti toliau (išvalyti eilę)",
     "all_enqueue_options": "Visos įtraukimo į eilę parinktys",
@@ -1189,8 +1153,6 @@
         "create": "Sukurti išmanųjį grojaraštį",
         "created": "Išmanusis grojaraštis sukurtas!",
         "creating": "Kuriama…",
-        "dedup_hours": "Nekartokite tos pačios dainos",
-        "dedup_hours_tooltip": "Praleisti neseniai grotus takelius. Nustatykite valandų skaičių, per kurį takelis nebus kartojamas. 0 išjungia apribojimą.",
         "desc": "Sukurkite grojaraštį iš savo bibliotekos pagal taisykles.",
         "edit_rules": "Redaguoti taisykles",
         "off": "Išjungta",
@@ -1206,8 +1168,6 @@
         "add_first_filter": "Pridėti filtrą",
         "add_first_rule": "Pridėti taisyklę",
         "add_rule": "Pridėti taisyklę",
-        "filter_inactive": "Neaktyvus",
-        "hours_unit": "valandos",
         "edited": "\"{name}\" atnaujinta",
         "empty_desc": "Nėra takelių, atitinkančių jūsų dabartines taisykles. Norėdami pradėti, atlaisvinkite filtrą arba pasirinkite kitą pradinį kriterijų.",
         "empty_title": "Dar nėra ką leisti",

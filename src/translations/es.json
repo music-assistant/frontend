@@ -51,7 +51,6 @@
     "play_now": "Reproducir Ahora",
     "play_on": "Reproducir en: {0}",
     "play_playlist_from": "Reproducir lista de reproducción desde aquí",
-    "play_radio": "Comenzar Radio",
     "player_type": {
         "group": "Grupo",
         "player": "Reproductor",
@@ -72,8 +71,6 @@
     "queue_next_items": "Siguientes elementos",
     "queue_options": "Opciones de cola",
     "queue_previous_items": "Elementos reproducidos",
-    "queue_radio_based_on": "La cola se genera dinámicamente en pistas basadas en {0}:",
-    "queue_radio_enabled": "El modo de radio está habilitado",
     "radios": "Radio",
     "read_more": "leer más",
     "refresh_item": "Refrescar elemento",
@@ -133,7 +130,6 @@
         "tracks_in_library": "Pistas en biblioteca",
         "playlists_in_library": "Listas de reproducción en biblioteca",
         "radio_in_library": "Radio en biblioteca",
-        "server_logging": "Registro del servidor",
         "download_log": "Descargar archivo de registro",
         "edit_group_members": "Editar miembros del grupo",
         "add_new_provider_button": "Añadir proveedor {0}",
@@ -148,10 +144,6 @@
                 "light": "Claro",
                 "dark": "Oscuro"
             }
-        },
-        "menu_items": {
-            "label": "Elementos de menú habilitados",
-            "description": "Configure qué elementos mostrar en el menú.\n\nTen en cuenta que si desactivas los ajustes puedes bloquearte.\n\nEn ese caso, tendrá que introducir manualmente la ruta a la configuración o borrar las cookies del navegador para acceder de nuevo a la configuración."
         },
         "language": {
             "label": "Idioma",
@@ -318,8 +310,6 @@
     },
     "shuffle_disable": "Deshabilitar reproducción aleatoria",
     "shuffle_enable": "Activar reproducción aleatoria",
-    "dont_stop_the_music_enable": "Habilita '¡No pares la música!",
-    "dont_stop_the_music_disable": "Desactivar '¡No pares la música!'",
     "uri_copied": "URI copiado en el portapapeles",
     "uri_copy_failed": "Error al copiar URI al portapapeles",
     "remove_provider_mapping_confirm": "¿Está seguro de que desea eliminar esta asignación de proveedor? Esto desvinculará el elemento de los detalles del elemento actual. Es posible que vuelva a aparecer si vuelve a buscar todas las coincidencias de proveedores.",

@@ -657,6 +657,7 @@ const activeTab = computed(() => {
     name.includes("core") ||
     name.includes("serverlog") ||
     name === "backgroundtasks" ||
+    name === "diagnostics" ||
     name === "genremanagement" ||
     name === "audioanalysissettings"
   ) {
@@ -861,9 +862,9 @@ const breadcrumbItems = computed(() => {
         disabled: true,
       });
     })
-    .with("serverlogs", () => {
+    .with("diagnostics", () => {
       items.push({
-        title: t("settings.server_logging"),
+        title: t("settings.diagnostics"),
         disabled: true,
       });
     })

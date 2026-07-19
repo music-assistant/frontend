@@ -51,7 +51,6 @@
     "play_now": "Reprodueix ara",
     "play_on": "Reprodueix a: {0}",
     "play_playlist_from": "Reprodueix la llista de reproducció des d'aquí",
-    "play_radio": "Inicia la ràdio",
     "player_type": {
         "group": "Grup",
         "player": "Reproductor",
@@ -72,8 +71,6 @@
     "queue_next_items": "Elements següents",
     "queue_options": "Opcions de la cua",
     "queue_previous_items": "Elements reproduïts",
-    "queue_radio_based_on": "La cua s'omple dinàmicament amb pistes en funció de:",
-    "queue_radio_enabled": "El mode ràdio està activat",
     "radios": "Ràdio",
     "read_more": "llegeix més",
     "refresh_item": "Actualitza l'element",
@@ -127,10 +124,6 @@
                 "light": "Clar",
                 "dark": "Fosc"
             }
-        },
-        "menu_items": {
-            "label": "Elements de menú habilitats",
-            "description": "Configureu quins elements es mostraran al menú.\n\nTingueu en compte que si desactiveu la configuració, podeu bloquejar-vos.\n\nEn aquest cas, haureu d'introduir manualment el camí a la configuració o esborrar les galetes del navegador per accedir de nou a la configuració, utilitzeu-la sota el vostre propi risc."
         },
         "language": {
             "label": "Llengua",
@@ -332,10 +325,6 @@
     "podcast_episode": "Episodi",
     "podcast_episodes": "Episodis",
     "play_from_here": "Reprodueix des d'aquí",
-    "loudness_measurement": "{0} LUFS (nivell de sonoritat)",
-    "loudness_measurement_album": "{0} LUFS (àlbum)",
-    "loudness_dynamic": "Normalització dinàmica del volum",
-    "loudness_fixed": "Configuració del guany fix",
     "dsp_active": "Actiu",
     "currently_playing_players": "Reproduint ara",
     "all_players": "Tots els reproductors",
@@ -349,7 +338,6 @@
             "channels": "Canals: {0}"
         }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Selecciona la font",
     "play_replace_next": "Reprodueix a continuació (neteja la cua)",
     "all_enqueue_options": "Totes les opcions d'afegir a la cua",

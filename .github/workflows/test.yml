@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 11.8.0
       - name: Use Node.js
@@ -35,7 +35,7 @@ jobs:
           CI: true
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm lint:check
         env:
           CI: true
 

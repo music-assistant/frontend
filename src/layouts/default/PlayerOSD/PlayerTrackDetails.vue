@@ -21,24 +21,25 @@
             store.activePlayer?.powered != false &&
             store.activePlayer?.current_media?.image_url
           "
+          class="w-full h-full"
         >
           <v-img
             class="media-thumb"
             style="border-radius: 4px"
             size="60"
             :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
+            :alt="$t('tooltip.artwork')"
           />
         </div>
         <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
-          <v-icon
-            size="32"
-            :icon="
+          <PlayerIcon
+            :icon="store.activePlayer?.icon"
+            :grouped="
               store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_members.length
-                ? 'mdi-speaker-multiple'
-                : store.activePlayer?.icon || 'mdi-speaker'
+              !!store.activePlayer?.group_members.length
             "
+            :size="32"
           />
         </div>
       </div>
@@ -71,11 +72,24 @@
           v-if="
             store.activePlayer &&
             store.activePlayer?.powered != false &&
-            store.activePlayer?.playback_state != PlaybackState.IDLE
+            store.activePlayer?.playback_state != PlaybackState.IDLE &&
+            !waveformBins
           "
           :show-badge="false"
           :show-icon="true"
           icon-style="margin-left: 12px; margin-bottom: 4px;"
+        />
+        <MiniEqualizer
+          v-else-if="
+            store.activePlayer &&
+            store.activePlayer?.powered != false &&
+            store.activePlayer?.playback_state != PlaybackState.IDLE &&
+            waveformBins
+          "
+          color="rgb(var(--v-theme-primary))"
+          :bars="4"
+          :height="16"
+          style="margin-left: 12px; margin-bottom: 4px"
         />
       </div>
     </template>
@@ -172,9 +186,12 @@
 
 <script setup lang="ts">
 import MarqueeText from "@/components/MarqueeText.vue";
+import MiniEqualizer from "@/components/MiniEqualizer.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import {
   ImageColorPalette,
   getMediaImageUrl,
@@ -187,6 +204,7 @@ import { store } from "@/plugins/store";
 import { computed } from "vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
+const { waveformBins } = useActiveTrackWaveform();
 const marqueeSync = new MarqueeTextSync();
 
 // properties
@@ -194,7 +212,7 @@ interface Props {
   showOnlyArtist?: boolean;
   showQualityDetailsBtn?: boolean;
   colorPalette: ImageColorPalette;
-  primaryColor: string;
+  primaryColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {

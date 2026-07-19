@@ -48,7 +48,6 @@
     "play_now": "Възпроизвеждане сега",
     "play_on": "Възпроизвеждане на: {0}",
     "play_playlist_from": "Възпроизвеждане на плейлиста от тук",
-    "play_radio": "Стартиране на радиото",
     "player_type": {
         "group": "Група",
         "player": "Плейър"
@@ -66,7 +65,6 @@
     "queue_next_items": "Следващи елементи",
     "queue_options": "Опции на опашката",
     "queue_previous_items": "Възпроизведени елементи",
-    "queue_radio_enabled": "Радио режимът е активиран",
     "radios": "Радио",
     "read_more": "прочетете повече",
     "refresh_item": "Обновяване на елемента",
@@ -131,10 +129,6 @@
                 "light": "Светла",
                 "dark": "Тъмна"
             }
-        },
-        "menu_items": {
-            "label": "Активирани елементи от менюто",
-            "description": "Конфигурирайте кои елементи да се показват в менюто.\n\nИмайте предвид, че ако деактивирате настройките, може да се заключите.\n\nЗа да получите достъп отново, ще трябва ръчно да въведете пътя до настройките или да изчистите бисквитките на браузъра. Използвате на свой собствен риск!"
         },
         "language": {
             "label": "Език",
@@ -244,7 +238,6 @@
         "view_documentation": "Преглед на документацията",
         "about": "Относно",
         "about_description": "Информация за версията, кредити и още",
-        "system_logging_description": "Преглед и изтегляне на журнали на сървъра за отстраняване на неизправности",
         "auto_refresh_log": "Автоматично опресняване",
         "log_truncated": "Показване на последните {0} реда. Изтеглете пълния журнал за цялостната история.",
         "version_info": "Информация за версията",
@@ -417,7 +410,17 @@
         "abort_setup": "Прекратяване на настройката",
         "provider_saved": "Настройките на доставчика са запазени",
         "provider_reloading": "Презареждане на доставчика…",
-        "provider_removed": "Доставчикът е премахнат"
+        "provider_removed": "Доставчикът е премахнат",
+        "audio_analysis_failures": {
+            "col_item": "Елемент",
+            "col_reason": "Причина",
+            "col_retry": "Следващ опит",
+            "col_actions": "Действия",
+            "clear_all": "Изчистване на всички"
+        },
+        "protocol_configure_title": "Конфигуриране на {name}",
+        "download_diagnostics": "Изтегляне на диагностика",
+        "diagnostics": "Диагностика"
     },
     "show_info": "Показване на информация",
     "show_select_boxes": "Показване на полета за избор",
@@ -468,7 +471,18 @@
         "filter_genre": "Филтриране по жанр",
         "show_only_default_genres": "Показване само на жанрове по подразбиране",
         "show_all_genres": "Показване на всички жанрове",
-        "select_provider": "Изберете доставчик"
+        "select_provider": "Изберете доставчик",
+        "genre_content_type": "Тип на медията",
+        "previous_page": "Предишна страница",
+        "next_page": "Следваща страница",
+        "more_options": "Повече опции",
+        "close_fullscreen": "Затваряне на цял екран",
+        "enter_fullscreen": "Влизане в режим на цял екран",
+        "exit_fullscreen": "Изход от режим на цял екран",
+        "select_player": "Изберете плейър",
+        "user_options": "Потребителски опции",
+        "help": "Помощ",
+        "import_file": "Импортиране на файл"
     },
     "topresult": "Най-добър резултат",
     "track": "Песен",
@@ -518,8 +532,6 @@
     },
     "shuffle_disable": "Деактивиране на разбъркването",
     "shuffle_enable": "Активиране на разбъркването",
-    "dont_stop_the_music_enable": "Активирайте 'Не спирайте музиката!'",
-    "dont_stop_the_music_disable": "Дезактивирайте 'Не спирайте музиката!'",
     "open_dsp_settings": "Отваряне на настройките на DSP",
     "audiobook": "Аудиокнига",
     "audiobooks": "Аудиокниги",
@@ -535,8 +547,6 @@
     "podcast_episode": "Епизод",
     "podcast_episodes": "Епизоди",
     "play_from_here": "Възпроизвеждане от тук",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (албум)",
     "dsp_active": "Активен",
     "currently_playing_players": "В момента се възпроизвежда",
     "all_players": "Всички плейъри",
@@ -545,24 +555,15 @@
     "streamdetails": {
         "input_header": "Вход",
         "output_header": "Изход",
-        "output_format_info": "Аудиото се изпраща във формат {0}",
         "input_gain": "Входно усилване ({0} dB)",
         "output_gain": "Изходно усилване ({0} dB)",
-        "output_limiter_info": "Автоматично намалява много силните звуци, за да предотврати изкривяване и да защити високоговорителите ви",
-        "dsp_unsupported": "DSP не се поддържа",
         "file_info": {
             "container": "Контейнер: {0}",
             "codec": "Кодек: {0}",
             "channels": "Канали: {0}"
         },
-        "volume_normalization": {
-            "mode": {
-                "dynamic": "Нормализирането на силата на звука е активно в динамичен режим."
-            }
-        },
-        "click_to_expand": "Кликнете, за да видите всички плейъри"
+        "more_info": "Повече информация"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Изберете източник",
     "play_replace_next": "Възпроизвеждане на следващия (изчистване на опашката)",
     "music_assistant_source": "Опашка на Music Assistant",
@@ -825,7 +826,8 @@
                 "unknown_artist": "Неизвестен изпълнител",
                 "view_songs": "Преглед на песни",
                 "added": "Добавено",
-                "already_in_queue": "Вече е в опашката"
+                "already_in_queue": "Вече е в опашката",
+                "listen_in_powered_by": "Задвижвано от Sendspin"
             },
             "add": "Добавяне",
             "check_network": "Проверете мрежовите си настройки",
@@ -845,6 +847,40 @@
             "guest_access_enabled": "Достъпът за гости е активиран",
             "guest_access_toggle_failed": "Неуспешно превключване на достъпа за гости",
             "powered_by": "Задвижвано от"
+        },
+        "music_quiz": {
+            "game_over": "Край на играта!",
+            "connection_lost": "Връзката е прекъсната, повторно свързване...",
+            "answer_seconds": "Време за отговор (секунди)",
+            "search_music": "Търсене в библиотеката ви",
+            "searching": "Търсене...",
+            "no_sources_found": "Няма намерени песни или плейлисти",
+            "selected_music": "Избрана музика",
+            "pick_at_least_one_source": "Изберете поне един източник",
+            "playlist": "Плейлист",
+            "source_music": "Музика",
+            "track_count": "{0} песен",
+            "tracks_count": "{0} песни",
+            "playlist_count": "{0} плейлист",
+            "playlists_count": "{0} плейлисти",
+            "player_name": "Вашето име",
+            "answers": "Отговори",
+            "copied": "Копирано",
+            "copy_link": "Копиране на връзката",
+            "now_playing": "Сега се възпроизвежда",
+            "copy_music_name": "Копиране на заглавието на песента",
+            "copy_music_name_failed": "Не можа да се копира заглавието на песента",
+            "error_no_web_player": "Уеб плейърът все още не е наличен",
+            "listen_in_powered_by": "Задвижвано от Sendspin",
+            "choose_game_type": "Изберете тип игра",
+            "configure_game": "Конфигурирайте играта си",
+            "setup_step": "Стъпка {0} от {1}",
+            "coming_soon": "Очаквайте скоро",
+            "waiting_for_answer": "В очакване на отговор",
+            "unsupported_title": "Изисква се актуализация",
+            "unsupported_description": "Този тип игра изисква по-нова версия на интерфейса на Music Assistant.",
+            "end_game_confirm": "Сигурни ли сте, че искате да прекратите тази игра? Това ще премахне текущата игра за всички играчи.",
+            "end_game": "Край на играта"
         }
     },
     "no_lyrics_available": "Няма налични текстове на песни",
@@ -968,10 +1004,14 @@
     "edit_track": "Редактиране на песен",
     "uri_read_only": "URI (само за четене)",
     "similar_tracks": "Подобни песни",
+    "similar_artists": "Подобни изпълнители",
+    "audio_source": "Аудио източник",
+    "shortcut": {
+        "add_to": "Добавяне към преките пътища",
+        "remove_from": "Премахване от преките пътища"
+    },
     "smart_playlist": {
         "creating": "Създаване…",
-        "dedup_hours": "Не повтаряйте една и съща песен за",
-        "dedup_hours_tooltip": "Пропускане на наскоро възпроизведени песни. Задайте броя часове, през които дадена песен няма да се повтаря. 0 деактивира ограничението.",
         "desc": "Генериране на плейлист от вашата библиотека въз основа на правила.",
         "edit_rules": "Редактиране на правилата",
         "saving": "Запазване…",
@@ -985,7 +1025,6 @@
         "add_first_filter": "Добавяне на филтър",
         "add_first_rule": "Добавяне на правило",
         "add_rule": "Добавяне на правило",
-        "hours_unit": "часа",
         "empty_title": "Все още няма нищо за възпроизвеждане",
         "favorites_yes": "Да",
         "field_album_is": "Албумът е",
@@ -1001,6 +1040,7 @@
         "op_is": "е",
         "op_is_not": "не е",
         "type_library": "От моята библиотека",
+        "type_seed": "Откриване",
         "seed_album_pick": "Изберете албум",
         "seed_playlist_pick": "Изберете плейлист",
         "name_label": "Име",
@@ -1008,7 +1048,18 @@
         "results_library": "Резултати от библиотеката",
         "results_other": "Други резултати",
         "explicit_allowed": "Разрешено",
-        "explicit_not_allowed": "Не е разрешено"
+        "explicit_not_allowed": "Не е разрешено",
+        "field_duration": "Продължителност",
+        "field_last_played": "Последно възпроизвеждане",
+        "duration_min": "Мин",
+        "duration_max": "Макс",
+        "unit_hours": "часа",
+        "unit_days": "дни",
+        "unit_weeks": "седмици",
+        "unit_months": "месеца",
+        "last_played_ago": "преди",
+        "op_greater_than": "по-голямо от",
+        "op_less_than": "по-малко от"
     },
     "explore": "Разгледайте",
     "shortcuts": "Преки пътища",
@@ -1021,6 +1072,40 @@
     "now_playing": "Сега се възпроизвежда",
     "artist_topalbums": "Най-популярни албуми",
     "in_library": "Във вашата библиотека",
+    "artist_no_library_albums": "Нямате албуми в библиотеката си за този изпълнител.",
+    "artist_no_library_tracks": "Нямате записи във вашата библиотека за този изпълнител.",
     "artist_all_albums": "Всички албуми",
-    "artist_all_tracks": "Всички песни"
+    "artist_all_tracks": "Всички песни",
+    "lyrics_unavailable_content": "Текстовете на песни не са налични за този тип медия.",
+    "autoplay_enable": "Активиране на автоматичното възпроизвеждане",
+    "autoplay_disable": "Деактивиране на автоматичното възпроизвеждане",
+    "autoplay": "Автоматично възпроизвеждане",
+    "autoplay_active": "Автоматичното възпроизвеждане е включено.",
+    "genre_content_type": {
+        "all": "Всички",
+        "audiobooks": "Аудиокниги",
+        "podcasts": "Подкасти",
+        "music": "Музика"
+    },
+    "queue_reorder": "Плъзнете, за да пренаредите",
+    "lyrics_show": "Показване на текста на тази песен",
+    "lyrics_hide": "Скриване на текста на тази песен",
+    "show_less": "Покажи по-малко",
+    "show_more": "Покажи още",
+    "autoplay_on_title": "Автоматичното възпроизвеждане е активирано",
+    "autoplay_off_title": "Автоматичното възпроизвеждане е деактивирано",
+    "open_player_settings": "Отваряне на настройките на плейъра",
+    "sleep_timer_preset": {
+        "15": "15 минути",
+        "30": "30 минути",
+        "45": "45 минути",
+        "60": "1 час",
+        "120": "2 часа"
+    },
+    "shuffle_smart_active": "Интелигентното разбъркване е включено. Кликнете, за да го изключите.",
+    "autoplay_dynamic_title": "Автоматичното възпроизвеждане е активно",
+    "bpm": "BPM",
+    "musical_key": "Ключ",
+    "audio_overlay_sound": "Звук",
+    "audio_overlay_select_sound": "Изберете звук"
 }

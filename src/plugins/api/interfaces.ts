@@ -14,6 +14,8 @@ export enum AudioChannel {
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
   TONE_CONTROL = "tone_control",
+  GAIN = "gain",
+  BALANCE = "balance",
 }
 
 export enum ParametricEQBandType {
@@ -55,8 +57,22 @@ export interface ToneControlFilter extends DSPFilterBase {
   treble_level: number;
 }
 
+export interface GainFilter extends DSPFilterBase {
+  type: DSPFilterType.GAIN;
+  gain: number;
+}
+
+export interface BalanceFilter extends DSPFilterBase {
+  type: DSPFilterType.BALANCE;
+  balance: number;
+}
+
 // Union type for all possible filters
-export type DSPFilter = ParametricEQFilter | ToneControlFilter;
+export type DSPFilter =
+  | ParametricEQFilter
+  | ToneControlFilter
+  | GainFilter
+  | BalanceFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
@@ -64,6 +80,7 @@ export interface DSPConfig {
   filters: DSPFilter[];
   input_gain: number;
   output_gain: number;
+  preset_id?: string | null;
 }
 
 // DSPConfigPreset represents a preset configuration for DSP
@@ -73,25 +90,11 @@ export interface DSPConfigPreset {
   config: DSPConfig;
 }
 
-// DSPDetails used in StreamDetails
 export enum DSPState {
   ENABLED = "enabled",
   DISABLED = "disabled",
   DISABLED_BY_UNSUPPORTED_GROUP = "disabled_by_unsupported_group",
-}
-
-// This describes the DSP configuration as applied,
-// even when the DSP state is disabled. For example,
-// output_limiter can remain true while the DSP is disabled.
-// All filters in the list are guaranteed to be enabled.
-// output_format is the format that will be sent to the output device (if known).
-export interface DSPDetails {
-  state: DSPState;
-  input_gain: number;
-  filters: DSPFilter[];
-  output_gain: number;
-  output_limiter: boolean;
-  output_format?: AudioFormat;
+  UNKNOWN = "unknown",
 }
 
 /// enums
@@ -104,6 +107,7 @@ export enum MediaType {
   RADIO = "radio",
   AUDIOBOOK = "audiobook",
   AUDIO_SOURCE = "audio_source",
+  SOUND_EFFECT = "sound_effect",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
   GENRE = "genre",
@@ -313,6 +317,7 @@ export enum EventType {
   PLAYER_UPDATED = "player_updated",
   PLAYER_REMOVED = "player_removed",
   PLAYER_SETTINGS_UPDATED = "player_settings_updated",
+  PLAYER_SLEEP_TIMER_UPDATED = "player_sleep_timer_updated",
   QUEUE_ADDED = "queue_added",
   QUEUE_UPDATED = "queue_updated",
   QUEUE_ITEMS_UPDATED = "queue_items_updated",
@@ -331,6 +336,7 @@ export enum EventType {
   PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   AUTH_SESSION = "auth_session",
+  PROVIDER_EVENT = "provider_event",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -342,6 +348,8 @@ export enum ProviderFeature {
   BROWSE = "browse",
   SEARCH = "search",
   RECOMMENDATIONS = "recommendations",
+  // provider can enumerate sound effect items (used as audio overlay sources)
+  SOUND_EFFECTS = "sound_effects",
   // library feature per mediatype
   LIBRARY_ARTISTS = "library_artists",
   LIBRARY_ALBUMS = "library_albums",
@@ -419,6 +427,30 @@ export enum VolumeNormalizationMode {
   FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
   FIXED_GAIN = "fixed_gain",
   FALLBACK_DYNAMIC = "fallback_dynamic",
+  UNKNOWN = "unknown",
+}
+
+export enum CrossfadeMode {
+  SMART_CROSSFADE = "smart_crossfade",
+  STANDARD_CROSSFADE = "standard_crossfade",
+  DISABLED = "disabled",
+  UNKNOWN = "unknown",
+}
+
+export enum AudioQuality {
+  LOW = "low",
+  STANDARD = "standard",
+  LOSSLESS = "lossless",
+  HI_RES = "hi_res",
+  UNKNOWN = "unknown",
+}
+
+export enum AudioNormalizationMeasurementSource {
+  TRACK = "track",
+  ALBUM = "album",
+  LIVE = "live",
+  FALLBACK = "fallback",
+  UNKNOWN = "unknown",
 }
 
 export enum IdentifierType {
@@ -515,6 +547,8 @@ export interface ConfigValueOption {
   disabled?: boolean;
   // disabled_reason: optional explanation of why the option is disabled
   disabled_reason?: string;
+  // description: optional per-option help text shown under the option
+  description?: string;
 }
 
 export interface ConfigEntry {
@@ -709,6 +743,12 @@ export interface Album extends MediaItem {
   album_type: AlbumType;
 }
 
+export interface AudioMetadata {
+  // Audio analysis details (e.g. bpm, musical key).
+  bpm?: number | null;
+  musical_key?: string | null;
+}
+
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
@@ -716,6 +756,8 @@ export interface Track extends MediaItem {
   album: ItemMapping | Album;
   disc_number?: number;
   track_number?: number;
+  // only populated when the full track is requested (get_track), never on listings
+  audio_metadata?: AudioMetadata | null;
 }
 
 export interface Playlist extends MediaItem {
@@ -726,6 +768,10 @@ export interface Playlist extends MediaItem {
 }
 
 export interface Radio extends MediaItem {}
+
+export interface SoundEffect extends MediaItem {
+  duration: number;
+}
 
 export interface AudioSource extends MediaItem {
   can_play_pause: boolean;
@@ -759,6 +805,8 @@ export interface PodcastEpisode extends MediaItem {
 
 export interface Genre extends MediaItem {
   genre_aliases: string[] | null;
+  // taxonomy this genre belongs to; null/undefined = music/general
+  content_type?: MediaType | null;
 }
 
 export interface BrowseFolder extends MediaItem {
@@ -813,12 +861,48 @@ export interface AudioFormat {
   bit_rate: number;
 }
 
-export interface LoudnessMeasurement {
-  integrated: number;
-  true_peak: number;
-  lra: number;
-  threshold: number;
-  target_offset: number;
+export interface AudioFidelity {
+  quality?: AudioQuality;
+  bit_perfect?: boolean | null;
+}
+
+export interface AudioNormalizationDetails {
+  mode?: VolumeNormalizationMode;
+  measurement_source?: AudioNormalizationMeasurementSource;
+  target_lufs?: number | null;
+  measured_lufs?: number | null;
+  applied_gain_db?: number | null;
+}
+
+export interface AudioQueueProcessing {
+  pcm_format?: AudioFormat | null;
+  normalization?: AudioNormalizationDetails | null;
+  playback_speed?: number;
+  crossfade_mode?: CrossfadeMode;
+  overlay_active?: boolean;
+}
+
+export interface AudioDSPDetails {
+  state?: DSPState;
+  input_gain?: number;
+  filters?: DSPFilter[];
+  output_gain?: number;
+  output_limiter?: boolean;
+  preset_id?: string | null;
+}
+
+export interface AudioOutputDetails {
+  player_ids?: string[];
+  dsp?: AudioDSPDetails;
+  source_channel?: AudioChannel | null;
+  output_format?: AudioFormat | null;
+  fidelity?: AudioFidelity;
+}
+
+export interface AudioProcessingChain {
+  input_fidelity?: AudioFidelity;
+  queue_processing?: AudioQueueProcessing | null;
+  outputs?: AudioOutputDetails[];
 }
 
 export interface StreamMetadata {
@@ -839,18 +923,10 @@ export interface StreamDetails {
   media_type: MediaType;
   stream_metadata?: StreamMetadata;
   duration?: number;
+  audio_processing?: AudioProcessingChain | null;
 
   queue_id?: string;
   fade_in?: boolean;
-  loudness?: number;
-  loudness_album?: number;
-  prefer_album_loudness?: boolean;
-  target_loudness?: number;
-  volume_normalization_mode?: VolumeNormalizationMode;
-  volume_normalization_gain_correct?: number;
-  // This contains the DSPDetails of all players in the group.
-  // In case of single player playback, dict will contain only one entry.
-  dsp?: Record<string, DSPDetails>;
 }
 
 // queue_item
@@ -882,12 +958,23 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
+  // smart_shuffle_active: whether shuffle is currently in "smart" mode (server-derived,
+  // read-only). True when shuffle is on with the per-queue smart-shuffle setting enabled,
+  // or while radio mode is active. Lets clients show a smart-shuffle indicator.
+  smart_shuffle_active: boolean;
   autoplay_enabled: boolean;
   repeat_mode: RepeatMode;
   crossfade_enabled: boolean;
   // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
   // read-only). Lets clients show a smart-fades indicator when crossfade is on and smart is active.
   smart_fades_active: boolean;
+  // audio overlay: a looping sound effect mixed into this queue's playback.
+  // overlay_source holds the selected sound effect (kept when the overlay is
+  // disabled so it can be re-enabled with the same sound), overlay_volume is
+  // the overlay loudness relative to the music in percent (100 = equally loud).
+  overlay_enabled: boolean;
+  overlay_source?: ItemMapping;
+  overlay_volume: number;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
@@ -907,7 +994,10 @@ export interface PlayerQueue {
   state: PlaybackState;
   current_item?: QueueItem;
   next_item?: QueueItem;
-  radio_source: MediaItemType[];
+  // The queue's enqueued parent items (its origin), present regardless of mode.
+  // When one or more sources are dynamic, the queue runs in dynamic mode
+  // (is_dynamic), implicitly enabling autoplay and smart shuffle.
+  sources: ItemMapping[];
   enqueued_media_items: MediaItemType[];
   is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward
@@ -930,6 +1020,9 @@ export interface OutputProtocol {
   protocol_domain: string | null; // e.g., "airplay", "dlna" (null for native)
   priority: number; // Lower = more preferred (native = 0 if supported)
   available: boolean; // Whether this output protocol is currently available
+  // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin
+  // bridge over an AirPlay player), the output_protocol_id of the base output; null for direct outputs
+  derived_from?: string | null;
 }
 
 export interface DeviceInfo {
@@ -1053,6 +1146,10 @@ export interface Player {
   // Can be "native" or a protocol player_id
   // null means no playback in progress or native playback without explicit selection
   active_output_protocol: string | null;
+
+  // sleep_timer_expires_at: unix (utc) timestamp at which the active sleep timer
+  // will stop playback, or null when no sleep timer is set.
+  sleep_timer_expires_at?: number | null;
 }
 
 // provider
@@ -1311,6 +1408,8 @@ export interface PartyConfig {
   qr_text: string | null;
   hide_back_button: boolean;
   show_progress_bar: boolean;
+  // Shared-audio experience for guests: "venue" (opt-in) or "remote" (silent disco).
+  mode?: "venue" | "remote";
 }
 
 export interface SmartPlaylistRules {
@@ -1339,9 +1438,12 @@ export interface SmartPlaylistRules {
   excluded_artist_names?: Record<number, string>;
   excluded_album_names?: Record<number, string>;
   excluded_genre_names?: Record<number, string>;
-  dedup_hours?: number;
   album_types?: string[];
   excluded_album_types?: string[];
+  min_duration?: number;
+  max_duration?: number;
+  last_played_before_value?: number;
+  last_played_before_unit?: string;
 }
 
 export interface SmartPlaylistTrackStats {

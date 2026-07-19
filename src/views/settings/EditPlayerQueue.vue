@@ -12,6 +12,21 @@
       </div>
     </v-card>
 
+    <!-- Global queue settings hint -->
+    <div
+      class="border-primary/20 bg-primary/5 mb-4 flex flex-wrap items-center gap-4 rounded-xl border px-4 py-3"
+    >
+      <Info class="text-primary size-5 shrink-0" />
+      <p class="text-muted-foreground m-0 flex-1 text-sm">
+        {{ $t("settings.queue_global_settings_hint") }}
+      </p>
+      <Button as-child variant="outline" size="sm">
+        <RouterLink to="/settings/editcore/player_queues" class="no-underline">
+          {{ $t("settings.queue_global_settings_link") }}
+        </RouterLink>
+      </Button>
+    </div>
+
     <edit-config
       v-if="config"
       :config-entries="allConfigEntries"
@@ -34,8 +49,10 @@
 <script setup lang="ts">
 import { api } from "@/plugins/api";
 import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
+import { Button } from "@/components/ui/button";
+import { Info } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
 

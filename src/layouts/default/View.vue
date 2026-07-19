@@ -17,6 +17,7 @@
             <component :is="Component" />
           </router-view>
           <add-to-playlist-dialog />
+          <audio-overlay-dialog />
           <create-playlist-dialog />
           <create-smart-playlist-dialog />
           <import-playlist-dialog />
@@ -47,6 +48,7 @@ import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
+import AudioOverlayDialog from "./AudioOverlayDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
 import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";

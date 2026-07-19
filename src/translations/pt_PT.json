@@ -53,7 +53,6 @@
     "play_now": "Reproduzir agora",
     "play_on": "Reproduzir em: {0}",
     "play_playlist_from": "Reproduzir a lista de reprodução a partir daqui",
-    "play_radio": "Iniciar rádio",
     "player_type": {
         "group": "Grupo",
         "player": "Leitor",
@@ -74,8 +73,6 @@
     "queue_next_items": "Próximos itens",
     "queue_options": "Opções de fila",
     "queue_previous_items": "Itens reproduzidos",
-    "queue_radio_based_on": "A fila de espera é preenchida dinamicamente com faixas com base em:",
-    "queue_radio_enabled": "O modo rádio está ativado",
     "radios": "Rádio",
     "read_more": "ler mais",
     "refresh_item": "Atualizar item",
@@ -135,7 +132,6 @@
         "tracks_in_library": "Faixas na biblioteca",
         "playlists_in_library": "Listas de reprodução na biblioteca",
         "radio_in_library": "Rádio na biblioteca",
-        "server_logging": "Registo no servidor",
         "download_log": "Descarregar ficheiro de registo",
         "edit_group_members": "Editar membros do grupo",
         "add_new_provider_button": "Adicionar provedor {0}",
@@ -150,10 +146,6 @@
                 "light": "Claro",
                 "dark": "Escuro"
             }
-        },
-        "menu_items": {
-            "label": "Itens de menu ativados",
-            "description": "Configure os itens a mostrar no menu.\n\nNote que, se desativar as definições, poderá ficar sem acesso.\n\nPara voltar a ter acesso, terá de introduzir manualmente o caminho para as definições ou limpar os cookies do browser. Utilize por sua conta e risco!"
         },
         "language": {
             "label": "Idioma",
@@ -312,8 +304,6 @@
         "view_documentation": "Ver documentação",
         "about": "Sobre",
         "about_description": "Informações sobre a versão, créditos e mais",
-        "system_logging": "Registo do servidor",
-        "system_logging_description": "Visualizar e descarregar registos do servidor para resolução de problemas",
         "auto_refresh_log": "Atualização automática",
         "log_truncated": "Mostrando as últimas {0} linhas. Descarregue o ficheiro de registo completo para obter o histórico completo.",
         "version_info": "Informações sobre a versão",
@@ -677,8 +667,6 @@
     },
     "shuffle_disable": "Desativar a reprodução aleatória",
     "shuffle_enable": "Ativar a reprodução aleatória",
-    "dont_stop_the_music_enable": "Ativar reprodução automática",
-    "dont_stop_the_music_disable": "Desativar reprodução automática",
     "open_dsp_settings": "Abrir definições DSP",
     "audiobook": "Audiolivro",
     "audiobooks": "Audiolivros",
@@ -696,10 +684,6 @@
     "podcast_episode": "Episódio",
     "podcast_episodes": "Episódios",
     "play_from_here": "Reproduzir a partir daqui",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (álbum)",
-    "loudness_dynamic": "Normalização dinâmica do volume",
-    "loudness_fixed": "Correção de ganho fixo",
     "dsp_active": "Ativo",
     "currently_playing_players": "A tocar",
     "all_players": "Todos os leitores",
@@ -709,40 +693,20 @@
     "streamdetails": {
         "input_header": "Entrada",
         "output_header": "Saída",
-        "output_format_info": "O áudio é enviado no formato {0}",
         "eq_band_count": "{0} bandas",
         "eq_band_count_singular": "1 banda",
         "input_gain": "Ganho de entrada ({0} dB)",
         "output_gain": "Ganho de saída ({0} dB)",
         "output_limiter": "Limitador de saída",
-        "output_limiter_info": "Reduz automaticamente os sons muito altos para evitar distorções e proteger os altifalantes",
-        "dsp_unsupported": "DSP não suportado",
-        "dsp_disabled_by_unsupported_group": "Este fornecedor de leitores não suporta DSP com reprodução sincronizada",
         "file_info": {
             "container": "Contentor: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Taxa de bits: {0} kbps",
             "sample_rate": "Taxa de amostragem: {0} kHz",
             "channels": "Canais: {0}",
-            "bit_depth": "Profundidade de bits: {0}",
-            "processing_notice": "O áudio é processado internamente como PCM flutuante de 32 bits"
-        },
-        "volume_normalization": {
-            "target_level": "Nível-alvo: {0} LUFS",
-            "integrated_loudness": "Intensidade sonora medida (integrada): {0} LUFS",
-            "integrated_album_loudness": "Volume do álbum: {0} LUFS",
-            "applied_gain_correction": "Correção do ganho aplicado: {0} dB",
-            "mode": {
-                "dynamic": "A normalização do volume está ativa no modo dinâmico.",
-                "measurement_only": "A normalização do volume está ativa com base numa medição armazenada do volume (integrado) do áudio.",
-                "measurement_album": "A normalização do volume está ativa com base numa medição armazenada do volume (integrado) do álbum.",
-                "fixed_gain": "A normalização do volume está ativa com base na correção de ganho fixo."
-            }
-        },
-        "click_to_expand": "Clique para ver todos os leitores",
-        "output_format_pcm_info": "O áudio é transmitido como PCM para o fornecedor do leitor. O fornecedor do leitor pode então converter o áudio para um formato diferente antes de o enviar para o leitor."
+            "bit_depth": "Profundidade de bits: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Selecionar fonte",
     "play_replace_next": "Reproduzir Seguinte (limpar a fila)",
     "all_enqueue_options": "Todas as opções de fila",
@@ -1211,8 +1175,6 @@
         "create": "Criar lista de reprodução inteligente",
         "created": "Lista de reprodução inteligente criada!",
         "creating": "A criar…",
-        "dedup_hours": "Não repetir a mesma canção durante",
-        "dedup_hours_tooltip": "Saltar faixas que foram reproduzidas recentemente. Definir o número de horas durante as quais uma faixa não será repetida. 0 desativa o limite.",
         "desc": "Gerar uma lista de reprodução a partir da sua biblioteca com base em regras.",
         "edit_rules": "Editar regras",
         "off": "Desligado",
@@ -1228,8 +1190,6 @@
         "add_first_filter": "Adicionar um filtro",
         "add_first_rule": "Adicionar uma regra",
         "add_rule": "Adicionar regra",
-        "filter_inactive": "Inativo",
-        "hours_unit": "horas",
         "edited": "“{name}” atualizado",
         "empty_desc": "Nenhuma faixa corresponde às suas regras atuais. Desaperte um filtro ou escolha uma semente diferente para começar.",
         "empty_title": "Ainda não há nada para reproduzir",
@@ -1307,13 +1267,6 @@
     "crossfade_active": "O Crossfade está ativado.",
     "crossfade_active_with_smart": "A função Crossfade está ativada com transições inteligentes.",
     "crossfade_smart_active": "O tempo de fade é selecionado automaticamente de forma a adaptar-se a cada faixa.",
-    "radio_explanation": "A função Rádio transforma o conteúdo multimédia que selecionou numa mistura dinâmica e interminável, incorporando continuamente faixas semelhantes para que a música não pare.",
-    "radio_active": "A rádio está ativa, com base em:",
-    "radio_not_active": "O rádio está desligado; a sua lista de reprodução está a tocar exatamente a seleção que escolheu.",
-    "auto_play": "Reprodução automática",
-    "auto_play_explanation": "Não deixe a música parar. Quando a sua lista de reprodução acabar, serão adicionadas automaticamente faixas semelhantes, com base no que tem ouvido.",
-    "auto_play_active": "A reprodução automática está ativada.",
-    "auto_play_radio_active": "Não é necessário enquanto o rádio estiver ativo, pois a sua fila já continua a avançar por si só.",
     "lyrics": "Letra",
     "lyrics_unavailable_song": "A letra desta canção ainda não está disponível.",
     "lyrics_unavailable_content": "Não há letras disponíveis para este conteúdo."

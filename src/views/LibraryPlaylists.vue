@@ -26,10 +26,12 @@
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
+  MediaType,
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -170,6 +172,12 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+  // per-item events are suppressed during provider library syncs; also refresh
+  // when a sync covering playlists finishes
+  const unsubSync = onLibrarySyncCompleted(MediaType.PLAYLIST, () => {
+    updateAvailable.value = true;
+  });
+  onBeforeUnmount(unsubSync);
 });
 
 const newPlaylist = function (provId: string) {

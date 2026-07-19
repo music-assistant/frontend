@@ -54,7 +54,7 @@ jobs:
 
       - name: Generate release notes with Release Drafter
         id: release_drafter
-        uses: release-drafter/release-drafter@v7.4.0
+        uses: release-drafter/release-drafter@v7.5.1
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
@@ -80,7 +80,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 11.8.0
       - name: Set up Node ${{ env.NODE_VERSION }}
@@ -131,6 +131,17 @@ jobs:
     needs: build-and-publish
     runs-on: ubuntu-latest
     steps:
+      - name: Determine server target branch
+        id: target
+        run: |
+          # Stable patch builds (PEP 440 .post releases) bump the server `stable`
+          # branch; regular releases bump the default (dev) branch.
+          if [[ "${{ inputs.version }}" == *.post* ]]; then
+            echo "branch=stable" >> $GITHUB_OUTPUT
+          else
+            echo "branch=dev" >> $GITHUB_OUTPUT
+          fi
+
       - name: Wait for PyPI availability
         run: |
           echo "Waiting 5 minutes for PyPI to propagate music-assistant-frontend ${{ inputs.version }}..."
@@ -164,6 +175,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: music-assistant/server
+          ref: ${{ steps.target.outputs.branch }}
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
           path: .
 
@@ -187,6 +199,7 @@ jobs:
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
           commit-message: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
           branch: "auto-update-frontend-${{ inputs.version }}"
+          base: ${{ steps.target.outputs.branch }}
           delete-branch: true
           title: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
           body: |

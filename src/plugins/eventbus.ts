@@ -1,10 +1,11 @@
 // Global, simple eventbus
 
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import mitt, { Emitter } from "mitt";
 import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
+  MediaType,
   Playlist,
   Radio,
   Track,
@@ -30,6 +31,7 @@ export type CreatePlaylistEvent = {
 export type MergeGenreDialogEvent = {
   genreIds: string[];
   genreNames: string[];
+  genreContentTypes: (MediaType | null | undefined)[];
 };
 
 export type DeleteGenreDialogEvent = {
@@ -57,6 +59,10 @@ export type CreateSmartPlaylistEvent = {
   providerId?: string;
 };
 
+export type AudioOverlayDialogEvent = {
+  queueId: string;
+};
+
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
@@ -67,10 +73,10 @@ export type Events = {
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
+  audioOverlayDialog: AudioOverlayDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
   genreExcluded: void;
-  "homescreen-edit-toggle": void;
   "mobile-sidebar-open": void;
 };
 

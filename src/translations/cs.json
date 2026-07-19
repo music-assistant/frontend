@@ -53,7 +53,6 @@
     "play_now": "Přehrát nyní",
     "play_on": "Přehrát na: {0}",
     "play_playlist_from": "Přehrát Playlist odtud",
-    "play_radio": "Spustit rádio",
     "player_type": {
         "group": "Skupina",
         "player": "Přehrávač",
@@ -74,8 +73,6 @@
     "queue_next_items": "Další položky",
     "queue_options": "Možnosti fronty",
     "queue_previous_items": "Přehrané položky",
-    "queue_radio_based_on": "Fronta se dynamicky plní skladbami na základě {0} :",
-    "queue_radio_enabled": "Režim rádia je povolen",
     "radios": "Rádio",
     "read_more": "Přečíst víc",
     "refresh_item": "Obnovit položku",
@@ -135,7 +132,6 @@
         "tracks_in_library": "Skladby v knihovně",
         "playlists_in_library": "Playlisty v knihovně",
         "radio_in_library": "Rádio v knihovně",
-        "server_logging": "Logování serveru",
         "download_log": "Stáhnout soubor logu",
         "edit_group_members": "Upravit členy skupiny",
         "add_new_provider_button": "Přidat {0} poskytovatele",
@@ -150,10 +146,6 @@
                 "light": "Světlý",
                 "dark": "Tmavý"
             }
-        },
-        "menu_items": {
-            "label": "Povolené položky nabídky",
-            "description": "Konfigurace položek, které se mají zobrazit v nabídce.\n\nUpozorňujeme, že pokud nastavení zakážete, můžete se zablokovat.\n\nV takovém případě budete muset ručně zadat cestu k nastavení nebo vymazat soubory cookie prohlížeče, abyste znovu získali přístup k nastavení, používejte na vlastní nebezpečí."
         },
         "language": {
             "label": "Jazyk",
@@ -311,8 +303,6 @@
         "view_documentation": "Zobrazit dokumentaci",
         "about": "O aplikaci",
         "about_description": "Informace o verzi, kredity a další informace",
-        "system_logging": "Protokolování serveru",
-        "system_logging_description": "Zobrazení a stažení protokolů serveru pro řešení problémů",
         "auto_refresh_log": "Automatické obnovení",
         "log_truncated": "Zobrazení posledních {0} řádků. Stáhněte si celý soubor protokolu pro kompletní historii.",
         "version_info": "Informace o verzi",
@@ -612,8 +602,6 @@
     },
     "shuffle_disable": "Zakázat promíchání",
     "shuffle_enable": "Povolit promíchání",
-    "dont_stop_the_music_enable": "Povolit \"Nevypínej hudbu!\"",
-    "dont_stop_the_music_disable": "Zakázat \"Nevypínej hudbu!\"",
     "open_dsp_settings": "Otevřít nastavení DSP",
     "audiobook": "Audiokniha",
     "audiobooks": "Audioknihy",
@@ -631,10 +619,6 @@
     "podcast_episode": "Epizoda",
     "podcast_episodes": "Epizody",
     "play_from_here": "Přehrát odtud",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamická normalizace hlasitosti",
-    "loudness_fixed": "Pevná korekce zisku",
     "dsp_active": "Aktivní",
     "currently_playing_players": "Právě hraje",
     "all_players": "Všechny přehrávače",
@@ -644,40 +628,20 @@
     "streamdetails": {
         "input_header": "Vstup",
         "output_header": "Výstup",
-        "output_format_info": "Zvuk je odesílán ve formátu {0}",
         "eq_band_count": "{0} pásma",
         "eq_band_count_singular": "1 pásmo",
         "input_gain": "Vstupní zesílení ({0} dB)",
         "output_gain": "Výstupní zisk ({0} dB)",
         "output_limiter": "Omezovač výstupu",
-        "output_limiter_info": "Automaticky redukuje velmi hlasité zvuky, aby se zabránilo zkreslení a ochránily vaše reproduktory",
-        "dsp_unsupported": "DSP není podporováno",
-        "dsp_disabled_by_unsupported_group": "Tento poskytovatel přehrávače nepodporuje DSP se synchronizovaným přehráváním",
         "file_info": {
             "container": "Kontejner: {0}",
             "codec": "Kodek: {0}",
             "bit_rate": "Přenosová rychlost: {0} kbps",
             "sample_rate": "Vzorkovací frekvence: {0} kHz",
             "channels": "Kanály: {0}",
-            "bit_depth": "Bitová hloubka: {0}",
-            "processing_notice": "Zvuk je interně zpracováván jako 32bitová PCM s plovoucí čárkou."
-        },
-        "volume_normalization": {
-            "target_level": "Cílová úroveň: {0} LUFS",
-            "integrated_loudness": "Naměřená (integrovaná) hlasitost: {0} LUFS",
-            "integrated_album_loudness": "Hlasitost alba: {0} LUFS",
-            "applied_gain_correction": "Použitá korekce zisku: {0} dB",
-            "mode": {
-                "dynamic": "Normalizace hlasitosti je aktivní v dynamickém režimu.",
-                "measurement_only": "Normalizace hlasitosti je aktivní na základě uloženého měření (integrované) hlasitosti zvuku.",
-                "measurement_album": "Normalizace hlasitosti je aktivní na základě uloženého měření (integrované) hlasitosti alba.",
-                "fixed_gain": "Normalizace hlasitosti je aktivní na základě pevné korekce zisku."
-            }
-        },
-        "click_to_expand": "Kliknutím zobrazíte všechny přehrávače",
-        "output_format_pcm_info": "Zvuk je poskytovateli přehrávače předáván jako PCM. Zprostředkovatel přehrávače pak může zvuk před odesláním do přehrávače převést do jiného formátu."
+            "bit_depth": "Bitová hloubka: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vyberte zdroj",
     "play_replace_next": "Přehrát další (vymazat frontu)",
     "all_enqueue_options": "Všechny možnosti fronty",

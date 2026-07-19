@@ -1,5 +1,5 @@
 import { store } from "../store";
-/* eslint-disable no-constant-condition */
+
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import { $t, i18n } from "../i18n";
@@ -55,6 +55,7 @@ import {
   RepeatMode,
   SearchResults,
   SmartPlaylistRules,
+  SoundEffect,
   UserRole,
 } from "./interfaces";
 
@@ -105,6 +106,7 @@ export class MusicAssistantApi {
     {
       resolve: (result: unknown) => void;
       reject: (err: unknown) => void;
+      suppressGlobalError?: boolean;
     }
   >;
 
@@ -1069,6 +1071,7 @@ export class MusicAssistantApi {
       genre?: number | number[];
       hide_empty?: boolean | null;
       media_type?: MediaType;
+      content_type?: MediaType | "music";
     } = {},
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", opts);
@@ -1110,19 +1113,14 @@ export class MusicAssistantApi {
     });
   }
 
-  public restoreGenreDefaults(fullRestore = false): Promise<Genre[]> {
+  public restoreGenreDefaults(
+    fullRestore = false,
+    contentType?: "all" | "music" | "podcast" | "audiobook",
+  ): Promise<Genre[]> {
     return this.sendCommand("music/genres/restore_defaults", {
       full_restore: fullRestore,
+      content_type: contentType,
     });
-  }
-
-  public getGenreScannerStatus(): Promise<{
-    running: boolean;
-    last_scan_time: number;
-    last_scan_ago_seconds: number | null;
-    last_scan_mapped: number | null;
-  }> {
-    return this.sendCommand("music/genres/scanner_status");
   }
 
   public triggerGenreScan(): Promise<{
@@ -1230,13 +1228,17 @@ export class MusicAssistantApi {
     });
   }
 
-  public getGenreRadioBaseTracks(
-    item_id: string,
-    provider_instance_id_or_domain: string,
+  public getGenreTracks(
+    item_id: string | number,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
   ): Promise<Track[]> {
-    return this.sendCommand("music/genres/radio_mode_base_tracks", {
+    return this.sendCommand("music/genres/tracks", {
       item_id,
-      provider_instance_id_or_domain,
+      limit,
+      offset,
+      order_by,
     });
   }
 
@@ -1302,6 +1304,17 @@ export class MusicAssistantApi {
     // Returns a tuple of (lyrics, lrc_lyrics) - plain text and synced lyrics.
     return this.sendCommand("metadata/get_track_lyrics", {
       track,
+    });
+  }
+
+  public getWaveForm(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<number[] | null> {
+    // Returns RMS energy bins normalized 0.0-1.0, or null when no analysis exists.
+    return this.sendCommand("audio_analysis/wave_form", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 
@@ -1398,12 +1411,16 @@ export class MusicAssistantApi {
     search_query: string,
     media_types?: MediaType[],
     limit?: number,
+    providers?: string[],
   ): Promise<SearchResults> {
-    // Perform global search for media items on all providers.
+    // Perform global search for media items on the given providers.
+    // providers: provider instance ids/domains and/or "library";
+    // omit to search the library and all available providers combined.
     return this.sendCommand("music/search", {
       search_query,
       media_types,
       limit,
+      providers,
     });
   }
 
@@ -1425,6 +1442,11 @@ export class MusicAssistantApi {
 
   public async getRecommendations(): Promise<RecommendationFolder[]> {
     return this.sendCommand("music/recommendations");
+  }
+
+  public async getSoundEffects(): Promise<SoundEffect[]> {
+    // Fetch all sound effect items from providers that offer them.
+    return this.sendCommand("music/sound_effects");
   }
 
   public markItemPlayed(
@@ -1576,6 +1598,15 @@ export class MusicAssistantApi {
   public queueCommandAutoplayToggle(queueId: string) {
     // Toggle autoplay mode of a queue
     this.queueCommandAutoplay(queueId, !this.queues[queueId].autoplay_enabled);
+  }
+  public queueCommandOverlay(
+    queueId: string,
+    args: { enabled?: boolean; source?: string; volume?: number },
+  ) {
+    // Configure the audio overlay (a looping sound effect mixed into playback) on the queue.
+    // source is the uri of a sound effect item; volume is the overlay loudness
+    // relative to the music in percent (0-200). Omitted args are left unchanged.
+    this.playerQueueCommand(queueId, "overlay", args);
   }
   public queueCommandSetPlaybackSpeed(
     queue_id: string,
@@ -1805,6 +1836,37 @@ export class MusicAssistantApi {
     return this.sendCommand("players/remove", { player_id: playerId });
   }
 
+  // Sleep timer related functions/commands
+
+  public getSleepTimer(playerId: string): Promise<number | null> {
+    /*
+      Return the active sleep timer expiry (unix utc timestamp) or null.
+    */
+    return this.sendCommand("players/sleep_timer/get", {
+      player_id: playerId,
+    });
+  }
+
+  public setSleepTimer(playerId: string, seconds: number): Promise<number> {
+    /*
+      Set a sleep timer that stops playback after the given number of seconds.
+      Returns the expiry (unix utc timestamp).
+    */
+    return this.sendCommand("players/sleep_timer/set", {
+      player_id: playerId,
+      seconds,
+    });
+  }
+
+  public clearSleepTimer(playerId: string): Promise<void> {
+    /*
+      Clear the active sleep timer for the given player.
+    */
+    return this.sendCommand("players/sleep_timer/clear", {
+      player_id: playerId,
+    });
+  }
+
   // PlayerGroup related functions/commands
 
   public playerCommandGroupVolume(playerId: string, newVolume: number) {
@@ -1867,7 +1929,6 @@ export class MusicAssistantApi {
       | string
       | string[],
     option?: QueueOption,
-    radio_mode?: boolean,
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
     sort_by?: string,
@@ -1885,7 +1946,6 @@ export class MusicAssistantApi {
       queue_id,
       media,
       option,
-      radio_mode,
       start_item,
       sort_by,
     });
@@ -2074,9 +2134,25 @@ export class MusicAssistantApi {
     });
   }
 
-  public async getDSPPresets(): Promise<DSPConfigPreset[]> {
+  public async applyDSPPreset(
+    player_id: string,
+    preset_id: string,
+  ): Promise<DSPConfig> {
+    return this.sendCommand("config/players/dsp/apply_preset", {
+      player_id,
+      preset_id,
+    });
+  }
+
+  public async getDSPPresets(
+    suppressGlobalError = false,
+  ): Promise<DSPConfigPreset[]> {
     // Return all known DSP presets
-    return this.sendCommand("config/dsp_presets/get");
+    return this.sendCommand(
+      "config/dsp_presets/get",
+      undefined,
+      suppressGlobalError ? { suppressGlobalError: true } : undefined,
+    );
   }
 
   public async saveDSPPreset(
@@ -2375,20 +2451,26 @@ export class MusicAssistantApi {
     if ("error_code" in msg) {
       // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
-      console.error("[resultMessage]", msg);
+      if (resultPromise?.suppressGlobalError) {
+        // The caller opted out of global error handling (expected/best-effort
+        // failure); it still receives the rejection below.
+        console.debug("[resultMessage]", msg);
+      } else {
+        console.error("[resultMessage]", msg);
 
-      // Don't show toast for authentication errors - they're handled by the login UI
-      const errorMsg = msg.details || msg.error_code || "";
-      const isAuthError =
-        errorMsg.includes("Invalid credentials") ||
-        errorMsg.includes("Invalid username") ||
-        errorMsg.includes("Invalid password") ||
-        errorMsg.includes("Authentication failed") ||
-        errorMsg.includes("Authentication required") ||
-        errorMsg.toLowerCase().includes("unauthorized");
+        // Don't show toast for authentication errors - they're handled by the login UI
+        const errorMsg = msg.details || msg.error_code || "";
+        const isAuthError =
+          errorMsg.includes("Invalid credentials") ||
+          errorMsg.includes("Invalid username") ||
+          errorMsg.includes("Invalid password") ||
+          errorMsg.includes("Authentication failed") ||
+          errorMsg.includes("Authentication required") ||
+          errorMsg.toLowerCase().includes("unauthorized");
 
-      if (!isAuthError) {
-        toast.error(msg.details || msg.error_code);
+        if (!isAuthError) {
+          toast.error(msg.details || msg.error_code);
+        }
       }
     } else if (DEBUG) {
       console.log("[resultMessage]", msg);
@@ -2878,6 +2960,14 @@ export class MusicAssistantApi {
   public sendCommand<Result>(
     command: string,
     args?: Record<string, unknown>,
+    options?: {
+      /**
+       * Suppress the global console.error + error toast for an error result.
+       * Use for best-effort commands where the caller handles (or expects)
+       * failure itself; the returned promise still rejects as usual.
+       */
+      suppressGlobalError?: boolean;
+    },
   ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
@@ -2885,6 +2975,7 @@ export class MusicAssistantApi {
       this.commands.set(cmdId, {
         resolve: resolve as (result: unknown) => void,
         reject,
+        suppressGlobalError: options?.suppressGlobalError,
       });
       this._sendCommand(command, args, cmdId);
     });
@@ -2948,10 +3039,14 @@ export class MusicAssistantApi {
       this.providerManifests[prov.domain] = prov;
     }
 
-    for (const prov of await this.sendCommand<ProviderInstance[]>(
-      "providers",
-    )) {
-      this.providers[prov.instance_id] = prov;
+    await this.fetchProviders();
+  }
+
+  public async fetchProviders() {
+    const providers = await this.sendCommand<ProviderInstance[]>("providers");
+    Object.keys(this.providers).forEach((key) => delete this.providers[key]);
+    for (const provider of providers) {
+      this.providers[provider.instance_id] = provider;
     }
   }
 

@@ -53,7 +53,6 @@
     "play_now": "Play Now",
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
-    "play_radio": "Start Radio",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -74,8 +73,6 @@
     "queue_next_items": "Next items",
     "queue_options": "Queue options",
     "queue_previous_items": "Played items",
-    "queue_radio_based_on": "The queue is dynamically filled with tracks based on:",
-    "queue_radio_enabled": "Radio mode is enabled",
     "radios": "Radio",
     "read_more": "read more",
     "refresh_item": "Refresh item",
@@ -135,7 +132,6 @@
         "tracks_in_library": "Tracks in library",
         "playlists_in_library": "Playlists in library",
         "radio_in_library": "Radio in library",
-        "server_logging": "Server logging",
         "download_log": "Download logfile",
         "edit_group_members": "Edit group members",
         "add_new_provider_button": "Add {0} provider",
@@ -150,10 +146,6 @@
                 "light": "Light",
                 "dark": "Dark"
             }
-        },
-        "menu_items": {
-            "label": "Enabled menu items",
-            "description": "Configure which items to show in the menu.\n\n Note that if you disable the settings you may lock yourself out. \n\nTo gain access again, you will need to manually enter the path to the settings or clear the browser cookies. Use at your own risk!"
         },
         "language": {
             "label": "Language",
@@ -310,8 +302,6 @@
         "view_documentation": "View documentation",
         "about": "About",
         "about_description": "Version information, credits and more",
-        "system_logging": "Server Logging",
-        "system_logging_description": "View and download server logs for troubleshooting",
         "auto_refresh_log": "Auto-refresh",
         "log_truncated": "Showing last {0} lines. Download the full log file for complete history.",
         "version_info": "Version Information",
@@ -552,8 +542,6 @@
     },
     "shuffle_disable": "Disable shuffle",
     "shuffle_enable": "Enable shuffle",
-    "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
-    "dont_stop_the_music_disable": "Disable 'Don't stop the music!'",
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
@@ -571,10 +559,6 @@
     "podcast_episode": "Episode",
     "podcast_episodes": "Episodes",
     "play_from_here": "Play from here",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamic volume normalisation",
-    "loudness_fixed": "Fixed gain correction",
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",
     "all_players": "All players",
@@ -584,40 +568,20 @@
     "streamdetails": {
         "input_header": "Input",
         "output_header": "Output",
-        "output_format_info": "Audio is sent in the {0} format",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",
         "input_gain": "Input Gain ({0} dB)",
         "output_gain": "Output Gain ({0} dB)",
         "output_limiter": "Output Limiter",
-        "output_limiter_info": "Automatically reduces very loud sounds to prevent distortion and protect your speakers",
-        "dsp_unsupported": "DSP not supported",
-        "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronised playback",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Bit rate: {0} kbps",
             "sample_rate": "Sample rate: {0} kHz",
             "channels": "Channels: {0}",
-            "bit_depth": "Bit depth: {0}",
-            "processing_notice": "Audio is processed internally as 32-bit float PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Target level: {0} LUFS",
-            "integrated_loudness": "Measured (integrated) loudness: {0} LUFS",
-            "integrated_album_loudness": "Album loudness: {0} LUFS",
-            "applied_gain_correction": "Applied gain correction: {0} dB",
-            "mode": {
-                "dynamic": "Volume normalisation is active in the dynamic mode.",
-                "measurement_only": "Volume normalisation is active based on a stored measurement of the (integrated) loudness of the audio.",
-                "measurement_album": "Volume normalisation is active based on a stored measurement of the (integrated) loudness of the album.",
-                "fixed_gain": "Volume normalisation is active based on fixed gain correction."
-            }
-        },
-        "click_to_expand": "Click to show all players",
-        "output_format_pcm_info": "Audio is passed as PCM to the player provider. The player provider may then convert the audio to a different format before sending it to the player."
+            "bit_depth": "Bit depth: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Select source",
     "play_replace_next": "Play Next (clear queue)",
     "all_enqueue_options": "All enqueue options",

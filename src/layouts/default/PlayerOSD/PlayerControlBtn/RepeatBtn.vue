@@ -3,7 +3,11 @@
   <Icon
     v-bind="{ ...icon, ...$attrs }"
     :disabled="
-      !playerQueue || !playerQueue.active || isLoading || isInfiniteStream
+      !playerQueue ||
+      !playerQueue.active ||
+      isLoading ||
+      isInfiniteStream ||
+      isDynamic
     "
     :color="
       getValueFromSources(icon?.color, [
@@ -12,6 +16,8 @@
         [playerQueue?.repeat_mode == RepeatMode.ONE, 'primary'],
       ])
     "
+    :title="repeatTitle"
+    :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="api.queueCommandRepeat(playerQueue?.queue_id || '', nextRepeatMode)"
   >
@@ -33,10 +39,8 @@ import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
-import {
-  isQueueDynamicPlaylist,
-  isQueueInfiniteStream,
-} from "@/plugins/api/helpers";
+import { isQueueInfiniteStream } from "@/plugins/api/helpers";
+import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
@@ -57,24 +61,32 @@ const isLoading = computed(() => {
   );
 });
 
-const isSingleDynamicPlaylist = computed(() =>
-  isQueueDynamicPlaylist(compProps.playerQueue),
-);
+const isDynamic = computed(() => compProps.playerQueue?.is_dynamic === true);
 
 const isInfiniteStream = computed(() =>
   isQueueInfiniteStream(compProps.playerQueue),
 );
 
-// Determine the next repeat mode when the button is pressed. Radio/dynamic
-// queues have no defined end, so "repeat all" doesn't apply there — only allow
-// toggling "repeat one" on and off.
+// The next repeat mode when the button is pressed: cycle OFF -> ALL -> ONE.
+// (The button is disabled for radio/dynamic queues, so those don't apply here.)
 const nextRepeatMode = computed<RepeatMode>(() => {
   const current = compProps.playerQueue?.repeat_mode ?? RepeatMode.OFF;
-  if (isSingleDynamicPlaylist.value) {
-    return current === RepeatMode.ONE ? RepeatMode.OFF : RepeatMode.ONE;
-  }
   if (current === RepeatMode.OFF) return RepeatMode.ALL;
   if (current === RepeatMode.ALL) return RepeatMode.ONE;
   return RepeatMode.OFF;
 });
+
+// In dynamic mode the button is disabled; the tooltip explains why.
+const repeatTitle = computed<string | undefined>(() =>
+  isDynamic.value ? $t("repeat_dynamic_unavailable") : undefined,
+);
 </script>
+
+<style scoped>
+/* Disabled icons drop pointer events (so no tooltip), but in dynamic mode we
+   want the title to explain why repeat is unavailable. Re-enable hover just for
+   that case; the Icon still guards the click itself. */
+.icon-container--disabled[data-dynamic] {
+  pointer-events: auto;
+}
+</style>

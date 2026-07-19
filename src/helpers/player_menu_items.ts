@@ -1,6 +1,6 @@
 // shared logic to show player menu items
 // this menu is shown in the full screen player and in the player list
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import {
   Player,
@@ -9,7 +9,8 @@ import {
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
+import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
+import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -61,15 +62,19 @@ export const getPlayerMenuItems = (
     });
   }
 
-  const isSingleDynamicPlaylist = isQueueDynamicPlaylist(playerQueue);
+  // sleep timer (both menus); available while playing/paused or already running
+  if (
+    player?.playback_state == "playing" ||
+    player?.playback_state == "paused" ||
+    sleepTimerActive(player)
+  ) {
+    menuItems.push(getSleepTimerMenuItem(player));
+  }
+
+  const isDynamic = playerQueue?.is_dynamic === true;
 
   // shuffle (queue menu only; hidden when the dedicated control is visible)
-  if (
-    isQueue &&
-    playerQueue &&
-    !isSingleDynamicPlaylist &&
-    !hideShuffleRepeat
-  ) {
+  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
     menuItems.push({
       label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
@@ -83,12 +88,7 @@ export const getPlayerMenuItems = (
   }
 
   // repeat (queue menu only; hidden when the dedicated control is visible)
-  if (
-    isQueue &&
-    playerQueue &&
-    !isSingleDynamicPlaylist &&
-    !hideShuffleRepeat
-  ) {
+  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
@@ -119,6 +119,22 @@ export const getPlayerMenuItems = (
         },
       ],
       icon: "mdi-repeat",
+    });
+  }
+
+  // audio overlay (queue menu only; when a provider offering sound effects is
+  // available). Opens the overlay dialog to pick a sound and set the volume;
+  // a check marks it as active.
+  const { overlayAvailable, openOverlayDialog } = useAudioOverlay();
+  if (isQueue && playerQueue && overlayAvailable.value) {
+    menuItems.push({
+      label: "audio_overlay",
+      labelArgs: [],
+      action: () => {
+        openOverlayDialog(playerQueue.queue_id);
+      },
+      icon: "mdi-waveform",
+      selected: playerQueue.overlay_enabled,
     });
   }
 
@@ -153,8 +169,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // clear queue (queue menu only)
-  if (isQueue && playerQueue?.items && playerQueue.items > 0) {
+  // clear queue (both menus; only when the queue has items)
+  if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "queue_clear",
       labelArgs: [],
@@ -249,6 +265,20 @@ export const getPlayerMenuItems = (
       });
     }
 
+    // open player settings (player menu only)
+    if (isPlayer) {
+      menuItems.push({
+        label: "open_player_settings",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          router.push(`/settings/editplayer/${player.player_id}`);
+        },
+        icon: "mdi-cog-outline",
+      });
+    }
+
     // open dsp settings (player menu only)
     if (isPlayer && player.type !== PlayerType.GROUP) {
       menuItems.push({
@@ -263,7 +293,7 @@ export const getPlayerMenuItems = (
       });
     }
 
-    // open player settings (both menus)
+    // open player options (both menus)
     if (player.options.length > 0) {
       menuItems.push({
         label: "player_options.open",

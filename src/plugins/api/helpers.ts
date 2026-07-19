@@ -1,6 +1,7 @@
 // several helpers for dealing with the api and its (media) items
 
-import api from ".";
+import { watch } from "vue";
+import api, { ConnectionState } from ".";
 import {
   AudioSource,
   MediaItemType,
@@ -11,14 +12,27 @@ import {
 } from "./interfaces";
 
 /**
- * Returns true when the given queue is currently playing a single dynamic playlist.
- * In that case, shuffle, repeat, radio mode, and don't-stop-the-music should be hidden.
+ * Resolve once the API connection is fully initialized (server state such as
+ * providers and players has been fetched). Resolves immediately when already
+ * initialized. Use before commands whose result depends on that state being
+ * present (e.g. provider-presence checks).
  */
-export const isQueueDynamicPlaylist = function (
-  queue: PlayerQueue | undefined,
-): boolean {
-  return queue?.is_dynamic ?? false;
-};
+export async function waitForApiInitialization(): Promise<void> {
+  if (api.state.value === ConnectionState.INITIALIZED) return;
+
+  await new Promise<void>((resolve) => {
+    const unwatch = watch(
+      () => api.state.value,
+      (newState) => {
+        if (newState === ConnectionState.INITIALIZED) {
+          unwatch();
+          resolve();
+        }
+      },
+      { immediate: true },
+    );
+  });
+}
 
 /**
  * Returns true when the queue's current item is an infinite stream

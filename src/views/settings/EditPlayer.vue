@@ -11,7 +11,11 @@
       <v-card v-if="config" class="header-card mb-4" elevation="0">
         <div class="header-content">
           <div class="header-icon">
-            <v-icon size="32" color="primary">mdi-speaker</v-icon>
+            <PlayerIcon
+              :icon="api.players[config.player_id]?.icon"
+              :size="32"
+              class="text-primary"
+            />
           </div>
           <div class="header-info">
             <div class="header-title-row">
@@ -182,7 +186,7 @@
       v-if="config"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
-      :default-expanded-protocol="nativeProtocolCategory"
+      :output-protocols="api.players[config.player_id]?.output_protocols || []"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -244,6 +248,7 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { watch } from "vue";
 
 import { nanoid } from "nanoid";
@@ -287,13 +292,6 @@ const unsub = api.subscribe(
   },
 );
 onBeforeUnmount(unsub);
-
-// Compute the native protocol category to auto-expand its accordion panel
-const nativeProtocolCategory = computed(() => {
-  if (!config.value) return undefined;
-  const domain = api.getProviderManifest(config.value.provider)?.domain;
-  return domain ? `protocol_${domain}` : undefined;
-});
 
 // computed properties
 const config_entries = computed(() => {

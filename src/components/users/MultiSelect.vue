@@ -31,6 +31,7 @@
             size="icon-sm"
             variant="ghost"
             class="ml-auto shrink-0"
+            :aria-label="$t('tooltip.open_options')"
             @click.prevent
           >
             <ChevronsUpDown :size="16" class="opacity-50" />

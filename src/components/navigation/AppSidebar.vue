@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
 import NavShortcuts from "@/components/navigation/NavShortcuts.vue";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -11,23 +12,34 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { eventbus } from "@/plugins/eventbus";
-import { computed, onMounted, onUnmounted } from "vue";
+import { store } from "@/plugins/store";
+import { Check } from "@lucide/vue";
+import { computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import NavMobile from "./NavMobile.vue";
-import { getMenuItems } from "./utils/getMenuItems";
+import {
+  getMenuItems,
+  resolveMenuConfig,
+  type MenuGroup,
+} from "./utils/getMenuItems";
 
 const router = useRouter();
 const { t } = useI18n();
 
+const editMode = computed(() => store.navMenuEditMode);
+
 const navItems = computed(() =>
   getMenuItems()
-    .filter((item) => !item.hidden)
+    // Edit mode lists every (available) item so hidden ones can be re-enabled.
+    .filter((item) => editMode.value || !item.hidden)
     .map((item) => ({
+      id: item.id,
       title: t(item.label),
       url: item.path,
       icon: item.icon,
-      disabled: item.disabled,
+      disabled: editMode.value ? undefined : item.disabled,
+      hidden: item.hidden,
       group: item.group,
     })),
 );
@@ -42,8 +54,42 @@ const systemItems = computed(() =>
   navItems.value.filter((item) => item.group === "system"),
 );
 
-const { toggleSidebar, state, isMobile } = useSidebar();
+const DEFAULT_SECTION_LABELS: Record<MenuGroup, string> = {
+  explore: "explore",
+  library: "library",
+  system: "system",
+};
+
+const sections = computed(() => {
+  const sectionConfigs = resolveMenuConfig().sections;
+  const resolved = {} as Record<
+    MenuGroup,
+    { label: string; defaultLabel: string; labelHidden: boolean }
+  >;
+  for (const [group, labelKey] of Object.entries(DEFAULT_SECTION_LABELS)) {
+    const cfg = sectionConfigs[group as MenuGroup] ?? {};
+    const defaultLabel = t(labelKey);
+    resolved[group as MenuGroup] = {
+      label: cfg.label || defaultLabel,
+      defaultLabel,
+      labelHidden: !!cfg.hide_label,
+    };
+  }
+  return resolved;
+});
+
+const { toggleSidebar, setOpen, state, isMobile } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
+
+// Editing needs the full (labeled) menu, so pop the sidebar open when edit
+// mode is entered from anywhere (profile menu, settings page shortcut), and
+// treat collapsing to icon mode as leaving edit mode.
+watch(editMode, (editing) => {
+  if (editing && !isMobile.value) setOpen(true);
+});
+watch(collapsed, (isCollapsed) => {
+  if (isCollapsed && store.navMenuEditMode) store.navMenuEditMode = false;
+});
 
 const handleOpenSidebar = () => {
   if (isMobile.value) {
@@ -57,6 +103,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   eventbus.off("mobile-sidebar-open", handleOpenSidebar);
+  store.navMenuEditMode = false;
 });
 </script>
 
@@ -83,12 +130,41 @@ onUnmounted(() => {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
-      <NavMain :items="discoverItems" :label="t('explore')" />
-      <NavMain :items="libraryItems" :label="t('library')" />
-      <NavMain :items="systemItems" :label="t('system')" />
-      <NavShortcuts />
+      <NavMain
+        :items="discoverItems"
+        :label="sections.explore.label"
+        :default-label="sections.explore.defaultLabel"
+        :label-hidden="sections.explore.labelHidden"
+        section-id="explore"
+        :edit-mode="editMode"
+      />
+      <NavMain
+        :items="libraryItems"
+        :label="sections.library.label"
+        :default-label="sections.library.defaultLabel"
+        :label-hidden="sections.library.labelHidden"
+        section-id="library"
+        :edit-mode="editMode"
+      />
+      <NavMain
+        :items="systemItems"
+        :label="sections.system.label"
+        :default-label="sections.system.defaultLabel"
+        :label-hidden="sections.system.labelHidden"
+        section-id="system"
+        :edit-mode="editMode"
+      />
+      <NavShortcuts :edit-mode="editMode" />
     </SidebarContent>
     <SidebarFooter>
+      <Button
+        v-if="editMode"
+        class="menu-edit-done"
+        @click="store.navMenuEditMode = false"
+      >
+        <Check class="size-4" />
+        {{ t("menu_edit_disable") }}
+      </Button>
       <NavMobile v-if="isMobile" />
       <SidebarTrigger v-else />
     </SidebarFooter>
@@ -126,6 +202,11 @@ onUnmounted(() => {
   transition: opacity 0.3s ease;
   position: relative;
   cursor: pointer;
+}
+
+.menu-edit-done {
+  width: 100%;
+  border-radius: 999px;
 }
 
 .ha-header-button {

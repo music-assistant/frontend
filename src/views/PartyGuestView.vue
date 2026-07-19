@@ -1,26 +1,17 @@
 <template>
   <div class="guest-view">
-    <!-- Logo -->
-    <div class="guest-logo">
-      <img :src="logoSrc" alt="Music Assistant" class="logo-img" />
-    </div>
+    <!-- Listen in (shared audio) -->
+    <PartyListenIn />
 
-    <!-- Search Section -->
-    <PartySearchBar
-      ref="searchBarRef"
-      v-model:search-query="searchQuery"
-      v-model:search-filter="searchFilter"
-      :has-searched="hasSearched"
-      :show-back="hasSearched || !!selectedArtist"
-      @clear="handleClear"
-      @back="goBack"
-      @submit="performSearch"
-    />
-
-    <!-- Search Loading State -->
-    <div v-if="searching && !selectedArtist" class="loading-state">
-      <Spinner class="size-12 text-primary" />
-      <p>{{ $t("providers.party.guest_page.searching") }}</p>
+    <!-- Search: same dropdown experience as the quiz setup; picking a track
+         shows it below with the boost/request actions, picking an artist
+         drills into that artist's tracks -->
+    <div class="search-section">
+      <MediaSearch
+        :allowed-media-types="[MediaType.TRACK, MediaType.ARTIST]"
+        :placeholder="$t('providers.party.guest_page.search_placeholder')"
+        @select="onSearchSelect"
+      />
     </div>
 
     <!-- Artist Tracks View (when drilling into an artist) -->
@@ -94,19 +85,19 @@
       </div>
     </div>
 
-    <!-- Search Results -->
-    <div
-      v-else-if="!searching && searchResults.length > 0"
-      class="results-section"
-    >
+    <!-- Picked track: shows the boost/request actions for a track chosen
+         from the search dropdown -->
+    <div v-else-if="pickedTrack" class="results-section picked-track-section">
       <div class="section-header">
-        <h2 class="section-title">
-          {{
-            $t("providers.party.guest_page.search_results_count", [
-              searchResults.length,
-            ])
-          }}
-        </h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="back-btn"
+          :aria-label="$t('close')"
+          @click="pickedTrack = null"
+        >
+          <X :size="16" />
+        </Button>
         <div v-if="rateLimitingEnabled" class="tokens-row">
           <PartyTokensBadge
             v-if="boostEnabled"
@@ -128,57 +119,26 @@
           />
         </div>
       </div>
-      <div ref="resultsListRef" class="results-list" @scroll="handleScroll">
-        <PartyResultItem
-          v-for="item in displayedResults"
-          :key="`${item.media_type}-${item.item_id}`"
-          :item="item"
-          :boost-enabled="boostEnabled"
-          :add-queue-enabled="addQueueEnabled"
-          :rate-limiting-enabled="rateLimitingEnabled"
-          :boost-tokens="boostTokens"
-          :add-queue-tokens="addQueueTokens"
-          :boost-badge-color="boostBadgeColor"
-          :request-badge-color="requestBadgeColor"
-          :adding-items="addingItems"
-          :added-items="addedItems"
-          :queued-uris="queuedUris"
-          :is-expanded="
-            expandedResultItemId === `${item.media_type}-${item.item_id}`
-          "
-          @add-to-queue="addToQueue"
-          @select-artist="selectArtist"
-          @toggle-expand="toggleExpandedResult"
-        />
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div
-      v-else-if="
-        !searching &&
-        hasSearched &&
-        searchResults.length === 0 &&
-        !selectedArtist
-      "
-      class="empty-state"
-    >
-      <Search :size="64" class="text-muted-foreground" />
-      <p>
-        {{ $t("providers.party.guest_page.no_results_for", [searchQuery]) }}
-      </p>
-      <p class="empty-hint">
-        {{ $t("providers.party.guest_page.try_different_search") }}
-      </p>
+      <PartyResultItem
+        :item="pickedTrack"
+        :boost-enabled="boostEnabled"
+        :add-queue-enabled="addQueueEnabled"
+        :rate-limiting-enabled="rateLimitingEnabled"
+        :boost-tokens="boostTokens"
+        :add-queue-tokens="addQueueTokens"
+        :boost-badge-color="boostBadgeColor"
+        :request-badge-color="requestBadgeColor"
+        :adding-items="addingItems"
+        :added-items="addedItems"
+        :queued-uris="queuedUris"
+        :is-expanded="true"
+        @add-to-queue="addToQueue"
+      />
     </div>
 
     <!-- Current Queue Section -->
     <PartyQueueSection
-      v-if="
-        !selectedArtist &&
-        !searching &&
-        (!searchQuery || searchResults.length === 0)
-      "
+      v-if="!selectedArtist"
       ref="queueSectionRef"
       :queue-items="queueItems"
       :queue-fetch-offset="queueFetchOffset"
@@ -203,14 +163,15 @@
 </template>
 
 <script setup lang="ts">
+import MediaSearch from "@/components/MediaSearch.vue";
+import PartyListenIn from "@/components/party/PartyListenIn.vue";
 import PartyQueueSection from "@/components/party/PartyQueueSection.vue";
 import PartyResultItem from "@/components/party/PartyResultItem.vue";
-import PartySearchBar from "@/components/party/PartySearchBar.vue";
 import PartyTokensBadge from "@/components/party/PartyTokensBadge.vue";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { useGuestArtistTracks } from "@/composables/useGuestArtistTracks";
 import { useGuestQueue } from "@/composables/useGuestQueue";
-import { useGuestSearch } from "@/composables/useGuestSearch";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
 import api from "@/plugins/api";
@@ -218,13 +179,15 @@ import {
   type Artist,
   type EventMessage,
   EventType,
+  type MediaItemTypeOrItemMapping,
+  MediaType,
   PlaybackState,
   type QueueItem,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Music, Search } from "@lucide/vue";
+import { ArrowLeft, Music, X } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -234,14 +197,6 @@ import {
   watch,
 } from "vue";
 import { toast } from "vue-sonner";
-import { useTheme } from "vuetify";
-const searchBarRef = ref<InstanceType<typeof PartySearchBar> | null>(null);
-const theme = useTheme();
-const logoSrc = computed(() =>
-  theme.current.value.dark
-    ? new URL("@/assets/logo/logo.svg", import.meta.url).href
-    : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
-);
 
 // --- Composables ---
 const { config: partyConfig, fetchConfig } = usePartyConfig();
@@ -284,24 +239,26 @@ const isPlaying = computed(
   () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
 );
 
-const search = useGuestSearch();
 const {
-  searchQuery,
-  searchResults,
-  searching,
-  hasSearched,
-  searchFilter,
   selectedArtist,
   artistTracks,
   loadingArtistTracks,
-  displayedResults,
-  resultsListRef,
-  performSearch,
-  clearSearch,
   selectArtist,
   clearArtistSelection,
-  handleScroll,
-} = search;
+} = useGuestArtistTracks();
+
+// a track picked from the search dropdown, offered with the queue actions
+const pickedTrack = ref<Track | null>(null);
+
+const onSearchSelect = (item: MediaItemTypeOrItemMapping) => {
+  if (item.media_type === MediaType.ARTIST) {
+    pickedTrack.value = null;
+    selectArtist(item as Artist);
+  } else if (item.media_type === MediaType.TRACK) {
+    clearArtistSelection();
+    pickedTrack.value = item as Track;
+  }
+};
 
 const queuedUris = computed(() => {
   const uris = new Set<string>();
@@ -340,28 +297,16 @@ watch(
 );
 
 // --- Back navigation ---
-const goBack = () => {
-  if (selectedArtist.value) {
-    clearArtistSelection();
-    return;
-  }
-  clearSearch();
-  // Scroll is triggered by the watcher above when PartyQueueSection remounts
-};
-
-const handleClear = () => {
-  clearSearch();
-  // Scroll is triggered by the watcher above when PartyQueueSection remounts
-};
-
-const handleBack = (event: PopStateEvent) => {
-  if (
-    selectedArtist.value ||
-    searchQuery.value ||
-    searchResults.value.length > 0
-  ) {
-    event.preventDefault();
-    goBack();
+const handleBack = () => {
+  if (selectedArtist.value || pickedTrack.value) {
+    if (selectedArtist.value) {
+      clearArtistSelection();
+      // Scroll is triggered by the watcher above when PartyQueueSection remounts
+    } else {
+      pickedTrack.value = null;
+    }
+    // popstate cannot be canceled: re-arm the history entry so the next
+    // back press is caught here again instead of leaving the page
     history.pushState(null, "", location.href);
   }
 };
@@ -511,13 +456,6 @@ const skipCurrentSong = async () => {
   }
 };
 
-// Restore focus to search input after search completes
-watch(searching, (isSearching) => {
-  if (!isSearching) {
-    searchBarRef.value?.focus();
-  }
-});
-
 // React to party config changes (e.g., admin changes rate limits or badge colors)
 watch(partyConfig, (newConfig) => {
   if (newConfig) {
@@ -595,33 +533,18 @@ onBeforeUnmount(() => {
   cleanupCountdown?.();
   cleanupProvidersSub?.();
   cleanupQueueUpdatedSub?.();
-  search.cleanup();
 });
 </script>
 
 <style scoped>
-.guest-logo {
-  display: flex;
-  justify-content: center;
-  padding-bottom: 0.75rem;
-  flex-shrink: 0;
-}
-
-.logo-img {
-  height: 28px;
-  width: auto;
-  opacity: 0.85;
-  margin-bottom: 1rem;
-}
-
 .guest-view {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
   padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
-  height: 100dvh;
-  max-height: 100dvh;
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -711,11 +634,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
-  .logo-img {
-    height: 25px;
-    margin-bottom: 0.2rem;
-  }
-
   .guest-view {
     padding: 0.75rem;
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));

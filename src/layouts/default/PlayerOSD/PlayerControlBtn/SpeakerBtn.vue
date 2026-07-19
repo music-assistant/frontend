@@ -1,5 +1,11 @@
 <template>
-  <Button variant="icon" :ripple="false" icon @click="openPlayersMenu">
+  <Button
+    variant="icon"
+    :ripple="false"
+    icon
+    :aria-label="$t('tooltip.select_player')"
+    @click="openPlayersMenu"
+  >
     <v-icon
       :color="color ? color : ''"
       :size="24"

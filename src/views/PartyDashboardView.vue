@@ -53,6 +53,7 @@
             v-if="isFullscreen && !hideBackButton"
             variant="ghost-icon"
             size="icon-sm"
+            :aria-label="$t('tooltip.exit_fullscreen')"
             @click="goFullscreen(false)"
           >
             <Minimize2 :size="13" />
@@ -82,6 +83,7 @@
               v-if="partyInstanceId"
               variant="ghost-icon"
               size="icon-sm"
+              :aria-label="$t('tooltip.party_settings')"
               @click="goToSettings"
             >
               <Settings :size="13" />
@@ -89,6 +91,7 @@
             <Button
               variant="ghost-icon"
               size="icon-sm"
+              :aria-label="$t('tooltip.enter_fullscreen')"
               @click="goFullscreen(true)"
             >
               <Maximize2 :size="13" />
@@ -242,8 +245,11 @@
       </template>
     </div>
     <div
-      class="absolute bottom-1 right-1 flex items-center gap-2 opacity-50 font-medium"
-      :style="{ color: chromeTextColor }"
+      class="absolute right-1 flex items-center gap-2 opacity-50 font-medium"
+      :style="{
+        color: chromeTextColor,
+        bottom: 'var(--party-player-bottom)',
+      }"
     >
       <span>{{ $t("providers.party.powered_by") }}</span>
       <img :src="maLogoSrc" alt="Music Assistant" class="h-5 w-auto" />
@@ -635,6 +641,9 @@ const albumArtUrl = computed(() => {
 });
 
 // Gradient background style (used when album art is disabled, or as fallback)
+// oxlint false positive: every code path returns (early `{}` + final object),
+// which ESLint's vue/return-in-computed-property correctly accepts.
+// oxlint-disable-next-line vue/return-in-computed-property
 const gradientBackgroundStyle = computed(() => {
   // When using album art, the .background-image element handles visuals
   if (useAlbumArtBackground.value && albumArtUrl.value) {
@@ -1316,5 +1325,17 @@ watch(
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
+  padding-bottom: 0 !important;
+  /* total bottom offset for overlays (here, "Powered by"): player bar + tailwind spacing-1 gap */
+  --party-player-bottom: 94px; /* 90px player bar (View.vue .content-section) + 4px (spacing-1) */
+}
+
+.content-section--mobile.party-view-active {
+  padding-bottom: 0 !important;
+  --party-player-bottom: 189px; /* 185px above Footer.vue gradient overlay + 4px (spacing-1) */
+}
+
+.content-section--frameless.party-view-active {
+  --party-player-bottom: 4px; /* no player bar; tw spacing-1 gap from screen edge */
 }
 </style>

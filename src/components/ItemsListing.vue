@@ -90,11 +90,15 @@
             <PanelviewItem
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :show-actions="
-                ['tracks', 'albums', 'albumtracks', 'artists'].includes(
-                  itemtype,
-                )
+                [
+                  'tracks',
+                  'albums',
+                  'albumtracks',
+                  'artists',
+                  'genres',
+                ].includes(itemtype)
               "
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
@@ -118,7 +122,7 @@
             <PanelviewItemCompact
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
@@ -148,11 +152,11 @@
               :show-track-number="showTrackNumber"
               :show-disc-number="showTrackNumber"
               :show-duration="showDuration"
-              :show-favorite="showFavoritesOnlyFilter"
+              :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
               :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
@@ -221,7 +225,6 @@
 </template>
 
 <script setup lang="ts">
-/* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
@@ -294,7 +297,6 @@ export interface LoadDataParams {
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
-  genreContentTypeFilter?: MediaType;
 }
 // properties
 export interface Props {
@@ -304,6 +306,7 @@ export interface Props {
   showProvider?: boolean;
   showAlbum?: boolean;
   showFavoritesOnlyFilter?: boolean;
+  showFavorite?: boolean;
   showDuration?: boolean;
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
@@ -330,7 +333,6 @@ export interface Props {
   emptyMessage?: string;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
-  showGenreContentTypeFilter?: boolean;
   showHideEmptyFilter?: boolean;
   showHideFullyPlayedFilter?: boolean;
   allowCollapse?: boolean;
@@ -356,6 +358,7 @@ const props = withDefaults(defineProps<Props>(), {
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
   showFavoritesOnlyFilter: true,
+  showFavorite: undefined,
   showDuration: true,
   parentItem: undefined,
   hideOnEmpty: false,
@@ -377,7 +380,6 @@ const props = withDefaults(defineProps<Props>(), {
   subtitle: undefined,
   showLibraryOnlyFilter: false,
   showGenreFilter: false,
-  showGenreContentTypeFilter: false,
   showHideEmptyFilter: false,
   showHideFullyPlayedFilter: false,
   extraMenuItems: undefined,
@@ -600,19 +602,6 @@ const toggleHideEmptyFilter = function () {
   loadData(undefined, undefined, true);
 };
 
-const changeGenreContentTypeFilter = function (mediaType?: MediaType) {
-  // single-select: clicking the active type clears it back to "all"
-  params.value.genreContentTypeFilter =
-    params.value.genreContentTypeFilter === mediaType ? undefined : mediaType;
-  setItemsListingPreference(
-    props.path || props.itemtype,
-    props.itemtype,
-    "genreContentTypeFilter",
-    params.value.genreContentTypeFilter,
-  );
-  loadData(undefined, undefined, true);
-};
-
 const toggleGenreFilter = function (genreId: number) {
   // normalize current ids to an array
   const current = params.value.genreIds;
@@ -653,6 +642,12 @@ const toggleGenreFilter = function (genreId: number) {
 
 const isSelected = function (item: MediaItemTypeOrItemMapping) {
   return selectedItems.value.includes(item);
+};
+
+const isParentDirItem = function (item: MediaItemTypeOrItemMapping) {
+  // the parent directory ("..") link injected in browse listings
+  // must never be selectable as it breaks the action/context menu
+  return item.media_type == MediaType.FOLDER && item.name == "..";
 };
 
 const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
@@ -704,6 +699,7 @@ const onSelect = function (
   selected: boolean,
 ) {
   if (selected) {
+    if (isParentDirItem(item)) return;
     if (!selectedItems.value.includes(item)) selectedItems.value.push(item);
   } else {
     for (let i = 0; i < selectedItems.value.length; i++) {
@@ -808,23 +804,18 @@ const providerFilterSubItems = () =>
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
-  if (props.itemtype == "artists") {
-    store.globalSearchType = MediaType.ARTIST;
-  } else if (props.itemtype == "albums") {
-    store.globalSearchType = MediaType.ALBUM;
-  } else if (props.itemtype == "tracks") {
-    store.globalSearchType = MediaType.TRACK;
-  } else if (props.itemtype == "playlists") {
-    store.globalSearchType = MediaType.PLAYLIST;
-  } else if (props.itemtype == "audiobooks") {
-    store.globalSearchType = MediaType.AUDIOBOOK;
-  } else if (props.itemtype == "podcasts") {
-    store.globalSearchType = MediaType.PODCAST;
-  } else if (props.itemtype == "radios") {
-    store.globalSearchType = MediaType.RADIO;
-  } else if (props.itemtype == "genres") {
-    store.globalSearchType = MediaType.GENRE;
-  }
+  const mediaTypeByItemtype: Record<string, MediaType> = {
+    artists: MediaType.ARTIST,
+    albums: MediaType.ALBUM,
+    tracks: MediaType.TRACK,
+    playlists: MediaType.PLAYLIST,
+    audiobooks: MediaType.AUDIOBOOK,
+    podcasts: MediaType.PODCAST,
+    radios: MediaType.RADIO,
+    genres: MediaType.GENRE,
+  };
+  const mediaType = mediaTypeByItemtype[props.itemtype];
+  store.globalSearchMediaTypes = mediaType ? [mediaType] : [];
   router.push({ name: "search" });
 };
 
@@ -856,7 +847,7 @@ const loadAllItems = async function () {
 
 // computed properties
 const isSearchActive = computed(() => {
-  var searchActive = false;
+  let searchActive = false;
   if (params.value.search && params.value.search.length !== 0) {
     searchActive = true;
   }
@@ -881,7 +872,6 @@ const hasActiveFilters = computed(() => {
     // a required selector always has a provider chosen — that is not a "filter"
     (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
     (p.albumType && p.albumType.length > 0) ||
-    Boolean(p.genreContentTypeFilter) ||
     genreActive ||
     // hide-empty genres filter: true (hide empty) and null (defaults only)
     // both narrow the result; false/undefined means "show all"
@@ -1184,32 +1174,6 @@ const menuItems = computed(() => {
     });
   }
 
-  // genre content-type filter (music / audiobooks / podcasts)
-  if (props.showGenreContentTypeFilter === true) {
-    const active = params.value.genreContentTypeFilter;
-    items.push({
-      label: "tooltip.genre_content_type",
-      icon: "mdi-bookshelf",
-      disabled: loading.value,
-      active: !!active,
-      closeOnContentClick: true,
-      overflowAllowed: true,
-      subItems: [
-        { label: "genre_content_type.all", value: undefined },
-        { label: "genre_content_type.audiobooks", value: MediaType.AUDIOBOOK },
-        { label: "genre_content_type.podcasts", value: MediaType.PODCAST },
-      ].map((entry) => {
-        return {
-          label: entry.label,
-          selected: active === entry.value,
-          action: () => {
-            changeGenreContentTypeFilter(entry.value);
-          },
-        };
-      }),
-    });
-  }
-
   // album type filter
   if (props.showAlbumTypeFilter) {
     items.push({
@@ -1438,10 +1402,13 @@ const loadData = async function (
   tempHide.value = false;
 };
 
-// Get preferences as a computed ref that updates automatically
-const savedPrefs = getItemsListingPreferences(
-  props.path || props.itemtype,
-  props.itemtype,
+// Re-derive from the current props.path: browse reuses one ItemsListing
+// instance across folders, so a ref bound to the mount-time path would read
+// and reset the wrong folder's saved sort/view settings.
+const savedPrefs = computed(
+  () =>
+    getItemsListingPreferences(props.path || props.itemtype, props.itemtype)
+      .value,
 );
 
 const restoreSettings = async function () {
@@ -1511,14 +1478,6 @@ const restoreSettings = async function () {
     params.value.albumType = prefs.albumType;
   }
 
-  // get stored genre content-type filter for this itemtype
-  if (
-    props.showGenreContentTypeFilter === true &&
-    prefs.genreContentTypeFilter
-  ) {
-    params.value.genreContentTypeFilter = prefs.genreContentTypeFilter;
-  }
-
   // get stored/default provider filter for this itemtype
   // only apply stored filter if there are multiple providers available
   // with a single provider, any stored filter is either redundant or stale
@@ -1549,11 +1508,23 @@ const restoreSettings = async function () {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (store.dialogActive) return;
+  if (store.dialogActive || store.showPlayersMenu) return;
   if (loading.value) return;
   if (e.key === "Escape") closeSearch();
   // Let searchInput handle this.
   if (searchHasFocus.value) return;
+
+  // ignore keystrokes typed into another editable element (e.g. the search box
+  // in the player drawer) so we don't steal focus to our own search input.
+  const target = e.target as HTMLElement | null;
+  if (
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable)
+  ) {
+    return;
+  }
 
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
@@ -1610,6 +1581,10 @@ watch(
 watch(
   () => props.path,
   (newVal) => {
+    // always leave selection mode: the selection belongs to the previous
+    // folder, and the target may not offer the toggle to turn it off
+    selectedItems.value = [];
+    showCheckboxes.value = false;
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
@@ -1988,7 +1963,7 @@ const selectAll = async function () {
 
   if (confirmed) {
     await loadAllItems();
-    selectedItems.value = pagedItems.value;
+    selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
     showCheckboxes.value = true;
   }
 };

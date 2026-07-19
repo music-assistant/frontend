@@ -43,7 +43,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
 import { watch, ref, onMounted, onBeforeUnmount } from "vue";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import { eventbus } from "@/plugins/eventbus";
 
@@ -118,7 +118,7 @@ const onMenu = function (
 
 const onClick = function (item: MediaItemType, posX: number, posY: number) {
   if (!itemDetails.value || !itemIsAvailable(item)) return;
-  api.playMedia(itemDetails.value.uri, undefined, undefined, item.uri);
+  api.playMedia(itemDetails.value.uri, undefined, item.uri);
 };
 
 const loadPodcastEpisodes = async function (params: LoadDataParams) {

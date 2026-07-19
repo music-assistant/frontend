@@ -51,7 +51,6 @@
     "play_now": "Afspil nu",
     "play_on": "Spil på: {0}",
     "play_playlist_from": "Afspil afspilningsliste herfra",
-    "play_radio": "Start radio",
     "player_type": {
         "group": "Gruppe",
         "player": "Afspiller",
@@ -72,8 +71,6 @@
     "queue_next_items": "Næste emner",
     "queue_options": "Indstillinger for kø",
     "queue_previous_items": "Afspillede emner",
-    "queue_radio_based_on": "Køen fyldes dynamisk med spor baseret på {0}:",
-    "queue_radio_enabled": "Radiotilstand er aktiveret",
     "radios": "Radio",
     "read_more": "Læs mere",
     "refresh_item": "Opdater emne",
@@ -133,7 +130,6 @@
         "tracks_in_library": "Sange i biblioteket",
         "playlists_in_library": "Afspilningslister i biblioteket",
         "radio_in_library": "Radio i biblioteket",
-        "server_logging": "Server-logning",
         "download_log": "Download log-fil",
         "edit_group_members": "Rediger gruppe-afspillere",
         "add_new_provider_button": "Tilføj {0} udbyder",
@@ -148,10 +144,6 @@
                 "light": "Lys",
                 "dark": "Mørk"
             }
-        },
-        "menu_items": {
-            "label": "Aktiverede menupunkter",
-            "description": "Konfigurer hvilke elementer der skal vises i menuen.\n\n Bemærk, at hvis du deaktiverer indstillinger, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller rydde browserens cookies for at få adgang til indstillingerne igen - brug dem på eget ansvar."
         },
         "language": {
             "label": "Sprog",
@@ -448,8 +440,6 @@
     },
     "shuffle_disable": "Deaktivér bland",
     "shuffle_enable": "Aktivér bland",
-    "dont_stop_the_music_enable": "Aktiver \"Stop ikke musikken!",
-    "dont_stop_the_music_disable": "Deaktiver \"Stop ikke musikken!",
     "open_dsp_settings": "Åbn DSP-indstillinger",
     "audiobook": "Lydbog",
     "audiobooks": "Lydbøger",
@@ -467,10 +457,6 @@
     "podcast_episode": "Episode",
     "podcast_episodes": "Episoder",
     "play_from_here": "Afspil herfra",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamisk normalisering af lydstyrke",
-    "loudness_fixed": "Bestemt forstærkningskorrektion",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Spiller nu",
     "all_players": "Alle afspillere",
@@ -480,40 +466,20 @@
     "streamdetails": {
         "input_header": "Indgang",
         "output_header": "Udgang",
-        "output_format_info": "Lyden konverteres til formatet '{0}', før den sendes til afspilleren.",
         "eq_band_count": "{0} bånd",
         "eq_band_count_singular": "1 bånd",
         "input_gain": "Indgangsforstærkning ({0} dB)",
         "output_gain": "Udgangsforstærkning ({0} dB)",
         "output_limiter": "Udgangsbegrænser",
-        "output_limiter_info": "Reducerer automatisk meget høje lyde for at forhindre forvrængning og beskytte dine højttalere",
-        "dsp_unsupported": "DSP understøttes ikke",
-        "dsp_disabled_by_unsupported_group": "Denne afspillerudbyder understøtter ikke DSP med synkroniseret afspilning",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Kodeks: {0}",
             "bit_rate": "Bit rate: {0} kbps",
             "sample_rate": "Samplingsfrekvens: {0} kHz",
             "channels": "Kanaler: {0}",
-            "bit_depth": "Bitdybde: {0}",
-            "processing_notice": "Lyd behandles internt som 32-bit float PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Målniveau: {0} LUFS",
-            "integrated_loudness": "Målt (integreret) lydstyrke: {0} LUFS",
-            "integrated_album_loudness": "Albummets lydstyrke: {0} LUFS",
-            "applied_gain_correction": "Anvendt forstærkningskorrektion: {0} dB",
-            "mode": {
-                "dynamic": "Normalisering af lydstyrken er aktiv i dynamisk tilstand.",
-                "measurement_only": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af lydens (integrerede) lydstyrke.",
-                "measurement_album": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af albummets (integrerede) lydstyrke.",
-                "fixed_gain": "Normalisering af lydstyrken er aktiv, baseret på bestemt forstærkningskorrektion."
-            }
-        },
-        "click_to_expand": "Klik for at vise alle spillere",
-        "output_format_pcm_info": "Lyden sendes som PCM til afspillerudbyderen. Afspillerudbyderen kan derefter konvertere lyden til et andet format, før den sendes til afspilleren."
+            "bit_depth": "Bitdybde: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vælg kilde",
     "play_replace_next": "Afspil næste (ryd køen)",
     "all_enqueue_options": "Alle muligheder for at sætte i kø",

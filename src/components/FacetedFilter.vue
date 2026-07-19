@@ -1,49 +1,52 @@
 <template>
   <Popover>
     <PopoverTrigger as-child>
-      <Button variant="outline" class="border-dashed">
-        <PlusCircle class="h-4 w-4" />
-        {{ title }}
-        <template v-if="selectedCount > 0">
-          <Separator orientation="vertical" class="mx-2 h-4" />
-          <Badge
-            class="lg:hidden font-medium rounded-[6px]"
-            :aria-label="`${selectedCount} selected`"
-          >
-            {{ selectedCount }}
-          </Badge>
-          <div class="hidden space-x-1 lg:flex">
-            <Badge v-if="selectedCount > 2" class="rounded-[6px] gap-2">
-              {{ selectedCount }} selected
-              <button
-                type="button"
-                :aria-label="`Clear all ${title} filters`"
-                class="flex items-center justify-center cursor-pointer hover:opacity-70"
-                @click.stop="clear"
-              >
-                <X class="size-2.5" />
-              </button>
+      <!-- custom trigger (e.g. a compact icon button inside an input) -->
+      <slot name="trigger">
+        <Button variant="outline" class="border-dashed">
+          <PlusCircle class="h-4 w-4" />
+          {{ title }}
+          <template v-if="selectedCount > 0">
+            <Separator orientation="vertical" class="mx-2 h-4" />
+            <Badge
+              class="lg:hidden font-medium rounded-[6px]"
+              :aria-label="`${selectedCount} selected`"
+            >
+              {{ selectedCount }}
             </Badge>
-            <template v-else>
-              <Badge
-                v-for="opt in selectedOptionLabels"
-                :key="opt.value"
-                class="font-medium rounded-[6px] gap-2"
-              >
-                {{ opt.label }}
+            <div class="hidden space-x-1 lg:flex">
+              <Badge v-if="selectedCount > 2" class="rounded-[6px] gap-2">
+                {{ selectedCount }} selected
                 <button
                   type="button"
-                  :aria-label="`Remove ${opt.label} filter`"
+                  :aria-label="`Clear all ${title} filters`"
                   class="flex items-center justify-center cursor-pointer hover:opacity-70"
-                  @click.stop="removeFilter(opt.value)"
+                  @click.stop="clear"
                 >
                   <X class="size-2.5" />
                 </button>
               </Badge>
-            </template>
-          </div>
-        </template>
-      </Button>
+              <template v-else>
+                <Badge
+                  v-for="opt in selectedOptionLabels"
+                  :key="opt.value"
+                  class="font-medium rounded-[6px] gap-2"
+                >
+                  {{ opt.label }}
+                  <button
+                    type="button"
+                    :aria-label="`Remove ${opt.label} filter`"
+                    class="flex items-center justify-center cursor-pointer hover:opacity-70"
+                    @click.stop="removeFilter(opt.value)"
+                  >
+                    <X class="size-2.5" />
+                  </button>
+                </Badge>
+              </template>
+            </div>
+          </template>
+        </Button>
+      </slot>
     </PopoverTrigger>
     <PopoverContent class="w-[220px] p-0" align="start">
       <div class="faceted-filter-content">
@@ -63,6 +66,7 @@
             tabindex="0"
             @click="toggle(option.value)"
             @keydown.space.prevent="toggle(option.value)"
+            @keydown.enter.prevent="toggle(option.value)"
           >
             <Checkbox
               :model-value="selectedSet.has(option.value)"
@@ -89,7 +93,7 @@
   </Popover>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="TValue extends string">
 import { PlusCircle, X } from "@lucide/vue";
 import type { HTMLAttributes } from "vue";
 import { computed, ref } from "vue";
@@ -107,18 +111,18 @@ import { Separator } from "@/components/ui/separator";
 
 interface FacetedOption {
   label: string;
-  value: string;
+  value: TValue;
 }
 
 const props = defineProps<{
   title: string;
   options: FacetedOption[];
-  modelValue: string[];
+  modelValue: TValue[];
   class?: HTMLAttributes["class"];
 }>();
 
 const emit = defineEmits<{
-  (e: "update:modelValue", value: string[]): void;
+  (e: "update:modelValue", value: TValue[]): void;
 }>();
 
 const search = ref("");
@@ -137,7 +141,7 @@ const filteredOptions = computed(() => {
   return props.options.filter((opt) => opt.label.toLowerCase().includes(term));
 });
 
-const toggle = (value: string) => {
+const toggle = (value: TValue) => {
   const next = new Set(selectedSet.value);
   if (next.has(value)) {
     next.delete(value);
@@ -147,7 +151,7 @@ const toggle = (value: string) => {
   emit("update:modelValue", Array.from(next));
 };
 
-const removeFilter = (value: string) => {
+const removeFilter = (value: TValue) => {
   const next = new Set(selectedSet.value);
   next.delete(value);
   emit("update:modelValue", Array.from(next));

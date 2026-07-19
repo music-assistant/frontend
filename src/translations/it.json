@@ -53,7 +53,6 @@
     "play_now": "Riproduci ora",
     "play_on": "Riproduci su: {0}",
     "play_playlist_from": "Riproduci playlist da qui",
-    "play_radio": "Avvia Radio",
     "player_type": {
         "group": "Gruppo",
         "player": "Lettore",
@@ -74,8 +73,6 @@
     "queue_next_items": "Prossimi elementi",
     "queue_options": "Opzioni di coda",
     "queue_previous_items": "Elementi riprodotti",
-    "queue_radio_based_on": "La coda viene riempita dinamicamente con tracce basate su {0}:",
-    "queue_radio_enabled": "La modalità radio è abilitata",
     "radios": "Radio",
     "read_more": "Leggi di più",
     "refresh_item": "Aggiorna elemento",
@@ -135,7 +132,6 @@
         "tracks_in_library": "Tracce in libreria",
         "playlists_in_library": "Playlist in libreria",
         "radio_in_library": "Radio in libreria",
-        "server_logging": "Registrazione del server",
         "download_log": "Scarica file log",
         "edit_group_members": "Modifica i membri del gruppo",
         "add_new_provider_button": "Aggiungi {0} provider",
@@ -150,10 +146,6 @@
                 "light": "Chiaro",
                 "dark": "Scuro"
             }
-        },
-        "menu_items": {
-            "label": "Elementi attivi del menu",
-            "description": "Configura quali elementi mostrare nel menu.\n\nNota che se disabiliti le impostazioni potresti bloccarti.\n\nIn tal caso dovrai inserire manualmente il percorso alle impostazioni o cancellare i cookie del browser per accedere nuovamente alle impostazioni, utilizzalo a tuo rischio e pericolo."
         },
         "language": {
             "label": "Lingua",
@@ -421,8 +413,6 @@
     },
     "shuffle_disable": "Disabilita riproduzione casuale",
     "shuffle_enable": "Abilita riproduzione casuale",
-    "dont_stop_the_music_enable": "Abilita \"Non fermare la musica!\"",
-    "dont_stop_the_music_disable": "Disabilita \"Non fermare la musica!\"",
     "open_dsp_settings": "Apri impostazioni DSP",
     "audiobook": "Audiolibro",
     "audiobooks": "Audiolibri",
@@ -440,10 +430,6 @@
     "podcast_episode": "Episodio",
     "podcast_episodes": "Episodi",
     "play_from_here": "Riproduci da qui",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Normalizzazione dinamica volume",
-    "loudness_fixed": "Correzione guadagno fissa",
     "dsp_active": "Attivo",
     "currently_playing_players": "In riproduzione",
     "all_players": "Tutti i lettori",
@@ -453,15 +439,11 @@
     "streamdetails": {
         "input_header": "Ingresso",
         "output_header": "Uscita",
-        "output_format_info": "L'audio viene convertito nel formato {0} prima di essere inviato al lettore",
         "eq_band_count": "{0} bande",
         "eq_band_count_singular": "1 banda",
         "input_gain": "Guadagno di ingresso ( {0} dB)",
         "output_gain": "Guadagno in uscita ( {0} dB)",
         "output_limiter": "Limitatore di uscita",
-        "output_limiter_info": "Riduce automaticamente i suoni molto forti per evitare distorsioni e proteggere gli altoparlanti",
-        "dsp_unsupported": "DSP non supportato",
-        "dsp_disabled_by_unsupported_group": "Questo provider di lettori non supporta il DSP con la riproduzione sincronizzata",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codice: {0}",
@@ -469,20 +451,8 @@
             "sample_rate": "Rate campionamento: {0} kHz",
             "channels": "Canali: {0}",
             "bit_depth": "Profondità di bit: {0}"
-        },
-        "volume_normalization": {
-            "target_level": "Livello-obiettivo: {0} LUFS",
-            "integrated_loudness": "Intensità sonora misurata (integrata): {0} LUFS",
-            "integrated_album_loudness": "Album loudness: {0} LUFS",
-            "applied_gain_correction": "Correzione guadagno applicata: {0} dB",
-            "mode": {
-                "dynamic": "Normalizzazione volume attiva in modalità dinamica",
-                "fixed_gain": "Normalizzazione volume attiva in base alla correzione guadagno fissa"
-            }
-        },
-        "click_to_expand": "Clicca per mostrare tutti i lettori"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Seleziona la fonte",
     "music_assistant_source": "Coda Music Assistant",
     "music_assistant_library": "Libreria Music Assistant",

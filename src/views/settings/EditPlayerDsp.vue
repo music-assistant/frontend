@@ -12,22 +12,10 @@
       }}</v-toolbar-title>
       <v-menu offset-y transition="slide-y-transition">
         <template #activator="{ props: menuProps }">
-          <Badge v-if="selectedPreset !== null" class="mr-4" variant="outline">
-            {{
-              selectedPreset.preset_id
-                ? $t("settings.dsp.presets.selected_preset.clean", [
-                    selectedPreset.name,
-                  ])
-                : $t("settings.dsp.presets.selected_preset.modified", [
-                    selectedPreset.name,
-                  ])
-            }}
-          </Badge>
-
           <v-btn v-bind="menuProps" class="mr-4" :class="getButtonClass()">
             <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-tray-arrow-down </v-icon>
-            <span class="d-none d-md-inline">
-              {{ $t("settings.dsp.presets.load") }}
+            <span class="d-none d-md-inline" data-testid="selected-dsp-preset">
+              {{ selectedPresetLabel }}
             </span>
           </v-btn>
         </template>
@@ -63,7 +51,7 @@
       </v-btn>
     </v-toolbar>
 
-    <v-container class="pa-4">
+    <v-container fluid class="pa-4">
       <v-alert v-if="!dsp.enabled" type="info" class="mt-4" color="transparent">
         {{ $t("settings.dsp.disabled_message") }}
       </v-alert>
@@ -172,10 +160,29 @@
               v-model="dsp.filters[selectedStage] as ParametricEQFilter"
             />
             <DSPToneControl
-              v-if="
+              v-else-if="
                 dsp.filters[selectedStage].type === DSPFilterType.TONE_CONTROL
               "
               v-model="dsp.filters[selectedStage] as ToneControlFilter"
+            />
+            <DSPSlider
+              v-else-if="dsp.filters[selectedStage].type === DSPFilterType.GAIN"
+              v-model="(dsp.filters[selectedStage] as GainFilter).gain"
+              type="gain"
+            />
+            <DSPSlider
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.BALANCE
+              "
+              v-model="(dsp.filters[selectedStage] as BalanceFilter).balance"
+              :type="{
+                min: -100,
+                max: 100,
+                step: 1,
+                label: $t('settings.dsp.parameter.balance'),
+                unit: '%',
+                is_log: false,
+              }"
             />
           </v-card>
         </v-col>
@@ -234,16 +241,8 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  watch,
-  onUnmounted,
-  onBeforeUnmount,
-  onMounted,
-} from "vue";
+import { ref, computed, toRaw, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
 import { useDisplay, useTheme } from "vuetify";
 import { api } from "@/plugins/api";
 import {
@@ -252,6 +251,8 @@ import {
   ParametricEQBandType,
   DSPFilter,
   DSPFilterType,
+  type GainFilter,
+  type BalanceFilter,
   ParametricEQFilter,
   ToneControlFilter,
   EventType,
@@ -261,12 +262,13 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
-import { Badge } from "@/components/ui/badge";
-
-type SelectedDSPPreset = Pick<DSPConfigPreset, "name" | "preset_id">;
+import { useDSPPresets } from "@/composables/useDSPPresets";
+import {
+  areDSPConfigsEqual,
+  sanitizeDSPPresetConfig,
+} from "@/helpers/audioProcessing";
 
 const { t } = useI18n();
-const router = useRouter();
 const theme = useTheme();
 
 const props = defineProps<{
@@ -274,17 +276,40 @@ const props = defineProps<{
 }>();
 
 const dsp = ref<DSPConfig>();
-const selectedPreset = ref<SelectedDSPPreset | null>(null);
-const dspPresets = ref<DSPConfigPreset[]>([]);
+const { getPresetName, presets: dspPresets } = useDSPPresets();
 const selectedStage = ref<number | null | "input" | "output">(null);
 const showAddFilterDialog = ref(false);
 const showSavePresetDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
 const newPresetName = ref("");
-const windowWidth = ref(window.innerWidth);
 const { mobile } = useDisplay();
 let updatedFromServer = false;
-let updatedFromLoadPreset = false;
+let localConfigGeneration = 0;
+let applyRequestId = 0;
+let playerLoadRequestId = 0;
+let manualSaveRequestId = 0;
+let playerOperationVersion = 0;
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+interface ManualSaveContext {
+  config: DSPConfig;
+  generation: number;
+  playerId: string;
+  requestId: number;
+}
+const pendingManualSaves: ManualSaveContext[] = [];
+let scheduledManualSave: ManualSaveContext | undefined;
+interface PresetApplyContext {
+  canceledManualSave?: ManualSaveContext;
+  generation: number;
+  operationVersion: number;
+  playerId: string;
+  presetId: string;
+  requestId: number;
+  serverGeneration: number;
+}
+const activePresetApplies = new Map<number, PresetApplyContext>();
+const latestPlayerOperationVersions = new Map<string, number>();
+let pendingPresetApply: PresetApplyContext | undefined;
 
 let unsubPlayerDSP: (() => void) | undefined = undefined;
 
@@ -293,6 +318,11 @@ const filterTypes = Object.values(DSPFilterType).map((value) => {
     value: value,
     title: t(`settings.dsp.types.${value}`),
   };
+});
+const selectedPresetLabel = computed(() => {
+  const presetId = dsp.value?.preset_id;
+  if (!presetId) return t("settings.dsp.presets.load");
+  return getPresetName(presetId) ?? t("settings.dsp.presets.custom");
 });
 
 // Methods
@@ -310,20 +340,6 @@ const stageTitle = (index: number | "input" | "output") => {
   if (index === "input") return t("settings.dsp.input");
   if (index === "output") return t("settings.dsp.output");
   return t(`settings.dsp.types.${dsp.value?.filters[index].type}`);
-};
-
-const changeSelectedPreset = (preset: DSPConfigPreset) => {
-  selectedPreset.value = { preset_id: preset.preset_id, name: preset.name };
-};
-
-const wipeSelectedPreset = () => {
-  selectedPreset.value = null;
-};
-
-const markSelectedPresetAsModified = () => {
-  if (selectedPreset.value) {
-    selectedPreset.value = { name: selectedPreset.value.name };
-  }
 };
 
 const addFilter = () => {
@@ -348,6 +364,20 @@ const addFilter = () => {
         bass_level: 0,
         mid_level: 0,
         treble_level: 0,
+      };
+      break;
+    case DSPFilterType.GAIN:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.GAIN,
+        gain: 0,
+      };
+      break;
+    case DSPFilterType.BALANCE:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.BALANCE,
+        balance: 0,
       };
       break;
     default:
@@ -382,13 +412,58 @@ const removeFilter = (index: number) => {
 };
 
 const loadPreset = async (preset: DSPConfigPreset) => {
-  if (!preset || !preset.config) return;
+  if (!preset.preset_id || !props.playerId) return;
 
+  const carriedManualSave =
+    pendingPresetApply?.playerId === props.playerId &&
+    isLatestPlayerOperation(pendingPresetApply)
+      ? pendingPresetApply.canceledManualSave
+      : undefined;
+  const canceledManualSave = scheduledManualSave ?? carriedManualSave;
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = null;
+  scheduledManualSave = undefined;
+  localConfigGeneration += 1;
   selectedStage.value = "input";
-  changeSelectedPreset(preset);
-  updatedFromLoadPreset = true;
-  // Deep copy the preset config to avoid reference issues
-  dsp.value = preset.config;
+  const applyContext = {
+    canceledManualSave,
+    generation: localConfigGeneration,
+    operationVersion: markPlayerOperation(props.playerId),
+    playerId: props.playerId,
+    presetId: preset.preset_id,
+    requestId: ++applyRequestId,
+    serverGeneration: playerLoadRequestId,
+  };
+  pendingPresetApply = applyContext;
+  activePresetApplies.set(applyContext.requestId, applyContext);
+  try {
+    const config = await api.applyDSPPreset(
+      applyContext.playerId,
+      applyContext.presetId,
+    );
+    if (isCurrentPresetApply(applyContext)) {
+      setServerDSPConfig(config, applyContext.playerId);
+    }
+  } catch {
+    const isCurrentApply = isCurrentPresetApply(applyContext);
+    if (
+      applyContext.canceledManualSave &&
+      isLatestPlayerOperation(applyContext)
+    ) {
+      if (isCurrentApply && dsp.value) {
+        debouncedSave(dsp.value);
+      } else {
+        void saveManualDSPConfig(applyContext.canceledManualSave, false);
+      }
+    } else if (isCurrentApply) {
+      await reloadDSPConfigAfterFailedApply(applyContext);
+    }
+  } finally {
+    activePresetApplies.delete(applyContext.requestId);
+    if (pendingPresetApply?.requestId === applyContext.requestId) {
+      pendingPresetApply = undefined;
+    }
+  }
 };
 
 const savePreset = async () => {
@@ -396,14 +471,13 @@ const savePreset = async () => {
 
   const preset: DSPConfigPreset = {
     name: newPresetName.value.trim(),
-    config: dsp.value,
+    config: sanitizeDSPPresetConfig(dsp.value),
   };
 
   try {
     await api.saveDSPPreset(preset);
     newPresetName.value = "";
     showSavePresetDialog.value = false;
-    changeSelectedPreset(preset);
   } catch (error) {
     console.error("Failed to save DSP preset:", error);
   }
@@ -413,12 +487,6 @@ const removePreset = async (presetId: string | undefined) => {
   if (!presetId || !confirm(t("settings.dsp.presets.remove_confirm"))) return;
 
   await api.removeDSPPreset(presetId);
-  dspPresets.value = dspPresets.value.filter((p) => p.preset_id !== presetId);
-
-  if (presetId === selectedPreset.value?.preset_id) {
-    // If we're removing the currently selected preset, wipe it from being selected.
-    wipeSelectedPreset();
-  }
 };
 
 // Watchers
@@ -440,46 +508,67 @@ watch(
   () => props.playerId,
   async (val) => {
     if (unsubPlayerDSP) unsubPlayerDSP();
+    flushScheduledManualSave();
+    pendingPresetApply = undefined;
+    localConfigGeneration += 1;
+    const loadRequestId = ++playerLoadRequestId;
+    clearServerDSPConfig();
+    selectedStage.value = mobile.value ? null : "input";
     // Don't overwrite the config for the newly selected player
-    updatedFromServer = true;
     if (val) {
-      dsp.value = await api.getDSPConfig(val);
+      unsubPlayerDSP = api.subscribe(
+        EventType.PLAYER_DSP_CONFIG_UPDATED,
+        (evt: { data: DSPConfig }) => {
+          if (props.playerId !== val) return;
+          const manualSave = takeMatchingManualSave(evt.data, val);
+          if (
+            manualSave &&
+            (manualSave.playerId !== props.playerId ||
+              manualSave.generation !== localConfigGeneration)
+          ) {
+            return;
+          }
+          if (shouldIgnorePlayerDSPUpdate(evt.data)) return;
+          playerLoadRequestId += 1;
+          setServerDSPConfig(evt.data, val);
+        },
+        val,
+      );
+      const config = await api.getDSPConfig(val);
+      if (loadRequestId !== playerLoadRequestId || props.playerId !== val) {
+        return;
+      }
+      setServerDSPConfig(config, val);
     }
-    unsubPlayerDSP = api.subscribe(
-      EventType.PLAYER_DSP_CONFIG_UPDATED,
-      (evt: { data: DSPConfig }) => {
-        updatedFromServer = true;
-        dsp.value = evt.data;
-      },
-      props.playerId,
-    );
   },
   { immediate: true },
 );
 
-const unsubDSPPresets = api.subscribe(
-  EventType.DSP_PRESETS_UPDATED,
-  (evt: { data: DSPConfigPreset[] }) => {
-    dspPresets.value = evt.data;
-  },
-);
-
-onMounted(async () => {
-  dspPresets.value = await api.getDSPPresets();
-});
-
 onBeforeUnmount(() => {
   if (unsubPlayerDSP) unsubPlayerDSP();
-  unsubDSPPresets();
+  flushScheduledManualSave();
+  localConfigGeneration += 1;
+  playerLoadRequestId += 1;
+  pendingPresetApply = undefined;
 });
 
 // Debounced save, to prevent too many requests, but still be responsive
-let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 const debouncedSave = (newVal: DSPConfig) => {
+  const playerId = props.playerId;
+  if (!playerId) return;
   if (saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(async () => {
-    if (props.playerId) {
-      await api.saveDSPConfig(props.playerId, newVal);
+  const saveContext = {
+    config: structuredClone(toRaw(newVal)),
+    generation: localConfigGeneration,
+    playerId,
+    requestId: ++manualSaveRequestId,
+  };
+  scheduledManualSave = saveContext;
+  saveTimeout = setTimeout(() => {
+    saveTimeout = null;
+    if (scheduledManualSave?.requestId === saveContext.requestId) {
+      scheduledManualSave = undefined;
+      void saveManualDSPConfig(saveContext);
     }
   }, 2000);
 };
@@ -490,23 +579,136 @@ watch(
     if (updatedFromServer) {
       // Skip resending, since we just got the config
       if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = null;
+      scheduledManualSave = undefined;
       updatedFromServer = false;
       return;
     }
-
     if (oldVal === null) return; // We haven't changed anything yet
     if (newVal) {
+      localConfigGeneration += 1;
+      if (props.playerId) markPlayerOperation(props.playerId);
+      newVal.preset_id = null;
       debouncedSave(newVal);
-
-      if (updatedFromLoadPreset) {
-        // Skip updating selected preset, we loaded it from loadPreset
-        updatedFromLoadPreset = false;
-      } else if (selectedPreset.value && selectedPreset.value.preset_id) {
-        // If we modified a loaded preset, mark it as modified
-        markSelectedPresetAsModified();
-      }
     }
   },
   { deep: true },
 );
+
+function setServerDSPConfig(
+  config: DSPConfig,
+  playerId = props.playerId,
+): void {
+  if (playerId) markPlayerOperation(playerId);
+  updatedFromServer = true;
+  dsp.value = structuredClone(config);
+}
+
+function clearServerDSPConfig(): void {
+  updatedFromServer = true;
+  dsp.value = undefined;
+}
+
+function isCurrentPresetApply(
+  applyContext: NonNullable<typeof pendingPresetApply>,
+): boolean {
+  return (
+    pendingPresetApply?.requestId === applyContext.requestId &&
+    props.playerId === applyContext.playerId &&
+    localConfigGeneration === applyContext.generation &&
+    playerLoadRequestId === applyContext.serverGeneration &&
+    isLatestPlayerOperation(applyContext)
+  );
+}
+
+function shouldIgnorePlayerDSPUpdate(config: DSPConfig): boolean {
+  if (!config.preset_id) return false;
+  const matchingApply = [...activePresetApplies.values()]
+    .filter(
+      (applyContext) =>
+        applyContext.playerId === props.playerId &&
+        applyContext.presetId === config.preset_id,
+    )
+    .sort((left, right) => right.requestId - left.requestId)[0];
+  if (!matchingApply) return false;
+  return (
+    matchingApply.requestId !== pendingPresetApply?.requestId ||
+    localConfigGeneration !== matchingApply.generation
+  );
+}
+
+async function reloadDSPConfigAfterFailedApply(
+  applyContext: PresetApplyContext,
+): Promise<void> {
+  const loadRequestId = playerLoadRequestId;
+  try {
+    const config = await api.getDSPConfig(applyContext.playerId);
+    if (
+      loadRequestId === playerLoadRequestId &&
+      isCurrentPresetApply(applyContext)
+    ) {
+      setServerDSPConfig(config, applyContext.playerId);
+    }
+  } catch {
+    // The API already surfaced the command failure.
+  }
+}
+
+async function saveManualDSPConfig(
+  saveContext: ManualSaveContext,
+  requireCurrentContext = true,
+): Promise<void> {
+  if (
+    requireCurrentContext &&
+    (props.playerId !== saveContext.playerId ||
+      localConfigGeneration !== saveContext.generation)
+  ) {
+    return;
+  }
+  pendingManualSaves.push(saveContext);
+  try {
+    await api.saveDSPConfig(saveContext.playerId, saveContext.config);
+  } finally {
+    const index = pendingManualSaves.findIndex(
+      (pending) => pending.requestId === saveContext.requestId,
+    );
+    if (index !== -1) pendingManualSaves.splice(index, 1);
+  }
+}
+
+function takeMatchingManualSave(
+  config: DSPConfig,
+  playerId: string,
+): ManualSaveContext | undefined {
+  const index = pendingManualSaves.findIndex(
+    (pending) =>
+      pending.playerId === playerId &&
+      areDSPConfigsEqual(pending.config, config),
+  );
+  if (index === -1) return undefined;
+  return pendingManualSaves.splice(index, 1)[0];
+}
+
+function flushScheduledManualSave(): void {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = null;
+  const saveContext = scheduledManualSave;
+  scheduledManualSave = undefined;
+  if (saveContext) {
+    void saveManualDSPConfig(saveContext, false);
+  }
+}
+
+function markPlayerOperation(playerId: string): number {
+  const version = ++playerOperationVersion;
+  latestPlayerOperationVersions.set(playerId, version);
+  return version;
+}
+
+function isLatestPlayerOperation(applyContext: PresetApplyContext): boolean {
+  return (
+    latestPlayerOperationVersions.get(applyContext.playerId) ===
+    applyContext.operationVersion
+  );
+}
 </script>
