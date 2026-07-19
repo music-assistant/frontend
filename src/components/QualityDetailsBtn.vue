@@ -10,6 +10,7 @@
         size="xs"
         :disabled="triggerDisabled"
         :title="$t('show_audio_chain_details')"
+        :aria-label="qualityDetailsLabel"
       >
         <span
           class="quality-pill-dot"
@@ -24,26 +25,28 @@
     <PopoverContent
       :side="pill ? 'bottom' : 'top'"
       align="center"
-      :collision-padding="12"
-      class="streamdetails-popover overflow-y-auto p-3"
-      :style="{
-        width: 'fit-content',
-        minWidth: '320px',
-        maxWidth: 'calc(100vw - 25px)',
-        maxHeight: 'calc(100vh - 150px)',
-      }"
-      @open-auto-focus.prevent
+      :collision-padding="8"
+      class="audio-processing-popover overflow-y-auto"
+      data-testid="audio-processing-popover-content"
+      :aria-label="$t('show_audio_chain_details')"
+      @open-auto-focus="focusPopoverContent"
     >
-      <AudioProcessingDetails
-        :chain="audioProcessing"
-        :stream-details="streamDetails"
-      />
+      <div
+        ref="popoverFocusTarget"
+        class="audio-processing-popover-focus-target outline-none"
+        tabindex="-1"
+      >
+        <AudioProcessingDetails
+          :chain="audioProcessing"
+          :stream-details="streamDetails"
+        />
+      </div>
     </PopoverContent>
   </Popover>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -79,6 +82,14 @@ const qualityLabel = computed(() => {
     maxOutputQualityTier.value,
   );
 });
+const qualityDetailsLabel = computed(() =>
+  qualityLabel.value
+    ? $t("show_audio_chain_details_for_quality", {
+        quality: qualityLabel.value,
+      })
+    : $t("show_audio_chain_details"),
+);
+const popoverFocusTarget = ref<HTMLElement>();
 
 // disable the trigger when there is no active queue with items
 const triggerDisabled = computed(
@@ -87,6 +98,11 @@ const triggerDisabled = computed(
     !store.activePlayerQueue?.active ||
     store.activePlayerQueue?.items == 0,
 );
+
+function focusPopoverContent(event: Event): void {
+  event.preventDefault();
+  popoverFocusTarget.value?.focus();
+}
 </script>
 
 <script lang="ts">
@@ -102,11 +118,19 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
 </script>
 
 <style>
-.streamdetails-popover {
-  /* single knob for the diagram's vertical rhythm; connector lines derive
-     their heights from this so content rows and the rail stay in lockstep */
-  --sd-row: 34px;
-  font-size: 0.875rem;
+.audio-processing-popover[data-slot="popover-content"] {
+  width: min(420px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  max-height: min(
+    560px,
+    calc(100dvh - 16px),
+    var(--reka-popover-content-available-height, calc(100dvh - 16px))
+  );
+  padding: 12px;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  overscroll-behavior: contain;
 }
 
 .quality-pill-dot {
@@ -115,5 +139,12 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   width: 8px;
   border-radius: 50%;
   flex: 0 0 auto;
+}
+
+@media (max-width: 379px) {
+  .audio-processing-popover[data-slot="popover-content"] {
+    padding: 10px;
+    font-size: 0.8rem;
+  }
 }
 </style>

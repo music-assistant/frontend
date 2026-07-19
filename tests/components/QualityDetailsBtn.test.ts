@@ -1,4 +1,5 @@
-import { shallowMount } from "@vue/test-utils";
+import { mount, shallowMount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import {
@@ -10,6 +11,7 @@ import {
   RepeatMode,
   type StreamDetails,
 } from "@/plugins/api/interfaces";
+import { i18n } from "@/plugins/i18n";
 
 const storeMock = vi.hoisted(() => ({
   activePlayerQueue: undefined as PlayerQueue | undefined,
@@ -25,7 +27,9 @@ vi.mock("@/components/AudioProcessingDetails.vue", () => ({
 }));
 
 beforeEach(() => {
+  i18n.global.locale.value = "en";
   storeMock.activePlayerQueue = undefined;
+  document.body.innerHTML = "";
 });
 
 describe("QualityDetailsBtn", () => {
@@ -66,11 +70,65 @@ describe("QualityDetailsBtn", () => {
       wrapper.find('[data-testid="audio-processing-details"]').exists(),
     ).toBe(true);
     expect(wrapper.text()).toContain("LQ-HR");
+    expect(wrapper.get("button").attributes("aria-label")).toBe(
+      "Show audio chain details (LQ-HR)",
+    );
+  });
+
+  it.each([
+    { pill: false, side: "top" },
+    { pill: true, side: "bottom" },
+  ])("uses the compact popover layout on the $side side", ({ pill, side }) => {
+    storeMock.activePlayerQueue = makeQueue({
+      ...makeStreamDetails(),
+      audio_processing: {
+        outputs: [{ fidelity: { quality: AudioQuality.STANDARD } }],
+      },
+    });
+
+    const wrapper = mountButton({ pill });
+    const content = wrapper.find(
+      '[data-testid="audio-processing-popover-content"]',
+    );
+
+    expect(content.classes()).toEqual(
+      expect.arrayContaining(["audio-processing-popover", "overflow-y-auto"]),
+    );
+    expect(content.attributes("side")).toBe(side);
+    expect(content.attributes("collision-padding")).toBe("8");
+  });
+
+  it("moves focus into the audio-chain popover when opened", async () => {
+    storeMock.activePlayerQueue = makeQueue({
+      ...makeStreamDetails(),
+      audio_processing: {
+        outputs: [{ fidelity: { quality: AudioQuality.STANDARD } }],
+      },
+    });
+
+    const wrapper = mount(QualityDetailsBtn, {
+      attachTo: document.body,
+    });
+    await wrapper.get("button").trigger("click");
+    await nextTick();
+
+    const content = document.body.querySelector<HTMLElement>(
+      '[data-testid="audio-processing-popover-content"]',
+    );
+    expect(content?.getAttribute("aria-label")).toBe(
+      "Show audio chain details",
+    );
+    expect(content?.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement?.classList).toContain(
+      "audio-processing-popover-focus-target",
+    );
+    wrapper.unmount();
   });
 });
 
-function mountButton() {
+function mountButton(props: { pill?: boolean } = {}) {
   return shallowMount(QualityDetailsBtn, {
+    props,
     global: {
       stubs: {
         AudioProcessingDetails: false,
