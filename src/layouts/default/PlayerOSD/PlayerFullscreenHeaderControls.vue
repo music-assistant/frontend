@@ -244,7 +244,7 @@ const showLabel = computed(() => !store.mobileLayout);
 
 // Destination for casting this player's now-playing screen to a dashboard device.
 const dashboardPath = computed(
-  () => `/now-playing?player=${store.activePlayerId}`,
+  () => `/now-playing?player=${encodeURIComponent(store.activePlayerId ?? "")}`,
 );
 
 // The ghost-outline variant provides the pill look (transparent with a subtle

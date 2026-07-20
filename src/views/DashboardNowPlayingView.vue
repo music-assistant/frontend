@@ -82,9 +82,8 @@ onMounted(() => {
 // Synced marquee scrolling for the title/artist, same as the fullscreen player.
 const marqueeSync = new MarqueeTextSync();
 
-// Waveform for the current track, loaded centrally like the fullscreen player.
-// The dashboard always shows the waveform by design: this session runs as a
-// guest user which has no show_waveform preference, so it defaults to on.
+// Waveform is always on by design: the guest session has no show_waveform
+// preference, so it defaults to on.
 const { waveformBins: waveformData, waveformLoading } =
   useActiveTrackWaveform();
 

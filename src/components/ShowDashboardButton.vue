@@ -60,7 +60,7 @@
           @click="disconnect"
         >
           <Unplug />
-          <span>{{ $t("dashboard.disconnect") }}</span>
+          <span>{{ $t("dashboard.disconnect", [activeSession.name]) }}</span>
         </DropdownMenuItem>
       </template>
     </DropdownMenuContent>
@@ -88,7 +88,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Check, TvMinimal, Unplug } from "@lucide/vue";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const props = withDefaults(
@@ -133,17 +133,29 @@ const activeSession = computed(() =>
   sessions.value.find((session) => session.path === props.path),
 );
 
-onMounted(() => {
-  if (!chromecastAvailable.value) return;
-  fetchSessions();
-  const unsubscribe = api.subscribe(
-    EventType.DASHBOARD_SESSIONS_UPDATED,
-    (evt: EventMessage) => {
-      sessions.value = evt.data as DashboardSession[];
-    },
-  );
-  onBeforeUnmount(unsubscribe);
-});
+// api.providers is often not yet populated when this component mounts, so
+// wait for the chromecast provider to actually show up before initializing
+// (once only, guarded below) instead of gating on mount timing.
+let sessionsInitialized = false;
+let unsubscribeSessions: (() => void) | undefined;
+
+watch(
+  chromecastAvailable,
+  (available) => {
+    if (!available || sessionsInitialized) return;
+    sessionsInitialized = true;
+    fetchSessions();
+    unsubscribeSessions = api.subscribe(
+      EventType.DASHBOARD_SESSIONS_UPDATED,
+      (evt: EventMessage) => {
+        sessions.value = evt.data as DashboardSession[];
+      },
+    );
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => unsubscribeSessions?.());
 
 async function fetchSessions() {
   try {
@@ -156,6 +168,9 @@ async function fetchSessions() {
 
 async function loadDevices() {
   loading.value = true;
+  // Refresh sessions too so checkmarks recover from any missed events (e.g. a
+  // websocket reconnect).
+  fetchSessions();
   try {
     devices.value =
       await api.sendCommand<DashboardDevice[]>("dashboard/devices");
@@ -179,8 +194,7 @@ async function selectDevice(device: DashboardDevice) {
         device_id: previousSession.device_id,
       });
     } catch (error) {
-      // Still attempt to show on the newly selected device even if stopping
-      // the previous session failed.
+      // Still try the new device even if stopping the old one failed.
       console.error("Failed to stop previous cast dashboard:", error);
     }
   }
@@ -193,8 +207,7 @@ async function selectDevice(device: DashboardDevice) {
     });
     toast.success($t("dashboard.started", [device.name]));
   } catch (error) {
-    // The global sendCommand error handler already surfaces the server's
-    // message (e.g. remote access disabled) via a toast.
+    // Global sendCommand error handler already toasts the server's message.
     console.error("Failed to start cast dashboard:", error);
   }
 }
@@ -213,6 +226,7 @@ async function disconnect() {
     });
   } catch (error) {
     console.error("Failed to stop cast dashboard:", error);
+    await fetchSessions(); // roll back the optimistic removal
   }
 }
 

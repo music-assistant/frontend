@@ -9,6 +9,7 @@ import {
 import { Check } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { reactive } from "vue";
 
 const { apiMock, isDashboardViewerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -20,6 +21,11 @@ const { apiMock, isDashboardViewerMock, toastMock } = vi.hoisted(() => ({
   isDashboardViewerMock: vi.fn(() => false),
   toastMock: { success: vi.fn(), error: vi.fn() },
 }));
+
+// Reactive (like the real api store) so tests can flip provider availability
+// after mount and exercise the watch(chromecastAvailable) init.
+apiMock.providers = reactive(apiMock.providers);
+apiMock.players = reactive(apiMock.players);
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
@@ -276,6 +282,7 @@ describe("ShowDashboardButton", () => {
           device_id: "device-1",
           provider_instance: "chromecast_1",
           path: "/party",
+          name: "Living Room TV",
         },
       ],
     });
@@ -295,6 +302,7 @@ describe("ShowDashboardButton", () => {
           device_id: "device-1",
           provider_instance: "chromecast_1",
           path: "/music-quiz",
+          name: "Living Room TV",
         },
       ],
     });
@@ -324,6 +332,7 @@ describe("ShowDashboardButton", () => {
         device_id: "device-1",
         provider_instance: "chromecast_1",
         path: "/party",
+        name: "Living Room TV",
       },
     ]);
     await flushAsync();
@@ -339,6 +348,7 @@ describe("ShowDashboardButton", () => {
           device_id: "device-1",
           provider_instance: "chromecast_1",
           path: "/party",
+          name: "Living Room TV",
         },
       ],
       "dashboard/devices": () => [
@@ -368,6 +378,7 @@ describe("ShowDashboardButton", () => {
 
     const disconnect = wrapper.get('[data-testid="cast-dashboard-disconnect"]');
     expect(disconnect.attributes("data-variant")).toBe("destructive");
+    expect(disconnect.text()).toContain("dashboard.disconnect:Living Room TV");
   });
 
   it("disconnect stops the active session and optimistically clears the active icon", async () => {
@@ -378,6 +389,7 @@ describe("ShowDashboardButton", () => {
           device_id: "device-1",
           provider_instance: "chromecast_1",
           path: "/party",
+          name: "Living Room TV",
         },
       ],
     });
@@ -399,6 +411,76 @@ describe("ShowDashboardButton", () => {
     expect(wrapper.get("button").classes()).not.toContain("bg-primary");
   });
 
+  it("refetches sessions when disconnect's dashboard/hide fails, rolling back the optimistic removal", async () => {
+    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
+    mockCommands({
+      "dashboard/sessions": () => [
+        {
+          device_id: "device-1",
+          provider_instance: "chromecast_1",
+          path: "/party",
+          name: "Living Room TV",
+        },
+      ],
+      "dashboard/hide": () => {
+        throw new Error("device offline");
+      },
+    });
+
+    const wrapper = mountButton("/party");
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+    apiMock.sendCommand.mockClear();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-disconnect"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/hide", {
+      provider_instance: "chromecast_1",
+      device_id: "device-1",
+    });
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/sessions");
+    // the resync brought the still-active session back, so the pill stays lit
+    expect(wrapper.get("button").classes()).toContain("bg-primary");
+  });
+
+  it("subscribes and fetches sessions once the chromecast provider appears after mount", async () => {
+    mockCommands();
+
+    const wrapper = mountButton("/party");
+    await flushAsync();
+
+    expect(apiMock.subscribe).not.toHaveBeenCalled();
+    expect(apiMock.sendCommand).not.toHaveBeenCalledWith("dashboard/sessions");
+
+    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
+    await flushAsync();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/sessions");
+    expect(apiMock.subscribe).toHaveBeenCalledWith(
+      EventType.DASHBOARD_SESSIONS_UPDATED,
+      expect.any(Function),
+    );
+    void wrapper;
+  });
+
+  it("calls the sessions subscription's unsubscribe function on unmount", async () => {
+    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
+    const unsubscribeMock = vi.fn();
+    apiMock.subscribe.mockImplementation(() => unsubscribeMock);
+    mockCommands();
+
+    const wrapper = mountButton("/party");
+    await flushAsync();
+
+    wrapper.unmount();
+
+    expect(unsubscribeMock).toHaveBeenCalledOnce();
+  });
+
   it("selecting a different device hides the current session before showing the new one", async () => {
     apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
@@ -407,6 +489,7 @@ describe("ShowDashboardButton", () => {
           device_id: "device-1",
           provider_instance: "chromecast_1",
           path: "/party",
+          name: "Living Room TV",
         },
       ],
       "dashboard/devices": () => [
@@ -458,6 +541,7 @@ describe("ShowDashboardButton", () => {
           device_id: "device-1",
           provider_instance: "chromecast_1",
           path: "/party",
+          name: "Living Room TV",
         },
       ],
       "dashboard/devices": () => [
