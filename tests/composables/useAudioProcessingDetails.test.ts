@@ -22,6 +22,9 @@ import {
 vi.mock("@/plugins/api", () => ({
   default: {
     getProviderName: vi.fn(),
+    getProviderManifest: vi.fn((providerId: string) => ({
+      domain: providerId,
+    })),
     players: {},
   },
 }));
@@ -36,37 +39,273 @@ const dependencies: AudioProcessingDetailsDependencies = {
   translate: (key, values) => (values ? $t(key, values) : $t(key)),
   locale: "en-US",
   getProviderName: () => "Test provider",
+  getProviderDomain: (providerId) => providerId.split("--", 1)[0],
   getPresetName: (presetId) =>
     presetId ? presetNames.get(presetId) : undefined,
-  players: {
-    kitchen: {
-      player_id: "kitchen",
-      name: "Kitchen",
-      active_output_protocol: "airplay-kitchen",
-      output_protocols: [
-        {
-          output_protocol_id: "airplay-kitchen",
-          is_native: false,
-        },
-      ],
-    },
-    office: {
-      player_id: "office",
-      name: "Office",
-      active_output_protocol: null,
-      output_protocols: [],
-    },
-  },
+  players: makePlayers(),
 };
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
   dependencies.locale = "en-US";
+  dependencies.players = makePlayers();
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
 });
 
 describe("buildAudioProcessingDetailsDisplay", () => {
+  it("uses provider and codec icons for the input path", () => {
+    const display = buildDisplay({});
+
+    expect(display.inputStages[0]).toMatchObject({
+      title: "Test provider",
+      providerIconDomain: "test--instance",
+    });
+    expect(display.inputStages[1]).toMatchObject({
+      title: "FLAC",
+      codecIconLabel: "FLAC",
+    });
+  });
+
+  it.each([
+    [ContentType.PCM_F32LE, "PCM"],
+    [ContentType.ADPCM_IMA, "ADPCM"],
+    [ContentType.DSD_MSBF, "DSD"],
+    [ContentType.WAVPACK, "WAVPACK"],
+  ])("builds a compact %s codec label", (contentType, expectedLabel) => {
+    const format = makeFormat({
+      content_type: contentType,
+      codec_type: contentType,
+    });
+    const display = buildDisplay(
+      {
+        outputs: [{ player_ids: ["office"], output_format: format }],
+      },
+      format,
+    );
+
+    expect(display.inputStages[1]).toMatchObject({
+      codecIconLabel: expectedLabel,
+    });
+    expect(display.outputPaths[0].stages.at(-1)).toMatchObject({
+      codecIconLabel: expectedLabel,
+    });
+  });
+
+  it("keeps the generic format icon when the codec is unknown", () => {
+    const format = makeFormat({
+      content_type: ContentType.UNKNOWN,
+      codec_type: ContentType.UNKNOWN,
+    });
+    const display = buildDisplay({}, format);
+
+    expect(display.inputStages[1]).toHaveProperty("icon");
+    expect(display.inputStages[1]).not.toHaveProperty("codecIconLabel");
+  });
+
+  it("uses the native player provider for direct output", () => {
+    const destination = buildDisplay({
+      outputs: [{ player_ids: ["office"], output_format: makeFormat() }],
+    }).outputPaths[0].destination;
+
+    expect(destination).toMatchObject({
+      title: "Office",
+      providerIconDomain: "squeezelite",
+    });
+  });
+
+  it.each(["airplay", "sendspin", "snapcast", "msx_bridge"])(
+    "uses the exact active %s protocol domain",
+    (protocolDomain) => {
+      const protocolId = `${protocolDomain}-kitchen`;
+      dependencies.players.kitchen.active_output_protocol = protocolId;
+      dependencies.players.kitchen.output_protocols = [
+        {
+          output_protocol_id: protocolId,
+          is_native: false,
+          protocol_domain: protocolDomain,
+        },
+      ];
+
+      const destination = buildDisplay({
+        outputs: [{ player_ids: ["kitchen"], output_format: makeFormat() }],
+      }).outputPaths[0].destination;
+
+      expect(destination).toMatchObject({
+        title: "Kitchen",
+        providerIconDomain: protocolDomain,
+      });
+    },
+  );
+
+  it("resolves older protocol IDs to one visible parent", () => {
+    const destination = buildDisplay({
+      outputs: [
+        {
+          player_ids: ["airplay-kitchen", "kitchen"],
+          output_format: makeFormat(),
+        },
+      ],
+    }).outputPaths[0].destination;
+
+    expect(destination).toMatchObject({
+      title: "Kitchen",
+      providerIconDomain: "airplay",
+    });
+    expect(destination.details).toBeUndefined();
+  });
+
+  it("uses the protocol player provider when the active entry has no domain", () => {
+    dependencies.players.kitchen.active_output_protocol = "sendspin-kitchen";
+    dependencies.players.kitchen.output_protocols = [
+      {
+        output_protocol_id: "sendspin-kitchen",
+        is_native: false,
+        protocol_domain: null,
+      },
+    ];
+    dependencies.players["sendspin-kitchen"] = {
+      player_id: "sendspin-kitchen",
+      name: "Kitchen",
+      provider: "sendspin--bridge",
+      active_output_protocol: null,
+      output_protocols: [],
+    };
+
+    const destination = buildDisplay({
+      outputs: [{ player_ids: ["kitchen"], output_format: makeFormat() }],
+    }).outputPaths[0].destination;
+
+    expect(destination).toMatchObject({
+      title: "Kitchen",
+      providerIconDomain: "sendspin",
+    });
+  });
+
+  it("never falls back to the base provider for an unresolved active protocol", () => {
+    dependencies.players.kitchen.active_output_protocol = "missing-protocol";
+    dependencies.players.kitchen.output_protocols = [];
+    dependencies.players["missing-protocol"] = {
+      player_id: "missing-protocol",
+      name: "Unrelated protocol player",
+      provider: "snapcast--other",
+      active_output_protocol: null,
+      output_protocols: [],
+    };
+
+    const destination = buildDisplay({
+      outputs: [{ player_ids: ["kitchen"], output_format: makeFormat() }],
+    }).outputPaths[0].destination;
+
+    expect(destination).toHaveProperty("icon");
+    expect(destination).not.toHaveProperty("providerIconDomain");
+  });
+
+  it.each(["snapcast", "msx_bridge"])(
+    "uses a visible %s destination provider without a parent mapping",
+    (providerDomain) => {
+      const playerId = `${providerDomain}-room`;
+      dependencies.players.kitchen.output_protocols = [];
+      dependencies.players[playerId] = {
+        player_id: playerId,
+        name: "Visible destination",
+        provider: `${providerDomain}--main`,
+        active_output_protocol: null,
+        output_protocols: [],
+      };
+
+      const destination = buildDisplay({
+        outputs: [
+          {
+            player_ids: [playerId],
+            output_format: makeFormat(),
+          },
+        ],
+      }).outputPaths[0].destination;
+
+      expect(destination).toMatchObject({
+        title: "Visible destination",
+        providerIconDomain: providerDomain,
+      });
+    },
+  );
+
+  it("keeps a missing protocol ID generic without an exact parent mapping", () => {
+    dependencies.players.kitchen.output_protocols = [];
+
+    const destination = buildDisplay({
+      outputs: [
+        {
+          player_ids: ["airplay-kitchen"],
+          output_format: makeFormat(),
+        },
+      ],
+    }).outputPaths[0].destination;
+
+    expect(destination.title).toBe("Destination airplay-kitchen");
+    expect(destination).toHaveProperty("icon");
+    expect(destination).not.toHaveProperty("providerIconDomain");
+  });
+
+  it("uses a provider icon only for grouped destinations on one domain", () => {
+    dependencies.players.kitchen.active_output_protocol = "native";
+    dependencies.players.office.provider = "sonos--office";
+    let destination = buildDisplay({
+      outputs: [
+        {
+          player_ids: ["kitchen", "office"],
+          output_format: makeFormat(),
+        },
+      ],
+    }).outputPaths[0].destination;
+    expect(destination).toMatchObject({ providerIconDomain: "sonos" });
+
+    dependencies.players.office.provider = "squeezelite--office";
+    destination = buildDisplay({
+      outputs: [
+        {
+          player_ids: ["kitchen", "office"],
+          output_format: makeFormat(),
+        },
+      ],
+    }).outputPaths[0].destination;
+    expect(destination).toHaveProperty("icon");
+    expect(destination).not.toHaveProperty("providerIconDomain");
+  });
+
+  it("uses a shared active protocol icon for grouped output", () => {
+    dependencies.players.office.active_output_protocol = "airplay-office";
+    dependencies.players.office.output_protocols = [
+      {
+        output_protocol_id: "airplay-office",
+        is_native: false,
+        protocol_domain: "airplay",
+      },
+    ];
+    let destination = buildDisplay({
+      outputs: [
+        {
+          player_ids: ["kitchen", "office"],
+          output_format: makeFormat(),
+        },
+      ],
+    }).outputPaths[0].destination;
+    expect(destination).toMatchObject({ providerIconDomain: "airplay" });
+
+    dependencies.players.office.output_protocols[0].protocol_domain =
+      "snapcast";
+    destination = buildDisplay({
+      outputs: [
+        {
+          player_ids: ["kitchen", "office"],
+          output_format: makeFormat(),
+        },
+      ],
+    }).outputPaths[0].destination;
+    expect(destination).toHaveProperty("icon");
+    expect(destination).not.toHaveProperty("providerIconDomain");
+  });
+
   it("distinguishes direct paths from floating-point headroom", () => {
     const sourceFormat = makeFormat({
       sample_rate: 44100,
@@ -329,12 +568,37 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
 function buildDisplay(chain: AudioProcessingChain, audioFormat = makeFormat()) {
   const streamDetails: StreamDetails = {
-    provider: "test",
+    provider: "test--instance",
     item_id: "track-1",
     audio_format: audioFormat,
     media_type: MediaType.TRACK,
   };
   return buildAudioProcessingDetailsDisplay(chain, streamDetails, dependencies);
+}
+
+function makePlayers(): AudioProcessingDetailsDependencies["players"] {
+  return {
+    kitchen: {
+      player_id: "kitchen",
+      name: "Kitchen",
+      provider: "sonos--main",
+      active_output_protocol: "airplay-kitchen",
+      output_protocols: [
+        {
+          output_protocol_id: "airplay-kitchen",
+          is_native: false,
+          protocol_domain: "airplay",
+        },
+      ],
+    },
+    office: {
+      player_id: "office",
+      name: "Office",
+      provider: "squeezelite--main",
+      active_output_protocol: null,
+      output_protocols: [],
+    },
+  };
 }
 
 function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {

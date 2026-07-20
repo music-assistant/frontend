@@ -6,7 +6,6 @@ import {
   Gauge,
   GitMerge,
   Layers,
-  Radio,
   Shield,
   SlidersHorizontal,
   Speaker,
@@ -37,15 +36,33 @@ type TranslationValue = string | number;
 type Translate = (key: string, values?: TranslationValue[]) => string;
 type AudioDSPDetails = NonNullable<AudioOutputDetails["dsp"]>;
 
-export interface AudioProcessingDisplayStage {
+interface AudioProcessingDisplayStageBase {
   key: string;
-  icon: Component;
   title: string;
   subtitleParts?: string[];
   atomicSubtitleParts?: boolean;
   badge?: string;
   details?: string[];
 }
+
+export type AudioProcessingDisplayStage = AudioProcessingDisplayStageBase &
+  (
+    | {
+        icon: Component;
+        providerIconDomain?: never;
+        codecIconLabel?: never;
+      }
+    | {
+        icon?: never;
+        providerIconDomain: string;
+        codecIconLabel?: never;
+      }
+    | {
+        icon?: never;
+        providerIconDomain?: never;
+        codecIconLabel: string;
+      }
+  );
 
 export interface AudioProcessingOutputDisplay {
   key: string;
@@ -67,10 +84,12 @@ export interface AudioProcessingDetailsDisplay {
 export interface AudioProcessingDisplayPlayer {
   player_id: string;
   name: string;
+  provider: string;
   active_output_protocol?: string | null;
   output_protocols?: Array<{
     output_protocol_id: string;
     is_native: boolean;
+    protocol_domain?: string | null;
   }>;
 }
 
@@ -78,6 +97,7 @@ export interface AudioProcessingDetailsDependencies {
   translate: Translate;
   locale: string;
   getProviderName: (providerId: string) => string;
+  getProviderDomain: (providerId: string) => string | undefined;
   getPresetName: (presetId: string | null | undefined) => string | undefined;
   players: Record<string, AudioProcessingDisplayPlayer>;
 }
@@ -145,6 +165,8 @@ export function useAudioProcessingDetails(
         translate,
         locale: locale.value,
         getProviderName: (providerId) => api.getProviderName(providerId),
+        getProviderDomain: (providerId) =>
+          api.getProviderManifest(providerId)?.domain,
         getPresetName,
         players: api.players,
       },
@@ -186,7 +208,7 @@ function buildInputStages(
   return [
     {
       key: "provider",
-      icon: Radio,
+      providerIconDomain: streamDetails.provider,
       title: dependencies.getProviderName(streamDetails.provider),
     },
     formatStage(
@@ -363,9 +385,8 @@ function destinationStage(
   const destinations = resolveDestinations(playerIds, dependencies);
   const primary = destinations[0];
   const additionalDestinationCount = destinations.length - 1;
-  return {
+  const stage = {
     key: "destination",
-    icon: Speaker,
     title:
       additionalDestinationCount > 0
         ? `${primary.name} +${additionalDestinationCount}`
@@ -375,46 +396,112 @@ function destinationStage(
         ? destinations.map((destination) => destination.name)
         : undefined,
   };
+  const providerIconDomain = commonDestinationProviderDomain(destinations);
+  return providerIconDomain
+    ? { ...stage, providerIconDomain }
+    : { ...stage, icon: Speaker };
+}
+
+interface ResolvedDestination {
+  playerId: string;
+  name: string;
+  providerDomain?: string;
 }
 
 function resolveDestinations(
   playerIds: string[],
   dependencies: AudioProcessingDetailsDependencies,
-): Array<{ playerId: string; name: string }> {
-  const destinations: Array<{ playerId: string; name: string }> = [];
+): ResolvedDestination[] {
+  const destinations: ResolvedDestination[] = [];
   const seenPlayerIds = new Set<string>();
   for (const playerId of playerIds) {
-    const player = resolveDestinationPlayer(playerId, dependencies.players);
-    const resolvedPlayerId = player?.player_id ?? playerId;
+    const resolved = resolveDestination(playerId, dependencies);
+    const resolvedPlayerId = resolved?.player.player_id ?? playerId;
     if (seenPlayerIds.has(resolvedPlayerId)) continue;
     seenPlayerIds.add(resolvedPlayerId);
     destinations.push({
       playerId: resolvedPlayerId,
       name:
-        player?.name ??
+        resolved?.player.name ??
         dependencies.translate(
           "streamdetails.audio_processing.destination_unknown",
           [playerId],
         ),
+      providerDomain: resolved?.providerDomain,
     });
   }
   return destinations;
 }
 
-function resolveDestinationPlayer(
+interface DestinationResolution {
+  player: AudioProcessingDisplayPlayer;
+  providerDomain?: string;
+}
+
+function resolveDestination(
   playerId: string,
-  players: Record<string, AudioProcessingDisplayPlayer>,
-): AudioProcessingDisplayPlayer | undefined {
-  const protocolParent = Object.values(players).find(
-    (player) =>
-      player.player_id !== playerId &&
-      (player.active_output_protocol === playerId ||
-        player.output_protocols?.some(
-          (protocol) =>
-            !protocol.is_native && protocol.output_protocol_id === playerId,
-        )),
+  dependencies: AudioProcessingDetailsDependencies,
+): DestinationResolution | undefined {
+  for (const player of Object.values(dependencies.players)) {
+    if (player.player_id === playerId) continue;
+    const protocol = player.output_protocols?.find(
+      (outputProtocol) =>
+        !outputProtocol.is_native &&
+        outputProtocol.output_protocol_id === playerId,
+    );
+    if (!protocol) continue;
+    return {
+      player,
+      providerDomain:
+        protocol.protocol_domain ??
+        playerProviderDomain(dependencies.players[playerId], dependencies),
+    };
+  }
+
+  const player = dependencies.players[playerId];
+  if (!player) return undefined;
+  const activeProtocolId = player.active_output_protocol;
+  if (
+    !activeProtocolId ||
+    activeProtocolId === "native" ||
+    activeProtocolId === player.player_id
+  ) {
+    return {
+      player,
+      providerDomain: playerProviderDomain(player, dependencies),
+    };
+  }
+
+  const activeProtocol = player.output_protocols?.find(
+    (protocol) => protocol.output_protocol_id === activeProtocolId,
   );
-  return protocolParent ?? players[playerId];
+  return {
+    player,
+    providerDomain: activeProtocol
+      ? (activeProtocol.protocol_domain ??
+        playerProviderDomain(
+          dependencies.players[activeProtocolId],
+          dependencies,
+        ))
+      : undefined,
+  };
+}
+
+function playerProviderDomain(
+  player: AudioProcessingDisplayPlayer | undefined,
+  dependencies: AudioProcessingDetailsDependencies,
+): string | undefined {
+  return player ? dependencies.getProviderDomain(player.provider) : undefined;
+}
+
+function commonDestinationProviderDomain(
+  destinations: ResolvedDestination[],
+): string | undefined {
+  const domain = destinations[0]?.providerDomain;
+  return domain &&
+    destinations.every((destination) => destination.providerDomain === domain)
+    ? domain
+    : undefined;
 }
 
 function normalizationStage(
@@ -571,9 +658,8 @@ function finalOutputStage(
       translate,
     ),
   );
-  return {
+  const stage = {
     key: `output-format-${index}`,
-    icon: FileAudio,
     title: format
       ? audioFormatTitle(format, translate)
       : translate("streamdetails.audio_processing.unknown_format"),
@@ -587,6 +673,10 @@ function finalOutputStage(
         : undefined,
     details,
   };
+  const codecIconLabel = format ? codecBadgeLabel(format) : undefined;
+  return codecIconLabel
+    ? { ...stage, codecIconLabel }
+    : { ...stage, icon: FileAudio };
 }
 
 function formatStage(
@@ -595,14 +685,17 @@ function formatStage(
   translate: Translate,
   locale: string,
 ): AudioProcessingDisplayStage {
-  return {
+  const stage = {
     key,
-    icon: FileAudio,
     title: audioFormatTitle(format, translate),
     subtitleParts: audioFormatTechnicalParts(format, translate, locale),
     atomicSubtitleParts: true,
     details: audioFormatDetails(format, translate, locale),
   };
+  const codecIconLabel = codecBadgeLabel(format);
+  return codecIconLabel
+    ? { ...stage, codecIconLabel }
+    : { ...stage, icon: FileAudio };
 }
 
 function outputFidelityDetail(
@@ -806,6 +899,19 @@ function audioFormatCodec(format: AudioFormat): string {
   return format.codec_type && format.codec_type !== ContentType.UNKNOWN
     ? format.codec_type
     : format.content_type;
+}
+
+function codecBadgeLabel(format: AudioFormat): string | undefined {
+  const codec = audioFormatCodec(format);
+  if (codec === ContentType.UNKNOWN || !KNOWN_CONTENT_TYPES.has(codec)) {
+    return undefined;
+  }
+  if (codec === ContentType.PCM || PCM_CONTENT_TYPES.has(codec)) {
+    return "PCM";
+  }
+  if (codec.startsWith("adpcm_")) return "ADPCM";
+  if (codec.startsWith("dsd_")) return "DSD";
+  return codec.toUpperCase().replaceAll("_", "-");
 }
 
 function audioChannelCountLabel(

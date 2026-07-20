@@ -205,8 +205,8 @@ const {
 .audio-processing-details .audio-processing-stage {
   position: relative;
   display: grid;
-  grid-template-columns: 12px 16px minmax(0, 1fr) 24px;
-  column-gap: 7px;
+  grid-template-columns: 12px 24px minmax(0, 1fr) 24px;
+  column-gap: 4px;
   align-items: start;
   min-height: 24px;
 }
@@ -261,9 +261,44 @@ const {
 
 .audio-processing-details .audio-processing-stage-icon {
   grid-column: 2;
-  width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
   height: 16px;
   margin-top: 4px;
+}
+
+.audio-processing-details .audio-processing-stage-provider-icon {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+}
+
+.audio-processing-details .audio-processing-stage-codec-icon {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 14px;
+  padding: 0 2px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  color: var(--muted-foreground);
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.44rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.audio-processing-details .audio-processing-stage-codec-icon--dense {
+  padding: 0 1px;
+  font-size: 0.32rem;
+  letter-spacing: -0.05em;
 }
 
 .audio-processing-details .audio-processing-stage-copy {
