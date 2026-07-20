@@ -100,17 +100,25 @@ describe("CastDashboardButton", () => {
       playback_state: PlaybackState.PLAYING,
     } as Player;
     apiMock.sendCommand.mockResolvedValueOnce([
-      { device_id: "device-1", name: "Living Room TV" },
-      { device_id: "device-2", name: "Bedroom TV" },
+      {
+        device_id: "device-1",
+        provider_instance: "chromecast_1",
+        name: "Living Room TV",
+        player_id: "device-1",
+      },
+      {
+        device_id: "device-2",
+        provider_instance: "chromecast_1",
+        name: "Bedroom TV",
+        player_id: null,
+      },
     ]);
 
     const wrapper = mountButton();
     await wrapper.get("button").trigger("click");
     await flushAsync();
 
-    expect(apiMock.sendCommand).toHaveBeenCalledWith(
-      "chromecast/display_devices",
-    );
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/devices");
     const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
     expect(devices).toHaveLength(2);
     expect(devices[0]!.text()).toContain("Living Room TV");
@@ -122,8 +130,15 @@ describe("CastDashboardButton", () => {
   it("starts the dashboard on the selected device and toasts success", async () => {
     apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     apiMock.sendCommand.mockImplementation((command: string) => {
-      if (command === "chromecast/display_devices") {
-        return Promise.resolve([{ device_id: "device-1", name: "Kitchen" }]);
+      if (command === "dashboard/devices") {
+        return Promise.resolve([
+          {
+            device_id: "device-1",
+            provider_instance: "chromecast_1",
+            name: "Kitchen",
+            player_id: null,
+          },
+        ]);
       }
       return Promise.resolve(undefined);
     });
@@ -135,10 +150,11 @@ describe("CastDashboardButton", () => {
     await wrapper.get('[data-testid="cast-dashboard-device"]').trigger("click");
     await flushAsync();
 
-    expect(apiMock.sendCommand).toHaveBeenCalledWith(
-      "chromecast/show_dashboard",
-      { device_id: "device-1", path: "/music-quiz" },
-    );
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/show", {
+      provider_instance: "chromecast_1",
+      device_id: "device-1",
+      path: "/music-quiz",
+    });
     expect(toastMock.success).toHaveBeenCalledWith(
       "cast_dashboard.started:Kitchen",
     );
@@ -147,8 +163,15 @@ describe("CastDashboardButton", () => {
   it("leaves error toasting to the global command handler on failure", async () => {
     apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     apiMock.sendCommand.mockImplementation((command: string) => {
-      if (command === "chromecast/display_devices") {
-        return Promise.resolve([{ device_id: "device-1", name: "Kitchen" }]);
+      if (command === "dashboard/devices") {
+        return Promise.resolve([
+          {
+            device_id: "device-1",
+            provider_instance: "chromecast_1",
+            name: "Kitchen",
+            player_id: null,
+          },
+        ]);
       }
       return Promise.reject(new Error("Remote access disabled"));
     });

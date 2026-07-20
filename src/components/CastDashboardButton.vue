@@ -35,7 +35,7 @@
         <div class="flex min-w-0 flex-col">
           <span class="truncate">{{ device.name }}</span>
           <span
-            v-if="isPlayingAudio(device.device_id)"
+            v-if="isPlayingAudio(device)"
             class="text-muted-foreground truncate text-xs"
           >
             {{ $t("cast_dashboard.playing_hint") }}
@@ -55,17 +55,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button, type ButtonVariants } from "@/components/ui/button";
 import api from "@/plugins/api";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { type DashboardDevice, PlaybackState } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Cast } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
-
-interface CastDisplayDevice {
-  device_id: string;
-  name: string;
-}
 
 const props = withDefaults(
   defineProps<{
@@ -83,7 +78,7 @@ const props = withDefaults(
 
 const open = ref(false);
 const loading = ref(false);
-const devices = ref<CastDisplayDevice[]>([]);
+const devices = ref<DashboardDevice[]>([]);
 
 // Chromecast dashboards can't be cast from a cast viewer session itself, and
 // the button only makes sense while the chromecast provider is loaded.
@@ -95,17 +90,18 @@ const chromecastAvailable = computed(
     ),
 );
 
-function isPlayingAudio(deviceId: string): boolean {
-  // Chromecast player_ids are the cast device's uuid, so this maps directly.
-  return api.players?.[deviceId]?.playback_state === PlaybackState.PLAYING;
+function isPlayingAudio(device: DashboardDevice): boolean {
+  if (!device.player_id) return false;
+  return (
+    api.players?.[device.player_id]?.playback_state === PlaybackState.PLAYING
+  );
 }
 
 async function loadDevices() {
   loading.value = true;
   try {
-    devices.value = await api.sendCommand<CastDisplayDevice[]>(
-      "chromecast/display_devices",
-    );
+    devices.value =
+      await api.sendCommand<DashboardDevice[]>("dashboard/devices");
   } catch (error) {
     console.error("Failed to load cast devices:", error);
     devices.value = [];
@@ -114,10 +110,11 @@ async function loadDevices() {
   }
 }
 
-async function selectDevice(device: CastDisplayDevice) {
+async function selectDevice(device: DashboardDevice) {
   open.value = false;
   try {
-    await api.sendCommand("chromecast/show_dashboard", {
+    await api.sendCommand("dashboard/show", {
+      provider_instance: device.provider_instance,
       device_id: device.device_id,
       path: props.path,
     });

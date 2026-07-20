@@ -1233,6 +1233,14 @@ export interface ProviderInstance {
   is_streaming_provider?: boolean;
 }
 
+export interface DashboardDevice {
+  // A device capable of displaying a Music Assistant dashboard (e.g. a Chromecast).
+  device_id: string;
+  provider_instance: string;
+  name: string;
+  player_id: string | null; // linked MA player, if any
+}
+
 export enum TaskStatus {
   IDLE = "idle",
   PENDING = "pending",
