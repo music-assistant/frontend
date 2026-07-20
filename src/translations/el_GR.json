@@ -587,10 +587,6 @@
     "podcast_episode": "Επεισόδιο",
     "podcast_episodes": "Επεισόδια",
     "play_from_here": "Αναπαραγωγή από εδώ",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (άλμπουμ)",
-    "loudness_dynamic": "Δυναμική ομαλοποίηση έντασης ήχου",
-    "loudness_fixed": "Σταθερή διόρθωση ενίσχυσης",
     "dsp_active": "Ενεργό",
     "currently_playing_players": "Παίζει τώρα",
     "all_players": "Ολοι οι παίκτες",
@@ -600,40 +596,20 @@
     "streamdetails": {
         "input_header": "Είσοδος",
         "output_header": "Εξοδος",
-        "output_format_info": "Ο ήχος αποστέλλεται σε μορφή {0}",
         "eq_band_count": "{0} μπάντες",
         "eq_band_count_singular": "1 μπάντα",
         "input_gain": "Ενίσχυση εισόδου ({0} dB)",
         "output_gain": "Ενίσχυση εξόδου ({0} dB)",
         "output_limiter": "Περιοριστής εξόδου",
-        "output_limiter_info": "Μειώνει αυτόματα τους πολύ δυνατούς ήχους για να αποτρέψει την παραμόρφωση και να προστατεύσει τα ηχεία σας",
-        "dsp_unsupported": "Το DSP δεν υποστηρίζεται",
-        "dsp_disabled_by_unsupported_group": "Αυτός ο πάροχος παίκτη δεν υποστηρίζει DSP με συγχρονισμένη αναπαραγωγή",
         "file_info": {
             "container": "Κοντέινερ: {0}",
             "codec": "Κωδικοποιητής: {0}",
             "bit_rate": "Ρυθμός μετάδοσης δεδομένων: {0} kbps",
             "sample_rate": "Ρυθμός δειγματοληψίας: {0} kHz",
             "channels": "Κανάλια: {0}",
-            "bit_depth": "Βάθος bit: {0}",
-            "processing_notice": "Ο ήχος επεξεργάζεται εσωτερικά ως 32-bit float PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Επίπεδο-στόχος: {0} LUFS",
-            "integrated_loudness": "Μετρημένη (ενσωματωμένη) ένταση ήχου: {0} LUFS",
-            "integrated_album_loudness": "Ενταση ήχου άλμπουμ: {0} LUFS",
-            "applied_gain_correction": "Εφαρμοσμένη διόρθωση ενίσχυσης: {0} dB",
-            "mode": {
-                "dynamic": "Η ομαλοποίηση έντασης ήχου είναι ενεργή στη δυναμική λειτουργία.",
-                "measurement_only": "Η ομαλοποίηση της έντασης ήχου είναι ενεργή με βάση μια αποθηκευμένη μέτρηση της (ενσωματωμένης) έντασης του ήχου.",
-                "measurement_album": "Η ομαλοποίηση της έντασης ήχου είναι ενεργή με βάση μια αποθηκευμένη μέτρηση της (ενσωματωμένης) έντασης του άλμπουμ.",
-                "fixed_gain": "Η ομαλοποίηση έντασης ήχου είναι ενεργή με βάση τη διόρθωση σταθερής ενίσχυσης."
-            }
-        },
-        "click_to_expand": "Κάντε κλικ για να εμφανιστούν όλοι οι παίκτες",
-        "output_format_pcm_info": "Ο ήχος διαβιβάζεται ως PCM στον πάροχο παίκτη. Ο πάροχος παίκτη μπορεί στη συνέχεια να μετατρέψει τον ήχο σε διαφορετική μορφή πριν τον στείλει στον παίκτη."
+            "bit_depth": "Βάθος bit: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Επιλέξτε πηγή",
     "play_replace_next": "Αναπαραγωγή επόμενου (διαγραφή ουράς)",
     "all_enqueue_options": "Ολες οι επιλογές εισαγωγής στην ουρά",

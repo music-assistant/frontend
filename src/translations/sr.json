@@ -742,10 +742,6 @@
     "podcast_episode": "Епизода",
     "podcast_episodes": "Епизоде",
     "play_from_here": "Пусти одавде",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (албум)",
-    "loudness_dynamic": "Динамичка нормализација јачине звука",
-    "loudness_fixed": "Корекција фиксног појачања",
     "dsp_active": "Активно",
     "currently_playing_players": "Тренутно се репродукује",
     "all_players": "Сви плејери",
@@ -755,42 +751,21 @@
     "streamdetails": {
         "input_header": "Улаз",
         "output_header": "Излаз",
-        "output_format_info": "Аудио се шаље у {0} формату",
         "eq_band_count": "{0} опсеге(а)",
         "eq_band_count_singular": "1 опсег",
         "input_gain": "Улазно појачање ({0} dB)",
         "output_gain": "Излазно појачање ({0} dB)",
         "output_limiter": "Ограничивач излаза",
-        "output_limiter_info": "Аутоматски смањује веома гласне звукове како би се спречило изобличење и заштитили звучници",
-        "dsp_unsupported": "„DSP“ није подржан",
-        "dsp_disabled_by_unsupported_group": "Овај провајдер плејера не подржава „DSP“ са синхронизованом репродукцијом",
         "file_info": {
             "container": "Контејнер: {0}",
             "codec": "Кодек: {0}",
             "bit_rate": "Брзина преноса: {0} kbps",
             "sample_rate": "Фреквенција узорка {0} kHz",
             "channels": "Канали: {0}",
-            "bit_depth": "Дубина бита: {0}",
-            "processing_notice": "Аудио се обрађује интерно као 32-битни „float PCM“"
+            "bit_depth": "Дубина бита: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Циљни ниво: {0} LUFS",
-            "integrated_loudness": "Измерена (интегрисана) јачина звука: {0} LUFS",
-            "integrated_album_loudness": "Гласноћа албума: {0} LUFS",
-            "applied_gain_correction": "Примењена корекција појачања: {0} dB",
-            "mode": {
-                "dynamic": "Нормализација јачине звука је активна у динамичком режиму.",
-                "measurement_only": "Нормализација јачине звука је активна на основу сачуваног мерења (интегрисане) јачине звука.",
-                "measurement_album": "Нормализација јачине звука је активна на основу сачуваног мерења (интегрисане) гласноће албума.",
-                "fixed_gain": "Нормализација јачине звука је активна на основу корекције фиксног појачања."
-            }
-        },
-        "click_to_expand": "Кликните да бисте видели све плејере",
-        "output_format_pcm_info": "Аудио се прослеђује као „PCM“ провајдеру плејера. Провадер плејера затим може конвертовати звук у други формат пре него што га пошаље плејеру.",
-        "more_info": "Више информација",
-        "player_not_found": "Плејер није пронађен"
+        "more_info": "Више информација"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Изаберите извор",
     "play_replace_next": "Пусти следеће (обриши ред за репродукцију)",
     "all_enqueue_options": "Све опције стављања у ред",

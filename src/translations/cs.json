@@ -619,10 +619,6 @@
     "podcast_episode": "Epizoda",
     "podcast_episodes": "Epizody",
     "play_from_here": "Přehrát odtud",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamická normalizace hlasitosti",
-    "loudness_fixed": "Pevná korekce zisku",
     "dsp_active": "Aktivní",
     "currently_playing_players": "Právě hraje",
     "all_players": "Všechny přehrávače",
@@ -632,40 +628,20 @@
     "streamdetails": {
         "input_header": "Vstup",
         "output_header": "Výstup",
-        "output_format_info": "Zvuk je odesílán ve formátu {0}",
         "eq_band_count": "{0} pásma",
         "eq_band_count_singular": "1 pásmo",
         "input_gain": "Vstupní zesílení ({0} dB)",
         "output_gain": "Výstupní zisk ({0} dB)",
         "output_limiter": "Omezovač výstupu",
-        "output_limiter_info": "Automaticky redukuje velmi hlasité zvuky, aby se zabránilo zkreslení a ochránily vaše reproduktory",
-        "dsp_unsupported": "DSP není podporováno",
-        "dsp_disabled_by_unsupported_group": "Tento poskytovatel přehrávače nepodporuje DSP se synchronizovaným přehráváním",
         "file_info": {
             "container": "Kontejner: {0}",
             "codec": "Kodek: {0}",
             "bit_rate": "Přenosová rychlost: {0} kbps",
             "sample_rate": "Vzorkovací frekvence: {0} kHz",
             "channels": "Kanály: {0}",
-            "bit_depth": "Bitová hloubka: {0}",
-            "processing_notice": "Zvuk je interně zpracováván jako 32bitová PCM s plovoucí čárkou."
-        },
-        "volume_normalization": {
-            "target_level": "Cílová úroveň: {0} LUFS",
-            "integrated_loudness": "Naměřená (integrovaná) hlasitost: {0} LUFS",
-            "integrated_album_loudness": "Hlasitost alba: {0} LUFS",
-            "applied_gain_correction": "Použitá korekce zisku: {0} dB",
-            "mode": {
-                "dynamic": "Normalizace hlasitosti je aktivní v dynamickém režimu.",
-                "measurement_only": "Normalizace hlasitosti je aktivní na základě uloženého měření (integrované) hlasitosti zvuku.",
-                "measurement_album": "Normalizace hlasitosti je aktivní na základě uloženého měření (integrované) hlasitosti alba.",
-                "fixed_gain": "Normalizace hlasitosti je aktivní na základě pevné korekce zisku."
-            }
-        },
-        "click_to_expand": "Kliknutím zobrazíte všechny přehrávače",
-        "output_format_pcm_info": "Zvuk je poskytovateli přehrávače předáván jako PCM. Zprostředkovatel přehrávače pak může zvuk před odesláním do přehrávače převést do jiného formátu."
+            "bit_depth": "Bitová hloubka: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vyberte zdroj",
     "play_replace_next": "Přehrát další (vymazat frontu)",
     "all_enqueue_options": "Všechny možnosti fronty",

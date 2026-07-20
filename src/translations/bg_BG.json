@@ -547,8 +547,6 @@
     "podcast_episode": "Епизод",
     "podcast_episodes": "Епизоди",
     "play_from_here": "Възпроизвеждане от тук",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (албум)",
     "dsp_active": "Активен",
     "currently_playing_players": "В момента се възпроизвежда",
     "all_players": "Всички плейъри",
@@ -557,25 +555,15 @@
     "streamdetails": {
         "input_header": "Вход",
         "output_header": "Изход",
-        "output_format_info": "Аудиото се изпраща във формат {0}",
         "input_gain": "Входно усилване ({0} dB)",
         "output_gain": "Изходно усилване ({0} dB)",
-        "output_limiter_info": "Автоматично намалява много силните звуци, за да предотврати изкривяване и да защити високоговорителите ви",
-        "dsp_unsupported": "DSP не се поддържа",
         "file_info": {
             "container": "Контейнер: {0}",
             "codec": "Кодек: {0}",
             "channels": "Канали: {0}"
         },
-        "volume_normalization": {
-            "mode": {
-                "dynamic": "Нормализирането на силата на звука е активно в динамичен режим."
-            }
-        },
-        "click_to_expand": "Кликнете, за да видите всички плейъри",
         "more_info": "Повече информация"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Изберете източник",
     "play_replace_next": "Възпроизвеждане на следващия (изчистване на опашката)",
     "music_assistant_source": "Опашка на Music Assistant",

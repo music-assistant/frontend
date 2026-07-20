@@ -502,6 +502,7 @@ import { useDisplay } from "vuetify";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
+import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 
 const { name, mdAndUp } = useDisplay();
 
@@ -744,95 +745,11 @@ watch(
   },
 );
 
-// Waveform for the current track, rendered by PlayerTimeline instead of the flat bar.
-const waveformData = ref<number[] | null>(null);
-const waveformLoading = ref(false);
+// Waveform for the current track — loaded centrally by useActiveTrackWaveform.
+const { waveformBins: waveformData, waveformLoading } =
+  useActiveTrackWaveform();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
-let waveformLoadGeneration = 0;
-let waveformQueueItemId: string | undefined;
-let waveformDetailsTimer: ReturnType<typeof setTimeout> | null = null;
-const WAVEFORM_DETAILS_TIMEOUT_MS = 2000;
-const fetchWaveform = async () => {
-  const generation = ++waveformLoadGeneration;
-
-  const queueItemId = store.curQueueItem?.queue_item_id;
-  if (queueItemId !== waveformQueueItemId) {
-    waveformQueueItemId = queueItemId;
-    waveformData.value = null;
-  }
-
-  const mediaItem = store.curQueueItem?.media_item;
-  // Analysis is keyed by the provider-native (streaming) item id, not the library id.
-  const streamDetails = store.curQueueItem?.streamdetails;
-  if (
-    !showWaveformPref.value ||
-    !store.showFullscreenPlayer ||
-    mediaItem?.media_type !== MediaType.TRACK
-  ) {
-    waveformData.value = null;
-    waveformLoading.value = false;
-    clearWaveformDetailsTimer();
-    return;
-  }
-  if (!streamDetails) {
-    waveformLoading.value = true;
-    clearWaveformDetailsTimer();
-    waveformDetailsTimer = setTimeout(() => {
-      waveformDetailsTimer = null;
-      if (generation === waveformLoadGeneration) {
-        waveformLoading.value = false;
-      }
-    }, WAVEFORM_DETAILS_TIMEOUT_MS);
-    return;
-  }
-
-  clearWaveformDetailsTimer();
-  waveformLoading.value = true;
-  try {
-    const waveform = await api.getWaveForm(
-      streamDetails.item_id,
-      streamDetails.provider,
-    );
-    // a newer track change started while awaiting; this result is stale
-    if (generation !== waveformLoadGeneration) return;
-    waveformData.value = waveform?.length ? waveform : null;
-    waveformLoading.value = false;
-  } catch {
-    // No analysis available; PlayerTimeline falls back to the flat progress bar.
-    if (generation !== waveformLoadGeneration) return;
-    waveformData.value = null;
-    waveformLoading.value = false;
-  }
-};
-
-const clearWaveformDetailsTimer = () => {
-  if (waveformDetailsTimer === null) return;
-  clearTimeout(waveformDetailsTimer);
-  waveformDetailsTimer = null;
-};
-
-onBeforeUnmount(clearWaveformDetailsTimer);
-
-// Streamdetails can arrive after the queue item switches, so watch both ids.
-watch(
-  () => [
-    store.curQueueItem?.queue_item_id,
-    store.curQueueItem?.streamdetails?.item_id,
-  ],
-  fetchWaveform,
-  { immediate: true },
-);
-
-// FrontendConfig reloads the app on save, but react to live changes anyway (multi-tab sync).
-watch(showWaveformPref, fetchWaveform);
-
-watch(
-  () => store.showFullscreenPlayer,
-  (isOpen) => {
-    if (isOpen) fetchWaveform();
-  },
-);
 
 const titleFontSize = computed(() => {
   switch (name.value) {

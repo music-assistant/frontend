@@ -2155,9 +2155,25 @@ export class MusicAssistantApi {
     });
   }
 
-  public async getDSPPresets(): Promise<DSPConfigPreset[]> {
+  public async applyDSPPreset(
+    player_id: string,
+    preset_id: string,
+  ): Promise<DSPConfig> {
+    return this.sendCommand("config/players/dsp/apply_preset", {
+      player_id,
+      preset_id,
+    });
+  }
+
+  public async getDSPPresets(
+    suppressGlobalError = false,
+  ): Promise<DSPConfigPreset[]> {
     // Return all known DSP presets
-    return this.sendCommand("config/dsp_presets/get");
+    return this.sendCommand(
+      "config/dsp_presets/get",
+      undefined,
+      suppressGlobalError ? { suppressGlobalError: true } : undefined,
+    );
   }
 
   public async saveDSPPreset(

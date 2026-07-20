@@ -756,10 +756,6 @@
     "podcast_episode": "插曲",
     "podcast_episodes": "剧集",
     "play_from_here": "从此处开始播放",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS（唱片集）",
-    "loudness_dynamic": "动态音量标准化",
-    "loudness_fixed": "固定增益校正",
     "dsp_active": "激活",
     "currently_playing_players": "正在播放",
     "all_players": "所有播放器",
@@ -769,42 +765,21 @@
     "streamdetails": {
         "input_header": "输入",
         "output_header": "输出",
-        "output_format_info": "音频以{0}格式发送",
         "eq_band_count": "{0}乐队",
         "eq_band_count_singular": "1个乐队",
         "input_gain": "输入增益 ({0} dB)",
         "output_gain": "输出增益 ( {0} dB)",
         "output_limiter": "输出限制器",
-        "output_limiter_info": "自动降低非常响亮的声音，防止失真并保护扬声器",
-        "dsp_unsupported": "不支持 DSP",
-        "dsp_disabled_by_unsupported_group": "该播放器提供程序不支持同步播放的 DSP",
         "file_info": {
             "container": "容器： {0}",
             "codec": "编解码器： {0}",
             "bit_rate": "比特率： {0} kbps",
             "sample_rate": "采样率： {0} kHz",
             "channels": "通道： {0}",
-            "bit_depth": "位深度： {0}",
-            "processing_notice": "音频在内部以 32 位浮点处理PCM"
+            "bit_depth": "位深度： {0}"
         },
-        "volume_normalization": {
-            "target_level": "目标级别： {0} LUFS",
-            "integrated_loudness": "测量（综合）响度： {0} LUFS",
-            "integrated_album_loudness": "唱片集响度： {0} LUFS",
-            "applied_gain_correction": "应用增益校正： {0} dB",
-            "mode": {
-                "dynamic": "音量标准化在动态模式下处于活动状态。",
-                "measurement_only": "音量正常化是根据音频（综合）响度的存储测量值激活的。",
-                "measurement_album": "音量归一化功能是根据已存储的唱片集响度（综合）测量结果激活的。",
-                "fixed_gain": "基于固定增益校正音量"
-            }
-        },
-        "click_to_expand": "点击显示所有播放器",
-        "output_format_pcm_info": "音频以 PCM 格式传递给播放器提供程序。播放器提供程序可能会将音频转换为其他格式，然后再发送给播放器。",
-        "more_info": "更多信息",
-        "player_not_found": "未找到播放器"
+        "more_info": "更多信息"
     },
-    "volume_normalization_gain_correction": "{0}分贝",
     "select_source": "选择来源",
     "play_replace_next": "播放下一个（清除队列）",
     "all_enqueue_options": "所有队列选项",

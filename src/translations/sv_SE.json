@@ -756,10 +756,6 @@
     "podcast_episode": "Avsnitt",
     "podcast_episodes": "Avsnitt",
     "play_from_here": "Spela härifrån",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamisk volymnormalisering",
-    "loudness_fixed": "Korrigering av fast förstärkning",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Spelar just nu",
     "all_players": "Alla spelare",
@@ -769,42 +765,21 @@
     "streamdetails": {
         "input_header": "Ingång",
         "output_header": "Utgång",
-        "output_format_info": "Ljud skickas i {0} format",
         "eq_band_count": "{0} band",
         "eq_band_count_singular": "1 band",
         "input_gain": "Ingångsförstärkning ({0} dB)",
         "output_gain": "Utgångsförstärkning ({0} dB)",
         "output_limiter": "Utgångsbegränsare",
-        "output_limiter_info": "Reducerar automatiskt mycket höga ljud för att förhindra distorsion och skydda dina högtalare",
-        "dsp_unsupported": "DSP stöds inte",
-        "dsp_disabled_by_unsupported_group": "Denna spelarleverantör stöder inte DSP med synkroniserad uppspelning",
         "file_info": {
             "container": "Behållare: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Bithastighet: {0} kbps",
             "sample_rate": "Samplingsfrekvens: {0} kHz",
             "channels": "Kanaler: {0}",
-            "bit_depth": "Bitdjup: {0}",
-            "processing_notice": "Ljud bearbetas internt som 32-bitars flytande PCM"
+            "bit_depth": "Bitdjup: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Målnivå: {0} LUFS",
-            "integrated_loudness": "Uppmätt (integrerad) ljudstyrka: {0} LUFS",
-            "integrated_album_loudness": "Albumets ljudstyrka: {0} LUFS",
-            "applied_gain_correction": "Tillämpad förstärkningskorrigering: {0} dB",
-            "mode": {
-                "dynamic": "Volymnormalisering är aktiv i dynamiskt läge.",
-                "measurement_only": "Volymnormalisering är aktiv baserat på en lagrad mätning av ljudets (integrerade) högstyrka.",
-                "measurement_album": "Volymnormalisering är aktiv baserat på en lagrad mätning av albumets (integrerade) ljudstyrka.",
-                "fixed_gain": "Volymnormalisering är aktiv baserat på korrigering av fast förstärkning."
-            }
-        },
-        "click_to_expand": "Klicka för att visa alla spelare",
-        "output_format_pcm_info": "Ljud skickas som PCM till spelarleverantören. Spelleverantören kan sedan konvertera ljudet till ett annat format innan det skickas till spelaren.",
-        "more_info": "Mer information",
-        "player_not_found": "Spelaren hittades inte"
+        "more_info": "Mer information"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Välj källa",
     "play_replace_next": "Spela härnäst (rensa kön)",
     "all_enqueue_options": "Alla alternativ för att lägga till i kö",
