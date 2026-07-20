@@ -107,7 +107,7 @@ export const routes: RouteRecordRaw[] = [
         name: "now-playing",
         component: () =>
           import(
-            /* webpackChunkName: "now-playing" */ "@/views/NowPlayingView.vue"
+            /* webpackChunkName: "now-playing" */ "@/views/DashboardNowPlayingView.vue"
           ),
       },
     ],

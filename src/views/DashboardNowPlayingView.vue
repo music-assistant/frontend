@@ -40,7 +40,12 @@
       </div>
 
       <div class="now-playing-timeline">
-        <PlayerTimeline :show-labels="true" :color="timelineColor" />
+        <PlayerTimeline
+          :show-labels="true"
+          :color="timelineColor"
+          :waveform="waveformData"
+          :waveform-loading="waveformLoading"
+        />
       </div>
     </template>
   </div>
@@ -49,6 +54,7 @@
 <script setup lang="ts">
 import MarqueeText from "@/components/MarqueeText.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   type ImageColorPalette,
@@ -75,6 +81,12 @@ onMounted(() => {
 
 // Synced marquee scrolling for the title/artist, same as the fullscreen player.
 const marqueeSync = new MarqueeTextSync();
+
+// Waveform for the current track, loaded centrally like the fullscreen player.
+// The dashboard always shows the waveform by design: this session runs as a
+// guest user which has no show_waveform preference, so it defaults to on.
+const { waveformBins: waveformData, waveformLoading } =
+  useActiveTrackWaveform();
 
 const artworkUrl = computed(
   () => getMediaImageUrl(store.activePlayer?.current_media?.image_url) || null,

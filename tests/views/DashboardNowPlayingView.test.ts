@@ -1,4 +1,4 @@
-import NowPlayingView from "@/views/NowPlayingView.vue";
+import DashboardNowPlayingView from "@/views/DashboardNowPlayingView.vue";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -56,7 +56,7 @@ vi.mock("@vueuse/core", () => ({
 // which is out of scope here; MarqueeText needs a slot passthrough so title/
 // artist text stays assertable instead of collapsing to an empty stub.
 function mountView() {
-  return mount(NowPlayingView, {
+  return mount(DashboardNowPlayingView, {
     global: {
       stubs: {
         PlayerTimeline: true,
@@ -66,7 +66,7 @@ function mountView() {
   });
 }
 
-describe("NowPlayingView", () => {
+describe("DashboardNowPlayingView", () => {
   beforeEach(() => {
     routeMock.query = {};
     storeMock.activePlayerId = undefined;

@@ -1,14 +1,5 @@
 <template>
   <div class="fullscreen-header-controls">
-    <!-- cast this player's now-playing screen to a dashboard device -->
-    <ShowDashboardButton
-      :path="dashboardPath"
-      variant="ghost-outline"
-      :button-size="showLabel ? 'xs' : 'icon-xs'"
-      :icon-size="16"
-      content-class="z-[10001]"
-    />
-
     <!-- sleep timer countdown (only while a timer is running) -->
     <SleepTimerBtn pill />
 
@@ -158,6 +149,15 @@
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+
+    <!-- cast this player's now-playing screen to a dashboard device -->
+    <ShowDashboardButton
+      :path="dashboardPath"
+      variant="ghost-outline"
+      :button-size="showLabel ? 'xs' : 'icon-xs'"
+      :icon-size="16"
+      content-class="z-[10001]"
+    />
 
     <!-- audio overlay: shown only while an overlay sound is active. Clicking it
          reopens the overlay dialog to adjust the sound or volume. -->
