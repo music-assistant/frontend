@@ -25,6 +25,7 @@
     "artists": "Artists",
     "browse": "Browse",
     "cast_dashboard": {
+        "disconnect": "Disconnect",
         "loading": "Loading devices...",
         "no_devices": "No cast devices found",
         "playing_hint": "Playing music - casting will stop it",

@@ -337,6 +337,7 @@ export enum EventType {
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
+  DASHBOARD_SESSIONS_UPDATED = "dashboard_sessions_updated",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -1239,6 +1240,13 @@ export interface DashboardDevice {
   provider_instance: string;
   name: string;
   player_id: string | null; // linked MA player, if any
+}
+
+export interface DashboardSession {
+  // An active dashboard cast session on a device.
+  device_id: string;
+  provider_instance: string;
+  path: string;
 }
 
 export enum TaskStatus {

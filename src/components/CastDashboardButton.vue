@@ -4,6 +4,7 @@
       <Button
         :variant="variant"
         :size="buttonSize"
+        :class="activeSession ? activePillClass : ''"
         :aria-label="$t('tooltip.cast_dashboard')"
         :title="$t('tooltip.cast_dashboard')"
         @click="loadDevices"
@@ -49,7 +50,19 @@
             </span>
           </div>
         </div>
+        <Check v-if="isActiveDevice(device)" class="ml-auto size-4" />
       </DropdownMenuItem>
+      <template v-if="activeSession">
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          data-testid="cast-dashboard-disconnect"
+          @click="disconnect"
+        >
+          <Unplug />
+          <span>{{ $t("cast_dashboard.disconnect") }}</span>
+        </DropdownMenuItem>
+      </template>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
@@ -59,16 +72,23 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button, type ButtonVariants } from "@/components/ui/button";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
-import { type DashboardDevice, PlaybackState } from "@/plugins/api/interfaces";
+import {
+  type DashboardDevice,
+  type DashboardSession,
+  type EventMessage,
+  EventType,
+  PlaybackState,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { TvMinimal } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { Check, TvMinimal, Unplug } from "@lucide/vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 
 const props = withDefaults(
@@ -88,6 +108,7 @@ const props = withDefaults(
 const open = ref(false);
 const loading = ref(false);
 const devices = ref<DashboardDevice[]>([]);
+const sessions = ref<DashboardSession[]>([]);
 
 // Chromecast dashboards can't be cast from a cast viewer session itself, and
 // the button only makes sense while the chromecast provider is loaded.
@@ -99,17 +120,35 @@ const chromecastAvailable = computed(
     ),
 );
 
-// ProviderIcon resolves an instance id to its provider's icon itself, so this
-// only needs to gate rendering when the instance isn't (or no longer) loaded.
-function deviceHasProvider(device: DashboardDevice): boolean {
-  return !!api.providers?.[device.provider_instance];
-}
+// Solid primary pill for the active state, same treatment as the
+// autoplay/crossfade toggles on the fullscreen player header.
+const activePillClass =
+  "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
 
-function isPlayingAudio(device: DashboardDevice): boolean {
-  if (!device.player_id) return false;
-  return (
-    api.players?.[device.player_id]?.playback_state === PlaybackState.PLAYING
+// The session (if any) currently showing this button's own dashboard route.
+const activeSession = computed(() =>
+  sessions.value.find((session) => session.path === props.path),
+);
+
+onMounted(() => {
+  if (!chromecastAvailable.value) return;
+  fetchSessions();
+  const unsubscribe = api.subscribe(
+    EventType.DASHBOARD_SESSIONS_UPDATED,
+    (evt: EventMessage) => {
+      sessions.value = evt.data as DashboardSession[];
+    },
   );
+  onBeforeUnmount(unsubscribe);
+});
+
+async function fetchSessions() {
+  try {
+    sessions.value =
+      await api.sendCommand<DashboardSession[]>("dashboard/sessions");
+  } catch (error) {
+    console.error("Failed to load dashboard sessions:", error);
+  }
 }
 
 async function loadDevices() {
@@ -127,6 +166,22 @@ async function loadDevices() {
 
 async function selectDevice(device: DashboardDevice) {
   open.value = false;
+  if (isActiveDevice(device)) return; // already showing here
+
+  const previousSession = activeSession.value;
+  if (previousSession) {
+    try {
+      await api.sendCommand("dashboard/hide", {
+        provider_instance: previousSession.provider_instance,
+        device_id: previousSession.device_id,
+      });
+    } catch (error) {
+      // Still attempt to show on the newly selected device even if stopping
+      // the previous session failed.
+      console.error("Failed to stop previous cast dashboard:", error);
+    }
+  }
+
   try {
     await api.sendCommand("dashboard/show", {
       provider_instance: device.provider_instance,
@@ -139,5 +194,44 @@ async function selectDevice(device: DashboardDevice) {
     // message (e.g. remote access disabled) via a toast.
     console.error("Failed to start cast dashboard:", error);
   }
+}
+
+async function disconnect() {
+  open.value = false;
+  const session = activeSession.value;
+  if (!session) return;
+
+  // Optimistically clear locally; dashboard_sessions_updated confirms it.
+  sessions.value = sessions.value.filter((s) => s !== session);
+  try {
+    await api.sendCommand("dashboard/hide", {
+      provider_instance: session.provider_instance,
+      device_id: session.device_id,
+    });
+  } catch (error) {
+    console.error("Failed to stop cast dashboard:", error);
+  }
+}
+
+// ProviderIcon resolves an instance id to its provider's icon itself, so this
+// only needs to gate rendering when the instance isn't (or no longer) loaded.
+function deviceHasProvider(device: DashboardDevice): boolean {
+  return !!api.providers?.[device.provider_instance];
+}
+
+function isPlayingAudio(device: DashboardDevice): boolean {
+  if (!device.player_id) return false;
+  return (
+    api.players?.[device.player_id]?.playback_state === PlaybackState.PLAYING
+  );
+}
+
+function isActiveDevice(device: DashboardDevice): boolean {
+  const session = activeSession.value;
+  return (
+    !!session &&
+    session.device_id === device.device_id &&
+    session.provider_instance === device.provider_instance
+  );
 }
 </script>
