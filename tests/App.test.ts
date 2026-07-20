@@ -51,7 +51,7 @@ const {
   const authManagerMock = {
     bindPersistentToken: vi.fn(),
     getToken: vi.fn(),
-    isCastViewer: vi.fn(() => false),
+    isDashboardViewer: vi.fn(() => false),
     isGuestAccessSession: vi.fn(() => guestType.value !== null),
     isMusicQuizGuest: vi.fn(() => guestType.value === "music_quiz"),
     isPartyGuest: vi.fn(() => guestType.value === "party"),

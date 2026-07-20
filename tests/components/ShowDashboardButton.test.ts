@@ -1,4 +1,4 @@
-import CastDashboardButton from "@/components/CastDashboardButton.vue";
+import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import {
   EventType,
   PlaybackState,
@@ -10,14 +10,14 @@ import { Check } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, isCastViewerMock, toastMock } = vi.hoisted(() => ({
+const { apiMock, isDashboardViewerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     providers: {} as Record<string, ProviderInstance>,
     players: {} as Record<string, Player>,
     sendCommand: vi.fn(),
     subscribe: vi.fn(),
   },
-  isCastViewerMock: vi.fn(() => false),
+  isDashboardViewerMock: vi.fn(() => false),
   toastMock: { success: vi.fn(), error: vi.fn() },
 }));
 
@@ -27,7 +27,7 @@ vi.mock("@/plugins/api", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
-    isCastViewer: isCastViewerMock,
+    isDashboardViewer: isDashboardViewerMock,
   },
 }));
 
@@ -86,7 +86,7 @@ function captureSubscription() {
 
 function mountButton(path = "/party") {
   const passthroughStub = { template: "<div><slot /></div>" };
-  return mount(CastDashboardButton, {
+  return mount(ShowDashboardButton, {
     props: { path },
     global: {
       stubs: {
@@ -110,7 +110,7 @@ function mountButton(path = "/party") {
   });
 }
 
-describe("CastDashboardButton", () => {
+describe("ShowDashboardButton", () => {
   beforeEach(() => {
     for (const key of Object.keys(apiMock.providers)) {
       delete apiMock.providers[key];
@@ -122,8 +122,8 @@ describe("CastDashboardButton", () => {
     apiMock.subscribe.mockReset();
     apiMock.subscribe.mockImplementation(() => vi.fn());
     mockCommands();
-    isCastViewerMock.mockReset();
-    isCastViewerMock.mockReturnValue(false);
+    isDashboardViewerMock.mockReset();
+    isDashboardViewerMock.mockReturnValue(false);
     toastMock.success.mockReset();
     toastMock.error.mockReset();
   });
@@ -133,9 +133,9 @@ describe("CastDashboardButton", () => {
     expect(wrapper.find("button").exists()).toBe(false);
   });
 
-  it("renders nothing for a cast viewer session even if chromecast is loaded", () => {
+  it("renders nothing for a dashboard viewer session even if chromecast is loaded", () => {
     apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
-    isCastViewerMock.mockReturnValue(true);
+    isDashboardViewerMock.mockReturnValue(true);
 
     const wrapper = mountButton();
     expect(wrapper.find("button").exists()).toBe(false);
@@ -172,9 +172,9 @@ describe("CastDashboardButton", () => {
     const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
     expect(devices).toHaveLength(2);
     expect(devices[0]!.text()).toContain("Living Room TV");
-    expect(devices[0]!.text()).toContain("cast_dashboard.playing_hint");
+    expect(devices[0]!.text()).toContain("dashboard.playing_hint");
     expect(devices[1]!.text()).toContain("Bedroom TV");
-    expect(devices[1]!.text()).not.toContain("cast_dashboard.playing_hint");
+    expect(devices[1]!.text()).not.toContain("dashboard.playing_hint");
   });
 
   it("shows a provider icon per device, skipping it for an unknown provider instance", async () => {
@@ -239,9 +239,7 @@ describe("CastDashboardButton", () => {
       device_id: "device-1",
       path: "/music-quiz",
     });
-    expect(toastMock.success).toHaveBeenCalledWith(
-      "cast_dashboard.started:Kitchen",
-    );
+    expect(toastMock.success).toHaveBeenCalledWith("dashboard.started:Kitchen");
   });
 
   it("leaves error toasting to the global command handler on failure", async () => {

@@ -406,13 +406,13 @@ import type {
   User,
 } from "@/plugins/api/interfaces";
 import {
-  CAST_VIEWER_PATH_STORAGE_KEY,
+  DASHBOARD_VIEWER_PATH_STORAGE_KEY,
   GUEST_REMOTE_ID_STORAGE_KEY,
   GUEST_SERVER_ADDRESS_STORAGE_KEY,
   PENDING_JOIN_CODE_STORAGE_KEY,
   PENDING_JOIN_TYPE_STORAGE_KEY,
 } from "@/helpers/guest_session";
-import { sanitizeCastViewerPath } from "@/helpers/cast_viewer_access";
+import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
@@ -732,24 +732,24 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
 };
 
 /**
- * Exchange a cast code (same code system as guest join codes) for a JWT,
+ * Exchange a dashboard code (same code system as guest join codes) for a JWT,
  * then pin the session to its dashboard route and clean up the URL.
  */
-const completeCastAuth = async (
-  castCode: string,
+const completeDashboardAuth = async (
+  dashboardCode: string,
   rawPath: string | null,
 ): Promise<boolean> => {
-  const path = sanitizeCastViewerPath(rawPath);
-  if (!(await tryGuestCodeAuth(castCode))) {
+  const path = sanitizeDashboardViewerPath(rawPath);
+  if (!(await tryGuestCodeAuth(dashboardCode))) {
     return false;
   }
 
-  sessionStorage.setItem(CAST_VIEWER_PATH_STORAGE_KEY, path);
+  sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, path);
   void router.replace(path);
 
   const urlParams = new URLSearchParams(window.location.search);
   urlParams.delete("remote_id");
-  urlParams.delete("cast");
+  urlParams.delete("dashboard");
   urlParams.delete("path");
   const queryString = urlParams.toString();
   window.history.replaceState(
@@ -779,10 +779,10 @@ const setPendingGuestAuth = (code: string, type: "local" | "remote") => {
 function hasGuestConnectionContext(): boolean {
   return (
     authManager.isGuestAccessSession() ||
-    authManager.isCastViewer() ||
+    authManager.isDashboardViewer() ||
     sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY) !== null ||
     new URLSearchParams(window.location.search).has("join") ||
-    new URLSearchParams(window.location.search).has("cast")
+    new URLSearchParams(window.location.search).has("dashboard")
   );
 }
 
@@ -950,9 +950,9 @@ const autoConnect = async () => {
   const urlRemoteId = urlParams.get("remote_id");
   // Guest code is the short code (e.g., "ABCD1234") exchanged for JWT
   const urlJoinCode = urlParams.get("join");
-  // Cast code: same short-code exchange, used by a Chromecast dashboard
+  // Dashboard code: same short-code exchange, used by a Chromecast dashboard
   // session instead of a guest join. Carries its own destination route.
-  const urlCastCode = urlParams.get("cast");
+  const urlDashboardCode = urlParams.get("dashboard");
 
   // Also check for pending guest code from sessionStorage (survives SW reload)
   const pendingJoinCode = sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY);
@@ -1032,10 +1032,10 @@ const autoConnect = async () => {
     }
   }
 
-  // Remote-connected cast dashboard session (e.g. a Chromecast receiver
+  // Remote-connected dashboard viewer session (e.g. a Chromecast receiver
   // iframing this frontend). Unlike guest join codes, a mid-connection
   // service worker reload isn't recovered - re-casting issues a fresh code.
-  if (urlRemoteId && urlCastCode) {
+  if (urlRemoteId && urlDashboardCode) {
     const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
     if (cleanRemoteId.length === 26) {
@@ -1052,7 +1052,9 @@ const autoConnect = async () => {
         emit("connected", transport);
 
         if (await waitForApiConnection(15000)) {
-          if (await completeCastAuth(urlCastCode, urlParams.get("path"))) {
+          if (
+            await completeDashboardAuth(urlDashboardCode, urlParams.get("path"))
+          ) {
             return; // Success - App.vue will complete initialization
           }
         }
@@ -1064,7 +1066,7 @@ const autoConnect = async () => {
         step.value = "error";
         return;
       } catch (error) {
-        console.error("[Login] Remote cast connection failed:", error);
+        console.error("[Login] Remote dashboard connection failed:", error);
         connectionError.value =
           error instanceof Error
             ? error.message
@@ -1169,8 +1171,8 @@ const autoConnect = async () => {
     }
   }
 
-  // Handle local cast code (no remote_id, just the cast code)
-  if (urlCastCode && !urlRemoteId) {
+  // Handle local dashboard code (no remote_id, just the dashboard code)
+  if (urlDashboardCode && !urlRemoteId) {
     isHostedWithAPI.value = await checkIfHostedWithAPI();
 
     if (isHostedWithAPI.value) {
@@ -1187,7 +1189,9 @@ const autoConnect = async () => {
         emit("local-connect", address);
 
         if (await waitForApiConnection()) {
-          if (await completeCastAuth(urlCastCode, urlParams.get("path"))) {
+          if (
+            await completeDashboardAuth(urlDashboardCode, urlParams.get("path"))
+          ) {
             return; // Success - App.vue will take over
           }
         }
@@ -1199,7 +1203,7 @@ const autoConnect = async () => {
         step.value = "error";
         return;
       } catch (error) {
-        console.error("[Login] Local cast connection failed:", error);
+        console.error("[Login] Local dashboard connection failed:", error);
         connectionError.value =
           error instanceof Error
             ? error.message

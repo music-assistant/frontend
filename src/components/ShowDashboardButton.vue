@@ -5,8 +5,8 @@
         :variant="variant"
         :size="buttonSize"
         :class="activeSession ? activePillClass : ''"
-        :aria-label="$t('tooltip.cast_dashboard')"
-        :title="$t('tooltip.cast_dashboard')"
+        :aria-label="$t('tooltip.show_dashboard')"
+        :title="$t('tooltip.show_dashboard')"
         @click="loadDevices"
       >
         <TvMinimal :size="iconSize" />
@@ -18,14 +18,14 @@
         class="text-muted-foreground px-2 py-1.5 text-sm"
         data-testid="cast-dashboard-loading"
       >
-        {{ $t("cast_dashboard.loading") }}
+        {{ $t("dashboard.loading") }}
       </div>
       <div
         v-else-if="!devices.length"
         class="text-muted-foreground px-2 py-1.5 text-sm"
         data-testid="cast-dashboard-empty"
       >
-        {{ $t("cast_dashboard.no_devices") }}
+        {{ $t("dashboard.no_devices") }}
       </div>
       <DropdownMenuItem
         v-for="device in devices"
@@ -46,7 +46,7 @@
               v-if="isPlayingAudio(device)"
               class="text-muted-foreground truncate text-xs"
             >
-              {{ $t("cast_dashboard.playing_hint") }}
+              {{ $t("dashboard.playing_hint") }}
             </span>
           </div>
         </div>
@@ -60,7 +60,7 @@
           @click="disconnect"
         >
           <Unplug />
-          <span>{{ $t("cast_dashboard.disconnect") }}</span>
+          <span>{{ $t("dashboard.disconnect") }}</span>
         </DropdownMenuItem>
       </template>
     </DropdownMenuContent>
@@ -110,11 +110,11 @@ const loading = ref(false);
 const devices = ref<DashboardDevice[]>([]);
 const sessions = ref<DashboardSession[]>([]);
 
-// Chromecast dashboards can't be cast from a cast viewer session itself, and
-// the button only makes sense while the chromecast provider is loaded.
+// Chromecast dashboards can't be cast from a dashboard viewer session itself,
+// and the button only makes sense while the chromecast provider is loaded.
 const chromecastAvailable = computed(
   () =>
-    !authManager.isCastViewer?.() &&
+    !authManager.isDashboardViewer?.() &&
     Object.values(api.providers ?? {}).some(
       (provider) => provider.domain === "chromecast" && provider.available,
     ),
@@ -188,7 +188,7 @@ async function selectDevice(device: DashboardDevice) {
       device_id: device.device_id,
       path: props.path,
     });
-    toast.success($t("cast_dashboard.started", [device.name]));
+    toast.success($t("dashboard.started", [device.name]));
   } catch (error) {
     // The global sendCommand error handler already surfaces the server's
     // message (e.g. remote access disabled) via a toast.

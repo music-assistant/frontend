@@ -46,7 +46,7 @@ vi.mock("@/plugins/auth", () => ({
     clearGuestSession: mocks.clearGuestSession,
     getPersistentToken: mocks.getPersistentToken,
     getToken: mocks.getToken,
-    isCastViewer: () => false,
+    isDashboardViewer: () => false,
     isGuestAccessSession: () =>
       sessionStorage.getItem("ma_guest_access_token") !== null,
     leaveGuestSession: mocks.leaveGuestSession,

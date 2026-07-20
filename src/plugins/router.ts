@@ -1,6 +1,6 @@
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
-import { getCastViewerNavigationRedirect } from "@/helpers/cast_viewer_access";
-import { CAST_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
+import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { watch } from "vue";
 import {
   createRouter,
@@ -81,11 +81,11 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          // Cast viewer tokens are scoped like guest accounts and can't read
-          // provider configs, so they can't populate store.enabledPlugins.
-          // Trust the server here: a cast session only exists because it was
-          // created from an already-enabled party dashboard.
-          if (authManager.isCastViewer()) return;
+          // Dashboard viewer tokens are scoped like guest accounts and can't
+          // read provider configs, so they can't populate store.enabledPlugins.
+          // Trust the server here: a dashboard session only exists because it
+          // was created from an already-enabled party dashboard.
+          if (authManager.isDashboardViewer()) return;
 
           // Only allow access if party plugin is enabled
           if (!store.enabledPlugins.has("party")) {
@@ -602,18 +602,20 @@ router.beforeEach(async (to) => {
     return guestRedirect;
   }
 
-  // Cast viewer sessions are pinned to the dashboard route they were opened
-  // on and render kiosk-style, without navigation/player chrome.
-  if (authManager.isCastViewer()) {
+  // Dashboard viewer sessions are pinned to the dashboard route they were
+  // opened on and render kiosk-style, without navigation/player chrome.
+  if (authManager.isDashboardViewer()) {
     store.frameless = true;
-    const pinnedPath = sessionStorage.getItem(CAST_VIEWER_PATH_STORAGE_KEY);
-    const castRedirect = getCastViewerNavigationRedirect(
+    const pinnedPath = sessionStorage.getItem(
+      DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+    );
+    const dashboardRedirect = getDashboardViewerNavigationRedirect(
       true,
       pinnedPath,
       to.path,
     );
-    if (castRedirect) {
-      return castRedirect;
+    if (dashboardRedirect) {
+      return dashboardRedirect;
     }
   }
 

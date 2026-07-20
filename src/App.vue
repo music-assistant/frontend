@@ -36,12 +36,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
-import { sanitizeCastViewerPath } from "@/helpers/cast_viewer_access";
+import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
-import { CAST_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import {
   isMediaSessionDisabled,
   resetMediaSession,
@@ -165,7 +165,10 @@ const handleRemoteAuthenticated = async (credentials: {
     }
 
     // Update remote connection manager
-    if (!authManager.isGuestAccessSession() && !authManager.isCastViewer()) {
+    if (
+      !authManager.isGuestAccessSession() &&
+      !authManager.isDashboardViewer()
+    ) {
       remoteConnectionManager.rememberCurrentRemoteConnection();
     }
     remoteConnectionManager.setAuthenticated(
@@ -248,9 +251,9 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
 
   const isGuestAccessSession = authManager.isGuestAccessSession();
-  const isCastViewer = authManager.isCastViewer();
+  const isDashboardViewer = authManager.isDashboardViewer();
   const connectionIdentity = getCurrentAuthConnectionIdentity();
-  if (!isGuestAccessSession && !isCastViewer && connectionIdentity) {
+  if (!isGuestAccessSession && !isDashboardViewer && connectionIdentity) {
     authManager.bindPersistentToken(connectionIdentity);
   }
 
@@ -263,7 +266,7 @@ const completeInitialization = async () => {
 
   // TODO: Remove this migration code in v2.9 release
   // Migrate localStorage settings to user preferences (one-time migration)
-  if (!isGuestAccessSession && !isCastViewer) {
+  if (!isGuestAccessSession && !isDashboardViewer) {
     await migrateLocalStorageToUserPreferences();
   }
 
@@ -271,7 +274,7 @@ const completeInitialization = async () => {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
-  if (!isGuestAccessSession && !isCastViewer) {
+  if (!isGuestAccessSession && !isDashboardViewer) {
     // Full initialization for regular users
     await api.fetchState();
     // Drop persisted filters for providers that are no longer installed.
@@ -316,8 +319,8 @@ const completeInitialization = async () => {
       console.error("[App] Failed to check music_quiz status:", error);
       store.enabledPlugins.delete("music_quiz");
     }
-  } else if (isCastViewer) {
-    console.debug("[App] Cast viewer - fetching player/queue state only");
+  } else if (isDashboardViewer) {
+    console.debug("[App] Dashboard viewer - fetching player/queue state only");
     // Dashboards render live player/queue state, which regular guests don't need
     await api.fetchState();
   } else {
@@ -335,9 +338,9 @@ const completeInitialization = async () => {
     router.push("/settings");
   } else if (isGuestAccessSession) {
     router.push("/guest");
-  } else if (isCastViewer) {
-    const pinnedPath = sanitizeCastViewerPath(
-      sessionStorage.getItem(CAST_VIEWER_PATH_STORAGE_KEY),
+  } else if (isDashboardViewer) {
+    const pinnedPath = sanitizeDashboardViewerPath(
+      sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY),
     );
     router.replace(pinnedPath);
   }
@@ -535,7 +538,7 @@ onMounted(async () => {
 
   // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    if (authManager.isGuestAccessSession() || authManager.isCastViewer())
+    if (authManager.isGuestAccessSession() || authManager.isDashboardViewer())
       return;
 
     try {
@@ -555,7 +558,10 @@ onMounted(async () => {
 
   // Re-prune when the provider set changes at runtime.
   api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-    if (!authManager.isGuestAccessSession() && !authManager.isCastViewer()) {
+    if (
+      !authManager.isGuestAccessSession() &&
+      !authManager.isDashboardViewer()
+    ) {
       void pruneStaleProviderFilters();
     }
   });

@@ -105,7 +105,7 @@
         >
           <template #actions>
             <div class="flex items-center gap-2">
-              <CastDashboardButton
+              <ShowDashboardButton
                 path="/music-quiz"
                 variant="outline"
                 button-size="icon"
@@ -206,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-import CastDashboardButton from "@/components/CastDashboardButton.vue";
+import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
 import MusicQuizEndGameDialog from "@/components/music-quiz/MusicQuizEndGameDialog.vue";
 import {
