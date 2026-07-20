@@ -8,7 +8,7 @@
         :title="$t('tooltip.cast_dashboard')"
         @click="loadDevices"
       >
-        <Cast :size="iconSize" />
+        <TvMinimal :size="iconSize" />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
@@ -32,14 +32,22 @@
         data-testid="cast-dashboard-device"
         @click="selectDevice(device)"
       >
-        <div class="flex min-w-0 flex-col">
-          <span class="truncate">{{ device.name }}</span>
-          <span
-            v-if="isPlayingAudio(device)"
-            class="text-muted-foreground truncate text-xs"
-          >
-            {{ $t("cast_dashboard.playing_hint") }}
-          </span>
+        <div class="flex min-w-0 items-center gap-1.5">
+          <ProviderIcon
+            v-if="deviceHasProvider(device)"
+            class="shrink-0"
+            :domain="device.provider_instance"
+            :size="14"
+          />
+          <div class="flex min-w-0 flex-col">
+            <span class="truncate">{{ device.name }}</span>
+            <span
+              v-if="isPlayingAudio(device)"
+              class="text-muted-foreground truncate text-xs"
+            >
+              {{ $t("cast_dashboard.playing_hint") }}
+            </span>
+          </div>
         </div>
       </DropdownMenuItem>
     </DropdownMenuContent>
@@ -54,11 +62,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button, type ButtonVariants } from "@/components/ui/button";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
 import { type DashboardDevice, PlaybackState } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { Cast } from "@lucide/vue";
+import { TvMinimal } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -89,6 +98,12 @@ const chromecastAvailable = computed(
       (provider) => provider.domain === "chromecast" && provider.available,
     ),
 );
+
+// ProviderIcon resolves an instance id to its provider's icon itself, so this
+// only needs to gate rendering when the instance isn't (or no longer) loaded.
+function deviceHasProvider(device: DashboardDevice): boolean {
+  return !!api.providers?.[device.provider_instance];
+}
 
 function isPlayingAudio(device: DashboardDevice): boolean {
   if (!device.player_id) return false;

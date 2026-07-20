@@ -60,6 +60,11 @@ function mountButton(path = "/party") {
           template:
             '<button data-testid="cast-dashboard-device" @click="$emit(\'click\')"><slot /></button>',
         },
+        ProviderIcon: {
+          props: ["domain"],
+          template:
+            '<span data-testid="cast-dashboard-provider-icon" :data-domain="domain"></span>',
+        },
       },
     },
   });
@@ -125,6 +130,37 @@ describe("CastDashboardButton", () => {
     expect(devices[0]!.text()).toContain("cast_dashboard.playing_hint");
     expect(devices[1]!.text()).toContain("Bedroom TV");
     expect(devices[1]!.text()).not.toContain("cast_dashboard.playing_hint");
+  });
+
+  it("shows a provider icon per device, skipping it for an unknown provider instance", async () => {
+    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
+    apiMock.sendCommand.mockResolvedValueOnce([
+      {
+        device_id: "device-1",
+        provider_instance: "chromecast_1",
+        name: "Living Room TV",
+        player_id: null,
+      },
+      {
+        device_id: "device-2",
+        provider_instance: "unloaded_provider",
+        name: "Stale Device",
+        player_id: null,
+      },
+    ]);
+
+    const wrapper = mountButton();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
+    const icons = (device: (typeof devices)[number]) =>
+      device.findAll('[data-testid="cast-dashboard-provider-icon"]');
+    expect(icons(devices[0]!)).toHaveLength(1);
+    expect(icons(devices[0]!)[0]!.attributes("data-domain")).toBe(
+      "chromecast_1",
+    );
+    expect(icons(devices[1]!)).toHaveLength(0);
   });
 
   it("starts the dashboard on the selected device and toasts success", async () => {
