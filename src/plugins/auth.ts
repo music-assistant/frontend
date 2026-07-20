@@ -62,8 +62,7 @@ export class AuthManager {
     const token = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (!token) return null;
     const claims = this.decodeJWT(token);
-    if (isGuestAccessClaims(claims) || isDashboardViewerClaims(claims))
-      return null;
+    if (isGuestSessionClaims(claims)) return null;
     return localStorage.getItem(TOKEN_CONNECTION_STORAGE_KEY) ===
       connectionIdentity
       ? token
@@ -271,10 +270,7 @@ export class AuthManager {
     const guestToken = sessionStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
     if (guestToken) {
       const guestClaims = this.decodeJWT(guestToken);
-      if (
-        isGuestAccessClaims(guestClaims) ||
-        isDashboardViewerClaims(guestClaims)
-      ) {
+      if (isGuestSessionClaims(guestClaims)) {
         this.token = guestToken;
         this.claims = guestClaims;
         return;
@@ -286,11 +282,7 @@ export class AuthManager {
     const persistentClaims = persistentToken
       ? this.decodeJWT(persistentToken)
       : null;
-    if (
-      persistentToken &&
-      (isGuestAccessClaims(persistentClaims) ||
-        isDashboardViewerClaims(persistentClaims))
-    ) {
+    if (persistentToken && isGuestSessionClaims(persistentClaims)) {
       sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, persistentToken);
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
@@ -304,11 +296,7 @@ export class AuthManager {
     const persistentClaims = persistentToken
       ? this.decodeJWT(persistentToken)
       : null;
-    if (
-      persistentToken &&
-      (isGuestAccessClaims(persistentClaims) ||
-        isDashboardViewerClaims(persistentClaims))
-    ) {
+    if (persistentToken && isGuestSessionClaims(persistentClaims)) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       this.token = null;
       this.claims = null;
@@ -342,15 +330,14 @@ export class AuthManager {
   }
 }
 
-function isGuestAccessClaims(claims: JWTClaims | null): boolean {
+// Session-scoped tokens (party/quiz guests, dashboard viewers) live in
+// sessionStorage and are never treated as a persistent regular-user token.
+function isGuestSessionClaims(claims: JWTClaims | null): boolean {
   return (
     claims?.username === "party_guest" ||
-    claims?.username === "music_quiz_guest"
+    claims?.username === "music_quiz_guest" ||
+    claims?.username === "dashboard_viewer"
   );
-}
-
-function isDashboardViewerClaims(claims: JWTClaims | null): boolean {
-  return claims?.username === "dashboard_viewer";
 }
 
 // Export singleton instance

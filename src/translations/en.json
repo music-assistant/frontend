@@ -32,7 +32,6 @@
         "disconnect": "Disconnect {0}",
         "loading": "Loading devices...",
         "no_devices": "No cast devices found",
-        "playing_hint": "Playing music - casting will stop it",
         "started": "Casting to \"{0}\""
     },
     "delete_db": "Delete item from database",

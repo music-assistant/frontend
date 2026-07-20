@@ -40,15 +40,7 @@
             :domain="device.provider_instance"
             :size="14"
           />
-          <div class="flex min-w-0 flex-col">
-            <span class="truncate">{{ device.name }}</span>
-            <span
-              v-if="isPlayingAudio(device)"
-              class="text-muted-foreground truncate text-xs"
-            >
-              {{ $t("dashboard.playing_hint") }}
-            </span>
-          </div>
+          <span class="truncate">{{ device.name }}</span>
         </div>
         <Check v-if="isActiveDevice(device)" class="ml-auto size-4" />
       </DropdownMenuItem>
@@ -83,7 +75,6 @@ import {
   type DashboardSession,
   type EventMessage,
   EventType,
-  PlaybackState,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
@@ -234,13 +225,6 @@ async function disconnect() {
 // only needs to gate rendering when the instance isn't (or no longer) loaded.
 function deviceHasProvider(device: DashboardDevice): boolean {
   return !!api.providers?.[device.provider_instance];
-}
-
-function isPlayingAudio(device: DashboardDevice): boolean {
-  if (!device.player_id) return false;
-  return (
-    api.players?.[device.player_id]?.playback_state === PlaybackState.PLAYING
-  );
 }
 
 function isActiveDevice(device: DashboardDevice): boolean {

@@ -1,7 +1,6 @@
 import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import {
   EventType,
-  PlaybackState,
   type EventMessage,
   type Player,
   type ProviderInstance,
@@ -147,12 +146,8 @@ describe("ShowDashboardButton", () => {
     expect(wrapper.find("button").exists()).toBe(false);
   });
 
-  it("loads and lists cast devices when opened, annotating ones playing MA audio", async () => {
+  it("loads and lists cast devices when opened", async () => {
     apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
-    apiMock.players["device-1"] = {
-      player_id: "device-1",
-      playback_state: PlaybackState.PLAYING,
-    } as Player;
     mockCommands({
       "dashboard/devices": () => [
         {
@@ -178,9 +173,7 @@ describe("ShowDashboardButton", () => {
     const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
     expect(devices).toHaveLength(2);
     expect(devices[0]!.text()).toContain("Living Room TV");
-    expect(devices[0]!.text()).toContain("dashboard.playing_hint");
     expect(devices[1]!.text()).toContain("Bedroom TV");
-    expect(devices[1]!.text()).not.toContain("dashboard.playing_hint");
   });
 
   it("shows a provider icon per device, skipping it for an unknown provider instance", async () => {
