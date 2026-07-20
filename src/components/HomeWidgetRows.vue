@@ -196,11 +196,18 @@
                 <EyeOff v-else />
               </Button>
             </template>
-            <EditorialMediaCard
-              v-for="item in row.folder?.items || []"
-              :key="item.uri"
-              :item="item"
-            />
+            <template v-if="rowItemsMap.get(row.id) === undefined">
+              <div class="ed-row-loading">
+                <v-progress-circular indeterminate size="24" />
+              </div>
+            </template>
+            <template v-else>
+              <EditorialMediaCard
+                v-for="item in rowItemsMap.get(row.id) ?? []"
+                :key="item.uri"
+                :item="item"
+              />
+            </template>
           </EditorialShelf>
 
           <!-- Genres row -->
@@ -274,6 +281,10 @@ import {
   setDiscoverRowHidden,
   setDiscoverRowsOrder,
 } from "@/components/discover/utils/discoverRows";
+import {
+  isRecommendationRowVisible,
+  rowIdsNeedingItems,
+} from "@/components/discover/utils/rowItems";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { useListDragReorder } from "@/composables/useListDragReorder";
@@ -314,21 +325,12 @@ const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
 });
 
-// Entering edit mode needs the whole catalog to toggle/discover rows, so
-// bypass the persisted `wanted` set for a one-off full fetch.
-watch(
-  () => props.editMode,
-  async (isEdit) => {
-    if (isEdit) {
-      await loadRecommendations();
-      resolveHeroPicks();
-    }
-  },
-);
-
 const loading = ref(true);
 const playersShelf = ref<EditorialShelfExpose | null>(null);
+// The row catalog (every available row, `items` always `[]`).
 const recommendations = ref<RecommendationFolder[]>([]);
+// Items fetched per row, keyed by folder uri. Absent = not loaded yet.
+const rowItemsMap = ref(new Map<string, MediaItemTypeOrItemMapping[]>());
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
 
@@ -417,10 +419,12 @@ const buildHeroEntries = (randomize = false): HeroEntry[] => {
   // refresh) reshuffles the row order and the items within a row; the resolve
   // path stays deterministic so repeated builds are content-equal.
   const rows = recommendations.value
-    .filter((f) => shownRecRowIds.value.has(f.uri) && f.items.length > 0)
-    .map((f) => ({
-      tag: f.name,
-      items: randomize ? shuffled(f.items) : f.items,
+    .filter((f) => shownRecRowIds.value.has(f.uri))
+    .map((f) => ({ tag: f.name, items: rowItemsMap.value.get(f.uri) ?? [] }))
+    .filter((r) => r.items.length > 0)
+    .map((r) => ({
+      tag: r.tag,
+      items: randomize ? shuffled(r.items) : r.items,
     }));
   const sources = randomize ? shuffled(rows) : rows;
 
@@ -517,7 +521,7 @@ const refreshTopPicks = async () => {
   if (heroRefreshing.value) return;
   heroRefreshing.value = true;
   try {
-    await loadRecommendations();
+    await refreshShownRowItems();
     heroEntries.value = buildHeroEntries(true);
   } finally {
     heroRefreshing.value = false;
@@ -535,17 +539,16 @@ interface DiscoverRow {
   folder?: RecommendationFolder;
 }
 
-const recommendationRows = computed(() =>
-  recommendations.value.filter((f) => f.items.length > 0),
-);
+// The catalog is always complete (server always returns every row, `items`
+// aside), so every recommendation folder is a candidate row.
 const defaultHiddenIds = computed(() =>
   recommendations.value.filter((f) => !f.enabled_by_default).map((f) => f.uri),
 );
 
-// Default order of every candidate row (recommendation rows not yet known to be
-// empty), well-known rows first, remaining server rows as returned, genres last.
+// Default order of every candidate row, well-known rows first, remaining
+// server rows as returned, genres last.
 const availableRowIds = computed<string[]>(() => {
-  const recUris = recommendationRows.value.map((d) => d.uri);
+  const recUris = recommendations.value.map((d) => d.uri);
   const recSet = new Set(recUris);
   const ids: string[] = [];
   for (const id of DEFAULT_PRIORITY_ROWS) {
@@ -569,7 +572,7 @@ const allRows = computed<DiscoverRow[]>(() => {
     availableRowIds.value,
     defaultHiddenIds.value,
   );
-  const folders = new Map(recommendationRows.value.map((d) => [d.uri, d]));
+  const folders = new Map(recommendations.value.map((d) => [d.uri, d]));
   const rows: DiscoverRow[] = [];
   for (const id of order) {
     if (id === PLAYERS_ROW_ID) {
@@ -609,7 +612,15 @@ const allRows = computed<DiscoverRow[]>(() => {
 });
 
 const displayedRows = computed(() =>
-  props.editMode ? allRows.value : allRows.value.filter((row) => !row.hidden),
+  allRows.value.filter((row) =>
+    row.kind === "recommendation"
+      ? isRecommendationRowVisible(
+          row,
+          rowItemsMap.value.get(row.id),
+          props.editMode,
+        )
+      : props.editMode || !row.hidden,
+  ),
 );
 
 // The recommendation rows currently visible to the user (not hidden). The Top
@@ -624,7 +635,16 @@ const shownRecRowIds = computed(
 );
 
 const toggleRow = (row: DiscoverRow) => {
-  setDiscoverRowHidden(row.id, !row.hidden);
+  const wasHidden = row.hidden;
+  setDiscoverRowHidden(row.id, !wasHidden);
+  // Showing a row for the first time: fetch its items if we haven't already.
+  if (
+    wasHidden &&
+    row.kind === "recommendation" &&
+    !rowItemsMap.value.has(row.id)
+  ) {
+    fetchRowItems([row.id]);
+  }
 };
 
 // --- Drag-to-reorder (edit mode), same interaction as the navigation menu ---
@@ -648,70 +668,71 @@ const draggedRow = computed(() =>
     : null,
 );
 
-// Cache the server's row catalog (which rows exist + their default visibility) — the one
-// thing `discover.rows` prefs don't carry. The wanted set is derived fresh from this catalog
-// resolved against the prefs on each load, so hide/show state lives only in prefs.
-const ROW_CATALOG_KEY = "discoverRowCatalog";
-interface RowCatalogEntry {
-  uri: string;
-  enabled_by_default: boolean;
-}
-const readRowCatalog = (): RowCatalogEntry[] => {
-  try {
-    const raw = localStorage.getItem(ROW_CATALOG_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr)
-      ? arr.filter(
-          (x): x is RowCatalogEntry =>
-            !!x &&
-            typeof x.uri === "string" &&
-            typeof x.enabled_by_default === "boolean",
-        )
-      : [];
-  } catch {
-    return [];
-  }
-};
-const writeRowCatalog = (folders: RecommendationFolder[]): void => {
-  try {
-    const catalog: RowCatalogEntry[] = folders.map((f) => ({
-      uri: f.uri,
-      enabled_by_default: f.enabled_by_default,
-    }));
-    localStorage.setItem(ROW_CATALOG_KEY, JSON.stringify(catalog));
-  } catch {
-    // ignore
-  }
-};
-// The recommendation-row URIs to request, derived from the cached catalog resolved against
-// discover.rows prefs. `undefined` when no catalog is known yet → the caller does a full fetch.
-const wantedFromPrefs = (): string[] | undefined => {
-  const catalog = readRowCatalog();
-  if (!catalog.length) return undefined;
-  const availableIds = catalog.map((c) => c.uri);
-  const defaultHidden = catalog
-    .filter((c) => !c.enabled_by_default)
-    .map((c) => c.uri);
-  const { hidden } = resolveDiscoverRowsConfig(availableIds, defaultHidden);
-  return availableIds.filter((uri) => !hidden.has(uri));
-};
-
-const loadRecommendations = async (wanted?: string[]) => {
+// Fetches the row catalog (every available row; `items` always `[]`) plus the
+// recently-played fallback for the Top Picks hero. Row content itself is
+// fetched separately, per row, into `rowItemsMap`.
+const loadRecommendationRows = async () => {
   // Preserve the currently shown rows on a (transient) refresh failure instead
   // of wiping them; log so a recurring failure is visible.
   const [rows, recent] = await Promise.allSettled([
-    api.getRecommendations(wanted),
+    api.getRecommendations(),
     api.getRecentlyPlayedItems(12),
   ]);
-  if (rows.status === "fulfilled") {
-    recommendations.value = rows.value;
-    // A full fetch (no `wanted`) returns the whole catalog — remember it so the next
-    // cold load can request only the shown rows.
-    if (wanted === undefined) writeRowCatalog(rows.value);
-  } else console.error("Failed to load recommendations:", rows.reason);
+  if (rows.status === "fulfilled") recommendations.value = rows.value;
+  else console.error("Failed to load recommendations:", rows.reason);
   if (recent.status === "fulfilled") recentlyPlayed.value = recent.value;
   else console.error("Failed to load recently played:", recent.reason);
 };
+
+// Fetches and stores items for the given recommendation row ids, in parallel.
+// Each row's result lands in `rowItemsMap` as soon as its own fetch resolves.
+const fetchRowItems = async (ids: string[]): Promise<void> => {
+  const folders = new Map(recommendations.value.map((f) => [f.uri, f]));
+  await Promise.all(
+    ids.map(async (id) => {
+      const folder = folders.get(id);
+      if (!folder) return;
+      const items = await api
+        .getRecommendationItems(folder.provider, folder.item_id)
+        .catch((err) => {
+          console.error(
+            `Failed to load items for recommendation row ${id}:`,
+            err,
+          );
+          return undefined;
+        });
+      if (items !== undefined) {
+        rowItemsMap.value.set(id, items);
+      } else if (!rowItemsMap.value.has(id)) {
+        // first load failed: mark the row empty so it does not spin forever;
+        // on a refresh failure keep the previously shown items instead
+        rowItemsMap.value.set(id, []);
+      }
+    }),
+  );
+};
+
+const displayedRecommendationRowIds = (): string[] =>
+  rowIdsNeedingItems(
+    allRows.value.filter((r) => r.kind === "recommendation"),
+    props.editMode,
+  );
+
+// Fetches items for every currently-displayed recommendation row that hasn't
+// been loaded yet (all rows in edit mode, shown rows otherwise).
+const fetchMissingRowItems = (): Promise<void> =>
+  fetchRowItems(
+    displayedRecommendationRowIds().filter((id) => !rowItemsMap.value.has(id)),
+  );
+
+// Re-fetches items for every currently-displayed recommendation row,
+// regardless of whether it's already loaded.
+const refreshDisplayedRowItems = (): Promise<void> =>
+  fetchRowItems(displayedRecommendationRowIds());
+
+// Re-fetches items for the rows currently feeding the Top Picks hero.
+const refreshShownRowItems = (): Promise<void> =>
+  fetchRowItems([...shownRecRowIds.value]);
 
 // "Browse by genre": show the 8 genres with the most linked media items
 // (most relevant to the user) rather than the first 8 alphabetically.
@@ -747,8 +768,11 @@ const scheduleRecommendationRefresh = () => {
   refreshRecommendationsTimer = setTimeout(async () => {
     refreshRecommendationsTimer = undefined;
     if (isUnmounted) return;
-    // Refetches folder content so play-history rows and rotated picks stay current.
-    await loadRecommendations(wantedFromPrefs());
+    // Refetches the catalog and the displayed rows' content so play-history
+    // rows and rotated picks stay current.
+    await loadRecommendationRows();
+    if (isUnmounted) return;
+    await refreshDisplayedRowItems();
     if (isUnmounted) return;
     resolveHeroPicks();
   }, 1500);
@@ -773,15 +797,33 @@ const unsubscribeRecommendations = api.subscribe(
   },
 );
 
+// Entering edit mode needs items for every row (including ones hidden until
+// now) so they render a usable empty/loaded state while toggling.
+watch(
+  () => props.editMode,
+  async (isEdit) => {
+    if (!isEdit) return;
+    await fetchMissingRowItems();
+    resolveHeroPicks();
+  },
+);
+
 onMounted(async () => {
-  await Promise.all([loadRecommendations(wantedFromPrefs()), loadGenres()]);
+  // Genres is its own row and isn't part of the fast catalog call, so it
+  // doesn't gate the page spinner.
+  loadGenres();
+  window.addEventListener("resize", updateHeroNav);
+
+  await loadRecommendationRows();
   if (isUnmounted) return;
   loading.value = false;
+
+  await fetchMissingRowItems();
+  if (isUnmounted) return;
   resolveHeroPicks();
   nextTick(() => {
     if (!isUnmounted) observeHero();
   });
-  window.addEventListener("resize", updateHeroNav);
 });
 
 onBeforeUnmount(() => {
@@ -800,6 +842,11 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   padding: 80px 0;
+}
+.ed-row-loading {
+  display: flex;
+  align-items: center;
+  padding: 24px 28px;
 }
 .ed-section {
   margin-bottom: 32px;

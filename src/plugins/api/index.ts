@@ -1440,15 +1440,23 @@ export class MusicAssistantApi {
     });
   }
 
-  public async getRecommendations(
-    wanted?: string[],
-  ): Promise<RecommendationFolder[]> {
-    // Send `wanted` whenever it is defined — including an empty array (the user hid
-    // every row → the server returns nothing). Omit it only when undefined (full fetch).
-    return this.sendCommand(
-      "music/recommendations",
-      wanted !== undefined ? { wanted } : {},
-    );
+  public async getRecommendations(): Promise<RecommendationFolder[]> {
+    // Returns every available row (with empty `items`) — the discover skeleton
+    // and row-toggle catalog in one fast, cacheable call.
+    return this.sendCommand("music/recommendations");
+  }
+
+  public async getRecommendationItems(
+    provider: string,
+    item_id: string,
+  ): Promise<MediaItemTypeOrItemMapping[]> {
+    // Fetches a single recommendation row's items. Per-row timeout/error
+    // isolation lives server-side: an unknown id or a failing provider
+    // resolves to `[]` rather than rejecting.
+    return this.sendCommand("music/recommendations/items", {
+      provider,
+      item_id,
+    });
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
