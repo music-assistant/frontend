@@ -12,7 +12,7 @@
         <TvMinimal :size="iconSize" />
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
+    <DropdownMenuContent align="end" :class="contentClass">
       <div
         v-if="loading"
         class="text-muted-foreground px-2 py-1.5 text-sm"
@@ -97,11 +97,14 @@ const props = withDefaults(
     variant?: ButtonVariants["variant"];
     buttonSize?: ButtonVariants["size"];
     iconSize?: number;
+    // z-index override for hosts that render inside a high z-index overlay
+    contentClass?: string;
   }>(),
   {
     variant: "ghost-icon",
     buttonSize: "icon-sm",
     iconSize: 13,
+    contentClass: undefined,
   },
 );
 

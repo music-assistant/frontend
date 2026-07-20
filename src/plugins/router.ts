@@ -95,6 +95,23 @@ export const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  // Now-playing kiosk display for casting a single player's fullscreen view to
+  // a dashboard device. Placed at top level, like /party, so it renders
+  // without navigation/player controls.
+  {
+    path: "/now-playing",
+    component: () => import("@/layouts/default/Default.vue"),
+    children: [
+      {
+        path: "",
+        name: "now-playing",
+        component: () =>
+          import(
+            /* webpackChunkName: "now-playing" */ "@/views/NowPlayingView.vue"
+          ),
+      },
+    ],
+  },
   // All other routes go through default layout with navigation/player controls
   {
     path: "/",
@@ -609,10 +626,12 @@ router.beforeEach(async (to) => {
     const pinnedPath = sessionStorage.getItem(
       DASHBOARD_VIEWER_PATH_STORAGE_KEY,
     );
+    // Compare fullPath (not path) so a pinned route with a query string, like
+    // /now-playing?player=..., isn't treated as a mismatch on every navigation.
     const dashboardRedirect = getDashboardViewerNavigationRedirect(
       true,
       pinnedPath,
-      to.path,
+      to.fullPath,
     );
     if (dashboardRedirect) {
       return dashboardRedirect;
