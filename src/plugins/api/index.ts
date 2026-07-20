@@ -1452,11 +1452,17 @@ export class MusicAssistantApi {
   ): Promise<MediaItemTypeOrItemMapping[]> {
     // Fetches a single recommendation row's items. Per-row timeout/error
     // isolation lives server-side: an unknown id or a failing provider
-    // resolves to `[]` rather than rejecting.
-    return this.sendCommand("music/recommendations/items", {
-      provider,
-      item_id,
-    });
+    // resolves to `[]` rather than rejecting. Transport-level failures are
+    // best-effort per row (the caller degrades the row), so opt out of the
+    // global error toast.
+    return this.sendCommand(
+      "music/recommendations/items",
+      {
+        provider,
+        item_id,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
