@@ -136,7 +136,7 @@ const {
 }
 
 .audio-processing-details .audio-processing-group + .audio-processing-group {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .audio-processing-details .audio-processing-header {
@@ -161,7 +161,7 @@ const {
   .audio-processing-group
   + .audio-processing-group
   .audio-processing-header::before {
-  top: -12px;
+  top: -8px;
 }
 
 .audio-processing-details .audio-processing-quality-dot {
@@ -205,8 +205,8 @@ const {
 .audio-processing-details .audio-processing-stage {
   position: relative;
   display: grid;
-  grid-template-columns: 12px 16px minmax(0, 1fr) 24px;
-  column-gap: 7px;
+  grid-template-columns: 12px 24px minmax(0, 1fr) 24px;
+  column-gap: 4px;
   align-items: start;
   min-height: 24px;
 }
@@ -261,9 +261,30 @@ const {
 
 .audio-processing-details .audio-processing-stage-icon {
   grid-column: 2;
-  width: 16px;
-  height: 16px;
-  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.audio-processing-details .audio-processing-stage-provider-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 18px;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  overflow: hidden;
+}
+
+.audio-processing-details .audio-processing-stage-provider-icon :is(svg, img) {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .audio-processing-details .audio-processing-stage-copy {
@@ -277,7 +298,7 @@ const {
   min-width: 0;
   align-items: baseline;
   gap: 6px;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .audio-processing-details .audio-processing-stage-title {
@@ -298,10 +319,10 @@ const {
 }
 
 .audio-processing-details .audio-processing-stage-subtitle {
-  margin-top: 1px;
+  margin-top: 2px;
   color: var(--muted-foreground);
   font-size: 0.72rem;
-  line-height: 1.25;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
