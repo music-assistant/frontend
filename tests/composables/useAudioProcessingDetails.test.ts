@@ -541,12 +541,12 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     });
 
     expect(wrapper.get('[data-testid="playback-speed"]').text()).toBe(
-      "Playback speed: 1.25x",
+      $t("streamdetails.audio_processing.playback_speed", ["1.25"]),
     );
     i18n.global.locale.value = "de";
     await nextTick();
     expect(wrapper.get('[data-testid="playback-speed"]').text()).toBe(
-      "Playback speed: 1,25x",
+      $t("streamdetails.audio_processing.playback_speed", ["1,25"]),
     );
     wrapper.unmount();
   });
