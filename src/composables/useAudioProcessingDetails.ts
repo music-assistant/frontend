@@ -2,6 +2,7 @@ import { computed, toValue, type Component, type MaybeRefOrGetter } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   AudioLines,
+  Binary,
   FileAudio,
   Gauge,
   GitMerge,
@@ -50,17 +51,10 @@ export type AudioProcessingDisplayStage = AudioProcessingDisplayStageBase &
     | {
         icon: Component;
         providerIconDomain?: never;
-        codecIconLabel?: never;
       }
     | {
         icon?: never;
         providerIconDomain: string;
-        codecIconLabel?: never;
-      }
-    | {
-        icon?: never;
-        providerIconDomain?: never;
-        codecIconLabel: string;
       }
   );
 
@@ -658,8 +652,9 @@ function finalOutputStage(
       translate,
     ),
   );
-  const stage = {
+  return {
     key: `output-format-${index}`,
+    icon: Binary,
     title: format
       ? audioFormatTitle(format, translate)
       : translate("streamdetails.audio_processing.unknown_format"),
@@ -673,10 +668,6 @@ function finalOutputStage(
         : undefined,
     details,
   };
-  const codecIconLabel = format ? codecBadgeLabel(format) : undefined;
-  return codecIconLabel
-    ? { ...stage, codecIconLabel }
-    : { ...stage, icon: FileAudio };
 }
 
 function formatStage(
@@ -685,17 +676,14 @@ function formatStage(
   translate: Translate,
   locale: string,
 ): AudioProcessingDisplayStage {
-  const stage = {
+  return {
     key,
+    icon: Binary,
     title: audioFormatTitle(format, translate),
     subtitleParts: audioFormatTechnicalParts(format, translate, locale),
     atomicSubtitleParts: true,
     details: audioFormatDetails(format, translate, locale),
   };
-  const codecIconLabel = codecBadgeLabel(format);
-  return codecIconLabel
-    ? { ...stage, codecIconLabel }
-    : { ...stage, icon: FileAudio };
 }
 
 function outputFidelityDetail(
@@ -899,19 +887,6 @@ function audioFormatCodec(format: AudioFormat): string {
   return format.codec_type && format.codec_type !== ContentType.UNKNOWN
     ? format.codec_type
     : format.content_type;
-}
-
-function codecBadgeLabel(format: AudioFormat): string | undefined {
-  const codec = audioFormatCodec(format);
-  if (codec === ContentType.UNKNOWN || !KNOWN_CONTENT_TYPES.has(codec)) {
-    return undefined;
-  }
-  if (codec === ContentType.PCM || PCM_CONTENT_TYPES.has(codec)) {
-    return "PCM";
-  }
-  if (codec.startsWith("adpcm_")) return "ADPCM";
-  if (codec.startsWith("dsd_")) return "DSD";
-  return codec.toUpperCase().replaceAll("_", "-");
 }
 
 function audioChannelCountLabel(

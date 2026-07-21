@@ -8,8 +8,9 @@ import { i18n } from "@/plugins/i18n";
 vi.mock("@/components/ProviderIcon.vue", () => ({
   default: {
     name: "ProviderIcon",
-    props: ["domain"],
-    template: '<span data-testid="provider-icon" :domain="domain" />',
+    props: ["domain", "size", "monochrome"],
+    template:
+      '<span data-testid="provider-icon" :domain="domain" :data-size="size" :data-monochrome="monochrome" />',
   },
 }));
 
@@ -79,35 +80,16 @@ describe("AudioProcessingStage", () => {
       wrapper.get('[data-testid="provider-icon"]').attributes("domain"),
     ).toBe("filesystem--music");
     expect(
+      wrapper.get('[data-testid="provider-icon"]').attributes("data-size"),
+    ).toBe("20");
+    expect(
+      wrapper
+        .get('[data-testid="provider-icon"]')
+        .attributes("data-monochrome"),
+    ).toBe("true");
+    expect(
       wrapper.get(".audio-processing-stage-icon").attributes("aria-hidden"),
     ).toBe("true");
-  });
-
-  it("renders compact and dense codec badges", () => {
-    const compact = mountStage({
-      key: "source-format",
-      codecIconLabel: "FLAC",
-      title: "FLAC",
-    });
-    expect(compact.get(".audio-processing-stage-codec-icon").text()).toBe(
-      "FLAC",
-    );
-    expect(
-      compact
-        .get(".audio-processing-stage-codec-icon")
-        .classes("audio-processing-stage-codec-icon--dense"),
-    ).toBe(false);
-
-    const dense = mountStage({
-      key: "source-format",
-      codecIconLabel: "WAVPACK",
-      title: "WAVPACK",
-    });
-    expect(
-      dense
-        .get(".audio-processing-stage-codec-icon")
-        .classes("audio-processing-stage-codec-icon--dense"),
-    ).toBe(true);
   });
 
   it("renders a badge and tooltip details in their dedicated columns", () => {

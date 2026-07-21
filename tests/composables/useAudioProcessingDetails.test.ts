@@ -54,7 +54,7 @@ beforeEach(() => {
 });
 
 describe("buildAudioProcessingDetailsDisplay", () => {
-  it("uses provider and codec icons for the input path", () => {
+  it("uses provider and file icons for the input path", () => {
     const display = buildDisplay({});
 
     expect(display.inputStages[0]).toMatchObject({
@@ -63,16 +63,17 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     });
     expect(display.inputStages[1]).toMatchObject({
       title: "FLAC",
-      codecIconLabel: "FLAC",
+      icon: expect.any(Function),
     });
   });
 
   it.each([
-    [ContentType.PCM_F32LE, "PCM"],
-    [ContentType.ADPCM_IMA, "ADPCM"],
-    [ContentType.DSD_MSBF, "DSD"],
-    [ContentType.WAVPACK, "WAVPACK"],
-  ])("builds a compact %s codec label", (contentType, expectedLabel) => {
+    ContentType.FLAC,
+    ContentType.PCM_F32LE,
+    ContentType.ADPCM_IMA,
+    ContentType.DSD_MSBF,
+    ContentType.WAVPACK,
+  ])("uses the generic file icon for %s", (contentType) => {
     const format = makeFormat({
       content_type: contentType,
       codec_type: contentType,
@@ -84,23 +85,8 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       format,
     );
 
-    expect(display.inputStages[1]).toMatchObject({
-      codecIconLabel: expectedLabel,
-    });
-    expect(display.outputPaths[0].stages.at(-1)).toMatchObject({
-      codecIconLabel: expectedLabel,
-    });
-  });
-
-  it("keeps the generic format icon when the codec is unknown", () => {
-    const format = makeFormat({
-      content_type: ContentType.UNKNOWN,
-      codec_type: ContentType.UNKNOWN,
-    });
-    const display = buildDisplay({}, format);
-
     expect(display.inputStages[1]).toHaveProperty("icon");
-    expect(display.inputStages[1]).not.toHaveProperty("codecIconLabel");
+    expect(display.outputPaths[0].stages.at(-1)).toHaveProperty("icon");
   });
 
   it("uses the native player provider for direct output", () => {

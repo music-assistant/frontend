@@ -5,20 +5,10 @@
       <ProviderIcon
         v-if="stage.providerIconDomain"
         :domain="stage.providerIconDomain"
-        :size="16"
+        :size="20"
         :monochrome="true"
         class="audio-processing-stage-provider-icon"
       />
-      <span
-        v-else-if="stage.codecIconLabel"
-        class="audio-processing-stage-codec-icon"
-        :class="{
-          'audio-processing-stage-codec-icon--dense':
-            stage.codecIconLabel.length > 4,
-        }"
-      >
-        {{ stage.codecIconLabel }}
-      </span>
       <component :is="stage.icon" v-else :size="16" />
     </span>
     <div class="audio-processing-stage-copy">

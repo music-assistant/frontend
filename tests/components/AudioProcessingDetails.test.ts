@@ -115,9 +115,9 @@ describe("AudioProcessingDetails", () => {
     expect(
       wrapper
         .find('[data-stage="source-format"]')
-        .get(".audio-processing-stage-codec-icon")
-        .text(),
-    ).toBe("FLAC");
+        .find(".audio-processing-stage-icon svg")
+        .exists(),
+    ).toBe(true);
     expect(
       groupedDestination
         .get('[data-testid="provider-icon"]')

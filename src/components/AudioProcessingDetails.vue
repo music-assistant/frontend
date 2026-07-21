@@ -265,40 +265,26 @@ const {
   align-items: center;
   justify-content: center;
   width: 24px;
-  height: 16px;
-  margin-top: 4px;
+  height: 20px;
+  margin-top: 2px;
 }
 
 .audio-processing-details .audio-processing-stage-provider-icon {
-  width: 16px !important;
-  height: 16px !important;
-  margin: 0 !important;
-}
-
-.audio-processing-details .audio-processing-stage-codec-icon {
-  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 14px;
-  padding: 0 2px;
-  border: 1px solid currentColor;
-  border-radius: 3px;
-  color: var(--muted-foreground);
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    monospace;
-  font-size: 0.44rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1;
+  flex: 0 0 20px;
+  width: 20px !important;
+  height: 20px !important;
+  margin: 0 !important;
+  overflow: hidden;
 }
 
-.audio-processing-details .audio-processing-stage-codec-icon--dense {
-  padding: 0 1px;
-  font-size: 0.32rem;
-  letter-spacing: -0.05em;
+.audio-processing-details .audio-processing-stage-provider-icon :is(svg, img) {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .audio-processing-details .audio-processing-stage-copy {
