@@ -5,11 +5,11 @@
       <ProviderIcon
         v-if="stage.providerIconDomain"
         :domain="stage.providerIconDomain"
-        :size="20"
+        :size="18"
         :monochrome="true"
         class="audio-processing-stage-provider-icon"
       />
-      <component :is="stage.icon" v-else :size="16" />
+      <component :is="stage.icon" v-else :size="18" />
     </span>
     <div class="audio-processing-stage-copy">
       <div class="audio-processing-stage-primary">

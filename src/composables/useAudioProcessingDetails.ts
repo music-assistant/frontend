@@ -2,17 +2,16 @@ import { computed, toValue, type Component, type MaybeRefOrGetter } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   AudioLines,
-  Binary,
+  File as FileIcon,
   FileAudio,
   Gauge,
-  GitMerge,
-  Layers,
   Shield,
   SlidersHorizontal,
   Speaker,
   Split,
 } from "@lucide/vue";
 import { useDSPPresets } from "@/composables/useDSPPresets";
+import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import {
   audioQualityToTier,
   type QualityTier,
@@ -252,7 +251,7 @@ function buildProcessingStages(
   ) {
     stages.push({
       key: "crossfade",
-      icon: GitMerge,
+      icon: CrossfadeIcon,
       title: translate("streamdetails.audio_processing.crossfade", [
         crossfadeModeLabel(processing.crossfade_mode, translate),
       ]),
@@ -261,7 +260,7 @@ function buildProcessingStages(
   if (processing?.overlay_active) {
     stages.push({
       key: "overlay",
-      icon: Layers,
+      icon: AudioLines,
       title: translate("streamdetails.audio_processing.overlay_active"),
     });
   }
@@ -571,7 +570,7 @@ function processingContextStage(
     }
     return {
       key: "pcm-format",
-      icon: FileAudio,
+      icon: Gauge,
       title: translate("streamdetails.audio_processing.processing_headroom"),
       subtitleParts: [contentTypeLabel(internalCodec, translate)],
       atomicSubtitleParts: true,
@@ -654,7 +653,7 @@ function finalOutputStage(
   );
   return {
     key: `output-format-${index}`,
-    icon: Binary,
+    icon: FileIcon,
     title: format
       ? audioFormatTitle(format, translate)
       : translate("streamdetails.audio_processing.unknown_format"),
@@ -678,7 +677,7 @@ function formatStage(
 ): AudioProcessingDisplayStage {
   return {
     key,
-    icon: Binary,
+    icon: FileIcon,
     title: audioFormatTitle(format, translate),
     subtitleParts: audioFormatTechnicalParts(format, translate, locale),
     atomicSubtitleParts: true,

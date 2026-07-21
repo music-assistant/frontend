@@ -81,7 +81,7 @@ describe("AudioProcessingStage", () => {
     ).toBe("filesystem--music");
     expect(
       wrapper.get('[data-testid="provider-icon"]').attributes("data-size"),
-    ).toBe("20");
+    ).toBe("18");
     expect(
       wrapper
         .get('[data-testid="provider-icon"]')

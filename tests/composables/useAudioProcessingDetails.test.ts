@@ -1,4 +1,5 @@
 import { mount } from "@vue/test-utils";
+import { File as FileIcon } from "@lucide/vue";
 import { defineComponent, h, nextTick, ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -63,7 +64,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     });
     expect(display.inputStages[1]).toMatchObject({
       title: "FLAC",
-      icon: expect.any(Function),
+      icon: FileIcon,
     });
   });
 
@@ -85,8 +86,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       format,
     );
 
-    expect(display.inputStages[1]).toHaveProperty("icon");
-    expect(display.outputPaths[0].stages.at(-1)).toHaveProperty("icon");
+    expect(display.inputStages[1]).toMatchObject({ icon: FileIcon });
+    expect(display.outputPaths[0].stages.at(-1)).toMatchObject({
+      icon: FileIcon,
+    });
   });
 
   it("uses the native player provider for direct output", () => {

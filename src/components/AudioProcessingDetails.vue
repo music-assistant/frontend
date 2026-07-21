@@ -136,7 +136,7 @@ const {
 }
 
 .audio-processing-details .audio-processing-group + .audio-processing-group {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .audio-processing-details .audio-processing-header {
@@ -161,7 +161,7 @@ const {
   .audio-processing-group
   + .audio-processing-group
   .audio-processing-header::before {
-  top: -12px;
+  top: -8px;
 }
 
 .audio-processing-details .audio-processing-quality-dot {
@@ -273,9 +273,9 @@ const {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 20px;
-  width: 20px !important;
-  height: 20px !important;
+  flex: 0 0 18px;
+  width: 18px !important;
+  height: 18px !important;
   margin: 0 !important;
   overflow: hidden;
 }
@@ -298,7 +298,7 @@ const {
   min-width: 0;
   align-items: baseline;
   gap: 6px;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .audio-processing-details .audio-processing-stage-title {
@@ -319,10 +319,10 @@ const {
 }
 
 .audio-processing-details .audio-processing-stage-subtitle {
-  margin-top: 1px;
+  margin-top: 2px;
   color: var(--muted-foreground);
   font-size: 0.72rem;
-  line-height: 1.25;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
