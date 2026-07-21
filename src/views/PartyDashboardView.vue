@@ -88,7 +88,7 @@
             >
               <Settings :size="13" />
             </Button>
-            <ShowDashboardButton path="/party" />
+            <ShowDashboardButton dashboard="party" />
             <Button
               variant="ghost-icon"
               size="icon-sm"

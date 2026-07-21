@@ -1,6 +1,7 @@
 import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import {
   EventType,
+  type DashboardType,
   type EventMessage,
   type Player,
   type ProviderInstance,
@@ -89,10 +90,14 @@ function captureSubscription() {
   };
 }
 
-function mountButton(path = "/party") {
+function mountButton(
+  props: { dashboard: DashboardType; playerId?: string } = {
+    dashboard: "party",
+  },
+) {
   const passthroughStub = { template: "<div><slot /></div>" };
   return mount(ShowDashboardButton, {
-    props: { path },
+    props,
     global: {
       stubs: {
         DropdownMenu: passthroughStub,
@@ -222,7 +227,10 @@ describe("ShowDashboardButton", () => {
       ],
     });
 
-    const wrapper = mountButton("/music-quiz");
+    const wrapper = mountButton({
+      dashboard: "now_playing",
+      playerId: "player-1",
+    });
     await wrapper.get("button").trigger("click");
     await flushAsync();
 
@@ -236,7 +244,8 @@ describe("ShowDashboardButton", () => {
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/show", {
       provider_instance: "chromecast_1",
       device_id: "device-1",
-      path: "/music-quiz",
+      dashboard: "now_playing",
+      player_id: "player-1",
     });
     expect(toastMock.success).toHaveBeenCalledWith("dashboard.started:Kitchen");
   });
@@ -267,43 +276,74 @@ describe("ShowDashboardButton", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
-  it("fetches sessions on mount and shows the icon in the active color when one matches this path", async () => {
+  it("fetches sessions on mount and shows the icon in the active color when one matches this dashboard", async () => {
     apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
           device_id: "device-1",
           provider_instance: "chromecast_1",
-          path: "/party",
+          dashboard: "party",
+          player_id: null,
           name: "Living Room TV",
         },
       ],
     });
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
 
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/sessions");
     expect(wrapper.get("button").classes()).toContain("bg-primary");
   });
 
-  it("does not color the icon when the active session is for a different path", async () => {
+  it("does not color the icon when the active session is for a different dashboard", async () => {
     apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
           device_id: "device-1",
           provider_instance: "chromecast_1",
-          path: "/music-quiz",
+          dashboard: "now_playing",
+          player_id: null,
           name: "Living Room TV",
         },
       ],
     });
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
 
     expect(wrapper.get("button").classes()).not.toContain("bg-primary");
+  });
+
+  it("colors a now_playing button only when the session targets its player", async () => {
+    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
+    mockCommands({
+      "dashboard/sessions": () => [
+        {
+          device_id: "device-1",
+          provider_instance: "chromecast_1",
+          dashboard: "now_playing",
+          player_id: "player-2",
+          name: "Living Room TV",
+        },
+      ],
+    });
+
+    const otherPlayer = mountButton({
+      dashboard: "now_playing",
+      playerId: "player-1",
+    });
+    await flushAsync();
+    expect(otherPlayer.get("button").classes()).not.toContain("bg-primary");
+
+    const matchingPlayer = mountButton({
+      dashboard: "now_playing",
+      playerId: "player-2",
+    });
+    await flushAsync();
+    expect(matchingPlayer.get("button").classes()).toContain("bg-primary");
   });
 
   it("updates active state when a dashboard_sessions_updated event arrives", async () => {
@@ -311,7 +351,7 @@ describe("ShowDashboardButton", () => {
     mockCommands();
     const subscription = captureSubscription();
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
 
     expect(apiMock.subscribe).toHaveBeenCalledWith(
@@ -324,7 +364,8 @@ describe("ShowDashboardButton", () => {
       {
         device_id: "device-1",
         provider_instance: "chromecast_1",
-        path: "/party",
+        dashboard: "party",
+        player_id: null,
         name: "Living Room TV",
       },
     ]);
@@ -340,7 +381,8 @@ describe("ShowDashboardButton", () => {
         {
           device_id: "device-1",
           provider_instance: "chromecast_1",
-          path: "/party",
+          dashboard: "party",
+          player_id: null,
           name: "Living Room TV",
         },
       ],
@@ -360,7 +402,7 @@ describe("ShowDashboardButton", () => {
       ],
     });
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
     await wrapper.get("button").trigger("click");
     await flushAsync();
@@ -381,13 +423,14 @@ describe("ShowDashboardButton", () => {
         {
           device_id: "device-1",
           provider_instance: "chromecast_1",
-          path: "/party",
+          dashboard: "party",
+          player_id: null,
           name: "Living Room TV",
         },
       ],
     });
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
     await wrapper.get("button").trigger("click");
     await flushAsync();
@@ -411,7 +454,8 @@ describe("ShowDashboardButton", () => {
         {
           device_id: "device-1",
           provider_instance: "chromecast_1",
-          path: "/party",
+          dashboard: "party",
+          player_id: null,
           name: "Living Room TV",
         },
       ],
@@ -420,7 +464,7 @@ describe("ShowDashboardButton", () => {
       },
     });
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
     await wrapper.get("button").trigger("click");
     await flushAsync();
@@ -443,7 +487,7 @@ describe("ShowDashboardButton", () => {
   it("subscribes and fetches sessions once the chromecast provider appears after mount", async () => {
     mockCommands();
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
 
     expect(apiMock.subscribe).not.toHaveBeenCalled();
@@ -466,7 +510,7 @@ describe("ShowDashboardButton", () => {
     apiMock.subscribe.mockImplementation(() => unsubscribeMock);
     mockCommands();
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
 
     wrapper.unmount();
@@ -481,7 +525,8 @@ describe("ShowDashboardButton", () => {
         {
           device_id: "device-1",
           provider_instance: "chromecast_1",
-          path: "/party",
+          dashboard: "party",
+          player_id: null,
           name: "Living Room TV",
         },
       ],
@@ -501,7 +546,7 @@ describe("ShowDashboardButton", () => {
       ],
     });
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
     await wrapper.get("button").trigger("click");
     await flushAsync();
@@ -522,7 +567,8 @@ describe("ShowDashboardButton", () => {
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/show", {
       provider_instance: "chromecast_1",
       device_id: "device-2",
-      path: "/party",
+      dashboard: "party",
+      player_id: null,
     });
   });
 
@@ -533,7 +579,8 @@ describe("ShowDashboardButton", () => {
         {
           device_id: "device-1",
           provider_instance: "chromecast_1",
-          path: "/party",
+          dashboard: "party",
+          player_id: null,
           name: "Living Room TV",
         },
       ],
@@ -547,7 +594,7 @@ describe("ShowDashboardButton", () => {
       ],
     });
 
-    const wrapper = mountButton("/party");
+    const wrapper = mountButton();
     await flushAsync();
     await wrapper.get("button").trigger("click");
     await flushAsync();

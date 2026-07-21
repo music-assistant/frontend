@@ -152,7 +152,8 @@
 
     <!-- cast this player's now-playing screen to a dashboard device -->
     <ShowDashboardButton
-      :path="dashboardPath"
+      dashboard="now_playing"
+      :player-id="store.activePlayerId"
       variant="ghost-outline"
       :button-size="showLabel ? 'xs' : 'icon-xs'"
       :icon-size="16"
@@ -241,11 +242,6 @@ const seedNames = computed(() =>
 );
 
 const showLabel = computed(() => !store.mobileLayout);
-
-// Destination for casting this player's now-playing screen to a dashboard device.
-const dashboardPath = computed(
-  () => `/now-playing?player=${encodeURIComponent(store.activePlayerId ?? "")}`,
-);
 
 // The ghost-outline variant provides the pill look (transparent with a subtle
 // border, frosted background on hover only).

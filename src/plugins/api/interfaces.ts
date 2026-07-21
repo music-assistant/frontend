@@ -1242,12 +1242,15 @@ export interface DashboardDevice {
   player_id: string | null; // linked MA player, if any
 }
 
+export type DashboardType = "party" | "now_playing";
+
 export interface DashboardSession {
   // An active dashboard cast session on a device.
   device_id: string;
   provider_instance: string;
-  path: string;
   name: string; // device display name
+  dashboard: DashboardType;
+  player_id: string | null; // target player for the now_playing dashboard
 }
 
 export enum TaskStatus {

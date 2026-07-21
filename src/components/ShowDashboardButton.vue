@@ -73,6 +73,7 @@ import api from "@/plugins/api";
 import {
   type DashboardDevice,
   type DashboardSession,
+  type DashboardType,
   type EventMessage,
   EventType,
 } from "@/plugins/api/interfaces";
@@ -84,7 +85,8 @@ import { toast } from "vue-sonner";
 
 const props = withDefaults(
   defineProps<{
-    path: string;
+    dashboard: DashboardType;
+    playerId?: string;
     variant?: ButtonVariants["variant"];
     buttonSize?: ButtonVariants["size"];
     iconSize?: number;
@@ -119,9 +121,15 @@ const chromecastAvailable = computed(
 const activePillClass =
   "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
 
-// The session (if any) currently showing this button's own dashboard route.
+// The session (if any) currently showing this button's own dashboard. For the
+// now_playing dashboard the session must also target this button's player.
 const activeSession = computed(() =>
-  sessions.value.find((session) => session.path === props.path),
+  sessions.value.find(
+    (session) =>
+      session.dashboard === props.dashboard &&
+      (props.dashboard !== "now_playing" ||
+        session.player_id === props.playerId),
+  ),
 );
 
 // api.providers is often not yet populated when this component mounts, so
@@ -194,7 +202,8 @@ async function selectDevice(device: DashboardDevice) {
     await api.sendCommand("dashboard/show", {
       provider_instance: device.provider_instance,
       device_id: device.device_id,
-      path: props.path,
+      dashboard: props.dashboard,
+      player_id: props.playerId ?? null,
     });
     toast.success($t("dashboard.started", [device.name]));
   } catch (error) {
