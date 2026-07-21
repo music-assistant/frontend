@@ -234,11 +234,14 @@
             "parameter": {
                 "frequency": "Frekvens",
                 "gain": "Få",
-                "q_factor": "Q Faktor"
+                "q_factor": "Q Faktor",
+                "balance": "Balans"
             },
             "types": {
                 "parametric_eq": "Parametrisk EQ",
-                "tone_control": "Tonkontroll"
+                "tone_control": "Tonkontroll",
+                "gain": "Nivå",
+                "balance": "Balans"
             },
             "channels": {
                 "ALL": "Alla",
@@ -255,7 +258,9 @@
                 "save": "Spara DSP förinställningen",
                 "name": "Förinställt namn",
                 "name_placeholder": "Min nya förinställning",
-                "remove_confirm": "Är du säker på att du vill ta bort den här DSP förinställningen?"
+                "remove_confirm": "Är du säker på att du vill ta bort den här DSP förinställningen?",
+                "custom": "Anpassat",
+                "selected": "Förinställt: {0}"
             }
         },
         "dsp_enabled": "DSP är aktiverat",
@@ -756,10 +761,6 @@
     "podcast_episode": "Avsnitt",
     "podcast_episodes": "Avsnitt",
     "play_from_here": "Spela härifrån",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamisk volymnormalisering",
-    "loudness_fixed": "Korrigering av fast förstärkning",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Spelar just nu",
     "all_players": "Alla spelare",
@@ -769,42 +770,111 @@
     "streamdetails": {
         "input_header": "Ingång",
         "output_header": "Utgång",
-        "output_format_info": "Ljud skickas i {0} format",
         "eq_band_count": "{0} band",
         "eq_band_count_singular": "1 band",
         "input_gain": "Ingångsförstärkning ({0} dB)",
         "output_gain": "Utgångsförstärkning ({0} dB)",
         "output_limiter": "Utgångsbegränsare",
-        "output_limiter_info": "Reducerar automatiskt mycket höga ljud för att förhindra distorsion och skydda dina högtalare",
-        "dsp_unsupported": "DSP stöds inte",
-        "dsp_disabled_by_unsupported_group": "Denna spelarleverantör stöder inte DSP med synkroniserad uppspelning",
         "file_info": {
             "container": "Behållare: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Bithastighet: {0} kbps",
             "sample_rate": "Samplingsfrekvens: {0} kHz",
             "channels": "Kanaler: {0}",
-            "bit_depth": "Bitdjup: {0}",
-            "processing_notice": "Ljud bearbetas internt som 32-bitars flytande PCM"
+            "bit_depth": "Bitdjup: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Målnivå: {0} LUFS",
-            "integrated_loudness": "Uppmätt (integrerad) ljudstyrka: {0} LUFS",
-            "integrated_album_loudness": "Albumets ljudstyrka: {0} LUFS",
-            "applied_gain_correction": "Tillämpad förstärkningskorrigering: {0} dB",
-            "mode": {
-                "dynamic": "Volymnormalisering är aktiv i dynamiskt läge.",
-                "measurement_only": "Volymnormalisering är aktiv baserat på en lagrad mätning av ljudets (integrerade) högstyrka.",
-                "measurement_album": "Volymnormalisering är aktiv baserat på en lagrad mätning av albumets (integrerade) ljudstyrka.",
-                "fixed_gain": "Volymnormalisering är aktiv baserat på korrigering av fast förstärkning."
-            }
-        },
-        "click_to_expand": "Klicka för att visa alla spelare",
-        "output_format_pcm_info": "Ljud skickas som PCM till spelarleverantören. Spelleverantören kan sedan konvertera ljudet till ett annat format innan det skickas till spelaren.",
         "more_info": "Mer information",
-        "player_not_found": "Spelaren hittades inte"
+        "audio_processing": {
+            "unknown": "Okänd",
+            "unknown_format": "Okänt format",
+            "provider": "Leverantör: {0}",
+            "source_format": "Källa: {0}",
+            "pcm_format": "Delad bearbetning: {0}",
+            "output_format": "Slutresultat: {0}",
+            "sample_rate": "{0} kHz",
+            "bit_depth": "{0}-bit",
+            "channel_count": "{0} kanaler",
+            "bit_rate": "{0} kbps",
+            "pcm": "PCM",
+            "float_pcm_32": "32-bitars flyttal PCM",
+            "float_pcm_64": "64-bitars flytande PCM",
+            "normalization": "Volymnormalisering: {0}",
+            "measurement_source": "Mått: {0}",
+            "target_lufs": "Målnivå: {0} LUFS",
+            "measured_lufs": "Uppmätt ljudstyrka: {0} LUFS",
+            "applied_gain_db": "Tillämpad förstärkning: {0} dB",
+            "playback_speed": "Uppspelningshastighet: {0}x",
+            "crossfade": "Övertoning: {0}",
+            "overlay_active": "Ljudöverlägg aktivt",
+            "source_channel": "Källkanal: {0}",
+            "source_channel_left": "Vänster",
+            "source_channel_right": "Höger",
+            "dsp_preset": "DSP förinställt: {0}",
+            "bit_perfect": "Bitperfekt utdata",
+            "not_bit_perfect": "Bearbetad utdata",
+            "destination_unknown": "Destination {0}",
+            "destination_unavailable": "Destination otillgänglig",
+            "quality": {
+                "low": "Låg kvalitet",
+                "standard": "Standardkvalitet",
+                "lossless": "Förlustfri",
+                "hi_res": "Högupplöst",
+                "unknown": "Kvalitet okänd"
+            },
+            "normalization_mode": {
+                "disabled": "Inaktiverad",
+                "dynamic": "Dynamisk",
+                "measurement_only": "Uppmätt ljudstyrka",
+                "fallback_fixed_gain": "Alternativ fast förstärkning",
+                "fixed_gain": "Fast förstärkning",
+                "fallback_dynamic": "Reservdynamik"
+            },
+            "measurement": {
+                "track": "Spår",
+                "album": "Album",
+                "live": "Live",
+                "fallback": "Reserv"
+            },
+            "crossfade_mode": {
+                "smart": "Smart",
+                "standard": "Standard",
+                "disabled": "Inaktiverad"
+            },
+            "dsp_state": {
+                "enabled": "DSP aktiv",
+                "disabled": "DSP inaktiverad",
+                "disabled_by_unsupported_group": "DSP är inte tillgängligt för den här gruppen",
+                "unknown": "DSP tillstånd okänt"
+            },
+            "mono": "Mono",
+            "stereo": "Stereo",
+            "integer_pcm": "{0}-bit PCM",
+            "direct_signal_path": "Direkt signalväg",
+            "direct_signal_path_detail": "Ljudet passerar oförändrat genom kö behandlingen.",
+            "direct_signal_path_inactive_detail": "Ingen volymnormalisering, övertoning, justering av uppspelningshastighet eller ljudöverlagring är aktiv.",
+            "no_shared_transforms": "Inga delade transformationer rapporterades",
+            "no_shared_transforms_detail": "Ingen normalisering, övertoning, justering av uppspelningshastighet eller ljudöverlagring rapporteras av bearbetningsmodellen.",
+            "processing_headroom": "Bearbetningsutrymme",
+            "processing_headroom_detail": "Music Assistant konverterar ljud till flyttal internt för att skapa fri höjd och minska klippning eller precisionsförlust under normalisering, mixning, crossfade, DSP och begränsning.",
+            "processing_headroom_reasons": "Flyttalshöjd är tillgänglig för: {0}.",
+            "internal_format_detail": "Internt format: {0}",
+            "internal_format_conversion": "Intern formatkonvertering",
+            "internal_format_conversion_detail": "Music Assistant konverterar det interna bearbetningsformatet före utmatning.",
+            "normalization_title": "Volymnormalisering",
+            "playback_speed_title": "Uppspelningshastighet",
+            "crossfade_title": "Övertoning",
+            "overlay_title": "Ljudöverlagring",
+            "dsp_preset_label": "DSP förinställning",
+            "dsp_title": "DSP",
+            "bit_perfect_badge": "Bitperfekt",
+            "bit_perfect_detail": "Bitperfekt: ljudproverna är oförändrade från källan.",
+            "samples_changed_detail": "Ljudbehandling eller förlustfri formatkonvertering ändrade ljudproverna. Detta är inte bitperfekt, men borde inte orsaka en hörbar kvalitetsförlust.",
+            "lossy_output_detail": "Utdata är kodad med en förlustbringande kodek. Detta är inte bitperfekt och kan försämra ljudkvaliteten.",
+            "bit_perfect_unknown_detail": "Bitperfekt status är inte tillgänglig."
+        },
+        "processing_header": "Bearbetning",
+        "more_info_for": "Mer information om {item}"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Välj källa",
     "play_replace_next": "Spela härnäst (rensa kön)",
     "all_enqueue_options": "Alla alternativ för att lägga till i kö",
@@ -1137,7 +1207,15 @@
             "enable_guest_access": "Aktivera gäståtkomst",
             "guest_access_enabled": "Gäståtkomst aktiverad",
             "guest_access_toggle_failed": "Misslyckades med att växla gäståtkomst",
-            "powered_by": "Drivs av"
+            "powered_by": "Drivs av",
+            "copy_link": "Kopiera länk",
+            "more_share_options": "Fler delningsalternativ",
+            "qr_default_text": "Skanna QR-koden för att delta i festen!",
+            "share_description": "Använd den här länken eller skanna QR-koden för att delta i festen.",
+            "share_failed": "Kunde inte dela inbjudan",
+            "share_invitation": "Dela inbjudan",
+            "share_named_title": "Gå med {0}",
+            "share_title": "Gå med i Music Assistant festen"
         },
         "music_quiz": {
             "title": "Musikquiz",
@@ -1262,7 +1340,7 @@
             "timeline": "Tidslinje",
             "timeline_anchor": "Förankra",
             "timeline_revealed": "Ny",
-            "timeline_place_help": "Välj mellanrummet där den spelade låten hör hemma.",
+            "timeline_place_help": "Välj var den spelade låten hör hemma, från äldre till nyare.",
             "timeline_place_here": "Placera här",
             "timeline_placed_here": "Placerad här",
             "timeline_place_before": "Placera före {0}: {1}",
@@ -1349,7 +1427,22 @@
             "playback_options_unavailable": "Uppspelningsalternativen kunde inte läsas in. Försök igen innan du skapar spelet.",
             "preparing_game": "Förbereda ditt spel",
             "preparing_game_help": "Laddar din valda musik och skapar rundorna. Det kan ta en stund.",
-            "settings": "Inställningar för musikquiz"
+            "settings": "Inställningar för musikquiz",
+            "more_share_options": "Fler delningsalternativ",
+            "share_description": "Använd den här länken eller skanna QR-koden för att delta i musikquizet.",
+            "share_failed": "Det gick inte att dela quiz inbjudan",
+            "share_invitation": "Dela inbjudan",
+            "share_title": "Delta i frågesporten om musikassistenten",
+            "timeline_order": "Tidslinje, från äldre till nyare",
+            "timeline_older": "Äldre",
+            "timeline_newer": "Nyare",
+            "timeline_place_before_year": "Före {0}",
+            "timeline_place_after_year": "Efter {0}",
+            "timeline_place_between_years": "Mellan {0} och {1}",
+            "timeline_place_in_year": "I {0}",
+            "play_along": "Spela med",
+            "host_controls": "Värdkontroller",
+            "return_to_host_panel": "Återgå till värdpanelen"
         }
     },
     "no_lyrics_available": "Inga texter tillgängliga",
@@ -1675,8 +1768,16 @@
         "no_quiz_title": "Inget quiz är aktivt för närvarande",
         "no_quiz_description": "Be värden att starta ett musikquiz.",
         "nothing_active_title": "Ingenting är aktivt för närvarande",
-        "nothing_active_description": "Be värden att starta en gästupplevelse."
+        "nothing_active_description": "Be värden att starta en gästupplevelse.",
+        "error_title": "Det gick inte att ladda den aktiva upplevelsen",
+        "error_description": "Kontrollera din anslutning och försök igen.",
+        "access_label": "Gäståtkomst",
+        "menu_label": "Gästalternativ",
+        "leave": "Lämna gästläget",
+        "return_to_app": "Tillbaka till Music Assistant"
     },
     "searching": "Söker...",
-    "pause": "Pausa"
+    "pause": "Pausa",
+    "play_failed": "Uppspelningsåtgärden misslyckades",
+    "show_audio_chain_details_for_quality": "Visa detaljer om ljudkedjan ({quality})"
 }

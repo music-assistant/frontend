@@ -619,10 +619,6 @@
     "podcast_episode": "Epizode",
     "podcast_episodes": "Epizodes",
     "play_from_here": "Atskaņot no šejienes",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (albumam)",
-    "loudness_dynamic": "Dinamiskā skaļuma normalizācija",
-    "loudness_fixed": "Fiksēta pastiprinājuma korekcija",
     "dsp_active": "Aktīvs",
     "currently_playing_players": "Pašlaik atskaņo",
     "all_players": "Visi atskaņotāji",
@@ -632,40 +628,20 @@
     "streamdetails": {
         "input_header": "Ieeja",
         "output_header": "Izeja",
-        "output_format_info": "Audio tiek nosūtīts {0} formātā",
         "eq_band_count": "{0} joslas",
         "eq_band_count_singular": "1 josla",
         "input_gain": "Ievades pastiprinājums ({0} dB)",
         "output_gain": "Izejas pastiprinājums ({0} dB)",
         "output_limiter": "Izejas ierobežotājs",
-        "output_limiter_info": "Automātiski samazina ļoti skaļas skaņas, lai novērstu skaņas kropļojumus un aizsargātu tavus skaļruņus",
-        "dsp_unsupported": "DSP nav atbalstīts",
-        "dsp_disabled_by_unsupported_group": "Šī atskaņotāja sniedzējs neatbalsta DSP ar sinhronizētu atskaņošanu",
         "file_info": {
             "container": "Konteiners: {0}",
             "codec": "Kodeks: {0}",
             "bit_rate": "Pārraides ātrums: {0} kbps",
             "sample_rate": "Parauga frekvence: {0} kHz",
             "channels": "Kanāli: {0}",
-            "bit_depth": "Bitu dziļums: {0}",
-            "processing_notice": "Audio tiek apstrādāts iekšēji kā 32 bitu peldošā punkta (float) PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Mērķa līmenis: {0} LUFS",
-            "integrated_loudness": "Izmērītais (iekšējais) skaļums: {0} LUFS",
-            "integrated_album_loudness": "Albuma skaļums: {0} LUFS",
-            "applied_gain_correction": "Piemērotā pastiprinājuma korekcija: {0} dB",
-            "mode": {
-                "dynamic": "Skaļuma normalizācija ir aktīva dinamiskajā režīmā.",
-                "measurement_only": "Skaļuma normalizācija ir aktīva balstoties uz saglabātu mērījumu audio (iekšējam) skaļumam.",
-                "measurement_album": "Skaļuma normalizācija ir aktīva balstoties uz saglabātu mērijumu albuma (iekšējam) skaļumam.",
-                "fixed_gain": "Skaļuma normalizācija ir aktīva izmantojot fiksētu skaļuma korekciju."
-            }
-        },
-        "click_to_expand": "Nospied, lai redzētu visus atskaņotājus",
-        "output_format_pcm_info": "Audio tiek padots kā PCM uz atskaņotāja sniedzēju. Atskaņotāja sniedzējs var tad to pārveidot uz citu formātu pirms nosūtīšanas atskaņotājam."
+            "bit_depth": "Bitu dziļums: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Izvēlieties avotu",
     "play_replace_next": "Atskaņot Nākamo (notīrīt rindu)",
     "all_enqueue_options": "Visas rindu opcijas",

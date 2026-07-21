@@ -216,7 +216,7 @@
                     "notch": "Notch"
                 },
                 "import_apo": "APO\/REW Preset importeren",
-                "export_apo": "APO Preset exporteren",
+                "export_apo": "APO-preset exporteren",
                 "preamp": "Preamp",
                 "add_band_channel": "Band toevoegen (alleen {channel})",
                 "band_channel": "Band {index} (alleen {channel})",
@@ -234,11 +234,14 @@
             "parameter": {
                 "frequency": "Frequentie",
                 "gain": "Gain",
-                "q_factor": "Q-factor"
+                "q_factor": "Q-factor",
+                "balance": "Balans"
             },
             "types": {
                 "parametric_eq": "Parametrische EQ",
-                "tone_control": "Toonregeling"
+                "tone_control": "Toonregeling",
+                "gain": "Gain",
+                "balance": "Balans"
             },
             "channels": {
                 "ALL": "Alle",
@@ -250,12 +253,14 @@
                 "FR": "R"
             },
             "presets": {
-                "load": "DSP Preset laden",
-                "empty_warning": "Geen DSP preset beschikbaar",
+                "load": "DSP-preset laden",
+                "empty_warning": "Geen DSP-preset beschikbaar",
                 "save": "Preset opslaan",
                 "name": "Presetnaam",
                 "name_placeholder": "Mijn nieuwe preset",
-                "remove_confirm": "Weet je zeker dat je deze DSP preset wilt verwijderen?"
+                "remove_confirm": "Weet je zeker dat je deze DSP preset wilt verwijderen?",
+                "custom": "Aangepast",
+                "selected": "Preset: {0}"
             }
         },
         "dsp_enabled": "DSP is ingeschakeld",
@@ -568,7 +573,7 @@
         "protocol_configure_label": "Uitvoerprotocollen configureren",
         "protocol_configure_title_via": "Configureer {name} (via {base})",
         "show_waveform": {
-            "label": "Laat de geluidsgolf als voortgangsbalk zien",
+            "label": "Gebruik geluidsgolf als voortgangsbalk",
             "description": "Toon een voortgangsbalk in geluidsgolfstijl in de speler op volledig scherm wanneer er audioanalyse data beschikbaar is voor het nummer dat wordt afgespeeld."
         },
         "download_diagnostics": "Diagnostisch rapport downloaden",
@@ -756,10 +761,6 @@
     "podcast_episode": "Aflevering",
     "podcast_episodes": "Afleveringen",
     "play_from_here": "Speel vanaf hier",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamische volumenormalisatie",
-    "loudness_fixed": "Vaste versterkingscorrectie",
     "dsp_active": "Actief",
     "currently_playing_players": "Nu aan het spelen",
     "all_players": "Alle spelers",
@@ -769,42 +770,111 @@
     "streamdetails": {
         "input_header": "Invoer",
         "output_header": "Uitvoer",
-        "output_format_info": "Audio wordt verzonden in het {0} formaat",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",
         "input_gain": "Ingangsversterking ({0} dB)",
         "output_gain": "Uitgangsversterking ({0} dB)",
         "output_limiter": "Uitgangsbegrenzer",
-        "output_limiter_info": "Reduceert automatisch zeer harde geluiden om vervorming te voorkomen en je luidsprekers te beschermen.",
-        "dsp_unsupported": "DSP niet ondersteund",
-        "dsp_disabled_by_unsupported_group": "Deze spelerprovider biedt geen ondersteuning voor DSP met gesynchroniseerd afspelen.",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Bitrate: {0} kbps",
             "sample_rate": "Sample rate: {0} kHz",
             "channels": "Kanalen: {0}",
-            "bit_depth": "Bitdiepte: {0}",
-            "processing_notice": "Audio wordt intern verwerkt als 32-bits float PCM"
+            "bit_depth": "Bitdiepte: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Doelniveau: {0} LUFS.",
-            "integrated_loudness": "Gemeten (geïntegreerde) loudness: {0} LUFS.",
-            "integrated_album_loudness": "Album loudness: {0} LUFS.",
-            "applied_gain_correction": "Toegepaste versterkingscorrectie: {0} Db.",
-            "mode": {
-                "dynamic": "Volumenormalisatie is actief in de dynamische modus.",
-                "measurement_only": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) loudness van de audio.",
-                "measurement_album": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) loudness van het album.",
-                "fixed_gain": "Volumenormalisatie is actief op basis van vaste versterkingscorrectie."
-            }
-        },
-        "click_to_expand": "Klik om alle spelers te laten zien",
-        "output_format_pcm_info": "Audio wordt als PCM doorgegeven aan de spelerprovider. De speleraanbieder kan dan de audio converteren naar een ander formaat voordat het naar de speler wordt gestuurd.",
         "more_info": "Meer informatie",
-        "player_not_found": "Speler niet gevonden"
+        "audio_processing": {
+            "unknown": "Onbekend",
+            "unknown_format": "Onbekend formaat",
+            "provider": "Provider: {0}",
+            "source_format": "Bron: {0}",
+            "pcm_format": "Gedeelde verwerking: {0}",
+            "output_format": "Definitieve uitvoer: {0}",
+            "sample_rate": "{0} kHz",
+            "bit_depth": "{0}-bit",
+            "channel_count": "{0} kanalen",
+            "bit_rate": "{0} kbps",
+            "pcm": "PCM",
+            "float_pcm_32": "32-bit float PCM",
+            "float_pcm_64": "64-bit float PCM",
+            "normalization": "Volumenormalisatie: {0}",
+            "measurement_source": "Meting: {0}",
+            "target_lufs": "Doelniveau: {0} LUFS",
+            "measured_lufs": "Gemeten loudness: {0} LUFS",
+            "applied_gain_db": "Toegepaste versterking: {0} dB",
+            "playback_speed": "Afspeelsnelheid: {0}X",
+            "crossfade": "Crossfade: {0}",
+            "overlay_active": "Audio-overlay actief",
+            "source_channel": "Bronkanaal: {0}",
+            "source_channel_left": "Links",
+            "source_channel_right": "Rechts",
+            "dsp_preset": "DSP-preset: {0}",
+            "bit_perfect": "Bit-perfect uitvoer",
+            "not_bit_perfect": "Verwerkte uitvoer",
+            "destination_unknown": "Bestemming {0}",
+            "destination_unavailable": "Bestemming niet beschikbaar",
+            "quality": {
+                "low": "Lage kwaliteit",
+                "standard": "Standaardkwaliteit",
+                "lossless": "Lossless",
+                "hi_res": "Hi-res",
+                "unknown": "Onbekende kwaliteit"
+            },
+            "normalization_mode": {
+                "disabled": "Uitgeschakeld",
+                "dynamic": "Dynamisch",
+                "measurement_only": "Gemeten loudness",
+                "fallback_fixed_gain": "Vaste versterking (fallback)",
+                "fixed_gain": "Vaste versterking",
+                "fallback_dynamic": "Dynamische fallback"
+            },
+            "measurement": {
+                "track": "Nummer",
+                "album": "Album",
+                "live": "Live",
+                "fallback": "Fallback"
+            },
+            "crossfade_mode": {
+                "smart": "Smart",
+                "standard": "Standaard",
+                "disabled": "Uitgeschakeld"
+            },
+            "dsp_state": {
+                "enabled": "DSP actief",
+                "disabled": "DSP uitgeschakeld",
+                "disabled_by_unsupported_group": "DSP niet beschikbaar voor deze groep",
+                "unknown": "DSP-status onbekend"
+            },
+            "mono": "Mono",
+            "stereo": "Stereo",
+            "integer_pcm": "{0}-bit PCM",
+            "direct_signal_path": "Direct signaalpad",
+            "direct_signal_path_detail": "Audio wordt ongewijzigd door de wachtrijverwerking geleid.",
+            "direct_signal_path_inactive_detail": "Er is geen volumenormalisatie, crossfade, aanpassing van de afspeelsnelheid of audio-overlay actief.",
+            "no_shared_transforms": "Er zijn geen gedeelde transformaties gemeld",
+            "no_shared_transforms_detail": "Het verwerkingsmodel meldt geen normalisatie, crossfade, aanpassing van de afspeelsnelheid of audio-overlay.",
+            "processing_headroom": "Verwerkings-headroom",
+            "processing_headroom_detail": "Music Assistant zet audio intern om naar floating-point om headroom te creëren en clipping of precisieverlies te verminderen tijdens normalisatie, mixen, crossfades, DSP en limiting.",
+            "processing_headroom_reasons": "Floating-point headroom is beschikbaar voor: {0}.",
+            "internal_format_detail": "Intern formaat: {0}",
+            "internal_format_conversion": "Interne formaatconversie",
+            "internal_format_conversion_detail": "Music Assistant converteert het interne verwerkingsformaat vóór de uitvoer.",
+            "normalization_title": "Volumenormalisatie",
+            "playback_speed_title": "Afspeelsnelheid",
+            "crossfade_title": "Crossfade",
+            "overlay_title": "Audio-overlay",
+            "dsp_preset_label": "DSP-preset",
+            "dsp_title": "DSP",
+            "bit_perfect_badge": "Bit-perfect",
+            "bit_perfect_detail": "Bit-perfect: de audiofragmenten zijn ongewijzigd ten opzichte van de bron.",
+            "samples_changed_detail": "Door audioverwerking of conversie naar een ander lossless formaat, zijn de audiosamples gewijzigd. Dit is niet bit-perfect, maar zou geen hoorbaar kwaliteitsverlies moeten veroorzaken.",
+            "lossy_output_detail": "De uitvoer wordt gecodeerd met een lossy codec. Dit betekent dat de codering niet bit-perfect is en de geluidskwaliteit kan afnemen.",
+            "bit_perfect_unknown_detail": "De bit-perfect status is niet beschikbaar."
+        },
+        "processing_header": "Verwerking",
+        "more_info_for": "Meer informatie over {item}"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Bron selecteren",
     "play_replace_next": "Hierna afspelen (wachtrij wissen)",
     "all_enqueue_options": "Alle afspeelopties",
@@ -1137,7 +1207,15 @@
             "enable_guest_access": "Gasttoegang inschakelen",
             "guest_access_enabled": "Gasttoegang ingeschakeld",
             "guest_access_toggle_failed": "Gasttoegang schakelen mislukt",
-            "powered_by": "Mogelijk gemaakt door"
+            "powered_by": "Mogelijk gemaakt door",
+            "copy_link": "Link kopiëren",
+            "more_share_options": "Meer deelopties",
+            "qr_default_text": "Scan de QR-code om mee te doen aan de party!",
+            "share_description": "Gebruik deze link of scan de QR-code om mee te doen aan de party.",
+            "share_failed": "Ik kon de uitnodiging niet delen",
+            "share_invitation": "Uitnodiging delen",
+            "share_named_title": "Doe mee {0}",
+            "share_title": "Doe mee met het Music Assistant party"
         },
         "music_quiz": {
             "title": "Muziekquiz",
@@ -1333,7 +1411,7 @@
             "playback_help": "Kies waar de deelnemers de muziek horen.",
             "playback_mode": "Afspeelmodus",
             "playback_venue": "Locatie",
-            "playback_venue_help": "Speel muziek af via één luidspreker.",
+            "playback_venue_help": "Speel muziek af via een luidspreker.",
             "playback_remote": "Op afstand",
             "playback_remote_help": "Deelnemers luisteren via hun eigen apparaat.",
             "playback_summary_venue": "Locatie · {0}",
@@ -1349,7 +1427,22 @@
             "playback_options_unavailable": "De afspeelopties konden niet worden geladen. Probeer het nog eens voordat je het spel aanmaakt.",
             "preparing_game": "Je spel voorbereiden",
             "preparing_game_help": "De door jou geselecteerde muziek wordt geladen en de rondes worden aangemaakt. Dit kan even duren.",
-            "settings": "Muziekquiz instellingen"
+            "settings": "Muziekquiz instellingen",
+            "more_share_options": "Meer deelopties",
+            "share_description": "Gebruik deze link of scan de QR-code om mee te doen aan de Muziekquiz.",
+            "share_failed": "Kon de quizuitnodiging niet delen.",
+            "share_invitation": "Uitnodiging delen",
+            "share_title": "Doe mee aan de Music Assistant-quiz",
+            "timeline_order": "Tijdlijn, van oud naar nieuw",
+            "timeline_older": "Ouder",
+            "timeline_newer": "Nieuwer",
+            "timeline_place_before_year": "Voor {0}",
+            "timeline_place_after_year": "Na {0}",
+            "timeline_place_between_years": "Tussen {0} en {1}",
+            "timeline_place_in_year": "Gedurende {0}",
+            "play_along": "Doe mee",
+            "host_controls": "Host bedieningselementen",
+            "return_to_host_panel": "Terug naar het hostpaneel"
         }
     },
     "no_lyrics_available": "Geen songtekst beschikbaar",
@@ -1675,8 +1768,16 @@
         "no_quiz_title": "Er is momenteel geen Muziekquiz actief",
         "no_quiz_description": "Vraag de gastheer om een Muziekquiz te starten.",
         "nothing_active_title": "Er is momenteel niets actief",
-        "nothing_active_description": "Vraag de gastheer\/gastvrouw om een ​​gastbeleving te starten."
+        "nothing_active_description": "Vraag de gastheer\/gastvrouw om een ​​gastbeleving te starten.",
+        "error_title": "De actieve ervaring kan niet worden geladen",
+        "error_description": "Controleer je verbinding en probeer het opnieuw.",
+        "access_label": "Gasttoegang",
+        "menu_label": "Gastopties",
+        "leave": "Verlaat de gastmodus",
+        "return_to_app": "Terug naar Music Assistant"
     },
     "searching": "Zoeken...",
-    "pause": "Pauzeren"
+    "pause": "Pauzeren",
+    "play_failed": "Afspeelactie mislukt",
+    "show_audio_chain_details_for_quality": "Details van de audioketen weergeven ({quality})"
 }

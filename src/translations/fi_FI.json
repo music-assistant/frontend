@@ -490,10 +490,6 @@
     "podcast_episode": "Jakso",
     "podcast_episodes": "Jaksot",
     "play_from_here": "Toista tästä",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (albumi)",
-    "loudness_dynamic": "Dynaaminen äänenvoimakkuuden normalisointi",
-    "loudness_fixed": "Kiinteä vahvistuksen korjaus",
     "dsp_active": "Aktiivinen",
     "currently_playing_players": "Toistetaan tällä hetkellä",
     "all_players": "Kaikki soittimet",
@@ -503,13 +499,9 @@
     "streamdetails": {
         "input_header": "Sisääntulo",
         "output_header": "Lähtö",
-        "output_format_info": "Ääni lähetetään {0} formaatissa",
         "input_gain": "Tulosignaalin vahvistus ({0} dB)",
         "output_gain": "Lähtövahvistus ({0} dB)",
         "output_limiter": "Lähtörajoitin",
-        "output_limiter_info": "Vaimentaa automaattisesti erittäin kovia ääniä estääkseen säröä ja suojatakseen kaiuttimiasi",
-        "dsp_unsupported": "DSP:tä ei tueta",
-        "dsp_disabled_by_unsupported_group": "Tämä soittimen tarjoaja ei tue DSP:tä synkronoidun toiston kanssa",
         "file_info": {
             "container": "Säiliö: {0}",
             "codec": "Koodekki: {0}",
@@ -517,19 +509,8 @@
             "sample_rate": "Näytteenottotaajuus: {0} kHz",
             "channels": "Kanavia: {0}",
             "bit_depth": "Bittisyvyys: {0}"
-        },
-        "volume_normalization": {
-            "target_level": "Tavoitetaso: {0} LUFS",
-            "integrated_loudness": "Mitattu (integroitu) äänenvoimakkuus: {0} LUFS",
-            "integrated_album_loudness": "Albumin äänenvoimakkuus: {0} LUFS",
-            "applied_gain_correction": "Käytetty vahvistuksen korjaus: {0} dB",
-            "mode": {
-                "dynamic": "Äänenvoimakkuuden normalisointi on aktiivinen dynaamisessa tilassa."
-            }
-        },
-        "click_to_expand": "Klikkaa nähdäksesi kaikki soittimet"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Valitse lähde",
     "play_replace_next": "Toista seuraavaksi (tyhjennä jono)",
     "music_assistant_source": "Music Assistant jono",

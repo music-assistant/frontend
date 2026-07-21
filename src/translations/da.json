@@ -457,10 +457,6 @@
     "podcast_episode": "Episode",
     "podcast_episodes": "Episoder",
     "play_from_here": "Afspil herfra",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamisk normalisering af lydstyrke",
-    "loudness_fixed": "Bestemt forstærkningskorrektion",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Spiller nu",
     "all_players": "Alle afspillere",
@@ -470,40 +466,20 @@
     "streamdetails": {
         "input_header": "Indgang",
         "output_header": "Udgang",
-        "output_format_info": "Lyden konverteres til formatet '{0}', før den sendes til afspilleren.",
         "eq_band_count": "{0} bånd",
         "eq_band_count_singular": "1 bånd",
         "input_gain": "Indgangsforstærkning ({0} dB)",
         "output_gain": "Udgangsforstærkning ({0} dB)",
         "output_limiter": "Udgangsbegrænser",
-        "output_limiter_info": "Reducerer automatisk meget høje lyde for at forhindre forvrængning og beskytte dine højttalere",
-        "dsp_unsupported": "DSP understøttes ikke",
-        "dsp_disabled_by_unsupported_group": "Denne afspillerudbyder understøtter ikke DSP med synkroniseret afspilning",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Kodeks: {0}",
             "bit_rate": "Bit rate: {0} kbps",
             "sample_rate": "Samplingsfrekvens: {0} kHz",
             "channels": "Kanaler: {0}",
-            "bit_depth": "Bitdybde: {0}",
-            "processing_notice": "Lyd behandles internt som 32-bit float PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Målniveau: {0} LUFS",
-            "integrated_loudness": "Målt (integreret) lydstyrke: {0} LUFS",
-            "integrated_album_loudness": "Albummets lydstyrke: {0} LUFS",
-            "applied_gain_correction": "Anvendt forstærkningskorrektion: {0} dB",
-            "mode": {
-                "dynamic": "Normalisering af lydstyrken er aktiv i dynamisk tilstand.",
-                "measurement_only": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af lydens (integrerede) lydstyrke.",
-                "measurement_album": "Normalisering af lydstyrken er aktiv, baseret på en lagret måling af albummets (integrerede) lydstyrke.",
-                "fixed_gain": "Normalisering af lydstyrken er aktiv, baseret på bestemt forstærkningskorrektion."
-            }
-        },
-        "click_to_expand": "Klik for at vise alle spillere",
-        "output_format_pcm_info": "Lyden sendes som PCM til afspillerudbyderen. Afspillerudbyderen kan derefter konvertere lyden til et andet format, før den sendes til afspilleren."
+            "bit_depth": "Bitdybde: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vælg kilde",
     "play_replace_next": "Afspil næste (ryd køen)",
     "all_enqueue_options": "Alle muligheder for at sætte i kø",

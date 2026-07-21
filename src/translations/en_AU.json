@@ -20,18 +20,6 @@
     "favorites_add": "Add to favourites",
     "favorites_remove": "Remove from favourites",
     "sync_player_with": "Synchronise with another player",
-    "loudness_dynamic": "Dynamic volume normalisation",
-    "streamdetails": {
-        "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronised playback",
-        "volume_normalization": {
-            "mode": {
-                "dynamic": "Volume normalisation is active in the dynamic mode.",
-                "measurement_only": "Volume normalisation is active based on a stored measurement of the (integrated) loudness of the audio.",
-                "measurement_album": "Volume normalisation is active based on a stored measurement of the (integrated) loudness of the album.",
-                "fixed_gain": "Volume normalisation is active based on fixed gain correction."
-            }
-        }
-    },
     "smart_playlist": {
         "field_favorite": "Favourite"
     }

@@ -1,7 +1,9 @@
 import {
   type CommandMessage,
+  type DSPConfig,
   type ErrorResultMessage,
   type ServerInfoMessage,
+  type SuccessResultMessage,
 } from "@/plugins/api/interfaces";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -57,7 +59,9 @@ class TestTransport extends BaseTransport {
     this.sentCommands.push(JSON.parse(data) as CommandMessage);
   }
 
-  receive(message: ServerInfoMessage | ErrorResultMessage): void {
+  receive(
+    message: ServerInfoMessage | SuccessResultMessage | ErrorResultMessage,
+  ): void {
     this.emit("message", JSON.stringify(message));
   }
 
@@ -127,6 +131,31 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleError).toHaveBeenCalledWith("[resultMessage]", error);
     expect(mockToastError).toHaveBeenCalledWith("Visible failure");
     expect(consoleDebug).not.toHaveBeenCalled();
+  });
+
+  it("applies a DSP preset through the dedicated command", async () => {
+    const config: DSPConfig = {
+      enabled: true,
+      filters: [],
+      input_gain: 0,
+      output_gain: 0,
+      preset_id: "preset-1",
+    };
+    const result = api.applyDSPPreset("player-1", "preset-1");
+
+    expect(transport.lastCommand.command).toBe(
+      "config/players/dsp/apply_preset",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      player_id: "player-1",
+      preset_id: "preset-1",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: config,
+    });
+    await expect(result).resolves.toEqual(config);
   });
 });
 
