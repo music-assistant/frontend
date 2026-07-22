@@ -1242,8 +1242,8 @@ export interface DashboardDevice {
   dashboard_id: string;
   name: string;
   supported_types: DashboardType[];
-  icon?: string; // material design (mdi-*) or MA/lucide icon name
-  player_id?: string; // linked MA player, if any
+  icon?: string | null; // material design (mdi-*) or MA/lucide icon name
+  player_id?: string | null; // linked MA player, if any
 }
 
 export type DashboardType = "party" | "now_playing" | "music_quiz";
@@ -1253,7 +1253,7 @@ export interface DashboardSession {
   dashboard_id: string;
   name: string; // device display name
   dashboard: DashboardType;
-  player_id?: string; // target player for the now_playing dashboard
+  player_id?: string | null; // target player for the now_playing dashboard
 }
 
 export enum TaskStatus {
