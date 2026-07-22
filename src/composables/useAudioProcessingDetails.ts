@@ -5,7 +5,6 @@ import {
   File as FileIcon,
   FileAudio,
   Gauge,
-  Shield,
   SlidersHorizontal,
   Speaker,
   Split,
