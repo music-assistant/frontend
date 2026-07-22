@@ -24,9 +24,58 @@ export interface BuildLatestEpisodesOptions {
 }
 
 /**
+ * Matches a date-only `release_date` of the form `YYYY-MM-DD` (no time part).
+ * Such values carry a calendar date, not an instant, so they must be rendered
+ * as that same local date regardless of the viewer's time zone.
+ */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Construct a local-time `Date` at midnight for the given calendar components
+ * (month is 1-based). The `Date` constructor maps two-digit years (0-99) to
+ * 1900-1999, so `setFullYear` is used to pin the actual four-digit year and
+ * keep construction correct across the whole `0000`-`9999` range.
+ */
+function buildLocalCalendarDate(
+  year: number,
+  month: number,
+  day: number,
+): Date {
+  const date = new Date(year, month - 1, day);
+  date.setFullYear(year);
+  return date;
+}
+
+/**
+ * When `raw` is a valid `YYYY-MM-DD` calendar date, return its `[year, month,
+ * day]` components (month is 1-based). Returns `null` for any other shape or
+ * for values that look date-only but are not real dates (e.g. `2024-02-31`).
+ */
+function parseDateOnlyParts(raw: string): [number, number, number] | null {
+  if (!DATE_ONLY_PATTERN.test(raw)) return null;
+  const [year, month, day] = raw.split("-").map(Number);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  // Reject impossible calendar dates (e.g. Feb 31) via round-trip check: an
+  // overflowing day rolls into the next month, so the components no longer match.
+  const asDate = buildLocalCalendarDate(year, month, day);
+  if (
+    asDate.getFullYear() !== year ||
+    asDate.getMonth() !== month - 1 ||
+    asDate.getDate() !== day
+  ) {
+    return null;
+  }
+  return [year, month, day];
+}
+
+/**
  * Parse an episode's `metadata.release_date` into a numeric timestamp (ms).
  * Returns `null` when the field is missing or not a valid date, which callers
  * use to push undated episodes to the end of the listing.
+ *
+ * Date-only values (`YYYY-MM-DD`) are interpreted as UTC midnight (the default
+ * `Date` parsing behavior) so that global sorting stays deterministic and
+ * independent of the viewer's time zone.
  */
 export function getEpisodeReleaseTime(episode: PodcastEpisode): number | null {
   const rawReleaseDate = episode.metadata?.release_date;
@@ -37,20 +86,49 @@ export function getEpisodeReleaseTime(episode: PodcastEpisode): number | null {
 
 /**
  * Format an episode's release date as a localized date string, or return
- * `null` when the episode has no valid release date. Pure wrapper around
- * `getEpisodeReleaseTime` so the component template stays declarative.
+ * `null` when the episode has no valid release date.
+ *
+ * Date-only values (`YYYY-MM-DD`) are rendered as that exact local calendar
+ * date, so a `2024-01-15` release shows as Jan 15 even in time zones west of
+ * UTC (where the naive `new Date("2024-01-15")` UTC-midnight instant would slip
+ * to Jan 14). Full ISO timestamps keep instant semantics and are formatted in
+ * the viewer's local time zone.
+ *
+ * Date-only-shaped inputs are handled strictly: a value matching `YYYY-MM-DD`
+ * never enters generic timestamp parsing. Valid ones render as their exact
+ * local calendar date; impossible-but-in-range ones (e.g. `2024-02-31`) return
+ * `null` rather than being silently normalized to a different month by lenient
+ * `Date` parsing.
  */
 export function formatEpisodeReleaseDate(
   episode: PodcastEpisode,
   locale?: string,
 ): string | null {
-  const releaseTime = getEpisodeReleaseTime(episode);
-  if (releaseTime === null) return null;
-  return new Date(releaseTime).toLocaleDateString(locale, {
+  const rawReleaseDate = episode.metadata?.release_date;
+  if (!rawReleaseDate) return null;
+
+  const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: "numeric",
     month: "short",
     day: "numeric",
-  });
+  };
+
+  // Any date-only-shaped value is resolved entirely here and never falls
+  // through to generic parsing, so invalid calendar dates return null.
+  if (DATE_ONLY_PATTERN.test(rawReleaseDate)) {
+    const dateOnlyParts = parseDateOnlyParts(rawReleaseDate);
+    if (!dateOnlyParts) return null;
+    const [year, month, day] = dateOnlyParts;
+    // Build a local-time Date so the rendered calendar date matches the input.
+    return buildLocalCalendarDate(year, month, day).toLocaleDateString(
+      locale,
+      dateFormatOptions,
+    );
+  }
+
+  const releaseTime = getEpisodeReleaseTime(episode);
+  if (releaseTime === null) return null;
+  return new Date(releaseTime).toLocaleDateString(locale, dateFormatOptions);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import {
   buildLatestEpisodes,
   dedupeEpisodes,
@@ -77,6 +77,61 @@ describe("formatEpisodeReleaseDate", () => {
     );
     expect(formatted).toBeTruthy();
     expect(formatted).toContain("2024");
+  });
+});
+
+describe("formatEpisodeReleaseDate in a western time zone", () => {
+  const originalTz = process.env.TZ;
+
+  afterEach(() => {
+    // Restore any mutated TZ state so other tests are unaffected.
+    if (originalTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = originalTz;
+    }
+  });
+
+  it("renders a date-only value as its local calendar date west of UTC", () => {
+    process.env.TZ = "America/Los_Angeles";
+    // Naive `new Date("2024-01-15")` is UTC midnight, which is Jan 14 in LA;
+    // the date-only path must keep it on Jan 15.
+    expect(
+      formatEpisodeReleaseDate(
+        makeEpisode("a", { releaseDate: "2024-01-15" }),
+        "en-US",
+      ),
+    ).toBe("Jan 15, 2024");
+  });
+
+  it("keeps instant semantics for a full ISO timestamp west of UTC", () => {
+    process.env.TZ = "America/Los_Angeles";
+    // 2024-01-15T05:00:00Z is 2024-01-14 21:00 in LA, so it renders as Jan 14.
+    expect(
+      formatEpisodeReleaseDate(
+        makeEpisode("a", { releaseDate: "2024-01-15T05:00:00Z" }),
+        "en-US",
+      ),
+    ).toBe("Jan 14, 2024");
+  });
+
+  it("does not treat an out-of-range date-only value as a local calendar date", () => {
+    process.env.TZ = "America/Los_Angeles";
+    // "2024-13-40" matches the YYYY-MM-DD shape but is not a real date, so the
+    // strict date-only path returns null rather than a bogus local date.
+    expect(
+      formatEpisodeReleaseDate(makeEpisode("a", { releaseDate: "2024-13-40" })),
+    ).toBeNull();
+  });
+
+  it("returns null for an impossible-but-in-range date-only value", () => {
+    process.env.TZ = "America/Los_Angeles";
+    // "2024-02-31" is date-only-shaped and in range per-field, but Feb has no
+    // 31st. It must NOT fall through to generic Date parsing (which would
+    // normalize it to March 2); the strict path returns null instead.
+    expect(
+      formatEpisodeReleaseDate(makeEpisode("a", { releaseDate: "2024-02-31" })),
+    ).toBeNull();
   });
 });
 
