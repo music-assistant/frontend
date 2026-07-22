@@ -1181,7 +1181,6 @@ export interface ProviderManifest {
   // icon: material design icon
   icon?: string;
   // icon_images: which icon variants this provider supplies as image files.
-  // Fetch the bytes via api.getProviderIcon(domain, variant).
   icon_images: ProviderIconVariant[];
   // depends on: domain of another provider that is required for this provider
   depends_on?: string;
