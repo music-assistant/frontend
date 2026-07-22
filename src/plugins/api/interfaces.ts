@@ -1243,7 +1243,6 @@ export interface DashboardDevice {
   name: string;
   supported_types: DashboardType[];
   icon?: string | null; // material design (mdi-*) or MA/lucide icon name
-  player_id?: string | null; // linked MA player, if any
 }
 
 export type DashboardType = "party" | "now_playing" | "music_quiz";

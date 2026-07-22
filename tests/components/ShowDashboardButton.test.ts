@@ -190,7 +190,6 @@ describe("ShowDashboardButton", () => {
           dashboard_id: "device-1",
           name: "Living Room TV",
           supported_types: ["party"],
-          player_id: "device-1",
         },
         {
           dashboard_id: "device-2",
