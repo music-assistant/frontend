@@ -47,6 +47,7 @@ import {
   Podcast,
   PodcastEpisode,
   ProviderConfig,
+  ProviderIconVariant,
   ProviderManifest,
   ProviderType,
   QueueOption,
@@ -96,6 +97,8 @@ export class MusicAssistantApi {
   public providerManifests = reactive<{ [domain: string]: ProviderManifest }>(
     {},
   );
+  public providerIcons = reactive<{ [key: string]: string | null }>({});
+  private _providerIconRequests = new Map<string, Promise<string | null>>();
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
@@ -397,6 +400,10 @@ export class MusicAssistantApi {
     Object.keys(this.providerManifests).forEach(
       (key) => delete this.providerManifests[key],
     );
+    Object.keys(this.providerIcons).forEach(
+      (key) => delete this.providerIcons[key],
+    );
+    this._providerIconRequests.clear();
     this.serverInfo.value = undefined;
   }
 
@@ -2382,6 +2389,30 @@ export class MusicAssistantApi {
       return this.providerManifests[prov.domain];
     }
     return undefined;
+  }
+
+  public async getProviderIcon(
+    domain: string,
+    variant: ProviderIconVariant,
+  ): Promise<string | null> {
+    const key = `${domain}:${variant}`;
+    if (key in this.providerIcons) return this.providerIcons[key];
+    let request = this._providerIconRequests.get(key);
+    if (!request) {
+      request = this.sendCommand<string | null>("providers/icon", {
+        provider: domain,
+        variant,
+      })
+        .then((dataUri) => {
+          this.providerIcons[key] = dataUri ?? null;
+          return this.providerIcons[key];
+        })
+        .finally(() => {
+          this._providerIconRequests.delete(key);
+        });
+      this._providerIconRequests.set(key, request);
+    }
+    return request;
   }
 
   private handleEventMessage(msg: EventMessage) {
