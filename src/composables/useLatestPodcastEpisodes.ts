@@ -117,6 +117,17 @@ export function useLatestPodcastEpisodes(
       }
       failedFeedCount.value = failures;
 
+      // A non-empty library where every feed rejected is a hard load failure,
+      // not a partial one: there is no usable listing to show. Empty libraries
+      // and fulfilled-but-empty feeds stay normal empty content.
+      if (podcasts.length > 0 && failures === podcasts.length) {
+        loadFailed.value = true;
+        episodes.value = [];
+        hasLoadedOnce.value = true;
+        toast.error($t("latest_episodes_load_failed"));
+        return;
+      }
+
       episodes.value = buildLatestEpisodes(perPodcastEpisodeLists, {
         candidatesPerPodcast,
         maxResults,

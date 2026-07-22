@@ -60,6 +60,28 @@ describe("getEpisodeReleaseTime", () => {
       getEpisodeReleaseTime(makeEpisode("a", { releaseDate: "2024-01-01" })),
     ).toBe(new Date("2024-01-01").getTime());
   });
+
+  it("pins a valid date-only value to UTC midnight", () => {
+    expect(
+      getEpisodeReleaseTime(makeEpisode("a", { releaseDate: "2024-02-28" })),
+    ).toBe(Date.UTC(2024, 1, 28));
+  });
+
+  it("returns null for an impossible-but-in-range date-only value", () => {
+    // "2024-02-31" is date-only-shaped and in range per-field, but Feb has no
+    // 31st. It must sort as undated rather than being normalized to March.
+    expect(
+      getEpisodeReleaseTime(makeEpisode("a", { releaseDate: "2024-02-31" })),
+    ).toBeNull();
+  });
+
+  it("keeps instant semantics for a full ISO timestamp", () => {
+    expect(
+      getEpisodeReleaseTime(
+        makeEpisode("a", { releaseDate: "2024-01-15T05:00:00Z" }),
+      ),
+    ).toBe(new Date("2024-01-15T05:00:00Z").getTime());
+  });
 });
 
 describe("formatEpisodeReleaseDate", () => {
@@ -172,6 +194,30 @@ describe("sortEpisodesByReleaseDate", () => {
     const snapshot = episodes.map((e) => e.name);
     sortEpisodesByReleaseDate(episodes);
     expect(episodes.map((e) => e.name)).toEqual(snapshot);
+  });
+
+  it("orders valid date-only values deterministically newest-first", () => {
+    const episodes = [
+      makeEpisode("feb", { releaseDate: "2024-02-28" }),
+      makeEpisode("mar", { releaseDate: "2024-03-01" }),
+      makeEpisode("jan", { releaseDate: "2024-01-15" }),
+    ];
+    expect(sortEpisodesByReleaseDate(episodes).map((e) => e.name)).toEqual([
+      "mar",
+      "feb",
+      "jan",
+    ]);
+  });
+
+  it("treats impossible date-only values as undated and sorts them last", () => {
+    const episodes = [
+      makeEpisode("impossible", { releaseDate: "2024-02-31" }),
+      makeEpisode("dated", { releaseDate: "2020-01-01" }),
+    ];
+    expect(sortEpisodesByReleaseDate(episodes).map((e) => e.name)).toEqual([
+      "dated",
+      "impossible",
+    ]);
   });
 });
 

@@ -69,17 +69,46 @@ function parseDateOnlyParts(raw: string): [number, number, number] | null {
 }
 
 /**
+ * Build a UTC-midnight timestamp (ms) for the given calendar components (month
+ * is 1-based). `Date.UTC` maps two-digit years (0-99) to 1900-1999, so
+ * `setUTCFullYear` pins the actual four-digit year and keeps the result correct
+ * across the whole `0000`-`9999` range.
+ */
+function buildUtcMidnightTime(
+  year: number,
+  month: number,
+  day: number,
+): number {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCFullYear(year);
+  return date.getTime();
+}
+
+/**
  * Parse an episode's `metadata.release_date` into a numeric timestamp (ms).
  * Returns `null` when the field is missing or not a valid date, which callers
  * use to push undated episodes to the end of the listing.
  *
- * Date-only values (`YYYY-MM-DD`) are interpreted as UTC midnight (the default
- * `Date` parsing behavior) so that global sorting stays deterministic and
- * independent of the viewer's time zone.
+ * Date-only values (`YYYY-MM-DD`) are validated strictly and pinned to UTC
+ * midnight so that global sorting stays deterministic and independent of the
+ * viewer's time zone. Impossible calendar dates that merely look date-only
+ * (e.g. `2024-02-31`) are treated as undated (`null`) rather than being
+ * silently normalized to a different month by lenient `Date` parsing. Full ISO
+ * timestamps keep their instant semantics.
  */
 export function getEpisodeReleaseTime(episode: PodcastEpisode): number | null {
   const rawReleaseDate = episode.metadata?.release_date;
   if (!rawReleaseDate) return null;
+
+  // Any date-only-shaped value is resolved strictly here and never falls
+  // through to generic parsing, so invalid calendar dates sort as undated.
+  if (DATE_ONLY_PATTERN.test(rawReleaseDate)) {
+    const dateOnlyParts = parseDateOnlyParts(rawReleaseDate);
+    if (!dateOnlyParts) return null;
+    const [year, month, day] = dateOnlyParts;
+    return buildUtcMidnightTime(year, month, day);
+  }
+
   const parsedTime = new Date(rawReleaseDate).getTime();
   return Number.isNaN(parsedTime) ? null : parsedTime;
 }
