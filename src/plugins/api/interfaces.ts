@@ -1154,6 +1154,12 @@ export interface Player {
 
 // provider
 
+export enum ProviderIconVariant {
+  DEFAULT = "default",
+  DARK = "dark",
+  MONOCHROME = "monochrome",
+}
+
 export interface ProviderManifest {
   // ProviderManifest, details of a provider.
   type: ProviderType;
@@ -1174,12 +1180,9 @@ export interface ProviderManifest {
   stage: ProviderStage;
   // icon: material design icon
   icon?: string;
-  // icon_svg: svg icon (full xml string)
-  icon_svg?: string;
-  // icon_svg_dark: optional separate dark svg icon (full xml string)
-  icon_svg_dark?: string;
-  // icon_svg_dark: optional separate monochrome svg icon (full xml string)
-  icon_svg_monochrome?: string;
+  // icon_images: which icon variants this provider supplies as image files.
+  // Fetch the bytes via api.getProviderIcon(domain, variant).
+  icon_images: ProviderIconVariant[];
   // depends on: domain of another provider that is required for this provider
   depends_on?: string;
 }
