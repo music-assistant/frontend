@@ -66,6 +66,7 @@ import ListItem from "@/components/ListItem.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import {
   formatDuration,
+  handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/utils";
@@ -90,7 +91,9 @@ const onClick = (evt: Event): void => {
   // Unavailable/non-playable episodes must not act as links or start playback.
   if (!props.episode.is_playable) return;
   const mouseEvt = evt as MouseEvent;
-  handlePlayBtnClick(props.episode, mouseEvt.clientX, mouseEvt.clientY);
+  // Preserve MA's standard episode interaction: the row routes through
+  // handleMediaItemClick, which opens the podcast episode play/options menu.
+  handleMediaItemClick(props.episode, mouseEvt.clientX, mouseEvt.clientY);
 };
 
 const onPlayAreaClick = (evt: Event): void => {
