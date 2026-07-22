@@ -17,24 +17,37 @@
     :total="total"
     :show-provider-filter="true"
     :show-genre-filter="true"
+    :extra-menu-items="extraMenuItems"
   />
 </template>
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Podcast } from "@lucide/vue";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 defineOptions({
   name: "Podcasts",
 });
 
+const router = useRouter();
 const updateAvailable = ref(false);
 const total = ref(store.libraryPodcastsCount);
+
+// discoverable entry point to the cross-podcast "latest episodes" page
+const extraMenuItems = computed<ToolBarMenuItem[]>(() => [
+  {
+    label: "latest_episodes",
+    icon: "mdi-new-box",
+    action: () => router.push({ name: "podcasts-latest" }),
+  },
+]);
 
 const sortKeys = [
   "name",
