@@ -3,7 +3,6 @@ export const GUEST_REMOTE_ID_STORAGE_KEY = "ma_guest_remote_id";
 export const GUEST_SERVER_ADDRESS_STORAGE_KEY = "ma_guest_server_address";
 export const PENDING_JOIN_CODE_STORAGE_KEY = "ma_pending_join_code";
 export const PENDING_JOIN_TYPE_STORAGE_KEY = "ma_pending_join_type";
-// Dashboard route a dashboard viewer session is pinned to, for the lifetime of the session.
 export const DASHBOARD_VIEWER_PATH_STORAGE_KEY = "ma_dashboard_viewer_path";
 
 export function clearGuestSessionStorage(): void {

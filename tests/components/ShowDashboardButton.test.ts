@@ -46,18 +46,14 @@ vi.mock("@/plugins/i18n", () => ({
     values.length ? `${key}:${values.join(",")}` : key,
 }));
 
-// A single registered dashboard, used as the default "dashboard/dashboards"
-// response so most tests get a visible button without having to spell it
-// out; tests about the empty/hidden state override it explicitly.
+// Default dashboard so most tests get a visible button without extra setup; empty/hidden-state tests override this.
 const DEFAULT_DASHBOARD = {
   dashboard_id: "device-1",
   name: "Living Room TV",
   supported_types: ["party", "now_playing"] as DashboardType[],
 };
 
-// Command responses are keyed by command name; anything not overridden here
-// falls back to one registered dashboard / an empty sessions list, matching
-// the "no active session" default most tests want.
+// Command responses keyed by name; unlisted commands fall back to one dashboard / no active sessions.
 function mockCommands(overrides: Record<string, () => unknown> = {}) {
   apiMock.sendCommand.mockImplementation((command: string) => {
     if (command in overrides) {
@@ -77,8 +73,7 @@ function mockCommands(overrides: Record<string, () => unknown> = {}) {
   });
 }
 
-// Captures the callbacks passed to api.subscribe, keyed by event type, so a
-// test can fire a fake event mirroring the real event bus.
+// Captures api.subscribe callbacks by event type so a test can fire a fake event.
 function captureSubscriptions() {
   const callbacks = new Map<EventType, (evt: EventMessage) => void>();
   apiMock.subscribe.mockImplementation(
@@ -163,8 +158,7 @@ describe("ShowDashboardButton", () => {
   });
 
   it("defers fetching until the API connection is initialized", async () => {
-    // On a hard page refresh the component can mount before the API has
-    // finished its initial sync; fetching dashboards too early would race it.
+    // A hard page refresh can mount this before the API has finished its initial sync.
     const initialization = deferred<void>();
     mockWaitForApiInitialization.mockReturnValue(initialization.promise);
 

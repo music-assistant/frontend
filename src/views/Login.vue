@@ -950,8 +950,7 @@ const autoConnect = async () => {
   const urlRemoteId = urlParams.get("remote_id");
   // Guest code is the short code (e.g., "ABCD1234") exchanged for JWT
   const urlJoinCode = urlParams.get("join");
-  // Dashboard code: same short-code exchange, used by a Chromecast dashboard
-  // session instead of a guest join. Carries its own destination route.
+  // Dashboard code: same short-code exchange as a guest join, but for a Chromecast dashboard session; carries its own destination route.
   const urlDashboardCode = urlParams.get("dashboard");
 
   // Also check for pending guest code from sessionStorage (survives SW reload)
@@ -1032,9 +1031,7 @@ const autoConnect = async () => {
     }
   }
 
-  // Remote-connected dashboard viewer session (e.g. a Chromecast receiver
-  // iframing this frontend). Unlike guest join codes, a mid-connection
-  // service worker reload isn't recovered - re-casting issues a fresh code.
+  // Remote dashboard viewer (e.g. a Chromecast iframe); unlike guest codes, a mid-connection SW reload isn't recovered - re-cast for a fresh code.
   if (urlRemoteId && urlDashboardCode) {
     const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
@@ -1171,7 +1168,6 @@ const autoConnect = async () => {
     }
   }
 
-  // Handle local dashboard code (no remote_id, just the dashboard code)
   if (urlDashboardCode && !urlRemoteId) {
     isHostedWithAPI.value = await checkIfHostedWithAPI();
 

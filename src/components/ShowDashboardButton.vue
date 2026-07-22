@@ -107,19 +107,16 @@ const loading = ref(false);
 const dashboards = ref<DashboardDevice[]>([]);
 const sessions = ref<DashboardSession[]>([]);
 
-// A dashboard viewer session can't cast a dashboard itself, and the button
-// only makes sense once at least one dashboard endpoint has registered.
+// A dashboard viewer can't cast a dashboard itself; only show once one is registered.
 const showButton = computed(
   () => !authManager.isDashboardViewer?.() && dashboards.value.length > 0,
 );
 
-// Solid primary pill for the active state, same treatment as the
-// autoplay/crossfade toggles on the fullscreen player header.
+// Solid primary pill for the active state, matching the fullscreen player header's autoplay/crossfade toggles.
 const activePillClass =
   "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
 
-// The session (if any) currently showing this button's own dashboard. For the
-// now_playing dashboard the session must also target this button's player.
+// Session (if any) showing this dashboard; now_playing also requires a matching player_id.
 const activeSession = computed(() =>
   sessions.value.find(
     (session) =>
@@ -129,9 +126,7 @@ const activeSession = computed(() =>
   ),
 );
 
-// The api connection isn't necessarily initialized yet when this component
-// mounts (e.g. a hard page refresh), so wait for it before fetching the
-// dashboard/session lists and subscribing to their update events.
+// Wait for API init (mount can race a hard page refresh) before fetching lists/subscribing.
 let active = false;
 const unsubscribers: Array<() => void> = [];
 
@@ -146,8 +141,7 @@ onMounted(async () => {
     api.subscribe(EventType.DASHBOARD_SESSIONS_UPDATED, (evt: EventMessage) => {
       sessions.value = evt.data as DashboardSession[];
     }),
-    // Registered dashboards can come and go (clients connect/disconnect), so
-    // keep the list - which also drives this button's visibility - live.
+    // Keep the list live - clients connect/disconnect, and it also drives this button's visibility.
     api.subscribe(EventType.DASHBOARDS_UPDATED, () => loadDashboards()),
   );
 });
@@ -168,8 +162,7 @@ async function fetchSessions() {
 
 async function loadDashboards() {
   loading.value = true;
-  // Refresh sessions too so checkmarks recover from any missed events (e.g. a
-  // websocket reconnect).
+  // Refresh sessions too so checkmarks recover from any missed events (e.g. a websocket reconnect).
   fetchSessions();
   try {
     dashboards.value = await api.sendCommand<DashboardDevice[]>(
@@ -186,7 +179,7 @@ async function loadDashboards() {
 
 async function selectDevice(device: DashboardDevice) {
   open.value = false;
-  if (isActiveDevice(device)) return; // already showing here
+  if (isActiveDevice(device)) return;
 
   const previousSession = activeSession.value;
   if (previousSession) {

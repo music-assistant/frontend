@@ -33,9 +33,7 @@ vi.mock("vue-router", () => ({
   useRoute: () => routeMock,
 }));
 
-// Pulled in transitively via @/helpers/utils (router, ItemContextMenu); unused
-// on this view's code path but their module-load side effects (AuthManager
-// reading localStorage) don't belong in this test.
+// Pulled in transitively via @/helpers/utils; mocked so their module-load side effects (AuthManager reading localStorage) don't leak into this test.
 vi.mock("@/plugins/router", () => ({
   default: {},
 }));
@@ -52,9 +50,7 @@ vi.mock("@vueuse/core", () => ({
   useColorMode: () => ({ value: "light" }),
 }));
 
-// PlayerTimeline pulls in the full transport-position/waveform machinery,
-// which is out of scope here; MarqueeText needs a slot passthrough so title/
-// artist text stays assertable instead of collapsing to an empty stub.
+// PlayerTimeline stub avoids pulling in transport/waveform machinery; MarqueeText needs a slot passthrough so title/artist text stays assertable.
 function mountView() {
   return mount(DashboardNowPlayingView, {
     global: {

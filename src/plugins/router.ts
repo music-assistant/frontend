@@ -81,10 +81,7 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          // Dashboard viewer tokens are scoped like guest accounts and can't
-          // read provider configs, so they can't populate store.enabledPlugins.
-          // Trust the server here: a dashboard session only exists because it
-          // was created from an already-enabled party dashboard.
+          // Dashboard viewers can't populate enabledPlugins (scoped like guests); trust the server, since the session only exists via an already-enabled dashboard.
           if (authManager.isDashboardViewer()) return;
 
           // Only allow access if party plugin is enabled
@@ -95,9 +92,7 @@ export const routes: RouteRecordRaw[] = [
       },
     ],
   },
-  // Now-playing kiosk display for casting a single player's fullscreen view to
-  // a dashboard device. Placed at top level, like /party, so it renders
-  // without navigation/player controls.
+  // Now-playing kiosk route for casting a player's fullscreen view; top-level like /party so it renders without nav/player chrome.
   {
     path: "/now-playing",
     component: () => import("@/layouts/default/Default.vue"),
@@ -619,15 +614,13 @@ router.beforeEach(async (to) => {
     return guestRedirect;
   }
 
-  // Dashboard viewer sessions are pinned to the dashboard route they were
-  // opened on and render kiosk-style, without navigation/player chrome.
+  // Dashboard viewer sessions are pinned to their opened route and render kiosk-style (no nav/player chrome).
   if (authManager.isDashboardViewer()) {
     store.frameless = true;
     const pinnedPath = sessionStorage.getItem(
       DASHBOARD_VIEWER_PATH_STORAGE_KEY,
     );
-    // Compare fullPath (not path) so a pinned route with a query string, like
-    // /now-playing?player=..., isn't treated as a mismatch on every navigation.
+    // Compare fullPath (not path) so a pinned route with a query string (e.g. /now-playing?player=...) isn't a mismatch on every nav.
     const dashboardRedirect = getDashboardViewerNavigationRedirect(
       true,
       pinnedPath,

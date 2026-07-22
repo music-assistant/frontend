@@ -82,8 +82,7 @@ onMounted(() => {
 // Synced marquee scrolling for the title/artist, same as the fullscreen player.
 const marqueeSync = new MarqueeTextSync();
 
-// Waveform is always on by design: the guest session has no show_waveform
-// preference, so it defaults to on.
+// Waveform is always on here: the guest session has no show_waveform preference, so it defaults on.
 const { waveformBins: waveformData, waveformLoading } =
   useActiveTrackWaveform();
 

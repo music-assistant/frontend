@@ -1,6 +1,4 @@
-// Dashboard routes a dashboard viewer session may be pinned to. Anything else
-// falls back to the party dashboard. Checked against the pathname only - a
-// pinned route (e.g. /now-playing) may carry its own query string.
+// Routes a dashboard viewer may be pinned to (else falls back to /party); matched by pathname only since a pinned route can carry a query string.
 const DASHBOARD_VIEWER_ROUTES = new Set([
   "/party",
   "/music-quiz",

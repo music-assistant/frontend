@@ -159,10 +159,8 @@ export class AuthManager {
   }
 
   /**
-   * Check if this is a dashboard viewer session.
-   * Dashboard viewers authenticate via a one-time dashboard code (from
-   * casting a dashboard to a Chromecast) and are pinned to a single
-   * dashboard route.
+   * True for a dashboard viewer session, authenticated via a one-time
+   * dashboard code and pinned to a single dashboard route.
    */
   isDashboardViewer(): boolean {
     return this.claims?.username === "dashboard_viewer";
@@ -330,8 +328,7 @@ export class AuthManager {
   }
 }
 
-// Session-scoped tokens (party/quiz guests, dashboard viewers) live in
-// sessionStorage and are never treated as a persistent regular-user token.
+// Session-scoped tokens (party/quiz guests, dashboard viewers) are never treated as a persistent regular-user token.
 function isGuestSessionClaims(claims: JWTClaims | null): boolean {
   return (
     claims?.username === "party_guest" ||

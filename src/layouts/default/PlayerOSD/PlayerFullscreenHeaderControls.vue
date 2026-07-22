@@ -150,7 +150,6 @@
       </Tooltip>
     </TooltipProvider>
 
-    <!-- cast this player's now-playing screen to a dashboard device -->
     <ShowDashboardButton
       dashboard="now_playing"
       :player-id="store.activePlayerId"

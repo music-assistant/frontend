@@ -1250,7 +1250,7 @@ export type DashboardType = "party" | "now_playing" | "music_quiz";
 export interface DashboardSession {
   // An active dashboard cast session on a device.
   dashboard_id: string;
-  name: string; // device display name
+  name: string;
   dashboard: DashboardType;
   player_id?: string | null; // target player for the now_playing dashboard
 }
