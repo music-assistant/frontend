@@ -1,8 +1,18 @@
 import { mount } from "@vue/test-utils";
 import { markRaw, nextTick } from "vue";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import AudioProcessingStage from "@/components/AudioProcessingStage.vue";
+import type { AudioProcessingDisplayStage } from "@/composables/useAudioProcessingDetails";
 import { i18n } from "@/plugins/i18n";
+
+vi.mock("@/components/ProviderIcon.vue", () => ({
+  default: {
+    name: "ProviderIcon",
+    props: ["domain", "size", "monochrome"],
+    template:
+      '<span data-testid="provider-icon" :domain="domain" :data-size="size" :data-monochrome="monochrome" />',
+  },
+}));
 
 const TestIcon = markRaw({
   template: '<svg data-testid="stage-icon"></svg>',
@@ -57,6 +67,29 @@ describe("AudioProcessingStage", () => {
     expect(detail.classes("audio-processing-stage-subtitle-part--atomic")).toBe(
       false,
     );
+  });
+
+  it("renders provider icons as decorative stage content", () => {
+    const wrapper = mountStage({
+      key: "provider",
+      providerIconDomain: "filesystem--music",
+      title: "Filesystem",
+    });
+
+    expect(
+      wrapper.get('[data-testid="provider-icon"]').attributes("domain"),
+    ).toBe("filesystem--music");
+    expect(
+      wrapper.get('[data-testid="provider-icon"]').attributes("data-size"),
+    ).toBe("18");
+    expect(
+      wrapper
+        .get('[data-testid="provider-icon"]')
+        .attributes("data-monochrome"),
+    ).toBe("true");
+    expect(
+      wrapper.get(".audio-processing-stage-icon").attributes("aria-hidden"),
+    ).toBe("true");
   });
 
   it("renders a badge and tooltip details in their dedicated columns", () => {
@@ -133,15 +166,7 @@ describe("AudioProcessingStage", () => {
   });
 });
 
-function mountStage(stage: {
-  key: string;
-  icon: typeof TestIcon;
-  title: string;
-  subtitleParts?: string[];
-  atomicSubtitleParts?: boolean;
-  badge?: string;
-  details?: string[];
-}) {
+function mountStage(stage: AudioProcessingDisplayStage) {
   return mount(AudioProcessingStage, {
     props: { stage },
     global: {

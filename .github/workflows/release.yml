@@ -54,7 +54,7 @@ jobs:
 
       - name: Generate release notes with Release Drafter
         id: release_drafter
-        uses: release-drafter/release-drafter@v7.5.1
+        uses: release-drafter/release-drafter@v7.6.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
@@ -75,7 +75,7 @@ jobs:
           ref: ${{ inputs.version }}
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -84,7 +84,7 @@ jobs:
         with:
           version: 11.8.0
       - name: Set up Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -115,7 +115,7 @@ jobs:
           python3 -m build
 
       - name: Publish release to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.14.0
+        uses: pypa/gh-action-pypi-publish@v1.14.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}

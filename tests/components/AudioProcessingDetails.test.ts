@@ -21,15 +21,20 @@ import {
 interface PlayerDisplayMock {
   player_id: string;
   name: string;
+  provider: string;
   active_output_protocol?: string | null;
   output_protocols?: Array<{
     output_protocol_id: string;
     is_native: boolean;
+    protocol_domain?: string | null;
   }>;
 }
 
 const apiMock = vi.hoisted(() => ({
   getProviderName: vi.fn(() => "Test provider"),
+  getProviderManifest: vi.fn((providerId: string) => ({
+    domain: providerId.split("--", 1)[0],
+  })),
   players: {} as Record<string, PlayerDisplayMock>,
 }));
 const presetRegistryMock = vi.hoisted(() => ({
@@ -57,12 +62,14 @@ beforeEach(() => {
     "player-1": {
       player_id: "player-1",
       name: "Kitchen",
+      provider: "squeezelite--main",
       active_output_protocol: null,
       output_protocols: [],
     },
     "player-2": {
       player_id: "player-2",
       name: "Office",
+      provider: "squeezelite--main",
       active_output_protocol: null,
       output_protocols: [],
     },
@@ -99,6 +106,23 @@ describe("AudioProcessingDetails", () => {
         .find(".audio-processing-stage-info")
         .attributes("aria-label"),
     ).toBe("More information about Kitchen +1");
+    expect(
+      wrapper
+        .find('[data-stage="provider"]')
+        .get('[data-testid="provider-icon"]')
+        .attributes("data-domain"),
+    ).toBe("filesystem--music");
+    expect(
+      wrapper
+        .find('[data-stage="source-format"]')
+        .find(".audio-processing-stage-icon svg")
+        .exists(),
+    ).toBe(true);
+    expect(
+      groupedDestination
+        .get('[data-testid="provider-icon"]')
+        .attributes("data-domain"),
+    ).toBe("squeezelite");
 
     const stageKeys = wrapper
       .findAll("[data-stage]")
@@ -718,6 +742,7 @@ describe("AudioProcessingDetails", () => {
       {
         output_protocol_id: "airplay-kitchen",
         is_native: false,
+        protocol_domain: "airplay",
       },
     ];
     const wrapper = mountDetails({
@@ -737,6 +762,35 @@ describe("AudioProcessingDetails", () => {
       "Kitchen",
       "Office",
     ]);
+    expect(destination.find('[data-testid="provider-icon"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("renders the active output protocol icon for a parent destination", () => {
+    apiMock.players["player-1"].active_output_protocol = "airplay-kitchen";
+    apiMock.players["player-1"].output_protocols = [
+      {
+        output_protocol_id: "airplay-kitchen",
+        is_native: false,
+        protocol_domain: "airplay",
+      },
+    ];
+    const wrapper = mountDetails({
+      outputs: [
+        {
+          player_ids: ["player-1"],
+          output_format: makeFormat(),
+        },
+      ],
+    });
+
+    const destination = wrapper.find('[data-stage="destination"]');
+    expect(
+      destination
+        .get('[data-testid="provider-icon"]')
+        .attributes("data-domain"),
+    ).toBe("airplay");
   });
 
   it("keeps large destination groups in one complete detail list", () => {
@@ -748,6 +802,7 @@ describe("AudioProcessingDetails", () => {
       apiMock.players[playerId] = {
         player_id: playerId,
         name: `Room ${index + 1}`,
+        provider: "squeezelite--main",
         active_output_protocol: null,
         output_protocols: [],
       };
@@ -821,6 +876,11 @@ function mountDetails(
         Popover: { template: "<div><slot /></div>" },
         PopoverContent: { template: "<div><slot /></div>" },
         PopoverTrigger: { template: "<div><slot /></div>" },
+        ProviderIcon: {
+          props: ["domain"],
+          template:
+            '<span data-testid="provider-icon" :data-domain="domain" />',
+        },
       },
     },
   });
@@ -848,7 +908,7 @@ function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
 
 function makeStreamDetails(audioFormat = makeFormat()): StreamDetails {
   return {
-    provider: "test",
+    provider: "filesystem--music",
     item_id: "track-1",
     audio_format: audioFormat,
     media_type: MediaType.TRACK,
