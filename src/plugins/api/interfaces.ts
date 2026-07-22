@@ -887,7 +887,6 @@ export interface AudioDSPDetails {
   input_gain?: number;
   filters?: DSPFilter[];
   output_gain?: number;
-  output_limiter?: boolean;
   preset_id?: string | null;
 }
 
