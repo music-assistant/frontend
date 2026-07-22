@@ -338,6 +338,9 @@ export enum EventType {
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
   DASHBOARD_SESSIONS_UPDATED = "dashboard_sessions_updated",
+  DASHBOARD_SHOW = "dashboard_show",
+  DASHBOARD_HIDE = "dashboard_hide",
+  DASHBOARDS_UPDATED = "dashboards_updated",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -1235,22 +1238,21 @@ export interface ProviderInstance {
 }
 
 export interface DashboardDevice {
-  // A device capable of displaying a Music Assistant dashboard (e.g. a Chromecast).
-  device_id: string;
-  provider_instance: string;
+  // A dashboard endpoint self-registered with the server (e.g. a Chromecast).
+  dashboard_id: string;
   name: string;
-  player_id: string | null; // linked MA player, if any
+  supported_types: DashboardType[];
+  player_id?: string; // linked MA player, if any
 }
 
-export type DashboardType = "party" | "now_playing";
+export type DashboardType = "party" | "now_playing" | "music_quiz";
 
 export interface DashboardSession {
   // An active dashboard cast session on a device.
-  device_id: string;
-  provider_instance: string;
+  dashboard_id: string;
   name: string; // device display name
   dashboard: DashboardType;
-  player_id: string | null; // target player for the now_playing dashboard
+  player_id?: string; // target player for the now_playing dashboard
 }
 
 export enum TaskStatus {

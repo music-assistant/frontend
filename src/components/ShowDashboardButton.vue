@@ -1,5 +1,5 @@
 <template>
-  <DropdownMenu v-if="chromecastAvailable" v-model:open="open">
+  <DropdownMenu v-if="showButton" v-model:open="open">
     <DropdownMenuTrigger as-child>
       <Button
         :variant="variant"
@@ -7,7 +7,7 @@
         :class="activeSession ? activePillClass : ''"
         :aria-label="$t('tooltip.show_dashboard')"
         :title="$t('tooltip.show_dashboard')"
-        @click="loadDevices"
+        @click="loadDashboards"
       >
         <TvMinimal :size="iconSize" />
       </Button>
@@ -21,25 +21,19 @@
         {{ $t("dashboard.loading") }}
       </div>
       <div
-        v-else-if="!devices.length"
+        v-else-if="!dashboards.length"
         class="text-muted-foreground px-2 py-1.5 text-sm"
         data-testid="cast-dashboard-empty"
       >
         {{ $t("dashboard.no_devices") }}
       </div>
       <DropdownMenuItem
-        v-for="device in devices"
-        :key="device.device_id"
+        v-for="device in dashboards"
+        :key="device.dashboard_id"
         data-testid="cast-dashboard-device"
         @click="selectDevice(device)"
       >
         <div class="flex min-w-0 items-center gap-1.5">
-          <ProviderIcon
-            v-if="deviceHasProvider(device)"
-            class="shrink-0"
-            :domain="device.provider_instance"
-            :size="14"
-          />
           <span class="truncate">{{ device.name }}</span>
         </div>
         <Check v-if="isActiveDevice(device)" class="ml-auto size-4" />
@@ -68,8 +62,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button, type ButtonVariants } from "@/components/ui/button";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
+import { waitForApiInitialization } from "@/plugins/api/helpers";
 import {
   type DashboardDevice,
   type DashboardSession,
@@ -80,7 +74,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Check, TvMinimal, Unplug } from "@lucide/vue";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 
 const props = withDefaults(
@@ -103,17 +97,13 @@ const props = withDefaults(
 
 const open = ref(false);
 const loading = ref(false);
-const devices = ref<DashboardDevice[]>([]);
+const dashboards = ref<DashboardDevice[]>([]);
 const sessions = ref<DashboardSession[]>([]);
 
-// Chromecast dashboards can't be cast from a dashboard viewer session itself,
-// and the button only makes sense while the chromecast provider is loaded.
-const chromecastAvailable = computed(
-  () =>
-    !authManager.isDashboardViewer?.() &&
-    Object.values(api.providers ?? {}).some(
-      (provider) => provider.domain === "chromecast" && provider.available,
-    ),
+// A dashboard viewer session can't cast a dashboard itself, and the button
+// only makes sense once at least one dashboard endpoint has registered.
+const showButton = computed(
+  () => !authManager.isDashboardViewer?.() && dashboards.value.length > 0,
 );
 
 // Solid primary pill for the active state, same treatment as the
@@ -132,29 +122,33 @@ const activeSession = computed(() =>
   ),
 );
 
-// api.providers is often not yet populated when this component mounts, so
-// wait for the chromecast provider to actually show up before initializing
-// (once only, guarded below) instead of gating on mount timing.
-let sessionsInitialized = false;
-let unsubscribeSessions: (() => void) | undefined;
+// The api connection isn't necessarily initialized yet when this component
+// mounts (e.g. a hard page refresh), so wait for it before fetching the
+// dashboard/session lists and subscribing to their update events.
+let active = false;
+const unsubscribers: Array<() => void> = [];
 
-watch(
-  chromecastAvailable,
-  (available) => {
-    if (!available || sessionsInitialized) return;
-    sessionsInitialized = true;
-    fetchSessions();
-    unsubscribeSessions = api.subscribe(
-      EventType.DASHBOARD_SESSIONS_UPDATED,
-      (evt: EventMessage) => {
-        sessions.value = evt.data as DashboardSession[];
-      },
-    );
-  },
-  { immediate: true },
-);
+onMounted(async () => {
+  active = true;
+  await waitForApiInitialization();
+  if (!active) return;
 
-onBeforeUnmount(() => unsubscribeSessions?.());
+  fetchSessions();
+  loadDashboards();
+  unsubscribers.push(
+    api.subscribe(EventType.DASHBOARD_SESSIONS_UPDATED, (evt: EventMessage) => {
+      sessions.value = evt.data as DashboardSession[];
+    }),
+    // Registered dashboards can come and go (clients connect/disconnect), so
+    // keep the list - which also drives this button's visibility - live.
+    api.subscribe(EventType.DASHBOARDS_UPDATED, () => loadDashboards()),
+  );
+});
+
+onBeforeUnmount(() => {
+  active = false;
+  unsubscribers.forEach((unsubscribe) => unsubscribe());
+});
 
 async function fetchSessions() {
   try {
@@ -165,17 +159,19 @@ async function fetchSessions() {
   }
 }
 
-async function loadDevices() {
+async function loadDashboards() {
   loading.value = true;
   // Refresh sessions too so checkmarks recover from any missed events (e.g. a
   // websocket reconnect).
   fetchSessions();
   try {
-    devices.value =
-      await api.sendCommand<DashboardDevice[]>("dashboard/devices");
+    dashboards.value = await api.sendCommand<DashboardDevice[]>(
+      "dashboard/dashboards",
+      { dashboard: props.dashboard },
+    );
   } catch (error) {
-    console.error("Failed to load cast devices:", error);
-    devices.value = [];
+    console.error("Failed to load cast dashboards:", error);
+    dashboards.value = [];
   } finally {
     loading.value = false;
   }
@@ -189,8 +185,7 @@ async function selectDevice(device: DashboardDevice) {
   if (previousSession) {
     try {
       await api.sendCommand("dashboard/hide", {
-        provider_instance: previousSession.provider_instance,
-        device_id: previousSession.device_id,
+        dashboard_id: previousSession.dashboard_id,
       });
     } catch (error) {
       // Still try the new device even if stopping the old one failed.
@@ -200,8 +195,7 @@ async function selectDevice(device: DashboardDevice) {
 
   try {
     await api.sendCommand("dashboard/show", {
-      provider_instance: device.provider_instance,
-      device_id: device.device_id,
+      dashboard_id: device.dashboard_id,
       dashboard: props.dashboard,
       player_id: props.playerId ?? null,
     });
@@ -221,8 +215,7 @@ async function disconnect() {
   sessions.value = sessions.value.filter((s) => s !== session);
   try {
     await api.sendCommand("dashboard/hide", {
-      provider_instance: session.provider_instance,
-      device_id: session.device_id,
+      dashboard_id: session.dashboard_id,
     });
   } catch (error) {
     console.error("Failed to stop cast dashboard:", error);
@@ -230,18 +223,8 @@ async function disconnect() {
   }
 }
 
-// ProviderIcon resolves an instance id to its provider's icon itself, so this
-// only needs to gate rendering when the instance isn't (or no longer) loaded.
-function deviceHasProvider(device: DashboardDevice): boolean {
-  return !!api.providers?.[device.provider_instance];
-}
-
 function isActiveDevice(device: DashboardDevice): boolean {
   const session = activeSession.value;
-  return (
-    !!session &&
-    session.device_id === device.device_id &&
-    session.provider_instance === device.provider_instance
-  );
+  return !!session && session.dashboard_id === device.dashboard_id;
 }
 </script>

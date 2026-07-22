@@ -3,32 +3,32 @@ import {
   EventType,
   type DashboardType,
   type EventMessage,
-  type Player,
-  type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import { Check } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { reactive } from "vue";
 
-const { apiMock, isDashboardViewerMock, toastMock } = vi.hoisted(() => ({
+const {
+  apiMock,
+  mockWaitForApiInitialization,
+  isDashboardViewerMock,
+  toastMock,
+} = vi.hoisted(() => ({
   apiMock: {
-    providers: {} as Record<string, ProviderInstance>,
-    players: {} as Record<string, Player>,
     sendCommand: vi.fn(),
     subscribe: vi.fn(),
   },
+  mockWaitForApiInitialization: vi.fn(),
   isDashboardViewerMock: vi.fn(() => false),
   toastMock: { success: vi.fn(), error: vi.fn() },
 }));
 
-// Reactive (like the real api store) so tests can flip provider availability
-// after mount and exercise the watch(chromecastAvailable) init.
-apiMock.providers = reactive(apiMock.providers);
-apiMock.players = reactive(apiMock.players);
-
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
+}));
+
+vi.mock("@/plugins/api/helpers", () => ({
+  waitForApiInitialization: mockWaitForApiInitialization,
 }));
 
 vi.mock("@/plugins/auth", () => ({
@@ -46,19 +46,18 @@ vi.mock("@/plugins/i18n", () => ({
     values.length ? `${key}:${values.join(",")}` : key,
 }));
 
-const CHROMECAST_PROVIDER = {
-  type: "plugin",
-  domain: "chromecast",
-  name: "Chromecast",
-  default_name: "Chromecast",
-  instance_id: "chromecast_1",
-  supported_features: [],
-  available: true,
-} as unknown as ProviderInstance;
+// A single registered dashboard, used as the default "dashboard/dashboards"
+// response so most tests get a visible button without having to spell it
+// out; tests about the empty/hidden state override it explicitly.
+const DEFAULT_DASHBOARD = {
+  dashboard_id: "device-1",
+  name: "Living Room TV",
+  supported_types: ["party", "now_playing"] as DashboardType[],
+};
 
 // Command responses are keyed by command name; anything not overridden here
-// falls back to an empty sessions list / undefined, matching the "no active
-// session" default most tests want.
+// falls back to one registered dashboard / an empty sessions list, matching
+// the "no active session" default most tests want.
 function mockCommands(overrides: Record<string, () => unknown> = {}) {
   apiMock.sendCommand.mockImplementation((command: string) => {
     if (command in overrides) {
@@ -68,25 +67,29 @@ function mockCommands(overrides: Record<string, () => unknown> = {}) {
         return Promise.reject(error);
       }
     }
-    if (command === "dashboard/sessions" || command === "dashboard/devices") {
+    if (command === "dashboard/sessions") {
       return Promise.resolve([]);
+    }
+    if (command === "dashboard/dashboards") {
+      return Promise.resolve([DEFAULT_DASHBOARD]);
     }
     return Promise.resolve(undefined);
   });
 }
 
-// Captures the callback passed to api.subscribe so a test can fire a fake
-// dashboard_sessions_updated event, mirroring the real event bus.
-function captureSubscription() {
-  let callback: ((evt: EventMessage) => void) | undefined;
+// Captures the callbacks passed to api.subscribe, keyed by event type, so a
+// test can fire a fake event mirroring the real event bus.
+function captureSubscriptions() {
+  const callbacks = new Map<EventType, (evt: EventMessage) => void>();
   apiMock.subscribe.mockImplementation(
-    (_eventType: EventType, cb: (evt: EventMessage) => void) => {
-      callback = cb;
+    (eventType: EventType, cb: (evt: EventMessage) => void) => {
+      callbacks.set(eventType, cb);
       return vi.fn();
     },
   );
   return {
-    emit: (data: unknown) => callback?.({ event: EventType.ALL, data }),
+    emit: (eventType: EventType, data: unknown) =>
+      callbacks.get(eventType)?.({ event: eventType, data }),
   };
 }
 
@@ -110,11 +113,6 @@ function mountButton(
           template:
             '<button data-testid="cast-dashboard-device" :data-variant="variant" @click="$emit(\'click\')"><slot /></button>',
         },
-        ProviderIcon: {
-          props: ["domain"],
-          template:
-            '<span data-testid="cast-dashboard-provider-icon" :data-domain="domain"></span>',
-        },
       },
     },
   });
@@ -122,15 +120,11 @@ function mountButton(
 
 describe("ShowDashboardButton", () => {
   beforeEach(() => {
-    for (const key of Object.keys(apiMock.providers)) {
-      delete apiMock.providers[key];
-    }
-    for (const key of Object.keys(apiMock.players)) {
-      delete apiMock.players[key];
-    }
     apiMock.sendCommand.mockReset();
     apiMock.subscribe.mockReset();
     apiMock.subscribe.mockImplementation(() => vi.fn());
+    mockWaitForApiInitialization.mockReset();
+    mockWaitForApiInitialization.mockResolvedValue(undefined);
     mockCommands();
     isDashboardViewerMock.mockReset();
     isDashboardViewerMock.mockReturnValue(false);
@@ -138,91 +132,90 @@ describe("ShowDashboardButton", () => {
     toastMock.error.mockReset();
   });
 
-  it("renders nothing when the chromecast provider isn't loaded", () => {
+  it("renders nothing when no dashboards are registered", async () => {
+    mockCommands({ "dashboard/dashboards": () => [] });
+
     const wrapper = mountButton();
+    await flushAsync();
+
     expect(wrapper.find("button").exists()).toBe(false);
   });
 
-  it("renders nothing for a dashboard viewer session even if chromecast is loaded", () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
+  it("renders once at least one dashboard is registered", async () => {
+    const wrapper = mountButton();
+    await flushAsync();
+
+    expect(wrapper.find("button").exists()).toBe(true);
+  });
+
+  it("renders nothing for a dashboard viewer session even when dashboards are registered", async () => {
     isDashboardViewerMock.mockReturnValue(true);
 
     const wrapper = mountButton();
+    await flushAsync();
+
     expect(wrapper.find("button").exists()).toBe(false);
   });
 
+  it("defers fetching until the API connection is initialized", async () => {
+    // On a hard page refresh the component can mount before the API has
+    // finished its initial sync; fetching dashboards too early would race it.
+    const initialization = deferred<void>();
+    mockWaitForApiInitialization.mockReturnValue(initialization.promise);
+
+    const wrapper = mountButton();
+    await flushAsync();
+
+    expect(apiMock.sendCommand).not.toHaveBeenCalled();
+    expect(wrapper.find("button").exists()).toBe(false);
+
+    initialization.resolve();
+    await flushAsync();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/dashboards", {
+      dashboard: "party",
+    });
+    expect(wrapper.find("button").exists()).toBe(true);
+  });
+
   it("loads and lists cast devices when opened", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
-      "dashboard/devices": () => [
+      "dashboard/dashboards": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           name: "Living Room TV",
+          supported_types: ["party"],
           player_id: "device-1",
         },
         {
-          device_id: "device-2",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-2",
           name: "Bedroom TV",
-          player_id: null,
+          supported_types: ["party"],
         },
       ],
     });
 
     const wrapper = mountButton();
+    await flushAsync();
     await wrapper.get("button").trigger("click");
     await flushAsync();
 
-    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/devices");
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/dashboards", {
+      dashboard: "party",
+    });
     const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
     expect(devices).toHaveLength(2);
     expect(devices[0]!.text()).toContain("Living Room TV");
     expect(devices[1]!.text()).toContain("Bedroom TV");
   });
 
-  it("shows a provider icon per device, skipping it for an unknown provider instance", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
-    mockCommands({
-      "dashboard/devices": () => [
-        {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
-          name: "Living Room TV",
-          player_id: null,
-        },
-        {
-          device_id: "device-2",
-          provider_instance: "unloaded_provider",
-          name: "Stale Device",
-          player_id: null,
-        },
-      ],
-    });
-
-    const wrapper = mountButton();
-    await wrapper.get("button").trigger("click");
-    await flushAsync();
-
-    const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
-    const icons = (device: (typeof devices)[number]) =>
-      device.findAll('[data-testid="cast-dashboard-provider-icon"]');
-    expect(icons(devices[0]!)).toHaveLength(1);
-    expect(icons(devices[0]!)[0]!.attributes("data-domain")).toBe(
-      "chromecast_1",
-    );
-    expect(icons(devices[1]!)).toHaveLength(0);
-  });
-
   it("starts the dashboard on the selected device and toasts success", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
-      "dashboard/devices": () => [
+      "dashboard/dashboards": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           name: "Kitchen",
-          player_id: null,
+          supported_types: ["now_playing"],
         },
       ],
     });
@@ -231,6 +224,7 @@ describe("ShowDashboardButton", () => {
       dashboard: "now_playing",
       playerId: "player-1",
     });
+    await flushAsync();
     await wrapper.get("button").trigger("click");
     await flushAsync();
 
@@ -242,8 +236,7 @@ describe("ShowDashboardButton", () => {
       expect.anything(),
     );
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/show", {
-      provider_instance: "chromecast_1",
-      device_id: "device-1",
+      dashboard_id: "device-1",
       dashboard: "now_playing",
       player_id: "player-1",
     });
@@ -251,22 +244,14 @@ describe("ShowDashboardButton", () => {
   });
 
   it("leaves error toasting to the global command handler on failure", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
-      "dashboard/devices": () => [
-        {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
-          name: "Kitchen",
-          player_id: null,
-        },
-      ],
       "dashboard/show": () => {
         throw new Error("Remote access disabled");
       },
     });
 
     const wrapper = mountButton();
+    await flushAsync();
     await wrapper.get("button").trigger("click");
     await flushAsync();
     await wrapper.get('[data-testid="cast-dashboard-device"]').trigger("click");
@@ -277,14 +262,11 @@ describe("ShowDashboardButton", () => {
   });
 
   it("fetches sessions on mount and shows the icon in the active color when one matches this dashboard", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           dashboard: "party",
-          player_id: null,
           name: "Living Room TV",
         },
       ],
@@ -298,14 +280,11 @@ describe("ShowDashboardButton", () => {
   });
 
   it("does not color the icon when the active session is for a different dashboard", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           dashboard: "now_playing",
-          player_id: null,
           name: "Living Room TV",
         },
       ],
@@ -318,12 +297,10 @@ describe("ShowDashboardButton", () => {
   });
 
   it("colors a now_playing button only when the session targets its player", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           dashboard: "now_playing",
           player_id: "player-2",
           name: "Living Room TV",
@@ -347,9 +324,7 @@ describe("ShowDashboardButton", () => {
   });
 
   it("updates active state when a dashboard_sessions_updated event arrives", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
-    mockCommands();
-    const subscription = captureSubscription();
+    const subscriptions = captureSubscriptions();
 
     const wrapper = mountButton();
     await flushAsync();
@@ -360,12 +335,10 @@ describe("ShowDashboardButton", () => {
     );
     expect(wrapper.get("button").classes()).not.toContain("bg-primary");
 
-    subscription.emit([
+    subscriptions.emit(EventType.DASHBOARD_SESSIONS_UPDATED, [
       {
-        device_id: "device-1",
-        provider_instance: "chromecast_1",
+        dashboard_id: "device-1",
         dashboard: "party",
-        player_id: null,
         name: "Living Room TV",
       },
     ]);
@@ -375,29 +348,24 @@ describe("ShowDashboardButton", () => {
   });
 
   it("marks the active device with a check and offers a disconnect item", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           dashboard: "party",
-          player_id: null,
           name: "Living Room TV",
         },
       ],
-      "dashboard/devices": () => [
+      "dashboard/dashboards": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           name: "Living Room TV",
-          player_id: null,
+          supported_types: ["party"],
         },
         {
-          device_id: "device-2",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-2",
           name: "Bedroom TV",
-          player_id: null,
+          supported_types: ["party"],
         },
       ],
     });
@@ -417,14 +385,11 @@ describe("ShowDashboardButton", () => {
   });
 
   it("disconnect stops the active session and optimistically clears the active icon", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           dashboard: "party",
-          player_id: null,
           name: "Living Room TV",
         },
       ],
@@ -441,21 +406,17 @@ describe("ShowDashboardButton", () => {
     await flushAsync();
 
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/hide", {
-      provider_instance: "chromecast_1",
-      device_id: "device-1",
+      dashboard_id: "device-1",
     });
     expect(wrapper.get("button").classes()).not.toContain("bg-primary");
   });
 
   it("refetches sessions when disconnect's dashboard/hide fails, rolling back the optimistic removal", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           dashboard: "party",
-          player_id: null,
           name: "Living Room TV",
         },
       ],
@@ -476,72 +437,95 @@ describe("ShowDashboardButton", () => {
     await flushAsync();
 
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/hide", {
-      provider_instance: "chromecast_1",
-      device_id: "device-1",
+      dashboard_id: "device-1",
     });
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/sessions");
     // the resync brought the still-active session back, so the pill stays lit
     expect(wrapper.get("button").classes()).toContain("bg-primary");
   });
 
-  it("subscribes and fetches sessions once the chromecast provider appears after mount", async () => {
-    mockCommands();
-
-    const wrapper = mountButton();
-    await flushAsync();
-
-    expect(apiMock.subscribe).not.toHaveBeenCalled();
-    expect(apiMock.sendCommand).not.toHaveBeenCalledWith("dashboard/sessions");
-
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
-    await flushAsync();
-
-    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/sessions");
-    expect(apiMock.subscribe).toHaveBeenCalledWith(
-      EventType.DASHBOARD_SESSIONS_UPDATED,
-      expect.any(Function),
-    );
-    void wrapper;
-  });
-
-  it("calls the sessions subscription's unsubscribe function on unmount", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
-    const unsubscribeMock = vi.fn();
-    apiMock.subscribe.mockImplementation(() => unsubscribeMock);
-    mockCommands();
+  it("calls the sessions and dashboards subscriptions' unsubscribe functions on unmount", async () => {
+    const unsubscribeMocks: ReturnType<typeof vi.fn>[] = [];
+    apiMock.subscribe.mockImplementation(() => {
+      const unsubscribe = vi.fn();
+      unsubscribeMocks.push(unsubscribe);
+      return unsubscribe;
+    });
 
     const wrapper = mountButton();
     await flushAsync();
 
     wrapper.unmount();
 
-    expect(unsubscribeMock).toHaveBeenCalledOnce();
+    expect(unsubscribeMocks).toHaveLength(2);
+    for (const unsubscribe of unsubscribeMocks) {
+      expect(unsubscribe).toHaveBeenCalledOnce();
+    }
+  });
+
+  it("subscribes to dashboards_updated", async () => {
+    mountButton();
+    await flushAsync();
+
+    expect(apiMock.subscribe).toHaveBeenCalledWith(
+      EventType.DASHBOARDS_UPDATED,
+      expect.any(Function),
+    );
+  });
+
+  it("reloads the device list when a dashboards_updated event arrives", async () => {
+    let listCall = 0;
+    mockCommands({
+      "dashboard/dashboards": () => {
+        listCall += 1;
+        return listCall === 1
+          ? [DEFAULT_DASHBOARD]
+          : [
+              DEFAULT_DASHBOARD,
+              {
+                dashboard_id: "device-2",
+                name: "Bedroom TV",
+                supported_types: ["party"],
+              },
+            ];
+      },
+    });
+    const subscriptions = captureSubscriptions();
+
+    const wrapper = mountButton();
+    await flushAsync();
+    expect(
+      wrapper.findAll('[data-testid="cast-dashboard-device"]'),
+    ).toHaveLength(1);
+
+    subscriptions.emit(EventType.DASHBOARDS_UPDATED, undefined);
+    await flushAsync();
+
+    expect(listCall).toBe(2);
+    expect(
+      wrapper.findAll('[data-testid="cast-dashboard-device"]'),
+    ).toHaveLength(2);
   });
 
   it("selecting a different device hides the current session before showing the new one", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           dashboard: "party",
-          player_id: null,
           name: "Living Room TV",
         },
       ],
-      "dashboard/devices": () => [
+      "dashboard/dashboards": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           name: "Living Room TV",
-          player_id: null,
+          supported_types: ["party"],
         },
         {
-          device_id: "device-2",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-2",
           name: "Bedroom TV",
-          player_id: null,
+          supported_types: ["party"],
         },
       ],
     });
@@ -561,35 +545,22 @@ describe("ShowDashboardButton", () => {
     expect(hideIndex).toBeGreaterThanOrEqual(0);
     expect(showIndex).toBeGreaterThan(hideIndex);
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/hide", {
-      provider_instance: "chromecast_1",
-      device_id: "device-1",
+      dashboard_id: "device-1",
     });
     expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/show", {
-      provider_instance: "chromecast_1",
-      device_id: "device-2",
+      dashboard_id: "device-2",
       dashboard: "party",
       player_id: null,
     });
   });
 
   it("clicking the already-active device is a no-op", async () => {
-    apiMock.providers[CHROMECAST_PROVIDER.instance_id] = CHROMECAST_PROVIDER;
     mockCommands({
       "dashboard/sessions": () => [
         {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
+          dashboard_id: "device-1",
           dashboard: "party",
-          player_id: null,
           name: "Living Room TV",
-        },
-      ],
-      "dashboard/devices": () => [
-        {
-          device_id: "device-1",
-          provider_instance: "chromecast_1",
-          name: "Living Room TV",
-          player_id: null,
         },
       ],
     });
@@ -615,6 +586,17 @@ describe("ShowDashboardButton", () => {
 });
 
 async function flushAsync() {
-  await Promise.resolve();
-  await Promise.resolve();
+  for (let index = 0; index < 8; index += 1) {
+    await Promise.resolve();
+  }
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
 }
