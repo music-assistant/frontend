@@ -17,19 +17,35 @@
     :total="total"
     :show-provider-filter="true"
     :show-genre-filter="true"
-    :extra-menu-items="extraMenuItems"
-  />
+  >
+    <template #title>
+      <div class="podcasts-title">
+        <span>{{ $t("podcasts") }}</span>
+        <v-btn
+          class="latest-episodes-link"
+          variant="text"
+          color="primary"
+          size="small"
+          prepend-icon="mdi-new-box"
+          :title="$t('latest_episodes')"
+          :aria-label="$t('latest_episodes')"
+          @click.stop="router.push({ name: 'podcasts-latest' })"
+        >
+          <span class="latest-episodes-label">{{ $t("latest_episodes") }}</span>
+        </v-btn>
+      </div>
+    </template>
+  </ItemsListing>
 </template>
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
-import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Podcast } from "@lucide/vue";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 defineOptions({
@@ -39,15 +55,6 @@ defineOptions({
 const router = useRouter();
 const updateAvailable = ref(false);
 const total = ref(store.libraryPodcastsCount);
-
-// discoverable entry point to the cross-podcast "latest episodes" page
-const extraMenuItems = computed<ToolBarMenuItem[]>(() => [
-  {
-    label: "latest_episodes",
-    icon: "mdi-new-box",
-    action: () => router.push({ name: "podcasts-latest" }),
-  },
-]);
 
 const sortKeys = [
   "name",
@@ -114,3 +121,29 @@ onMounted(() => {
   onBeforeUnmount(unsubSync);
 });
 </script>
+
+<style scoped>
+.podcasts-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.latest-episodes-link {
+  flex-shrink: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+@media (max-width: 600px) {
+  .latest-episodes-link {
+    min-width: 36px;
+    padding-inline: 6px;
+  }
+
+  .latest-episodes-label {
+    display: none;
+  }
+}
+</style>
