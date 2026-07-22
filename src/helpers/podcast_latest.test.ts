@@ -100,6 +100,39 @@ describe("formatEpisodeReleaseDate", () => {
     expect(formatted).toBeTruthy();
     expect(formatted).toContain("2024");
   });
+
+  // Music Assistant locale keys use underscores (en_GB, pt_BR, zh_CN) which
+  // are not valid BCP-47 tags. They must be canonicalized so Intl formatting
+  // never throws, and must render identically to their hyphenated form.
+  it.each(["en_GB", "pt_BR", "zh_CN"])(
+    "formats a date-only value with underscore locale %s without throwing",
+    (underscoreLocale) => {
+      const hyphenLocale = underscoreLocale.replace("_", "-");
+      const episode = makeEpisode("a", { releaseDate: "2024-01-15" });
+      let formatted: string | null = null;
+      expect(() => {
+        formatted = formatEpisodeReleaseDate(episode, underscoreLocale);
+      }).not.toThrow();
+      expect(formatted).toBeTruthy();
+      expect(formatted).toBe(formatEpisodeReleaseDate(episode, hyphenLocale));
+    },
+  );
+
+  it.each(["en_GB", "pt_BR", "zh_CN"])(
+    "formats a full ISO timestamp with underscore locale %s without throwing",
+    (underscoreLocale) => {
+      const hyphenLocale = underscoreLocale.replace("_", "-");
+      const episode = makeEpisode("a", {
+        releaseDate: "2024-01-15T05:00:00Z",
+      });
+      let formatted: string | null = null;
+      expect(() => {
+        formatted = formatEpisodeReleaseDate(episode, underscoreLocale);
+      }).not.toThrow();
+      expect(formatted).toBeTruthy();
+      expect(formatted).toBe(formatEpisodeReleaseDate(episode, hyphenLocale));
+    },
+  );
 });
 
 describe("formatEpisodeReleaseDate in a western time zone", () => {

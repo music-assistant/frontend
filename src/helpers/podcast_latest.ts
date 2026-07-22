@@ -9,6 +9,7 @@
  * `useLatestPodcastEpisodes`.
  */
 import type { PodcastEpisode } from "@/plugins/api/interfaces";
+import { canonicalizeLocale } from "@/plugins/i18n";
 
 /** Default number of newest candidate episodes taken from each podcast feed. */
 export const DEFAULT_CANDIDATES_PER_PODCAST = 10;
@@ -142,6 +143,13 @@ export function formatEpisodeReleaseDate(
     day: "numeric",
   };
 
+  // Music Assistant locale keys use underscores (e.g. `en_GB`, `pt_BR`) which
+  // are not valid BCP-47 language tags and make Intl date formatting throw.
+  // Canonicalize centrally here so every caller is safe; passing `undefined`
+  // keeps the runtime default locale behaviour.
+  const formatLocale =
+    locale === undefined ? undefined : canonicalizeLocale(locale);
+
   // Any date-only-shaped value is resolved entirely here and never falls
   // through to generic parsing, so invalid calendar dates return null.
   if (DATE_ONLY_PATTERN.test(rawReleaseDate)) {
@@ -150,14 +158,17 @@ export function formatEpisodeReleaseDate(
     const [year, month, day] = dateOnlyParts;
     // Build a local-time Date so the rendered calendar date matches the input.
     return buildLocalCalendarDate(year, month, day).toLocaleDateString(
-      locale,
+      formatLocale,
       dateFormatOptions,
     );
   }
 
   const releaseTime = getEpisodeReleaseTime(episode);
   if (releaseTime === null) return null;
-  return new Date(releaseTime).toLocaleDateString(locale, dateFormatOptions);
+  return new Date(releaseTime).toLocaleDateString(
+    formatLocale,
+    dateFormatOptions,
+  );
 }
 
 /**
