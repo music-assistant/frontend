@@ -116,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ArrowLeft, Podcast, RefreshCw, TriangleAlert } from "@lucide/vue";
 import Container from "@/components/Container.vue";
@@ -136,7 +136,9 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useLatestPodcastEpisodes } from "@/composables/useLatestPodcastEpisodes";
 import { getEpisodeIdentity } from "@/helpers/podcast_latest";
-import type { PodcastEpisode } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import { EventType } from "@/plugins/api/interfaces";
+import type { EventMessage, PodcastEpisode } from "@/plugins/api/interfaces";
 
 defineOptions({
   name: "LatestPodcastEpisodes",
@@ -153,6 +155,7 @@ const {
   hasPartialFailure,
   load,
   refresh,
+  applyPlaybackUpdate,
 } = useLatestPodcastEpisodes();
 
 const searchQuery = ref("");
@@ -194,7 +197,22 @@ const toolbarMenuItems = computed<ToolBarMenuItem[]>(() => [
   },
 ]);
 
+// Keep the open listing in sync with playback: progress icons and the
+// unplayed-only filter must react to MEDIA_ITEM_PLAYED without a manual refresh.
+let unsubscribePlayed: (() => void) | undefined;
+
 onMounted(() => {
   load();
+  unsubscribePlayed = api.subscribe(
+    EventType.MEDIA_ITEM_PLAYED,
+    (evt: EventMessage) => {
+      applyPlaybackUpdate(evt.object_id, evt.data);
+    },
+  );
+});
+
+onBeforeUnmount(() => {
+  unsubscribePlayed?.();
+  unsubscribePlayed = undefined;
 });
 </script>

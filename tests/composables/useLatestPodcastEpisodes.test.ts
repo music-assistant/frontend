@@ -160,4 +160,62 @@ describe("useLatestPodcastEpisodes", () => {
       $t("latest_episodes_refreshed"),
     );
   });
+
+  it("applies playback data to a matching episode by uri", async () => {
+    mockGetLibraryPodcasts.mockResolvedValueOnce([makePodcast("p1")]);
+    mockGetLibraryPodcasts.mockResolvedValue([]);
+    mockGetPodcastEpisodes.mockResolvedValue([makeEpisode("e1", "2024-01-01")]);
+
+    const { episodes, load, applyPlaybackUpdate } = useLatestPodcastEpisodes();
+    await load();
+
+    const updated = applyPlaybackUpdate("podcast_episode://test/e1", {
+      fully_played: true,
+      seconds_played: 42,
+    });
+
+    expect(updated).toBe(true);
+    expect(episodes.value[0].fully_played).toBe(true);
+    expect(episodes.value[0].resume_position_ms).toBe(42000);
+  });
+
+  it("ignores playback events for an unrelated uri", async () => {
+    mockGetLibraryPodcasts.mockResolvedValueOnce([makePodcast("p1")]);
+    mockGetLibraryPodcasts.mockResolvedValue([]);
+    mockGetPodcastEpisodes.mockResolvedValue([makeEpisode("e1", "2024-01-01")]);
+
+    const { episodes, load, applyPlaybackUpdate } = useLatestPodcastEpisodes();
+    await load();
+
+    const updated = applyPlaybackUpdate("podcast_episode://test/other", {
+      fully_played: true,
+      seconds_played: 42,
+    });
+
+    expect(updated).toBe(false);
+    expect(episodes.value[0].fully_played).toBeUndefined();
+    expect(episodes.value[0].resume_position_ms).toBeUndefined();
+  });
+
+  it("applies playback fields defensively", async () => {
+    mockGetLibraryPodcasts.mockResolvedValueOnce([makePodcast("p1")]);
+    mockGetLibraryPodcasts.mockResolvedValue([]);
+    mockGetPodcastEpisodes.mockResolvedValue([makeEpisode("e1", "2024-01-01")]);
+
+    const { episodes, load, applyPlaybackUpdate } = useLatestPodcastEpisodes();
+    await load();
+
+    // Missing object_id and malformed payloads must not throw or mutate.
+    expect(applyPlaybackUpdate(undefined, undefined)).toBe(false);
+    expect(applyPlaybackUpdate("podcast_episode://test/e1", undefined)).toBe(
+      true,
+    );
+    applyPlaybackUpdate("podcast_episode://test/e1", {
+      fully_played: "yes",
+      seconds_played: "nan",
+    });
+
+    expect(episodes.value[0].fully_played).toBeUndefined();
+    expect(episodes.value[0].resume_position_ms).toBeUndefined();
+  });
 });

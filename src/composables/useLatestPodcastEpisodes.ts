@@ -151,6 +151,35 @@ export function useLatestPodcastEpisodes(
 
   const refresh = (): Promise<void> => load(true);
 
+  /**
+   * Apply a MEDIA_ITEM_PLAYED payload to a matching episode in-place so open
+   * views (progress icons, unplayed-only filter) update immediately. Matching
+   * is by `uri`; unrelated ids are ignored. Fields are applied defensively:
+   * `fully_played` only when present as a boolean, and `resume_position_ms`
+   * derived from `seconds_played` (seconds → ms) only when it is a number.
+   *
+   * @returns true when a matching episode was updated.
+   */
+  const applyPlaybackUpdate = (
+    objectId: string | undefined,
+    data: unknown,
+  ): boolean => {
+    if (!objectId) return false;
+    const idx = episodes.value.findIndex((episode) => episode.uri === objectId);
+    if (idx < 0) return false;
+
+    const playData = (data ?? {}) as Record<string, unknown>;
+    const episode = episodes.value[idx];
+
+    if (typeof playData.fully_played === "boolean") {
+      episode.fully_played = playData.fully_played;
+    }
+    if (typeof playData.seconds_played === "number") {
+      episode.resume_position_ms = playData.seconds_played * 1000;
+    }
+    return true;
+  };
+
   return {
     episodes,
     isLoading,
@@ -162,5 +191,6 @@ export function useLatestPodcastEpisodes(
     hasPartialFailure,
     load,
     refresh,
+    applyPlaybackUpdate,
   };
 }
