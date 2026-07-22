@@ -46,15 +46,9 @@ const providerName = computed(() => manifest.value?.name ?? "");
 // pick the best available variant for the current theme + monochrome request
 const variant = computed<ProviderIconVariant | undefined>(() => {
   const available = manifest.value?.icon_images ?? [];
-  if (
-    props.monochrome &&
-    available.includes(ProviderIconVariant.MONOCHROME)
-  )
+  if (props.monochrome && available.includes(ProviderIconVariant.MONOCHROME))
     return ProviderIconVariant.MONOCHROME;
-  if (
-    theme.current.value.dark &&
-    available.includes(ProviderIconVariant.DARK)
-  )
+  if (theme.current.value.dark && available.includes(ProviderIconVariant.DARK))
     return ProviderIconVariant.DARK;
   if (available.includes(ProviderIconVariant.DEFAULT))
     return ProviderIconVariant.DEFAULT;

@@ -5,9 +5,7 @@ import { ProviderIconVariant } from "./interfaces";
 describe("getProviderIcon", () => {
   beforeEach(() => {
     // reset cache between tests
-    Object.keys(api.providerIcons).forEach(
-      (k) => delete api.providerIcons[k],
-    );
+    Object.keys(api.providerIcons).forEach((k) => delete api.providerIcons[k]);
   });
 
   afterEach(() => {
