@@ -1242,6 +1242,7 @@ export interface DashboardDevice {
   dashboard_id: string;
   name: string;
   supported_types: DashboardType[];
+  icon?: string; // material design (mdi-*) or MA/lucide icon name
   player_id?: string; // linked MA player, if any
 }
 

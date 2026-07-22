@@ -113,6 +113,11 @@ function mountButton(
           template:
             '<button data-testid="cast-dashboard-device" :data-variant="variant" @click="$emit(\'click\')"><slot /></button>',
         },
+        PlayerIcon: {
+          props: ["icon"],
+          template:
+            '<i data-testid="cast-dashboard-device-icon" :data-icon="icon" />',
+        },
       },
     },
   });
@@ -207,6 +212,34 @@ describe("ShowDashboardButton", () => {
     expect(devices).toHaveLength(2);
     expect(devices[0]!.text()).toContain("Living Room TV");
     expect(devices[1]!.text()).toContain("Bedroom TV");
+  });
+
+  it("renders the device's declared icon, falling back to tv", async () => {
+    mockCommands({
+      "dashboard/dashboards": () => [
+        {
+          dashboard_id: "device-1",
+          name: "Living Room TV",
+          supported_types: ["party"],
+          icon: "cast",
+        },
+        {
+          dashboard_id: "device-2",
+          name: "Bedroom TV",
+          supported_types: ["party"],
+        },
+      ],
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    const icons = wrapper.findAll('[data-testid="cast-dashboard-device-icon"]');
+    expect(icons).toHaveLength(2);
+    expect(icons[0]!.attributes("data-icon")).toBe("cast");
+    expect(icons[1]!.attributes("data-icon")).toBe("tv");
   });
 
   it("starts the dashboard on the selected device and toasts success", async () => {
