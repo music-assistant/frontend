@@ -150,6 +150,15 @@
       </Tooltip>
     </TooltipProvider>
 
+    <ShowDashboardButton
+      dashboard="now_playing"
+      :player-id="store.activePlayerId"
+      variant="ghost-outline"
+      :button-size="showLabel ? 'xs' : 'icon-xs'"
+      :icon-size="16"
+      content-class="z-[10001]"
+    />
+
     <!-- audio overlay: shown only while an overlay sound is active. Clicking it
          reopens the overlay dialog to adjust the sound or volume. -->
     <TooltipProvider v-if="overlayActive && queue" :delay-duration="200">
@@ -177,6 +186,7 @@
 
 <script setup lang="ts">
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
 import { Button } from "@/components/ui/button";
 import {

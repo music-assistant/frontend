@@ -337,6 +337,10 @@ export enum EventType {
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
+  DASHBOARD_SESSIONS_UPDATED = "dashboard_sessions_updated",
+  DASHBOARD_SHOW = "dashboard_show",
+  DASHBOARD_HIDE = "dashboard_hide",
+  DASHBOARDS_UPDATED = "dashboards_updated",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -1231,6 +1235,24 @@ export interface ProviderInstance {
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider?: boolean;
+}
+
+export interface DashboardDevice {
+  // A dashboard endpoint self-registered with the server (e.g. a Chromecast).
+  dashboard_id: string;
+  name: string;
+  supported_types: DashboardType[];
+  provider_domain_hint?: string | null; // provider domain used to resolve this endpoint's icon
+}
+
+export type DashboardType = "party" | "now_playing" | "music_quiz";
+
+export interface DashboardSession {
+  // An active dashboard cast session on a device.
+  dashboard_id: string;
+  name: string;
+  dashboard: DashboardType;
+  player_id?: string | null; // target player for the now_playing dashboard
 }
 
 export enum TaskStatus {

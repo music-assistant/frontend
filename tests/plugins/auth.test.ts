@@ -117,6 +117,33 @@ describe("AuthManager guest sessions", () => {
     expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
   });
 
+  it("stores a dashboard viewer token like a guest token", () => {
+    const regularToken = createToken("regular-token", "admin");
+    const dashboardToken = createToken("dashboard-token", "dashboard_viewer");
+    localStorage.setItem("ma_access_token", regularToken);
+    const authManager = new AuthManager();
+
+    authManager.setToken(dashboardToken);
+
+    expect(authManager.isDashboardViewer()).toBe(true);
+    expect(authManager.isGuestAccessSession()).toBe(false);
+    expect(authManager.getToken()).toBe(dashboardToken);
+    expect(localStorage.getItem("ma_access_token")).toBe(regularToken);
+    expect(sessionStorage.getItem("ma_guest_access_token")).toBe(
+      dashboardToken,
+    );
+  });
+
+  it("restores a stored dashboard viewer token on reload", () => {
+    const dashboardToken = createToken("dashboard-token", "dashboard_viewer");
+    sessionStorage.setItem("ma_guest_access_token", dashboardToken);
+
+    const authManager = new AuthManager();
+
+    expect(authManager.getToken()).toBe(dashboardToken);
+    expect(authManager.isDashboardViewer()).toBe(true);
+  });
+
   it("clears persistent and guest credentials on full logout", () => {
     const authManager = new AuthManager();
     authManager.setToken(createToken("regular-token", "admin"));
