@@ -136,6 +136,30 @@
               {{ new Date(item.metadata.release_date).getFullYear() }}
             </v-card-subtitle>
 
+            <!-- artist birth date -->
+            <v-card-subtitle
+              v-if="
+                item.media_type == MediaType.ARTIST &&
+                item.metadata?.life_span?.begin
+              "
+              class="title d-flex"
+            >
+              <component
+                :is="
+                  item.metadata?.artist_entity_type &&
+                  GROUP_TYPES.has(item.metadata.artist_entity_type)
+                    ? Users
+                    : Cake
+                "
+                :size="16"
+                style="margin-left: -1px; margin-right: 5px; flex-shrink: 0"
+              />
+              {{ formatLifeDate(item.metadata.life_span.begin) }}
+              <span v-if="item.metadata?.life_span?.end">
+                &nbsp;–&nbsp;{{ formatLifeDate(item.metadata.life_span.end) }}
+              </span>
+            </v-card-subtitle>
+
             <!-- item artists -->
             <v-card-subtitle
               v-if="'artists' in item && item.artists"
@@ -462,11 +486,16 @@ import type {
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
-import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
+import {
+  ArtistEntityType,
+  ImageType,
+  MediaType,
+  Track,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
+import { ArrowLeft, Cake, Merge, Trash2, Users } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -483,6 +512,29 @@ export interface Props {
 }
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
+
+const GROUP_TYPES = new Set([
+  ArtistEntityType.GROUP,
+  ArtistEntityType.ORCHESTRA,
+  ArtistEntityType.CHOIR,
+]);
+
+const formatLifeDate = (dateStr: string): string => {
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length === 3 && parts[1] && parts[2]) {
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(parts[0], parts[1] - 1, parts[2]));
+  } else if (parts.length >= 2 && parts[1]) {
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+    }).format(new Date(parts[0], parts[1] - 1, 1));
+  }
+  return String(parts[0]);
+};
 const fanartImage = ref();
 useDisplay();
 const menuItems = ref<ContextMenuItem[]>([]);
