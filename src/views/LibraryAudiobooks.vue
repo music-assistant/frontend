@@ -17,6 +17,7 @@
     :total="total"
     :show-provider-filter="true"
     :show-genre-filter="true"
+    :show-collapse-collections="true"
   />
 </template>
 
@@ -62,6 +63,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.sortBy,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.collapseCollections,
   );
 };
 

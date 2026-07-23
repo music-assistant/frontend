@@ -70,6 +70,17 @@
               <MediaItemThumb :item="item" size="calc(100%)" />
             </v-avatar>
           </div>
+          <div
+            v-else-if="
+              item.media_type && item.media_type == MediaType.COLLECTION
+            "
+          >
+            <MediaCollectionThumb
+              :item="item as MediaCollection"
+              size="calc(100%)"
+              style="max-height: 256px"
+            />
+          </div>
           <div v-else>
             <MediaItemThumb
               :item="item"
@@ -193,7 +204,9 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(author, authorindex) in item.authors"
+                  v-for="(author, authorindex) in getAuthorsNarratorsArray(
+                    item.authors,
+                  )"
                   :key="author"
                 >
                   <span style="color: accent">{{ author }}</span>
@@ -220,7 +233,9 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(narrator, narratorIndex) in item.narrators"
+                  v-for="(narrator, narratorIndex) in getAuthorsNarratorsArray(
+                    item.narrators,
+                  )"
                   :key="narrator"
                 >
                   <span style="color: accent">{{ narrator }}</span>
@@ -269,6 +284,52 @@
                   • {{ item.album.year }}</span
                 ></MarqueeText
               >
+            </v-card-subtitle>
+
+            <!-- Audiobook Collection -->
+            <v-card-subtitle v-if="isAudiobookCollection" class="title d-flex">
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-edit"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(author, authorindex) in collectionAuthors"
+                  :key="author"
+                >
+                  <span style="color: accent">{{ author }}</span>
+                  <span
+                    v-if="authorindex + 1 < collectionAuthors.length"
+                    :key="authorindex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
+            </v-card-subtitle>
+            <v-card-subtitle v-if="isAudiobookCollection" class="title d-flex">
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-voice"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(narrator, narratorIndex) in collectionNarrators"
+                  :key="narrator"
+                >
+                  <span style="color: accent">{{ narrator }}</span>
+                  <span
+                    v-if="narratorIndex + 1 < collectionNarrators.length"
+                    :key="narratorIndex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
             </v-card-subtitle>
           </div>
 
@@ -444,6 +505,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
+  getAuthorsNarratorsArray,
   getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,
@@ -458,11 +520,17 @@ import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type {
   Album,
   Artist,
+  Audiobook,
   Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
-import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  Track,
+  MediaCollection,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -475,10 +543,11 @@ import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
+import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
-  item?: MediaItemType;
+  item?: MediaItemType | MediaCollection;
   sortBy?: string;
 }
 const compProps = defineProps<Props>();
@@ -700,6 +769,55 @@ const deleteGenre = () => {
     navigateBack: true,
   });
 };
+
+const isAudiobookCollection = computed(() => {
+  if (compProps.item?.media_type != MediaType.COLLECTION) return false;
+  const collection = compProps.item as MediaCollection;
+  if (
+    collection.items.length > 0 &&
+    collection.items[0].media_type === MediaType.AUDIOBOOK
+  )
+    return true;
+  return false;
+});
+
+const collectionAuthors = computed(() => {
+  if (!isAudiobookCollection.value) return [];
+  const authors: string[] = [];
+  const collection = compProps.item as MediaCollection;
+  collection.items.forEach((book) => {
+    (book as Audiobook).authors.forEach((author) => {
+      let _author: string | undefined = undefined;
+      if (typeof author === "string") {
+        _author = author;
+      } else {
+        _author = author.name;
+      }
+      if (_author != undefined && authors.indexOf(_author) === -1)
+        authors.push(_author);
+    });
+  });
+  return authors;
+});
+
+const collectionNarrators = computed(() => {
+  if (!isAudiobookCollection.value) return [];
+  const narrators: string[] = [];
+  const collection = compProps.item as MediaCollection;
+  collection.items.forEach((book) => {
+    (book as Audiobook).narrators.forEach((narrator) => {
+      let _narrator: string | undefined = undefined;
+      if (typeof narrator === "string") {
+        _narrator = narrator;
+      } else {
+        _narrator = narrator.name;
+      }
+      if (_narrator != undefined && narrators.indexOf(_narrator) === -1)
+        narrators.push(_narrator);
+    });
+  });
+  return narrators;
+});
 </script>
 
 <style scoped>

@@ -23,7 +23,10 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import type {
+  MediaCollection,
+  MediaItemPalette,
+} from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
@@ -168,6 +171,21 @@ export const getArtistsString = function (
       return x.name;
     })
     .join(" | ");
+};
+
+export const getAuthorsNarratorsArray = function (
+  authorsNarrators: Array<string | Artist>,
+) {
+  if (!authorsNarrators) return [];
+  const _authorsNarrators: string[] = [];
+  authorsNarrators.forEach((authorNarrator) => {
+    if (typeof authorNarrator === "string") {
+      _authorsNarrators.push(authorNarrator);
+    } else {
+      _authorsNarrators.push(authorNarrator.name);
+    }
+  });
+  return _authorsNarrators;
 };
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
@@ -806,6 +824,18 @@ export const handleMediaItemClick = function (
     return;
   }
 
+  // open menu for collection items
+  if (item.media_type == MediaType.COLLECTION) {
+    router.push({
+      name: "collection",
+      params: {
+        itemId: item.item_id,
+        provider: item.provider,
+      },
+    });
+    return;
+  }
+
   // all other: go to details view
   router.push({
     name: item.media_type,
@@ -830,6 +860,26 @@ export const handleMenuBtnClick = function (
     : [item];
   showContextMenuForMediaItem(
     mediaItems,
+    parentItem,
+    posX,
+    posY,
+    includePlayMenuItems,
+    includePlayMenuItems,
+    sortBy,
+  );
+};
+
+/* Handle menu button click */
+export const handleCollectionClick = function (
+  item: MediaCollection,
+  posX: number,
+  posY: number,
+  parentItem?: MediaItemType,
+  includePlayMenuItems = true,
+  sortBy?: string,
+) {
+  showContextMenuForMediaItem(
+    item.items,
     parentItem,
     posX,
     posY,

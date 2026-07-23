@@ -110,6 +110,7 @@ export enum MediaType {
   SOUND_EFFECT = "sound_effect",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  COLLECTION = "collection",
   GENRE = "genre",
   GENRE_ALIAS = "genre_alias",
   FOLDER = "folder",
@@ -787,8 +788,8 @@ export interface AudioSource extends MediaItem {
 
 export interface Audiobook extends MediaItem {
   publisher: string;
-  authors: string[];
-  narrators: string[];
+  authors: string[] | Artist[];
+  narrators: string[] | Artist[];
   duration: number;
   fully_played?: boolean;
   resume_position_ms?: number;
@@ -830,6 +831,10 @@ export interface RecommendationFolder extends BrowseFolder {
   items: MediaItemTypeOrItemMapping[];
   enabled_by_default: boolean;
   type?: RecommendationFolderType;
+}
+
+export interface MediaCollection extends MediaItem {
+  items: MediaItemType[];
 }
 
 export type MediaItemType =
