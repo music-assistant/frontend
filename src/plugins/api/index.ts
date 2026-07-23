@@ -47,6 +47,7 @@ import {
   Podcast,
   PodcastEpisode,
   ProviderConfig,
+  ProviderIconVariant,
   ProviderManifest,
   ProviderType,
   QueueOption,
@@ -97,6 +98,8 @@ export class MusicAssistantApi {
   public providerManifests = reactive<{ [domain: string]: ProviderManifest }>(
     {},
   );
+  public providerIcons = reactive<{ [key: string]: string | null }>({});
+  private _providerIconRequests = new Map<string, Promise<string | null>>();
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
@@ -398,6 +401,10 @@ export class MusicAssistantApi {
     Object.keys(this.providerManifests).forEach(
       (key) => delete this.providerManifests[key],
     );
+    Object.keys(this.providerIcons).forEach(
+      (key) => delete this.providerIcons[key],
+    );
+    this._providerIconRequests.clear();
     this.serverInfo.value = undefined;
   }
 
@@ -1450,7 +1457,28 @@ export class MusicAssistantApi {
   }
 
   public async getRecommendations(): Promise<RecommendationFolder[]> {
+    // Returns every available row (with empty `items`) — the discover skeleton
+    // and row-toggle catalog in one fast, cacheable call.
     return this.sendCommand("music/recommendations");
+  }
+
+  public async getRecommendationItems(
+    provider: string,
+    item_id: string,
+  ): Promise<MediaItemTypeOrItemMapping[]> {
+    // Fetches a single recommendation row's items. Per-row timeout/error
+    // isolation lives server-side: an unknown id or a failing provider
+    // resolves to `[]` rather than rejecting. Transport-level failures are
+    // best-effort per row (the caller degrades the row), so opt out of the
+    // global error toast.
+    return this.sendCommand(
+      "music/recommendations/items",
+      {
+        provider,
+        item_id,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
@@ -2391,6 +2419,30 @@ export class MusicAssistantApi {
       return this.providerManifests[prov.domain];
     }
     return undefined;
+  }
+
+  public async getProviderIcon(
+    domain: string,
+    variant: ProviderIconVariant,
+  ): Promise<string | null> {
+    const key = `${domain}:${variant}`;
+    if (key in this.providerIcons) return this.providerIcons[key];
+    let request = this._providerIconRequests.get(key);
+    if (!request) {
+      request = this.sendCommand<string | null>("providers/icon", {
+        provider: domain,
+        variant,
+      })
+        .then((dataUri) => {
+          this.providerIcons[key] = dataUri ?? null;
+          return this.providerIcons[key];
+        })
+        .finally(() => {
+          this._providerIconRequests.delete(key);
+        });
+      this._providerIconRequests.set(key, request);
+    }
+    return request;
   }
 
   private handleEventMessage(msg: EventMessage) {

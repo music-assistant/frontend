@@ -28,6 +28,12 @@
     "close": "Close",
     "create_playlist": "Create new playlist on {0}",
     "dark_mode": "Dark mode",
+    "dashboard": {
+        "disconnect": "Disconnect {0}",
+        "loading": "Loading devices...",
+        "no_devices": "No cast devices found",
+        "started": "Casting to \"{0}\""
+    },
     "delete_db": "Delete item from database",
     "details": "Details",
     "enter_url": "Enter the URL you want to manually add to the database",
@@ -677,6 +683,7 @@
         "increase_offset": "Increase offset",
         "toggle_queue": "Toggle queue",
         "select_player": "Select player",
+        "show_dashboard": "Cast dashboard to a device",
         "party_settings": "Party settings",
         "group_members": "Group members",
         "toggle_subplayers": "Toggle sub-players",
@@ -779,7 +786,6 @@
         "eq_band_count_singular": "1 band",
         "input_gain": "Input Gain ({0} dB)",
         "output_gain": "Output Gain ({0} dB)",
-        "output_limiter": "Output Limiter",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",

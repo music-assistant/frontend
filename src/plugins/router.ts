@@ -1,4 +1,6 @@
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
+import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
+import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { watch } from "vue";
 import {
   createRouter,
@@ -79,11 +81,29 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
+          // Dashboard viewers can't populate enabledPlugins (scoped like guests); trust the server, since the session only exists via an already-enabled dashboard.
+          if (authManager.isDashboardViewer()) return;
+
           // Only allow access if party plugin is enabled
           if (!store.enabledPlugins.has("party")) {
             return { name: "discover" };
           }
         },
+      },
+    ],
+  },
+  // Now-playing kiosk route for casting a player's fullscreen view; top-level like /party so it renders without nav/player chrome.
+  {
+    path: "/now-playing",
+    component: () => import("@/layouts/default/Default.vue"),
+    children: [
+      {
+        path: "",
+        name: "now-playing",
+        component: () =>
+          import(
+            /* webpackChunkName: "now-playing" */ "@/views/DashboardNowPlayingView.vue"
+          ),
       },
     ],
   },
@@ -601,6 +621,23 @@ router.beforeEach(async (to) => {
   );
   if (guestRedirect) {
     return guestRedirect;
+  }
+
+  // Dashboard viewer sessions are pinned to their opened route and render kiosk-style (no nav/player chrome).
+  if (authManager.isDashboardViewer()) {
+    store.frameless = true;
+    const pinnedPath = sessionStorage.getItem(
+      DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+    );
+    // Compare fullPath (not path) so a pinned route with a query string (e.g. /now-playing?player=...) isn't a mismatch on every nav.
+    const dashboardRedirect = getDashboardViewerNavigationRedirect(
+      true,
+      pinnedPath,
+      to.fullPath,
+    );
+    if (dashboardRedirect) {
+      return dashboardRedirect;
+    }
   }
 
   // Check admin-only routes - check all matched routes for requiresAdmin meta

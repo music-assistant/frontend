@@ -338,6 +338,10 @@ export enum EventType {
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
+  DASHBOARD_SESSIONS_UPDATED = "dashboard_sessions_updated",
+  DASHBOARD_SHOW = "dashboard_show",
+  DASHBOARD_HIDE = "dashboard_hide",
+  DASHBOARDS_UPDATED = "dashboards_updated",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -814,10 +818,19 @@ export interface BrowseFolder extends MediaItem {
   path?: string;
   image?: MediaItemImage;
 }
+export enum RecommendationFolderType {
+  DEFAULT = "default",
+  TIMELINE = "timeline",
+}
+
+/** Mirrors music_assistant_models RecommendationFolder. `items` is populated by
+ *  the server; per-user visibility is owned by the frontend (discover.rows). */
 export interface RecommendationFolder extends BrowseFolder {
   icon?: string;
   subtitle?: string;
   items: MediaItemTypeOrItemMapping[];
+  enabled_by_default: boolean;
+  type?: RecommendationFolderType;
 }
 
 export interface MediaCollection extends MediaItem {
@@ -892,7 +905,6 @@ export interface AudioDSPDetails {
   input_gain?: number;
   filters?: DSPFilter[];
   output_gain?: number;
-  output_limiter?: boolean;
   preset_id?: string | null;
 }
 
@@ -1159,6 +1171,12 @@ export interface Player {
 
 // provider
 
+export enum ProviderIconVariant {
+  DEFAULT = "default",
+  DARK = "dark",
+  MONOCHROME = "monochrome",
+}
+
 export interface ProviderManifest {
   // ProviderManifest, details of a provider.
   type: ProviderType;
@@ -1179,12 +1197,8 @@ export interface ProviderManifest {
   stage: ProviderStage;
   // icon: material design icon
   icon?: string;
-  // icon_svg: svg icon (full xml string)
-  icon_svg?: string;
-  // icon_svg_dark: optional separate dark svg icon (full xml string)
-  icon_svg_dark?: string;
-  // icon_svg_dark: optional separate monochrome svg icon (full xml string)
-  icon_svg_monochrome?: string;
+  // icon_images: which icon variants this provider supplies as image files.
+  icon_images: ProviderIconVariant[];
   // depends on: domain of another provider that is required for this provider
   depends_on?: string;
 }
@@ -1226,6 +1240,24 @@ export interface ProviderInstance {
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider?: boolean;
+}
+
+export interface DashboardDevice {
+  // A dashboard endpoint self-registered with the server (e.g. a Chromecast).
+  dashboard_id: string;
+  name: string;
+  supported_types: DashboardType[];
+  provider_domain_hint?: string | null; // provider domain used to resolve this endpoint's icon
+}
+
+export type DashboardType = "party" | "now_playing" | "music_quiz";
+
+export interface DashboardSession {
+  // An active dashboard cast session on a device.
+  dashboard_id: string;
+  name: string;
+  dashboard: DashboardType;
+  player_id?: string | null; // target player for the now_playing dashboard
 }
 
 export enum TaskStatus {
