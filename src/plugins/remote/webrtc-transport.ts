@@ -295,7 +295,11 @@ export class WebRTCTransport extends BaseTransport {
   }): void {
     let pending = this.chunkGroups.get(frame.id);
     if (!pending) {
-      pending = { count: frame.count, parts: new Array<string>(frame.count), received: 0 };
+      pending = {
+        count: frame.count,
+        parts: Array.from<string>({ length: frame.count }),
+        received: 0,
+      };
       this.chunkGroups.set(frame.id, pending);
     }
     if (pending.parts[frame.seq] === undefined) {
