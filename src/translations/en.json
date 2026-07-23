@@ -777,7 +777,6 @@
         "eq_band_count_singular": "1 band",
         "input_gain": "Input Gain ({0} dB)",
         "output_gain": "Output Gain ({0} dB)",
-        "output_limiter": "Output Limiter",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
