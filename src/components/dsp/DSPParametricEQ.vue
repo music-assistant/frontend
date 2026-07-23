@@ -201,6 +201,14 @@
         hide-details
       />
     </template>
+
+    <v-alert
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mx-2 mb-2"
+      :text="$t('settings.dsp.parametric_eq.help')"
+    />
   </v-container>
 </template>
 <script setup lang="ts">

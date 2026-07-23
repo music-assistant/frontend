@@ -32,6 +32,14 @@
       is_log: false,
     }"
   />
+
+  <v-alert
+    type="info"
+    variant="tonal"
+    density="compact"
+    class="mx-4 mb-4"
+    :text="$t('settings.dsp.tone_control.help')"
+  />
 </template>
 <script setup lang="ts">
 import { ToneControlFilter } from "@/plugins/api/interfaces";

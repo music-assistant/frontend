@@ -146,6 +146,13 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.input_gain" type="gain" />
+            <v-alert
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mx-4 mb-4"
+              :text="$t('settings.dsp.input_gain_help')"
+            />
           </v-card>
 
           <!-- Settings of the Output stage -->
@@ -155,6 +162,13 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.output_gain" type="gain" />
+            <v-alert
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mx-4 mb-4"
+              :text="$t('settings.dsp.output_gain_help')"
+            />
           </v-card>
 
           <!-- Settings of the selected DSP Filter -->
@@ -175,25 +189,45 @@
               "
               v-model="dsp.filters[selectedStage] as ToneControlFilter"
             />
-            <DSPSlider
+            <template
               v-else-if="dsp.filters[selectedStage].type === DSPFilterType.GAIN"
-              v-model="(dsp.filters[selectedStage] as GainFilter).gain"
-              type="gain"
-            />
-            <DSPSlider
+            >
+              <DSPSlider
+                v-model="(dsp.filters[selectedStage] as GainFilter).gain"
+                type="gain"
+              />
+              <v-alert
+                type="info"
+                variant="tonal"
+                density="compact"
+                class="mx-4 mb-4"
+                :text="$t('settings.dsp.gain.help')"
+              />
+            </template>
+            <template
               v-else-if="
                 dsp.filters[selectedStage].type === DSPFilterType.BALANCE
               "
-              v-model="(dsp.filters[selectedStage] as BalanceFilter).balance"
-              :type="{
-                min: -100,
-                max: 100,
-                step: 1,
-                label: $t('settings.dsp.parameter.balance'),
-                unit: '%',
-                is_log: false,
-              }"
-            />
+            >
+              <DSPSlider
+                v-model="(dsp.filters[selectedStage] as BalanceFilter).balance"
+                :type="{
+                  min: -100,
+                  max: 100,
+                  step: 1,
+                  label: $t('settings.dsp.parameter.balance'),
+                  unit: '%',
+                  is_log: false,
+                }"
+              />
+              <v-alert
+                type="info"
+                variant="tonal"
+                density="compact"
+                class="mx-4 mb-4"
+                :text="$t('settings.dsp.balance.help')"
+              />
+            </template>
           </v-card>
         </v-col>
       </v-row>
