@@ -8,15 +8,14 @@ export interface RecommendationRowState {
 }
 
 /**
- * Row ids whose items should be fetched right now: every recommendation row
- * in edit mode (hidden rows still render, dimmed, so they stay toggleable),
- * or only the currently-shown rows otherwise.
+ * Row ids whose items should be fetched: only the currently-shown rows.
+ * Hidden rows are never fetched here — including default-off rows, which are
+ * hidden precisely because they're heavy. In edit mode their shell still
+ * renders from catalog metadata (dimmed, toggleable); their items load on
+ * demand when the user unhides them.
  */
-export function rowIdsNeedingItems(
-  rows: RecommendationRowState[],
-  editMode: boolean,
-): string[] {
-  return rows.filter((row) => editMode || !row.hidden).map((row) => row.id);
+export function rowIdsNeedingItems(rows: RecommendationRowState[]): string[] {
+  return rows.filter((row) => !row.hidden).map((row) => row.id);
 }
 
 /**

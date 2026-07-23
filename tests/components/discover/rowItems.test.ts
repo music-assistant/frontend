@@ -12,19 +12,20 @@ const rows: RecommendationRowState[] = [
 ];
 
 describe("rowIdsNeedingItems", () => {
-  it("only fetches shown rows in normal mode", () => {
-    expect(rowIdsNeedingItems(rows, false)).toEqual(["a", "c"]);
+  it("only fetches shown rows", () => {
+    expect(rowIdsNeedingItems(rows)).toEqual(["a", "c"]);
   });
 
-  it("fetches every row (including hidden ones) in edit mode", () => {
-    expect(rowIdsNeedingItems(rows, true)).toEqual(["a", "b", "c"]);
+  it("never fetches hidden rows, even the heavy default-off ones", () => {
+    const allHidden = rows.map((r) => ({ ...r, hidden: true }));
+    expect(rowIdsNeedingItems(allHidden)).toEqual([]);
   });
 
   it("fetches a previously hidden row once it is toggled shown", () => {
     const toggled = rows.map((r) =>
       r.id === "b" ? { ...r, hidden: false } : r,
     );
-    expect(rowIdsNeedingItems(toggled, false)).toEqual(["a", "b", "c"]);
+    expect(rowIdsNeedingItems(toggled)).toEqual(["a", "b", "c"]);
   });
 });
 

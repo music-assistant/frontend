@@ -196,7 +196,12 @@
                 <EyeOff v-else />
               </Button>
             </template>
-            <template v-if="rowItemsMap.get(row.id) === undefined">
+            <!-- Spinner only while a fetch is genuinely in flight. A hidden row
+                 (edit mode) is never fetched until unhidden, so it renders just
+                 its shell rather than spinning forever. -->
+            <template
+              v-if="rowItemsMap.get(row.id) === undefined && !row.hidden"
+            >
               <div class="ed-row-loading">
                 <v-progress-circular indeterminate size="24" />
               </div>
@@ -712,25 +717,18 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
   );
 };
 
-const displayedRecommendationRowIds = (): string[] =>
-  rowIdsNeedingItems(
-    allRows.value.filter((r) => r.kind === "recommendation"),
-    props.editMode,
-  );
-
-// Fetches items for every currently-displayed recommendation row that hasn't
-// been loaded yet (all rows in edit mode, shown rows otherwise).
+// Fetches items for every currently-shown recommendation row that hasn't been
+// loaded yet. Hidden rows (default-off, or toggled off) are skipped; they load
+// on demand when unhidden.
 const fetchMissingRowItems = (): Promise<void> =>
   fetchRowItems(
-    displayedRecommendationRowIds().filter((id) => !rowItemsMap.value.has(id)),
+    rowIdsNeedingItems(
+      allRows.value.filter((r) => r.kind === "recommendation"),
+    ).filter((id) => !rowItemsMap.value.has(id)),
   );
 
-// Re-fetches items for every currently-displayed recommendation row,
-// regardless of whether it's already loaded.
-const refreshDisplayedRowItems = (): Promise<void> =>
-  fetchRowItems(displayedRecommendationRowIds());
-
-// Re-fetches items for the rows currently feeding the Top Picks hero.
+// Re-fetches items for all shown recommendation rows, regardless of whether
+// they're already loaded — feeds both the shelves and the Top Picks hero.
 const refreshShownRowItems = (): Promise<void> =>
   fetchRowItems([...shownRecRowIds.value]);
 
@@ -768,11 +766,11 @@ const scheduleRecommendationRefresh = () => {
   refreshRecommendationsTimer = setTimeout(async () => {
     refreshRecommendationsTimer = undefined;
     if (isUnmounted) return;
-    // Refetches the catalog and the displayed rows' content so play-history
-    // rows and rotated picks stay current.
+    // Refetches the catalog and the shown rows' content so play-history rows
+    // and rotated picks stay current.
     await loadRecommendationRows();
     if (isUnmounted) return;
-    await refreshDisplayedRowItems();
+    await refreshShownRowItems();
     if (isUnmounted) return;
     resolveHeroPicks();
   }, 1500);
@@ -794,17 +792,6 @@ const unsubscribeRecommendations = api.subscribe(
     if (isFinishedPlaybackEvent(evt.data)) {
       scheduleRecommendationRefresh();
     }
-  },
-);
-
-// Entering edit mode needs items for every row (including ones hidden until
-// now) so they render a usable empty/loaded state while toggling.
-watch(
-  () => props.editMode,
-  async (isEdit) => {
-    if (!isEdit) return;
-    await fetchMissingRowItems();
-    resolveHeroPicks();
   },
 );
 
