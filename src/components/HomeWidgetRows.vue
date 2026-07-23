@@ -196,15 +196,14 @@
                 <EyeOff v-else />
               </Button>
             </template>
-            <!-- Spinner only while a fetch is genuinely in flight. A hidden row
-                 (edit mode) is never fetched until unhidden, so it renders just
-                 its shell rather than spinning forever. -->
-            <template
-              v-if="rowItemsMap.get(row.id) === undefined && !row.hidden"
-            >
-              <div class="ed-row-loading">
-                <v-progress-circular indeterminate size="24" />
-              </div>
+            <!-- Skeleton tiles while a fetch is in flight - and for hidden rows
+                 in edit mode (never fetched until unhidden) - so every row
+                 reserves its final height and nothing shifts as items land. -->
+            <template v-if="rowItemsMap.get(row.id) === undefined">
+              <EditorialCardSkeleton
+                v-for="n in skeletonTileCount"
+                :key="`skeleton-${n}`"
+              />
             </template>
             <template v-else>
               <EditorialMediaCard
@@ -271,6 +270,7 @@
 </template>
 
 <script setup lang="ts">
+import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
 import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
@@ -343,6 +343,11 @@ const tilesPerView = computed(() => {
   const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
   return isPhone ? 2.2 : panelViewItemResponsive(0) + 0.5;
 });
+
+// One skeleton per (partially) visible tile while a row's items load.
+const skeletonTileCount = computed(() =>
+  Math.max(2, Math.ceil(tilesPerView.value)),
+);
 
 const players = useOrderedPlayers();
 
@@ -829,11 +834,6 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   padding: 80px 0;
-}
-.ed-row-loading {
-  display: flex;
-  align-items: center;
-  padding: 24px 28px;
 }
 .ed-section {
   margin-bottom: 32px;
