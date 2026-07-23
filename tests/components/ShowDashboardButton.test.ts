@@ -108,10 +108,10 @@ function mountButton(
           template:
             '<button data-testid="cast-dashboard-device" :data-variant="variant" @click="$emit(\'click\')"><slot /></button>',
         },
-        PlayerIcon: {
-          props: ["icon"],
+        DashboardDeviceIcon: {
+          props: ["providerDomainHint"],
           template:
-            '<i data-testid="cast-dashboard-device-icon" :data-icon="icon" />',
+            '<i data-testid="cast-dashboard-device-icon" :data-icon="providerDomainHint" />',
         },
       },
     },
@@ -207,14 +207,14 @@ describe("ShowDashboardButton", () => {
     expect(devices[1]!.text()).toContain("Bedroom TV");
   });
 
-  it("renders the device's declared icon, falling back to tv", async () => {
+  it("passes each device's provider domain hint to its icon, one per device", async () => {
     mockCommands({
       "dashboard/dashboards": () => [
         {
           dashboard_id: "device-1",
           name: "Living Room TV",
           supported_types: ["party"],
-          icon: "cast",
+          provider_domain_hint: "chromecast",
         },
         {
           dashboard_id: "device-2",
@@ -231,8 +231,8 @@ describe("ShowDashboardButton", () => {
 
     const icons = wrapper.findAll('[data-testid="cast-dashboard-device-icon"]');
     expect(icons).toHaveLength(2);
-    expect(icons[0]!.attributes("data-icon")).toBe("cast");
-    expect(icons[1]!.attributes("data-icon")).toBe("tv");
+    expect(icons[0]!.attributes("data-icon")).toBe("chromecast");
+    expect(icons[1]!.attributes("data-icon")).toBeUndefined();
   });
 
   it("starts the dashboard on the selected device and toasts success", async () => {

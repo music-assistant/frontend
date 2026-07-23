@@ -1242,7 +1242,7 @@ export interface DashboardDevice {
   dashboard_id: string;
   name: string;
   supported_types: DashboardType[];
-  icon?: string | null; // material design (mdi-*) or MA/lucide icon name
+  provider_domain_hint?: string | null; // provider domain used to resolve this endpoint's icon
 }
 
 export type DashboardType = "party" | "now_playing" | "music_quiz";

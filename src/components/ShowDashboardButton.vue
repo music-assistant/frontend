@@ -34,11 +34,9 @@
         @click="selectDevice(device)"
       >
         <div class="flex min-w-0 items-center gap-1.5">
-          <PlayerIcon
-            class="shrink-0"
-            :icon="device.icon || 'tv'"
+          <DashboardDeviceIcon
+            :provider-domain-hint="device.provider_domain_hint"
             :size="14"
-            data-testid="cast-dashboard-device-icon"
           />
           <span class="truncate">{{ device.name }}</span>
         </div>
@@ -68,7 +66,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button, type ButtonVariants } from "@/components/ui/button";
-import PlayerIcon from "@/components/PlayerIcon.vue";
+import DashboardDeviceIcon from "@/components/DashboardDeviceIcon.vue";
 import api from "@/plugins/api";
 import { waitForApiInitialization } from "@/plugins/api/helpers";
 import {
