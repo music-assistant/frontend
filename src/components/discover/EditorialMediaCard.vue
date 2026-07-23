@@ -60,7 +60,9 @@
       >
         {{ displayName }}
       </div>
-      <div class="ed-card__sub">{{ subtitle }}</div>
+      <div class="ed-card__sub">
+        <slot name="subtitle">{{ subtitle }}</slot>
+      </div>
       <span v-if="showPlay" class="ed-card__play" @click.stop="onPlay">
         <Play
           :size="18"
