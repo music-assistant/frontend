@@ -40,8 +40,10 @@ describe("useGuestArtistTracks", () => {
       useGuestArtistTracks();
 
     const artist = {
+      item_id: "artist-id",
+      provider: "library",
       provider_mappings: [
-        { item_id: "artist-id", provider_instance: "provider-1" },
+        { item_id: "mapping-id", provider_instance: "provider-1" },
       ],
     } as unknown as Artist;
 
@@ -49,7 +51,7 @@ describe("useGuestArtistTracks", () => {
 
     expect(loadingArtistTracks.value).toBe(false);
     expect(selectedArtist.value).toStrictEqual(artist);
-    expect(mockGetArtistTracks).toHaveBeenCalledWith("artist-id", "provider-1");
+    expect(mockGetArtistTracks).toHaveBeenCalledWith("artist-id", "library");
     expect(artistTracks.value).toEqual(tracks);
   });
 
