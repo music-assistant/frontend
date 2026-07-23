@@ -73,6 +73,17 @@ export class WebRTCTransport extends BaseTransport {
       reject: (error: Error) => void;
     }
   >();
+  // Reassembly buffers for chunked HTTP proxy responses, keyed by request id.
+  private chunkedResponses = new Map<
+    string,
+    {
+      status: number;
+      headers: Record<string, string>;
+      chunks: number;
+      parts: string[];
+      received: number;
+    }
+  >();
   // ICE servers received from the signaling server (provided by MA server)
   private iceServers: IceServerConfig[] = [];
 
@@ -258,6 +269,14 @@ export class WebRTCTransport extends BaseTransport {
           this.handleHttpProxyResponse(data);
           return;
         }
+        if (data.type === "http-proxy-response-start") {
+          this.handleHttpProxyResponseStart(data);
+          return;
+        }
+        if (data.type === "http-proxy-response-chunk") {
+          this.handleHttpProxyResponseChunk(data);
+          return;
+        }
       } catch {
         // Not JSON or not HTTP proxy response, treat as normal message
       }
@@ -416,6 +435,7 @@ export class WebRTCTransport extends BaseTransport {
       setTimeout(() => {
         if (this.httpProxyCallbacks.has(requestId)) {
           this.httpProxyCallbacks.delete(requestId);
+          this.chunkedResponses.delete(requestId);
           reject(new Error("HTTP proxy request timeout"));
         }
       }, 30000);
@@ -467,6 +487,52 @@ export class WebRTCTransport extends BaseTransport {
         );
       }
     }
+  }
+
+  /**
+   * Begin buffering a chunked HTTP proxy response.
+   */
+  private handleHttpProxyResponseStart(data: {
+    id: string;
+    status: number;
+    headers: Record<string, string>;
+    chunks: number;
+  }): void {
+    this.chunkedResponses.set(data.id, {
+      status: data.status,
+      headers: data.headers,
+      chunks: data.chunks,
+      parts: new Array<string>(data.chunks),
+      received: 0,
+    });
+  }
+
+  /**
+   * Store one chunk of a chunked HTTP proxy response and, once all chunks have
+   * arrived, reassemble the body and resolve the pending request.
+   */
+  private handleHttpProxyResponseChunk(data: {
+    id: string;
+    index: number;
+    body: string;
+  }): void {
+    const pending = this.chunkedResponses.get(data.id);
+    if (!pending) return;
+
+    if (pending.parts[data.index] === undefined) {
+      pending.received++;
+    }
+    pending.parts[data.index] = data.body;
+
+    if (pending.received < pending.chunks) return;
+
+    this.chunkedResponses.delete(data.id);
+    this.handleHttpProxyResponse({
+      id: data.id,
+      status: pending.status,
+      headers: pending.headers,
+      body: pending.parts.join(""),
+    });
   }
 
   /**
@@ -584,6 +650,7 @@ export class WebRTCTransport extends BaseTransport {
       callbacks.reject(new Error("Transport closed"));
     }
     this.httpProxyCallbacks.clear();
+    this.chunkedResponses.clear();
   }
 
   /**
