@@ -265,6 +265,7 @@ import {
   PlusCircle,
   RadioTower,
   RefreshCw,
+  RotateCcw,
   SkipForward,
   Trash2,
 } from "@lucide/vue";
@@ -785,6 +786,30 @@ export const getContextMenuItems = async function (
         },
       });
     }
+  }
+
+  // play from beginning (podcast episode with saved progress)
+  if (
+    items.length === 1 &&
+    items[0].media_type === MediaType.PODCAST_EPISODE &&
+    ((items[0] as PodcastEpisode).fully_played ||
+      (items[0] as PodcastEpisode).resume_position_ms)
+  ) {
+    contextMenuItems.push({
+      label: "play_from_beginning",
+      icon: RotateCcw,
+      action: () => {
+        api.playMedia(
+          items[0].uri,
+          QueueOption.PLAY,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+      },
+      disabled: !store.activePlayer,
+    });
   }
 
   // update metadata
