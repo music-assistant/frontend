@@ -16,7 +16,12 @@ type TransportInternals = {
     { resolve: (value: ProxyResult) => void; reject: (error: Error) => void }
   >;
   dispatchMessage: (data: string) => void;
-  handleChunk: (frame: { id: number; seq: number; count: number; b64: string }) => void;
+  handleChunk: (frame: {
+    id: number;
+    seq: number;
+    count: number;
+    b64: string;
+  }) => void;
   on: (event: string, cb: (...args: unknown[]) => void) => void;
 };
 
@@ -28,7 +33,10 @@ function makeTransport(): TransportInternals {
   return transport as unknown as TransportInternals;
 }
 
-function pending(transport: TransportInternals, id: string): Promise<ProxyResult> {
+function pending(
+  transport: TransportInternals,
+  id: string,
+): Promise<ProxyResult> {
   return new Promise<ProxyResult>((resolve, reject) => {
     transport.httpProxyCallbacks.set(id, { resolve, reject });
   });
@@ -42,7 +50,13 @@ function toHex(bytes: number[]): string {
 function makeChunks(text: string, id: number, pieceBytes = 8) {
   const bytes = new TextEncoder().encode(text);
   const count = Math.max(1, Math.ceil(bytes.length / pieceBytes));
-  const frames: { type: "__chunk__"; id: number; seq: number; count: number; b64: string }[] = [];
+  const frames: {
+    type: "__chunk__";
+    id: number;
+    seq: number;
+    count: number;
+    b64: string;
+  }[] = [];
   for (let seq = 0; seq < count; seq++) {
     const slice = bytes.slice(seq * pieceBytes, (seq + 1) * pieceBytes);
     let binary = "";
@@ -101,7 +115,8 @@ describe("WebRTCTransport chunk reassembly", () => {
       body: toHex([1, 2, 3, 4, 5, 6, 7, 8]),
     });
 
-    for (const frame of [...makeChunks(msg, 7)].reverse()) transport.handleChunk(frame);
+    for (const frame of [...makeChunks(msg, 7)].reverse())
+      transport.handleChunk(frame);
 
     const { body } = await result;
     expect(Array.from(body)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
