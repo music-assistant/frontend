@@ -1147,6 +1147,192 @@
     "genre_exclusions": "Genre Exclusions",
     "remove_genre_exclusion": "Remove exclusion",
     "providers": {
+        "ai_radio": {
+            "title": "AI Radio",
+            "context": {
+                "run_with": "Play as AI Radio"
+            },
+            "actions": {
+                "discard": "Discard",
+                "delete": "Delete",
+                "saving": "Saving...",
+                "up": "Up",
+                "down": "Down",
+                "remove": "Remove"
+            },
+            "fields": {
+                "source_playtime_cap": "Source Playtime Cap (minutes)",
+                "target_playlist_provider": "Target Playlist Provider",
+                "default_playback_device": "Default Playback Device (optional)",
+                "web_search_mode": "Web Search Mode",
+                "character_limit": "Character Limit",
+                "prompt": "Prompt",
+                "clear_queue_on_dynamic_start": "Clear Queue on Dynamic Start",
+                "dynamic_batch_size": "Dynamic Batch Size",
+                "dynamic_prefetch_remaining": "Dynamic Prefetch Remaining Tracks",
+                "dynamic_poll_seconds": "Dynamic Poll Seconds",
+                "timezone": "Timezone",
+                "weather_city": "Weather City",
+                "weather_country": "Weather Country",
+                "instructions": "Host and Program Instructions"
+            },
+            "web_search": {
+                "disabled": "disabled (no web tool)",
+                "allow": "allow (model may use web)",
+                "force": "force (web search required)",
+                "help": "Whether the host may look things up on the web for this segment."
+            },
+            "plays": {
+                "start": "Once at start",
+                "end": "Once at end",
+                "every_song": "Every song",
+                "every_n_songs": "Every ~{0} songs",
+                "every_n_min": "Every ~{0} min",
+                "occasionally": "Occasionally ({0}%)"
+            },
+            "validation": {
+                "invalid_import_file": "The file is not a valid AI Radio export.",
+                "station_name_required": "Station name is required",
+                "station_source_playlist_required": "Station source playlist is required",
+                "select_section": "Select at least one section",
+                "section_order_required": "Section order requires at least one rule",
+                "rule_requires_flow": "Rule {0} requires at least one flow item",
+                "must_needs_section": "Rule {0}, flow {1}: MUST needs a section",
+                "alternative_needs_choice": "Rule {0}, flow {1}: ALTERNATIVE needs at least one valid choice",
+                "optional_needs_section": "Rule {0}, flow {1}: OPTIONAL needs a section",
+                "optional_chance_numeric": "Rule {0}, flow {1}: OPTIONAL chance must be numeric",
+                "section_name_required": "Section name is required",
+                "section_prompt_required": "Section prompt is required",
+                "no_station_loaded": "No station loaded",
+                "no_section_loaded": "No section loaded"
+            },
+            "confirm": {
+                "discard_changes_title": "Discard changes?",
+                "discard_changes": "You have unsaved changes that will be lost.",
+                "delete_station_title": "Delete station?",
+                "delete_station": "Delete this station?"
+            },
+            "toast": {
+                "playlists_truncated": "Only the first {0} playlists were loaded.",
+                "unavailable": "AI Radio is not enabled.",
+                "playlist_starting": "Generating playlist — it will appear in your library shortly.",
+                "live_starting": "Live radio started",
+                "playlist_start_failed": "Failed to start playlist generation",
+                "live_start_failed": "Failed to start live radio",
+                "session_stopped": "AI Radio session stopped",
+                "session_stop_failed": "Failed to stop AI Radio session",
+                "station_saved": "Station saved",
+                "station_save_failed": "Failed to save station",
+                "station_deleted": "Station deleted",
+                "station_duplicated": "Station duplicated",
+                "session_failed": "AI Radio run failed: {0}"
+            },
+            "header": {
+                "subtitle": "Turn a playlist into a radio show with an AI host."
+            },
+            "gallery": {
+                "empty_title": "Create your first show",
+                "empty_description": "AI Radio turns one of your playlists into a radio show with an AI host. AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host — configure one under Settings → Plugins.",
+                "create_cta": "Create show",
+                "new_show": "New show",
+                "refresh": "Refresh"
+            },
+            "card": {
+                "play": "Play",
+                "starting": "Starting...",
+                "stop": "Stop",
+                "stopping": "Stopping...",
+                "on_air": "On air",
+                "generate_playlist": "Generate as playlist",
+                "customize": "Customize",
+                "duplicate": "Duplicate",
+                "duplicate_name": "{0} (copy)",
+                "delete": "Delete",
+                "session_failed": "Last run failed",
+                "open_playlist": "Open generated playlist",
+                "status_failed": "Failed {0}",
+                "status_playlist_ready": "Playlist ready · {0}",
+                "status_last_on_air": "Last on air {0}",
+                "no_player": "Select a player first",
+                "start_failed": "Failed to start: {0}",
+                "switch_show_title": "Switch show?",
+                "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
+                "switch_show_confirm_label": "Switch"
+            },
+            "phase": {
+                "preparing": "Preparing your show…",
+                "fetch_source_tracks": "Fetching tracks…",
+                "planning_sections": "Planning the show…",
+                "generating_llm": "Writing the host's lines…",
+                "generating_tts": "Recording the host's voice…",
+                "publishing_playlist": "Publishing playlist…",
+                "initializing_queue": "Preparing the queue…",
+                "queueing_batch": "Queueing music…",
+                "waiting_for_playback": "Waiting for playback…"
+            },
+            "create": {
+                "title": "Create a show",
+                "description": "Pick a playlist, a host style, and how chatty it should be.",
+                "playlist_label": "Source playlist",
+                "playlist_placeholder": "Choose a playlist",
+                "playlist_empty": "No playlists found",
+                "preset_label": "Host style",
+                "talk_label": "Talkativeness",
+                "name_label": "Show name",
+                "default_name": "{0} — {1}",
+                "create": "Create",
+                "create_and_play": "Create & play",
+                "creating": "Creating...",
+                "validation": {
+                    "playlist_required": "Choose a source playlist",
+                    "name_required": "Show name is required"
+                }
+            },
+            "presets": {
+                "morning_show": {
+                    "name": "Morning show",
+                    "description": "Warm, upbeat host with weather and news breaks."
+                },
+                "minimal_dj": {
+                    "name": "Minimal DJ",
+                    "description": "Calm, understated transitions that stay out of the way."
+                },
+                "music_nerd": {
+                    "name": "Music nerd",
+                    "description": "Shares artist facts and trivia between songs."
+                },
+                "party_host": {
+                    "name": "Party host",
+                    "description": "High-energy shout-outs to keep the party going."
+                }
+            },
+            "talk": {
+                "rarely": "Rarely",
+                "normal": "Normal",
+                "chatty": "Chatty"
+            },
+            "prereq": {
+                "title": "AI provider needed",
+                "description": "AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host.",
+                "action": "Go to Settings → Plugins"
+            },
+            "customize": {
+                "title": "Customize show",
+                "save": "Save show",
+                "advanced": "Advanced",
+                "basics_title": "Basics",
+                "segments_title": "Segments",
+                "segments_empty": "No segments yet — add one to get started.",
+                "add_segment": "Add segment",
+                "blank_segment": "Blank segment",
+                "blank_segment_name": "New segment",
+                "segment_name": "Segment name",
+                "use_current_player": "Use current player",
+                "lossy_warning_title": "Simplified on save",
+                "lossy_warning_description": "This show uses an advanced configuration that can't be fully represented here. Saving will rewrite it in the simplified segment format above.",
+                "prompt_placeholders_hint": "Available placeholders: {placeholders}"
+            }
+        },
         "party": {
             "guest_page": {
                 "add_available": "Add Available",

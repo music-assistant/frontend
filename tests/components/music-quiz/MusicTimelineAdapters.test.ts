@@ -8,7 +8,7 @@ import type {
   MusicQuizTimelineHostState,
   MusicQuizTimelinePersonalizedState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { mount, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -102,7 +102,7 @@ import {
 import {
   guestEntryStateKey,
   useGuestEntryResolver,
-} from "@/composables/useGuestEntryResolver";
+} from "@/composables/guest/useGuestEntryResolver";
 import {
   isThemePreference,
   THEME_PREFERENCES,

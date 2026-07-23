@@ -81,7 +81,7 @@
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { MusicQuizGuessTheSongRound } from "@/composables/useMusicQuiz";
+import type { MusicQuizGuessTheSongRound } from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Check, Copy, Loader2 } from "@lucide/vue";
 

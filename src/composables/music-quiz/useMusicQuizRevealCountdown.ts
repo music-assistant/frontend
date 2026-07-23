@@ -1,4 +1,4 @@
-import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
 export interface MusicQuizRevealCountdownOptions {

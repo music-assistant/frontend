@@ -4,7 +4,7 @@ import type {
   MusicQuizTimelineEntry,
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 

@@ -125,8 +125,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX } from "@lucide/vue";

@@ -65,8 +65,8 @@ import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import type {
   MusicQuizMultipleChoicePersonalizedState,
   MusicQuizMultipleChoiceRound,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX } from "@lucide/vue";

@@ -2,7 +2,7 @@ import type {
   MusicQuizPhase,
   MusicQuizPlayer,
   MusicQuizSupportedPublicState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
 import { $t, i18n } from "@/plugins/i18n";
 

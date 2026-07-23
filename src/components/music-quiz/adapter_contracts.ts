@@ -6,7 +6,7 @@ import type {
   MusicQuizSupportedHostState,
   MusicQuizSupportedPersonalizedState,
   MusicQuizSupportedRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import type { MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import type { VNode } from "vue";
 

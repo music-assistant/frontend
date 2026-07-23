@@ -20,7 +20,7 @@ import MusicTimelineRound from "@/components/music-quiz/game-types/music-timelin
 import type {
   MusicQuizTimelinePersonalizedState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
