@@ -168,7 +168,41 @@
             </div>
           </section>
 
-          <!-- Recommendation shelf -->
+          <!-- Timeline recommendation -->
+          <EditorialTimeline
+            v-if="
+              row.kind === 'recommendation' &&
+              row.folder?.type === RecommendationFolderType.TIMELINE &&
+              rowItemsMap.get(row.id) !== undefined
+            "
+            :title="row.folder.name"
+            :provider="row.folder.provider"
+            :items="rowItemsMap.get(row.id) ?? []"
+            :dimmed="editMode && row.hidden"
+            :tiles-per-view="tilesPerView"
+          >
+            <template v-if="editMode" #actions>
+              <button
+                class="ed-drag-handle"
+                :aria-label="$t('queue_reorder')"
+                @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                @click.stop
+              >
+                <GripVertical />
+              </button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :aria-label="$t('tooltip.toggle_row')"
+                @click="toggleRow(row)"
+              >
+                <Eye v-if="!row.hidden" />
+                <EyeOff v-else />
+              </Button>
+            </template>
+          </EditorialTimeline>
+
+          <!-- Recommendation shelf (including timeline loading state) -->
           <EditorialShelf
             v-else-if="row.kind === 'recommendation' && row.folder"
             :title="row.folder.name"
@@ -277,6 +311,7 @@ import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf, {
   type EditorialShelfExpose,
 } from "@/components/discover/EditorialShelf.vue";
+import EditorialTimeline from "@/components/discover/EditorialTimeline.vue";
 import {
   GENRES_ROW_ID,
   PLAYERS_ROW_ID,
@@ -299,6 +334,7 @@ import api from "@/plugins/api";
 import {
   EventType,
   PlaybackState,
+  RecommendationFolderType,
   type EventMessage,
   type Genre,
   type ItemMapping,
