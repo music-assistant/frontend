@@ -6,7 +6,6 @@
     :height="size"
     class="shrink-0"
     data-testid="cast-dashboard-device-icon"
-    :data-icon="iconSrc"
   />
   <TvMinimal
     v-else
