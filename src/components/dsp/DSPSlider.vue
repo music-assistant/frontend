@@ -1,26 +1,35 @@
 <template>
-  <div class="flex items-center gap-4 p-4">
-    <span class="min-w-[100px] pl-2 text-muted-foreground">
-      {{ config.label }}
-    </span>
-    <div class="flex-grow pr-4">
-      <Slider
-        :model-value="[sliderModel]"
-        :min="sliderMin"
-        :max="sliderMax"
-        :step="sliderStep"
-        @update:model-value="onSlide"
-      />
+  <div class="@container p-4">
+    <!-- Below the @sm container width the value entry drops to its own row
+         beneath the label + slider, so the slider keeps its width instead of
+         collapsing to a dot. -->
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <span class="min-w-[100px] pl-2 text-muted-foreground">
+        {{ config.label }}
+      </span>
+      <div class="min-w-0 flex-1 pr-4">
+        <Slider
+          :model-value="[sliderModel]"
+          :min="sliderMin"
+          :max="sliderMax"
+          :step="sliderStep"
+          @update:model-value="onSlide"
+        />
+      </div>
+      <div
+        class="order-last flex w-full items-center justify-end gap-2 @sm:order-none @sm:w-auto @sm:justify-start"
+      >
+        <Input
+          v-model="displayValue"
+          type="number"
+          class="w-24 shrink-0"
+          :aria-label="config.label"
+          @focus="isEditing = true"
+          @blur="isEditing = false"
+        />
+        <span class="min-w-[40px]">{{ config.unit }}</span>
+      </div>
     </div>
-    <Input
-      v-model="displayValue"
-      type="number"
-      class="max-w-[100px]"
-      :aria-label="config.label"
-      @focus="isEditing = true"
-      @blur="isEditing = false"
-    />
-    <span class="min-w-[40px] pl-2">{{ config.unit }}</span>
   </div>
 </template>
 
