@@ -16,6 +16,7 @@ export enum DSPFilterType {
   TONE_CONTROL = "tone_control",
   GAIN = "gain",
   BALANCE = "balance",
+  CONVOLUTION = "convolution",
 }
 
 export enum ParametricEQBandType {
@@ -67,12 +68,33 @@ export interface BalanceFilter extends DSPFilterBase {
   balance: number;
 }
 
+// Applies a stored impulse response to the audio. `ir_id` references an entry
+// in the server-side IR library; an empty string is valid and means "none
+// selected", which makes the filter a no-op. `gain` trims the output level,
+// since an impulse response changes overall loudness (-60..60 dB).
+export interface ConvolutionFilter extends DSPFilterBase {
+  type: DSPFilterType.CONVOLUTION;
+  ir_id: string;
+  gain: number;
+}
+
+// Metadata of a stored impulse response. Everything but `name` is probed from
+// the file server-side and is informational only.
+export interface DSPIRMetadata {
+  ir_id: string;
+  name: string;
+  sample_rate: number;
+  channels: number;
+  duration: number;
+}
+
 // Union type for all possible filters
 export type DSPFilter =
   | ParametricEQFilter
   | ToneControlFilter
   | GainFilter
-  | BalanceFilter;
+  | BalanceFilter
+  | ConvolutionFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
