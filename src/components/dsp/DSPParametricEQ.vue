@@ -202,13 +202,14 @@
       />
     </template>
 
-    <v-alert
-      type="info"
-      variant="tonal"
-      density="compact"
-      class="mx-2 mb-2"
-      :text="$t('settings.dsp.parametric_eq.help')"
-    />
+    <div class="px-2">
+      <Alert variant="info" class="mb-2">
+        <Info />
+        <AlertDescription>
+          {{ $t("settings.dsp.parametric_eq.help") }}
+        </AlertDescription>
+      </Alert>
+    </div>
   </v-container>
 </template>
 <script setup lang="ts">
@@ -222,6 +223,8 @@ import {
 import DSPSlider from "./DSPSlider.vue";
 import { $t } from "@/plugins/i18n";
 import { useTheme } from "vuetify";
+import { Info } from "@lucide/vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const apoToBandType: Record<string, ParametricEQBandType> = {
   PK: ParametricEQBandType.PEAK,

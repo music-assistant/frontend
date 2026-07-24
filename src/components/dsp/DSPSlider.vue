@@ -1,37 +1,34 @@
 <template>
-  <v-card flat color="transparent">
-    <v-card-text class="d-flex align-center gap-4">
-      <span style="min-width: 100px" class="v-label pl-2">{{
-        config.label
-      }}</span>
-      <v-slider
-        v-model="sliderModel"
+  <div class="flex items-center gap-4 p-4">
+    <span class="min-w-[100px] pl-2 text-muted-foreground">
+      {{ config.label }}
+    </span>
+    <div class="flex-grow pr-4">
+      <Slider
+        :model-value="[sliderModel]"
         :min="sliderMin"
         :max="sliderMax"
         :step="sliderStep"
-        hide-details
-        class="flex-grow-1 pr-4"
-        density="compact"
-        color="primary"
+        @update:model-value="onSlide"
       />
-      <v-text-field
-        v-model="displayValue"
-        type="number"
-        hide-details
-        density="compact"
-        style="max-width: 100px"
-        :aria-label="config.label"
-        @focus="isEditing = true"
-        @blur="isEditing = false"
-      />
-      <span style="min-width: 40px" class="pl-2">{{ config.unit }}</span>
-    </v-card-text>
-  </v-card>
+    </div>
+    <Input
+      v-model="displayValue"
+      type="number"
+      class="max-w-[100px]"
+      :aria-label="config.label"
+      @focus="isEditing = true"
+      @blur="isEditing = false"
+    />
+    <span class="min-w-[40px] pl-2">{{ config.unit }}</span>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { $t } from "@/plugins/i18n";
 import { ref, computed } from "vue";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 
 type ParameterConfig = {
   // Minimum value for the slider
@@ -118,6 +115,12 @@ const sliderModel = computed({
     }
   },
 });
+
+const onSlide = (value?: number[]) => {
+  if (!value?.length) return;
+  sliderModel.value = value[0];
+};
+
 const sliderMax = computed(() => {
   if (config.value.is_log) {
     return Math.log10(config.value.max);
@@ -133,8 +136,12 @@ const sliderMin = computed(() => {
   }
 });
 const sliderStep = computed(() => {
+  // In log mode the slider runs in log10 space, so a fine fixed step keeps
+  // dragging smooth. It must be non-zero: reka-ui snaps by dividing by the
+  // step, and the old Math.log10(step) was 0 for the frequency slider's step
+  // of 1 (Vuetify tolerated that as continuous; reka-ui produces NaN).
   if (config.value.is_log) {
-    return Math.log10(config.value.step);
+    return 0.001;
   } else {
     return config.value.step;
   }

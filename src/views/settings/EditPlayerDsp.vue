@@ -62,9 +62,19 @@
     </v-toolbar>
 
     <v-container fluid class="pa-4">
-      <v-alert v-if="!dsp.enabled" type="info" class="mt-4" color="transparent">
-        {{ $t("settings.dsp.disabled_message") }}
-      </v-alert>
+      <!-- Kept in the DOM and only faded, so toggling DSP on leaves its space in
+           place instead of shifting the layout below up. -->
+      <Alert
+        variant="warning"
+        class="mb-5 mt-0.5 transition-opacity duration-200"
+        :class="dsp.enabled ? 'pointer-events-none opacity-0' : 'opacity-100'"
+        :aria-hidden="dsp.enabled"
+      >
+        <TriangleAlert />
+        <AlertDescription>
+          {{ $t("settings.dsp.disabled_message") }}
+        </AlertDescription>
+      </Alert>
       <v-row :class="{ 'justify-center': mobile }" class="flex-nowrap">
         <!-- Timeline Column -->
         <v-col
@@ -146,13 +156,14 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.input_gain" type="gain" />
-            <v-alert
-              type="info"
-              variant="tonal"
-              density="compact"
-              class="mx-4 mb-4"
-              :text="$t('settings.dsp.input_gain_help')"
-            />
+            <div class="px-4">
+              <Alert variant="info" class="mb-4">
+                <Info />
+                <AlertDescription>
+                  {{ $t("settings.dsp.input_gain_help") }}
+                </AlertDescription>
+              </Alert>
+            </div>
           </v-card>
 
           <!-- Settings of the Output stage -->
@@ -162,13 +173,14 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.output_gain" type="gain" />
-            <v-alert
-              type="info"
-              variant="tonal"
-              density="compact"
-              class="mx-4 mb-4"
-              :text="$t('settings.dsp.output_gain_help')"
-            />
+            <div class="px-4">
+              <Alert variant="info" class="mb-4">
+                <Info />
+                <AlertDescription>
+                  {{ $t("settings.dsp.output_gain_help") }}
+                </AlertDescription>
+              </Alert>
+            </div>
           </v-card>
 
           <!-- Settings of the selected DSP Filter -->
@@ -196,13 +208,14 @@
                 v-model="(dsp.filters[selectedStage] as GainFilter).gain"
                 type="gain"
               />
-              <v-alert
-                type="info"
-                variant="tonal"
-                density="compact"
-                class="mx-4 mb-4"
-                :text="$t('settings.dsp.gain.help')"
-              />
+              <div class="px-4">
+                <Alert variant="info" class="mb-4">
+                  <Info />
+                  <AlertDescription>
+                    {{ $t("settings.dsp.gain.help") }}
+                  </AlertDescription>
+                </Alert>
+              </div>
             </template>
             <template
               v-else-if="
@@ -220,13 +233,14 @@
                   is_log: false,
                 }"
               />
-              <v-alert
-                type="info"
-                variant="tonal"
-                density="compact"
-                class="mx-4 mb-4"
-                :text="$t('settings.dsp.balance.help')"
-              />
+              <div class="px-4">
+                <Alert variant="info" class="mb-4">
+                  <Info />
+                  <AlertDescription>
+                    {{ $t("settings.dsp.balance.help") }}
+                  </AlertDescription>
+                </Alert>
+              </div>
             </template>
           </v-card>
         </v-col>
@@ -306,6 +320,8 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import { Info, TriangleAlert } from "@lucide/vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
