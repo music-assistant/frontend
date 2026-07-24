@@ -1,10 +1,9 @@
 <template>
   <v-card
-    class="flex-fill rounded-lg player-card"
+    class="rounded-lg player-card"
     :class="{
       'player-disabled': !playerConfig.enabled,
       'player-unavailable': !isAvailable,
-      'player-needs-setup': playerConfig.enabled && needsSetup,
     }"
     @click="handleClick"
   >
@@ -27,17 +26,16 @@
       </div>
 
       <!-- Player needs setup warning -->
-      <div
+      <v-chip
         v-if="playerConfig.enabled && needsSetup"
-        class="player-warning-card"
+        size="x-small"
+        variant="tonal"
+        color="warning"
+        class="player-warning-chip"
       >
-        <div class="player-warning-inline">
-          <v-icon icon="mdi-alert-circle" size="16" color="warning" />
-          <span class="player-warning-text">{{
-            $t("settings.player_needs_setup")
-          }}</span>
-        </div>
-      </div>
+        <v-icon icon="mdi-alert-circle" size="14" start />
+        {{ $t("settings.player_needs_setup") }}
+      </v-chip>
 
       <div class="card-footer">
         <div class="protocol-chips">
@@ -69,13 +67,6 @@
             size="16"
             color="grey"
             :title="$t('settings.player_disabled')"
-          />
-          <v-icon
-            v-else-if="needsSetup"
-            icon="mdi-alert-circle"
-            size="16"
-            color="warning"
-            :title="$t('settings.player_needs_setup')"
           />
           <v-icon
             v-else-if="!isAvailable"
@@ -169,26 +160,9 @@ const handleMenu = (event: Event) => {
   opacity: 0.7;
 }
 
-.player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
-}
-
-.player-warning-card {
-  background: rgba(var(--v-theme-warning), 0.08);
-  border-radius: 8px;
-  margin: 8px 0 0 0;
-  padding: 8px 12px;
-}
-
-.player-warning-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgb(var(--v-theme-warning));
-}
-
-.player-warning-text {
-  font-size: 13px;
+.player-warning-chip {
+  align-self: flex-start;
+  font-size: 10px;
   font-weight: 500;
 }
 
@@ -198,6 +172,7 @@ const handleMenu = (event: Event) => {
   padding: 16px;
   height: 100%;
   min-height: 120px;
+  gap: 8px;
 }
 
 .card-header {
@@ -251,7 +226,6 @@ const handleMenu = (event: Event) => {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 12px;
 }
 
 .protocol-chips {

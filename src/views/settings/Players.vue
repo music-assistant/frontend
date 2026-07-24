@@ -39,8 +39,6 @@
           :class="{
             'player-disabled': !item.enabled,
             'player-unavailable': !api.players[item.player_id]?.available,
-            'player-needs-setup':
-              item.enabled && api.players[item.player_id]?.needs_setup,
           }"
           @click="editPlayer(item.player_id, item.provider)"
           @menu="(evt) => onMenu(evt, item)"
@@ -64,15 +62,16 @@
           <template #subtitle>
             <div class="player-meta">
               <!-- Player needs setup warning -->
-              <div
+              <v-chip
                 v-if="item.enabled && api.players[item.player_id]?.needs_setup"
-                class="player-warning-inline"
+                size="x-small"
+                variant="tonal"
+                color="warning"
+                class="player-warning-chip"
               >
-                <v-icon icon="mdi-alert-circle" size="16" color="warning" />
-                <span class="player-warning-text">{{
-                  $t("settings.player_needs_setup")
-                }}</span>
-              </div>
+                <v-icon icon="mdi-alert-circle" size="14" start />
+                {{ $t("settings.player_needs_setup") }}
+              </v-chip>
               <span v-else class="provider-name">
                 {{
                   api.players[item.player_id]?.device_info
@@ -134,23 +133,15 @@
         </ListItem>
       </v-list>
 
-      <v-row v-else>
-        <v-col
+      <div v-else class="players-grid">
+        <SettingsPlayerCard
           v-for="item in getAllFilteredPlayers()"
           :key="item.player_id"
-          cols="12"
-          md="6"
-          lg="4"
-          class="d-flex"
-        >
-          <SettingsPlayerCard
-            :player-config="item"
-            @click="(config) => editPlayer(config.player_id, config.provider)"
-            @menu="(evt, config) => onMenu(evt, config)"
-          />
-        </v-col>
-      </v-row>
-
+          :player-config="item"
+          @click="(config) => editPlayer(config.player_id, config.provider)"
+          @menu="(evt, config) => onMenu(evt, config)"
+        />
+      </div>
       <div v-if="getAllFilteredPlayers().length === 0" class="empty-state">
         <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
         <div class="empty-title">{{ $t("no_content") }}</div>
@@ -599,6 +590,25 @@ watch(
   background: rgba(var(--v-theme-primary), 0.15);
 }
 
+.players-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: auto;
+  gap: 24px;
+}
+
+@media (min-width: 960px) {
+  .players-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1264px) {
+  .players-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .player-disabled {
   opacity: 0.6;
 }
@@ -607,19 +617,8 @@ watch(
   opacity: 0.7;
 }
 
-.player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
-}
-
-.player-warning-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgb(var(--v-theme-warning));
-}
-
-.player-warning-text {
-  font-size: 13px;
+.player-warning-chip {
+  font-size: 10px;
   font-weight: 500;
 }
 
