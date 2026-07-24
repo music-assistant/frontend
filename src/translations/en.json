@@ -233,6 +233,23 @@
                 "mid_level": "Mid Level",
                 "treble_level": "Treble Level"
             },
+            "stereo_width": {
+                "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound.",
+                "clip_hint": "Widening past Original can raise peaks and cause clipping. Consider adding a Limiter after this filter.",
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Original",
+                    "wide": "Wide"
+                }
+            },
+            "crossfeed": {
+                "help": "Makes headphone listening feel more natural by gently blending the left and right channels, similar to listening to speakers.",
+                "presets": {
+                    "low": "Low",
+                    "medium": "Medium",
+                    "high": "High"
+                }
+            },
             "parameter": {
                 "frequency": "Frequency",
                 "gain": "Gain",
@@ -243,7 +260,9 @@
                 "parametric_eq": "Parametric EQ",
                 "tone_control": "Tone Control",
                 "gain": "Gain",
-                "balance": "Balance"
+                "balance": "Balance",
+                "stereo_width": "Stereo Width",
+                "crossfeed": "Crossfeed"
             },
             "channels": {
                 "ALL": "All",

@@ -194,6 +194,18 @@
                 is_log: false,
               }"
             />
+            <DSPStereoWidth
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.STEREO_WIDTH
+              "
+              v-model="dsp.filters[selectedStage] as StereoWidthFilter"
+            />
+            <DSPCrossfeed
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CROSSFEED
+              "
+              v-model="dsp.filters[selectedStage] as CrossfeedFilter"
+            />
           </v-card>
         </v-col>
       </v-row>
@@ -263,6 +275,8 @@ import {
   DSPFilterType,
   type GainFilter,
   type BalanceFilter,
+  type StereoWidthFilter,
+  type CrossfeedFilter,
   ParametricEQFilter,
   ToneControlFilter,
   EventType,
@@ -272,6 +286,8 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import DSPStereoWidth from "@/components/dsp/DSPStereoWidth.vue";
+import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
 import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
@@ -391,6 +407,21 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.BALANCE,
         balance: 0,
+      };
+      break;
+    case DSPFilterType.STEREO_WIDTH:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.STEREO_WIDTH,
+        width: 1,
+      };
+      break;
+    case DSPFilterType.CROSSFEED:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CROSSFEED,
+        strength: 0.2,
+        soundstage: 0.5,
       };
       break;
     default:
