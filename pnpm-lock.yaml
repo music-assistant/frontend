@@ -30,8 +30,8 @@ importers:
         specifier: 3.2.1
         version: 3.2.1
       '@tabler/icons-vue':
-        specifier: ^3.44.0
-        version: 3.44.0(vue@3.5.39(typescript@6.0.3))
+        specifier: ^3.45.0
+        version: 3.45.0(vue@3.5.39(typescript@6.0.3))
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.1.3(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.101.0)(terser@5.48.0)(yaml@2.9.0))
@@ -1890,13 +1890,13 @@ packages:
   '@swc/helpers@0.5.23':
     resolution: {integrity: sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw==}
 
-  '@tabler/icons-vue@3.44.0':
-    resolution: {integrity: sha512-mABxdhq3SWo2ZI77w/t0reiOGNim/SEDSlfMT5PeiWA3cZwnZoQUYRiq/X6SgeTaA7LzCTX0IuvQWVf4RWOvsg==}
+  '@tabler/icons-vue@3.45.0':
+    resolution: {integrity: sha512-Q/cmDsx0zrzBScIL6Xxwevg7JqvkrteFW2R+NGTN9pwOrgJMzBLhyz/7ONvktjuwDn6eUKhFSM66CNAR8u3tRw==}
     peerDependencies:
       vue: '>=3.0.1'
 
-  '@tabler/icons@3.44.0':
-    resolution: {integrity: sha512-Wn0AOZG9sg0L+bjfMqq4eNhC6pQjIrk94LvvWYNYkY8KH8wC3YILRzQlrnVJc4FUeMxH/AK97QsYCX35H3LndA==}
+  '@tabler/icons@3.45.0':
+    resolution: {integrity: sha512-jiATwV8+zGYLTZ7gMLGivCic+KtsMZXcDmufIG8umlLxoHhI6902hGYIEt0Oa9Y9SXblNzUlrisHm5jOFMxOQA==}
 
   '@tailwindcss/node@4.3.3':
     resolution: {integrity: sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg==}
@@ -3832,8 +3832,8 @@ packages:
     resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postcss@8.5.20:
-    resolution: {integrity: sha512-lW616l85ucIQL+FocMmL7pQFPqBmwejrCMg+iPxyImlrANNJG9NHq/RkyCZopDhd8C3LA03PHRJDjkbGu8vvug==}
+  postcss@8.5.22:
+    resolution: {integrity: sha512-KBDEIpLrvpv16pp3K0Fw+UCoZfopFjjgeB+0tA/aaThfEE74kKDLrgg603YvOWJyg3+WYtyq3xYsQWsIyZlPqQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   prelude-ls@1.2.1:
@@ -6245,12 +6245,12 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@tabler/icons-vue@3.44.0(vue@3.5.39(typescript@6.0.3))':
+  '@tabler/icons-vue@3.45.0(vue@3.5.39(typescript@6.0.3))':
     dependencies:
-      '@tabler/icons': 3.44.0
+      '@tabler/icons': 3.45.0
       vue: 3.5.39(typescript@6.0.3)
 
-  '@tabler/icons@3.44.0': {}
+  '@tabler/icons@3.45.0': {}
 
   '@tailwindcss/node@4.3.3':
     dependencies:
@@ -6737,7 +6737,7 @@ snapshots:
       '@vue/shared': 3.5.39
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.20
+      postcss: 8.5.22
       source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.5.39':
@@ -8376,7 +8376,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postcss@8.5.20:
+  postcss@8.5.22:
     dependencies:
       nanoid: 3.3.16
       picocolors: 1.1.1
