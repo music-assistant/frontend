@@ -16,6 +16,8 @@ export enum DSPFilterType {
   TONE_CONTROL = "tone_control",
   GAIN = "gain",
   BALANCE = "balance",
+  STEREO_WIDTH = "stereo_width",
+  CROSSFEED = "crossfeed",
 }
 
 export enum ParametricEQBandType {
@@ -67,12 +69,26 @@ export interface BalanceFilter extends DSPFilterBase {
   balance: number;
 }
 
+export interface StereoWidthFilter extends DSPFilterBase {
+  type: DSPFilterType.STEREO_WIDTH;
+  // 0.0 mono, 1.0 unchanged, 2.0 widest
+  width: number;
+}
+
+export interface CrossfeedFilter extends DSPFilterBase {
+  type: DSPFilterType.CROSSFEED;
+  strength: number;
+  soundstage: number;
+}
+
 // Union type for all possible filters
 export type DSPFilter =
   | ParametricEQFilter
   | ToneControlFilter
   | GainFilter
-  | BalanceFilter;
+  | BalanceFilter
+  | StereoWidthFilter
+  | CrossfeedFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
