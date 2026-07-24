@@ -22,6 +22,15 @@ if (typeof AbortSignal !== "undefined" && !AbortSignal.timeout) {
   };
 }
 
+if (!Object.hasOwn) {
+  Object.defineProperty(Object, "hasOwn", {
+    configurable: true,
+    value: (object: object, property: PropertyKey): boolean =>
+      Object.prototype.hasOwnProperty.call(object, property),
+    writable: true,
+  });
+}
+
 // Global styles
 import "@/styles/global.css";
 import "@/styles/style.css";
