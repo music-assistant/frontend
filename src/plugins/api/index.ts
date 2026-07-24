@@ -58,6 +58,7 @@ import {
   SmartPlaylistRules,
   SoundEffect,
   UserRole,
+  ArtistType,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -535,10 +536,12 @@ export class MusicAssistantApi {
   public getLibraryArtistsCount(
     favorite_only: boolean = false,
     album_artists_only: boolean = false,
+    artist_type?: ArtistType,
   ): Promise<number> {
     return this.sendCommand("music/artists/count", {
       favorite_only,
       album_artists_only,
+      artist_type,
     });
   }
   public getLibraryAlbumsCount(
@@ -610,6 +613,7 @@ export class MusicAssistantApi {
     album_artists_only?: boolean,
     provider?: string | string[],
     genre?: number | number[],
+    artist_type?: ArtistType,
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -620,6 +624,7 @@ export class MusicAssistantApi {
       album_artists_only,
       provider,
       genre,
+      artist_type,
     });
   }
 
@@ -666,6 +671,20 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
+    });
+  }
+
+  public getArtistAudiobooks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    artist_type?: ArtistType,
+    in_library_only?: boolean,
+  ): Promise<Audiobook[]> {
+    return this.sendCommand("music/artists/artist_audiobooks", {
+      item_id,
+      provider_instance_id_or_domain,
+      artist_type,
+      in_library_only,
     });
   }
 

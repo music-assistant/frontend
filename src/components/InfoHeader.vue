@@ -193,7 +193,9 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(author, authorindex) in item.authors"
+                  v-for="(author, authorindex) in getAuthorsNarratorsArray(
+                    item.authors,
+                  )"
                   :key="author"
                 >
                   <span style="color: accent">{{ author }}</span>
@@ -220,7 +222,9 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(narrator, narratorIndex) in item.narrators"
+                  v-for="(narrator, narratorIndex) in getAuthorsNarratorsArray(
+                    item.narrators,
+                  )"
                   :key="narrator"
                 >
                   <span style="color: accent">{{ narrator }}</span>
@@ -444,6 +448,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
+  getAuthorsNarratorsArray,
   getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,

@@ -170,6 +170,21 @@ export const getArtistsString = function (
     .join(" | ");
 };
 
+export const getAuthorsNarratorsArray = function (
+  authorsNarrators: Array<string | Artist>,
+) {
+  if (!authorsNarrators) return [];
+  const _authorsNarrators: string[] = [];
+  authorsNarrators.forEach((authorNarrator) => {
+    if (typeof authorNarrator === "string") {
+      _authorsNarrators.push(authorNarrator);
+    } else {
+      _authorsNarrators.push(authorNarrator.name);
+    }
+  });
+  return _authorsNarrators;
+};
+
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
   // The server now provides the display name and (when a resolver is active) strips
   // translation_key from the wire, so the client can no longer localize it itself: use the

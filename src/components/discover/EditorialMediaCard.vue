@@ -81,6 +81,7 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   getArtistsString,
+  getAuthorsNarratorsArray,
   getBrowseFolderName,
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -171,7 +172,8 @@ const subtitle = computed(() => {
       }
   >;
   if (it.artists?.length) return getArtistsString(it.artists, 1);
-  if (it.authors?.length) return it.authors.join(" / ");
+  if (it.authors?.length)
+    return getAuthorsNarratorsArray(it.authors).join(" / ");
   if (it.publisher) return it.publisher;
   if (it.owner) return it.owner;
   return t(props.item.media_type);

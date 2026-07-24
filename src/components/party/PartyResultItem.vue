@@ -135,7 +135,7 @@ const onItemClick = () => {
   if (props.item.media_type === MediaType.TRACK) {
     emit("toggleExpand", `${props.item.media_type}-${props.item.item_id}`);
   } else if (props.item.media_type === MediaType.ARTIST) {
-    emit("selectArtist", props.item);
+    emit("selectArtist", props.item as Artist);
   }
 };
 
