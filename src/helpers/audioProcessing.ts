@@ -3,6 +3,7 @@ import { toRaw } from "vue";
 import {
   DSPFilterType,
   type BalanceFilter,
+  type ConvolutionFilter,
   type DSPConfig,
   type DSPFilter,
   type GainFilter,
@@ -73,6 +74,12 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
   ) {
     return areBalanceFiltersEqual(left, right);
   }
+  if (
+    left.type === DSPFilterType.CONVOLUTION &&
+    right.type === DSPFilterType.CONVOLUTION
+  ) {
+    return areConvolutionFiltersEqual(left, right);
+  }
   return false;
 }
 
@@ -103,6 +110,13 @@ function areParametricEqFiltersEqual(
 
 function areGainFiltersEqual(left: GainFilter, right: GainFilter): boolean {
   return left.gain === right.gain;
+}
+
+function areConvolutionFiltersEqual(
+  left: ConvolutionFilter,
+  right: ConvolutionFilter,
+): boolean {
+  return left.ir_id === right.ir_id && left.gain === right.gain;
 }
 
 function areBalanceFiltersEqual(

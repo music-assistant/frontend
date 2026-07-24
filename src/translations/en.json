@@ -233,6 +233,27 @@
                 "mid_level": "Mid Level",
                 "treble_level": "Treble Level"
             },
+            "convolution": {
+                "help": "Convolution applies a recorded impulse response to the audio \u2014 used for room or speaker correction and headphone simulation. Gain should be negative or zero, as an impulse response changes overall loudness.",
+                "impulse_response": "Impulse Response",
+                "none": "None selected",
+                "missing": "Unavailable impulse response",
+                "manage_irs": "Manage IR Files",
+                "library": "Impulse Response Library",
+                "library_help": "Impulse responses are converted and stored on the server, so one you upload here is available to every player.",
+                "empty": "No impulse responses uploaded yet.",
+                "choose_file": "Choose File",
+                "no_file": "No file selected",
+                "name": "Name",
+                "upload": "Upload",
+                "upload_failed": "Upload failed",
+                "too_large": "This file is larger than the {0} MiB limit.",
+                "remove": "Delete impulse response",
+                "remove_confirm": "Delete \"{0}\"? Any convolution filter using it, on any player or preset, will be reset to no impulse response.",
+                "mono": "Mono",
+                "stereo": "Stereo",
+                "channel_count": "{0} channels"
+            },
             "parameter": {
                 "frequency": "Frequency",
                 "gain": "Gain",
@@ -243,7 +264,8 @@
                 "parametric_eq": "Parametric EQ",
                 "tone_control": "Tone Control",
                 "gain": "Gain",
-                "balance": "Balance"
+                "balance": "Balance",
+                "convolution": "Convolution"
             },
             "channels": {
                 "ALL": "All",

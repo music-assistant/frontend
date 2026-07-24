@@ -37,6 +37,7 @@ import {
   CoreConfig,
   DSPConfig,
   DSPConfigPreset,
+  DSPIRMetadata,
   EventType,
   ItemMapping,
   MediaItemTypeOrItemMapping,
@@ -2174,6 +2175,34 @@ export class MusicAssistantApi {
     return this.sendCommand("config/dsp_presets/remove", {
       preset_id: presetId,
     });
+  }
+
+  public async getDSPIRs(
+    suppressGlobalError = false,
+  ): Promise<DSPIRMetadata[]> {
+    // Return the metadata of all stored impulse responses.
+    return this.sendCommand(
+      "config/dsp_irs/list",
+      undefined,
+      suppressGlobalError ? { suppressGlobalError: true } : undefined,
+    );
+  }
+
+  public async uploadDSPIR(name: string, data: string): Promise<DSPIRMetadata> {
+    // Store an impulse response. `data` is the raw file, base64 encoded.
+    // Errors (size limit, invalid base64, not valid audio) are surfaced by the
+    // caller, so skip the global error toast.
+    return this.sendCommand(
+      "config/dsp_irs/upload",
+      { name, data },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async removeDSPIR(irId: string): Promise<void> {
+    // Remove a stored impulse response. The server blanks the ir_id of every
+    // convolution filter that referenced it.
+    return this.sendCommand("config/dsp_irs/remove", { ir_id: irId });
   }
 
   // Core Config related functions

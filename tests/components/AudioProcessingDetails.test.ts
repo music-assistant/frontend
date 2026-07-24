@@ -35,6 +35,10 @@ const apiMock = vi.hoisted(() => ({
   getProviderManifest: vi.fn((providerId: string) => ({
     domain: providerId.split("--", 1)[0],
   })),
+  // useDSPIRs (via useAudioProcessingDetails) fetches the IR list and
+  // subscribes to config updates on mount; subscribe hands back an unsubscribe.
+  getDSPIRs: vi.fn(() => Promise.resolve([])),
+  subscribe: vi.fn(() => vi.fn()),
   players: {} as Record<string, PlayerDisplayMock>,
 }));
 const presetRegistryMock = vi.hoisted(() => ({

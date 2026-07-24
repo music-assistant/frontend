@@ -194,6 +194,12 @@
                 is_log: false,
               }"
             />
+            <DSPConvolution
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CONVOLUTION
+              "
+              v-model="dsp.filters[selectedStage] as ConvolutionFilter"
+            />
           </v-card>
         </v-col>
       </v-row>
@@ -263,6 +269,7 @@ import {
   DSPFilterType,
   type GainFilter,
   type BalanceFilter,
+  type ConvolutionFilter,
   ParametricEQFilter,
   ToneControlFilter,
   EventType,
@@ -272,6 +279,7 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import DSPConvolution from "@/components/dsp/DSPConvolution.vue";
 import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
@@ -391,6 +399,16 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.BALANCE,
         balance: 0,
+      };
+      break;
+    case DSPFilterType.CONVOLUTION:
+      // An empty ir_id is valid: the filter is added first, the impulse
+      // response picked afterwards.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CONVOLUTION,
+        ir_id: "",
+        gain: 0,
       };
       break;
     default:
