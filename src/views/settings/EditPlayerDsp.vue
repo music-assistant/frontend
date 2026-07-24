@@ -62,8 +62,7 @@
     </v-toolbar>
 
     <v-container fluid class="pa-4">
-      <!-- Kept in the DOM and only faded, so toggling DSP on leaves its space in
-           place instead of shifting the layout below up. -->
+      <!-- Faded rather than removed so its space stays and the layout doesn't jump. -->
       <Alert
         variant="warning"
         class="mb-5 mt-0.5 transition-opacity duration-200"

@@ -1,8 +1,6 @@
 <template>
   <div class="@container p-4">
-    <!-- Below the @sm container width the value entry drops to its own row
-         beneath the label + slider, so the slider keeps its width instead of
-         collapsing to a dot. -->
+    <!-- Below @sm the value entry wraps below so the slider keeps a usable width. -->
     <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
       <span class="min-w-[100px] pl-2 text-muted-foreground">
         {{ config.label }}
@@ -145,10 +143,8 @@ const sliderMin = computed(() => {
   }
 });
 const sliderStep = computed(() => {
-  // In log mode the slider runs in log10 space, so a fine fixed step keeps
-  // dragging smooth. It must be non-zero: reka-ui snaps by dividing by the
-  // step, and the old Math.log10(step) was 0 for the frequency slider's step
-  // of 1 (Vuetify tolerated that as continuous; reka-ui produces NaN).
+  // Log sliders need a non-zero step: reka-ui divides by it when snapping, so
+  // Math.log10(1) = 0 would give NaN (Vuetify treated it as continuous).
   if (config.value.is_log) {
     return 0.001;
   } else {
