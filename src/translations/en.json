@@ -201,6 +201,8 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
+            "input_gain_help": "Sets the level going into the chain. Lower it to leave headroom for filters that boost.",
+            "output_gain_help": "Adjusts the level leaving the chain, after every filter has been applied. Player volume is applied later.",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
@@ -210,6 +212,7 @@
             "move_down": "Move Down",
             "delete_filter": "Delete Filter",
             "parametric_eq": {
+                "help": "Precise tone shaping: each band targets a frequency and can cut or boost it. Cuts are safer than boosts, which can cause clipping.",
                 "add_band": "Add Band",
                 "delete_band": "Delete Band",
                 "filter_type": "Filter Type",
@@ -235,9 +238,16 @@
                 "disable_multichannel_controls": "Disable Multi-Channel controls"
             },
             "tone_control": {
+                "help": "A simple three band adjustment of bass, mid and treble. Use the Parametric EQ for finer control.",
                 "bass_level": "Bass Level",
                 "mid_level": "Mid Level",
                 "treble_level": "Treble Level"
+            },
+            "gain": {
+                "help": "Raises or lowers the level of everything passing through this point in the chain."
+            },
+            "balance": {
+                "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
             },
             "parameter": {
                 "frequency": "Frequency",
