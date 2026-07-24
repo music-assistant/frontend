@@ -1960,6 +1960,7 @@ export class MusicAssistantApi {
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
     sort_by?: string,
+    start_from_beginning?: boolean,
   ): Promise<void> {
     if (
       !queue_id &&
@@ -1976,6 +1977,7 @@ export class MusicAssistantApi {
       option,
       start_item,
       sort_by,
+      start_from_beginning,
     });
   }
 
