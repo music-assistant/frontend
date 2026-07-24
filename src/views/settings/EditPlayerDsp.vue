@@ -194,6 +194,24 @@
                 is_log: false,
               }"
             />
+            <DSPSafetyLimiter
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.SAFETY_LIMITER
+              "
+              v-model="dsp.filters[selectedStage] as SafetyLimiterFilter"
+            />
+            <DSPCompressor
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.COMPRESSOR
+              "
+              v-model="dsp.filters[selectedStage] as CompressorFilter"
+            />
+            <DSPHighLowPass
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.HIGH_LOW_PASS
+              "
+              v-model="dsp.filters[selectedStage] as HighLowPassFilter"
+            />
           </v-card>
         </v-col>
       </v-row>
@@ -265,6 +283,10 @@ import {
   type BalanceFilter,
   ParametricEQFilter,
   ToneControlFilter,
+  type SafetyLimiterFilter,
+  type CompressorFilter,
+  type HighLowPassFilter,
+  HighLowPassMode,
   EventType,
 } from "@/plugins/api/interfaces";
 import { getPlayerName } from "@/helpers/utils";
@@ -272,10 +294,16 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import DSPSafetyLimiter from "@/components/dsp/DSPSafetyLimiter.vue";
+import DSPCompressor from "@/components/dsp/DSPCompressor.vue";
+import DSPHighLowPass from "@/components/dsp/DSPHighLowPass.vue";
+import { COMPRESSOR_PRESETS } from "@/components/dsp/compressorPresets";
+import { DEFAULT_HIGH_PASS_FREQUENCY } from "@/components/dsp/highLowPass";
 import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
+  dspFilterTypeLabel,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
 
@@ -352,7 +380,8 @@ const selectStage = (index: number | "input" | "output") => {
 const stageTitle = (index: number | "input" | "output") => {
   if (index === "input") return t("settings.dsp.input");
   if (index === "output") return t("settings.dsp.output");
-  return t(`settings.dsp.types.${dsp.value?.filters[index].type}`);
+  const filter = dsp.value?.filters[index];
+  return filter ? dspFilterTypeLabel(filter) : "";
 };
 
 const addFilter = () => {
@@ -391,6 +420,30 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.BALANCE,
         balance: 0,
+      };
+      break;
+    case DSPFilterType.SAFETY_LIMITER:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.SAFETY_LIMITER,
+        ceiling: -2.0,
+      };
+      break;
+    case DSPFilterType.COMPRESSOR:
+      // Start from the Light preset so a new compressor opens in Basic mode.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.COMPRESSOR,
+        ...COMPRESSOR_PRESETS.light,
+      };
+      break;
+    case DSPFilterType.HIGH_LOW_PASS:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.HIGH_LOW_PASS,
+        mode: HighLowPassMode.HIGH_PASS,
+        frequency: DEFAULT_HIGH_PASS_FREQUENCY,
+        slope: 12,
       };
       break;
     default:

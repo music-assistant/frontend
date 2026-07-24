@@ -1,30 +1,37 @@
 <template>
   <v-card flat color="transparent">
-    <v-card-text class="d-flex align-center gap-4">
-      <span style="min-width: 100px" class="v-label pl-2">{{
-        config.label
-      }}</span>
-      <v-slider
-        v-model="sliderModel"
-        :min="sliderMin"
-        :max="sliderMax"
-        :step="sliderStep"
-        hide-details
-        class="flex-grow-1 pr-4"
-        density="compact"
-        color="primary"
-      />
-      <v-text-field
-        v-model="displayValue"
-        type="number"
-        hide-details
-        density="compact"
-        style="max-width: 100px"
-        :aria-label="config.label"
-        @focus="isEditing = true"
-        @blur="isEditing = false"
-      />
-      <span style="min-width: 40px" class="pl-2">{{ config.unit }}</span>
+    <!-- Below @sm the value entry wraps below so the slider keeps a usable width. -->
+    <v-card-text class="@container">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <span style="min-width: 100px" class="v-label pl-2">{{
+          config.label
+        }}</span>
+        <v-slider
+          v-model="sliderModel"
+          :min="sliderMin"
+          :max="sliderMax"
+          :step="sliderStep"
+          hide-details
+          class="min-w-0 flex-1 pr-4"
+          density="compact"
+          color="primary"
+        />
+        <div
+          class="order-last flex w-full items-center justify-end gap-2 @sm:order-none @sm:w-auto @sm:justify-start"
+        >
+          <v-text-field
+            v-model="displayValue"
+            type="number"
+            hide-details
+            density="compact"
+            style="max-width: 100px"
+            :aria-label="config.label"
+            @focus="isEditing = true"
+            @blur="isEditing = false"
+          />
+          <span style="min-width: 40px">{{ config.unit }}</span>
+        </div>
+      </div>
     </v-card-text>
   </v-card>
 </template>
@@ -44,6 +51,9 @@ type ParameterConfig = {
   unit: string;
   // Whether the slider should behave logarithmically
   is_log: boolean;
+  // Fixed decimal places for the readout; falls back to magnitude-based
+  // formatting when unset.
+  decimals?: number;
 };
 
 const props = defineProps<{
@@ -92,12 +102,18 @@ const displayValue = computed({
     if (isEditing.value) {
       return model.value.toString();
     }
+    if (config.value.decimals !== undefined) {
+      return model.value.toFixed(config.value.decimals);
+    }
     if (model.value > 1000) return model.value.toFixed(0);
     if (model.value > 100) return model.value.toFixed(1);
     return model.value.toFixed(2);
   },
   set: (value: string) => {
-    model.value = Number(value);
+    const num = Number(value);
+    if (Number.isNaN(num)) return;
+    // Clamp to range so a typed readout can't push a (log) slider out of bounds.
+    model.value = Math.min(config.value.max, Math.max(config.value.min, num));
   },
 });
 

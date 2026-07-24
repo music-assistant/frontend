@@ -42,7 +42,7 @@
         class="dsp-pipeline-card"
       >
         <v-card-text class="px-3 py-1">{{
-          $t(`settings.dsp.types.${filter.type}`)
+          dspFilterTypeLabel(filter)
         }}</v-card-text>
       </v-btn>
     </v-timeline-item>
@@ -92,6 +92,7 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { DSPConfig } from "@/plugins/api/interfaces";
+import { dspFilterTypeLabel } from "@/helpers/audioProcessing";
 import { eventbus } from "@/plugins/eventbus";
 import { useTheme } from "vuetify";
 

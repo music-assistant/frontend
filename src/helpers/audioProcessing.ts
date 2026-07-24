@@ -3,9 +3,12 @@ import { toRaw } from "vue";
 import {
   DSPFilterType,
   type BalanceFilter,
+  type CompressorFilter,
   type DSPConfig,
   type DSPFilter,
   type GainFilter,
+  type HighLowPassFilter,
+  type SafetyLimiterFilter,
   type ParametricEQBand,
   type ParametricEQFilter,
   type ToneControlFilter,
@@ -28,8 +31,18 @@ export function areDSPConfigsEqual(left: DSPConfig, right: DSPConfig): boolean {
   );
 }
 
+// Display label for a filter type. A high/low-pass edits as itself, so it
+// reads its stored mode ("High-pass" / "Low-pass") rather than the generic
+// type name used in the add-filter menu.
+export function dspFilterTypeLabel(filter: DSPFilter): string {
+  if (filter.type === DSPFilterType.HIGH_LOW_PASS) {
+    return $t(`settings.dsp.high_low_pass.mode.${filter.mode}`);
+  }
+  return $t(`settings.dsp.types.${filter.type}`);
+}
+
 export function dspFilterText(filter: DSPFilter): string {
-  let text = $t(`settings.dsp.types.${filter.type}`);
+  let text = dspFilterTypeLabel(filter);
   if (filter.type !== DSPFilterType.PARAMETRIC_EQ) return text;
 
   const enabledBandsCount = filter.bands.filter((band) => band.enabled).length;
@@ -73,6 +86,24 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
   ) {
     return areBalanceFiltersEqual(left, right);
   }
+  if (
+    left.type === DSPFilterType.SAFETY_LIMITER &&
+    right.type === DSPFilterType.SAFETY_LIMITER
+  ) {
+    return areSafetyLimiterFiltersEqual(left, right);
+  }
+  if (
+    left.type === DSPFilterType.COMPRESSOR &&
+    right.type === DSPFilterType.COMPRESSOR
+  ) {
+    return areCompressorFiltersEqual(left, right);
+  }
+  if (
+    left.type === DSPFilterType.HIGH_LOW_PASS &&
+    right.type === DSPFilterType.HIGH_LOW_PASS
+  ) {
+    return areHighLowPassFiltersEqual(left, right);
+  }
   return false;
 }
 
@@ -110,6 +141,38 @@ function areBalanceFiltersEqual(
   right: BalanceFilter,
 ): boolean {
   return left.balance === right.balance;
+}
+
+function areSafetyLimiterFiltersEqual(
+  left: SafetyLimiterFilter,
+  right: SafetyLimiterFilter,
+): boolean {
+  return left.ceiling === right.ceiling;
+}
+
+function areCompressorFiltersEqual(
+  left: CompressorFilter,
+  right: CompressorFilter,
+): boolean {
+  return (
+    left.threshold === right.threshold &&
+    left.ratio === right.ratio &&
+    left.attack === right.attack &&
+    left.release === right.release &&
+    left.knee === right.knee &&
+    left.makeup === right.makeup
+  );
+}
+
+function areHighLowPassFiltersEqual(
+  left: HighLowPassFilter,
+  right: HighLowPassFilter,
+): boolean {
+  return (
+    left.mode === right.mode &&
+    left.frequency === right.frequency &&
+    left.slope === right.slope
+  );
 }
 
 function areParametricEqBandsEqual(

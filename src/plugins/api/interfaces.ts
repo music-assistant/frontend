@@ -16,6 +16,14 @@ export enum DSPFilterType {
   TONE_CONTROL = "tone_control",
   GAIN = "gain",
   BALANCE = "balance",
+  SAFETY_LIMITER = "safety_limiter",
+  COMPRESSOR = "compressor",
+  HIGH_LOW_PASS = "high_low_pass",
+}
+
+export enum HighLowPassMode {
+  HIGH_PASS = "high_pass",
+  LOW_PASS = "low_pass",
 }
 
 export enum ParametricEQBandType {
@@ -67,12 +75,46 @@ export interface BalanceFilter extends DSPFilterBase {
   balance: number;
 }
 
+// All values are in user-facing units (dB/ms/ratio); the server converts to
+// ffmpeg parameters, so the UI must never send anything else.
+export interface SafetyLimiterFilter extends DSPFilterBase {
+  type: DSPFilterType.SAFETY_LIMITER;
+  ceiling: number;
+}
+
+export interface CompressorFilter extends DSPFilterBase {
+  type: DSPFilterType.COMPRESSOR;
+  threshold: number;
+  ratio: number;
+  attack: number;
+  release: number;
+  knee: number;
+  makeup: number;
+}
+
+// Slope in dB/octave. Each biquad section is 12 dB/oct, so the filter is a
+// cascade of 1/2/4 sections. The server coerces anything else to 12 without
+// reporting an error, so only these three values may be sent.
+export type HighLowPassSlope = 12 | 24 | 48;
+
+// A first-class high-pass / low-pass filter. `frequency` is the cutoff in Hz,
+// 20..20000.
+export interface HighLowPassFilter extends DSPFilterBase {
+  type: DSPFilterType.HIGH_LOW_PASS;
+  mode: HighLowPassMode;
+  frequency: number;
+  slope: HighLowPassSlope;
+}
+
 // Union type for all possible filters
 export type DSPFilter =
   | ParametricEQFilter
   | ToneControlFilter
   | GainFilter
-  | BalanceFilter;
+  | BalanceFilter
+  | SafetyLimiterFilter
+  | CompressorFilter
+  | HighLowPassFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
