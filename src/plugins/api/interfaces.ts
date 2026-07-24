@@ -16,6 +16,7 @@ export enum DSPFilterType {
   TONE_CONTROL = "tone_control",
   GAIN = "gain",
   BALANCE = "balance",
+  TRANSPOSE = "transpose",
 }
 
 export enum ParametricEQBandType {
@@ -67,12 +68,19 @@ export interface BalanceFilter extends DSPFilterBase {
   balance: number;
 }
 
+export interface TransposeFilter extends DSPFilterBase {
+  type: DSPFilterType.TRANSPOSE;
+  // Key shift in semitones, -12.0 to +12.0. Fractional values are valid.
+  semitones: number;
+}
+
 // Union type for all possible filters
 export type DSPFilter =
   | ParametricEQFilter
   | ToneControlFilter
   | GainFilter
-  | BalanceFilter;
+  | BalanceFilter
+  | TransposeFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
