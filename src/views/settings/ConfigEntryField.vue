@@ -23,6 +23,17 @@
       :text="displayLabel()"
     />
 
+    <!-- image value (presentational, e.g. a pairing QR code) -->
+    <div
+      v-else-if="confEntry.type == ConfigEntryType.IMAGE"
+      class="config-image"
+    >
+      <img
+        :src="(confEntry.value ?? confEntry.default_value) as string"
+        :alt="displayLabel()"
+      />
+    </div>
+
     <!-- action type -->
     <v-btn
       v-else-if="
@@ -359,6 +370,18 @@ const displayOptions = computed(() => {
 
 .config-divider {
   padding: 8px 0;
+}
+
+.config-image {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.config-image img {
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: 8px;
 }
 
 .divider-label {

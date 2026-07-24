@@ -706,7 +706,9 @@ export const playerVisible = function (
     return false;
   }
   if (player.active_group && !allowGroupChilds) return false;
-  if (!player.available) {
+  // A player that needs setup is serialized as unavailable, but we still surface it
+  // (dimmed, with a "Setup required" affordance) so the user can start its setup flow.
+  if (!player.available && !player.needs_setup) {
     return false;
   }
   if (isBuiltinPlayer(player)) {

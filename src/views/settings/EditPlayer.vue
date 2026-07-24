@@ -165,6 +165,14 @@
     >
       <div class="disabled-banner">
         <span>{{ $t("settings.player_needs_setup") }}</span>
+        <v-btn
+          size="small"
+          color="warning"
+          variant="flat"
+          @click="startPlayerSetup"
+        >
+          {{ $t("settings.start_setup") }}
+        </v-btn>
       </div>
     </v-alert>
 
@@ -258,6 +266,7 @@ import {
   isInjected,
 } from "@/helpers/config_entry_ui";
 import { openLinkInNewTab } from "@/helpers/utils";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 // global refs
 const router = useRouter();
@@ -407,6 +416,14 @@ const enablePlayer = function () {
     .finally(() => {
       loading.value = false;
     });
+};
+
+const startPlayerSetup = function () {
+  if (!props.playerId) return;
+  eventbus.emit("setupFlowDialog", {
+    kind: "player",
+    playerId: props.playerId,
+  });
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {

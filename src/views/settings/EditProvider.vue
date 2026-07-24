@@ -24,7 +24,10 @@
 
       <!-- Error banner: shows why the provider failed to load -->
       <div
-        v-if="config.enabled && config.last_error"
+        v-if="
+          config.enabled &&
+          (config.last_error || config.status === ProviderStatus.AUTH_REQUIRED)
+        "
         class="mb-4 flex gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive"
       >
         <TriangleAlert class="size-5 shrink-0" />
@@ -35,11 +38,15 @@
           <div
             class="mt-0.5 text-sm whitespace-pre-wrap break-words opacity-90"
           >
-            {{ config.last_error?.message }}
+            {{
+              config.last_error?.message ||
+              $t("settings.provider_status_auth_required")
+            }}
           </div>
           <div
             v-if="
               config.status === ProviderStatus.INCOMPATIBLE ||
+              canReconfigure ||
               config.status === ProviderStatus.ERROR
             "
             class="mt-3 flex gap-2"
@@ -54,11 +61,28 @@
               <Trash2 class="size-4" />
               {{ $t("settings.remove_provider") }}
             </Button>
-            <!-- other errors: offer to retry loading -->
-            <Button v-else size="sm" variant="destructive" @click="onReload">
-              <RefreshCw class="size-4" />
-              {{ $t("settings.reload") }}
-            </Button>
+            <template v-else>
+              <!-- auth required / error: relaunch the setup (reconfigure) flow -->
+              <Button
+                v-if="canReconfigure"
+                size="sm"
+                variant="destructive"
+                @click="onReconfigure"
+              >
+                <RefreshCw class="size-4" />
+                {{ $t("settings.reconfigure") }}
+              </Button>
+              <!-- error: also offer a plain reload -->
+              <Button
+                v-if="config.status === ProviderStatus.ERROR"
+                size="sm"
+                variant="outline"
+                @click="onReload"
+              >
+                <RefreshCw class="size-4" />
+                {{ $t("settings.reload") }}
+              </Button>
+            </template>
           </div>
         </div>
       </div>
@@ -161,19 +185,7 @@
       persistent
       style="display: flex; align-items: center; justify-content: center"
     >
-      <v-card v-if="showAuthLink" style="background-color: white">
-        <v-card-title>Authenticating...</v-card-title>
-        <v-card-subtitle
-          >A new tab/popup should be opened where you can
-          authenticate</v-card-subtitle
-        >
-        <v-card-actions>
-          <a id="auth" href="" target="_blank"
-            ><v-btn>Click here if the popup did not open</v-btn></a
-          >
-        </v-card-actions>
-      </v-card>
-      <v-progress-circular v-else indeterminate size="64" color="primary" />
+      <v-progress-circular indeterminate size="64" color="primary" />
     </v-overlay>
 
     <provider-save-error-dialog
@@ -193,15 +205,12 @@ import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
-  EventMessage,
-  EventType,
   ProviderConfig,
   ProviderStatus,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { RefreshCw, Trash2, TriangleAlert } from "@lucide/vue";
-import { nanoid } from "nanoid";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -211,9 +220,7 @@ import EditConfig from "./EditConfig.vue";
 const router = useRouter();
 const { t } = useI18n();
 const config = ref<ProviderConfig>();
-const sessionId = nanoid(11);
 const loading = ref(false);
-const showAuthLink = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
@@ -231,24 +238,12 @@ const allConfigEntries = computed(() => {
   return Object.values(config.value.values);
 });
 
-onMounted(() => {
-  //reload if/when item updates
-  const unsub = api.subscribe(EventType.AUTH_SESSION, (evt: EventMessage) => {
-    // handle AUTH_SESSION event (used for auth flows to open the auth url)
-    // ignore any events that not match our session id.
-    if (evt.object_id !== sessionId) return;
-    const url = evt.data as string;
-    // Some browsers (e.g. iOS) have a weird limitation that we're not allowed to do window.open,
-    // unless a user interaction has happened. So we need to do this the hard way
-    showAuthLink.value = true;
-    window.setTimeout(() => {
-      const a = document.getElementById("auth") as HTMLAnchorElement;
-      a.setAttribute("href", url);
-      a.click();
-    }, 100);
-  });
-  onBeforeUnmount(unsub);
-});
+// auth_required/error providers can relaunch their setup (reconfigure) flow
+const canReconfigure = computed(
+  () =>
+    config.value?.status === ProviderStatus.AUTH_REQUIRED ||
+    config.value?.status === ProviderStatus.ERROR,
+);
 
 // watchers
 watch(
@@ -282,6 +277,14 @@ const onReload = function () {
     .then(() => toast.success(t("settings.provider_reloading")))
     .catch((err) => toast.error(String(err)));
   backToProviders();
+};
+
+const onReconfigure = function () {
+  if (!config.value) return;
+  eventbus.emit("setupFlowDialog", {
+    kind: "reconfigure",
+    instanceId: config.value.instance_id,
+  });
 };
 
 const onRemove = function () {
@@ -328,7 +331,6 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     })
     .finally(() => {
       loading.value = false;
-      showAuthLink.value = false;
     });
 };
 
@@ -360,8 +362,6 @@ const onAction = async function (
       values[entry.key] = entry.value;
     }
   }
-  // ensure the session id is passed along (for auth actions)
-  values["session_id"] = sessionId;
   api
     .getProviderConfigEntries(
       config.value!.domain,
@@ -397,7 +397,6 @@ const onAction = async function (
     })
     .finally(() => {
       loading.value = false;
-      showAuthLink.value = false;
     });
 };
 

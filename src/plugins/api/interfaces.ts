@@ -341,6 +341,9 @@ export enum EventType {
   DASHBOARD_SHOW = "dashboard_show",
   DASHBOARD_HIDE = "dashboard_hide",
   DASHBOARDS_UPDATED = "dashboards_updated",
+  // setup_flow_updated: a running setup flow produced a new/updated step;
+  // object_id is the flow_id, data is the SetupFlowStep
+  SETUP_FLOW_UPDATED = "setup_flow_updated",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -418,6 +421,8 @@ export enum ConfigEntryType {
   ACTION = "action",
   ICON = "icon",
   ALERT = "alert",
+  // image: presentational entry whose value/default_value is a data-URI image
+  IMAGE = "image",
 
   // Only used in the frontend
   DSP_SETTINGS = "dsp_settings",
@@ -606,6 +611,57 @@ export interface ConfigEntry {
 export interface Config {
   // Base Configuration object.
   values: Record<string, ConfigEntry>;
+}
+
+export enum FlowStepType {
+  // form: render config entries and wait for the user to submit
+  FORM = "form",
+  // external: the user must open an external url (e.g. OAuth); the server
+  // advances the flow on the callback (pushed via SETUP_FLOW_UPDATED)
+  EXTERNAL = "external",
+  // progress: the server is working/waiting on something; no user input
+  PROGRESS = "progress",
+  // finish: the flow completed; result references the created/updated object
+  FINISH = "finish",
+  // abort: the flow ended without a result
+  ABORT = "abort",
+  // fallback
+  UNKNOWN = "unknown",
+}
+
+export interface SetupFlowStep {
+  // A single step of a running setup flow (add/reconfigure a provider or set up a player).
+  // Human-readable fields (title/description/progress_text/reason and error values) are
+  // already resolved server-side for the connection locale.
+
+  // flow_id: identifier of the running flow this step belongs to
+  flow_id: string;
+  // step_id: stable slug identifying this step
+  step_id: string;
+  type: FlowStepType;
+  title?: string | null;
+  description?: string | null;
+  // entries [FORM]: the config entries that make up the form fields
+  entries: ConfigEntry[];
+  // errors [FORM]: field-key (or "base") -> localized error message
+  errors: Record<string, string>;
+  // last_step [FORM]: hint for the submit button label (final step vs. continue)
+  last_step?: boolean | null;
+  // url [EXTERNAL]: url the user must open (e.g. an OAuth authorize url)
+  url?: string | null;
+  // progress_text [PROGRESS]: localized status message
+  progress_text?: string | null;
+  // progress [PROGRESS]: optional completion fraction between 0 and 1
+  progress?: number | null;
+  // image [PROGRESS]: optional data-URI illustration (e.g. a pairing QR code)
+  image?: string | null;
+  // expires_at [FORM/EXTERNAL/PROGRESS]: UTC epoch deadline for this step; the client
+  // countdown is cosmetic, the server enforces the deadline
+  expires_at?: number | null;
+  // result [FINISH]: reference to the created/updated object (e.g. {"instance_id": ...})
+  result?: Record<string, string> | null;
+  // reason [ABORT]: localized reason the flow ended
+  reason?: string | null;
 }
 
 export interface ProviderConfig extends Config {

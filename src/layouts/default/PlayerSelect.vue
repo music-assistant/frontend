@@ -101,6 +101,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import type { Player } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { Speaker } from "@lucide/vue";
@@ -202,6 +203,15 @@ function handleSheetInteractOutside(event: Event) {
 }
 
 function selectPlayer(player: Player) {
+  if (player.needs_setup) {
+    // a player that still needs setup can't be selected; launch its setup flow instead
+    eventbus.emit("setupFlowDialog", {
+      kind: "player",
+      playerId: player.player_id,
+    });
+    store.showPlayersMenu = false;
+    return;
+  }
   store.activePlayerId = player.player_id;
   store.showPlayersMenu = false;
 }
