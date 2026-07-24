@@ -259,6 +259,15 @@ export const routes: RouteRecordRaw[] = [
             props: true,
           },
           {
+            path: "latest",
+            name: "podcasts-latest",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcasts-latest" */ "@/views/LatestPodcastEpisodes.vue"
+              ),
+            props: true,
+          },
+          {
             path: ":provider/:itemId",
             name: "podcast",
             component: () =>

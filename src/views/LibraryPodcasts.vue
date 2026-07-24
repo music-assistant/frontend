@@ -17,7 +17,25 @@
     :total="total"
     :show-provider-filter="true"
     :show-genre-filter="true"
-  />
+  >
+    <template #title>
+      <div class="podcasts-title">
+        <span>{{ $t("podcasts") }}</span>
+        <v-btn
+          class="latest-episodes-link"
+          variant="text"
+          color="primary"
+          size="small"
+          prepend-icon="mdi-new-box"
+          :title="$t('latest_episodes')"
+          :aria-label="$t('latest_episodes')"
+          @click.stop="router.push({ name: 'podcasts-latest' })"
+        >
+          <span class="latest-episodes-label">{{ $t("latest_episodes") }}</span>
+        </v-btn>
+      </div>
+    </template>
+  </ItemsListing>
 </template>
 
 <script setup lang="ts">
@@ -28,11 +46,13 @@ import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Podcast } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 defineOptions({
   name: "Podcasts",
 });
 
+const router = useRouter();
 const updateAvailable = ref(false);
 const total = ref(store.libraryPodcastsCount);
 
@@ -101,3 +121,29 @@ onMounted(() => {
   onBeforeUnmount(unsubSync);
 });
 </script>
+
+<style scoped>
+.podcasts-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.latest-episodes-link {
+  flex-shrink: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+@media (max-width: 600px) {
+  .latest-episodes-link {
+    min-width: 36px;
+    padding-inline: 6px;
+  }
+
+  .latest-episodes-label {
+    display: none;
+  }
+}
+</style>
