@@ -115,7 +115,9 @@ const expandedMemberPlayerIds = reactive(new Set<string>());
 const { getPreference, setPreference } = useUserPreferences();
 let menuTrigger: HTMLElement | null = null;
 
-const orderedPlayers = useOrderedPlayers();
+// PlayerSelect is the only surface that lists needs_setup players: a click here
+// launches the setup flow (see selectPlayer) instead of selecting/playing them.
+const orderedPlayers = useOrderedPlayers({ allowNeedsSetup: true });
 
 const showSearch = computed(
   () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,

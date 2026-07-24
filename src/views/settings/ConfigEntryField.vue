@@ -29,8 +29,10 @@
       class="config-image"
     >
       <img
-        :src="(confEntry.value ?? confEntry.default_value) as string"
+        v-if="imageSrc"
+        :src="imageSrc"
         :alt="displayLabel()"
+        loading="lazy"
       />
     </div>
 
@@ -305,6 +307,15 @@ const props = defineProps<{
 const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
 });
+
+// Only surface an <img> when a source is actually available; otherwise the
+// element would render as a broken image (both value and default missing).
+const imageSrc = computed(
+  () =>
+    (props.confEntry.value ?? props.confEntry.default_value) as
+      | string
+      | undefined,
+);
 
 const emit = defineEmits<{
   (e: "togglePassword"): void;

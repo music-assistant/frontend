@@ -699,6 +699,7 @@ export const isBuiltinPlayer = function (player: Player): boolean {
 export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
+  allowNeedsSetup = false,
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
@@ -706,9 +707,11 @@ export const playerVisible = function (
     return false;
   }
   if (player.active_group && !allowGroupChilds) return false;
-  // A player that needs setup is serialized as unavailable, but we still surface it
-  // (dimmed, with a "Setup required" affordance) so the user can start its setup flow.
-  if (!player.available && !player.needs_setup) {
+  // A player that needs setup is serialized as unavailable. Only surface it
+  // (dimmed, with a "Setup required" affordance) where a click launches its
+  // setup flow (opt-in via allowNeedsSetup); elsewhere a click would select or
+  // play the player, so an unusable needs_setup player must stay hidden.
+  if (!player.available && !(player.needs_setup && allowNeedsSetup)) {
     return false;
   }
   if (isBuiltinPlayer(player)) {

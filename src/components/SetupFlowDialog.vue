@@ -1,60 +1,57 @@
 <template>
-  <v-dialog
-    :model-value="open"
-    max-width="560"
-    scrollable
-    :persistent="isBusyStep"
-    @update:model-value="onDialogModelValue"
-  >
-    <v-card class="setup-flow-card">
+  <Dialog :open="open" @update:open="onOpenChange">
+    <DialogContent
+      class="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[560px]"
+      @escape-key-down="onGuardedClose"
+      @pointer-down-outside="onGuardedClose"
+      @interact-outside="onGuardedClose"
+    >
       <!-- Header -->
-      <div class="flow-header">
-        <div class="flow-header-icon">
-          <provider-icon v-if="iconDomain" :domain="iconDomain" :size="32" />
+      <DialogHeader
+        class="flex-row items-center gap-3 border-b px-5 py-4 pr-12 text-left"
+      >
+        <span class="flex shrink-0 items-center justify-center">
+          <ProviderIcon v-if="iconDomain" :domain="iconDomain" :size="32" />
           <Settings2 v-else :size="28" />
-        </div>
-        <div class="flow-header-title">{{ dialogTitle }}</div>
-        <v-btn
-          icon="mdi-close"
-          variant="text"
-          size="small"
-          density="comfortable"
-          :aria-label="$t('close')"
-          @click="close()"
-        />
-      </div>
+        </span>
+        <DialogTitle class="min-w-0 flex-1 truncate">
+          {{ dialogTitle }}
+        </DialogTitle>
+      </DialogHeader>
 
-      <v-divider />
-
-      <v-card-text class="flow-body">
+      <!-- Body -->
+      <div class="min-h-[120px] flex-1 overflow-y-auto px-5 py-5">
         <!-- Starting / loading state (no step yet) -->
-        <div v-if="!step" class="flow-centered">
-          <v-progress-circular indeterminate size="48" color="primary" />
+        <div v-if="!step" class="flex items-center justify-center py-8">
+          <Spinner :size="44" class="text-primary" />
         </div>
 
         <!-- FORM step -->
         <template v-else-if="step.type === FlowStepType.FORM">
-          <h3 v-if="step.title" class="flow-step-title">{{ step.title }}</h3>
-          <p v-if="step.description" class="flow-step-description">
+          <h3 v-if="step.title" class="mb-2 text-base font-semibold">
+            {{ step.title }}
+          </h3>
+          <p
+            v-if="step.description"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
+          >
             {{ step.description }}
           </p>
 
           <!-- base (non-field) error -->
-          <v-alert
+          <Alert
             v-if="step.errors && step.errors.base"
-            type="error"
-            variant="tonal"
-            density="comfortable"
+            variant="destructive"
             class="mb-4"
           >
-            {{ step.errors.base }}
-          </v-alert>
+            <AlertDescription>{{ step.errors.base }}</AlertDescription>
+          </Alert>
 
-          <v-form @submit.prevent="submit">
+          <form @submit.prevent="submit">
             <div
               v-for="entry in visibleFormEntries"
               :key="entry.key"
-              class="flow-field"
+              class="mb-1"
             >
               <ConfigEntryRow
                 :conf-entry="entry"
@@ -66,14 +63,17 @@
               />
               <div
                 v-if="step.errors && step.errors[entry.key]"
-                class="flow-field-error"
+                class="text-destructive mb-2.5 ml-0.5 text-xs"
               >
                 {{ step.errors[entry.key] }}
               </div>
             </div>
-          </v-form>
+          </form>
 
-          <div v-if="countdownText" class="flow-countdown">
+          <div
+            v-if="countdownText"
+            class="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs"
+          >
             <Clock :size="14" />
             <span>{{ countdownText }}</span>
           </div>
@@ -81,32 +81,38 @@
 
         <!-- EXTERNAL step -->
         <template v-else-if="step.type === FlowStepType.EXTERNAL">
-          <h3 v-if="step.title" class="flow-step-title">{{ step.title }}</h3>
-          <p v-if="step.description" class="flow-step-description">
+          <h3 v-if="step.title" class="mb-2 text-base font-semibold">
+            {{ step.title }}
+          </h3>
+          <p
+            v-if="step.description"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
+          >
             {{ step.description }}
           </p>
-          <div class="flow-centered flow-external">
-            <v-btn
-              color="primary"
-              size="large"
-              prepend-icon="mdi-open-in-new"
-              @click="openExternal"
-            >
+          <div
+            class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
+          >
+            <Button size="lg" @click="openExternal">
+              <ExternalLink :size="18" />
               {{ $t("settings.setup_flow.open_external") }}
-            </v-btn>
-            <div class="flow-external-waiting">
-              <v-progress-circular indeterminate size="18" width="2" />
+            </Button>
+            <div class="text-muted-foreground flex items-center gap-2 text-sm">
+              <Spinner :size="18" />
               <span>{{ $t("settings.setup_flow.external_waiting") }}</span>
             </div>
             <a
-              class="flow-external-fallback"
+              class="text-primary text-sm hover:underline"
               :href="step.url || '#'"
               target="_blank"
               rel="noopener"
               >{{ $t("settings.setup_flow.external_fallback") }}</a
             >
           </div>
-          <div v-if="countdownText" class="flow-countdown">
+          <div
+            v-if="countdownText"
+            class="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs"
+          >
             <Clock :size="14" />
             <span>{{ countdownText }}</span>
           </div>
@@ -114,34 +120,36 @@
 
         <!-- PROGRESS step -->
         <template v-else-if="step.type === FlowStepType.PROGRESS">
-          <div class="flow-centered flow-progress">
+          <div
+            class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
+          >
             <img
               v-if="step.image"
               :src="step.image"
               alt=""
-              class="flow-progress-image"
+              class="max-h-[220px] max-w-[220px] rounded-lg"
+              loading="lazy"
             />
-            <v-progress-circular
+            <Spinner
               v-if="step.progress === null || step.progress === undefined"
-              indeterminate
-              size="52"
-              color="primary"
+              :size="52"
+              class="text-primary"
             />
-            <v-progress-linear
+            <Progress
               v-else
               :model-value="(step.progress || 0) * 100"
-              color="primary"
-              height="8"
-              rounded
-              class="flow-progress-bar"
+              class="w-full max-w-[320px]"
             />
             <p
               v-if="step.progress_text"
-              class="flow-step-description flow-progress-text"
+              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
             >
               {{ step.progress_text }}
             </p>
-            <div v-if="countdownText" class="flow-countdown">
+            <div
+              v-if="countdownText"
+              class="text-muted-foreground flex items-center justify-center gap-1.5 text-xs"
+            >
               <Clock :size="14" />
               <span>{{ countdownText }}</span>
             </div>
@@ -150,14 +158,21 @@
 
         <!-- FINISH step -->
         <template v-else-if="step.type === FlowStepType.FINISH">
-          <div class="flow-centered flow-terminal">
-            <div class="flow-terminal-icon flow-terminal-icon--success">
+          <div
+            class="flex flex-col items-center justify-center gap-3 py-3 text-center"
+          >
+            <span
+              class="flex size-[72px] items-center justify-center rounded-full bg-green-500/15 text-green-600 dark:text-green-500"
+            >
               <CircleCheck :size="40" />
-            </div>
-            <h3 class="flow-step-title">
+            </span>
+            <h3 class="text-base font-semibold">
               {{ step.title || $t("settings.setup_flow.success_title") }}
             </h3>
-            <p v-if="step.description" class="flow-step-description">
+            <p
+              v-if="step.description"
+              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
+            >
               {{ step.description }}
             </p>
           </div>
@@ -165,109 +180,107 @@
 
         <!-- ABORT step -->
         <template v-else-if="step.type === FlowStepType.ABORT">
-          <div class="flow-centered flow-terminal">
-            <div class="flow-terminal-icon flow-terminal-icon--abort">
+          <div
+            class="flex flex-col items-center justify-center gap-3 py-3 text-center"
+          >
+            <span
+              class="flex size-[72px] items-center justify-center rounded-full bg-yellow-500/15 text-yellow-600 dark:text-yellow-400"
+            >
               <TriangleAlert :size="40" />
-            </div>
-            <h3 class="flow-step-title">
+            </span>
+            <h3 class="text-base font-semibold">
               {{ step.title || $t("settings.setup_flow.aborted_title") }}
             </h3>
-            <p class="flow-step-description">
+            <p
+              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
+            >
               {{ step.reason || $t("settings.setup_flow.aborted_text") }}
             </p>
           </div>
         </template>
-      </v-card-text>
-
-      <v-divider />
+      </div>
 
       <!-- Actions -->
-      <v-card-actions class="flow-actions">
-        <template v-if="step && step.type === FlowStepType.FORM">
-          <v-spacer />
-          <v-btn variant="text" :disabled="busy" @click="close()">
+      <DialogFooter v-if="step" class="border-t px-4 py-3">
+        <template v-if="step.type === FlowStepType.FORM">
+          <Button variant="ghost" :disabled="busy" @click="close()">
             {{ $t("cancel") }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            :loading="busy"
-            :disabled="!canSubmit"
-            @click="submit"
-          >
+          </Button>
+          <Button :disabled="!canSubmit" @click="submit">
+            <Spinner v-if="busy" class="size-4" />
             {{
               step.last_step
                 ? $t("settings.setup_flow.finish")
                 : $t("settings.setup_flow.next")
             }}
-          </v-btn>
+          </Button>
         </template>
 
         <template
           v-else-if="
-            step &&
-            (step.type === FlowStepType.EXTERNAL ||
-              step.type === FlowStepType.PROGRESS)
+            step.type === FlowStepType.EXTERNAL ||
+            step.type === FlowStepType.PROGRESS
           "
         >
-          <v-spacer />
-          <v-btn variant="text" @click="close()">{{ $t("cancel") }}</v-btn>
+          <Button variant="ghost" @click="close()">{{ $t("cancel") }}</Button>
         </template>
 
-        <template v-else-if="step && step.type === FlowStepType.FINISH">
-          <v-spacer />
-          <v-btn
+        <template v-else-if="step.type === FlowStepType.FINISH">
+          <Button
             v-if="canOpenInstanceSettings"
-            variant="text"
+            variant="ghost"
             @click="openInstanceSettings"
           >
             {{ $t("settings.setup_flow.open_settings") }}
-          </v-btn>
-          <v-btn color="primary" variant="flat" @click="close(false)">
+          </Button>
+          <Button @click="close(false)">
             {{ $t("settings.setup_flow.done") }}
-          </v-btn>
+          </Button>
         </template>
 
-        <template v-else-if="step && step.type === FlowStepType.ABORT">
-          <v-spacer />
-          <v-btn color="primary" variant="flat" @click="close(false)">
-            {{ $t("close") }}
-          </v-btn>
+        <template v-else-if="step.type === FlowStepType.ABORT">
+          <Button @click="close(false)">{{ $t("close") }}</Button>
         </template>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 
   <!-- Per-field help dialog -->
-  <v-dialog
-    :model-value="helpEntry !== undefined"
-    width="auto"
-    max-width="480"
-    @update:model-value="helpEntry = undefined"
-  >
-    <v-card>
-      <v-card-title>{{ helpEntry?.label }}</v-card-title>
-      <v-card-text style="white-space: pre-wrap">{{
-        helpEntry?.description
-      }}</v-card-text>
-      <v-card-actions>
-        <v-btn
+  <Dialog :open="helpEntry !== undefined" @update:open="onHelpOpenChange">
+    <DialogContent class="sm:max-w-[480px]">
+      <DialogHeader>
+        <DialogTitle>{{ helpEntry?.label }}</DialogTitle>
+      </DialogHeader>
+      <p class="text-muted-foreground text-sm whitespace-pre-wrap">
+        {{ helpEntry?.description }}
+      </p>
+      <DialogFooter>
+        <Button
           v-if="helpEntry?.help_link"
+          variant="outline"
           @click="openLink(helpEntry!.help_link!)"
         >
           {{ $t("read_more") }}
-        </v-btn>
-        <v-spacer />
-        <v-btn color="primary" @click="helpEntry = undefined">
-          {{ $t("close") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </Button>
+        <Button @click="helpEntry = undefined">{{ $t("close") }}</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
 import {
   type ConfigEntry,
@@ -281,7 +294,13 @@ import {
 import { eventbus, type SetupFlowDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { CircleCheck, Clock, Settings2, TriangleAlert } from "@lucide/vue";
+import {
+  CircleCheck,
+  Clock,
+  ExternalLink,
+  Settings2,
+  TriangleAlert,
+} from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -546,8 +565,18 @@ function onReconnect() {
     });
 }
 
-function onDialogModelValue(value: boolean) {
+function onOpenChange(value: boolean) {
   if (!value) close();
+}
+
+// block accidental dismissal (escape / click-outside) while a submit is in flight;
+// the explicit close button stays active, matching the previous behaviour
+function onGuardedClose(event: Event) {
+  if (isBusyStep.value) event.preventDefault();
+}
+
+function onHelpOpenChange(value: boolean) {
+  if (!value) helpEntry.value = undefined;
 }
 
 function close(sendAbort = true) {
@@ -596,152 +625,3 @@ function isNullOrUndefined(value: unknown): boolean {
   return value === null || value === undefined;
 }
 </script>
-
-<style scoped>
-.setup-flow-card {
-  display: flex;
-  flex-direction: column;
-  border-radius: 16px;
-}
-
-.flow-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 16px 16px 20px;
-}
-
-.flow-header-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.flow-header-title {
-  flex: 1;
-  min-width: 0;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.flow-body {
-  padding: 20px;
-  min-height: 120px;
-}
-
-.flow-centered {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 12px 0;
-  text-align: center;
-}
-
-.flow-step-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.flow-step-description {
-  font-size: 0.9rem;
-  color: rgba(var(--v-theme-on-surface), 0.75);
-  line-height: 1.5;
-  margin: 0 0 16px 0;
-  white-space: pre-wrap;
-}
-
-.flow-field {
-  margin-bottom: 4px;
-}
-
-.flow-field-error {
-  color: rgb(var(--v-theme-error));
-  font-size: 0.78rem;
-  margin: -2px 0 10px 2px;
-}
-
-.flow-external {
-  width: 100%;
-}
-
-.flow-external-waiting {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.flow-external-fallback {
-  font-size: 0.82rem;
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-}
-
-.flow-external-fallback:hover {
-  text-decoration: underline;
-}
-
-.flow-progress {
-  width: 100%;
-}
-
-.flow-progress-bar {
-  width: 100%;
-  max-width: 320px;
-}
-
-.flow-progress-image {
-  max-width: 220px;
-  max-height: 220px;
-  border-radius: 8px;
-}
-
-.flow-progress-text {
-  margin: 0;
-}
-
-.flow-terminal {
-  gap: 12px;
-}
-
-.flow-terminal-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-}
-
-.flow-terminal-icon--success {
-  background: rgba(var(--v-theme-success), 0.15);
-  color: rgb(var(--v-theme-success));
-}
-
-.flow-terminal-icon--abort {
-  background: rgba(var(--v-theme-warning), 0.15);
-  color: rgb(var(--v-theme-warning));
-}
-
-.flow-countdown {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 12px;
-  font-size: 0.8rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.flow-actions {
-  padding: 12px 16px;
-  gap: 8px;
-}
-</style>
