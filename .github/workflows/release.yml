@@ -481,6 +481,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: server
           permission-contents: write
+          permission-issues: write
           permission-pull-requests: write
 
       - name: Checkout server repository
