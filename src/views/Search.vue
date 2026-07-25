@@ -99,6 +99,7 @@ import { MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 
 // local refs
 const searchHasFocus = ref(false);
@@ -142,10 +143,57 @@ const {
   genreOnly,
   search,
   filteredItems,
+  targetStates,
 } = useProgressiveSearch({
   mediaTypes: selectedMediaTypes,
   providers: storedProviders,
 });
+
+// display name for a search target id, used by the noteworthy-outcome toasts
+const targetName = function (targetId: string) {
+  if (targetId === LIBRARY_SEARCH_TARGET) return $t("library");
+  return (
+    providerTargets.value.find((target) => target.id === targetId)?.name ||
+    targetId
+  );
+};
+
+const hasVisibleResults = computed(() =>
+  singleType.value ? singleTypeHasItems.value : searchSections.value.length > 0,
+);
+
+// label for a noteworthy target outcome, resolved at toast time so a locale
+// switch mid-search is reflected
+const noteworthyStatusLabel = function (state: "no_matches" | "failed") {
+  if (state === "no_matches") return $t("search_status_no_matches");
+  return $t("search_status_failed");
+};
+
+// Toast targets that reached a terminal outcome that didn't come back clean:
+// failed, or no_matches once other results are on screen. The transient
+// retrying state is not toasted since a toast can't be retracted when the
+// provider recovers. At most one toast per (search-run, target, outcome).
+const toastedOutcomes = new Set<string>();
+watch(
+  targetStates,
+  (states) => {
+    const entries = Object.entries(states);
+    if (!entries.length) {
+      // targetStates was reset to {}: a new search run started
+      toastedOutcomes.clear();
+      return;
+    }
+    for (const [targetId, state] of entries) {
+      if (state !== "failed" && state !== "no_matches") continue;
+      if (state === "no_matches" && !hasVisibleResults.value) continue;
+      const outcomeKey = `${targetId}:${state}`;
+      if (toastedOutcomes.has(outcomeKey)) continue;
+      toastedOutcomes.add(outcomeKey);
+      toast.info(`${targetName(targetId)}: ${noteworthyStatusLabel(state)}`);
+    }
+  },
+  { deep: true },
+);
 
 const selectedSearchProviders = computed<string[]>({
   // the composable drops stale ids of removed providers from the selection

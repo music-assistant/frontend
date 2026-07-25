@@ -3,6 +3,7 @@ import {
   Genre,
   MediaType,
   ProviderFeature,
+  ProviderSearchStatus,
   SearchResults,
 } from "@/plugins/api/interfaces";
 import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
@@ -37,6 +38,40 @@ export interface SearchTarget {
   iconDomain: string;
 }
 
+// Per-target outcome as surfaced to consumers: "pending"/"retrying" while a
+// request or scheduled retry is in flight, "done"/"no_matches" once a target
+// has settled with or without contributing items, "failed" once retries (if
+// any) are exhausted for a hard server error.
+export type SearchTargetState =
+  | "pending"
+  | "done"
+  | "no_matches"
+  | "retrying"
+  | "failed";
+
+type SearchResultsArrayField =
+  | "artists"
+  | "albums"
+  | "tracks"
+  | "playlists"
+  | "radio"
+  | "podcasts"
+  | "audiobooks"
+  | "genres";
+
+// maps a media type to its SearchResults field, used to determine whether a
+// target contributed any items for the currently selected media types
+const MEDIA_TYPE_FIELDS: Partial<Record<MediaType, SearchResultsArrayField>> = {
+  [MediaType.TRACK]: "tracks",
+  [MediaType.ARTIST]: "artists",
+  [MediaType.ALBUM]: "albums",
+  [MediaType.PLAYLIST]: "playlists",
+  [MediaType.RADIO]: "radio",
+  [MediaType.PODCAST]: "podcasts",
+  [MediaType.AUDIOBOOK]: "audiobooks",
+  [MediaType.GENRE]: "genres",
+};
+
 export interface ProgressiveSearchOptions {
   // selected media types; an empty selection searches all allowed types
   mediaTypes: Ref<MediaType[]>;
@@ -70,6 +105,8 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
   const pendingTargets = ref(new Set<string>());
   const libraryGenresFallback = ref<Genre[]>([]);
   const retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  // per-target outcome, surfaced to consumers for status reporting
+  const targetStates = ref<{ [targetId: string]: SearchTargetState }>({});
   // guards stale responses: bumped on every new search, responses for an
   // older search id are discarded
   let currentSearchId = 0;
@@ -187,12 +224,14 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     providerResults.value = {};
     pendingTargets.value = new Set();
     libraryGenresFallback.value = [];
+    targetStates.value = {};
     activeSearchTerm.value = trimmedTerm;
     if (!trimmedTerm) return;
 
     if (genreOnly.value) {
       // Genre-only search: use library search directly
       pendingTargets.value.add(LIBRARY_SEARCH_TARGET);
+      targetStates.value[LIBRARY_SEARCH_TARGET] = "pending";
       try {
         const genres = await api.getLibraryGenres({
           search: trimmedTerm,
@@ -205,8 +244,12 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
           ...emptyResults(),
           genres,
         };
+        targetStates.value[LIBRARY_SEARCH_TARGET] = genres.length
+          ? "done"
+          : "no_matches";
       } catch (err) {
         console.error("Genre search failed", err);
+        targetStates.value[LIBRARY_SEARCH_TARGET] = "failed";
       }
       if (searchId === currentSearchId) {
         pendingTargets.value.delete(LIBRARY_SEARCH_TARGET);
@@ -258,46 +301,134 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     }
   };
 
+  // Resolves a target's reported status from the response's provider_search_statuses
+  // map: a direct lookup for instance-id targets, or (for streaming domain
+  // targets) the best status across every instance of that domain - complete
+  // beats timeout beats failed. Returns undefined when the field is absent
+  // (old server) or no status could be resolved for this target, signalling
+  // the caller to fall back to the timing heuristic.
+  const resolveTargetStatus = function (
+    targetId: string,
+    statuses: Record<string, ProviderSearchStatus> | undefined,
+  ): ProviderSearchStatus | undefined {
+    if (!statuses) return undefined;
+    if (targetId in statuses) return statuses[targetId];
+    const instanceStatuses = Object.values(api.providers)
+      .filter((provider) => provider.domain === targetId)
+      .map((provider) => statuses[provider.instance_id])
+      .filter((status): status is ProviderSearchStatus => !!status);
+    if (!instanceStatuses.length) return undefined;
+    if (instanceStatuses.includes(ProviderSearchStatus.COMPLETE))
+      return ProviderSearchStatus.COMPLETE;
+    if (instanceStatuses.includes(ProviderSearchStatus.TIMEOUT))
+      return ProviderSearchStatus.TIMEOUT;
+    return ProviderSearchStatus.FAILED;
+  };
+
+  // Whether a target's result contributed any items for the currently
+  // selected media types (all allowed types when nothing is selected).
+  const resultHasSelectedItems = function (result: SearchResults): boolean {
+    const types = selectedMediaTypes.value.length
+      ? selectedMediaTypes.value
+      : allowedMediaTypes;
+    return types.some((type) => {
+      const field = MEDIA_TYPE_FIELDS[type];
+      return !!(field && result[field]?.length);
+    });
+  };
+
+  // Terminal step for a target: store its result, clear it from pending, and
+  // record whether it settled hard-failed, empty, or with items.
+  const settleTarget = function (
+    targetId: string,
+    result: SearchResults | undefined,
+    errored: boolean,
+  ) {
+    providerResults.value[targetId] = result || emptyResults();
+    pendingTargets.value.delete(targetId);
+    targetStates.value[targetId] = errored
+      ? "failed"
+      : resultHasSelectedItems(providerResults.value[targetId])
+        ? "done"
+        : "no_matches";
+  };
+
   // One search request for a single target (library or one provider); the
   // response is merged into the view as soon as it arrives.
   const searchTarget = async function (
     searchId: number,
     targetId: string,
     attempt = 0,
+    failedRetried = false,
   ) {
     if (searchId !== currentSearchId) return;
     const limit = singleType.value ? limits.single : limits.multi;
     const mediaTypes = effectiveMediaTypes.value;
     pendingTargets.value.add(targetId);
+    targetStates.value[targetId] = "pending";
     const started = Date.now();
     let result: SearchResults | undefined;
+    let errored = false;
     try {
       result = await api.search(activeSearchTerm.value, mediaTypes, limit, [
         targetId,
       ]);
     } catch (err) {
       console.error(`Search on ${targetId} failed`, err);
+      errored = true;
     }
     if (searchId !== currentSearchId) return;
+
+    const scheduleRetry = function (
+      nextAttempt: number,
+      nextFailedRetried: boolean,
+    ) {
+      targetStates.value[targetId] = "retrying";
+      retryTimers.set(
+        targetId,
+        setTimeout(() => {
+          retryTimers.delete(targetId);
+          searchTarget(searchId, targetId, nextAttempt, nextFailedRetried);
+        }, SOFT_TIMEOUT_RETRY_DELAY_MS),
+      );
+    };
+
+    const status = errored
+      ? undefined
+      : resolveTargetStatus(targetId, result?.provider_search_statuses);
+
+    if (status) {
+      // real per-target status reported by the server
+      if (
+        status === ProviderSearchStatus.TIMEOUT &&
+        attempt < MAX_SOFT_TIMEOUT_RETRIES
+      ) {
+        // soft timeout: the provider search continues in the background
+        // server-side, retry shortly to pick up the cached result
+        scheduleRetry(attempt + 1, failedRetried);
+        return;
+      }
+      if (status === ProviderSearchStatus.FAILED && !failedRetried) {
+        scheduleRetry(attempt, true);
+        return;
+      }
+      settleTarget(targetId, result, status === ProviderSearchStatus.FAILED);
+      return;
+    }
+
+    // field absent (old server) or unresolvable: fall back to the existing
+    // timing heuristic unchanged
     if (
+      !errored &&
       result &&
       isEmptyResult(result) &&
       Date.now() - started >= SOFT_TIMEOUT_MS &&
       attempt < MAX_SOFT_TIMEOUT_RETRIES
     ) {
-      // soft timeout: the provider search continues in the background
-      // server-side, retry shortly to pick up the cached result
-      retryTimers.set(
-        targetId,
-        setTimeout(() => {
-          retryTimers.delete(targetId);
-          searchTarget(searchId, targetId, attempt + 1);
-        }, SOFT_TIMEOUT_RETRY_DELAY_MS),
-      );
+      scheduleRetry(attempt + 1, failedRetried);
       return;
     }
-    providerResults.value[targetId] = result || emptyResults();
-    pendingTargets.value.delete(targetId);
+    settleTarget(targetId, result, errored);
   };
 
   // media type selection changes affect limits and per-request media types:
@@ -322,6 +453,7 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     activeSearchTerm,
     loading,
     pendingTargets,
+    targetStates,
     searchResult,
     providerTargets,
     selectedProviders,
