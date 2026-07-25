@@ -482,7 +482,6 @@ jobs:
           repositories: server
           permission-contents: write
           permission-pull-requests: write
-          permission-issues: write
 
       - name: Checkout server repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
