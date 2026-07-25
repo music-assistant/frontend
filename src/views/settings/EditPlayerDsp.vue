@@ -1,65 +1,64 @@
 <template>
   <section v-if="dsp">
-    <v-toolbar color="transparent" class="border-b pr-4">
-      <v-switch
-        v-model="dsp.enabled"
-        hide-details
-        color="primary"
-        class="pl-4"
-      />
-      <v-toolbar-title>{{
-        $t("settings.dsp.configure_on", { name: playerName })
-      }}</v-toolbar-title>
-      <v-menu offset-y transition="slide-y-transition">
-        <template #activator="{ props: menuProps }">
-          <Badge
-            v-if="selectedPresetLabel"
-            :aria-label="selectedPresetLabel"
-            :title="selectedPresetLabel"
-            data-testid="selected-dsp-preset"
-            class="mr-2 max-w-24 md:mr-4 md:max-w-48"
-            variant="outline"
-          >
-            <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
-          </Badge>
-          <v-btn v-bind="menuProps" class="mr-4" :class="getButtonClass()">
-            <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-tray-arrow-down </v-icon>
-            <span class="d-none d-md-inline">
+    <div class="flex items-center gap-2 border-b px-4 py-2">
+      <Switch v-model="dsp.enabled" />
+      <h2 class="min-w-0 flex-1 truncate text-base font-medium">
+        {{ $t("settings.dsp.configure_on", { name: playerName }) }}
+      </h2>
+      <Badge
+        v-if="selectedPresetLabel"
+        :aria-label="selectedPresetLabel"
+        :title="selectedPresetLabel"
+        data-testid="selected-dsp-preset"
+        class="max-w-24 md:max-w-48"
+        variant="outline"
+      >
+        <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
+      </Badge>
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button variant="secondary">
+            <Download />
+            <span class="hidden md:inline">
               {{ $t("settings.dsp.presets.load") }}
             </span>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item v-if="dspPresets.length === 0">
-            <v-list-item-title>
-              {{ $t("settings.dsp.presets.empty_warning") }}
-            </v-list-item-title>
-          </v-list-item>
-          <v-list-item
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          class="min-w-[max(8rem,var(--reka-dropdown-menu-trigger-width))]"
+        >
+          <DropdownMenuItem v-if="dspPresets.length === 0" disabled>
+            {{ $t("settings.dsp.presets.empty_warning") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem
             v-for="preset in dspPresets"
             v-else
             :key="preset.preset_id"
+            class="justify-between gap-4"
             @click="loadPreset(preset)"
           >
-            <v-list-item-title>{{ preset.name }}</v-list-item-title>
-            <template #append>
-              <v-btn
-                icon="mdi-delete"
-                variant="text"
-                density="compact"
-                @click.stop="removePreset(preset.preset_id)"
-              />
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-      <v-btn :class="getButtonClass()" @click="showSavePresetDialog = true">
-        <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-content-save </v-icon>
-        <span class="d-none d-md-inline">
+            <span class="min-w-0 truncate">{{ preset.name }}</span>
+            <!-- .stop keeps the click off the item, which would otherwise
+                 select the preset and close the menu. -->
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              :aria-label="$t('delete')"
+              @click.stop="removePreset(preset.preset_id)"
+            >
+              <Trash2 />
+            </Button>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Button variant="secondary" @click="showSavePresetDialog = true">
+        <Save />
+        <span class="hidden md:inline">
           {{ $t("settings.dsp.presets.save") }}
         </span>
-      </v-btn>
-    </v-toolbar>
+      </Button>
+    </div>
 
     <v-container fluid class="pa-4">
       <v-row :class="{ 'justify-center': mobile }" class="flex-nowrap">
@@ -272,7 +271,7 @@
 <script setup lang="ts">
 import { ref, computed, toRaw, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
-import { useDisplay, useTheme } from "vuetify";
+import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
 import {
   DSPConfig,
@@ -292,9 +291,17 @@ import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
-import { TriangleAlert } from "@lucide/vue";
+import { Download, Save, Trash2, TriangleAlert } from "@lucide/vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
@@ -302,7 +309,6 @@ import {
 } from "@/helpers/audioProcessing";
 
 const { t } = useI18n();
-const theme = useTheme();
 
 const props = defineProps<{
   playerId?: string;
@@ -361,12 +367,6 @@ const selectedPresetLabel = computed(() => {
 });
 
 // Methods
-const getButtonClass = (): string => {
-  return theme.global.current.value.dark
-    ? "bg-grey-darken-3"
-    : "bg-grey-lighten-3";
-};
-
 const selectStage = (index: number | "input" | "output") => {
   selectedStage.value = index;
 };
