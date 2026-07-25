@@ -1,6 +1,6 @@
 <template>
   <div ref="containerEl" class="waveform-track">
-    <svg class="waveform-layer" :aria-hidden="true">
+    <svg class="waveform-layer" aria-hidden="true">
       <path
         :d="barsPath"
         :stroke="color"
@@ -12,7 +12,7 @@
     </svg>
     <svg
       class="waveform-layer"
-      :aria-hidden="true"
+      aria-hidden="true"
       :style="{ clipPath: `inset(0 ${100 - brightClipEnd}% 0 0)` }"
     >
       <path

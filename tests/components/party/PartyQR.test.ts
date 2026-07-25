@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
   share: vi.fn(),
   subscribe: vi.fn(),
   toastError: vi.fn(),
-  toCanvas: vi.fn(),
 }));
 
 vi.mock("@/composables/usePartyConfig", () => ({
@@ -54,18 +53,6 @@ vi.mock("@/plugins/i18n", () => ({
   },
 }));
 
-// Only the canvas renderer needs stubbing; symbol generation is pure, so the
-// component renders a real QR here.
-vi.mock("qrcode", async () => {
-  const actual = await vi.importActual<typeof import("qrcode")>("qrcode");
-  return {
-    default: {
-      create: actual.create,
-      toCanvas: mocks.toCanvas,
-    },
-  };
-});
-
 vi.mock("vue-sonner", () => ({
   toast: {
     error: mocks.toastError,
@@ -104,7 +91,6 @@ describe("PartyQR", () => {
     mocks.share.mockReset().mockResolvedValue(undefined);
     mocks.subscribe.mockReset().mockReturnValue(vi.fn());
     mocks.toastError.mockReset();
-    mocks.toCanvas.mockReset().mockResolvedValue(undefined);
   });
 
   afterEach(() => {

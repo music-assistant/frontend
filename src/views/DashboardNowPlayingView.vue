@@ -142,7 +142,6 @@ const backgroundGradient = computed(() => {
 .now-playing-artwork {
   flex: 0 0 auto;
   margin-top: auto;
-  min-height: 0;
   width: 100%;
   display: flex;
   align-items: center;

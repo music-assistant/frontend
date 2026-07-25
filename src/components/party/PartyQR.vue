@@ -23,7 +23,7 @@
           :width="qrSize"
           :height="qrSize"
           shape-rendering="crispEdges"
-          role="img"
+          aria-hidden="true"
         >
           <rect :width="qrExtent" :height="qrExtent" :fill="qrLight" />
           <path :d="qrModulesPath" :fill="qrDark" />
@@ -132,7 +132,7 @@ let unmounted = false;
 const QR_MARGIN = 2;
 
 const qrModules = computed(() =>
-  qrCodeUrl.value ? QRCode.create(qrCodeUrl.value, {}).modules : null,
+  qrCodeUrl.value ? QRCode.create(qrCodeUrl.value).modules : null,
 );
 
 const qrExtent = computed(() =>

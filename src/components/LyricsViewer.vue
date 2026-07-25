@@ -142,11 +142,17 @@ const props = withDefaults(defineProps<Props>(), {
   offset: 0,
 });
 
-// Older Cast and Android TV runtimes have no color-mix(); an unsupported stop
-// invalidates the whole gradient, which would blank the note entirely.
-const unsungNoteColor = computed(() =>
-  Color(props.textColor).alpha(0.35).string(),
-);
+// Older Cast and Android TV runtimes have no color-mix(), and an unsupported
+// stop invalidates the whole gradient, which would blank the note entirely.
+// Keywords and var() references can only be resolved by the browser, so those
+// keep the color-mix() form.
+const unsungNoteColor = computed(() => {
+  try {
+    return Color(props.textColor).alpha(0.35).string();
+  } catch {
+    return `color-mix(in srgb, ${props.textColor} 35%, transparent)`;
+  }
+});
 
 // Core state
 const displayLines = ref<DisplayLine[]>([]);
