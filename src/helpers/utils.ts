@@ -2,7 +2,7 @@ import { api } from "@/plugins/api";
 import {
   Artist,
   BrowseFolder,
-  ConfigEntry,
+  type ConfigEntry,
   ConfigEntryType,
   ImageType,
   ItemMapping,

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { openActionUrlEntries } from "./utils";
-import { ConfigEntry, ConfigEntryType } from "@/plugins/api/interfaces";
+import { type ConfigEntry, ConfigEntryType } from "@/plugins/api/interfaces";
 
 const urlEntry = (value: unknown, key = "wizard"): ConfigEntry =>
   ({
