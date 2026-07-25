@@ -107,11 +107,7 @@
           class="karaoke-qr"
           :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
         >
-          <PartyQR
-            :qr-dark="qrDarkColor"
-            :qr-light="qrLightColor"
-            @available="qrAvailable = $event"
-          />
+          <PartyQR :qr-dark="qrDarkColor" @available="qrAvailable = $event" />
         </div>
 
         <div
@@ -188,11 +184,7 @@
             class="qr-wrapper"
             :style="swapped && displayLyrics ? { order: 1 } : undefined"
           >
-            <PartyQR
-              :qr-dark="qrDarkColor"
-              :qr-light="qrLightColor"
-              @available="qrAvailable = $event"
-            />
+            <PartyQR :qr-dark="qrDarkColor" @available="qrAvailable = $event" />
           </div>
           <div
             v-if="displayLyrics"
@@ -418,10 +410,6 @@ const maLogoSrc = computed(() =>
 );
 const qrDarkColor = computed(() =>
   useLightChrome.value ? "#FFFFFF" : "#000000",
-);
-// A 1/255 fill keeps the QR canvas visible on older Cast and Android TV compositors.
-const qrLightColor = computed(() =>
-  useLightChrome.value ? "#00000001" : "#FFFFFF01",
 );
 
 const partyName = computed(() => partyConfig.value?.party_name ?? null);
@@ -906,12 +894,19 @@ watch(
 .party-view {
   width: 100%;
   height: 100vh;
-  height: 100dvh;
   overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Keep the vh fallback in a separate rule: the minifier collapses duplicate
+   declarations, which would drop it and leave Android TV without a height. */
+@supports (height: 100dvh) {
+  .party-view {
+    height: 100dvh;
+  }
 }
 
 .background-image {

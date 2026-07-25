@@ -1,16 +1,33 @@
 <template>
   <div ref="containerEl" class="waveform-track">
-    <canvas ref="dimCanvasEl" class="waveform-canvas" />
-    <canvas
-      ref="brightCanvasEl"
-      class="waveform-canvas"
+    <svg class="waveform-layer" aria-hidden="true">
+      <path
+        :d="barsPath"
+        :stroke="color"
+        :stroke-opacity="DIM_ALPHA"
+        :stroke-width="BAR_WIDTH"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </svg>
+    <svg
+      class="waveform-layer"
+      aria-hidden="true"
       :style="{ clipPath: `inset(0 ${100 - brightClipEnd}% 0 0)` }"
-    />
+    >
+      <path
+        :d="barsPath"
+        :stroke="color"
+        :stroke-width="BAR_WIDTH"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </svg>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useElementSize } from "@vueuse/core";
 
 export interface Props {
@@ -33,12 +50,8 @@ const BAR_WIDTH = 2;
 // Keep silent sections visible as a thin baseline.
 const MIN_BAR_HEIGHT = 2;
 const DIM_ALPHA = 0.3;
-// A 1/255 fill prevents older Cast and Android TV compositors from dropping the canvas.
-const COMPOSITOR_BLEED_ALPHA = 1 / 255;
 
 const containerEl = ref<HTMLDivElement>();
-const dimCanvasEl = ref<HTMLCanvasElement>();
-const brightCanvasEl = ref<HTMLCanvasElement>();
 
 const { width, height } = useElementSize(containerEl);
 
@@ -73,78 +86,29 @@ const computePeaks = (bins: number[], barCount: number): number[] => {
   return peaks;
 };
 
-const drawBars = (
-  canvas: HTMLCanvasElement,
-  peaks: number[],
-  cssWidth: number,
-  cssHeight: number,
-  dpr: number,
-  color: string,
-  alpha: number,
-) => {
-  canvas.width = Math.round(cssWidth * dpr);
-  canvas.height = Math.round(cssHeight * dpr);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, cssWidth, cssHeight);
-  ctx.fillStyle = color;
-  ctx.globalAlpha = COMPOSITOR_BLEED_ALPHA;
-  ctx.fillRect(0, 0, cssWidth, cssHeight);
-  ctx.globalAlpha = alpha;
-  for (let i = 0; i < peaks.length; i++) {
-    const barHeight = Math.max(MIN_BAR_HEIGHT, peaks[i] * cssHeight);
-    const x = i * BAR_PITCH;
-    const y = (cssHeight - barHeight) / 2;
-    ctx.beginPath();
-    if (typeof (ctx as CanvasRenderingContext2D).roundRect === "function") {
-      ctx.roundRect(x, y, BAR_WIDTH, barHeight, BAR_WIDTH / 2);
-    } else {
-      ctx.rect(x, y, BAR_WIDTH, barHeight);
-    }
-    ctx.fill();
-  }
-};
-
-const draw = () => {
+// One vertical segment per bar. Round caps supply the rounded ends, so a bar is
+// inset by half the stroke on both sides and a silent bar collapses to a dot.
+const barsPath = computed(() => {
   const cssWidth = width.value;
   const cssHeight = height.value;
-  if (
-    !dimCanvasEl.value ||
-    !brightCanvasEl.value ||
-    !props.data.length ||
-    cssWidth <= 0 ||
-    cssHeight <= 0
-  )
-    return;
+  if (!props.data.length || cssWidth <= 0 || cssHeight <= 0) return "";
 
-  const dpr = window.devicePixelRatio || 1;
   const barCount = Math.ceil(cssWidth / BAR_PITCH);
   const peaks = computePeaks(props.data, barCount);
+  const inset = BAR_WIDTH / 2;
 
-  drawBars(
-    dimCanvasEl.value,
-    peaks,
-    cssWidth,
-    cssHeight,
-    dpr,
-    props.color,
-    DIM_ALPHA,
-  );
-  drawBars(
-    brightCanvasEl.value,
-    peaks,
-    cssWidth,
-    cssHeight,
-    dpr,
-    props.color,
-    1,
-  );
-};
-
-// Progress/hover only move clip-paths, so playback and pointer movement never redraw.
-watch([width, height, () => props.data, () => props.color], draw, {
-  flush: "post",
+  let path = "";
+  for (let i = 0; i < barCount; i++) {
+    const barHeight = Math.max(MIN_BAR_HEIGHT, peaks[i] * cssHeight);
+    const x = (i * BAR_PITCH + inset).toFixed(2);
+    const top = ((cssHeight - barHeight) / 2 + inset).toFixed(2);
+    const bottom = (
+      (cssHeight - barHeight) / 2 +
+      Math.max(inset, barHeight - inset)
+    ).toFixed(2);
+    path += `M${x} ${top}V${bottom}`;
+  }
+  return path;
 });
 </script>
 
@@ -155,10 +119,11 @@ watch([width, height, () => props.data, () => props.color], draw, {
   height: 100%;
   pointer-events: none;
 }
-.waveform-canvas {
+.waveform-layer {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 </style>
