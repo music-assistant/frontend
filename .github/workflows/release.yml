@@ -1,6 +1,7 @@
 name: Publish Release
 
-# Creates a GitHub release, builds and publishes to PyPI, and creates a PR in the server repo
+# Builds and tests the package, publishes a fully populated immutable GitHub release,
+# publishes to PyPI, and creates a PR in the server repo
 # Can be triggered manually with a version number or called by the auto-release workflow
 
 on:
@@ -26,109 +27,362 @@ env:
   PYTHON_VERSION: "3.12"
   NODE_VERSION: "22.x"
   NODE_OPTIONS: --max_old_space_size=6144
+  RELEASE_VERSION: ${{ inputs.version }}
 
-# Set default workflow permissions
 permissions:
   contents: write
   pages: write
+  pull-requests: read
   id-token: write
 
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
 jobs:
-  create-release:
-    name: Create Release
+  build-and-publish:
+    name: Build and Publish
     runs-on: ubuntu-latest
     outputs:
       version: ${{ inputs.version }}
+      release_id: ${{ steps.prepare_draft.outputs.release_id || steps.inspect_release.outputs.release_id }}
+      already_published: ${{ steps.inspect_release.outputs.already_published }}
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Create and push tag
+      - name: Verify immutable releases are enabled
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ inputs.version }}" -m "Release ${{ inputs.version }}"
-          git push origin "${{ inputs.version }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if ! SETTINGS=$(gh api "repos/$GITHUB_REPOSITORY/immutable-releases"); then
+            echo "::error::PRIVILEGED_GITHUB_TOKEN needs administration read access to $GITHUB_REPOSITORY."
+            exit 1
+          fi
 
-      - name: Generate release notes with Release Drafter
-        id: release_drafter
-        uses: release-drafter/release-drafter@v7.6.0
-        with:
-          config-name: release-drafter.yml
-          version: ${{ inputs.version }}
-          tag: ${{ inputs.version }}
-          publish: true
-          prerelease: false
+          ENABLED=$(jq -r '.enabled' <<< "$SETTINGS")
+          if [[ "$ENABLED" != "true" ]]; then
+            echo "::error::Immutable releases must be enabled before publishing."
+            echo "::error::Run: gh api --method PUT repos/$GITHUB_REPOSITORY/immutable-releases"
+            exit 1
+          fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
-  build-and-publish:
-    name: Build and Publish
-    needs: create-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.version }}
+      - name: Inspect existing release
+        id: inspect_release
+        run: |
+          TARGET_SHA=$(git rev-parse HEAD)
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_VERSION"; then
+            TARGET_SHA=$(git rev-list -n 1 "$RELEASE_VERSION")
+          fi
+
+          RELEASES_FILE="$RUNNER_TEMP/releases.json"
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+            jq -s '.' > "$RELEASES_FILE"
+          MATCH_COUNT=$(jq --arg version "$RELEASE_VERSION" \
+            '[.[][] | select(.tag_name == $version)] | length' "$RELEASES_FILE")
+
+          if (( MATCH_COUNT > 1 )); then
+            echo "::error::Multiple releases use tag $RELEASE_VERSION."
+            exit 1
+          fi
+
+          echo "target_sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
+
+          if (( MATCH_COUNT == 0 )); then
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          RELEASE=$(jq -c --arg version "$RELEASE_VERSION" \
+            '.[][] | select(.tag_name == $version)' "$RELEASES_FILE")
+          RELEASE_ID=$(jq -r '.id' <<< "$RELEASE")
+          IS_DRAFT=$(jq -r '.draft' <<< "$RELEASE")
+          IS_IMMUTABLE=$(jq -r '.immutable // false' <<< "$RELEASE")
+          echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+
+          if [[ "$IS_DRAFT" == "true" ]]; then
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          elif [[ "$IS_IMMUTABLE" == "true" ]]; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Release $RELEASE_VERSION is already published but is not immutable."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout release source
+        if: steps.inspect_release.outputs.already_published != 'true'
+        run: git checkout --detach "${{ steps.inspect_release.outputs.target_sha }}"
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
+        if: steps.inspect_release.outputs.already_published != 'true'
         uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install pnpm
+        if: steps.inspect_release.outputs.already_published != 'true'
         uses: pnpm/action-setup@v6
         with:
           version: 11.8.0
+
       - name: Set up Node ${{ env.NODE_VERSION }}
+        if: steps.inspect_release.outputs.already_published != 'true'
         uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - name: Install dependencies
+        if: steps.inspect_release.outputs.already_published != 'true'
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           python3 -m pip install build tomli tomli-w
 
       - name: Set Python project version
+        if: steps.inspect_release.outputs.already_published != 'true'
         shell: python
         run: |-
+          import os
+
           import tomli
           import tomli_w
 
           with open("pyproject.toml", "rb") as f:
             pyproject = tomli.load(f)
 
-          pyproject["project"]["version"] = "${{ inputs.version }}"
+          pyproject["project"]["version"] = os.environ["RELEASE_VERSION"]
 
           with open("pyproject.toml", "wb") as f:
             tomli_w.dump(pyproject, f)
 
+      - name: Run tests
+        if: steps.inspect_release.outputs.already_published != 'true'
+        run: pnpm test:run
+        env:
+          CI: true
+
       - name: Build package
+        if: steps.inspect_release.outputs.already_published != 'true'
         run: |
           pnpm build
           rm -rf dist music_assistant_frontend.egg-info
           python3 -m build
 
+      - name: Create or verify tag
+        if: steps.inspect_release.outputs.already_published != 'true'
+        run: |
+          TARGET_SHA=$(git rev-parse HEAD)
+
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_VERSION"; then
+            TAG_SHA=$(git rev-list -n 1 "$RELEASE_VERSION")
+            if [[ "$TAG_SHA" != "$TARGET_SHA" ]]; then
+              echo "::error::Tag $RELEASE_VERSION already points to $TAG_SHA instead of $TARGET_SHA."
+              exit 1
+            fi
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RELEASE_VERSION" -m "Release $RELEASE_VERSION"
+            git push origin "refs/tags/$RELEASE_VERSION"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release notes with Release Drafter
+        id: release_drafter
+        if: steps.inspect_release.outputs.already_published != 'true'
+        uses: release-drafter/release-drafter@v7.6.0
+        with:
+          config-name: release-drafter.yml
+          version: ${{ inputs.version }}
+          tag: ${{ inputs.version }}
+          publish: false
+          prerelease: false
+          dry-run: true
+          commitish: ${{ steps.inspect_release.outputs.target_sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create or update draft release
+        id: prepare_draft
+        if: steps.inspect_release.outputs.already_published != 'true'
+        run: |
+          RELEASE_ID="${{ steps.inspect_release.outputs.release_id }}"
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          if [[ -z "${RELEASE_NOTES//[[:space:]]/}" ]]; then
+            echo "::error::Release Drafter did not generate release notes."
+            exit 1
+          fi
+          printf '%s\n' "$RELEASE_NOTES" > "$NOTES_FILE"
+
+          if [[ -n "$RELEASE_ID" ]]; then
+            METHOD="PATCH"
+            ENDPOINT="repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID"
+          else
+            METHOD="POST"
+            ENDPOINT="repos/$GITHUB_REPOSITORY/releases"
+          fi
+
+          API_ARGS=(
+            --method "$METHOD"
+            "$ENDPOINT"
+            -f "tag_name=$RELEASE_VERSION"
+            -F "body=@$NOTES_FILE"
+            -F draft=true
+            -F prerelease=false
+          )
+
+          if [[ "$METHOD" == "POST" ]]; then
+            API_ARGS+=(-f "target_commitish=${{ steps.inspect_release.outputs.target_sha }}")
+          fi
+          if [[ -n "$RELEASE_NAME" ]]; then
+            API_ARGS+=(-f "name=$RELEASE_NAME")
+          fi
+
+          RELEASE_ID=$(gh api "${API_ARGS[@]}" --jq '.id')
+          echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NAME: ${{ steps.release_drafter.outputs.name }}
+          RELEASE_NOTES: ${{ steps.release_drafter.outputs.body }}
+
+      - name: Upload draft release assets
+        if: steps.inspect_release.outputs.already_published != 'true'
+        run: |
+          RELEASE_ID="${{ steps.prepare_draft.outputs.release_id }}"
+          shopt -s nullglob
+          WHEELS=(dist/*.whl)
+          SDISTS=(dist/*.tar.gz)
+          if (( ${#WHEELS[@]} != 1 || ${#SDISTS[@]} != 1 )); then
+            echo "::error::Expected one wheel and one source distribution."
+            exit 1
+          fi
+          ASSETS=("${WHEELS[@]}" "${SDISTS[@]}")
+          for ASSET in "${ASSETS[@]}"; do
+            if [[ ! -s "$ASSET" ]]; then
+              echo "::error::Release asset $ASSET is empty."
+              exit 1
+            fi
+          done
+
+          read -r RELEASE_TAG IS_DRAFT <<< "$(
+            gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+              --jq '[.tag_name, .draft] | @tsv'
+          )"
+          if [[ "$RELEASE_TAG" != "$RELEASE_VERSION" || "$IS_DRAFT" != "true" ]]; then
+            echo "::error::Release $RELEASE_ID is not the expected draft for $RELEASE_VERSION."
+            exit 1
+          fi
+
+          EXISTING_ASSETS=$(
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?per_page=100" |
+              jq -r '.[].id'
+          )
+          while IFS= read -r ASSET_ID; do
+            [[ -z "$ASSET_ID" ]] && continue
+            gh api --method DELETE \
+              "repos/$GITHUB_REPOSITORY/releases/assets/$ASSET_ID"
+          done <<< "$EXISTING_ASSETS"
+
+          gh release upload "$RELEASE_VERSION" "${ASSETS[@]}"
+
+          printf '%s\n' "${ASSETS[@]##*/}" | sort > "$RUNNER_TEMP/expected-assets"
+          UPLOADS_READY=false
+          for _ in {1..5}; do
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?per_page=100" \
+              --jq '.[] | select(.state == "uploaded" and .size > 0) | .name' |
+              sort > "$RUNNER_TEMP/uploaded-assets"
+            if diff -q "$RUNNER_TEMP/expected-assets" \
+              "$RUNNER_TEMP/uploaded-assets" > /dev/null; then
+              UPLOADS_READY=true
+              break
+            fi
+            sleep 2
+          done
+
+          if [[ "$UPLOADS_READY" != "true" ]]; then
+            diff -u "$RUNNER_TEMP/expected-assets" "$RUNNER_TEMP/uploaded-assets"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish release to PyPI
+        if: steps.inspect_release.outputs.already_published != 'true'
         uses: pypa/gh-action-pypi-publish@v1.14.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
+          skip-existing: true
 
-      - name: Upload release assets
+      - name: Publish GitHub release
+        if: steps.inspect_release.outputs.already_published != 'true'
         run: |
-          gh release upload "${{ inputs.version }}" dist/*.whl dist/*.tar.gz
+          RELEASE_ID="${{ steps.prepare_draft.outputs.release_id }}"
+          IS_DRAFT=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.draft')
+          if [[ "$IS_DRAFT" != "true" ]]; then
+            echo "::error::Release $RELEASE_ID is no longer a draft."
+            exit 1
+          fi
+
+          gh api --method PATCH \
+            "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            -F draft=false \
+            -f make_latest=true \
+            --jq '.html_url'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  verify-release:
+    name: Verify Immutable Release
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify published release
+        run: |
+          RELEASE_ID="${{ needs.build-and-publish.outputs.release_id }}"
+
+          for _ in {1..10}; do
+            RELEASE=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID")
+            IS_DRAFT=$(jq -r '.draft' <<< "$RELEASE")
+            IS_IMMUTABLE=$(jq -r '.immutable // false' <<< "$RELEASE")
+            if [[ "$IS_DRAFT" == "false" && "$IS_IMMUTABLE" == "true" ]]; then
+              break
+            fi
+            sleep 3
+          done
+
+          if [[ "$IS_DRAFT" != "false" || "$IS_IMMUTABLE" != "true" ]]; then
+            echo "::error::Release $RELEASE_VERSION was not published as immutable."
+            exit 1
+          fi
+
+          RELEASE_TAG=$(jq -r '.tag_name' <<< "$RELEASE")
+          if [[ "$RELEASE_TAG" != "$RELEASE_VERSION" ]]; then
+            echo "::error::Release $RELEASE_ID uses unexpected tag $RELEASE_TAG."
+            exit 1
+          fi
+
+          EXPECTED_ASSETS=(
+            "music_assistant_frontend-$RELEASE_VERSION-py3-none-any.whl"
+            "music_assistant_frontend-$RELEASE_VERSION.tar.gz"
+          )
+          printf '%s\n' "${EXPECTED_ASSETS[@]}" | sort > "$RUNNER_TEMP/expected-assets"
+          jq -r '.assets[] | select(.state == "uploaded" and .size > 0) | .name' \
+            <<< "$RELEASE" | sort > "$RUNNER_TEMP/published-assets"
+          diff -u "$RUNNER_TEMP/expected-assets" "$RUNNER_TEMP/published-assets"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   server-repo-pr:
     name: Server repo PR
-    needs: build-and-publish
+    needs: verify-release
     runs-on: ubuntu-latest
     steps:
       - name: Determine server target branch
@@ -136,7 +390,7 @@ jobs:
         run: |
           # Stable patch builds (PEP 440 .post releases) bump the server `stable`
           # branch; regular releases bump the default (dev) branch.
-          if [[ "${{ inputs.version }}" == *.post* ]]; then
+          if [[ "$RELEASE_VERSION" == *.post* ]]; then
             echo "branch=stable" >> $GITHUB_OUTPUT
           else
             echo "branch=dev" >> $GITHUB_OUTPUT
@@ -144,17 +398,15 @@ jobs:
 
       - name: Wait for PyPI availability
         run: |
-          echo "Waiting 5 minutes for PyPI to propagate music-assistant-frontend ${{ inputs.version }}..."
+          echo "Waiting 5 minutes for PyPI to propagate music-assistant-frontend $RELEASE_VERSION..."
           sleep 300
           echo "Done waiting, proceeding with server repo update"
 
       - name: Get release notes
         id: release_notes
         run: |
-          VERSION="${{ inputs.version }}"
-
           # Get the release notes from the frontend release
-          RELEASE_DATA=$(gh release view "$VERSION" --repo music-assistant/frontend --json body)
+          RELEASE_DATA=$(gh release view "$RELEASE_VERSION" --repo music-assistant/frontend --json body)
 
           RELEASE_NOTES=$(echo "$RELEASE_DATA" | jq -r '.body')
 
@@ -181,13 +433,11 @@ jobs:
 
       - name: Update frontend version
         run: |
-          VERSION="${{ inputs.version }}"
-
           # Update pyproject.toml
-          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$VERSION\",/" pyproject.toml
+          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$RELEASE_VERSION\",/" pyproject.toml
 
           # Update requirements_all.txt
-          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$VERSION/" requirements_all.txt
+          sed -i.bak "s/music-assistant-frontend==.*/music-assistant-frontend==$RELEASE_VERSION/" requirements_all.txt
 
           # Remove backup files
           rm -f pyproject.toml.bak requirements_all.txt.bak
@@ -209,4 +459,3 @@ jobs:
 
           labels: |
             dependencies
-

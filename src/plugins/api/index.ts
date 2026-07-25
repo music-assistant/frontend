@@ -167,7 +167,6 @@ export class MusicAssistantApi {
       }
 
       transport = new WebSocketTransport({ url: wsUrl });
-      await transport.connect();
       baseUrl = httpBaseUrl;
     } else {
       // Transport instance provided (WebRTC)
@@ -240,6 +239,8 @@ export class MusicAssistantApi {
         }, 0);
       }
     });
+
+    await transport.connect();
 
     // Wait for initial ServerInfo message
     await this.waitForServerInfo();

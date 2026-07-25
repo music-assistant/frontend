@@ -12,6 +12,7 @@ on:
 permissions:
   contents: write
   pages: write
+  pull-requests: read
   id-token: write
 
 jobs:
