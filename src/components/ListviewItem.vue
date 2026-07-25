@@ -276,6 +276,7 @@
           getBreakpointValue('bp3') &&
           'favorite' in item &&
           showFavorite &&
+          item.media_type != MediaType.COLLECTION &&
           !$vuetify.display.mobile
         "
         class="favorite-button-wrapper"
