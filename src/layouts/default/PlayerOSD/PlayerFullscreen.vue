@@ -81,14 +81,14 @@
             <!-- player name as title if its powered off-->
             <v-card-title
               v-if="store.activePlayer?.powered == false"
-              :style="`font-size: ${titleFontSize};font-weight:600;`"
+              class="now-playing-title"
             >
               {{ store.activePlayer?.name }}
             </v-card-title>
             <!-- current media title -->
             <v-card-title
               v-else-if="store.activePlayer?.current_media?.title"
-              :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
+              class="now-playing-title clickable"
               @click="onTitleClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -98,7 +98,7 @@
             <!-- no player selected message -->
             <v-card-title
               v-else
-              :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
+              class="now-playing-title clickable"
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -121,7 +121,7 @@
               v-else-if="
                 store.activePlayer?.current_media?.album && showAlbumSubtitle
               "
-              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+              class="now-playing-subtitle clickable"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -132,7 +132,7 @@
             <!-- subtitle: artist -->
             <v-card-subtitle
               v-if="store.activePlayer?.current_media?.artist"
-              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+              class="now-playing-subtitle clickable"
               @click="onArtistClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -503,7 +503,7 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 
-const { name, mdAndUp } = useDisplay();
+const { mdAndUp } = useDisplay();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
 // The player select button is important enough to keep pinned at the bottom in
@@ -748,31 +748,6 @@ watch(
 const { waveformBins: waveformData } = useActiveTrackWaveform();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
-
-const titleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "1.3em";
-    case "sm":
-      return "1.6em";
-    case "md":
-      return "1.8em";
-    case "lg":
-      return store.showQueueItems ? "1.7em" : "2.1em";
-    case "xl":
-      return store.showQueueItems ? "1.8em" : "2.3em";
-    case "xxl":
-      return store.showQueueItems ? "1.9em" : "2.5em";
-    default:
-      return "1.0em";
-  }
-});
-
-const subTitleFontSize = computed(() => {
-  // Anchor album/artist size to the track title using the EditorialMediaCard
-  // tile ratio (subtitle 12px / title 14px).
-  return `${(parseFloat(titleFontSize.value) * (12 / 14)).toFixed(3)}em`;
-});
 
 const showExpandedPlayerSelectButton = computed(() => {
   // Always show the player select button at the bottom; only hide it on very
@@ -1510,10 +1485,26 @@ watchEffect(() => {
   text-align: center;
   padding: min(5%, 5vh) 0 10px;
   overflow: hidden;
+  container-type: inline-size; /* anchor for the cqw sizing below */
 }
 
 .main-media-details-track-info > * {
   max-width: 100%;
+}
+
+/* Ratios mirror the cast dashboard; cqw trims the text when the queue halves this column. */
+.now-playing-title {
+  font-size: clamp(1.125rem, min(2.1vw, 3.4cqw), 1.75rem);
+  font-weight: 600;
+}
+
+.now-playing-subtitle {
+  font-size: clamp(0.8rem, min(1.5vw, 2.4cqw), 1.25rem);
+  opacity: 0.8;
+}
+
+.clickable {
+  cursor: pointer;
 }
 
 .player-bottom {
