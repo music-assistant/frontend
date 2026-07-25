@@ -82,7 +82,9 @@
         <!-- Filter Settings Panel -->
         <v-col v-if="selectedStage != null" style="min-width: 0">
           <!-- Toolbar of the selected item -->
-          <div class="flex items-center gap-1 border-b bg-muted px-2 py-1.5">
+          <div
+            class="flex min-h-12 items-center gap-1 border-b bg-muted px-2 py-1.5"
+          >
             <Button
               v-if="mobile"
               variant="ghost"
