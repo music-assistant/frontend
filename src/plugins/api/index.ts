@@ -993,7 +993,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     collapse_collections?: boolean,
-  ): Promise<(Audiobook | MediaCollection)[]> {
+  ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
       search,

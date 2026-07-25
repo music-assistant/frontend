@@ -17,7 +17,6 @@
 import { computed } from "vue";
 import type {
   ItemMapping,
-  MediaCollection,
   MediaItemType,
   QueueItem,
 } from "@/plugins/api/interfaces";
@@ -31,7 +30,7 @@ import {
 import { getImageThumbForItem } from "@/helpers/utils";
 
 export interface Props {
-  item?: MediaItemType | ItemMapping | QueueItem | MediaCollection;
+  item?: MediaItemType | ItemMapping | QueueItem;
   size?: string | number;
   fallback?: string;
   rounded?: boolean;

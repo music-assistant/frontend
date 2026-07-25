@@ -76,7 +76,7 @@
             "
           >
             <MediaCollectionThumb
-              :item="item as MediaCollection"
+              :item="item as MediaCollection<MediaItemType>"
               size="calc(100%)"
               style="max-height: 256px"
             />
@@ -296,12 +296,12 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(author, authorindex) in collectionAuthors"
+                  v-for="(author, authorindex) in collectionArtists"
                   :key="author"
                 >
                   <span style="color: accent">{{ author }}</span>
                   <span
-                    v-if="authorindex + 1 < collectionAuthors.length"
+                    v-if="authorindex + 1 < collectionArtists.length"
                     :key="authorindex"
                     style="color: accent"
                     >{{ " / " }}</span
@@ -547,7 +547,7 @@ import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
-  item?: MediaItemType | MediaCollection;
+  item?: MediaItemType;
   sortBy?: string;
 }
 const compProps = defineProps<Props>();
@@ -772,7 +772,7 @@ const deleteGenre = () => {
 
 const isAudiobookCollection = computed(() => {
   if (compProps.item?.media_type != MediaType.COLLECTION) return false;
-  const collection = compProps.item as MediaCollection;
+  const collection = compProps.item as MediaCollection<MediaItemType>;
   if (
     collection.items.length > 0 &&
     collection.items[0].media_type === MediaType.AUDIOBOOK
@@ -781,42 +781,38 @@ const isAudiobookCollection = computed(() => {
   return false;
 });
 
-const collectionAuthors = computed(() => {
-  if (!isAudiobookCollection.value) return [];
-  const authors: string[] = [];
-  const collection = compProps.item as MediaCollection;
+function getAudiobookCollectionArtists(
+  collection: MediaCollection<Audiobook>,
+  selector: (book: Audiobook) => (string | Artist)[],
+): string[] {
+  const artists = new Set<string>();
+
   collection.items.forEach((book) => {
-    (book as Audiobook).authors.forEach((author) => {
-      let _author: string | undefined = undefined;
-      if (typeof author === "string") {
-        _author = author;
-      } else {
-        _author = author.name;
-      }
-      if (_author != undefined && authors.indexOf(_author) === -1)
-        authors.push(_author);
+    selector(book).forEach((person) => {
+      const name = typeof person === "string" ? person : person.name;
+      artists.add(name);
     });
   });
-  return authors;
+
+  return [...artists];
+}
+
+const collectionArtists = computed(() => {
+  if (!isAudiobookCollection.value) return [];
+
+  return getAudiobookCollectionArtists(
+    compProps.item as MediaCollection<Audiobook>,
+    (book) => book.authors,
+  );
 });
 
 const collectionNarrators = computed(() => {
   if (!isAudiobookCollection.value) return [];
-  const narrators: string[] = [];
-  const collection = compProps.item as MediaCollection;
-  collection.items.forEach((book) => {
-    (book as Audiobook).narrators.forEach((narrator) => {
-      let _narrator: string | undefined = undefined;
-      if (typeof narrator === "string") {
-        _narrator = narrator;
-      } else {
-        _narrator = narrator.name;
-      }
-      if (_narrator != undefined && narrators.indexOf(_narrator) === -1)
-        narrators.push(_narrator);
-    });
-  });
-  return narrators;
+
+  return getAudiobookCollectionArtists(
+    compProps.item as MediaCollection<Audiobook>,
+    (book) => book.narrators,
+  );
 });
 </script>
 

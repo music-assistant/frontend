@@ -25,10 +25,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
-import type { MediaCollection } from "@/plugins/api/interfaces";
+import type { MediaCollection, MediaItemType } from "@/plugins/api/interfaces";
 
 interface Props {
-  item: MediaCollection;
+  item: MediaCollection<MediaItemType>;
   size?: string | number;
   thumbScale?: string | number;
   thumbOffset?: string | number;

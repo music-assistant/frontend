@@ -833,8 +833,8 @@ export interface RecommendationFolder extends BrowseFolder {
   type?: RecommendationFolderType;
 }
 
-export interface MediaCollection extends MediaItem {
-  items: MediaItemType[];
+export interface MediaCollection<M extends MediaItemType> extends MediaItem {
+  items: M[];
 }
 
 export type MediaItemType =
@@ -848,6 +848,7 @@ export type MediaItemType =
   | Podcast
   | PodcastEpisode
   | Genre
+  | MediaCollection<MediaItemType>
   | BrowseFolder;
 
 export type PlayableMediaItemType =
