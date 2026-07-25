@@ -146,8 +146,10 @@ const backgroundGradient = computed(() => {
 }
 
 .now-playing-artwork-image {
-  width: min(62.5vh, 92vw);
-  height: min(62.5vh, 92vw);
+  /* flex-basis auto with no shrink: the square must never be squashed to fit */
+  flex: 0 0 auto;
+  width: min(52vh, 85vw);
+  height: min(52vh, 85vw);
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 12px;
@@ -155,8 +157,9 @@ const backgroundGradient = computed(() => {
 }
 
 .now-playing-artwork-fallback {
-  width: min(62.5vh, 92vw);
-  height: min(62.5vh, 92vw);
+  flex: 0 0 auto;
+  width: min(52vh, 85vw);
+  height: min(52vh, 85vw);
   aspect-ratio: 1;
   border-radius: 12px;
   display: flex;
@@ -174,14 +177,14 @@ const backgroundGradient = computed(() => {
 }
 
 .now-playing-title {
-  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-size: clamp(1rem, 2.1vw, 1.75rem);
   font-weight: 600;
 }
 
 .now-playing-subtitle {
-  font-size: clamp(1rem, 2.5vw, 1.75rem);
+  font-size: clamp(0.8rem, 1.5vw, 1.25rem);
   opacity: 0.8;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .now-playing-timeline {
