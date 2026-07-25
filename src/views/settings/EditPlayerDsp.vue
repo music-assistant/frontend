@@ -62,18 +62,6 @@
     </v-toolbar>
 
     <v-container fluid class="pa-4">
-      <!-- Faded rather than removed so its space stays and the layout doesn't jump. -->
-      <Alert
-        variant="warning"
-        class="mb-5 mt-0.5 transition-opacity duration-200"
-        :class="dsp.enabled ? 'pointer-events-none opacity-0' : 'opacity-100'"
-        :aria-hidden="dsp.enabled"
-      >
-        <TriangleAlert />
-        <AlertDescription>
-          {{ $t("settings.dsp.disabled_message") }}
-        </AlertDescription>
-      </Alert>
       <v-row :class="{ 'justify-center': mobile }" class="flex-nowrap">
         <!-- Timeline Column -->
         <v-col
@@ -216,6 +204,18 @@
           </v-card>
         </v-col>
       </v-row>
+
+      <Alert
+        variant="warning"
+        class="mt-5 transition-opacity duration-200"
+        :class="dsp.enabled ? 'pointer-events-none opacity-0' : 'opacity-100'"
+        :aria-hidden="dsp.enabled"
+      >
+        <TriangleAlert />
+        <AlertDescription>
+          {{ $t("settings.dsp.disabled_message") }}
+        </AlertDescription>
+      </Alert>
     </v-container>
 
     <!-- Save DSP Preset Dialog -->
