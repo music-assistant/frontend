@@ -139,31 +139,19 @@
           </div>
 
           <!-- Settings of the Input stage -->
-          <v-card
-            v-if="selectedStage === 'input'"
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-if="selectedStage === 'input'" class="bg-muted">
             <DSPSlider v-model="dsp.input_gain" type="gain" />
             <DSPHelp :text="$t('settings.dsp.input_gain_help')" />
-          </v-card>
+          </div>
 
           <!-- Settings of the Output stage -->
-          <v-card
-            v-else-if="selectedStage === 'output'"
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-else-if="selectedStage === 'output'" class="bg-muted">
             <DSPSlider v-model="dsp.output_gain" type="gain" />
             <DSPHelp :text="$t('settings.dsp.output_gain_help')" />
-          </v-card>
+          </div>
 
           <!-- Settings of the selected DSP Filter -->
-          <v-card
-            v-else
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-else class="bg-muted">
             <DSPParametricEQ
               v-if="
                 dsp.filters[selectedStage].type === DSPFilterType.PARAMETRIC_EQ
@@ -203,7 +191,7 @@
               />
               <DSPHelp :text="$t('settings.dsp.balance.help')" />
             </template>
-          </v-card>
+          </div>
         </v-col>
       </v-row>
 
