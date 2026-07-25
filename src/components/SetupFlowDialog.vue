@@ -81,14 +81,13 @@
 
         <!-- EXTERNAL step -->
         <template v-else-if="step.type === FlowStepType.EXTERNAL">
-          <h3 v-if="step.title" class="mb-2 text-base font-semibold">
-            {{ step.title }}
+          <h3 class="mb-2 text-base font-semibold">
+            {{ step.title || $t("settings.setup_flow.external_default_title") }}
           </h3>
           <p
-            v-if="step.description"
             class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
           >
-            {{ step.description }}
+            {{ step.description || $t("settings.setup_flow.external_default_text") }}
           </p>
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
@@ -97,6 +96,13 @@
               <ExternalLink :size="18" />
               {{ $t("settings.setup_flow.open_external") }}
             </Button>
+            <div
+              v-if="externalHost"
+              class="text-muted-foreground flex items-center gap-1.5 text-xs"
+            >
+              <ShieldCheck :size="13" />
+              <span>{{ $t("settings.setup_flow.external_host", [externalHost]) }}</span>
+            </div>
             <div class="text-muted-foreground flex items-center gap-2 text-sm">
               <Spinner :size="18" />
               <span>{{ $t("settings.setup_flow.external_waiting") }}</span>
@@ -299,6 +305,7 @@ import {
   Clock,
   ExternalLink,
   Settings2,
+  ShieldCheck,
   TriangleAlert,
 } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
@@ -519,6 +526,16 @@ async function submit() {
   }
 }
 
+// the host of the external step's url, shown as a trust cue under the Open button
+const externalHost = computed(() => {
+  if (!step.value?.url) return null;
+  try {
+    return new URL(step.value.url).host;
+  } catch {
+    return null;
+  }
+});
+
 function openExternal() {
   if (!step.value?.url) return;
   // iOS-safe: perform a programmatic anchor click within this user gesture
@@ -572,7 +589,19 @@ function onOpenChange(value: boolean) {
 // block accidental dismissal (escape / click-outside) while a submit is in flight;
 // the explicit close button stays active, matching the previous behaviour
 function onGuardedClose(event: Event) {
-  if (isBusyStep.value) event.preventDefault();
+  if (isBusyStep.value) {
+    event.preventDefault();
+    return;
+  }
+  // Vuetify menus/overlays (e.g. a select dropdown or date picker inside a form
+  // step) teleport OUTSIDE the dialog DOM, so Reka would treat interacting with
+  // them as an outside click and dismiss the whole dialog. Keep it open when the
+  // interaction lands inside a Vuetify overlay.
+  const original = (event as CustomEvent).detail?.originalEvent as Event | undefined;
+  const target = (original?.target ?? event.target) as HTMLElement | null;
+  if (target?.closest?.(".v-overlay-container, .v-overlay, .v-menu")) {
+    event.preventDefault();
+  }
 }
 
 function onHelpOpenChange(value: boolean) {
