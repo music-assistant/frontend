@@ -172,6 +172,7 @@
     <v-select
       v-else-if="confEntry.options && confEntry.options.length > 0"
       :model-value="confEntry.value"
+      :menu-props="{ zIndex: 10000 }"
       :chips="confEntry.multi_value"
       :clearable="true"
       :multiple="confEntry.multi_value"
@@ -240,6 +241,7 @@
         confEntry.type == ConfigEntryType.STRING && confEntry.multi_value
       "
       :model-value="confEntry.value as string[]"
+      :menu-props="{ zIndex: 10000 }"
       multiple
       chips
       :clearable="true"
