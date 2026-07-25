@@ -67,59 +67,49 @@
       </div>
     </v-card>
 
-    <!-- Band Management Section -->
-    <v-card
-      elevation="0"
-      color="transparent"
-      class="border-t border-b rounded-0"
-    >
-      <!-- Band Selection with Visual Indicators -->
-      <v-card-text class="pa-0">
-        <v-chip-group
-          v-model="selectedBandIndex"
-          class="mb-0 pa-2"
-          mandatory
-          selected-class="primary"
-        >
-          <v-chip :key="-1" :value="-1" filter variant="elevated">
-            {{ $t("settings.dsp.parametric_eq.preamp", { index: 100 }) }}
-          </v-chip>
-          <v-chip
-            v-for="(band, index) in peq.bands"
-            :key="index"
-            :value="index"
-            :class="{
-              // Disabled or not show in the selected (graphed) channel
-              'opacity-50': !band.enabled,
-            }"
-            filter
-            variant="elevated"
-          >
-            {{
-              band.channel === AudioChannel.ALL
-                ? $t("settings.dsp.parametric_eq.band", { index: index + 1 })
-                : $t("settings.dsp.parametric_eq.band_channel", {
-                    index: index + 1,
-                    // Just uses `L` or `R` to save some space
-                    channel: $t(
-                      `settings.dsp.channels_compact.${band.channel}`,
-                    ),
-                  })
-            }}
-          </v-chip>
-          <v-chip variant="outlined" @click="addBand">
-            <v-icon icon="mdi-plus" start />
-            {{
-              editedChannel === AudioChannel.ALL
-                ? $t("settings.dsp.parametric_eq.add_band")
-                : $t("settings.dsp.parametric_eq.add_band_channel", {
-                    channel: $t(`settings.dsp.channels.${editedChannel}`),
-                  })
-            }}
-          </v-chip>
-        </v-chip-group>
-      </v-card-text>
-    </v-card>
+    <!-- Band Selection with Visual Indicators -->
+    <div class="flex flex-wrap gap-2 border-y border-border p-2">
+      <Button
+        :variant="selectedBandIndex === -1 ? 'default' : 'secondary'"
+        size="sm"
+        :aria-pressed="selectedBandIndex === -1"
+        @click="selectedBandIndex = -1"
+      >
+        {{ $t("settings.dsp.parametric_eq.preamp", { index: 100 }) }}
+      </Button>
+      <Button
+        v-for="(band, index) in peq.bands"
+        :key="index"
+        :variant="selectedBandIndex === index ? 'default' : 'secondary'"
+        size="sm"
+        :aria-pressed="selectedBandIndex === index"
+        :class="{
+          // Disabled or not show in the selected (graphed) channel
+          'opacity-50': !band.enabled,
+        }"
+        @click="selectedBandIndex = index"
+      >
+        {{
+          band.channel === AudioChannel.ALL
+            ? $t("settings.dsp.parametric_eq.band", { index: index + 1 })
+            : $t("settings.dsp.parametric_eq.band_channel", {
+                index: index + 1,
+                // Just uses `L` or `R` to save some space
+                channel: $t(`settings.dsp.channels_compact.${band.channel}`),
+              })
+        }}
+      </Button>
+      <Button variant="outline" size="sm" @click="addBand">
+        <Plus />
+        {{
+          editedChannel === AudioChannel.ALL
+            ? $t("settings.dsp.parametric_eq.add_band")
+            : $t("settings.dsp.parametric_eq.add_band_channel", {
+                channel: $t(`settings.dsp.channels.${editedChannel}`),
+              })
+        }}
+      </Button>
+    </div>
     <v-card v-if="selectedBandIndex === -1" elevation="0" color="transparent">
       <v-card-text>
         <!-- Filter Controls -->
@@ -217,6 +207,8 @@ import DSPSlider from "./DSPSlider.vue";
 import DSPHelp from "./DSPHelp.vue";
 import { $t } from "@/plugins/i18n";
 import { useMutationObserver } from "@vueuse/core";
+import { Plus } from "@lucide/vue";
+import { Button } from "@/components/ui/button";
 
 const apoToBandType: Record<string, ParametricEQBandType> = {
   PK: ParametricEQBandType.PEAK,
