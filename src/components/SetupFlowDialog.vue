@@ -82,12 +82,15 @@
         <!-- EXTERNAL step -->
         <template v-else-if="step.type === FlowStepType.EXTERNAL">
           <h3 class="mb-2 text-base font-semibold">
-            {{ step.title || $t("settings.setup_flow.external_default_title") }}
+            {{ step.title ?? $t("settings.setup_flow.external_default_title") }}
           </h3>
           <p
             class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
           >
-            {{ step.description || $t("settings.setup_flow.external_default_text") }}
+            {{
+              step.description ??
+              $t("settings.setup_flow.external_default_text")
+            }}
           </p>
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
@@ -101,7 +104,9 @@
               class="text-muted-foreground flex items-center gap-1.5 text-xs"
             >
               <ShieldCheck :size="13" />
-              <span>{{ $t("settings.setup_flow.external_host", [externalHost]) }}</span>
+              <span>{{
+                $t("settings.setup_flow.external_host", [externalHost])
+              }}</span>
             </div>
             <div class="text-muted-foreground flex items-center gap-2 text-sm">
               <Spinner :size="18" />
@@ -173,7 +178,7 @@
               <CircleCheck :size="40" />
             </span>
             <h3 class="text-base font-semibold">
-              {{ step.title || $t("settings.setup_flow.success_title") }}
+              {{ step.title ?? $t("settings.setup_flow.success_title") }}
             </h3>
             <p
               v-if="step.description"
@@ -195,7 +200,7 @@
               <TriangleAlert :size="40" />
             </span>
             <h3 class="text-base font-semibold">
-              {{ step.title || $t("settings.setup_flow.aborted_title") }}
+              {{ step.title ?? $t("settings.setup_flow.aborted_title") }}
             </h3>
             <p
               class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
@@ -526,7 +531,7 @@ async function submit() {
   }
 }
 
-// the host of the external step's url, shown as a trust cue under the Open button
+// the host of the external step's URL, shown as a trust cue under the Open button
 const externalHost = computed(() => {
   if (!step.value?.url) return null;
   try {
@@ -597,7 +602,9 @@ function onGuardedClose(event: Event) {
   // step) teleport OUTSIDE the dialog DOM, so Reka would treat interacting with
   // them as an outside click and dismiss the whole dialog. Keep it open when the
   // interaction lands inside a Vuetify overlay.
-  const original = (event as CustomEvent).detail?.originalEvent as Event | undefined;
+  const original = (event as CustomEvent).detail?.originalEvent as
+    | Event
+    | undefined;
   const target = (original?.target ?? event.target) as HTMLElement | null;
   if (target?.closest?.(".v-overlay-container, .v-overlay, .v-menu")) {
     event.preventDefault();
