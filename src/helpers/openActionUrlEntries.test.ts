@@ -52,6 +52,21 @@ describe("openActionUrlEntries", () => {
     expect(result.map((e) => e.key)).toEqual(["server_url"]);
   });
 
+  it("falls back to default_value when value is unset", () => {
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    const entry = {
+      key: "wizard",
+      type: ConfigEntryType.URL,
+      label: "wizard",
+      default_value: "https://example.com/from-default",
+    } as ConfigEntry;
+    const result = openActionUrlEntries([entry, stringEntry()]);
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(result.map((e) => e.key)).toEqual(["server_url"]);
+  });
+
   it("leaves entry lists without url entries untouched", () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")

@@ -53,18 +53,22 @@ export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
   // via an anchor click, which browsers treat more leniently than window.open
   // when the triggering user gesture has just expired. Only web URLs are
   // opened, and all URL entries are dropped from the rendered form.
-  const urlEntries = entries.filter((e) => {
-    if (e.type !== ConfigEntryType.URL || typeof e.value !== "string")
-      return false;
+  const urls: string[] = [];
+  for (const entry of entries) {
+    if (entry.type !== ConfigEntryType.URL) continue;
+    const target = entry.value ?? entry.default_value;
+    if (typeof target !== "string") continue;
     try {
-      return ["http:", "https:"].includes(new URL(e.value).protocol);
+      if (["http:", "https:"].includes(new URL(target).protocol)) {
+        urls.push(target);
+      }
     } catch {
-      return false;
+      // not a parseable url: drop silently
     }
-  });
-  for (const entry of urlEntries) {
+  }
+  for (const url of urls) {
     const a = document.createElement("a");
-    a.setAttribute("href", String(entry.value));
+    a.setAttribute("href", url);
     a.setAttribute("target", "_blank");
     a.setAttribute("rel", "noopener");
     document.body.appendChild(a);
