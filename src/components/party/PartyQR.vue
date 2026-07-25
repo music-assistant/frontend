@@ -25,7 +25,6 @@
           shape-rendering="crispEdges"
           aria-hidden="true"
         >
-          <rect :width="qrExtent" :height="qrExtent" :fill="qrLight" />
           <path :d="qrModulesPath" :fill="qrDark" />
         </svg>
         <Transition name="copy-toast">
@@ -84,11 +83,9 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 const props = withDefaults(
   defineProps<{
     qrDark?: string;
-    qrLight?: string;
   }>(),
   {
     qrDark: "#FFFFFF",
-    qrLight: "#00000000",
   },
 );
 

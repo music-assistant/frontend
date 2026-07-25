@@ -107,11 +107,7 @@
           class="karaoke-qr"
           :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
         >
-          <PartyQR
-            :qr-dark="qrDarkColor"
-            :qr-light="qrLightColor"
-            @available="qrAvailable = $event"
-          />
+          <PartyQR :qr-dark="qrDarkColor" @available="qrAvailable = $event" />
         </div>
 
         <div
@@ -188,11 +184,7 @@
             class="qr-wrapper"
             :style="swapped && displayLyrics ? { order: 1 } : undefined"
           >
-            <PartyQR
-              :qr-dark="qrDarkColor"
-              :qr-light="qrLightColor"
-              @available="qrAvailable = $event"
-            />
+            <PartyQR :qr-dark="qrDarkColor" @available="qrAvailable = $event" />
           </div>
           <div
             v-if="displayLyrics"
@@ -418,10 +410,6 @@ const maLogoSrc = computed(() =>
 );
 const qrDarkColor = computed(() =>
   useLightChrome.value ? "#FFFFFF" : "#000000",
-);
-// Transparent quiet zone, so the symbol sits on the dashboard background.
-const qrLightColor = computed(() =>
-  useLightChrome.value ? "#00000000" : "#FFFFFF00",
 );
 
 const partyName = computed(() => partyConfig.value?.party_name ?? null);
