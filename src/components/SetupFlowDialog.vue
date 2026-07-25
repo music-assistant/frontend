@@ -47,7 +47,7 @@
             <AlertDescription>{{ step.errors.base }}</AlertDescription>
           </Alert>
 
-          <form @submit.prevent="submit">
+          <form ref="formRef" @submit.prevent="submit">
             <div
               v-for="entry in visibleFormEntries"
               :key="entry.key"
@@ -68,6 +68,8 @@
                 {{ step.errors[entry.key] }}
               </div>
             </div>
+            <!-- enables implicit (Enter) submission on multi-field forms -->
+            <button type="submit" class="sr-only" tabindex="-1"></button>
           </form>
 
           <div
@@ -292,12 +294,11 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
-import { api } from "@/plugins/api";
+import { api, ConnectionState } from "@/plugins/api";
 import {
   type ConfigEntry,
   ConfigEntryType,
   type ConfigValueType,
-  EventType,
   FlowStepType,
   SECURE_STRING_SUBSTITUTE,
   type SetupFlowStep,
@@ -313,7 +314,14 @@ import {
   ShieldCheck,
   TriangleAlert,
 } from "@lucide/vue";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import ConfigEntryRow from "@/views/settings/ConfigEntryRow.vue";
@@ -329,9 +337,12 @@ const showPasswordValues = ref(false);
 const helpEntry = ref<ConfigEntry | undefined>(undefined);
 const now = ref(Date.now() / 1000);
 
+const formRef = ref<HTMLFormElement | null>(null);
+
 let unsubscribeFlow: (() => void) | null = null;
-let unsubscribeConnected: (() => void) | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
+// one-shot guard so an expired step triggers a single reconcile fetch
+let expiryReconciledFor: string | null = null;
 
 // terminal steps: closing them must not abort (the flow already ended server-side)
 const PRESENTATIONAL_TYPES = [
@@ -401,34 +412,73 @@ const canOpenInstanceSettings = computed(
   () => launch.value?.kind === "provider" && !!step.value?.result?.instance_id,
 );
 
-const countdownText = computed(() => {
+const countdownRemaining = computed(() => {
   const expiresAt = step.value?.expires_at;
-  if (!expiresAt) return "";
-  const remaining = Math.max(0, Math.round(expiresAt - now.value));
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
+  if (!expiresAt) return null;
+  return Math.max(0, Math.round(expiresAt - now.value));
+});
+
+const countdownText = computed(() => {
+  if (countdownRemaining.value === null) return "";
+  const mins = Math.floor(countdownRemaining.value / 60);
+  const secs = countdownRemaining.value % 60;
   const formatted = `${mins}:${secs.toString().padStart(2, "0")}`;
   return $t("settings.setup_flow.expires_in", [formatted]);
 });
 
 onMounted(() => {
   eventbus.on("setupFlowDialog", onLaunch);
-  // re-render the current step after a websocket reconnect
-  unsubscribeConnected = api.subscribe(
-    EventType.CONNECTED,
-    onReconnect,
-  ) as () => void;
-  countdownTimer = setInterval(() => {
-    now.value = Date.now() / 1000;
-  }, 1000);
 });
 
 onBeforeUnmount(() => {
   eventbus.off("setupFlowDialog", onLaunch);
   cleanupFlow();
-  if (unsubscribeConnected) unsubscribeConnected();
-  if (countdownTimer) clearInterval(countdownTimer);
+  stopCountdown();
 });
+
+// re-sync the current step after a websocket drop. CONNECTED fires before the
+// connection is (re)authenticated, so a fetch on that signal would be rejected
+// and wrongly present a still-alive flow as aborted - wait for AUTHENTICATED.
+watch(
+  () => api.state.value,
+  (state, prev) => {
+    if (
+      state === ConnectionState.AUTHENTICATED &&
+      prev !== ConnectionState.AUTHENTICATED
+    ) {
+      reconcileFlow();
+    }
+  },
+);
+
+// the countdown ticker only needs to run while the dialog is open
+watch(open, (isOpen) => (isOpen ? startCountdown() : stopCountdown()));
+
+// when a step's deadline elapses the server pushes the follow-up step; fetch
+// once as a safety net so a missed push can't leave a stale form on screen
+watch(countdownRemaining, (remaining) => {
+  if (remaining !== 0 || !step.value || isTerminal.value) return;
+  const key = `${step.value.flow_id}:${step.value.step_id}`;
+  if (expiryReconciledFor === key) return;
+  expiryReconciledFor = key;
+  reconcileFlow();
+});
+
+function startCountdown() {
+  now.value = Date.now() / 1000;
+  if (!countdownTimer) {
+    countdownTimer = setInterval(() => {
+      now.value = Date.now() / 1000;
+    }, 1000);
+  }
+}
+
+function stopCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+}
 
 async function onLaunch(evt: SetupFlowDialogEvent) {
   // starting a new flow replaces any currently open one
@@ -440,6 +490,8 @@ async function onLaunch(evt: SetupFlowDialogEvent) {
   store.dialogActive = true;
   try {
     const firstStep = await startFlow(evt);
+    // the dialog may have been closed (or relaunched) while the request ran
+    if (!open.value || launch.value !== evt) return;
     applyStep(firstStep);
   } catch (err) {
     toast.error(String(err));
@@ -479,6 +531,14 @@ function applyStep(newStep: SetupFlowStep) {
     const sameForm =
       prevFlowId === newStep.flow_id && prevStepId === newStep.step_id;
     buildForm(newStep, sameForm);
+    if (!sameForm) {
+      // move focus into the fresh form for keyboard/screen-reader users
+      nextTick(() => {
+        formRef.value
+          ?.querySelector<HTMLElement>("input:not([type=hidden]), textarea")
+          ?.focus();
+      });
+    }
   } else {
     formEntries.value = [];
   }
@@ -521,8 +581,11 @@ async function submit() {
     values[entry.key] = value ?? null;
   }
   busy.value = true;
+  const flowId = step.value.flow_id;
   try {
-    const nextStep = await api.submitSetupFlow(step.value.flow_id, values);
+    const nextStep = await api.submitSetupFlow(flowId, values);
+    // the dialog may have been closed (or a new flow started) while awaiting
+    if (!open.value || step.value?.flow_id !== flowId) return;
     applyStep(nextStep);
   } catch (err) {
     toast.error(String(err));
@@ -567,14 +630,18 @@ function openInstanceSettings() {
   router.push(`/settings/editprovider/${instanceId}`);
 }
 
-function onReconnect() {
-  // after a reconnect, re-fetch the current step; if the flow is gone, show an abort
+function reconcileFlow() {
+  // re-fetch the current step; if the flow is gone server-side, show an abort
   if (!open.value || !step.value || isTerminal.value) return;
   const flowId = step.value.flow_id;
   api
     .getSetupFlow(flowId)
-    .then((current) => applyStep(current))
+    .then((current) => {
+      if (!open.value || step.value?.flow_id !== flowId) return;
+      applyStep(current);
+    })
     .catch(() => {
+      if (!open.value || step.value?.flow_id !== flowId) return;
       cleanupFlow();
       step.value = {
         flow_id: flowId,
