@@ -276,7 +276,7 @@
         "playerprovider": "Провайдер плеера",
         "plugin": "Плагин",
         "pluginprovider": "Поставщик плагина",
-        "providers_total": "{0} провайдер{1}",
+        "providers_total": "{count} провайдер",
         "stage": {
             "label": "Версия",
             "options": {
@@ -395,7 +395,7 @@
         "players_count": "{0} плеер{1}",
         "one_player": "1 плеер",
         "view_players": "Просмотр плееров",
-        "players_total": "{0} плеер{1}",
+        "players_total": "{count} плеер",
         "api_docs": "Документация API",
         "no_group_providers": "У вас пока нет провайдеров, поддерживающих создание групп",
         "provider_codeowners": "Этот провайдер предоставлен\/поддерживается",
@@ -1102,7 +1102,7 @@
     "background_tasks": {
         "title": "Фоновые задачи",
         "description": "Отслеживание запланированных задач и длительных действий.",
-        "total": "{0} фоновых задач{1}",
+        "total": "{count} фоновых задач",
         "clear_finished": "Очистить завершенные",
         "empty_title": "Нет фоновых задач",
         "empty_description": "Здесь будут отображаться запланированные задачи и длительные действия.",

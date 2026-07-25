@@ -281,7 +281,7 @@
         "playerprovider": "Integracija plejera",
         "plugin": "Dodatak",
         "pluginprovider": "Dodatak",
-        "providers_total": "Ukupno stavki: {0}",
+        "providers_total": "Ukupno stavki: {count}",
         "stage": {
             "label": "Status",
             "options": {
@@ -400,7 +400,7 @@
         "players_count": "Broj plejera: {0}",
         "one_player": "1 plejer",
         "view_players": "Prikažite plejere",
-        "players_total": "Ukupno plejera: {0}",
+        "players_total": "Ukupno plejera: {count}",
         "api_docs": "API dokumentacija",
         "no_group_providers": "Trenutno nemate dostupne integracije koje podržavaju kreiranje grupa",
         "provider_codeowners": "Ovaj servis je razvijen i održavan od strane",
@@ -1449,7 +1449,7 @@
     "background_tasks": {
         "title": "Pozadinski zadaci",
         "description": "Pratite zakazane zadatke i dugotrajne radnje.",
-        "total": "Ukupno pozadinskih zadataka: {0}",
+        "total": "Ukupno pozadinskih zadataka: {count}",
         "clear_finished": "Očistite završene zadatke",
         "empty_title": "Nema pozadinskih zadataka",
         "empty_description": "Ovde će se pojaviti zakazani zadaci i dugotrajne radnje.",

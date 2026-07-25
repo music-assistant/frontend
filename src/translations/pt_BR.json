@@ -273,7 +273,7 @@
         "playerprovider": "Provedor do reprodutor",
         "plugin": "Plug-in",
         "pluginprovider": "Provedor de plug-in",
-        "providers_total": "{0} provedor total{1}",
+        "providers_total": "{count} provedor total",
         "stage": {
             "label": "Estágio",
             "options": {

@@ -275,7 +275,7 @@
         "playerprovider": "Lejátszó szolgáltató",
         "plugin": "Beépülő modul",
         "pluginprovider": "Beépülő modul szolgáltató",
-        "providers_total": "{0} szolgáltató összesen{1}",
+        "providers_total": "{count} szolgáltató összesen",
         "stage": {
             "label": "Állapot",
             "options": {
@@ -394,7 +394,7 @@
         "players_count": "{0}{1} lejátszó",
         "one_player": "1 lejátszó",
         "view_players": "Lejátszók megtekintése",
-        "players_total": "Összesen {0}{1} lejátszó",
+        "players_total": "Összesen {count} lejátszó",
         "api_docs": "API dokumentáció",
         "no_group_providers": "Jelenleg nincs olyan szolgáltató, amely támogatná csoportok létrehozását",
         "provider_codeowners": "Ezt a szolgáltatót közreműködő\/karbantartó:",
@@ -1089,7 +1089,7 @@
     "background_tasks": {
         "title": "Háttérfolyamatok",
         "description": "Ütemezett feladatok és legutóbbi hosszan futó műveletek figyelése.",
-        "total": "Összesen {0} háttérfolyamat{1}",
+        "total": "Összesen {count} háttérfolyamat",
         "clear_finished": "Befejezettek törlése",
         "empty_title": "Nincs háttérfeladat",
         "empty_description": "Az ütemezett feladatok és hosszan futó műveletek itt jelennek meg.",

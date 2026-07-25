@@ -281,7 +281,7 @@
         "playerprovider": "Spelerprovider",
         "plugin": "Plugin",
         "pluginprovider": "Pluginprovider",
-        "providers_total": "Totaal {0} provider{1}",
+        "providers_total": "Totaal {count} provider",
         "stage": {
             "label": "Fase",
             "options": {
@@ -400,7 +400,7 @@
         "players_count": "{0} speler{1}",
         "one_player": "1 speler",
         "view_players": "Bekijk spelers",
-        "players_total": "Totaal {0} speler{1}",
+        "players_total": "Totaal {count} speler",
         "api_docs": "API-documentatie",
         "no_group_providers": "Er zijn nu geen providers die het aanmaken van groepen ondersteunen",
         "provider_codeowners": "Deze provider wordt bijgedragen\/onderhouden door",
@@ -1449,7 +1449,7 @@
     "background_tasks": {
         "title": "Achtergrondtaken",
         "description": "Monitor geplande taken en recente, langlopende acties.",
-        "total": "Totaal {0} achtergrondtaak\/-taken",
+        "total": "Totaal {count} achtergrondtaak\/-taken",
         "clear_finished": "Wis voltooide",
         "empty_title": "Geen achtergrondtaken",
         "empty_description": "Geplande taken en langlopende acties worden hier weergegeven.",

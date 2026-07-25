@@ -273,7 +273,7 @@
         "playerprovider": "Πάροχος παικτών",
         "plugin": "Πρόσθετο",
         "pluginprovider": "Πάροχος πρόσθετου",
-        "providers_total": "{0} συνολικός αριθμός παρόχων{1}",
+        "providers_total": "{count} συνολικός αριθμός παρόχων",
         "stage": {
             "label": "Στάδιο",
             "options": {
@@ -392,7 +392,7 @@
         "players_count": "{0} παίκτες{1}",
         "one_player": "1 παίκτης",
         "view_players": "Προβολή παικτών",
-        "players_total": "{0} σύνολο παικτών{1}",
+        "players_total": "{count} σύνολο παικτών",
         "api_docs": "Τεκμηρίωση API",
         "no_group_providers": "Αυτήν τη στιγμή δεν έχετε παρόχους που να υποστηρίζουν τη δημιουργία ομάδων",
         "provider_codeowners": "Αυτός ο πάροχος παρέχεται\/συντηρείται από",

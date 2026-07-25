@@ -264,7 +264,7 @@
         "player": "Player",
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
-        "providers_total": "{0} fornitori totali {1}",
+        "providers_total": "{count} fornitori totali ",
         "stage": {
             "label": "Stage",
             "options": {

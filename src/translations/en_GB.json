@@ -273,7 +273,7 @@
         "playerprovider": "Player provider",
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
-        "providers_total": "{0} total provider{1}",
+        "providers_total": "{count} total provider",
         "stage": {
             "label": "Stage",
             "options": {
@@ -392,7 +392,7 @@
         "players_count": "{0} player{1}",
         "one_player": "1 player",
         "view_players": "View players",
-        "players_total": "{0} total player{1}",
+        "players_total": "{count} total player",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
         "provider_codeowners": "This provider is contributed\/maintained by",

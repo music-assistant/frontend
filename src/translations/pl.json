@@ -276,7 +276,7 @@
         "playerprovider": "Dostawca odtwarzacza",
         "plugin": "Wtyczka",
         "pluginprovider": "Dostawca wtyczki",
-        "providers_total": "{0} łącznie dostawców{1}",
+        "providers_total": "{count} łącznie dostawców",
         "stage": {
             "label": "Etap",
             "options": {
@@ -395,7 +395,7 @@
         "players_count": "{0} odtwarzacz{1}",
         "one_player": "1 odtwarzacz",
         "view_players": "Pokaż odtwarzacze",
-        "players_total": "{0} łącznie odtwarzaczy{1}",
+        "players_total": "{count} łącznie odtwarzaczy",
         "api_docs": "Dokumentacja API",
         "no_group_providers": "Obecnie nie masz żadnych dostawców obsługujących tworzenie grup",
         "provider_codeowners": "Ten dostawca jest współtworzony\/obsługiwany przez",
@@ -1070,7 +1070,7 @@
     "background_tasks": {
         "title": "Zadania w tle",
         "description": "Monitoruj zaplanowane zadania i ostatnie działania długotrwałe.",
-        "total": "Całkowita liczba zadań w tle: {0}",
+        "total": "Całkowita liczba zadań w tle: {count}",
         "clear_finished": "Wyczyść zakończone",
         "empty_title": "Brak zadań w tle",
         "empty_description": "Tutaj będą wyświetlane zadania zaplanowane i działania długoterminowe.",

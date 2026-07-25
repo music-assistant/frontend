@@ -148,7 +148,7 @@
         "musicprovider": "ספקי מוסיקה",
         "plugin": "תוסף",
         "pluginprovider": "ספקי תוספים",
-        "providers_total": "{0} כלל הספקים{1}",
+        "providers_total": "{count} כלל הספקים",
         "stage": {
             "label": "שָׁלָב",
             "options": {
@@ -375,7 +375,7 @@
     "background_tasks": {
         "title": "משימות ברקע",
         "description": "עקוב אחר משימות מתוזמנות ופעולות ממושכות אחרונות.",
-        "total": "יש {0} משימות ברקע {1}",
+        "total": "יש {count} משימות ברקע ",
         "clear_finished": "נקה משימות שהסתיימו",
         "empty_title": "אין משימות רקע",
         "empty_description": "משימות מתוזמנות ופעולות ארוכות־טווח יופיעו כאן.",
