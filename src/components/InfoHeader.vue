@@ -287,7 +287,10 @@
             </v-card-subtitle>
 
             <!-- Audiobook Collection -->
-            <v-card-subtitle v-if="isAudiobookCollection" class="title d-flex">
+            <v-card-subtitle
+              v-if="collectionMediaType === MediaType.AUDIOBOOK"
+              class="title d-flex"
+            >
               <v-icon
                 style="margin-left: -3px; margin-right: 3px"
                 small
@@ -309,7 +312,10 @@
                 </span>
               </MarqueeText>
             </v-card-subtitle>
-            <v-card-subtitle v-if="isAudiobookCollection" class="title d-flex">
+            <v-card-subtitle
+              v-if="collectionMediaType === MediaType.AUDIOBOOK"
+              class="title d-flex"
+            >
               <v-icon
                 style="margin-left: -3px; margin-right: 3px"
                 small
@@ -516,7 +522,10 @@ import {
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
+import {
+  getCollectionMediaTypeFromItemId,
+  getProviderIconDomain,
+} from "@/plugins/api/helpers";
 import type {
   Album,
   Artist,
@@ -770,15 +779,10 @@ const deleteGenre = () => {
   });
 };
 
-const isAudiobookCollection = computed(() => {
-  if (compProps.item?.media_type != MediaType.COLLECTION) return false;
-  const collection = compProps.item as MediaCollection<MediaItemType>;
-  if (
-    collection.items.length > 0 &&
-    collection.items[0].media_type === MediaType.AUDIOBOOK
-  )
-    return true;
-  return false;
+const collectionMediaType = computed(() => {
+  if (compProps.item?.media_type != MediaType.COLLECTION)
+    return MediaType.UNKNOWN;
+  return getCollectionMediaTypeFromItemId(compProps.item.item_id);
 });
 
 function getAudiobookCollectionArtists(
@@ -798,7 +802,7 @@ function getAudiobookCollectionArtists(
 }
 
 const collectionArtists = computed(() => {
-  if (!isAudiobookCollection.value) return [];
+  if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
 
   return getAudiobookCollectionArtists(
     compProps.item as MediaCollection<Audiobook>,
@@ -807,7 +811,7 @@ const collectionArtists = computed(() => {
 });
 
 const collectionNarrators = computed(() => {
-  if (!isAudiobookCollection.value) return [];
+  if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
 
   return getAudiobookCollectionArtists(
     compProps.item as MediaCollection<Audiobook>,

@@ -182,6 +182,14 @@ export const getSourceName = function (player: Player) {
   return source_id;
 };
 
+export const getCollectionMediaTypeFromItemId = function (itemId: string) {
+  // the item id is defined by the backend as "<MediaType>___<collection_name>"
+  const itemIdType = itemId.split("___", 1)[0];
+  return Object.values(MediaType).includes(itemIdType as MediaType)
+    ? (itemIdType as MediaType)
+    : MediaType.UNKNOWN;
+};
+
 /**
  * Generate a friendly device name from the user agent and browser APIs.
  * Uses User-Agent Client Hints API when available for more accurate detection.
