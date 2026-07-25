@@ -60,7 +60,7 @@ vi.mock("qrcode", async () => {
   const actual = await vi.importActual<typeof import("qrcode")>("qrcode");
   return {
     default: {
-      create: actual.default.create,
+      create: actual.create,
       toCanvas: mocks.toCanvas,
     },
   };

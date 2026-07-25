@@ -38,9 +38,9 @@
             :progress-percent="progressPercent"
             :hover-percent="hoverPercent"
           />
-          <!-- Sized to the track instead of centred with -translate-y-1/2:
-               Tailwind emits the standalone `translate` property, which Android
-               TV's Chrome ignores, dropping the fill half a bar too low. -->
+          <!-- Tailwind's translate utilities emit the standalone `translate`
+               property, which Android TV's Chrome ignores. Everything below
+               centres via the track box or an explicit transform instead. -->
           <SliderRange
             v-if="!hasWaveform"
             data-slot="slider-range"
@@ -52,8 +52,11 @@
             v-for="tick in chapterTicks"
             :key="tick.position"
             type="button"
-            class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-4 w-3 items-center justify-center"
-            :style="{ left: `${tick.percent}%` }"
+            class="absolute top-1/2 flex h-4 w-3 items-center justify-center"
+            :style="{
+              left: `${tick.percent}%`,
+              transform: 'translate(-50%, -50%)',
+            }"
             :aria-label="tick.name"
             @pointerdown.stop
             @click.stop="chapterClicked(tick)"
@@ -84,8 +87,8 @@
             v-for="tick in chapterTicks"
             :key="`label-${tick.position}`"
             type="button"
-            class="absolute bottom-full mb-1 -translate-x-1/2 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
-            :style="{ left: `${tick.percent}%` }"
+            class="absolute bottom-full mb-1 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
+            :style="{ left: `${tick.percent}%`, transform: 'translateX(-50%)' }"
             @pointerdown.stop
             @click="chapterClicked(tick)"
           >
