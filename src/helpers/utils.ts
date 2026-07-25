@@ -49,21 +49,29 @@ export const openLinkInNewTab = function (url: string) {
 };
 
 export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
-  // Open URL-type entries returned by a config invoke_action response (one-shot):
-  // a programmatic anchor click keeps the user-gesture chain so mobile browsers
-  // don't popup-block it. Opened entries are dropped from the rendered form.
-  const urlEntries = entries.filter(
-    (e) =>
-      e.type === ConfigEntryType.URL && typeof e.value === "string" && e.value,
-  );
+  // Open URL-type entries returned by a config invoke_action response (one-shot)
+  // via an anchor click, which browsers treat more leniently than window.open
+  // when the triggering user gesture has just expired. Only web URLs are
+  // opened, and all URL entries are dropped from the rendered form.
+  const urlEntries = entries.filter((e) => {
+    if (e.type !== ConfigEntryType.URL || typeof e.value !== "string")
+      return false;
+    try {
+      return ["http:", "https:"].includes(new URL(e.value).protocol);
+    } catch {
+      return false;
+    }
+  });
   for (const entry of urlEntries) {
     const a = document.createElement("a");
     a.setAttribute("href", String(entry.value));
     a.setAttribute("target", "_blank");
     a.setAttribute("rel", "noopener");
+    document.body.appendChild(a);
     a.click();
+    a.remove();
   }
-  return entries.filter((e) => !urlEntries.includes(e));
+  return entries.filter((e) => e.type !== ConfigEntryType.URL);
 };
 
 export const parseBool = (val: string | boolean | undefined | null) => {
