@@ -202,14 +202,7 @@
       />
     </template>
 
-    <div class="px-2">
-      <Alert variant="info" class="mb-2">
-        <Info />
-        <AlertDescription>
-          {{ $t("settings.dsp.parametric_eq.help") }}
-        </AlertDescription>
-      </Alert>
-    </div>
+    <DSPHelp :text="$t('settings.dsp.parametric_eq.help')" />
   </v-container>
 </template>
 <script setup lang="ts">
@@ -221,10 +214,9 @@ import {
   ParametricEQFilter,
 } from "@/plugins/api/interfaces";
 import DSPSlider from "./DSPSlider.vue";
+import DSPHelp from "./DSPHelp.vue";
 import { $t } from "@/plugins/i18n";
 import { useTheme } from "vuetify";
-import { Info } from "@lucide/vue";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const apoToBandType: Record<string, ParametricEQBandType> = {
   PK: ParametricEQBandType.PEAK,

@@ -155,14 +155,7 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.input_gain" type="gain" />
-            <div class="px-4">
-              <Alert variant="info" class="mb-4">
-                <Info />
-                <AlertDescription>
-                  {{ $t("settings.dsp.input_gain_help") }}
-                </AlertDescription>
-              </Alert>
-            </div>
+            <DSPHelp :text="$t('settings.dsp.input_gain_help')" />
           </v-card>
 
           <!-- Settings of the Output stage -->
@@ -172,14 +165,7 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.output_gain" type="gain" />
-            <div class="px-4">
-              <Alert variant="info" class="mb-4">
-                <Info />
-                <AlertDescription>
-                  {{ $t("settings.dsp.output_gain_help") }}
-                </AlertDescription>
-              </Alert>
-            </div>
+            <DSPHelp :text="$t('settings.dsp.output_gain_help')" />
           </v-card>
 
           <!-- Settings of the selected DSP Filter -->
@@ -207,14 +193,7 @@
                 v-model="(dsp.filters[selectedStage] as GainFilter).gain"
                 type="gain"
               />
-              <div class="px-4">
-                <Alert variant="info" class="mb-4">
-                  <Info />
-                  <AlertDescription>
-                    {{ $t("settings.dsp.gain.help") }}
-                  </AlertDescription>
-                </Alert>
-              </div>
+              <DSPHelp :text="$t('settings.dsp.gain.help')" />
             </template>
             <template
               v-else-if="
@@ -232,14 +211,7 @@
                   is_log: false,
                 }"
               />
-              <div class="px-4">
-                <Alert variant="info" class="mb-4">
-                  <Info />
-                  <AlertDescription>
-                    {{ $t("settings.dsp.balance.help") }}
-                  </AlertDescription>
-                </Alert>
-              </div>
+              <DSPHelp :text="$t('settings.dsp.balance.help')" />
             </template>
           </v-card>
         </v-col>
@@ -319,7 +291,8 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
-import { Info, TriangleAlert } from "@lucide/vue";
+import DSPHelp from "@/components/dsp/DSPHelp.vue";
+import { TriangleAlert } from "@lucide/vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";

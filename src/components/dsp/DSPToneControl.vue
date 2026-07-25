@@ -33,20 +33,12 @@
     }"
   />
 
-  <div class="px-4">
-    <Alert variant="info" class="mb-4">
-      <Info />
-      <AlertDescription>
-        {{ $t("settings.dsp.tone_control.help") }}
-      </AlertDescription>
-    </Alert>
-  </div>
+  <DSPHelp :text="$t('settings.dsp.tone_control.help')" />
 </template>
 <script setup lang="ts">
-import { Info } from "@lucide/vue";
 import { ToneControlFilter } from "@/plugins/api/interfaces";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import DSPSlider from "./DSPSlider.vue";
+import DSPHelp from "./DSPHelp.vue";
 
 const tone_control = defineModel<ToneControlFilter>({ required: true });
 </script>
