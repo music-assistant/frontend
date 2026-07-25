@@ -201,7 +201,7 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Button } from "@/components/ui/button";
-import { markdownToHtml } from "@/helpers/utils";
+import { markdownToHtml, openActionUrlEntries } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -351,25 +351,14 @@ const onImmediateApply = async function (
 
 const onAction = async function (
   action: string,
-  values: Record<string, ConfigValueType>,
+  _values: Record<string, ConfigValueType>,
   immediateApply: boolean,
 ) {
   loading.value = true;
-  // append existing ConfigEntry values to allow
-  // values be passed between flow steps
-  for (const entry of Object.values(config.value!.values)) {
-    if (entry.value !== undefined && values[entry.key] == undefined) {
-      values[entry.key] = entry.value;
-    }
-  }
   api
-    .getProviderConfigEntries(
-      config.value!.domain,
-      config.value!.instance_id,
-      action,
-      values,
-    )
+    .invokeProviderConfigAction(config.value!.instance_id, action)
     .then(async (entries) => {
+      entries = openActionUrlEntries(entries);
       config.value!.values = {};
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;

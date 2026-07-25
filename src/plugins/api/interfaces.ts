@@ -423,6 +423,8 @@ export enum ConfigEntryType {
   ALERT = "alert",
   // image: presentational entry whose value/default_value is a data-URI image
   IMAGE = "image",
+  // url: clickable link; in an invoke_action response the frontend opens it (one-shot)
+  URL = "url",
 
   // Only used in the frontend
   DSP_SETTINGS = "dsp_settings",

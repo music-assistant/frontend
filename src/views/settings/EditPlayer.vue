@@ -259,19 +259,17 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { watch } from "vue";
 
-import { nanoid } from "nanoid";
 import {
   ConfigEntryUI,
   UI_ENTRY_TYPE,
   isInjected,
 } from "@/helpers/config_entry_ui";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { openActionUrlEntries, openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
-const sessionId = nanoid(11);
 const loading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
@@ -461,22 +459,14 @@ const onImmediateApply = async function (
 
 const onAction = async function (
   action: string,
-  values: Record<string, ConfigValueType>,
+  _values: Record<string, ConfigValueType>,
   immediateApply: boolean,
 ) {
   loading.value = true;
-  // append existing ConfigEntry values to allow
-  // values be passed between flow steps
-  for (const entry of Object.values(config.value!.values)) {
-    if (entry.value !== undefined && values[entry.key] == undefined) {
-      values[entry.key] = entry.value;
-    }
-  }
-  // ensure the session id is passed along (for auth actions)
-  values["session_id"] = sessionId;
   api
-    .getPlayerConfigEntries(config.value!.player_id, action, values)
+    .invokePlayerConfigAction(config.value!.player_id, action)
     .then(async (entries) => {
+      entries = openActionUrlEntries(entries);
       config.value!.values = {};
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;

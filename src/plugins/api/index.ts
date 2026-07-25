@@ -2000,21 +2000,23 @@ export class MusicAssistantApi {
   }
 
   public async getProviderConfigEntries(
-    provider_domain: string,
-    instance_id?: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
+    instance_id: string,
   ): Promise<ConfigEntry[]> {
-    // Return Config entries to setup/configure a provider.
-    // provider_domain: (mandatory) domain of the provider.
-    // instance_id: id of an existing provider instance (None for new instance setup).
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
+    // Return the config (options) entries for an existing provider instance.
     return this.sendCommand("config/providers/get_entries", {
-      provider_domain,
+      instance_id,
+    });
+  }
+
+  public async invokeProviderConfigAction(
+    instance_id: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a provider's options
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/providers/invoke_action", {
       instance_id,
       action,
-      values,
     });
   }
 
@@ -2073,17 +2075,22 @@ export class MusicAssistantApi {
 
   public async getPlayerConfigEntries(
     player_id: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
   ): Promise<ConfigEntry[]> {
-    // Return Config entries to setup/configure a player.
-    // player_id: (mandatory) id of the player.
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
+    // Return the config entries to configure a player.
     return this.sendCommand("config/players/get_entries", {
       player_id,
+    });
+  }
+
+  public async invokePlayerConfigAction(
+    player_id: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a player's config
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/players/invoke_action", {
+      player_id,
       action,
-      values,
     });
   }
 

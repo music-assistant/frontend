@@ -2,6 +2,8 @@ import { api } from "@/plugins/api";
 import {
   Artist,
   BrowseFolder,
+  type ConfigEntry,
+  ConfigEntryType,
   ImageType,
   ItemMapping,
   MediaItemImage,
@@ -44,6 +46,36 @@ export const openLinkInNewTab = function (url: string) {
     url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
   }
   window.open(url, "_blank");
+};
+
+export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
+  // Open URL-type entries returned by a config invoke_action response (one-shot)
+  // via an anchor click, which browsers treat more leniently than window.open
+  // when the triggering user gesture has just expired. Only web URLs are
+  // opened, and all URL entries are dropped from the rendered form.
+  const urls: string[] = [];
+  for (const entry of entries) {
+    if (entry.type !== ConfigEntryType.URL) continue;
+    const target = entry.value ?? entry.default_value;
+    if (typeof target !== "string") continue;
+    try {
+      if (["http:", "https:"].includes(new URL(target).protocol)) {
+        urls.push(target);
+      }
+    } catch {
+      // not a parseable url: drop silently
+    }
+  }
+  for (const url of urls) {
+    const a = document.createElement("a");
+    a.setAttribute("href", url);
+    a.setAttribute("target", "_blank");
+    a.setAttribute("rel", "noopener");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  return entries.filter((e) => e.type !== ConfigEntryType.URL);
 };
 
 export const parseBool = (val: string | boolean | undefined | null) => {
