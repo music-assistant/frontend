@@ -419,9 +419,9 @@ const maLogoSrc = computed(() =>
 const qrDarkColor = computed(() =>
   useLightChrome.value ? "#FFFFFF" : "#000000",
 );
-// A 1/255 fill keeps the QR canvas visible on older Cast and Android TV compositors.
+// Transparent quiet zone, so the symbol sits on the dashboard background.
 const qrLightColor = computed(() =>
-  useLightChrome.value ? "#00000001" : "#FFFFFF01",
+  useLightChrome.value ? "#00000000" : "#FFFFFF00",
 );
 
 const partyName = computed(() => partyConfig.value?.party_name ?? null);
@@ -906,12 +906,19 @@ watch(
 .party-view {
   width: 100%;
   height: 100vh;
-  height: 100dvh;
   overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Keep the vh fallback in a separate rule: the minifier collapses duplicate
+   declarations, which would drop it and leave Android TV without a height. */
+@supports (height: 100dvh) {
+  .party-view {
+    height: 100dvh;
+  }
 }
 
 .background-image {

@@ -1,15 +1,12 @@
 <template>
-  <div
-    class="w-auto"
-    :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-6'"
-  >
+  <div class="w-auto" :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-6'">
     <div v-if="store.activePlayer">
       <SliderRoot
         v-model="wrappedCurTimeValue"
         data-slot="slider"
         class="relative flex items-center select-none touch-none w-full"
         :class="[
-          usesWaveformLayout ? 'h-11 md:h-12 lg:h-14' : 'h-8',
+          hasWaveform ? 'h-11 md:h-12 lg:h-14' : 'h-8',
           hasWaveform && canSeek ? 'cursor-pointer' : '',
         ]"
         :disabled="!canSeek"
@@ -27,29 +24,27 @@
         <SliderTrack
           data-slot="slider-track"
           class="relative grow rounded-full"
-          :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
+          :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
         >
           <div
-            v-if="!usesWaveformLayout"
+            v-if="!hasWaveform"
             class="absolute inset-0 rounded-full"
             :style="trackBackgroundStyle"
           />
           <WaveformTrack
-            v-if="hasWaveform"
+            v-else
             :data="waveform!"
             :color="color"
             :progress-percent="progressPercent"
             :hover-percent="hoverPercent"
           />
-          <div
-            v-else-if="waveformLoading"
-            class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full"
-            :style="trackBackgroundStyle"
-          />
+          <!-- Sized to the track instead of centred with -translate-y-1/2:
+               Tailwind emits the standalone `translate` property, which Android
+               TV's Chrome ignores, dropping the fill half a bar too low. -->
           <SliderRange
             v-if="!hasWaveform"
             data-slot="slider-range"
-            class="absolute rounded-full h-1 top-1/2 -translate-y-1/2"
+            class="absolute inset-y-0 rounded-full"
             :style="{ 'background-color': color }"
           />
           <!-- pointerdown.stop prevents reka's slider track tap action -->
@@ -141,14 +136,12 @@ export interface Props {
   color?: string;
   // Precomputed waveform bins (0.0-1.0); when set, replaces the flat track.
   waveform?: number[] | null;
-  waveformLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: "var(--foreground)",
   waveform: null,
-  waveformLoading: false,
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -368,9 +361,6 @@ const chapterTicks = computed(() =>
 );
 
 const hasWaveform = computed(() => !!props.waveform?.length);
-const usesWaveformLayout = computed(
-  () => hasWaveform.value || props.waveformLoading,
-);
 // Older Cast and Android TV runtimes need an opacity layer instead of color-mix().
 const trackBackgroundStyle = computed(() => ({
   backgroundColor: props.color,

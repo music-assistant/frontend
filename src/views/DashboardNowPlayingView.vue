@@ -44,7 +44,6 @@
           :show-labels="true"
           :color="timelineColor"
           :waveform="waveformData"
-          :waveform-loading="waveformLoading"
         />
       </div>
     </template>
@@ -83,8 +82,7 @@ onMounted(() => {
 const marqueeSync = new MarqueeTextSync();
 
 // Waveform is always on here: the guest session has no show_waveform preference, so it defaults on.
-const { waveformBins: waveformData, waveformLoading } =
-  useActiveTrackWaveform();
+const { waveformBins: waveformData } = useActiveTrackWaveform();
 
 const artworkUrl = computed(
   () => getMediaImageUrl(store.activePlayer?.current_media?.image_url) || null,
@@ -115,7 +113,6 @@ const backgroundGradient = computed(() => {
 .now-playing-view {
   width: 100%;
   height: 100vh;
-  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -124,6 +121,14 @@ const backgroundGradient = computed(() => {
   padding: 5vh 5vw;
   box-sizing: border-box;
   color: var(--text-color, #fff);
+}
+
+/* Keep the vh fallback in a separate rule: the minifier collapses duplicate
+   declarations, which would drop it and leave Android TV without a height. */
+@supports (height: 100dvh) {
+  .now-playing-view {
+    height: 100dvh;
+  }
 }
 
 .now-playing-empty {

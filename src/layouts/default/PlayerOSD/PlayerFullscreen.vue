@@ -328,7 +328,6 @@
             :show-labels="true"
             :color="sliderColor"
             :waveform="waveformData"
-            :waveform-loading="waveformLoading"
           />
         </div>
 
@@ -746,8 +745,7 @@ watch(
 );
 
 // Waveform for the current track — loaded centrally by useActiveTrackWaveform.
-const { waveformBins: waveformData, waveformLoading } =
-  useActiveTrackWaveform();
+const { waveformBins: waveformData } = useActiveTrackWaveform();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
 

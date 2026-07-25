@@ -54,11 +54,17 @@ vi.mock("@/plugins/i18n", () => ({
   },
 }));
 
-vi.mock("qrcode", () => ({
-  default: {
-    toCanvas: mocks.toCanvas,
-  },
-}));
+// Only the canvas renderer needs stubbing; symbol generation is pure, so the
+// component renders a real QR here.
+vi.mock("qrcode", async () => {
+  const actual = await vi.importActual<typeof import("qrcode")>("qrcode");
+  return {
+    default: {
+      create: actual.default.create,
+      toCanvas: mocks.toCanvas,
+    },
+  };
+});
 
 vi.mock("vue-sonner", () => ({
   toast: {
