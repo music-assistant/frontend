@@ -52,7 +52,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          persist-credentials: false
 
       - name: Verify release credentials and settings
         run: |
@@ -194,15 +193,13 @@ jobs:
               exit 1
             fi
           else
-            git config user.name "music-assistant-machine"
-            git config user.email "141749843+music-assistant-machine@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
             git tag -a "$RELEASE_VERSION" -m "Release $RELEASE_VERSION"
-            git push \
-              "https://x-access-token:${PRIVILEGED_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-              "refs/tags/$RELEASE_VERSION"
+            git push origin "refs/tags/$RELEASE_VERSION"
           fi
         env:
-          PRIVILEGED_GITHUB_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate release notes with Release Drafter
         id: release_drafter
@@ -258,7 +255,7 @@ jobs:
           RELEASE_ID=$(gh api "${API_ARGS[@]}" --jq '.id')
           echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
         env:
-          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_NAME: ${{ steps.release_drafter.outputs.name }}
           RELEASE_NOTES: ${{ steps.release_drafter.outputs.body }}
 
@@ -323,7 +320,7 @@ jobs:
             exit 1
           fi
         env:
-          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish release to PyPI
         if: steps.inspect_release.outputs.already_published != 'true'
@@ -349,7 +346,7 @@ jobs:
             -f make_latest=true \
             --jq '.html_url'
         env:
-          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   verify-release:
     name: Verify Immutable Release
