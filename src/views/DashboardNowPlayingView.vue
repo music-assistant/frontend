@@ -118,7 +118,8 @@ const backgroundGradient = computed(() => {
   align-items: center;
   justify-content: center;
   gap: 3vh;
-  padding: 5vh 5vw;
+  /* Deeper bottom padding lifts the timeline clear of the screen edge. */
+  padding: 5vh 5vw 9vh;
   box-sizing: border-box;
   color: var(--text-color, #fff);
 }
@@ -136,8 +137,11 @@ const backgroundGradient = computed(() => {
   opacity: 0.7;
 }
 
+/* The row hugs the artwork rather than growing, so the leftover height is
+   shared with the auto margins below instead of pooling under the artwork. */
 .now-playing-artwork {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  margin-top: auto;
   min-height: 0;
   width: 100%;
   display: flex;
@@ -170,6 +174,8 @@ const backgroundGradient = computed(() => {
 
 .now-playing-info {
   flex: 0 0 auto;
+  /* Centres the text between the artwork and the timeline. */
+  margin-block: auto;
   width: 100%;
   max-width: 900px;
   text-align: center;
