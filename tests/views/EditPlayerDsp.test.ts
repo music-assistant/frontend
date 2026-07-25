@@ -25,6 +25,11 @@ const apiMock = vi.hoisted(() => ({
 const registryMock = vi.hoisted(() => ({
   presets: undefined as Ref<DSPConfigPreset[]> | undefined,
 }));
+// The view reads only mobileLayout, and the real store calls into
+// @/helpers/utils at import time, which is mocked down to getPlayerName here.
+const storeMock = vi.hoisted(() => ({ mobileLayout: false }));
+
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -649,9 +654,6 @@ async function mountEditor() {
     global: {
       mocks: {
         $t: translate,
-        $vuetify: {
-          theme: { current: { dark: false } },
-        },
       },
       stubs: {
         Badge: { template: "<span><slot /></span>" },
@@ -667,9 +669,6 @@ async function mountEditor() {
         DSPSlider: true,
         DSPToneControl: ToneControlStub,
         Switch: SwitchStub,
-        VCol: { template: "<div><slot /></div>" },
-        VContainer: { template: "<div><slot /></div>" },
-        VRow: { template: "<div><slot /></div>" },
       },
     },
   });

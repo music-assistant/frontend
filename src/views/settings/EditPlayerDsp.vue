@@ -60,14 +60,16 @@
       </Button>
     </div>
 
-    <v-container fluid class="pa-4">
-      <v-row :class="{ 'justify-center': mobile }" class="flex-nowrap">
+    <div class="p-4">
+      <div
+        class="flex flex-nowrap gap-6"
+        :class="{ 'justify-center': mobileLayout }"
+      >
         <!-- Timeline Column -->
-        <v-col
-          v-if="!mobile || selectedStage === null"
-          class="flex-grow-0 flex-shrink-0"
-          :class="{ 'border-e pr-4': !mobile }"
-          align-self="start"
+        <div
+          v-if="!mobileLayout || selectedStage === null"
+          class="shrink-0 grow-0 self-start"
+          :class="{ 'border-r border-border pr-4': !mobileLayout }"
         >
           <DSPPipeline
             :dsp="dsp"
@@ -77,16 +79,16 @@
             @on-move-filter="(d) => moveFilter(d.index, d.direction)"
             @on-delete-filter="removeFilter"
           />
-        </v-col>
+        </div>
 
         <!-- Filter Settings Panel -->
-        <v-col v-if="selectedStage != null" style="min-width: 0">
+        <div v-if="selectedStage != null" class="min-w-0 flex-1">
           <!-- Toolbar of the selected item -->
           <div
             class="flex min-h-12 items-center gap-1 border-b bg-muted px-2 py-1.5"
           >
             <Button
-              v-if="mobile"
+              v-if="mobileLayout"
               variant="ghost"
               size="icon-sm"
               :aria-label="$t('back')"
@@ -100,7 +102,7 @@
             <Button
               v-if="
                 typeof selectedStage === 'number' &&
-                !mobile &&
+                !mobileLayout &&
                 selectedStage > 0
               "
               variant="ghost"
@@ -113,7 +115,7 @@
             <Button
               v-if="
                 typeof selectedStage === 'number' &&
-                !mobile &&
+                !mobileLayout &&
                 selectedStage < dsp.filters.length - 1
               "
               variant="ghost"
@@ -194,8 +196,8 @@
               <DSPHelp :text="$t('settings.dsp.balance.help')" />
             </template>
           </div>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
 
       <Alert
         variant="warning"
@@ -208,7 +210,7 @@
           {{ $t("settings.dsp.disabled_message") }}
         </AlertDescription>
       </Alert>
-    </v-container>
+    </div>
 
     <!-- Save DSP Preset Dialog -->
     <Dialog v-model:open="showSavePresetDialog">
@@ -283,8 +285,8 @@
 <script setup lang="ts">
 import { ref, computed, toRaw, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
-import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
 import {
   DSPConfig,
   DSPConfigPreset,
@@ -357,7 +359,9 @@ const showAddFilterDialog = ref(false);
 const showSavePresetDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
 const newPresetName = ref("");
-const { mobile } = useDisplay();
+// The app's own definition of a mobile layout, which also covers tablets and
+// the force-mobile setting, rather than Vuetify's width-only breakpoint.
+const mobileLayout = computed(() => store.mobileLayout);
 let updatedFromServer = false;
 let localConfigGeneration = 0;
 let applyRequestId = 0;
@@ -563,9 +567,9 @@ const removePreset = async (presetId: string | undefined) => {
 // Watchers
 
 watch(
-  mobile,
-  (mobile) => {
-    if (!mobile && selectedStage.value === null) {
+  mobileLayout,
+  (isMobile) => {
+    if (!isMobile && selectedStage.value === null) {
       selectStage("input");
     }
   },
@@ -584,7 +588,7 @@ watch(
     localConfigGeneration += 1;
     const loadRequestId = ++playerLoadRequestId;
     clearServerDSPConfig();
-    selectedStage.value = mobile.value ? null : "input";
+    selectedStage.value = mobileLayout.value ? null : "input";
     // Don't overwrite the config for the newly selected player
     if (val) {
       unsubPlayerDSP = api.subscribe(
