@@ -68,10 +68,10 @@ describe("pluralized settings messages", () => {
   it("pluralizes provider totals in the en_GB locale", () => {
     i18n.global.locale.value = "en_GB";
 
-    expect(i18n.global.t("settings.providers_total", 1, { count: 1 })).toBe(
+    expect(i18n.global.t("settings.providers_total", { count: 1 }, 1)).toBe(
       "1 total provider",
     );
-    expect(i18n.global.t("settings.providers_total", 2, { count: 2 })).toBe(
+    expect(i18n.global.t("settings.providers_total", { count: 2 }, 2)).toBe(
       "2 total providers",
     );
   });
@@ -79,10 +79,10 @@ describe("pluralized settings messages", () => {
   it("pluralizes player totals in the en_GB locale", () => {
     i18n.global.locale.value = "en_GB";
 
-    expect(i18n.global.t("settings.players_total", 1, { count: 1 })).toBe(
+    expect(i18n.global.t("settings.players_total", { count: 1 }, 1)).toBe(
       "1 total player",
     );
-    expect(i18n.global.t("settings.players_total", 2, { count: 2 })).toBe(
+    expect(i18n.global.t("settings.players_total", { count: 2 }, 2)).toBe(
       "2 total players",
     );
   });
