@@ -60,7 +60,7 @@ jobs:
           client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
           private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
+          repositories: ${{ github.repository }}
           permission-administration: read
 
       - name: Verify immutable releases are enabled
@@ -367,7 +367,7 @@ jobs:
           client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
           private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
+          repositories: ${{ github.repository }}
           permission-administration: read
 
       - name: Recheck immutable releases are enabled
