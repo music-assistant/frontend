@@ -24,19 +24,16 @@
           hoverPercent = null;
         "
       >
-        <!-- color-mix is the same logic as tailwind's bg-color/30 -->
         <SliderTrack
           data-slot="slider-track"
           class="relative grow rounded-full"
           :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
-          :style="
-            usesWaveformLayout
-              ? undefined
-              : {
-                  'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
-                }
-          "
         >
+          <div
+            v-if="!usesWaveformLayout"
+            class="absolute inset-0 rounded-full"
+            :style="trackBackgroundStyle"
+          />
           <WaveformTrack
             v-if="hasWaveform"
             :data="waveform!"
@@ -47,9 +44,7 @@
           <div
             v-else-if="waveformLoading"
             class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full"
-            :style="{
-              'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
-            }"
+            :style="trackBackgroundStyle"
           />
           <SliderRange
             v-if="!hasWaveform"
@@ -376,6 +371,10 @@ const hasWaveform = computed(() => !!props.waveform?.length);
 const usesWaveformLayout = computed(
   () => hasWaveform.value || props.waveformLoading,
 );
+const trackBackgroundStyle = computed(() => ({
+  backgroundColor: props.color,
+  opacity: 0.3,
+}));
 
 const progressPercent = computed(() => {
   const duration = store.activePlayer?.current_media?.duration;

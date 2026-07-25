@@ -33,6 +33,7 @@ const BAR_WIDTH = 2;
 // Keep silent sections visible as a thin baseline.
 const MIN_BAR_HEIGHT = 2;
 const DIM_ALPHA = 0.3;
+const COMPOSITOR_BLEED_ALPHA = 1 / 255;
 
 const containerEl = ref<HTMLDivElement>();
 const dimCanvasEl = ref<HTMLCanvasElement>();
@@ -87,6 +88,8 @@ const drawBars = (
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, cssWidth, cssHeight);
   ctx.fillStyle = color;
+  ctx.globalAlpha = COMPOSITOR_BLEED_ALPHA;
+  ctx.fillRect(0, 0, cssWidth, cssHeight);
   ctx.globalAlpha = alpha;
   for (let i = 0; i < peaks.length; i++) {
     const barHeight = Math.max(MIN_BAR_HEIGHT, peaks[i] * cssHeight);

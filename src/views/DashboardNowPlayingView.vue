@@ -114,12 +114,13 @@ const backgroundGradient = computed(() => {
 <style scoped>
 .now-playing-view {
   width: 100%;
+  height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5vh;
+  gap: 3vh;
   padding: 5vh 5vw;
   box-sizing: border-box;
   color: var(--text-color, #fff);
@@ -140,8 +141,8 @@ const backgroundGradient = computed(() => {
 }
 
 .now-playing-artwork-image {
-  max-width: min(70vh, 90%);
-  max-height: 100%;
+  width: min(62.5vh, 92vw);
+  height: min(62.5vh, 92vw);
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 12px;
@@ -149,7 +150,8 @@ const backgroundGradient = computed(() => {
 }
 
 .now-playing-artwork-fallback {
-  width: min(70vh, 90%);
+  width: min(62.5vh, 92vw);
+  height: min(62.5vh, 92vw);
   aspect-ratio: 1;
   border-radius: 12px;
   display: flex;
@@ -167,7 +169,7 @@ const backgroundGradient = computed(() => {
 }
 
 .now-playing-title {
-  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
   font-weight: 600;
 }
 
