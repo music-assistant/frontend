@@ -57,7 +57,7 @@
             >
               <MediaCollectionThumb
                 size="50"
-                :item="item as MediaCollection"
+                :item="item as MediaCollection<MediaItemType>"
                 thumb-offset="5"
               />
             </div>
@@ -109,7 +109,7 @@
               >
                 <MediaCollectionThumb
                   size="50"
-                  :item="item as MediaCollection"
+                  :item="item as MediaCollection<MediaItemType>"
                   thumb-offset="5"
                 />
               </div>

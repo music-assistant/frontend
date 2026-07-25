@@ -871,7 +871,7 @@ export const handleMenuBtnClick = function (
 
 /* Handle menu button click */
 export const handleCollectionClick = function (
-  item: MediaCollection,
+  item: MediaCollection<MediaItemType>,
   posX: number,
   posY: number,
   parentItem?: MediaItemType,
