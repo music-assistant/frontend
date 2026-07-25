@@ -371,6 +371,7 @@ const hasWaveform = computed(() => !!props.waveform?.length);
 const usesWaveformLayout = computed(
   () => hasWaveform.value || props.waveformLoading,
 );
+// Older Cast and Android TV runtimes need an opacity layer instead of color-mix().
 const trackBackgroundStyle = computed(() => ({
   backgroundColor: props.color,
   opacity: 0.3,

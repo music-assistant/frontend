@@ -33,6 +33,7 @@ const BAR_WIDTH = 2;
 // Keep silent sections visible as a thin baseline.
 const MIN_BAR_HEIGHT = 2;
 const DIM_ALPHA = 0.3;
+// A 1/255 fill prevents older Cast and Android TV compositors from dropping the canvas.
 const COMPOSITOR_BLEED_ALPHA = 1 / 255;
 
 const containerEl = ref<HTMLDivElement>();

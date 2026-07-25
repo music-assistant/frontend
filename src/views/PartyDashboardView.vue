@@ -419,6 +419,7 @@ const maLogoSrc = computed(() =>
 const qrDarkColor = computed(() =>
   useLightChrome.value ? "#FFFFFF" : "#000000",
 );
+// A 1/255 fill keeps the QR canvas visible on older Cast and Android TV compositors.
 const qrLightColor = computed(() =>
   useLightChrome.value ? "#00000001" : "#FFFFFF01",
 );
