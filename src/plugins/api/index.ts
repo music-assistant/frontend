@@ -25,6 +25,7 @@ import {
   type QueueItem,
   type Radio,
   type ServerInfoMessage,
+  type SetupFlowStep,
   type SuccessResultMessage,
   type TaskSchedule,
   type Track,
@@ -2110,6 +2111,65 @@ export class MusicAssistantApi {
     return this.sendCommand("config/players/remove", {
       player_id,
     });
+  }
+
+  // Setup flow related functions
+
+  public setupProvider(provider_domain: string): Promise<SetupFlowStep> {
+    // Start the setup flow to add a new instance of the given provider.
+    // Returns the flow's first step (may already be a FINISH/ABORT step).
+    return this.sendCommand("config/providers/setup", { provider_domain });
+  }
+
+  public reconfigureProvider(instance_id: string): Promise<SetupFlowStep> {
+    // Start the reconfigure flow on an existing provider instance (covers reauth).
+    return this.sendCommand("config/providers/reconfigure", { instance_id });
+  }
+
+  public setupPlayer(player_id: string): Promise<SetupFlowStep> {
+    // Start the setup flow for a player (e.g. pairing).
+    return this.sendCommand("config/players/setup", { player_id });
+  }
+
+  public submitSetupFlow(
+    flow_id: string,
+    values: Record<string, ConfigValueType>,
+  ): Promise<SetupFlowStep> {
+    // Submit the user's values for the flow's pending FORM step.
+    // Returns the next step, or the same FORM step (with per-field errors) on validation failure.
+    return this.sendCommand("config/flows/submit", { flow_id, values });
+  }
+
+  public getSetupFlow(flow_id: string): Promise<SetupFlowStep> {
+    // Return the current step of a running flow (idempotent re-render, never advances).
+    // Rejects when the flow no longer exists; the caller handles that (e.g. show abort).
+    return this.sendCommand(
+      "config/flows/get",
+      { flow_id },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public abortSetupFlow(flow_id: string): Promise<void> {
+    // Abort a running flow (user cancelled). Best-effort: a stale/finished flow is ignored.
+    return this.sendCommand(
+      "config/flows/abort",
+      { flow_id },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public subscribeSetupFlow(
+    flow_id: string,
+    callback: (step: SetupFlowStep) => void,
+  ): () => void {
+    // Subscribe to step changes for a specific running flow (external/progress steps
+    // advance via this push). Returns a handle to remove the listener.
+    return this.subscribe(
+      EventType.SETUP_FLOW_UPDATED,
+      (evt: EventMessage) => callback(evt.data as SetupFlowStep),
+      flow_id,
+    ) as () => void;
   }
 
   // PlayerQueue Config related functions
