@@ -69,7 +69,12 @@
               </div>
             </div>
             <!-- enables implicit (Enter) submission on multi-field forms -->
-            <button type="submit" class="sr-only" tabindex="-1"></button>
+            <button
+              type="submit"
+              class="sr-only"
+              tabindex="-1"
+              aria-hidden="true"
+            ></button>
           </form>
 
           <div
