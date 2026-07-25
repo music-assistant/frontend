@@ -141,9 +141,13 @@ const isBoosted = computed(
   () => props.item.extra_attributes?.party_boosted === true,
 );
 
-const badgeColor = computed(() =>
-  isBoosted.value ? props.boostBadgeColor : props.requestBadgeColor,
-);
+const badgeColor = computed(() => {
+  const color = isBoosted.value
+    ? props.boostBadgeColor
+    : props.requestBadgeColor;
+  if (!color) return isBoosted.value ? "#FF5722" : "#2196F3";
+  return color;
+});
 
 // Older Cast and Android TV runtimes need precomputed alpha colors.
 const badgeStyle = computed(() => {
