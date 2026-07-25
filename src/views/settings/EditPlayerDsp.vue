@@ -221,53 +221,72 @@
     </v-container>
 
     <!-- Save DSP Preset Dialog -->
-    <v-dialog v-model="showSavePresetDialog" max-width="300">
-      <v-card>
-        <v-card-title>{{ $t("settings.dsp.presets.save") }}</v-card-title>
-        <v-card-text>
-          <v-text-field
+    <Dialog v-model:open="showSavePresetDialog">
+      <DialogContent class="sm:max-w-[360px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.dsp.presets.save") }}</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-2">
+          <Label for="dsp-preset-name">
+            {{ $t("settings.dsp.presets.name") }}
+          </Label>
+          <Input
+            id="dsp-preset-name"
             v-model="newPresetName"
-            :label="$t('settings.dsp.presets.name')"
             :placeholder="$t('settings.dsp.presets.name_placeholder')"
-            variant="outlined"
           />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="showSavePresetDialog = false">
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showSavePresetDialog = false">
             {{ $t("cancel") }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            :disabled="!newPresetName.trim()"
-            @click="savePreset"
-          >
+          </Button>
+          <Button :disabled="!newPresetName.trim()" @click="savePreset">
             {{ $t("settings.dsp.presets.save") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Add Filter Dialog -->
-    <v-dialog v-model="showAddFilterDialog" max-width="300">
-      <v-card>
-        <v-card-title>{{ $t("settings.dsp.filter.add") }}</v-card-title>
-        <v-card-text>
-          <v-select
-            v-model="newFilterType"
-            :items="filterTypes"
-            :label="$t('settings.dsp.filter.type')"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="showAddFilterDialog = false">{{ $t("cancel") }}</v-btn>
-          <v-btn color="primary" @click="addFilter">{{
+    <Dialog v-model:open="showAddFilterDialog">
+      <DialogContent class="sm:max-w-[360px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.dsp.filter.add") }}</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-2">
+          <Label for="dsp-filter-type">
+            {{ $t("settings.dsp.filter.type") }}
+          </Label>
+          <Select
+            :model-value="newFilterType"
+            @update:model-value="
+              (value) => (newFilterType = value as DSPFilterType)
+            "
+          >
+            <SelectTrigger id="dsp-filter-type" class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="filterType in filterTypes"
+                :key="filterType.value"
+                :value="filterType.value"
+              >
+                {{ filterType.title }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showAddFilterDialog = false">
+            {{ $t("cancel") }}
+          </Button>
+          <Button @click="addFilter">{{
             $t("settings.dsp.filter.add")
-          }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
 
@@ -306,6 +325,22 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
