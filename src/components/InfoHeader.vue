@@ -364,7 +364,10 @@
               @menu="playButtonClick(true)"
             />
 
-            <div class="flex items-center gap-2">
+            <div
+              v-if="item.media_type != MediaType.COLLECTION"
+              class="flex items-center gap-2"
+            >
               <!-- favorite (heart) icon -->
               <IconHeartFilled
                 v-if="item.favorite"
