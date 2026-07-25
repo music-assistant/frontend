@@ -82,58 +82,61 @@
         <!-- Filter Settings Panel -->
         <v-col v-if="selectedStage != null" style="min-width: 0">
           <!-- Toolbar of the selected item -->
-          <v-toolbar
-            density="compact"
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-            class="border-b"
-          >
-            <v-btn
+          <div class="flex items-center gap-1 border-b bg-muted px-2 py-1.5">
+            <Button
               v-if="mobile"
-              class="hidden-xs-only"
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('back')"
               @click="selectedStage = null"
             >
-              <v-icon>mdi-arrow-left</v-icon>
-            </v-btn>
-            <v-toolbar-title>{{ stageTitle(selectedStage) }}</v-toolbar-title>
-            <v-btn
+              <ArrowLeft />
+            </Button>
+            <h3 class="min-w-0 flex-1 truncate px-2 font-medium">
+              {{ stageTitle(selectedStage) }}
+            </h3>
+            <Button
               v-if="
                 typeof selectedStage === 'number' &&
                 !mobile &&
                 selectedStage > 0
               "
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.move_up')"
               @click="moveFilter(selectedStage, 'up')"
             >
-              <v-icon>mdi-arrow-up</v-icon>
-            </v-btn>
-            <v-btn
+              <ArrowUp />
+            </Button>
+            <Button
               v-if="
                 typeof selectedStage === 'number' &&
                 !mobile &&
                 selectedStage < dsp.filters.length - 1
               "
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.move_down')"
               @click="moveFilter(selectedStage, 'down')"
             >
-              <v-icon>mdi-arrow-down</v-icon>
-            </v-btn>
+              <ArrowDown />
+            </Button>
 
-            <v-switch
+            <Switch
               v-if="typeof selectedStage === 'number'"
               v-model="dsp.filters[selectedStage].enabled"
-              hide-details
-              color="primary"
-              class="mr-4"
+              class="mx-2"
             />
-            <v-btn
+            <Button
               v-if="typeof selectedStage === 'number'"
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.delete_filter')"
               @click="removeFilter(selectedStage)"
             >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </v-toolbar>
+              <Trash2 />
+            </Button>
+          </div>
 
           <!-- Settings of the Input stage -->
           <v-card
@@ -291,7 +294,15 @@ import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
-import { Download, Save, Trash2, TriangleAlert } from "@lucide/vue";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Download,
+  Save,
+  Trash2,
+  TriangleAlert,
+} from "@lucide/vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
