@@ -216,7 +216,7 @@ import {
 import DSPSlider from "./DSPSlider.vue";
 import DSPHelp from "./DSPHelp.vue";
 import { $t } from "@/plugins/i18n";
-import { useTheme } from "vuetify";
+import { useMutationObserver } from "@vueuse/core";
 
 const apoToBandType: Record<string, ParametricEQBandType> = {
   PK: ParametricEQBandType.PEAK,
@@ -468,9 +468,30 @@ const exportApoSettings = () => {
   URL.revokeObjectURL(url);
 };
 
-const theme = useTheme();
-
 const peq = defineModel<ParametricEQFilter>({ required: true });
+
+// The canvas can't use CSS, so the theme tokens are resolved off the element
+// itself and handed to the drawing functions.
+type GraphColors = {
+  curve: string;
+  grid: string;
+  label: string;
+  isDark: boolean;
+};
+
+const graphColors = (element: HTMLElement): GraphColors => {
+  const styles = getComputedStyle(element);
+  const token = (name: string, fallback: string) =>
+    styles.getPropertyValue(name).trim() || fallback;
+  return {
+    curve: token("--foreground", "#000"),
+    grid: token("--border", "#666"),
+    label: token("--muted-foreground", "#222"),
+    // Band curves are a generated hue ramp rather than a token, so they still
+    // need to know which way to lean.
+    isDark: document.documentElement.classList.contains("dark"),
+  };
+};
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const graphContainer = ref<HTMLDivElement | null>(null);
@@ -518,7 +539,7 @@ const viewport = ref<Viewport>({
 // Graph drawing functions
 const drawGraph = () => {
   if (!canvas.value || !graphContainer.value) return;
-  const isDark = theme.global.current.value.dark;
+  const colors = graphColors(canvas.value);
 
   const ctx = canvas.value.getContext("2d");
   if (!ctx) return;
@@ -534,7 +555,7 @@ const drawGraph = () => {
   ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
 
   // Draw frequency grid
-  drawGrid(ctx, viewport.value);
+  drawGrid(ctx, viewport.value, colors);
 
   const width = ctx.canvas.width / 2;
   const height = ctx.canvas.height / 2;
@@ -545,12 +566,12 @@ const drawGraph = () => {
     index: number,
     ctx: CanvasRenderingContext2D,
   ) => {
-    let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${isDark ? 70 : 50}%, 0.5)`;
+    let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${colors.isDark ? 70 : 50}%, 0.5)`;
 
     ctx.beginPath();
     if (index === selectedBandIndex.value) {
       ctx.lineWidth = 5;
-      color = `hsla(${(index * 360) / peq.value.bands.length}, 70%, ${isDark ? 70 : 60}%, 1)`;
+      color = `hsla(${(index * 360) / peq.value.bands.length}, 70%, ${colors.isDark ? 70 : 60}%, 1)`;
     } else {
       ctx.lineWidth = 2;
     }
@@ -602,11 +623,7 @@ const drawGraph = () => {
     ctx: CanvasRenderingContext2D,
   ) => {
     ctx.lineWidth = 3;
-    if (isDark) {
-      ctx.strokeStyle = "#fff";
-    } else {
-      ctx.strokeStyle = "#000";
-    }
+    ctx.strokeStyle = colors.curve;
 
     ctx.beginPath();
     for (
@@ -819,7 +836,13 @@ watch(
   { deep: true },
 );
 watch(() => editedChannel.value, drawGraph);
-watch(() => theme.global.current.value.dark, drawGraph);
+
+// The theme toggle swaps the dark class on <html>, which is what the tokens
+// above resolve against, so the graph has to be redrawn when it changes.
+useMutationObserver(document.documentElement, drawGraph, {
+  attributes: true,
+  attributeFilter: ["class"],
+});
 
 // Auto enable if the user selects a multichannel EQ
 watchEffect(() => {
@@ -875,18 +898,16 @@ const yToGain = (y: number, viewport: Viewport): number => {
 };
 
 // Draw frequency response grid
-const drawGrid = (ctx: CanvasRenderingContext2D, viewport: Viewport) => {
+const drawGrid = (
+  ctx: CanvasRenderingContext2D,
+  viewport: Viewport,
+  colors: GraphColors,
+) => {
   const width = ctx.canvas.width / 2;
   const height = ctx.canvas.height / 2;
-  const isDark = theme.global.current.value.dark;
 
-  if (isDark) {
-    ctx.fillStyle = "#eee";
-    ctx.strokeStyle = "#eee";
-  } else {
-    ctx.fillStyle = "#222";
-    ctx.strokeStyle = "#666";
-  }
+  ctx.fillStyle = colors.label;
+  ctx.strokeStyle = colors.grid;
   ctx.lineWidth = 1;
 
   // Draw frequency lines
