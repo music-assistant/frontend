@@ -1205,6 +1205,8 @@ export interface Player {
   volume_control: string;
   mute_control: string;
   needs_setup: boolean;
+  // this player (or a wrapped protocol child) offers a setup flow that can be re-run on demand
+  has_setup_flow?: boolean;
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
