@@ -264,7 +264,7 @@ import {
   UI_ENTRY_TYPE,
   isInjected,
 } from "@/helpers/config_entry_ui";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { openActionUrlEntries, openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 // global refs
@@ -466,6 +466,7 @@ const onAction = async function (
   api
     .invokePlayerConfigAction(config.value!.player_id, action)
     .then(async (entries) => {
+      entries = openActionUrlEntries(entries);
       config.value!.values = {};
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;

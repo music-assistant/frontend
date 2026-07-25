@@ -2,6 +2,8 @@ import { api } from "@/plugins/api";
 import {
   Artist,
   BrowseFolder,
+  ConfigEntry,
+  ConfigEntryType,
   ImageType,
   ItemMapping,
   MediaItemImage,
@@ -44,6 +46,24 @@ export const openLinkInNewTab = function (url: string) {
     url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
   }
   window.open(url, "_blank");
+};
+
+export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
+  // Open URL-type entries returned by a config invoke_action response (one-shot):
+  // a programmatic anchor click keeps the user-gesture chain so mobile browsers
+  // don't popup-block it. Opened entries are dropped from the rendered form.
+  const urlEntries = entries.filter(
+    (e) =>
+      e.type === ConfigEntryType.URL && typeof e.value === "string" && e.value,
+  );
+  for (const entry of urlEntries) {
+    const a = document.createElement("a");
+    a.setAttribute("href", String(entry.value));
+    a.setAttribute("target", "_blank");
+    a.setAttribute("rel", "noopener");
+    a.click();
+  }
+  return entries.filter((e) => !urlEntries.includes(e));
 };
 
 export const parseBool = (val: string | boolean | undefined | null) => {

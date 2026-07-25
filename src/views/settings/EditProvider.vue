@@ -201,7 +201,7 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Button } from "@/components/ui/button";
-import { markdownToHtml } from "@/helpers/utils";
+import { markdownToHtml, openActionUrlEntries } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -358,6 +358,7 @@ const onAction = async function (
   api
     .invokeProviderConfigAction(config.value!.instance_id, action)
     .then(async (entries) => {
+      entries = openActionUrlEntries(entries);
       config.value!.values = {};
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;
