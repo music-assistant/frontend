@@ -104,5 +104,4 @@ jobs:
       version: ${{ needs.check-and-release.outputs.version }}
     secrets:
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      TRIAGE_APP_ID: ${{ secrets.TRIAGE_APP_ID }}
-      TRIAGE_APP_PRIVATE_KEY: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+      MUSIC_ASSISTANT_BOT_PRIVATE_KEY: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}

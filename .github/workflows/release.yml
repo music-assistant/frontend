@@ -20,9 +20,7 @@ on:
     secrets:
       PYPI_TOKEN:
         required: true
-      TRIAGE_APP_ID:
-        required: true
-      TRIAGE_APP_PRIVATE_KEY:
+      MUSIC_ASSISTANT_BOT_PRIVATE_KEY:
         required: true
 
 env:
@@ -59,8 +57,8 @@ jobs:
         id: immutable_settings_token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.TRIAGE_APP_ID }}
-          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.repository }}
           permission-administration: read
@@ -368,8 +366,8 @@ jobs:
         id: immutable_settings_token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.TRIAGE_APP_ID }}
-          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.repository }}
           permission-administration: read
@@ -478,8 +476,8 @@ jobs:
         id: server_repo_token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.TRIAGE_APP_ID }}
-          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: server
           permission-contents: write
