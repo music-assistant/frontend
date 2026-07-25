@@ -905,7 +905,8 @@ watch(
 <style scoped>
 .party-view {
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   position: relative;
   display: flex;
