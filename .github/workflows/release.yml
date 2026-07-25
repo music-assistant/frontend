@@ -49,12 +49,22 @@ jobs:
       already_published: ${{ steps.inspect_release.outputs.already_published }}
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Verify immutable releases are enabled
+      - name: Verify release credentials and settings
         run: |
+          if ! TOKEN_LOGIN=$(gh api user --jq '.login'); then
+            echo "::error::PRIVILEGED_GITHUB_TOKEN must authenticate as music-assistant-machine."
+            exit 1
+          fi
+          if [[ "$TOKEN_LOGIN" != "music-assistant-machine" ]]; then
+            echo "::error::PRIVILEGED_GITHUB_TOKEN authenticates as $TOKEN_LOGIN, expected music-assistant-machine."
+            exit 1
+          fi
+
           if ! SETTINGS=$(gh api "repos/$GITHUB_REPOSITORY/immutable-releases"); then
             echo "::error::PRIVILEGED_GITHUB_TOKEN needs administration read access to $GITHUB_REPOSITORY."
             exit 1
@@ -119,19 +129,19 @@ jobs:
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install pnpm
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.8.0
 
       - name: Set up Node ${{ env.NODE_VERSION }}
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -184,18 +194,20 @@ jobs:
               exit 1
             fi
           else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git config user.name "music-assistant-machine"
+            git config user.email "141749843+music-assistant-machine@users.noreply.github.com"
             git tag -a "$RELEASE_VERSION" -m "Release $RELEASE_VERSION"
-            git push origin "refs/tags/$RELEASE_VERSION"
+            git push \
+              "https://x-access-token:${PRIVILEGED_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+              "refs/tags/$RELEASE_VERSION"
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVILEGED_GITHUB_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
       - name: Generate release notes with Release Drafter
         id: release_drafter
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: release-drafter/release-drafter@v7.6.0
+        uses: release-drafter/release-drafter@eada3c96a64734dd381cfbda23511034e328ddb0 # v7.6.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
@@ -246,7 +258,7 @@ jobs:
           RELEASE_ID=$(gh api "${API_ARGS[@]}" --jq '.id')
           echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
           RELEASE_NAME: ${{ steps.release_drafter.outputs.name }}
           RELEASE_NOTES: ${{ steps.release_drafter.outputs.body }}
 
@@ -311,11 +323,11 @@ jobs:
             exit 1
           fi
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
       - name: Publish release to PyPI
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pypa/gh-action-pypi-publish@v1.14.1
+        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # v1.14.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
@@ -337,7 +349,7 @@ jobs:
             -f make_latest=true \
             --jq '.html_url'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
   verify-release:
     name: Verify Immutable Release
@@ -424,11 +436,12 @@ jobs:
           GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
       - name: Checkout server repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: music-assistant/server
           ref: ${{ steps.target.outputs.branch }}
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          persist-credentials: false
           path: .
 
       - name: Update frontend version
@@ -444,10 +457,12 @@ jobs:
 
       - name: Create Pull Request
         id: create_pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
           commit-message: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
+          committer: "music-assistant-machine <141749843+music-assistant-machine@users.noreply.github.com>"
+          author: "music-assistant-machine <141749843+music-assistant-machine@users.noreply.github.com>"
           branch: "auto-update-frontend-${{ inputs.version }}"
           base: ${{ steps.target.outputs.branch }}
           delete-branch: true
