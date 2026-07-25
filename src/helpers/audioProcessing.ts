@@ -1,5 +1,19 @@
 import { $t } from "@/plugins/i18n";
-import { toRaw } from "vue";
+import { toRaw, type Component } from "vue";
+import {
+  ArrowDownToLine,
+  ArrowLeftRight,
+  ArrowUpDown,
+  AudioWaveform,
+  Blend,
+  ChevronsDownUp,
+  Expand,
+  Gauge,
+  SlidersHorizontal,
+  TrendingDown,
+  TrendingUp,
+  Waves,
+} from "@lucide/vue";
 import {
   DSPFilterType,
   type BalanceFilter,
@@ -26,6 +40,33 @@ export function areDSPConfigsEqual(left: DSPConfig, right: DSPConfig): boolean {
     (left.preset_id ?? null) === (right.preset_id ?? null) &&
     areDspFiltersEqual(left.filters, right.filters)
   );
+}
+
+// Keyed by the filter type's string value rather than the enum so the filters
+// still waiting on their own branches are covered here too, and land with an
+// icon the moment their type exists.
+const filterIcons: Record<string, Component> = {
+  [DSPFilterType.PARAMETRIC_EQ]: SlidersHorizontal,
+  [DSPFilterType.TONE_CONTROL]: AudioWaveform,
+  [DSPFilterType.GAIN]: Gauge,
+  [DSPFilterType.BALANCE]: ArrowLeftRight,
+  safety_limiter: ArrowDownToLine,
+  compressor: ChevronsDownUp,
+  convolution: Waves,
+  transpose: ArrowUpDown,
+  stereo_width: Expand,
+  crossfeed: Blend,
+};
+
+export function dspFilterIcon(filter: DSPFilter): Component {
+  // A high/low-pass is one filter type with two directions, so the icon comes
+  // from its mode: the response curve either rises or falls.
+  if ((filter.type as string) === "high_low_pass") {
+    return (filter as { mode?: string }).mode === "low_pass"
+      ? TrendingDown
+      : TrendingUp;
+  }
+  return filterIcons[filter.type] ?? SlidersHorizontal;
 }
 
 export function dspFilterText(filter: DSPFilter): string {

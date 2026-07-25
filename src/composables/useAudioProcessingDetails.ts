@@ -16,7 +16,7 @@ import {
   audioQualityToTier,
   type QualityTier,
 } from "@/composables/useStreamQuality";
-import { dspFilterText } from "@/helpers/audioProcessing";
+import { dspFilterIcon, dspFilterText } from "@/helpers/audioProcessing";
 import api from "@/plugins/api";
 import {
   AudioChannel,
@@ -310,7 +310,7 @@ function buildOutputDisplay(
     if (output.dsp.input_gain) {
       stages.push({
         key: `dsp-input-gain-${index}`,
-        icon: SlidersHorizontal,
+        icon: Gauge,
         title: translate("streamdetails.input_gain", [
           formatNumber(output.dsp.input_gain, 1, dependencies.locale),
         ]),
@@ -319,14 +319,14 @@ function buildOutputDisplay(
     for (const [filterIndex, filter] of (output.dsp.filters ?? []).entries()) {
       stages.push({
         key: `dsp-filter-${index}-${filterIndex}`,
-        icon: SlidersHorizontal,
+        icon: dspFilterIcon(filter),
         title: dspFilterText(filter),
       });
     }
     if (output.dsp.output_gain) {
       stages.push({
         key: `dsp-output-gain-${index}`,
-        icon: SlidersHorizontal,
+        icon: Gauge,
         title: translate("streamdetails.output_gain", [
           formatNumber(output.dsp.output_gain, 1, dependencies.locale),
         ]),

@@ -47,7 +47,7 @@
         @click="handleSelect(index)"
       >
         <component
-          :is="filterIcon(filter.type)"
+          :is="dspFilterIcon(filter)"
           :size="18"
           class="dsp-chain-icon"
         />
@@ -91,32 +91,16 @@
 </template>
 
 <script setup lang="ts">
-import type { Component } from "vue";
 import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
-import { DSPConfig, DSPFilterType } from "@/plugins/api/interfaces";
+import { DSPConfig } from "@/plugins/api/interfaces";
+import { dspFilterIcon } from "@/helpers/audioProcessing";
 import { eventbus } from "@/plugins/eventbus";
-import {
-  ArrowLeftRight,
-  AudioLines,
-  AudioWaveform,
-  Gauge,
-  Plus,
-  SlidersHorizontal,
-  Speaker,
-} from "@lucide/vue";
+import { AudioLines, Plus, Speaker } from "@lucide/vue";
 
 type SelectionType = number | "input" | "output";
-
-// Mirrors the audio chain popover, where DSP filters are drawn with sliders.
-const filterIcons: Record<DSPFilterType, Component> = {
-  [DSPFilterType.PARAMETRIC_EQ]: SlidersHorizontal,
-  [DSPFilterType.TONE_CONTROL]: AudioWaveform,
-  [DSPFilterType.GAIN]: Gauge,
-  [DSPFilterType.BALANCE]: ArrowLeftRight,
-};
 
 const props = defineProps<{
   dsp: DSPConfig;
@@ -129,9 +113,6 @@ const emit = defineEmits<{
   (e: "onMoveFilter", data: { index: number; direction: "up" | "down" }): void;
   (e: "onDeleteFilter", index: number): void;
 }>();
-
-const filterIcon = (type: DSPFilterType): Component =>
-  filterIcons[type] ?? SlidersHorizontal;
 
 const dotClass = (value: SelectionType) =>
   props.selected === value ? "dsp-chain-dot--active" : "";
