@@ -357,6 +357,9 @@ const now = ref(Date.now() / 1000);
 
 const formRef = ref<HTMLFormElement | null>(null);
 
+// monotonically increasing launch token; guards async step application
+let launchSeq = 0;
+
 let unsubscribeFlow: (() => void) | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 // one-shot guard so an expired step triggers a single reconcile fetch
@@ -513,6 +516,9 @@ function stopCountdown() {
 async function onLaunch(evt: SetupFlowDialogEvent) {
   // starting a new flow replaces any currently open one
   if (open.value) close();
+  // identity on launch.value cannot be used for staleness checks: the ref
+  // proxy-wraps the stored event, so it never equals the raw evt again
+  const seq = ++launchSeq;
   launch.value = evt;
   step.value = null;
   busy.value = true;
@@ -521,7 +527,7 @@ async function onLaunch(evt: SetupFlowDialogEvent) {
   try {
     const firstStep = await startFlow(evt);
     // the dialog may have been closed (or relaunched) while the request ran
-    if (!open.value || launch.value !== evt) return;
+    if (!open.value || seq !== launchSeq) return;
     applyStep(firstStep);
   } catch (err) {
     toast.error(String(err));
