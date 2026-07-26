@@ -38,6 +38,12 @@ export class AuthManager {
   private baseUrl: string = "";
 
   constructor() {
+    if (
+      typeof localStorage === "undefined" ||
+      typeof sessionStorage === "undefined"
+    ) {
+      return;
+    }
     this.loadStoredToken();
   }
 
