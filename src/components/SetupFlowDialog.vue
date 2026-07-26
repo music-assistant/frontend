@@ -202,12 +202,24 @@
             class="flex flex-col items-center justify-center gap-3 py-3 text-center"
           >
             <span
+              v-if="isSessionEnded"
+              class="bg-muted text-muted-foreground flex size-[72px] items-center justify-center rounded-full"
+            >
+              <Info :size="40" />
+            </span>
+            <span
+              v-else
               class="flex size-[72px] items-center justify-center rounded-full bg-yellow-500/15 text-yellow-600 dark:text-yellow-400"
             >
               <TriangleAlert :size="40" />
             </span>
             <h3 class="text-base font-semibold">
-              {{ step.title ?? $t("settings.setup_flow.aborted_title") }}
+              {{
+                step.title ??
+                (isSessionEnded
+                  ? $t("settings.setup_flow.session_ended_title")
+                  : $t("settings.setup_flow.aborted_title"))
+              }}
             </h3>
             <p
               class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
@@ -315,6 +327,7 @@ import {
   CircleCheck,
   Clock,
   ExternalLink,
+  Info,
   Settings2,
   ShieldCheck,
   TriangleAlert,
@@ -349,6 +362,10 @@ let countdownTimer: ReturnType<typeof setInterval> | null = null;
 // one-shot guard so an expired step triggers a single reconcile fetch
 let expiryReconciledFor: string | null = null;
 
+// step_id of the abort step this dialog synthesizes when the flow is gone after a
+// reconnect; the double underscores keep it out of reach of server-sent slugs
+const SESSION_ENDED_STEP_ID = "__session_ended__";
+
 // terminal steps: closing them must not abort (the flow already ended server-side)
 const PRESENTATIONAL_TYPES = [
   ConfigEntryType.DIVIDER,
@@ -362,6 +379,14 @@ const isTerminal = computed(
   () =>
     step.value?.type === FlowStepType.FINISH ||
     step.value?.type === FlowStepType.ABORT,
+);
+
+// the synthesized abort is not a failure (the flow may well have completed while we
+// were disconnected), so it gets neutral wording and styling instead of a warning
+const isSessionEnded = computed(
+  () =>
+    step.value?.type === FlowStepType.ABORT &&
+    step.value?.step_id === SESSION_ENDED_STEP_ID,
 );
 
 // while awaiting a submit response the dialog can't be dismissed accidentally
@@ -636,7 +661,7 @@ function openInstanceSettings() {
 }
 
 function reconcileFlow() {
-  // re-fetch the current step; if the flow is gone server-side, show an abort
+  // re-fetch the current step; if the flow is gone server-side, end the dialog neutrally
   if (!open.value || !step.value || isTerminal.value) return;
   const flowId = step.value.flow_id;
   api
@@ -650,11 +675,11 @@ function reconcileFlow() {
       cleanupFlow();
       step.value = {
         flow_id: flowId,
-        step_id: "abort",
+        step_id: SESSION_ENDED_STEP_ID,
         type: FlowStepType.ABORT,
         entries: [],
         errors: {},
-        reason: $t("settings.setup_flow.flow_gone"),
+        reason: $t("settings.setup_flow.session_ended_text"),
       };
     });
 }
