@@ -514,7 +514,8 @@
             "open_settings": "Open settings",
             "setup_player_title": "Set up player",
             "expires_in": "Expires in {0}",
-            "flow_gone": "This setup is no longer available. Please start again."
+            "session_ended_title": "Setup session ended",
+            "session_ended_text": "The setup session ended — it may have completed. Check your providers or players to confirm."
         },
         "add_music_provider": "Add a music source",
         "add_player_provider": "Add a player provider",
