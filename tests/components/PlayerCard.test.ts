@@ -231,6 +231,11 @@ describe("PlayerCard", () => {
       wrapper.find(".player-select-action").attributes("disabled"),
     ).toBeUndefined();
     expect(wrapper.find('[aria-label="play"]').attributes("disabled")).toBe("");
+    expect(
+      wrapper
+        .find('[aria-label="tooltip.more_options"]')
+        .attributes("disabled"),
+    ).toBe("");
   });
 
   it("lists every player name in a manual group", () => {

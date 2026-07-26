@@ -42,7 +42,7 @@
             'player-needs-setup':
               item.enabled && api.players[item.player_id]?.needs_setup,
           }"
-          @click="editPlayer(item.player_id, item.provider)"
+          @click="handlePlayerClick(item)"
           @menu="(evt) => onMenu(evt, item)"
         >
           <template #prepend>
@@ -154,7 +154,7 @@
         >
           <SettingsPlayerCard
             :player-config="item"
-            @click="(config) => editPlayer(config.player_id, config.provider)"
+            @click="handlePlayerClick"
             @menu="(evt, config) => onMenu(evt, config)"
             @setup="(config) => startPlayerSetup(config.player_id)"
           />
@@ -192,6 +192,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
@@ -276,6 +277,17 @@ const startPlayerSetup = function (playerId: string) {
   eventbus.emit("setupFlowDialog", { kind: "player", playerId });
 };
 
+const handlePlayerClick = function (playerConfig: PlayerConfig) {
+  if (
+    playerConfig.enabled &&
+    api.players[playerConfig.player_id]?.needs_setup
+  ) {
+    startPlayerSetup(playerConfig.player_id);
+    return;
+  }
+  editPlayer(playerConfig.player_id, playerConfig.provider);
+};
+
 const editPlayerDsp = function (playerId: string) {
   router.push(`/settings/editplayer/${playerId}/dsp`);
 };
@@ -313,16 +325,21 @@ const getOutputProtocols = function (playerId: string) {
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
+  const player = api.players[playerConfig.player_id];
   const menuItems: ContextMenuItem[] = [
     {
-      label: "settings.configure",
+      label: "open_player_settings",
       labelArgs: [],
       action: () => {
         editPlayer(playerConfig.player_id, playerConfig.provider);
       },
-      icon: "mdi-cog",
+      icon: "mdi-cog-outline",
       disabled: !api.getProvider(playerConfig!.provider),
     },
+  ];
+  const setupMenuItem = player && getPlayerSetupMenuItem(player);
+  if (setupMenuItem) menuItems.push(setupMenuItem);
+  menuItems.push(
     {
       label: "open_dsp_settings",
       labelArgs: [],
@@ -361,7 +378,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       icon: "mdi-delete",
       hide: !playerCanBeDeleted(playerConfig.player_id),
     },
-  ];
+  );
   eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
