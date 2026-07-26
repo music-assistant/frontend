@@ -482,11 +482,7 @@ onMounted(async () => {
         initializationCompleted = false;
 
         const { authManager } = await import("@/plugins/auth");
-        // Check if we're in Ingress mode by examining the URL path
-        const isIngressMode =
-          window.location.pathname.includes("/hassio_ingress/");
-
-        if (isIngressMode) {
+        if (store.isIngressSession) {
           // In Ingress mode, authentication happens via HA proxy headers
           try {
             const user = await api.getCurrentUserInfo();
