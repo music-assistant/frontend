@@ -2285,20 +2285,18 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core/get_value", { domain, key });
   }
 
-  public async getCoreConfigEntries(
-    domain: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
-  ): Promise<ConfigEntry[]> {
+  public async getCoreConfigEntries(domain: string): Promise<ConfigEntry[]> {
     // Return Config entries to configure a core controller.
-    // domain: (mandatory) domain of the core module.
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
-    return this.sendCommand("config/core/get_entries", {
-      domain,
-      action,
-      values,
-    });
+    return this.sendCommand("config/core/get_entries", { domain });
+  }
+
+  public async invokeCoreConfigAction(
+    domain: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a core module's config
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/core/invoke_action", { domain, action });
   }
 
   public async saveCoreConfig(
