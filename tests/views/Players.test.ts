@@ -88,6 +88,7 @@ const passthroughStub = {
 describe("Players", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    playerConfig.enabled = true;
     apiMock.players = {
       kitchen: {
         available: false,
@@ -127,6 +128,19 @@ describe("Players", () => {
   it("opens settings when clicking a configured player", async () => {
     apiMock.players.kitchen.needs_setup = false;
     apiMock.players.kitchen.available = true;
+    const wrapper = await mountPlayers("list");
+
+    await wrapper.get(".player-list-item").trigger("click");
+
+    expect(emitEvent).not.toHaveBeenCalledWith(
+      "setupFlowDialog",
+      expect.anything(),
+    );
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
+  it("opens settings when a setup-required player is disabled", async () => {
+    playerConfig.enabled = false;
     const wrapper = await mountPlayers("list");
 
     await wrapper.get(".player-list-item").trigger("click");

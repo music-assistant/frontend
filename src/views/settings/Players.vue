@@ -278,7 +278,10 @@ const startPlayerSetup = function (playerId: string) {
 };
 
 const handlePlayerClick = function (playerConfig: PlayerConfig) {
-  if (api.players[playerConfig.player_id]?.needs_setup) {
+  if (
+    playerConfig.enabled &&
+    api.players[playerConfig.player_id]?.needs_setup
+  ) {
     startPlayerSetup(playerConfig.player_id);
     return;
   }
