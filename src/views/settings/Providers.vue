@@ -28,7 +28,7 @@
         :class="{
           'provider-disabled': !item.enabled,
         }"
-        @click="editProvider(item.instance_id)"
+        @click="openProvider(item)"
         @menu="(evt) => onMenu(evt, item)"
       >
         <template #prepend>
@@ -59,12 +59,12 @@
               />
               <span class="provider-error-text">{{ getErrorText(item) }}</span>
               <v-btn
-                v-if="item.status !== ProviderStatus.INCOMPATIBLE"
+                v-if="canReconfigure(item)"
                 size="x-small"
                 color="error"
                 variant="tonal"
                 class="ml-2"
-                @click.stop="editProvider(item.instance_id)"
+                @click.stop="reconfigureProvider(item.instance_id)"
               >
                 {{ $t("settings.reconfigure") }}
               </v-btn>
@@ -136,7 +136,7 @@
           class="flex-fill rounded-lg provider-card d-flex flex-column"
           :class="{ 'player-provider-card': item.type === ProviderType.PLAYER }"
           min-height="200px"
-          @click="editProvider(item.instance_id)"
+          @click="openProvider(item)"
         >
           <template #prepend>
             <provider-icon
@@ -225,13 +225,13 @@
               {{ getErrorText(item) }}
             </div>
             <v-btn
-              v-if="item.status !== ProviderStatus.INCOMPATIBLE"
+              v-if="canReconfigure(item)"
               size="small"
               color="error"
               variant="tonal"
               class="mt-2"
               block
-              @click.stop="editProvider(item.instance_id)"
+              @click.stop="reconfigureProvider(item.instance_id)"
             >
               {{ $t("settings.reconfigure") }}
             </v-btn>
@@ -270,6 +270,11 @@ import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  canReconfigureProvider,
+  providerRequiresReconfiguration,
+} from "@/helpers/provider_config";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -354,8 +359,40 @@ const removeProvider = function (providerInstanceId: string) {
   );
 };
 
-const editProvider = function (providerInstanceId: string) {
+const openProviderOptions = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
+};
+
+const reconfigureProvider = function (providerInstanceId: string) {
+  eventbus.emit("setupFlowDialog", {
+    kind: "reconfigure",
+    instanceId: providerInstanceId,
+    onFlowEnded: () => {
+      void loadItems();
+    },
+  });
+};
+
+const openProvider = function (provider: ProviderConfig) {
+  if (
+    providerRequiresReconfiguration(
+      provider.status,
+      api.providerManifests[provider.domain]?.has_setup_flow,
+      provider.enabled,
+    )
+  ) {
+    reconfigureProvider(provider.instance_id);
+    return;
+  }
+  openProviderOptions(provider.instance_id);
+};
+
+const canReconfigure = function (provider: ProviderConfig) {
+  return canReconfigureProvider(
+    provider.status,
+    api.providerManifests[provider.domain]?.has_setup_flow,
+    provider.enabled,
+  );
 };
 
 const shouldShowStageBadge = function (stage?: ProviderStage) {
@@ -399,12 +436,12 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
     return;
   }
   const providerInstance = api.getProvider(item.instance_id);
-  const menuItems = [
+  const menuItems: ContextMenuItem[] = [
     {
-      label: "settings.configure",
+      label: "settings.options",
       labelArgs: [],
       action: () => {
-        editProvider(item.instance_id);
+        openProviderOptions(item.instance_id);
       },
       icon: "mdi-cog",
     },
@@ -453,6 +490,17 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       icon: "mdi-refresh",
     },
   ];
+
+  if (canReconfigure(item)) {
+    menuItems.unshift({
+      label: "settings.reconfigure",
+      labelArgs: [],
+      action: () => {
+        reconfigureProvider(item.instance_id);
+      },
+      icon: "mdi-cog-refresh",
+    });
+  }
 
   if (item.type === ProviderType.PLAYER && providerInstance) {
     menuItems.push({

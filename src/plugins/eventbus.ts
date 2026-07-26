@@ -67,7 +67,11 @@ export type AudioOverlayDialogEvent = {
 // reconfiguring a provider instance, or setting up a player.
 export type SetupFlowDialogEvent =
   | { kind: "provider"; domain: string }
-  | { kind: "reconfigure"; instanceId: string }
+  | {
+      kind: "reconfigure";
+      instanceId: string;
+      onFlowEnded?: () => void;
+    }
   | { kind: "player"; playerId: string };
 
 export type Events = {

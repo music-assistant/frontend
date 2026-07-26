@@ -201,16 +201,18 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Button } from "@/components/ui/button";
+import { canReconfigureProvider } from "@/helpers/provider_config";
 import { markdownToHtml, openActionUrlEntries } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
+  EventType,
   ProviderConfig,
   ProviderStatus,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { RefreshCw, Trash2, TriangleAlert } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -226,6 +228,9 @@ const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
+let configLoadRequestId = 0;
+let statusRefreshRequestId = 0;
+let unsubProvidersUpdated: (() => void) | undefined;
 
 // props
 const props = defineProps<{
@@ -239,19 +244,19 @@ const allConfigEntries = computed(() => {
 });
 
 // auth_required/error providers can relaunch their setup (reconfigure) flow
-const canReconfigure = computed(
-  () =>
-    config.value?.status === ProviderStatus.AUTH_REQUIRED ||
-    config.value?.status === ProviderStatus.ERROR,
+const canReconfigure = computed(() =>
+  canReconfigureProvider(
+    config.value?.status,
+    api.providerManifests[config.value?.domain ?? ""]?.has_setup_flow,
+    config.value?.enabled,
+  ),
 );
 
 // watchers
 watch(
   () => props.instanceId,
-  async (val) => {
-    if (val) {
-      config.value = await api.getProviderConfig(val);
-    }
+  (val) => {
+    if (val) void loadConfig(val);
   },
   { immediate: true },
 );
@@ -260,6 +265,16 @@ watch(showRenameDialog, (val) => {
   if (val && config.value) {
     editName.value = config.value.name || null;
   }
+});
+
+onMounted(() => {
+  unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+    if (props.instanceId) void refreshProviderStatus(props.instanceId);
+  });
+});
+
+onBeforeUnmount(() => {
+  unsubProvidersUpdated?.();
 });
 
 // methods
@@ -281,9 +296,13 @@ const onReload = function () {
 
 const onReconfigure = function () {
   if (!config.value) return;
+  const instanceId = config.value.instance_id;
   eventbus.emit("setupFlowDialog", {
     kind: "reconfigure",
-    instanceId: config.value.instance_id,
+    instanceId,
+    onFlowEnded: () => {
+      void refreshProviderStatus(instanceId);
+    },
   });
 };
 
@@ -429,6 +448,40 @@ const saveRename = function () {
       showRenameDialog.value = false;
     });
 };
+
+async function loadConfig(instanceId: string) {
+  const requestId = ++configLoadRequestId;
+  try {
+    const updatedConfig = await api.getProviderConfig(instanceId);
+    if (requestId === configLoadRequestId && props.instanceId === instanceId) {
+      config.value = updatedConfig;
+    }
+  } catch (err) {
+    if (requestId === configLoadRequestId) {
+      toast.error(String(err));
+    }
+  }
+}
+
+async function refreshProviderStatus(instanceId: string) {
+  if (config.value?.instance_id !== instanceId) return;
+  const requestId = ++statusRefreshRequestId;
+  try {
+    const updatedConfig = await api.getProviderConfig(instanceId);
+    if (
+      requestId === statusRefreshRequestId &&
+      props.instanceId === instanceId &&
+      config.value?.instance_id === instanceId
+    ) {
+      config.value.status = updatedConfig.status;
+      config.value.last_error = updatedConfig.last_error;
+    }
+  } catch (err) {
+    if (requestId === statusRefreshRequestId) {
+      toast.error(String(err));
+    }
+  }
+}
 </script>
 
 <style scoped>
