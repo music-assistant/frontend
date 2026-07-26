@@ -745,7 +745,7 @@ const completeDashboardAuth = async (
   }
 
   sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, path);
-  void router.replace(path);
+  await router.replace(path);
 
   const urlParams = new URLSearchParams(window.location.search);
   urlParams.delete("remote_id");

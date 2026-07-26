@@ -481,16 +481,6 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresAdmin: true },
           },
           {
-            path: "addprovider/:domain",
-            name: "addproviderdetails",
-            component: () =>
-              import(
-                /* webpackChunkName: "addproviderdetails" */ "@/views/settings/AddProviderDetails.vue"
-              ),
-            props: true,
-            meta: { requiresAdmin: true },
-          },
-          {
             path: "editprovider/:instanceId",
             name: "editprovider",
             component: () =>

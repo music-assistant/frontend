@@ -72,6 +72,15 @@
                 <span class="player-warning-text">{{
                   $t("settings.player_needs_setup")
                 }}</span>
+                <v-btn
+                  size="x-small"
+                  color="warning"
+                  variant="flat"
+                  class="ml-2"
+                  @click.stop="startPlayerSetup(item.player_id)"
+                >
+                  {{ $t("settings.start_setup") }}
+                </v-btn>
               </div>
               <span v-else class="provider-name">
                 {{
@@ -147,6 +156,7 @@
             :player-config="item"
             @click="(config) => editPlayer(config.player_id, config.provider)"
             @menu="(evt, config) => onMenu(evt, config)"
+            @setup="(config) => startPlayerSetup(config.player_id)"
           />
         </v-col>
       </v-row>
@@ -260,6 +270,10 @@ const editPlayer = function (playerId: string, provider: string) {
     // only allow edit if provider is available
     router.push(`/settings/editplayer/${playerId}`);
   }
+};
+
+const startPlayerSetup = function (playerId: string) {
+  eventbus.emit("setupFlowDialog", { kind: "player", playerId });
 };
 
 const editPlayerDsp = function (playerId: string) {

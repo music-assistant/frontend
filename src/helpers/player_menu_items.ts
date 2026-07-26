@@ -279,6 +279,23 @@ export const getPlayerMenuItems = (
       });
     }
 
+    // re-run the player's setup flow (pairing etc.) on demand
+    if (isPlayer && player.has_setup_flow) {
+      menuItems.push({
+        label: "reconfigure_player",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          eventbus.emit("setupFlowDialog", {
+            kind: "player",
+            playerId: player.player_id,
+          });
+        },
+        icon: "mdi-cog-refresh-outline",
+      });
+    }
+
     // open dsp settings (player menu only)
     if (isPlayer && player.type !== PlayerType.GROUP) {
       menuItems.push({

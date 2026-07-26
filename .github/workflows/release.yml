@@ -20,7 +20,7 @@ on:
     secrets:
       PYPI_TOKEN:
         required: true
-      PRIVILEGED_GITHUB_TOKEN:
+      MUSIC_ASSISTANT_BOT_PRIVATE_KEY:
         required: true
 
 env:
@@ -49,14 +49,29 @@ jobs:
       already_published: ${{ steps.inspect_release.outputs.already_published }}
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
+      - name: Create immutable settings token
+        id: immutable_settings_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.repository }}
+          permission-administration: read
+
       - name: Verify immutable releases are enabled
         run: |
+          if [[ "$APP_SLUG" != "musicassistant-bot" ]]; then
+            echo "::error::GitHub App slug is $APP_SLUG, expected musicassistant-bot."
+            exit 1
+          fi
+
           if ! SETTINGS=$(gh api "repos/$GITHUB_REPOSITORY/immutable-releases"); then
-            echo "::error::PRIVILEGED_GITHUB_TOKEN needs administration read access to $GITHUB_REPOSITORY."
+            echo "::error::GitHub App needs administration read access to $GITHUB_REPOSITORY."
             exit 1
           fi
 
@@ -67,7 +82,8 @@ jobs:
             exit 1
           fi
         env:
-          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          APP_SLUG: ${{ steps.immutable_settings_token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.immutable_settings_token.outputs.token }}
 
       - name: Inspect existing release
         id: inspect_release
@@ -119,19 +135,19 @@ jobs:
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install pnpm
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.8.0
 
       - name: Set up Node ${{ env.NODE_VERSION }}
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -195,7 +211,7 @@ jobs:
       - name: Generate release notes with Release Drafter
         id: release_drafter
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: release-drafter/release-drafter@v7.6.0
+        uses: release-drafter/release-drafter@eada3c96a64734dd381cfbda23511034e328ddb0 # v7.6.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
@@ -315,7 +331,7 @@ jobs:
 
       - name: Publish release to PyPI
         if: steps.inspect_release.outputs.already_published != 'true'
-        uses: pypa/gh-action-pypi-publish@v1.14.1
+        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # v1.14.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
@@ -343,7 +359,38 @@ jobs:
     name: Verify Immutable Release
     needs: build-and-publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
+      - name: Create immutable settings token
+        id: immutable_settings_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.repository }}
+          permission-administration: read
+
+      - name: Recheck immutable releases are enabled
+        run: |
+          if [[ "$APP_SLUG" != "musicassistant-bot" ]]; then
+            echo "::error::GitHub App slug is $APP_SLUG, expected musicassistant-bot."
+            exit 1
+          fi
+
+          if ! SETTINGS=$(gh api "repos/$GITHUB_REPOSITORY/immutable-releases"); then
+            echo "::error::GitHub App needs administration read access to $GITHUB_REPOSITORY."
+            exit 1
+          fi
+          if [[ $(jq -r '.enabled' <<< "$SETTINGS") != "true" ]]; then
+            echo "::error::Immutable releases were disabled during publishing."
+            exit 1
+          fi
+        env:
+          APP_SLUG: ${{ steps.immutable_settings_token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.immutable_settings_token.outputs.token }}
+
       - name: Verify published release
         run: |
           RELEASE_ID="${{ needs.build-and-publish.outputs.release_id }}"
@@ -384,6 +431,8 @@ jobs:
     name: Server repo PR
     needs: verify-release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Determine server target branch
         id: target
@@ -421,14 +470,26 @@ jobs:
             echo EOF
           } >> $GITHUB_OUTPUT
         env:
-          GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create server repository token
+        id: server_repo_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.MUSIC_ASSISTANT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: server
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Checkout server repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: music-assistant/server
           ref: ${{ steps.target.outputs.branch }}
-          token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          token: ${{ steps.server_repo_token.outputs.token }}
+          persist-credentials: false
           path: .
 
       - name: Update frontend version
@@ -444,10 +505,11 @@ jobs:
 
       - name: Create Pull Request
         id: create_pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
+          token: ${{ steps.server_repo_token.outputs.token }}
           commit-message: "⬆️ Update music-assistant-frontend to ${{ inputs.version }}"
+          sign-commits: true
           branch: "auto-update-frontend-${{ inputs.version }}"
           base: ${{ steps.target.outputs.branch }}
           delete-branch: true

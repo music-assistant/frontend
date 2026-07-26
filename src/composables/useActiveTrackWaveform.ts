@@ -9,10 +9,8 @@ import { useUserPreferences } from "@/composables/userPreferences";
 // duplicate API calls.
 const waveformBins = ref<number[] | null>(null);
 const trackDurationSecs = ref<number>(0);
-const waveformLoading = ref(false);
 
 let lastFetchKey: string | undefined;
-let loadingTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 const { getPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
@@ -31,30 +29,18 @@ watch(
     if (fetchKey === lastFetchKey) return;
     lastFetchKey = fetchKey;
 
-    if (loadingTimeoutId !== null) {
-      clearTimeout(loadingTimeoutId);
-      loadingTimeoutId = null;
-    }
-
     waveformBins.value = null;
-    waveformLoading.value = false;
     trackDurationSecs.value = store.curQueueItem?.duration ?? 0;
 
     const mediaItem = store.curQueueItem?.media_item;
     if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
     if (!showWaveform) return;
 
+    // Without streamdetails there is nothing to analyse yet; this refires once
+    // they arrive, because the watcher tracks their item id.
     const streamDetails = store.curQueueItem?.streamdetails;
-    if (!streamDetails) {
-      waveformLoading.value = true;
-      // Safety net: clear loading if streamdetails never arrive for this item.
-      loadingTimeoutId = setTimeout(() => {
-        if (lastFetchKey === fetchKey) waveformLoading.value = false;
-      }, 5000);
-      return;
-    }
+    if (!streamDetails) return;
 
-    waveformLoading.value = true;
     try {
       const bins = await api.getWaveForm(
         streamDetails.item_id,
@@ -65,14 +51,11 @@ watch(
       waveformBins.value = bins?.length ? bins : null;
     } catch {
       // No audio analysis available.
-    } finally {
-      const currentKey = `${showWaveformPref.value}:${store.curQueueItem?.queue_item_id}:${store.curQueueItem?.streamdetails?.item_id}`;
-      if (currentKey === fetchKey) waveformLoading.value = false;
     }
   },
   { immediate: true },
 );
 
 export function useActiveTrackWaveform() {
-  return { waveformBins, trackDurationSecs, waveformLoading };
+  return { waveformBins, trackDurationSecs };
 }
