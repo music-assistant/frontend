@@ -4,9 +4,10 @@
     class="gap-0 rounded-lg p-2 shadow-none transition-colors"
     :class="{
       'border-primary bg-primary/15': player.player_id === store.activePlayerId,
-      'opacity-80': player.playback_state === PlaybackState.IDLE,
-      'opacity-60': player.powered === false,
-      'opacity-40': !player.available,
+      'opacity-80':
+        !player.needs_setup && player.playback_state === PlaybackState.IDLE,
+      'opacity-60': !player.needs_setup && player.powered === false,
+      'opacity-40': !player.available && !player.needs_setup,
     }"
     @click.capture="swallowClickAfterHold"
     @contextmenu.prevent.stop="openPlayerMenu"
