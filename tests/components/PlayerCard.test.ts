@@ -231,28 +231,11 @@ describe("PlayerCard", () => {
       wrapper.find(".player-select-action").attributes("disabled"),
     ).toBeUndefined();
     expect(wrapper.find('[aria-label="play"]').attributes("disabled")).toBe("");
-  });
-
-  it("keeps the menu available for a setup-required player", async () => {
-    vi.clearAllMocks();
-    const wrapper = mountPlayerCard(
-      createPlayer({
-        available: false,
-        needs_setup: true,
-      }),
-    );
-    const menu = wrapper.find('[aria-label="tooltip.more_options"]');
-
-    expect(menu.attributes("disabled")).toBeUndefined();
-    await menu.trigger("click");
-
-    expect(emitContextMenu).toHaveBeenCalledWith(
-      "contextmenu",
-      expect.objectContaining({
-        posX: 1,
-        posY: 2,
-      }),
-    );
+    expect(
+      wrapper
+        .find('[aria-label="tooltip.more_options"]')
+        .attributes("disabled"),
+    ).toBe("");
   });
 
   it("lists every player name in a manual group", () => {

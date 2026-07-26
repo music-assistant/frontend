@@ -42,7 +42,7 @@
             'player-needs-setup':
               item.enabled && api.players[item.player_id]?.needs_setup,
           }"
-          @click="editPlayer(item.player_id, item.provider)"
+          @click="handlePlayerClick(item)"
           @menu="(evt) => onMenu(evt, item)"
         >
           <template #prepend>
@@ -154,7 +154,7 @@
         >
           <SettingsPlayerCard
             :player-config="item"
-            @click="(config) => editPlayer(config.player_id, config.provider)"
+            @click="handlePlayerClick"
             @menu="(evt, config) => onMenu(evt, config)"
             @setup="(config) => startPlayerSetup(config.player_id)"
           />
@@ -275,6 +275,14 @@ const editPlayer = function (playerId: string, provider: string) {
 
 const startPlayerSetup = function (playerId: string) {
   eventbus.emit("setupFlowDialog", { kind: "player", playerId });
+};
+
+const handlePlayerClick = function (playerConfig: PlayerConfig) {
+  if (api.players[playerConfig.player_id]?.needs_setup) {
+    startPlayerSetup(playerConfig.player_id);
+    return;
+  }
+  editPlayer(playerConfig.player_id, playerConfig.provider);
 };
 
 const editPlayerDsp = function (playerId: string) {
