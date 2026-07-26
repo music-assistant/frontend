@@ -123,10 +123,3 @@ export const getAvatarImage = function (
   width: 100% !important;
 }
 </style>
-
-<style scoped>
-.v-avatar.v-avatar--density-default {
-  height: 100% !important;
-  width: 100% !important;
-}
-</style>

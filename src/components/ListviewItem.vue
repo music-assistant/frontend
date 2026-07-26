@@ -321,7 +321,7 @@ import {
   AlbumType,
   ContentType,
   MediaType,
-  MediaCollection,
+  type MediaCollection,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";

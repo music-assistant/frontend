@@ -99,7 +99,7 @@ import {
   type ItemMapping,
   type MediaItemType,
   MediaType,
-  MediaCollection,
+  type MediaCollection,
   type Track,
 } from "@/plugins/api/interfaces";
 import { Play } from "@lucide/vue";

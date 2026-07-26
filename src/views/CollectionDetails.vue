@@ -1,7 +1,7 @@
 <template>
   <InfoHeader :item="itemDetails" />
   <ItemsListing
-    itemtype="collectionMediaType"
+    :itemtype="collectionMediaType"
     :parent-item="itemDetails"
     :show-refresh-button="false"
     :load-items="loadCollectionItems"
@@ -17,8 +17,8 @@ import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
 import { api } from "@/plugins/api";
 import {
-  MediaCollection,
-  MediaItemType,
+  type MediaCollection,
+  type MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
 import { ref, computed } from "vue";
