@@ -16,6 +16,26 @@ import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 
+export const getPlayerSetupMenuItem = (
+  player: Pick<Player, "player_id" | "needs_setup" | "has_setup_flow">,
+): ContextMenuItem | undefined => {
+  if (!player.has_setup_flow && !player.needs_setup) return undefined;
+
+  return {
+    label: player.needs_setup ? "configure_player" : "reconfigure_player",
+    labelArgs: [],
+    action: () => {
+      store.showFullscreenPlayer = false;
+      store.showPlayersMenu = false;
+      eventbus.emit("setupFlowDialog", {
+        kind: "player",
+        playerId: player.player_id,
+      });
+    },
+    icon: "mdi-cog-refresh-outline",
+  };
+};
+
 export const getPlayerMenuItems = (
   player: Player,
   playerQueue: PlayerQueue | undefined,
@@ -279,21 +299,10 @@ export const getPlayerMenuItems = (
       });
     }
 
-    // re-run the player's setup flow (pairing etc.) on demand
-    if (isPlayer && player.has_setup_flow) {
-      menuItems.push({
-        label: "reconfigure_player",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          eventbus.emit("setupFlowDialog", {
-            kind: "player",
-            playerId: player.player_id,
-          });
-        },
-        icon: "mdi-cog-refresh-outline",
-      });
+    // configure the player or re-run its setup flow on demand
+    if (isPlayer) {
+      const setupMenuItem = getPlayerSetupMenuItem(player);
+      if (setupMenuItem) menuItems.push(setupMenuItem);
     }
 
     // open dsp settings (player menu only)

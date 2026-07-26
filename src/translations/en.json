@@ -1749,6 +1749,7 @@
     "autoplay_off_title": "Autoplay is disabled",
     "autoplay_off_desc": "Your music will stop once the queue has finished. Enable Autoplay to automatically keep it going with more content based on your preferences.",
     "open_player_settings": "Open player settings",
+    "configure_player": "Configure player",
     "reconfigure_player": "Reconfigure player",
     "sleep_timer": "Sleep timer",
     "sleep_timer_active": "Sleep timer · {0}",

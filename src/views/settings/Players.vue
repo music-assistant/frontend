@@ -192,6 +192,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
@@ -313,16 +314,21 @@ const getOutputProtocols = function (playerId: string) {
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
+  const player = api.players[playerConfig.player_id];
   const menuItems: ContextMenuItem[] = [
     {
-      label: "settings.configure",
+      label: "open_player_settings",
       labelArgs: [],
       action: () => {
         editPlayer(playerConfig.player_id, playerConfig.provider);
       },
-      icon: "mdi-cog",
+      icon: "mdi-cog-outline",
       disabled: !api.getProvider(playerConfig!.provider),
     },
+  ];
+  const setupMenuItem = player && getPlayerSetupMenuItem(player);
+  if (setupMenuItem) menuItems.push(setupMenuItem);
+  menuItems.push(
     {
       label: "open_dsp_settings",
       labelArgs: [],
@@ -361,7 +367,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       icon: "mdi-delete",
       hide: !playerCanBeDeleted(playerConfig.player_id),
     },
-  ];
+  );
   eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,

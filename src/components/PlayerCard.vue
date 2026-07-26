@@ -170,7 +170,7 @@
           variant="ghost"
           size="icon-sm"
           :class="{ '-ml-1': canPlayPause }"
-          :disabled="!player.available"
+          :disabled="!player.available && !player.needs_setup"
           :aria-label="$t('tooltip.more_options')"
           @click.stop="openPlayerMenu"
         >
@@ -351,7 +351,7 @@ watch(
 
 function openPlayerMenu(event: Event) {
   event.stopPropagation();
-  if (!props.player.available) return;
+  if (!props.player.available && !props.player.needs_setup) return;
   const position = getEventPosition(event);
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(props.player, playerQueue.value, {
