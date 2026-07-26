@@ -1249,6 +1249,8 @@ export interface ProviderManifest {
   builtin: boolean;
   // allow_disable: whether this provider can be disabled (used with builtin)
   allow_disable: boolean;
+  // has_setup_flow: whether setup can be run again to reconfigure the provider
+  has_setup_flow?: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon?: string;

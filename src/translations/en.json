@@ -94,6 +94,7 @@
         "check_docs": "Check out the documentation",
         "config_player": "Configure player: {0}",
         "configure": "Configure",
+        "options": "Options",
         "delete": "Delete",
         "disable": "Disable",
         "documentation": "Documentation",
