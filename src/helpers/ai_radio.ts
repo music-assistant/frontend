@@ -217,7 +217,7 @@ export const PRESETS: ShowPreset[] = [
           "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Create a natural, energetic morning-show transition that connects both songs, sounds informed but concise, and avoids filler or repetition.",
         webSearch: "allow",
         maxChars: 650,
-        plays: { kind: "every_song" },
+        plays: { kind: "every_n_songs", n: 3 },
       },
       {
         id: "weather",
@@ -226,7 +226,7 @@ export const PRESETS: ShowPreset[] = [
           "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth morning-show phrasing.",
         webSearch: "disabled",
         maxChars: 500,
-        plays: { kind: "every_n_songs", n: 4 },
+        plays: { kind: "every_n_min", n: 60 },
       },
       {
         id: "news",
@@ -321,7 +321,7 @@ export const PRESETS: ShowPreset[] = [
           "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Deliver a high-energy party transition with a quick shout-out vibe: keep it fun, confident, and concise, and avoid filler or repetition.",
         webSearch: "allow",
         maxChars: 650,
-        plays: { kind: "every_song" },
+        plays: { kind: "every_n_songs", n: 3 },
       },
       {
         id: "sign_off",
