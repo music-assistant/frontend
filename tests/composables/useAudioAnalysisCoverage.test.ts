@@ -19,7 +19,7 @@ vi.mock("@/plugins/api", () => {
   };
 });
 
-import { useAudioAnalysisCoverage } from "@/composables/useAudioAnalysisCoverage";
+import { useAudioAnalysisCoverage } from "@/composables/audio-analysis/useAudioAnalysisCoverage";
 
 function setProviders(list: Array<Record<string, unknown>>) {
   for (const k of Object.keys(providersMock)) delete providersMock[k];

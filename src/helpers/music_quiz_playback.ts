@@ -1,7 +1,7 @@
 import type {
   MusicQuizMode,
   MusicQuizPlaybackOptions,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 
 export interface MusicQuizPlaybackSelection {
   mode: MusicQuizMode | null;

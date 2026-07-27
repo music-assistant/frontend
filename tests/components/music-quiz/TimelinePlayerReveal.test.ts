@@ -2,7 +2,7 @@ import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/
 import type {
   MusicQuizTimelinePersonalizedState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import {
   anchor,
   baseRound,

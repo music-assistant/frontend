@@ -4,7 +4,7 @@ import MultipleChoicePresentAnswer from "@/components/music-quiz/answer-types/mu
 import TimelineHostAnswer from "@/components/music-quiz/answer-types/timeline/TimelineHostAnswer.vue";
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
 import TimelinePresentAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePresentAnswer.vue";
-import type { MusicQuizAnswerType } from "@/composables/useMusicQuiz";
+import type { MusicQuizAnswerType } from "@/composables/music-quiz/useMusicQuiz";
 import { markRaw, type Component } from "vue";
 
 export interface MusicQuizAnswerTypeDefinition<

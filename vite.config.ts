@@ -30,14 +30,11 @@ export default defineConfig({
       srcDir: "public",
       filename: "sw.js",
       injectManifest: {
+        // MA requires a server, so only precache the web app manifest.
+        globPatterns: [],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
       },
-      includeAssets: [
-        "favicon.svg",
-        "favicon.ico",
-        "robots.txt",
-        "apple-touch-icon.png",
-      ],
+      includeManifestIcons: false,
       manifest: {
         name: "Music Assistant",
         short_name: "Music Assistant",

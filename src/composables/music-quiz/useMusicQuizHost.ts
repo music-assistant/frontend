@@ -14,7 +14,7 @@ import {
   type MusicQuizCurrentRound,
   type MusicQuizHostState,
   type MusicQuizPlaybackOptions,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";

@@ -16,10 +16,9 @@
 
     <div class="pl-5 font-weight-medium">
       {{
-        t("background_tasks.total", [
-          filteredTasks.length,
-          filteredTasks.length !== 1 ? "s" : "",
-        ])
+        t("background_tasks.total", filteredTasks.length, {
+          named: { count: filteredTasks.length },
+        })
       }}
     </div>
 
@@ -105,8 +104,8 @@ import {
   isCancelableTask,
   isRetryableTask,
   isScheduledTask,
-} from "@/composables/useBackgroundTaskDisplay";
-import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
+} from "@/composables/background-tasks/useBackgroundTaskDisplay";
+import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import { copyToClipboard } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
