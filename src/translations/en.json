@@ -1707,6 +1707,7 @@
     },
     "explore": "Explore",
     "shortcuts": "Shortcuts",
+    "plugins": "Plugins",
     "system": "System",
     "add_url_item_failed": "Failed to add item",
     "added_to_library": "\"{0}\" added to library",
