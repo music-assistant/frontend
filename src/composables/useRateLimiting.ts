@@ -1,7 +1,8 @@
 /**
- * Token bucket rate limiting composable for guest view.
+ * Token bucket rate limiting composable for the Party participant view.
  * Manages boost, add-to-queue, and skip-song token buckets
- * with localStorage persistence and countdown timers.
+ * with browser-wide persistence and countdown timers. Buckets contain
+ * only token counts and timestamps, never participant identity.
  */
 
 import { ref, type Ref } from "vue";
@@ -260,7 +261,8 @@ export function useRateLimiting() {
   };
 
   /**
-   * Initialize token buckets from localStorage and start countdown timer.
+   * Initialize browser-wide token buckets and start the countdown timer.
+   *
    * Returns a cleanup function to clear the interval.
    */
   const startCountdown = (): (() => void) => {

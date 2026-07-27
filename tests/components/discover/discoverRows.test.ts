@@ -249,4 +249,82 @@ describe("discoverRows (discover.rows preference)", () => {
       expect(mockSetUserPreference).not.toHaveBeenCalled();
     });
   });
+
+  describe("resolveDiscoverRowsConfig — default-off rows", () => {
+    it("hides a default-off row when the user has no config", () => {
+      const { hidden } = resolveDiscoverRowsConfig(["a", "b"], ["b"]);
+      expect(hidden.has("b")).toBe(true);
+      expect(hidden.has("a")).toBe(false);
+    });
+
+    it("shows a default-off row once the user opted it in (shown)", () => {
+      setPreferences({
+        [DISCOVER_ROWS_PREFERENCE_KEY]: {
+          hidden: [],
+          shown: ["b"],
+          order: [],
+        },
+      });
+      const { hidden } = resolveDiscoverRowsConfig(["a", "b"], ["b"]);
+      expect(hidden.has("b")).toBe(false);
+    });
+
+    it("hides a normal row the user explicitly hid", () => {
+      setPreferences({
+        [DISCOVER_ROWS_PREFERENCE_KEY]: {
+          hidden: ["a"],
+          shown: [],
+          order: [],
+        },
+      });
+      const { hidden } = resolveDiscoverRowsConfig(["a", "b"], []);
+      expect(hidden.has("a")).toBe(true);
+    });
+
+    it("keeps a default-off row in order so it stays openable in edit mode", () => {
+      const { order } = resolveDiscoverRowsConfig(["a", "b"], ["b"]);
+      expect(order).toContain("b");
+    });
+
+    it("treats hidden as authoritative when a row is in both hidden and shown", () => {
+      setPreferences({
+        [DISCOVER_ROWS_PREFERENCE_KEY]: {
+          hidden: ["a"],
+          shown: ["a"],
+          order: [],
+        },
+      });
+      const { hidden } = resolveDiscoverRowsConfig(["a"], ["a"]);
+      expect(hidden.has("a")).toBe(true);
+    });
+  });
+
+  describe("setDiscoverRowHidden — hidden/shown bookkeeping", () => {
+    it("hiding adds to hidden and clears shown; showing does the reverse", async () => {
+      setPreferences({
+        [DISCOVER_ROWS_PREFERENCE_KEY]: {
+          hidden: [],
+          shown: ["b"],
+          order: [],
+        },
+      });
+      await setDiscoverRowHidden("b", true);
+      expect(mockSetUserPreference).toHaveBeenLastCalledWith(
+        DISCOVER_ROWS_PREFERENCE_KEY,
+        expect.objectContaining({ hidden: ["b"], shown: [] }),
+      );
+      setPreferences({
+        [DISCOVER_ROWS_PREFERENCE_KEY]: {
+          hidden: ["b"],
+          shown: [],
+          order: [],
+        },
+      });
+      await setDiscoverRowHidden("b", false);
+      expect(mockSetUserPreference).toHaveBeenLastCalledWith(
+        DISCOVER_ROWS_PREFERENCE_KEY,
+        expect.objectContaining({ hidden: [], shown: ["b"] }),
+      );
+    });
+  });
 });

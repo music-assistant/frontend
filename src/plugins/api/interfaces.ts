@@ -14,6 +14,9 @@ export enum AudioChannel {
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
   TONE_CONTROL = "tone_control",
+  GAIN = "gain",
+  BALANCE = "balance",
+  TRANSPOSE = "transpose",
 }
 
 export enum ParametricEQBandType {
@@ -55,8 +58,29 @@ export interface ToneControlFilter extends DSPFilterBase {
   treble_level: number;
 }
 
+export interface GainFilter extends DSPFilterBase {
+  type: DSPFilterType.GAIN;
+  gain: number;
+}
+
+export interface BalanceFilter extends DSPFilterBase {
+  type: DSPFilterType.BALANCE;
+  balance: number;
+}
+
+export interface TransposeFilter extends DSPFilterBase {
+  type: DSPFilterType.TRANSPOSE;
+  // Key shift in semitones, -12.0 to +12.0. Fractional values are valid.
+  semitones: number;
+}
+
 // Union type for all possible filters
-export type DSPFilter = ParametricEQFilter | ToneControlFilter;
+export type DSPFilter =
+  | ParametricEQFilter
+  | ToneControlFilter
+  | GainFilter
+  | BalanceFilter
+  | TransposeFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
@@ -64,6 +88,7 @@ export interface DSPConfig {
   filters: DSPFilter[];
   input_gain: number;
   output_gain: number;
+  preset_id?: string | null;
 }
 
 // DSPConfigPreset represents a preset configuration for DSP
@@ -73,25 +98,11 @@ export interface DSPConfigPreset {
   config: DSPConfig;
 }
 
-// DSPDetails used in StreamDetails
 export enum DSPState {
   ENABLED = "enabled",
   DISABLED = "disabled",
   DISABLED_BY_UNSUPPORTED_GROUP = "disabled_by_unsupported_group",
-}
-
-// This describes the DSP configuration as applied,
-// even when the DSP state is disabled. For example,
-// output_limiter can remain true while the DSP is disabled.
-// All filters in the list are guaranteed to be enabled.
-// output_format is the format that will be sent to the output device (if known).
-export interface DSPDetails {
-  state: DSPState;
-  input_gain: number;
-  filters: DSPFilter[];
-  output_gain: number;
-  output_limiter: boolean;
-  output_format?: AudioFormat;
+  UNKNOWN = "unknown",
 }
 
 /// enums
@@ -334,6 +345,13 @@ export enum EventType {
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
+  DASHBOARD_SESSIONS_UPDATED = "dashboard_sessions_updated",
+  DASHBOARD_SHOW = "dashboard_show",
+  DASHBOARD_HIDE = "dashboard_hide",
+  DASHBOARDS_UPDATED = "dashboards_updated",
+  // setup_flow_updated: a running setup flow produced a new/updated step;
+  // object_id is the flow_id, data is the SetupFlowStep
+  SETUP_FLOW_UPDATED = "setup_flow_updated",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -411,6 +429,10 @@ export enum ConfigEntryType {
   ACTION = "action",
   ICON = "icon",
   ALERT = "alert",
+  // image: presentational entry whose value/default_value is a data-URI image
+  IMAGE = "image",
+  // url: clickable link; in an invoke_action response the frontend opens it (one-shot)
+  URL = "url",
 
   // Only used in the frontend
   DSP_SETTINGS = "dsp_settings",
@@ -424,6 +446,30 @@ export enum VolumeNormalizationMode {
   FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
   FIXED_GAIN = "fixed_gain",
   FALLBACK_DYNAMIC = "fallback_dynamic",
+  UNKNOWN = "unknown",
+}
+
+export enum CrossfadeMode {
+  SMART_CROSSFADE = "smart_crossfade",
+  STANDARD_CROSSFADE = "standard_crossfade",
+  DISABLED = "disabled",
+  UNKNOWN = "unknown",
+}
+
+export enum AudioQuality {
+  LOW = "low",
+  STANDARD = "standard",
+  LOSSLESS = "lossless",
+  HI_RES = "hi_res",
+  UNKNOWN = "unknown",
+}
+
+export enum AudioNormalizationMeasurementSource {
+  TRACK = "track",
+  ALBUM = "album",
+  LIVE = "live",
+  FALLBACK = "fallback",
+  UNKNOWN = "unknown",
 }
 
 export enum IdentifierType {
@@ -575,6 +621,57 @@ export interface ConfigEntry {
 export interface Config {
   // Base Configuration object.
   values: Record<string, ConfigEntry>;
+}
+
+export enum FlowStepType {
+  // form: render config entries and wait for the user to submit
+  FORM = "form",
+  // external: the user must open an external url (e.g. OAuth); the server
+  // advances the flow on the callback (pushed via SETUP_FLOW_UPDATED)
+  EXTERNAL = "external",
+  // progress: the server is working/waiting on something; no user input
+  PROGRESS = "progress",
+  // finish: the flow completed; result references the created/updated object
+  FINISH = "finish",
+  // abort: the flow ended without a result
+  ABORT = "abort",
+  // fallback
+  UNKNOWN = "unknown",
+}
+
+export interface SetupFlowStep {
+  // A single step of a running setup flow (add/reconfigure a provider or set up a player).
+  // Human-readable fields (title/description/progress_text/reason and error values) are
+  // already resolved server-side for the connection locale.
+
+  // flow_id: identifier of the running flow this step belongs to
+  flow_id: string;
+  // step_id: stable slug identifying this step
+  step_id: string;
+  type: FlowStepType;
+  title?: string | null;
+  description?: string | null;
+  // entries [FORM]: the config entries that make up the form fields
+  entries: ConfigEntry[];
+  // errors [FORM]: field-key (or "base") -> localized error message
+  errors: Record<string, string>;
+  // last_step [FORM]: hint for the submit button label (final step vs. continue)
+  last_step?: boolean | null;
+  // url [EXTERNAL]: url the user must open (e.g. an OAuth authorize url)
+  url?: string | null;
+  // progress_text [PROGRESS]: localized status message
+  progress_text?: string | null;
+  // progress [PROGRESS]: optional completion fraction between 0 and 1
+  progress?: number | null;
+  // image [PROGRESS]: optional data-URI illustration (e.g. a pairing QR code)
+  image?: string | null;
+  // expires_at [FORM/EXTERNAL/PROGRESS]: UTC epoch deadline for this step; the client
+  // countdown is cosmetic, the server enforces the deadline
+  expires_at?: number | null;
+  // result [FINISH]: reference to the created/updated object (e.g. {"instance_id": ...})
+  result?: Record<string, string> | null;
+  // reason [ABORT]: localized reason the flow ended
+  reason?: string | null;
 }
 
 export interface ProviderConfig extends Config {
@@ -786,10 +883,19 @@ export interface BrowseFolder extends MediaItem {
   path?: string;
   image?: MediaItemImage;
 }
+export enum RecommendationFolderType {
+  DEFAULT = "default",
+  TIMELINE = "timeline",
+}
+
+/** Mirrors music_assistant_models RecommendationFolder. `items` is populated by
+ *  the server; per-user visibility is owned by the frontend (discover.rows). */
 export interface RecommendationFolder extends BrowseFolder {
   icon?: string;
   subtitle?: string;
   items: MediaItemTypeOrItemMapping[];
+  enabled_by_default: boolean;
+  type?: RecommendationFolderType;
 }
 
 export type MediaItemType =
@@ -834,12 +940,47 @@ export interface AudioFormat {
   bit_rate: number;
 }
 
-export interface LoudnessMeasurement {
-  integrated: number;
-  true_peak: number;
-  lra: number;
-  threshold: number;
-  target_offset: number;
+export interface AudioFidelity {
+  quality?: AudioQuality;
+  bit_perfect?: boolean | null;
+}
+
+export interface AudioNormalizationDetails {
+  mode?: VolumeNormalizationMode;
+  measurement_source?: AudioNormalizationMeasurementSource;
+  target_lufs?: number | null;
+  measured_lufs?: number | null;
+  applied_gain_db?: number | null;
+}
+
+export interface AudioQueueProcessing {
+  pcm_format?: AudioFormat | null;
+  normalization?: AudioNormalizationDetails | null;
+  playback_speed?: number;
+  crossfade_mode?: CrossfadeMode;
+  overlay_active?: boolean;
+}
+
+export interface AudioDSPDetails {
+  state?: DSPState;
+  input_gain?: number;
+  filters?: DSPFilter[];
+  output_gain?: number;
+  preset_id?: string | null;
+}
+
+export interface AudioOutputDetails {
+  player_ids?: string[];
+  dsp?: AudioDSPDetails;
+  source_channel?: AudioChannel | null;
+  output_format?: AudioFormat | null;
+  fidelity?: AudioFidelity;
+}
+
+export interface AudioProcessingChain {
+  input_fidelity?: AudioFidelity;
+  queue_processing?: AudioQueueProcessing | null;
+  outputs?: AudioOutputDetails[];
 }
 
 export interface StreamMetadata {
@@ -860,18 +1001,10 @@ export interface StreamDetails {
   media_type: MediaType;
   stream_metadata?: StreamMetadata;
   duration?: number;
+  audio_processing?: AudioProcessingChain | null;
 
   queue_id?: string;
   fade_in?: boolean;
-  loudness?: number;
-  loudness_album?: number;
-  prefer_album_loudness?: boolean;
-  target_loudness?: number;
-  volume_normalization_mode?: VolumeNormalizationMode;
-  volume_normalization_gain_correct?: number;
-  // This contains the DSPDetails of all players in the group.
-  // In case of single player playback, dict will contain only one entry.
-  dsp?: Record<string, DSPDetails>;
 }
 
 // queue_item
@@ -1082,6 +1215,8 @@ export interface Player {
   volume_control: string;
   mute_control: string;
   needs_setup: boolean;
+  // this player (or a wrapped protocol child) offers a setup flow that can be re-run on demand
+  has_setup_flow?: boolean;
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
@@ -1098,6 +1233,12 @@ export interface Player {
 }
 
 // provider
+
+export enum ProviderIconVariant {
+  DEFAULT = "default",
+  DARK = "dark",
+  MONOCHROME = "monochrome",
+}
 
 export interface ProviderManifest {
   // ProviderManifest, details of a provider.
@@ -1116,15 +1257,13 @@ export interface ProviderManifest {
   builtin: boolean;
   // allow_disable: whether this provider can be disabled (used with builtin)
   allow_disable: boolean;
+  // has_setup_flow: whether setup can be run again to reconfigure the provider
+  has_setup_flow?: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon?: string;
-  // icon_svg: svg icon (full xml string)
-  icon_svg?: string;
-  // icon_svg_dark: optional separate dark svg icon (full xml string)
-  icon_svg_dark?: string;
-  // icon_svg_dark: optional separate monochrome svg icon (full xml string)
-  icon_svg_monochrome?: string;
+  // icon_images: which icon variants this provider supplies as image files.
+  icon_images: ProviderIconVariant[];
   // depends on: domain of another provider that is required for this provider
   depends_on?: string;
 }
@@ -1166,6 +1305,24 @@ export interface ProviderInstance {
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider?: boolean;
+}
+
+export interface DashboardDevice {
+  // A dashboard endpoint self-registered with the server (e.g. a Chromecast).
+  dashboard_id: string;
+  name: string;
+  supported_types: DashboardType[];
+  provider_domain_hint?: string | null; // provider domain used to resolve this endpoint's icon
+}
+
+export type DashboardType = "party" | "now_playing" | "music_quiz";
+
+export interface DashboardSession {
+  // An active dashboard cast session on a device.
+  dashboard_id: string;
+  name: string;
+  dashboard: DashboardType;
+  player_id?: string | null; // target player for the now_playing dashboard
 }
 
 export enum TaskStatus {

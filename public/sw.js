@@ -14,43 +14,109 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Store for pending HTTP requests
 const pendingRequests = new Map();
 
-// Storage key for remote mode state in Cache API
-const REMOTE_MODE_CACHE_KEY = "ma-remote-mode-state";
+const LEGACY_REMOTE_MODE_CACHE_NAME = "ma-sw-state-v1";
+const LEGACY_REMOTE_MODE_CACHE_KEY = "ma-remote-mode-state";
+const REMOTE_MODE_CACHE_NAME = "ma-sw-client-state-v1";
+const REMOTE_MODE_CACHE_PATH = "/__ma_remote_mode__/";
 
 /**
- * Read remote mode state from persistent storage
- * Returns true if in remote mode, false otherwise
+ * Read remote proxy state for a browser client.
  */
-async function getRemoteMode() {
+async function getRemoteState(clientId) {
+  if (!clientId) return { isRemote: false };
+
   try {
-    const cache = await caches.open("ma-sw-state-v1");
-    const response = await cache.match(REMOTE_MODE_CACHE_KEY);
+    const cache = await caches.open(REMOTE_MODE_CACHE_NAME);
+    const response = await cache.match(getRemoteStateKey(clientId));
     if (response) {
       const data = await response.json();
-      return data.isRemote === true;
+      return {
+        isRemote: data.isRemote === true,
+        proxyScope: data.proxyScope,
+      };
     }
   } catch (error) {
     console.error("[ServiceWorker] Error reading remote mode:", error);
   }
-  return false; // Default to local mode on error
+  return { isRemote: false };
 }
 
 /**
- * Write remote mode state to persistent storage
+ * Write remote proxy state for a browser client.
  */
-async function setRemoteMode(isRemote) {
+async function setRemoteState(clientId, isRemote, proxyScope) {
+  if (!clientId) return;
+
   try {
-    const cache = await caches.open("ma-sw-state-v1");
-    await cache.put(
-      REMOTE_MODE_CACHE_KEY,
-      new Response(JSON.stringify({ isRemote }), {
-        headers: { "Content-Type": "application/json" },
-      }),
+    const cache = await caches.open(REMOTE_MODE_CACHE_NAME);
+    const cacheKey = getRemoteStateKey(clientId);
+    if (isRemote) {
+      await cache.put(
+        cacheKey,
+        new Response(JSON.stringify({ isRemote, proxyScope }), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    } else {
+      await cache.delete(cacheKey);
+    }
+    await pruneRemoteStates(cache);
+    console.log(
+      "[ServiceWorker] Remote mode set for client:",
+      clientId,
+      isRemote,
     );
-    console.log("[ServiceWorker] Remote mode set to:", isRemote);
   } catch (error) {
     console.error("[ServiceWorker] Error writing remote mode:", error);
   }
+}
+
+function getRemoteStateKey(clientId) {
+  return new URL(
+    `${REMOTE_MODE_CACHE_PATH}${encodeURIComponent(clientId)}`,
+    self.location.origin,
+  ).href;
+}
+
+async function pruneRemoteStates(cache) {
+  const activeClients = await self.clients.matchAll({
+    includeUncontrolled: true,
+  });
+  const activeStateKeys = new Set(
+    activeClients.map((client) => getRemoteStateKey(client.id)),
+  );
+  const storedStateKeys = await cache.keys();
+  await Promise.all(
+    storedStateKeys
+      .filter((request) => !activeStateKeys.has(request.url))
+      .map((request) => cache.delete(request)),
+  );
+}
+
+async function migrateLegacyRemoteState() {
+  const legacyCache = await caches.open(LEGACY_REMOTE_MODE_CACHE_NAME);
+  const response = await legacyCache.match(LEGACY_REMOTE_MODE_CACHE_KEY);
+  if (!response) return;
+
+  const data = await response.json();
+  if (data.isRemote === true) {
+    const activeClients = await self.clients.matchAll({
+      includeUncontrolled: true,
+    });
+    const cache = await caches.open(REMOTE_MODE_CACHE_NAME);
+    await Promise.all(
+      activeClients.map((client) =>
+        cache.put(
+          getRemoteStateKey(client.id),
+          new Response(JSON.stringify({ isRemote: true }), {
+            headers: { "Content-Type": "application/json" },
+          }),
+        ),
+      ),
+    );
+  }
+
+  await caches.delete(LEGACY_REMOTE_MODE_CACHE_NAME);
 }
 
 // Listen for messages from the main thread
@@ -62,7 +128,7 @@ self.addEventListener("message", async (event) => {
     const { id, status, headers, body } = data;
 
     const pendingRequest = pendingRequests.get(id);
-    if (pendingRequest) {
+    if (pendingRequest && pendingRequest.clientId === event.source?.id) {
       pendingRequests.delete(id);
 
       try {
@@ -81,8 +147,7 @@ self.addEventListener("message", async (event) => {
       }
     }
   } else if (type === "set-remote-mode") {
-    // Update remote mode state in PERSISTENT storage
-    await setRemoteMode(data.isRemote);
+    await setRemoteState(event.source?.id, data.isRemote, data.proxyScope);
     // Send acknowledgment back to the main thread
     if (event.source) {
       event.source.postMessage({
@@ -108,11 +173,15 @@ self.addEventListener("fetch", (event) => {
     // Read remote mode from persistent storage and proxy accordingly
     event.respondWith(
       (async () => {
-        const isRemoteMode = await getRemoteMode();
+        const remoteState = await getRemoteState(event.clientId);
 
-        if (isRemoteMode) {
+        if (remoteState.isRemote) {
           // Proxy over WebRTC when in remote mode
-          return handleHttpProxyRequest(event.request);
+          return handleHttpProxyRequest(
+            event.request,
+            event.clientId,
+            remoteState.proxyScope,
+          );
         } else {
           // Let request through normally when NOT in remote mode
           return fetch(event.request);
@@ -129,9 +198,9 @@ self.addEventListener("fetch", (event) => {
 /**
  * Handle HTTP proxy request over WebRTC
  */
-async function handleHttpProxyRequest(request) {
+async function handleHttpProxyRequest(request, clientId, proxyScope) {
   const url = new URL(request.url);
-  const cacheKey = request.url;
+  const cacheKey = `${request.url}${url.search ? "&" : "?"}__ma_proxy_scope=${encodeURIComponent(proxyScope || clientId)}`;
 
   // Try to get from cache first
   const cache = await caches.open("ma-http-proxy-v1");
@@ -149,7 +218,7 @@ async function handleHttpProxyRequest(request) {
   // Create promise for response
   const responsePromise = new Promise((resolve, reject) => {
     // Store the resolve/reject callbacks
-    pendingRequests.set(requestId, { resolve, reject });
+    pendingRequests.set(requestId, { clientId, resolve, reject });
 
     // Set timeout
     setTimeout(() => {
@@ -172,9 +241,9 @@ async function handleHttpProxyRequest(request) {
   }
 
   // Send HTTP proxy request to main thread
-  const clients = await self.clients.matchAll();
-  if (clients.length > 0) {
-    clients[0].postMessage({
+  const client = clientId ? await self.clients.get(clientId) : null;
+  if (client) {
+    client.postMessage({
       type: "http-proxy-request",
       data: {
         id: requestId,
@@ -240,8 +309,11 @@ self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
 });
 
-// Claim clients immediately when service worker activates
 self.addEventListener("activate", (event) => {
-  console.log("[ServiceWorker] Activating...");
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      await migrateLegacyRemoteState();
+      await self.clients.claim();
+    })(),
+  );
 });

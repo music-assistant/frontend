@@ -700,18 +700,6 @@ const activeTab = computed(() => {
       return "audio_analysis_providers";
   }
 
-  if (name === "addproviderdetails") {
-    const domain = router.currentRoute.value.params.domain as string;
-    const manifest = api.providerManifests[domain];
-    if (manifest) {
-      if (manifest.type === ProviderType.MUSIC) return "music_providers";
-      if (manifest.type === ProviderType.PLAYER) return "player_providers";
-      if (manifest.type === ProviderType.METADATA) return "metadata_providers";
-      if (manifest.type === ProviderType.PLUGIN) return "plugin_providers";
-      if (manifest.type === ProviderType.AUDIO_ANALYSIS)
-        return "audio_analysis_providers";
-    }
-  }
   return "music_providers";
 });
 
@@ -823,12 +811,6 @@ const breadcrumbItems = computed(() => {
   }
 
   match(name)
-    .with("addproviderdetails", () => {
-      items.push({
-        title: t("settings.setup_provider", [route.params.domain || ""]),
-        disabled: true,
-      });
-    })
     .with("editprovider", () => {
       items.push({
         title: getProviderName(route.params.instanceId as string),
@@ -897,7 +879,7 @@ const documentationUrl = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
 
-  // Show documentation link for editcore, editprovider, and addproviderdetails routes
+  // Show documentation link for editcore and editprovider routes
   if (name === "editcore") {
     const domain = route.params.domain as string;
     if (domain && api.providerManifests[domain]) {
@@ -910,11 +892,6 @@ const documentationUrl = computed(() => {
       if (provider && api.providerManifests[provider.domain]) {
         return api.providerManifests[provider.domain].documentation || null;
       }
-    }
-  } else if (name === "addproviderdetails") {
-    const domain = route.params.domain as string;
-    if (domain && api.providerManifests[domain]) {
-      return api.providerManifests[domain].documentation || null;
     }
   }
 

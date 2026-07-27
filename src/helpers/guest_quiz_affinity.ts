@@ -1,9 +1,15 @@
-const STORAGE_KEY = "music_quiz_guest_affinity";
-const STORAGE_VERSION = 1;
+import type { ConnectionIdentity } from "@/helpers/connection_identity";
 
-interface StoredGuestQuizAffinity {
+const STORAGE_KEY = "music_quiz_guest_affinity";
+const STORAGE_VERSION = 2;
+
+export interface GuestQuizAffinityContext {
+  connectionIdentity: ConnectionIdentity;
+  participantIdentity: string;
+}
+
+interface StoredGuestQuizAffinity extends GuestQuizAffinityContext {
   version: typeof STORAGE_VERSION;
-  guestIdentity: string;
 }
 
 export interface GuestQuizAffinity {
@@ -12,12 +18,12 @@ export interface GuestQuizAffinity {
 }
 
 /**
- * Track Music Quiz affinity for one authenticated guest identity.
+ * Track Music Quiz affinity for one authenticated participant.
  */
 export function createGuestQuizAffinity(
-  guestIdentity: string | undefined,
+  context: GuestQuizAffinityContext | undefined,
 ): GuestQuizAffinity {
-  if (!guestIdentity) {
+  if (!context) {
     clearGuestQuizAffinity();
     return {
       active: false,
@@ -25,7 +31,7 @@ export function createGuestQuizAffinity(
     };
   }
 
-  let active = readGuestQuizAffinity(guestIdentity);
+  let active = readGuestQuizAffinity(context);
   let persisted = active;
   return {
     get active() {
@@ -34,31 +40,33 @@ export function createGuestQuizAffinity(
     record() {
       if (active) return persisted;
       active = true;
-      persisted = writeGuestQuizAffinity(guestIdentity);
+      persisted = writeGuestQuizAffinity(context);
       return persisted;
     },
   };
 }
 
 /**
- * Remove any stored Music Quiz guest affinity.
+ * Remove stored Music Quiz participant affinity.
  */
 export function clearGuestQuizAffinity(): boolean {
   try {
+    sessionStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(STORAGE_KEY);
     return true;
   } catch (error) {
-    console.warn("Unable to clear Music Quiz guest affinity.", error);
+    console.warn("Unable to clear Music Quiz participant affinity.", error);
     return false;
   }
 }
 
-function readGuestQuizAffinity(guestIdentity: string): boolean {
+function readGuestQuizAffinity(context: GuestQuizAffinityContext): boolean {
   let rawValue: string | null;
   try {
-    rawValue = localStorage.getItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    rawValue = sessionStorage.getItem(STORAGE_KEY);
   } catch (error) {
-    console.warn("Unable to read Music Quiz guest affinity.", error);
+    console.warn("Unable to read Music Quiz participant affinity.", error);
     return false;
   }
   if (rawValue === null) return false;
@@ -67,33 +75,36 @@ function readGuestQuizAffinity(guestIdentity: string): boolean {
   try {
     storedValue = JSON.parse(rawValue);
   } catch (error) {
-    console.warn("Ignoring corrupt Music Quiz guest affinity.", error);
+    console.warn("Ignoring corrupt Music Quiz participant affinity.", error);
     clearGuestQuizAffinity();
     return false;
   }
 
   if (!isStoredGuestQuizAffinity(storedValue)) {
-    console.warn("Ignoring invalid Music Quiz guest affinity.");
+    console.warn("Ignoring invalid Music Quiz participant affinity.");
     clearGuestQuizAffinity();
     return false;
   }
-  if (storedValue.guestIdentity !== guestIdentity) {
+  if (
+    storedValue.connectionIdentity !== context.connectionIdentity ||
+    storedValue.participantIdentity !== context.participantIdentity
+  ) {
     clearGuestQuizAffinity();
     return false;
   }
   return true;
 }
 
-function writeGuestQuizAffinity(guestIdentity: string): boolean {
+function writeGuestQuizAffinity(context: GuestQuizAffinityContext): boolean {
   const value: StoredGuestQuizAffinity = {
     version: STORAGE_VERSION,
-    guestIdentity,
+    ...context,
   };
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value));
     return true;
   } catch (error) {
-    console.warn("Unable to store Music Quiz guest affinity.", error);
+    console.warn("Unable to store Music Quiz participant affinity.", error);
     return false;
   }
 }
@@ -106,8 +117,12 @@ function isStoredGuestQuizAffinity(
     value !== null &&
     "version" in value &&
     value.version === STORAGE_VERSION &&
-    "guestIdentity" in value &&
-    typeof value.guestIdentity === "string" &&
-    value.guestIdentity.length > 0
+    "participantIdentity" in value &&
+    typeof value.participantIdentity === "string" &&
+    value.participantIdentity.length > 0 &&
+    "connectionIdentity" in value &&
+    typeof value.connectionIdentity === "string" &&
+    (value.connectionIdentity.startsWith("local:") ||
+      value.connectionIdentity.startsWith("remote:"))
   );
 }

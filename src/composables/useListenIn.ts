@@ -84,6 +84,8 @@ export function useListenIn(options: UseListenInOptions) {
       const available = await api.sendCommand<boolean>(
         `${domain}/can_listen_in`,
         { web_player_id: playerId },
+        // Availability is best-effort; failures are handled below.
+        { suppressGlobalError: true },
       );
       if (
         disposed ||

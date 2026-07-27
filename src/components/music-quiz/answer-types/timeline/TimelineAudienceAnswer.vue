@@ -71,26 +71,32 @@
               <span
                 data-testid="timeline-result-score"
                 class="flex min-w-0 max-w-[45%] items-center gap-1 font-semibold tabular-nums"
-                :class="
-                  result.correct
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-muted-foreground'
-                "
               >
                 <CircleCheck
-                  v-if="result.correct"
-                  class="size-4"
+                  v-if="result.placementCorrect"
+                  class="size-4 text-green-600 dark:text-green-400"
                   aria-hidden="true"
                 />
-                <CircleX v-else class="size-4" aria-hidden="true" />
+                <CircleX
+                  v-else
+                  class="text-muted-foreground size-4"
+                  aria-hidden="true"
+                />
                 <span class="sr-only">
                   {{
-                    result.correct
-                      ? $t("providers.music_quiz.correct")
-                      : $t("providers.music_quiz.incorrect")
+                    result.placementCorrect
+                      ? $t("providers.music_quiz.timeline_correct_placement")
+                      : $t("providers.music_quiz.timeline_incorrect_placement")
                   }}
                 </span>
-                <span class="min-w-0 flex-1 truncate">
+                <span
+                  class="min-w-0 flex-1 truncate"
+                  :class="
+                    result.points > 0
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-muted-foreground'
+                  "
+                >
                   +{{ result.points }}
                 </span>
               </span>
@@ -147,7 +153,7 @@ const revealedResults = computed(() =>
     return [
       {
         name: player.name,
-        correct: answer.placement.correct,
+        placementCorrect: answer.placement.correct,
         points:
           answer.placement.points +
           (answer.artist?.points ?? 0) +

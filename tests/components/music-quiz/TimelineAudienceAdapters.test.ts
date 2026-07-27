@@ -214,13 +214,13 @@ describe("timeline host and present answers", () => {
       players: [
         {
           ...hostState.players[1],
-          score: 1250,
+          score: 250,
           last_answer: {
             placement: {
               previous_entry_id: "anchor",
               next_entry_id: null,
-              correct: true,
-              points: 1000,
+              correct: false,
+              points: 0,
             },
             artist: {
               correct: true,
@@ -249,11 +249,16 @@ describe("timeline host and present answers", () => {
     });
 
     expect(wrapper.text()).toContain("Complete");
-    expect(wrapper.text()).toContain("+1250");
+    expect(wrapper.text()).toContain("+250");
     expect(wrapper.findComponent(TimelineProgress).exists()).toBe(false);
     expect(wrapper.find(".sr-only").text()).toContain(
-      "providers.music_quiz.correct",
+      "providers.music_quiz.timeline_incorrect_placement",
     );
+    expect(
+      wrapper
+        .get('[data-testid="timeline-result-score"] span.truncate')
+        .classes(),
+    ).toContain("text-green-600");
     expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
   });
 });

@@ -11,7 +11,7 @@
     :class="{
       'is-playing': isPlaying,
       'checkbox-label': showCheckboxes,
-      'album-track-title': albumTrackView,
+      'album-track-title': !showCheckboxes,
     }"
     class="v-list-item-title"
   >
@@ -32,7 +32,7 @@
         <span
           :aria-label="t('tooltip.explicit')"
           tabindex="0"
-          :class="{ 'explicit-icon-align': albumTrackView }"
+          :class="{ 'explicit-icon-align': !showCheckboxes }"
         >
           <v-icon
             :class="{ 'explicit-icon-margin-left': showCheckboxes }"
@@ -69,7 +69,6 @@ export interface Props {
   item: MediaItemType;
   showCheckboxes: boolean;
   isPlaying: boolean;
-  albumTrackView?: boolean;
 }
 
 // global refs
@@ -79,7 +78,6 @@ withDefaults(defineProps<Props>(), {
   displayName: "",
   showCheckboxes: false,
   isPlaying: false,
-  albumTrackView: false,
 });
 </script>
 

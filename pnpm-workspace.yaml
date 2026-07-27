@@ -3,5 +3,8 @@ allowBuilds:
   esbuild: true
   vue-demi: true
 
+minimumReleaseAgeExclude:
+  - '@sendspin/sendspin-js@3.2.1'
+
 overrides:
   "minimatch@9": "9.0.9"

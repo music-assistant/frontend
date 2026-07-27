@@ -115,6 +115,27 @@ describe("TimelineDisplay", () => {
     ]);
   });
 
+  it("shows the timeline order and contextual placement labels", () => {
+    const wrapper = mount(TimelineDisplay, {
+      props: {
+        entries,
+        selectable: true,
+      },
+    });
+
+    expect(wrapper.get("ol").attributes("aria-label")).toBe(
+      "providers.music_quiz.timeline_order",
+    );
+    expect(wrapper.text()).toContain("providers.music_quiz.timeline_older");
+    expect(wrapper.text()).toContain("providers.music_quiz.timeline_newer");
+    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+      "providers.music_quiz.timeline_place_before_year:1990",
+      "providers.music_quiz.timeline_place_between_years:1990|2000",
+      "providers.music_quiz.timeline_place_in_year:2000",
+      "providers.music_quiz.timeline_place_after_year:2000",
+    ]);
+  });
+
   it("styles every available boundary as a spaced primary action", () => {
     const wrapper = mount(TimelineDisplay, {
       props: {
@@ -133,6 +154,8 @@ describe("TimelineDisplay", () => {
 
       const button = item.get("button");
       expect(button.classes()).toContain("bg-primary");
+      expect(button.classes()).toContain("max-w-full");
+      expect(button.classes()).toContain("whitespace-normal");
       expect(button.classes()).not.toContain("bg-background");
       expect(button.attributes("aria-pressed")).toBe("false");
     }
@@ -165,20 +188,41 @@ describe("TimelineDisplay", () => {
         selectedPreviousEntryId: "same-a",
         selectedNextEntryId: "same-b",
       },
+      slots: {
+        "selected-boundary":
+          '<section data-testid="inline-follow-up">Follow-up</section>',
+      },
     });
     const buttons = wrapper.findAll("button");
     const selected = buttons[2];
+    const selectedItem = selected.element.closest("li");
 
     expect(selected.attributes("aria-pressed")).toBe("true");
+    expect(selected.attributes("data-selected")).toBe("true");
     expect(buttons.every((button) => "disabled" in button.attributes())).toBe(
       true,
     );
     expect(selected.classes()).toContain("min-h-11");
     expect(selected.classes()).toContain("bg-primary");
+    expect(selected.classes()).toContain("ring-4");
+    expect(selected.classes()).toContain("disabled:opacity-100");
     expect(selected.text()).toContain(
       "providers.music_quiz.timeline_placed_here",
     );
+    expect(selected.text()).toContain(
+      "providers.music_quiz.timeline_place_in_year:2000",
+    );
     expect(selected.find("svg").exists()).toBe(true);
+    expect(
+      buttons
+        .filter((button) => button !== selected)
+        .every((button) => button.classes().includes("bg-background")),
+    ).toBe(true);
+    expect(
+      selectedItem?.contains(
+        wrapper.get('[data-testid="inline-follow-up"]').element,
+      ),
+    ).toBe(true);
   });
 
   it("renders a read-only timeline without placement controls", () => {
@@ -208,17 +252,19 @@ describe("TimelineDisplay", () => {
       },
     });
     const display = wrapper.get('[data-orientation="horizontal"]');
+    const scrollArea = display.get("[data-timeline-scroll]");
     const list = display.get("ol");
     const cards = display.findAll("article");
     await flushPromises();
 
-    expect(display.classes()).toEqual(
+    expect(scrollArea.classes()).toEqual(
       expect.arrayContaining([
         "min-w-0",
         "overflow-x-auto",
         "overscroll-x-contain",
       ]),
     );
+    expect(scrollArea.find("p").exists()).toBe(false);
     expect(list.classes()).toEqual(
       expect.arrayContaining(["w-max", "min-w-full", "flex-row"]),
     );

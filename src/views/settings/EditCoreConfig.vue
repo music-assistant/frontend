@@ -42,9 +42,9 @@
 </template>
 
 <script setup lang="ts">
+import { openActionUrlEntries } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
-import { nanoid } from "nanoid";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -55,7 +55,6 @@ import EditConfig from "./EditConfig.vue";
 const router = useRouter();
 const { t } = useI18n();
 const config = ref<CoreConfig>();
-const sessionId = nanoid(11);
 const loading = ref(false);
 
 // props
@@ -140,22 +139,14 @@ const onImmediateApply = async function (
 
 const onAction = async function (
   action: string,
-  values: Record<string, ConfigValueType>,
+  _values: Record<string, ConfigValueType>,
   immediateApply: boolean,
 ) {
   loading.value = true;
-  // append existing ConfigEntry values to allow
-  // values be passed between flow steps
-  for (const entry of Object.values(config.value!.values)) {
-    if (entry.value !== undefined && values[entry.key] == undefined) {
-      values[entry.key] = entry.value;
-    }
-  }
-  // ensure the session id is passed along
-  values["session_id"] = sessionId;
   api
-    .getCoreConfigEntries(config.value!.domain, action, values)
+    .invokeCoreConfigAction(config.value!.domain, action)
     .then(async (entries) => {
+      entries = openActionUrlEntries(entries);
       config.value!.values = {};
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;

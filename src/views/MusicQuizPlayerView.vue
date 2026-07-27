@@ -344,15 +344,16 @@ async function handleReady() {
 <style scoped>
 .music-quiz-player {
   min-height: 100%;
-  padding: calc(0.75rem + env(safe-area-inset-top, 0px))
-    calc(0.75rem + env(safe-area-inset-right, 0px))
+  padding: 0.75rem calc(0.75rem + env(safe-area-inset-right, 0px))
     calc(1rem + env(safe-area-inset-bottom, 0px))
     calc(0.75rem + env(safe-area-inset-left, 0px));
 }
 
 @media (min-width: 768px) {
   .music-quiz-player {
-    padding: 1.25rem;
+    padding: 1.25rem calc(1.25rem + env(safe-area-inset-right, 0px))
+      calc(1.25rem + env(safe-area-inset-bottom, 0px))
+      calc(1.25rem + env(safe-area-inset-left, 0px));
   }
 }
 </style>

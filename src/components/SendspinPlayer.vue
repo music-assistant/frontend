@@ -10,7 +10,10 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
-import { resetMediaSession } from "@/helpers/mediaSession";
+import {
+  isMediaSessionDisabled,
+  resetMediaSession,
+} from "@/helpers/mediaSession";
 import { getDeviceName } from "@/plugins/api/helpers";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
@@ -30,12 +33,14 @@ import {
   isDirectConnection,
 } from "@/plugins/sendspin-connection";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
 // Properties
 export interface Props {
   playerId: string;
 }
 const props = defineProps<Props>();
+const route = useRoute();
 
 const audioRef = ref<HTMLAudioElement>();
 const silentAudioRef = ref<HTMLAudioElement>();
@@ -50,34 +55,16 @@ const isMobileOutput = isAndroid || isIOS;
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
 
-// Internal sendspin-js scheduler hooks used to unlock audio within a user
-// gesture; the pinned 3.2.0 release exposes no public equivalent.
-interface SendspinAudioUnlock {
-  initAudioContext?: () => void;
-  resumeAudioContext?: () => void | Promise<void>;
-}
-
 // iOS only lets audio start inside a user gesture, but listen-in audio starts
 // asynchronously (after the server groups this player), so the library would
-// create and resume its AudioContext outside the gesture and stay silent.
-// Create and resume that context now, while the gesture is still active, so the
-// stream plays reliably once it arrives.
+// otherwise unlock its audio outside the gesture and stay silent.
 const primeAudio = () => {
   if (!isIOS) return true;
-  try {
-    const scheduler = (
-      player as unknown as { scheduler?: SendspinAudioUnlock } | null
-    )?.scheduler;
-    if (!scheduler?.initAudioContext || !scheduler.resumeAudioContext) {
-      return false;
-    }
-    scheduler.initAudioContext();
-    void scheduler.resumeAudioContext();
-    return true;
-  } catch (error) {
+  if (!player) return false;
+  void player.unlock().catch((error) => {
     console.debug("Sendspin: failed to prime audio for listen-in", error);
-    return false;
-  }
+  });
+  return true;
 };
 
 // Reactive state
@@ -128,6 +115,9 @@ const metadataPlayerId = computed(() => {
   }
   return undefined;
 });
+const mediaSessionDisabled = computed(() =>
+  isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
+);
 
 const correctionMode = computed(() => {
   // Only do the more precise but distorting "full" correction when grouped
@@ -139,10 +129,10 @@ const correctionMode = computed(() => {
 
 // Subscribe to metadata immediately (doesn't require user interaction)
 watch(
-  metadataPlayerId,
-  (newPlayerId) => {
+  [metadataPlayerId, mediaSessionDisabled],
+  ([newPlayerId, disabled]) => {
     if (unsubMetadata) unsubMetadata();
-    if (isReceiveOnlyGuest()) {
+    if (disabled) {
       resetMediaSession();
       unsubMetadata = undefined;
       return;
@@ -155,12 +145,24 @@ watch(
 watch(
   () => webPlayer.tabMode,
   () => {
-    if (!isReceiveOnlyGuest()) return;
+    if (!mediaSessionDisabled.value) return;
     if (unsubMetadata) {
       unsubMetadata();
       unsubMetadata = undefined;
     }
     resetMediaSession();
+  },
+  { immediate: true },
+);
+
+watch(
+  mediaSessionDisabled,
+  (disabled) => {
+    if (disabled) {
+      resetMediaSession();
+    } else {
+      registerMediaSessionActionHandlers();
+    }
   },
   { immediate: true },
 );
@@ -181,11 +183,18 @@ watch(
 
 // Watch active player's playback state to control silent audio
 watch(
-  () => store.activePlayer?.playback_state,
-  (state) => {
+  [() => store.activePlayer?.playback_state, mediaSessionDisabled],
+  ([state, disabled]) => {
+    if (disabled) {
+      if (silentAudioInterval) {
+        clearInterval(silentAudioInterval);
+        silentAudioInterval = undefined;
+      }
+      silentAudioRef.value?.pause();
+      return;
+    }
     // Only control when showing active player metadata (not web player)
     if (metadataPlayerId.value !== undefined) return;
-    if (isReceiveOnlyGuest()) return;
     if (!silentAudioRef.value) return;
 
     // Clear existing interval
@@ -219,9 +228,10 @@ watch(
     () => store.activePlayer?.playback_state,
     metadataPlayerId,
     () => webPlayer.interacted,
+    mediaSessionDisabled,
   ],
-  ([, pState, , metaPlayerId, interacted]) => {
-    if (isReceiveOnlyGuest()) {
+  ([, pState, , metaPlayerId, interacted, disabled]) => {
+    if (disabled) {
       resetMediaSession();
       return;
     }
@@ -261,7 +271,7 @@ onMounted(() => {
   // If already showing active player metadata, play silent audio now that silentAudioRef exists
   if (
     metadataPlayerId.value === undefined &&
-    !isReceiveOnlyGuest() &&
+    !mediaSessionDisabled.value &&
     webPlayer.interacted &&
     silentAudioRef.value
   ) {
@@ -341,12 +351,6 @@ onMounted(() => {
       });
   }
 
-  if (isReceiveOnlyGuest()) {
-    resetMediaSession();
-  } else {
-    registerMediaSessionActionHandlers();
-  }
-
   // Audio element event listeners for mobile MediaSession resilience
   if (audioRef.value) {
     // Ensure audio element doesn't stay paused after interruptions while stream should play
@@ -383,16 +387,12 @@ onBeforeUnmount(() => {
   for (const timeout of pauseCommandTimeouts) clearTimeout(timeout);
   pauseCommandTimeouts.clear();
   if (
-    isReceiveOnlyGuest() ||
+    mediaSessionDisabled.value ||
     webPlayer.tabMode !== WebPlayerMode.CONTROLS_ONLY
   ) {
     resetMediaSession();
   }
 });
-
-function isReceiveOnlyGuest(): boolean {
-  return authManager.isPartyGuest() || authManager.isMusicQuizGuest();
-}
 
 function getTargetPlayerId(): string | undefined {
   if (metadataPlayerId.value !== undefined) return props.playerId;

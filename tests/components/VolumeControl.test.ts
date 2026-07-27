@@ -41,7 +41,12 @@ vi.mock("@/layouts/default/PlayerOSD/PlayerVolume.vue", () => ({
 const CheckboxStub = {
   props: ["modelValue"],
   emits: ["update:modelValue"],
-  template: '<button class="member-checkbox" />',
+  template: `
+    <button
+      class="member-checkbox"
+      @click="$emit('update:modelValue', !modelValue)"
+    />
+  `,
 };
 
 function createPlayer(overrides: Partial<Player> = {}): Player {
@@ -124,6 +129,8 @@ function mountVolumeControl(
 
 describe("VolumeControl", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useRealTimers();
     api.players = {};
   });
 
@@ -190,7 +197,8 @@ describe("VolumeControl", () => {
     expect(wrapper.find(".player-volume").exists()).toBe(false);
   });
 
-  it("shows member checkboxes without child sliders", () => {
+  it("allows removing the parent from its sync group", async () => {
+    vi.useFakeTimers();
     const child = createPlayer({
       player_id: "child",
       name: "Office",
@@ -210,7 +218,21 @@ describe("VolumeControl", () => {
     });
 
     expect(wrapper.findAll(".player-volume")).toHaveLength(1);
-    expect(wrapper.findAll(".member-checkbox")).toHaveLength(1);
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen", "Office"]);
+
+    await wrapper.get('[aria-label="Kitchen"]').trigger("click");
+    expect(parent.group_members).toEqual([child.player_id]);
+
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.playerCommandSetMembers).toHaveBeenCalledWith(
+      parent.player_id,
+      undefined,
+      [parent.player_id],
+    );
   });
 
   it("forwards group slider taps as child-volume toggles", async () => {

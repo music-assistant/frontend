@@ -584,10 +584,6 @@
     "podcast_episode": "Епізод",
     "podcast_episodes": "Епізоди",
     "play_from_here": "Грати звідси",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (альбом)",
-    "loudness_dynamic": "Динамічна нормалізація гучності",
-    "loudness_fixed": "Фіксована корекція посилення",
     "dsp_active": "Активний",
     "currently_playing_players": "Зараз грає",
     "all_players": "Всі плеєри",
@@ -597,40 +593,20 @@
     "streamdetails": {
         "input_header": "Вхід",
         "output_header": "Вихід",
-        "output_format_info": "Аудіо надсилається у форматі {0}",
         "eq_band_count": "{0} смуг(и)",
         "eq_band_count_singular": "1 смуга",
         "input_gain": "Вхідний коефіцієнт підсилення ({0} дБ)",
         "output_gain": "Коефіцієнт підсилення на виході ({0} дБ)",
         "output_limiter": "Обмежувач виходу",
-        "output_limiter_info": "Автоматично приглушує дуже гучні звуки, щоб запобігти спотворенням і захистити ваші динаміки",
-        "dsp_unsupported": "DSP не підтримується",
-        "dsp_disabled_by_unsupported_group": "Цей провайдер плеєра не підтримує DSP із синхронізованим відтворенням",
         "file_info": {
             "container": "Контейнер: {0}",
             "codec": "Кодек: {0}",
             "bit_rate": "Бітрейт: {0} kbps",
             "sample_rate": "Частота дискретизації: {0} кГц",
             "channels": "Канали: {0}",
-            "bit_depth": "Глибина розрядності: {0}",
-            "processing_notice": "Аудіо обробляється внутрішньо як 32-розрядний float PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Цільовий рівень: {0} LUFS",
-            "integrated_loudness": "Виміряна (інтегрована) гучність: {0} LUFS",
-            "integrated_album_loudness": "Гучність альбому: {0} LUFS",
-            "applied_gain_correction": "Застосована корекція підсилення: {0} дБ",
-            "mode": {
-                "dynamic": "Нормалізація гучності активна в динамічному режимі.",
-                "measurement_only": "Нормалізація гучності активна на основі збереженого вимірювання (інтегрованої) гучності звуку.",
-                "measurement_album": "Нормалізація гучності активна на основі збереженого вимірювання (інтегральної) гучності альбому.",
-                "fixed_gain": "Нормалізація гучності активна на основі фіксованої корекції посилення."
-            }
-        },
-        "click_to_expand": "Натисніть, щоб показати всі преєри",
-        "output_format_pcm_info": "Аудіо передається у форматі PCM провайдеру плеєра. Провайдер може конвертувати аудіо в інший формат, перш ніж надсилати його на плеєр."
+            "bit_depth": "Глибина розрядності: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} дБ",
     "select_source": "Виберіть джерело",
     "play_replace_next": "Відтворити наступним (очистити чергу)",
     "all_enqueue_options": "Налаштування черги",

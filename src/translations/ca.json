@@ -325,10 +325,6 @@
     "podcast_episode": "Episodi",
     "podcast_episodes": "Episodis",
     "play_from_here": "Reprodueix des d'aquí",
-    "loudness_measurement": "{0} LUFS (nivell de sonoritat)",
-    "loudness_measurement_album": "{0} LUFS (àlbum)",
-    "loudness_dynamic": "Normalització dinàmica del volum",
-    "loudness_fixed": "Configuració del guany fix",
     "dsp_active": "Actiu",
     "currently_playing_players": "Reproduint ara",
     "all_players": "Tots els reproductors",
@@ -342,7 +338,6 @@
             "channels": "Canals: {0}"
         }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Selecciona la font",
     "play_replace_next": "Reprodueix a continuació (neteja la cua)",
     "all_enqueue_options": "Totes les opcions d'afegir a la cua",

@@ -46,6 +46,7 @@
     :show-provider="false"
     :show-library="false"
     :show-favorites-only-filter="false"
+    :show-favorite="true"
     :show-track-number="false"
     :show-refresh-button="true"
     :refresh-on-parent-update="true"

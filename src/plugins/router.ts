@@ -1,4 +1,6 @@
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
+import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
+import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { watch } from "vue";
 import {
   createRouter,
@@ -25,12 +27,14 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "party",
         name: "guest-party",
+        meta: { disableMediaSession: true },
         component: () =>
           import(/* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"),
       },
       {
         path: "quiz",
         name: "guest-quiz",
+        meta: { disableMediaSession: true },
         component: () =>
           import(
             /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizPlayerView.vue"
@@ -77,11 +81,29 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
+          // Dashboard viewers can't populate enabledPlugins (scoped like guests); trust the server, since the session only exists via an already-enabled dashboard.
+          if (authManager.isDashboardViewer()) return;
+
           // Only allow access if party plugin is enabled
           if (!store.enabledPlugins.has("party")) {
             return { name: "discover" };
           }
         },
+      },
+    ],
+  },
+  // Now-playing kiosk route for casting a player's fullscreen view; top-level like /party so it renders without nav/player chrome.
+  {
+    path: "/now-playing",
+    component: () => import("@/layouts/default/Default.vue"),
+    children: [
+      {
+        path: "",
+        name: "now-playing",
+        component: () =>
+          import(
+            /* webpackChunkName: "now-playing" */ "@/views/DashboardNowPlayingView.vue"
+          ),
       },
     ],
   },
@@ -450,16 +472,6 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresAdmin: true },
           },
           {
-            path: "addprovider/:domain",
-            name: "addproviderdetails",
-            component: () =>
-              import(
-                /* webpackChunkName: "addproviderdetails" */ "@/views/settings/AddProviderDetails.vue"
-              ),
-            props: true,
-            meta: { requiresAdmin: true },
-          },
-          {
             path: "editprovider/:instanceId",
             name: "editprovider",
             component: () =>
@@ -583,16 +595,30 @@ router.onError((error, to) => {
 });
 
 // Navigation guard for admin-only routes and guest mode restrictions
-router.beforeEach(async (to, _from, next) => {
-  const currentUser = store.currentUser;
-
+router.beforeEach(async (to) => {
   const guestRedirect = getGuestNavigationRedirect(
     authManager.isGuestAccessSession(),
     to.path,
   );
   if (guestRedirect) {
-    next(guestRedirect);
-    return;
+    return guestRedirect;
+  }
+
+  // Dashboard viewer sessions are pinned to their opened route and render kiosk-style (no nav/player chrome).
+  if (authManager.isDashboardViewer()) {
+    store.frameless = true;
+    const pinnedPath = sessionStorage.getItem(
+      DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+    );
+    // Compare fullPath (not path) so a pinned route with a query string (e.g. /now-playing?player=...) isn't a mismatch on every nav.
+    const dashboardRedirect = getDashboardViewerNavigationRedirect(
+      true,
+      pinnedPath,
+      to.fullPath,
+    );
+    if (dashboardRedirect) {
+      return dashboardRedirect;
+    }
   }
 
   // Check admin-only routes - check all matched routes for requiresAdmin meta
@@ -629,12 +655,9 @@ router.beforeEach(async (to, _from, next) => {
 
     if (!currentUser || currentUser.role !== "admin") {
       console.warn("Admin access required for", to.path);
-      next({ name: "discover" });
-      return;
+      return { name: "discover" };
     }
   }
-
-  next();
 });
 
 router.afterEach((to, from) => {

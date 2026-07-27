@@ -43,7 +43,7 @@ describe("Timeline player focus", () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
-  it("moves and focuses bonus controls before a long timeline", async () => {
+  it("moves and focuses bonus controls at the chosen boundary", async () => {
     const longRound = {
       ...bonusRound,
       timeline: Array.from({ length: 100 }, (_, index) => ({
@@ -55,6 +55,9 @@ describe("Timeline player focus", () => {
         is_anchor: index === 0,
       })),
     } satisfies MusicQuizTimelineRound;
+    const answeredState = stateWithAnswer();
+    if (!answeredState.you.answer) throw new Error("Expected fixture answer");
+    answeredState.you.answer.previous_entry_id = "entry-99";
     const wrapper = mount(TimelinePlayerAnswer, {
       attachTo: document.body,
       props: {
@@ -71,7 +74,7 @@ describe("Timeline player focus", () => {
     });
 
     await wrapper.setProps({
-      state: stateWithAnswer(),
+      state: answeredState,
       busy: true,
     });
     await nextTick();
@@ -81,11 +84,11 @@ describe("Timeline player focus", () => {
     await nextTick();
 
     const controls = wrapper.get('[data-testid="timeline-post-placement"]');
-    const timeline = wrapper.get(
-      'ol[aria-label="providers.music_quiz.timeline"]',
-    );
+    const selectedButton = wrapper.get('button[data-selected="true"]');
+    const selectedBoundary = selectedButton.element.closest("li");
+    expect(selectedBoundary?.contains(controls.element)).toBe(true);
     expect(
-      controls.element.compareDocumentPosition(timeline.element) &
+      selectedButton.element.compareDocumentPosition(controls.element) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(document.activeElement).toBe(wrapper.get("input").element);
@@ -106,14 +109,13 @@ describe("Timeline player focus", () => {
     const wrapper = mount(TimelinePlayerAnswer, {
       attachTo: document.body,
       props: {
-        state: baseState,
+        state: stateWithAnswer(),
         currentRound: bonusRound,
         busy: false,
       },
       global: {
         stubs: {
           MusicQuizCountdown: true,
-          TimelineDisplay: true,
           TimelineProgress: true,
         },
       },
@@ -121,7 +123,12 @@ describe("Timeline player focus", () => {
 
     await wrapper.setProps({
       state: stateWithAnswer([artistAnswer]),
+      busy: true,
     });
+    await nextTick();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    await wrapper.setProps({ busy: false });
     await nextTick();
 
     expect((document.activeElement as HTMLElement).textContent).toContain(
@@ -131,6 +138,33 @@ describe("Timeline player focus", () => {
       behavior: "auto",
       block: "start",
     });
+    wrapper.unmount();
+  });
+
+  it("focuses bonus controls when scrolling is unavailable", async () => {
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: undefined,
+    });
+    const wrapper = mount(TimelinePlayerAnswer, {
+      attachTo: document.body,
+      props: {
+        state: baseState,
+        currentRound: bonusRound,
+        busy: false,
+      },
+      global: {
+        stubs: {
+          MusicQuizCountdown: true,
+          TimelineProgress: true,
+        },
+      },
+    });
+
+    await wrapper.setProps({ state: stateWithAnswer() });
+    await nextTick();
+
+    expect(document.activeElement).toBe(wrapper.get("input").element);
     wrapper.unmount();
   });
 });

@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockSendCommand } = vi.hoisted(() => ({
+const { mockSendCommand, mockProviders } = vi.hoisted(() => ({
   mockSendCommand: vi.fn(),
+  mockProviders: {} as Record<string, { domain: string }>,
 }));
 
 vi.mock("@/plugins/api", () => ({
   default: {
     sendCommand: mockSendCommand,
+    providers: mockProviders,
   },
 }));
 
@@ -14,6 +16,7 @@ import {
   answerMusicQuiz,
   createMusicQuiz,
   getAvailableMusicQuizTypes,
+  getMusicQuizInfo,
   getMusicQuizPlaybackOptions,
   heartbeatMusicQuiz,
   isMusicQuizProviderEvent,
@@ -54,6 +57,27 @@ describe("useMusicQuiz commands", () => {
   beforeEach(() => {
     mockSendCommand.mockReset();
     mockSendCommand.mockResolvedValue(undefined);
+    Object.keys(mockProviders).forEach((key) => delete mockProviders[key]);
+  });
+
+  describe("getMusicQuizInfo", () => {
+    it("resolves null without a server round-trip when the provider is absent", async () => {
+      await expect(getMusicQuizInfo()).resolves.toBeNull();
+      expect(mockSendCommand).not.toHaveBeenCalled();
+    });
+
+    it("queries the server as a best-effort command when the provider is loaded", async () => {
+      mockProviders.music_quiz = { domain: "music_quiz" };
+      const info = { game_id: "game-1" };
+      mockSendCommand.mockResolvedValue(info);
+
+      await expect(getMusicQuizInfo()).resolves.toBe(info);
+      expect(mockSendCommand).toHaveBeenCalledWith(
+        "music_quiz/info",
+        undefined,
+        { suppressGlobalError: true },
+      );
+    });
   });
 
   it("sends difficulty in the create payload", async () => {

@@ -11,11 +11,14 @@ import { WebRTCTransport } from "./webrtc-transport";
 
 // Storage key for remote mode (must match connection-manager.ts)
 const REMOTE_MODE_STORAGE_KEY = "ma_remote_mode";
+const CURRENT_REMOTE_ID_STORAGE_KEY = "ma_current_remote_id";
 // Storage key to track reload attempts (prevents infinite loops)
 const SW_RELOAD_ATTEMPT_KEY = "ma_sw_reload_attempt";
 
 class HttpProxyBridge {
   private transport: WebRTCTransport | null = null;
+  private isRemoteMode: boolean | null = null;
+  private proxyScope: string | undefined;
   // Cache of recently failed requests to prevent retry loops
   // Key: path, Value: { timestamp, errorCount }
   private failedRequests = new Map<
@@ -64,6 +67,11 @@ class HttpProxyBridge {
    * Internal initialization logic
    */
   private async doInitialize(): Promise<void> {
+    if (import.meta.env.DEV) {
+      this.isReady.value = true;
+      return;
+    }
+
     // Register service worker if not already registered
     if ("serviceWorker" in navigator) {
       try {
@@ -80,15 +88,20 @@ class HttpProxyBridge {
         navigator.serviceWorker.addEventListener("message", (event) => {
           this.handleServiceWorkerMessage(event);
         });
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          void this.syncRemoteMode();
+        });
 
         // Check if we were in remote mode (from localStorage) and notify SW early
         // This prevents the race condition where images load before remote mode is set
         const storedMode = localStorage.getItem(REMOTE_MODE_STORAGE_KEY);
-        if (storedMode === "remote" && hasController) {
-          console.log(
-            "[HttpProxyBridge] Restoring remote mode from localStorage",
-          );
-          await this.notifyRemoteMode(true);
+        if (hasController) {
+          if (storedMode === "remote") {
+            console.log(
+              "[HttpProxyBridge] Restoring remote mode from localStorage",
+            );
+          }
+          await this.syncRemoteMode();
         }
 
         if (hasController) {
@@ -187,16 +200,24 @@ class HttpProxyBridge {
   /**
    * Set the WebRTC transport to use for proxying
    */
-  async setTransport(transport: WebRTCTransport | null): Promise<void> {
+  async setTransport(
+    transport: WebRTCTransport | null,
+    proxyScope?: string,
+  ): Promise<void> {
     this.transport = transport;
-    await this.notifyRemoteMode(transport !== null);
+    this.isRemoteMode = transport !== null;
+    this.proxyScope = transport ? proxyScope : undefined;
+    await this.notifyRemoteMode(transport !== null, proxyScope);
   }
 
   /**
    * Notify service worker of remote mode state
    * Returns a promise that resolves when the SW acknowledges the message
    */
-  private notifyRemoteMode(isRemote: boolean): Promise<void> {
+  private notifyRemoteMode(
+    isRemote: boolean,
+    proxyScope?: string,
+  ): Promise<void> {
     return new Promise((resolve) => {
       // If no service worker support or no controller, resolve immediately
       if (!navigator.serviceWorker?.controller) {
@@ -231,7 +252,7 @@ class HttpProxyBridge {
       // Send the message
       navigator.serviceWorker.controller.postMessage({
         type: "set-remote-mode",
-        data: { isRemote },
+        data: { isRemote, proxyScope },
       });
     });
   }
@@ -423,6 +444,17 @@ class HttpProxyBridge {
     return Array.from(bytes)
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
+  }
+
+  private async syncRemoteMode(): Promise<void> {
+    const isRemote =
+      this.isRemoteMode ??
+      localStorage.getItem(REMOTE_MODE_STORAGE_KEY) === "remote";
+    const proxyScope =
+      this.proxyScope ||
+      localStorage.getItem(CURRENT_REMOTE_ID_STORAGE_KEY) ||
+      undefined;
+    await this.notifyRemoteMode(isRemote, proxyScope);
   }
 }
 

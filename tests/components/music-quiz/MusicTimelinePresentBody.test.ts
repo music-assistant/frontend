@@ -179,11 +179,13 @@ describe("MusicTimelinePresentBody", () => {
       },
     });
     const history = wrapper.get('[data-testid="music-timeline-history"]');
+    const scrollArea = history.get("[data-timeline-scroll]");
     const cards = history.findAll("article");
 
     expect(history.attributes("data-orientation")).toBe("horizontal");
-    expect(history.classes()).toEqual(
-      expect.arrayContaining(["overflow-x-auto", "lg:col-span-2"]),
+    expect(history.classes()).toContain("lg:col-span-2");
+    expect(scrollArea.classes()).toEqual(
+      expect.arrayContaining(["min-w-0", "overflow-x-auto"]),
     );
     expect(history.get("ol").classes()).toEqual(
       expect.arrayContaining(["w-max", "min-w-full", "flex-row"]),

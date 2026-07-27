@@ -70,6 +70,21 @@ describe("useRateLimiting", () => {
     expect(stored).toBeTruthy();
     const bucket = JSON.parse(stored || "{}") as { tokens?: number };
     expect(bucket.tokens).toBe(rateLimiting.boostTokens.value);
+    expect(Object.keys(JSON.parse(stored || "{}"))).toEqual([
+      "tokens",
+      "lastRefill",
+    ]);
+  });
+
+  it("shares identity-free cooldown buckets across tabs and reloads", () => {
+    const firstView = useRateLimiting();
+    expect(firstView.consumeBoostToken()).toBe(true);
+
+    const reloadedView = useRateLimiting();
+    const cleanup = reloadedView.startCountdown();
+
+    expect(reloadedView.boostTokens.value).toBe(2);
+    cleanup();
   });
 
   it("returns false when no tokens are available", () => {

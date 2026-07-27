@@ -100,9 +100,11 @@ describe("useListenIn", () => {
 
       await checkCanListenIn();
 
-      expect(mockSendCommand).toHaveBeenCalledWith("party/can_listen_in", {
-        web_player_id: "wp-1",
-      });
+      expect(mockSendCommand).toHaveBeenCalledWith(
+        "party/can_listen_in",
+        { web_player_id: "wp-1" },
+        { suppressGlobalError: true },
+      );
       expect(canListenIn.value).toBe(true);
     });
 
@@ -442,9 +444,11 @@ describe("useListenIn", () => {
       await nextTick();
 
       expect(isListeningIn.value).toBe(false);
-      expect(mockSendCommand).toHaveBeenCalledWith("party/can_listen_in", {
-        web_player_id: "wp-2",
-      });
+      expect(mockSendCommand).toHaveBeenCalledWith(
+        "party/can_listen_in",
+        { web_player_id: "wp-2" },
+        { suppressGlobalError: true },
+      );
     });
 
     it("ignores a stale enable completion after player replacement", async () => {

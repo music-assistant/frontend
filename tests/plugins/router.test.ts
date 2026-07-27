@@ -40,4 +40,17 @@ describe("guest routes", () => {
       "quiz",
     ]);
   });
+
+  it("disables media controls on participant routes", () => {
+    const guestRoute = routes.find((route) => route.path === "/guest");
+    const participantRoutes = guestRoute?.children?.filter(
+      (route) => route.path === "party" || route.path === "quiz",
+    );
+
+    expect(
+      participantRoutes?.every(
+        (route) => route.meta?.disableMediaSession === true,
+      ),
+    ).toBe(true);
+  });
 });
