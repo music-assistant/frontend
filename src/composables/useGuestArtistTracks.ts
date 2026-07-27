@@ -26,15 +26,8 @@ export function useGuestArtistTracks() {
     artistTracks.value = [];
 
     try {
-      const providerMapping = artist.provider_mappings?.[0];
-      if (!providerMapping) {
-        throw new Error("No provider mapping found for artist");
-      }
-
-      const tracks = await api.getArtistTracks(
-        providerMapping.item_id,
-        providerMapping.provider_instance,
-      );
+      // Use the artist's own identity so a library artist returns its in-library tracks.
+      const tracks = await api.getArtistTracks(artist.item_id, artist.provider);
       if (currentRequestId !== requestId) return;
       artistTracks.value = tracks;
     } catch (error) {

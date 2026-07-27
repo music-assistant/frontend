@@ -406,15 +406,21 @@ import type {
   User,
 } from "@/plugins/api/interfaces";
 import {
+  DASHBOARD_VIEWER_PATH_STORAGE_KEY,
   GUEST_REMOTE_ID_STORAGE_KEY,
   GUEST_SERVER_ADDRESS_STORAGE_KEY,
   PENDING_JOIN_CODE_STORAGE_KEY,
   PENDING_JOIN_TYPE_STORAGE_KEY,
 } from "@/helpers/guest_session";
+import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
+import {
+  hasHomeAssistantIngressPath,
+  isHomeAssistantIngressSession,
+} from "@/helpers/ingress";
 import type { ITransport } from "@/plugins/remote/transport";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
@@ -463,10 +469,9 @@ const isRemoteOnlyMode = computed(() => {
   return urlParams.get("remote") === "1";
 });
 
-// Detect if running in Home Assistant Ingress mode
-const isIngressMode = computed(() => {
-  return window.location.pathname.includes("/hassio_ingress/");
-});
+const isIngressMode = computed(() =>
+  isHomeAssistantIngressSession(api.serverInfo.value),
+);
 
 const isHostedWithAPI = ref(false);
 
@@ -729,6 +734,39 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
   }
 };
 
+/**
+ * Exchange a dashboard code (same code system as guest join codes) for a JWT,
+ * then pin the session to its dashboard route and clean up the URL.
+ */
+const completeDashboardAuth = async (
+  dashboardCode: string,
+  rawPath: string | null,
+): Promise<boolean> => {
+  const path = sanitizeDashboardViewerPath(rawPath);
+  if (!(await tryGuestCodeAuth(dashboardCode))) {
+    return false;
+  }
+
+  sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, path);
+  await router.replace(path);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.delete("remote_id");
+  urlParams.delete("dashboard");
+  urlParams.delete("path");
+  const queryString = urlParams.toString();
+  window.history.replaceState(
+    {},
+    "",
+    window.location.origin +
+      window.location.pathname +
+      (queryString ? `?${queryString}` : "") +
+      window.location.hash,
+  );
+
+  return true;
+};
+
 type PendingGuestAuthResult = "none" | "authenticated" | "failed";
 
 const clearPendingGuestAuth = () => {
@@ -744,8 +782,10 @@ const setPendingGuestAuth = (code: string, type: "local" | "remote") => {
 function hasGuestConnectionContext(): boolean {
   return (
     authManager.isGuestAccessSession() ||
+    authManager.isDashboardViewer() ||
     sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY) !== null ||
-    new URLSearchParams(window.location.search).has("join")
+    new URLSearchParams(window.location.search).has("join") ||
+    new URLSearchParams(window.location.search).has("dashboard")
   );
 }
 
@@ -913,6 +953,8 @@ const autoConnect = async () => {
   const urlRemoteId = urlParams.get("remote_id");
   // Guest code is the short code (e.g., "ABCD1234") exchanged for JWT
   const urlJoinCode = urlParams.get("join");
+  // Dashboard code: same short-code exchange as a guest join, but for a Chromecast dashboard session; carries its own destination route.
+  const urlDashboardCode = urlParams.get("dashboard");
 
   // Also check for pending guest code from sessionStorage (survives SW reload)
   const pendingJoinCode = sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY);
@@ -982,6 +1024,49 @@ const autoConnect = async () => {
         return;
       } catch (error) {
         console.error("[Login] Remote party connection failed:", error);
+        connectionError.value =
+          error instanceof Error
+            ? error.message
+            : t("login.error_unknown", "Unknown error occurred");
+        step.value = "error";
+        return;
+      }
+    }
+  }
+
+  // Remote dashboard viewer (e.g. a Chromecast iframe); unlike guest codes, a mid-connection SW reload isn't recovered - re-cast for a fresh code.
+  if (urlRemoteId && urlDashboardCode) {
+    const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+    if (cleanRemoteId.length === 26) {
+      connectionStatusMessage.value = t(
+        "login.connecting_remote_party",
+        "Connecting to party...",
+      );
+
+      try {
+        setRemoteIdFromString(cleanRemoteId);
+        step.value = "connecting";
+
+        const transport = await connectRemote(cleanRemoteId);
+        emit("connected", transport);
+
+        if (await waitForApiConnection(15000)) {
+          if (
+            await completeDashboardAuth(urlDashboardCode, urlParams.get("path"))
+          ) {
+            return; // Success - App.vue will complete initialization
+          }
+        }
+
+        connectionError.value = t(
+          "login.connection_failed",
+          "Connection failed",
+        );
+        step.value = "error";
+        return;
+      } catch (error) {
+        console.error("[Login] Remote dashboard connection failed:", error);
         connectionError.value =
           error instanceof Error
             ? error.message
@@ -1086,11 +1171,53 @@ const autoConnect = async () => {
     }
   }
 
+  if (urlDashboardCode && !urlRemoteId) {
+    isHostedWithAPI.value = await checkIfHostedWithAPI();
+
+    if (isHostedWithAPI.value) {
+      connectionStatusMessage.value = t(
+        "login.connecting_local_party",
+        "Connecting to party...",
+      );
+
+      try {
+        const address =
+          window.location.origin + window.location.pathname.replace(/\/$/, "");
+        serverAddress.value = address;
+
+        emit("local-connect", address);
+
+        if (await waitForApiConnection()) {
+          if (
+            await completeDashboardAuth(urlDashboardCode, urlParams.get("path"))
+          ) {
+            return; // Success - App.vue will take over
+          }
+        }
+
+        connectionError.value = t(
+          "login.connection_failed",
+          "Connection failed",
+        );
+        step.value = "error";
+        return;
+      } catch (error) {
+        console.error("[Login] Local dashboard connection failed:", error);
+        connectionError.value =
+          error instanceof Error
+            ? error.message
+            : t("login.error_unknown", "Unknown error occurred");
+        step.value = "error";
+        return;
+      }
+    }
+  }
+
   // Check if we're hosted with the API
   isHostedWithAPI.value = await checkIfHostedWithAPI();
 
-  // Special handling for Home Assistant Ingress mode
-  if (isIngressMode.value) {
+  let currentHostConnected = false;
+  if (hasHomeAssistantIngressPath()) {
     connectionStatusMessage.value = t(
       "login.connecting_ingress",
       "Connecting via Home Assistant...",
@@ -1098,32 +1225,10 @@ const autoConnect = async () => {
 
     const address =
       window.location.origin + window.location.pathname.replace(/\/$/, "");
+    serverAddress.value = address;
 
-    try {
-      emit("local-connect", address);
-
-      if (await waitForApiConnection()) {
-        if (await tryIngressAuth()) {
-          return; // Success - App.vue will take over
-        }
-      }
-
-      console.error("[Login] Ingress authentication failed");
-      connectionError.value = t(
-        "login.error_ingress_failed",
-        "Failed to authenticate via Home Assistant Ingress",
-      );
-      step.value = "error";
-      return;
-    } catch (error) {
-      console.error("[Login] Ingress connection failed:", error);
-      connectionError.value =
-        error instanceof Error
-          ? error.message
-          : t("login.error_unknown", "Unknown error occurred");
-      step.value = "error";
-      return;
-    }
+    emit("local-connect", address);
+    currentHostConnected = await waitForApiConnection();
   }
 
   // If in remote-only mode, skip all local connection attempts
@@ -1228,7 +1333,7 @@ const autoConnect = async () => {
   }
 
   // 1. If hosted with API, try connecting to current host first
-  if (isHostedWithAPI.value) {
+  if (isHostedWithAPI.value || currentHostConnected) {
     connectionStatusMessage.value = t(
       "login.checking_local",
       "Checking local server...",
@@ -1237,15 +1342,34 @@ const autoConnect = async () => {
     const storedToken = authManager.getToken();
     const localWsUrl = getWebSocketUrlFromLocation();
 
-    if (await tryConnect(localWsUrl, 3000)) {
+    if (currentHostConnected || (await tryConnect(localWsUrl, 3000))) {
       const address =
         window.location.origin + window.location.pathname.replace(/\/$/, "");
       serverAddress.value = address;
 
-      emit("local-connect", address);
+      if (!currentHostConnected) {
+        emit("local-connect", address);
+      }
+
+      const apiConnected =
+        currentHostConnected || (await waitForApiConnection());
+      if (apiConnected && isIngressMode.value) {
+        if (await tryIngressAuth()) {
+          return; // Success - App.vue will take over
+        }
+
+        console.error("[Login] Ingress authentication failed");
+        connectionError.value = t(
+          "login.error_ingress_failed",
+          "Failed to authenticate via Home Assistant Ingress",
+        );
+        step.value = "error";
+        return;
+      }
+
       rememberServerAddress(address);
 
-      if (await waitForApiConnection()) {
+      if (apiConnected) {
         const pendingGuestAuthResult = await tryPendingGuestAuth();
         if (pendingGuestAuthResult !== "none") {
           return;

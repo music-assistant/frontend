@@ -11,6 +11,7 @@ import {
   type ParametricEQFilter,
   type StereoWidthFilter,
   type ToneControlFilter,
+  type TransposeFilter,
 } from "@/plugins/api/interfaces";
 
 export function sanitizeDSPPresetConfig(config: DSPConfig): DSPConfig {
@@ -76,6 +77,12 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
     return areBalanceFiltersEqual(left, right);
   }
   if (
+    left.type === DSPFilterType.TRANSPOSE &&
+    right.type === DSPFilterType.TRANSPOSE
+  ) {
+    return areTransposeFiltersEqual(left, right);
+  }
+  if (
     left.type === DSPFilterType.STEREO_WIDTH &&
     right.type === DSPFilterType.STEREO_WIDTH
   ) {
@@ -124,6 +131,13 @@ function areBalanceFiltersEqual(
   right: BalanceFilter,
 ): boolean {
   return left.balance === right.balance;
+}
+
+function areTransposeFiltersEqual(
+  left: TransposeFilter,
+  right: TransposeFilter,
+): boolean {
+  return left.semitones === right.semitones;
 }
 
 function areStereoWidthFiltersEqual(

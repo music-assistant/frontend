@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
   share: vi.fn(),
   subscribe: vi.fn(),
   toastError: vi.fn(),
-  toCanvas: vi.fn(),
 }));
 
 vi.mock("@/composables/usePartyConfig", () => ({
@@ -54,12 +53,6 @@ vi.mock("@/plugins/i18n", () => ({
   },
 }));
 
-vi.mock("qrcode", () => ({
-  default: {
-    toCanvas: mocks.toCanvas,
-  },
-}));
-
 vi.mock("vue-sonner", () => ({
   toast: {
     error: mocks.toastError,
@@ -98,7 +91,6 @@ describe("PartyQR", () => {
     mocks.share.mockReset().mockResolvedValue(undefined);
     mocks.subscribe.mockReset().mockReturnValue(vi.fn());
     mocks.toastError.mockReset();
-    mocks.toCanvas.mockReset().mockResolvedValue(undefined);
   });
 
   afterEach(() => {

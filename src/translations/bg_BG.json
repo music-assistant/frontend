@@ -255,7 +255,8 @@
                 "name": "Кеш"
             },
             "metadata": {
-                "name": "Метаданни"
+                "name": "Метаданни",
+                "description": "Конфигурация на основния модул за управление на метаданни"
             },
             "music": {
                 "name": "Музика"
@@ -480,9 +481,11 @@
         "enter_fullscreen": "Влизане в режим на цял екран",
         "exit_fullscreen": "Изход от режим на цял екран",
         "select_player": "Изберете плейър",
+        "change_avatar": "Промяна на аватара",
         "user_options": "Потребителски опции",
         "help": "Помощ",
-        "import_file": "Импортиране на файл"
+        "import_file": "Импортиране на файл",
+        "musical_key": "Музикален ключ"
     },
     "topresult": "Най-добър резултат",
     "track": "Песен",
@@ -849,6 +852,19 @@
             "powered_by": "Задвижвано от"
         },
         "music_quiz": {
+            "loading": "Зареждане...",
+            "no_active_game": "Няма активна игра",
+            "game_removed": "Играта вече не е налична",
+            "game_ended": "Играта приключи",
+            "game_no_longer_available": "Тази игра вече не е налична",
+            "new_game": "Нова игра",
+            "phase_answers_open": "Отговорите са отворени!",
+            "players": "Играчи",
+            "enter_name": "Въведете името си",
+            "waiting_for_answers": "В очакване на отговори...",
+            "choose_answer": "Изберете своя отговор!",
+            "correct": "Правилно!",
+            "incorrect": "Неправилно",
             "game_over": "Край на играта!",
             "connection_lost": "Връзката е прекъсната, повторно свързване...",
             "answer_seconds": "Време за отговор (секунди)",
@@ -858,6 +874,8 @@
             "selected_music": "Избрана музика",
             "pick_at_least_one_source": "Изберете поне един източник",
             "playlist": "Плейлист",
+            "track_with_artist": "Песен • {0}",
+            "track": "Песен",
             "source_music": "Музика",
             "track_count": "{0} песен",
             "tracks_count": "{0} песни",
@@ -880,7 +898,26 @@
             "unsupported_title": "Изисква се актуализация",
             "unsupported_description": "Този тип игра изисква по-нова версия на интерфейса на Music Assistant.",
             "end_game_confirm": "Сигурни ли сте, че искате да прекратите тази игра? Това ще премахне текущата игра за всички играчи.",
-            "end_game": "Край на играта"
+            "end_game": "Край на играта",
+            "add_music_sources": "Добавяне на музикални източници",
+            "genre": "Жанр",
+            "album": "Албум",
+            "artist": "Изпълнител",
+            "genre_count": "{0} жанр",
+            "genres_count": "{0} жанра",
+            "album_count": "{0} албум",
+            "albums_count": "{0} албуми",
+            "artist_count": "{0} изпълнител",
+            "artists_count": "{0} изпълнители",
+            "game_starts_in": "Играта започва след {0}",
+            "playback_mode": "Режим на възпроизвеждане",
+            "speaker": "Говорител",
+            "choose_speaker": "Изберете говорител",
+            "loading_playback_options": "Зареждане на опциите за възпроизвеждане...",
+            "error_load_playback_options": "Не можаха да се заредят опциите за възпроизвеждане",
+            "timeline_place_before_year": "Преди {0}",
+            "timeline_place_after_year": "След {0}",
+            "timeline_place_between_years": "Между {0} и {1}"
         }
     },
     "no_lyrics_available": "Няма налични текстове на песни",
@@ -1031,11 +1068,13 @@
         "field_album_is_not": "Албумът не е",
         "field_artist_is": "Изпълнителят е",
         "field_artist_is_not": "Изпълнителят не е",
+        "field_favorite": "Любим",
         "field_genre_is": "Жанрът е",
         "field_genre_is_not": "Жанрът не е",
         "field_year": "Година",
         "match_all": "всички",
         "match_any": "всеки",
+        "no_rules_title": "Всички песни от библиотеката",
         "op_between": "между",
         "op_is": "е",
         "op_is_not": "не е",
@@ -1047,6 +1086,8 @@
         "name_required": "Моля, въведете име.",
         "results_library": "Резултати от библиотеката",
         "results_other": "Други резултати",
+        "field_album_type_is": "Типът на албума е",
+        "field_album_type_is_not": "Типът на албума не е",
         "explicit_allowed": "Разрешено",
         "explicit_not_allowed": "Не е разрешено",
         "field_duration": "Продължителност",
@@ -1095,6 +1136,8 @@
     "autoplay_on_title": "Автоматичното възпроизвеждане е активирано",
     "autoplay_off_title": "Автоматичното възпроизвеждане е деактивирано",
     "open_player_settings": "Отваряне на настройките на плейъра",
+    "sleep_timer": "Таймер за заспиване",
+    "sleep_timer_remaining": "Спира в {0}",
     "sleep_timer_preset": {
         "15": "15 минути",
         "30": "30 минути",
@@ -1107,5 +1150,13 @@
     "bpm": "BPM",
     "musical_key": "Ключ",
     "audio_overlay_sound": "Звук",
-    "audio_overlay_select_sound": "Изберете звук"
+    "audio_overlay_select_sound": "Изберете звук",
+    "menu_edit_disable": "Изход от режим на редактиране",
+    "guest": {
+        "loading_description": "Моля, изчакайте...",
+        "error_description": "Проверете връзката си и опитайте отново.",
+        "return_to_app": "Назад към Music Assistant"
+    },
+    "searching": "Търсене...",
+    "pause": "Пауза"
 }

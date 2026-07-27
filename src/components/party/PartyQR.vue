@@ -17,7 +17,16 @@
         :aria-label="$t('providers.party.copy_link')"
         @click="copyUrlToClipboard"
       >
-        <canvas ref="qrCanvas"></canvas>
+        <svg
+          class="qr-code"
+          :viewBox="`0 0 ${qrExtent} ${qrExtent}`"
+          :width="qrSize"
+          :height="qrSize"
+          shape-rendering="crispEdges"
+          aria-hidden="true"
+        >
+          <path :d="qrModulesPath" :fill="qrDark" />
+        </svg>
         <Transition name="copy-toast">
           <div
             v-if="copyFeedback"
@@ -69,16 +78,14 @@ import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { AlertCircle, Check } from "@lucide/vue";
 import QRCode from "qrcode";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 const props = withDefaults(
   defineProps<{
     qrDark?: string;
-    qrLight?: string;
   }>(),
   {
     qrDark: "#FFFFFF",
-    qrLight: "#00000000",
   },
 );
 
@@ -102,7 +109,6 @@ const shareDescription = computed(
     $t("providers.party.share_description"),
 );
 
-const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrContainer = ref<HTMLElement | null>(null);
 const shareActions = ref<InstanceType<typeof InvitationShareActions> | null>(
   null,
@@ -119,6 +125,34 @@ let unsubProviders: (() => void) | undefined;
 let unsubCoreState: (() => void) | undefined;
 let unmounted = false;
 
+// Quiet zone around the symbol, in modules.
+const QR_MARGIN = 2;
+
+const qrModules = computed(() =>
+  qrCodeUrl.value ? QRCode.create(qrCodeUrl.value).modules : null,
+);
+
+const qrExtent = computed(() =>
+  qrModules.value ? qrModules.value.size + QR_MARGIN * 2 : 1,
+);
+
+// One 1x1 module square per dark bit; the viewBox scales it to any size, so
+// resizing and recolouring stay pure attribute updates.
+const qrModulesPath = computed(() => {
+  const modules = qrModules.value;
+  if (!modules) return "";
+  const { size, data } = modules;
+  let path = "";
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (data[y * size + x]) {
+        path += `M${x + QR_MARGIN} ${y + QR_MARGIN}h1v1h-1z`;
+      }
+    }
+  }
+  return path;
+});
+
 function copyUrlToClipboard() {
   void shareActions.value?.copyLink();
 }
@@ -134,19 +168,6 @@ function handleCopyResult(success: boolean) {
   }, 2000);
 }
 
-// Render QR code when canvas mounts (after v-if switches to the qr-display branch)
-watch(qrCanvas, (canvas) => {
-  if (canvas) renderQRToCanvas();
-});
-
-// Re-render when colors change (e.g., empty-state vs album-art mode)
-watch(
-  () => [props.qrDark, props.qrLight],
-  () => {
-    if (qrCanvas.value && qrCodeUrl.value) renderQRToCanvas();
-  },
-);
-
 onMounted(async () => {
   await generateQRCode();
   if (unmounted) return;
@@ -154,12 +175,7 @@ onMounted(async () => {
   // Set up ResizeObserver to regenerate QR code when container size changes
   if (qrContainer.value) {
     resizeObserver = new ResizeObserver(() => {
-      if (qrCodeUrl.value && qrCanvas.value) {
-        const newSize = calculateQRSize();
-        if (newSize !== qrSize.value) {
-          renderQRToCanvas();
-        }
-      }
+      qrSize.value = calculateQRSize();
     });
     resizeObserver.observe(qrContainer.value);
   }
@@ -208,19 +224,6 @@ function calculateQRSize() {
   return Math.max(160, Math.min(1024, availableSize));
 }
 
-async function renderQRToCanvas() {
-  if (!qrCanvas.value || !qrCodeUrl.value) return;
-  qrSize.value = calculateQRSize();
-  await QRCode.toCanvas(qrCanvas.value, qrCodeUrl.value, {
-    width: qrSize.value,
-    margin: 2,
-    color: {
-      dark: props.qrDark,
-      light: props.qrLight,
-    },
-  });
-}
-
 async function generateQRCode() {
   loading.value = true;
   try {
@@ -233,13 +236,8 @@ async function generateQRCode() {
       return;
     }
 
-    // Set URL — the watch on qrCanvas handles initial mount rendering
+    // Setting the URL is enough — the symbol is derived from it.
     qrCodeUrl.value = url;
-
-    // If canvas is already mounted (e.g., re-generating after config change), render now
-    if (qrCanvas.value) {
-      await renderQRToCanvas();
-    }
   } catch (error) {
     console.error("Failed to generate QR code:", error);
     guestAccessEnabled.value = false;
@@ -353,7 +351,7 @@ async function generateQRCode() {
   transform: translate(-50%, -50%) scale(0.8);
 }
 
-.qr-display canvas {
+.qr-display .qr-code {
   display: block;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
