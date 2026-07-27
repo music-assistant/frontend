@@ -1,11 +1,6 @@
 import { computed, onMounted, ref } from "vue";
 import api from "@/plugins/api";
-import {
-  type DSPConfig,
-  DSPFilterType,
-  type DSPIRMetadata,
-  EventType,
-} from "@/plugins/api/interfaces";
+import { type DSPIRMetadata, EventType } from "@/plugins/api/interfaces";
 
 interface DSPIRRegistryOptions {
   optional?: boolean;
@@ -48,22 +43,18 @@ const addIR = (ir: DSPIRMetadata): void => {
   available.value = true;
 };
 
-// Removing an IR blanks the ir_id of every convolution filter that used it,
-// so a config arriving with an unselected convolution filter is the signal
-// that our list may be stale. Refreshing on every DSP update would refetch on
-// each slider save instead. This misses an upload from another session and the
-// removal of an unreferenced IR; both need a server-side IR event to fix.
+// The event carries the library itself, so it replaces the list outright. It
+// fires on every upload and removal, including ones made from another session.
+// Servers without it never fire it; the fetch on mount covers those.
 const subscribe = (): void => {
   if (subscribed) return;
   subscribed = true;
   api.subscribe(
-    EventType.PLAYER_DSP_CONFIG_UPDATED,
-    (event: { data: DSPConfig }) => {
-      const hasUnselected = event.data.filters?.some(
-        (filter) =>
-          filter.type === DSPFilterType.CONVOLUTION && filter.ir_id === "",
-      );
-      if (hasUnselected) void refresh(true);
+    EventType.DSP_IRS_UPDATED,
+    (event: { data: DSPIRMetadata[] }) => {
+      generation += 1;
+      irs.value = event.data;
+      available.value = true;
     },
   );
 };

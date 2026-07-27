@@ -357,6 +357,7 @@ export enum EventType {
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
   PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
+  DSP_IRS_UPDATED = "dsp_irs_updated",
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
   // special types for local subscriptions only
