@@ -50,6 +50,9 @@ const discoverItems = computed(() =>
 const libraryItems = computed(() =>
   navItems.value.filter((item) => item.group === "library"),
 );
+const pluginItems = computed(() =>
+  navItems.value.filter((item) => item.group === "plugins"),
+);
 const systemItems = computed(() =>
   navItems.value.filter((item) => item.group === "system"),
 );
@@ -57,6 +60,7 @@ const systemItems = computed(() =>
 const DEFAULT_SECTION_LABELS: Record<MenuGroup, string> = {
   explore: "explore",
   library: "library",
+  plugins: "plugins",
   system: "system",
 };
 
@@ -144,6 +148,14 @@ onUnmounted(() => {
         :default-label="sections.library.defaultLabel"
         :label-hidden="sections.library.labelHidden"
         section-id="library"
+        :edit-mode="editMode"
+      />
+      <NavMain
+        :items="pluginItems"
+        :label="sections.plugins.label"
+        :default-label="sections.plugins.defaultLabel"
+        :label-hidden="sections.plugins.labelHidden"
+        section-id="plugins"
         :edit-mode="editMode"
       />
       <NavMain
