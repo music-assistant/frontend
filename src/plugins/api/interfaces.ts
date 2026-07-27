@@ -17,7 +17,6 @@ export enum DSPFilterType {
   GAIN = "gain",
   BALANCE = "balance",
   TRANSPOSE = "transpose",
-  CONVOLUTION = "convolution",
 }
 
 export enum ParametricEQBandType {
@@ -75,34 +74,13 @@ export interface TransposeFilter extends DSPFilterBase {
   semitones: number;
 }
 
-// Applies a stored impulse response to the audio. `ir_id` references an entry
-// in the server-side IR library; an empty string is valid and means "none
-// selected", which makes the filter a no-op. `gain` trims the output level,
-// since an impulse response changes overall loudness (-60..60 dB).
-export interface ConvolutionFilter extends DSPFilterBase {
-  type: DSPFilterType.CONVOLUTION;
-  ir_id: string;
-  gain: number;
-}
-
-// Metadata of a stored impulse response. Everything but `name` is probed from
-// the file server-side and is informational only.
-export interface DSPIRMetadata {
-  ir_id: string;
-  name: string;
-  sample_rate: number;
-  channels: number;
-  duration: number;
-}
-
 // Union type for all possible filters
 export type DSPFilter =
   | ParametricEQFilter
   | ToneControlFilter
   | GainFilter
   | BalanceFilter
-  | TransposeFilter
-  | ConvolutionFilter;
+  | TransposeFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
@@ -365,7 +343,6 @@ export enum EventType {
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
   PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
-  DSP_IRS_UPDATED = "dsp_irs_updated",
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
   DASHBOARD_SESSIONS_UPDATED = "dashboard_sessions_updated",
