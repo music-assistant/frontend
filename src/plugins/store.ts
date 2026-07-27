@@ -9,6 +9,7 @@ import {
 } from "./api/interfaces";
 
 import { StoredState } from "@/components/ItemsListing.vue";
+import { isHomeAssistantIngressSession } from "@/helpers/ingress";
 import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
 import api from "./api";
 
@@ -131,7 +132,9 @@ export const store: Store = reactive({
   }),
   currentUser: undefined,
   serverInfo: undefined,
-  isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
+  isIngressSession: computed(() =>
+    isHomeAssistantIngressSession(api.serverInfo.value),
+  ),
   isOnboarding: false,
   enabledPlugins: new Set(),
   isPartyGuest: false,

@@ -172,9 +172,6 @@ class RemoteConnectionManager {
 
       this.transport = transport;
       this.setupTransportHandlers();
-      await transport.connect();
-
-      this.state.value = RemoteConnectionState.CONNECTED;
 
       // Set up HTTP proxy bridge for remote connections
       // This must be awaited to ensure SW has remote mode set before images load
@@ -286,6 +283,10 @@ class RemoteConnectionManager {
 
   private setupTransportHandlers(): void {
     if (!this.transport) return;
+
+    this.transport.on("open", () => {
+      this.state.value = RemoteConnectionState.CONNECTED;
+    });
 
     this.transport.on("close", () => {
       this.state.value = RemoteConnectionState.DISCONNECTED;

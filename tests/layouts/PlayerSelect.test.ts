@@ -12,7 +12,7 @@ import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getPreference, setPreference, storage } = vi.hoisted(() => {
+const { emitEvent, getPreference, setPreference, storage } = vi.hoisted(() => {
   const values = new Map<string, string>();
   const storage = {
     clear: () => values.clear(),
@@ -26,6 +26,7 @@ const { getPreference, setPreference, storage } = vi.hoisted(() => {
   };
   vi.stubGlobal("localStorage", storage);
   return {
+    emitEvent: vi.fn(),
     getPreference: vi.fn(() => ({ value: undefined })),
     setPreference: vi.fn(),
     storage,
@@ -62,6 +63,12 @@ vi.mock("@/plugins/web_player", async () => {
     }),
   };
 });
+
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: {
+    emit: emitEvent,
+  },
+}));
 
 vi.mock("@/composables/userPreferences", () => ({
   useUserPreferences: () => ({
@@ -326,6 +333,23 @@ describe("PlayerSelect", () => {
 
     expect(store.activePlayerId).toBe(player.player_id);
     expect(store.showPlayersMenu).toBe(false);
+  });
+
+  it("starts setup instead of selecting a setup-required player", async () => {
+    const player = createPlayer("kitchen", "Kitchen");
+    player.available = false;
+    player.needs_setup = true;
+    api.players = { [player.player_id]: player };
+    const wrapper = mountPlayerSelect();
+
+    await wrapper.find(".select-player").trigger("click");
+
+    expect(store.activePlayerId).toBeUndefined();
+    expect(store.showPlayersMenu).toBe(false);
+    expect(emitEvent).toHaveBeenCalledWith("setupFlowDialog", {
+      kind: "player",
+      playerId: player.player_id,
+    });
   });
 
   it("enables the detailed card layout only in the selector", () => {
