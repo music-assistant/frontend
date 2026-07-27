@@ -90,7 +90,7 @@ const { t } = useI18n();
 
 const filter = defineModel<ConvolutionFilter>({ required: true });
 
-const { irs, refresh } = useDSPIRs();
+const { addIR, irs, refresh } = useDSPIRs();
 const showManager = ref(false);
 
 // The server accepts -60..60 dB; the slider itself only spans the usual ±15,
@@ -144,8 +144,12 @@ const gain = computed({
 });
 
 const onUploaded = (ir: DSPIRMetadata) => {
-  void refresh();
+  // List the new IR before selecting it, so the select never falls back to the
+  // missing-IR label while the refetch is in flight. Refreshing afterwards
+  // bumps the generation, discarding any fetch started before the upload.
+  addIR(ir);
   filter.value.ir_id = ir.ir_id;
+  void refresh();
   showManager.value = false;
 };
 

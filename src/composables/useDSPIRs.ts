@@ -33,6 +33,15 @@ export function useDSPIRs(options: DSPIRRegistryOptions = {}) {
     }
   };
 
+  // An upload response is a complete record, so it can be listed before the
+  // refetch lands and the selection never points at an id the list lacks.
+  const addIR = (ir: DSPIRMetadata): void => {
+    const index = irs.value.findIndex((item) => item.ir_id === ir.ir_id);
+    if (index === -1) irs.value.push(ir);
+    else irs.value[index] = ir;
+    available.value = true;
+  };
+
   // Removing an IR blanks the ir_id of every convolution filter that used it,
   // so a config arriving with an unselected convolution filter is the signal
   // that our list may be stale. Refreshing on every DSP update would refetch on
@@ -58,6 +67,7 @@ export function useDSPIRs(options: DSPIRRegistryOptions = {}) {
   const getIRName = (irId: string | null | undefined) => getIR(irId)?.name;
 
   return {
+    addIR,
     available,
     getIR,
     getIRName,
