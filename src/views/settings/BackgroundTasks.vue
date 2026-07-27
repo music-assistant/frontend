@@ -16,10 +16,9 @@
 
     <div class="pl-5 font-weight-medium">
       {{
-        t("background_tasks.total", [
-          filteredTasks.length,
-          filteredTasks.length !== 1 ? "s" : "",
-        ])
+        t("background_tasks.total", filteredTasks.length, {
+          named: { count: filteredTasks.length },
+        })
       }}
     </div>
 
