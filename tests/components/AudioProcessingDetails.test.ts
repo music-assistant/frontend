@@ -143,7 +143,6 @@ describe("AudioProcessingDetails", () => {
         "dsp-filter-0-1",
         "dsp-filter-0-2",
         "dsp-output-gain-0",
-        "output-limiter-0",
         "output-format-0",
         "source-channel-0",
       ]),
@@ -175,7 +174,7 @@ describe("AudioProcessingDetails", () => {
       "32-bit float PCM",
     );
     expect(headroom.findAll("li").map((detail) => detail.text())).toContain(
-      "Floating-point headroom is available for: Volume normalization, Playback speed, Crossfade, Audio overlay, DSP, Output Limiter.",
+      "Floating-point headroom is available for: Volume normalization, Playback speed, Crossfade, Audio overlay, DSP.",
     );
     expect(
       wrapper
@@ -191,7 +190,6 @@ describe("AudioProcessingDetails", () => {
       "dsp-filter-0-2",
       "dsp-output-gain-0",
       "source-channel-0",
-      "output-limiter-0",
       "output-format-0",
       "destination",
     ]);
@@ -219,7 +217,6 @@ describe("AudioProcessingDetails", () => {
     expect(text).toContain("Gain");
     expect(text).toContain("Balance");
     expect(text).toContain("Source channel: Left");
-    expect(text).toContain("Output Limiter");
     expect(text).toContain("Lossless");
     expect(
       wrapper
@@ -677,7 +674,7 @@ describe("AudioProcessingDetails", () => {
     ).toBe("DSP unavailable for this group");
   });
 
-  it("hides disabled DSP while retaining limiter headroom context", () => {
+  it("hides disabled DSP and reports no headroom consumers", () => {
     const sourceFormat = makeFormat({
       sample_rate: 48000,
       bit_depth: 16,
@@ -697,7 +694,6 @@ describe("AudioProcessingDetails", () => {
             player_ids: ["player-1"],
             dsp: {
               state: DSPState.DISABLED,
-              output_limiter: true,
             },
             output_format: sourceFormat,
           },
@@ -707,13 +703,14 @@ describe("AudioProcessingDetails", () => {
     );
 
     expect(wrapper.find('[data-stage="dsp-state-0"]').exists()).toBe(false);
-    expect(wrapper.find('[data-stage="output-limiter-0"]').exists()).toBe(true);
     expect(
       wrapper
         .find('[data-stage="pcm-format"]')
         .findAll("li")
         .map((detail) => detail.text()),
-    ).toContain("Floating-point headroom is available for: Output Limiter.");
+    ).not.toContainEqual(
+      expect.stringContaining("Floating-point headroom is available for"),
+    );
   });
 
   it("keeps missing destination IDs visible in the grouped detail list", () => {
@@ -964,7 +961,6 @@ function makeFullChain(): AudioProcessingChain {
             },
           ],
           output_gain: 2,
-          output_limiter: true,
         },
         source_channel: AudioChannel.FL,
         output_format: makeFormat({
