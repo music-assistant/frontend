@@ -1,56 +1,51 @@
 <template>
-  <div class="@container p-4">
-    <div class="flex flex-wrap items-center gap-4">
-      <div class="min-w-0 flex-1 px-1 pb-6">
+  <div class="p-4">
+    <div class="flex items-center gap-4 pb-7">
+      <div class="relative min-w-0 flex-1 px-1">
         <Slider
+          class="dsp-slider"
           :model-value="[sliderValue]"
           :min="MIN_SEMITONES"
           :max="MAX_SEMITONES"
           :step="1"
           @update:model-value="onSlide"
         />
-        <div class="mt-2 flex justify-between text-xs text-muted-foreground">
+        <div
+          class="pointer-events-none absolute inset-x-1 top-full mt-2 flex justify-between text-xs text-muted-foreground"
+        >
           <span>{{ format(MIN_SEMITONES) }}</span>
           <span>{{ $t("settings.dsp.transpose.original_key") }}</span>
           <span>+{{ format(MAX_SEMITONES) }}</span>
         </div>
       </div>
-      <div class="order-last mb-6 w-full @sm:order-none @sm:w-auto">
-        <div class="flex items-center gap-4">
-          <Input
-            v-model="fieldValue"
-            type="number"
-            :min="MIN_SEMITONES"
-            :max="MAX_SEMITONES"
-            step="0.001"
-            class="max-w-[100px]"
-            :aria-label="$t('settings.dsp.types.transpose')"
-            @focus="isEditing = true"
-            @blur="isEditing = false"
-          />
-          <span class="min-w-[90px] text-muted-foreground">
-            {{ unitLabel }}
-          </span>
-        </div>
-        <TooltipProvider :delay-duration="200">
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <Button
-                variant="outline"
-                size="sm"
-                class="mt-2 w-[100px]"
-                :class="isConcertPitch432 ? 'border-primary text-primary' : ''"
-                @click="setConcertPitch432"
-              >
-                {{ $t("settings.dsp.transpose.concert_pitch_432") }}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {{ $t("settings.dsp.transpose.concert_pitch_432_hint") }}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+      <Input
+        v-model="fieldValue"
+        type="number"
+        :min="MIN_SEMITONES"
+        :max="MAX_SEMITONES"
+        step="0.001"
+        class="max-w-[100px]"
+        :aria-label="$t('settings.dsp.types.transpose')"
+        @focus="isEditing = true"
+        @blur="isEditing = false"
+      />
+      <span class="min-w-[90px] text-muted-foreground">
+        {{ unitLabel }}
+      </span>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <Button
+        variant="outline"
+        size="sm"
+        :class="isConcertPitch432 ? 'border-primary text-primary' : ''"
+        @click="setConcertPitch432"
+      >
+        {{ $t("settings.dsp.transpose.concert_pitch_432") }}
+      </Button>
+      <span class="text-xs text-muted-foreground">
+        {{ $t("settings.dsp.transpose.concert_pitch_432_hint") }}
+      </span>
     </div>
 
     <Alert variant="info" class="mt-4">
@@ -69,20 +64,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { Info, TriangleAlert } from "@lucide/vue";
-import { $t } from "@/plugins/i18n";
-import { TransposeFilter } from "@/plugins/api/interfaces";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TransposeFilter } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { Info, TriangleAlert } from "@lucide/vue";
+import { computed, ref } from "vue";
 
 const MIN_SEMITONES = -6;
 const MAX_SEMITONES = 6;
