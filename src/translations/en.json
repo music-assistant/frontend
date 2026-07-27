@@ -872,7 +872,7 @@
             "dsp_title": "DSP",
             "bit_perfect": "Bit-perfect output",
             "bit_perfect_badge": "Bit-perfect",
-            "bit_perfect_detail": "Bit-perfect: audio samples are unchanged from the source.",
+            "bit_perfect_detail": "Bit-perfect: decoded source samples reach the output unchanged.",
             "samples_changed_detail": "Audio processing or lossless format conversion changed the audio samples. This is not bit-perfect, but should not cause an audible loss of quality.",
             "lossy_output_detail": "The output is encoded with a lossy codec. This is not bit-perfect and may reduce sound quality.",
             "bit_perfect_unknown_detail": "Bit-perfect status is unavailable.",
