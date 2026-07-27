@@ -80,6 +80,16 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     );
   });
 
+  it("groups the plugin-backed entries under the plugins section", () => {
+    storeMock.enabledPlugins = new Set(["party", "music_quiz", "ai_radio"]);
+
+    const pluginIds = getMenuItems()
+      .filter((item) => item.group === "plugins")
+      .map((item) => item.id);
+
+    expect(pluginIds).toEqual(["party", "music_quiz", "ai_radio"]);
+  });
+
   it("ignores the retired menu_items whitelist preferences", () => {
     // preferences written by pre-edit-mode frontends have no effect anymore
     setPreferences({
