@@ -6,9 +6,7 @@ interface DSPIRRegistryOptions {
   optional?: boolean;
 }
 
-// The IR library is server-wide, so the list is shared by every consumer: an
-// upload from the DSP editor has to be visible to the stream details panel
-// without either of them refetching.
+// The IR library is server-wide, so every caller shares one list.
 const irs = ref<DSPIRMetadata[]>([]);
 const available = ref<boolean>();
 const irsById = computed(
@@ -17,9 +15,7 @@ const irsById = computed(
 let generation = 0;
 let subscribed = false;
 
-// `suppressError` belongs to the caller that triggered the fetch, not to the
-// shared list: a failure while the editor is open warrants the global error,
-// the same failure behind the stream details panel does not.
+// Whoever triggered the fetch decides whether a failure raises the global error.
 const refresh = async (suppressError: boolean): Promise<void> => {
   const refreshGeneration = ++generation;
   try {
@@ -34,8 +30,7 @@ const refresh = async (suppressError: boolean): Promise<void> => {
   }
 };
 
-// An upload response is a complete record, so it can be listed before the
-// refetch lands and the selection never points at an id the list lacks.
+// Upload responses are complete records, so a new IR can be listed at once.
 const addIR = (ir: DSPIRMetadata): void => {
   const index = irs.value.findIndex((item) => item.ir_id === ir.ir_id);
   if (index === -1) irs.value.push(ir);
@@ -43,9 +38,8 @@ const addIR = (ir: DSPIRMetadata): void => {
   available.value = true;
 };
 
-// The event carries the library itself, so it replaces the list outright. It
-// fires on every upload and removal, including ones made from another session.
-// Servers without it never fire it; the fetch on mount covers those.
+// The event carries the new library. Older servers never emit it, leaving the
+// fetch on mount as the only refresh.
 const subscribe = (): void => {
   if (subscribed) return;
   subscribed = true;

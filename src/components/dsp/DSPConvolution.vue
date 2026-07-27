@@ -144,9 +144,8 @@ const gain = computed({
 });
 
 const onUploaded = (ir: DSPIRMetadata) => {
-  // List the new IR before selecting it, so the select never falls back to the
-  // missing-IR label while the refetch is in flight. Refreshing afterwards
-  // bumps the generation, discarding any fetch started before the upload.
+  // List it before selecting, or the select shows the missing-IR label until
+  // the refetch lands.
   addIR(ir);
   filter.value.ir_id = ir.ir_id;
   void refresh();
