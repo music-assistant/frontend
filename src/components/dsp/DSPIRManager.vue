@@ -94,6 +94,7 @@ import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { FileMusic, Trash2 } from "@lucide/vue";
 import { api } from "@/plugins/api";
+import { eventbus } from "@/plugins/eventbus";
 import type { DSPIRMetadata } from "@/plugins/api/interfaces";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -188,15 +189,20 @@ const upload = async () => {
   }
 };
 
-const removeIR = async (ir: DSPIRMetadata) => {
-  if (!confirm(t("settings.dsp.convolution.remove_confirm", [ir.name]))) return;
-  removingId.value = ir.ir_id;
-  try {
-    await api.removeDSPIR(ir.ir_id);
-    emit("removed", ir.ir_id);
-  } finally {
-    removingId.value = null;
-  }
+const removeIR = (ir: DSPIRMetadata) => {
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("settings.dsp.convolution.remove"),
+    message: t("settings.dsp.convolution.remove_confirm", [ir.name]),
+    onConfirm: async () => {
+      removingId.value = ir.ir_id;
+      try {
+        await api.removeDSPIR(ir.ir_id);
+        emit("removed", ir.ir_id);
+      } finally {
+        removingId.value = null;
+      }
+    },
+  });
 };
 
 function resetUpload(): void {
