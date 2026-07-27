@@ -158,14 +158,24 @@
           </AccordionTrigger>
           <AccordionContent class="grid gap-4 pt-2 md:grid-cols-2">
             <div class="flex flex-col gap-1.5 md:col-span-2">
-              <Label>{{ $t("providers.ai_radio.fields.instructions") }}</Label>
+              <FieldLabel
+                :label="$t('providers.ai_radio.fields.instructions')"
+                :description="
+                  $t('providers.ai_radio.field_descriptions.instructions')
+                "
+              />
               <Textarea v-model="draft.basics.general.instructions" rows="4" />
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <Label>
-                {{ $t("providers.ai_radio.fields.source_playtime_cap") }}
-              </Label>
+              <FieldLabel
+                :label="$t('providers.ai_radio.fields.source_playtime_cap')"
+                :description="
+                  $t(
+                    'providers.ai_radio.field_descriptions.source_playtime_cap',
+                  )
+                "
+              />
               <NumberField v-model="draft.basics.maxDurationMinutes" :min="0">
                 <NumberFieldContent>
                   <NumberFieldDecrement />
@@ -175,9 +185,12 @@
               </NumberField>
             </div>
             <div class="flex flex-col gap-1.5">
-              <Label>
-                {{ $t("providers.ai_radio.fields.dynamic_batch_size") }}
-              </Label>
+              <FieldLabel
+                :label="$t('providers.ai_radio.fields.dynamic_batch_size')"
+                :description="
+                  $t('providers.ai_radio.field_descriptions.dynamic_batch_size')
+                "
+              />
               <NumberField v-model="draft.basics.dynamicBatchSize" :min="1">
                 <NumberFieldContent>
                   <NumberFieldDecrement />
@@ -188,11 +201,17 @@
             </div>
 
             <div class="flex items-center gap-3 md:col-span-2">
-              <Label for="customize-clear-queue">
-                {{
-                  $t("providers.ai_radio.fields.clear_queue_on_dynamic_start")
-                }}
-              </Label>
+              <FieldLabel
+                html-for="customize-clear-queue"
+                :label="
+                  $t('providers.ai_radio.fields.clear_queue_on_dynamic_start')
+                "
+                :description="
+                  $t(
+                    'providers.ai_radio.field_descriptions.clear_queue_on_dynamic_start',
+                  )
+                "
+              />
               <Switch
                 id="customize-clear-queue"
                 v-model="draft.basics.clearQueueOnStart"
@@ -209,6 +228,7 @@
 import AiRadioPlaylistPicker, {
   type PlaylistSelection,
 } from "@/components/ai-radio/AiRadioPlaylistPicker.vue";
+import FieldLabel from "@/components/ai-radio/FieldLabel.vue";
 import SegmentRow from "@/components/ai-radio/SegmentRow.vue";
 import {
   Accordion,
