@@ -1,15 +1,12 @@
 <template>
-  <div
-    class="w-auto"
-    :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-6'"
-  >
+  <div class="w-auto" :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-6'">
     <div v-if="store.activePlayer">
       <SliderRoot
         v-model="wrappedCurTimeValue"
         data-slot="slider"
         class="relative flex items-center select-none touch-none w-full"
         :class="[
-          usesWaveformLayout ? 'h-11 md:h-12 lg:h-14' : 'h-8',
+          hasWaveform ? 'h-11 md:h-12 lg:h-14' : 'h-8',
           hasWaveform && canSeek ? 'cursor-pointer' : '',
         ]"
         :disabled="!canSeek"
@@ -24,37 +21,30 @@
           hoverPercent = null;
         "
       >
-        <!-- color-mix is the same logic as tailwind's bg-color/30 -->
         <SliderTrack
           data-slot="slider-track"
           class="relative grow rounded-full"
-          :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
-          :style="
-            usesWaveformLayout
-              ? undefined
-              : {
-                  'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
-                }
-          "
+          :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
         >
+          <div
+            v-if="!hasWaveform"
+            class="absolute inset-0 rounded-full"
+            :style="trackBackgroundStyle"
+          />
           <WaveformTrack
-            v-if="hasWaveform"
+            v-else
             :data="waveform!"
             :color="color"
             :progress-percent="progressPercent"
             :hover-percent="hoverPercent"
           />
-          <div
-            v-else-if="waveformLoading"
-            class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full"
-            :style="{
-              'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
-            }"
-          />
+          <!-- Tailwind's translate utilities emit the standalone `translate`
+               property, which Android TV's Chrome ignores. Everything below
+               centres via the track box or an explicit transform instead. -->
           <SliderRange
             v-if="!hasWaveform"
             data-slot="slider-range"
-            class="absolute rounded-full h-1 top-1/2 -translate-y-1/2"
+            class="absolute inset-y-0 rounded-full"
             :style="{ 'background-color': color }"
           />
           <!-- pointerdown.stop prevents reka's slider track tap action -->
@@ -62,8 +52,11 @@
             v-for="tick in chapterTicks"
             :key="tick.position"
             type="button"
-            class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-4 w-3 items-center justify-center"
-            :style="{ left: `${tick.percent}%` }"
+            class="absolute top-1/2 flex h-4 w-3 items-center justify-center"
+            :style="{
+              left: `${tick.percent}%`,
+              transform: 'translate(-50%, -50%)',
+            }"
             :aria-label="tick.name"
             @pointerdown.stop
             @click.stop="chapterClicked(tick)"
@@ -94,8 +87,8 @@
             v-for="tick in chapterTicks"
             :key="`label-${tick.position}`"
             type="button"
-            class="absolute bottom-full mb-1 -translate-x-1/2 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
-            :style="{ left: `${tick.percent}%` }"
+            class="absolute bottom-full mb-1 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
+            :style="{ left: `${tick.percent}%`, transform: 'translateX(-50%)' }"
             @pointerdown.stop
             @click="chapterClicked(tick)"
           >
@@ -146,14 +139,12 @@ export interface Props {
   color?: string;
   // Precomputed waveform bins (0.0-1.0); when set, replaces the flat track.
   waveform?: number[] | null;
-  waveformLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: "var(--foreground)",
   waveform: null,
-  waveformLoading: false,
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -373,9 +364,11 @@ const chapterTicks = computed(() =>
 );
 
 const hasWaveform = computed(() => !!props.waveform?.length);
-const usesWaveformLayout = computed(
-  () => hasWaveform.value || props.waveformLoading,
-);
+// Older Cast and Android TV runtimes need an opacity layer instead of color-mix().
+const trackBackgroundStyle = computed(() => ({
+  backgroundColor: props.color,
+  opacity: 0.3,
+}));
 
 const progressPercent = computed(() => {
   const duration = store.activePlayer?.current_media?.duration;
