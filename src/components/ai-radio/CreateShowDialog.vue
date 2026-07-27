@@ -214,7 +214,7 @@ function buildDraft(): ShowDraft {
       targetPlaylistProvider: "builtin",
       defaultPlayerId: "",
       maxDurationMinutes: 0,
-      dynamicBatchSize: 1,
+      dynamicBatchSize: 3,
       dynamicPollSeconds: 5,
       dynamicPrefetchRemainingTracks: 2,
       clearQueueOnStart: true,

@@ -128,7 +128,7 @@ describe("normalizeStationDraft", () => {
     const draft = normalizeStationDraft({} as AIRadioStation);
     expect(draft.source_playlist_provider).toBe("library");
     expect(draft.target_playlist_provider).toBe("builtin");
-    expect(draft.dynamic_batch_size).toBe(1);
+    expect(draft.dynamic_batch_size).toBe(3);
     expect(draft.clear_queue_on_start).toBe(true);
     expect(draft.general.timezone).toBe("UTC");
     expect(draft.general.weather_provider).toBe("open_meteo");
@@ -137,10 +137,10 @@ describe("normalizeStationDraft", () => {
 
   it("keeps explicit values", () => {
     const draft = normalizeStationDraft(
-      makeStation({ clear_queue_on_start: false, dynamic_batch_size: 3 }),
+      makeStation({ clear_queue_on_start: false, dynamic_batch_size: 5 }),
     );
     expect(draft.clear_queue_on_start).toBe(false);
-    expect(draft.dynamic_batch_size).toBe(3);
+    expect(draft.dynamic_batch_size).toBe(5);
   });
 });
 

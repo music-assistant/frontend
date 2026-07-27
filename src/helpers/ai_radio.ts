@@ -662,7 +662,7 @@ export const decompileStation = (
     targetPlaylistProvider: station.target_playlist_provider || "builtin",
     defaultPlayerId: station.default_player_id || "",
     maxDurationMinutes: station.max_duration_minutes || 0,
-    dynamicBatchSize: station.dynamic_batch_size || 1,
+    dynamicBatchSize: station.dynamic_batch_size || 3,
     dynamicPollSeconds: station.dynamic_poll_seconds || 5,
     dynamicPrefetchRemainingTracks:
       station.dynamic_prefetch_remaining_tracks || 2,
@@ -786,9 +786,9 @@ export const normalizeStationDraft = (
   draft.default_player_id = String(draft.default_player_id || "").trim();
   draft.max_duration_minutes = parseOptionalNumber(draft.max_duration_minutes);
   draft.dynamic_batch_size = safeInteger(
-    String(draft.dynamic_batch_size ?? 1),
+    String(draft.dynamic_batch_size ?? 3),
     1,
-    1,
+    3,
   );
   draft.dynamic_poll_seconds = safeInteger(
     String(draft.dynamic_poll_seconds ?? 5),

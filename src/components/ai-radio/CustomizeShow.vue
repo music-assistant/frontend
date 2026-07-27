@@ -178,13 +178,6 @@
             </div>
             <div class="flex flex-col gap-1.5">
               <Label>
-                {{ $t("providers.ai_radio.fields.target_playlist_provider") }}
-              </Label>
-              <Input v-model="draft.basics.targetPlaylistProvider" />
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <Label>
                 {{ $t("providers.ai_radio.fields.source_playtime_cap") }}
               </Label>
               <NumberField v-model="draft.basics.maxDurationMinutes" :min="0">
@@ -200,33 +193,6 @@
                 {{ $t("providers.ai_radio.fields.dynamic_batch_size") }}
               </Label>
               <NumberField v-model="draft.basics.dynamicBatchSize" :min="1">
-                <NumberFieldContent>
-                  <NumberFieldDecrement />
-                  <NumberFieldInput />
-                  <NumberFieldIncrement />
-                </NumberFieldContent>
-              </NumberField>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <Label>
-                {{ $t("providers.ai_radio.fields.dynamic_poll_seconds") }}
-              </Label>
-              <NumberField v-model="draft.basics.dynamicPollSeconds" :min="1">
-                <NumberFieldContent>
-                  <NumberFieldDecrement />
-                  <NumberFieldInput />
-                  <NumberFieldIncrement />
-                </NumberFieldContent>
-              </NumberField>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <Label>
-                {{ $t("providers.ai_radio.fields.dynamic_prefetch_remaining") }}
-              </Label>
-              <NumberField
-                v-model="draft.basics.dynamicPrefetchRemainingTracks"
-                :min="1"
-              >
                 <NumberFieldContent>
                   <NumberFieldDecrement />
                   <NumberFieldInput />
