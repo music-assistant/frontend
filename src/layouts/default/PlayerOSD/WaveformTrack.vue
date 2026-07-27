@@ -78,19 +78,15 @@ const clampedHover = computed(() =>
   Math.min(100, Math.max(0, props.hoverPercent ?? 0)),
 );
 
-// Progress canvas clip: when hovering before progress, exclude 0→hover so the
-// hover canvas can show a mid-brightness indicator in that region.
 const progressClipPath = computed(() => {
   const p = clampedProgress.value;
-  if (props.hoverPercent == null || clampedHover.value >= p) {
+  const h = clampedHover.value;
+  if (props.hoverPercent == null || h >= p) {
     return `inset(0 ${100 - p}% 0 0)`;
   }
-  // Hover is before progress: clip progress canvas to hover→progress only.
-  return `inset(0 ${100 - p}% 0 ${clampedHover.value}%)`;
+  return `inset(0 ${100 - h}% 0 0)`;
 });
 
-// Hover canvas clip: shows the seek-preview region at mid-brightness.
-// Forward seek: progress→hover; backward seek: 0→hover.
 const hoverClipPath = computed(() => {
   if (props.hoverPercent == null) return "inset(0 100% 0 0)";
   const h = clampedHover.value;
@@ -98,7 +94,7 @@ const hoverClipPath = computed(() => {
   if (h >= p) {
     return `inset(0 ${100 - h}% 0 ${p}%)`;
   }
-  return `inset(0 ${100 - h}% 0 0)`;
+  return `inset(0 ${100 - p}% 0 ${h}%)`;
 });
 
 // Max-pool bins into one peak per bar; max (not average) preserves the transients.
