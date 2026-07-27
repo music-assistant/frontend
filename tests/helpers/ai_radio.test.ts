@@ -130,7 +130,6 @@ describe("normalizeStationDraft", () => {
     expect(draft.target_playlist_provider).toBe("builtin");
     expect(draft.dynamic_batch_size).toBe(3);
     expect(draft.clear_queue_on_start).toBe(true);
-    expect(draft.general.timezone).toBe("UTC");
     expect(draft.general.weather_provider).toBe("open_meteo");
     expect(draft.section_ids).toEqual([]);
   });

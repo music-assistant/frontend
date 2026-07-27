@@ -1206,8 +1206,6 @@
                 "prompt": "Prompt",
                 "clear_queue_on_dynamic_start": "Clear Queue on Dynamic Start",
                 "dynamic_batch_size": "Dynamic Batch Size",
-                "weather_city": "Weather City",
-                "weather_country": "Weather Country",
                 "instructions": "Host and Program Instructions"
             },
             "web_search": {

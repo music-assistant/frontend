@@ -109,11 +109,6 @@ export const asGeneralDefaults = (
   general?: AIRadioStationGeneral,
 ): AIRadioStationGeneral => {
   return {
-    timezone: general?.timezone || "UTC",
-    location: {
-      city: general?.location?.city || "",
-      country: general?.location?.country || "",
-    },
     instructions: general?.instructions || "",
     weather_provider: general?.weather_provider || "open_meteo",
     weather_timeout_seconds:

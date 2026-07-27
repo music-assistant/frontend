@@ -1619,11 +1619,6 @@ export interface AIRadioSectionOrderRule {
 }
 
 export interface AIRadioStationGeneral {
-  timezone: string;
-  location: {
-    city: string;
-    country: string;
-  };
   instructions: string;
   weather_provider: string;
   weather_timeout_seconds: number;

@@ -163,16 +163,6 @@
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <Label>{{ $t("providers.ai_radio.fields.weather_city") }}</Label>
-              <Input v-model="draft.basics.general.location.city" />
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <Label>{{
-                $t("providers.ai_radio.fields.weather_country")
-              }}</Label>
-              <Input v-model="draft.basics.general.location.country" />
-            </div>
-            <div class="flex flex-col gap-1.5">
               <Label>
                 {{ $t("providers.ai_radio.fields.source_playtime_cap") }}
               </Label>
