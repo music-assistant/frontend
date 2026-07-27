@@ -4,10 +4,12 @@ import { PlaybackState, type Player } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 
-export function useOrderedPlayers() {
+export function useOrderedPlayers(opts?: { allowNeedsSetup?: boolean }) {
   return computed(() =>
     Object.values(api.players)
-      .filter((player) => playerVisible(player))
+      .filter((player) =>
+        playerVisible(player, false, opts?.allowNeedsSetup ?? false),
+      )
       .sort(comparePlayers),
   );
 }

@@ -20,8 +20,6 @@
     "favorites_add": "Add to favourites",
     "favorites_remove": "Remove from favourites",
     "sync_player_with": "Synchronise with another player",
-    "streamdetails": {
-    },
     "smart_playlist": {
         "field_favorite": "Favourite"
     }

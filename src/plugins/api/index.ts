@@ -25,6 +25,7 @@ import {
   type QueueItem,
   type Radio,
   type ServerInfoMessage,
+  type SetupFlowStep,
   type SuccessResultMessage,
   type TaskSchedule,
   type Track,
@@ -47,6 +48,7 @@ import {
   Podcast,
   PodcastEpisode,
   ProviderConfig,
+  ProviderIconVariant,
   ProviderManifest,
   ProviderType,
   QueueOption,
@@ -96,6 +98,8 @@ export class MusicAssistantApi {
   public providerManifests = reactive<{ [domain: string]: ProviderManifest }>(
     {},
   );
+  public providerIcons = reactive<{ [key: string]: string | null }>({});
+  private _providerIconRequests = new Map<string, Promise<string | null>>();
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
@@ -163,7 +167,6 @@ export class MusicAssistantApi {
       }
 
       transport = new WebSocketTransport({ url: wsUrl });
-      await transport.connect();
       baseUrl = httpBaseUrl;
     } else {
       // Transport instance provided (WebRTC)
@@ -236,6 +239,8 @@ export class MusicAssistantApi {
         }, 0);
       }
     });
+
+    await transport.connect();
 
     // Wait for initial ServerInfo message
     await this.waitForServerInfo();
@@ -397,6 +402,10 @@ export class MusicAssistantApi {
     Object.keys(this.providerManifests).forEach(
       (key) => delete this.providerManifests[key],
     );
+    Object.keys(this.providerIcons).forEach(
+      (key) => delete this.providerIcons[key],
+    );
+    this._providerIconRequests.clear();
     this.serverInfo.value = undefined;
   }
 
@@ -1441,7 +1450,28 @@ export class MusicAssistantApi {
   }
 
   public async getRecommendations(): Promise<RecommendationFolder[]> {
+    // Returns every available row (with empty `items`) — the discover skeleton
+    // and row-toggle catalog in one fast, cacheable call.
     return this.sendCommand("music/recommendations");
+  }
+
+  public async getRecommendationItems(
+    provider: string,
+    item_id: string,
+  ): Promise<MediaItemTypeOrItemMapping[]> {
+    // Fetches a single recommendation row's items. Per-row timeout/error
+    // isolation lives server-side: an unknown id or a failing provider
+    // resolves to `[]` rather than rejecting. Transport-level failures are
+    // best-effort per row (the caller degrades the row), so opt out of the
+    // global error toast.
+    return this.sendCommand(
+      "music/recommendations/items",
+      {
+        provider,
+        item_id,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
@@ -1970,21 +2000,23 @@ export class MusicAssistantApi {
   }
 
   public async getProviderConfigEntries(
-    provider_domain: string,
-    instance_id?: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
+    instance_id: string,
   ): Promise<ConfigEntry[]> {
-    // Return Config entries to setup/configure a provider.
-    // provider_domain: (mandatory) domain of the provider.
-    // instance_id: id of an existing provider instance (None for new instance setup).
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
+    // Return the config (options) entries for an existing provider instance.
     return this.sendCommand("config/providers/get_entries", {
-      provider_domain,
+      instance_id,
+    });
+  }
+
+  public async invokeProviderConfigAction(
+    instance_id: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a provider's options
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/providers/invoke_action", {
       instance_id,
       action,
-      values,
     });
   }
 
@@ -2043,17 +2075,22 @@ export class MusicAssistantApi {
 
   public async getPlayerConfigEntries(
     player_id: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
   ): Promise<ConfigEntry[]> {
-    // Return Config entries to setup/configure a player.
-    // player_id: (mandatory) id of the player.
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
+    // Return the config entries to configure a player.
     return this.sendCommand("config/players/get_entries", {
       player_id,
+    });
+  }
+
+  public async invokePlayerConfigAction(
+    player_id: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a player's config
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/players/invoke_action", {
+      player_id,
       action,
-      values,
     });
   }
 
@@ -2081,6 +2118,65 @@ export class MusicAssistantApi {
     return this.sendCommand("config/players/remove", {
       player_id,
     });
+  }
+
+  // Setup flow related functions
+
+  public setupProvider(provider_domain: string): Promise<SetupFlowStep> {
+    // Start the setup flow to add a new instance of the given provider.
+    // Returns the flow's first step (may already be a FINISH/ABORT step).
+    return this.sendCommand("config/providers/setup", { provider_domain });
+  }
+
+  public reconfigureProvider(instance_id: string): Promise<SetupFlowStep> {
+    // Start the reconfigure flow on an existing provider instance (covers reauth).
+    return this.sendCommand("config/providers/reconfigure", { instance_id });
+  }
+
+  public setupPlayer(player_id: string): Promise<SetupFlowStep> {
+    // Start the setup flow for a player (e.g. pairing).
+    return this.sendCommand("config/players/setup", { player_id });
+  }
+
+  public submitSetupFlow(
+    flow_id: string,
+    values: Record<string, ConfigValueType>,
+  ): Promise<SetupFlowStep> {
+    // Submit the user's values for the flow's pending FORM step.
+    // Returns the next step, or the same FORM step (with per-field errors) on validation failure.
+    return this.sendCommand("config/flows/submit", { flow_id, values });
+  }
+
+  public getSetupFlow(flow_id: string): Promise<SetupFlowStep> {
+    // Return the current step of a running flow (idempotent re-render, never advances).
+    // Rejects when the flow no longer exists; the caller handles that (e.g. show abort).
+    return this.sendCommand(
+      "config/flows/get",
+      { flow_id },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public abortSetupFlow(flow_id: string): Promise<void> {
+    // Abort a running flow (user cancelled). Best-effort: a stale/finished flow is ignored.
+    return this.sendCommand(
+      "config/flows/abort",
+      { flow_id },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public subscribeSetupFlow(
+    flow_id: string,
+    callback: (step: SetupFlowStep) => void,
+  ): () => void {
+    // Subscribe to step changes for a specific running flow (external/progress steps
+    // advance via this push). Returns a handle to remove the listener.
+    return this.subscribe(
+      EventType.SETUP_FLOW_UPDATED,
+      (evt: EventMessage) => callback(evt.data as SetupFlowStep),
+      flow_id,
+    ) as () => void;
   }
 
   // PlayerQueue Config related functions
@@ -2189,20 +2285,18 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core/get_value", { domain, key });
   }
 
-  public async getCoreConfigEntries(
-    domain: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
-  ): Promise<ConfigEntry[]> {
+  public async getCoreConfigEntries(domain: string): Promise<ConfigEntry[]> {
     // Return Config entries to configure a core controller.
-    // domain: (mandatory) domain of the core module.
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
-    return this.sendCommand("config/core/get_entries", {
-      domain,
-      action,
-      values,
-    });
+    return this.sendCommand("config/core/get_entries", { domain });
+  }
+
+  public async invokeCoreConfigAction(
+    domain: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a core module's config
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/core/invoke_action", { domain, action });
   }
 
   public async saveCoreConfig(
@@ -2382,6 +2476,30 @@ export class MusicAssistantApi {
       return this.providerManifests[prov.domain];
     }
     return undefined;
+  }
+
+  public async getProviderIcon(
+    domain: string,
+    variant: ProviderIconVariant,
+  ): Promise<string | null> {
+    const key = `${domain}:${variant}`;
+    if (key in this.providerIcons) return this.providerIcons[key];
+    let request = this._providerIconRequests.get(key);
+    if (!request) {
+      request = this.sendCommand<string | null>("providers/icon", {
+        provider: domain,
+        variant,
+      })
+        .then((dataUri) => {
+          this.providerIcons[key] = dataUri ?? null;
+          return this.providerIcons[key];
+        })
+        .finally(() => {
+          this._providerIconRequests.delete(key);
+        });
+      this._providerIconRequests.set(key, request);
+    }
+    return request;
   }
 
   private handleEventMessage(msg: EventMessage) {

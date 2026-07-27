@@ -16,7 +16,10 @@ const mocks = vi.hoisted(() => ({
   routerReplace: vi.fn(),
   sendCommand: vi.fn(),
   serverInfo: {
-    value: { server_id: "server-id" } as { server_id: string } | null,
+    value: {
+      homeassistant_addon: false,
+      server_id: "server-id",
+    } as { homeassistant_addon: boolean; server_id: string } | null,
   },
   setToken: vi.fn(),
 }));
@@ -46,6 +49,7 @@ vi.mock("@/plugins/auth", () => ({
     clearGuestSession: mocks.clearGuestSession,
     getPersistentToken: mocks.getPersistentToken,
     getToken: mocks.getToken,
+    isDashboardViewer: () => false,
     isGuestAccessSession: () =>
       sessionStorage.getItem("ma_guest_access_token") !== null,
     leaveGuestSession: mocks.leaveGuestSession,
@@ -248,7 +252,10 @@ beforeEach(() => {
     username: "ingress-user",
     role: "admin",
   });
-  mocks.serverInfo.value = { server_id: "server-id" };
+  mocks.serverInfo.value = {
+    homeassistant_addon: false,
+    server_id: "server-id",
+  };
   mocks.setToken.mockImplementation((token: string) => {
     sessionStorage.setItem("ma_guest_access_token", token);
   });
@@ -573,6 +580,10 @@ describe("guest join login", () => {
       "http://localhost:3000/hassio_ingress/server/?join=abcd1234#/guest",
     );
     mockHostedFrontend();
+    mocks.serverInfo.value = {
+      homeassistant_addon: true,
+      server_id: "server-id",
+    };
 
     const wrapper = mountLogin();
 
@@ -585,6 +596,7 @@ describe("guest join login", () => {
         },
       });
     });
+
     expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
     expect(mocks.sendCommand).not.toHaveBeenCalledWith(
       "auth/join_code/exchange",
@@ -618,5 +630,63 @@ describe("guest join login", () => {
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
     expect(localStorage.getItem("mass_remote_id")).toBe(regularRemoteId);
+  });
+});
+
+describe("ingress login", () => {
+  it("uses ingress authentication for a Home Assistant add-on", async () => {
+    setLocation("hassio_ingress/server/");
+    mockHostedFrontend();
+    mocks.serverInfo.value = {
+      homeassistant_addon: true,
+      server_id: "server-id",
+    };
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+        user: {
+          role: "admin",
+          user_id: "ingress-user",
+          username: "ingress-user",
+        },
+      });
+    });
+    expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
+    expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
+  });
+
+  it("uses stored authentication for a standalone server behind ingress", async () => {
+    setLocation("hassio_ingress/server/");
+    mockHostedFrontend();
+    localStorage.setItem("ma_access_token", "admin-token");
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+        token: "admin-token",
+        user: {
+          role: "admin",
+          user_id: "regular-id",
+          username: "regular-user",
+        },
+      });
+    });
+    expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
+    expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
+  });
+
+  it("shows the normal login for a standalone server behind ingress", async () => {
+    setLocation("hassio_ingress/server/");
+    mockHostedFrontend();
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Username");
+    });
+    expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
   });
 });

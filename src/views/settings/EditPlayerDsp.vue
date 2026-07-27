@@ -194,6 +194,12 @@
                 is_log: false,
               }"
             />
+            <DSPTranspose
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.TRANSPOSE
+              "
+              v-model="dsp.filters[selectedStage] as TransposeFilter"
+            />
             <DSPSafetyLimiter
               v-else-if="
                 dsp.filters[selectedStage].type === DSPFilterType.SAFETY_LIMITER
@@ -281,6 +287,7 @@ import {
   DSPFilterType,
   type GainFilter,
   type BalanceFilter,
+  type TransposeFilter,
   ParametricEQFilter,
   ToneControlFilter,
   type SafetyLimiterFilter,
@@ -294,6 +301,7 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
 import DSPSafetyLimiter from "@/components/dsp/DSPSafetyLimiter.vue";
 import DSPCompressor from "@/components/dsp/DSPCompressor.vue";
 import DSPHighLowPass from "@/components/dsp/DSPHighLowPass.vue";
@@ -352,12 +360,14 @@ let pendingPresetApply: PresetApplyContext | undefined;
 
 let unsubPlayerDSP: (() => void) | undefined = undefined;
 
-const filterTypes = Object.values(DSPFilterType).map((value) => {
-  return {
-    value: value,
-    title: t(`settings.dsp.types.${value}`),
-  };
-});
+const filterTypes = Object.values(DSPFilterType)
+  .map((value) => {
+    return {
+      value: value,
+      title: t(`settings.dsp.types.${value}`),
+    };
+  })
+  .sort((a, b) => a.title.localeCompare(b.title));
 const selectedPresetLabel = computed(() => {
   const presetId = dsp.value?.preset_id;
   if (!presetId) return undefined;
@@ -420,6 +430,13 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.BALANCE,
         balance: 0,
+      };
+      break;
+    case DSPFilterType.TRANSPOSE:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.TRANSPOSE,
+        semitones: 0,
       };
       break;
     case DSPFilterType.SAFETY_LIMITER:

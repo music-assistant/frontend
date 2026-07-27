@@ -1,11 +1,16 @@
 <template>
   <div class="audio-processing-stage" :data-stage="stage.key">
     <span class="audio-processing-stage-connector" aria-hidden="true"></span>
-    <component
-      :is="stage.icon"
-      :size="16"
-      class="audio-processing-stage-icon"
-    />
+    <span class="audio-processing-stage-icon" aria-hidden="true">
+      <ProviderIcon
+        v-if="stage.providerIconDomain"
+        :domain="stage.providerIconDomain"
+        :size="18"
+        :monochrome="true"
+        class="audio-processing-stage-provider-icon"
+      />
+      <component :is="stage.icon" v-else :size="18" />
+    </span>
     <div class="audio-processing-stage-copy">
       <div class="audio-processing-stage-primary">
         <span class="audio-processing-stage-title">{{ stage.title }}</span>
@@ -87,6 +92,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import type { AudioProcessingDisplayStage } from "@/composables/useAudioProcessingDetails";
 import { $t } from "@/plugins/i18n";
 

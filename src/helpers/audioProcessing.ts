@@ -12,6 +12,7 @@ import {
   type ParametricEQBand,
   type ParametricEQFilter,
   type ToneControlFilter,
+  type TransposeFilter,
 } from "@/plugins/api/interfaces";
 
 export function sanitizeDSPPresetConfig(config: DSPConfig): DSPConfig {
@@ -87,6 +88,12 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
     return areBalanceFiltersEqual(left, right);
   }
   if (
+    left.type === DSPFilterType.TRANSPOSE &&
+    right.type === DSPFilterType.TRANSPOSE
+  ) {
+    return areTransposeFiltersEqual(left, right);
+  }
+  if (
     left.type === DSPFilterType.SAFETY_LIMITER &&
     right.type === DSPFilterType.SAFETY_LIMITER
   ) {
@@ -141,6 +148,13 @@ function areBalanceFiltersEqual(
   right: BalanceFilter,
 ): boolean {
   return left.balance === right.balance;
+}
+
+function areTransposeFiltersEqual(
+  left: TransposeFilter,
+  right: TransposeFilter,
+): boolean {
+  return left.semitones === right.semitones;
 }
 
 function areSafetyLimiterFiltersEqual(
