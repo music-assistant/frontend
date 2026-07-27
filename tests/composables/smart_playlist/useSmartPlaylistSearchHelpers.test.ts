@@ -1,6 +1,6 @@
 import { effectScope, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setupDebouncedSearch } from "@/composables/useSmartPlaylistSearchHelpers";
+import { setupDebouncedSearch } from "@/composables/smart-playlist/useSmartPlaylistSearchHelpers";
 
 describe("setupDebouncedSearch", () => {
   beforeEach(() => {

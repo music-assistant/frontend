@@ -1,5 +1,5 @@
-import type { MusicQuizInfo } from "@/composables/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+import type { MusicQuizInfo } from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
 export type MusicQuizAutoStartState = Pick<

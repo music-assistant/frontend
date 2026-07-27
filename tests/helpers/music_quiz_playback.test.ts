@@ -1,4 +1,4 @@
-import type { MusicQuizPlaybackOptions } from "@/composables/useMusicQuiz";
+import type { MusicQuizPlaybackOptions } from "@/composables/music-quiz/useMusicQuiz";
 import {
   reconcileMusicQuizPlaybackSelection,
   type MusicQuizPlaybackSelection,

@@ -95,7 +95,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { SeedKind } from "@/composables/useSmartPlaylistSeedItems";
+import type { SeedKind } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
 import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Loader2, Plus } from "@lucide/vue";
