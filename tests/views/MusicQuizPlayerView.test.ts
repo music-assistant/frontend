@@ -58,11 +58,11 @@ vi.mock("@/components/music-quiz/game_types", () => ({
       : game.supportsListenIn(state),
 }));
 
-vi.mock("@/composables/useMusicQuizPlayer", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizPlayer", () => ({
   useMusicQuizPlayer: mockUseMusicQuizPlayer,
 }));
 
-vi.mock("@/composables/useMusicQuizCelebration", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizCelebration", () => ({
   useMusicQuizCelebration: () => ({
     celebrate: vi.fn(),
   }),

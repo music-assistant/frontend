@@ -9,7 +9,7 @@ import type {
   MusicQuizTriviaHostState,
   MusicQuizTriviaPersonalizedState,
   MusicQuizTriviaRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { mount, shallowMount } from "@vue/test-utils";
 import type { Component } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

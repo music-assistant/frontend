@@ -67,7 +67,7 @@ import type {
   MusicQuizAnswerSubmission,
   MusicQuizCurrentRound,
   MusicQuizSupportedPersonalizedState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Trophy } from "@lucide/vue";
 import type { Component } from "vue";

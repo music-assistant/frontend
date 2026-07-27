@@ -121,7 +121,7 @@ import type {
   RuleField,
   RuleOperator,
   RuleRow,
-} from "@/composables/useSmartPlaylistRulesForm";
+} from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Info, Plus } from "@lucide/vue";

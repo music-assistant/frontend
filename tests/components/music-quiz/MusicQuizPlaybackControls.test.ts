@@ -1,5 +1,5 @@
 import MusicQuizPlaybackControls from "@/components/music-quiz/MusicQuizPlaybackControls.vue";
-import type { MusicQuizPlaybackOptions } from "@/composables/useMusicQuiz";
+import type { MusicQuizPlaybackOptions } from "@/composables/music-quiz/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, nextTick, ref } from "vue";
 import { describe, expect, it, vi } from "vitest";

@@ -54,7 +54,7 @@ vi.mock("@/plugins/router", () => ({
   default: routerMock,
 }));
 
-vi.mock("@/composables/useBackgroundTasks", () => ({
+vi.mock("@/composables/background-tasks/useBackgroundTasks", () => ({
   useBackgroundTasks: () => ({
     isProviderSyncing: () => false,
   }),

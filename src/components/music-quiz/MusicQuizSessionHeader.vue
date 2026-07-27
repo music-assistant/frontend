@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import type { MusicQuizGameDefinition } from "@/components/music-quiz/game_types";
 import { Badge } from "@/components/ui/badge";
-import type { MusicQuizMode } from "@/composables/useMusicQuiz";
+import type { MusicQuizMode } from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 

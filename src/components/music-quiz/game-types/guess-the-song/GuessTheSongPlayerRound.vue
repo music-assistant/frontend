@@ -28,7 +28,7 @@ import { useGuessTheSongPlaybackPosition } from "@/components/music-quiz/game-ty
 import type {
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
