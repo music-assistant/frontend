@@ -194,6 +194,12 @@
                 is_log: false,
               }"
             />
+            <DSPTranspose
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.TRANSPOSE
+              "
+              v-model="dsp.filters[selectedStage] as TransposeFilter"
+            />
             <DSPConvolution
               v-else-if="
                 dsp.filters[selectedStage].type === DSPFilterType.CONVOLUTION
@@ -269,6 +275,7 @@ import {
   DSPFilterType,
   type GainFilter,
   type BalanceFilter,
+  type TransposeFilter,
   type ConvolutionFilter,
   ParametricEQFilter,
   ToneControlFilter,
@@ -279,6 +286,7 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
 import DSPConvolution from "@/components/dsp/DSPConvolution.vue";
 import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";
@@ -332,12 +340,14 @@ let pendingPresetApply: PresetApplyContext | undefined;
 
 let unsubPlayerDSP: (() => void) | undefined = undefined;
 
-const filterTypes = Object.values(DSPFilterType).map((value) => {
-  return {
-    value: value,
-    title: t(`settings.dsp.types.${value}`),
-  };
-});
+const filterTypes = Object.values(DSPFilterType)
+  .map((value) => {
+    return {
+      value: value,
+      title: t(`settings.dsp.types.${value}`),
+    };
+  })
+  .sort((a, b) => a.title.localeCompare(b.title));
 const selectedPresetLabel = computed(() => {
   const presetId = dsp.value?.preset_id;
   if (!presetId) return undefined;
@@ -399,6 +409,13 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.BALANCE,
         balance: 0,
+      };
+      break;
+    case DSPFilterType.TRANSPOSE:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.TRANSPOSE,
+        semitones: 0,
       };
       break;
     case DSPFilterType.CONVOLUTION:

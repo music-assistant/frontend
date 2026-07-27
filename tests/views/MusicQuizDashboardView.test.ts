@@ -138,6 +138,18 @@ describe("MusicQuizDashboardView", () => {
     wrapper.unmount();
   });
 
+  it("offers casting the quiz dashboard, also to non-admins", async () => {
+    const wrapper = mountDashboard();
+    await flushPromises();
+
+    const cast = wrapper.get('[data-testid="music-quiz-cast"]');
+    expect(cast.attributes("data-dashboard")).toBe("music_quiz");
+    // casting is a host action, unlike the admin-only provider settings shortcut
+    expect(wrapper.find('[data-testid="music-quiz-settings"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("retains playback changes when setup is cancelled and reopened", async () => {
     const wrapper = mountDashboard();
     await flushPromises();
@@ -291,6 +303,11 @@ function mountDashboard() {
         MusicQuizConnectionBanners: true,
         MusicQuizHostPanel: {
           template: '<div><slot name="game" /></div>',
+        },
+        ShowDashboardButton: {
+          props: ["dashboard"],
+          template:
+            '<button data-testid="music-quiz-cast" :data-dashboard="dashboard" />',
         },
         MusicQuizSessionHeader: {
           template: '<header><slot name="actions" /></header>',

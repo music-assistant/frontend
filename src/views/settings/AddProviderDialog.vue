@@ -97,12 +97,13 @@ import {
   ProviderStage,
   ProviderType,
 } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, Search } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, nextTick, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 
 const props = defineProps<{
   show?: boolean;
@@ -123,7 +124,6 @@ const emit = defineEmits<{
   (e: "update:show", value: boolean): void;
 }>();
 
-const router = useRouter();
 const route = useRoute();
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
@@ -245,13 +245,20 @@ const addProvider = function (provider: ProviderManifest) {
           ]),
         )
       ) {
-        router.push(`/settings/addprovider/${provider.depends_on}`);
+        close();
+        eventbus.emit("setupFlowDialog", {
+          kind: "provider",
+          domain: provider.depends_on,
+        });
       }
       return;
     }
   }
-  router.push(`/settings/addprovider/${provider.domain}`);
   close();
+  eventbus.emit("setupFlowDialog", {
+    kind: "provider",
+    domain: provider.domain,
+  });
 };
 
 const getStageVariant = function (

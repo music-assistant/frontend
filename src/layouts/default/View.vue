@@ -25,6 +25,7 @@
           <delete-genre-dialog />
           <link-genre-dialog />
           <dialog-delete-confirmation />
+          <setup-flow-dialog />
           <item-context-menu />
           <AddManualLink
             v-model="showEditItemDialog"
@@ -47,6 +48,7 @@ import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
+import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import AudioOverlayDialog from "./AudioOverlayDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
