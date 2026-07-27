@@ -281,7 +281,7 @@
         "playerprovider": "播放器提供程序",
         "plugin": "插件",
         "pluginprovider": "插件提供程序",
-        "providers_total": "总共{count}个提供程序",
+        "providers_total": "总共{0}个提供程序",
         "stage": {
             "label": "阶段",
             "options": {
@@ -400,7 +400,7 @@
         "players_count": "{0} 个播放器",
         "one_player": "1 个播放器",
         "view_players": "查看播放器",
-        "players_total": "{count} 个播放器",
+        "players_total": "{0} 个播放器{1}",
         "api_docs": "API 文档",
         "no_group_providers": "您目前没有任何支持创建群组的提供程序",
         "provider_codeowners": "该提供程序由以下人员创建\/维护",
@@ -1449,7 +1449,7 @@
     "background_tasks": {
         "title": "后台任务",
         "description": "监控计划任务和最近耗时较长的操作。",
-        "total": "共 {count} 个后台任务",
+        "total": "共 {0} 个后台任务",
         "clear_finished": "清除已完成",
         "empty_title": "无后台任务",
         "empty_description": "这里将显示计划作业和长期运行的操作。",

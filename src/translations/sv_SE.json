@@ -281,7 +281,7 @@
         "playerprovider": "Spelarleverantör",
         "plugin": "Plugin",
         "pluginprovider": "Plugin leverantör",
-        "providers_total": "{count} totalt leverantörer ",
+        "providers_total": "{0} totalt leverantörer {1}",
         "stage": {
             "label": "Etapp",
             "options": {
@@ -400,7 +400,7 @@
         "players_count": "{0} spelare{1}",
         "one_player": "1 spelare",
         "view_players": "Visa spelare",
-        "players_total": "{count}total spelare",
+        "players_total": "{0}total spelare{1}",
         "api_docs": "API Dokumentation",
         "no_group_providers": "Du har för närvarande inga leverantörer som stöder att skapa grupper",
         "provider_codeowners": "Denna leverantör tillhandahålls\/underhålls av",
@@ -1449,7 +1449,7 @@
     "background_tasks": {
         "title": "Bakgrundsuppgifter",
         "description": "Övervaka schemalagda jobb och senaste långvariga åtgärder.",
-        "total": "{count} totalt bakgrundsuppgift ",
+        "total": "{0} totalt bakgrundsuppgift {1}",
         "clear_finished": "Rensa färdiga",
         "empty_title": "Inga bakgrundsuppgifter",
         "empty_description": "Schemalagda jobb och långvariga åtgärder visas här.",

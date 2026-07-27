@@ -273,7 +273,7 @@
         "playerprovider": "Постачальник плеєра",
         "plugin": "Плагін",
         "pluginprovider": "Постачальник плагінів",
-        "providers_total": "{count} загальний провайдер",
+        "providers_total": "{0} загальний провайдер{1}",
         "stage": {
             "label": "Етап",
             "options": {
@@ -392,7 +392,7 @@
         "players_count": "{0} плеєр{1}",
         "one_player": "1 плеєр",
         "view_players": "Переглянути плеєри",
-        "players_total": "{count} загальний плеєр",
+        "players_total": "{0} загальний плеєр{1}",
         "api_docs": "Документація API",
         "no_group_providers": "Наразі у вас немає провайдерів, які підтримують створення груп",
         "provider_codeowners": "Цей провайдер надається\/підтримується",

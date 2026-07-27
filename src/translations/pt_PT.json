@@ -275,7 +275,7 @@
         "playerprovider": "Fornecedor de leitores",
         "plugin": "Suplemento",
         "pluginprovider": "Fornecedor de suplementos",
-        "providers_total": "{count} fornecedor total",
+        "providers_total": "{0} fornecedor total{1}",
         "stage": {
             "label": "Estágio",
             "options": {
@@ -394,7 +394,7 @@
         "players_count": "{0} leitor{1}",
         "one_player": "1 leitor",
         "view_players": "Ver leitores",
-        "players_total": "{count} total de leitores",
+        "players_total": "{0} total de leitores{1}",
         "api_docs": "Documentação da API",
         "no_group_providers": "De momento não tem nenhum fornecedor que suporte a criação de grupos",
         "provider_codeowners": "Este provedor é contribuído\/mantido por",
@@ -1036,7 +1036,7 @@
     "background_tasks": {
         "title": "Tarefas em segundo plano",
         "description": "Monitorizar trabalhos agendados e ações recentes de longa duração.",
-        "total": "{count} tarefa de fundo total",
+        "total": "{0} tarefa de fundo total{1}",
         "clear_finished": "Limpar finalizado",
         "empty_title": "Sem tarefas em segundo plano",
         "empty_description": "Os trabalhos agendados e as ações de longa duração aparecerão aqui.",

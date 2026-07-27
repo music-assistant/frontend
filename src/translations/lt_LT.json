@@ -275,7 +275,7 @@
         "playerprovider": "Grotuvų tiekėjas",
         "plugin": "Įskiepis",
         "pluginprovider": "Įskiepio teikėjas",
-        "providers_total": "{count} bendras tiekėjas",
+        "providers_total": "{0} bendras tiekėjas{1}",
         "stage": {
             "label": "Scenoje",
             "options": {
@@ -394,7 +394,7 @@
         "players_count": "{0} grotuvas{1}",
         "one_player": "1 grotuvas",
         "view_players": "Peržiūrėti grotuvus",
-        "players_total": "{count} bendras grotuvas",
+        "players_total": "{0} bendras grotuvas{1}",
         "api_docs": "API dokumentacija",
         "no_group_providers": "Šiuo metu neturite jokių tiekėjų, kurie palaikytų grupių kūrimą",
         "provider_codeowners": "Šį teikėją teikia \/ prižiūri",
@@ -1015,7 +1015,7 @@
     "background_tasks": {
         "title": "Foninės užduotys",
         "description": "Stebėkite suplanuotas užduotis ir neseniai atliktus ilgalaikius veiksmus.",
-        "total": "{count} bendra foninė užduotis",
+        "total": "{0} bendra foninė užduotis{1}",
         "clear_finished": "Išvalyti baigta",
         "empty_title": "Jokių foninių užduočių",
         "empty_description": "Čia bus rodomi suplanuoti darbai ir ilgai trunkantys veiksmai.",

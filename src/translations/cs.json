@@ -274,7 +274,7 @@
         "playerprovider": "Poskytovatel přehrávačů",
         "plugin": "Plugin",
         "pluginprovider": "Poskytovatel pluginů",
-        "providers_total": "{count} poskytovatel celkem",
+        "providers_total": "{0} poskytovatel{1} celkem",
         "stage": {
             "label": "Fáze",
             "options": {
@@ -393,7 +393,7 @@
         "players_count": "{0} přehrávač{1}",
         "one_player": "1 přehrávač",
         "view_players": "Zobrazit přehrávače",
-        "players_total": "{count} celkový přehrávač",
+        "players_total": "{0} celkový přehrávač{1}",
         "api_docs": "Dokumentace API",
         "no_group_providers": "Momentálně nemáte žádné poskytovatele, kteří by podporovali vytváření skupin.",
         "provider_codeowners": "Na tomto poskytovateli se podílí\/spravuje jej",

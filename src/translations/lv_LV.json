@@ -274,7 +274,7 @@
         "playerprovider": "Atskaņotāju sniedzējs",
         "plugin": "Paplašinājums",
         "pluginprovider": "Paplašinājumu sniedzējs",
-        "providers_total": "{count} kopējais sniedzējs",
+        "providers_total": "{0} kopējais sniedzējs{1}",
         "stage": {
             "label": "Laidiens",
             "options": {
@@ -393,7 +393,7 @@
         "players_count": "{0} atskaņotājs {1}",
         "one_player": "1 atskaņotājs",
         "view_players": "Skatīt atskaņotājus",
-        "players_total": "{count} kopējie atskaņotāji ",
+        "players_total": "{0} kopējie atskaņotāji {1}",
         "api_docs": "API dokumentācija",
         "no_group_providers": "Tev pašlaik nav neviena sniedzēja, kas atbalsta grupu izveidi.",
         "provider_codeowners": "Šo sniedzēju nodrošina\/uztur",

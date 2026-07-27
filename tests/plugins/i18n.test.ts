@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   canonicalizeLocale,
   getLocaleDisplayName,
@@ -65,26 +65,41 @@ describe("resolveLocale", () => {
 });
 
 describe("pluralized settings messages", () => {
-  it("pluralizes provider totals in the en_GB locale", () => {
-    i18n.global.locale.value = "en_GB";
+  let originalLocale: string;
 
-    expect(i18n.global.t("settings.providers_total", { count: 1 }, 1)).toBe(
-      "1 total provider",
-    );
-    expect(i18n.global.t("settings.providers_total", { count: 2 }, 2)).toBe(
-      "2 total providers",
-    );
+  beforeEach(() => {
+    originalLocale = i18n.global.locale.value;
+    i18n.global.locale.value = "en";
   });
 
-  it("pluralizes player totals in the en_GB locale", () => {
-    i18n.global.locale.value = "en_GB";
+  afterEach(() => {
+    i18n.global.locale.value = originalLocale;
+  });
 
-    expect(i18n.global.t("settings.players_total", { count: 1 }, 1)).toBe(
-      "1 total player",
-    );
-    expect(i18n.global.t("settings.players_total", { count: 2 }, 2)).toBe(
-      "2 total players",
-    );
+  it("pluralizes provider totals in the en locale", () => {
+    expect(
+      i18n.global.t("settings.providers_total", 1, {
+        named: { count: 1 },
+      }),
+    ).toBe("1 total provider");
+    expect(
+      i18n.global.t("settings.providers_total", 2, {
+        named: { count: 2 },
+      }),
+    ).toBe("2 total providers");
+  });
+
+  it("pluralizes player totals in the en locale", () => {
+    expect(
+      i18n.global.t("settings.players_total", 1, {
+        named: { count: 1 },
+      }),
+    ).toBe("1 total player");
+    expect(
+      i18n.global.t("settings.players_total", 2, {
+        named: { count: 2 },
+      }),
+    ).toBe("2 total players");
   });
 });
 

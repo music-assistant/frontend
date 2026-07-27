@@ -277,7 +277,7 @@
         "playerprovider": "Wiedergabegerät-Anbieter",
         "plugin": "Plugin",
         "pluginprovider": "Plugin-Anbieter",
-        "providers_total": "{count} Anbieter gesamt",
+        "providers_total": "{0} Anbieter gesamt{1}",
         "stage": {
             "label": "Phase",
             "options": {
@@ -396,7 +396,7 @@
         "players_count": "{0} Wiedergabegerät{1}",
         "one_player": "Ein Wiedergabegerät",
         "view_players": "Wiedergabegeräte ansehen",
-        "players_total": "{count} Wiedergabegeräte insgesamt",
+        "players_total": "{0} Wiedergabegeräte insgesamt{1}",
         "api_docs": "API-Dokumentation",
         "no_group_providers": "Du hast derzeit keine Anbieter, die die Erstellung von Gruppen unterstützen.",
         "provider_codeowners": "Dieser Anbieter wird unterstützt\/gewartet von",
@@ -1404,7 +1404,7 @@
     "background_tasks": {
         "title": "Hintergrundaufgaben",
         "description": "Überwache geplante Jobs und kürzlich durchgeführte, länger andauernde Aktionen.",
-        "total": "{count} gesamte Hintergrundaufgaben ",
+        "total": "{0} gesamte Hintergrundaufgaben {1}",
         "clear_finished": "Abgeschlossene entfernen",
         "empty_title": "Keine Hintergrundaufgaben",
         "empty_description": "Geplante Jobs und länger laufende Aktionen werden hier angezeigt.",

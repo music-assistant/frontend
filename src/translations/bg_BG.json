@@ -213,7 +213,7 @@
         "player": "Плейър",
         "playerprovider": "Доставчик на плейъри",
         "plugin": "Добавка",
-        "providers_total": "Общо {count} доставчик",
+        "providers_total": "Общо {0} доставчик{1}",
         "stage": {
             "label": "Етап",
             "options": {
@@ -312,7 +312,7 @@
         "players_count": "{0} плейър{1}",
         "one_player": "1 плейър",
         "view_players": "Вижте плейърите",
-        "players_total": "Общо {count} плейър",
+        "players_total": "Общо {0} плейър{1}",
         "api_docs": "Документация за API",
         "no_group_providers": "В момента нямате доставчици, които поддържат създаването на групи",
         "provider_codeowners": "Този доставчик е предоставен\/поддържан от",
@@ -923,7 +923,7 @@
     "no_lyrics_available": "Няма налични текстове на песни",
     "background_tasks": {
         "title": "Фонови задачи",
-        "total": "{count} общо фонови задачи",
+        "total": "{0} общо фонови задачи{1}",
         "empty_title": "Няма фонови задачи",
         "scheduled": "Планирано",
         "disabled": "Деактивирано",
