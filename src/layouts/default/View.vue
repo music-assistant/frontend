@@ -40,22 +40,14 @@
 </template>
 
 <script lang="ts" setup>
-import AppSidebar from "@/components/navigation/AppSidebar.vue";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { store } from "@/plugins/store";
-import PlayerSelect from "./PlayerSelect.vue";
+import AddManualLink from "@/components/AddManualLink.vue";
+import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
 import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
-import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
+import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
-import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
-import AudioOverlayDialog from "./AudioOverlayDialog.vue";
-import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
-import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
-import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
-import ItemContextMenu from "./ItemContextMenu.vue";
-import AddManualLink from "@/components/AddManualLink.vue";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   MediaType,
   type Playlist,
@@ -63,7 +55,15 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
+import AudioOverlayDialog from "./AudioOverlayDialog.vue";
+import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
+import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
+import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
+import ItemContextMenu from "./ItemContextMenu.vue";
+import PlayerSelect from "./PlayerSelect.vue";
 
 const showEditItemDialog = ref(false);
 const editItem = ref<Radio | Track | Playlist | undefined>(undefined);
@@ -95,6 +95,7 @@ onMounted(() => {
 .content-section {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
   padding-bottom: 90px;
 }
