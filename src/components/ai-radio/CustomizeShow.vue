@@ -173,10 +173,6 @@
               <Input v-model="draft.basics.general.location.country" />
             </div>
             <div class="flex flex-col gap-1.5">
-              <Label>{{ $t("providers.ai_radio.fields.timezone") }}</Label>
-              <Input v-model="draft.basics.general.timezone" />
-            </div>
-            <div class="flex flex-col gap-1.5">
               <Label>
                 {{ $t("providers.ai_radio.fields.source_playtime_cap") }}
               </Label>
