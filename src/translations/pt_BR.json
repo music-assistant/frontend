@@ -476,7 +476,6 @@
         "eq_band_count_singular": "1 banda",
         "input_gain": "Ganho de entrada ({0} dB)",
         "output_gain": "Ganho de saída ({0} dB)",
-        "output_limiter": "Limitador de saída",
         "file_info": {
             "container": "Contêiner: {0}",
             "codec": "Codec: {0}",

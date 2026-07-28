@@ -17,6 +17,7 @@
     "albums": "Албуми",
     "artist": "Изпълнител",
     "artist_albums": "Албуми",
+    "artist_toptracks": "Най-популярни песни",
     "artists": "Изпълнители",
     "browse": "Разглеждане",
     "clear_selection": "Изчистване на избора",
@@ -188,7 +189,8 @@
             },
             "parameter": {
                 "frequency": "Честота",
-                "q_factor": "Q фактор"
+                "q_factor": "Q фактор",
+                "balance": "Баланс"
             },
             "channels": {
                 "ALL": "Всички",
@@ -198,6 +200,10 @@
             "channels_compact": {
                 "FL": "Л",
                 "FR": "Д"
+            },
+            "types": {
+                "gain": "Усилване",
+                "balance": "Баланс"
             }
         },
         "dsp_enabled": "DSP е активиран",
@@ -224,6 +230,10 @@
                 "unmaintained": "Неподдържан",
                 "deprecated": "Отхвърлен"
             }
+        },
+        "force_mobile_layout": {
+            "label": "Принудително мобилно оформление",
+            "description": "Принудително мобилното оформление (с менюто за навигация в долната част), дори на по-големи екрани."
         },
         "providers_description": "Управлявайте вашите музикални източници, доставчици на плейъри и добавки",
         "players_description": "Конфигуриране и управление на изходните аудио устройства",
@@ -294,6 +304,7 @@
         "remote_access_disabled": "Отдалеченият достъп е дзеактивиран",
         "remote_access_connected": "Свързан",
         "remote_access_connecting": "Свързване...",
+        "remote_access_id_explanation": "Използвайте този уникален ID за да се свържете с вашия сървър Music Assistant от отдалечени устройства:",
         "remote_access_how_to_use": "Как да използвате отдалечен достъп",
         "remote_access_step_1": "Отидете на",
         "remote_access_step_2": "Въведете вашия ID за отдалечен достъп, когато бъдете подканени",
@@ -565,7 +576,41 @@
             "codec": "Кодек: {0}",
             "channels": "Канали: {0}"
         },
-        "more_info": "Повече информация"
+        "more_info": "Повече информация",
+        "audio_processing": {
+            "unknown_format": "Неизвестен формат",
+            "provider": "Доставчик: {0}",
+            "source_format": "Източник: {0}",
+            "sample_rate": "{0} kHz",
+            "bit_depth": "{0}-bit",
+            "channel_count": "{0} канала",
+            "bit_rate": "{0} kbps",
+            "pcm": "PCM",
+            "normalization": "Нормализиране на силата на звука: {0}",
+            "measurement_source": "Измерване: {0}",
+            "playback_speed": "Скорост на възпроизвеждане: {0}x",
+            "source_channel_left": "Ляв",
+            "source_channel_right": "Десен",
+            "destination_unknown": "Дестинация {0}",
+            "quality": {
+                "low": "Ниско качество",
+                "standard": "Стандартно качество"
+            },
+            "normalization_mode": {
+                "fixed_gain": "Фиксирано усилване"
+            },
+            "measurement": {
+                "track": "Песен",
+                "album": "Албум"
+            },
+            "mono": "Моно",
+            "stereo": "Стерео",
+            "integer_pcm": "{0}-bit PCM",
+            "normalization_title": "Нормализиране на силата на звука",
+            "playback_speed_title": "Скорост на възпроизвеждане",
+            "dsp_title": "DSP"
+        },
+        "more_info_for": "Повече информация за {item}"
     },
     "select_source": "Изберете източник",
     "play_replace_next": "Възпроизвеждане на следващия (изчистване на опашката)",
@@ -849,7 +894,11 @@
             "enable_guest_access": "Активиране на достъпа за гости",
             "guest_access_enabled": "Достъпът за гости е активиран",
             "guest_access_toggle_failed": "Неуспешно превключване на достъпа за гости",
-            "powered_by": "Задвижвано от"
+            "powered_by": "Задвижвано от",
+            "copy_link": "Копиране на връзката",
+            "more_share_options": "Още опции за споделяне",
+            "qr_default_text": "Сканирайте QR кода, за да се присъедините към партито!",
+            "share_description": "Използвайте тази връзка или сканирайте QR кода, за да се присъедините към партито."
         },
         "music_quiz": {
             "loading": "Зареждане...",
@@ -890,6 +939,10 @@
             "copy_music_name_failed": "Не можа да се копира заглавието на песента",
             "error_no_web_player": "Уеб плейърът все още не е наличен",
             "listen_in_powered_by": "Задвижвано от Sendspin",
+            "difficulty": "Трудност",
+            "difficulty_easy": "Лесно",
+            "difficulty_normal": "Нормално",
+            "difficulty_hard": "Трудно",
             "choose_game_type": "Изберете тип игра",
             "configure_game": "Конфигурирайте играта си",
             "setup_step": "Стъпка {0} от {1}",
@@ -909,12 +962,16 @@
             "albums_count": "{0} албуми",
             "artist_count": "{0} изпълнител",
             "artists_count": "{0} изпълнители",
+            "set_up_new_game": "Настройване на нова игра…",
             "game_starts_in": "Играта започва след {0}",
+            "playback": "Възпроизвеждане",
             "playback_mode": "Режим на възпроизвеждане",
             "speaker": "Говорител",
             "choose_speaker": "Изберете говорител",
             "loading_playback_options": "Зареждане на опциите за възпроизвеждане...",
             "error_load_playback_options": "Не можаха да се заредят опциите за възпроизвеждане",
+            "preparing_game_help": "Зареждане на избраната от вас музика и създаване на рундовете. Това може да отнеме известно време.",
+            "settings": "Настройки на музикалната викторина",
             "timeline_place_before_year": "Преди {0}",
             "timeline_place_after_year": "След {0}",
             "timeline_place_between_years": "Между {0} и {1}"
@@ -1076,8 +1133,10 @@
         "match_any": "всеки",
         "no_rules_title": "Всички песни от библиотеката",
         "op_between": "между",
+        "picker_empty_search": "Въведете поне 2 знака, за да намерите {label}.",
         "op_is": "е",
         "op_is_not": "не е",
+        "seed_heading": "Открийте музика, подобна на следните песни, изпълнители, албуми или плейлисти",
         "type_library": "От моята библиотека",
         "type_seed": "Откриване",
         "seed_album_pick": "Изберете албум",
@@ -1152,9 +1211,11 @@
     "audio_overlay_sound": "Звук",
     "audio_overlay_select_sound": "Изберете звук",
     "menu_edit_disable": "Изход от режим на редактиране",
+    "media_type": "Тип на медията",
     "guest": {
         "loading_description": "Моля, изчакайте...",
         "error_description": "Проверете връзката си и опитайте отново.",
+        "access_label": "Достъп за гости",
         "return_to_app": "Назад към Music Assistant"
     },
     "searching": "Търсене...",
