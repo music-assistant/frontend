@@ -600,7 +600,6 @@
         "eq_band_count_singular": "1 μπάντα",
         "input_gain": "Ενίσχυση εισόδου ({0} dB)",
         "output_gain": "Ενίσχυση εξόδου ({0} dB)",
-        "output_limiter": "Περιοριστής εξόδου",
         "file_info": {
             "container": "Κοντέινερ: {0}",
             "codec": "Κωδικοποιητής: {0}",

@@ -241,7 +241,8 @@
                 "parametric_eq": "Parametrische EQ",
                 "tone_control": "Toonregeling",
                 "gain": "Gain",
-                "balance": "Balans"
+                "balance": "Balans",
+                "transpose": "Transponeren"
             },
             "channels": {
                 "ALL": "Alle",
@@ -261,6 +262,15 @@
                 "remove_confirm": "Weet je zeker dat je deze DSP preset wilt verwijderen?",
                 "custom": "Aangepast",
                 "selected": "Preset: {0}"
+            },
+            "transpose": {
+                "help": "Verhoogt of verlaagt de toonhoogte van de muziek zonder het tempo te wijzigen. Handig om mee te spelen in een key die beter bij je past.",
+                "cpu_hint": "Transponeren vraagt meer rekenkracht van de CPU dan de andere filters. Op minder krachtige hardware kun je dit het beste alleen voor één speler gebruiken.",
+                "original_key": "Originele key",
+                "unit": "halve tonen",
+                "unit_singular": "halve toon",
+                "concert_pitch_432": "A = 432 Hz",
+                "concert_pitch_432_hint": "Stel de standaardtoonhoogte zo in dat A op 432 Hz is gestemd"
             }
         },
         "dsp_enabled": "DSP is ingeschakeld",
@@ -582,7 +592,29 @@
         "customize_menu": {
             "label": "Menu aanpassen",
             "description": "Zet het navigatiemenu in de bewerkingsmodus om de items te laten zien, te verbergen, te verplaatsen en te hernoemen."
-        }
+        },
+        "start_setup": "Installatie starten",
+        "setup_required": "Installatie vereist",
+        "setup_flow": {
+            "next": "Volgende",
+            "finish": "Afronden",
+            "done": "Klaar",
+            "open_external": "Open",
+            "external_waiting": "Wachten tot je deze stap voltooid hebt…",
+            "external_fallback": "Klik hier als het venster niet is geopend",
+            "success_title": "Klaar!",
+            "aborted_title": "Installatie geannuleerd",
+            "aborted_text": "De installatie is niet voltooid.",
+            "open_settings": "Instellingen openen",
+            "setup_player_title": "Speler instellen",
+            "expires_in": "Verloopt over {0}",
+            "external_default_title": "Ga verder in je browser",
+            "external_default_text": "Er wordt een nieuw browservenster geopend waarin je je kunt aanmelden en Music Assistant kunt autoriseren. Kom hier terug zodra je klaar bent — dit dialoogvenster gaat automatisch verder.",
+            "external_host": "Opent {0}",
+            "session_ended_title": "Installatiesessie beëindigd",
+            "session_ended_text": "De installatiesessie is beëindigd — mogelijk is deze voltooid. Controleer je providers of spelers om dit te bevestigen."
+        },
+        "options": "Opties"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -625,7 +657,7 @@
     "sync_now": "Nu synchroniseren",
     "sync_running": "Een of meer muziekproviders worden gesynchroniseerd.",
     "tooltip": {
-        "album_artist_filter": "Album-artiestfilter in-\/uitschakelen",
+        "album_artist_filter": "Albumartiest-filter in-\/uitschakelen",
         "explicit": "Expliciet",
         "filter_library": "Wissel in bibliotheek-\/favorietenfilter",
         "library": "Schakel in bibliotheek\/favoriet",
@@ -688,7 +720,8 @@
         "artwork": "Albumhoezen",
         "import_file": "Bestand importeren",
         "bpm": "Tempo (beats per minuut)",
-        "musical_key": "Muzikale toonsoort"
+        "musical_key": "Muzikale toonsoort",
+        "show_dashboard": "Cast het dashboard naar een apparaat."
     },
     "topresult": "Topresultaat",
     "track": "Nummer",
@@ -774,7 +807,6 @@
         "eq_band_count_singular": "1 band",
         "input_gain": "Ingangsversterking ({0} dB)",
         "output_gain": "Uitgangsversterking ({0} dB)",
-        "output_limiter": "Uitgangsbegrenzer",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
@@ -928,10 +960,10 @@
         "manage_active_sessions": "Bekijk en beheer je actieve inlogsessies",
         "active_sessions_description": "Dit zijn sessies die worden aangemaakt wanneer je inlogt. Ze worden automatisch verlengd wanneer ze worden gebruikt en verlopen na 30 dagen inactiviteit.",
         "no_active_sessions": "Geen actieve sessies",
-        "long_lived_tokens": "Toegangstokens met lange levensduur",
+        "long_lived_tokens": "Long-lived access tokens",
         "api_tokens_description": "Maak en beheer API tokens voor externe integraties",
-        "long_lived_tokens_description": "Tokens met een lange levensduur worden gebruikt voor externe integraties en API-toegang. Ze verlopen na 10 jaar en worden niet automatisch verlengd.",
-        "no_long_lived_tokens": "Geen lange levensduur toegangstokens",
+        "long_lived_tokens_description": "Long-lived access tokens worden gebruikt voor externe integraties en API-toegang. Ze verlopen na 10 jaar en worden niet automatisch verlengd.",
+        "no_long_lived_tokens": "Geen long-lived access tokens",
         "no_tokens": "Nog geen tokens beschikbaar",
         "create_token_hint": "Maak een token aan om Music Assistant met externe applicaties te gebruiken",
         "token_name": "Tokennaam",
@@ -1443,6 +1475,192 @@
             "play_along": "Doe mee",
             "host_controls": "Host bedieningselementen",
             "return_to_host_panel": "Terug naar het hostpaneel"
+        },
+        "ai_radio": {
+            "title": "AI Radio",
+            "context": {
+                "run_with": "Speel als AI Radio"
+            },
+            "actions": {
+                "discard": "Weggooien",
+                "delete": "Verwijderen",
+                "saving": "Opslaan…",
+                "up": "Omhoog",
+                "down": "Omlaag",
+                "remove": "Verwijderen"
+            },
+            "fields": {
+                "source_playtime_cap": "Maximale speelduur (minuten)",
+                "default_playback_device": "Standaard afspeelapparaat (optioneel)",
+                "web_search_mode": "Webzoekmodus",
+                "character_limit": "Tekenlimiet",
+                "prompt": "Opdracht",
+                "clear_queue_on_dynamic_start": "Wachtrij leegmaken bij dynamische start",
+                "dynamic_batch_size": "Dynamische batchgrootte",
+                "instructions": "Instructies voor presentatoren en programma’s"
+            },
+            "field_descriptions": {
+                "source_playtime_cap": "Maximale totale afspeeltijd van de bronmuziek, in minuten. Nummers worden willekeurig geselecteerd totdat de limiet is bereikt, zodat je een willekeurige selectie uit de afspeellijst krijgt in plaats van alleen het eerste deel ervan. Laat dit veld op 0 staan als je geen limiet wilt instellen.",
+                "clear_queue_on_dynamic_start": "Vervang alles wat zich in de wachtrij bevindt wanneer het programma begint. Schakel deze optie uit om de uitzending in plaats daarvan aan het einde van de wachtrij toe te voegen en het huidige nummer te blijven afspelen.",
+                "dynamic_batch_size": "Hoeveel nummers de host tegelijkertijd voorbereidt. Grotere batches zorgen voor minder pauzes terwijl het volgende segment wordt gegenereerd, maar ook voor een langere wachttijd voordat het programma begint te spelen.",
+                "instructions": "Hierin wordt de persoonlijkheid van de presentator beschreven en aangegeven hoe de segmenten moeten worden geschreven. Dit wordt bij elk segment naar de AI gestuurd."
+            },
+            "web_search": {
+                "disabled": "uitgeschakeld (geen webtool)",
+                "allow": "toestaan (model mag gebruikmaken van het web)",
+                "force": "forceer (zoekopdracht op internet vereist)",
+                "help": "Of de presentator voor dit onderdeel informatie op internet mag opzoeken."
+            },
+            "plays": {
+                "start": "Eenmalig tijdens de start",
+                "end": "Eenmalig aan het einde",
+                "every_song": "Ieder nummer",
+                "every_n_songs": "Elke ~{0} nummers",
+                "every_n_min": "Elke ~{0} min",
+                "occasionally": "Af en toe ({0}%)"
+            },
+            "validation": {
+                "invalid_import_file": "Het bestand is geen geldige AI Radio-export.",
+                "station_name_required": "De stationsnaam is verplicht.",
+                "station_source_playlist_required": "Een Station Source-afspeellijst is vereist",
+                "select_section": "Selecteer ten minste één sectie",
+                "section_order_required": "Een sectievolgorde vereist ten minste één regel",
+                "rule_requires_flow": "Regel {0} vereist minstens één flow-item",
+                "must_needs_section": "Regel {0}, flow {1}: er MOET een sectie zijn",
+                "alternative_needs_choice": "Regel {0}, flow {1}: ALTERNATIEF vereist minstens één geldige keuze",
+                "optional_needs_section": "Regel {0}, flow {1}: OPTIONEEL vereist een sectie",
+                "optional_chance_numeric": "Regel {0}, flow {1}: OPTIONEEL kans moet een getal zijn",
+                "section_name_required": "Sectienaam is vereist",
+                "section_prompt_required": "Sectieprompt is vereist",
+                "no_station_loaded": "Geen stations geladen",
+                "no_section_loaded": "Geen sectie geladen"
+            },
+            "confirm": {
+                "discard_changes_title": "Wijzigingen ongedaan maken?",
+                "discard_changes": "Je hebt nog niet-opgeslagen wijzigingen die verloren zullen gaan.",
+                "delete_station_title": "Station verwijderen?",
+                "delete_station": "Wil je dit station verwijderen?"
+            },
+            "toast": {
+                "playlists_truncated": "Alleen de eerste {0} afspeellijsten werden geladen.",
+                "unavailable": "AI Radio is niet ingeschakeld.",
+                "playlist_starting": "De afspeellijst wordt aangemaakt — deze verschijnt binnenkort in je bibliotheek.",
+                "live_starting": "De live-uitzending is begonnen",
+                "playlist_start_failed": "Het genereren van de afspeellijst is mislukt.",
+                "live_start_failed": "Het starten van de live radio-uitzending is mislukt",
+                "session_stopped": "AI Radio-sessie gestopt",
+                "session_stop_failed": "Het is niet gelukt om de AI Radio-sessie te beëindigen",
+                "station_saved": "Station opgeslagen",
+                "station_save_failed": "Het opslaan van het station is mislukt",
+                "station_deleted": "Station verwijderd",
+                "station_duplicated": "Station gedupliceerd",
+                "session_failed": "AI Radio-uitvoering mislukt: {0}"
+            },
+            "header": {
+                "subtitle": "Verander een afspeellijst in een radioprogramma met een AI-presentator."
+            },
+            "gallery": {
+                "empty_title": "Maak je eerste programma",
+                "empty_description": "AI Radio verandert een van je afspeellijsten in een radioprogramma met een AI-presentator. AI Radio heeft een AI-ondersteunende provider (bijvoorbeeld Home Assistant) nodig om de presentator te genereren — stel deze in via Instellingen → Plugins.",
+                "create_cta": "Programma aanmaken",
+                "new_show": "Nieuw programma",
+                "refresh": "Vernieuwen"
+            },
+            "card": {
+                "play": "Afspelen",
+                "starting": "Starten...",
+                "stop": "Stop",
+                "stopping": "Stoppen...",
+                "on_air": "Wordt nu uitgezonden",
+                "generate_playlist": "Genereer en sla op als afspeellijst",
+                "customize": "Aanpassen",
+                "duplicate": "Dupliceren",
+                "duplicate_name": "{0} (kopie)",
+                "delete": "Verwijderen",
+                "session_failed": "De laatste poging is mislukt",
+                "open_playlist": "Open de gegenereerde afspeellijst",
+                "status_failed": "Mislukt: {0}",
+                "status_playlist_ready": "Afspeellijst klaar · {0}",
+                "status_last_on_air": "Laatst uitgezonden {0}",
+                "no_player": "Selecteer eerst een speler",
+                "start_failed": "Starten van {0} mislukt",
+                "switch_show_title": "Van programma wisselen?",
+                "switch_show_confirm": "«{0}» wordt uitgezonden. Wil je deze stoppen en «{1}» afspelen?",
+                "switch_show_confirm_label": "Wisselen"
+            },
+            "phase": {
+                "preparing": "Je programma voorbereiden…",
+                "fetch_source_tracks": "Nummeren worden opgehaald…",
+                "planning_sections": "Het programma plannen…",
+                "generating_llm": "De tekst van de presentator schrijven…",
+                "generating_tts": "De stem van de presentator opnemen…",
+                "publishing_playlist": "Afspeellijst publiceren…",
+                "initializing_queue": "De wachtrij wordt voorbereid…",
+                "queueing_batch": "Muziek wordt geladen…",
+                "waiting_for_playback": "Wachten op het afspelen…"
+            },
+            "create": {
+                "title": "Een programma maken",
+                "description": "Kies een afspeellijst, een presentatiestijl en hoe veel er gepraat moet worden tijdens het programma.",
+                "playlist_label": "Bron-afspeellijst",
+                "playlist_placeholder": "Kies een afspeellijst",
+                "playlist_empty": "Geen afspeellijsten gevonden",
+                "preset_label": "Presentator-stijl",
+                "talk_label": "Spraakzaamheid",
+                "name_label": "Programmanaam",
+                "default_name": "{0} — {1}",
+                "create": "Aanmaken",
+                "create_and_play": "Aanmaken & afspelen",
+                "creating": "Aanmaken...",
+                "validation": {
+                    "playlist_required": "Kies een bronafspeellijst",
+                    "name_required": "Programmanaam is vereist"
+                }
+            },
+            "presets": {
+                "morning_show": {
+                    "name": "Ochtendprogramma",
+                    "description": "Een hartelijke, opgewekte presentator met weer- en nieuwsuitzendingen."
+                },
+                "minimal_dj": {
+                    "name": "Minimale DJ",
+                    "description": "Rustige, ingetogen overgangen die niet opvallen."
+                },
+                "music_nerd": {
+                    "name": "Muziekfanaat",
+                    "description": "Deelt tussen de nummers door weetjes en trivia over de artiest."
+                },
+                "party_host": {
+                    "name": "Feest-presentator",
+                    "description": "Energieke kreten om het feest gaande te houden."
+                }
+            },
+            "talk": {
+                "rarely": "Zelden",
+                "normal": "Normaal",
+                "chatty": "Spraakzaam"
+            },
+            "prereq": {
+                "title": "AI-provider nodig",
+                "description": "AI Radio heeft een provider met AI-functionaliteit nodig (bijvoorbeeld Home Assistant) om de presentator te genereren.",
+                "action": "Ga naar Instellingen → Plugins"
+            },
+            "customize": {
+                "title": "Programma aanpassen",
+                "save": "Programma opslaan",
+                "advanced": "Geavanceerd",
+                "basics_title": "Basis",
+                "segments_title": "Segmenten",
+                "segments_empty": "Er zijn nog geen segmenten — voeg er een toe om aan de slag te gaan.",
+                "add_segment": "Segment toevoegen",
+                "blank_segment": "Leeg segment",
+                "blank_segment_name": "Nieuw segment",
+                "segment_name": "Segmentnaam",
+                "use_current_player": "Huidige speler gebruiken",
+                "lossy_warning_title": "Vereenvoudigd bij het opslaan",
+                "lossy_warning_description": "Dit programma maakt gebruik van een geavanceerde configuratie die hier niet volledig kan worden weergegeven. Als je opslaat, wordt deze herschreven in het hierboven weergegeven vereenvoudigde segmentformaat.",
+                "prompt_placeholders_hint": "Beschikbare plaatshouders: {placeholders}"
+            }
         }
     },
     "no_lyrics_available": "Geen songtekst beschikbaar",
@@ -1779,5 +1997,14 @@
     "searching": "Zoeken...",
     "pause": "Pauzeren",
     "play_failed": "Afspeelactie mislukt",
-    "show_audio_chain_details_for_quality": "Details van de audioketen weergeven ({quality})"
+    "show_audio_chain_details_for_quality": "Details van de audioketen weergeven ({quality})",
+    "dashboard": {
+        "disconnect": "Verbinding verbreken voor {0}",
+        "loading": "Apparaten laden...",
+        "no_devices": "Geen Cast-apparaten gevonden",
+        "started": "Casten naar \"{0}\""
+    },
+    "reconfigure_player": "Speler opnieuw configureren",
+    "configure_player": "Speler configureren",
+    "plugins": "Plugins"
 }
