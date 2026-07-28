@@ -200,7 +200,23 @@
               </NumberField>
             </div>
 
-            <div class="flex items-center gap-3 md:col-span-2">
+            <div class="flex items-center gap-3">
+              <FieldLabel
+                html-for="customize-shuffle-source-tracks"
+                :label="$t('providers.ai_radio.fields.shuffle_playlist_tracks')"
+                :description="
+                  $t(
+                    'providers.ai_radio.field_descriptions.shuffle_playlist_tracks',
+                  )
+                "
+              />
+              <Switch
+                id="customize-shuffle-source-tracks"
+                v-model="draft.basics.shuffleSourceTracks"
+              />
+            </div>
+
+            <div class="flex items-center gap-3">
               <FieldLabel
                 html-for="customize-clear-queue"
                 :label="
