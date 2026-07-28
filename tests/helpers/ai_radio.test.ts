@@ -1,4 +1,12 @@
-import { errorMessage, relativeTimeFromIso, slugify } from "@/helpers/ai_radio";
+import {
+  asGeneralDefaults,
+  compileShow,
+  decompileStation,
+  errorMessage,
+  relativeTimeFromIso,
+  slugify,
+} from "@/helpers/ai_radio";
+import type { ShowDraft } from "@/helpers/ai_radio";
 import type { AIRadioSection, AIRadioStation } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
 
@@ -19,6 +27,27 @@ const makeSection = (
   type: "ai_text",
   prompt: "Say hello",
   ...overrides,
+});
+
+const makeDraft = (
+  overrides: Partial<ShowDraft["basics"]> = {},
+): ShowDraft => ({
+  basics: {
+    name: "My Show",
+    sourcePlaylistId: "42",
+    sourcePlaylistProvider: "library",
+    targetPlaylistProvider: "builtin",
+    defaultPlayerId: "",
+    maxDurationMinutes: 0,
+    shuffleSourceTracks: true,
+    dynamicBatchSize: 3,
+    dynamicPollSeconds: 5,
+    dynamicPrefetchRemainingTracks: 2,
+    clearQueueOnStart: true,
+    general: asGeneralDefaults(undefined),
+    ...overrides,
+  },
+  segments: [],
 });
 
 const makeStation = (
@@ -70,5 +99,19 @@ describe("relativeTimeFromIso", () => {
     expect(at("2026-07-16T11:45:00Z")).toBe("15m ago");
     expect(at("2026-07-16T10:00:00Z")).toBe("2h ago");
     expect(at("2026-07-13T12:00:00Z")).toBe("3d ago");
+  });
+});
+
+describe("compileShow", () => {
+  it("writes shuffle_source_tracks from the draft", () => {
+    const draft = makeDraft({ shuffleSourceTracks: false });
+    expect(compileShow(draft).shuffle_source_tracks).toBe(false);
+  });
+});
+
+describe("decompileStation", () => {
+  it("defaults shuffleSourceTracks to true when absent from the station", () => {
+    const { basics } = decompileStation(makeStation(), [makeSection()]);
+    expect(basics.shuffleSourceTracks).toBe(true);
   });
 });
