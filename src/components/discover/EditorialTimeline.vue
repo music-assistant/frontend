@@ -46,7 +46,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from "vue";
+import {
+  computed,
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  type Component,
+} from "vue";
 import type {
   Artist,
   MediaItemTypeOrItemMapping,
@@ -81,39 +88,12 @@ const gap = computed(() => props.gap ?? 14);
 
 const MAX_DAYS = computed(() => props.maxDays ?? 15);
 
-const minDaysLabel = computed(() => {
-  const days = MAX_DAYS.value;
-  return days === 1 ? "Yesterday" : `${days} days ago`;
-});
-
-const maxDaysLabel = computed(() => {
-  const days = MAX_DAYS.value;
-  return days === 1 ? "Tomorrow" : `in ${days} days`;
-});
-
-const EVENT_ICONS: Record<string, unknown> = {
+const EVENT_ICONS: Record<string, Component> = {
   artist_birthdays: Cake,
   artist_memoriam: Heart,
   group_founded: Users,
   group_disbanded: UserMinus,
 };
-
-function fullDate(event: TimelineEvent): string {
-  const lifeSpan = event.artist.metadata?.life_span;
-  if (!lifeSpan) return event.dateLabel;
-  const raw =
-    event.eventType === "artist_memoriam" ||
-    event.eventType === "group_disbanded"
-      ? lifeSpan.end
-      : lifeSpan.begin;
-  if (!raw || raw.length < 10) return event.dateLabel;
-  const [year, month, day] = raw.substring(0, 10).split("-").map(Number);
-  return new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(year, month - 1, day));
-}
 
 const GROUP_TYPES = new Set<ArtistEntityType>([
   ArtistEntityType.GROUP,
@@ -215,8 +195,19 @@ const updateTileArt = () => {
   tileArt.value = Math.round(Math.max(MIN_ART, Math.min(MAX_ART, size)));
 };
 
+let ro: ResizeObserver | undefined;
 onMounted(() => {
   updateTileArt();
+  window.addEventListener("resize", updateTileArt);
+  if (track.value && "ResizeObserver" in window) {
+    ro = new ResizeObserver(updateTileArt);
+    ro.observe(track.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateTileArt);
+  ro?.disconnect();
 });
 
 watch(() => props.tilesPerView, updateTileArt);
@@ -258,6 +249,7 @@ watch(() => props.tilesPerView, updateTileArt);
   overflow-x: auto;
   overflow-y: hidden;
   scroll-behavior: smooth;
+  touch-action: pan-x pan-y;
 
   /* Hide scrollbar */
   scrollbar-width: none;
