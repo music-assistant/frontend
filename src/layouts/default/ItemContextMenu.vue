@@ -244,7 +244,6 @@ import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
   ArrowDown,
   ArrowUp,
-  CassetteTape,
   Disc3,
   Download,
   Folder,
@@ -259,6 +258,7 @@ import {
   Merge,
   MicVocal,
   MinusCircle,
+  Orbit,
   Pencil,
   Pin,
   PinOff,
@@ -532,7 +532,7 @@ export const getContextMenuItems = async function (
       label: radioActionLabelKey(firstItem),
       labelArgs: [],
       action: () => gotoRadio(firstItem),
-      icon: CassetteTape,
+      icon: Orbit,
       disabled: !radioSupported(firstItem),
     });
   }

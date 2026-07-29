@@ -24,7 +24,7 @@
         {{ $t("show_info") }}
       </DropdownMenuItem>
       <DropdownMenuItem v-if="radioAvailable" @click="onStartRadio">
-        <CassetteTape class="size-4" />
+        <Orbit class="size-4" />
         {{ $t(radioLabel) }}
       </DropdownMenuItem>
       <DropdownMenuItem
@@ -99,11 +99,11 @@ import { eventbus } from "@/plugins/eventbus";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import {
-  CassetteTape,
   EllipsisIcon,
   Gauge,
   Heart,
   Info,
+  Orbit,
   PlusCircle,
 } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
