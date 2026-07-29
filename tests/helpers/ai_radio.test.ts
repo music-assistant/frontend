@@ -44,7 +44,6 @@ const makeDraft = (
     dynamicBatchSize: 3,
     dynamicPollSeconds: 5,
     dynamicPrefetchRemainingTracks: 2,
-    clearQueueOnStart: true,
     general: asGeneralDefaults(undefined),
     ...overrides,
   },

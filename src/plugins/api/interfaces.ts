@@ -1636,7 +1636,6 @@ export interface AIRadioStation {
   dynamic_batch_size?: number;
   dynamic_poll_seconds?: number;
   dynamic_prefetch_remaining_tracks?: number;
-  clear_queue_on_start?: boolean;
   merge_section_id?: string;
   general?: AIRadioStationGeneral;
   section_ids?: string[];

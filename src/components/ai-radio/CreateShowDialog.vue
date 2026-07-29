@@ -218,7 +218,6 @@ function buildDraft(): ShowDraft {
       dynamicBatchSize: 3,
       dynamicPollSeconds: 5,
       dynamicPrefetchRemainingTracks: 2,
-      clearQueueOnStart: true,
       general,
     },
     segments: applyTalkativeness(preset.segments, talkLevel.value),
