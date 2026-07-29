@@ -8,6 +8,7 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import type { PlayerQueue, QueueItem } from "@/plugins/api/interfaces";
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
+import { currentQueueIndex as resolveCurrentQueueIndex } from "@/helpers/queue_position";
 
 export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
   const queueItems = ref<QueueItem[]>([]);
@@ -22,8 +23,8 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
     return queueId ? api.queues[queueId] : null;
   });
 
-  const currentQueueIndex = computed(
-    () => currentQueue.value?.current_index ?? 0,
+  const currentQueueIndex = computed(() =>
+    resolveCurrentQueueIndex(currentQueue.value),
   );
 
   const scrollToCurrentItem = async () => {
@@ -88,7 +89,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
       }
 
       if (reset) {
-        const currentIdx = queue?.current_index ?? 0;
+        const currentIdx = resolveCurrentQueueIndex(queue);
         const offset = Math.max(0, currentIdx - 10);
         queueFetchOffset.value = offset;
 
