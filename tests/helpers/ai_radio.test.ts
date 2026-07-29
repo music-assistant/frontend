@@ -12,6 +12,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
+  canonicalizeLocale: (locale: string) => locale.replaceAll("_", "-"),
   i18n: {
     global: {
       locale: { value: "en" },
