@@ -124,15 +124,12 @@ function mmddOffset(mmdd: string): number {
   return Math.round((best.getTime() - todayMs) / 86_400_000);
 }
 
-function dateLabel(offset: number, mmdd: string): string {
-  if (offset === 0) return "Today";
-  if (offset === -1) return "Yesterday";
-  if (offset === 1) return "Tomorrow";
+function dateLabel(mmdd: string): string {
   const [mm, dd] = mmdd.split("-").map(Number);
   const date = new Date(2000, mm - 1, dd);
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
-    day: "2-digit",
+    day: "numeric",
   }).format(date);
 }
 
@@ -158,7 +155,7 @@ const timelineItems = computed((): TimelineEvent[] => {
           id: `${artist.uri}_birth`,
           artist,
           eventType: isGroup ? "group_founded" : "artist_birthdays",
-          dateLabel: dateLabel(offset, mmdd),
+          dateLabel: dateLabel(mmdd),
           offset,
         });
       }
@@ -172,7 +169,7 @@ const timelineItems = computed((): TimelineEvent[] => {
           id: `${artist.uri}_end`,
           artist,
           eventType: isGroup ? "group_disbanded" : "artist_memoriam",
-          dateLabel: dateLabel(offset, mmdd),
+          dateLabel: dateLabel(mmdd),
           offset,
         });
       }
