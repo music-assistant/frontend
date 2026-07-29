@@ -749,7 +749,6 @@
         "eq_band_count_singular": "1 sáv",
         "input_gain": "Bemeneti erősítés ({0} dB)",
         "output_gain": "Kimeneti erősítés ({0} dB)",
-        "output_limiter": "Kimeneti korlátozó",
         "file_info": {
             "container": "Tároló: {0}",
             "codec": "Kodek: {0}",

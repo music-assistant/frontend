@@ -774,7 +774,6 @@
         "eq_band_count_singular": "1个乐队",
         "input_gain": "输入增益 ({0} dB)",
         "output_gain": "输出增益 ( {0} dB)",
-        "output_limiter": "输出限制器",
         "file_info": {
             "container": "容器： {0}",
             "codec": "编解码器： {0}",

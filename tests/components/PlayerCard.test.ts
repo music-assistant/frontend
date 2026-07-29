@@ -213,6 +213,31 @@ describe("PlayerCard", () => {
     expect(action.text()).toContain("Kitchen");
   });
 
+  it("keeps setup-required player details at full opacity", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        available: false,
+        needs_setup: true,
+        powered: false,
+      }),
+    );
+
+    expect(wrapper.classes()).not.toContain("opacity-80");
+    expect(wrapper.classes()).not.toContain("opacity-60");
+    expect(wrapper.classes()).not.toContain("opacity-40");
+    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen");
+    expect(wrapper.text()).toContain("settings.setup_required");
+    expect(
+      wrapper.find(".player-select-action").attributes("disabled"),
+    ).toBeUndefined();
+    expect(wrapper.find('[aria-label="play"]').attributes("disabled")).toBe("");
+    expect(
+      wrapper
+        .find('[aria-label="tooltip.more_options"]')
+        .attributes("disabled"),
+    ).toBe("");
+  });
+
   it("lists every player name in a manual group", () => {
     const office = createPlayer({
       player_id: "office",

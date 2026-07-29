@@ -443,7 +443,6 @@
         "eq_band_count_singular": "1 banda",
         "input_gain": "Guadagno di ingresso ( {0} dB)",
         "output_gain": "Guadagno in uscita ( {0} dB)",
-        "output_limiter": "Limitatore di uscita",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codice: {0}",

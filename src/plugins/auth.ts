@@ -38,7 +38,17 @@ export class AuthManager {
   private baseUrl: string = "";
 
   constructor() {
-    this.loadStoredToken();
+    try {
+      if (
+        typeof localStorage === "undefined" ||
+        typeof sessionStorage === "undefined"
+      ) {
+        return;
+      }
+      this.loadStoredToken();
+    } catch (error) {
+      console.warn("Unable to restore authentication token.", error);
+    }
   }
 
   /**

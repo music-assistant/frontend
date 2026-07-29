@@ -32,10 +32,13 @@
       is_log: false,
     }"
   />
+
+  <DSPHelp :text="$t('settings.dsp.tone_control.help')" />
 </template>
 <script setup lang="ts">
 import { ToneControlFilter } from "@/plugins/api/interfaces";
 import DSPSlider from "./DSPSlider.vue";
+import DSPHelp from "./DSPHelp.vue";
 
 const tone_control = defineModel<ToneControlFilter>({ required: true });
 </script>

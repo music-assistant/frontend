@@ -1,5 +1,5 @@
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
-import type { MusicQuizTimelinePersonalizedState } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelinePersonalizedState } from "@/composables/music-quiz/useMusicQuiz";
 import {
   baseRound,
   baseState,

@@ -359,6 +359,7 @@ const formRef = ref<HTMLFormElement | null>(null);
 
 // monotonically increasing launch token; guards async step application
 let launchSeq = 0;
+let completionNotified = false;
 
 let unsubscribeFlow: (() => void) | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
@@ -519,6 +520,7 @@ async function onLaunch(evt: SetupFlowDialogEvent) {
   // identity on launch.value cannot be used for staleness checks: the ref
   // proxy-wraps the stored event, so it never equals the raw evt again
   const seq = ++launchSeq;
+  completionNotified = false;
   launch.value = evt;
   step.value = null;
   busy.value = true;
@@ -560,6 +562,14 @@ function applyStep(newStep: SetupFlowStep) {
   if (isTerminal.value && unsubscribeFlow) {
     unsubscribeFlow();
     unsubscribeFlow = null;
+  }
+  if (
+    isTerminal.value &&
+    !completionNotified &&
+    launch.value?.kind === "reconfigure"
+  ) {
+    completionNotified = true;
+    launch.value.onFlowEnded?.();
   }
 
   if (newStep.type === FlowStepType.FORM) {
@@ -679,14 +689,14 @@ function reconcileFlow() {
     .catch(() => {
       if (!open.value || step.value?.flow_id !== flowId) return;
       cleanupFlow();
-      step.value = {
+      applyStep({
         flow_id: flowId,
         step_id: SESSION_ENDED_STEP_ID,
         type: FlowStepType.ABORT,
         entries: [],
         errors: {},
         reason: $t("settings.setup_flow.session_ended_text"),
-      };
+      });
     });
 }
 

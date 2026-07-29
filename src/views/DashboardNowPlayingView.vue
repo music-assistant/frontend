@@ -181,13 +181,16 @@ const backgroundGradient = computed(() => {
   overflow: hidden;
 }
 
+/* A Nest Hub (1024x600) and a Chromecast on a TV (1280x720) report almost the
+   same viewport, so the steep slope plus a cap that bites around 1070px is what
+   lets the Hub catch up without the TV growing much. */
 .now-playing-title {
-  font-size: clamp(1rem, 2.1vw, 1.75rem);
+  font-size: clamp(1.25rem, 3vw, 2rem);
   font-weight: 600;
 }
 
 .now-playing-subtitle {
-  font-size: clamp(0.8rem, 1.5vw, 1.25rem);
+  font-size: clamp(1rem, 2.2vw, 1.5rem);
   opacity: 0.8;
   margin-top: 0.25rem;
 }
@@ -196,5 +199,11 @@ const backgroundGradient = computed(() => {
   flex: 0 0 auto;
   width: 100%;
   max-width: 900px;
+}
+
+/* The timeline's elapsed/total labels come from a shared Vuetify caption class;
+   scale them here only, so the rest of the app keeps its 12px captions. */
+.now-playing-timeline :deep(.text-caption) {
+  font-size: clamp(0.75rem, 1.3vw, 0.9375rem);
 }
 </style>
