@@ -25,7 +25,7 @@ import GuessTheSongReveal from "@/components/music-quiz/game-types/guess-the-son
 import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";

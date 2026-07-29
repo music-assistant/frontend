@@ -470,7 +470,6 @@
         "eq_band_count_singular": "1 bånd",
         "input_gain": "Indgangsforstærkning ({0} dB)",
         "output_gain": "Udgangsforstærkning ({0} dB)",
-        "output_limiter": "Udgangsbegrænser",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Kodeks: {0}",

@@ -2,7 +2,7 @@ import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
 import type {
   MusicQuizSupportedHostState,
   MusicQuizTriviaHostState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,7 +23,7 @@ const {
   mockUseMusicQuizHost: vi.fn(),
 }));
 
-vi.mock("@/composables/useMusicQuizHost", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizHost", () => ({
   useMusicQuizHost: mockUseMusicQuizHost,
 }));
 

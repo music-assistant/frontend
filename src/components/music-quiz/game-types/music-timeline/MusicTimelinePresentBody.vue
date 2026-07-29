@@ -46,7 +46,7 @@ import MusicQuizLeaderboard from "@/components/music-quiz/MusicQuizLeaderboard.v
 import type {
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 
 defineProps<
   MusicQuizPresentBodyAdapterProps<

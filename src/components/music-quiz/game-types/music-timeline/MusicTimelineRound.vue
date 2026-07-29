@@ -110,8 +110,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import type {
   MusicQuizTimelineRound,
   MusicQuizPhase,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { AudioLines, Check, Clock3, Music2 } from "@lucide/vue";

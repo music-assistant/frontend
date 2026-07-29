@@ -20,7 +20,7 @@ import {
   classifyRetry,
   useAudioAnalysisFailures,
   type RawFailure,
-} from "@/composables/useAudioAnalysisFailures";
+} from "@/composables/audio-analysis/useAudioAnalysisFailures";
 
 /** Server `audio_analysis/failures` row shape (snake_case, epoch seconds). */
 interface ServerFailure {

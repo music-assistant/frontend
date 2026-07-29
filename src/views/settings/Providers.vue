@@ -9,10 +9,9 @@
 
   <div class="pl-5 font-weight-medium">
     {{
-      $t("settings.providers_total", [
-        getAllFilteredProviders().length,
-        getAllFilteredProviders().length > 1 ? "s" : "",
-      ])
+      $t("settings.providers_total", getAllFilteredProviders().length, {
+        named: { count: getAllFilteredProviders().length },
+      })
     }}
   </div>
   <Container
@@ -269,7 +268,7 @@ import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
-import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
+import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   canReconfigureProvider,

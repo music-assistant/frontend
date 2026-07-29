@@ -134,7 +134,7 @@ import { Switch } from "@/components/ui/switch";
 import type {
   MusicQuizCreateRequest,
   MusicQuizPlaybackOptions,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import {
   getMusicQuizPlaybackCreateFields,
   isMusicQuizPlaybackSelectionValid,

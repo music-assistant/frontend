@@ -161,8 +161,8 @@ import { Button } from "@/components/ui/button";
 import type {
   MusicQuizCurrentRound,
   MusicQuizSupportedHostState,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizCelebration } from "@/composables/useMusicQuizCelebration";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizCelebration } from "@/composables/music-quiz/useMusicQuizCelebration";
 import { $t } from "@/plugins/i18n";
 import { Minimize2 } from "@lucide/vue";
 import { computed, watch, type Component } from "vue";
