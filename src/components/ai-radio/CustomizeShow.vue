@@ -200,21 +200,19 @@
               </NumberField>
             </div>
 
-            <div class="flex items-center gap-3 md:col-span-2">
+            <div class="flex items-center gap-3">
               <FieldLabel
-                html-for="customize-clear-queue"
-                :label="
-                  $t('providers.ai_radio.fields.clear_queue_on_dynamic_start')
-                "
+                html-for="customize-shuffle-source-tracks"
+                :label="$t('providers.ai_radio.fields.shuffle_playlist_tracks')"
                 :description="
                   $t(
-                    'providers.ai_radio.field_descriptions.clear_queue_on_dynamic_start',
+                    'providers.ai_radio.field_descriptions.shuffle_playlist_tracks',
                   )
                 "
               />
               <Switch
-                id="customize-clear-queue"
-                v-model="draft.basics.clearQueueOnStart"
+                id="customize-shuffle-source-tracks"
+                v-model="draft.basics.shuffleSourceTracks"
               />
             </div>
           </AccordionContent>

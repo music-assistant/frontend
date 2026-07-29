@@ -1632,10 +1632,10 @@ export interface AIRadioStation {
   target_playlist_provider?: string;
   default_player_id?: string;
   max_duration_minutes?: number;
+  shuffle_source_tracks?: boolean;
   dynamic_batch_size?: number;
   dynamic_poll_seconds?: number;
   dynamic_prefetch_remaining_tracks?: number;
-  clear_queue_on_start?: boolean;
   merge_section_id?: string;
   general?: AIRadioStationGeneral;
   section_ids?: string[];

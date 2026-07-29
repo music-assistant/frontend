@@ -258,12 +258,12 @@ import {
   Merge,
   MicVocal,
   MinusCircle,
+  Orbit,
   Pencil,
   Pin,
   PinOff,
   PlayCircle,
   PlusCircle,
-  RadioTower,
   RefreshCw,
   RotateCcw,
   SkipForward,
@@ -556,7 +556,7 @@ export const getContextMenuItems = async function (
       label: radioActionLabelKey(firstItem),
       labelArgs: [],
       action: () => gotoRadio(firstItem),
-      icon: RadioTower,
+      icon: Orbit,
       disabled: !radioSupported(firstItem),
     });
   }
