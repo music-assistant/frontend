@@ -215,24 +215,6 @@
                 v-model="draft.basics.shuffleSourceTracks"
               />
             </div>
-
-            <div class="flex items-center gap-3">
-              <FieldLabel
-                html-for="customize-clear-queue"
-                :label="
-                  $t('providers.ai_radio.fields.clear_queue_on_dynamic_start')
-                "
-                :description="
-                  $t(
-                    'providers.ai_radio.field_descriptions.clear_queue_on_dynamic_start',
-                  )
-                "
-              />
-              <Switch
-                id="customize-clear-queue"
-                v-model="draft.basics.clearQueueOnStart"
-              />
-            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

@@ -1215,14 +1215,12 @@
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "clear_queue_on_dynamic_start": "Clear Queue on Dynamic Start",
                 "dynamic_batch_size": "Dynamic Batch Size",
                 "instructions": "Host and Program Instructions"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
                 "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order.",
-                "clear_queue_on_dynamic_start": "Replace whatever is in the queue when the show starts. Turn this off to append the show to the queue instead and keep the current track playing.",
                 "dynamic_batch_size": "How many tracks the host prepares at a time. Larger batches mean fewer pauses while the next segment is generated, but a longer wait before the show starts playing.",
                 "instructions": "Describes the host's personality and how segments should be written. This is sent to the AI with every segment."
             },
