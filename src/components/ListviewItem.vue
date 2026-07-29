@@ -58,7 +58,7 @@
               <MediaCollectionThumb
                 size="50"
                 :item="item as MediaCollection<MediaItemType>"
-                thumb-offset="5"
+                :thumb-offset="5"
               />
             </div>
             <div v-else>
@@ -110,7 +110,7 @@
                 <MediaCollectionThumb
                   size="50"
                   :item="item as MediaCollection<MediaItemType>"
-                  thumb-offset="5"
+                  :thumb-offset="5"
                 />
               </div>
               <div v-else>
