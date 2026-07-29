@@ -2,7 +2,7 @@ import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
 import type {
   MusicQuizSupportedHostState,
   MusicQuizTriviaHostState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,7 +23,7 @@ const {
   mockUseMusicQuizHost: vi.fn(),
 }));
 
-vi.mock("@/composables/useMusicQuizHost", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizHost", () => ({
   useMusicQuizHost: mockUseMusicQuizHost,
 }));
 
@@ -301,10 +301,15 @@ describe("MusicQuizDashboardView host actions", () => {
       expect.arrayContaining(["mx-auto", "max-w-6xl", "p-4"]),
     );
     expect(root.classes()).not.toContain("lg:h-full");
+    expect(wrapper.find('[data-testid="music-quiz-cast"]').exists()).toBe(true);
 
     await wrapper.get('[data-testid="enter-present"]').trigger("click");
 
     expect(wrapper.find('[data-testid="present-stage"]').exists()).toBe(true);
+    // the header (and its cast button) gives way to the present stage
+    expect(wrapper.find('[data-testid="music-quiz-cast"]').exists()).toBe(
+      false,
+    );
     expect(root.classes()).toEqual(
       expect.arrayContaining([
         "w-full",
@@ -425,6 +430,9 @@ function mountDashboard() {
         MusicQuizSessionPanels: true,
         MusicQuizSetupWizard: {
           template: '<div data-testid="setup-wizard" />',
+        },
+        ShowDashboardButton: {
+          template: '<button data-testid="music-quiz-cast" />',
         },
         MusicQuizUnsupportedGame: true,
         Dialog: {

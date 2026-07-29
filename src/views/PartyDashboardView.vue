@@ -88,6 +88,7 @@
             >
               <Settings :size="13" />
             </Button>
+            <ShowDashboardButton dashboard="party" />
             <Button
               variant="ghost-icon"
               size="icon-sm"
@@ -290,6 +291,7 @@
 </template>
 
 <script setup lang="ts">
+import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyQR from "@/components/party/PartyQR.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
@@ -304,7 +306,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import {
   ImageColorPalette,
@@ -891,12 +893,20 @@ watch(
 <style scoped>
 .party-view {
   width: 100%;
-  height: 100dvh;
+  height: 100vh;
   overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Keep the vh fallback in a separate rule: the minifier collapses duplicate
+   declarations, which would drop it and leave Android TV without a height. */
+@supports (height: 100dvh) {
+  .party-view {
+    height: 100dvh;
+  }
 }
 
 .background-image {
@@ -1096,7 +1106,7 @@ watch(
   max-width: 60vw;
   display: flex;
   justify-content: center;
-  padding-bottom: 1rem;
+  padding-bottom: calc(1rem + var(--party-player-bottom, 0px));
 }
 
 .karaoke-track-stack :deep(.track-artwork) {

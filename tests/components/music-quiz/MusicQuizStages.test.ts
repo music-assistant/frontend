@@ -9,7 +9,7 @@ import type {
   MusicQuizGuessTheSongRound,
   MusicQuizTimelinePersonalizedState,
   MusicQuizTriviaHostState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import {
   baseRound as musicTimelineRound,
   baseState as musicTimelineState,
@@ -36,7 +36,7 @@ vi.mock("@/helpers/utils", () => ({
   getMediaImageUrl: (url: string) => url,
 }));
 
-vi.mock("@/composables/useMusicQuizCelebration", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizCelebration", () => ({
   useMusicQuizCelebration: () => ({
     celebrate: vi.fn(),
   }),

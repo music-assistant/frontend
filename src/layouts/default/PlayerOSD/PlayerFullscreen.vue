@@ -328,7 +328,6 @@
             :show-labels="true"
             :color="sliderColor"
             :waveform="waveformData"
-            :waveform-loading="waveformLoading"
           />
         </div>
 
@@ -449,8 +448,8 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
-import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
-import { useLyricsOffset } from "@/composables/useLyricsOffset";
+import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
+import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -746,8 +745,7 @@ watch(
 );
 
 // Waveform for the current track — loaded centrally by useActiveTrackWaveform.
-const { waveformBins: waveformData, waveformLoading } =
-  useActiveTrackWaveform();
+const { waveformBins: waveformData } = useActiveTrackWaveform();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
 
@@ -1489,6 +1487,9 @@ watchEffect(() => {
   container-type: size;
 }
 .main-media-details-image .v-img {
+  /* Fallback for engines without container query units; they drop the pair below and collapse the image to 0x0. */
+  width: 100%;
+  height: auto;
   width: min(100cqi, 100cqh);
   height: min(100cqi, 100cqh);
   flex: 0 0 auto;

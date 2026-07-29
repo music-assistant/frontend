@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { useLyricsOffset } from "@/composables/useLyricsOffset";
+import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { $t } from "@/plugins/i18n";
 import { ChevronsLeftRight, Minus, Plus } from "@lucide/vue";
 import { onBeforeUnmount } from "vue";

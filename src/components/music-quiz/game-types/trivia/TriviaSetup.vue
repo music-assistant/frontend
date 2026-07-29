@@ -150,7 +150,7 @@ import { Switch } from "@/components/ui/switch";
 import type {
   MusicQuizDifficulty,
   MusicQuizTriviaConfig,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t, canonicalizeLocale, getLocaleOptions, i18n } from "@/plugins/i18n";
 import { Brain } from "@lucide/vue";
 import { computed, ref } from "vue";

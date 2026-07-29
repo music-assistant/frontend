@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/composables/useGuestEntryResolver", () => ({
+vi.mock("@/composables/guest/useGuestEntryResolver", () => ({
   guestEntryStateKey: Symbol("guest-entry-state"),
   useGuestEntryResolver: () => ({ state: ref("inactive") }),
 }));

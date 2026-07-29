@@ -222,7 +222,7 @@ import {
   formatBackgroundTaskFailureSummary,
   formatBackgroundTaskSchedule,
   formatBackgroundTaskStatus,
-} from "@/composables/useBackgroundTaskDisplay";
+} from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import {
   type BackgroundTask,
   TaskStatus,

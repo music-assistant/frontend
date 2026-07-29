@@ -5,7 +5,6 @@ import {
   File as FileIcon,
   FileAudio,
   Gauge,
-  Shield,
   SlidersHorizontal,
   Speaker,
   Split,
@@ -341,13 +340,6 @@ function buildOutputDisplay(
       title: translate("streamdetails.audio_processing.source_channel", [
         sourceChannelLabel(output.source_channel, translate),
       ]),
-    });
-  }
-  if (output.dsp?.output_limiter) {
-    stages.push({
-      key: `output-limiter-${index}`,
-      icon: Shield,
-      title: translate("streamdetails.output_limiter"),
     });
   }
   stages.push(finalOutputStage(output, index, translate, dependencies.locale));
@@ -757,9 +749,6 @@ function processingHeadroomReasons(
     if (!output.dsp) continue;
     if (hasActiveDSPTransform(output.dsp)) {
       reasons.add(translate("streamdetails.audio_processing.dsp_title"));
-    }
-    if (output.dsp.output_limiter) {
-      reasons.add(translate("streamdetails.output_limiter"));
     }
   }
   return [...reasons];

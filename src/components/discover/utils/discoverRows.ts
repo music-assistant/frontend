@@ -17,11 +17,14 @@ export const DEFAULT_PRIORITY_ROWS = [
 ];
 
 // Per-user discover page customization, stored as a single preference object.
-// Visibility is an opt-out list: rows are visible by default, so new
-// recommendation rows (e.g. from a freshly added provider) show up
-// automatically.
+// Visibility is hybrid: normal rows are visible by default and can be opted out
+// via `hidden`; rows the server marks default-off (enabled_by_default=false) are
+// hidden by default and must be opted in via `shown`. New normal rows (e.g. from
+// a freshly added provider) still show up automatically. An id is in at most one
+// of `hidden`/`shown`; the resolver treats `hidden` as authoritative if both.
 export interface DiscoverRowsConfig {
   hidden?: string[];
+  shown?: string[];
   order?: string[];
 }
 
@@ -49,20 +52,36 @@ interface LegacyRowSetting {
 
 /**
  * The effective discover rows configuration for the current user, resolved
- * against the currently available rows: everything visible in the default
- * order when the user never customized the page.
+ * against the currently available rows.
  *
- * `availableIds` is the default order of all rows that can be shown right
- * now; rows the user ordered previously but that are currently unavailable
- * (e.g. their provider is offline) are left out of the result but keep
- * their saved state.
+ * `availableIds` is the default order of all rows that can be shown right now.
+ * `defaultHidden` lists rows the server marks default-off; each is hidden unless
+ * the user opted it in via `shown`, while a normal row is visible unless the user
+ * hid it. Rows the user ordered previously but that are currently unavailable
+ * (e.g. their provider is offline) are left out of the result but keep their
+ * saved state.
  */
 export function resolveDiscoverRowsConfig(
   availableIds: string[],
+  defaultHidden: string[] = [],
 ): ResolvedDiscoverRowsConfig {
   const cfg = effectiveConfig();
   const available = new Set(availableIds);
-  const hidden = new Set((cfg.hidden ?? []).filter((id) => available.has(id)));
+  const userHidden = new Set(
+    (cfg.hidden ?? []).filter((id) => available.has(id)),
+  );
+  const userShown = new Set(
+    (cfg.shown ?? []).filter((id) => available.has(id)),
+  );
+  const defaultHiddenSet = new Set(
+    defaultHidden.filter((id) => available.has(id)),
+  );
+  const hidden = new Set(
+    availableIds.filter(
+      (id) =>
+        userHidden.has(id) || (defaultHiddenSet.has(id) && !userShown.has(id)),
+    ),
+  );
   const order = mergeOrder(cfg.order ?? [], availableIds, false);
   return { hidden, order };
 }
@@ -73,10 +92,16 @@ export async function setDiscoverRowHidden(
   hidden: boolean,
 ): Promise<void> {
   const cfg = effectiveConfig();
-  const set = new Set(cfg.hidden ?? []);
-  if (hidden) set.add(id);
-  else set.delete(id);
-  await writeConfig({ ...cfg, hidden: [...set] });
+  const hiddenSet = new Set(cfg.hidden ?? []);
+  const shownSet = new Set(cfg.shown ?? []);
+  if (hidden) {
+    hiddenSet.add(id);
+    shownSet.delete(id);
+  } else {
+    hiddenSet.delete(id);
+    shownSet.add(id);
+  }
+  await writeConfig({ ...cfg, hidden: [...hiddenSet], shown: [...shownSet] });
 }
 
 /**
@@ -107,6 +132,7 @@ function effectiveConfig(): DiscoverRowsConfig {
     const cfg = pref as DiscoverRowsConfig;
     return {
       hidden: Array.isArray(cfg.hidden) ? cfg.hidden : [],
+      shown: Array.isArray(cfg.shown) ? cfg.shown : [],
       order: Array.isArray(cfg.order) ? cfg.order : [],
     };
   }
@@ -148,6 +174,7 @@ function legacyConfig(): DiscoverRowsConfig {
 async function writeConfig(cfg: DiscoverRowsConfig): Promise<void> {
   const pref: DiscoverRowsConfig = {
     hidden: cfg.hidden ?? [],
+    shown: cfg.shown ?? [],
     order: cfg.order ?? [],
   };
   await setUserPreference(DISCOVER_ROWS_PREFERENCE_KEY, pref);

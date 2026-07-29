@@ -1,5 +1,9 @@
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
+import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
+import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { $t } from "@/plugins/i18n";
 import { watch } from "vue";
+import { toast } from "vue-sonner";
 import {
   createRouter,
   createWebHashHistory,
@@ -79,11 +83,29 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
+          // Dashboard viewers can't populate enabledPlugins (scoped like guests); trust the server, since the session only exists via an already-enabled dashboard.
+          if (authManager.isDashboardViewer()) return;
+
           // Only allow access if party plugin is enabled
           if (!store.enabledPlugins.has("party")) {
             return { name: "discover" };
           }
         },
+      },
+    ],
+  },
+  // Now-playing kiosk route for casting a player's fullscreen view; top-level like /party so it renders without nav/player chrome.
+  {
+    path: "/now-playing",
+    component: () => import("@/layouts/default/Default.vue"),
+    children: [
+      {
+        path: "",
+        name: "now-playing",
+        component: () =>
+          import(
+            /* webpackChunkName: "now-playing" */ "@/views/DashboardNowPlayingView.vue"
+          ),
       },
     ],
   },
@@ -108,6 +130,38 @@ export const routes: RouteRecordRaw[] = [
         name: "discover",
         component: () =>
           import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
+      },
+      {
+        path: "/ai-radio",
+        name: "ai-radio",
+        component: () =>
+          import(/* webpackChunkName: "ai-radio" */ "@/views/AIRadioView.vue"),
+        beforeEnter: async () => {
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            // Wait for the connection, but never block navigation forever.
+            await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
+                unwatch();
+                resolve();
+              }, 10000);
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    clearTimeout(timeout);
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          if (!store.enabledPlugins.has("ai_radio")) {
+            toast.error($t("providers.ai_radio.toast.unavailable"));
+            return { name: "discover" };
+          }
+        },
       },
       {
         path: "/search",
@@ -452,16 +506,6 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresAdmin: true },
           },
           {
-            path: "addprovider/:domain",
-            name: "addproviderdetails",
-            component: () =>
-              import(
-                /* webpackChunkName: "addproviderdetails" */ "@/views/settings/AddProviderDetails.vue"
-              ),
-            props: true,
-            meta: { requiresAdmin: true },
-          },
-          {
             path: "editprovider/:instanceId",
             name: "editprovider",
             component: () =>
@@ -592,6 +636,23 @@ router.beforeEach(async (to) => {
   );
   if (guestRedirect) {
     return guestRedirect;
+  }
+
+  // Dashboard viewer sessions are pinned to their opened route and render kiosk-style (no nav/player chrome).
+  if (authManager.isDashboardViewer()) {
+    store.frameless = true;
+    const pinnedPath = sessionStorage.getItem(
+      DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+    );
+    // Compare fullPath (not path) so a pinned route with a query string (e.g. /now-playing?player=...) isn't a mismatch on every nav.
+    const dashboardRedirect = getDashboardViewerNavigationRedirect(
+      true,
+      pinnedPath,
+      to.fullPath,
+    );
+    if (dashboardRedirect) {
+      return dashboardRedirect;
+    }
   }
 
   // Check admin-only routes - check all matched routes for requiresAdmin meta

@@ -13,7 +13,7 @@ import MusicTimelineRound from "@/components/music-quiz/game-types/music-timelin
 import type {
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 
 withDefaults(
   defineProps<
