@@ -26,6 +26,7 @@ import {
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import type {
+  Audiobook,
   MediaCollection,
   MediaItemPalette,
 } from "@/plugins/api/interfaces";
@@ -218,6 +219,21 @@ export const getAuthorsNarratorsArray = function (
     }
   });
   return _authorsNarrators;
+};
+
+export const getAudiobookCollectionArtists = function (
+  collection: MediaCollection<Audiobook>,
+  selector: (book: Audiobook) => (string | Artist)[],
+): string[] {
+  const artists = new Set<string>();
+
+  collection.items.forEach((book) => {
+    getAuthorsNarratorsArray(selector(book)).forEach((name) =>
+      artists.add(name),
+    );
+  });
+
+  return [...artists];
 };
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
@@ -897,26 +913,6 @@ export const handleMenuBtnClick = function (
     : [item];
   showContextMenuForMediaItem(
     mediaItems,
-    parentItem,
-    posX,
-    posY,
-    includePlayMenuItems,
-    includePlayMenuItems,
-    sortBy,
-  );
-};
-
-/* Handle menu button click */
-export const handleCollectionClick = function (
-  item: MediaCollection<MediaItemType>,
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-  includePlayMenuItems = true,
-  sortBy?: string,
-) {
-  showContextMenuForMediaItem(
-    item.items,
     parentItem,
     posX,
     posY,

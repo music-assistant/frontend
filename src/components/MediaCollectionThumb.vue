@@ -15,7 +15,7 @@
       <MediaItemThumb
         :item="mediaItem"
         size="100%"
-        :scale="props.thumbScale as number"
+        :scale="props.thumbScale"
         rounded
       />
     </div>
@@ -30,8 +30,8 @@ import type { MediaCollection, MediaItemType } from "@/plugins/api/interfaces";
 interface Props {
   item: MediaCollection<MediaItemType>;
   size?: string | number;
-  thumbScale?: string | number;
-  thumbOffset?: string | number;
+  thumbScale?: number;
+  thumbOffset?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -44,7 +44,7 @@ const visibleItems = computed(() => props.item.items.slice(0, 3));
 
 function thumbStyle(index: number) {
   const count = visibleItems.value.length;
-  const offset = props.thumbOffset as number;
+  const offset = props.thumbOffset;
 
   return {
     zIndex: count - index,

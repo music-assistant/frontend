@@ -515,6 +515,7 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   getAuthorsNarratorsArray,
+  getAudiobookCollectionArtists,
   getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,
@@ -787,22 +788,6 @@ const collectionMediaType = computed(() => {
     return MediaType.UNKNOWN;
   return getCollectionMediaTypeFromItemId(compProps.item.item_id);
 });
-
-function getAudiobookCollectionArtists(
-  collection: MediaCollection<Audiobook>,
-  selector: (book: Audiobook) => (string | Artist)[],
-): string[] {
-  const artists = new Set<string>();
-
-  collection.items.forEach((book) => {
-    selector(book).forEach((person) => {
-      const name = typeof person === "string" ? person : person.name;
-      artists.add(name);
-    });
-  });
-
-  return [...artists];
-}
 
 const collectionArtists = computed(() => {
   if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];

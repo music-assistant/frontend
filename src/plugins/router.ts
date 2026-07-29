@@ -329,7 +329,7 @@ export const routes: RouteRecordRaw[] = [
             name: "collection",
             component: () =>
               import(
-                /* webpackChunkName: "audiobook" */ "@/views/CollectionDetails.vue"
+                /* webpackChunkName: "collection" */ "@/views/CollectionDetails.vue"
               ),
             props: true,
           },
