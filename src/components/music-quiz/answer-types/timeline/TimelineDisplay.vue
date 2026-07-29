@@ -111,7 +111,7 @@
 <script setup lang="ts">
 import TimelineEntryCard from "@/components/music-quiz/answer-types/timeline/TimelineEntryCard.vue";
 import { Button } from "@/components/ui/button";
-import type { MusicQuizTimelineEntry } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelineEntry } from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { ArrowDown, ArrowRight, Check, Plus } from "@lucide/vue";
 import { computed, nextTick, ref, watch } from "vue";

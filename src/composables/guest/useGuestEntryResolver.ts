@@ -1,7 +1,7 @@
 import {
   getMusicQuizInfo,
   isMusicQuizProviderEvent,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import {
   createGuestQuizAffinity,
   type GuestQuizAffinity,

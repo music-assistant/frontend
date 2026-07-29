@@ -266,6 +266,7 @@ import {
   RadioTower,
   RefreshCw,
   SkipForward,
+  Sparkles,
   Trash2,
 } from "@lucide/vue";
 import type { Component } from "vue";
@@ -449,6 +450,28 @@ export const getContextMenuItems = async function (
         });
       },
       icon: Info,
+    });
+  }
+
+  if (
+    items.length === 1 &&
+    firstItem.media_type === MediaType.PLAYLIST &&
+    store.enabledPlugins.has("ai_radio")
+  ) {
+    contextMenuItems.push({
+      label: "providers.ai_radio.context.run_with",
+      labelArgs: [],
+      action: () => {
+        router.push({
+          name: "ai-radio",
+          query: {
+            source_playlist_id: firstItem.item_id,
+            source_playlist_provider: firstItem.provider,
+            source_playlist_name: firstItem.name,
+          },
+        });
+      },
+      icon: Sparkles,
     });
   }
 

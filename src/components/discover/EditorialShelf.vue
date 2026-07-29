@@ -288,6 +288,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: flex-start;
   gap: var(--ed-gap, 14px);
+  position: relative;
   overflow-x: auto;
   overflow-y: visible;
   overscroll-behavior-x: contain;

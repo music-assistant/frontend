@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   canonicalizeLocale,
   getLocaleDisplayName,
+  i18n,
   resolveLocale,
 } from "@/plugins/i18n";
 
@@ -60,6 +61,45 @@ describe("resolveLocale", () => {
   it("falls back to English for an unknown language", () => {
     expect(resolveLocale("ja", AVAILABLE)).toBe("en");
     expect(resolveLocale("xx-YY", AVAILABLE)).toBe("en");
+  });
+});
+
+describe("pluralized settings messages", () => {
+  let originalLocale: string;
+
+  beforeEach(() => {
+    originalLocale = i18n.global.locale.value;
+    i18n.global.locale.value = "en";
+  });
+
+  afterEach(() => {
+    i18n.global.locale.value = originalLocale;
+  });
+
+  it("pluralizes provider totals in the en locale", () => {
+    expect(
+      i18n.global.t("settings.providers_total", 1, {
+        named: { count: 1 },
+      }),
+    ).toBe("1 total provider");
+    expect(
+      i18n.global.t("settings.providers_total", 2, {
+        named: { count: 2 },
+      }),
+    ).toBe("2 total providers");
+  });
+
+  it("pluralizes player totals in the en locale", () => {
+    expect(
+      i18n.global.t("settings.players_total", 1, {
+        named: { count: 1 },
+      }),
+    ).toBe("1 total player");
+    expect(
+      i18n.global.t("settings.players_total", 2, {
+        named: { count: 2 },
+      }),
+    ).toBe("2 total players");
   });
 });
 

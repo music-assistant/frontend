@@ -769,7 +769,6 @@
         "eq_band_count_singular": "1 опсег",
         "input_gain": "Улазно појачање ({0} dB)",
         "output_gain": "Излазно појачање ({0} dB)",
-        "output_limiter": "Ограничивач излаза",
         "file_info": {
             "container": "Контејнер: {0}",
             "codec": "Кодек: {0}",

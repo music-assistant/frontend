@@ -2,7 +2,7 @@ import MusicQuizHostControlsMenu from "@/components/music-quiz/MusicQuizHostCont
 import type {
   MusicQuizHostState,
   MusicQuizPhase,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,11 +23,11 @@ const {
   mockUseMusicQuizHost: vi.fn(),
 }));
 
-vi.mock("@/composables/useMusicQuizHost", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizHost", () => ({
   useMusicQuizHost: mockUseMusicQuizHost,
 }));
 
-vi.mock("@/composables/useMusicQuiz", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuiz", () => ({
   isSupportedMusicQuiz: (state: { answer_type?: string; quiz_type?: string }) =>
     state.quiz_type === "guess_the_song" &&
     state.answer_type === "multiple_choice",

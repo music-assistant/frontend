@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import type { MusicQuizTimelineEntry } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelineEntry } from "@/composables/music-quiz/useMusicQuiz";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { Music2 } from "@lucide/vue";
