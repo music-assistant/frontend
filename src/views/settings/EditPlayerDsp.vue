@@ -199,12 +199,7 @@
         </div>
       </div>
 
-      <Alert
-        variant="warning"
-        class="mt-5 transition-opacity duration-200"
-        :class="dsp.enabled ? 'pointer-events-none opacity-0' : 'opacity-100'"
-        :aria-hidden="dsp.enabled"
-      >
+      <Alert v-if="!dsp.enabled" variant="warning" class="mt-5">
         <TriangleAlert />
         <AlertDescription>
           {{ $t("settings.dsp.disabled_message") }}
