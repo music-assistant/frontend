@@ -1,24 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
-import { ConnectionState, MusicAssistantApi } from "./index";
+import {
+  ConnectionLostError,
+  ConnectionState,
+  MusicAssistantApi,
+} from "./index";
 
 type FakeTransport = {
   send: ReturnType<typeof vi.fn>;
   disconnect: ReturnType<typeof vi.fn>;
-  on: (event: string, handler: (payload: unknown) => void) => void;
-  emit: (event: string, payload: unknown) => void;
 };
 
-const makeTransport = (): FakeTransport => {
-  const handlers: Record<string, (payload: unknown) => void> = {};
-  return {
-    send: vi.fn(),
-    disconnect: vi.fn(),
-    on: (event, handler) => {
-      handlers[event] = handler;
-    },
-    emit: (event, payload) => handlers[event]?.(payload),
-  };
-};
+const makeTransport = (): FakeTransport => ({
+  send: vi.fn(),
+  disconnect: vi.fn(),
+});
 
 /** Resolves to "pending" when the promise has not settled within a tick. */
 const outcomeOf = (promise: Promise<unknown>) => {
@@ -48,7 +43,7 @@ describe("commands in flight when the connection drops", () => {
 
     api.disconnect();
 
-    expect(await outcomeOf(inFlight)).toBe("Connection lost");
+    await expect(inFlight).rejects.toBeInstanceOf(ConnectionLostError);
   });
 
   it.each(["reconnecting", "failed", "disconnected"])(
@@ -74,5 +69,20 @@ describe("commands in flight when the connection drops", () => {
     } as never);
 
     expect(await outcomeOf(inFlight)).toBe("resolved");
+  });
+
+  it("keeps a reconnecting session out of AUTH_REQUIRED when re-auth is cut off", async () => {
+    const { api } = connectedApi();
+    const reauth = api
+      .authenticateWithToken("stored-token")
+      .catch(() => undefined);
+
+    // the transport dies again before the auth reply arrives
+    api["handleTransportStateChange"]("disconnected");
+    api["handleTransportStateChange"]("reconnecting");
+    await reauth;
+
+    // AUTH_REQUIRED here would break App.vue's re-auth watch (CONNECTED <- RECONNECTING)
+    expect(api.state.value).toBe(ConnectionState.RECONNECTING);
   });
 });

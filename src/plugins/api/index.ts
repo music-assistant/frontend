@@ -86,6 +86,14 @@ export enum ConnectionState {
   FAILED = "failed", // Connection failed permanently
 }
 
+/** Rejection for in-flight commands that can never be answered because the connection dropped. */
+export class ConnectionLostError extends Error {
+  constructor() {
+    super("Connection lost");
+    this.name = "ConnectionLostError";
+  }
+}
+
 export class MusicAssistantApi {
   private transport?: ITransport;
   private _throttleId?: ReturnType<typeof setTimeout>;
@@ -337,8 +345,12 @@ export class MusicAssistantApi {
 
       return result;
     } catch (error) {
-      // Token is invalid - require user authentication
-      this.state.value = ConnectionState.AUTH_REQUIRED;
+      // a dropped connection says nothing about the token; leave the
+      // reconnect flow intact so re-auth runs again after reconnect
+      if (!(error instanceof ConnectionLostError)) {
+        // Token is invalid - require user authentication
+        this.state.value = ConnectionState.AUTH_REQUIRED;
+      }
       throw error;
     }
   }
@@ -3267,7 +3279,7 @@ export class MusicAssistantApi {
     this.commands.clear();
     this.partialResult = {};
     for (const command of pending) {
-      command.reject(new Error("Connection lost"));
+      command.reject(new ConnectionLostError());
     }
   }
 
