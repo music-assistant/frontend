@@ -16,7 +16,9 @@ const TOKEN_STORAGE_KEY = "ma_access_token";
 const TOKEN_CONNECTION_STORAGE_KEY = "ma_access_token_connection";
 
 /**
- * JWT claims structure from Music Assistant tokens
+ * JWT claims structure from Music Assistant tokens, mirroring the server's
+ * token payload. Mutable per-user data (permissions, player/provider filters)
+ * lives on `User`, not on the token, since tokens can be long-lived.
  */
 interface JWTClaims {
   sub: string; // user_id
@@ -25,9 +27,6 @@ interface JWTClaims {
   exp: number; // expiration
   username: string;
   role: string;
-  permissions: string[];
-  player_filter: string[];
-  provider_filter: string[];
   token_name: string;
   is_long_lived: boolean;
 }
