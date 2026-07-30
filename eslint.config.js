@@ -10,7 +10,15 @@ export default defineConfigWithVueTs(
   // Replaces the old `ignorePatterns`. node_modules is ignored by default.
   {
     name: "app/ignores",
-    ignores: ["dist", "dev-dist", "coverage"],
+    ignores: [
+      "dist",
+      "dev-dist",
+      "coverage",
+      // Nested git worktrees hold another branch's checkout; linting them
+      // would report — and with `--fix`, rewrite — files outside this branch.
+      "**/.claude/worktrees/**",
+      "**/.worktrees/**",
+    ],
   },
   vueTsConfigs.eslintRecommended,
   pluginVue.configs["flat/recommended"],
