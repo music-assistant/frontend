@@ -121,12 +121,7 @@ const subtitle = computed(() =>
 const PHASE_LABEL_KEYS: Record<string, string> = {
   fetch_source_tracks: "providers.ai_radio.phase.fetch_source_tracks",
   planning_sections: "providers.ai_radio.phase.planning_sections",
-  generating_llm: "providers.ai_radio.phase.generating_llm",
-  generating_tts: "providers.ai_radio.phase.generating_tts",
-  publishing_playlist: "providers.ai_radio.phase.publishing_playlist",
   initializing_queue: "providers.ai_radio.phase.initializing_queue",
-  queueing_batch: "providers.ai_radio.phase.queueing_batch",
-  waiting_for_playback: "providers.ai_radio.phase.waiting_for_playback",
 };
 
 const preparingLabel = computed(() => {

@@ -211,13 +211,9 @@ function buildDraft(): ShowDraft {
       name: showName.value.trim(),
       sourcePlaylistId: selectedPlaylist.value?.itemId || "",
       sourcePlaylistProvider: selectedPlaylist.value?.provider || "library",
-      targetPlaylistProvider: "builtin",
       defaultPlayerId: "",
       maxDurationMinutes: 0,
       shuffleSourceTracks: true,
-      dynamicBatchSize: 3,
-      dynamicPollSeconds: 5,
-      dynamicPrefetchRemainingTracks: 2,
       general,
     },
     segments: applyTalkativeness(preset.segments, talkLevel.value),
@@ -267,7 +263,7 @@ async function playAfterCreate(stationId: string, defaultPlayerId?: string) {
     return;
   }
   try {
-    await startShow(stationId, "dynamic", { playerIdOverride: playerId });
+    await startShow(stationId, { playerIdOverride: playerId });
   } catch (error) {
     const message = errorMessage(error);
     toast.error($t("providers.ai_radio.card.start_failed", [message]));
