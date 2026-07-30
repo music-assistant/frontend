@@ -1331,7 +1331,6 @@
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
                 "unavailable": "AI Radio is not enabled.",
                 "live_starting": "Live radio started",
-                "playlist_start_failed": "Failed to start playlist generation",
                 "live_start_failed": "Failed to start live radio",
                 "session_stopped": "AI Radio session stopped",
                 "session_stop_failed": "Failed to stop AI Radio session",
