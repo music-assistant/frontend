@@ -632,7 +632,6 @@
         "eq_band_count_singular": "1 pásmo",
         "input_gain": "Vstupní zesílení ({0} dB)",
         "output_gain": "Výstupní zisk ({0} dB)",
-        "output_limiter": "Omezovač výstupu",
         "file_info": {
             "container": "Kontejner: {0}",
             "codec": "Kodek: {0}",

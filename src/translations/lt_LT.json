@@ -676,7 +676,6 @@
         "eq_band_count_singular": "1 juosta",
         "input_gain": "Įvesties stiprinimas ({0} dB)",
         "output_gain": "Išėjimo stiprinimas ({0} dB)",
-        "output_limiter": "Išvesties ribotuvas",
         "file_info": {
             "container": "Konteineris: {0}",
             "codec": "Kodekas: {0}",

@@ -20,10 +20,9 @@
 
     <div class="pl-5 font-weight-medium">
       {{
-        $t("settings.players_total", [
-          getAllFilteredPlayers().length,
-          getAllFilteredPlayers().length !== 1 ? "s" : "",
-        ])
+        $t("settings.players_total", getAllFilteredPlayers().length, {
+          named: { count: getAllFilteredPlayers().length },
+        })
       }}
     </div>
     <Container

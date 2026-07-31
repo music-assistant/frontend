@@ -2,9 +2,9 @@ import type {
   MusicQuizPhase,
   MusicQuizPlayer,
   MusicQuizSupportedPublicState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
-import { $t, i18n } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
 
 const MUSIC_QUIZ_PLAYER_ID_KEY = "music_quiz_player_id";
 const MUSIC_QUIZ_PLAYER_NAME_KEY = "music_quiz_player_name";
@@ -139,7 +139,7 @@ export function getMusicQuizRoundPlayers<T extends MusicQuizPlayer>(
 }
 
 export function formatNameList(names: string[]) {
-  return new Intl.ListFormat(i18n.global.locale.value, {
+  return new Intl.ListFormat(canonicalizeLocale(i18n.global.locale.value), {
     style: "long",
     type: "conjunction",
   }).format(names);

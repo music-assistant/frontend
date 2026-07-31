@@ -24,29 +24,36 @@
       </template>
     </Toolbar>
 
-    <!-- Provider error warning banner -->
-    <v-alert
+    <!-- Provider error warning banner: message on the left, actions pinned
+         right so the bar never reads as empty on wide screens. -->
+    <Alert
       v-if="hasProviderErrors && showProviderWarning"
-      variant="outlined"
-      type="error"
-      icon="mdi-alert-circle"
-      prominent
-      class="mx-5 mt-4"
-      closable
-      @click:close="showProviderWarning = false"
+      variant="destructive"
+      class="provider-alert mx-7 mb-6 mt-4 flex w-auto items-center gap-3 bg-destructive/8 py-3 pl-4 pr-3 [&>svg]:translate-y-0"
     >
-      <div class="provider-warning-content">
-        <span>{{ $t("settings.provider_requires_attention_detail") }}</span>
-        <v-btn
-          size="small"
-          color="error"
-          variant="flat"
-          @click="navigateToProviders"
-        >
-          {{ $t("settings.fix_now") }}
-        </v-btn>
-      </div>
-    </v-alert>
+      <CircleAlert class="size-5 shrink-0" />
+      <AlertDescription class="min-w-0 flex-1 text-destructive">
+        {{ $t("settings.provider_requires_attention_detail") }}
+      </AlertDescription>
+      <Button
+        variant="destructive"
+        size="sm"
+        class="shrink-0"
+        @click="navigateToProviders"
+      >
+        {{ $t("settings.fix_now") }}
+        <ArrowRight class="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        :aria-label="$t('close')"
+        @click="showProviderWarning = false"
+      >
+        <X class="size-4" />
+      </Button>
+    </Alert>
 
     <HomeWidgetRows :edit-mode="editMode" />
 
@@ -65,10 +72,18 @@
 <script setup lang="ts">
 import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
-import { Check, Compass, SquarePen } from "@lucide/vue";
+import {
+  ArrowRight,
+  Check,
+  CircleAlert,
+  Compass,
+  SquarePen,
+  X,
+} from "@lucide/vue";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -110,6 +125,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.provider-alert {
+  border-color: var(--destructive) !important;
+}
+
 .ed-discover {
   background:
     radial-gradient(
@@ -128,20 +147,5 @@ onMounted(async () => {
   z-index: 1000;
   border-radius: 999px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-}
-
-.provider-warning-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 600px) {
-  .provider-warning-content {
-    flex-direction: column;
-    align-items: stretch;
-  }
 }
 </style>

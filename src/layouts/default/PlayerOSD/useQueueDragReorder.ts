@@ -57,7 +57,9 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
   const firstReorderableIndex = () => {
     const queue = store.activePlayerQueue;
     if (!queue) return 0;
-    const current = queue.current_index ?? 0;
+    // a queue that never started or already ended has nothing cued, so every row is free
+    if (queue.ended || queue.current_index === undefined) return 0;
+    const current = queue.current_index;
     const buffer = Math.max(queue.index_in_buffer ?? current, current);
     return buffer + 1;
   };

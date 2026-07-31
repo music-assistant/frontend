@@ -24,7 +24,7 @@
         {{ $t("show_info") }}
       </DropdownMenuItem>
       <DropdownMenuItem v-if="radioAvailable" @click="onStartRadio">
-        <RadioTower class="size-4" />
+        <Orbit class="size-4" />
         {{ $t(radioLabel) }}
       </DropdownMenuItem>
       <DropdownMenuItem
@@ -103,8 +103,8 @@ import {
   Gauge,
   Heart,
   Info,
+  Orbit,
   PlusCircle,
-  RadioTower,
 } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 
