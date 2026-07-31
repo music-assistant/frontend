@@ -789,22 +789,23 @@ export const getContextMenuItems = async function (
   const playLogItem = items.length === 1 ? items[0] : undefined;
   if (itemSupportsPlayLog(playLogItem)) {
     const item = playLogItem;
-    // mark unplayed
+    // mark played: anything not yet fully played, including in-progress items
+    if (!item.fully_played) {
+      contextMenuItems.push({
+        label: "mark_played",
+        icon: History,
+        action: async () => {
+          await api.markItemPlayed(item, true);
+        },
+      });
+    }
+    // mark unplayed: fully played or in-progress items
     if (item.fully_played || item.resume_position_ms) {
       contextMenuItems.push({
         label: "mark_unplayed",
         icon: History,
         action: async () => {
           await api.markItemUnPlayed(item);
-        },
-      });
-    } else {
-      // mark played
-      contextMenuItems.push({
-        label: "mark_played",
-        icon: History,
-        action: async () => {
-          await api.markItemPlayed(item, true);
         },
       });
     }
