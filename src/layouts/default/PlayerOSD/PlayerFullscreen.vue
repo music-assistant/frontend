@@ -117,26 +117,34 @@
             </v-card-subtitle>
 
             <!-- subtitle: album -->
+            <!-- keeps an empty placeholder line when the current media has no
+                 album, so the artwork above keeps a constant size when e.g.
+                 AI radio alternates between tracks and DJ announcements -->
             <v-card-subtitle
-              v-else-if="
-                store.activePlayer?.current_media?.album && showAlbumSubtitle
-              "
-              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+              v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
+              :style="`font-size: ${subTitleFontSize};${
+                store.activePlayer.current_media.album ? 'cursor:pointer;' : ''
+              }`"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.album }}
+                {{ store.activePlayer.current_media.album || " " }}
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: artist -->
+            <!-- subtitle: artist (same placeholder treatment as the album) -->
             <v-card-subtitle
-              v-if="store.activePlayer?.current_media?.artist"
-              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+              v-if="
+                store.activePlayer?.powered != false &&
+                store.activePlayer?.current_media
+              "
+              :style="`font-size: ${subTitleFontSize};${
+                store.activePlayer.current_media.artist ? 'cursor:pointer;' : ''
+              }`"
               @click="onArtistClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.artist }}
+                {{ store.activePlayer.current_media.artist || " " }}
               </MarqueeText>
             </v-card-subtitle>
 
