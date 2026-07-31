@@ -232,7 +232,9 @@ describe("AudioProcessingDetails", () => {
         .find('[data-stage="output-format-0"]')
         .findAll("li")
         .map((detail) => detail.text()),
-    ).toContain("Bit-perfect: audio samples are unchanged from the source.");
+    ).toContain(
+      "Bit-perfect: decoded source samples reach the output unchanged.",
+    );
     expect(text).not.toContain("Processed output");
   });
 

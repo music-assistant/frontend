@@ -750,7 +750,6 @@
         "eq_band_count_singular": "1 pasmo",
         "input_gain": "Wzmocnienie wejściowe ({0} dB)",
         "output_gain": "Wzmocnienie wyjściowe ({0} dB)",
-        "output_limiter": "Limiter wyjścia",
         "file_info": {
             "container": "Kontener: {0}",
             "codec": "Kodek: {0}",

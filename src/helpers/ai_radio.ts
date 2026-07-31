@@ -8,7 +8,7 @@ import type {
   AIRadioStationGeneral,
   AIRadioWebSearchMode,
 } from "@/plugins/api/interfaces";
-import { $t, i18n } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
 
 // Sentinel for "no selection" in shadcn Select components, which do not
 // allow SelectItem values to be empty strings.
@@ -68,10 +68,13 @@ export const relativeTimeFromIso = (
   if (Number.isNaN(thenMs)) return "";
   const diffSeconds = Math.round((thenMs - nowMs) / 1000);
   const absSeconds = Math.abs(diffSeconds);
-  const rtf = new Intl.RelativeTimeFormat(i18n.global.locale.value, {
-    numeric: "auto",
-    style: "narrow",
-  });
+  const rtf = new Intl.RelativeTimeFormat(
+    canonicalizeLocale(i18n.global.locale.value),
+    {
+      numeric: "auto",
+      style: "narrow",
+    },
+  );
   if (absSeconds < 60) return rtf.format(0, "second");
   if (absSeconds < 3600)
     return rtf.format(Math.trunc(diffSeconds / 60), "minute");
@@ -133,10 +136,10 @@ export interface ShowBasics {
   targetPlaylistProvider: string;
   defaultPlayerId: string;
   maxDurationMinutes: number;
+  shuffleSourceTracks: boolean;
   dynamicBatchSize: number;
   dynamicPollSeconds: number;
   dynamicPrefetchRemainingTracks: number;
-  clearQueueOnStart: boolean;
   general: AIRadioStationGeneral;
 }
 
@@ -491,11 +494,11 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
     target_playlist_provider: draft.basics.targetPlaylistProvider || "builtin",
     default_player_id: draft.basics.defaultPlayerId || "",
     max_duration_minutes: draft.basics.maxDurationMinutes,
+    shuffle_source_tracks: draft.basics.shuffleSourceTracks,
     dynamic_batch_size: draft.basics.dynamicBatchSize,
     dynamic_poll_seconds: draft.basics.dynamicPollSeconds,
     dynamic_prefetch_remaining_tracks:
       draft.basics.dynamicPrefetchRemainingTracks,
-    clear_queue_on_start: draft.basics.clearQueueOnStart,
     merge_section_id: mergeSectionId,
     general: draft.basics.general,
     sections,
@@ -632,11 +635,11 @@ export const decompileStation = (
     targetPlaylistProvider: station.target_playlist_provider || "builtin",
     defaultPlayerId: station.default_player_id || "",
     maxDurationMinutes: station.max_duration_minutes || 0,
+    shuffleSourceTracks: station.shuffle_source_tracks !== false,
     dynamicBatchSize: station.dynamic_batch_size || 3,
     dynamicPollSeconds: station.dynamic_poll_seconds || 5,
     dynamicPrefetchRemainingTracks:
       station.dynamic_prefetch_remaining_tracks || 2,
-    clearQueueOnStart: station.clear_queue_on_start !== false,
     general: asGeneralDefaults(station.general),
   };
 

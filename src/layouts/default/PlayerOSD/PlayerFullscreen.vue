@@ -154,6 +154,9 @@
                 ])
               }}
             </v-card-subtitle>
+            <v-card-subtitle v-else-if="queueEnded" class="caption">
+              {{ $t("queue_ended") }}
+            </v-card-subtitle>
             <v-card-subtitle
               v-else-if="
                 store.activePlayerQueue && store.activePlayerQueue.items == 0
@@ -189,6 +192,11 @@
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
+            <!-- the queue played through: say so, rather than leaving its last
+                 track looking like it is still the current one -->
+            <div v-if="queueEnded" class="queue-ended">
+              {{ $t("queue_ended") }}
+            </div>
             <!-- empty state -->
             <div v-if="!totalItems" class="queue-empty">
               {{ $t("queue_empty") }}
@@ -630,6 +638,7 @@ const {
   virtualRows,
   totalItems,
   upNextCount,
+  queueEnded,
   totalSize,
   measureRow,
   playerActive,
@@ -1472,6 +1481,13 @@ watchEffect(() => {
   height: 100%;
   padding: 24px;
   text-align: center;
+  opacity: 0.6;
+}
+
+.queue-ended {
+  padding: 8px 4px 12px;
+  text-align: center;
+  font-size: 0.85rem;
   opacity: 0.6;
 }
 

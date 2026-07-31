@@ -38,8 +38,8 @@
     "details": "Details",
     "enter_url": "Enter the URL you want to manually add to the database",
     "external_source_active": "External source active: {0}",
-    "goto_album": "Go to album {0}",
-    "goto_artist": "Go to artist {0}",
+    "goto_album": "View album {0}",
+    "goto_artist": "View artist {0}",
     "items_selected": "{0} item(s) selected",
     "items_total": "{0} total item(s)",
     "library": "Library",
@@ -76,6 +76,7 @@
     "queue_clear": "Clear queue",
     "queue_delete": "Delete item",
     "queue_empty": "No items in the queue",
+    "queue_ended": "Playback finished",
     "queue_move_down": "Move down",
     "queue_move_up": "Move up",
     "queue_next_items": "Next items",
@@ -202,6 +203,8 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
+            "input_gain_help": "Sets the level going into the chain. Lower it to leave headroom for filters that boost.",
+            "output_gain_help": "Adjusts the level leaving the chain, after every filter has been applied. Player volume is applied later.",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
@@ -211,6 +214,7 @@
             "move_down": "Move Down",
             "delete_filter": "Delete Filter",
             "parametric_eq": {
+                "help": "Precise tone shaping: each band targets a frequency and can cut or boost it. Cuts are safer than boosts, which can cause clipping.",
                 "add_band": "Add Band",
                 "delete_band": "Delete Band",
                 "filter_type": "Filter Type",
@@ -236,9 +240,16 @@
                 "disable_multichannel_controls": "Disable Multi-Channel controls"
             },
             "tone_control": {
+                "help": "A simple three band adjustment of bass, mid and treble. Use the Parametric EQ for finer control.",
                 "bass_level": "Bass Level",
                 "mid_level": "Mid Level",
                 "treble_level": "Treble Level"
+            },
+            "gain": {
+                "help": "Raises or lowers the level of everything passing through this point in the chain."
+            },
+            "balance": {
+                "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
             },
             "transpose": {
                 "help": "Shifts the music up or down in key without changing the tempo. Useful for playing along in a more comfortable key.",
@@ -894,7 +905,7 @@
             "dsp_title": "DSP",
             "bit_perfect": "Bit-perfect output",
             "bit_perfect_badge": "Bit-perfect",
-            "bit_perfect_detail": "Bit-perfect: audio samples are unchanged from the source.",
+            "bit_perfect_detail": "Bit-perfect: decoded source samples reach the output unchanged.",
             "samples_changed_detail": "Audio processing or lossless format conversion changed the audio samples. This is not bit-perfect, but should not cause an audible loss of quality.",
             "lossy_output_detail": "The output is encoded with a lossy codec. This is not bit-perfect and may reduce sound quality.",
             "bit_perfect_unknown_detail": "Bit-perfect status is unavailable.",
@@ -1222,17 +1233,17 @@
             },
             "fields": {
                 "source_playtime_cap": "Source Playtime Cap (minutes)",
+                "shuffle_playlist_tracks": "Shuffle Playlist Tracks",
                 "default_playback_device": "Default Playback Device (optional)",
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "clear_queue_on_dynamic_start": "Clear Queue on Dynamic Start",
                 "dynamic_batch_size": "Dynamic Batch Size",
                 "instructions": "Host and Program Instructions"
             },
             "field_descriptions": {
-                "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are picked at random until the cap is reached, so you get a random selection of the playlist rather than the first part of it. Leave at 0 for no limit.",
-                "clear_queue_on_dynamic_start": "Replace whatever is in the queue when the show starts. Turn this off to append the show to the queue instead and keep the current track playing.",
+                "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
+                "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order.",
                 "dynamic_batch_size": "How many tracks the host prepares at a time. Larger batches mean fewer pauses while the next segment is generated, but a longer wait before the show starts playing.",
                 "instructions": "Describes the host's personality and how segments should be written. This is sent to the AI with every segment."
             },
@@ -1983,12 +1994,12 @@
         "120": "2 hours"
     },
     "shuffle_smart_active": "Smart shuffle is on. Click to turn it off.",
-    "goto_album_radio": "Go to Album Radio",
-    "goto_artist_radio": "Go to Artist Radio",
-    "goto_genre_radio": "Go to Genre Radio",
-    "goto_playlist_radio": "Go to Playlist Radio",
-    "goto_radio": "Go to Radio",
-    "goto_track_radio": "Go to Track Radio",
+    "goto_album_radio": "View album endless mix",
+    "goto_artist_radio": "View artist endless mix",
+    "goto_genre_radio": "View genre endless mix",
+    "goto_playlist_radio": "View playlist endless mix",
+    "goto_radio": "View endless mix",
+    "goto_track_radio": "View track endless mix",
     "autoplay_dynamic_title": "Autoplay is active",
     "autoplay_dynamic_lead": "Your queue is being dynamically filled based on your selection:",
     "autoplay_dynamic_desc": "Your queue is being dynamically filled based on your selection.",
