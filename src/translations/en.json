@@ -38,8 +38,8 @@
     "details": "Details",
     "enter_url": "Enter the URL you want to manually add to the database",
     "external_source_active": "External source active: {0}",
-    "goto_album": "Go to album {0}",
-    "goto_artist": "Go to artist {0}",
+    "goto_album": "View album {0}",
+    "goto_artist": "View artist {0}",
     "items_selected": "{0} item(s) selected",
     "items_total": "{0} total item(s)",
     "library": "Library",
@@ -76,6 +76,7 @@
     "queue_clear": "Clear queue",
     "queue_delete": "Delete item",
     "queue_empty": "No items in the queue",
+    "queue_ended": "Playback finished",
     "queue_move_down": "Move down",
     "queue_move_up": "Move up",
     "queue_next_items": "Next items",
@@ -202,6 +203,8 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
+            "input_gain_help": "Sets the level going into the chain. Lower it to leave headroom for filters that boost.",
+            "output_gain_help": "Adjusts the level leaving the chain, after every filter has been applied. Player volume is applied later.",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
@@ -211,6 +214,7 @@
             "move_down": "Move Down",
             "delete_filter": "Delete Filter",
             "parametric_eq": {
+                "help": "Precise tone shaping: each band targets a frequency and can cut or boost it. Cuts are safer than boosts, which can cause clipping.",
                 "add_band": "Add Band",
                 "delete_band": "Delete Band",
                 "filter_type": "Filter Type",
@@ -236,9 +240,16 @@
                 "disable_multichannel_controls": "Disable Multi-Channel controls"
             },
             "tone_control": {
+                "help": "A simple three band adjustment of bass, mid and treble. Use the Parametric EQ for finer control.",
                 "bass_level": "Bass Level",
                 "mid_level": "Mid Level",
                 "treble_level": "Treble Level"
+            },
+            "gain": {
+                "help": "Raises or lowers the level of everything passing through this point in the chain."
+            },
+            "balance": {
+                "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
             },
             "transpose": {
                 "help": "Shifts the music up or down in key without changing the tempo. Useful for playing along in a more comfortable key.",
@@ -319,7 +330,7 @@
         "playerprovider": "Player provider",
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
-        "providers_total": "{0} total provider{1}",
+        "providers_total": "{count} total provider | {count} total providers",
         "stage": {
             "label": "Stage",
             "options": {
@@ -438,7 +449,7 @@
         "players_count": "{0} player{1}",
         "one_player": "1 player",
         "view_players": "View players",
-        "players_total": "{0} total player{1}",
+        "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
         "provider_codeowners": "This provider is contributed\/maintained by",
@@ -891,7 +902,7 @@
             "dsp_title": "DSP",
             "bit_perfect": "Bit-perfect output",
             "bit_perfect_badge": "Bit-perfect",
-            "bit_perfect_detail": "Bit-perfect: audio samples are unchanged from the source.",
+            "bit_perfect_detail": "Bit-perfect: decoded source samples reach the output unchanged.",
             "samples_changed_detail": "Audio processing or lossless format conversion changed the audio samples. This is not bit-perfect, but should not cause an audible loss of quality.",
             "lossy_output_detail": "The output is encoded with a lossy codec. This is not bit-perfect and may reduce sound quality.",
             "bit_perfect_unknown_detail": "Bit-perfect status is unavailable.",
@@ -1204,6 +1215,192 @@
     "genre_exclusions": "Genre Exclusions",
     "remove_genre_exclusion": "Remove exclusion",
     "providers": {
+        "ai_radio": {
+            "title": "AI Radio",
+            "context": {
+                "run_with": "Play as AI Radio"
+            },
+            "actions": {
+                "discard": "Discard",
+                "delete": "Delete",
+                "saving": "Saving...",
+                "up": "Up",
+                "down": "Down",
+                "remove": "Remove"
+            },
+            "fields": {
+                "source_playtime_cap": "Source Playtime Cap (minutes)",
+                "shuffle_playlist_tracks": "Shuffle Playlist Tracks",
+                "default_playback_device": "Default Playback Device (optional)",
+                "web_search_mode": "Web Search Mode",
+                "character_limit": "Character Limit",
+                "prompt": "Prompt",
+                "dynamic_batch_size": "Dynamic Batch Size",
+                "instructions": "Host and Program Instructions"
+            },
+            "field_descriptions": {
+                "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
+                "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order.",
+                "dynamic_batch_size": "How many tracks the host prepares at a time. Larger batches mean fewer pauses while the next segment is generated, but a longer wait before the show starts playing.",
+                "instructions": "Describes the host's personality and how segments should be written. This is sent to the AI with every segment."
+            },
+            "web_search": {
+                "disabled": "disabled (no web tool)",
+                "allow": "allow (model may use web)",
+                "force": "force (web search required)",
+                "help": "Whether the host may look things up on the web for this segment."
+            },
+            "plays": {
+                "start": "Once at start",
+                "end": "Once at end",
+                "every_song": "Every song",
+                "every_n_songs": "Every ~{0} songs",
+                "every_n_min": "Every ~{0} min",
+                "occasionally": "Occasionally ({0}%)"
+            },
+            "validation": {
+                "invalid_import_file": "The file is not a valid AI Radio export.",
+                "station_name_required": "Station name is required",
+                "station_source_playlist_required": "Station source playlist is required",
+                "select_section": "Select at least one section",
+                "section_order_required": "Section order requires at least one rule",
+                "rule_requires_flow": "Rule {0} requires at least one flow item",
+                "must_needs_section": "Rule {0}, flow {1}: MUST needs a section",
+                "alternative_needs_choice": "Rule {0}, flow {1}: ALTERNATIVE needs at least one valid choice",
+                "optional_needs_section": "Rule {0}, flow {1}: OPTIONAL needs a section",
+                "optional_chance_numeric": "Rule {0}, flow {1}: OPTIONAL chance must be numeric",
+                "section_name_required": "Section name is required",
+                "section_prompt_required": "Section prompt is required",
+                "no_station_loaded": "No station loaded",
+                "no_section_loaded": "No section loaded"
+            },
+            "confirm": {
+                "discard_changes_title": "Discard changes?",
+                "discard_changes": "You have unsaved changes that will be lost.",
+                "delete_station_title": "Delete station?",
+                "delete_station": "Delete this station?"
+            },
+            "toast": {
+                "playlists_truncated": "Only the first {0} playlists were loaded.",
+                "unavailable": "AI Radio is not enabled.",
+                "playlist_starting": "Generating playlist — it will appear in your library shortly.",
+                "live_starting": "Live radio started",
+                "playlist_start_failed": "Failed to start playlist generation",
+                "live_start_failed": "Failed to start live radio",
+                "session_stopped": "AI Radio session stopped",
+                "session_stop_failed": "Failed to stop AI Radio session",
+                "station_saved": "Station saved",
+                "station_save_failed": "Failed to save station",
+                "station_deleted": "Station deleted",
+                "station_duplicated": "Station duplicated",
+                "session_failed": "AI Radio run failed: {0}"
+            },
+            "header": {
+                "subtitle": "Turn a playlist into a radio show with an AI host."
+            },
+            "gallery": {
+                "empty_title": "Create your first show",
+                "empty_description": "AI Radio turns one of your playlists into a radio show with an AI host. AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host — configure one under Settings → Plugins.",
+                "create_cta": "Create show",
+                "new_show": "New show",
+                "refresh": "Refresh"
+            },
+            "card": {
+                "play": "Play",
+                "starting": "Starting...",
+                "stop": "Stop",
+                "stopping": "Stopping...",
+                "on_air": "On air",
+                "generate_playlist": "Generate and save as playlist",
+                "customize": "Customize",
+                "duplicate": "Duplicate",
+                "duplicate_name": "{0} (copy)",
+                "delete": "Delete",
+                "session_failed": "Last run failed",
+                "open_playlist": "Open generated playlist",
+                "status_failed": "Failed {0}",
+                "status_playlist_ready": "Playlist ready · {0}",
+                "status_last_on_air": "Last on air {0}",
+                "no_player": "Select a player first",
+                "start_failed": "Failed to start: {0}",
+                "switch_show_title": "Switch show?",
+                "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
+                "switch_show_confirm_label": "Switch"
+            },
+            "phase": {
+                "preparing": "Preparing your show…",
+                "fetch_source_tracks": "Fetching tracks…",
+                "planning_sections": "Planning the show…",
+                "generating_llm": "Writing the host's lines…",
+                "generating_tts": "Recording the host's voice…",
+                "publishing_playlist": "Publishing playlist…",
+                "initializing_queue": "Preparing the queue…",
+                "queueing_batch": "Queueing music…",
+                "waiting_for_playback": "Waiting for playback…"
+            },
+            "create": {
+                "title": "Create a show",
+                "description": "Pick a playlist, a host style, and how chatty it should be.",
+                "playlist_label": "Source playlist",
+                "playlist_placeholder": "Choose a playlist",
+                "playlist_empty": "No playlists found",
+                "preset_label": "Host style",
+                "talk_label": "Talkativeness",
+                "name_label": "Show name",
+                "default_name": "{0} — {1}",
+                "create": "Create",
+                "create_and_play": "Create & play",
+                "creating": "Creating...",
+                "validation": {
+                    "playlist_required": "Choose a source playlist",
+                    "name_required": "Show name is required"
+                }
+            },
+            "presets": {
+                "morning_show": {
+                    "name": "Morning show",
+                    "description": "Warm, upbeat host with weather and news breaks."
+                },
+                "minimal_dj": {
+                    "name": "Minimal DJ",
+                    "description": "Calm, understated transitions that stay out of the way."
+                },
+                "music_nerd": {
+                    "name": "Music nerd",
+                    "description": "Shares artist facts and trivia between songs."
+                },
+                "party_host": {
+                    "name": "Party host",
+                    "description": "High-energy shout-outs to keep the party going."
+                }
+            },
+            "talk": {
+                "rarely": "Rarely",
+                "normal": "Normal",
+                "chatty": "Chatty"
+            },
+            "prereq": {
+                "title": "AI provider needed",
+                "description": "AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host.",
+                "action": "Go to Settings → Plugins"
+            },
+            "customize": {
+                "title": "Customize show",
+                "save": "Save show",
+                "advanced": "Advanced",
+                "basics_title": "Basics",
+                "segments_title": "Segments",
+                "segments_empty": "No segments yet — add one to get started.",
+                "add_segment": "Add segment",
+                "blank_segment": "Blank segment",
+                "blank_segment_name": "New segment",
+                "segment_name": "Segment name",
+                "use_current_player": "Use current player",
+                "lossy_warning_title": "Simplified on save",
+                "lossy_warning_description": "This show uses an advanced configuration that can't be fully represented here. Saving will rewrite it in the simplified segment format above.",
+                "prompt_placeholders_hint": "Available placeholders: {placeholders}"
+            }
+        },
         "party": {
             "guest_page": {
                 "add_available": "Add Available",
@@ -1508,7 +1705,7 @@
     "background_tasks": {
         "title": "Background tasks",
         "description": "Monitor scheduled jobs and recent long-running actions.",
-        "total": "{0} total background task{1}",
+        "total": "{count} total background task | {count} total background tasks",
         "clear_finished": "Clear finished",
         "empty_title": "No background tasks",
         "empty_description": "Scheduled jobs and long-running actions will appear here.",
@@ -1726,6 +1923,7 @@
     },
     "explore": "Explore",
     "shortcuts": "Shortcuts",
+    "plugins": "Plugins",
     "system": "System",
     "add_url_item_failed": "Failed to add item",
     "added_to_library": "\"{0}\" added to library",
@@ -1793,12 +1991,12 @@
         "120": "2 hours"
     },
     "shuffle_smart_active": "Smart shuffle is on. Click to turn it off.",
-    "goto_album_radio": "Go to Album Radio",
-    "goto_artist_radio": "Go to Artist Radio",
-    "goto_genre_radio": "Go to Genre Radio",
-    "goto_playlist_radio": "Go to Playlist Radio",
-    "goto_radio": "Go to Radio",
-    "goto_track_radio": "Go to Track Radio",
+    "goto_album_radio": "View album endless mix",
+    "goto_artist_radio": "View artist endless mix",
+    "goto_genre_radio": "View genre endless mix",
+    "goto_playlist_radio": "View playlist endless mix",
+    "goto_radio": "View endless mix",
+    "goto_track_radio": "View track endless mix",
     "autoplay_dynamic_title": "Autoplay is active",
     "autoplay_dynamic_lead": "Your queue is being dynamically filled based on your selection:",
     "autoplay_dynamic_desc": "Your queue is being dynamically filled based on your selection.",

@@ -3,7 +3,7 @@ import GuessTheSongReveal from "@/components/music-quiz/game-types/guess-the-son
 import type {
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { MediaType } from "@/plugins/api/interfaces";
 import { shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";

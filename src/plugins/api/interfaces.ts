@@ -1071,6 +1071,11 @@ export interface PlayerQueue {
   overlay_volume: number;
   current_index?: number;
   index_in_buffer?: number;
+  // ended: whether the queue played all the way to its end and is waiting to be restarted
+  // (server-derived, read-only). The position stays on the last item, so this flag is what
+  // tells a finished queue apart from one that is merely stopped on that item. Pressing play
+  // on an ended queue starts it over from the beginning.
+  ended: boolean;
   elapsed_time: number;
   /**
    * UTC timestamp (seconds since epoch) when `elapsed_time` was last updated.
@@ -1567,4 +1572,118 @@ export interface SmartPlaylistRules {
 export interface SmartPlaylistTrackStats {
   count: number;
   duration_seconds: number;
+}
+
+// AI Radio interfaces
+
+export type AIRadioMode = "playlist" | "dynamic";
+
+export type AIRadioSectionType = "ai_text" | "ai_meta";
+export type AIRadioWebSearchMode = "disabled" | "allow" | "force";
+
+export interface AIRadioSectionConstraints {
+  max_chars?: number;
+}
+
+export interface AIRadioSection {
+  id: string;
+  name: string;
+  type: AIRadioSectionType;
+  prompt: string;
+  web_search?: AIRadioWebSearchMode;
+  constraints?: AIRadioSectionConstraints;
+  cover_image?: string;
+}
+
+export interface AIRadioOptionalGuards {
+  min_gap_songs?: number;
+  max_per_60min?: number;
+  require_placeholders_present?: string[];
+}
+
+export interface AIRadioAlternativeChoice {
+  section: string;
+  weight: number;
+}
+
+export interface AIRadioFlowMust {
+  MUST: string;
+}
+
+export interface AIRadioFlowAlternative {
+  ALTERNATIVE: {
+    choices: AIRadioAlternativeChoice[];
+  };
+}
+
+export interface AIRadioFlowOptional {
+  OPTIONAL: {
+    section: string;
+    chance?: number;
+    guards?: AIRadioOptionalGuards;
+  };
+}
+
+export type AIRadioFlowItem =
+  | AIRadioFlowMust
+  | AIRadioFlowAlternative
+  | AIRadioFlowOptional;
+
+export type AIRadioPlacement =
+  | "start_of_playlist"
+  | "between_songs"
+  | "end_of_playlist";
+
+export interface AIRadioSectionOrderRule {
+  when: AIRadioPlacement;
+  flow: AIRadioFlowItem[];
+}
+
+export interface AIRadioStationGeneral {
+  instructions: string;
+  weather_provider: string;
+  weather_timeout_seconds: number;
+}
+
+export interface AIRadioStation {
+  id: string;
+  name: string;
+  source_playlist_id: string;
+  source_playlist_provider: string;
+  target_playlist_provider?: string;
+  default_player_id?: string;
+  max_duration_minutes?: number;
+  shuffle_source_tracks?: boolean;
+  dynamic_batch_size?: number;
+  dynamic_poll_seconds?: number;
+  dynamic_prefetch_remaining_tracks?: number;
+  merge_section_id?: string;
+  general?: AIRadioStationGeneral;
+  section_ids?: string[];
+  sections?: AIRadioSection[];
+  section_order?: AIRadioSectionOrderRule[];
+}
+
+export interface AIRadioSession {
+  session_id: string;
+  station_id: string;
+  mode: AIRadioMode;
+  status: "running" | "completed" | "failed" | "stopped";
+  created_at: string;
+  started_at?: string;
+  ended_at?: string;
+  error?: string;
+  progress?: {
+    phase?: string;
+    [key: string]: unknown;
+  };
+  result?: {
+    target_playlist_id?: string;
+    target_playlist_name?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface AIRadioStatus {
+  sessions: AIRadioSession[];
 }

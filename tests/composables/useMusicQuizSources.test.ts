@@ -3,7 +3,7 @@ import {
   MUSIC_QUIZ_DEFAULT_SOURCE_MEDIA_TYPES,
   MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
   useMusicQuizSources,
-} from "@/composables/useMusicQuizSources";
+} from "@/composables/music-quiz/useMusicQuizSources";
 import { MediaType } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
 

@@ -163,6 +163,10 @@
             $t("external_source_active", [getSourceName(store.activePlayer)])
           }}
         </div>
+        <!-- queue ended message: the queue is still there, it just finished -->
+        <div v-else-if="queueEnded" class="ma-line-clamp-1">
+          {{ $t("queue_ended") }}
+        </div>
         <!-- queue empty message -->
         <div
           v-else-if="
@@ -191,6 +195,7 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { isQueueEnded } from "@/helpers/queue_position";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import {
   ImageColorPalette,
@@ -206,6 +211,8 @@ import PlayerFullscreen from "./PlayerFullscreen.vue";
 
 const { waveformBins } = useActiveTrackWaveform();
 const marqueeSync = new MarqueeTextSync();
+
+const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
 
 // properties
 interface Props {

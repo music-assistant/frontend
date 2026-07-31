@@ -97,6 +97,11 @@
                 {{ mediaByline }}
               </p>
               <span
+                v-else-if="isQueueEnded(playerQueue)"
+                class="sr-only"
+                :aria-label="$t('queue_ended')"
+              ></span>
+              <span
                 v-else-if="playerQueue?.items === 0"
                 class="sr-only"
                 :aria-label="$t('queue_empty')"
@@ -206,6 +211,7 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { isQueueEnded } from "@/helpers/queue_position";
 import {
   getMediaImageUrl,
   getPlayerName,

@@ -24,7 +24,7 @@ vi.mock("vue-sonner", () => ({
   toast: mockToast,
 }));
 
-import { useGuestArtistTracks } from "@/composables/useGuestArtistTracks";
+import { useGuestArtistTracks } from "@/composables/guest/useGuestArtistTracks";
 
 describe("useGuestArtistTracks", () => {
   beforeEach(() => {

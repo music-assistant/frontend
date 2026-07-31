@@ -39,7 +39,6 @@ describe("openActionUrlEntries", () => {
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => undefined);
     const entries = [
-      // eslint-disable-next-line no-script-url
       urlEntry("javascript:alert(1)", "xss"),
       urlEntry("data:text/html,hi", "data"),
       urlEntry("not a url at all", "junk"),

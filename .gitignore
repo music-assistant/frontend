@@ -123,4 +123,7 @@ venv/*
 !.vscode/launch.json
 !.vscode/tasks.json
 .coverage
+
+# nested git worktrees
+/.claude/worktrees
 /.worktrees

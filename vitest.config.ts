@@ -16,8 +16,13 @@ export default mergeConfig(
         },
       },
       // Ignore nested git worktrees so a sibling branch's tests under
-      // ./.worktrees aren't picked up by this repo's suite.
-      exclude: [...configDefaults.exclude, "**/.worktrees/**"],
+      // ./.claude/worktrees (or the older ./.worktrees) aren't picked up by
+      // this repo's suite.
+      exclude: [
+        ...configDefaults.exclude,
+        "**/.claude/worktrees/**",
+        "**/.worktrees/**",
+      ],
     },
   }),
 );
