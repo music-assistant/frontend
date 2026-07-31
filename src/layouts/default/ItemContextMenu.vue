@@ -220,6 +220,7 @@ import {
   radioSupported,
 } from "@/helpers/radio";
 import { playerVisible } from "@/helpers/utils";
+import { runWithConcurrency } from "@/helpers/concurrency";
 import {
   isItemInLibrary,
   itemIsAvailable,
@@ -1204,18 +1205,22 @@ export const getPlaybackContextMenuItems = async function (
     const allFullyPlayed = podcastEpisodes.every(isFullyPlayed);
     const allUnplayed = podcastEpisodes.every(isUnplayed);
 
+    // throttled: a bulk selection can span thousands of episodes
+    const markAllPlayed = () =>
+      runWithConcurrency(podcastEpisodes, (item: PodcastEpisode) =>
+        api.markItemPlayed(item, true),
+      );
+    const markAllUnPlayed = () =>
+      runWithConcurrency(podcastEpisodes, (item: PodcastEpisode) =>
+        api.markItemUnPlayed(item),
+      );
+
     // If all items are fully played, show "mark unplayed" option
     if (allFullyPlayed) {
       playMenuItems.push({
         label: "mark_unplayed",
         icon: History,
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map((item: PodcastEpisode) =>
-              api.markItemUnPlayed(item),
-            ),
-          );
-        },
+        action: markAllUnPlayed,
       });
     }
     // If all items are unplayed, show "mark played" option
@@ -1223,13 +1228,7 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "mark_played",
         icon: History,
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map((item: PodcastEpisode) =>
-              api.markItemPlayed(item, true),
-            ),
-          );
-        },
+        action: markAllPlayed,
       });
     }
     // If mixed state, show both options
@@ -1237,25 +1236,13 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "mark_played",
         icon: History,
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map((item: PodcastEpisode) =>
-              api.markItemPlayed(item, true),
-            ),
-          );
-        },
+        action: markAllPlayed,
       });
 
       playMenuItems.push({
         label: "mark_unplayed",
         icon: History,
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map((item: PodcastEpisode) =>
-              api.markItemUnPlayed(item),
-            ),
-          );
-        },
+        action: markAllUnPlayed,
       });
     }
   }
