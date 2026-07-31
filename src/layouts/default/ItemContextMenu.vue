@@ -220,7 +220,11 @@ import {
   radioSupported,
 } from "@/helpers/radio";
 import { playerVisible } from "@/helpers/utils";
-import { isItemInLibrary, itemIsAvailable } from "@/plugins/api/helpers";
+import {
+  isItemInLibrary,
+  itemIsAvailable,
+  itemSupportsPlayLog,
+} from "@/plugins/api/helpers";
 import {
   Album,
   BrowseFolder,
@@ -782,19 +786,16 @@ export const getContextMenuItems = async function (
     });
   }
 
-  if (
-    items.length === 1 &&
-    "fully_played" in items[0] &&
-    "resume_position_ms" in items[0]
-  ) {
+  const playLogItem = items.length === 1 ? items[0] : undefined;
+  if (itemSupportsPlayLog(playLogItem)) {
+    const item = playLogItem;
     // mark unplayed
-    if (items[0].fully_played || items[0].resume_position_ms) {
+    if (item.fully_played || item.resume_position_ms) {
       contextMenuItems.push({
         label: "mark_unplayed",
         icon: History,
         action: async () => {
-          await api.markItemUnPlayed(items[0]);
-          (items[0] as PodcastEpisode).fully_played = false;
+          await api.markItemUnPlayed(item);
         },
       });
     } else {
@@ -803,8 +804,7 @@ export const getContextMenuItems = async function (
         label: "mark_played",
         icon: History,
         action: async () => {
-          await api.markItemPlayed(items[0], true);
-          (items[0] as PodcastEpisode).fully_played = true;
+          await api.markItemPlayed(item, true);
         },
       });
     }
@@ -1189,12 +1189,7 @@ export const getPlaybackContextMenuItems = async function (
   // Multi-select mark as played/unplayed for podcast episodes
   if (
     items.length > 1 &&
-    items.every(
-      (item) =>
-        item.media_type === MediaType.PODCAST_EPISODE &&
-        "fully_played" in item &&
-        "resume_position_ms" in item,
-    )
+    items.every((item) => item.media_type === MediaType.PODCAST_EPISODE)
   ) {
     const podcastEpisodes = items as PodcastEpisode[];
 
@@ -1215,11 +1210,9 @@ export const getPlaybackContextMenuItems = async function (
         icon: History,
         action: async () => {
           await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemUnPlayed(item);
-              item.fully_played = false;
-              item.resume_position_ms = 0;
-            }),
+            podcastEpisodes.map((item: PodcastEpisode) =>
+              api.markItemUnPlayed(item),
+            ),
           );
         },
       });
@@ -1231,10 +1224,9 @@ export const getPlaybackContextMenuItems = async function (
         icon: History,
         action: async () => {
           await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemPlayed(item, true);
-              item.fully_played = true;
-            }),
+            podcastEpisodes.map((item: PodcastEpisode) =>
+              api.markItemPlayed(item, true),
+            ),
           );
         },
       });
@@ -1246,10 +1238,9 @@ export const getPlaybackContextMenuItems = async function (
         icon: History,
         action: async () => {
           await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemPlayed(item, true);
-              item.fully_played = true;
-            }),
+            podcastEpisodes.map((item: PodcastEpisode) =>
+              api.markItemPlayed(item, true),
+            ),
           );
         },
       });
@@ -1259,11 +1250,9 @@ export const getPlaybackContextMenuItems = async function (
         icon: History,
         action: async () => {
           await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemUnPlayed(item);
-              item.fully_played = false;
-              item.resume_position_ms = 0;
-            }),
+            podcastEpisodes.map((item: PodcastEpisode) =>
+              api.markItemUnPlayed(item),
+            ),
           );
         },
       });

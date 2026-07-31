@@ -5,7 +5,7 @@ import { toast } from "vue-sonner";
 import { $t, i18n } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
-import { getDeviceName } from "./helpers";
+import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
   type Artist,
@@ -1484,9 +1484,13 @@ export class MusicAssistantApi {
     fully_played?: boolean,
     seconds_played?: number,
   ): Promise<void> {
-    if ("fully_played" in media_item) media_item.fully_played = fully_played;
-    if ("resume_position_ms" in media_item)
-      delete media_item.resume_position_ms;
+    // optimistically update the local object so the UI reflects the new state;
+    // keep resume_position_ms present (instead of deleting the key) because
+    // parts of the UI check for the key's existence on the item
+    if (itemSupportsPlayLog(media_item)) {
+      media_item.fully_played = fully_played;
+      media_item.resume_position_ms = (seconds_played ?? 0) * 1000;
+    }
     // Mark item as played in the playlog
     return this.sendCommand("music/mark_played", {
       media_item,
@@ -1497,9 +1501,11 @@ export class MusicAssistantApi {
   public markItemUnPlayed(
     media_item: MediaItemTypeOrItemMapping,
   ): Promise<void> {
-    if ("fully_played" in media_item) media_item.fully_played = false;
-    if ("resume_position_ms" in media_item)
-      delete media_item.resume_position_ms;
+    // optimistically update the local object so the UI reflects the new state
+    if (itemSupportsPlayLog(media_item)) {
+      media_item.fully_played = false;
+      media_item.resume_position_ms = 0;
+    }
     // Mark item as unplayed in the playlog
     return this.sendCommand("music/mark_unplayed", {
       media_item,

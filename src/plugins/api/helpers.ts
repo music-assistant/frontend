@@ -3,12 +3,14 @@
 import { watch } from "vue";
 import api, { ConnectionState } from ".";
 import {
+  Audiobook,
   AudioSource,
   MediaItemType,
   ItemMapping,
   MediaType,
   Player,
   PlayerQueue,
+  PodcastEpisode,
 } from "./interfaces";
 
 /**
@@ -55,6 +57,19 @@ export const isAudioSource = function (
   item: MediaItemType | ItemMapping | undefined,
 ): item is AudioSource {
   return item?.media_type === MediaType.AUDIO_SOURCE;
+};
+
+/**
+ * Type guard for media items that track played state (fully_played /
+ * resume_position_ms): podcast episodes and audiobooks.
+ */
+export const itemSupportsPlayLog = function (
+  item: MediaItemType | ItemMapping | undefined,
+): item is Audiobook | PodcastEpisode {
+  return (
+    item?.media_type === MediaType.PODCAST_EPISODE ||
+    item?.media_type === MediaType.AUDIOBOOK
+  );
 };
 
 /**
