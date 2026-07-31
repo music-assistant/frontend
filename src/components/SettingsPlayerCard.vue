@@ -26,16 +26,27 @@
       </div>
 
       <!-- Player needs setup warning -->
-      <v-chip
-        v-if="playerConfig.enabled && needsSetup"
-        size="x-small"
-        variant="tonal"
-        color="warning"
-        class="player-warning-chip"
-      >
-        <v-icon icon="mdi-alert-circle" size="14" start />
-        {{ $t("settings.player_needs_setup") }}
-      </v-chip>
+      <div v-if="playerConfig.enabled && needsSetup" class="player-warning">
+        <v-chip
+          size="x-small"
+          variant="tonal"
+          color="warning"
+          class="player-warning-chip"
+        >
+          <v-icon icon="mdi-alert-circle" size="14" start />
+          {{ $t("settings.player_needs_setup") }}
+        </v-chip>
+        <v-btn
+          size="small"
+          color="warning"
+          variant="flat"
+          block
+          class="mt-2"
+          @click.stop="handleSetup"
+        >
+          {{ $t("settings.start_setup") }}
+        </v-btn>
+      </div>
 
       <div class="card-footer">
         <div class="protocol-chips">
@@ -96,6 +107,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "click", playerConfig: PlayerConfig): void;
   (e: "menu", event: Event, playerConfig: PlayerConfig): void;
+  (e: "setup", playerConfig: PlayerConfig): void;
 }>();
 
 const player = computed(() => api.players[props.playerConfig.player_id]);
@@ -137,6 +149,10 @@ const handleClick = () => {
 const handleMenu = (event: Event) => {
   emit("menu", event, props.playerConfig);
 };
+
+const handleSetup = () => {
+  emit("setup", props.playerConfig);
+};
 </script>
 
 <style scoped>
@@ -158,6 +174,11 @@ const handleMenu = (event: Event) => {
 
 .player-unavailable {
   opacity: 0.7;
+}
+
+.player-warning {
+  display: flex;
+  flex-direction: column;
 }
 
 .player-warning-chip {

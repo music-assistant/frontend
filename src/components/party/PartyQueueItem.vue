@@ -36,7 +36,7 @@
       <span
         v-if="item.extra_attributes?.party_guest === true"
         class="guest-request-badge"
-        :style="{ '--badge-color': badgeColor }"
+        :style="badgeStyle"
       >
         <component :is="badgeIconComponent" :size="10" />
         <span>{{ badgeLabel }}</span>
@@ -72,6 +72,7 @@ import { getMediaItemImageUrl } from "@/helpers/utils";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Music, Rocket, UserRound } from "@lucide/vue";
+import Color from "color";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -140,9 +141,23 @@ const isBoosted = computed(
   () => props.item.extra_attributes?.party_boosted === true,
 );
 
-const badgeColor = computed(() =>
-  isBoosted.value ? props.boostBadgeColor : props.requestBadgeColor,
-);
+const badgeColor = computed(() => {
+  const color = isBoosted.value
+    ? props.boostBadgeColor
+    : props.requestBadgeColor;
+  if (!color) return isBoosted.value ? "#FF5722" : "#2196F3";
+  return color;
+});
+
+// Older Cast and Android TV runtimes need precomputed alpha colors.
+const badgeStyle = computed(() => {
+  const color = Color(badgeColor.value);
+  return {
+    "--badge-color": badgeColor.value,
+    "--badge-background": color.alpha(0.2).string(),
+    "--badge-border": color.alpha(0.4).string(),
+  };
+});
 
 const badgeIconComponent = computed(() =>
   isBoosted.value ? Rocket : UserRound,
@@ -273,8 +288,8 @@ const badgeLabel = computed(() =>
   align-items: center;
   gap: 0.25rem;
   padding: 0.2rem 0.3rem;
-  background: color-mix(in srgb, var(--badge-color) 20%, transparent);
-  border: 1px solid color-mix(in srgb, var(--badge-color) 40%, transparent);
+  background: var(--badge-background);
+  border: 1px solid var(--badge-border);
   border-radius: 999px;
   font-size: 0.55rem;
   font-weight: 600;

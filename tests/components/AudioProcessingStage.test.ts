@@ -102,7 +102,7 @@ describe("AudioProcessingStage", () => {
       badge: "Bit-perfect",
       details: [
         "Container: FLAC",
-        "Bit-perfect: audio samples are unchanged from the source.",
+        "Bit-perfect: decoded source samples reach the output unchanged.",
       ],
     });
 
@@ -112,7 +112,7 @@ describe("AudioProcessingStage", () => {
     expect(wrapper.find(".audio-processing-stage-info").exists()).toBe(true);
     expect(wrapper.findAll("li").map((detail) => detail.text())).toEqual([
       "Container: FLAC",
-      "Bit-perfect: audio samples are unchanged from the source.",
+      "Bit-perfect: decoded source samples reach the output unchanged.",
     ]);
   });
 

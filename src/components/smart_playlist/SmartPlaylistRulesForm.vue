@@ -55,7 +55,7 @@ import {
   useSmartPlaylistRulesForm,
   type RuleRow,
   type SmartPlaylistRulesFormInit,
-} from "@/composables/useSmartPlaylistRulesForm";
+} from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Library, Sparkles } from "@lucide/vue";

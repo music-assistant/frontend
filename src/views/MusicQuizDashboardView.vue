@@ -35,18 +35,25 @@
             {{ statusText }}
           </p>
         </div>
-        <Button
-          v-if="isAdmin && musicQuizProviderInstanceId"
-          class="shrink-0"
-          variant="ghost"
-          size="icon"
-          data-testid="music-quiz-settings"
-          :aria-label="$t('providers.music_quiz.settings')"
-          :title="$t('providers.music_quiz.settings')"
-          @click="goToMusicQuizSettings"
-        >
-          <Settings class="size-5" />
-        </Button>
+        <div class="flex shrink-0 items-center gap-1">
+          <Button
+            v-if="isAdmin && musicQuizProviderInstanceId"
+            variant="ghost"
+            size="icon"
+            data-testid="music-quiz-settings"
+            :aria-label="$t('providers.music_quiz.settings')"
+            :title="$t('providers.music_quiz.settings')"
+            @click="goToMusicQuizSettings"
+          >
+            <Settings class="size-5" />
+          </Button>
+          <ShowDashboardButton
+            dashboard="music_quiz"
+            variant="ghost"
+            button-size="icon"
+            :icon-size="20"
+          />
+        </div>
       </header>
 
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
@@ -215,6 +222,7 @@ import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHead
 import MusicQuizSessionPanels from "@/components/music-quiz/MusicQuizSessionPanels.vue";
 import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
+import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -227,8 +235,8 @@ import {
 import {
   isSupportedMusicQuiz,
   type MusicQuizCreateRequest,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
 import {
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,

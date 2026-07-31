@@ -15,10 +15,11 @@ import {
   Radio,
   Search,
   Settings,
+  Sparkles,
 } from "@lucide/vue";
 import { Component } from "vue";
 
-export type MenuGroup = "explore" | "library" | "system";
+export type MenuGroup = "explore" | "library" | "plugins" | "system";
 
 // Sections that can be customized (renamed / label hidden) in menu edit mode.
 export type MenuSectionId = MenuGroup | "shortcuts";
@@ -100,24 +101,6 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     group: "explore",
   },
   {
-    id: "party",
-    label: "party_mode",
-    icon: PartyPopper,
-    path: "/party",
-    isLibraryNode: false,
-    group: "explore",
-    available: () => store.enabledPlugins.has("party"),
-  },
-  {
-    id: "music_quiz",
-    label: "providers.music_quiz.title",
-    icon: MicVocal,
-    path: "/music-quiz",
-    isLibraryNode: false,
-    group: "explore",
-    available: () => store.enabledPlugins.has("music_quiz"),
-  },
-  {
     id: "artists",
     label: "artists",
     icon: ArtistIcon,
@@ -182,6 +165,33 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     path: "/genres",
     isLibraryNode: true,
     group: "library",
+  },
+  {
+    id: "party",
+    label: "party_mode",
+    icon: PartyPopper,
+    path: "/party",
+    isLibraryNode: false,
+    group: "plugins",
+    available: () => store.enabledPlugins.has("party"),
+  },
+  {
+    id: "music_quiz",
+    label: "providers.music_quiz.title",
+    icon: MicVocal,
+    path: "/music-quiz",
+    isLibraryNode: false,
+    group: "plugins",
+    available: () => store.enabledPlugins.has("music_quiz"),
+  },
+  {
+    id: "ai_radio",
+    label: "providers.ai_radio.title",
+    icon: Sparkles,
+    path: "/ai-radio",
+    isLibraryNode: false,
+    group: "plugins",
+    available: () => store.enabledPlugins.has("ai_radio"),
   },
   {
     id: "settings",

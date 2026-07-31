@@ -20,10 +20,9 @@
 
     <div class="pl-5 font-weight-medium">
       {{
-        $t("settings.players_total", [
-          getAllFilteredPlayers().length,
-          getAllFilteredPlayers().length !== 1 ? "s" : "",
-        ])
+        $t("settings.players_total", getAllFilteredPlayers().length, {
+          named: { count: getAllFilteredPlayers().length },
+        })
       }}
     </div>
     <Container
@@ -40,7 +39,7 @@
             'player-disabled': !item.enabled,
             'player-unavailable': !api.players[item.player_id]?.available,
           }"
-          @click="editPlayer(item.player_id, item.provider)"
+          @click="handlePlayerClick(item)"
           @menu="(evt) => onMenu(evt, item)"
         >
           <template #prepend>
@@ -62,16 +61,29 @@
           <template #subtitle>
             <div class="player-meta">
               <!-- Player needs setup warning -->
-              <v-chip
+              <div
                 v-if="item.enabled && api.players[item.player_id]?.needs_setup"
-                size="x-small"
-                variant="tonal"
-                color="warning"
-                class="player-warning-chip"
+                class="player-warning"
               >
-                <v-icon icon="mdi-alert-circle" size="14" start />
-                {{ $t("settings.player_needs_setup") }}
-              </v-chip>
+                <v-chip
+                  size="x-small"
+                  variant="tonal"
+                  color="warning"
+                  class="player-warning-chip"
+                >
+                  <v-icon icon="mdi-alert-circle" size="14" start />
+                  {{ $t("settings.player_needs_setup") }}
+                </v-chip>
+                <v-btn
+                  size="x-small"
+                  color="warning"
+                  variant="flat"
+                  class="ml-2"
+                  @click.stop="startPlayerSetup(item.player_id)"
+                >
+                  {{ $t("settings.start_setup") }}
+                </v-btn>
+              </div>
               <span v-else class="provider-name">
                 {{
                   api.players[item.player_id]?.device_info
@@ -138,10 +150,12 @@
           v-for="item in getAllFilteredPlayers()"
           :key="item.player_id"
           :player-config="item"
-          @click="(config) => editPlayer(config.player_id, config.provider)"
+          @click="handlePlayerClick"
           @menu="(evt, config) => onMenu(evt, config)"
+          @setup="(config) => startPlayerSetup(config.player_id)"
         />
       </div>
+
       <div v-if="getAllFilteredPlayers().length === 0" class="empty-state">
         <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
         <div class="empty-title">{{ $t("no_content") }}</div>
@@ -173,6 +187,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
@@ -253,6 +268,21 @@ const editPlayer = function (playerId: string, provider: string) {
   }
 };
 
+const startPlayerSetup = function (playerId: string) {
+  eventbus.emit("setupFlowDialog", { kind: "player", playerId });
+};
+
+const handlePlayerClick = function (playerConfig: PlayerConfig) {
+  if (
+    playerConfig.enabled &&
+    api.players[playerConfig.player_id]?.needs_setup
+  ) {
+    startPlayerSetup(playerConfig.player_id);
+    return;
+  }
+  editPlayer(playerConfig.player_id, playerConfig.provider);
+};
+
 const editPlayerDsp = function (playerId: string) {
   router.push(`/settings/editplayer/${playerId}/dsp`);
 };
@@ -290,16 +320,21 @@ const getOutputProtocols = function (playerId: string) {
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
+  const player = api.players[playerConfig.player_id];
   const menuItems: ContextMenuItem[] = [
     {
-      label: "settings.configure",
+      label: "open_player_settings",
       labelArgs: [],
       action: () => {
         editPlayer(playerConfig.player_id, playerConfig.provider);
       },
-      icon: "mdi-cog",
+      icon: "mdi-cog-outline",
       disabled: !api.getProvider(playerConfig!.provider),
     },
+  ];
+  const setupMenuItem = player && getPlayerSetupMenuItem(player);
+  if (setupMenuItem) menuItems.push(setupMenuItem);
+  menuItems.push(
     {
       label: "open_dsp_settings",
       labelArgs: [],
@@ -338,7 +373,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
       icon: "mdi-delete",
       hide: !playerCanBeDeleted(playerConfig.player_id),
     },
-  ];
+  );
   eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
@@ -615,6 +650,12 @@ watch(
 
 .player-unavailable {
   opacity: 0.7;
+}
+
+.player-warning {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .player-warning-chip {

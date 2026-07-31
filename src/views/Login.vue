@@ -417,6 +417,10 @@ import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
+import {
+  hasHomeAssistantIngressPath,
+  isHomeAssistantIngressSession,
+} from "@/helpers/ingress";
 import type { ITransport } from "@/plugins/remote/transport";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
@@ -465,10 +469,9 @@ const isRemoteOnlyMode = computed(() => {
   return urlParams.get("remote") === "1";
 });
 
-// Detect if running in Home Assistant Ingress mode
-const isIngressMode = computed(() => {
-  return window.location.pathname.includes("/hassio_ingress/");
-});
+const isIngressMode = computed(() =>
+  isHomeAssistantIngressSession(api.serverInfo.value),
+);
 
 const isHostedWithAPI = ref(false);
 
@@ -745,7 +748,7 @@ const completeDashboardAuth = async (
   }
 
   sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, path);
-  void router.replace(path);
+  await router.replace(path);
 
   const urlParams = new URLSearchParams(window.location.search);
   urlParams.delete("remote_id");
@@ -1213,8 +1216,8 @@ const autoConnect = async () => {
   // Check if we're hosted with the API
   isHostedWithAPI.value = await checkIfHostedWithAPI();
 
-  // Special handling for Home Assistant Ingress mode
-  if (isIngressMode.value) {
+  let currentHostConnected = false;
+  if (hasHomeAssistantIngressPath()) {
     connectionStatusMessage.value = t(
       "login.connecting_ingress",
       "Connecting via Home Assistant...",
@@ -1222,32 +1225,10 @@ const autoConnect = async () => {
 
     const address =
       window.location.origin + window.location.pathname.replace(/\/$/, "");
+    serverAddress.value = address;
 
-    try {
-      emit("local-connect", address);
-
-      if (await waitForApiConnection()) {
-        if (await tryIngressAuth()) {
-          return; // Success - App.vue will take over
-        }
-      }
-
-      console.error("[Login] Ingress authentication failed");
-      connectionError.value = t(
-        "login.error_ingress_failed",
-        "Failed to authenticate via Home Assistant Ingress",
-      );
-      step.value = "error";
-      return;
-    } catch (error) {
-      console.error("[Login] Ingress connection failed:", error);
-      connectionError.value =
-        error instanceof Error
-          ? error.message
-          : t("login.error_unknown", "Unknown error occurred");
-      step.value = "error";
-      return;
-    }
+    emit("local-connect", address);
+    currentHostConnected = await waitForApiConnection();
   }
 
   // If in remote-only mode, skip all local connection attempts
@@ -1352,7 +1333,7 @@ const autoConnect = async () => {
   }
 
   // 1. If hosted with API, try connecting to current host first
-  if (isHostedWithAPI.value) {
+  if (isHostedWithAPI.value || currentHostConnected) {
     connectionStatusMessage.value = t(
       "login.checking_local",
       "Checking local server...",
@@ -1361,15 +1342,34 @@ const autoConnect = async () => {
     const storedToken = authManager.getToken();
     const localWsUrl = getWebSocketUrlFromLocation();
 
-    if (await tryConnect(localWsUrl, 3000)) {
+    if (currentHostConnected || (await tryConnect(localWsUrl, 3000))) {
       const address =
         window.location.origin + window.location.pathname.replace(/\/$/, "");
       serverAddress.value = address;
 
-      emit("local-connect", address);
+      if (!currentHostConnected) {
+        emit("local-connect", address);
+      }
+
+      const apiConnected =
+        currentHostConnected || (await waitForApiConnection());
+      if (apiConnected && isIngressMode.value) {
+        if (await tryIngressAuth()) {
+          return; // Success - App.vue will take over
+        }
+
+        console.error("[Login] Ingress authentication failed");
+        connectionError.value = t(
+          "login.error_ingress_failed",
+          "Failed to authenticate via Home Assistant Ingress",
+        );
+        step.value = "error";
+        return;
+      }
+
       rememberServerAddress(address);
 
-      if (await waitForApiConnection()) {
+      if (apiConnected) {
         const pendingGuestAuthResult = await tryPendingGuestAuth();
         if (pendingGuestAuthResult !== "none") {
           return;
