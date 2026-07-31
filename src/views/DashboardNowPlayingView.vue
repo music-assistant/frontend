@@ -29,9 +29,7 @@
               store.activePlayer.current_media?.title || store.activePlayer.name
             }}
           </MarqueeText>
-          <!-- keeps an empty placeholder line when the current media has no
-               artist, so the artwork keeps a fixed position when e.g. AI radio
-               alternates between tracks and DJ announcements -->
+          <!-- placeholder when no artist, so the artwork position stays fixed -->
           <MarqueeText :sync="marqueeSync" class="now-playing-subtitle">
             {{ store.activePlayer.current_media?.artist || " " }}
           </MarqueeText>

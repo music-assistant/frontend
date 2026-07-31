@@ -116,10 +116,8 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- subtitle: album -->
-            <!-- keeps an empty placeholder line when the current media has no
-                 album, so the artwork above keeps a constant size when e.g.
-                 AI radio alternates between tracks and DJ announcements -->
+            <!-- subtitle: album; placeholder when empty so the artwork
+                 above keeps a constant size -->
             <v-card-subtitle
               v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
               :style="`font-size: ${subTitleFontSize};${
@@ -132,7 +130,7 @@
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: artist (same placeholder treatment as the album) -->
+            <!-- subtitle: artist; placeholder when empty, as above -->
             <v-card-subtitle
               v-if="
                 store.activePlayer?.powered != false &&
