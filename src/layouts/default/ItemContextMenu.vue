@@ -831,7 +831,11 @@ export const getContextMenuItems = async function (
   }
 
   // update metadata
-  if (items.length === 1 && items[0] == parentItem) {
+  if (
+    items.length === 1 &&
+    items[0] == parentItem &&
+    items[0].media_type !== MediaType.COLLECTION
+  ) {
     contextMenuItems.push({
       label: "update_metadata",
       labelArgs: [],
@@ -890,6 +894,7 @@ export const getContextMenuItems = async function (
   // refresh item
   if (
     items.length === 1 &&
+    items[0].media_type !== MediaType.COLLECTION &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
   ) {
     contextMenuItems.push({
@@ -1015,7 +1020,10 @@ export const getContextMenuItems = async function (
   // link to genre (library items only, non-genre)
   if (
     items.every(
-      (i) => i.media_type !== MediaType.GENRE && i.provider === "library",
+      (i) =>
+        i.media_type !== MediaType.GENRE &&
+        i.media_type !== MediaType.COLLECTION &&
+        i.provider === "library",
     )
   ) {
     contextMenuItems.push({

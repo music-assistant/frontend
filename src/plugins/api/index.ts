@@ -59,6 +59,7 @@ import {
   SmartPlaylistRules,
   SoundEffect,
   UserRole,
+  MediaCollection,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -993,7 +994,8 @@ export class MusicAssistantApi {
     order_by?: string,
     provider?: string | string[],
     genre?: number | number[],
-  ): Promise<Audiobook[]> {
+    collapse_collections?: boolean,
+  ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
       search,
@@ -1002,6 +1004,7 @@ export class MusicAssistantApi {
       order_by,
       provider,
       genre,
+      collapse_collections,
     });
   }
 
@@ -1012,6 +1015,14 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/get_audiobook", {
       item_id,
       provider_instance_id_or_domain,
+    });
+  }
+
+  public getAudiobookCollection(
+    item_id: string,
+  ): Promise<MediaCollection<Audiobook>> {
+    return this.sendCommand("music/audiobooks/get_collection", {
+      item_id,
     });
   }
 
