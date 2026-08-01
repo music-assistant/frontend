@@ -421,21 +421,48 @@ describe("guest join login", () => {
     );
     mocks.sendCommand.mockResolvedValue({
       success: false,
-      error: "expired",
+      error: "Invalid or expired join code",
     });
 
     const wrapper = mountLogin();
 
     await vi.waitFor(() => {
-      expect(wrapper.text()).toContain(
-        "Failed to join party. The code may have expired.",
-      );
+      expect(wrapper.text()).toContain("Couldn't join the party");
     });
+    expect(wrapper.get(".text-h6").text()).toBe("Couldn't join the party");
+    expect(wrapper.text()).toContain("Invalid or expired join code");
+    expect(wrapper.text()).not.toContain("Connection Failed");
     expect(sessionStorage.getItem("ma_pending_join_code")).toBeNull();
     expect(sessionStorage.getItem("ma_pending_join_type")).toBeNull();
     expect(sessionStorage.getItem("ma_guest_server_address")).toBeNull();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
     expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
+    expect(wrapper.emitted("authenticated")).toBeUndefined();
+  });
+
+  it("shows the server reason when the join code exchange is rate limited", async () => {
+    setLocation("?join=abcd1234");
+    mockStandaloneFrontend();
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+    mocks.sendCommand.mockResolvedValue({
+      success: false,
+      error: "Too many failed attempts. Please try again in 120 seconds.",
+    });
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Couldn't join the party");
+    });
+    expect(wrapper.get(".text-h6").text()).toBe("Couldn't join the party");
+    expect(wrapper.text()).toContain(
+      "Too many failed attempts. Please try again in 120 seconds.",
+    );
+    expect(wrapper.text()).not.toContain("expired");
+    expect(wrapper.text()).not.toContain("Connection Failed");
     expect(wrapper.emitted("authenticated")).toBeUndefined();
   });
 
