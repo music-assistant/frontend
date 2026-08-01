@@ -258,7 +258,7 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
   margin-block: 3px;
   padding: 6px 8px;
   border-radius: var(--radius-md);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   line-height: 1.3;
   text-align: left;
   transition:
