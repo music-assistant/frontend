@@ -359,6 +359,10 @@ const formRef = ref<HTMLFormElement | null>(null);
 
 // monotonically increasing launch token; guards async step application
 let launchSeq = 0;
+// bumped whenever the dialog moves to another step; guards a late response from
+// overwriting a newer step that a push update already applied (flow_id alone
+// never changes mid-flow, so it can't be used for that)
+let stepSeq = 0;
 let completionNotified = false;
 
 let unsubscribeFlow: (() => void) | null = null;
@@ -549,6 +553,11 @@ function startFlow(evt: SetupFlowDialogEvent): Promise<SetupFlowStep> {
 function applyStep(newStep: SetupFlowStep) {
   const prevFlowId = step.value?.flow_id;
   const prevStepId = step.value?.step_id;
+  // only a real step change invalidates in-flight requests: the same step being
+  // re-served (reconcile, validation errors) must not discard their responses
+  if (prevFlowId !== newStep.flow_id || prevStepId !== newStep.step_id) {
+    stepSeq++;
+  }
   step.value = newStep;
 
   // subscribe to push updates for non-terminal flows (external/progress advance this way)
@@ -628,10 +637,12 @@ async function submit() {
   }
   busy.value = true;
   const flowId = step.value.flow_id;
+  const seq = stepSeq;
   try {
     const nextStep = await api.submitSetupFlow(flowId, values);
-    // the dialog may have been closed (or a new flow started) while awaiting
-    if (!open.value || step.value?.flow_id !== flowId) return;
+    // the dialog may have been closed, a new flow started, or a pushed update
+    // already advanced us past this step while the request ran
+    if (!open.value || seq !== stepSeq) return;
     applyStep(nextStep);
   } catch (err) {
     toast.error(String(err));
@@ -680,14 +691,15 @@ function reconcileFlow() {
   // re-fetch the current step; if the flow is gone server-side, end the dialog neutrally
   if (!open.value || !step.value || isTerminal.value) return;
   const flowId = step.value.flow_id;
+  const seq = stepSeq;
   api
     .getSetupFlow(flowId)
     .then((current) => {
-      if (!open.value || step.value?.flow_id !== flowId) return;
+      if (!open.value || seq !== stepSeq) return;
       applyStep(current);
     })
     .catch(() => {
-      if (!open.value || step.value?.flow_id !== flowId) return;
+      if (!open.value || seq !== stepSeq) return;
       cleanupFlow();
       applyStep({
         flow_id: flowId,
@@ -736,6 +748,8 @@ function close(sendAbort = true) {
   open.value = false;
   store.dialogActive = false;
   cleanupFlow();
+  // invalidate any in-flight request so it can't apply a step onto a relaunch
+  stepSeq++;
   step.value = null;
   launch.value = null;
   formEntries.value = [];
