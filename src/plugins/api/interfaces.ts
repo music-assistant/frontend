@@ -1061,6 +1061,11 @@ export interface PlayerQueue {
   overlay_volume: number;
   current_index?: number;
   index_in_buffer?: number;
+  // ended: whether the queue played all the way to its end and is waiting to be restarted
+  // (server-derived, read-only). The position stays on the last item, so this flag is what
+  // tells a finished queue apart from one that is merely stopped on that item. Pressing play
+  // on an ended queue starts it over from the beginning.
+  ended: boolean;
   elapsed_time: number;
   /**
    * UTC timestamp (seconds since epoch) when `elapsed_time` was last updated.

@@ -76,6 +76,7 @@
     "queue_clear": "Clear queue",
     "queue_delete": "Delete item",
     "queue_empty": "No items in the queue",
+    "queue_ended": "Playback finished",
     "queue_move_down": "Move down",
     "queue_move_up": "Move up",
     "queue_next_items": "Next items",
