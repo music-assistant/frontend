@@ -359,8 +359,9 @@ const formRef = ref<HTMLFormElement | null>(null);
 
 // monotonically increasing launch token; guards async step application
 let launchSeq = 0;
-// bumped on every applied step; guards a late response from overwriting a newer
-// step that a push update already applied (flow_id alone never changes mid-flow)
+// bumped whenever the dialog moves to another step; guards a late response from
+// overwriting a newer step that a push update already applied (flow_id alone
+// never changes mid-flow, so it can't be used for that)
 let stepSeq = 0;
 let completionNotified = false;
 
@@ -552,7 +553,11 @@ function startFlow(evt: SetupFlowDialogEvent): Promise<SetupFlowStep> {
 function applyStep(newStep: SetupFlowStep) {
   const prevFlowId = step.value?.flow_id;
   const prevStepId = step.value?.step_id;
-  stepSeq++;
+  // only a real step change invalidates in-flight requests: the same step being
+  // re-served (reconcile, validation errors) must not discard their responses
+  if (prevFlowId !== newStep.flow_id || prevStepId !== newStep.step_id) {
+    stepSeq++;
+  }
   step.value = newStep;
 
   // subscribe to push updates for non-terminal flows (external/progress advance this way)
