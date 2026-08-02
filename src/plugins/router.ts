@@ -324,6 +324,15 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
           },
+          {
+            path: ":provider/collection/:itemId",
+            name: "collection",
+            component: () =>
+              import(
+                /* webpackChunkName: "collection" */ "@/views/CollectionDetails.vue"
+              ),
+            props: true,
+          },
         ],
       },
       {

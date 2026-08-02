@@ -225,6 +225,18 @@
               "
               v-model="dsp.filters[selectedStage] as HighLowPassFilter"
             />
+            <DSPStereoWidth
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.STEREO_WIDTH
+              "
+              v-model="dsp.filters[selectedStage] as StereoWidthFilter"
+            />
+            <DSPCrossfeed
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CROSSFEED
+              "
+              v-model="dsp.filters[selectedStage] as CrossfeedFilter"
+            />
           </v-card>
         </v-col>
       </v-row>
@@ -302,6 +314,8 @@ import {
   type GainFilter,
   type BalanceFilter,
   type TransposeFilter,
+  type StereoWidthFilter,
+  type CrossfeedFilter,
   ParametricEQFilter,
   ToneControlFilter,
   type SafetyLimiterFilter,
@@ -319,6 +333,8 @@ import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
 import DSPSafetyLimiter from "@/components/dsp/DSPSafetyLimiter.vue";
 import DSPCompressor from "@/components/dsp/DSPCompressor.vue";
 import DSPHighLowPass from "@/components/dsp/DSPHighLowPass.vue";
+import DSPStereoWidth from "@/components/dsp/DSPStereoWidth.vue";
+import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
 import { COMPRESSOR_PRESETS } from "@/components/dsp/compressorPresets";
 import { DEFAULT_HIGH_PASS_FREQUENCY } from "@/components/dsp/highLowPass";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
@@ -478,6 +494,21 @@ const addFilter = () => {
         mode: HighLowPassMode.HIGH_PASS,
         frequency: DEFAULT_HIGH_PASS_FREQUENCY,
         slope: 12,
+      };
+      break;
+    case DSPFilterType.STEREO_WIDTH:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.STEREO_WIDTH,
+        width: 1,
+      };
+      break;
+    case DSPFilterType.CROSSFEED:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CROSSFEED,
+        strength: 0.2,
+        soundstage: 0.5,
       };
       break;
     default:
