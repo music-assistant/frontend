@@ -325,7 +325,7 @@
                     class="mb-4"
                   />
                   <p class="text-h6 mb-2">
-                    {{ $t("login.reconnecting", "Connection Lost") }}
+                    {{ $t("login.reconnecting", "Reconnecting") }}
                   </p>
                   <p class="text-body-2 text-medium-emphasis">
                     {{
@@ -1392,7 +1392,7 @@ const autoConnect = async () => {
         console.error("[Login] Ingress authentication failed");
         connectionError.value = t(
           "login.error_ingress_failed",
-          "Failed to authenticate via Home Assistant Ingress",
+          "Couldn't sign in through Home Assistant",
         );
         step.value = "error";
         return;
@@ -1935,13 +1935,13 @@ const handleAuthenticationError = (error: unknown) => {
   ) {
     errorMessage = t(
       "login.error_invalid_credentials",
-      "Invalid username or password. Please try again.",
+      "Couldn't sign you in. Please check your username and password.",
     );
   } else if (errorMessage.includes("Authentication required")) {
     // This happens when subsequent API calls fail due to auth issues
     errorMessage = t(
       "login.error_invalid_credentials",
-      "Invalid username or password. Please try again.",
+      "Couldn't sign you in. Please check your username and password.",
     );
   }
 
