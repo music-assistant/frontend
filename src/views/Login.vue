@@ -292,10 +292,22 @@
                     >mdi-alert-circle</v-icon
                   >
                   <p class="text-h6 mb-2">
-                    {{ $t("login.connection_failed", "Connection Failed") }}
+                    {{
+                      connectionErrorTitle ??
+                      $t("login.connection_failed", "Connection Failed")
+                    }}
                   </p>
-                  <p class="text-body-2 text-medium-emphasis">
+                  <p
+                    v-if="connectionError"
+                    class="text-body-2 text-medium-emphasis"
+                  >
                     {{ connectionError }}
+                  </p>
+                  <p
+                    v-if="connectionErrorDetail"
+                    class="text-caption text-medium-emphasis mt-2"
+                  >
+                    {{ connectionErrorDetail }}
                   </p>
                 </div>
                 <v-btn color="primary" block rounded="lg" @click="retry">
@@ -550,6 +562,10 @@ const showQrScanner = ref(false);
 const qrScannerError = ref<string | null>(null);
 const isConnecting = ref(false);
 const connectionError = ref<string | null>(null);
+// Overrides the error step's headline when the failure isn't a connection failure.
+const connectionErrorTitle = ref<string | null>(null);
+// Verbatim server-supplied reason shown under connectionError; not localized.
+const connectionErrorDetail = ref<string | null>(null);
 const connectionStatusMessage = ref("");
 const isRemoteConnection = ref(false);
 const connectedServerName = ref<string | null>(null);
@@ -691,10 +707,16 @@ const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
 /**
  * Try to authenticate with a guest code (exchange for JWT)
  * This is the new short code system for party guest access
+ *
+ * The `error` of a rejected exchange is the server's plain-English reason
+ * (rate limited, invalid or expired code); callers surface it as detail
+ * alongside their own localized message.
  */
-const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
+const tryGuestCodeAuth = async (
+  code: string,
+): Promise<{ authenticated: boolean; error?: string }> => {
   if (!code) {
-    return false;
+    return { authenticated: false };
   }
 
   try {
@@ -713,7 +735,7 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
 
     if (!result.success || !result.access_token) {
       console.error("[Login] Guest code exchange failed:", result.error);
-      return false;
+      return { authenticated: false, error: result.error };
     }
 
     authManager.setToken(result.access_token);
@@ -726,11 +748,14 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
       token: result.access_token,
       user: authResult.user,
     });
-    return true;
+    return { authenticated: true };
   } catch (error) {
     console.error("[Login] Guest code authentication failed:", error);
     authManager.clearGuestSession();
-    return false;
+    return {
+      authenticated: false,
+      error: error instanceof Error ? error.message : undefined,
+    };
   }
 };
 
@@ -743,7 +768,7 @@ const completeDashboardAuth = async (
   rawPath: string | null,
 ): Promise<boolean> => {
   const path = sanitizeDashboardViewerPath(rawPath);
-  if (!(await tryGuestCodeAuth(dashboardCode))) {
+  if (!(await tryGuestCodeAuth(dashboardCode)).authenticated) {
     return false;
   }
 
@@ -867,17 +892,22 @@ const tryPendingGuestAuth = async (): Promise<PendingGuestAuthResult> => {
     return "authenticated";
   }
 
-  if (await tryGuestCodeAuth(code)) {
+  const codeAuth = await tryGuestCodeAuth(code);
+  if (codeAuth.authenticated) {
     clearPendingGuestAuth();
     return "authenticated";
   }
 
   clearPendingGuestAuth();
   authManager.clearGuestSession();
-  connectionError.value = t(
+  // The code was rejected, not the connection: headline the join failure and
+  // let the server's reason stand as the only detail.
+  connectionErrorTitle.value = t(
     "login.error_party_auth_failed",
-    "Failed to join party. The code may have expired.",
+    "Couldn't join the party",
   );
+  connectionError.value = null;
+  connectionErrorDetail.value = codeAuth.error ?? null;
   step.value = "error";
   return "failed";
 };
@@ -1265,10 +1295,11 @@ const autoConnect = async () => {
         }
 
         clearPendingGuestAuth();
-        connectionError.value = t(
+        connectionErrorTitle.value = t(
           "login.error_party_auth_failed",
-          "Failed to join party. The code may have expired.",
+          "Couldn't join the party",
         );
+        connectionError.value = null;
         step.value = "error";
         return;
       } catch (error) {
@@ -1658,6 +1689,8 @@ const setRemoteIdFromString = (value: string) => {
 const performLocalConnect = async (address: string) => {
   isConnecting.value = true;
   connectionError.value = null;
+  connectionErrorTitle.value = null;
+  connectionErrorDetail.value = null;
   isRemoteConnection.value = false;
   step.value = "connecting";
   connectionStatusMessage.value = t(
@@ -1735,6 +1768,8 @@ const connectToRemote = async () => {
 
   isConnecting.value = true;
   connectionError.value = null;
+  connectionErrorTitle.value = null;
+  connectionErrorDetail.value = null;
   isRemoteConnection.value = true;
   step.value = "connecting";
   connectionStatusMessage.value = t(
@@ -1970,6 +2005,8 @@ const cancelConnection = () => {
 
 const retry = () => {
   connectionError.value = null;
+  connectionErrorTitle.value = null;
+  connectionErrorDetail.value = null;
   remoteConnectionManager.disconnect();
   api.disconnect();
   step.value = "select-mode";

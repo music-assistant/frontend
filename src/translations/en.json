@@ -1111,6 +1111,7 @@
         "error_unknown": "Unknown error occurred",
         "error_login_failed": "Login failed. Please check your credentials.",
         "error_oauth_failed": "Failed to authenticate with Home Assistant.",
+        "error_party_auth_failed": "Couldn't join the party",
         "scan_qr": "Scan QR",
         "scan_qr_code": "Scan QR Code",
         "scan_qr_hint": "Point your camera at the QR code shown in your Music Assistant server settings.",
