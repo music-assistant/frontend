@@ -4,11 +4,13 @@ import {
   DSPFilterType,
   type BalanceFilter,
   type ConvolutionFilter,
+  type CrossfeedFilter,
   type DSPConfig,
   type DSPFilter,
   type GainFilter,
   type ParametricEQBand,
   type ParametricEQFilter,
+  type StereoWidthFilter,
   type ToneControlFilter,
   type TransposeFilter,
 } from "@/plugins/api/interfaces";
@@ -87,6 +89,18 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
   ) {
     return areConvolutionFiltersEqual(left, right);
   }
+  if (
+    left.type === DSPFilterType.STEREO_WIDTH &&
+    right.type === DSPFilterType.STEREO_WIDTH
+  ) {
+    return areStereoWidthFiltersEqual(left, right);
+  }
+  if (
+    left.type === DSPFilterType.CROSSFEED &&
+    right.type === DSPFilterType.CROSSFEED
+  ) {
+    return areCrossfeedFiltersEqual(left, right);
+  }
   return false;
 }
 
@@ -138,6 +152,22 @@ function areTransposeFiltersEqual(
   right: TransposeFilter,
 ): boolean {
   return left.semitones === right.semitones;
+}
+
+function areStereoWidthFiltersEqual(
+  left: StereoWidthFilter,
+  right: StereoWidthFilter,
+): boolean {
+  return left.width === right.width;
+}
+
+function areCrossfeedFiltersEqual(
+  left: CrossfeedFilter,
+  right: CrossfeedFilter,
+): boolean {
+  return (
+    left.strength === right.strength && left.soundstage === right.soundstage
+  );
 }
 
 function areParametricEqBandsEqual(

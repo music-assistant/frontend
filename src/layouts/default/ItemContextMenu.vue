@@ -265,6 +265,7 @@ import {
   PlayCircle,
   PlusCircle,
   RefreshCw,
+  RotateCcw,
   SkipForward,
   Sparkles,
   Trash2,
@@ -784,34 +785,57 @@ export const getContextMenuItems = async function (
 
   if (
     items.length === 1 &&
-    "fully_played" in items[0] &&
-    "resume_position_ms" in items[0]
+    "fully_played" in firstItem &&
+    "resume_position_ms" in firstItem
   ) {
     // mark unplayed
-    if (items[0].fully_played || items[0].resume_position_ms) {
+    if (firstItem.fully_played || firstItem.resume_position_ms) {
       contextMenuItems.push({
         label: "mark_unplayed",
         icon: History,
         action: async () => {
-          await api.markItemUnPlayed(items[0]);
-          (items[0] as PodcastEpisode).fully_played = false;
+          await api.markItemUnPlayed(firstItem);
+          firstItem.fully_played = false;
+          firstItem.resume_position_ms = 0;
         },
       });
+      // play from beginning (podcast episode with saved progress)
+      if (firstItem.media_type === MediaType.PODCAST_EPISODE) {
+        contextMenuItems.push({
+          label: "play_from_beginning",
+          icon: RotateCcw,
+          action: () => {
+            api.playMedia(
+              firstItem.uri,
+              QueueOption.PLAY,
+              undefined,
+              undefined,
+              undefined,
+              true,
+            );
+          },
+          disabled: !store.activePlayer,
+        });
+      }
     } else {
       // mark played
       contextMenuItems.push({
         label: "mark_played",
         icon: History,
         action: async () => {
-          await api.markItemPlayed(items[0], true);
-          (items[0] as PodcastEpisode).fully_played = true;
+          await api.markItemPlayed(firstItem, true);
+          firstItem.fully_played = true;
         },
       });
     }
   }
 
   // update metadata
-  if (items.length === 1 && items[0] == parentItem) {
+  if (
+    items.length === 1 &&
+    items[0] == parentItem &&
+    items[0].media_type !== MediaType.COLLECTION
+  ) {
     contextMenuItems.push({
       label: "update_metadata",
       labelArgs: [],
@@ -870,6 +894,7 @@ export const getContextMenuItems = async function (
   // refresh item
   if (
     items.length === 1 &&
+    items[0].media_type !== MediaType.COLLECTION &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
   ) {
     contextMenuItems.push({
@@ -995,7 +1020,10 @@ export const getContextMenuItems = async function (
   // link to genre (library items only, non-genre)
   if (
     items.every(
-      (i) => i.media_type !== MediaType.GENRE && i.provider === "library",
+      (i) =>
+        i.media_type !== MediaType.GENRE &&
+        i.media_type !== MediaType.COLLECTION &&
+        i.provider === "library",
     )
   ) {
     contextMenuItems.push({

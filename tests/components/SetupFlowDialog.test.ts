@@ -18,6 +18,7 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
       state: {
         value: "authenticated",
       },
+      submitSetupFlow: vi.fn(),
       subscribeSetupFlow: vi.fn(),
     },
     eventbusMock: {
@@ -112,6 +113,73 @@ describe("SetupFlowDialog", () => {
       expect(onFlowEnded).toHaveBeenCalledOnce();
     },
   );
+
+  it("keeps the pushed step when a stale submit response lands after it", async () => {
+    apiMock.reconfigureProvider.mockResolvedValue(formStep());
+    let resolveSubmit: (step: SetupFlowStep) => void = () => {};
+    apiMock.submitSetupFlow.mockReturnValue(
+      new Promise<SetupFlowStep>((resolve) => {
+        resolveSubmit = resolve;
+      }),
+    );
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({
+      kind: "reconfigure",
+      instanceId: "spotify--test",
+      onFlowEnded: vi.fn(),
+    });
+    await flushPromises();
+
+    const pushStep = apiMock.subscribeSetupFlow.mock.calls[0][1] as (
+      step: SetupFlowStep,
+    ) => void;
+    await wrapper.find("form").trigger("submit");
+
+    // the server pushes the follow-up step before the submit call comes back
+    pushStep(progressStep("pushed"));
+    await flushPromises();
+    resolveSubmit(progressStep("submitted"));
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("pushed");
+    expect(wrapper.text()).not.toContain("submitted");
+  });
+
+  it("still applies the submit response when the same step is re-served", async () => {
+    apiMock.reconfigureProvider.mockResolvedValue(formStep());
+    let resolveSubmit: (step: SetupFlowStep) => void = () => {};
+    apiMock.submitSetupFlow.mockReturnValue(
+      new Promise<SetupFlowStep>((resolve) => {
+        resolveSubmit = resolve;
+      }),
+    );
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({
+      kind: "reconfigure",
+      instanceId: "spotify--test",
+      onFlowEnded: vi.fn(),
+    });
+    await flushPromises();
+
+    const pushStep = apiMock.subscribeSetupFlow.mock.calls[0][1] as (
+      step: SetupFlowStep,
+    ) => void;
+    await wrapper.find("form").trigger("submit");
+
+    // a reconcile re-serving the current step must not count as moving on
+    pushStep(formStep());
+    await flushPromises();
+    resolveSubmit(progressStep("submitted"));
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("submitted");
+  });
 });
 
 function terminalStep(type: FlowStepType): SetupFlowStep {
@@ -121,5 +189,26 @@ function terminalStep(type: FlowStepType): SetupFlowStep {
     flow_id: "flow-1",
     step_id: type,
     type,
+  };
+}
+
+function formStep(): SetupFlowStep {
+  return {
+    entries: [],
+    errors: {},
+    flow_id: "flow-1",
+    step_id: "form",
+    type: FlowStepType.FORM,
+  };
+}
+
+function progressStep(progressText: string): SetupFlowStep {
+  return {
+    entries: [],
+    errors: {},
+    flow_id: "flow-1",
+    progress_text: progressText,
+    step_id: progressText,
+    type: FlowStepType.PROGRESS,
   };
 }
