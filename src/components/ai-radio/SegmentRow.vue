@@ -74,7 +74,7 @@
         variant="ghost-icon"
         size="icon-sm"
         class="shrink-0"
-        :aria-label="$t('open')"
+        :aria-label="expanded ? $t('show_less') : $t('show_more')"
         @click="expanded = !expanded"
       >
         <ChevronDown

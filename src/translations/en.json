@@ -504,6 +504,7 @@
                 "right": "Right"
             }
         },
+        "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "genre_management": "Genre Management",
         "genre_management_description": "Manage default genres and restore genre defaults",
@@ -787,6 +788,7 @@
     "enter_name": "Enter a new (custom) name",
     "image_url": "Input the URL to an image or icon (optional)",
     "invalid_input": "The input was invalid",
+    "error_generic": "Something went wrong. Please try again.",
     "new_playlist": "New playlist",
     "create_playlist_on": "Create new playlist on {0}",
     "view": {
@@ -1022,6 +1024,7 @@
         "manage_tokens": "Manage access tokens",
         "token_created": "Token created successfully",
         "token_create_failed": "Failed to create token. Please try again.",
+        "tokens_load_failed": "Failed to load access tokens",
         "user_management": "User management",
         "users": "Users",
         "create_user": "Create user",
@@ -1043,6 +1046,7 @@
         "user_disable_failed": "Failed to disable user",
         "user_enabled": "User enabled successfully",
         "user_enable_failed": "Failed to enable user",
+        "users_load_failed": "Failed to load users",
         "password_optional_hint": "Leave blank to keep current password",
         "confirm_disable_user": "Are you sure you want to disable this user?",
         "confirm_delete_user": "Are you sure you want to delete this user? This action cannot be undone.",
