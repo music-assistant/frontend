@@ -25,9 +25,15 @@ import { $t } from "@/plugins/i18n";
 import { LoaderCircle } from "@lucide/vue";
 import { onMounted, ref } from "vue";
 
+// The status region announces itself through aria-live, so moving focus is only
+// appropriate when this client just triggered the action it reports on.
+const props = withDefaults(defineProps<{ autofocus?: boolean }>(), {
+  autofocus: false,
+});
+
 const statusElement = ref<HTMLElement | null>(null);
 
 onMounted(() => {
-  statusElement.value?.focus({ preventScroll: true });
+  if (props.autofocus) statusElement.value?.focus({ preventScroll: true });
 });
 </script>
