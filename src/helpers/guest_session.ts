@@ -20,7 +20,9 @@ const GUEST_SESSION_KINDS: readonly GuestSessionKind[] = [
  *
  * Deliberately not cleared by clearGuestSessionStorage: the marker is written
  * while the dead session is being torn down and has to outlive it, so the login
- * screen can explain what happened instead of showing a sign-in form.
+ * screen can explain what happened instead of showing a sign-in form. It must
+ * survive the remount that follows a failed reconnect, as well as an accidental
+ * reload of the screen itself.
  *
  * :param kind: The kind of guest session that ended.
  */

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   clearGuestSession: vi.fn(),
   connectRemote: vi.fn(),
   disconnectRemote: vi.fn(),
+  endRejectedGuestSession: vi.fn(),
   getCurrentUserInfo: vi.fn(),
   getPersistentToken: vi.fn(),
   getToken: vi.fn(),
@@ -49,6 +50,7 @@ vi.mock("@/plugins/auth", () => ({
   authManager: {
     clearAuth: mocks.clearAuth,
     clearGuestSession: mocks.clearGuestSession,
+    endRejectedGuestSession: mocks.endRejectedGuestSession,
     getPersistentToken: mocks.getPersistentToken,
     getToken: mocks.getToken,
     guestSessionKind: mocks.guestSessionKind,
@@ -244,6 +246,17 @@ beforeEach(() => {
   mocks.guestSessionKind.mockImplementation(() =>
     sessionStorage.getItem("ma_guest_access_token") ? "party" : null,
   );
+  mocks.endRejectedGuestSession.mockImplementation(() => {
+    const kind = mocks.guestSessionKind();
+    if (!kind) return { outcome: "no-guest-session" };
+    mocks.clearGuestSession();
+    if (mocks.getToken()) {
+      mocks.returnToFullApp();
+      return { outcome: "own-session-restored" };
+    }
+    sessionStorage.setItem("ma_guest_session_ended", kind);
+    return { outcome: "ended", kind };
+  });
   mocks.getToken.mockImplementation(
     () =>
       sessionStorage.getItem("ma_guest_access_token") ||

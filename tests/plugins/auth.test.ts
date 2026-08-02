@@ -157,6 +157,63 @@ describe("AuthManager guest sessions", () => {
     expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
     expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
   });
+
+  it("restores the saved regular token when a dashboard viewer session is cleared", () => {
+    const regularToken = createToken("regular-token", "admin");
+    const dashboardToken = createToken("dashboard-token", "dashboard_viewer");
+    localStorage.setItem("ma_access_token", regularToken);
+    const authManager = new AuthManager();
+    authManager.setToken(dashboardToken);
+
+    authManager.clearGuestSession();
+
+    expect(authManager.getToken()).toBe(regularToken);
+    expect(authManager.isDashboardViewer()).toBe(false);
+    expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
+  });
+
+  describe("endRejectedGuestSession", () => {
+    it("reports no guest session and writes no marker for a regular session", () => {
+      const authManager = new AuthManager();
+      authManager.setToken(createToken("regular-token", "admin"));
+
+      expect(authManager.endRejectedGuestSession()).toEqual({
+        outcome: "no-guest-session",
+      });
+      expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    });
+
+    it("restores the device's own session and writes no marker when one is saved", () => {
+      const regularToken = createToken("regular-token", "admin");
+      const guestToken = createToken("guest-token", "party_guest");
+      localStorage.setItem("ma_access_token", regularToken);
+      const authManager = new AuthManager();
+      authManager.setToken(guestToken);
+      const reloadSpy = vi
+        .spyOn(window.location, "reload")
+        .mockImplementation(() => {});
+
+      const result = authManager.endRejectedGuestSession();
+
+      expect(result).toEqual({ outcome: "own-session-restored" });
+      expect(reloadSpy).toHaveBeenCalledOnce();
+      expect(authManager.getToken()).toBe(regularToken);
+      expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+
+      reloadSpy.mockRestore();
+    });
+
+    it("records the ended kind when no regular session is saved", () => {
+      const guestToken = createToken("guest-token", "party_guest");
+      const authManager = new AuthManager();
+      authManager.setToken(guestToken);
+
+      const result = authManager.endRejectedGuestSession();
+
+      expect(result).toEqual({ outcome: "ended", kind: "party" });
+      expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("party");
+    });
+  });
 });
 
 function createToken(jti: string, username: string): string {

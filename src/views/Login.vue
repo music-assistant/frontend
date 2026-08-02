@@ -454,7 +454,6 @@ import {
   type GuestSessionKind,
   PENDING_JOIN_CODE_STORAGE_KEY,
   PENDING_JOIN_TYPE_STORAGE_KEY,
-  setGuestSessionEnded,
 } from "@/helpers/guest_session";
 import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
@@ -781,22 +780,17 @@ const tryStoredTokenAuth = async (
   } catch {
     if (token) return "failed";
 
-    const endedKind = authManager.guestSessionKind();
-    if (!endedKind) {
-      authManager.clearAuth();
-      return "failed";
+    const ended = authManager.endRejectedGuestSession();
+    switch (ended.outcome) {
+      case "no-guest-session":
+        authManager.clearAuth();
+        return "failed";
+      case "own-session-restored":
+        return "failed";
+      case "ended":
+        showGuestSessionEnded(ended.kind);
+        return "guest-session-ended";
     }
-
-    // Clearing restores this device's own session, if it has one; that takes
-    // precedence over explaining the guest session, as it can still sign in.
-    authManager.clearGuestSession();
-    if (authManager.getToken()) {
-      authManager.returnToFullApp();
-      return "failed";
-    }
-
-    showGuestSessionEnded(endedKind);
-    return "guest-session-ended";
   }
 };
 
@@ -891,13 +885,9 @@ const completeDashboardAuth = async (
 /**
  * Show the terminal screen for a guest session the server no longer accepts.
  *
- * The marker is persisted so the screen survives the remount that follows a
- * failed reconnect, and an accidental reload of the screen itself.
- *
  * :param kind: The kind of guest session that ended.
  */
 function showGuestSessionEnded(kind: GuestSessionKind): void {
-  setGuestSessionEnded(kind);
   guestSessionEndedKind.value = kind;
   step.value = "guest-ended";
 }
@@ -910,8 +900,7 @@ function showGuestSessionEnded(kind: GuestSessionKind): void {
 function restoreGuestSessionEnded(): boolean {
   const kind = getGuestSessionEnded();
   if (!kind) return false;
-  guestSessionEndedKind.value = kind;
-  step.value = "guest-ended";
+  showGuestSessionEnded(kind);
   return true;
 }
 

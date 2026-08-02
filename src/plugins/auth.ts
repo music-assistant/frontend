@@ -9,6 +9,7 @@ import {
   clearGuestSessionStorage,
   GUEST_TOKEN_STORAGE_KEY,
   type GuestSessionKind,
+  setGuestSessionEnded,
 } from "@/helpers/guest_session";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
 import type { User } from "./api/interfaces";
@@ -32,6 +33,12 @@ interface JWTClaims {
   token_name: string;
   is_long_lived: boolean;
 }
+
+/** What happened to a session-scoped session the server rejected. */
+export type EndedGuestSession =
+  | { outcome: "no-guest-session" }
+  | { outcome: "own-session-restored" }
+  | { outcome: "ended"; kind: GuestSessionKind };
 
 export class AuthManager {
   private token: string | null = null;
@@ -213,7 +220,7 @@ export class AuthManager {
    */
   clearGuestSession(): void {
     clearGuestSessionStorage();
-    if (!this.isGuestAccessSession()) return;
+    if (!this.guestSessionKind()) return;
 
     this.restorePersistentToken();
     store.currentUser = undefined;
@@ -228,6 +235,33 @@ export class AuthManager {
 
     this.clearGuestSession();
     this.returnToFullApp();
+  }
+
+  /**
+   * Tear down a session-scoped session the server no longer accepts.
+   *
+   * A session-scoped device (party/quiz guest, dashboard viewer) has no
+   * credentials to re-authenticate with, so this restores the device's own
+   * session if one is saved, or records what ended for the login screen to
+   * explain otherwise. When the outcome is "own-session-restored", the tab is
+   * already being reloaded into that session - the caller must not continue.
+   *
+   * :return: What happened: no guest session was active, the device's own
+   *     session was restored (and the tab is reloading), or the guest session
+   *     ended and its kind was recorded.
+   */
+  endRejectedGuestSession(): EndedGuestSession {
+    const kind = this.guestSessionKind();
+    if (!kind) return { outcome: "no-guest-session" };
+
+    this.clearGuestSession();
+    if (this.token) {
+      this.returnToFullApp();
+      return { outcome: "own-session-restored" };
+    }
+
+    setGuestSessionEnded(kind);
+    return { outcome: "ended", kind };
   }
 
   /**

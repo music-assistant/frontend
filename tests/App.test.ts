@@ -53,6 +53,7 @@ const {
   const authManagerMock = {
     bindPersistentToken: vi.fn(),
     clearGuestSession: vi.fn(),
+    endRejectedGuestSession: vi.fn(),
     getToken: vi.fn(),
     guestSessionKind: vi.fn(() => guestType.value),
     isDashboardViewer: vi.fn(() => false),
@@ -286,6 +287,17 @@ describe("App initialization", () => {
     if (routeState.current) routeState.current.meta = {};
     vi.stubGlobal("localStorage", createStorage());
     vi.stubGlobal("sessionStorage", createStorage());
+    authManagerMock.endRejectedGuestSession.mockImplementation(() => {
+      const kind = authManagerMock.guestSessionKind();
+      if (!kind) return { outcome: "no-guest-session" };
+      authManagerMock.clearGuestSession();
+      if (authManagerMock.getToken()) {
+        authManagerMock.returnToFullApp();
+        return { outcome: "own-session-restored" };
+      }
+      sessionStorage.setItem("ma_guest_session_ended", kind);
+      return { outcome: "ended", kind };
+    });
     localStorage.setItem("frontend.settings.theme", "dark");
     Object.defineProperty(window, "matchMedia", {
       configurable: true,

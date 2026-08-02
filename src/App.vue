@@ -41,10 +41,7 @@ import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
-import {
-  DASHBOARD_VIEWER_PATH_STORAGE_KEY,
-  setGuestSessionEnded,
-} from "@/helpers/guest_session";
+import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import {
   isMediaSessionDisabled,
   resetMediaSession,
@@ -121,26 +118,11 @@ const interactedHandler = function () {
 /**
  * Tear down a guest session that the server no longer accepts.
  *
- * A guest has no credentials to re-authenticate with, so record what ended for
- * the login screen to explain - unless this device also has its own session,
- * which takes over instead since it can still sign in.
- *
  * :return: True when the tab is being reloaded into the full application, so
  *     the caller must not continue.
  */
-const handleEndedGuestSession = (): boolean => {
-  const endedKind = authManager.guestSessionKind();
-  if (!endedKind) return false;
-
-  authManager.clearGuestSession();
-  if (authManager.getToken()) {
-    authManager.returnToFullApp();
-    return true;
-  }
-
-  setGuestSessionEnded(endedKind);
-  return false;
-};
+const handleEndedGuestSession = (): boolean =>
+  authManager.endRejectedGuestSession().outcome === "own-session-restored";
 
 const handleRemoteConnected = async (transport: ITransport) => {
   isConnected.value = true;
