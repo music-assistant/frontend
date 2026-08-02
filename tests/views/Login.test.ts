@@ -12,7 +12,9 @@ const mocks = vi.hoisted(() => ({
   getPersistentToken: vi.fn(),
   getToken: vi.fn(),
   getStoredRemoteId: vi.fn(),
+  guestSessionKind: vi.fn(),
   leaveGuestSession: vi.fn(),
+  returnToFullApp: vi.fn(),
   routerReplace: vi.fn(),
   sendCommand: vi.fn(),
   serverInfo: {
@@ -49,10 +51,12 @@ vi.mock("@/plugins/auth", () => ({
     clearGuestSession: mocks.clearGuestSession,
     getPersistentToken: mocks.getPersistentToken,
     getToken: mocks.getToken,
+    guestSessionKind: mocks.guestSessionKind,
     isDashboardViewer: () => false,
     isGuestAccessSession: () =>
       sessionStorage.getItem("ma_guest_access_token") !== null,
     leaveGuestSession: mocks.leaveGuestSession,
+    returnToFullApp: mocks.returnToFullApp,
     setToken: mocks.setToken,
   },
 }));
@@ -237,6 +241,9 @@ beforeEach(() => {
   mocks.leaveGuestSession.mockImplementation(() => {
     mocks.clearGuestSession();
   });
+  mocks.guestSessionKind.mockImplementation(() =>
+    sessionStorage.getItem("ma_guest_access_token") ? "party" : null,
+  );
   mocks.getToken.mockImplementation(
     () =>
       sessionStorage.getItem("ma_guest_access_token") ||
@@ -644,9 +651,11 @@ describe("guest join login", () => {
     mountLogin();
 
     await vi.waitFor(() => {
-      expect(mocks.leaveGuestSession).toHaveBeenCalledOnce();
+      expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
     });
 
+    expect(mocks.clearGuestSession).toHaveBeenCalledOnce();
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
     expect(mocks.connectRemote).toHaveBeenCalledWith(guestRemoteId, {
       remember: false,
     });
@@ -657,6 +666,105 @@ describe("guest join login", () => {
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
     expect(localStorage.getItem("mass_remote_id")).toBe(regularRemoteId);
+  });
+});
+
+describe("ended guest session", () => {
+  const stubExpiredGuestToken = (kind = "party") => {
+    setLocation("");
+    mockStandaloneFrontend();
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+    sessionStorage.setItem("ma_guest_access_token", "expired-guest-token");
+    sessionStorage.setItem(
+      "ma_guest_server_address",
+      "http://music-assistant.local:8095",
+    );
+    mocks.guestSessionKind.mockReturnValue(kind);
+    mocks.authenticateWithToken.mockRejectedValue(new Error("expired"));
+  };
+
+  it("explains an ended party session instead of asking for credentials", async () => {
+    stubExpiredGuestToken();
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Your party session has ended");
+    });
+    expect(wrapper.text()).toContain(
+      "Ask the host to share the party link or QR code again to rejoin.",
+    );
+    expect(wrapper.text()).toContain("Scan QR Code");
+    expect(wrapper.text()).not.toContain("Username");
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("party");
+    expect(mocks.clearGuestSession).toHaveBeenCalledOnce();
+    expect(mocks.returnToFullApp).not.toHaveBeenCalled();
+    expect(mocks.clearAuth).not.toHaveBeenCalled();
+  });
+
+  it("uses the quiz wording for an ended quiz session", async () => {
+    stubExpiredGuestToken("music_quiz");
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Your quiz session has ended");
+    });
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("music_quiz");
+  });
+
+  it("keeps explaining an ended session after a reload", async () => {
+    setLocation("");
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Your party session has ended");
+    });
+    expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
+    expect(mocks.connectRemote).not.toHaveBeenCalled();
+  });
+
+  it("drops the ended marker when the guest scans a fresh join code", async () => {
+    setLocation("?join=abcd1234");
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.emitted("authenticated")).toBeTruthy();
+    });
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
+      code: "ABCD1234",
+    });
+  });
+
+  it("hands the tab back to the full app when the guest leaves", async () => {
+    stubExpiredGuestToken();
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Your party session has ended");
+    });
+    const leaveButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Continue to Music Assistant");
+    await leaveButton!.trigger("click");
+
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
   });
 });
 

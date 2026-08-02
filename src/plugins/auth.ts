@@ -5,8 +5,10 @@
 
 import { clearGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
 import {
+  clearGuestSessionEnded,
   clearGuestSessionStorage,
   GUEST_TOKEN_STORAGE_KEY,
+  type GuestSessionKind,
 } from "@/helpers/guest_session";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
 import type { User } from "./api/interfaces";
@@ -176,6 +178,21 @@ export class AuthManager {
   }
 
   /**
+   * Return the kind of session-scoped access the current token grants.
+   *
+   * Read this before tearing down a guest session: the kind comes from the
+   * token claims, which clearGuestSession discards.
+   *
+   * :return: The guest session kind, or null for a regular user session.
+   */
+  guestSessionKind(): GuestSessionKind | null {
+    if (this.isPartyGuest()) return "party";
+    if (this.isMusicQuizGuest()) return "music_quiz";
+    if (this.isDashboardViewer()) return "dashboard";
+    return null;
+  }
+
+  /**
    * Set current user
    */
   setCurrentUser(user: User): void {
@@ -210,6 +227,13 @@ export class AuthManager {
     if (!this.isGuestAccessSession()) return;
 
     this.clearGuestSession();
+    this.returnToFullApp();
+  }
+
+  /**
+   * Reload the tab into the full application, dropping any guest join context.
+   */
+  returnToFullApp(): void {
     const returnUrl = new URL(window.location.href);
     returnUrl.searchParams.delete("join");
     returnUrl.hash = "/discover";
@@ -226,6 +250,7 @@ export class AuthManager {
     store.currentUser = undefined;
     clearGuestQuizAffinity();
     clearGuestSessionStorage();
+    clearGuestSessionEnded();
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
   }
