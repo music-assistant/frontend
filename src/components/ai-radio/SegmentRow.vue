@@ -75,6 +75,7 @@
         size="icon-sm"
         class="shrink-0"
         :aria-label="expanded ? $t('show_less') : $t('show_more')"
+        :aria-expanded="expanded"
         @click="expanded = !expanded"
       >
         <ChevronDown
