@@ -38,8 +38,8 @@
     "details": "Details",
     "enter_url": "Enter the URL you want to manually add to the database",
     "external_source_active": "External source active: {0}",
-    "goto_album": "Go to album {0}",
-    "goto_artist": "Go to artist {0}",
+    "goto_album": "View album {0}",
+    "goto_artist": "View artist {0}",
     "items_selected": "{0} item(s) selected",
     "items_total": "{0} total item(s)",
     "library": "Library",
@@ -76,6 +76,7 @@
     "queue_clear": "Clear queue",
     "queue_delete": "Delete item",
     "queue_empty": "No items in the queue",
+    "queue_ended": "Playback finished",
     "queue_move_down": "Move down",
     "queue_move_up": "Move up",
     "queue_next_items": "Next items",
@@ -259,6 +260,23 @@
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Set the concert pitch so A is tuned to 432 Hz"
             },
+            "stereo_width": {
+                "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound.",
+                "clip_hint": "Widening past Original can raise peaks and cause clipping. Consider adding a Limiter after this filter.",
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Original",
+                    "wide": "Wide"
+                }
+            },
+            "crossfeed": {
+                "help": "Makes headphone listening feel more natural by gently blending the left and right channels, similar to listening to speakers.",
+                "presets": {
+                    "low": "Low",
+                    "medium": "Medium",
+                    "high": "High"
+                }
+            },
             "parameter": {
                 "frequency": "Frequency",
                 "gain": "Gain",
@@ -270,7 +288,9 @@
                 "tone_control": "Tone Control",
                 "gain": "Gain",
                 "balance": "Balance",
-                "transpose": "Transpose"
+                "transpose": "Transpose",
+                "stereo_width": "Stereo Width",
+                "crossfeed": "Crossfeed"
             },
             "channels": {
                 "ALL": "All",
@@ -676,6 +696,7 @@
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
+        "collapse_collections": "Collapse collections",
         "explicit": "Explicit",
         "filter_library": "Toggle in-library\/favorite filter",
         "library": "Toggle in-library\/favorite",
@@ -798,6 +819,7 @@
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
+    "audiobooks_in_collection": "Audiobooks in this collection",
     "chapter": "Chapter",
     "chapters": "Chapters",
     "podcast": "Podcast",
@@ -811,6 +833,7 @@
     "global_search": "Global search",
     "podcast_episode": "Episode",
     "podcast_episodes": "Episodes",
+    "play_from_beginning": "Play from beginning",
     "play_from_here": "Play from here",
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",
@@ -1215,14 +1238,12 @@
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "clear_queue_on_dynamic_start": "Clear Queue on Dynamic Start",
                 "dynamic_batch_size": "Dynamic Batch Size",
                 "instructions": "Host and Program Instructions"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
                 "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order.",
-                "clear_queue_on_dynamic_start": "Replace whatever is in the queue when the show starts. Turn this off to append the show to the queue instead and keep the current track playing.",
                 "dynamic_batch_size": "How many tracks the host prepares at a time. Larger batches mean fewer pauses while the next segment is generated, but a longer wait before the show starts playing.",
                 "instructions": "Describes the host's personality and how segments should be written. This is sent to the AI with every segment."
             },
@@ -1923,6 +1944,7 @@
     "artist_all_tracks": "All tracks",
     "on_provider": "On {0}",
     "open_queue_settings": "Open queue settings",
+    "collection_no_audiobooks": "This collection does not hold any audiobooks.",
     "crossfade_enable": "Enable crossfade",
     "crossfade_disable": "Disable crossfade",
     "crossfade": "Crossfade",
@@ -1973,12 +1995,12 @@
         "120": "2 hours"
     },
     "shuffle_smart_active": "Smart shuffle is on. Click to turn it off.",
-    "goto_album_radio": "Go to Album Radio",
-    "goto_artist_radio": "Go to Artist Radio",
-    "goto_genre_radio": "Go to Genre Radio",
-    "goto_playlist_radio": "Go to Playlist Radio",
-    "goto_radio": "Go to Radio",
-    "goto_track_radio": "Go to Track Radio",
+    "goto_album_radio": "View album endless mix",
+    "goto_artist_radio": "View artist endless mix",
+    "goto_genre_radio": "View genre endless mix",
+    "goto_playlist_radio": "View playlist endless mix",
+    "goto_radio": "View endless mix",
+    "goto_track_radio": "View track endless mix",
     "autoplay_dynamic_title": "Autoplay is active",
     "autoplay_dynamic_lead": "Your queue is being dynamically filled based on your selection:",
     "autoplay_dynamic_desc": "Your queue is being dynamically filled based on your selection.",

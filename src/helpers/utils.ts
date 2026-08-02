@@ -25,7 +25,11 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import type {
+  Audiobook,
+  MediaCollection,
+  MediaItemPalette,
+} from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
@@ -200,6 +204,36 @@ export const getArtistsString = function (
       return x.name;
     })
     .join(" | ");
+};
+
+export const getAuthorsNarratorsArray = function (
+  authorsNarrators: Array<string | Artist>,
+) {
+  if (!authorsNarrators) return [];
+  const _authorsNarrators: string[] = [];
+  authorsNarrators.forEach((authorNarrator) => {
+    if (typeof authorNarrator === "string") {
+      _authorsNarrators.push(authorNarrator);
+    } else {
+      _authorsNarrators.push(authorNarrator.name);
+    }
+  });
+  return _authorsNarrators;
+};
+
+export const getAudiobookCollectionArtists = function (
+  collection: MediaCollection<Audiobook>,
+  selector: (book: Audiobook) => (string | Artist)[],
+): string[] {
+  const artists = new Set<string>();
+
+  collection.items.forEach((book) => {
+    getAuthorsNarratorsArray(selector(book)).forEach((name) =>
+      artists.add(name),
+    );
+  });
+
+  return [...artists];
 };
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
@@ -840,6 +874,18 @@ export const handleMediaItemClick = function (
   // TODO: revisit this once we have a proper podcast episode details view
   if (item.media_type == MediaType.PODCAST_EPISODE) {
     handlePlayBtnClick(item, posX, posY, parentItem, true);
+    return;
+  }
+
+  // open menu for collection items
+  if (item.media_type == MediaType.COLLECTION) {
+    router.push({
+      name: "collection",
+      params: {
+        itemId: item.item_id,
+        provider: item.provider,
+      },
+    });
     return;
   }
 

@@ -8,7 +8,7 @@ import type {
   AIRadioStationGeneral,
   AIRadioWebSearchMode,
 } from "@/plugins/api/interfaces";
-import { $t, i18n } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
 
 // Sentinel for "no selection" in shadcn Select components, which do not
 // allow SelectItem values to be empty strings.
@@ -68,10 +68,13 @@ export const relativeTimeFromIso = (
   if (Number.isNaN(thenMs)) return "";
   const diffSeconds = Math.round((thenMs - nowMs) / 1000);
   const absSeconds = Math.abs(diffSeconds);
-  const rtf = new Intl.RelativeTimeFormat(i18n.global.locale.value, {
-    numeric: "auto",
-    style: "narrow",
-  });
+  const rtf = new Intl.RelativeTimeFormat(
+    canonicalizeLocale(i18n.global.locale.value),
+    {
+      numeric: "auto",
+      style: "narrow",
+    },
+  );
   if (absSeconds < 60) return rtf.format(0, "second");
   if (absSeconds < 3600)
     return rtf.format(Math.trunc(diffSeconds / 60), "minute");
@@ -137,7 +140,6 @@ export interface ShowBasics {
   dynamicBatchSize: number;
   dynamicPollSeconds: number;
   dynamicPrefetchRemainingTracks: number;
-  clearQueueOnStart: boolean;
   general: AIRadioStationGeneral;
 }
 
@@ -497,7 +499,6 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
     dynamic_poll_seconds: draft.basics.dynamicPollSeconds,
     dynamic_prefetch_remaining_tracks:
       draft.basics.dynamicPrefetchRemainingTracks,
-    clear_queue_on_start: draft.basics.clearQueueOnStart,
     merge_section_id: mergeSectionId,
     general: draft.basics.general,
     sections,
@@ -639,7 +640,6 @@ export const decompileStation = (
     dynamicPollSeconds: station.dynamic_poll_seconds || 5,
     dynamicPrefetchRemainingTracks:
       station.dynamic_prefetch_remaining_tracks || 2,
-    clearQueueOnStart: station.clear_queue_on_start !== false,
     general: asGeneralDefaults(station.general),
   };
 

@@ -70,6 +70,17 @@
               <MediaItemThumb :item="item" size="calc(100%)" />
             </v-avatar>
           </div>
+          <div
+            v-else-if="
+              item.media_type && item.media_type == MediaType.COLLECTION
+            "
+          >
+            <MediaCollectionThumb
+              :item="item as MediaCollection<MediaItemType>"
+              size="calc(100%)"
+              style="max-height: 256px"
+            />
+          </div>
           <div v-else>
             <MediaItemThumb
               :item="item"
@@ -193,7 +204,9 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(author, authorindex) in item.authors"
+                  v-for="(author, authorindex) in getAuthorsNarratorsArray(
+                    item.authors,
+                  )"
                   :key="author"
                 >
                   <span style="color: accent">{{ author }}</span>
@@ -220,7 +233,9 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(narrator, narratorIndex) in item.narrators"
+                  v-for="(narrator, narratorIndex) in getAuthorsNarratorsArray(
+                    item.narrators,
+                  )"
                   :key="narrator"
                 >
                   <span style="color: accent">{{ narrator }}</span>
@@ -270,6 +285,58 @@
                 ></MarqueeText
               >
             </v-card-subtitle>
+
+            <!-- Audiobook Collection -->
+            <v-card-subtitle
+              v-if="collectionMediaType === MediaType.AUDIOBOOK"
+              class="title d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-edit"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(author, authorindex) in collectionArtists"
+                  :key="author"
+                >
+                  <span style="color: accent">{{ author }}</span>
+                  <span
+                    v-if="authorindex + 1 < collectionArtists.length"
+                    :key="authorindex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
+            </v-card-subtitle>
+            <v-card-subtitle
+              v-if="collectionMediaType === MediaType.AUDIOBOOK"
+              class="title d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-account-voice"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <span
+                  v-for="(narrator, narratorIndex) in collectionNarrators"
+                  :key="narrator"
+                >
+                  <span style="color: accent">{{ narrator }}</span>
+                  <span
+                    v-if="narratorIndex + 1 < collectionNarrators.length"
+                    :key="narratorIndex"
+                    style="color: accent"
+                    >{{ " / " }}</span
+                  >
+                </span>
+              </MarqueeText>
+            </v-card-subtitle>
           </div>
 
           <!-- play/info buttons -->
@@ -297,7 +364,10 @@
               @menu="playButtonClick(true)"
             />
 
-            <div class="flex items-center gap-2">
+            <div
+              v-if="item.media_type != MediaType.COLLECTION"
+              class="flex items-center gap-2"
+            >
               <!-- favorite (heart) icon -->
               <IconHeartFilled
                 v-if="item.favorite"
@@ -444,6 +514,8 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
+  getAuthorsNarratorsArray,
+  getAudiobookCollectionArtists,
   getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,
@@ -454,15 +526,24 @@ import {
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
+import {
+  getCollectionMediaTypeFromItemId,
+  getProviderIconDomain,
+} from "@/plugins/api/helpers";
 import type {
   Album,
   Artist,
+  Audiobook,
   Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
-import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  Track,
+  MediaCollection,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -475,6 +556,7 @@ import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
+import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
@@ -700,6 +782,30 @@ const deleteGenre = () => {
     navigateBack: true,
   });
 };
+
+const collectionMediaType = computed(() => {
+  if (compProps.item?.media_type != MediaType.COLLECTION)
+    return MediaType.UNKNOWN;
+  return getCollectionMediaTypeFromItemId(compProps.item.item_id);
+});
+
+const collectionArtists = computed(() => {
+  if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
+
+  return getAudiobookCollectionArtists(
+    compProps.item as MediaCollection<Audiobook>,
+    (book) => book.authors,
+  );
+});
+
+const collectionNarrators = computed(() => {
+  if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
+
+  return getAudiobookCollectionArtists(
+    compProps.item as MediaCollection<Audiobook>,
+    (book) => book.narrators,
+  );
+});
 </script>
 
 <style scoped>

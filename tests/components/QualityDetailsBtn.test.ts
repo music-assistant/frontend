@@ -175,6 +175,7 @@ function makeQueue(streamdetails: StreamDetails): PlayerQueue {
     smart_fades_active: false,
     overlay_enabled: false,
     overlay_volume: 100,
+    ended: false,
     elapsed_time: 0,
     elapsed_time_last_updated: 0,
     state: PlaybackState.PLAYING,
