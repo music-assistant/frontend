@@ -661,12 +661,16 @@ describe("guest join login", () => {
     localStorage.setItem("mass_remote_id", regularRemoteId);
     mocks.authenticateWithToken.mockRejectedValueOnce(new Error("expired"));
 
-    mountLogin();
+    const wrapper = mountLogin();
 
     await vi.waitFor(() => {
       expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
     });
+    await flushPromises();
 
+    // The reload is already under way, so nothing should replace it with a
+    // sign-in form the guest would see flash past.
+    expect(wrapper.text()).not.toContain("Username");
     expect(mocks.clearGuestSession).toHaveBeenCalledOnce();
     expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
     expect(mocks.connectRemote).toHaveBeenCalledWith(guestRemoteId, {

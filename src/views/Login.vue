@@ -752,13 +752,19 @@ const tryConnect = async (
   });
 };
 
-type StoredTokenAuthResult = "authenticated" | "failed" | "guest-session-ended";
+type StoredTokenAuthResult =
+  | "authenticated"
+  | "failed"
+  | "guest-session-ended"
+  | "reloading";
 
 /**
  * Try to authenticate with stored token after connection
  *
  * :param token: Token to use instead of the stored one; passing it also skips
  *     the cleanup of a rejected stored session.
+ * :return: The outcome; only "failed" leaves the caller anything to do, as
+ *     every other outcome has already taken over the tab.
  */
 const tryStoredTokenAuth = async (
   token?: string,
@@ -786,7 +792,7 @@ const tryStoredTokenAuth = async (
         authManager.clearAuth();
         return "failed";
       case "own-session-restored":
-        return "failed";
+        return "reloading";
       case "ended":
         showGuestSessionEnded(ended.kind);
         return "guest-session-ended";
@@ -1470,9 +1476,8 @@ const autoConnect = async () => {
             const storedTokenAuth = await tryStoredTokenAuth();
             if (storedTokenAuth === "authenticated") {
               console.info("[Login] Remote auto-login successful!");
-              return; // Success - App.vue will take over
             }
-            if (storedTokenAuth === "guest-session-ended") return;
+            if (storedTokenAuth !== "failed") return;
           }
         }
 
@@ -1539,10 +1544,7 @@ const autoConnect = async () => {
 
         if (storedToken) {
           const storedTokenAuth = await tryStoredTokenAuth();
-          if (storedTokenAuth === "authenticated") {
-            return; // Success - App.vue will take over
-          }
-          if (storedTokenAuth === "guest-session-ended") return;
+          if (storedTokenAuth !== "failed") return;
         }
       }
 
@@ -1583,10 +1585,7 @@ const autoConnect = async () => {
         }
 
         const storedTokenAuth = await tryStoredTokenAuth();
-        if (storedTokenAuth === "authenticated") {
-          return; // Success - App.vue will take over
-        }
-        if (storedTokenAuth === "guest-session-ended") return;
+        if (storedTokenAuth !== "failed") return;
       }
 
       // Token auth failed, show login form for this server
@@ -1636,10 +1635,7 @@ const autoConnect = async () => {
 
       if (await waitForApiConnection()) {
         const storedTokenAuth = await tryStoredTokenAuth();
-        if (storedTokenAuth === "authenticated") {
-          return; // Success - App.vue will take over
-        }
-        if (storedTokenAuth === "guest-session-ended") return;
+        if (storedTokenAuth !== "failed") return;
       }
 
       // Token auth failed, show login form
