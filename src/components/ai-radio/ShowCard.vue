@@ -88,7 +88,7 @@
             variant="ghost-icon"
             size="icon-sm"
             class="show-card__menu rounded-full bg-background/70 backdrop-blur-sm hover:bg-background/90"
-            :aria-label="$t('open')"
+            :aria-label="$t('more_options')"
             @click.stop
           >
             <MoreVertical class="h-4 w-4" />

@@ -234,8 +234,12 @@
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  :title="row.hidden ? $t('enable') : $t('disable')"
-                  :aria-label="row.hidden ? $t('enable') : $t('disable')"
+                  :title="
+                    row.hidden ? $t('settings.enable') : $t('settings.disable')
+                  "
+                  :aria-label="
+                    row.hidden ? $t('settings.enable') : $t('settings.disable')
+                  "
                   @click="toggleRow(row)"
                 >
                   <Eye v-if="!row.hidden" />

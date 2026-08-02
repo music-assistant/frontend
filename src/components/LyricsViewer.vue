@@ -2,7 +2,7 @@
   <div class="lyrics-container">
     <div v-if="loading || externalLoading" class="lyrics-loading">
       <Spinner class="size-6" />
-      <div>{{ $t("loading_lyrics") }}</div>
+      <div>{{ $t("lyrics_loading") }}</div>
     </div>
     <div v-else-if="!displayLines.length" class="lyrics-empty">
       {{ $t("no_lyrics_available") }}
