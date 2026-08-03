@@ -45,20 +45,19 @@ export function areDSPConfigsEqual(left: DSPConfig, right: DSPConfig): boolean {
   );
 }
 
-// Keyed by the filter type's string value rather than the enum so the filters
-// still waiting on their own branches are covered here too, and land with an
-// icon the moment their type exists.
+// The raw-string keys are filter types still waiting on their own branches, so
+// the record stays keyed by string until their enum members land.
 const filterIcons: Record<string, Component> = {
   [DSPFilterType.PARAMETRIC_EQ]: SlidersHorizontal,
   [DSPFilterType.TONE_CONTROL]: AudioWaveform,
   [DSPFilterType.GAIN]: Gauge,
   [DSPFilterType.BALANCE]: ArrowLeftRight,
+  [DSPFilterType.TRANSPOSE]: ArrowUpDown,
+  [DSPFilterType.STEREO_WIDTH]: Expand,
+  [DSPFilterType.CROSSFEED]: Blend,
   safety_limiter: ArrowDownToLine,
   compressor: ChevronsDownUp,
   convolution: Waves,
-  transpose: ArrowUpDown,
-  stereo_width: Expand,
-  crossfeed: Blend,
 };
 
 export function dspFilterIcon(filter: DSPFilter): Component {
