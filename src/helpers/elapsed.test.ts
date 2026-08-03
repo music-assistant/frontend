@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import computeElapsedTime from "./elapsed";
+import { computeElapsedTime } from "./elapsed";
 import { PlaybackState } from "../plugins/api/interfaces";
 
 describe("computeElapsedTime", () => {

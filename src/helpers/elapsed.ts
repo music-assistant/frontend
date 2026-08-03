@@ -36,5 +36,3 @@ export function computeElapsedTime(
 
   return elapsed_time + delta * playback_speed;
 }
-
-export default computeElapsedTime;
