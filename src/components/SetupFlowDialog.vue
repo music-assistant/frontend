@@ -311,6 +311,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
+import { serverNow } from "@/composables/useServerTime";
 import { api, ConnectionState } from "@/plugins/api";
 import {
   type ConfigEntry,
@@ -353,7 +354,8 @@ const launch = ref<SetupFlowDialogEvent | null>(null);
 const formEntries = ref<ConfigEntry[]>([]);
 const showPasswordValues = ref(false);
 const helpEntry = ref<ConfigEntry | undefined>(undefined);
-const now = ref(Date.now() / 1000);
+// on the server's clock, since the step's `expires_at` is a server timestamp
+const now = ref(serverNow());
 
 const formRef = ref<HTMLFormElement | null>(null);
 
@@ -503,10 +505,10 @@ watch(countdownRemaining, (remaining) => {
 });
 
 function startCountdown() {
-  now.value = Date.now() / 1000;
+  now.value = serverNow();
   if (!countdownTimer) {
     countdownTimer = setInterval(() => {
-      now.value = Date.now() / 1000;
+      now.value = serverNow();
     }, 1000);
   }
 }

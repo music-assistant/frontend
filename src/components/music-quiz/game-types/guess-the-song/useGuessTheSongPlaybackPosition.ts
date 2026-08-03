@@ -1,3 +1,4 @@
+import { serverNow } from "@/composables/useServerTime";
 import {
   onScopeDispose,
   ref,
@@ -57,7 +58,8 @@ export function useGuessTheSongPlaybackPosition(
       return;
     }
 
-    const elapsed = Math.max(0, Date.now() / 1000 - startedAt);
+    // `startedAt` is on the server's clock, so the position is measured against it too
+    const elapsed = Math.max(0, serverNow() - startedAt);
     const duration = toValue(options.duration);
     position.value =
       typeof duration === "number" && duration > 0

@@ -137,6 +137,7 @@
         "server_version": "Server version",
         "server_base_url": "Base URL",
         "server_as_addon": "Home Assistant add-on",
+        "server_clock_offset": "Clock offset (server vs this device)",
         "artists_in_library": "Artists in library",
         "albums_in_library": "Albums in library",
         "tracks_in_library": "Tracks in library",

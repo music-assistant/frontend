@@ -2,10 +2,20 @@ import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQui
 import { effectScope, nextTick, ref, type Ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Offset between the server clock and this device's, as useServerTime would estimate it.
+const { clockOffsetSeconds } = vi.hoisted(() => ({
+  clockOffsetSeconds: { value: 0 },
+}));
+
+vi.mock("@/composables/useServerTime", () => ({
+  serverNow: () => Date.now() / 1000 + clockOffsetSeconds.value,
+}));
+
 describe("useMusicQuizAnswerDeadline", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    clockOffsetSeconds.value = 0;
   });
 
   afterEach(() => {
@@ -48,6 +58,24 @@ describe("useMusicQuizAnswerDeadline", () => {
     expect(clock.remainingSeconds.value).toBeNull();
     expect(clock.remainingFraction.value).toBeNull();
     expect(clock.remainingLabel.value).toBe("");
+    scope.stop();
+  });
+
+  it("counts down on the server clock, not the device clock", () => {
+    // this device's clock runs 20s behind the server's, so an uncorrected countdown
+    // would show 50s left on a 30s deadline
+    clockOffsetSeconds.value = 20;
+    const active = ref(true);
+    const deadline = ref(Date.now() / 1000 + 50);
+    const duration = ref(30);
+    const { clock, scope } = createClock(active, deadline, duration);
+
+    expect(clock.remainingSeconds.value).toBe(30);
+    expect(clock.remainingFraction.value).toBe(1);
+
+    vi.advanceTimersByTime(30_000);
+
+    expect(clock.remainingSeconds.value).toBe(0);
     scope.stop();
   });
 
