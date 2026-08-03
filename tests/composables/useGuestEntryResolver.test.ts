@@ -254,6 +254,20 @@ describe("guest entry transitions", () => {
     expect(getRoutePath()).toBe("/guest/quiz");
   });
 
+  it("routes to Party once the Party provider appears", async () => {
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await expectState("inactive");
+
+    setProviders("party");
+    signalProvidersUpdated();
+
+    await expectState("party");
+    expect(routeMock.path).toBe("/guest/party");
+    expect(apiMock.sendCommand).not.toHaveBeenCalled();
+  });
+
   it("keeps a Party guest in Quiz context and returns to the next game", async () => {
     setProviders("party", "music_quiz");
     wrapper = mountResolver((state) => {
