@@ -862,6 +862,7 @@ describe("connection state changes", () => {
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain("Reconnecting");
     });
+    wrapper.unmount();
   });
 
   it("returns to the server picker when a reconnect fails", async () => {
@@ -879,6 +880,7 @@ describe("connection state changes", () => {
       expect(wrapper.text()).not.toContain("Reconnecting");
     });
     expect(wrapper.text()).toContain("Connect");
+    wrapper.unmount();
   });
 
   it("keeps explaining an ended guest session while the connection churns", async () => {
@@ -894,5 +896,6 @@ describe("connection state changes", () => {
 
     expect(wrapper.text()).toContain("Your party session has ended");
     expect(wrapper.text()).not.toContain("Reconnecting");
+    wrapper.unmount();
   });
 });
