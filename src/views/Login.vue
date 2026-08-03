@@ -315,6 +315,39 @@
                 </v-btn>
               </template>
 
+              <!-- Ended Guest Session -->
+              <template v-if="step === 'guest-ended'">
+                <div class="text-center py-6">
+                  <v-icon color="warning" size="64" class="mb-4"
+                    >mdi-account-clock</v-icon
+                  >
+                  <p class="text-h6 mb-2">{{ guestSessionEndedTitle }}</p>
+                  <p class="text-body-2 text-medium-emphasis">
+                    {{ guestSessionEndedMessage }}
+                  </p>
+                </div>
+                <v-btn
+                  v-if="guestSessionEndedKind !== 'dashboard'"
+                  color="primary"
+                  block
+                  rounded="lg"
+                  prepend-icon="mdi-qrcode-scan"
+                  @click="openQrScanner"
+                >
+                  {{ $t("login.scan_qr_code", "Scan QR Code") }}
+                </v-btn>
+                <v-btn
+                  variant="text"
+                  block
+                  class="mt-2"
+                  @click="dismissGuestSessionEnded"
+                >
+                  {{
+                    $t("login.continue_to_app", "Continue to Music Assistant")
+                  }}
+                </v-btn>
+              </template>
+
               <!-- Reconnecting State -->
               <template v-if="step === 'reconnecting'">
                 <div class="text-center py-6">
@@ -353,12 +386,7 @@
                 </v-card-title>
                 <v-card-text class="qr-scanner-content">
                   <p class="text-body-2 text-medium-emphasis mb-4">
-                    {{
-                      $t(
-                        "login.scan_qr_hint",
-                        "Point your camera at the QR code shown in your Music Assistant server settings.",
-                      )
-                    }}
+                    {{ scanQrHint }}
                   </p>
                   <div class="qr-scanner-wrapper">
                     <QrcodeStream
@@ -418,9 +446,12 @@ import type {
   User,
 } from "@/plugins/api/interfaces";
 import {
+  clearGuestSessionEnded,
   DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+  getGuestSessionEnded,
   GUEST_REMOTE_ID_STORAGE_KEY,
   GUEST_SERVER_ADDRESS_STORAGE_KEY,
+  type GuestSessionKind,
   PENDING_JOIN_CODE_STORAGE_KEY,
   PENDING_JOIN_TYPE_STORAGE_KEY,
 } from "@/helpers/guest_session";
@@ -545,8 +576,10 @@ type Step =
   | "login"
   | "connecting"
   | "reconnecting"
+  | "guest-ended"
   | "error";
 const step = ref<Step>("auto-connect");
+const guestSessionEndedKind = ref<GuestSessionKind | null>(null);
 const showLoginUI = ref(false);
 
 // Connection state
@@ -595,6 +628,51 @@ const getSubtitle = computed(() => {
     return t("login.establishing_connection", "Establishing connection...");
   }
   return t("login.subtitle", "Connect to your music server");
+});
+
+const guestSessionEndedTitle = computed(() => {
+  if (guestSessionEndedKind.value === "music_quiz") {
+    return t("login.guest_ended_quiz_title", "Your quiz session has ended");
+  }
+  if (guestSessionEndedKind.value === "dashboard") {
+    return t(
+      "login.guest_ended_dashboard_title",
+      "This dashboard session has ended",
+    );
+  }
+  return t("login.guest_ended_party_title", "Your party session has ended");
+});
+
+// A rejoining guest needs the host's join QR, not the server settings one.
+const scanQrHint = computed(() =>
+  step.value === "guest-ended"
+    ? t(
+        "login.scan_qr_hint_guest",
+        "Point your camera at the QR code the host is showing.",
+      )
+    : t(
+        "login.scan_qr_hint",
+        "Point your camera at the QR code shown in your Music Assistant server settings.",
+      ),
+);
+
+const guestSessionEndedMessage = computed(() => {
+  if (guestSessionEndedKind.value === "music_quiz") {
+    return t(
+      "login.guest_ended_quiz_message",
+      "Ask the host to share the quiz link or QR code again to rejoin.",
+    );
+  }
+  if (guestSessionEndedKind.value === "dashboard") {
+    return t(
+      "login.guest_ended_dashboard_message",
+      "Cast the dashboard again from Music Assistant to continue.",
+    );
+  }
+  return t(
+    "login.guest_ended_party_message",
+    "Ask the host to share the party link or QR code again to rejoin.",
+  );
 });
 
 /**
@@ -674,13 +752,26 @@ const tryConnect = async (
   });
 };
 
+type StoredTokenAuthResult =
+  | "authenticated"
+  | "failed"
+  | "guest-session-ended"
+  | "reloading";
+
 /**
  * Try to authenticate with stored token after connection
+ *
+ * :param token: Token to use instead of the stored one; passing it also skips
+ *     the cleanup of a rejected stored session.
+ * :return: The outcome; only "failed" leaves the caller anything to do, as
+ *     every other outcome has already taken over the tab.
  */
-const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
+const tryStoredTokenAuth = async (
+  token?: string,
+): Promise<StoredTokenAuthResult> => {
   const authToken = token || authManager.getToken();
   if (!authToken) {
-    return false;
+    return "failed";
   }
 
   try {
@@ -691,16 +782,21 @@ const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
 
     const result = await api.authenticateWithToken(authToken);
     emit("authenticated", { token: authToken, user: result.user });
-    return true;
+    return "authenticated";
   } catch {
-    if (!token) {
-      if (authManager.isGuestAccessSession()) {
-        authManager.leaveGuestSession();
-      } else {
+    if (token) return "failed";
+
+    const ended = authManager.endRejectedGuestSession();
+    switch (ended.outcome) {
+      case "no-guest-session":
         authManager.clearAuth();
-      }
+        return "failed";
+      case "own-session-restored":
+        return "reloading";
+      case "ended":
+        showGuestSessionEnded(ended.kind);
+        return "guest-session-ended";
     }
-    return false;
   }
 };
 
@@ -790,6 +886,34 @@ const completeDashboardAuth = async (
   );
 
   return true;
+};
+
+/**
+ * Show the terminal screen for a guest session the server no longer accepts.
+ *
+ * :param kind: The kind of guest session that ended.
+ */
+function showGuestSessionEnded(kind: GuestSessionKind): void {
+  guestSessionEndedKind.value = kind;
+  step.value = "guest-ended";
+}
+
+/**
+ * Show the ended-guest-session screen if a previous attempt recorded one.
+ *
+ * :return: True when the screen was shown.
+ */
+function restoreGuestSessionEnded(): boolean {
+  const kind = getGuestSessionEnded();
+  if (!kind) return false;
+  showGuestSessionEnded(kind);
+  return true;
+}
+
+const dismissGuestSessionEnded = () => {
+  clearGuestSessionEnded();
+  guestSessionEndedKind.value = null;
+  authManager.returnToFullApp();
 };
 
 type PendingGuestAuthResult = "none" | "authenticated" | "failed";
@@ -985,6 +1109,15 @@ const autoConnect = async () => {
   const urlJoinCode = urlParams.get("join");
   // Dashboard code: same short-code exchange as a guest join, but for a Chromecast dashboard session; carries its own destination route.
   const urlDashboardCode = urlParams.get("dashboard");
+
+  // A guest session the server ended has nothing left to auto-connect with, so
+  // keep explaining that instead of falling through to the sign-in form. A fresh
+  // code in the URL supersedes it: that is the recovery we asked the guest for.
+  if (urlJoinCode || urlDashboardCode) {
+    clearGuestSessionEnded();
+  } else if (restoreGuestSessionEnded()) {
+    return;
+  }
 
   // Also check for pending guest code from sessionStorage (survives SW reload)
   const pendingJoinCode = sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY);
@@ -1339,9 +1472,12 @@ const autoConnect = async () => {
 
         if (await waitForApiConnection()) {
           // Try to authenticate with stored token (if available)
-          if (storedToken && (await tryStoredTokenAuth())) {
-            console.info("[Login] Remote auto-login successful!");
-            return; // Success - App.vue will take over
+          if (storedToken) {
+            const storedTokenAuth = await tryStoredTokenAuth();
+            if (storedTokenAuth === "authenticated") {
+              console.info("[Login] Remote auto-login successful!");
+            }
+            if (storedTokenAuth !== "failed") return;
           }
         }
 
@@ -1406,8 +1542,9 @@ const autoConnect = async () => {
           return;
         }
 
-        if (storedToken && (await tryStoredTokenAuth())) {
-          return; // Success - App.vue will take over
+        if (storedToken) {
+          const storedTokenAuth = await tryStoredTokenAuth();
+          if (storedTokenAuth !== "failed") return;
         }
       }
 
@@ -1447,9 +1584,8 @@ const autoConnect = async () => {
           return;
         }
 
-        if (await tryStoredTokenAuth()) {
-          return; // Success - App.vue will take over
-        }
+        const storedTokenAuth = await tryStoredTokenAuth();
+        if (storedTokenAuth !== "failed") return;
       }
 
       // Token auth failed, show login form for this server
@@ -1498,9 +1634,8 @@ const autoConnect = async () => {
       emit("connected", transport);
 
       if (await waitForApiConnection()) {
-        if (await tryStoredTokenAuth()) {
-          return; // Success - App.vue will take over
-        }
+        const storedTokenAuth = await tryStoredTokenAuth();
+        if (storedTokenAuth !== "failed") return;
       }
 
       // Token auth failed, show login form
@@ -2090,12 +2225,19 @@ const onQrScannerError = (error: Error) => {
 watch(
   () => api.state.value,
   (connectionState) => {
+    // An ended guest session is terminal until the guest rejoins or leaves:
+    // connection churn must not replace the explanation with a sign-in form.
+    if (step.value === "guest-ended") return;
+
     if (connectionState === ConnectionState.RECONNECTING) {
       step.value = "reconnecting";
     } else if (connectionState === ConnectionState.AUTHENTICATING) {
       // Show connecting state during authentication
       step.value = "connecting";
     } else if (connectionState === ConnectionState.AUTH_REQUIRED) {
+      // A guest whose session the server dropped has no credentials to offer;
+      // App.vue records what ended so this can say so instead.
+      if (restoreGuestSessionEnded()) return;
       // In Ingress mode, we should never show the login form
       // The authentication is automatic via HA proxy headers
       if (!isIngressMode.value) {

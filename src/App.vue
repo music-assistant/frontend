@@ -115,6 +115,15 @@ const interactedHandler = function () {
   window.removeEventListener("click", interactedHandler);
 };
 
+/**
+ * Tear down a guest session that the server no longer accepts.
+ *
+ * :return: True when the tab is being reloaded into the full application, so
+ *     the caller must not continue.
+ */
+const handleEndedGuestSession = (): boolean =>
+  authManager.endRejectedGuestSession().outcome === "own-session-restored";
+
 const handleRemoteConnected = async (transport: ITransport) => {
   isConnected.value = true;
 
@@ -504,7 +513,9 @@ onMounted(async () => {
                 "[App] Re-authentication after reconnect failed:",
                 error,
               );
-              api.requireAuthentication();
+              if (!handleEndedGuestSession()) {
+                api.requireAuthentication();
+              }
             }
           } else {
             api.requireAuthentication();

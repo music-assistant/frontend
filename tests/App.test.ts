@@ -1,6 +1,6 @@
 import { EventType, ProviderType } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
-import { nextTick } from "vue";
+import { nextTick, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -21,6 +21,7 @@ const {
 } = vi.hoisted(() => {
   const guestType = { value: null as "party" | "music_quiz" | null };
   const apiMock = {
+    authenticateWithToken: vi.fn(),
     baseUrl: "http://music-assistant.test",
     fetchState: vi.fn(),
     fetchProviders: vi.fn(),
@@ -36,6 +37,7 @@ const {
     getProviderConfigs: vi.fn(),
     initialize: vi.fn(),
     isRemoteConnection: { value: false },
+    requireAuthentication: vi.fn(),
     serverInfo: {
       value: {
         onboard_done: true,
@@ -50,11 +52,15 @@ const {
   };
   const authManagerMock = {
     bindPersistentToken: vi.fn(),
+    clearGuestSession: vi.fn(),
+    endRejectedGuestSession: vi.fn(),
     getToken: vi.fn(),
+    guestSessionKind: vi.fn(() => guestType.value),
     isDashboardViewer: vi.fn(() => false),
     isGuestAccessSession: vi.fn(() => guestType.value !== null),
     isMusicQuizGuest: vi.fn(() => guestType.value === "music_quiz"),
     isPartyGuest: vi.fn(() => guestType.value === "party"),
+    returnToFullApp: vi.fn(),
     setBaseUrl: vi.fn(),
     setCurrentUser: vi.fn(),
     setToken: vi.fn(),
@@ -102,17 +108,22 @@ const {
   };
 });
 
-vi.mock("@/plugins/api", () => ({
-  api: apiMock,
-  ConnectionState: {
-    AUTHENTICATED: "authenticated",
-    CONNECTED: "connected",
-    DISCONNECTED: "disconnected",
-    INITIALIZED: "initialized",
-    RECONNECTING: "reconnecting",
-  },
-  default: apiMock,
-}));
+vi.mock("@/plugins/api", () => {
+  // App.vue watches api.state, so the mock has to carry a real ref: assignments
+  // to a plain { value } would never reach the watcher.
+  apiMock.state = ref(apiMock.state.value);
+  return {
+    api: apiMock,
+    ConnectionState: {
+      AUTHENTICATED: "authenticated",
+      CONNECTED: "connected",
+      DISCONNECTED: "disconnected",
+      INITIALIZED: "initialized",
+      RECONNECTING: "reconnecting",
+    },
+    default: apiMock,
+  };
+});
 
 vi.mock("@/plugins/auth", () => ({
   authManager: authManagerMock,
@@ -275,6 +286,18 @@ describe("App initialization", () => {
     webPlayerMock.tabMode = "disabled";
     if (routeState.current) routeState.current.meta = {};
     vi.stubGlobal("localStorage", createStorage());
+    vi.stubGlobal("sessionStorage", createStorage());
+    authManagerMock.endRejectedGuestSession.mockImplementation(() => {
+      const kind = authManagerMock.guestSessionKind();
+      if (!kind) return { outcome: "no-guest-session" };
+      authManagerMock.clearGuestSession();
+      if (authManagerMock.getToken()) {
+        authManagerMock.returnToFullApp();
+        return { outcome: "own-session-restored" };
+      }
+      sessionStorage.setItem("ma_guest_session_ended", kind);
+      return { outcome: "ended", kind };
+    });
     localStorage.setItem("frontend.settings.theme", "dark");
     Object.defineProperty(window, "matchMedia", {
       configurable: true,
@@ -490,7 +513,67 @@ describe("App initialization", () => {
       apiMock.initialize.mock.invocationCallOrder[0],
     );
   });
+
+  it.each(["party", "music_quiz"] as const)(
+    "records an ended %s guest session when reconnecting is rejected",
+    async (type) => {
+      guestType.value = type;
+      wrapper = await mountApp();
+      // Second call runs after the guest session is cleared: nothing is left.
+      authManagerMock.getToken
+        .mockReturnValueOnce("guest-token")
+        .mockReturnValue(null);
+      apiMock.authenticateWithToken.mockRejectedValue(new Error("revoked"));
+
+      await reconnect();
+
+      expect(sessionStorage.getItem("ma_guest_session_ended")).toBe(type);
+      expect(authManagerMock.clearGuestSession).toHaveBeenCalledOnce();
+      expect(authManagerMock.returnToFullApp).not.toHaveBeenCalled();
+      expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("hands a reconnecting guest back to its own session when it has one", async () => {
+    guestType.value = "party";
+    wrapper = await mountApp();
+    authManagerMock.getToken
+      .mockReturnValueOnce("guest-token")
+      .mockReturnValue("admin-token");
+    apiMock.authenticateWithToken.mockRejectedValue(new Error("revoked"));
+
+    await reconnect();
+
+    expect(authManagerMock.returnToFullApp).toHaveBeenCalledOnce();
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    expect(apiMock.requireAuthentication).not.toHaveBeenCalled();
+  });
+
+  it("keeps a rejected regular reconnect on the sign-in path", async () => {
+    wrapper = await mountApp();
+    authManagerMock.getToken.mockReturnValue("admin-token");
+    apiMock.authenticateWithToken.mockRejectedValue(new Error("expired"));
+
+    await reconnect();
+
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    expect(authManagerMock.clearGuestSession).not.toHaveBeenCalled();
+    expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
+  });
 });
+
+/**
+ * Drive the connection through a reconnect, which re-authenticates the token.
+ */
+async function reconnect() {
+  apiMock.state.value = "reconnecting";
+  await nextTick();
+  apiMock.state.value = "connected";
+  await vi.waitFor(() => {
+    expect(apiMock.authenticateWithToken).toHaveBeenCalled();
+  });
+  await nextTick();
+}
 
 async function mountApp() {
   const { default: App } = await import("@/App.vue");
