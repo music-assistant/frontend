@@ -1,14 +1,30 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick, ref } from "vue";
 
-vi.mock("@/plugins/api", () => ({
-  default: {
-    serverInfo: { value: null },
-    providers: {},
-    queues: {},
-  },
+const mocks = vi.hoisted(() => ({
+  apiState: { value: "connected" as string },
 }));
 
-import { isAudioSource, isQueueInfiniteStream } from "@/plugins/api/helpers";
+vi.mock("@/plugins/api", () => {
+  // waitForApiInitialization watches api.state, so the mock has to carry a real
+  // ref: assignments to a plain { value } would never reach the watcher.
+  mocks.apiState = ref(mocks.apiState.value);
+  return {
+    default: {
+      serverInfo: { value: null },
+      providers: {},
+      queues: {},
+      state: mocks.apiState,
+    },
+    ConnectionState: { INITIALIZED: "initialized" },
+  };
+});
+
+import {
+  isAudioSource,
+  isQueueInfiniteStream,
+  waitForApiInitialization,
+} from "@/plugins/api/helpers";
 import { MediaType } from "@/plugins/api/interfaces";
 import type { MediaItemType, PlayerQueue } from "@/plugins/api/interfaces";
 
@@ -65,5 +81,32 @@ describe("isQueueInfiniteStream", () => {
   it("returns false when the queue or current item is missing", () => {
     expect(isQueueInfiniteStream(undefined)).toBe(false);
     expect(isQueueInfiniteStream(makeQueue(undefined))).toBe(false);
+  });
+});
+
+describe("waitForApiInitialization", () => {
+  beforeEach(() => {
+    mocks.apiState.value = "connected";
+  });
+
+  it("resolves immediately when the api is already initialized", async () => {
+    mocks.apiState.value = "initialized";
+
+    await expect(waitForApiInitialization()).resolves.toBeUndefined();
+  });
+
+  it("waits for the api to reach the initialized state", async () => {
+    let resolved = false;
+    const pending = waitForApiInitialization().then(() => {
+      resolved = true;
+    });
+
+    mocks.apiState.value = "authenticated";
+    await nextTick();
+    expect(resolved).toBe(false);
+
+    mocks.apiState.value = "initialized";
+    await pending;
+    expect(resolved).toBe(true);
   });
 });

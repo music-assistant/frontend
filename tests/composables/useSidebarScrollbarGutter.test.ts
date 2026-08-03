@@ -1,10 +1,23 @@
-import { describe, expect, it, vi } from "vitest";
+import { mount } from "@vue/test-utils";
+import { defineComponent, nextTick, ref } from "vue";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/components/ui/sidebar", () => ({
-  useSidebar: vi.fn(() => ({ state: { value: "expanded" } })),
+const mocks = vi.hoisted(() => ({
+  sidebarState: { value: "expanded" as string },
 }));
 
-import { applySidebarScrollbarGutter } from "@/composables/useSidebarScrollbarGutter";
+vi.mock("@/components/ui/sidebar", async () => {
+  // The composable watches the sidebar state, so the mock has to carry a real
+  // ref: assignments to a plain { value } would never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  mocks.sidebarState = ref(mocks.sidebarState.value);
+  return { useSidebar: vi.fn(() => ({ state: mocks.sidebarState })) };
+});
+
+import {
+  applySidebarScrollbarGutter,
+  useSidebarScrollbarGutter,
+} from "@/composables/useSidebarScrollbarGutter";
 
 interface SidebarDomOptions {
   scrollHeight?: number;
@@ -142,5 +155,75 @@ describe("applySidebarScrollbarGutter", () => {
     expect(sidebarEl.style.getPropertyValue("--sidebar-width-icon")).toBe(
       "calc(3rem + 6px)",
     );
+  });
+});
+
+describe("useSidebarScrollbarGutter", () => {
+  afterEach(() => {
+    mocks.sidebarState.value = "expanded";
+    vi.unstubAllGlobals();
+  });
+
+  /**
+   * Mount a sidebar whose content overflows, wired up through the composable.
+   */
+  function mountSidebar(shortcuts = ref<string[]>([])) {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const wrapper = mount(
+      defineComponent({
+        setup: () => useSidebarScrollbarGutter(shortcuts),
+        template: `
+          <div data-slot="sidebar">
+            <div data-slot="sidebar-content"><div ref="navEl" /></div>
+          </div>
+        `,
+      }),
+    );
+    const contentEl = wrapper.get<HTMLElement>(
+      "[data-slot=sidebar-content]",
+    ).element;
+    Object.defineProperty(contentEl, "scrollHeight", {
+      configurable: true,
+      get: () => 200,
+    });
+    Object.defineProperty(contentEl, "clientHeight", {
+      configurable: true,
+      get: () => 100,
+    });
+    return { contentEl, sidebarEl: wrapper.element as HTMLElement, wrapper };
+  }
+
+  it("applies the gutter when the sidebar collapses", async () => {
+    const { contentEl, sidebarEl, wrapper } = mountSidebar();
+    expect(contentEl.style.scrollbarGutter).toBe("");
+
+    mocks.sidebarState.value = "collapsed";
+    await nextTick();
+
+    expect(contentEl.style.scrollbarGutter).toBe("stable");
+    expect(sidebarEl.style.getPropertyValue("--sidebar-width-icon")).toBe(
+      "calc(3rem + 6px)",
+    );
+    wrapper.unmount();
+  });
+
+  it("re-evaluates the gutter when the shortcut list changes", async () => {
+    const shortcuts = ref<string[]>([]);
+    const { contentEl } = mountSidebar(shortcuts);
+    mocks.sidebarState.value = "collapsed";
+    await nextTick();
+    contentEl.style.scrollbarGutter = "";
+
+    shortcuts.value = ["shortcut"];
+    await nextTick();
+    await nextTick();
+
+    expect(contentEl.style.scrollbarGutter).toBe("stable");
   });
 });
