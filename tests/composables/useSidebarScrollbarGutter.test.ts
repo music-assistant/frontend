@@ -215,7 +215,7 @@ describe("useSidebarScrollbarGutter", () => {
 
   it("re-evaluates the gutter when the shortcut list changes", async () => {
     const shortcuts = ref<string[]>([]);
-    const { contentEl } = mountSidebar(shortcuts);
+    const { contentEl, wrapper } = mountSidebar(shortcuts);
     mocks.sidebarState.value = "collapsed";
     await nextTick();
     contentEl.style.scrollbarGutter = "";
@@ -225,5 +225,6 @@ describe("useSidebarScrollbarGutter", () => {
     await nextTick();
 
     expect(contentEl.style.scrollbarGutter).toBe("stable");
+    wrapper.unmount();
   });
 });

@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { nextTick, ref } from "vue";
+import { nextTick } from "vue";
 
 const mocks = vi.hoisted(() => ({
   apiState: { value: "connected" as string },
 }));
 
-vi.mock("@/plugins/api", () => {
+vi.mock("@/plugins/api", async () => {
   // waitForApiInitialization watches api.state, so the mock has to carry a real
   // ref: assignments to a plain { value } would never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
   mocks.apiState = ref(mocks.apiState.value);
   return {
     default: {
