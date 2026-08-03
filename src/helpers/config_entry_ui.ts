@@ -35,3 +35,29 @@ export const isDspLinkEntry = (
 ): e is InjectedConfigEntry & {
   type: typeof UI_ENTRY_TYPE.DSP_SETTINGS_LINK;
 } => isInjected(e) && e.type === UI_ENTRY_TYPE.DSP_SETTINGS_LINK;
+
+/**
+ * Merges a freshly fetched set of config entries into the entries currently
+ * on screen after a PROVIDERS_UPDATED refresh.
+ *
+ * `incoming` wins for everything about an entry's definition (options,
+ * read_only, whether it exists at all), since that's what the server just
+ * told us is current. `current` wins for `value`, so a refresh never
+ * discards something the user typed but hasn't saved yet.
+ *
+ * Every returned entry is a fresh object, so the form is free to keep editing
+ * them in place without reaching back into either argument.
+ */
+export const mergeConfigEntries = (
+  current: Record<string, ConfigEntry>,
+  incoming: Record<string, ConfigEntry>,
+): Record<string, ConfigEntry> => {
+  const merged: Record<string, ConfigEntry> = {};
+  for (const [key, incomingEntry] of Object.entries(incoming)) {
+    const currentEntry = current[key];
+    merged[key] = currentEntry
+      ? { ...incomingEntry, value: currentEntry.value }
+      : { ...incomingEntry };
+  }
+  return merged;
+};
