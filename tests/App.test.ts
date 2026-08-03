@@ -10,6 +10,7 @@ const {
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
   mockProxyEnsureReady,
+  mockProxyIsReady,
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
   mockRememberCurrentRemoteConnection,
@@ -73,6 +74,7 @@ const {
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
     mockProxyEnsureReady: vi.fn(),
+    mockProxyIsReady: { value: true },
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
     mockRememberCurrentRemoteConnection: vi.fn(),
@@ -166,6 +168,7 @@ vi.mock("@/plugins/companion", () => ({
 
 vi.mock("@/plugins/remote", () => ({
   remoteConnectionManager: {
+    currentRemoteId: { value: null as string | null },
     rememberCurrentRemoteConnection: mockRememberCurrentRemoteConnection,
     setAuthenticated: vi.fn(),
   },
@@ -174,7 +177,7 @@ vi.mock("@/plugins/remote", () => ({
 vi.mock("@/plugins/remote/http-proxy", () => ({
   httpProxyBridge: {
     ensureReady: mockProxyEnsureReady,
-    isReady: { value: true },
+    isReady: mockProxyIsReady,
     setTransport: mockProxySetTransport,
   },
 }));
@@ -246,6 +249,8 @@ describe("App initialization", () => {
     vi.resetModules();
     guestType.value = null;
     apiMock.state.value = "authenticated";
+    apiMock.isRemoteConnection.value = false;
+    mockProxyIsReady.value = true;
     apiMock.serverInfo.value = {
       onboard_done: true,
       server_id: "server-id",
@@ -512,6 +517,26 @@ describe("App initialization", () => {
     expect(mockProxySetTransport.mock.invocationCallOrder[0]).toBeLessThan(
       apiMock.initialize.mock.invocationCallOrder[0],
     );
+  });
+
+  it("withholds the main app on a remote connection until the proxy is ready", async () => {
+    apiMock.isRemoteConnection.value = true;
+    mockProxyIsReady.value = false;
+
+    wrapper = await mountApp();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(false);
+    // The login screen is gone too: this is the proxy gate, not a sign-in prompt.
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+  });
+
+  it("shows the main app on a remote connection once the proxy is ready", async () => {
+    apiMock.isRemoteConnection.value = true;
+    mockProxyIsReady.value = true;
+
+    wrapper = await mountApp();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
   });
 
   it.each(["party", "music_quiz"] as const)(
