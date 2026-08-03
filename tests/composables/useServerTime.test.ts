@@ -8,21 +8,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const BURST_SPACING_MS = 200;
 const INITIAL_BURST_SIZE = 5;
+const REFRESH_BURST_SIZE = 3;
 const REFRESH_INTERVAL_MS = 60_000;
+const PROBE_TIMEOUT_MS = 2000;
 
 // The device clock runs 30 seconds ahead of the server's in these tests.
 const DEVICE_NOW_MS = Date.parse("2026-01-01T00:00:30Z");
 const DEVICE_CLOCK_ERROR_SECONDS = 30;
 
 describe("useServerTime", () => {
-  let perfNow: number;
+  // offset of the monotonic clock against the (fake) device clock; only a device that
+  // steps its own clock makes the two diverge
+  let perfDrift: number;
 
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(DEVICE_NOW_MS);
-    perfNow = 1000;
+    perfDrift = 0;
     // vitest does not fake performance.now(), which the offset estimate is anchored on
-    vi.spyOn(performance, "now").mockImplementation(() => perfNow);
+    vi.spyOn(performance, "now").mockImplementation(
+      () => Date.now() - DEVICE_NOW_MS + 1000 + perfDrift,
+    );
   });
 
   afterEach(() => {
@@ -70,9 +76,12 @@ describe("useServerTime", () => {
     await flushBurst(INITIAL_BURST_SIZE);
 
     const before = serverNow();
-    // the device steps its own clock (an NTP correction landing mid-playback)
-    vi.setSystemTime(DEVICE_NOW_MS + 3_600_000);
-    perfNow += 5000;
+    // the device steps its own clock an hour forward (an NTP correction landing
+    // mid-playback); the monotonic clock is untouched by that step
+    const stepMs = 3_600_000;
+    perfDrift -= stepMs;
+    vi.setSystemTime(Date.now() + stepMs);
+    await advanceTime(5000);
 
     expect(serverNow() - before).toBeCloseTo(5, 6);
   });
@@ -95,19 +104,42 @@ describe("useServerTime", () => {
     expect(useServerTime().offsetSeconds.value).toBeCloseTo(estimate!, 6);
   });
 
+  it("keeps refreshing after a probe that never answers", async () => {
+    // a command sent as the connection drops is never answered and never rejected
+    let stranded = true;
+    const probe = vi.fn(
+      () =>
+        new Promise<number>((resolve) => {
+          if (!stranded) resolve(serverClockNow());
+        }),
+    );
+    startServerTimeSync(probe);
+    await advanceTime(PROBE_TIMEOUT_MS + BURST_SPACING_MS);
+    expect(useServerTime().isSynced.value).toBe(false);
+
+    stranded = false;
+    await advanceTime(REFRESH_INTERVAL_MS);
+    await flushBurst(REFRESH_BURST_SIZE);
+
+    expect(useServerTime().isSynced.value).toBe(true);
+    expect(useServerTime().offsetSeconds.value).toBeCloseTo(
+      -DEVICE_CLOCK_ERROR_SECONDS,
+      3,
+    );
+  });
+
   it("stops probing and drops the estimate on reset", async () => {
     const probe = vi.fn(() => Promise.resolve(serverClockNow()));
     startServerTimeSync(probe);
     await flushBurst(INITIAL_BURST_SIZE);
     expect(useServerTime().isSynced.value).toBe(true);
 
-    resetServerTime(false);
+    resetServerTime();
     const callsAfterReset = probe.mock.calls.length;
     await advanceTime(REFRESH_INTERVAL_MS * 2);
 
     expect(probe).toHaveBeenCalledTimes(callsAfterReset);
     expect(useServerTime().isSynced.value).toBe(false);
-    expect(useServerTime().isSupported.value).toBe(false);
     expect(serverNow()).toBeCloseTo(Date.now() / 1000, 6);
   });
 
@@ -118,13 +150,11 @@ describe("useServerTime", () => {
 
   /** Burn wall-clock time without waiting on a timer (a round trip in flight). */
   function spendTime(ms: number) {
-    perfNow += ms;
     vi.setSystemTime(Date.now() + ms);
   }
 
-  /** Advance time, keeping the monotonic and device clocks in step. */
+  /** Advance time, letting any timer due in that window fire. */
   async function advanceTime(ms: number) {
-    perfNow += ms;
     await vi.advanceTimersByTimeAsync(ms);
   }
 

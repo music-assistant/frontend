@@ -36,12 +36,7 @@
           </ItemContent>
         </Item>
 
-        <Item
-          v-if="api.supportsServerTime"
-          variant="outline"
-          size="sm"
-          class="justify-between"
-        >
+        <Item variant="outline" size="sm" class="justify-between">
           <ItemContent>
             <ItemTitle>{{ $t("settings.server_clock_offset") }}</ItemTitle>
           </ItemContent>

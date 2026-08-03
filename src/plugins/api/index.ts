@@ -73,9 +73,6 @@ const DEBUG = process.env.NODE_ENV === "development";
 // Server-side string localization + the translations/set_locale command landed in API schema 32.
 const TRANSLATIONS_SCHEMA_VERSION = 32;
 
-// The `time` command (used to estimate the server/device clock offset) landed in schema 42.
-const SERVER_TIME_SCHEMA_VERSION = 42;
-
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
   CONNECTING = "connecting", // Establishing connection
@@ -2668,23 +2665,12 @@ export class MusicAssistantApi {
     // (re)estimate the offset between the server clock and this device's clock, so
     // server timestamps render correctly even when one of the two clocks is unsynced.
     // The command needs no authentication, so this also covers the pre-auth phase.
-    if (this.supportsServerTime) {
-      startServerTimeSync(() => this.getServerTime());
-    } else {
-      resetServerTime(false);
-    }
+    startServerTimeSync(() => this.getServerTime());
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
       data: msg,
     });
-  }
-
-  /** Whether the connected server can report its own clock (schema >= 42). */
-  public get supportsServerTime(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >= SERVER_TIME_SCHEMA_VERSION
-    );
   }
 
   /**

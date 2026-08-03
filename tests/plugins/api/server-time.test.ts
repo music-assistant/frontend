@@ -7,11 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const DEVICE_NOW_MS = Date.parse("2026-01-01T00:00:45Z");
 const SERVER_CLOCK_ERROR_SECONDS = 45;
 
-/** Transport that replies to `time` and records every command the client sends. */
+/** Transport that answers `time` and records every command the client sends. */
 class FakeTransport extends BaseTransport {
   public commands: string[] = [];
 
-  constructor(private schemaVersion: number) {
+  constructor(private failsTimeCommand = false) {
     super();
   }
 
@@ -23,7 +23,7 @@ class FakeTransport extends BaseTransport {
       JSON.stringify({
         server_id: "test-server",
         server_version: "2.99.0",
-        schema_version: this.schemaVersion,
+        schema_version: 42,
         min_supported_schema_version: 28,
         base_url: "http://localhost:8095",
       }),
@@ -40,10 +40,18 @@ class FakeTransport extends BaseTransport {
     if (msg.command !== "time") return;
     this.emit(
       "message",
-      JSON.stringify({
-        message_id: msg.message_id,
-        result: Date.now() / 1000 - SERVER_CLOCK_ERROR_SECONDS,
-      }),
+      JSON.stringify(
+        this.failsTimeCommand
+          ? {
+              message_id: msg.message_id,
+              error_code: "invalid_command",
+              details: "Invalid command: time",
+            }
+          : {
+              message_id: msg.message_id,
+              result: Date.now() / 1000 - SERVER_CLOCK_ERROR_SECONDS,
+            },
+      ),
     );
   }
 }
@@ -66,12 +74,11 @@ describe("api server time sync", () => {
     vi.restoreAllMocks();
   });
 
-  it("corrects the clock offset after connecting to a server that reports its time", async () => {
-    const transport = new FakeTransport(42);
+  it("corrects the clock offset after connecting", async () => {
+    const transport = new FakeTransport();
     await api.initialize(transport);
     await vi.advanceTimersByTimeAsync(0);
 
-    expect(api.supportsServerTime).toBe(true);
     expect(transport.commands).toContain("time");
     expect(serverNow()).toBeCloseTo(
       Date.now() / 1000 - SERVER_CLOCK_ERROR_SECONDS,
@@ -79,13 +86,12 @@ describe("api server time sync", () => {
     );
   });
 
-  it("leaves the device clock alone on a server without the time command", async () => {
-    const transport = new FakeTransport(41);
+  it("leaves the device clock alone when the server cannot report its time", async () => {
+    const transport = new FakeTransport(true);
     await api.initialize(transport);
     await vi.advanceTimersByTimeAsync(0);
 
-    expect(api.supportsServerTime).toBe(false);
-    expect(transport.commands).not.toContain("time");
+    expect(transport.commands).toContain("time");
     expect(serverNow()).toBeCloseTo(Date.now() / 1000, 6);
   });
 });

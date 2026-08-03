@@ -21,7 +21,7 @@
  * estimate survives the device stepping its own clock (an NTP correction landing
  * mid-playback) without the rendered position jumping.
  */
-import { computed, readonly, ref } from "vue";
+import { computed, ref } from "vue";
 
 /** Probes the server clock, resolving with its UTC timestamp in seconds. */
 export type ServerTimeProbe = () => Promise<number>;
@@ -32,6 +32,9 @@ const INITIAL_BURST_SIZE = 5;
 const REFRESH_BURST_SIZE = 3;
 const BURST_PROBE_SPACING_MS = 200;
 const REFRESH_INTERVAL_MS = 60_000;
+// A command sent as the connection drops is never answered and never rejected, so a
+// probe needs its own deadline; without one it would stall every later refresh.
+const PROBE_TIMEOUT_MS = 2000;
 
 interface ServerTimeAnchor {
   /** `performance.now()` reading the server timestamp is attributed to. */
@@ -43,16 +46,18 @@ interface ServerTimeAnchor {
 }
 
 const anchor = ref<ServerTimeAnchor | undefined>();
-const supported = ref(true);
 let probe: ServerTimeProbe | undefined;
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
-let burstInFlight = false;
+// bumped whenever probing stops, so a burst that is mid-flight abandons its remaining
+// probes instead of publishing samples taken across a reconnect
+let epoch = 0;
+let runningEpoch: number | undefined;
 
 /**
  * The current time on the server's clock, as a UTC timestamp in seconds.
  *
- * Falls back to the device clock while no estimate is available (before the first
- * successful probe, or against a server that predates the `time` command).
+ * Falls back to the device clock while no estimate is available: before the first
+ * probe lands, or when probing fails.
  */
 export function serverNow(): number {
   const current = anchor.value;
@@ -68,7 +73,6 @@ export function serverNow(): number {
  */
 export function startServerTimeSync(newProbe: ServerTimeProbe): void {
   probe = newProbe;
-  supported.value = true;
   if (refreshTimer === undefined) {
     refreshTimer = setInterval(
       () => void runBurst(REFRESH_BURST_SIZE),
@@ -87,6 +91,7 @@ export function startServerTimeSync(newProbe: ServerTimeProbe): void {
  */
 export function stopServerTimeSync(): void {
   probe = undefined;
+  epoch += 1;
   if (refreshTimer !== undefined) clearInterval(refreshTimer);
   refreshTimer = undefined;
   unregisterVisibilityListeners();
@@ -95,13 +100,12 @@ export function stopServerTimeSync(): void {
 /**
  * Drop the estimate and stop probing.
  *
- * Used when the connection cannot provide one (a server without the `time` command) or
- * when connecting to a different server, whose clock offset is unrelated.
+ * Used when disconnecting: the next connection may be to a different server, whose
+ * clock offset is unrelated to this one's.
  */
-export function resetServerTime(supportedByServer = true): void {
+export function resetServerTime(): void {
   stopServerTimeSync();
   anchor.value = undefined;
-  supported.value = supportedByServer;
 }
 
 /** Reactive view of the offset estimate, for diagnostics. */
@@ -117,22 +121,22 @@ export function useServerTime() {
       () => anchor.value?.uncertaintySeconds ?? null,
     ),
     isSynced: computed(() => anchor.value !== undefined),
-    /** Whether the connected server can report its clock at all. */
-    isSupported: readonly(supported),
   };
 }
 
 async function runBurst(size: number): Promise<void> {
-  if (burstInFlight || !probe) return;
-  burstInFlight = true;
+  if (runningEpoch === epoch || !probe) return;
+  const burstEpoch = epoch;
+  runningEpoch = burstEpoch;
   try {
     let best: ServerTimeAnchor | undefined;
     for (let index = 0; index < size; index++) {
       if (index > 0) await delay(BURST_PROBE_SPACING_MS);
-      // read after the delay: sync may have stopped while this burst was waiting
+      // re-read after the delay: probing may have stopped while this burst was waiting
       const currentProbe = probe;
-      if (!currentProbe) break;
+      if (burstEpoch !== epoch || !currentProbe) return;
       const sample = await takeSample(currentProbe);
+      if (burstEpoch !== epoch) return;
       if (!sample) continue;
       if (!best || sample.uncertaintySeconds < best.uncertaintySeconds) {
         // publish as the burst goes: the first sample already beats no correction, and
@@ -142,7 +146,7 @@ async function runBurst(size: number): Promise<void> {
       }
     }
   } finally {
-    burstInFlight = false;
+    if (runningEpoch === burstEpoch) runningEpoch = undefined;
   }
 }
 
@@ -150,13 +154,11 @@ async function takeSample(
   currentProbe: ServerTimeProbe,
 ): Promise<ServerTimeAnchor | undefined> {
   const sentAt = performance.now();
-  let serverSeconds: number;
-  try {
-    serverSeconds = await currentProbe();
-  } catch {
-    // Best-effort: a failed probe leaves the previous estimate in place.
-    return undefined;
-  }
+  // Best-effort: a probe that fails or never answers leaves the previous estimate in place.
+  const serverSeconds = await Promise.race([
+    currentProbe().catch(() => undefined),
+    delay(PROBE_TIMEOUT_MS).then(() => undefined),
+  ]);
   const receivedAt = performance.now();
   if (typeof serverSeconds !== "number" || !Number.isFinite(serverSeconds)) {
     return undefined;
