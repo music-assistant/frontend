@@ -1876,6 +1876,7 @@
         "title": "MilkDrop",
         "preset_random": "Random preset",
         "open_settings": "Visualizer settings",
+        "toggle": "Toggle the MilkDrop visualizer",
         "preset_random_favorites": "Random from favourites",
         "toggle_favorite": "Favourite this preset",
         "provider_missing": "The MilkDrop Visualizer plugin is not installed or unavailable. Add it under Settings > Providers to use the visualizer.",

@@ -58,18 +58,7 @@
 
         <!-- Right: controls -->
         <div class="flex items-center gap-2 shrink-0">
-          <!-- Fullscreen: minimize button -->
-          <Button
-            v-if="isFullscreen && !hideBackButton"
-            variant="ghost-icon"
-            size="icon-sm"
-            :aria-label="$t('tooltip.exit_fullscreen')"
-            @click="goFullscreen(false)"
-          >
-            <Minimize2 :size="13" />
-          </Button>
-
-          <!-- Non-fullscreen: actions -->
+          <!-- Guest access badge sits ahead of the icon cluster -->
           <template v-if="!isFullscreen">
             <Badge
               v-if="qrAvailable"
@@ -89,6 +78,36 @@
               <WifiOff :size="11" />
               {{ $t("providers.party.guest_access_disabled") }}
             </Badge>
+          </template>
+
+          <!-- Visualizer toggle; also available in fullscreen, where the
+               party screen normally runs -->
+          <Button
+            v-if="visualizerAvailable"
+            variant="ghost-icon"
+            size="icon-sm"
+            :aria-label="$t('visualizer.toggle')"
+            @click="toggleVisualizer"
+          >
+            <Droplet
+              :size="13"
+              :fill="visualizerEnabledPref ? 'currentColor' : 'none'"
+            />
+          </Button>
+
+          <!-- Fullscreen: minimize button -->
+          <Button
+            v-if="isFullscreen && !hideBackButton"
+            variant="ghost-icon"
+            size="icon-sm"
+            :aria-label="$t('tooltip.exit_fullscreen')"
+            @click="goFullscreen(false)"
+          >
+            <Minimize2 :size="13" />
+          </Button>
+
+          <!-- Non-fullscreen: actions -->
+          <template v-if="!isFullscreen">
             <Button
               v-if="partyInstanceId"
               variant="ghost-icon"
@@ -337,6 +356,7 @@ import {
 import { store } from "@/plugins/store";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
 import {
+  Droplet,
   Maximize2,
   Minimize2,
   Music,
@@ -483,14 +503,19 @@ onBeforeUnmount(() => {
 // Album art background is always active
 const useAlbumArtBackground = computed(() => true);
 
-const { getPreference } = useUserPreferences();
+const { getPreference, setPreference } = useUserPreferences();
 const visualizerEnabledPref = getPreference("visualizer_enabled", false);
 const visualizerPresetPref = getPreference("visualizer_preset", "");
 const visualizerBlurPref = getPreference("visualizer_blur", 0);
 const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
+const visualizerAvailable = computed(() => visualizerProviderAvailable());
 const visualizerActive = computed(
-  () => visualizerEnabledPref.value && visualizerProviderAvailable(),
+  () => visualizerEnabledPref.value && visualizerAvailable.value,
 );
+
+const toggleVisualizer = () => {
+  void setPreference("visualizer_enabled", !visualizerEnabledPref.value);
+};
 
 const isPlaying = computed(
   () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
