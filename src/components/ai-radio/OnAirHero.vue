@@ -79,6 +79,7 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useShows } from "@/composables/ai-radio/useShows";
+import { serverNow } from "@/composables/useServerTime";
 import { errorMessage } from "@/helpers/ai_radio";
 import { formatDuration } from "@/helpers/utils";
 import api from "@/plugins/api";
@@ -145,7 +146,8 @@ const isStopping = computed(
     stoppingSessionId.value === onAirSession.value.session_id,
 );
 
-const nowMs = ref(Date.now());
+// on the server's clock, since the session start time comes from the server
+const nowMs = ref(serverNow() * 1000);
 let elapsedTimer: ReturnType<typeof setInterval> | null = null;
 
 const elapsedLabel = computed(() => {
@@ -173,7 +175,7 @@ async function onStop() {
 
 onMounted(() => {
   elapsedTimer = setInterval(() => {
-    nowMs.value = Date.now();
+    nowMs.value = serverNow() * 1000;
   }, 1000);
 });
 

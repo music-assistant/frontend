@@ -3,7 +3,7 @@
  *
  * Calculate the current elapsed playback time in seconds from a stored
  * `elapsed_time` value and the `elapsed_time_last_updated` UTC timestamp
- * (seconds since epoch). The function assumes:
+ * (seconds since epoch), on the server's clock. The function assumes:
  *  - elapsed_time: seconds (may be fractional)
  *  - elapsed_time_last_updated: seconds since epoch (UTC)
  *  - playback_speed: multiplier applied to the wall-clock delta (default 1)
@@ -12,6 +12,7 @@
  * `elapsed_time` without applying the time-delta. This avoids advancing the
  * position while paused/stopped.
  */
+import { serverNow } from "@/composables/useServerTime";
 import { PlaybackState } from "../plugins/api/interfaces";
 
 export function computeElapsedTime(
@@ -28,15 +29,12 @@ export function computeElapsedTime(
   if (playbackState !== undefined && playbackState !== PlaybackState.PLAYING) {
     return elapsed_time;
   }
-  // The server sends `elapsed_time_last_updated` in seconds since epoch.
-  // Convert to milliseconds for Date.now() math.
-  const lastUpdatedMs = elapsed_time_last_updated * 1000;
+  // `elapsed_time_last_updated` is on the server's clock, so the delta is measured
+  // against the server's clock too: on a device whose own clock is off, comparing the
+  // two directly would offset the position by exactly that error.
+  const delta = Math.max(0, serverNow() - elapsed_time_last_updated);
 
-  const nowMs = Date.now();
-  const deltaMs = Math.max(0, nowMs - lastUpdatedMs);
-  const deltaSeconds = (deltaMs / 1000) * playback_speed;
-
-  return elapsed_time + deltaSeconds;
+  return elapsed_time + delta * playback_speed;
 }
 
 export default computeElapsedTime;

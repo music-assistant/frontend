@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { serverNow } from "@/composables/useServerTime";
 import { store } from "@/plugins/store";
 import api from "@/plugins/api";
 
@@ -41,7 +42,7 @@ function getElapsedSecs(): number {
   ) {
     const isPlaying = store.activePlayerQueue?.state === "playing";
     const delta = isPlaying
-      ? Date.now() / 1000 - queueTime.elapsed_time_last_updated
+      ? serverNow() - queueTime.elapsed_time_last_updated
       : 0;
     return queueTime.elapsed_time + delta;
   }
@@ -52,7 +53,7 @@ function getElapsedSecs(): number {
   ) {
     const isPlaying = player.playback_state === "playing";
     const delta = isPlaying
-      ? Date.now() / 1000 - player.elapsed_time_last_updated
+      ? serverNow() - player.elapsed_time_last_updated
       : 0;
     return player.elapsed_time + delta;
   }

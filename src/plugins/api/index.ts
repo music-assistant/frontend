@@ -2,6 +2,12 @@ import { store } from "../store";
 
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
+import {
+  resetServerTime,
+  serverNow,
+  startServerTimeSync,
+  stopServerTimeSync,
+} from "@/composables/useServerTime";
 import { $t, i18n } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
@@ -66,6 +72,9 @@ const DEBUG = process.env.NODE_ENV === "development";
 
 // Server-side string localization + the translations/set_locale command landed in API schema 32.
 const TRANSLATIONS_SCHEMA_VERSION = 32;
+
+// The `time` command (used to estimate the server/device clock offset) landed in schema 42.
+const SERVER_TIME_SCHEMA_VERSION = 42;
 
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
@@ -208,6 +217,9 @@ export class MusicAssistantApi {
       if (state === "reconnecting") {
         // Transport is attempting to reconnect
         this.state.value = ConnectionState.RECONNECTING;
+        // pause probing but keep the estimate: clock offsets don't change over a
+        // reconnect, and a slightly stale offset still beats no correction
+        stopServerTimeSync();
         this.signalEvent({
           event: EventType.DISCONNECTED,
           object_id: "",
@@ -392,6 +404,8 @@ export class MusicAssistantApi {
     }
     this.state.value = ConnectionState.DISCONNECTED;
     this.isRemoteConnection.value = false;
+    // the next connection may be to a different server, whose clock offset is unrelated
+    resetServerTime();
 
     // Clear reactive state
     Object.keys(this.players).forEach((key) => delete this.players[key]);
@@ -2536,7 +2550,10 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
       if (queueId in this.queues) {
-        const now = Date.now() / 1000;
+        // this event carries the elapsed time without a timestamp, so it is anchored
+        // here on arrival; in server time, to stay comparable with the timestamps that
+        // full queue updates carry.
+        const now = serverNow();
         const elapsed = msg.data as unknown as number;
         if (queueId in this.queueElapsedTime) {
           this.queueElapsedTime[queueId].elapsed_time = elapsed;
@@ -2648,10 +2665,37 @@ export class MusicAssistantApi {
     // so it also works on the Ingress path where the frontend skips the auth command.
     // best-effort, fire-and-forget: a transport failure here shouldn't break the connect flow
     void this.setLocale(i18n.global.locale.value).catch(() => undefined);
+    // (re)estimate the offset between the server clock and this device's clock, so
+    // server timestamps render correctly even when one of the two clocks is unsynced.
+    // The command needs no authentication, so this also covers the pre-auth phase.
+    if (this.supportsServerTime) {
+      startServerTimeSync(() => this.getServerTime());
+    } else {
+      resetServerTime(false);
+    }
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
       data: msg,
+    });
+  }
+
+  /** Whether the connected server can report its own clock (schema >= 42). */
+  public get supportsServerTime(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >= SERVER_TIME_SCHEMA_VERSION
+    );
+  }
+
+  /**
+   * Read the server's clock (UTC timestamp in seconds).
+   *
+   * Prefer `serverNow()` from `useServerTime`, which keeps a corrected local estimate;
+   * this command is the probe that estimate is built from.
+   */
+  public async getServerTime(): Promise<number> {
+    return await this.sendCommand<number>("time", undefined, {
+      suppressGlobalError: true,
     });
   }
 
