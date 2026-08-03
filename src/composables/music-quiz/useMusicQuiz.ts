@@ -386,6 +386,9 @@ export interface MusicQuizTimelineYourAnswer {
 export interface MusicQuizRoundBase {
   round_index: number;
   started_at: number | null;
+  // when the round's track became audible; anything that follows the audio
+  // (e.g. synced lyrics) should prefer this over started_at
+  audio_started_at?: number | null;
   deadline: number;
   auto_advance_at: number | null;
   ended_at?: number;
