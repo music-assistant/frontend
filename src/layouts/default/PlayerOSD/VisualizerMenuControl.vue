@@ -156,13 +156,17 @@ const selectValue = computed(() => {
   return RANDOM_VALUE;
 });
 
-// In random modes the trigger shows what is actually on screen right now
-// (auto-switches included); in fixed mode it shows the chosen preset.
+// The trigger shows what is actually on screen right now, marked with ⟳ when
+// that is not the user's own pick. Beat switching overrides fixed mode too, so
+// even a fixed selection can be showing something else.
 const triggerLabel = computed(() => {
-  if (presetModePref.value === "fixed" && presetPref.value)
-    return presetPref.value;
-  if (currentVisualizerPreset.value)
-    return `⟳ ${currentVisualizerPreset.value}`;
+  const showing = currentVisualizerPreset.value;
+  if (presetModePref.value === "fixed" && presetPref.value) {
+    return showing && showing !== presetPref.value
+      ? `⟳ ${showing}`
+      : presetPref.value;
+  }
+  if (showing) return `⟳ ${showing}`;
   return presetModePref.value === "random_favorites"
     ? $t("visualizer.preset_random_favorites")
     : $t("visualizer.preset_random");
