@@ -34,6 +34,10 @@ class FakeTransport extends BaseTransport {
     this.setState(TransportState.DISCONNECTED);
   }
 
+  fail(): void {
+    this.setState(TransportState.FAILED);
+  }
+
   send(data: string): void {
     const msg = JSON.parse(data) as { message_id: string; command: string };
     this.commands.push(msg.command);
@@ -84,6 +88,22 @@ describe("api server time sync", () => {
       Date.now() / 1000 - SERVER_CLOCK_ERROR_SECONDS,
       3,
     );
+  });
+
+  it("stops probing once the connection has failed for good", async () => {
+    const transport = new FakeTransport();
+    // a probe on a dead connection cannot succeed and leaves a pending command behind
+    const probe = vi.spyOn(api, "getServerTime");
+    await api.initialize(transport);
+    await vi.advanceTimersByTimeAsync(0);
+
+    transport.fail();
+    await vi.advanceTimersByTimeAsync(100);
+    const probesWhenFailed = probe.mock.calls.length;
+    // long enough for several refresh rounds, which would each probe again
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+
+    expect(probe).toHaveBeenCalledTimes(probesWhenFailed);
   });
 
   it("leaves the device clock alone when the server cannot report its time", async () => {

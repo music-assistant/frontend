@@ -214,8 +214,9 @@ export class MusicAssistantApi {
       if (state === "reconnecting") {
         // Transport is attempting to reconnect
         this.state.value = ConnectionState.RECONNECTING;
-        // pause probing but keep the estimate: clock offsets don't change over a
-        // reconnect, and a slightly stale offset still beats no correction
+        // pause probing but keep the estimate: clock offsets don't change while the
+        // connection is down, and a slightly stale offset still beats no correction.
+        // A new ServerInfo message resumes it once the connection is back.
         stopServerTimeSync();
         this.signalEvent({
           event: EventType.DISCONNECTED,
@@ -228,6 +229,7 @@ export class MusicAssistantApi {
           if (this.transportState.value === "failed") {
             // Still failed after brief wait - this is permanent failure
             this.state.value = ConnectionState.FAILED;
+            stopServerTimeSync();
             this.signalEvent({
               event: EventType.DISCONNECTED,
               object_id: "",
@@ -241,6 +243,7 @@ export class MusicAssistantApi {
         setTimeout(() => {
           if (this.transportState.value === "disconnected") {
             this.state.value = ConnectionState.DISCONNECTED;
+            stopServerTimeSync();
             this.signalEvent({
               event: EventType.DISCONNECTED,
               object_id: "",
