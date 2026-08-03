@@ -114,7 +114,16 @@ describe("GuessTheSongPlayerRound", () => {
     wrapper.unmount();
   });
 
-  it("falls back to started_at when audio_started_at is absent", () => {
+  it("falls back to started_at when the round omits audio_started_at", () => {
+    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    const wrapper = mountRound(createState("reveal"));
+
+    const options = mockUseGuessTheSongPlaybackPosition.mock.calls.at(-1)?.[0];
+    expect(options.startedAt()).toBe(currentRound.started_at);
+    wrapper.unmount();
+  });
+
+  it("falls back to started_at when audio_started_at is null", () => {
     mockGetItemByUri.mockReturnValue(new Promise(() => {}));
     const wrapper = mountRound(createState("reveal"), {
       ...currentRound,
