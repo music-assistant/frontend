@@ -42,7 +42,7 @@ function getElapsedSecs(): number {
   ) {
     const isPlaying = store.activePlayerQueue?.state === "playing";
     const delta = isPlaying
-      ? serverNow() - queueTime.elapsed_time_last_updated
+      ? Math.max(0, serverNow() - queueTime.elapsed_time_last_updated)
       : 0;
     return queueTime.elapsed_time + delta;
   }
@@ -53,7 +53,7 @@ function getElapsedSecs(): number {
   ) {
     const isPlaying = player.playback_state === "playing";
     const delta = isPlaying
-      ? serverNow() - player.elapsed_time_last_updated
+      ? Math.max(0, serverNow() - player.elapsed_time_last_updated)
       : 0;
     return player.elapsed_time + delta;
   }

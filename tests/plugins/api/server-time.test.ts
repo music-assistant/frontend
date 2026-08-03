@@ -54,6 +54,8 @@ describe("api server time sync", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(DEVICE_NOW_MS);
+    // vitest does not fake performance.now(), which the offset estimate is anchored on
+    vi.spyOn(performance, "now").mockReturnValue(1000);
     api = new MusicAssistantApi();
   });
 
@@ -61,6 +63,7 @@ describe("api server time sync", () => {
     api.disconnect();
     resetServerTime();
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("corrects the clock offset after connecting to a server that reports its time", async () => {

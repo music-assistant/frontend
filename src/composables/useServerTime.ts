@@ -128,9 +128,11 @@ async function runBurst(size: number): Promise<void> {
   try {
     let best: ServerTimeAnchor | undefined;
     for (let index = 0; index < size; index++) {
-      if (!probe) break;
       if (index > 0) await delay(BURST_PROBE_SPACING_MS);
-      const sample = await takeSample(probe);
+      // read after the delay: sync may have stopped while this burst was waiting
+      const currentProbe = probe;
+      if (!currentProbe) break;
+      const sample = await takeSample(currentProbe);
       if (!sample) continue;
       if (!best || sample.uncertaintySeconds < best.uncertaintySeconds) {
         // publish as the burst goes: the first sample already beats no correction, and
