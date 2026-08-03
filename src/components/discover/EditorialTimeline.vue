@@ -30,14 +30,14 @@
           class="timeline-card"
         >
           <template #subtitle>
-            <div style="display: flex; align-items: center; gap: 6px">
+            <span style="display: flex; align-items: center; gap: 6px">
               <component
                 :is="EVENT_ICONS[event.eventType]"
                 :size="12"
                 style="flex-shrink: 0; opacity: 0.75"
               />
               <span>{{ event.dateLabel }}</span>
-            </div>
+            </span>
           </template>
         </EditorialMediaCard>
       </div>
@@ -105,7 +105,17 @@ function mmddOffset(mmdd: string): number {
   const today = new Date();
   const year = today.getUTCFullYear();
   const [mm, dd] = mmdd.split("-").map(Number);
-  // Try this year first; if more than 180 days away, try adjacent year.
+  if (
+    !Number.isFinite(mm) ||
+    !Number.isFinite(dd) ||
+    mm < 1 ||
+    mm > 12 ||
+    dd < 1 ||
+    dd > 31
+  ) {
+    return Number.NaN;
+  }
+  // Pick the closest occurrence of this MM-DD across adjacent years.
   const candidates = [
     new Date(Date.UTC(year - 1, mm - 1, dd)),
     new Date(Date.UTC(year, mm - 1, dd)),
@@ -251,6 +261,12 @@ watch(() => props.tilesPerView, updateTileArt);
   /* Hide scrollbar */
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-scroll {
+    scroll-behavior: auto;
+  }
 }
 
 .timeline-scroll::-webkit-scrollbar {
