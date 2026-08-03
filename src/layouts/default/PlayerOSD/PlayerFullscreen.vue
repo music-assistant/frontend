@@ -116,27 +116,33 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- subtitle: album -->
+            <!-- subtitle: album; placeholder when empty so the artwork
+                 above keeps a constant size -->
             <v-card-subtitle
-              v-else-if="
-                store.activePlayer?.current_media?.album && showAlbumSubtitle
-              "
-              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+              v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
+              :style="`font-size: ${subTitleFontSize};${
+                store.activePlayer.current_media.album ? 'cursor:pointer;' : ''
+              }`"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.album }}
+                {{ store.activePlayer.current_media.album || " " }}
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: artist -->
+            <!-- subtitle: artist; placeholder when empty, as above -->
             <v-card-subtitle
-              v-if="store.activePlayer?.current_media?.artist"
-              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+              v-if="
+                store.activePlayer?.powered != false &&
+                store.activePlayer?.current_media
+              "
+              :style="`font-size: ${subTitleFontSize};${
+                store.activePlayer.current_media.artist ? 'cursor:pointer;' : ''
+              }`"
               @click="onArtistClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.artist }}
+                {{ store.activePlayer.current_media.artist || " " }}
               </MarqueeText>
             </v-card-subtitle>
 
