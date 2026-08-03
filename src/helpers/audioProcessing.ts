@@ -61,14 +61,15 @@ const filterIcons: Record<string, Component> = {
 };
 
 export function dspFilterIcon(filter: DSPFilter): Component {
-  // A high/low-pass is one filter type with two directions, so the icon comes
-  // from its mode: the response curve either rises or falls.
-  if ((filter.type as string) === "high_low_pass") {
-    return (filter as { mode?: string }).mode === "low_pass"
-      ? TrendingDown
-      : TrendingUp;
+  // high_low_pass is one filter type with two directions, so its icon comes
+  // from the mode: the response curve either rises or falls. Only the two
+  // known modes claim a curve; anything else falls through to the default.
+  const { type, mode } = filter as { type: string; mode?: string };
+  if (type === "high_low_pass") {
+    if (mode === "low_pass") return TrendingDown;
+    if (mode === "high_pass") return TrendingUp;
   }
-  return filterIcons[filter.type] ?? SlidersHorizontal;
+  return filterIcons[type] ?? SlidersHorizontal;
 }
 
 export function dspFilterText(filter: DSPFilter): string {
