@@ -1352,7 +1352,10 @@
                 "discard_changes_title": "Discard changes?",
                 "discard_changes": "You have unsaved changes that will be lost.",
                 "delete_station_title": "Delete station?",
-                "delete_station": "Delete this station?"
+                "delete_station": "Delete this station?",
+                "overwrite_show_title": "Replace existing show?",
+                "overwrite_show": "A show called «{0}» already exists. Continuing replaces it — its segments and instructions will be lost.",
+                "overwrite_show_label": "Replace"
             },
             "toast": {
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
@@ -1386,6 +1389,7 @@
                 "customize": "Customize",
                 "duplicate": "Duplicate",
                 "duplicate_name": "{0} (copy)",
+                "share": "Share…",
                 "delete": "Delete",
                 "session_failed": "Last run failed",
                 "status_failed": "Failed {0}",
@@ -1415,10 +1419,29 @@
                 "create": "Create",
                 "create_and_play": "Create & play",
                 "creating": "Creating...",
+                "mode_preset": "Start from a preset",
+                "mode_import": "Import a shared show",
+                "import_label": "Shared show",
+                "import_placeholder": "Paste the shared show JSON here",
+                "import_file": "Choose file",
+                "import_summary": "«{0}» · {1} segment(s)",
+                "import_warning_title": "Check prompts before running",
+                "import_warning_description": "The prompts in a shared show were written by whoever shared it. They are sent to your AI provider together with your weather location, local time and the tracks being played — and segments with web search enabled can carry that information off your network. Always check the prompt content first before running an imported show.",
                 "validation": {
                     "playlist_required": "Choose a source playlist",
-                    "name_required": "Show name is required"
+                    "name_required": "Show name is required",
+                    "import_required": "Paste or load a shared show first"
                 }
+            },
+            "share": {
+                "title": "Share this show",
+                "description": "Copy or download the show to hand it to someone else. Your playlist, player and advanced settings are not included.",
+                "json_label": "Shared show",
+                "copy": "Copy JSON",
+                "copied": "Copied to clipboard",
+                "copy_failed": "Could not copy to clipboard",
+                "download": "Download .json",
+                "lossy_description": "This show uses timing rules the simplified format can't express, so the shared copy is an approximation of the original."
             },
             "presets": {
                 "morning_show": {
