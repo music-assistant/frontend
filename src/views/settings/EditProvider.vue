@@ -201,6 +201,7 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Button } from "@/components/ui/button";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import { canReconfigureProvider } from "@/helpers/provider_config";
 import { markdownToHtml, openActionUrlEntries } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -229,7 +230,7 @@ const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
 let configLoadRequestId = 0;
-let statusRefreshRequestId = 0;
+let configRefreshRequestId = 0;
 let unsubProvidersUpdated: (() => void) | undefined;
 
 // props
@@ -269,7 +270,7 @@ watch(showRenameDialog, (val) => {
 
 onMounted(() => {
   unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-    if (props.instanceId) void refreshProviderStatus(props.instanceId);
+    if (props.instanceId) void refreshProviderConfig(props.instanceId);
   });
 });
 
@@ -301,7 +302,7 @@ const onReconfigure = function () {
     kind: "reconfigure",
     instanceId,
     onFlowEnded: () => {
-      void refreshProviderStatus(instanceId);
+      void refreshProviderConfig(instanceId);
     },
   });
 };
@@ -463,21 +464,25 @@ async function loadConfig(instanceId: string) {
   }
 }
 
-async function refreshProviderStatus(instanceId: string) {
+async function refreshProviderConfig(instanceId: string) {
   if (config.value?.instance_id !== instanceId) return;
-  const requestId = ++statusRefreshRequestId;
+  const requestId = ++configRefreshRequestId;
   try {
     const updatedConfig = await api.getProviderConfig(instanceId);
     if (
-      requestId === statusRefreshRequestId &&
+      requestId === configRefreshRequestId &&
       props.instanceId === instanceId &&
       config.value?.instance_id === instanceId
     ) {
       config.value.status = updatedConfig.status;
       config.value.last_error = updatedConfig.last_error;
+      config.value.values = mergeConfigEntries(
+        config.value.values,
+        updatedConfig.values,
+      );
     }
   } catch (err) {
-    if (requestId === statusRefreshRequestId) {
+    if (requestId === configRefreshRequestId) {
       toast.error(String(err));
     }
   }

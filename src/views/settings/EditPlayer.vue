@@ -263,6 +263,7 @@ import {
   ConfigEntryUI,
   UI_ENTRY_TYPE,
   isInjected,
+  mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import { openActionUrlEntries, openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
@@ -273,6 +274,8 @@ const config = ref<PlayerConfig>();
 const loading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
+let configLoadRequestId = 0;
+let configRefreshRequestId = 0;
 
 // props
 const props = defineProps<{
@@ -299,6 +302,11 @@ const unsub = api.subscribe(
   },
 );
 onBeforeUnmount(unsub);
+
+const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+  if (props.playerId) void refreshPlayerConfig(props.playerId);
+});
+onBeforeUnmount(unsubProvidersUpdated);
 
 // computed properties
 const config_entries = computed(() => {
@@ -375,10 +383,8 @@ const config_entries = computed(() => {
 
 watch(
   () => props.playerId,
-  async (val) => {
-    if (val) {
-      config.value = await api.getPlayerConfig(val);
-    }
+  (val) => {
+    if (val) void loadConfig(val);
   },
   { immediate: true },
 );
@@ -495,6 +501,42 @@ const onAction = async function (
       loading.value = false;
     });
 };
+
+async function loadConfig(playerId: string) {
+  const requestId = ++configLoadRequestId;
+  try {
+    const updatedConfig = await api.getPlayerConfig(playerId);
+    if (requestId === configLoadRequestId && props.playerId === playerId) {
+      config.value = updatedConfig;
+    }
+  } catch (err) {
+    if (requestId === configLoadRequestId) {
+      toast.error(String(err));
+    }
+  }
+}
+
+async function refreshPlayerConfig(playerId: string) {
+  if (config.value?.player_id !== playerId) return;
+  const requestId = ++configRefreshRequestId;
+  try {
+    const updatedConfig = await api.getPlayerConfig(playerId);
+    if (
+      requestId === configRefreshRequestId &&
+      props.playerId === playerId &&
+      config.value?.player_id === playerId
+    ) {
+      config.value.values = mergeConfigEntries(
+        config.value.values,
+        updatedConfig.values,
+      );
+    }
+  } catch (err) {
+    if (requestId === configRefreshRequestId) {
+      toast.error(String(err));
+    }
+  }
+}
 </script>
 
 <style scoped>
