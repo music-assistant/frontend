@@ -1,12 +1,13 @@
 import { EventType, ProviderType } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
-import { nextTick, ref } from "vue";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   apiMock,
   authManagerMock,
   guestType,
+  i18nMock,
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
   mockProxyEnsureReady,
@@ -70,6 +71,12 @@ const {
     apiMock,
     authManagerMock,
     guestType,
+    i18nMock: {
+      global: {
+        locale: { value: "en" },
+        t: (key: string) => key,
+      },
+    },
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
     mockProxyEnsureReady: vi.fn(),
@@ -108,9 +115,10 @@ const {
   };
 });
 
-vi.mock("@/plugins/api", () => {
+vi.mock("@/plugins/api", async () => {
   // App.vue watches api.state, so the mock has to carry a real ref: assignments
   // to a plain { value } would never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
   apiMock.state = ref(apiMock.state.value);
   return {
     api: apiMock,
@@ -179,14 +187,13 @@ vi.mock("@/plugins/remote/http-proxy", () => ({
   },
 }));
 
-vi.mock("@/plugins/i18n", () => ({
-  i18n: {
-    global: {
-      locale: { value: "en" },
-      t: (key: string) => key,
-    },
-  },
-}));
+vi.mock("@/plugins/i18n", async () => {
+  // App.vue watches the UI locale to push it to the server, so the mock has to
+  // carry a real ref: assignments to a plain { value } never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  i18nMock.global.locale = ref(i18nMock.global.locale.value);
+  return { i18n: i18nMock };
+});
 
 vi.mock("@vueuse/core", () => ({
   useColorMode: () => ({ value: "auto" }),
@@ -245,7 +252,9 @@ describe("App initialization", () => {
     vi.clearAllMocks();
     vi.resetModules();
     guestType.value = null;
+    i18nMock.global.locale.value = "en";
     apiMock.state.value = "authenticated";
+    apiMock.supportsServerSideTranslations = false;
     apiMock.serverInfo.value = {
       onboard_done: true,
       server_id: "server-id",
@@ -279,6 +288,7 @@ describe("App initialization", () => {
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
+    storeMock.isIngressSession = false;
     storeMock.isOnboarding = false;
     webPlayerMock.audioSource = "disabled";
     webPlayerMock.interacted = false;
@@ -560,19 +570,137 @@ describe("App initialization", () => {
     expect(authManagerMock.clearGuestSession).not.toHaveBeenCalled();
     expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
   });
+
+  it("re-authenticates an ingress session through the proxy on reconnect", async () => {
+    storeMock.isIngressSession = true;
+    wrapper = await mountApp();
+    const ingressUser = {
+      preferences: {},
+      role: "admin",
+      user_id: "ingress-user",
+      username: "ingress-user",
+    };
+    apiMock.getCurrentUserInfo.mockResolvedValue(ingressUser);
+
+    await startReconnect();
+
+    await vi.waitFor(() => {
+      expect(authManagerMock.setCurrentUser).toHaveBeenCalledWith(ingressUser);
+    });
+    expect(apiMock.authenticateWithToken).not.toHaveBeenCalled();
+    expect(apiMock.requireAuthentication).not.toHaveBeenCalled();
+  });
+
+  it("asks for authentication when an ingress reconnect finds no user", async () => {
+    storeMock.isIngressSession = true;
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    apiMock.getCurrentUserInfo.mockResolvedValue(null);
+
+    await startReconnect();
+
+    await vi.waitFor(() => {
+      expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
+    });
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
+  });
+
+  it("asks for authentication when an ingress reconnect fails", async () => {
+    storeMock.isIngressSession = true;
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    apiMock.getCurrentUserInfo.mockRejectedValue(new Error("proxy down"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await startReconnect();
+
+    await vi.waitFor(() => {
+      expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
+    });
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
+  });
+
+  it("pushes a locale change to a server that localizes its own strings", async () => {
+    apiMock.supportsServerSideTranslations = true;
+    wrapper = await mountAuthenticatedApp();
+
+    i18nMock.global.locale.value = "de";
+
+    await vi.waitFor(() => {
+      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
+    });
+    expect(apiMock.fetchState).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the locale local on a server without server-side translations", async () => {
+    wrapper = await mountAuthenticatedApp();
+
+    i18nMock.global.locale.value = "de";
+    await nextTick();
+
+    expect(apiMock.setLocale).not.toHaveBeenCalled();
+    expect(apiMock.fetchState).not.toHaveBeenCalled();
+  });
+
+  it("skips the state refresh for a guest after a locale change", async () => {
+    apiMock.supportsServerSideTranslations = true;
+    guestType.value = "party";
+    wrapper = await mountAuthenticatedApp();
+
+    i18nMock.global.locale.value = "de";
+
+    await vi.waitFor(() => {
+      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
+    });
+    expect(apiMock.fetchState).not.toHaveBeenCalled();
+  });
+
+  it("survives a failed locale push", async () => {
+    apiMock.supportsServerSideTranslations = true;
+    apiMock.setLocale.mockRejectedValue(new Error("offline"));
+    wrapper = await mountAuthenticatedApp();
+
+    i18nMock.global.locale.value = "de";
+
+    await vi.waitFor(() => {
+      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
+    });
+    expect(apiMock.fetchState).not.toHaveBeenCalled();
+  });
 });
 
 /**
  * Drive the connection through a reconnect, which re-authenticates the token.
  */
 async function reconnect() {
-  apiMock.state.value = "reconnecting";
-  await nextTick();
-  apiMock.state.value = "connected";
+  await startReconnect();
   await vi.waitFor(() => {
     expect(apiMock.authenticateWithToken).toHaveBeenCalled();
   });
   await nextTick();
+}
+
+/**
+ * Take the connection down and back up, without waiting for a particular
+ * re-authentication route.
+ */
+async function startReconnect() {
+  apiMock.state.value = "reconnecting";
+  await nextTick();
+  apiMock.state.value = "connected";
+  await nextTick();
+}
+
+/**
+ * Mount the app and leave it in the authenticated state, with the calls made
+ * during initialization cleared so later assertions only see fresh ones.
+ */
+async function mountAuthenticatedApp() {
+  const mounted = await mountApp();
+  apiMock.state.value = "authenticated";
+  await nextTick();
+  apiMock.fetchState.mockClear();
+  return mounted;
 }
 
 async function mountApp() {

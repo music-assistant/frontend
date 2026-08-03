@@ -3,6 +3,7 @@ import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  apiState: { value: "disconnected" as string },
   authenticateWithToken: vi.fn(),
   clearAuth: vi.fn(),
   clearGuestSession: vi.fn(),
@@ -27,24 +28,30 @@ const mocks = vi.hoisted(() => ({
   setToken: vi.fn(),
 }));
 
-vi.mock("@/plugins/api", () => ({
-  ConnectionState: {
-    AUTHENTICATED: "authenticated",
-    AUTHENTICATING: "authenticating",
-    AUTH_REQUIRED: "auth_required",
-    DISCONNECTED: "disconnected",
-    FAILED: "failed",
-    RECONNECTING: "reconnecting",
-  },
-  api: {
-    authenticateWithToken: mocks.authenticateWithToken,
-    disconnect: vi.fn(),
-    getCurrentUserInfo: mocks.getCurrentUserInfo,
-    sendCommand: mocks.sendCommand,
-    serverInfo: mocks.serverInfo,
-    state: { value: "disconnected" },
-  },
-}));
+vi.mock("@/plugins/api", async () => {
+  // Login.vue watches api.state, so the mock has to carry a real ref:
+  // assignments to a plain { value } would never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  mocks.apiState = ref(mocks.apiState.value);
+  return {
+    ConnectionState: {
+      AUTHENTICATED: "authenticated",
+      AUTHENTICATING: "authenticating",
+      AUTH_REQUIRED: "auth_required",
+      DISCONNECTED: "disconnected",
+      FAILED: "failed",
+      RECONNECTING: "reconnecting",
+    },
+    api: {
+      authenticateWithToken: mocks.authenticateWithToken,
+      disconnect: vi.fn(),
+      getCurrentUserInfo: mocks.getCurrentUserInfo,
+      sendCommand: mocks.sendCommand,
+      serverInfo: mocks.serverInfo,
+      state: mocks.apiState,
+    },
+  };
+});
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
@@ -223,6 +230,7 @@ beforeEach(() => {
   setLocation("");
   vi.clearAllMocks();
   vi.useRealTimers();
+  mocks.apiState.value = "disconnected";
   mocks.routerReplace.mockResolvedValue(undefined);
   vi.stubGlobal("WebSocket", WebSocketMock);
   mocks.clearAuth.mockImplementation(() => {
@@ -840,5 +848,54 @@ describe("ingress login", () => {
       expect(wrapper.text()).toContain("Username");
     });
     expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
+  });
+});
+
+describe("connection state changes", () => {
+  it("shows the reconnecting screen when the connection drops", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    mocks.apiState.value = "reconnecting";
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Reconnecting");
+    });
+    wrapper.unmount();
+  });
+
+  it("returns to the server picker when a reconnect fails", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+    mocks.apiState.value = "reconnecting";
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Reconnecting");
+    });
+
+    mocks.apiState.value = "disconnected";
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).not.toContain("Reconnecting");
+    });
+    expect(wrapper.text()).toContain("Connect");
+    wrapper.unmount();
+  });
+
+  it("keeps explaining an ended guest session while the connection churns", async () => {
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+    const wrapper = mountLogin();
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Your party session has ended");
+    });
+
+    mocks.apiState.value = "reconnecting";
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Your party session has ended");
+    expect(wrapper.text()).not.toContain("Reconnecting");
+    wrapper.unmount();
   });
 });
