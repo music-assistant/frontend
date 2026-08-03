@@ -1,17 +1,8 @@
 <template>
   <div class="party-view" :style="gradientBackgroundStyle">
-    <!-- MilkDrop visualizer takes over the backdrop when enabled -->
-    <VisualizerCanvas
-      v-if="visualizerActive"
-      :preset="visualizerPresetPref"
-      :blur="visualizerBlurPref"
-      :opacity="visualizerOpacityPref"
-      :player-id="store.activePlayer?.player_id"
-      covered-when-fullscreen
-    />
     <!-- Blurred album art background: separate element so the browser can cache the texture -->
     <div
-      v-else-if="useAlbumArtBackground && albumArtUrl"
+      v-if="useAlbumArtBackground && albumArtUrl"
       class="background-image"
       :style="{ backgroundImage: `url(${albumArtUrl})` }"
     ></div>
@@ -34,8 +25,7 @@
         'party-content',
         {
           'party-content--karaoke': karaokeMode,
-          'party-content--album-art':
-            visualizerActive || (useAlbumArtBackground && !!albumArtUrl),
+          'party-content--album-art': useAlbumArtBackground && !!albumArtUrl,
           'party-content--light-text': useLightChrome,
         },
       ]"
@@ -304,7 +294,6 @@
 import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyQR from "@/components/party/PartyQR.vue";
-import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
 import {
   AlertDialog,
@@ -319,7 +308,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
-import { useUserPreferences } from "@/composables/userPreferences";
 import {
   ImageColorPalette,
   getMediaItemImageUrl,
@@ -335,7 +323,6 @@ import {
   Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
 import {
   Maximize2,
   Minimize2,
@@ -482,15 +469,6 @@ onBeforeUnmount(() => {
 
 // Album art background is always active
 const useAlbumArtBackground = computed(() => true);
-
-const { getPreference } = useUserPreferences();
-const visualizerEnabledPref = getPreference("visualizer_enabled", false);
-const visualizerPresetPref = getPreference("visualizer_preset", "");
-const visualizerBlurPref = getPreference("visualizer_blur", 0);
-const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
-const visualizerActive = computed(
-  () => visualizerEnabledPref.value && visualizerProviderAvailable(),
-);
 
 const isPlaying = computed(
   () => store.activePlayer?.playback_state === PlaybackState.PLAYING,

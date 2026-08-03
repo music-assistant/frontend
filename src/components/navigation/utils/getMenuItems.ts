@@ -6,7 +6,6 @@ import {
   BookAudio,
   Compass,
   Disc3,
-  Droplet,
   Folder,
   ListMusic,
   MicVocal,
@@ -193,15 +192,6 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     isLibraryNode: false,
     group: "plugins",
     available: () => store.enabledPlugins.has("ai_radio"),
-  },
-  {
-    id: "milkdrop_visualizer",
-    label: "visualizer.title",
-    icon: Droplet,
-    path: "/visualizer",
-    isLibraryNode: false,
-    group: "plugins",
-    available: () => store.enabledPlugins.has("milkdrop_visualizer"),
   },
   {
     id: "settings",

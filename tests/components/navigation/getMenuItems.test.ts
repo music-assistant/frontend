@@ -71,12 +71,7 @@ describe("getMenuItems (sidebar.menu preference)", () => {
   });
 
   it("shows everything in default order for users without any customization", () => {
-    storeMock.enabledPlugins = new Set([
-      "party",
-      "music_quiz",
-      "ai_radio",
-      "milkdrop_visualizer",
-    ]);
+    storeMock.enabledPlugins = new Set(["party", "music_quiz", "ai_radio"]);
 
     expect(getIds()).toEqual(DEFAULT_MENU_ITEMS);
     expect(getMenuItems().filter((item) => item.hidden)).toEqual([]);
@@ -86,23 +81,13 @@ describe("getMenuItems (sidebar.menu preference)", () => {
   });
 
   it("groups the plugin-backed entries under the plugins section", () => {
-    storeMock.enabledPlugins = new Set([
-      "party",
-      "music_quiz",
-      "ai_radio",
-      "milkdrop_visualizer",
-    ]);
+    storeMock.enabledPlugins = new Set(["party", "music_quiz", "ai_radio"]);
 
     const pluginIds = getMenuItems()
       .filter((item) => item.group === "plugins")
       .map((item) => item.id);
 
-    expect(pluginIds).toEqual([
-      "party",
-      "music_quiz",
-      "ai_radio",
-      "milkdrop_visualizer",
-    ]);
+    expect(pluginIds).toEqual(["party", "music_quiz", "ai_radio"]);
   });
 
   it("ignores the retired menu_items whitelist preferences", () => {

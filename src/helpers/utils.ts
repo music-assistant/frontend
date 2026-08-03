@@ -800,14 +800,13 @@ export const playerVisible = function (
 };
 
 // Keep hidden players out of group pickers unless they represent this device or
-// are player types intended to be grouped with audio players. Visualizer
-// players are excluded: the built-in visualizer manages its own group
-// membership server-side, so surfacing its tap clients here is just noise.
+// are player types intended to be grouped with audio players.
 export const groupMemberPickerVisible = function (player: Player): boolean {
   return (
     !player.hide_in_ui ||
     isBuiltinPlayer(player) ||
-    player.type === PlayerType.LIGHT
+    player.type === PlayerType.LIGHT ||
+    player.type === PlayerType.VISUALIZER
   );
 };
 

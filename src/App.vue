@@ -225,7 +225,6 @@ const refreshPluginEnabledStates = async () => {
     refreshPluginEnabledState("party"),
     refreshPluginEnabledState("music_quiz"),
     refreshPluginEnabledState("ai_radio"),
-    refreshPluginEnabledState("milkdrop_visualizer"),
   ]);
 };
 

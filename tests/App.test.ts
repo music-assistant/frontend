@@ -372,23 +372,13 @@ describe("App initialization", () => {
       ProviderType.PLUGIN,
       "ai_radio",
     );
-    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
-      4,
-      ProviderType.PLUGIN,
-      "milkdrop_visualizer",
-    );
     expect(storeMock.enabledPlugins).toEqual(
-      new Set<string>([
-        "party",
-        "music_quiz",
-        "ai_radio",
-        "milkdrop_visualizer",
-      ]),
+      new Set<string>(["party", "music_quiz", "ai_radio"]),
     );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
 
     await signalProvidersUpdated();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(6);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
   });
 
