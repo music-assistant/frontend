@@ -309,9 +309,10 @@ onMounted(() => {
           codecs,
           syncDelay,
           requiredLeadTimeMs: 250,
-          // Ask for a larger buffer when we are being routed through WebRTC.
-          // This increases latency for live streams, but improves stability
-          minBufferMs: isDirectConnection() ? 2500 : 6000,
+          // Startup lead the server uses to schedule the first chunk, so it
+          // directly delays first audio and must stay small. Once playback is
+          // running the buffer grows well beyond this on its own.
+          minBufferMs: 500,
           onStateChange: (state) => {
             // Update reactive state when player state changes
             isPlaying.value = state.isPlaying;

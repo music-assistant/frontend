@@ -207,6 +207,18 @@
               "
               v-model="dsp.filters[selectedStage] as TransposeFilter"
             />
+            <DSPStereoWidth
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.STEREO_WIDTH
+              "
+              v-model="dsp.filters[selectedStage] as StereoWidthFilter"
+            />
+            <DSPCrossfeed
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CROSSFEED
+              "
+              v-model="dsp.filters[selectedStage] as CrossfeedFilter"
+            />
           </v-card>
         </v-col>
       </v-row>
@@ -284,6 +296,8 @@ import {
   type GainFilter,
   type BalanceFilter,
   type TransposeFilter,
+  type StereoWidthFilter,
+  type CrossfeedFilter,
   ParametricEQFilter,
   ToneControlFilter,
   EventType,
@@ -294,6 +308,8 @@ import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
 import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
+import DSPStereoWidth from "@/components/dsp/DSPStereoWidth.vue";
+import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
 import { TriangleAlert } from "@lucide/vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -425,6 +441,21 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.TRANSPOSE,
         semitones: 0,
+      };
+      break;
+    case DSPFilterType.STEREO_WIDTH:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.STEREO_WIDTH,
+        width: 1,
+      };
+      break;
+    case DSPFilterType.CROSSFEED:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CROSSFEED,
+        strength: 0.2,
+        soundstage: 0.5,
       };
       break;
     default:

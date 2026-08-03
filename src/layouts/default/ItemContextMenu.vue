@@ -186,7 +186,11 @@ const onOpenChange = function (value: boolean) {
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
   if (menuItem.action) {
-    menuItem.action();
+    // actions may be async and are not awaited here; catch so a rejection
+    // surfaces in the console instead of as an unhandled promise rejection
+    Promise.resolve(menuItem.action()).catch((err) => {
+      console.error("[contextmenu] action '%s' failed", menuItem.label, err);
+    });
   }
   // Keep the menu open for multi-select style items (optimistic update).
   if (menuItem.close_on_click === false) {
@@ -244,6 +248,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
@@ -270,6 +275,7 @@ import {
   PlayCircle,
   PlusCircle,
   RefreshCw,
+  RotateCcw,
   SkipForward,
   Sparkles,
   Trash2,
@@ -809,11 +815,33 @@ export const getContextMenuItems = async function (
           await api.markItemUnPlayed(item);
         },
       });
+      // play from beginning (podcast episode with saved progress)
+      if (item.media_type === MediaType.PODCAST_EPISODE) {
+        contextMenuItems.push({
+          label: "play_from_beginning",
+          icon: RotateCcw,
+          action: () => {
+            api.playMedia(
+              item.uri,
+              QueueOption.PLAY,
+              undefined,
+              undefined,
+              undefined,
+              true,
+            );
+          },
+          disabled: !store.activePlayer,
+        });
+      }
     }
   }
 
   // update metadata
-  if (items.length === 1 && items[0] == parentItem) {
+  if (
+    items.length === 1 &&
+    items[0] == parentItem &&
+    items[0].media_type !== MediaType.COLLECTION
+  ) {
     contextMenuItems.push({
       label: "update_metadata",
       labelArgs: [],
@@ -872,6 +900,7 @@ export const getContextMenuItems = async function (
   // refresh item
   if (
     items.length === 1 &&
+    items[0].media_type !== MediaType.COLLECTION &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
   ) {
     contextMenuItems.push({
@@ -997,7 +1026,10 @@ export const getContextMenuItems = async function (
   // link to genre (library items only, non-genre)
   if (
     items.every(
-      (i) => i.media_type !== MediaType.GENRE && i.provider === "library",
+      (i) =>
+        i.media_type !== MediaType.GENRE &&
+        i.media_type !== MediaType.COLLECTION &&
+        i.provider === "library",
     )
   ) {
     contextMenuItems.push({
@@ -1205,14 +1237,38 @@ export const getPlaybackContextMenuItems = async function (
     const allFullyPlayed = podcastEpisodes.every(isFullyPlayed);
     const allUnplayed = podcastEpisodes.every(isUnplayed);
 
-    // throttled: a bulk selection can span thousands of episodes
+    // Throttled: a bulk selection can span thousands of episodes. Per-command
+    // error toasts are suppressed so one broken connection can't produce a
+    // toast per episode; failures are counted and reported once instead.
+    const markAll = async (
+      command: (item: PodcastEpisode) => Promise<void>,
+    ): Promise<void> => {
+      const outcomes = await runWithConcurrency(
+        podcastEpisodes,
+        async (item: PodcastEpisode) => {
+          try {
+            await command(item);
+            return true;
+          } catch (err) {
+            console.error("[markAll] failed for %s", item.uri, err);
+            return false;
+          }
+        },
+      );
+      const failed = outcomes.filter((ok) => !ok).length;
+      if (failed) {
+        toast.error($t("mark_played_partial_failure", [failed]));
+      }
+    };
     const markAllPlayed = () =>
-      runWithConcurrency(podcastEpisodes, (item: PodcastEpisode) =>
-        api.markItemPlayed(item, true),
+      markAll((item) =>
+        api.markItemPlayed(item, true, undefined, {
+          suppressGlobalError: true,
+        }),
       );
     const markAllUnPlayed = () =>
-      runWithConcurrency(podcastEpisodes, (item: PodcastEpisode) =>
-        api.markItemUnPlayed(item),
+      markAll((item) =>
+        api.markItemUnPlayed(item, { suppressGlobalError: true }),
       );
 
     // If all items are fully played, show "mark unplayed" option

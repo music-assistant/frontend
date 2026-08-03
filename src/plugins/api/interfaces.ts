@@ -17,6 +17,8 @@ export enum DSPFilterType {
   GAIN = "gain",
   BALANCE = "balance",
   TRANSPOSE = "transpose",
+  STEREO_WIDTH = "stereo_width",
+  CROSSFEED = "crossfeed",
 }
 
 export enum ParametricEQBandType {
@@ -74,13 +76,27 @@ export interface TransposeFilter extends DSPFilterBase {
   semitones: number;
 }
 
+export interface StereoWidthFilter extends DSPFilterBase {
+  type: DSPFilterType.STEREO_WIDTH;
+  // 0.0 mono, 1.0 unchanged, 2.0 widest
+  width: number;
+}
+
+export interface CrossfeedFilter extends DSPFilterBase {
+  type: DSPFilterType.CROSSFEED;
+  strength: number;
+  soundstage: number;
+}
+
 // Union type for all possible filters
 export type DSPFilter =
   | ParametricEQFilter
   | ToneControlFilter
   | GainFilter
   | BalanceFilter
-  | TransposeFilter;
+  | TransposeFilter
+  | StereoWidthFilter
+  | CrossfeedFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
@@ -118,6 +134,7 @@ export enum MediaType {
   SOUND_EFFECT = "sound_effect",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  COLLECTION = "collection",
   GENRE = "genre",
   GENRE_ALIAS = "genre_alias",
   FOLDER = "folder",
@@ -853,8 +870,8 @@ export interface AudioSource extends MediaItem {
 
 export interface Audiobook extends MediaItem {
   publisher: string;
-  authors: string[];
-  narrators: string[];
+  authors: string[] | Artist[];
+  narrators: string[] | Artist[];
   duration: number;
   fully_played?: boolean;
   resume_position_ms?: number;
@@ -898,6 +915,10 @@ export interface RecommendationFolder extends BrowseFolder {
   type?: RecommendationFolderType;
 }
 
+export interface MediaCollection<M extends MediaItemType> extends MediaItem {
+  items: M[];
+}
+
 export type MediaItemType =
   | Artist
   | Album
@@ -909,6 +930,7 @@ export type MediaItemType =
   | Podcast
   | PodcastEpisode
   | Genre
+  | MediaCollection<MediaItemType>
   | BrowseFolder;
 
 export type PlayableMediaItemType =

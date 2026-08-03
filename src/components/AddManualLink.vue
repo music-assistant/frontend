@@ -99,7 +99,7 @@
           :disabled="loading || !isFormValid"
         >
           <Spinner v-if="loading" />
-          {{ isEditMode ? $t("save") : $t("add") }}
+          {{ isEditMode ? $t("settings.save") : $t("add") }}
         </Button>
       </DialogFooter>
     </DialogContent>

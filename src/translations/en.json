@@ -260,6 +260,23 @@
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Set the concert pitch so A is tuned to 432 Hz"
             },
+            "stereo_width": {
+                "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound.",
+                "clip_hint": "Widening past Original can raise peaks and cause clipping. Consider adding a Limiter after this filter.",
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Original",
+                    "wide": "Wide"
+                }
+            },
+            "crossfeed": {
+                "help": "Makes headphone listening feel more natural by gently blending the left and right channels, similar to listening to speakers.",
+                "presets": {
+                    "low": "Low",
+                    "medium": "Medium",
+                    "high": "High"
+                }
+            },
             "parameter": {
                 "frequency": "Frequency",
                 "gain": "Gain",
@@ -271,7 +288,9 @@
                 "tone_control": "Tone Control",
                 "gain": "Gain",
                 "balance": "Balance",
-                "transpose": "Transpose"
+                "transpose": "Transpose",
+                "stereo_width": "Stereo Width",
+                "crossfeed": "Crossfeed"
             },
             "channels": {
                 "ALL": "All",
@@ -485,6 +504,7 @@
                 "right": "Right"
             }
         },
+        "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "genre_management": "Genre Management",
         "genre_management_description": "Manage default genres and restore genre defaults",
@@ -677,6 +697,7 @@
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
+        "collapse_collections": "Collapse collections",
         "explicit": "Explicit",
         "filter_library": "Toggle in-library\/favorite filter",
         "library": "Toggle in-library\/favorite",
@@ -767,6 +788,7 @@
     "enter_name": "Enter a new (custom) name",
     "image_url": "Input the URL to an image or icon (optional)",
     "invalid_input": "The input was invalid",
+    "error_generic": "Something went wrong. Please try again.",
     "new_playlist": "New playlist",
     "create_playlist_on": "Create new playlist on {0}",
     "view": {
@@ -799,6 +821,7 @@
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
+    "audiobooks_in_collection": "Audiobooks in this collection",
     "chapter": "Chapter",
     "chapters": "Chapters",
     "podcast": "Podcast",
@@ -808,10 +831,12 @@
     "duration_in_seconds": "{0} seconds",
     "mark_played": "Mark as played",
     "mark_unplayed": "Mark as unplayed",
+    "mark_played_partial_failure": "Could not update {0} episode(s)",
     "searchtype_all": "All",
     "global_search": "Global search",
     "podcast_episode": "Episode",
     "podcast_episodes": "Episodes",
+    "play_from_beginning": "Play from beginning",
     "play_from_here": "Play from here",
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",
@@ -1000,6 +1025,7 @@
         "manage_tokens": "Manage access tokens",
         "token_created": "Token created successfully",
         "token_create_failed": "Failed to create token. Please try again.",
+        "tokens_load_failed": "Failed to load access tokens",
         "user_management": "User management",
         "users": "Users",
         "create_user": "Create user",
@@ -1021,6 +1047,7 @@
         "user_disable_failed": "Failed to disable user",
         "user_enabled": "User enabled successfully",
         "user_enable_failed": "Failed to enable user",
+        "users_load_failed": "Failed to load users",
         "password_optional_hint": "Leave blank to keep current password",
         "confirm_disable_user": "Are you sure you want to disable this user?",
         "confirm_delete_user": "Are you sure you want to delete this user? This action cannot be undone.",
@@ -1055,8 +1082,10 @@
         "establishing_connection": "Establishing connection...",
         "local_server": "Local Server",
         "remote_server": "Remote",
+        "remote_only_info": "Connect to your Music Assistant server remotely",
         "server_address": "Server Address",
         "server_address_placeholder": "http:\/\/192.168.1.100:8095",
+        "server_address_hint": "Enter the full URL of your Music Assistant server",
         "remote_id": "Remote ID",
         "remote_id_placeholder": "e.g., MA-X7K9-P2M4",
         "remote_id_hint": "Find this in your server settings under \"Remote Access\"",
@@ -1077,6 +1106,10 @@
         "checking_stored": "Checking for saved connection...",
         "connecting_to_saved": "Connecting to saved server...",
         "connecting_remote": "Connecting to remote server...",
+        "connecting_ingress": "Connecting via Home Assistant...",
+        "connecting_local_party": "Connecting to party...",
+        "connecting_remote_party": "Connecting to party...",
+        "joining_party": "Joining party...",
         "authenticating": "Authenticating...",
         "checking_local": "Checking local server...",
         "finding_server": "Finding your server...",
@@ -1084,14 +1117,27 @@
         "complete_sign_in": "Complete Sign-in",
         "oauth_waiting_message": "A browser window has opened. Please sign in with Home Assistant, then return here.",
         "waiting_for_auth": "Waiting for authentication...",
+        "reconnecting": "Reconnecting",
+        "reconnecting_message": "Attempting to reconnect to the server...",
         "connection_failed": "Connection Failed",
         "try_again": "Try Again",
         "error_unknown": "Unknown error occurred",
+        "error_ingress_failed": "Couldn't sign in through Home Assistant",
+        "error_invalid_credentials": "Couldn't sign you in. Please check your username and password.",
         "error_login_failed": "Login failed. Please check your credentials.",
         "error_oauth_failed": "Failed to authenticate with Home Assistant.",
+        "error_party_auth_failed": "Couldn't join the party",
+        "guest_ended_party_title": "Your party session has ended",
+        "guest_ended_party_message": "Ask the host to share the party link or QR code again to rejoin.",
+        "guest_ended_quiz_title": "Your quiz session has ended",
+        "guest_ended_quiz_message": "Ask the host to share the quiz link or QR code again to rejoin.",
+        "guest_ended_dashboard_title": "This dashboard session has ended",
+        "guest_ended_dashboard_message": "Cast the dashboard again from Music Assistant to continue.",
+        "continue_to_app": "Continue to Music Assistant",
         "scan_qr": "Scan QR",
         "scan_qr_code": "Scan QR Code",
         "scan_qr_hint": "Point your camera at the QR code shown in your Music Assistant server settings.",
+        "scan_qr_hint_guest": "Point your camera at the QR code the host is showing.",
         "qr_invalid": "Invalid QR code. Please scan a Music Assistant remote ID QR code.",
         "qr_camera_error": "Could not access camera. Please check permissions."
     },
@@ -1922,6 +1968,7 @@
     "artist_all_tracks": "All tracks",
     "on_provider": "On {0}",
     "open_queue_settings": "Open queue settings",
+    "collection_no_audiobooks": "This collection does not hold any audiobooks.",
     "crossfade_enable": "Enable crossfade",
     "crossfade_disable": "Disable crossfade",
     "crossfade": "Crossfade",

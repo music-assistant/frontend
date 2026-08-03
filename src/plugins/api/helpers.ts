@@ -168,6 +168,8 @@ export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
   if (item.media_type == MediaType.FOLDER) return true;
+  if (item.media_type == MediaType.COLLECTION && item.provider == "library")
+    return true;
   if (
     (item.media_type == MediaType.GENRE ||
       item.media_type == MediaType.GENRE_ALIAS) &&
@@ -193,6 +195,14 @@ export const getSourceName = function (player: Player) {
     }
   }
   return source_id;
+};
+
+export const getCollectionMediaTypeFromItemId = function (itemId: string) {
+  // the item id is defined by the backend as "<MediaType>___<collection_name>"
+  const itemIdType = itemId.split("___", 1)[0];
+  return Object.values(MediaType).includes(itemIdType as MediaType)
+    ? (itemIdType as MediaType)
+    : MediaType.UNKNOWN;
 };
 
 /**

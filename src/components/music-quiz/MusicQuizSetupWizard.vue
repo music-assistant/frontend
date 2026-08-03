@@ -2,6 +2,7 @@
   <div class="relative flex flex-col gap-5" :class="{ 'min-h-64': busy }">
     <MusicQuizPreparingState
       v-if="busy"
+      autofocus
       class="absolute inset-0 z-10 rounded-lg"
     />
 

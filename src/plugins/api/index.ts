@@ -59,6 +59,7 @@ import {
   SmartPlaylistRules,
   SoundEffect,
   UserRole,
+  MediaCollection,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -191,7 +192,13 @@ export class MusicAssistantApi {
 
     transport.on("close", () => {
       // Don't immediately emit DISCONNECTED - wait for stateChange
-      // to see if we're reconnecting or truly disconnected
+      // to see if we're reconnecting or truly disconnected.
+      // In-flight commands can never be answered though: the server does not
+      // retain message ids across connections, so fail them instead of leaving
+      // their promises pending forever.
+      this.rejectPendingCommands(
+        "Connection closed before the command completed",
+      );
     });
 
     transport.on("error", (error: Error) => {
@@ -407,6 +414,23 @@ export class MusicAssistantApi {
     );
     this._providerIconRequests.clear();
     this.serverInfo.value = undefined;
+    this.rejectPendingCommands("Disconnected before the command completed");
+  }
+
+  /**
+   * Fail every in-flight command. Their results can never arrive once the
+   * connection is gone, so without this their promises stay pending forever
+   * and any caller awaiting them stalls silently.
+   */
+  private rejectPendingCommands(reason: string): void {
+    if (this.commands.size === 0) return;
+    for (const command of this.commands.values()) {
+      command.reject(reason);
+    }
+    this.commands.clear();
+    for (const key of Object.keys(this.partialResult)) {
+      delete this.partialResult[key];
+    }
   }
 
   public subscribe(
@@ -993,7 +1017,8 @@ export class MusicAssistantApi {
     order_by?: string,
     provider?: string | string[],
     genre?: number | number[],
-  ): Promise<Audiobook[]> {
+    collapse_collections?: boolean,
+  ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
       search,
@@ -1002,6 +1027,7 @@ export class MusicAssistantApi {
       order_by,
       provider,
       genre,
+      collapse_collections,
     });
   }
 
@@ -1012,6 +1038,14 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/get_audiobook", {
       item_id,
       provider_instance_id_or_domain,
+    });
+  }
+
+  public getAudiobookCollection(
+    item_id: string,
+  ): Promise<MediaCollection<Audiobook>> {
+    return this.sendCommand("music/audiobooks/get_collection", {
+      item_id,
     });
   }
 
@@ -1483,6 +1517,7 @@ export class MusicAssistantApi {
     media_item: MediaItemTypeOrItemMapping,
     fully_played?: boolean,
     seconds_played?: number,
+    options?: { suppressGlobalError?: boolean },
   ): Promise<void> {
     // optimistically update the local object so the UI reflects the new state;
     // keep resume_position_ms present (instead of deleting the key) because
@@ -1492,14 +1527,19 @@ export class MusicAssistantApi {
       media_item.resume_position_ms = (seconds_played ?? 0) * 1000;
     }
     // Mark item as played in the playlog
-    return this.sendCommand("music/mark_played", {
-      media_item,
-      fully_played,
-      seconds_played,
-    });
+    return this.sendCommand(
+      "music/mark_played",
+      {
+        media_item,
+        fully_played,
+        seconds_played,
+      },
+      options,
+    );
   }
   public markItemUnPlayed(
     media_item: MediaItemTypeOrItemMapping,
+    options?: { suppressGlobalError?: boolean },
   ): Promise<void> {
     // optimistically update the local object so the UI reflects the new state
     if (itemSupportsPlayLog(media_item)) {
@@ -1507,9 +1547,13 @@ export class MusicAssistantApi {
       media_item.resume_position_ms = 0;
     }
     // Mark item as unplayed in the playlog
-    return this.sendCommand("music/mark_unplayed", {
-      media_item,
-    });
+    return this.sendCommand(
+      "music/mark_unplayed",
+      {
+        media_item,
+      },
+      options,
+    );
   }
 
   // PlayerQueue related functions/commands
@@ -1968,6 +2012,7 @@ export class MusicAssistantApi {
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
     sort_by?: string,
+    start_from_beginning?: boolean,
   ): Promise<void> {
     if (
       !queue_id &&
@@ -1984,6 +2029,7 @@ export class MusicAssistantApi {
       option,
       start_item,
       sort_by,
+      start_from_beginning,
     });
   }
 

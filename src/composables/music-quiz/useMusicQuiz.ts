@@ -112,6 +112,7 @@ interface MusicQuizGuessTheSongStateBase extends MusicQuizStateIdentity {
   mode: MusicQuizMode;
   players: MusicQuizMultipleChoicePlayer[];
   current_round?: MusicQuizGuessTheSongRound | null;
+  preparing?: boolean;
 }
 
 export type MusicQuizGuessTheSongPublicState = MusicQuizGuessTheSongStateBase;
@@ -126,6 +127,7 @@ interface MusicQuizTimelineStateBase extends MusicQuizStateIdentity {
   mode: MusicQuizMode;
   players: MusicQuizTimelinePlayer[];
   current_round: MusicQuizTimelineRound | null;
+  preparing?: boolean;
 }
 
 export type MusicQuizTimelinePublicState = MusicQuizTimelineStateBase;
@@ -141,6 +143,7 @@ interface MusicQuizTriviaStateBase extends MusicQuizStateIdentity {
   mode: MusicQuizMode;
   players: MusicQuizMultipleChoicePlayer[];
   current_round: MusicQuizTriviaRound | null;
+  preparing?: boolean;
 }
 
 export type MusicQuizTriviaPublicState = MusicQuizTriviaStateBase;

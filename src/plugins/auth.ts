@@ -5,8 +5,11 @@
 
 import { clearGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
 import {
+  clearGuestSessionEnded,
   clearGuestSessionStorage,
   GUEST_TOKEN_STORAGE_KEY,
+  type GuestSessionKind,
+  setGuestSessionEnded,
 } from "@/helpers/guest_session";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
 import type { User } from "./api/interfaces";
@@ -16,7 +19,9 @@ const TOKEN_STORAGE_KEY = "ma_access_token";
 const TOKEN_CONNECTION_STORAGE_KEY = "ma_access_token_connection";
 
 /**
- * JWT claims structure from Music Assistant tokens
+ * JWT claims from Music Assistant tokens, mirroring the server's token payload.
+ * Mutable per-user data (player/provider filters) stays on `User`, not the token —
+ * tokens can be long-lived and would serve stale filters after an admin edit.
  */
 interface JWTClaims {
   sub: string; // user_id
@@ -25,12 +30,15 @@ interface JWTClaims {
   exp: number; // expiration
   username: string;
   role: string;
-  permissions: string[];
-  player_filter: string[];
-  provider_filter: string[];
   token_name: string;
   is_long_lived: boolean;
 }
+
+/** What happened to a session-scoped session the server rejected. */
+export type EndedGuestSession =
+  | { outcome: "no-guest-session" }
+  | { outcome: "own-session-restored" }
+  | { outcome: "ended"; kind: GuestSessionKind };
 
 export class AuthManager {
   private token: string | null = null;
@@ -177,6 +185,21 @@ export class AuthManager {
   }
 
   /**
+   * Return the kind of session-scoped access the current token grants.
+   *
+   * Read this before tearing down a guest session: the kind comes from the
+   * token claims, which clearGuestSession discards.
+   *
+   * :return: The guest session kind, or null for a regular user session.
+   */
+  guestSessionKind(): GuestSessionKind | null {
+    if (this.isPartyGuest()) return "party";
+    if (this.isMusicQuizGuest()) return "music_quiz";
+    if (this.isDashboardViewer()) return "dashboard";
+    return null;
+  }
+
+  /**
    * Set current user
    */
   setCurrentUser(user: User): void {
@@ -197,7 +220,7 @@ export class AuthManager {
    */
   clearGuestSession(): void {
     clearGuestSessionStorage();
-    if (!this.isGuestAccessSession()) return;
+    if (!this.guestSessionKind()) return;
 
     this.restorePersistentToken();
     store.currentUser = undefined;
@@ -211,8 +234,45 @@ export class AuthManager {
     if (!this.isGuestAccessSession()) return;
 
     this.clearGuestSession();
+    this.returnToFullApp();
+  }
+
+  /**
+   * Tear down a session-scoped session the server no longer accepts.
+   *
+   * A session-scoped device (party/quiz guest, dashboard viewer) has no
+   * credentials to re-authenticate with, so this restores the device's own
+   * session if one is saved, or records what ended for the login screen to
+   * explain otherwise. When the outcome is "own-session-restored", the tab is
+   * already being reloaded into that session - the caller must not continue.
+   *
+   * :return: What happened: no guest session was active, the device's own
+   *     session was restored (and the tab is reloading), or the guest session
+   *     ended and its kind was recorded.
+   */
+  endRejectedGuestSession(): EndedGuestSession {
+    const kind = this.guestSessionKind();
+    if (!kind) return { outcome: "no-guest-session" };
+
+    this.clearGuestSession();
+    if (this.token) {
+      this.returnToFullApp();
+      return { outcome: "own-session-restored" };
+    }
+
+    setGuestSessionEnded(kind);
+    return { outcome: "ended", kind };
+  }
+
+  /**
+   * Reload the tab into the full application, dropping any guest join context.
+   */
+  returnToFullApp(): void {
     const returnUrl = new URL(window.location.href);
+    // Both codes would start a fresh guest session on the way back in. remote_id
+    // stays: the full application still needs it to reach a remote server.
     returnUrl.searchParams.delete("join");
+    returnUrl.searchParams.delete("dashboard");
     returnUrl.hash = "/discover";
     window.history.replaceState({}, "", returnUrl);
     window.location.reload();
@@ -227,6 +287,7 @@ export class AuthManager {
     store.currentUser = undefined;
     clearGuestQuizAffinity();
     clearGuestSessionStorage();
+    clearGuestSessionEnded();
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
   }

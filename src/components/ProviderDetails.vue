@@ -58,7 +58,7 @@
               @click.prevent="openLinkInNewTab(providerMapping.url)"
               >{{ getProviderUri(providerMapping) }}</a
             >
-            <span v-else style="opacity: 0.4" :title="$t('copy_uri')">{{
+            <span v-else style="opacity: 0.4" :title="$t('tooltip.copy_uri')">{{
               getProviderUri(providerMapping)
             }}</span>
           </template>

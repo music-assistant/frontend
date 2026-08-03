@@ -59,6 +59,11 @@ class TestTransport extends BaseTransport {
     this.sentCommands.push(JSON.parse(data) as CommandMessage);
   }
 
+  /** Simulate the socket dropping (emit is protected on the base class). */
+  close(reason = "connection lost"): void {
+    this.emit("close", reason);
+  }
+
   receive(
     message: ServerInfoMessage | SuccessResultMessage | ErrorResultMessage,
   ): void {
@@ -156,6 +161,25 @@ describe("MusicAssistantApi error handling", () => {
       result: config,
     });
     await expect(result).resolves.toEqual(config);
+  });
+
+  it("rejects in-flight commands when the connection closes", async () => {
+    const command = api.sendCommand("test/pending");
+    const rejection = expect(command).rejects.toContain("Connection closed");
+
+    // a dropped socket emits close; the result can never arrive afterwards
+    transport.close();
+
+    await rejection;
+  });
+
+  it("rejects in-flight commands on an explicit disconnect", async () => {
+    const command = api.sendCommand("test/pending");
+    const rejection = expect(command).rejects.toContain("Disconnected");
+
+    api.disconnect();
+
+    await rejection;
   });
 });
 

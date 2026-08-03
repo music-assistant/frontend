@@ -2,7 +2,7 @@
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
       <Button variant="ghost" class="size-8 p-0">
-        <span class="sr-only">{{ $t("open") }}</span>
+        <span class="sr-only">{{ $t("more_options") }}</span>
         <MoreVertical class="size-4" />
       </Button>
     </DropdownMenuTrigger>
