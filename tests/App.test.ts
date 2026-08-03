@@ -10,12 +10,12 @@ const {
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
   mockProxyEnsureReady,
-  mockProxyIsReady,
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
   mockRememberCurrentRemoteConnection,
   mockRouterPush,
   mockSetPreference,
+  proxyState,
   routeState,
   storeMock,
   webPlayerMock,
@@ -74,12 +74,12 @@ const {
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
     mockProxyEnsureReady: vi.fn(),
-    mockProxyIsReady: { value: true },
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRouterPush: vi.fn(),
     mockSetPreference: vi.fn(),
+    proxyState: { isReady: { value: true } },
     routeState: {
       current: null as { meta: Record<string, unknown> } | null,
     },
@@ -174,13 +174,18 @@ vi.mock("@/plugins/remote", () => ({
   },
 }));
 
-vi.mock("@/plugins/remote/http-proxy", () => ({
-  httpProxyBridge: {
-    ensureReady: mockProxyEnsureReady,
-    isReady: mockProxyIsReady,
-    setTransport: mockProxySetTransport,
-  },
-}));
+vi.mock("@/plugins/remote/http-proxy", () => {
+  // showMainApp reads this, so the mock has to carry a real ref: the gate only
+  // re-evaluates once the service worker reports ready if the read is tracked.
+  proxyState.isReady = ref(proxyState.isReady.value);
+  return {
+    httpProxyBridge: {
+      ensureReady: mockProxyEnsureReady,
+      isReady: proxyState.isReady,
+      setTransport: mockProxySetTransport,
+    },
+  };
+});
 
 vi.mock("@/plugins/i18n", () => ({
   i18n: {
@@ -250,7 +255,7 @@ describe("App initialization", () => {
     guestType.value = null;
     apiMock.state.value = "authenticated";
     apiMock.isRemoteConnection.value = false;
-    mockProxyIsReady.value = true;
+    proxyState.isReady.value = true;
     apiMock.serverInfo.value = {
       onboard_done: true,
       server_id: "server-id",
@@ -521,7 +526,7 @@ describe("App initialization", () => {
 
   it("withholds the main app on a remote connection until the proxy is ready", async () => {
     apiMock.isRemoteConnection.value = true;
-    mockProxyIsReady.value = false;
+    proxyState.isReady.value = false;
 
     wrapper = await mountApp();
 
@@ -532,9 +537,22 @@ describe("App initialization", () => {
 
   it("shows the main app on a remote connection once the proxy is ready", async () => {
     apiMock.isRemoteConnection.value = true;
-    mockProxyIsReady.value = true;
+    proxyState.isReady.value = true;
 
     wrapper = await mountApp();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
+  });
+
+  it("reveals the main app when the proxy turns ready after mount", async () => {
+    apiMock.isRemoteConnection.value = true;
+    proxyState.isReady.value = false;
+    wrapper = await mountApp();
+
+    // The service worker reports ready asynchronously, so the gate has to lift
+    // on a connection that mounted before it was controlling the page.
+    proxyState.isReady.value = true;
+    await nextTick();
 
     expect(wrapper.find("router-view-stub").exists()).toBe(true);
   });
