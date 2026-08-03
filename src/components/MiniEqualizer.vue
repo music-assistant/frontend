@@ -11,9 +11,10 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
-import { serverNow } from "@/composables/useServerTime";
+import computeElapsedTime from "@/helpers/elapsed";
 import { store } from "@/plugins/store";
 import api from "@/plugins/api";
+import { PlaybackState } from "@/plugins/api/interfaces";
 
 export interface Props {
   color?: string;
@@ -34,28 +35,38 @@ const canvasEl = ref<HTMLCanvasElement>();
 let timerId: ReturnType<typeof setInterval> | null = null;
 
 function getElapsedSecs(): number {
-  const queueId = store.activePlayerQueue?.queue_id;
+  const queue = store.activePlayerQueue;
+  const queueId = queue?.queue_id;
   const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+  const playbackSpeed =
+    store.curQueueItem?.extra_attributes?.playback_speed ?? 1;
   if (
     queueTime?.elapsed_time != null &&
     queueTime?.elapsed_time_last_updated != null
   ) {
-    const isPlaying = store.activePlayerQueue?.state === "playing";
-    const delta = isPlaying
-      ? Math.max(0, serverNow() - queueTime.elapsed_time_last_updated)
-      : 0;
-    return queueTime.elapsed_time + delta;
+    return (
+      computeElapsedTime(
+        queueTime.elapsed_time,
+        queueTime.elapsed_time_last_updated,
+        queue!.state,
+        playbackSpeed,
+      ) ?? 0
+    );
   }
   const player = store.activePlayer;
   if (
     player?.elapsed_time != null &&
     player?.elapsed_time_last_updated != null
   ) {
-    const isPlaying = player.playback_state === "playing";
-    const delta = isPlaying
-      ? Math.max(0, serverNow() - player.elapsed_time_last_updated)
-      : 0;
-    return player.elapsed_time + delta;
+    return (
+      computeElapsedTime(
+        player.elapsed_time,
+        player.elapsed_time_last_updated,
+        // An unknown state must not extrapolate from the last update.
+        player.playback_state ?? PlaybackState.IDLE,
+        playbackSpeed,
+      ) ?? 0
+    );
   }
   return 0;
 }
