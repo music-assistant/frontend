@@ -37,7 +37,7 @@ vi.mock("@/components/music-quiz/game_types", () => ({
 vi.mock("@/plugins/api", async () => {
   // The connection banner re-renders on api.state, so the mock has to carry a
   // real ref: assignments to a plain { value } would never reach the computed.
-  const { ref } = await import("vue");
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
   apiMock.state = ref(apiMock.state.value);
   const api = {
     sendCommand: mockSendCommand,
