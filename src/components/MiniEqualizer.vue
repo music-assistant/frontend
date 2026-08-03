@@ -38,6 +38,8 @@ function getElapsedSecs(): number {
   const queue = store.activePlayerQueue;
   const queueId = queue?.queue_id;
   const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+  const playbackSpeed =
+    store.curQueueItem?.extra_attributes?.playback_speed ?? 1;
   if (
     queueTime?.elapsed_time != null &&
     queueTime?.elapsed_time_last_updated != null
@@ -47,7 +49,7 @@ function getElapsedSecs(): number {
         queueTime.elapsed_time,
         queueTime.elapsed_time_last_updated,
         queue!.state,
-        store.curQueueItem?.extra_attributes?.playback_speed ?? 1,
+        playbackSpeed,
       ) ?? 0
     );
   }
@@ -62,6 +64,7 @@ function getElapsedSecs(): number {
         player.elapsed_time_last_updated,
         // An unknown state must not extrapolate from the last update.
         player.playback_state ?? PlaybackState.IDLE,
+        playbackSpeed,
       ) ?? 0
     );
   }
