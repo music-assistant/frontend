@@ -269,7 +269,10 @@ export class AuthManager {
    */
   returnToFullApp(): void {
     const returnUrl = new URL(window.location.href);
+    // Both codes would start a fresh guest session on the way back in. remote_id
+    // stays: the full application still needs it to reach a remote server.
     returnUrl.searchParams.delete("join");
+    returnUrl.searchParams.delete("dashboard");
     returnUrl.hash = "/discover";
     window.history.replaceState({}, "", returnUrl);
     window.location.reload();

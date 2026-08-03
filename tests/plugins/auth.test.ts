@@ -214,6 +214,27 @@ describe("AuthManager guest sessions", () => {
       expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("party");
     });
   });
+
+  it("drops both join codes but keeps the remote id when returning to the app", () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/?join=ABCD1234&dashboard=WXYZ5678&remote_id=REMOTE#/guest",
+    );
+    const authManager = new AuthManager();
+    const reloadSpy = vi
+      .spyOn(window.location, "reload")
+      .mockImplementation(() => {});
+
+    authManager.returnToFullApp();
+
+    expect(window.location.search).not.toContain("join");
+    expect(window.location.search).not.toContain("dashboard");
+    expect(window.location.search).toContain("remote_id=REMOTE");
+    expect(window.location.hash).toBe("#/discover");
+
+    reloadSpy.mockRestore();
+  });
 });
 
 function createToken(jti: string, username: string): string {
