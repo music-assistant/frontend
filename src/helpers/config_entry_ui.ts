@@ -44,6 +44,9 @@ export const isDspLinkEntry = (
  * read_only, whether it exists at all), since that's what the server just
  * told us is current. `current` wins for `value`, so a refresh never
  * discards something the user typed but hasn't saved yet.
+ *
+ * Every returned entry is a fresh object, so the form is free to keep editing
+ * them in place without reaching back into either argument.
  */
 export const mergeConfigEntries = (
   current: Record<string, ConfigEntry>,
@@ -54,7 +57,7 @@ export const mergeConfigEntries = (
     const currentEntry = current[key];
     merged[key] = currentEntry
       ? { ...incomingEntry, value: currentEntry.value }
-      : incomingEntry;
+      : { ...incomingEntry };
   }
   return merged;
 };

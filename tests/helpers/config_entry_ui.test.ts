@@ -62,6 +62,8 @@ describe("mergeConfigEntries", () => {
     const merged = mergeConfigEntries(current, incoming);
 
     expect(merged.fresh).toEqual(incoming.fresh);
+    // the form edits entries in place, so a merged entry must never alias its input
+    expect(merged.fresh).not.toBe(incoming.fresh);
   });
 
   it("does not mutate either input", () => {
