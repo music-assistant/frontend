@@ -1,6 +1,6 @@
 import { EventType, ProviderType } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
-import { nextTick, ref } from "vue";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -115,9 +115,10 @@ const {
   };
 });
 
-vi.mock("@/plugins/api", () => {
+vi.mock("@/plugins/api", async () => {
   // App.vue watches api.state, so the mock has to carry a real ref: assignments
   // to a plain { value } would never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
   apiMock.state = ref(apiMock.state.value);
   return {
     api: apiMock,
@@ -186,9 +187,10 @@ vi.mock("@/plugins/remote/http-proxy", () => ({
   },
 }));
 
-vi.mock("@/plugins/i18n", () => {
+vi.mock("@/plugins/i18n", async () => {
   // App.vue watches the UI locale to push it to the server, so the mock has to
   // carry a real ref: assignments to a plain { value } never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
   i18nMock.global.locale = ref(i18nMock.global.locale.value);
   return { i18n: i18nMock };
 });
