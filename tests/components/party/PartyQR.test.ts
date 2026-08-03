@@ -125,6 +125,22 @@ describe("PartyQR", () => {
     wrapper.unmount();
   });
 
+  it("falls back to generic wording when the party has no config", async () => {
+    mocks.partyConfig.value = null;
+
+    const wrapper = mount(PartyQR);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Scan to join");
+    expect(mocks.createInvitationFile).toHaveBeenCalledWith({
+      description: "Join the party",
+      joinLink: JOIN_LINK,
+      logoUrl: expect.stringContaining("logo"),
+      title: "Join the Music Assistant party",
+    });
+    wrapper.unmount();
+  });
+
   it("keeps copy link available alongside native sharing", async () => {
     const wrapper = mount(PartyQR);
     await flushPromises();
