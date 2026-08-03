@@ -34,6 +34,8 @@
         "@tanstack/vue-virtual": "3.13.30",
         "@types/qrcode": "^1.5.6",
         "@vueuse/core": "^14.3.0",
+        "butterchurn": "2.6.7",
+        "butterchurn-presets": "2.4.7",
         "canvas-confetti": "^1.9.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

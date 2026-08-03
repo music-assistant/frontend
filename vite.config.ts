@@ -102,6 +102,9 @@ export default defineConfig({
                     return "mdi";
                   if (id.includes("marked")) return "marked";
                   if (id.includes("qrcode")) return "qrcode";
+                  if (id.includes("butterchurn-presets"))
+                    return "butterchurn-presets";
+                  if (id.includes("butterchurn")) return "butterchurn";
                 }
                 return null;
               },

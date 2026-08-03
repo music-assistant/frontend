@@ -13,6 +13,13 @@
       class="fullscreen-player-card"
       :style="{ background: backgroundColor }"
     >
+      <VisualizerCanvas
+        v-if="store.showFullscreenPlayer && visualizerActive"
+        :preset="visualizerPresetPref"
+        :blur="visualizerBlurPref"
+        :opacity="visualizerOpacityPref"
+        :player-id="store.activePlayer?.player_id"
+      />
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button
@@ -472,7 +479,11 @@ import {
   getMediaImageUrl,
   getPlayerName,
 } from "@/helpers/utils";
+import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
+import { Droplet } from "@lucide/vue";
+import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
 import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
+import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
@@ -763,6 +774,15 @@ watch(
 const { waveformBins: waveformData } = useActiveTrackWaveform();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
+const visualizerEnabledPref = getPreference("visualizer_enabled", false);
+const visualizerPresetPref = getPreference("visualizer_preset", "");
+const visualizerBlurPref = getPreference("visualizer_blur", 0);
+const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
+// The visualizer only exists when the milkdrop_visualizer server plugin is loaded.
+const visualizerAvailable = computed(() => visualizerProviderAvailable());
+const visualizerActive = computed(
+  () => visualizerAvailable.value && visualizerEnabledPref.value,
+);
 
 const titleFontSize = computed(() => {
   switch (name.value) {
@@ -1107,6 +1127,24 @@ const openQueueMenu = function (evt: Event) {
     selected: showWaveformPref.value,
     close_on_click: false,
   });
+  if (visualizerAvailable.value) {
+    menuItems.push({
+      label: "settings.visualizer_enabled.label",
+      action: () => {
+        void setPreference("visualizer_enabled", !visualizerEnabledPref.value);
+      },
+      icon: markRaw(Droplet),
+      selected: visualizerEnabledPref.value,
+      close_on_click: false,
+    });
+    // Always present (the menu item list is a snapshot); the control itself
+    // renders nothing while the visualizer is disabled, so it appears and
+    // disappears live as the toggle above is flipped.
+    menuItems.push({
+      label: "visualizer_options",
+      component: markRaw(VisualizerMenuControl),
+    });
+  }
   // While lyrics are open, surface the sync-offset stepper at the top of the
   // overflow menu (only for players that benefit from a latency offset).
   if (showLyrics.value && showLyricsOffset.value) {
@@ -1260,6 +1298,21 @@ const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
 
 watchEffect(() => {
+  // With a dominant visualizer the view is effectively dark content: force
+  // light text and a dark palette-gradient base. At low opacity (<=50%) the
+  // visualizer is only a faint overlay, so keep the completely normal
+  // theme/palette treatment instead of forcing the dark look.
+  if (visualizerActive.value && visualizerOpacityPref.value > 50) {
+    document.documentElement.style.setProperty("--text-color", "#ffffff");
+    document.documentElement.style.setProperty(
+      "--text-color-inverse",
+      "#000000",
+    );
+    sliderColor.value = "#ffffff";
+    const darkBase = Color(compProps.colorPalette.darkColor || "#000");
+    backgroundColor.value = `linear-gradient(to bottom, ${darkBase.lighten(0.25).hex()}, ${darkBase.darken(0.25).hex()})`;
+    return;
+  }
   const isDarkTheme = vuetify.theme.current.value.dark;
   const bgHex = isDarkTheme
     ? compProps.colorPalette.darkColor || "#000"
@@ -1288,6 +1341,14 @@ watchEffect(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  /* Containing block for the visualizer layer (z-index 0); everything else
+     is lifted above it so the canvas renders strictly behind the content. */
+  position: relative;
+}
+
+.fullscreen-player-card > :not(.visualizer-layer) {
+  position: relative;
+  z-index: 1;
 }
 
 .main {
