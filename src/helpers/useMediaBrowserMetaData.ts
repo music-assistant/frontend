@@ -1,3 +1,4 @@
+import computeElapsedTime from "@/helpers/elapsed";
 import { getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { MediaType, PlayerMedia } from "@/plugins/api/interfaces";
@@ -5,6 +6,14 @@ import authManager from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
+
+// Media types that play back a fixed, seekable duration. Live and unbounded
+// sources get no progress bar at all.
+const POSITION_STATE_MEDIA_TYPES = new Set<MediaType>([
+  MediaType.TRACK,
+  MediaType.AUDIOBOOK,
+  MediaType.PODCAST_EPISODE,
+]);
 
 function playerMediaToMetadata(item: PlayerMedia) {
   const artwork = [
@@ -112,31 +121,57 @@ export function useMediaBrowserMetaData(player_id?: string) {
     const queueId = playerQueue.value?.queue_id;
     return queueId ? api.queueElapsedTime[queueId] : undefined;
   });
+  // The OS extrapolates the position from this rate between our updates, and a
+  // zero rate is rejected outright, so only a sane value may reach it.
+  const playbackSpeed = computed(() => {
+    const speed =
+      playerQueue.value?.current_item?.extra_attributes?.playback_speed;
+    return typeof speed === "number" && Number.isFinite(speed) && speed > 0
+      ? speed
+      : 1;
+  });
   const unwatch_position = watch(
     () => [
       queueElapsed.value?.elapsed_time,
+      queueElapsed.value?.elapsed_time_last_updated,
+      playerQueue.value?.state,
       playerQueue.value?.current_item?.duration,
+      playbackSpeed.value,
     ],
     () => {
-      if (
-        !playerQueue.value?.active ||
-        playerQueue.value?.current_item?.media_item?.media_type !==
-          MediaType.TRACK
-      ) {
+      const currentItem = playerQueue.value?.current_item;
+      const mediaType = currentItem?.media_item?.media_type;
+      const duration = currentItem?.duration;
+      // A podcast episode can arrive without a known duration, and there is no
+      // meaningful progress to show for it.
+      const hasProgress =
+        !!playerQueue.value?.active &&
+        !!mediaType &&
+        POSITION_STATE_MEDIA_TYPES.has(mediaType) &&
+        typeof duration === "number" &&
+        Number.isFinite(duration) &&
+        duration > 0;
+      if (!hasProgress) {
         // Clear the progress bar.
         navigator.mediaSession.setPositionState();
         return;
       }
-      const duration = playerQueue.value?.current_item?.duration || 1;
-      const position = Math.min(
-        duration,
-        queueElapsed.value?.elapsed_time != null
-          ? queueElapsed.value.elapsed_time
-          : 0,
-      );
+      // The stored position is anchored to the moment the server reported it,
+      // so it is carried forward to now; the OS takes it as a snapshot of the
+      // present and extrapolates from there.
+      const elapsed =
+        computeElapsedTime(
+          queueElapsed.value?.elapsed_time,
+          queueElapsed.value?.elapsed_time_last_updated,
+          playerQueue.value?.state,
+          playbackSpeed.value,
+        ) ?? 0;
+      const position = Number.isFinite(elapsed)
+        ? Math.min(duration, Math.max(0, elapsed))
+        : 0;
       navigator.mediaSession.setPositionState({
         duration: duration,
-        playbackRate: 1.0,
+        playbackRate: playbackSpeed.value,
         position: position,
       });
     },
