@@ -133,13 +133,9 @@ export interface ShowBasics {
   name: string;
   sourcePlaylistId: string;
   sourcePlaylistProvider: string;
-  targetPlaylistProvider: string;
   defaultPlayerId: string;
   maxDurationMinutes: number;
   shuffleSourceTracks: boolean;
-  dynamicBatchSize: number;
-  dynamicPollSeconds: number;
-  dynamicPrefetchRemainingTracks: number;
   general: AIRadioStationGeneral;
 }
 
@@ -491,14 +487,9 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
     name: draft.basics.name.trim(),
     source_playlist_id: draft.basics.sourcePlaylistId,
     source_playlist_provider: draft.basics.sourcePlaylistProvider || "library",
-    target_playlist_provider: draft.basics.targetPlaylistProvider || "builtin",
     default_player_id: draft.basics.defaultPlayerId || "",
     max_duration_minutes: draft.basics.maxDurationMinutes,
     shuffle_source_tracks: draft.basics.shuffleSourceTracks,
-    dynamic_batch_size: draft.basics.dynamicBatchSize,
-    dynamic_poll_seconds: draft.basics.dynamicPollSeconds,
-    dynamic_prefetch_remaining_tracks:
-      draft.basics.dynamicPrefetchRemainingTracks,
     merge_section_id: mergeSectionId,
     general: draft.basics.general,
     sections,
@@ -632,14 +623,9 @@ export const decompileStation = (
     name: station.name,
     sourcePlaylistId: station.source_playlist_id,
     sourcePlaylistProvider: station.source_playlist_provider || "library",
-    targetPlaylistProvider: station.target_playlist_provider || "builtin",
     defaultPlayerId: station.default_player_id || "",
     maxDurationMinutes: station.max_duration_minutes || 0,
     shuffleSourceTracks: station.shuffle_source_tracks !== false,
-    dynamicBatchSize: station.dynamic_batch_size || 3,
-    dynamicPollSeconds: station.dynamic_poll_seconds || 5,
-    dynamicPrefetchRemainingTracks:
-      station.dynamic_prefetch_remaining_tracks || 2,
     general: asGeneralDefaults(station.general),
   };
 

@@ -1284,13 +1284,11 @@
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "dynamic_batch_size": "Dynamic Batch Size",
                 "instructions": "Host and Program Instructions"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
                 "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order.",
-                "dynamic_batch_size": "How many tracks the host prepares at a time. Larger batches mean fewer pauses while the next segment is generated, but a longer wait before the show starts playing.",
                 "instructions": "Describes the host's personality and how segments should be written. This is sent to the AI with every segment."
             },
             "web_search": {
@@ -1332,9 +1330,7 @@
             "toast": {
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
                 "unavailable": "AI Radio is not enabled.",
-                "playlist_starting": "Generating playlist — it will appear in your library shortly.",
                 "live_starting": "Live radio started",
-                "playlist_start_failed": "Failed to start playlist generation",
                 "live_start_failed": "Failed to start live radio",
                 "session_stopped": "AI Radio session stopped",
                 "session_stop_failed": "Failed to stop AI Radio session",
@@ -1360,15 +1356,12 @@
                 "stop": "Stop",
                 "stopping": "Stopping...",
                 "on_air": "On air",
-                "generate_playlist": "Generate and save as playlist",
                 "customize": "Customize",
                 "duplicate": "Duplicate",
                 "duplicate_name": "{0} (copy)",
                 "delete": "Delete",
                 "session_failed": "Last run failed",
-                "open_playlist": "Open generated playlist",
                 "status_failed": "Failed {0}",
-                "status_playlist_ready": "Playlist ready · {0}",
                 "status_last_on_air": "Last on air {0}",
                 "no_player": "Select a player first",
                 "start_failed": "Failed to start: {0}",
@@ -1380,12 +1373,7 @@
                 "preparing": "Preparing your show…",
                 "fetch_source_tracks": "Fetching tracks…",
                 "planning_sections": "Planning the show…",
-                "generating_llm": "Writing the host's lines…",
-                "generating_tts": "Recording the host's voice…",
-                "publishing_playlist": "Publishing playlist…",
-                "initializing_queue": "Preparing the queue…",
-                "queueing_batch": "Queueing music…",
-                "waiting_for_playback": "Waiting for playback…"
+                "initializing_queue": "Preparing the queue…"
             },
             "create": {
                 "title": "Create a show",
