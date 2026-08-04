@@ -13,7 +13,7 @@
  * position while paused/stopped.
  */
 import { serverNow } from "@/composables/useServerTime";
-import { PlaybackState } from "../plugins/api/interfaces";
+import { PlaybackState, QueueItem } from "../plugins/api/interfaces";
 
 export function computeElapsedTime(
   elapsed_time: number | undefined,
@@ -35,4 +35,18 @@ export function computeElapsedTime(
   const delta = Math.max(0, serverNow() - elapsed_time_last_updated);
 
   return elapsed_time + delta * playback_speed;
+}
+
+/**
+ * Speed a queue item plays at, e.g. an audiobook at 1.5x.
+ *
+ * Falls back to normal speed unless the item reports a usable multiplier: zero
+ * would freeze every progress indicator, a negative value would run them
+ * backwards, and the OS media session rejects both outright.
+ */
+export function queueItemPlaybackSpeed(item?: QueueItem): number {
+  const speed = item?.extra_attributes?.playback_speed;
+  return typeof speed === "number" && Number.isFinite(speed) && speed > 0
+    ? speed
+    : 1;
 }
