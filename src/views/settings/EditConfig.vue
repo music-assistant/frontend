@@ -215,7 +215,6 @@ const emit = defineEmits<{
 const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
-const activePanel = ref<string[]>([]);
 const showPasswordValues = ref(false);
 const showAdvancedSettings = ref(false);
 const showHelpInfo = ref<ConfigEntryUI>();
@@ -344,12 +343,6 @@ watch(
       entries.value.push(entry);
     }
     oldValuesInitialized.value = true;
-    // Set active panels after entries are populated
-    // Expand all panels by default, except protocol categories which stay collapsed
-    const expandedPanels = panels.value.filter((p) => !isProtocolCategory(p));
-    activePanel.value = expandedPanels;
-    // Protocol config sections stay collapsed by default; the user opens the one
-    // they want to configure.
   },
   { immediate: true },
 );

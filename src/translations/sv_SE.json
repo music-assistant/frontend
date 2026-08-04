@@ -32,8 +32,8 @@
     "details": "Detaljer",
     "enter_url": "Ange den URL som du vill lägga till manuellt i databasen",
     "external_source_active": "Extern källa aktiv: {0}",
-    "goto_album": "Gå till album {0}",
-    "goto_artist": "Gå till artist {0}",
+    "goto_album": "Visa album {0}",
+    "goto_artist": "Visa artist {0}",
     "items_selected": "{0} objekt har valts",
     "items_total": "{0} totalt antal objekt",
     "library": "Bibliotek",
@@ -224,12 +224,14 @@
                 "edited_channel": "Rita ut EQ svaret för den\/denna kanal (er)",
                 "channel": "Detta band kommer att tillämpas på",
                 "per_channel_preamp": "Ytterligare för förstärkning för {channel}",
-                "disable_multichannel_controls": "Inaktivera flerkanalskontroller"
+                "disable_multichannel_controls": "Inaktivera flerkanalskontroller",
+                "help": "Exakt tonformning: varje band riktar sig mot en frekvens och kan skära eller förstärka den. Skärningar är säkrare än förstärkningar, vilket kan orsaka klippning."
             },
             "tone_control": {
                 "bass_level": "Basnivå",
                 "mid_level": "Mellannivå",
-                "treble_level": "Diskantnivå"
+                "treble_level": "Diskantnivå",
+                "help": "En enkel trebandsjustering av bas, mellanregister och diskant. Använd Parametrisk EQ för finare kontroll."
             },
             "parameter": {
                 "frequency": "Frekvens",
@@ -242,7 +244,9 @@
                 "tone_control": "Tonkontroll",
                 "gain": "Nivå",
                 "balance": "Balans",
-                "transpose": "Transponera"
+                "transpose": "Transponera",
+                "stereo_width": "Stereobredd",
+                "crossfeed": "Korsmatning"
             },
             "channels": {
                 "ALL": "Alla",
@@ -271,6 +275,31 @@
                 "unit_singular": "halvton",
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Ställ in konserttonhöjden så att A är stämt till 432 Hz"
+            },
+            "input_gain_help": "Ställer in nivån som går in i kedjan. Sänk den för att lämna utrymme för filter som förstärker.",
+            "output_gain_help": "Justerar nivån som lämnar kedjan, efter att varje filter har tillämpats. Spelarvolymen tillämpas senare.",
+            "gain": {
+                "help": "Höjer eller sänker nivån på allt som passerar genom denna punkt i kedjan."
+            },
+            "balance": {
+                "help": "Flyttar ljudet mot vänster eller höger högtalare. Gäller endast stereoljud."
+            },
+            "stereo_width": {
+                "help": "Justerar stereobildens bredd. Vänster om mitten smalnar av mot mono, höger breddar ljudet.",
+                "clip_hint": "Att bredda filtret bortom originalet kan höja toppar och orsaka klippning. Överväg att lägga till en limiter efter det här filtret.",
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Original",
+                    "wide": "Bred"
+                }
+            },
+            "crossfeed": {
+                "help": "Gör att hörlurslyssning känns mer naturligt genom att försiktigt blanda vänster och höger kanal, ungefär som att lyssna på högtalare.",
+                "presets": {
+                    "low": "Låg",
+                    "medium": "Medium",
+                    "high": "Hög"
+                }
             }
         },
         "dsp_enabled": "DSP är aktiverat",
@@ -614,7 +643,8 @@
             "session_ended_title": "Installationssessionen avslutad",
             "session_ended_text": "Installationssessionen avslutades – den kan ha slutförts. Kontrollera dina leverantörer eller spelare för att bekräfta."
         },
-        "options": "Alternativ"
+        "options": "Alternativ",
+        "add_group_player_desc": "Skapa en permanent spelargrupp med {0} spelare. När du spelar i den här spelargruppen synkroniseras medlemsspelarna automatiskt."
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -721,7 +751,8 @@
         "import_file": "Importera fil",
         "bpm": "Tempo (slag per minut)",
         "musical_key": "Musikalisk tonart",
-        "show_dashboard": "Strömma instrumentpanelen till en enhet"
+        "show_dashboard": "Strömma instrumentpanelen till en enhet",
+        "collapse_collections": "Komprimera samlingar"
     },
     "topresult": "Toppresultat",
     "track": "Spår",
@@ -1026,7 +1057,9 @@
         "select_providers": "Välj leverantörer",
         "save_changes": "Spara ändringar",
         "update_password": "Uppdatera lösenord",
-        "guest_role": "Gäst"
+        "guest_role": "Gäst",
+        "tokens_load_failed": "Misslyckades med att ladda åtkomst tokens",
+        "users_load_failed": "Misslyckades med att ladda användare"
     },
     "login": {
         "subtitle": "Anslut till din musikserver",
@@ -1074,7 +1107,26 @@
         "scan_qr_code": "Skanna QR koden",
         "scan_qr_hint": "Rikta kameran mot QR koden som visas i dina inställningar för Musik Assistant server.",
         "qr_invalid": "Ogiltig QR kod. Skanna en QR kod för Music Assistant fjärrkontrollens ID.",
-        "qr_camera_error": "Kunde inte komma åt kameran. Vänligen kontrollera behörigheterna."
+        "qr_camera_error": "Kunde inte komma åt kameran. Vänligen kontrollera behörigheterna.",
+        "error_party_auth_failed": "Kunde inte gå med i festen",
+        "remote_only_info": "Anslut till din Music Assistant-server på distans",
+        "server_address_hint": "Ange den fullständiga URL:en till din Music Assistant-server",
+        "connecting_ingress": "Ansluter via Home Assistant...",
+        "connecting_local_party": "Ansluter till festen...",
+        "connecting_remote_party": "Ansluter till festen...",
+        "joining_party": "Går med i festen...",
+        "reconnecting": "Återansluter",
+        "reconnecting_message": "Försöker återansluta till servern...",
+        "error_ingress_failed": "Kunde inte logga in via Home Assistant",
+        "error_invalid_credentials": "Det gick inte att logga in dig. Kontrollera ditt användarnamn och lösenord.",
+        "guest_ended_party_title": "Din festsession är avslutad",
+        "guest_ended_party_message": "Be värden att dela länken eller QR-koden till festen igen för att återansluta.",
+        "guest_ended_quiz_title": "Din quizsession är avslutad",
+        "guest_ended_quiz_message": "Be värden att dela quizlänken eller QR-koden igen för att återansluta.",
+        "guest_ended_dashboard_title": "Den här instrumentpanelssessionen har avslutats",
+        "guest_ended_dashboard_message": "Casta instrumentpanelen igen från Music Assistant för att fortsätta.",
+        "continue_to_app": "Fortsätt till Music Assistant",
+        "scan_qr_hint_guest": "Rikta kameran mot QR-koden som värden visar."
     },
     "yes": "Ja",
     "no": "Nej",
@@ -1495,15 +1547,15 @@
                 "web_search_mode": "Webbsökningsläge",
                 "character_limit": "Teckengräns",
                 "prompt": "Punktlig",
-                "clear_queue_on_dynamic_start": "Rensa kö vid dynamisk start",
                 "dynamic_batch_size": "Dynamisk batchstorlek",
-                "instructions": "Instruktioner för värd och program"
+                "instructions": "Instruktioner för värd och program",
+                "shuffle_playlist_tracks": "Blanda spår i spellistan"
             },
             "field_descriptions": {
-                "source_playtime_cap": "Maximal total speltid för källmusiken, i minuter. Spår väljs slumpmässigt tills gränsen nås, så du får ett slumpmässigt urval av spellistan snarare än den första delen av den. Låt värdet vara 0 om du vill ha obegränsad tid.",
-                "clear_queue_on_dynamic_start": "Ersätt det som finns i kön när programmet börjar. Stäng av detta för att lägga till programmet i kön istället och fortsätta spela det aktuella spåret.",
+                "source_playtime_cap": "Maximal total speltid för källmusiken, i minuter. Spår spelas i den ordning programmet spelar dem tills gränsen nås. Låt värdet vara 0 om du vill ha obegränsad tid.",
                 "dynamic_batch_size": "Hur många spår programledaren förbereder åt gången. Större omgångar innebär färre pauser medan nästa segment genereras, men en längre väntetid innan programmet börjar spelas.",
-                "instructions": "Beskriver värdens personlighet och hur segment ska skrivas. Detta skickas till AI:n med varje segment."
+                "instructions": "Beskriver värdens personlighet och hur segment ska skrivas. Detta skickas till AI:n med varje segment.",
+                "shuffle_playlist_tracks": "Spela upp källspellistan i slumpmässig ordning. Stäng av detta för att följa spellistan i dess egen ordning."
             },
             "web_search": {
                 "disabled": "inaktiverad (inget webbverktyg)",
@@ -1949,12 +2001,12 @@
         "120": "2 timmar"
     },
     "shuffle_smart_active": "Smart blandning är på. Klicka för att stänga av den.",
-    "goto_album_radio": "Gå till Album Radion",
-    "goto_artist_radio": "Gå till Artist Radion",
-    "goto_genre_radio": "Gå till Genre Radion",
-    "goto_playlist_radio": "Gå till spellistan för Radion",
-    "goto_radio": "Gå till radion",
-    "goto_track_radio": "Gå till Radio Spår",
+    "goto_album_radio": "Visa album oändlig mix",
+    "goto_artist_radio": "Visa artistens oändliga mix",
+    "goto_genre_radio": "Visa genre oändlig mix",
+    "goto_playlist_radio": "Visa spellista oändlig mix",
+    "goto_radio": "Visa oändlig mix",
+    "goto_track_radio": "Visa spår oändlig mix",
     "autoplay_dynamic_title": "Automatisk uppspelning är aktiv",
     "autoplay_dynamic_lead": "Din kö fylls dynamiskt baserat på ditt val:",
     "autoplay_dynamic_desc": "Din kö fylls dynamiskt baserat på ditt val.",
@@ -2006,5 +2058,10 @@
     },
     "reconfigure_player": "Konfigurera om spelaren",
     "configure_player": "Konfigurera spelaren",
-    "plugins": "Plugins"
+    "plugins": "Plugins",
+    "queue_ended": "Uppspelningen klar",
+    "play_from_beginning": "Spela från början",
+    "audiobooks_in_collection": "Ljudböcker i den här samlingen",
+    "collection_no_audiobooks": "Den här samlingen innehåller inga ljudböcker.",
+    "error_generic": "Något gick fel. Vänligen försök igen."
 }
