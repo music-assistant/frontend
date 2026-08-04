@@ -9,27 +9,18 @@
 import { ref, watchEffect, onScopeDispose, type Ref } from "vue";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { computeElapsedTime } from "@/helpers/elapsed";
-import api from "@/plugins/api";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 
 export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
   const elapsedTime = ref(0);
   let rafId: number | null = null;
 
   const update = () => {
-    const queue = store.activePlayerQueue;
-    const queueId = queue?.queue_id;
-    const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-    if (
-      queueTime?.elapsed_time != null &&
-      queueTime?.elapsed_time_last_updated != null
-    ) {
-      elapsedTime.value =
-        computeElapsedTime(
-          queueTime.elapsed_time,
-          queueTime.elapsed_time_last_updated,
-          store.activePlayer?.playback_state,
-        ) ?? 0;
+    // Keep the last known position when no source reports a timing, so the
+    // lyrics do not snap back to the start of the track.
+    const elapsed = resolveActiveElapsedTime();
+    if (elapsed !== undefined) {
+      elapsedTime.value = elapsed;
     }
     rafId = requestAnimationFrame(update);
   };
