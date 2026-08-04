@@ -1,37 +1,32 @@
 // Registry of all MA custom icons. To add a new icon:
 //   1. Create `<kebab-name>.ts` and export a Component.
 //   2. Add it to `registry` below.
-//   3. Optionally add aliases.
+// Custom icon artwork is owned by the shared icon set
+// (https://github.com/music-assistant/shared-icons) — these components mirror
+// its `icons/*.svg`; update them from there, repo-first.
 import type { Component } from "vue";
 
 import { HomepodMini } from "./homepod-mini";
 import { Sonos } from "./sonos";
 import { Mac } from "./mac";
 import { AppleTv } from "./apple-tv";
+import { GoogleNest } from "./google-nest";
+import { VoicePe } from "./voice-pe";
+import { Wiim } from "./wiim";
+import { Speakers } from "./speakers";
+import { Soundbar } from "./soundbar";
 
-/** Canonical name → component map. Names are stored in player configs. */
+export { Speakers };
+
+/** Canonical id → component map. Ids are stored in player configs. */
 export const registry: Record<string, Component> = {
   "homepod-mini": HomepodMini,
   sonos: Sonos,
   mac: Mac,
   "apple-tv": AppleTv,
-};
-
-/**
- * Alternate / legacy names resolved to a canonical name. The target may be an
- * MA registry key or a Lucide kebab name (getLucideIcon falls through to Lucide
- * after alias resolution), so friendly suggestion labels that have no matching
- * Lucide export can still render a real icon.
- */
-export const aliases: Record<string, string> = {
-  homepod: "homepod-mini",
-  "apple-homepod-mini": "homepod-mini",
-  appletv: "apple-tv",
-  // Descriptive suggestion labels with no direct Lucide export → closest icon.
-  "speaker-loud": "volume-2",
-  "bluetooth-speaker": "bluetooth",
-  // Names Lucide renamed/removed in newer versions.
-  "laptop-2": "laptop-minimal",
-  tree: "tree-pine",
-  home: "house",
+  "google-nest": GoogleNest,
+  "voice-pe": VoicePe,
+  wiim: Wiim,
+  speakers: Speakers,
+  soundbar: Soundbar,
 };

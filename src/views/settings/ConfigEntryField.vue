@@ -228,9 +228,6 @@
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
       :label="displayLabel()"
-      :prepend-inner-icon="confEntry.value as string"
-      variant="outlined"
-      density="comfortable"
       @update:model-value="onUpdateValue($event)"
       @click:clear="onClear"
     />
