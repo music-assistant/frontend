@@ -1714,7 +1714,7 @@ const loadGenreOptions = async () => {
 
     genreOptions.value = all;
   } catch {
-    toast.error(t("error_loading_genres"));
+    toast.error(t("settings.error_loading_genres"));
   }
 };
 

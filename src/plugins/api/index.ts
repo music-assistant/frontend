@@ -2,6 +2,12 @@ import { store } from "../store";
 
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
+import {
+  resetServerTime,
+  serverNow,
+  startServerTimeSync,
+  stopServerTimeSync,
+} from "@/composables/useServerTime";
 import { $t, i18n } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
@@ -38,6 +44,7 @@ import {
   CoreConfig,
   DSPConfig,
   DSPConfigPreset,
+  DSPIRMetadata,
   EventType,
   ItemMapping,
   MediaItemTypeOrItemMapping,
@@ -208,6 +215,10 @@ export class MusicAssistantApi {
       if (state === "reconnecting") {
         // Transport is attempting to reconnect
         this.state.value = ConnectionState.RECONNECTING;
+        // pause probing but keep the estimate: clock offsets don't change while the
+        // connection is down, and a slightly stale offset still beats no correction.
+        // A new ServerInfo message resumes it once the connection is back.
+        stopServerTimeSync();
         this.signalEvent({
           event: EventType.DISCONNECTED,
           object_id: "",
@@ -219,6 +230,7 @@ export class MusicAssistantApi {
           if (this.transportState.value === "failed") {
             // Still failed after brief wait - this is permanent failure
             this.state.value = ConnectionState.FAILED;
+            stopServerTimeSync();
             this.signalEvent({
               event: EventType.DISCONNECTED,
               object_id: "",
@@ -232,6 +244,7 @@ export class MusicAssistantApi {
         setTimeout(() => {
           if (this.transportState.value === "disconnected") {
             this.state.value = ConnectionState.DISCONNECTED;
+            stopServerTimeSync();
             this.signalEvent({
               event: EventType.DISCONNECTED,
               object_id: "",
@@ -392,6 +405,8 @@ export class MusicAssistantApi {
     }
     this.state.value = ConnectionState.DISCONNECTED;
     this.isRemoteConnection.value = false;
+    // the next connection may be to a different server, whose clock offset is unrelated
+    resetServerTime();
 
     // Clear reactive state
     Object.keys(this.players).forEach((key) => delete this.players[key]);
@@ -2278,6 +2293,34 @@ export class MusicAssistantApi {
     });
   }
 
+  public async getDSPIRs(
+    suppressGlobalError = false,
+  ): Promise<DSPIRMetadata[]> {
+    // Return the metadata of all stored impulse responses.
+    return this.sendCommand(
+      "config/dsp_irs/list",
+      undefined,
+      suppressGlobalError ? { suppressGlobalError: true } : undefined,
+    );
+  }
+
+  public async uploadDSPIR(name: string, data: string): Promise<DSPIRMetadata> {
+    // Store an impulse response. `data` is the raw file, base64 encoded.
+    // Errors (size limit, invalid base64, not valid audio) are surfaced by the
+    // caller, so skip the global error toast.
+    return this.sendCommand(
+      "config/dsp_irs/upload",
+      { name, data },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async removeDSPIR(irId: string): Promise<void> {
+    // Remove a stored impulse response. The server blanks the ir_id of every
+    // convolution filter that referenced it.
+    return this.sendCommand("config/dsp_irs/remove", { ir_id: irId });
+  }
+
   // Core Config related functions
 
   public async getCoreConfigs(): Promise<CoreConfig[]> {
@@ -2536,7 +2579,10 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
       if (queueId in this.queues) {
-        const now = Date.now() / 1000;
+        // this event carries the elapsed time without a timestamp, so it is anchored
+        // here on arrival; in server time, to stay comparable with the timestamps that
+        // full queue updates carry.
+        const now = serverNow();
         const elapsed = msg.data as unknown as number;
         if (queueId in this.queueElapsedTime) {
           this.queueElapsedTime[queueId].elapsed_time = elapsed;
@@ -2648,10 +2694,26 @@ export class MusicAssistantApi {
     // so it also works on the Ingress path where the frontend skips the auth command.
     // best-effort, fire-and-forget: a transport failure here shouldn't break the connect flow
     void this.setLocale(i18n.global.locale.value).catch(() => undefined);
+    // (re)estimate the offset between the server clock and this device's clock, so
+    // server timestamps render correctly even when one of the two clocks is unsynced.
+    // The command needs no authentication, so this also covers the pre-auth phase.
+    startServerTimeSync(() => this.getServerTime());
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
       data: msg,
+    });
+  }
+
+  /**
+   * Read the server's clock (UTC timestamp in seconds).
+   *
+   * Prefer `serverNow()` from `useServerTime`, which keeps a corrected local estimate;
+   * this command is the probe that estimate is built from.
+   */
+  public async getServerTime(): Promise<number> {
+    return await this.sendCommand<number>("time", undefined, {
+      suppressGlobalError: true,
     });
   }
 

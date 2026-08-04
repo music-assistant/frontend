@@ -6,6 +6,7 @@ import type {
 } from "@/composables/music-quiz/useMusicQuiz";
 import { MediaType } from "@/plugins/api/interfaces";
 import { shallowMount } from "@vue/test-utils";
+import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -13,11 +14,13 @@ const {
   mockGetItemByUri,
   mockGetTrackLyrics,
   mockToastError,
+  mockUseGuessTheSongPlaybackPosition,
 } = vi.hoisted(() => ({
   mockCopyToClipboard: vi.fn(),
   mockGetItemByUri: vi.fn(),
   mockGetTrackLyrics: vi.fn(),
   mockToastError: vi.fn(),
+  mockUseGuessTheSongPlaybackPosition: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -34,15 +37,9 @@ vi.mock("@/helpers/utils", () => ({
 
 vi.mock(
   "@/components/music-quiz/game-types/guess-the-song/useGuessTheSongPlaybackPosition",
-  async () => {
-    const { ref } = await import("vue");
-    return {
-      useGuessTheSongPlaybackPosition: () => ({
-        position: ref(12),
-        teardown: vi.fn(),
-      }),
-    };
-  },
+  () => ({
+    useGuessTheSongPlaybackPosition: mockUseGuessTheSongPlaybackPosition,
+  }),
 );
 
 vi.mock("@/plugins/i18n", () => ({
@@ -74,6 +71,11 @@ describe("GuessTheSongPlayerRound", () => {
     mockGetItemByUri.mockReset();
     mockGetTrackLyrics.mockReset();
     mockToastError.mockReset();
+    mockUseGuessTheSongPlaybackPosition.mockReset();
+    mockUseGuessTheSongPlaybackPosition.mockImplementation(() => ({
+      position: ref(12),
+      teardown: vi.fn(),
+    }));
   });
 
   it("does not initialize lyrics while answering", () => {
@@ -97,6 +99,39 @@ describe("GuessTheSongPlayerRound", () => {
     expect(reveal.props("lyrics")).toBe("Plain lyrics");
     expect(reveal.props("lrcLyrics")).toBe("Synced lyrics");
     expect(reveal.props("lyricsPosition")).toBe(12);
+    wrapper.unmount();
+  });
+
+  it("prefers audio_started_at as the playback anchor when present", () => {
+    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    const wrapper = mountRound(createState("reveal"), {
+      ...currentRound,
+      audio_started_at: 55,
+    });
+
+    const options = mockUseGuessTheSongPlaybackPosition.mock.calls.at(-1)?.[0];
+    expect(options.startedAt()).toBe(55);
+    wrapper.unmount();
+  });
+
+  it("falls back to started_at when the round omits audio_started_at", () => {
+    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    const wrapper = mountRound(createState("reveal"));
+
+    const options = mockUseGuessTheSongPlaybackPosition.mock.calls.at(-1)?.[0];
+    expect(options.startedAt()).toBe(currentRound.started_at);
+    wrapper.unmount();
+  });
+
+  it("falls back to started_at when audio_started_at is null", () => {
+    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    const wrapper = mountRound(createState("reveal"), {
+      ...currentRound,
+      audio_started_at: null,
+    });
+
+    const options = mockUseGuessTheSongPlaybackPosition.mock.calls.at(-1)?.[0];
+    expect(options.startedAt()).toBe(currentRound.started_at);
     wrapper.unmount();
   });
 
@@ -184,11 +219,14 @@ function createState(
   };
 }
 
-function mountRound(state: MusicQuizGuessTheSongPersonalizedState) {
+function mountRound(
+  state: MusicQuizGuessTheSongPersonalizedState,
+  round: MusicQuizGuessTheSongRound = currentRound,
+) {
   return shallowMount(GuessTheSongPlayerRound, {
     props: {
       state,
-      currentRound,
+      currentRound: round,
       busy: false,
     },
   });

@@ -34,8 +34,14 @@ vi.mock("@/composables/useDSPPresets", () => ({
     getPresetName: vi.fn(),
   }),
 }));
+vi.mock("@/composables/useDSPIRs", () => ({
+  useDSPIRs: () => ({
+    getIRName: vi.fn(),
+  }),
+}));
 
 const presetNames = new Map<string, string>();
+const irNames = new Map<string, string>();
 const dependencies: AudioProcessingDetailsDependencies = {
   translate: (key, values) => (values ? $t(key, values) : $t(key)),
   locale: "en-US",
@@ -43,6 +49,7 @@ const dependencies: AudioProcessingDetailsDependencies = {
   getProviderDomain: (providerId) => providerId.split("--", 1)[0],
   getPresetName: (presetId) =>
     presetId ? presetNames.get(presetId) : undefined,
+  getIRName: (irId) => (irId ? irNames.get(irId) : undefined),
   players: makePlayers(),
 };
 
@@ -52,6 +59,8 @@ beforeEach(() => {
   dependencies.players = makePlayers();
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
+  irNames.clear();
+  irNames.set("ir-1", "Living room correction");
 });
 
 describe("buildAudioProcessingDetailsDisplay", () => {

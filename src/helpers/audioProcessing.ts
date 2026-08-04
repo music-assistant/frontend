@@ -4,6 +4,7 @@ import {
   DSPFilterType,
   type BalanceFilter,
   type CompressorFilter,
+  type ConvolutionFilter,
   type CrossfeedFilter,
   type DSPConfig,
   type DSPFilter,
@@ -114,6 +115,12 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
     return areHighLowPassFiltersEqual(left, right);
   }
   if (
+    left.type === DSPFilterType.CONVOLUTION &&
+    right.type === DSPFilterType.CONVOLUTION
+  ) {
+    return areConvolutionFiltersEqual(left, right);
+  }
+  if (
     left.type === DSPFilterType.STEREO_WIDTH &&
     right.type === DSPFilterType.STEREO_WIDTH
   ) {
@@ -155,6 +162,13 @@ function areParametricEqFiltersEqual(
 
 function areGainFiltersEqual(left: GainFilter, right: GainFilter): boolean {
   return left.gain === right.gain;
+}
+
+function areConvolutionFiltersEqual(
+  left: ConvolutionFilter,
+  right: ConvolutionFilter,
+): boolean {
+  return left.ir_id === right.ir_id && left.gain === right.gain;
 }
 
 function areBalanceFiltersEqual(

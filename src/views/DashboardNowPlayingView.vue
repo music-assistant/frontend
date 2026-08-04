@@ -29,12 +29,9 @@
               store.activePlayer.current_media?.title || store.activePlayer.name
             }}
           </MarqueeText>
-          <MarqueeText
-            v-if="store.activePlayer.current_media?.artist"
-            :sync="marqueeSync"
-            class="now-playing-subtitle"
-          >
-            {{ store.activePlayer.current_media.artist }}
+          <!-- placeholder when no artist, so the artwork position stays fixed -->
+          <MarqueeText :sync="marqueeSync" class="now-playing-subtitle">
+            {{ store.activePlayer.current_media?.artist || " " }}
           </MarqueeText>
         </template>
       </div>

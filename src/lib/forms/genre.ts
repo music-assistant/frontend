@@ -4,7 +4,7 @@ export const addGenreSchema = (t: (key: string) => string) =>
   z.object({
     name: z
       .string()
-      .min(1, t("field_required"))
+      .min(1, t("auth.field_required"))
       .max(100, "Name must be at most 100 characters."),
     sortName: z.string().max(100, "Sort name must be at most 100 characters."),
     description: z

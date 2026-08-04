@@ -132,6 +132,47 @@ describe("EditProvider", () => {
     expect(unsubscribeMock).toHaveBeenCalledOnce();
   });
 
+  it("merges fresh entry definitions while keeping a pending local edit", async () => {
+    apiMock.getProviderConfig
+      .mockResolvedValueOnce(
+        providerConfig(ProviderStatus.LOADED, "current value", []),
+      )
+      .mockResolvedValueOnce(
+        providerConfig(ProviderStatus.LOADED, "server refresh", [
+          { title: "Home Assistant", value: "ha" },
+        ]),
+      );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    // EditConfig edits the entry objects in place, so this is what a user
+    // typing into the form leaves behind
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    editConfig.props("configEntries")[0].value = "typed but not saved";
+
+    providersUpdated?.();
+    await flushPromises();
+
+    expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
+    expect(editConfig.props("configEntries")).toEqual([
+      expect.objectContaining({
+        key: "account",
+        value: "typed but not saved",
+        options: [{ title: "Home Assistant", value: "ha" }],
+      }),
+    ]);
+  });
+
   it("refreshes provider status when reconfiguration ends", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(providerConfig(ProviderStatus.AUTH_REQUIRED))
@@ -167,6 +208,7 @@ describe("EditProvider", () => {
 function providerConfig(
   status: ProviderStatus,
   account: string = "current value",
+  accountOptions?: { title: string; value: string }[],
 ): ProviderConfig {
   return {
     domain: "spotify",
@@ -203,6 +245,7 @@ function providerConfig(
         default_value: null,
         key: "account",
         label: "Account",
+        options: accountOptions,
         required: false,
         type: ConfigEntryType.STRING,
         value: account,

@@ -94,7 +94,8 @@
       />
 
       <MusicQuizPreparingState
-        v-else-if="starting && activeState"
+        v-else-if="isPreparing && activeState"
+        :autofocus="starting"
         class="rounded-xl border shadow-sm"
       />
 
@@ -333,6 +334,12 @@ const statusText = computed(() => {
   if (state.value) return $t("providers.music_quiz.unsupported_title");
   return $t("providers.music_quiz.no_active_game");
 });
+
+// The local flag covers the gap between issuing a host action and the server
+// reporting that round preparation is underway.
+const isPreparing = computed(
+  () => starting.value || activeState.value?.preparing === true,
+);
 
 const isActiveRound = computed(
   () =>

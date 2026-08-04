@@ -225,6 +225,12 @@
               "
               v-model="dsp.filters[selectedStage] as HighLowPassFilter"
             />
+            <DSPConvolution
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CONVOLUTION
+              "
+              v-model="dsp.filters[selectedStage] as ConvolutionFilter"
+            />
             <DSPStereoWidth
               v-else-if="
                 dsp.filters[selectedStage].type === DSPFilterType.STEREO_WIDTH
@@ -314,6 +320,7 @@ import {
   type GainFilter,
   type BalanceFilter,
   type TransposeFilter,
+  type ConvolutionFilter,
   type StereoWidthFilter,
   type CrossfeedFilter,
   ParametricEQFilter,
@@ -333,6 +340,7 @@ import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
 import DSPSafetyLimiter from "@/components/dsp/DSPSafetyLimiter.vue";
 import DSPCompressor from "@/components/dsp/DSPCompressor.vue";
 import DSPHighLowPass from "@/components/dsp/DSPHighLowPass.vue";
+import DSPConvolution from "@/components/dsp/DSPConvolution.vue";
 import DSPStereoWidth from "@/components/dsp/DSPStereoWidth.vue";
 import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
 import { COMPRESSOR_PRESETS } from "@/components/dsp/compressorPresets";
@@ -494,6 +502,16 @@ const addFilter = () => {
         mode: HighLowPassMode.HIGH_PASS,
         frequency: DEFAULT_HIGH_PASS_FREQUENCY,
         slope: 12,
+      };
+      break;
+    case DSPFilterType.CONVOLUTION:
+      // An empty ir_id is valid: the filter is added first, the impulse
+      // response picked afterwards.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CONVOLUTION,
+        ir_id: "",
+        gain: 0,
       };
       break;
     case DSPFilterType.STEREO_WIDTH:
