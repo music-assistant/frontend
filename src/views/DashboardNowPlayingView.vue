@@ -76,7 +76,7 @@ import {
 } from "@/plugins/visualizer-relay";
 import { useColorMode } from "@vueuse/core";
 import Color from "color";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
@@ -104,9 +104,15 @@ const { getPreference } = useUserPreferences();
 // dashboard viewer, which has none and cannot set any, so the plugin's
 // show_on_dashboards setting decides there. An explicit choice always wins.
 const showOnDashboards = ref(false);
-onMounted(async () => {
-  showOnDashboards.value = await visualizerShownOnDashboards();
-});
+// Watched rather than fetched once on mount: a cast receiver boots straight into
+// this route, so the providers map is often still loading when the view mounts.
+watch(
+  () => visualizerProviderAvailable(),
+  async (available) => {
+    if (available) showOnDashboards.value = await visualizerShownOnDashboards();
+  },
+  { immediate: true },
+);
 const visualizerEnabledStored = getPreference<boolean>("visualizer_enabled");
 const visualizerEnabledPref = computed(
   () => visualizerEnabledStored.value ?? showOnDashboards.value,
