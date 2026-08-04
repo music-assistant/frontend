@@ -23,6 +23,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   createVisualizerEngine,
   type VisualizerEngine,
+  isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { currentVisualizerPreset } from "@/composables/visualizer/state";
@@ -150,8 +151,14 @@ const initialize = async () => {
   connectRelay();
   await createEngine();
   if (!engine) {
-    // WebGL2 unavailable or init failure: leave the layer transparent.
-    console.warn("[visualizer] engine unavailable, falling back to gradient");
+    // WebGL2 unavailable or init failure: leave the layer transparent. Report it
+    // over the relay before closing, so displays with no reachable console (cast
+    // receivers, kiosks) still say why they are showing a plain background.
+    const reason = isVisualizerSupported()
+      ? "visualizer engine failed to start"
+      : "WebGL2 unavailable in this browser";
+    console.warn(`[visualizer] ${reason}, falling back to gradient`);
+    relay?.reportError(reason);
     relay?.close();
     relay = null;
   }

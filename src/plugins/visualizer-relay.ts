@@ -278,6 +278,17 @@ export class VisualizerRelayClient {
     }, RECONNECT_DELAY_MS);
   }
 
+  /**
+   * Tell the server why this viewer cannot render.
+   *
+   * Cast displays and kiosks have no reachable console, so an engine that fails
+   * to start would otherwise be indistinguishable from a broken relay.
+   */
+  reportError(message: string): void {
+    if (this.ws?.readyState !== WebSocket.OPEN) return;
+    this.ws.send(JSON.stringify({ type: "client/error", message }));
+  }
+
   private clearTimers(): void {
     if (this.timeSyncTimer !== null) {
       clearInterval(this.timeSyncTimer);
