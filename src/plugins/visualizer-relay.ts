@@ -43,10 +43,31 @@ function relayUrl(playerQuery?: string): string {
  * Whether the MilkDrop Visualizer server plugin is loaded and available.
  */
 export function visualizerProviderAvailable(): boolean {
-  return Object.values(api.providers).some(
+  // may run before the providers map has loaded (e.g. a cast display booting)
+  return Object.values(api.providers ?? {}).some(
     (provider) =>
       provider.domain === "milkdrop_visualizer" && provider.available,
   );
+}
+
+/**
+ * Whether the plugin is configured to show the visualizer on dashboard screens.
+ *
+ * Cast dashboards run as the dashboard viewer, which has no user preferences and
+ * no way to set any, so this server-side setting decides for them (and provides
+ * the default for anyone who has not picked one).
+ */
+export async function visualizerShownOnDashboards(): Promise<boolean> {
+  if (!visualizerProviderAvailable()) return false;
+  try {
+    const config = await api.sendCommand<Record<string, boolean>>(
+      "milkdrop_visualizer/config",
+    );
+    return config?.show_on_dashboards === true;
+  } catch (error) {
+    console.warn("[visualizer] could not read the plugin config:", error);
+    return false;
+  }
 }
 
 export class VisualizerRelayClient {

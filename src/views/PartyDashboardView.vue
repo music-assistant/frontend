@@ -354,7 +354,10 @@ import {
   Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
+import {
+  visualizerProviderAvailable,
+  visualizerShownOnDashboards,
+} from "@/plugins/visualizer-relay";
 import {
   Droplet,
   Maximize2,
@@ -504,7 +507,17 @@ onBeforeUnmount(() => {
 const useAlbumArtBackground = computed(() => true);
 
 const { getPreference, setPreference } = useUserPreferences();
-const visualizerEnabledPref = getPreference("visualizer_enabled", false);
+// No stored preference means "not chosen": a cast dashboard runs as the
+// dashboard viewer, which has none and cannot set any, so the plugin's
+// show_on_dashboards setting decides there. An explicit choice always wins.
+const showOnDashboards = ref(false);
+onMounted(async () => {
+  showOnDashboards.value = await visualizerShownOnDashboards();
+});
+const visualizerEnabledStored = getPreference<boolean>("visualizer_enabled");
+const visualizerEnabledPref = computed(
+  () => visualizerEnabledStored.value ?? showOnDashboards.value,
+);
 const visualizerPresetPref = getPreference("visualizer_preset", "");
 const visualizerBlurPref = getPreference("visualizer_blur", 0);
 const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
