@@ -247,7 +247,7 @@ import {
   scrollElement,
 } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { itemIsAvailable, itemSupportsPlayLog } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -1781,14 +1781,13 @@ onMounted(async () => {
         // update item
         const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
         if (idx >= 0) {
-          const playData = evt.data as Record<string, unknown>;
-          if ("fully_played" in pagedItems.value[idx])
-            pagedItems.value[idx].fully_played = playData[
-              "fully_played"
-            ] as boolean;
-          if ("resume_position_ms" in pagedItems.value[idx])
-            pagedItems.value[idx].resume_position_ms =
-              (playData["seconds_played"] as number) * 1000;
+          const item = pagedItems.value[idx];
+          if (itemSupportsPlayLog(item)) {
+            const playData = evt.data as Record<string, unknown>;
+            item.fully_played = playData["fully_played"] as boolean;
+            item.resume_position_ms =
+              ((playData["seconds_played"] as number) ?? 0) * 1000;
+          }
         }
       }
     },

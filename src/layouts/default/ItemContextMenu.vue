@@ -186,7 +186,11 @@ const onOpenChange = function (value: boolean) {
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
   if (menuItem.action) {
-    menuItem.action();
+    // actions may be async and are not awaited here; catch so a rejection
+    // surfaces in the console instead of as an unhandled promise rejection
+    Promise.resolve(menuItem.action()).catch((err) => {
+      console.error("[contextmenu] action '%s' failed", menuItem.label, err);
+    });
   }
   // Keep the menu open for multi-select style items (optimistic update).
   if (menuItem.close_on_click === false) {
@@ -220,7 +224,12 @@ import {
   radioSupported,
 } from "@/helpers/radio";
 import { playerVisible } from "@/helpers/utils";
-import { isItemInLibrary, itemIsAvailable } from "@/plugins/api/helpers";
+import { runWithConcurrency } from "@/helpers/concurrency";
+import {
+  isItemInLibrary,
+  itemIsAvailable,
+  itemSupportsPlayLog,
+} from "@/plugins/api/helpers";
 import {
   Album,
   BrowseFolder,
@@ -239,6 +248,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
@@ -783,30 +793,36 @@ export const getContextMenuItems = async function (
     });
   }
 
-  if (
-    items.length === 1 &&
-    "fully_played" in firstItem &&
-    "resume_position_ms" in firstItem
-  ) {
-    // mark unplayed
-    if (firstItem.fully_played || firstItem.resume_position_ms) {
+  const playLogItem = items.length === 1 ? items[0] : undefined;
+  if (itemSupportsPlayLog(playLogItem)) {
+    const item = playLogItem;
+    // mark played: anything not yet fully played, including in-progress items
+    if (!item.fully_played) {
+      contextMenuItems.push({
+        label: "mark_played",
+        icon: History,
+        action: async () => {
+          await api.markItemPlayed(item, true);
+        },
+      });
+    }
+    // mark unplayed: fully played or in-progress items
+    if (item.fully_played || item.resume_position_ms) {
       contextMenuItems.push({
         label: "mark_unplayed",
         icon: History,
         action: async () => {
-          await api.markItemUnPlayed(firstItem);
-          firstItem.fully_played = false;
-          firstItem.resume_position_ms = 0;
+          await api.markItemUnPlayed(item);
         },
       });
       // play from beginning (podcast episode with saved progress)
-      if (firstItem.media_type === MediaType.PODCAST_EPISODE) {
+      if (item.media_type === MediaType.PODCAST_EPISODE) {
         contextMenuItems.push({
           label: "play_from_beginning",
           icon: RotateCcw,
           action: () => {
             api.playMedia(
-              firstItem.uri,
+              item.uri,
               QueueOption.PLAY,
               undefined,
               undefined,
@@ -817,16 +833,6 @@ export const getContextMenuItems = async function (
           disabled: !store.activePlayer,
         });
       }
-    } else {
-      // mark played
-      contextMenuItems.push({
-        label: "mark_played",
-        icon: History,
-        action: async () => {
-          await api.markItemPlayed(firstItem, true);
-          firstItem.fully_played = true;
-        },
-      });
     }
   }
 
@@ -1217,12 +1223,7 @@ export const getPlaybackContextMenuItems = async function (
   // Multi-select mark as played/unplayed for podcast episodes
   if (
     items.length > 1 &&
-    items.every(
-      (item) =>
-        item.media_type === MediaType.PODCAST_EPISODE &&
-        "fully_played" in item &&
-        "resume_position_ms" in item,
-    )
+    items.every((item) => item.media_type === MediaType.PODCAST_EPISODE)
   ) {
     const podcastEpisodes = items as PodcastEpisode[];
 
@@ -1236,20 +1237,46 @@ export const getPlaybackContextMenuItems = async function (
     const allFullyPlayed = podcastEpisodes.every(isFullyPlayed);
     const allUnplayed = podcastEpisodes.every(isUnplayed);
 
+    // Throttled: a bulk selection can span thousands of episodes. Per-command
+    // error toasts are suppressed so one broken connection can't produce a
+    // toast per episode; failures are counted and reported once instead.
+    const markAll = async (
+      command: (item: PodcastEpisode) => Promise<void>,
+    ): Promise<void> => {
+      const outcomes = await runWithConcurrency(
+        podcastEpisodes,
+        async (item: PodcastEpisode) => {
+          try {
+            await command(item);
+            return true;
+          } catch (err) {
+            console.error("[markAll] failed for %s", item.uri, err);
+            return false;
+          }
+        },
+      );
+      const failed = outcomes.filter((ok) => !ok).length;
+      if (failed) {
+        toast.error($t("mark_played_partial_failure", [failed]));
+      }
+    };
+    const markAllPlayed = () =>
+      markAll((item) =>
+        api.markItemPlayed(item, true, undefined, {
+          suppressGlobalError: true,
+        }),
+      );
+    const markAllUnPlayed = () =>
+      markAll((item) =>
+        api.markItemUnPlayed(item, { suppressGlobalError: true }),
+      );
+
     // If all items are fully played, show "mark unplayed" option
     if (allFullyPlayed) {
       playMenuItems.push({
         label: "mark_unplayed",
         icon: History,
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemUnPlayed(item);
-              item.fully_played = false;
-              item.resume_position_ms = 0;
-            }),
-          );
-        },
+        action: markAllUnPlayed,
       });
     }
     // If all items are unplayed, show "mark played" option
@@ -1257,14 +1284,7 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "mark_played",
         icon: History,
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemPlayed(item, true);
-              item.fully_played = true;
-            }),
-          );
-        },
+        action: markAllPlayed,
       });
     }
     // If mixed state, show both options
@@ -1272,28 +1292,13 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "mark_played",
         icon: History,
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemPlayed(item, true);
-              item.fully_played = true;
-            }),
-          );
-        },
+        action: markAllPlayed,
       });
 
       playMenuItems.push({
         label: "mark_unplayed",
         icon: History,
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemUnPlayed(item);
-              item.fully_played = false;
-              item.resume_position_ms = 0;
-            }),
-          );
-        },
+        action: markAllUnPlayed,
       });
     }
   }

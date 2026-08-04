@@ -11,7 +11,7 @@ import {
 import { $t, i18n } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
-import { getDeviceName } from "./helpers";
+import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
   type Artist,
@@ -199,7 +199,13 @@ export class MusicAssistantApi {
 
     transport.on("close", () => {
       // Don't immediately emit DISCONNECTED - wait for stateChange
-      // to see if we're reconnecting or truly disconnected
+      // to see if we're reconnecting or truly disconnected.
+      // In-flight commands can never be answered though: the server does not
+      // retain message ids across connections, so fail them instead of leaving
+      // their promises pending forever.
+      this.rejectPendingCommands(
+        "Connection closed before the command completed",
+      );
     });
 
     transport.on("error", (error: Error) => {
@@ -423,6 +429,23 @@ export class MusicAssistantApi {
     );
     this._providerIconRequests.clear();
     this.serverInfo.value = undefined;
+    this.rejectPendingCommands("Disconnected before the command completed");
+  }
+
+  /**
+   * Fail every in-flight command. Their results can never arrive once the
+   * connection is gone, so without this their promises stay pending forever
+   * and any caller awaiting them stalls silently.
+   */
+  private rejectPendingCommands(reason: string): void {
+    if (this.commands.size === 0) return;
+    for (const command of this.commands.values()) {
+      command.reject(reason);
+    }
+    this.commands.clear();
+    for (const key of Object.keys(this.partialResult)) {
+      delete this.partialResult[key];
+    }
   }
 
   public subscribe(
@@ -1509,27 +1532,43 @@ export class MusicAssistantApi {
     media_item: MediaItemTypeOrItemMapping,
     fully_played?: boolean,
     seconds_played?: number,
+    options?: { suppressGlobalError?: boolean },
   ): Promise<void> {
-    if ("fully_played" in media_item) media_item.fully_played = fully_played;
-    if ("resume_position_ms" in media_item)
-      delete media_item.resume_position_ms;
+    // optimistically update the local object so the UI reflects the new state;
+    // keep resume_position_ms present (instead of deleting the key) because
+    // parts of the UI check for the key's existence on the item
+    if (itemSupportsPlayLog(media_item)) {
+      media_item.fully_played = fully_played;
+      media_item.resume_position_ms = (seconds_played ?? 0) * 1000;
+    }
     // Mark item as played in the playlog
-    return this.sendCommand("music/mark_played", {
-      media_item,
-      fully_played,
-      seconds_played,
-    });
+    return this.sendCommand(
+      "music/mark_played",
+      {
+        media_item,
+        fully_played,
+        seconds_played,
+      },
+      options,
+    );
   }
   public markItemUnPlayed(
     media_item: MediaItemTypeOrItemMapping,
+    options?: { suppressGlobalError?: boolean },
   ): Promise<void> {
-    if ("fully_played" in media_item) media_item.fully_played = false;
-    if ("resume_position_ms" in media_item)
-      delete media_item.resume_position_ms;
+    // optimistically update the local object so the UI reflects the new state
+    if (itemSupportsPlayLog(media_item)) {
+      media_item.fully_played = false;
+      media_item.resume_position_ms = 0;
+    }
     // Mark item as unplayed in the playlog
-    return this.sendCommand("music/mark_unplayed", {
-      media_item,
-    });
+    return this.sendCommand(
+      "music/mark_unplayed",
+      {
+        media_item,
+      },
+      options,
+    );
   }
 
   // PlayerQueue related functions/commands
