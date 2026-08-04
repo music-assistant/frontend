@@ -52,9 +52,8 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
   document.addEventListener("visibilitychange", handleVisibilityChange);
 
   watchEffect(() => {
-    const playing =
-      store.activePlayer?.playback_state === PlaybackState.PLAYING;
     const queue = store.activePlayerQueue;
+    const playing = queue?.state === PlaybackState.PLAYING;
     const isEnabled = enabled ? enabled.value : true;
 
     shouldRun = playing && !!queue?.active && isEnabled;
