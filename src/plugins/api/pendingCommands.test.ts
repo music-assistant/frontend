@@ -85,4 +85,41 @@ describe("commands in flight when the connection drops", () => {
     // AUTH_REQUIRED here would break App.vue's re-auth watch (CONNECTED <- RECONNECTING)
     expect(api.state.value).toBe(ConnectionState.RECONNECTING);
   });
+
+  it("rejects with ConnectionLostError and leaves no commands map entry when sent while disconnected", async () => {
+    const api = new MusicAssistantApi();
+    api.state.value = ConnectionState.DISCONNECTED;
+
+    await expect(
+      api.sendCommand("ai_radio/stations/list"),
+    ).rejects.toBeInstanceOf(ConnectionLostError);
+    expect(api["commands"].size).toBe(0);
+  });
+
+  it("rejects with ConnectionLostError and leaves no commands map entry when the transport's send throws", async () => {
+    const { api, transport } = connectedApi();
+    transport.send.mockImplementation(() => {
+      throw new Error("WebSocket is not connected");
+    });
+
+    await expect(
+      api.sendCommand("ai_radio/stations/list"),
+    ).rejects.toBeInstanceOf(ConnectionLostError);
+    expect(api["commands"].size).toBe(0);
+  });
+
+  it("does not fall back to AUTH_REQUIRED when a dropped connection blocks re-auth from even being sent", async () => {
+    const { api, transport } = connectedApi();
+    api.state.value = ConnectionState.RECONNECTING;
+    transport.send.mockImplementation(() => {
+      throw new Error("WebSocket is not connected");
+    });
+
+    await expect(
+      api.authenticateWithToken("stored-token"),
+    ).rejects.toBeInstanceOf(ConnectionLostError);
+
+    // AUTH_REQUIRED here would wipe the token before the reconnect flow gets to retry
+    expect(api.state.value).not.toBe(ConnectionState.AUTH_REQUIRED);
+  });
 });

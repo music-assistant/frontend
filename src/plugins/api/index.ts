@@ -3195,7 +3195,13 @@ export class MusicAssistantApi {
         reject,
         suppressGlobalError: options?.suppressGlobalError,
       });
-      this._sendCommand(command, args, cmdId);
+      try {
+        this._sendCommand(command, args, cmdId);
+      } catch (error) {
+        // a synchronous throw here rejects the promise but leaves the map entry behind
+        this.commands.delete(cmdId);
+        throw error;
+      }
     });
   }
 
@@ -3212,7 +3218,7 @@ export class MusicAssistantApi {
       this.state.value !== ConnectionState.AUTHENTICATED &&
       this.state.value !== ConnectionState.INITIALIZED
     ) {
-      throw new Error("Connection lost");
+      throw new ConnectionLostError();
     }
 
     if (!msgId) {
@@ -3232,10 +3238,15 @@ export class MusicAssistantApi {
     const msgStr = JSON.stringify(msg);
 
     if (!this.transport) {
-      throw new Error("No connection available");
+      throw new ConnectionLostError();
     }
 
-    this.transport.send(msgStr);
+    try {
+      this.transport.send(msgStr);
+    } catch {
+      // transport throws untyped errors; callers filter on ConnectionLostError
+      throw new ConnectionLostError();
+    }
   }
 
   public async fetchState() {
