@@ -133,6 +133,8 @@ export function useMediaBrowserMetaData(player_id?: string) {
   const unwatch_position = watch(
     () => [
       queueElapsed.value?.elapsed_time,
+      queueElapsed.value?.elapsed_time_last_updated,
+      playerQueue.value?.state,
       playerQueue.value?.current_item?.duration,
       playbackSpeed.value,
     ],

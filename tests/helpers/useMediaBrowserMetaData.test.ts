@@ -122,22 +122,20 @@ describe("useMediaBrowserMetaData position state", () => {
     });
   });
 
-  it("reports the new speed when the queue item is replaced", async () => {
-    const queue = makeQueue({ extra_attributes: { playback_speed: 1 } });
+  // Mirrors a QUEUE_TIME_UPDATED event, which mutates the stored time in place.
+  it("follows an in-place update of the stored position", async () => {
+    makeQueue({ extra_attributes: { playback_speed: 1.5 } });
 
     teardown = useMediaBrowserMetaData(PLAYER_ID);
 
-    queue.current_item = {
-      ...queue.current_item!,
-      extra_attributes: { playback_speed: 2 },
-    };
+    serverTime = ANCHOR + 4;
+    apiMock.queueElapsedTime[QUEUE_ID].elapsed_time = 36;
+    apiMock.queueElapsedTime[QUEUE_ID].elapsed_time_last_updated = serverTime;
     await nextTick();
 
-    expect(setPositionState).toHaveBeenLastCalledWith({
-      duration: 200,
-      playbackRate: 2,
-      position: 30,
-    });
+    expect(setPositionState).toHaveBeenLastCalledWith(
+      expect.objectContaining({ position: 36 }),
+    );
   });
 
   it("re-fires when only the playback speed of the current item changes", async () => {
@@ -163,6 +161,48 @@ describe("useMediaBrowserMetaData position state", () => {
 
     expect(setPositionState).toHaveBeenCalledWith(
       expect.objectContaining({ position: 50 }),
+    );
+  });
+
+  it("never reports a position beyond the duration", () => {
+    makeQueue({ extra_attributes: { playback_speed: 2 } });
+    serverTime = ANCHOR + 3600;
+
+    teardown = useMediaBrowserMetaData(PLAYER_ID);
+
+    expect(setPositionState).toHaveBeenCalledWith(
+      expect.objectContaining({ duration: 200, position: 200 }),
+    );
+  });
+
+  it.each([
+    ["has no stored position yet", undefined],
+    ["reports an unusable position", NaN],
+  ])("starts from zero when the queue %s", (_label, elapsed_time) => {
+    makeQueue({});
+    if (elapsed_time === undefined) delete apiMock.queueElapsedTime[QUEUE_ID];
+    else apiMock.queueElapsedTime[QUEUE_ID].elapsed_time = elapsed_time;
+
+    teardown = useMediaBrowserMetaData(PLAYER_ID);
+
+    expect(setPositionState).toHaveBeenCalledWith(
+      expect.objectContaining({ position: 0 }),
+    );
+  });
+
+  it("freezes the position as soon as the queue pauses", async () => {
+    const queue = makeQueue({ extra_attributes: { playback_speed: 2 } });
+
+    teardown = useMediaBrowserMetaData(PLAYER_ID);
+    expect(setPositionState).toHaveBeenCalledTimes(1);
+
+    serverTime = ANCHOR + 10;
+    queue.state = PlaybackState.PAUSED;
+    await nextTick();
+
+    expect(setPositionState).toHaveBeenCalledTimes(2);
+    expect(setPositionState).toHaveBeenLastCalledWith(
+      expect.objectContaining({ position: 30 }),
     );
   });
 
