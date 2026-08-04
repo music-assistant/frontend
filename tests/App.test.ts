@@ -16,6 +16,7 @@ const {
   mockRememberCurrentRemoteConnection,
   mockRouterPush,
   mockSetPreference,
+  proxyState,
   routeState,
   storeMock,
   webPlayerMock,
@@ -85,6 +86,7 @@ const {
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRouterPush: vi.fn(),
     mockSetPreference: vi.fn(),
+    proxyState: { isReady: { value: true } },
     routeState: {
       current: null as { meta: Record<string, unknown> } | null,
     },
@@ -174,18 +176,25 @@ vi.mock("@/plugins/companion", () => ({
 
 vi.mock("@/plugins/remote", () => ({
   remoteConnectionManager: {
+    currentRemoteId: { value: null as string | null },
     rememberCurrentRemoteConnection: mockRememberCurrentRemoteConnection,
     setAuthenticated: vi.fn(),
   },
 }));
 
-vi.mock("@/plugins/remote/http-proxy", () => ({
-  httpProxyBridge: {
-    ensureReady: mockProxyEnsureReady,
-    isReady: { value: true },
-    setTransport: mockProxySetTransport,
-  },
-}));
+vi.mock("@/plugins/remote/http-proxy", async () => {
+  // showMainApp reads this, so the mock has to carry a real ref: the gate only
+  // re-evaluates once the service worker reports ready if the read is tracked.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  proxyState.isReady = ref(proxyState.isReady.value);
+  return {
+    httpProxyBridge: {
+      ensureReady: mockProxyEnsureReady,
+      isReady: proxyState.isReady,
+      setTransport: mockProxySetTransport,
+    },
+  };
+});
 
 vi.mock("@/plugins/i18n", async () => {
   // App.vue watches the UI locale to push it to the server, so the mock has to
@@ -254,7 +263,9 @@ describe("App initialization", () => {
     guestType.value = null;
     i18nMock.global.locale.value = "en";
     apiMock.state.value = "authenticated";
+    apiMock.isRemoteConnection.value = false;
     apiMock.supportsServerSideTranslations = false;
+    proxyState.isReady.value = true;
     apiMock.serverInfo.value = {
       onboard_done: true,
       server_id: "server-id",
@@ -522,6 +533,39 @@ describe("App initialization", () => {
     expect(mockProxySetTransport.mock.invocationCallOrder[0]).toBeLessThan(
       apiMock.initialize.mock.invocationCallOrder[0],
     );
+  });
+
+  it("withholds the main app on a remote connection until the proxy is ready", async () => {
+    apiMock.isRemoteConnection.value = true;
+    proxyState.isReady.value = false;
+
+    wrapper = await mountApp();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(false);
+    // The login screen is gone too: this is the proxy gate, not a sign-in prompt.
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+  });
+
+  it("shows the main app on a remote connection once the proxy is ready", async () => {
+    apiMock.isRemoteConnection.value = true;
+    proxyState.isReady.value = true;
+
+    wrapper = await mountApp();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
+  });
+
+  it("reveals the main app when the proxy turns ready after mount", async () => {
+    apiMock.isRemoteConnection.value = true;
+    proxyState.isReady.value = false;
+    wrapper = await mountApp();
+
+    // The service worker reports ready asynchronously, so the gate has to lift
+    // on a connection that mounted before it was controlling the page.
+    proxyState.isReady.value = true;
+    await nextTick();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
   });
 
   it.each(["party", "music_quiz"] as const)(
