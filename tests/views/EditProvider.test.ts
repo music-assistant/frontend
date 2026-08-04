@@ -211,7 +211,7 @@ describe("EditProvider", () => {
     );
   });
 
-  it("leaves the form untouched and shows a toast when an action returns no entries", async () => {
+  it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
       providerConfig(ProviderStatus.LOADED),
     );
@@ -229,8 +229,11 @@ describe("EditProvider", () => {
     });
     await flushPromises();
 
+    // EditConfig edits the entry objects in place, so this is what a user
+    // typing into the form leaves behind
     const editConfig = wrapper.findComponent({ name: "EditConfig" });
-    const entriesBefore = editConfig.props("configEntries");
+    const editedEntry = editConfig.props("configEntries")[0];
+    editedEntry.value = "typed but not saved";
 
     await editConfig.vm.$emit("action", "do_thing", {}, false);
     await flushPromises();
@@ -239,7 +242,10 @@ describe("EditProvider", () => {
       "spotify--test",
       "do_thing",
     );
-    expect(editConfig.props("configEntries")).toEqual(entriesBefore);
+    const entriesAfter = editConfig.props("configEntries");
+    expect(entriesAfter).toHaveLength(1);
+    expect(entriesAfter[0]).toBe(editedEntry);
+    expect(entriesAfter[0].value).toBe("typed but not saved");
     expect(apiMock.saveProviderConfig).not.toHaveBeenCalled();
     expect(toastMock.success).toHaveBeenCalledWith("settings.action_completed");
   });
