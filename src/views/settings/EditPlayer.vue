@@ -473,6 +473,12 @@ const onAction = async function (
     .invokePlayerConfigAction(config.value!.player_id, action)
     .then(async (entries) => {
       entries = openActionUrlEntries(entries);
+      // An empty response means the action was a one-off side effect with
+      // nothing to re-render: leave the form untouched.
+      if (entries.length === 0) {
+        toast.success($t("settings.action_completed"));
+        return;
+      }
       config.value!.values = {};
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;

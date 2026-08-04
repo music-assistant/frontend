@@ -10,8 +10,8 @@ import {
 } from "@/plugins/api/interfaces";
 import EditProvider from "@/views/settings/EditProvider.vue";
 
-const { apiMock, eventbusMock, routerMock, unsubscribeMock } = vi.hoisted(
-  () => ({
+const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
+  vi.hoisted(() => ({
     apiMock: {
       getProvider: vi.fn(),
       getProviderConfig: vi.fn(),
@@ -37,9 +37,12 @@ const { apiMock, eventbusMock, routerMock, unsubscribeMock } = vi.hoisted(
     routerMock: {
       push: vi.fn(),
     },
+    toastMock: {
+      error: vi.fn(),
+      success: vi.fn(),
+    },
     unsubscribeMock: vi.fn(),
-  }),
-);
+  }));
 
 let providersUpdated: (() => void) | undefined;
 
@@ -55,6 +58,10 @@ vi.mock("@/plugins/eventbus", () => ({
 vi.mock("@/helpers/utils", () => ({
   markdownToHtml: (value: string) => value,
   openActionUrlEntries: <T>(entries: T) => entries,
+}));
+
+vi.mock("vue-sonner", () => ({
+  toast: toastMock,
 }));
 
 vi.mock("vue-i18n", async (importOriginal) => {
@@ -202,6 +209,82 @@ describe("EditProvider", () => {
     expect(wrapper.text()).not.toContain(
       "settings.provider_requires_attention",
     );
+  });
+
+  it("leaves the form untouched and shows a toast when an action returns no entries", async () => {
+    apiMock.getProviderConfig.mockResolvedValueOnce(
+      providerConfig(ProviderStatus.LOADED),
+    );
+    apiMock.invokeProviderConfigAction.mockResolvedValueOnce([]);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    const entriesBefore = editConfig.props("configEntries");
+
+    await editConfig.vm.$emit("action", "do_thing", {}, false);
+    await flushPromises();
+
+    expect(apiMock.invokeProviderConfigAction).toHaveBeenCalledWith(
+      "spotify--test",
+      "do_thing",
+    );
+    expect(editConfig.props("configEntries")).toEqual(entriesBefore);
+    expect(apiMock.saveProviderConfig).not.toHaveBeenCalled();
+    expect(toastMock.success).toHaveBeenCalledWith("settings.action_completed");
+  });
+
+  it("still replaces the form when an action returns entries (transitional path)", async () => {
+    apiMock.getProviderConfig.mockResolvedValueOnce(
+      providerConfig(ProviderStatus.LOADED),
+    );
+    apiMock.invokeProviderConfigAction.mockResolvedValueOnce([
+      {
+        category: "generic",
+        default_value: null,
+        key: "new_field",
+        label: "New field",
+        required: false,
+        type: ConfigEntryType.STRING,
+        value: "server value",
+      },
+    ]);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+
+    await editConfig.vm.$emit("action", "do_thing", {}, false);
+    await flushPromises();
+
+    expect(editConfig.props("configEntries")).toEqual([
+      expect.objectContaining({
+        key: "new_field",
+        value: "server value",
+      }),
+    ]);
+    expect(apiMock.saveProviderConfig).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
   });
 });
 

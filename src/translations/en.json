@@ -636,6 +636,7 @@
         "provider_saved": "Provider settings saved",
         "provider_reloading": "Reloading provider…",
         "provider_removed": "Provider removed",
+        "action_completed": "Action completed",
         "queue_settings": "Queue settings",
         "audio_analysis_failures": {
             "title": "Audio Analysis Failures",
