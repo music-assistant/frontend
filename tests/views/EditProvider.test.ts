@@ -250,6 +250,32 @@ describe("EditProvider", () => {
     expect(toastMock.success).toHaveBeenCalledWith("settings.action_completed");
   });
 
+  it("does not save when an immediate-apply action returns no entries", async () => {
+    apiMock.getProviderConfig.mockResolvedValueOnce(
+      providerConfig(ProviderStatus.LOADED),
+    );
+    apiMock.invokeProviderConfigAction.mockResolvedValueOnce([]);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    await editConfig.vm.$emit("action", "do_thing", {}, true);
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).not.toHaveBeenCalled();
+    expect(toastMock.success).toHaveBeenCalledWith("settings.action_completed");
+  });
+
   it("still replaces the form when an action returns entries (transitional path)", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
       providerConfig(ProviderStatus.LOADED),

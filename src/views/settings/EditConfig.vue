@@ -394,7 +394,6 @@ const openPlayerOptions = function () {
 
 const onEntryAction = function (entry: ConfigEntryUI) {
   action(entry.action || entry.key, !!entry.immediate_apply);
-  entry.value = entry.action ? null : entry.key;
 };
 
 const onEntryHelp = function (entry: ConfigEntryUI) {
