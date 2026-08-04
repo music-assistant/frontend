@@ -264,7 +264,7 @@ describe("guest entry transitions", () => {
     signalProvidersUpdated();
 
     await expectState("party");
-    expect(routeMock.path).toBe("/guest/party");
+    expect(getRoutePath()).toBe("/guest/party");
     expect(apiMock.sendCommand).not.toHaveBeenCalled();
   });
 

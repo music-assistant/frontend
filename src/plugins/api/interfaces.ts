@@ -1647,8 +1647,6 @@ export interface SmartPlaylistTrackStats {
 
 // AI Radio interfaces
 
-export type AIRadioMode = "playlist" | "dynamic";
-
 export type AIRadioSectionType = "ai_text" | "ai_meta";
 export type AIRadioWebSearchMode = "disabled" | "allow" | "force";
 
@@ -1721,13 +1719,9 @@ export interface AIRadioStation {
   name: string;
   source_playlist_id: string;
   source_playlist_provider: string;
-  target_playlist_provider?: string;
   default_player_id?: string;
   max_duration_minutes?: number;
   shuffle_source_tracks?: boolean;
-  dynamic_batch_size?: number;
-  dynamic_poll_seconds?: number;
-  dynamic_prefetch_remaining_tracks?: number;
   merge_section_id?: string;
   general?: AIRadioStationGeneral;
   section_ids?: string[];
@@ -1738,19 +1732,21 @@ export interface AIRadioStation {
 export interface AIRadioSession {
   session_id: string;
   station_id: string;
-  mode: AIRadioMode;
   status: "running" | "completed" | "failed" | "stopped";
   created_at: string;
   started_at?: string;
   ended_at?: string;
   error?: string;
+  skipped_sections?: number;
+  last_render_error?: string;
   progress?: {
     phase?: string;
     [key: string]: unknown;
   };
   result?: {
-    target_playlist_id?: string;
-    target_playlist_name?: string;
+    queue_entries?: number;
+    planned_sections?: number;
+    skipped_sections?: number;
     [key: string]: unknown;
   };
 }
