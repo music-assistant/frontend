@@ -121,7 +121,11 @@
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { MediaType, type MediaItemChapter } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  PlaybackState,
+  type MediaItemChapter,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
@@ -278,7 +282,7 @@ const serverElapsedTime = computed(() => {
   void nowTick.value;
 
   // Adaptive tick: only run the timer when we have a playing source that relies on time progression
-  const isPlaying = store.activePlayer?.playback_state === "playing";
+  const isPlaying = serverTiming.value?.playbackState === PlaybackState.PLAYING;
   const usingQueue = !!(
     store.activePlayerQueue && store.activePlayerQueue.active
   );

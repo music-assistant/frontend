@@ -3,7 +3,8 @@
  *
  * Provides a reactive `elapsedTime` ref that updates at ~60fps while playing,
  * suitable for smooth lyrics synchronization. Automatically starts/stops the
- * rAF loop based on playback state and an optional `enabled` guard.
+ * rAF loop based on the active queue's playback state and an optional
+ * `enabled` guard.
  */
 
 import { ref, watchEffect, onScopeDispose, type Ref } from "vue";

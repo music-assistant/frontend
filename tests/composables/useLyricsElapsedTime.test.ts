@@ -1,4 +1,11 @@
-import { effectScope, nextTick, reactive, ref, type Ref } from "vue";
+import {
+  effectScope,
+  nextTick,
+  reactive,
+  ref,
+  type EffectScope,
+  type Ref,
+} from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlaybackState } from "@/plugins/api/interfaces";
 
@@ -24,7 +31,7 @@ vi.mock("@/composables/useServerTime", () => ({
 // the pattern used by the other composable tests in this directory.
 const storeMock = reactive({
   activePlayerQueue: undefined as
-    | { queue_id: string; state?: PlaybackState; active?: boolean }
+    | { queue_id: string; state: PlaybackState; active: boolean }
     | undefined,
   activePlayer: undefined as { playback_state?: PlaybackState } | undefined,
   curQueueItem: undefined as
@@ -63,19 +70,22 @@ function makeQueue(overrides: Record<string, unknown> = {}) {
   };
 }
 
-// The composable is imported per test so the mocked store module is already
-// initialised by the time its module factory runs.
+// Disposed in afterEach so a failed assertion cannot leave an effect
+// subscribed to the shared store mock and corrupt the tests that follow.
+let activeScope: EffectScope | undefined;
+
 async function runComposable(enabled?: Ref<boolean>) {
   const { useLyricsElapsedTime } =
     await import("@/composables/lyrics/useLyricsElapsedTime");
-  const scope = effectScope();
-  const composable = scope.run(() => useLyricsElapsedTime(enabled));
+  activeScope = effectScope();
+  const composable = activeScope.run(() => useLyricsElapsedTime(enabled));
   if (!composable) throw new Error("useLyricsElapsedTime did not run");
-  return { ...composable, scope };
+  return { ...composable, scope: activeScope };
 }
 
 describe("useLyricsElapsedTime", () => {
   beforeEach(() => {
+    activeScope = undefined;
     pendingFrames = new Map();
     nextRafId = 0;
     vi.stubGlobal(
@@ -102,11 +112,12 @@ describe("useLyricsElapsedTime", () => {
   });
 
   afterEach(() => {
+    activeScope?.stop();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it("does not advance the position while the queue is paused", async () => {
+  it("reads a frozen position from a paused queue even while the loop runs", async () => {
     storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PAUSED });
     storeMock.activePlayer = { playback_state: PlaybackState.PLAYING };
     apiMock.queueElapsedTime["q1"] = {
@@ -114,11 +125,12 @@ describe("useLyricsElapsedTime", () => {
       elapsed_time_last_updated: NOW,
     };
 
-    const { elapsedTime, start, scope } = await runComposable();
+    const { elapsedTime, start } = await runComposable();
     await nextTick();
+    expect(pendingFrames.size).toBe(0);
 
-    // The gate already keeps the loop stopped here, so drive it by hand to
-    // prove the position itself is frozen rather than merely unpolled.
+    // Drive the loop by hand to prove the position itself is frozen rather
+    // than merely unpolled.
     start();
     flushFrame();
     expect(elapsedTime.value).toBe(42);
@@ -126,8 +138,6 @@ describe("useLyricsElapsedTime", () => {
     serverNowMock.mockReturnValue(NOW + 50);
     flushFrame();
     expect(elapsedTime.value).toBe(42);
-
-    scope.stop();
   });
 
   it("advances the position as serverNow advances while the queue plays", async () => {
@@ -137,7 +147,7 @@ describe("useLyricsElapsedTime", () => {
       elapsed_time_last_updated: NOW,
     };
 
-    const { elapsedTime, scope } = await runComposable();
+    const { elapsedTime } = await runComposable();
     await nextTick();
     flushFrame();
     expect(elapsedTime.value).toBe(10);
@@ -145,36 +155,36 @@ describe("useLyricsElapsedTime", () => {
     serverNowMock.mockReturnValue(NOW + 5);
     flushFrame();
     expect(elapsedTime.value).toBe(15);
-
-    scope.stop();
   });
 
   it("runs the loop from the queue's state even when the player disagrees", async () => {
     storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PLAYING });
     storeMock.activePlayer = { playback_state: PlaybackState.PAUSED };
 
-    const { scope } = await runComposable();
+    await runComposable();
     await nextTick();
 
     expect(pendingFrames.size).toBe(1);
-    scope.stop();
   });
 
-  it("does not run the loop when the queue is paused even though the player plays", async () => {
-    storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PAUSED });
+  it("stops the loop when the queue pauses even though the player keeps playing", async () => {
+    storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PLAYING });
     storeMock.activePlayer = { playback_state: PlaybackState.PLAYING };
 
-    const { scope } = await runComposable();
+    await runComposable();
+    await nextTick();
+    expect(pendingFrames.size).toBe(1);
+
+    storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PAUSED });
     await nextTick();
 
     expect(pendingFrames.size).toBe(0);
-    scope.stop();
   });
 
   it("stops the loop when the queue becomes inactive", async () => {
     storeMock.activePlayerQueue = makeQueue({ active: true });
 
-    const { scope } = await runComposable();
+    await runComposable();
     await nextTick();
     expect(pendingFrames.size).toBe(1);
 
@@ -182,14 +192,13 @@ describe("useLyricsElapsedTime", () => {
     await nextTick();
 
     expect(pendingFrames.size).toBe(0);
-    scope.stop();
   });
 
   it("stops the loop when the enabled ref flips to false", async () => {
     storeMock.activePlayerQueue = makeQueue();
     const enabled = ref(true);
 
-    const { scope } = await runComposable(enabled);
+    await runComposable(enabled);
     await nextTick();
     expect(pendingFrames.size).toBe(1);
 
@@ -197,7 +206,6 @@ describe("useLyricsElapsedTime", () => {
     await nextTick();
 
     expect(pendingFrames.size).toBe(0);
-    scope.stop();
   });
 
   it("stops the loop and removes the visibilitychange listener when the scope is disposed", async () => {
