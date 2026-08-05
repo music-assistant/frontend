@@ -172,6 +172,44 @@ onMounted(() => {
       value:
         localStorage.getItem("frontend.settings.mobile_sidebar_side") || "left",
     },
+    {
+      key: "volume_slider_mode",
+      type: ConfigEntryType.STRING,
+      label: "volume_slider_mode",
+      default_value: "absolute",
+      required: false,
+      options: [
+        { title: "absolute", value: "absolute" },
+        { title: "relative", value: "relative" },
+      ],
+      multi_value: false,
+      category: "volume_control",
+      value:
+        (store.currentUser?.preferences?.volume_slider_mode as string) ||
+        "absolute",
+    },
+    {
+      key: "volume_step",
+      type: ConfigEntryType.INTEGER,
+      label: "volume_step",
+      default_value: 2,
+      required: false,
+      range: [1, 10],
+      multi_value: false,
+      category: "volume_control",
+      value: (store.currentUser?.preferences?.volume_step as number) ?? 2,
+    },
+    {
+      key: "volume_haptics",
+      type: ConfigEntryType.BOOLEAN,
+      label: "volume_haptics",
+      default_value: true,
+      required: false,
+      multi_value: false,
+      category: "volume_control",
+      value:
+        (store.currentUser?.preferences?.volume_haptics as boolean) ?? true,
+    },
   ];
 
   // Add web player settings (if not running in companion mode)
