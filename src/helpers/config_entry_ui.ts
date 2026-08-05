@@ -33,6 +33,9 @@ export type ConfigEntryUI = ServerConfigEntryUI | InjectedConfigEntry;
  * An unmet `depends_on` normally leaves an entry visible but disabled. These types
  * have nothing to disable, so a form must hide them instead or they read as if the
  * dependency were met.
+ *
+ * {@link VALUELESS_ENTRY_TYPES} derives from this list, so adding a type here also
+ * excludes it from validation and unsaved-change tracking.
  */
 export const NON_INTERACTIVE_ENTRY_TYPES: ConfigEntryUIType[] = [
   ConfigEntryType.DIVIDER,
@@ -40,6 +43,53 @@ export const NON_INTERACTIVE_ENTRY_TYPES: ConfigEntryUIType[] = [
   ConfigEntryType.ALERT,
   ConfigEntryType.IMAGE,
 ];
+
+/**
+ * Entry types that hold no user-supplied value, so they take no part in validation
+ * or unsaved-change tracking.
+ *
+ * A type here may still carry a value the server set — an IMAGE holds its data-URI —
+ * but nothing the form does can change it. Wider than
+ * {@link NON_INTERACTIVE_ENTRY_TYPES} by ACTION: an action button is interactive (an
+ * unmet dependency disables it) but stores nothing.
+ */
+export const VALUELESS_ENTRY_TYPES: ConfigEntryUIType[] = [
+  ...NON_INTERACTIVE_ENTRY_TYPES,
+  ConfigEntryType.ACTION,
+];
+
+// the fields a dependency check reads, so both server and UI entry shapes fit
+type DependencyFields = Pick<
+  ConfigEntry,
+  "key" | "value" | "depends_on" | "depends_on_value" | "depends_on_value_not"
+>;
+
+/**
+ * Whether `entry` should be disabled because its `depends_on` dependency is unmet
+ * within `entries`.
+ *
+ * `depends_on_value` requires the dependency to hold that value and
+ * `depends_on_value_not` requires it not to; with neither, any truthy dependency
+ * value satisfies it. An entry without a dependency is never disabled, while one
+ * naming a key that is not on the form always is.
+ */
+export const isEntryDisabled = (
+  entry: DependencyFields,
+  entries: readonly DependencyFields[],
+): boolean => {
+  if (isNullOrUndefined(entry.depends_on)) return false;
+  const dependency = entries.find((e) => e.key === entry.depends_on);
+  // a key that resolves to nothing stays gated, so a typo cannot silently open the gate
+  if (!dependency) return true;
+  const dependencyValue = dependency.value;
+  if (!isNullOrUndefined(entry.depends_on_value)) {
+    return dependencyValue != entry.depends_on_value;
+  }
+  if (!isNullOrUndefined(entry.depends_on_value_not)) {
+    return dependencyValue == entry.depends_on_value_not;
+  }
+  return !dependencyValue;
+};
 
 export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
   (e as InjectedConfigEntry).injected === true;
@@ -96,3 +146,6 @@ export const mergeActionEntries = (
   }
   return merged;
 };
+
+const isNullOrUndefined = (value: unknown): boolean =>
+  value === null || value === undefined;

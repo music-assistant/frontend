@@ -161,8 +161,10 @@
 <script setup lang="ts">
 import {
   ConfigEntryUI,
+  isEntryDisabled,
   isInjected,
   NON_INTERACTIVE_ENTRY_TYPES,
+  VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
 import {
@@ -267,10 +269,7 @@ const requiredValuesPresent = computed(() => {
         !(
           !isNullOrUndefined(entry.value) ||
           !isNullOrUndefined(entry.default_value) ||
-          entry.type == ConfigEntryType.DIVIDER ||
-          entry.type == ConfigEntryType.LABEL ||
-          entry.type == ConfigEntryType.ALERT ||
-          entry.type == ConfigEntryType.ACTION
+          VALUELESS_ENTRY_TYPES.includes(entry.type)
         )
       )
         return false;
@@ -284,13 +283,7 @@ const hasUnsavedChanges = computed(() => {
   if (!entries.value) return false;
   for (const entry of entries.value) {
     // Skip non-value entry types
-    if (
-      entry.type == ConfigEntryType.DIVIDER ||
-      entry.type == ConfigEntryType.LABEL ||
-      entry.type == ConfigEntryType.ALERT ||
-      entry.type == ConfigEntryType.ACTION ||
-      isInjected(entry)
-    ) {
+    if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
       continue;
     }
     // Skip secure strings that haven't been modified (still showing substitute)
@@ -460,26 +453,7 @@ const isNullOrUndefined = function (value: unknown) {
 };
 
 const isDisabled = function (entry: ConfigEntryUI) {
-  if (!isNullOrUndefined(entry.depends_on)) {
-    const dependentEntry = entries.value?.find(
-      (x) => x.key == entry.depends_on,
-    );
-    // a key that resolves to nothing stays gated, so a typo cannot silently open the gate
-    if (!dependentEntry) return true;
-
-    const dependentValue = dependentEntry.value;
-
-    if (!isNullOrUndefined(entry.depends_on_value)) {
-      return dependentValue != entry.depends_on_value;
-    }
-
-    if (!isNullOrUndefined(entry.depends_on_value_not)) {
-      return dependentValue == entry.depends_on_value_not;
-    }
-
-    return !dependentValue;
-  }
-  return false;
+  return isEntryDisabled(entry, entries.value || []);
 };
 
 const isVisible = function (entry: ConfigEntryUI) {
