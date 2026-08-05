@@ -1,4 +1,8 @@
-import { EventType, type PlayerQueue } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  PlaybackState,
+  type PlayerQueue,
+} from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSendCommand, mockGetPlayerQueueItems, mockSubscribe, storeMock } =
@@ -31,6 +35,7 @@ vi.mock("@/plugins/store", () => ({
 }));
 
 // Import after mocks so that composable uses the mocked modules
+import api from "@/plugins/api";
 import { useGuestQueue } from "@/composables/guest/useGuestQueue";
 
 describe("useGuestQueue", () => {
@@ -39,6 +44,7 @@ describe("useGuestQueue", () => {
     mockGetPlayerQueueItems.mockReset();
     mockSubscribe.mockReset();
     storeMock.activePlayerQueue = { queue_id: "queue1" };
+    for (const key of Object.keys(api.queues)) delete api.queues[key];
   });
 
   it("fetches queue items using active player queue when no party queue id is set", async () => {
@@ -120,6 +126,39 @@ describe("useGuestQueue", () => {
 
     expect(mockGetPlayerQueueItems).toHaveBeenLastCalledWith("queue1", 50, 0);
     expect(queueFetchOffset.value).toBe(0);
+  });
+
+  it("exposes the party queue and its index from the same queue", () => {
+    api.queues["party-player"] = {
+      queue_id: "party-player",
+      current_index: 3,
+      state: PlaybackState.PLAYING,
+    } as PlayerQueue;
+    api.queues["queue1"] = {
+      queue_id: "queue1",
+      current_index: 7,
+      state: PlaybackState.PAUSED,
+    } as PlayerQueue;
+
+    const { partyQueueId, currentQueue, currentQueueIndex } = useGuestQueue();
+    partyQueueId.value = "party-player";
+
+    expect(currentQueue.value?.queue_id).toBe("party-player");
+    expect(currentQueue.value?.state).toBe(PlaybackState.PLAYING);
+    expect(currentQueueIndex.value).toBe(3);
+  });
+
+  it("falls back to the active player queue when no party queue id is set", () => {
+    api.queues["queue1"] = {
+      queue_id: "queue1",
+      current_index: 7,
+      state: PlaybackState.PAUSED,
+    } as PlayerQueue;
+
+    const { currentQueue, currentQueueIndex } = useGuestQueue();
+
+    expect(currentQueue.value?.queue_id).toBe("queue1");
+    expect(currentQueueIndex.value).toBe(7);
   });
 
   it("subscribes to queue events and returns a cleanup function", () => {
