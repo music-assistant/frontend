@@ -29,10 +29,10 @@ interface UseConfigActionOptions<T extends Config> {
 /**
  * Build the `action` event handler for an EditConfig form.
  *
- * :param config: Ref holding the config the form renders.
- * :param loading: Ref driving the form's loading overlay.
- * :param invokeAction: Invokes the action for this config's flavour.
- * :param saveValues: Saves raw values for this config's flavour.
+ * @param config - Ref holding the config the form renders.
+ * @param loading - Ref driving the form's loading overlay.
+ * @param invokeAction - Invokes the action for this config's flavour.
+ * @param saveValues - Saves raw values for this config's flavour.
  */
 export function useConfigAction<T extends Config>({
   config,
