@@ -6,6 +6,7 @@
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 # Lint and format the staged files only, then restage what was fixed.
-# The repo-wide lint, the test suite and the typecheck all run in CI
-# (.github/workflows/test.yml) on every push and pull request.
+# CI (.github/workflows/test.yml) covers the rest on every push and pull
+# request: the repo-wide lint, the test suite, and the typecheck that
+# `pnpm build` runs ahead of the bundle.
 pnpm exec lint-staged
