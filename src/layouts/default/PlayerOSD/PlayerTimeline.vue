@@ -277,20 +277,14 @@ const playerTotalTimeStr = computed(() => {
 const serverTiming = computed(() => resolveActiveTiming());
 
 const serverElapsedTime = computed(() => {
-  // include nowTick.value so this computed re-evaluates periodically while mounted
-  // and updates UI for fallback player-level current_media that relies on Date.now()
+  // include nowTick.value so this computed re-evaluates periodically while
+  // mounted; the resolved position extrapolates from Date.now(), which is not
+  // reactive by itself
   void nowTick.value;
 
-  // Adaptive tick: only run the timer when we have a playing source that relies on time progression
-  const isPlaying = serverTiming.value?.playbackState === PlaybackState.PLAYING;
-  const usingQueue = !!(
-    store.activePlayerQueue && store.activePlayerQueue.active
-  );
-  const hasCurrentMedia =
-    store.activePlayer?.current_media?.elapsed_time != null;
-
-  // Start ticking when playing and either using queue or external current_media
-  if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
+  // Adaptive tick: the resolved position only advances on its own while the
+  // source that reports it is playing, whichever source that turns out to be.
+  if (serverTiming.value?.playbackState === PlaybackState.PLAYING) startTick();
   else stopTick();
 
   return resolveActiveElapsedTime() ?? 0;
