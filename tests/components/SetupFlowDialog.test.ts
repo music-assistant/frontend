@@ -224,6 +224,39 @@ describe("SetupFlowDialog", () => {
     expect(rows[0].props("disabled")).toBe(false);
     expect(rows[1].props("disabled")).toBe(true);
   });
+
+  it("gates an entry whose dependency key is not in the step", async () => {
+    apiMock.reconfigureProvider.mockResolvedValue(
+      formStep([
+        entry({
+          key: "feature_warning",
+          type: ConfigEntryType.ALERT,
+          depends_on: "typo_in_this_key",
+        }),
+        entry({
+          key: "feature_detail",
+          type: ConfigEntryType.STRING,
+          depends_on: "typo_in_this_key",
+        }),
+      ]),
+    );
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({
+      kind: "reconfigure",
+      instanceId: "spotify--test",
+      onFlowEnded: vi.fn(),
+    });
+    await flushPromises();
+
+    const rows = wrapper.findAllComponents({ name: "ConfigEntryRow" });
+    expect(
+      rows.map((row) => (row.props("confEntry") as ConfigEntry).key),
+    ).toEqual(["feature_detail"]);
+    expect(rows[0].props("disabled")).toBe(true);
+  });
 });
 
 function terminalStep(type: FlowStepType): SetupFlowStep {

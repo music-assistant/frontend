@@ -785,7 +785,8 @@ function onEntryHelp(entry: ConfigEntry) {
 function isEntryDisabled(entry: ConfigEntry): boolean {
   if (isNullOrUndefined(entry.depends_on)) return false;
   const dependency = formEntries.value.find((e) => e.key === entry.depends_on);
-  if (!dependency) return false;
+  // a key that resolves to nothing stays gated, so a typo cannot silently open the gate
+  if (!dependency) return true;
   const dependencyValue = dependency.value;
   if (!isNullOrUndefined(entry.depends_on_value)) {
     return dependencyValue != entry.depends_on_value;

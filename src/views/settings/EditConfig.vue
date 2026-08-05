@@ -464,7 +464,8 @@ const isDisabled = function (entry: ConfigEntryUI) {
     const dependentEntry = entries.value?.find(
       (x) => x.key == entry.depends_on,
     );
-    if (!dependentEntry) return false;
+    // a key that resolves to nothing stays gated, so a typo cannot silently open the gate
+    if (!dependentEntry) return true;
 
     const dependentValue = dependentEntry.value;
 

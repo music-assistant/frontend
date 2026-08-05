@@ -631,9 +631,14 @@ export interface ConfigEntry {
   help_link?: string;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
-  // depends_on [optional]: needs to be set before this setting shows up in frontend
+  // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
+  // as unmet. While unmet, input types and ACTION stay visible but render disabled;
+  // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
   depends_on?: string;
+  // depends_on_value [optional]: complementary to depends_on, the dependency is only met when
+  // the other entry holds this exact value (without it, any truthy value will do)
   depends_on_value?: ConfigValueType;
+  // depends_on_value_not [optional]: same as depends_on_value but inverted
   depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
