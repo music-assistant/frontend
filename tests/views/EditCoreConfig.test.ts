@@ -108,7 +108,7 @@ describe("EditCoreConfig", () => {
     ).toBe(false);
   });
 
-  it("still replaces the form when an action returns entries (transitional path)", async () => {
+  it("takes the value an action did provide", async () => {
     apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
     apiMock.invokeCoreConfigAction.mockResolvedValueOnce([
       {
@@ -147,6 +147,45 @@ describe("EditCoreConfig", () => {
     ]);
     expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
     expect(toastMock.success).not.toHaveBeenCalled();
+  });
+
+  it("keeps the current value for an entry the action returned without one", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
+    // an action response carries entry definitions only, never the stored values
+    apiMock.invokeCoreConfigAction.mockResolvedValueOnce([
+      {
+        category: "generic",
+        default_value: false,
+        key: "clear_on_start",
+        label: "Clear cache on start",
+        required: false,
+        type: ConfigEntryType.BOOLEAN,
+      },
+    ]);
+
+    const wrapper = shallowMount(EditCoreConfig, {
+      props: {
+        domain: "cache",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+
+    await editConfig.vm.$emit("action", "verify_ssl", {}, false);
+    await flushPromises();
+
+    expect(editConfig.props("configEntries")).toEqual([
+      expect.objectContaining({
+        key: "clear_on_start",
+        value: "current value",
+      }),
+    ]);
   });
 });
 
