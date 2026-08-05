@@ -120,6 +120,7 @@
         <div class="config-slider-input">
           <NumberField
             :model-value="confEntry.value as number"
+            :disabled="isFieldDisabled"
             :min="confEntry.range[0]"
             :max="confEntry.range[1]"
             :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
