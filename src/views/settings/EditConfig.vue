@@ -160,6 +160,7 @@
 
 <script setup lang="ts">
 import {
+  allRequiredValuesPresent,
   ConfigEntryUI,
   isEntryDisabled,
   isInjected,
@@ -261,23 +262,9 @@ const protocolPanels = computed(() => {
   return panels.value.filter((p) => isProtocolCategory(p));
 });
 
-const requiredValuesPresent = computed(() => {
-  if (entries.value) {
-    for (const entry of entries.value) {
-      if (
-        entry.required &&
-        !(
-          !isNullOrUndefined(entry.value) ||
-          !isNullOrUndefined(entry.default_value) ||
-          VALUELESS_ENTRY_TYPES.includes(entry.type)
-        )
-      )
-        return false;
-    }
-    return true;
-  }
-  return false;
-});
+const requiredValuesPresent = computed(() =>
+  entries.value ? allRequiredValuesPresent(entries.value) : false,
+);
 
 const hasUnsavedChanges = computed(() => {
   if (!entries.value) return false;
@@ -448,9 +435,6 @@ onBeforeUnmount(() => {
 
 // Add listener when component mounts
 window.addEventListener("beforeunload", handleBeforeUnload);
-const isNullOrUndefined = function (value: unknown) {
-  return value === null || value === undefined;
-};
 
 const isDisabled = function (entry: ConfigEntryUI) {
   return isEntryDisabled(entry, entries.value || []);

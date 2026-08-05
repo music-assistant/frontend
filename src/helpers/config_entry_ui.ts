@@ -64,6 +64,10 @@ type DependencyFields = Pick<
   "key" | "value" | "depends_on" | "depends_on_value" | "depends_on_value_not"
 >;
 
+// what a required-value check reads on top of the dependency it also evaluates
+type ValidationFields = DependencyFields &
+  Pick<ConfigEntry, "required" | "default_value"> & { type: ConfigEntryUIType };
+
 /**
  * Whether `entry` should be disabled because its `depends_on` dependency is unmet
  * within `entries`.
@@ -90,6 +94,27 @@ export const isEntryDisabled = (
   }
   return !dependencyValue;
 };
+
+/**
+ * Whether every required entry in `entries` holds something to submit.
+ *
+ * An entry counts as satisfied by its own value or by a default the server will fall
+ * back to. Entries the user cannot fill in never block a submission: those carrying no
+ * value at all, and those {@link isEntryDisabled} gates behind an unmet dependency —
+ * including a dependency naming a key that is not on the form, which is unsatisfiable
+ * by definition.
+ */
+export const allRequiredValuesPresent = (
+  entries: readonly ValidationFields[],
+): boolean =>
+  entries.every(
+    (entry) =>
+      !entry.required ||
+      VALUELESS_ENTRY_TYPES.includes(entry.type) ||
+      isEntryDisabled(entry, entries) ||
+      !isNullOrUndefined(entry.value) ||
+      !isNullOrUndefined(entry.default_value),
+  );
 
 export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
   (e as InjectedConfigEntry).injected === true;
