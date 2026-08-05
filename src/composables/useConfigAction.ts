@@ -1,0 +1,81 @@
+/**
+ * Shared handler for the action buttons on a settings config form.
+ * Provider, player and core config forms all invoke an action the same way and
+ * differ only in which API commands they talk to, so they pass those in.
+ */
+
+import type { Ref } from "vue";
+import { toast } from "vue-sonner";
+import { mergeActionEntries } from "@/helpers/config_entry_ui";
+import { openActionUrlEntries } from "@/helpers/utils";
+import type { ConfigEntry, ConfigValueType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+
+/** The part of a Provider/Player/Core config this handler touches. */
+interface ConfigWithValues {
+  values: Record<string, ConfigEntry>;
+}
+
+interface UseConfigActionOptions<T extends ConfigWithValues> {
+  /** The form's config, refreshed in place with whatever the action returns. */
+  config: Ref<T | undefined>;
+  /** Toggled around the invoke so the form can show its loading overlay. */
+  loading: Ref<boolean>;
+  /** Runs the action on the server and returns the entries to re-render. */
+  invokeAction: (action: string) => Promise<ConfigEntry[]>;
+  /** Persists the given raw values and returns the stored config. */
+  saveValues: (
+    values: Record<string, ConfigValueType>,
+  ) => Promise<ConfigWithValues>;
+}
+
+/**
+ * Build the `action` event handler for an EditConfig form.
+ *
+ * :param config: Ref holding the config the form renders.
+ * :param loading: Ref driving the form's loading overlay.
+ * :param invokeAction: Invokes the action for this config's flavour.
+ * :param saveValues: Saves raw values for this config's flavour.
+ */
+export function useConfigAction<T extends ConfigWithValues>({
+  config,
+  loading,
+  invokeAction,
+  saveValues,
+}: UseConfigActionOptions<T>) {
+  const onAction = async function (
+    action: string,
+    _values: Record<string, ConfigValueType>,
+    immediateApply: boolean,
+  ) {
+    loading.value = true;
+    try {
+      const entries = openActionUrlEntries(await invokeAction(action));
+      // An empty response means the action was a one-off side effect with
+      // nothing to re-render: leave the form untouched.
+      if (entries.length === 0) {
+        toast.success($t("settings.action_completed"));
+        return;
+      }
+      config.value!.values = mergeActionEntries(config.value!.values, entries);
+      if (immediateApply) {
+        const rawValues: Record<string, ConfigValueType> = {};
+        for (const entry of Object.values(config.value!.values)) {
+          if (entry.value !== undefined) {
+            rawValues[entry.key] = entry.value;
+          }
+        }
+        const updatedConfig = await saveValues(rawValues);
+        for (const [key, entry] of Object.entries(updatedConfig.values)) {
+          config.value!.values[key] = entry;
+        }
+      }
+    } catch (err) {
+      toast.error(String(err));
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  return { onAction };
+}
