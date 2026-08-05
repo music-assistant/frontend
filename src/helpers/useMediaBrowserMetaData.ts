@@ -1,4 +1,4 @@
-import computeElapsedTime from "@/helpers/elapsed";
+import { computeElapsedTime } from "@/helpers/elapsed";
 import { getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { MediaType, PlayerMedia } from "@/plugins/api/interfaces";
