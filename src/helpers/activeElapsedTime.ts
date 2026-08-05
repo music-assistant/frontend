@@ -6,7 +6,7 @@
  * Both functions read the current values on each call and hold no state, which
  * makes them equally usable inside a `computed` and inside a rAF/interval loop.
  */
-import { computeElapsedTime } from "@/helpers/elapsed";
+import { computeElapsedTime, queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { PlaybackState } from "@/plugins/api/interfaces";
@@ -29,8 +29,7 @@ export interface ActiveTiming {
  * never combine a queue position with a player state or the other way around.
  */
 export function resolveActiveTiming(): ActiveTiming | undefined {
-  const playbackSpeed =
-    store.curQueueItem?.extra_attributes?.playback_speed ?? 1;
+  const playbackSpeed = queueItemPlaybackSpeed(store.curQueueItem);
 
   // Prefer the active queue's own elapsed_time when it reports one.
   const queue = store.activePlayerQueue;

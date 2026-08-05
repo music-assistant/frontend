@@ -1,4 +1,4 @@
-import { computeElapsedTime } from "@/helpers/elapsed";
+import { computeElapsedTime, queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import { getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { MediaType, PlayerMedia } from "@/plugins/api/interfaces";
@@ -121,15 +121,10 @@ export function useMediaBrowserMetaData(player_id?: string) {
     const queueId = playerQueue.value?.queue_id;
     return queueId ? api.queueElapsedTime[queueId] : undefined;
   });
-  // The OS extrapolates the position from this rate between our updates, and a
-  // zero rate is rejected outright, so only a sane value may reach it.
-  const playbackSpeed = computed(() => {
-    const speed =
-      playerQueue.value?.current_item?.extra_attributes?.playback_speed;
-    return typeof speed === "number" && Number.isFinite(speed) && speed > 0
-      ? speed
-      : 1;
-  });
+  // The OS extrapolates the position from this rate between our updates.
+  const playbackSpeed = computed(() =>
+    queueItemPlaybackSpeed(playerQueue.value?.current_item),
+  );
   const unwatch_position = watch(
     () => [
       queueElapsed.value?.elapsed_time,

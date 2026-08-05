@@ -82,6 +82,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
+import { queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import {
   gotoRadio,
   radioActionLabelKey,
@@ -167,8 +168,7 @@ const playbackSpeedSupported = computed(
 watch(
   () => store.curQueueItem,
   (queueItem) => {
-    currentPlaybackSpeed.value =
-      queueItem?.extra_attributes?.playback_speed ?? 1;
+    currentPlaybackSpeed.value = queueItemPlaybackSpeed(queueItem);
   },
   { immediate: true },
 );
@@ -210,8 +210,7 @@ const onStartRadio = () => {
 const onOpenPlaybackSpeed = () => {
   // Sync from latest queue state before opening so the displayed value is
   // current even if the queue item updated since the menu was last touched.
-  currentPlaybackSpeed.value =
-    store.curQueueItem?.extra_attributes?.playback_speed ?? 1;
+  currentPlaybackSpeed.value = queueItemPlaybackSpeed(store.curQueueItem);
   playbackSpeedDialogOpen.value = true;
 };
 
