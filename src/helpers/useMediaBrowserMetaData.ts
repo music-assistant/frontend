@@ -121,8 +121,7 @@ export function useMediaBrowserMetaData(player_id?: string) {
     const queueId = playerQueue.value?.queue_id;
     return queueId ? api.queueElapsedTime[queueId] : undefined;
   });
-  // The OS extrapolates the position from this rate between our updates, and a
-  // zero rate is rejected outright, so only a sane value may reach it.
+  // The OS extrapolates the position from this rate between our updates.
   const playbackSpeed = computed(() =>
     queueItemPlaybackSpeed(playerQueue.value?.current_item),
   );

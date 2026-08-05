@@ -1,6 +1,7 @@
+import { serverNow } from "@/composables/useServerTime";
+import { PlaybackState, QueueItem } from "../plugins/api/interfaces";
+
 /**
- * computeElapsedTime
- *
  * Calculate the current elapsed playback time in seconds from a stored
  * `elapsed_time` value and the `elapsed_time_last_updated` UTC timestamp
  * (seconds since epoch), on the server's clock. The function assumes:
@@ -12,9 +13,6 @@
  * `elapsed_time` without applying the time-delta. This avoids advancing the
  * position while paused/stopped.
  */
-import { serverNow } from "@/composables/useServerTime";
-import { PlaybackState, QueueItem } from "../plugins/api/interfaces";
-
 export function computeElapsedTime(
   elapsed_time: number | undefined,
   elapsed_time_last_updated: number | undefined,
@@ -40,9 +38,9 @@ export function computeElapsedTime(
 /**
  * Speed a queue item plays at, e.g. an audiobook at 1.5x.
  *
- * Falls back to normal speed unless the item reports a usable multiplier: zero
- * would freeze every progress indicator, a negative value would run them
- * backwards, and the OS media session rejects both outright.
+ * Only a finite speed above zero is usable: zero would freeze every progress
+ * indicator, a negative value would run them backwards, and the OS media
+ * session rejects such a rate outright. Anything else reads as normal speed.
  */
 export function queueItemPlaybackSpeed(item?: QueueItem): number {
   const speed = item?.extra_attributes?.playback_speed;
