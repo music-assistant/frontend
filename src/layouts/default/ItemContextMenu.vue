@@ -117,7 +117,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getLucideIcon } from "@/helpers/icon";
+import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -157,7 +157,7 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
     action: () => {
       store.activePlayerId = player.player_id;
     },
-    icon: getLucideIcon(player.icon) ?? player.icon,
+    icon: getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK),
     selected: store.activePlayerId == player.player_id,
     close_on_click: false,
   }));

@@ -11,7 +11,7 @@ const PATH =
 
 /** Sonos – Sonos speaker cabinet silhouette (fill-based, padded to square). */
 export const Sonos: Component = makeFillIcon(
-  "Sonos",
+  "sonos",
   "-4 0 38 38",
   h("path", { d: PATH, fill: "currentColor" }),
 );
