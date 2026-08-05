@@ -1,6 +1,8 @@
 import {
   resolveActiveElapsedTime,
   resolveActiveTiming,
+  resolveQueueElapsedTime,
+  resolveQueueTiming,
 } from "@/helpers/activeElapsedTime";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,7 +17,7 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
   // Only the fields the helper actually reads are mocked.
   storeMock: {
     activePlayerQueue: undefined as
-      | { queue_id: string; state?: PlaybackState }
+      | { queue_id: string; state?: PlaybackState; active?: boolean }
       | undefined,
     activePlayer: undefined as
       | {
@@ -45,33 +47,70 @@ vi.mock("@/plugins/store", () => ({
 // epoch seconds the fake clock starts at; timestamps below are relative to this
 const NOW = 1_700_000_000;
 
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW * 1000);
+  apiMock.queueElapsedTime = {};
+  storeMock.activePlayerQueue = undefined;
+  storeMock.activePlayer = undefined;
+  storeMock.curQueueItem = undefined;
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(NOW * 1000);
-    apiMock.queueElapsedTime = {};
-    storeMock.activePlayerQueue = undefined;
-    storeMock.activePlayer = undefined;
-    storeMock.curQueueItem = undefined;
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("returns undefined when neither the queue nor the player reports a timing", () => {
     expect(resolveActiveTiming()).toBeUndefined();
     expect(resolveActiveElapsedTime()).toBeUndefined();
 
-    storeMock.activePlayerQueue = { queue_id: "q1" };
+    storeMock.activePlayerQueue = { queue_id: "q1", active: true };
     storeMock.activePlayer = {};
     expect(resolveActiveTiming()).toBeUndefined();
+  });
+
+  it("falls back to the player when the queue is not active", () => {
+    // a queue still selected on the player, holding the position it stopped at
+    storeMock.activePlayerQueue = {
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: false,
+    };
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+    storeMock.activePlayer = {
+      playback_state: PlaybackState.PLAYING,
+      current_media: { elapsed_time: 20, elapsed_time_last_updated: NOW },
+    };
+
+    vi.setSystemTime((NOW + 4) * 1000);
+    expect(resolveActiveElapsedTime()).toBeCloseTo(24, 6);
+  });
+
+  it("reports no position for an inactive queue when the player has none either", () => {
+    storeMock.activePlayerQueue = {
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: false,
+    };
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+    storeMock.activePlayer = { playback_state: PlaybackState.IDLE };
+
+    expect(resolveActiveTiming()).toBeUndefined();
+    expect(resolveActiveElapsedTime()).toBeUndefined();
   });
 
   it("prefers queue timing, paired with the queue's own state", () => {
     storeMock.activePlayerQueue = {
       queue_id: "q1",
       state: PlaybackState.PLAYING,
+      active: true,
     };
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 10,
@@ -93,6 +132,7 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     storeMock.activePlayerQueue = {
       queue_id: "q1",
       state: PlaybackState.PAUSED,
+      active: true,
     };
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 10,
@@ -109,6 +149,7 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     storeMock.activePlayerQueue = {
       queue_id: "q1",
       state: PlaybackState.PLAYING,
+      active: true,
     };
     storeMock.activePlayer = {
       playback_state: PlaybackState.PLAYING,
@@ -136,6 +177,7 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     storeMock.activePlayerQueue = {
       queue_id: "q1",
       state: PlaybackState.PLAYING,
+      active: true,
     };
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 0,
@@ -155,6 +197,7 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     storeMock.activePlayerQueue = {
       queue_id: "q1",
       state: PlaybackState.PLAYING,
+      active: true,
     };
     apiMock.queueElapsedTime["q1"] = { elapsed_time: 10 };
     storeMock.activePlayer = {
@@ -190,6 +233,7 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     storeMock.activePlayerQueue = {
       queue_id: "q1",
       state: PlaybackState.PLAYING,
+      active: true,
     };
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 10,
@@ -228,6 +272,7 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     storeMock.activePlayerQueue = {
       queue_id: "q1",
       state: PlaybackState.PAUSED,
+      active: true,
     };
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 42,
@@ -237,5 +282,85 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
 
     vi.setSystemTime((NOW + 50) * 1000);
     expect(resolveActiveElapsedTime()).toBe(42);
+  });
+});
+
+describe("resolveQueueTiming / resolveQueueElapsedTime", () => {
+  it("returns the queue timing, paired with the queue's own state", () => {
+    storeMock.activePlayerQueue = {
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: true,
+    };
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+    storeMock.curQueueItem = { extra_attributes: { playback_speed: 1.5 } };
+
+    expect(resolveQueueTiming()?.playbackState).toBe(PlaybackState.PLAYING);
+
+    vi.setSystemTime((NOW + 4) * 1000);
+    expect(resolveQueueElapsedTime()).toBeCloseTo(16, 6); // 10 + 4 * 1.5
+  });
+
+  it("returns undefined when there is no queue, whatever the player reports", () => {
+    storeMock.activePlayer = {
+      playback_state: PlaybackState.PLAYING,
+      current_media: { elapsed_time: 20, elapsed_time_last_updated: NOW },
+      elapsed_time: 30,
+      elapsed_time_last_updated: NOW,
+    };
+
+    expect(resolveQueueTiming()).toBeUndefined();
+    expect(resolveQueueElapsedTime()).toBeUndefined();
+    // the general resolver still falls back to the player for external sources
+    expect(resolveActiveElapsedTime()).toBeCloseTo(20, 6);
+  });
+
+  it("returns undefined for a queue that is no longer active", () => {
+    storeMock.activePlayerQueue = {
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: false,
+    };
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+
+    expect(resolveQueueTiming()).toBeUndefined();
+    expect(resolveQueueElapsedTime()).toBeUndefined();
+  });
+
+  it("returns undefined when the queue reports no timing, instead of falling back to the player", () => {
+    storeMock.activePlayerQueue = {
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: true,
+    };
+    apiMock.queueElapsedTime["q1"] = { elapsed_time: 10 };
+    storeMock.activePlayer = {
+      playback_state: PlaybackState.PLAYING,
+      elapsed_time: 500,
+      elapsed_time_last_updated: NOW,
+    };
+
+    expect(resolveQueueElapsedTime()).toBeUndefined();
+  });
+
+  it("does not advance while the queue is paused", () => {
+    storeMock.activePlayerQueue = {
+      queue_id: "q1",
+      state: PlaybackState.PAUSED,
+      active: true,
+    };
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 42,
+      elapsed_time_last_updated: NOW,
+    };
+
+    vi.setSystemTime((NOW + 50) * 1000);
+    expect(resolveQueueElapsedTime()).toBe(42);
   });
 });
