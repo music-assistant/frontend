@@ -12,6 +12,7 @@ import { StoredState } from "@/components/ItemsListing.vue";
 import { isHomeAssistantIngressSession } from "@/helpers/ingress";
 import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
 import api from "./api";
+import { resolvePlayerQueue } from "./api/helpers";
 
 import MobileDetect from "mobile-detect";
 import { getBreakpointValue } from "./breakpoint";
@@ -82,23 +83,7 @@ export const store: Store = reactive({
     }
     return undefined;
   }),
-  activePlayerQueue: computed(() => {
-    if (
-      store.activePlayer?.active_source &&
-      store.activePlayer.active_source in api.queues
-    ) {
-      return api.queues[store.activePlayer.active_source];
-    }
-    if (
-      store.activePlayer &&
-      !store.activePlayer.active_source &&
-      store.activePlayer.player_id in api.queues &&
-      api.queues[store.activePlayer.player_id].active
-    ) {
-      return api.queues[store.activePlayer.player_id];
-    }
-    return undefined;
-  }),
+  activePlayerQueue: computed(() => resolvePlayerQueue(store.activePlayer)),
   curQueueItem: computed(() => {
     if (store.activePlayerQueue && store.activePlayerQueue.active)
       return store.activePlayerQueue.current_item;

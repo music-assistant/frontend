@@ -11,6 +11,7 @@ import { nextTick } from "vue";
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
+    queues: {},
     queueElapsedTime: {},
     playerCommandSeek: vi.fn(),
     playMedia: vi.fn(),
@@ -23,7 +24,6 @@ vi.mock("@/plugins/store", async () => {
   return {
     store: reactive({
       activePlayer: undefined,
-      activePlayerQueue: undefined,
       curQueueItem: undefined,
     }),
   };
@@ -47,18 +47,18 @@ interface TestTiming {
 interface TestStore {
   activePlayer?: TestTiming & {
     player_id: string;
+    active_source?: string;
     playback_state?: PlaybackState;
     current_media?: TestTiming & { duration?: number };
-  };
-  activePlayerQueue?: {
-    queue_id: string;
-    state?: PlaybackState;
-    active?: boolean;
   };
   curQueueItem?: { queue_item_id?: string };
 }
 
 const api = apiDefault as unknown as {
+  queues: Record<
+    string,
+    { queue_id: string; state?: PlaybackState; active?: boolean }
+  >;
   queueElapsedTime: Record<string, TestTiming>;
 };
 const store = storeModule as unknown as TestStore;
@@ -71,9 +71,9 @@ let wrapper: VueWrapper | undefined;
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW * 1000);
+  api.queues = {};
   api.queueElapsedTime = {};
   store.activePlayer = undefined;
-  store.activePlayerQueue = undefined;
   store.curQueueItem = undefined;
 });
 
@@ -103,7 +103,7 @@ describe("PlayerTimeline", () => {
   });
 
   it("animates a queue-sourced position", async () => {
-    store.activePlayerQueue = {
+    api.queues["q1"] = {
       queue_id: "q1",
       state: PlaybackState.PLAYING,
       active: true,
@@ -114,6 +114,7 @@ describe("PlayerTimeline", () => {
     };
     store.activePlayer = {
       player_id: "p1",
+      active_source: "q1",
       playback_state: PlaybackState.PLAYING,
       current_media: { duration: 300 },
     };
