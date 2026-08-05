@@ -1084,8 +1084,8 @@ export interface PlayerQueue {
   // active: whether the player is currently playing this queue. Server-derived from the
   // player's active_source: false only while an external source (line-in, Spotify Connect,
   // another queue in a group) has taken the player over - a stopped or finished queue stays
-  // active and idle. Recalculated ~0.5s after the active_source change that causes it, so a
-  // queue reached through active_source can briefly still read as inactive.
+  // active and idle. Recalculated ~0.5s after the active_source change that causes it, so
+  // during a handover it can briefly still hold the value from before.
   active: boolean;
   display_name: string;
   available: boolean;
