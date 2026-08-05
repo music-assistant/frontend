@@ -187,6 +187,46 @@ describe("EditCoreConfig", () => {
       }),
     ]);
   });
+
+  it("saves the kept values, not the empty ones, on an immediate_apply action", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
+    apiMock.invokeCoreConfigAction.mockResolvedValueOnce([
+      {
+        category: "generic",
+        default_value: false,
+        key: "clear_on_start",
+        label: "Clear cache on start",
+        required: false,
+        type: ConfigEntryType.BOOLEAN,
+        value: null,
+      },
+    ]);
+    apiMock.saveCoreConfig.mockResolvedValueOnce({
+      ...coreConfig(),
+      values: {},
+    });
+
+    const wrapper = shallowMount(EditCoreConfig, {
+      props: {
+        domain: "cache",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+
+    await editConfig.vm.$emit("action", "do_thing", {}, true);
+    await flushPromises();
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("cache", {
+      clear_on_start: "current value",
+    });
+  });
 });
 
 function coreConfig(): CoreConfig {
