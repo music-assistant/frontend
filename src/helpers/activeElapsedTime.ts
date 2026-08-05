@@ -3,8 +3,10 @@
  *
  * Resolves the timing source, its playback state and the playback speed in one
  * place, so progress indicators do not each work the position out differently.
- * Both functions read the current values on each call and hold no state, which
- * makes them equally usable inside a `computed` and inside a rAF/interval loop.
+ * The `resolveQueue*` variants narrow that to the active queue, for consumers that
+ * only render what that queue is playing. Every function reads the current values
+ * on each call and holds no state, which makes them equally usable inside a
+ * `computed` and inside a rAF/interval loop.
  */
 import { computeElapsedTime, queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import api from "@/plugins/api";
@@ -29,28 +31,14 @@ export interface ActiveTiming {
  * never combine a queue position with a player state or the other way around.
  */
 export function resolveActiveTiming(): ActiveTiming | undefined {
-  const playbackSpeed = queueItemPlaybackSpeed(store.curQueueItem);
-
   // Prefer the active queue's own elapsed_time when it reports one.
-  const queue = store.activePlayerQueue;
-  if (queue) {
-    const queueTime = api.queueElapsedTime[queue.queue_id];
-    if (
-      queueTime?.elapsed_time != null &&
-      queueTime.elapsed_time_last_updated != null
-    ) {
-      return {
-        elapsedTime: queueTime.elapsed_time,
-        lastUpdated: queueTime.elapsed_time_last_updated,
-        playbackState: queue.state,
-        playbackSpeed,
-      };
-    }
-  }
+  const queueTiming = resolveQueueTiming();
+  if (queueTiming) return queueTiming;
 
   // Fall back to the player's own timing, which is what external/3rd-party
   // sources playing on the player report: current_media first, then the legacy
   // player-level fields.
+  const playbackSpeed = queueItemPlaybackSpeed(store.curQueueItem);
   const player = store.activePlayer;
   // An unknown state must not extrapolate from the last update.
   const playerState = player?.playback_state ?? PlaybackState.IDLE;
@@ -82,11 +70,52 @@ export function resolveActiveTiming(): ActiveTiming | undefined {
 }
 
 /**
+ * The timing reported by the active player's active queue, or undefined when there
+ * is no such queue or it reports no position.
+ *
+ * Use this rather than `resolveActiveTiming` for consumers that take their content
+ * from `store.curQueueItem`: the player fallback would hand them a position for
+ * content they cannot display.
+ */
+export function resolveQueueTiming(): ActiveTiming | undefined {
+  const queue = store.activePlayerQueue;
+  // An inactive queue holds the position it stopped at, while curQueueItem is
+  // already gone; pairing the two would mix a stale position with a default speed.
+  if (!queue?.active) return undefined;
+
+  const queueTime = api.queueElapsedTime[queue.queue_id];
+  if (
+    queueTime?.elapsed_time == null ||
+    queueTime.elapsed_time_last_updated == null
+  ) {
+    return undefined;
+  }
+
+  return {
+    elapsedTime: queueTime.elapsed_time,
+    lastUpdated: queueTime.elapsed_time_last_updated,
+    playbackState: queue.state,
+    playbackSpeed: queueItemPlaybackSpeed(store.curQueueItem),
+  };
+}
+
+/**
  * The current playback position of the active player in seconds, or undefined
  * when no timing source is available.
  */
 export function resolveActiveElapsedTime(): number | undefined {
-  const timing = resolveActiveTiming();
+  return toElapsedTime(resolveActiveTiming());
+}
+
+/**
+ * The current playback position of the active player's active queue in seconds, or
+ * undefined when there is no such queue or it reports no timing.
+ */
+export function resolveQueueElapsedTime(): number | undefined {
+  return toElapsedTime(resolveQueueTiming());
+}
+
+function toElapsedTime(timing: ActiveTiming | undefined): number | undefined {
   if (!timing) return undefined;
 
   return computeElapsedTime(

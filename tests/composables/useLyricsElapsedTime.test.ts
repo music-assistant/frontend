@@ -33,7 +33,13 @@ const storeMock = reactive({
   activePlayerQueue: undefined as
     | { queue_id: string; state: PlaybackState; active: boolean }
     | undefined,
-  activePlayer: undefined as { playback_state?: PlaybackState } | undefined,
+  activePlayer: undefined as
+    | {
+        playback_state?: PlaybackState;
+        elapsed_time?: number;
+        elapsed_time_last_updated?: number;
+      }
+    | undefined,
   curQueueItem: undefined as
     | { extra_attributes?: { playback_speed?: number } }
     | undefined,
@@ -70,6 +76,22 @@ function makeQueue(overrides: Record<string, unknown> = {}) {
   };
 }
 
+// Stands in for the `enabled` ref and counts how often the gate re-runs: the
+// watchEffect is the only reader, so a read means the effect ran. It never
+// changes value, so it needs no reactivity of its own.
+function countingEnabled() {
+  let reads = 0;
+  return {
+    ref: {
+      get value() {
+        reads++;
+        return true;
+      },
+    } as unknown as Ref<boolean>,
+    reads: () => reads,
+  };
+}
+
 // Disposed in afterEach so a failed assertion cannot leave an effect
 // subscribed to the shared store mock and corrupt the tests that follow.
 let activeScope: EffectScope | undefined;
@@ -103,7 +125,9 @@ describe("useLyricsElapsedTime", () => {
       }),
     );
 
-    apiMock.queueElapsedTime = {};
+    // reactive like the real map, so a timing push can be seen to (not) wake
+    // anything that subscribed to it
+    apiMock.queueElapsedTime = reactive({});
     storeMock.activePlayerQueue = undefined;
     storeMock.activePlayer = undefined;
     storeMock.curQueueItem = undefined;
@@ -206,6 +230,56 @@ describe("useLyricsElapsedTime", () => {
     await nextTick();
 
     expect(pendingFrames.size).toBe(0);
+  });
+
+  it("holds the last queue position rather than adopting the player's", async () => {
+    storeMock.activePlayerQueue = makeQueue();
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+
+    const { elapsedTime } = await runComposable();
+    await nextTick();
+    flushFrame();
+    expect(elapsedTime.value).toBe(10);
+
+    // the queue stops reporting a position while the player still reports one
+    delete apiMock.queueElapsedTime["q1"];
+    storeMock.activePlayer = {
+      playback_state: PlaybackState.PLAYING,
+      elapsed_time: 999,
+      elapsed_time_last_updated: NOW,
+    };
+    await nextTick();
+    flushFrame();
+
+    expect(elapsedTime.value).toBe(10);
+  });
+
+  it("does not re-run the gate when the queue timing updates", async () => {
+    storeMock.activePlayerQueue = makeQueue();
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+    const enabled = countingEnabled();
+
+    const { elapsedTime } = await runComposable(enabled.ref);
+    await nextTick();
+    const gateRuns = enabled.reads();
+    expect(gateRuns).toBeGreaterThan(0);
+
+    // a burst of QUEUE_TIME_UPDATED events
+    for (let second = 1; second <= 5; second++) {
+      apiMock.queueElapsedTime["q1"].elapsed_time = 10 + second;
+      await nextTick();
+    }
+
+    expect(enabled.reads()).toBe(gateRuns);
+    // and the loop is still running off those pushes
+    flushFrame();
+    expect(elapsedTime.value).toBe(15);
   });
 
   it("stops the loop and removes the visibilitychange listener when the scope is disposed", async () => {
