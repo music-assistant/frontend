@@ -470,8 +470,10 @@ onBeforeUnmount(() => {
 // Album art background is always active
 const useAlbumArtBackground = computed(() => true);
 
+// The track cards show the queue's position, so their play state comes from
+// the queue too.
 const isPlaying = computed(
-  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+  () => store.activePlayerQueue?.state === PlaybackState.PLAYING,
 );
 
 // Queue items state

@@ -3,7 +3,8 @@
  *
  * Provides a reactive `elapsedTime` ref that updates at ~60fps while playing,
  * suitable for smooth lyrics synchronization. Automatically starts/stops the
- * rAF loop based on playback state and an optional `enabled` guard.
+ * rAF loop based on the active queue's playback state and an optional
+ * `enabled` guard.
  */
 
 import { ref, watchEffect, onScopeDispose, type Ref } from "vue";
@@ -52,9 +53,8 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
   document.addEventListener("visibilitychange", handleVisibilityChange);
 
   watchEffect(() => {
-    const playing =
-      store.activePlayer?.playback_state === PlaybackState.PLAYING;
     const queue = store.activePlayerQueue;
+    const playing = queue?.state === PlaybackState.PLAYING;
     const isEnabled = enabled ? enabled.value : true;
 
     shouldRun = playing && !!queue?.active && isEnabled;
