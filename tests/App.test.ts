@@ -1,5 +1,5 @@
 import { EventType, ProviderType } from "@/plugins/api/interfaces";
-import { shallowMount, type VueWrapper } from "@vue/test-utils";
+import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -499,9 +499,8 @@ describe("App initialization", () => {
       },
     });
 
-    await vi.waitFor(() => {
-      expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
     expect(authManagerMock.setToken).toHaveBeenCalledWith(
       "regular-token",
       "local:http://music-assistant.test",
@@ -523,11 +522,10 @@ describe("App initialization", () => {
       .findComponent({ name: "Login" })
       .vm.$emit("local-connect", "http://music-assistant.local:8095");
 
-    await vi.waitFor(() => {
-      expect(apiMock.initialize).toHaveBeenCalledWith(
-        "http://music-assistant.local:8095",
-      );
-    });
+    await flushPromises();
+    expect(apiMock.initialize).toHaveBeenCalledWith(
+      "http://music-assistant.local:8095",
+    );
     expect(mockProxyEnsureReady).toHaveBeenCalledOnce();
     expect(mockProxySetTransport).toHaveBeenCalledWith(null);
     expect(mockProxySetTransport.mock.invocationCallOrder[0]).toBeLessThan(
@@ -628,9 +626,8 @@ describe("App initialization", () => {
 
     await startReconnect();
 
-    await vi.waitFor(() => {
-      expect(authManagerMock.setCurrentUser).toHaveBeenCalledWith(ingressUser);
-    });
+    await flushPromises();
+    expect(authManagerMock.setCurrentUser).toHaveBeenCalledWith(ingressUser);
     expect(apiMock.authenticateWithToken).not.toHaveBeenCalled();
     expect(apiMock.requireAuthentication).not.toHaveBeenCalled();
   });
@@ -643,9 +640,8 @@ describe("App initialization", () => {
 
     await startReconnect();
 
-    await vi.waitFor(() => {
-      expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
     expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
   });
 
@@ -658,9 +654,8 @@ describe("App initialization", () => {
 
     await startReconnect();
 
-    await vi.waitFor(() => {
-      expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
     expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
   });
 
@@ -670,9 +665,8 @@ describe("App initialization", () => {
 
     i18nMock.global.locale.value = "de";
 
-    await vi.waitFor(() => {
-      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
-    });
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
   });
 
@@ -680,7 +674,7 @@ describe("App initialization", () => {
     wrapper = await mountAuthenticatedApp();
 
     i18nMock.global.locale.value = "de";
-    await nextTick();
+    await flushPromises();
 
     expect(apiMock.setLocale).not.toHaveBeenCalled();
     expect(apiMock.fetchState).not.toHaveBeenCalled();
@@ -693,9 +687,8 @@ describe("App initialization", () => {
 
     i18nMock.global.locale.value = "de";
 
-    await vi.waitFor(() => {
-      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
-    });
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
     expect(apiMock.fetchState).not.toHaveBeenCalled();
   });
 
@@ -706,9 +699,8 @@ describe("App initialization", () => {
 
     i18nMock.global.locale.value = "de";
 
-    await vi.waitFor(() => {
-      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
-    });
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
     expect(apiMock.fetchState).not.toHaveBeenCalled();
   });
 });
@@ -718,10 +710,8 @@ describe("App initialization", () => {
  */
 async function reconnect() {
   await startReconnect();
-  await vi.waitFor(() => {
-    expect(apiMock.authenticateWithToken).toHaveBeenCalled();
-  });
-  await nextTick();
+  await flushPromises();
+  expect(apiMock.authenticateWithToken).toHaveBeenCalled();
 }
 
 /**
@@ -747,21 +737,30 @@ async function mountAuthenticatedApp() {
   return mounted;
 }
 
+/**
+ * Mount the app, register it for teardown, and wait for initialization to
+ * settle.
+ *
+ * Initialization runs entirely on the microtask queue, so one flush covers it;
+ * a timer anywhere in that path would need vi.waitFor instead.
+ */
 async function mountApp() {
   const { default: App } = await import("@/App.vue");
-  const mounted = shallowMount(App, {
+  // Registered before the assertions below so afterEach unmounts the app even
+  // when one of them throws: a live instance keeps reacting to api.state and
+  // corrupts every later test.
+  wrapper = shallowMount(App, {
     global: {
       stubs: {
         RouterView: true,
       },
     },
   });
-  await vi.waitFor(() => {
-    expect(apiMock.state.value).toBe("initialized");
-    expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
-    expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
-  });
-  return mounted;
+  await flushPromises();
+  expect(apiMock.state.value).toBe("initialized");
+  expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+  expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
+  return wrapper;
 }
 
 async function signalProvidersUpdated() {
