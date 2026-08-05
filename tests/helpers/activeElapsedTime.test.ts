@@ -173,6 +173,20 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     expect(resolveActiveElapsedTime()).toBe(5);
   });
 
+  it("falls through an empty current_media to the player-level elapsed_time", () => {
+    // the shape players report when they only expose a position at player
+    // level, e.g. a Home Assistant media_player with a media_position
+    storeMock.activePlayer = {
+      playback_state: PlaybackState.PLAYING,
+      elapsed_time: 30,
+      elapsed_time_last_updated: NOW,
+      current_media: {},
+    };
+
+    vi.setSystemTime((NOW + 6) * 1000);
+    expect(resolveActiveElapsedTime()).toBeCloseTo(36, 6);
+  });
+
   it("prefers a queue elapsed_time of 0 over a player timing", () => {
     storeMock.activePlayerQueue = {
       queue_id: "q1",
