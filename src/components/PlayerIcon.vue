@@ -1,5 +1,5 @@
 <template>
-  <Speakers v-if="grouped" :size="size" v-bind="$attrs" />
+  <Speakers v-if="grouped" :size="size" aria-hidden="true" v-bind="$attrs" />
   <component
     :is="lucideIcon || fallbackIcon"
     v-else
