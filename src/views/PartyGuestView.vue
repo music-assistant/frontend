@@ -230,13 +230,16 @@ const {
   queueFetchOffset,
   loadingMoreQueueItems,
   partyQueueId,
+  currentQueue,
   currentQueueIndex,
   fetchQueueItems,
   handleQueueScroll,
 } = queue;
 
+// Read from the same queue that positions the badge, so the row and the play
+// state can never disagree.
 const isPlaying = computed(
-  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+  () => currentQueue.value?.state === PlaybackState.PLAYING,
 );
 
 const {
