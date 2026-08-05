@@ -299,6 +299,26 @@ describe("AudioProcessingDetails", () => {
     ).toContain("Floating-point headroom is available for: Crossfade.");
   });
 
+  it("names a mono downmix instead of a selected source channel", () => {
+    const wrapper = mountDetails({
+      outputs: [
+        {
+          player_ids: ["player-1"],
+          dsp: { state: DSPState.DISABLED },
+          source_channel: AudioChannel.ALL,
+          output_format: makeFormat(),
+        },
+      ],
+    });
+
+    expect(
+      wrapper
+        .find('[data-stage="source-channel-0"] .audio-processing-stage-title')
+        .text(),
+    ).toBe("Mixed to mono");
+    expect(wrapper.text()).not.toContain("Source channel:");
+  });
+
   it("excludes disabled crossfade from component headroom reasons", () => {
     const wrapper = mountDetails({
       queue_processing: {
