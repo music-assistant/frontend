@@ -3,7 +3,7 @@
   <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
-      :icon="icon"
+      :icon="props.toolBarTabs === undefined ? icon : ''"
       :title="title"
       :subtitle="subtitle"
       :count="params.search ? pagedItems.length : total || allItems.length"
@@ -14,7 +14,39 @@
       @title-clicked="toggleExpand"
     >
       <template #title>
-        <slot name="title">{{ title }}</slot>
+        <div class="toolbar-title">
+          <slot v-if="props.toolBarTabs === undefined" name="title">{{
+            title
+          }}</slot>
+          <div v-else class="toolbar-tabs">
+            <button
+              v-for="tab in props.toolBarTabs"
+              :key="tab.id"
+              class="toolbar-tab"
+              :class="{ active: activeTabId === tab.id }"
+              @click.stop="
+                activeTabId = tab.id;
+                loadData(true, true);
+              "
+            >
+              <v-btn
+                :icon="typeof icon === 'string' ? icon : undefined"
+                size="small"
+                style="opacity: 0.8"
+              >
+                <component
+                  :is="tab.icon"
+                  v-if="typeof tab.icon !== 'string'"
+                  class="w-6 h-6"
+                  :class="{ 'active-icon': activeTabId === tab.id }"
+                />
+              </v-btn>
+              <span class="toolbar-tab-label">
+                {{ tab.label }}
+              </span>
+            </button>
+          </div>
+        </div>
       </template>
     </Toolbar>
 
@@ -282,6 +314,16 @@ import { toast } from "vue-sonner";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
+import ArtistIcon from "./icons/ArtistIcon.vue";
+
+type LoadPagedDataFn = (params: LoadDataParams) => Promise<MediaItemType[]>;
+
+export interface ToolBarTab {
+  id: string;
+  label: string;
+  icon: string | Component;
+  loadPagedData?: LoadPagedDataFn;
+}
 
 export interface LoadDataParams {
   offset: number;
@@ -341,7 +383,7 @@ export interface Props {
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
-  loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  loadPagedData?: LoadPagedDataFn;
   // loadItems callback is provided for flat non-paged listings
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit?: number;
@@ -353,6 +395,7 @@ export interface Props {
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel" | "panel_compact";
+  toolBarTabs?: ToolBarTab[];
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -394,6 +437,7 @@ const props = withDefaults(defineProps<Props>(), {
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
+  toolBarTabs: undefined,
 });
 
 // global refs
@@ -402,6 +446,14 @@ const route = useRoute();
 const { t, te } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
+const activeTabId = ref("");
+if (props.toolBarTabs !== undefined && props.toolBarTabs.length > 0) {
+  activeTabId.value = props.toolBarTabs[0].id;
+}
+
+const getActiveTab = () => {
+  return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
+};
 
 // local refs
 const params = ref<LoadDataParams>({
@@ -1368,6 +1420,13 @@ const loadData = async function (
   FilterParamsChanged = false,
   offset = 0,
 ) {
+  let loadPagedData: LoadPagedDataFn | undefined = props.loadPagedData;
+  if (props.toolBarTabs !== undefined && props.toolBarTabs.length > 0) {
+    const activeTab = getActiveTab();
+    if (activeTab !== undefined && activeTab.loadPagedData !== undefined) {
+      loadPagedData = activeTab.loadPagedData;
+    }
+  }
   if (loading.value) {
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
@@ -1375,7 +1434,7 @@ const loadData = async function (
   }
   loading.value = true;
 
-  if (FilterParamsChanged && props.loadPagedData != null) {
+  if (FilterParamsChanged && loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
     clear = true;
   }
@@ -1397,9 +1456,9 @@ const loadData = async function (
   params.value.limit = props.limit;
   params.value.refresh = refresh;
 
-  if (props.loadPagedData != null) {
+  if (loadPagedData != null) {
     // server side paged listing (with filter support)
-    const nextItems = await props.loadPagedData(params.value);
+    const nextItems = await loadPagedData(params.value);
     if (params.value.offset) {
       pagedItems.value.push(...nextItems);
     } else {
@@ -1714,7 +1773,7 @@ const loadGenreOptions = async () => {
 
     genreOptions.value = all;
   } catch {
-    toast.error(t("settings.error_loading_genres"));
+    toast.error(t("error_loading_genres"));
   }
 };
 
@@ -2075,5 +2134,47 @@ defineExpose({
   max-width: 10%;
   flex-basis: 10%;
   padding: 8px;
+}
+.toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.toolbar-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.toolbar-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.toolbar-tab.active {
+  font-weight: 600;
+}
+.active-icon {
+  transform: scale(1.2);
+}
+@media (max-width: 640px) {
+  .toolbar-tab-label {
+    display: none;
+  }
 }
 </style>

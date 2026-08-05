@@ -18,17 +18,28 @@
     :show-provider-filter="true"
     :show-genre-filter="true"
     :show-collapse-collections="true"
+    :tool-bar-tabs="artistTabs"
   />
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import ItemsListing, {
+  LoadDataParams,
+  ToolBarTab,
+} from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
+import {
+  ArtistType,
+  EventMessage,
+  EventType,
+  MediaType,
+  ProviderFeature,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { BookAudio } from "@lucide/vue";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { BookAudio, Mic, SquarePen } from "@lucide/vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { $t } from "@/plugins/i18n";
 
 defineOptions({
   name: "Audiobooks",
@@ -36,6 +47,7 @@ defineOptions({
 
 const updateAvailable = ref(false);
 const total = ref(store.libraryAudiobooksCount);
+const supportedArtistTypes = ref<ArtistType[]>([]);
 
 const sortKeys = [
   "name",
@@ -67,21 +79,134 @@ const loadItems = async function (params: LoadDataParams) {
   );
 };
 
-const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly && !params.provider) {
-    total.value = store.libraryAudiobooksCount;
-    return;
-  }
-  // When provider filter is active, we can't get accurate count from the count endpoint
-  // The total will be determined by the actual results returned
-  if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
-    return;
-  }
-  total.value = await api.getLibraryAudiobooksCount(
-    params.favoritesOnly || false,
+const loadItemsAuthorsNarrators = async (
+  params: LoadDataParams,
+  artistType: ArtistType,
+) => {
+  updateAvailable.value = false;
+  setTotals(params, artistType);
+
+  return await api.getLibraryArtists(
+    params.favoritesOnly || undefined,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortBy,
+    false,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
+    artistType,
   );
 };
+
+const loadItemsAuthors = (params: LoadDataParams) =>
+  loadItemsAuthorsNarrators(params, ArtistType.AUTHOR);
+
+const loadItemsNarrators = (params: LoadDataParams) =>
+  loadItemsAuthorsNarrators(params, ArtistType.NARRATOR);
+
+const setTotals = async function (
+  params: LoadDataParams,
+  artistType?: ArtistType,
+) {
+  if (artistType !== undefined) {
+    if (!params.favoritesOnly && !params.provider) {
+      total.value = store.libraryArtistsCount;
+      return;
+    }
+    // When provider filter is active, we can't get accurate count from the count endpoint
+    // The total will be determined by the actual results returned
+    if (params.provider && params.provider.length > 0) {
+      total.value = undefined;
+      return;
+    }
+    total.value = await api.getLibraryArtistsCount(
+      params.favoritesOnly || false,
+      params.albumArtistsFilter || false,
+      artistType,
+    );
+  } else {
+    if (!params.favoritesOnly && !params.provider) {
+      total.value = store.libraryAudiobooksCount;
+      return;
+    }
+    // When provider filter is active, we can't get accurate count from the count endpoint
+    // The total will be determined by the actual results returned
+    if (params.provider && params.provider.length > 0) {
+      total.value = undefined;
+      return;
+    }
+    total.value = await api.getLibraryAudiobooksCount(
+      params.favoritesOnly || false,
+    );
+  }
+};
+
+// we switch to a tabbed view if more than just singers are supported
+// singers are always included
+const artistTabs = computed(() => {
+  const bookTab: ToolBarTab = {
+    id: "books",
+    label: $t("audiobooks"),
+    icon: BookAudio,
+    loadPagedData: loadItems,
+  };
+  const authorTab: ToolBarTab = {
+    id: "authors",
+    label: $t("authors"),
+    icon: SquarePen,
+    loadPagedData: loadItemsAuthors,
+  };
+  const narratorTab: ToolBarTab = {
+    id: "narrators",
+    label: $t("narrators"),
+    icon: Mic,
+    loadPagedData: loadItemsNarrators,
+  };
+  const tabsMap: Record<string, ToolBarTab> = {
+    book: bookTab,
+    author: authorTab,
+    narrator: narratorTab,
+  };
+
+  const supportedTabIds = new Set<string>();
+
+  // verify library support
+  if (supportedArtistTypes.value.some((x) => x !== ArtistType.SINGER)) {
+    supportedTabIds.add("book");
+    supportedArtistTypes.value.forEach((x) => supportedTabIds.add(x));
+  }
+
+  // verify features of providers with a catalogue
+  for (const prov of Object.values(api.providers).filter(
+    (x) =>
+      x.available &&
+      (x.supported_features.includes(ProviderFeature.NARRATOR_AUDIOBOOKS) ||
+        x.supported_features.includes(ProviderFeature.AUTHOR_AUDIOBOOKS)),
+  )) {
+    supportedTabIds.add("book");
+    if (prov.supported_features.includes(ProviderFeature.AUTHOR_AUDIOBOOKS)) {
+      supportedTabIds.add("author");
+    }
+    if (prov.supported_features.includes(ProviderFeature.NARRATOR_AUDIOBOOKS)) {
+      supportedTabIds.add("narrator");
+    }
+  }
+
+  const tabs = ["book", "author", "narrator"]
+    .filter((id) => supportedTabIds.has(id))
+    .map((id) => tabsMap[id]);
+
+  return tabs.length > 0 ? tabs : undefined;
+});
+
+watch(
+  supportedArtistTypes,
+  async () => {
+    supportedArtistTypes.value = await api.getLibraryArtistTypes();
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   // signal if/when items get added within this library
