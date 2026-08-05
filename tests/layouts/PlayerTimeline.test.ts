@@ -66,6 +66,8 @@ const store = storeModule as unknown as TestStore;
 // epoch seconds the fake clock starts at; timestamps below are relative to this
 const NOW = 1_700_000_000;
 
+let wrapper: VueWrapper | undefined;
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW * 1000);
@@ -76,10 +78,30 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // the store is shared, so an instance left mounted would react to the next
+  // test's state and its timers would count towards that test's timer budget
+  wrapper?.unmount();
+  wrapper = undefined;
   vi.useRealTimers();
 });
 
-describe("PlayerTimeline adaptive tick", () => {
+describe("PlayerTimeline", () => {
+  it.each([
+    ["playing", PlaybackState.PLAYING],
+    ["paused", PlaybackState.PAUSED],
+  ])("shows the position it mounts on for a %s player", (_state, state) => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: state,
+      elapsed_time: 30,
+      elapsed_time_last_updated: NOW,
+      current_media: { duration: 300 },
+    };
+
+    mountTimeline();
+    expect(elapsedLabel()).toBe("00:30");
+  });
+
   it("animates a queue-sourced position", async () => {
     store.activePlayerQueue = {
       queue_id: "q1",
@@ -96,8 +118,8 @@ describe("PlayerTimeline adaptive tick", () => {
       current_media: { duration: 300 },
     };
 
-    const wrapper = mountTimeline();
-    expect(await elapsedLabelAfter(wrapper, 4)).toBe("00:14");
+    mountTimeline();
+    expect(await elapsedLabelAfter(4)).toBe("00:14");
   });
 
   it("animates a current_media position for an external source", async () => {
@@ -111,8 +133,8 @@ describe("PlayerTimeline adaptive tick", () => {
       },
     };
 
-    const wrapper = mountTimeline();
-    expect(await elapsedLabelAfter(wrapper, 5)).toBe("00:25");
+    mountTimeline();
+    expect(await elapsedLabelAfter(5)).toBe("00:25");
   });
 
   it("animates a player-level position when current_media reports none", async () => {
@@ -126,8 +148,8 @@ describe("PlayerTimeline adaptive tick", () => {
       current_media: { duration: 300 },
     };
 
-    const wrapper = mountTimeline();
-    expect(await elapsedLabelAfter(wrapper, 6)).toBe("00:36");
+    mountTimeline();
+    expect(await elapsedLabelAfter(6)).toBe("00:36");
   });
 
   it("animates a player-level position with no current_media at all", async () => {
@@ -138,8 +160,8 @@ describe("PlayerTimeline adaptive tick", () => {
       elapsed_time_last_updated: NOW,
     };
 
-    const wrapper = mountTimeline();
-    expect(await elapsedLabelAfter(wrapper, 6)).toBe("00:36");
+    mountTimeline();
+    expect(await elapsedLabelAfter(6)).toBe("00:36");
   });
 
   it("does not start the tick for a source that is paused", async () => {
@@ -152,7 +174,7 @@ describe("PlayerTimeline adaptive tick", () => {
     };
 
     mountTimeline();
-    await vi.advanceTimersByTimeAsync(10_000);
+    expect(await elapsedLabelAfter(10)).toBe("00:30");
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -165,8 +187,8 @@ describe("PlayerTimeline adaptive tick", () => {
       current_media: { duration: 300 },
     };
 
-    const wrapper = mountTimeline();
-    expect(await elapsedLabelAfter(wrapper, 4)).toBe("00:34");
+    mountTimeline();
+    expect(await elapsedLabelAfter(4)).toBe("00:34");
 
     store.activePlayer = {
       player_id: "p1",
@@ -178,7 +200,7 @@ describe("PlayerTimeline adaptive tick", () => {
     await nextTick();
     // the timers are released rather than left spinning behind a frozen label
     expect(vi.getTimerCount()).toBe(0);
-    expect(await elapsedLabelAfter(wrapper, 20)).toBe("00:34");
+    expect(await elapsedLabelAfter(20)).toBe("00:34");
   });
 
   it("shows no position when no source reports one", async () => {
@@ -188,18 +210,35 @@ describe("PlayerTimeline adaptive tick", () => {
       current_media: { duration: 300 },
     };
 
-    const wrapper = mountTimeline();
-    expect(await elapsedLabelAfter(wrapper, 10)).toBe("00:00");
+    mountTimeline();
+    expect(await elapsedLabelAfter(10)).toBe("00:00");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("releases the tick on unmount", async () => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PLAYING,
+      elapsed_time: 30,
+      elapsed_time_last_updated: NOW,
+      current_media: { duration: 300 },
+    };
+
+    mountTimeline();
+    await elapsedLabelAfter(1);
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+    wrapper!.unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
 });
 
 function mountTimeline() {
-  return mount(PlayerTimeline, {
+  wrapper = mount(PlayerTimeline, {
     props: { showLabels: true },
     global: {
-      // reka's slider measures the DOM; the timeline renders its own text
-      // labels outside of it.
+      // mounting reka's slider for real costs orders of magnitude more than the
+      // rest of the component; the time labels render outside of it anyway.
       stubs: {
         SliderRoot: true,
         SliderTrack: true,
@@ -210,19 +249,16 @@ function mountTimeline() {
   });
 }
 
-function elapsedLabel(wrapper: VueWrapper): string {
-  return wrapper.find(".time-text-left").text();
+function elapsedLabel(): string {
+  return wrapper!.find(".time-text-left").text();
 }
 
 /**
  * The elapsed-time label after `seconds` of wall-clock time have passed with no
  * store update in between, so only the component's own tick can move it.
  */
-async function elapsedLabelAfter(
-  wrapper: VueWrapper,
-  seconds: number,
-): Promise<string> {
+async function elapsedLabelAfter(seconds: number): Promise<string> {
   await vi.advanceTimersByTimeAsync(seconds * 1000);
   await nextTick();
-  return elapsedLabel(wrapper);
+  return elapsedLabel();
 }

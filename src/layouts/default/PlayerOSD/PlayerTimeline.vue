@@ -278,12 +278,12 @@ const serverTiming = computed(() => resolveActiveTiming());
 
 const serverElapsedTime = computed(() => {
   // include nowTick.value so this computed re-evaluates periodically while
-  // mounted; the resolved position extrapolates from Date.now(), which is not
-  // reactive by itself
+  // mounted; the resolved position extrapolates from the current time, which is
+  // not reactive by itself
   void nowTick.value;
 
   // Adaptive tick: the resolved position only advances on its own while the
-  // source that reports it is playing, whichever source that turns out to be.
+  // source it came from is playing.
   if (serverTiming.value?.playbackState === PlaybackState.PLAYING) startTick();
   else stopTick();
 
@@ -349,11 +349,17 @@ watch(serverTiming, (timing) => {
   }
 });
 
-watch(displayedElapsedTime, (newTime) => {
-  if (!isDragging.value) {
-    curTimeValue.value = newTime;
-  }
-});
+// immediate, so a fresh mount adopts the position that is already playing or
+// paused; a paused one never changes again to trigger the watcher
+watch(
+  displayedElapsedTime,
+  (newTime) => {
+    if (!isDragging.value) {
+      curTimeValue.value = newTime;
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   () => store.curQueueItem?.queue_item_id,

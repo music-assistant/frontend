@@ -173,7 +173,7 @@ describe("resolveActiveTiming / resolveActiveElapsedTime", () => {
     expect(resolveActiveElapsedTime()).toBe(5);
   });
 
-  it("falls back to player-level elapsed_time when current_media carries no position", () => {
+  it("falls through an empty current_media to the player-level elapsed_time", () => {
     // the shape players report when they only expose a position at player
     // level, e.g. a Home Assistant media_player with a media_position
     storeMock.activePlayer = {
