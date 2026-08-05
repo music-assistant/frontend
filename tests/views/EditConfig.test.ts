@@ -125,27 +125,34 @@ describe("EditConfig", () => {
     expect(renderedKeys(wrapper)).toEqual(["enable_feature", "feature_status"]);
   });
 
-  // a presentational entry holds no value, so a required one must never be able
-  // to block saving the entries that do
-  it("can still save alongside a required entry that holds no value", async () => {
-    const entries = [
+  // a presentational entry carries nothing the user can fill in, so a required one
+  // must never be able to block saving the entries that do
+  it("saves a dirty form despite a required entry the user cannot fill in", async () => {
+    const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
       entry({
         key: "pairing_code",
         type: ConfigEntryType.IMAGE,
         required: true,
       }),
-    ];
-    const wrapper = mountEntries(entries);
-    expect(saveDisabled(wrapper)).toBe(true);
+    ]);
 
-    const editable = wrapper
-      .findAllComponents({ name: "ConfigEntryRow" })[0]
-      .props("confEntry") as ConfigEntry;
-    editable.value = "localhost";
+    dirty(wrapper);
     await nextTick();
 
     expect(saveDisabled(wrapper)).toBe(false);
+  });
+
+  it("still blocks saving on a required input the user left empty", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "token", type: ConfigEntryType.STRING, required: true }),
+    ]);
+
+    dirty(wrapper);
+    await nextTick();
+
+    expect(saveDisabled(wrapper)).toBe(true);
   });
 });
 
@@ -183,6 +190,14 @@ function renderedKeys(wrapper: VueWrapper) {
   return wrapper
     .findAllComponents({ name: "ConfigEntryRow" })
     .map((row) => (row.props("confEntry") as ConfigEntry).key);
+}
+
+// edits the first entry in place, which is what typing into its field does
+function dirty(wrapper: VueWrapper) {
+  const first = wrapper
+    .findAllComponents({ name: "ConfigEntryRow" })[0]
+    .props("confEntry") as ConfigEntry;
+  first.value = "localhost";
 }
 
 function saveDisabled(wrapper: VueWrapper) {

@@ -33,6 +33,9 @@ export type ConfigEntryUI = ServerConfigEntryUI | InjectedConfigEntry;
  * An unmet `depends_on` normally leaves an entry visible but disabled. These types
  * have nothing to disable, so a form must hide them instead or they read as if the
  * dependency were met.
+ *
+ * {@link VALUELESS_ENTRY_TYPES} derives from this list, so adding a type here also
+ * excludes it from validation and unsaved-change tracking.
  */
 export const NON_INTERACTIVE_ENTRY_TYPES: ConfigEntryUIType[] = [
   ConfigEntryType.DIVIDER,
@@ -42,10 +45,13 @@ export const NON_INTERACTIVE_ENTRY_TYPES: ConfigEntryUIType[] = [
 ];
 
 /**
- * Entry types that hold no value, so they take no part in validation or submission.
+ * Entry types that hold no user-supplied value, so they take no part in validation
+ * or unsaved-change tracking.
  *
- * Wider than {@link NON_INTERACTIVE_ENTRY_TYPES} by ACTION: an action button is
- * interactive (an unmet dependency disables it) but still stores nothing.
+ * A type here may still carry a value the server set — an IMAGE holds its data-URI —
+ * but nothing the form does can change it. Wider than
+ * {@link NON_INTERACTIVE_ENTRY_TYPES} by ACTION: an action button is interactive (an
+ * unmet dependency disables it) but stores nothing.
  */
 export const VALUELESS_ENTRY_TYPES: ConfigEntryUIType[] = [
   ...NON_INTERACTIVE_ENTRY_TYPES,

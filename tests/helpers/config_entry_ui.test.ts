@@ -19,7 +19,7 @@ function entry(overrides: Partial<ConfigEntry> = {}): ConfigEntry {
 }
 
 describe("isEntryDisabled", () => {
-  const dependant = (overrides: Partial<ConfigEntry> = {}) =>
+  const dependentEntry = (overrides: Partial<ConfigEntry> = {}) =>
     entry({ key: "engine_option", depends_on: "engine", ...overrides });
 
   it("leaves an entry without a dependency enabled", () => {
@@ -27,30 +27,41 @@ describe("isEntryDisabled", () => {
   });
 
   it("disables an entry whose dependency is not on the form", () => {
-    expect(isEntryDisabled(dependant(), [])).toBe(true);
+    expect(isEntryDisabled(dependentEntry(), [])).toBe(true);
   });
 
   it("disables on a falsy dependency value when no expected value is given", () => {
     const dep = entry({ value: "" });
 
-    expect(isEntryDisabled(dependant(), [dep])).toBe(true);
+    expect(isEntryDisabled(dependentEntry(), [dep])).toBe(true);
   });
 
   it("enables on a truthy dependency value when no expected value is given", () => {
     const dep = entry({ value: "ha" });
 
-    expect(isEntryDisabled(dependant(), [dep])).toBe(false);
+    expect(isEntryDisabled(dependentEntry(), [dep])).toBe(false);
+  });
+
+  // the server serializes an unset bound as an explicit null rather than omitting it
+  it("treats a null bound as no bound at all", () => {
+    const target = dependentEntry({
+      depends_on_value: null,
+      depends_on_value_not: null,
+    });
+
+    expect(isEntryDisabled(target, [entry({ value: "ha" })])).toBe(false);
+    expect(isEntryDisabled(target, [entry({ value: "" })])).toBe(true);
   });
 
   it("enables only while the dependency holds depends_on_value", () => {
-    const target = dependant({ depends_on_value: "ha" });
+    const target = dependentEntry({ depends_on_value: "ha" });
 
     expect(isEntryDisabled(target, [entry({ value: "ha" })])).toBe(false);
     expect(isEntryDisabled(target, [entry({ value: "other" })])).toBe(true);
   });
 
   it("matches a falsy depends_on_value", () => {
-    const target = dependant({ depends_on_value: false });
+    const target = dependentEntry({ depends_on_value: false });
     const boolDep = (value: boolean) =>
       entry({ type: ConfigEntryType.BOOLEAN, value });
 
@@ -59,14 +70,14 @@ describe("isEntryDisabled", () => {
   });
 
   it("disables while the dependency holds depends_on_value_not", () => {
-    const target = dependant({ depends_on_value_not: "off" });
+    const target = dependentEntry({ depends_on_value_not: "off" });
 
     expect(isEntryDisabled(target, [entry({ value: "off" })])).toBe(true);
     expect(isEntryDisabled(target, [entry({ value: "ha" })])).toBe(false);
   });
 
   it("matches a falsy depends_on_value_not", () => {
-    const target = dependant({ depends_on_value_not: false });
+    const target = dependentEntry({ depends_on_value_not: false });
     const boolDep = (value: boolean) =>
       entry({ type: ConfigEntryType.BOOLEAN, value });
 
@@ -75,7 +86,7 @@ describe("isEntryDisabled", () => {
   });
 
   it("gives depends_on_value precedence when both bounds are set", () => {
-    const target = dependant({
+    const target = dependentEntry({
       depends_on_value: "ha",
       depends_on_value_not: "ha",
     });
@@ -87,19 +98,19 @@ describe("isEntryDisabled", () => {
   // so both bounds compare loosely
   it("compares the bounds loosely across types", () => {
     expect(
-      isEntryDisabled(dependant({ depends_on_value: 1 }), [
+      isEntryDisabled(dependentEntry({ depends_on_value: 1 }), [
         entry({ value: "1" }),
       ]),
     ).toBe(false);
     expect(
-      isEntryDisabled(dependant({ depends_on_value_not: 1 }), [
+      isEntryDisabled(dependentEntry({ depends_on_value_not: 1 }), [
         entry({ value: "1" }),
       ]),
     ).toBe(true);
   });
 
   it("resolves the dependency by key rather than by position", () => {
-    const target = dependant({ depends_on_value: "ha" });
+    const target = dependentEntry({ depends_on_value: "ha" });
     const form = [
       entry({ key: "decoy", value: "other" }),
       entry({ value: "ha" }),
