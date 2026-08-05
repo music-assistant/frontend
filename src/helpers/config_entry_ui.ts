@@ -1,4 +1,4 @@
-import type { ConfigEntry, ConfigEntryType } from "@/plugins/api/interfaces";
+import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 
 export const CONFIG_KEY_UI = {
   DSP_SETTINGS_LINK: "dsp_settings_link",
@@ -26,6 +26,20 @@ export type ServerConfigEntryUI = ConfigEntry & {
   injected?: false;
 };
 export type ConfigEntryUI = ServerConfigEntryUI | InjectedConfigEntry;
+
+/**
+ * Entry types whose ConfigEntryField branch takes no `disabled` binding.
+ *
+ * An unmet `depends_on` normally leaves an entry visible but disabled. These types
+ * have nothing to disable, so a form must hide them instead or they read as if the
+ * dependency were met.
+ */
+export const NON_INTERACTIVE_ENTRY_TYPES: ConfigEntryUIType[] = [
+  ConfigEntryType.DIVIDER,
+  ConfigEntryType.LABEL,
+  ConfigEntryType.ALERT,
+  ConfigEntryType.IMAGE,
+];
 
 export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
   (e as InjectedConfigEntry).injected === true;
@@ -58,6 +72,27 @@ export const mergeConfigEntries = (
     merged[key] = currentEntry
       ? { ...incomingEntry, value: currentEntry.value }
       : { ...incomingEntry };
+  }
+  return merged;
+};
+
+/**
+ * Merges the entries a config action returned into the ones currently on screen.
+ *
+ * An action response carries entry definitions without the stored values, so every
+ * entry it does not explicitly set keeps the value the form already holds. Without
+ * that, pressing any action button would drop the whole form back to its defaults.
+ */
+export const mergeActionEntries = (
+  current: Record<string, ConfigEntry>,
+  incoming: ConfigEntry[],
+): Record<string, ConfigEntry> => {
+  const merged: Record<string, ConfigEntry> = {};
+  for (const entry of incoming) {
+    merged[entry.key] = {
+      ...entry,
+      value: entry.value ?? current[entry.key]?.value,
+    };
   }
   return merged;
 };

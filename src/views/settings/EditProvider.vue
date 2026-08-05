@@ -201,7 +201,10 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Button } from "@/components/ui/button";
-import { mergeConfigEntries } from "@/helpers/config_entry_ui";
+import {
+  mergeActionEntries,
+  mergeConfigEntries,
+} from "@/helpers/config_entry_ui";
 import { canReconfigureProvider } from "@/helpers/provider_config";
 import { markdownToHtml, openActionUrlEntries } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -385,14 +388,11 @@ const onAction = async function (
         toast.success(t("settings.action_completed"));
         return;
       }
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
+      config.value!.values = mergeActionEntries(config.value!.values, entries);
       // If the action has immediate_apply, save the updated values right away
       if (immediateApply) {
         const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
+        for (const entry of Object.values(config.value!.values)) {
           if (entry.value !== undefined) {
             saveValues[entry.key] = entry.value;
           }
