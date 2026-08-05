@@ -1,4 +1,4 @@
-import type { ConfigEntry, ConfigEntryType } from "@/plugins/api/interfaces";
+import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 
 export const CONFIG_KEY_UI = {
   DSP_SETTINGS_LINK: "dsp_settings_link",
@@ -26,6 +26,20 @@ export type ServerConfigEntryUI = ConfigEntry & {
   injected?: false;
 };
 export type ConfigEntryUI = ServerConfigEntryUI | InjectedConfigEntry;
+
+/**
+ * Entry types that render no interactive control.
+ *
+ * An unmet `depends_on` normally leaves an entry visible but disabled. These types
+ * have nothing to disable, so a form must hide them instead or they read as if the
+ * dependency were met.
+ */
+export const NON_INTERACTIVE_ENTRY_TYPES: ConfigEntryUIType[] = [
+  ConfigEntryType.DIVIDER,
+  ConfigEntryType.LABEL,
+  ConfigEntryType.ALERT,
+  ConfigEntryType.IMAGE,
+];
 
 export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
   (e as InjectedConfigEntry).injected === true;

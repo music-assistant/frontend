@@ -312,6 +312,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
+import { NON_INTERACTIVE_ENTRY_TYPES } from "@/helpers/config_entry_ui";
 import { api, ConnectionState } from "@/plugins/api";
 import {
   type ConfigEntry,
@@ -429,7 +430,15 @@ const dialogTitle = computed(() => {
 });
 
 const visibleFormEntries = computed(() =>
-  formEntries.value.filter((entry) => !entry.hidden),
+  formEntries.value.filter(
+    (entry) =>
+      !entry.hidden &&
+      // an unmet dependency can only be expressed by hiding these types
+      !(
+        NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) &&
+        isEntryDisabled(entry)
+      ),
+  ),
 );
 
 const canSubmit = computed(() => {

@@ -159,7 +159,11 @@
 </template>
 
 <script setup lang="ts">
-import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
+import {
+  ConfigEntryUI,
+  isInjected,
+  NON_INTERACTIVE_ENTRY_TYPES,
+} from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
 import {
   ConfigEntryType,
@@ -455,10 +459,6 @@ const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
 
-const isVisible = function (entry: ConfigEntryUI) {
-  return !entry.hidden;
-};
-
 const isDisabled = function (entry: ConfigEntryUI) {
   if (!isNullOrUndefined(entry.depends_on)) {
     const dependentEntry = entries.value?.find(
@@ -479,6 +479,14 @@ const isDisabled = function (entry: ConfigEntryUI) {
     return !dependentValue;
   }
   return false;
+};
+
+const isVisible = function (entry: ConfigEntryUI) {
+  if (entry.hidden) return false;
+  // an unmet dependency can only be expressed by hiding these types
+  return !(
+    NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) && isDisabled(entry)
+  );
 };
 
 const visibleEntriesByCategory = computed(() => {
