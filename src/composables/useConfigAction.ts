@@ -8,15 +8,14 @@ import type { Ref } from "vue";
 import { toast } from "vue-sonner";
 import { mergeActionEntries } from "@/helpers/config_entry_ui";
 import { openActionUrlEntries } from "@/helpers/utils";
-import type { ConfigEntry, ConfigValueType } from "@/plugins/api/interfaces";
+import type {
+  Config,
+  ConfigEntry,
+  ConfigValueType,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
-/** The part of a Provider/Player/Core config this handler touches. */
-interface ConfigWithValues {
-  values: Record<string, ConfigEntry>;
-}
-
-interface UseConfigActionOptions<T extends ConfigWithValues> {
+interface UseConfigActionOptions<T extends Config> {
   /** The form's config, refreshed in place with whatever the action returns. */
   config: Ref<T | undefined>;
   /** Toggled around the invoke so the form can show its loading overlay. */
@@ -24,9 +23,7 @@ interface UseConfigActionOptions<T extends ConfigWithValues> {
   /** Runs the action on the server and returns the entries to re-render. */
   invokeAction: (action: string) => Promise<ConfigEntry[]>;
   /** Persists the given raw values and returns the stored config. */
-  saveValues: (
-    values: Record<string, ConfigValueType>,
-  ) => Promise<ConfigWithValues>;
+  saveValues: (values: Record<string, ConfigValueType>) => Promise<Config>;
 }
 
 /**
@@ -37,7 +34,7 @@ interface UseConfigActionOptions<T extends ConfigWithValues> {
  * :param invokeAction: Invokes the action for this config's flavour.
  * :param saveValues: Saves raw values for this config's flavour.
  */
-export function useConfigAction<T extends ConfigWithValues>({
+export function useConfigAction<T extends Config>({
   config,
   loading,
   invokeAction,
@@ -71,7 +68,9 @@ export function useConfigAction<T extends ConfigWithValues>({
         }
       }
     } catch (err) {
-      toast.error(String(err));
+      // the api rejects with a plain string, but a dropped connection rejects
+      // with an Error whose name would otherwise be prefixed onto the toast
+      toast.error(err instanceof Error ? err.message : String(err));
     } finally {
       loading.value = false;
     }

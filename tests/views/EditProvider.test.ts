@@ -60,8 +60,7 @@ vi.mock("@/helpers/utils", () => ({
   openActionUrlEntries: <T>(entries: T) => entries,
 }));
 
-vi.mock("@/plugins/i18n", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/plugins/i18n")>()),
+vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 

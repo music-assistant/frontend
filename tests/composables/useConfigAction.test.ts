@@ -18,8 +18,7 @@ vi.mock("vue-sonner", () => ({
   toast: toastMock,
 }));
 
-vi.mock("@/plugins/i18n", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/plugins/i18n")>()),
+vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
@@ -95,6 +94,35 @@ describe("useConfigAction", () => {
     await onAction("do_thing", {}, false);
 
     expect(toastMock.error).toHaveBeenCalledWith("action failed");
+    expect(loading.value).toBe(false);
+  });
+
+  it("reports a rejected Error without its class name", async () => {
+    const { invokeAction, onAction } = setup();
+    // a dropped connection rejects in-flight commands with an Error subclass
+    const connectionLost = new Error("Connection lost");
+    connectionLost.name = "ConnectionLostError";
+    invokeAction.mockRejectedValueOnce(connectionLost);
+
+    await onAction("do_thing", {}, false);
+
+    expect(toastMock.error).toHaveBeenCalledWith("Connection lost");
+  });
+
+  it("holds loading while the action is in flight", async () => {
+    const { loading, invokeAction, onAction } = setup();
+    let release: (entries: ConfigEntry[]) => void;
+    invokeAction.mockReturnValueOnce(
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+
+    const pending = onAction("do_thing", {}, false);
+    expect(loading.value).toBe(true);
+
+    release!([]);
+    await pending;
     expect(loading.value).toBe(false);
   });
 
