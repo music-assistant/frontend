@@ -925,6 +925,7 @@
             "source_channel": "Source channel: {0}",
             "source_channel_left": "Left",
             "source_channel_right": "Right",
+            "mixed_to_mono": "Mixed to mono",
             "dsp_preset": "DSP preset: {0}",
             "dsp_preset_label": "DSP preset",
             "dsp_title": "DSP",
