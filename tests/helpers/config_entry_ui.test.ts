@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isEntryDisabled,
   mergeActionEntries,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
@@ -16,6 +17,97 @@ function entry(overrides: Partial<ConfigEntry> = {}): ConfigEntry {
     ...overrides,
   };
 }
+
+describe("isEntryDisabled", () => {
+  const dependant = (overrides: Partial<ConfigEntry> = {}) =>
+    entry({ key: "engine_option", depends_on: "engine", ...overrides });
+
+  it("leaves an entry without a dependency enabled", () => {
+    expect(isEntryDisabled(entry(), [entry()])).toBe(false);
+  });
+
+  it("disables an entry whose dependency is not on the form", () => {
+    expect(isEntryDisabled(dependant(), [])).toBe(true);
+  });
+
+  it("disables on a falsy dependency value when no expected value is given", () => {
+    const dep = entry({ value: "" });
+
+    expect(isEntryDisabled(dependant(), [dep])).toBe(true);
+  });
+
+  it("enables on a truthy dependency value when no expected value is given", () => {
+    const dep = entry({ value: "ha" });
+
+    expect(isEntryDisabled(dependant(), [dep])).toBe(false);
+  });
+
+  it("enables only while the dependency holds depends_on_value", () => {
+    const target = dependant({ depends_on_value: "ha" });
+
+    expect(isEntryDisabled(target, [entry({ value: "ha" })])).toBe(false);
+    expect(isEntryDisabled(target, [entry({ value: "other" })])).toBe(true);
+  });
+
+  it("matches a falsy depends_on_value", () => {
+    const target = dependant({ depends_on_value: false });
+    const boolDep = (value: boolean) =>
+      entry({ type: ConfigEntryType.BOOLEAN, value });
+
+    expect(isEntryDisabled(target, [boolDep(false)])).toBe(false);
+    expect(isEntryDisabled(target, [boolDep(true)])).toBe(true);
+  });
+
+  it("disables while the dependency holds depends_on_value_not", () => {
+    const target = dependant({ depends_on_value_not: "off" });
+
+    expect(isEntryDisabled(target, [entry({ value: "off" })])).toBe(true);
+    expect(isEntryDisabled(target, [entry({ value: "ha" })])).toBe(false);
+  });
+
+  it("matches a falsy depends_on_value_not", () => {
+    const target = dependant({ depends_on_value_not: false });
+    const boolDep = (value: boolean) =>
+      entry({ type: ConfigEntryType.BOOLEAN, value });
+
+    expect(isEntryDisabled(target, [boolDep(false)])).toBe(true);
+    expect(isEntryDisabled(target, [boolDep(true)])).toBe(false);
+  });
+
+  it("gives depends_on_value precedence when both bounds are set", () => {
+    const target = dependant({
+      depends_on_value: "ha",
+      depends_on_value_not: "ha",
+    });
+
+    expect(isEntryDisabled(target, [entry({ value: "ha" })])).toBe(false);
+  });
+
+  // the server may type a value differently than the entry declares its bound,
+  // so both bounds compare loosely
+  it("compares the bounds loosely across types", () => {
+    expect(
+      isEntryDisabled(dependant({ depends_on_value: 1 }), [
+        entry({ value: "1" }),
+      ]),
+    ).toBe(false);
+    expect(
+      isEntryDisabled(dependant({ depends_on_value_not: 1 }), [
+        entry({ value: "1" }),
+      ]),
+    ).toBe(true);
+  });
+
+  it("resolves the dependency by key rather than by position", () => {
+    const target = dependant({ depends_on_value: "ha" });
+    const form = [
+      entry({ key: "decoy", value: "other" }),
+      entry({ value: "ha" }),
+    ];
+
+    expect(isEntryDisabled(target, form)).toBe(false);
+  });
+});
 
 describe("mergeConfigEntries", () => {
   it("adopts the fresh definition for an untouched key", () => {

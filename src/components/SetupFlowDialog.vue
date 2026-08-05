@@ -56,7 +56,7 @@
               <ConfigEntryRow
                 :conf-entry="entry"
                 :show-password-values="showPasswordValues"
-                :disabled="busy || isEntryDisabled(entry)"
+                :disabled="busy || isDisabled(entry)"
                 @update:value="onValueUpdate(entry, $event)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
                 @help="onEntryHelp(entry)"
@@ -312,7 +312,11 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
-import { NON_INTERACTIVE_ENTRY_TYPES } from "@/helpers/config_entry_ui";
+import {
+  isEntryDisabled,
+  NON_INTERACTIVE_ENTRY_TYPES,
+  VALUELESS_ENTRY_TYPES,
+} from "@/helpers/config_entry_ui";
 import { api, ConnectionState } from "@/plugins/api";
 import {
   type ConfigEntry,
@@ -377,15 +381,6 @@ let expiryReconciledFor: string | null = null;
 // reconnect; the double underscores keep it out of reach of server-sent slugs
 const SESSION_ENDED_STEP_ID = "__session_ended__";
 
-// entry types that carry no value, so they take no part in validation or submission
-const PRESENTATIONAL_TYPES = [
-  ConfigEntryType.DIVIDER,
-  ConfigEntryType.LABEL,
-  ConfigEntryType.ALERT,
-  ConfigEntryType.IMAGE,
-  ConfigEntryType.ACTION,
-];
-
 // terminal steps: closing them must not abort (the flow already ended server-side)
 const isTerminal = computed(
   () =>
@@ -435,18 +430,15 @@ const visibleFormEntries = computed(() =>
     (entry) =>
       !entry.hidden &&
       // an unmet dependency can only be expressed by hiding these types
-      !(
-        NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) &&
-        isEntryDisabled(entry)
-      ),
+      !(NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) && isDisabled(entry)),
   ),
 );
 
 const canSubmit = computed(() => {
   if (busy.value) return false;
   for (const entry of formEntries.value) {
-    if (PRESENTATIONAL_TYPES.includes(entry.type)) continue;
-    if (isEntryDisabled(entry)) continue;
+    if (VALUELESS_ENTRY_TYPES.includes(entry.type)) continue;
+    if (isDisabled(entry)) continue;
     if (
       entry.required &&
       isNullOrUndefined(entry.value) &&
@@ -635,7 +627,7 @@ async function submit() {
   if (!step.value || !canSubmit.value) return;
   const values: Record<string, ConfigValueType> = {};
   for (const entry of formEntries.value) {
-    if (PRESENTATIONAL_TYPES.includes(entry.type)) continue;
+    if (VALUELESS_ENTRY_TYPES.includes(entry.type)) continue;
     let value = entry.value;
     if (value === undefined) value = null;
     // don't send back the obfuscated placeholder for unchanged secure strings
@@ -782,19 +774,8 @@ function onEntryHelp(entry: ConfigEntry) {
   else if (entry.help_link) openLink(entry.help_link);
 }
 
-function isEntryDisabled(entry: ConfigEntry): boolean {
-  if (isNullOrUndefined(entry.depends_on)) return false;
-  const dependency = formEntries.value.find((e) => e.key === entry.depends_on);
-  // a key that resolves to nothing stays gated, so a typo cannot silently open the gate
-  if (!dependency) return true;
-  const dependencyValue = dependency.value;
-  if (!isNullOrUndefined(entry.depends_on_value)) {
-    return dependencyValue != entry.depends_on_value;
-  }
-  if (!isNullOrUndefined(entry.depends_on_value_not)) {
-    return dependencyValue == entry.depends_on_value_not;
-  }
-  return !dependencyValue;
+function isDisabled(entry: ConfigEntry): boolean {
+  return isEntryDisabled(entry, formEntries.value);
 }
 
 function isNullOrUndefined(value: unknown): boolean {

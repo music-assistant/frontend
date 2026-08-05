@@ -73,7 +73,11 @@
       v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
       class="dsp-config"
     >
-      <v-btn variant="outlined" @click="$emit('openOptions')">
+      <v-btn
+        variant="outlined"
+        :disabled="isFieldDisabled"
+        @click="$emit('openOptions')"
+      >
         {{ $t("player_options.open") }}
       </v-btn>
     </div>

@@ -124,6 +124,29 @@ describe("EditConfig", () => {
 
     expect(renderedKeys(wrapper)).toEqual(["enable_feature", "feature_status"]);
   });
+
+  // a presentational entry holds no value, so a required one must never be able
+  // to block saving the entries that do
+  it("can still save alongside a required entry that holds no value", async () => {
+    const entries = [
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({
+        key: "pairing_code",
+        type: ConfigEntryType.IMAGE,
+        required: true,
+      }),
+    ];
+    const wrapper = mountEntries(entries);
+    expect(saveDisabled(wrapper)).toBe(true);
+
+    const editable = wrapper
+      .findAllComponents({ name: "ConfigEntryRow" })[0]
+      .props("confEntry") as ConfigEntry;
+    editable.value = "localhost";
+    await nextTick();
+
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
 });
 
 function entry(
@@ -160,4 +183,12 @@ function renderedKeys(wrapper: VueWrapper) {
   return wrapper
     .findAllComponents({ name: "ConfigEntryRow" })
     .map((row) => (row.props("confEntry") as ConfigEntry).key);
+}
+
+function saveDisabled(wrapper: VueWrapper) {
+  const button = wrapper
+    .findAll("v-btn-stub")
+    .find((btn) => btn.text() === "settings.save");
+  if (!button) throw new Error("save button not rendered");
+  return button.attributes("disabled") === "true";
 }
