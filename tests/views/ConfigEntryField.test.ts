@@ -57,6 +57,15 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntry][] = [
     "a number input without a range",
     entry({ key: "port", type: ConfigEntryType.INTEGER, value: 8095 }),
   ],
+  [
+    "a multi-value combobox",
+    entry({
+      key: "manual_discovery_ips",
+      type: ConfigEntryType.STRING,
+      multi_value: true,
+      value: ["192.168.1.10"],
+    }),
+  ],
 ];
 
 describe("ConfigEntryField", () => {
@@ -167,12 +176,12 @@ function controlStates(wrapper: VueWrapper): boolean[] {
 }
 
 /**
- * The disabled state of each control in the slider row, keyed by the control it belongs
- * to: the slider itself plus the number field's input and its two step buttons.
+ * The disabled state of each control in the slider row: the value input Vuetify renders
+ * for the slider, plus the number field's own input and its two step buttons.
  */
 function sliderRowStates(wrapper: VueWrapper): Record<string, boolean> {
   const numberFieldParts = wrapper
-    .findAll("[data-slot]")
+    .findAll(".config-slider-input [data-slot]")
     .map((el) => [el.attributes("data-slot") as string, isDisabled(el)]);
 
   return {
