@@ -58,11 +58,9 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
-import computeElapsedTime from "@/helpers/elapsed";
-import api from "@/plugins/api";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { Rocket, UserRound } from "@lucide/vue";
 import Color from "color";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -248,24 +246,8 @@ const progressPercentage = computed(() => {
     return 0;
   }
 
-  // Get elapsed time from the isolated reactive map
-  const queue = store.activePlayerQueue;
-  const queueId = queue?.queue_id;
-  const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-  if (
-    queueTime?.elapsed_time != null &&
-    queueTime?.elapsed_time_last_updated != null
-  ) {
-    const elapsed =
-      computeElapsedTime(
-        queueTime.elapsed_time,
-        queueTime.elapsed_time_last_updated,
-        queue!.state,
-      ) ?? 0;
-    return Math.min((elapsed / duration) * 100, 100);
-  }
-
-  return 0;
+  const elapsed = resolveActiveElapsedTime() ?? 0;
+  return Math.min((elapsed / duration) * 100, 100);
 });
 
 // Watch for changes in position and isPlaying to start/stop ticking

@@ -87,6 +87,14 @@ export enum ConnectionState {
   FAILED = "failed", // Connection failed permanently
 }
 
+/** Rejection for in-flight commands that can never be answered because the connection dropped. */
+export class ConnectionLostError extends Error {
+  constructor() {
+    super("Connection lost");
+    this.name = "ConnectionLostError";
+  }
+}
+
 export class MusicAssistantApi {
   private transport?: ITransport;
   private _throttleId?: ReturnType<typeof setTimeout>;
@@ -209,50 +217,7 @@ export class MusicAssistantApi {
 
     // Listen for transport state changes (reconnecting, failed, etc.)
     transport.on("stateChange", (state) => {
-      console.log("[API] Transport state changed to:", state);
-      this.transportState.value = state;
-
-      // Handle specific state transitions
-      if (state === "reconnecting") {
-        // Transport is attempting to reconnect
-        this.state.value = ConnectionState.RECONNECTING;
-        // pause probing but keep the estimate: clock offsets don't change while the
-        // connection is down, and a slightly stale offset still beats no correction.
-        // A new ServerInfo message resumes it once the connection is back.
-        stopServerTimeSync();
-        this.signalEvent({
-          event: EventType.DISCONNECTED,
-          object_id: "",
-        });
-      } else if (state === "failed") {
-        // Failed could be transient (during reconnect) or permanent
-        // Wait to see if it transitions to reconnecting or stays failed
-        setTimeout(() => {
-          if (this.transportState.value === "failed") {
-            // Still failed after brief wait - this is permanent failure
-            this.state.value = ConnectionState.FAILED;
-            stopServerTimeSync();
-            this.signalEvent({
-              event: EventType.DISCONNECTED,
-              object_id: "",
-            });
-          }
-          // Otherwise it transitioned to reconnecting - ignore this transient failure
-        }, 50);
-      } else if (state === "disconnected") {
-        // Check if this is an intentional disconnect (not followed by reconnecting)
-        // Use nextTick to allow reconnecting state to be set first
-        setTimeout(() => {
-          if (this.transportState.value === "disconnected") {
-            this.state.value = ConnectionState.DISCONNECTED;
-            stopServerTimeSync();
-            this.signalEvent({
-              event: EventType.DISCONNECTED,
-              object_id: "",
-            });
-          }
-        }, 0);
-      }
+      this.handleTransportStateChange(state);
     });
 
     await transport.connect();
@@ -381,8 +346,12 @@ export class MusicAssistantApi {
 
       return result;
     } catch (error) {
-      // Token is invalid - require user authentication
-      this.state.value = ConnectionState.AUTH_REQUIRED;
+      // a dropped connection says nothing about the token; leave the
+      // reconnect flow intact so re-auth runs again after reconnect
+      if (!(error instanceof ConnectionLostError)) {
+        // Token is invalid - require user authentication
+        this.state.value = ConnectionState.AUTH_REQUIRED;
+      }
       throw error;
     }
   }
@@ -408,6 +377,7 @@ export class MusicAssistantApi {
     this.isRemoteConnection.value = false;
     // the next connection may be to a different server, whose clock offset is unrelated
     resetServerTime();
+    this._failPendingCommands();
 
     // Clear reactive state
     Object.keys(this.players).forEach((key) => delete this.players[key]);
@@ -2644,6 +2614,61 @@ export class MusicAssistantApi {
     this.signalEvent(msg);
   }
 
+  private handleTransportStateChange(state: string): void {
+    console.log("[API] Transport state changed to:", state);
+    this.transportState.value = state;
+
+    // the socket is already gone here, so nothing in flight can be answered
+    if (
+      state === "reconnecting" ||
+      state === "failed" ||
+      state === "disconnected"
+    ) {
+      this._failPendingCommands();
+    }
+
+    if (state === "reconnecting") {
+      // Transport is attempting to reconnect
+      this.state.value = ConnectionState.RECONNECTING;
+      // pause probing but keep the estimate: clock offsets don't change while the
+      // connection is down, and a slightly stale offset still beats no correction.
+      // A new ServerInfo message resumes it once the connection is back.
+      stopServerTimeSync();
+      this.signalEvent({
+        event: EventType.DISCONNECTED,
+        object_id: "",
+      });
+    } else if (state === "failed") {
+      // Failed could be transient (during reconnect) or permanent
+      // Wait to see if it transitions to reconnecting or stays failed
+      setTimeout(() => {
+        if (this.transportState.value === "failed") {
+          // Still failed after brief wait - this is permanent failure
+          this.state.value = ConnectionState.FAILED;
+          stopServerTimeSync();
+          this.signalEvent({
+            event: EventType.DISCONNECTED,
+            object_id: "",
+          });
+        }
+        // Otherwise it transitioned to reconnecting - ignore this transient failure
+      }, 50);
+    } else if (state === "disconnected") {
+      // Check if this is an intentional disconnect (not followed by reconnecting)
+      // Use nextTick to allow reconnecting state to be set first
+      setTimeout(() => {
+        if (this.transportState.value === "disconnected") {
+          this.state.value = ConnectionState.DISCONNECTED;
+          stopServerTimeSync();
+          this.signalEvent({
+            event: EventType.DISCONNECTED,
+            object_id: "",
+          });
+        }
+      }, 0);
+    }
+  }
+
   private handleResultMessage(msg: SuccessResultMessage | ErrorResultMessage) {
     // Handle result of a command
     const resultPromise = this.commands.get(msg.message_id);
@@ -3193,7 +3218,13 @@ export class MusicAssistantApi {
         reject,
         suppressGlobalError: options?.suppressGlobalError,
       });
-      this._sendCommand(command, args, cmdId);
+      try {
+        this._sendCommand(command, args, cmdId);
+      } catch (error) {
+        // a synchronous throw here rejects the promise but leaves the map entry behind
+        this.commands.delete(cmdId);
+        throw error;
+      }
     });
   }
 
@@ -3210,7 +3241,7 @@ export class MusicAssistantApi {
       this.state.value !== ConnectionState.AUTHENTICATED &&
       this.state.value !== ConnectionState.INITIALIZED
     ) {
-      throw new Error("Connection lost");
+      throw new ConnectionLostError();
     }
 
     if (!msgId) {
@@ -3230,10 +3261,15 @@ export class MusicAssistantApi {
     const msgStr = JSON.stringify(msg);
 
     if (!this.transport) {
-      throw new Error("No connection available");
+      throw new ConnectionLostError();
     }
 
-    this.transport.send(msgStr);
+    try {
+      this.transport.send(msgStr);
+    } catch {
+      // transport throws untyped errors; callers filter on ConnectionLostError
+      throw new ConnectionLostError();
+    }
   }
 
   public async fetchState() {
@@ -3263,6 +3299,21 @@ export class MusicAssistantApi {
     Object.keys(this.providers).forEach((key) => delete this.providers[key]);
     for (const provider of providers) {
       this.providers[provider.instance_id] = provider;
+    }
+  }
+
+  /** Reject commands still awaiting a reply; a dropped socket can never answer them. */
+  private _failPendingCommands(): void {
+    if (this.commands.size === 0) {
+      this.partialResult = {};
+      return;
+    }
+    // clear first: a rejection handler may immediately send a new command
+    const pending = [...this.commands.values()];
+    this.commands.clear();
+    this.partialResult = {};
+    for (const command of pending) {
+      command.reject(new ConnectionLostError());
     }
   }
 

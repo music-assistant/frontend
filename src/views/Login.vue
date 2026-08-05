@@ -439,7 +439,7 @@
 </template>
 
 <script setup lang="ts">
-import { api, ConnectionState } from "@/plugins/api";
+import { api, ConnectionLostError, ConnectionState } from "@/plugins/api";
 import type {
   AuthProvider,
   ServerInfoMessage,
@@ -783,8 +783,9 @@ const tryStoredTokenAuth = async (
     const result = await api.authenticateWithToken(authToken);
     emit("authenticated", { token: authToken, user: result.user });
     return "authenticated";
-  } catch {
-    if (token) return "failed";
+  } catch (error) {
+    // a blip says nothing about token validity; reconnect flow will retry
+    if (token || error instanceof ConnectionLostError) return "failed";
 
     const ended = authManager.endRejectedGuestSession();
     switch (ended.outcome) {

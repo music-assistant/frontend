@@ -127,7 +127,10 @@ import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
-import computeElapsedTime from "@/helpers/elapsed";
+import {
+  resolveActiveElapsedTime,
+  resolveActiveTiming,
+} from "@/helpers/activeElapsedTime";
 import { computeChapterTicks } from "@/helpers/chapters";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
@@ -267,51 +270,7 @@ const playerTotalTimeStr = computed(() => {
   return formatDuration(duration);
 });
 
-const serverTiming = computed(() => {
-  // Prefer queue-level elapsed_time if available (from isolated reactive map)
-  const queue = store.activePlayerQueue;
-  const queueId = queue?.queue_id;
-  const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-  if (
-    queueTime?.elapsed_time != null &&
-    queueTime?.elapsed_time_last_updated != null
-  ) {
-    return {
-      elapsedTime: queueTime.elapsed_time,
-      lastUpdated: queueTime.elapsed_time_last_updated,
-      playbackState: queue!.state,
-    };
-  }
-
-  // Fallback to player-level elapsed_time. This is used for external/3rd-party
-  // sources currently playing on the player (not for Music Assistant queue
-  // playback). Use the player-level fields when no activePlayerQueue is set.
-  // Prefer current_media timing when available (external source playing on the player)
-  if (
-    store.activePlayer?.current_media?.elapsed_time != null &&
-    store.activePlayer?.current_media?.elapsed_time_last_updated != null
-  ) {
-    return {
-      elapsedTime: store.activePlayer.current_media.elapsed_time,
-      lastUpdated: store.activePlayer.current_media.elapsed_time_last_updated,
-      playbackState: store.activePlayer.playback_state,
-    };
-  }
-
-  // Fall back to player-level elapsed_time (legacy / provider-level value)
-  if (
-    store.activePlayer?.elapsed_time != null &&
-    store.activePlayer?.elapsed_time_last_updated != null
-  ) {
-    return {
-      elapsedTime: store.activePlayer.elapsed_time,
-      lastUpdated: store.activePlayer.elapsed_time_last_updated,
-      playbackState: store.activePlayer.playback_state,
-    };
-  }
-
-  return null;
-});
+const serverTiming = computed(() => resolveActiveTiming());
 
 const serverElapsedTime = computed(() => {
   // include nowTick.value so this computed re-evaluates periodically while mounted
@@ -330,17 +289,7 @@ const serverElapsedTime = computed(() => {
   if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
   else stopTick();
 
-  const timing = serverTiming.value;
-  if (!timing) return 0;
-
-  return (
-    computeElapsedTime(
-      timing.elapsedTime,
-      timing.lastUpdated,
-      timing.playbackState,
-      store.curQueueItem?.extra_attributes?.playback_speed ?? 1,
-    ) ?? 0
-  );
+  return resolveActiveElapsedTime() ?? 0;
 });
 
 const displayedElapsedTime = computed(() => {

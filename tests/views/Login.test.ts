@@ -34,6 +34,7 @@ vi.mock("@/plugins/api", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   mocks.apiState = ref(mocks.apiState.value);
   return {
+    ConnectionLostError: class ConnectionLostError extends Error {},
     ConnectionState: {
       AUTHENTICATED: "authenticated",
       AUTHENTICATING: "authenticating",
