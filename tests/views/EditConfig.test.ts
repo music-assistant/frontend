@@ -80,6 +80,33 @@ describe("EditConfig", () => {
     expect(rows[1].props("disabled")).toBe(true);
   });
 
+  it("hides a label whose dependency key is not in the form", () => {
+    const wrapper = mountEntries([
+      entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),
+      entry({
+        key: "feature_status",
+        type: ConfigEntryType.LABEL,
+        depends_on: "typo_in_this_key",
+      }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["enable_feature"]);
+  });
+
+  it("disables an input whose dependency key is not in the form", () => {
+    const wrapper = mountEntries([
+      entry({
+        key: "feature_detail",
+        type: ConfigEntryType.STRING,
+        depends_on: "typo_in_this_key",
+      }),
+    ]);
+
+    const rows = wrapper.findAllComponents({ name: "ConfigEntryRow" });
+    expect(renderedKeys(wrapper)).toEqual(["feature_detail"]);
+    expect(rows[0].props("disabled")).toBe(true);
+  });
+
   it("reveals a label as soon as the dependency flips, without a save", async () => {
     const entries = [
       entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),
