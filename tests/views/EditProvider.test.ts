@@ -180,6 +180,46 @@ describe("EditProvider", () => {
     ]);
   });
 
+  it("keeps form values when an action returns entries without them", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      providerConfig(ProviderStatus.LOADED, "current value"),
+    );
+    // an action response carries entry definitions only, never the stored values
+    apiMock.invokeProviderConfigAction.mockResolvedValue([
+      {
+        category: "generic",
+        default_value: null,
+        key: "account",
+        label: "Account",
+        required: false,
+        type: ConfigEntryType.STRING,
+      },
+    ]);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    editConfig.vm.$emit("action", "verify", {}, false);
+    await flushPromises();
+
+    expect(editConfig.props("configEntries")).toEqual([
+      expect.objectContaining({
+        key: "account",
+        value: "current value",
+      }),
+    ]);
+  });
+
   it("refreshes provider status when reconfiguration ends", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(providerConfig(ProviderStatus.AUTH_REQUIRED))

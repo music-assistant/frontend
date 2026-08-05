@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import { mergeActionEntries } from "@/helpers/config_entry_ui";
 import { openActionUrlEntries } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
@@ -154,10 +155,7 @@ const onAction = async function (
         loading.value = false;
         return;
       }
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
+      config.value!.values = mergeActionEntries(config.value!.values, entries);
       // If the action has immediate_apply, save the updated values right away
       if (immediateApply) {
         const saveValues: Record<string, ConfigValueType> = {};

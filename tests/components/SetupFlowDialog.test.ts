@@ -221,6 +221,7 @@ describe("SetupFlowDialog", () => {
     expect(
       rows.map((row) => (row.props("confEntry") as ConfigEntry).key),
     ).toEqual(["enable_feature", "feature_detail"]);
+    expect(rows[0].props("disabled")).toBe(false);
     expect(rows[1].props("disabled")).toBe(true);
   });
 });

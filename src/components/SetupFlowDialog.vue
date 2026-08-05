@@ -377,7 +377,7 @@ let expiryReconciledFor: string | null = null;
 // reconnect; the double underscores keep it out of reach of server-sent slugs
 const SESSION_ENDED_STEP_ID = "__session_ended__";
 
-// terminal steps: closing them must not abort (the flow already ended server-side)
+// entry types that carry no value, so they take no part in validation or submission
 const PRESENTATIONAL_TYPES = [
   ConfigEntryType.DIVIDER,
   ConfigEntryType.LABEL,
@@ -386,6 +386,7 @@ const PRESENTATIONAL_TYPES = [
   ConfigEntryType.ACTION,
 ];
 
+// terminal steps: closing them must not abort (the flow already ended server-side)
 const isTerminal = computed(
   () =>
     step.value?.type === FlowStepType.FINISH ||

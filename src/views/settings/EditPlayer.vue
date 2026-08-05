@@ -263,6 +263,7 @@ import {
   ConfigEntryUI,
   UI_ENTRY_TYPE,
   isInjected,
+  mergeActionEntries,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import { openActionUrlEntries, openLinkInNewTab } from "@/helpers/utils";
@@ -479,10 +480,7 @@ const onAction = async function (
         toast.success($t("settings.action_completed"));
         return;
       }
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
+      config.value!.values = mergeActionEntries(config.value!.values, entries);
       // If the action has immediate_apply, save the updated values right away
       if (immediateApply) {
         const saveValues: Record<string, ConfigValueType> = {};

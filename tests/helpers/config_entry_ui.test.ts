@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { mergeConfigEntries } from "@/helpers/config_entry_ui";
+import {
+  mergeActionEntries,
+  mergeConfigEntries,
+} from "@/helpers/config_entry_ui";
 import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 
 function entry(overrides: Partial<ConfigEntry> = {}): ConfigEntry {
@@ -75,6 +78,64 @@ describe("mergeConfigEntries", () => {
     const incomingSnapshot = JSON.parse(JSON.stringify(incoming));
 
     mergeConfigEntries(current, incoming);
+
+    expect(current).toEqual(currentSnapshot);
+    expect(incoming).toEqual(incomingSnapshot);
+  });
+});
+
+describe("mergeActionEntries", () => {
+  it("keeps the current value for an entry the action left unset", () => {
+    const current = { engine: entry({ value: "current value" }) };
+    const incoming = [entry({ read_only: true })];
+
+    const merged = mergeActionEntries(current, incoming);
+
+    expect(merged.engine.value).toBe("current value");
+    expect(merged.engine.read_only).toBe(true);
+  });
+
+  it("keeps a falsy current value", () => {
+    const current = {
+      enabled: entry({ key: "enabled", type: ConfigEntryType.BOOLEAN }),
+    };
+    current.enabled.value = false;
+
+    const merged = mergeActionEntries(current, [
+      entry({ key: "enabled", type: ConfigEntryType.BOOLEAN }),
+    ]);
+
+    expect(merged.enabled.value).toBe(false);
+  });
+
+  it("takes the value the action did set", () => {
+    const current = { engine: entry({ value: "current value" }) };
+    const incoming = [entry({ value: "set by the action" })];
+
+    const merged = mergeActionEntries(current, incoming);
+
+    expect(merged.engine.value).toBe("set by the action");
+  });
+
+  it("adds an entry that only the action returned", () => {
+    const merged = mergeActionEntries({}, [entry({ key: "fresh" })]);
+
+    expect(merged.fresh.key).toBe("fresh");
+  });
+
+  it("drops an entry the action no longer returns", () => {
+    const current = { stale: entry({ key: "stale" }) };
+
+    expect(mergeActionEntries(current, [])).toEqual({});
+  });
+
+  it("does not mutate either input", () => {
+    const current = { engine: entry({ value: "current value" }) };
+    const incoming = [entry({ read_only: true })];
+    const currentSnapshot = JSON.parse(JSON.stringify(current));
+    const incomingSnapshot = JSON.parse(JSON.stringify(incoming));
+
+    mergeActionEntries(current, incoming);
 
     expect(current).toEqual(currentSnapshot);
     expect(incoming).toEqual(incomingSnapshot);

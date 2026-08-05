@@ -1,5 +1,6 @@
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 import {
   ConfigEntryType,
   type ConfigEntry,
@@ -75,7 +76,26 @@ describe("EditConfig", () => {
 
     const rows = wrapper.findAllComponents({ name: "ConfigEntryRow" });
     expect(renderedKeys(wrapper)).toEqual(["enable_feature", "feature_detail"]);
+    expect(rows[0].props("disabled")).toBe(false);
     expect(rows[1].props("disabled")).toBe(true);
+  });
+
+  it("reveals a label as soon as the dependency flips, without a save", async () => {
+    const entries = [
+      entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),
+      dependentEntry({ key: "feature_status", type: ConfigEntryType.LABEL }),
+    ];
+    const wrapper = mountEntries(entries);
+    expect(renderedKeys(wrapper)).toEqual(["enable_feature"]);
+
+    // onValueUpdate edits the entry object in place, so this is what ticking the box does
+    const toggle = wrapper
+      .findAllComponents({ name: "ConfigEntryRow" })[0]
+      .props("confEntry") as ConfigEntry;
+    toggle.value = true;
+    await nextTick();
+
+    expect(renderedKeys(wrapper)).toEqual(["enable_feature", "feature_status"]);
   });
 });
 
