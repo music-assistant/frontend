@@ -67,10 +67,31 @@ const store = storeModule as unknown as TestStore;
 const NOW = 1_700_000_000;
 
 let wrapper: VueWrapper | undefined;
+// fake timers fake requestAnimationFrame as well, so a scheduled frame counts
+// towards vi.getTimerCount(); the outstanding frames are tracked separately to
+// tell the two tickers apart.
+let pendingFrames: Set<number>;
 
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW * 1000);
+  pendingFrames = new Set();
+  const scheduleFrame = globalThis.requestAnimationFrame;
+  const cancelFrame = globalThis.cancelAnimationFrame;
+  vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation(
+    (callback) => {
+      const id = scheduleFrame((time) => {
+        pendingFrames.delete(id);
+        callback(time);
+      });
+      pendingFrames.add(id);
+      return id;
+    },
+  );
+  vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation((id) => {
+    pendingFrames.delete(id);
+    cancelFrame(id);
+  });
   api.queues = {};
   api.queueElapsedTime = {};
   store.activePlayer = undefined;
@@ -82,6 +103,8 @@ afterEach(() => {
   // test's state and its timers would count towards that test's timer budget
   wrapper?.unmount();
   wrapper = undefined;
+  // restore before the fake timers go, so the spies do not outlive them
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
@@ -165,6 +188,61 @@ describe("PlayerTimeline", () => {
     expect(await elapsedLabelAfter(6)).toBe("00:36");
   });
 
+  it.each([
+    ["there is no current_media", undefined],
+    ["current_media reports no duration", {}],
+  ])("only runs the label timer when %s", async (_case, currentMedia) => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PLAYING,
+      elapsed_time: 30,
+      elapsed_time_last_updated: NOW,
+      current_media: currentMedia,
+    };
+
+    mountTimeline();
+    // the slider cannot move without a duration, so the label is all that is
+    // left to refresh and the rAF loop would repaint an unchanged track
+    expect(await elapsedLabelAfter(6)).toBe("00:36");
+    expect(timerCount()).toEqual({ raf: 0, interval: 1 });
+  });
+
+  it("starts the smooth tick once a duration arrives", async () => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PLAYING,
+      elapsed_time: 30,
+      elapsed_time_last_updated: NOW,
+    };
+
+    mountTimeline();
+    await elapsedLabelAfter(1);
+    expect(timerCount()).toEqual({ raf: 0, interval: 1 });
+
+    // e.g. a radio stream handing over to a track with a known length
+    store.activePlayer!.current_media = { duration: 300 };
+    await nextTick();
+    expect(timerCount()).toEqual({ raf: 1, interval: 1 });
+  });
+
+  it("stops the smooth tick once the duration goes away", async () => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PLAYING,
+      elapsed_time: 30,
+      elapsed_time_last_updated: NOW,
+      current_media: { duration: 300 },
+    };
+
+    mountTimeline();
+    await elapsedLabelAfter(1);
+    expect(timerCount()).toEqual({ raf: 1, interval: 1 });
+
+    store.activePlayer!.current_media = {};
+    await nextTick();
+    expect(timerCount()).toEqual({ raf: 0, interval: 1 });
+  });
+
   it("does not start the tick for a source that is paused", async () => {
     store.activePlayer = {
       player_id: "p1",
@@ -176,7 +254,7 @@ describe("PlayerTimeline", () => {
 
     mountTimeline();
     expect(await elapsedLabelAfter(10)).toBe("00:30");
-    expect(vi.getTimerCount()).toBe(0);
+    expect(timerCount()).toEqual({ raf: 0, interval: 0 });
   });
 
   it("stops ticking once playback stops", async () => {
@@ -200,7 +278,7 @@ describe("PlayerTimeline", () => {
     };
     await nextTick();
     // the timers are released rather than left spinning behind a frozen label
-    expect(vi.getTimerCount()).toBe(0);
+    expect(timerCount()).toEqual({ raf: 0, interval: 0 });
     expect(await elapsedLabelAfter(20)).toBe("00:34");
   });
 
@@ -213,7 +291,7 @@ describe("PlayerTimeline", () => {
 
     mountTimeline();
     expect(await elapsedLabelAfter(10)).toBe("00:00");
-    expect(vi.getTimerCount()).toBe(0);
+    expect(timerCount()).toEqual({ raf: 0, interval: 0 });
   });
 
   it("releases the tick on unmount", async () => {
@@ -227,10 +305,10 @@ describe("PlayerTimeline", () => {
 
     mountTimeline();
     await elapsedLabelAfter(1);
-    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    expect(timerCount()).toEqual({ raf: 1, interval: 1 });
 
     wrapper!.unmount();
-    expect(vi.getTimerCount()).toBe(0);
+    expect(timerCount()).toEqual({ raf: 0, interval: 0 });
   });
 });
 
@@ -252,6 +330,17 @@ function mountTimeline() {
 
 function elapsedLabel(): string {
   return wrapper!.find(".time-text-left").text();
+}
+
+/**
+ * The tickers the mounted timeline is currently running: the rAF loop that
+ * animates the slider and the 1s interval that refreshes the time labels.
+ */
+function timerCount(): { raf: number; interval: number } {
+  return {
+    raf: pendingFrames.size,
+    interval: vi.getTimerCount() - pendingFrames.size,
+  };
 }
 
 /**
