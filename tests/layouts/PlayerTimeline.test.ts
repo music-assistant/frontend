@@ -207,12 +207,16 @@ describe("PlayerTimeline", () => {
     expect(timerCount()).toEqual({ raf: 0, interval: 1 });
   });
 
+  // the duration is changed in place in both tests below: replacing current_media
+  // would move the timing fields the tick already watches, and the tick has to
+  // follow the duration on its own
   it("starts the smooth tick once a duration arrives", async () => {
     store.activePlayer = {
       player_id: "p1",
       playback_state: PlaybackState.PLAYING,
       elapsed_time: 30,
       elapsed_time_last_updated: NOW,
+      current_media: {},
     };
 
     mountTimeline();
@@ -220,7 +224,7 @@ describe("PlayerTimeline", () => {
     expect(timerCount()).toEqual({ raf: 0, interval: 1 });
 
     // e.g. a radio stream handing over to a track with a known length
-    store.activePlayer!.current_media = { duration: 300 };
+    store.activePlayer!.current_media!.duration = 300;
     await nextTick();
     expect(timerCount()).toEqual({ raf: 1, interval: 1 });
   });
@@ -238,7 +242,7 @@ describe("PlayerTimeline", () => {
     await elapsedLabelAfter(1);
     expect(timerCount()).toEqual({ raf: 1, interval: 1 });
 
-    store.activePlayer!.current_media = {};
+    store.activePlayer!.current_media!.duration = undefined;
     await nextTick();
     expect(timerCount()).toEqual({ raf: 0, interval: 1 });
   });
@@ -334,7 +338,8 @@ function elapsedLabel(): string {
 
 /**
  * The tickers the mounted timeline is currently running: the rAF loop that
- * animates the slider and the 1s interval that refreshes the time labels.
+ * animates the slider, and everything else it has scheduled, which with no seek
+ * in flight is just the 1s interval that refreshes the time labels.
  */
 function timerCount(): { raf: number; interval: number } {
   return {
