@@ -5,12 +5,14 @@ import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import {
   ConfigEntryType,
-  type ConfigEntry,
   type ConfigValueType,
 } from "@/plugins/api/interfaces";
 import {
   NON_INTERACTIVE_ENTRY_TYPES,
+  UI_ENTRY_TYPE,
   type ConfigEntryUI,
+  type ConfigEntryUIType,
+  type InjectedConfigEntry,
 } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
 
@@ -25,7 +27,7 @@ const vuetify = createVuetify({ components, directives });
 const IMAGE_DATA_URI =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==";
 
-const INTERACTIVE_ENTRIES: [string, ConfigEntry][] = [
+const INTERACTIVE_ENTRIES: [string, ConfigEntryUI][] = [
   ["a text input", entry({ key: "name", type: ConfigEntryType.STRING })],
   [
     "a password input",
@@ -51,6 +53,24 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntry][] = [
       key: "authenticate",
       type: ConfigEntryType.ACTION,
       action: "authenticate",
+    }),
+  ],
+  // the two link buttons EditPlayer injects, shaped as that view builds them
+  [
+    "a DSP settings link",
+    entry({
+      key: "dsp_settings",
+      type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
+      injected: true,
+      read_only: false,
+    }),
+  ],
+  [
+    "a player options link",
+    entry({
+      key: "player_options",
+      type: ConfigEntryType.OPTIONS,
+      injected: true,
     }),
   ],
   [
@@ -101,7 +121,7 @@ describe("ConfigEntryField", () => {
       const wrapper = mountField(
         entry({
           key: "status",
-          type: type as ConfigEntryType,
+          type,
           label: "Nothing to configure",
           value: IMAGE_DATA_URI,
         }),
@@ -139,8 +159,11 @@ describe("ConfigEntryField", () => {
 });
 
 function entry(
-  overrides: Partial<ConfigEntry> & { key: string; type: ConfigEntryType },
-): ConfigEntry {
+  overrides: Partial<InjectedConfigEntry> & {
+    key: string;
+    type: ConfigEntryUIType;
+  },
+): ConfigEntryUI {
   return {
     category: "generic",
     default_value: null,
@@ -148,10 +171,10 @@ function entry(
     required: false,
     value: null as ConfigValueType,
     ...overrides,
-  } as ConfigEntry;
+  } as ConfigEntryUI;
 }
 
-function rangedEntry(type: ConfigEntryType): ConfigEntry {
+function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
   return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
 }
 
