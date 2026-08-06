@@ -821,6 +821,8 @@ export interface MediaItemMetadata {
   release_date?: string;
   cache_checksum?: string;
   chapters?: MediaItemChapter[];
+  life_span?: LifeSpan;
+  artist_entity_type?: ArtistEntityType;
 }
 
 interface _MediaItemBase {
@@ -931,6 +933,29 @@ export interface BrowseFolder extends MediaItem {
 export enum RecommendationFolderType {
   DEFAULT = "default",
   TIMELINE = "timeline",
+}
+
+export enum ArtistEntityType {
+  PERSON = "Person",
+  GROUP = "Group",
+  ORCHESTRA = "Orchestra",
+  CHOIR = "Choir",
+  CHARACTER = "Character",
+  OTHER = "Other",
+}
+
+export interface LifeSpan {
+  begin?: string;
+  end?: string;
+  ended?: boolean;
+}
+
+export interface TimelineEvent {
+  id: string;
+  artist: Artist;
+  eventType: string;
+  dateLabel: string;
+  offset: number;
 }
 
 /** Mirrors music_assistant_models RecommendationFolder. `items` is populated by
