@@ -107,6 +107,31 @@ describe("EditConfig", () => {
     expect(rows[0].props("disabled")).toBe(true);
   });
 
+  it("disables every field while the whole form is disabled", () => {
+    const wrapper = mountEntries(
+      [
+        entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),
+        entry({ key: "feature_detail", type: ConfigEntryType.STRING }),
+      ],
+      true,
+    );
+
+    const rows = wrapper.findAllComponents({ name: "ConfigEntryRow" });
+    expect(rows.map((row) => row.props("disabled"))).toEqual([true, true]);
+  });
+
+  it("keeps a label visible while the whole form is disabled", () => {
+    const wrapper = mountEntries(
+      [
+        entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),
+        entry({ key: "feature_status", type: ConfigEntryType.LABEL }),
+      ],
+      true,
+    );
+
+    expect(renderedKeys(wrapper)).toEqual(["enable_feature", "feature_status"]);
+  });
+
   it("reveals a label as soon as the dependency flips, without a save", async () => {
     const entries = [
       entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),
@@ -226,9 +251,9 @@ function dependentEntry(
   });
 }
 
-function mountEntries(configEntries: ConfigEntry[]) {
+function mountEntries(configEntries: ConfigEntry[], disabled = false) {
   return shallowMount(EditConfig, {
-    props: { configEntries, disabled: false },
+    props: { configEntries, disabled },
     global: { renderStubDefaultSlot: true },
   });
 }
