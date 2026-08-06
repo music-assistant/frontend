@@ -18,6 +18,7 @@
  * When not running in a companion app (e.g., in a browser), all functions are no-ops.
  */
 
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { PlaybackState, Player, PlayerSource } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -242,6 +243,11 @@ const extractNowPlaying = (player: Player | undefined): NowPlaying => {
     imageUrl = getMediaImageUrl(media.image_url);
   }
 
+  // Discord Rich Presence turns this into an absolute start timestamp and runs
+  // its own progress bar from there, so it needs the position as of now rather
+  // than as of the last server update.
+  const elapsed = resolveActiveElapsedTime(player.player_id);
+
   return {
     is_playing: isPlaying,
     track: media?.title || null,
@@ -251,7 +257,7 @@ const extractNowPlaying = (player: Player | undefined): NowPlaying => {
     player_name: player.name,
     player_id: player.player_id,
     duration: media?.duration || null,
-    elapsed: Math.round(player.elapsed_time || 0),
+    elapsed: elapsed === undefined ? null : Math.round(elapsed),
     // Play is available when not playing, pause when playing (if source supports it)
     can_play: !isPlaying && canPlayPause,
     can_pause: isPlaying && canPlayPause,
