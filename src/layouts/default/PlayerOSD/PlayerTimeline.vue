@@ -189,27 +189,40 @@ const wrappedCurTimeValue = computed<number[]>({
   },
 });
 
-const startTick = () => {
-  if (rafId === null) {
-    const tick = () => {
-      const now = Date.now();
-      if (now - nowTick.value >= 64) {
-        nowTick.value = now;
-      }
-      rafId = requestAnimationFrame(tick);
-    };
+const startRaf = () => {
+  if (rafId !== null) return;
+  const tick = () => {
+    const now = Date.now();
+    if (now - nowTick.value >= 64) {
+      nowTick.value = now;
+    }
     rafId = requestAnimationFrame(tick);
-  }
+  };
+  rafId = requestAnimationFrame(tick);
+};
+
+const stopRaf = () => {
+  if (rafId === null) return;
+  cancelAnimationFrame(rafId);
+  rafId = null;
+};
+
+const startTick = () => {
+  // The slider is scaled by the media duration, so without one (radio, or a
+  // player that only reports a bare elapsed_time) it stays pinned and the time
+  // label is the only thing that moves; the 1s interval alone keeps that fresh.
+  // Reading the duration here also makes it a dependency of the computed that
+  // drives the tick, so the rAF loop follows a duration arriving or going away.
+  if (store.activePlayer?.current_media?.duration) startRaf();
+  else stopRaf();
+
   if (fallbackTimer === null) {
     fallbackTimer = setInterval(() => (nowTick.value = Date.now()), 1000);
   }
 };
 
 const stopTick = () => {
-  if (rafId !== null) {
-    cancelAnimationFrame(rafId);
-    rafId = null;
-  }
+  stopRaf();
   if (fallbackTimer !== null) {
     clearInterval(fallbackTimer);
     fallbackTimer = null;
