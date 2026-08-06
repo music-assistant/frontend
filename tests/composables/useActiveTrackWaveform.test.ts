@@ -269,6 +269,26 @@ describe("useActiveTrackWaveform", () => {
     expect(second.waveformBins.value).toEqual([0.5]);
   });
 
+  it("refetches when only the stream provider changes", async () => {
+    mockGetWaveForm.mockResolvedValueOnce([0.5]).mockResolvedValueOnce([0.7]);
+
+    const { waveformBins } = addConsumer(await importComposable());
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+
+    storeMock.curQueueItem = makeQueueItem({
+      streamdetails: { item_id: "stream-1", provider: "qobuz" },
+    });
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).toHaveBeenLastCalledWith("stream-1", "qobuz");
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(2);
+    expect(waveformBins.value).toEqual([0.7]);
+  });
+
   it("does not fetch when the show_waveform preference is off", async () => {
     mockGetWaveForm.mockResolvedValue([0.5]);
     storeMock.currentUser = { preferences: { show_waveform: false } };

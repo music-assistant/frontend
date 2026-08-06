@@ -56,28 +56,25 @@ export function useActiveTrackWaveform() {
 
 function startWatcher() {
   stopWatcher = watcherScope.run(() =>
-    watch(
-      // Queue/stream IDs and the show_waveform preference are tracked together
-      // so that toggling the preference re-triggers a fetch without a track
-      // change.
-      () =>
-        [
-          store.curQueueItem?.queue_item_id,
-          store.curQueueItem?.streamdetails?.item_id,
-          showWaveformPref.value,
-        ] as const,
-      loadWaveform,
-      { immediate: true },
-    ),
+    watch(currentFetchKey, loadWaveform, { immediate: true }),
   );
 }
 
-async function loadWaveform([
-  queueItemId,
-  streamItemId,
-  showWaveform,
-]: readonly [string | undefined, string | undefined, boolean]) {
-  const fetchKey = `${showWaveform}:${queueItemId}:${streamItemId}`;
+/**
+ * Identifies everything the waveform request depends on, so that a change in
+ * any of it triggers a fetch and cached bins are never reused across it.
+ */
+function currentFetchKey() {
+  const streamDetails = store.curQueueItem?.streamdetails;
+  return [
+    showWaveformPref.value,
+    store.curQueueItem?.queue_item_id,
+    streamDetails?.item_id,
+    streamDetails?.provider,
+  ].join(":");
+}
+
+async function loadWaveform(fetchKey: string) {
   if (fetchKey === lastFetchKey) return;
   lastFetchKey = fetchKey;
 
@@ -86,10 +83,10 @@ async function loadWaveform([
 
   const mediaItem = store.curQueueItem?.media_item;
   if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
-  if (!showWaveform) return;
+  if (!showWaveformPref.value) return;
 
   // Without streamdetails there is nothing to analyse yet; this refires once
-  // they arrive, because the watcher tracks their item id.
+  // they arrive, because the key covers them.
   const streamDetails = store.curQueueItem?.streamdetails;
   if (!streamDetails) return;
 
@@ -102,8 +99,7 @@ async function loadWaveform([
     // cache claims to hold; while the watcher is stopped the two can drift, and
     // storing bins the cache key does not describe would serve them for the
     // wrong track on the next mount.
-    const currentKey = `${showWaveformPref.value}:${store.curQueueItem?.queue_item_id}:${store.curQueueItem?.streamdetails?.item_id}`;
-    if (currentKey !== fetchKey || lastFetchKey !== fetchKey) return;
+    if (currentFetchKey() !== fetchKey || lastFetchKey !== fetchKey) return;
     waveformBins.value = bins?.length ? bins : null;
   } catch {
     // No audio analysis available.
