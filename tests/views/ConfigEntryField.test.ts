@@ -165,8 +165,10 @@ function mountField(confEntry: ConfigEntryUI, disabled = false) {
 /**
  * The disabled state of every control the field rendered, in document order.
  *
- * A v-select mirrors its value into a hidden native select that no user can reach,
- * so hidden elements are left out.
+ * Elements carrying the `hidden` attribute are left out, since a v-select mirrors its
+ * value into a hidden native select that no user can reach. Everything else counts, so
+ * a control that escapes the field's disabled state fails the assertion rather than
+ * being filtered away.
  */
 function controlStates(wrapper: VueWrapper): boolean[] {
   return wrapper
