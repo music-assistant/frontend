@@ -771,14 +771,14 @@ async function mountApp() {
 }
 
 /**
- * Mount the app and register it for teardown, leaving initialization in
- * flight for the test to drive.
+ * Mount the app and register it for teardown, without waiting for
+ * initialization to settle; the test drives what happens next.
  */
 async function mountAppWithoutSettling() {
   const { default: App } = await import("@/App.vue");
-  // Registered before any assertion runs so afterEach unmounts the app even
-  // when one of them throws: a live instance keeps reacting to api.state and
-  // corrupts every later test.
+  // Registered at mount time so afterEach unmounts the app even when a
+  // caller's assertion throws: a live instance keeps reacting to api.state
+  // and corrupts every later test.
   wrapper = shallowMount(App, {
     global: {
       stubs: {
