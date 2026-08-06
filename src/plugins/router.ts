@@ -1,7 +1,9 @@
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { $t } from "@/plugins/i18n";
 import { watch } from "vue";
+import { toast } from "vue-sonner";
 import {
   createRouter,
   createWebHashHistory,
@@ -128,6 +130,38 @@ export const routes: RouteRecordRaw[] = [
         name: "discover",
         component: () =>
           import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
+      },
+      {
+        path: "/ai-radio",
+        name: "ai-radio",
+        component: () =>
+          import(/* webpackChunkName: "ai-radio" */ "@/views/AIRadioView.vue"),
+        beforeEnter: async () => {
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            // Wait for the connection, but never block navigation forever.
+            await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
+                unwatch();
+                resolve();
+              }, 10000);
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    clearTimeout(timeout);
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          if (!store.enabledPlugins.has("ai_radio")) {
+            toast.error($t("providers.ai_radio.toast.unavailable"));
+            return { name: "discover" };
+          }
+        },
       },
       {
         path: "/search",
@@ -287,6 +321,15 @@ export const routes: RouteRecordRaw[] = [
             component: () =>
               import(
                 /* webpackChunkName: "audiobook" */ "@/views/AudiobookDetails.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/collection/:itemId",
+            name: "collection",
+            component: () =>
+              import(
+                /* webpackChunkName: "collection" */ "@/views/CollectionDetails.vue"
               ),
             props: true,
           },
@@ -467,16 +510,6 @@ export const routes: RouteRecordRaw[] = [
             component: () =>
               import(
                 /* webpackChunkName: "genremanagement" */ "@/views/settings/GenreManagement.vue"
-              ),
-            props: true,
-            meta: { requiresAdmin: true },
-          },
-          {
-            path: "addprovider/:domain",
-            name: "addproviderdetails",
-            component: () =>
-              import(
-                /* webpackChunkName: "addproviderdetails" */ "@/views/settings/AddProviderDetails.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },

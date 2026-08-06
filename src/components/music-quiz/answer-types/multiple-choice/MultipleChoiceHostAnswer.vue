@@ -24,7 +24,7 @@
       :statuses="roundPlayerStatuses"
       :answered-count="answeredPlayerCount"
     />
-    <slot name="leaderboard" />
+    <slot name="leaderboard"></slot>
   </div>
 </template>
 
@@ -40,8 +40,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import type {
   MusicQuizMultipleChoiceHostState,
   MusicQuizMultipleChoiceRound,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { computed } from "vue";
 

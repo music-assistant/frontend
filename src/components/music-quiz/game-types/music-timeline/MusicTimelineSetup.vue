@@ -76,7 +76,7 @@
       </Field>
     </div>
 
-    <slot name="before-sources" />
+    <slot name="before-sources"></slot>
 
     <MusicQuizSourceSelector
       v-model="sourceUris"
@@ -114,7 +114,7 @@ import {
 import type {
   MusicQuizTimelineConfig,
   MusicQuizTimelineBonusMode,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { ListPlus } from "@lucide/vue";
 import { computed, ref } from "vue";

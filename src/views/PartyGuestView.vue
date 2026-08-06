@@ -170,8 +170,8 @@ import PartyResultItem from "@/components/party/PartyResultItem.vue";
 import PartyTokensBadge from "@/components/party/PartyTokensBadge.vue";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
-import { useGuestArtistTracks } from "@/composables/useGuestArtistTracks";
-import { useGuestQueue } from "@/composables/useGuestQueue";
+import { useGuestArtistTracks } from "@/composables/guest/useGuestArtistTracks";
+import { useGuestQueue } from "@/composables/guest/useGuestQueue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
 import api from "@/plugins/api";
@@ -186,7 +186,6 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { ArrowLeft, Music, X } from "@lucide/vue";
 import {
   computed,
@@ -230,13 +229,16 @@ const {
   queueFetchOffset,
   loadingMoreQueueItems,
   partyQueueId,
+  currentQueue,
   currentQueueIndex,
   fetchQueueItems,
   handleQueueScroll,
 } = queue;
 
+// Read from the same queue that positions the badge, so the row and the play
+// state can never disagree.
 const isPlaying = computed(
-  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+  () => currentQueue.value?.state === PlaybackState.PLAYING,
 );
 
 const {
@@ -473,9 +475,6 @@ const refreshPartyPlayer = async () => {
   try {
     const partyPlayerId = await api.sendCommand<string | null>("party/player");
     partyQueueId.value = partyPlayerId;
-    if (partyPlayerId) {
-      store.activePlayerId = partyPlayerId;
-    }
   } catch (error) {
     console.error("Failed to fetch party player:", error);
   }

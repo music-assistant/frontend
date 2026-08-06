@@ -632,7 +632,6 @@
         "eq_band_count_singular": "1 josla",
         "input_gain": "Ievades pastiprinājums ({0} dB)",
         "output_gain": "Izejas pastiprinājums ({0} dB)",
-        "output_limiter": "Izejas ierobežotājs",
         "file_info": {
             "container": "Konteiners: {0}",
             "codec": "Kodeks: {0}",

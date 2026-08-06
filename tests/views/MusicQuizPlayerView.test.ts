@@ -6,6 +6,7 @@ import { h, nextTick, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  apiMock,
   mockGameAdapterSetup,
   mockGetMusicQuizRoundScore,
   mockGetTrackLyrics,
@@ -16,6 +17,7 @@ const {
   mockToastSuccess,
   mockUseMusicQuizPlayer,
 } = vi.hoisted(() => ({
+  apiMock: { state: { value: "connected" as string } },
   mockGameAdapterSetup: vi.fn(),
   mockGetMusicQuizRoundScore: vi.fn(),
   mockGetTrackLyrics: vi.fn(),
@@ -58,11 +60,11 @@ vi.mock("@/components/music-quiz/game_types", () => ({
       : game.supportsListenIn(state),
 }));
 
-vi.mock("@/composables/useMusicQuizPlayer", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizPlayer", () => ({
   useMusicQuizPlayer: mockUseMusicQuizPlayer,
 }));
 
-vi.mock("@/composables/useMusicQuizCelebration", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizCelebration", () => ({
   useMusicQuizCelebration: () => ({
     celebrate: vi.fn(),
   }),
@@ -76,17 +78,23 @@ vi.mock("@/helpers/music_quiz", () => ({
   rankMusicQuizPlayers: () => [],
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
-    state: { value: "connected" },
-    sendCommand: vi.fn(),
-    getTrackLyrics: mockGetTrackLyrics,
-  },
-  ConnectionState: {
-    RECONNECTING: "reconnecting",
-    DISCONNECTED: "disconnected",
-  },
-}));
+vi.mock("@/plugins/api", async () => {
+  // The connection banner re-renders on api.state, so the mock has to carry a
+  // real ref: assignments to a plain { value } would never reach the computed.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  apiMock.state = ref(apiMock.state.value);
+  return {
+    default: {
+      state: apiMock.state,
+      sendCommand: vi.fn(),
+      getTrackLyrics: mockGetTrackLyrics,
+    },
+    ConnectionState: {
+      RECONNECTING: "reconnecting",
+      DISCONNECTED: "disconnected",
+    },
+  };
+});
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string, values: unknown[] = []) => {
@@ -218,6 +226,7 @@ describe("MusicQuizPlayerView routing", () => {
   });
 
   beforeEach(() => {
+    apiMock.state.value = "connected";
     mockGameAdapterSetup.mockReset();
     mockGetMusicQuizRoundScore.mockReset();
     mockGetTrackLyrics.mockReset();
@@ -340,6 +349,22 @@ describe("MusicQuizPlayerView routing", () => {
 
     expect(mockListenInSetup).toHaveBeenCalledOnce();
     expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("warns the player when the connection degrades mid-game", async () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+
+    const wrapper = mountView();
+    const banner = wrapper.findComponent({
+      name: "MusicQuizConnectionBanners",
+    });
+    expect(banner.props("degraded")).toBe(false);
+
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(banner.props("degraded")).toBe(true);
     wrapper.unmount();
   });
 

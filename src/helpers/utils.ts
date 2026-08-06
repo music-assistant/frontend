@@ -2,6 +2,8 @@ import { api } from "@/plugins/api";
 import {
   Artist,
   BrowseFolder,
+  type ConfigEntry,
+  ConfigEntryType,
   ImageType,
   ItemMapping,
   MediaItemImage,
@@ -23,7 +25,11 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import type {
+  Audiobook,
+  MediaCollection,
+  MediaItemPalette,
+} from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
@@ -44,6 +50,36 @@ export const openLinkInNewTab = function (url: string) {
     url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
   }
   window.open(url, "_blank");
+};
+
+export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
+  // Open URL-type entries returned by a config invoke_action response (one-shot)
+  // via an anchor click, which browsers treat more leniently than window.open
+  // when the triggering user gesture has just expired. Only web URLs are
+  // opened, and all URL entries are dropped from the rendered form.
+  const urls: string[] = [];
+  for (const entry of entries) {
+    if (entry.type !== ConfigEntryType.URL) continue;
+    const target = entry.value ?? entry.default_value;
+    if (typeof target !== "string") continue;
+    try {
+      if (["http:", "https:"].includes(new URL(target).protocol)) {
+        urls.push(target);
+      }
+    } catch {
+      // not a parseable url: drop silently
+    }
+  }
+  for (const url of urls) {
+    const a = document.createElement("a");
+    a.setAttribute("href", url);
+    a.setAttribute("target", "_blank");
+    a.setAttribute("rel", "noopener");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  return entries.filter((e) => e.type !== ConfigEntryType.URL);
 };
 
 export const parseBool = (val: string | boolean | undefined | null) => {
@@ -168,6 +204,36 @@ export const getArtistsString = function (
       return x.name;
     })
     .join(" | ");
+};
+
+export const getAuthorsNarratorsArray = function (
+  authorsNarrators: Array<string | Artist>,
+) {
+  if (!authorsNarrators) return [];
+  const _authorsNarrators: string[] = [];
+  authorsNarrators.forEach((authorNarrator) => {
+    if (typeof authorNarrator === "string") {
+      _authorsNarrators.push(authorNarrator);
+    } else {
+      _authorsNarrators.push(authorNarrator.name);
+    }
+  });
+  return _authorsNarrators;
+};
+
+export const getAudiobookCollectionArtists = function (
+  collection: MediaCollection<Audiobook>,
+  selector: (book: Audiobook) => (string | Artist)[],
+): string[] {
+  const artists = new Set<string>();
+
+  collection.items.forEach((book) => {
+    getAuthorsNarratorsArray(selector(book)).forEach((name) =>
+      artists.add(name),
+    );
+  });
+
+  return [...artists];
 };
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
@@ -699,6 +765,7 @@ export const isBuiltinPlayer = function (player: Player): boolean {
 export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
+  allowNeedsSetup = false,
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
@@ -706,7 +773,11 @@ export const playerVisible = function (
     return false;
   }
   if (player.active_group && !allowGroupChilds) return false;
-  if (!player.available) {
+  // A player that needs setup is serialized as unavailable. Only surface it
+  // (dimmed, with a "Setup required" affordance) where a click launches its
+  // setup flow (opt-in via allowNeedsSetup); elsewhere a click would select or
+  // play the player, so an unusable needs_setup player must stay hidden.
+  if (!player.available && !(player.needs_setup && allowNeedsSetup)) {
     return false;
   }
   if (isBuiltinPlayer(player)) {
@@ -803,6 +874,18 @@ export const handleMediaItemClick = function (
   // TODO: revisit this once we have a proper podcast episode details view
   if (item.media_type == MediaType.PODCAST_EPISODE) {
     handlePlayBtnClick(item, posX, posY, parentItem, true);
+    return;
+  }
+
+  // open menu for collection items
+  if (item.media_type == MediaType.COLLECTION) {
+    router.push({
+      name: "collection",
+      params: {
+        itemId: item.item_id,
+        provider: item.provider,
+      },
+    });
     return;
   }
 

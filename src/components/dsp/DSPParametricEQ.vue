@@ -201,6 +201,8 @@
         hide-details
       />
     </template>
+
+    <DSPHelp :text="$t('settings.dsp.parametric_eq.help')" />
   </v-container>
 </template>
 <script setup lang="ts">
@@ -212,6 +214,7 @@ import {
   ParametricEQFilter,
 } from "@/plugins/api/interfaces";
 import DSPSlider from "./DSPSlider.vue";
+import DSPHelp from "./DSPHelp.vue";
 import { $t } from "@/plugins/i18n";
 import { useTheme } from "vuetify";
 

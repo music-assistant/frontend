@@ -16,6 +16,10 @@ export enum DSPFilterType {
   TONE_CONTROL = "tone_control",
   GAIN = "gain",
   BALANCE = "balance",
+  TRANSPOSE = "transpose",
+  CONVOLUTION = "convolution",
+  STEREO_WIDTH = "stereo_width",
+  CROSSFEED = "crossfeed",
 }
 
 export enum ParametricEQBandType {
@@ -67,12 +71,54 @@ export interface BalanceFilter extends DSPFilterBase {
   balance: number;
 }
 
+export interface TransposeFilter extends DSPFilterBase {
+  type: DSPFilterType.TRANSPOSE;
+  // Key shift in semitones, -12.0 to +12.0. Fractional values are valid.
+  semitones: number;
+}
+
+// Applies a stored impulse response to the audio. `ir_id` references an entry
+// in the server-side IR library; an empty string is valid and means "none
+// selected", which makes the filter a no-op. `gain` trims the output level,
+// since an impulse response changes overall loudness (-60..60 dB).
+export interface ConvolutionFilter extends DSPFilterBase {
+  type: DSPFilterType.CONVOLUTION;
+  ir_id: string;
+  gain: number;
+}
+
+// Metadata of a stored impulse response. Everything but `name` is probed from
+// the file server-side and is informational only.
+export interface DSPIRMetadata {
+  ir_id: string;
+  name: string;
+  sample_rate: number;
+  channels: number;
+  duration: number;
+}
+
+export interface StereoWidthFilter extends DSPFilterBase {
+  type: DSPFilterType.STEREO_WIDTH;
+  // 0.0 mono, 1.0 unchanged, 2.0 widest
+  width: number;
+}
+
+export interface CrossfeedFilter extends DSPFilterBase {
+  type: DSPFilterType.CROSSFEED;
+  strength: number;
+  soundstage: number;
+}
+
 // Union type for all possible filters
 export type DSPFilter =
   | ParametricEQFilter
   | ToneControlFilter
   | GainFilter
-  | BalanceFilter;
+  | BalanceFilter
+  | TransposeFilter
+  | ConvolutionFilter
+  | StereoWidthFilter
+  | CrossfeedFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
@@ -110,6 +156,7 @@ export enum MediaType {
   SOUND_EFFECT = "sound_effect",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  COLLECTION = "collection",
   GENRE = "genre",
   GENRE_ALIAS = "genre_alias",
   FOLDER = "folder",
@@ -335,12 +382,16 @@ export enum EventType {
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
   PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
+  DSP_IRS_UPDATED = "dsp_irs_updated",
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
   DASHBOARD_SESSIONS_UPDATED = "dashboard_sessions_updated",
   DASHBOARD_SHOW = "dashboard_show",
   DASHBOARD_HIDE = "dashboard_hide",
   DASHBOARDS_UPDATED = "dashboards_updated",
+  // setup_flow_updated: a running setup flow produced a new/updated step;
+  // object_id is the flow_id, data is the SetupFlowStep
+  SETUP_FLOW_UPDATED = "setup_flow_updated",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -418,6 +469,10 @@ export enum ConfigEntryType {
   ACTION = "action",
   ICON = "icon",
   ALERT = "alert",
+  // image: presentational entry whose value/default_value is a data-URI image
+  IMAGE = "image",
+  // url: clickable link; in an invoke_action response the frontend opens it (one-shot)
+  URL = "url",
 
   // Only used in the frontend
   DSP_SETTINGS = "dsp_settings",
@@ -576,9 +631,14 @@ export interface ConfigEntry {
   help_link?: string;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
-  // depends_on [optional]: needs to be set before this setting shows up in frontend
+  // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
+  // as unmet. While unmet, input types and ACTION stay visible but render disabled;
+  // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
   depends_on?: string;
+  // depends_on_value [optional]: complementary to depends_on, the dependency is only met when
+  // the other entry holds this exact value (without it, any truthy value will do)
   depends_on_value?: ConfigValueType;
+  // depends_on_value_not [optional]: same as depends_on_value but inverted
   depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
@@ -606,6 +666,57 @@ export interface ConfigEntry {
 export interface Config {
   // Base Configuration object.
   values: Record<string, ConfigEntry>;
+}
+
+export enum FlowStepType {
+  // form: render config entries and wait for the user to submit
+  FORM = "form",
+  // external: the user must open an external url (e.g. OAuth); the server
+  // advances the flow on the callback (pushed via SETUP_FLOW_UPDATED)
+  EXTERNAL = "external",
+  // progress: the server is working/waiting on something; no user input
+  PROGRESS = "progress",
+  // finish: the flow completed; result references the created/updated object
+  FINISH = "finish",
+  // abort: the flow ended without a result
+  ABORT = "abort",
+  // fallback
+  UNKNOWN = "unknown",
+}
+
+export interface SetupFlowStep {
+  // A single step of a running setup flow (add/reconfigure a provider or set up a player).
+  // Human-readable fields (title/description/progress_text/reason and error values) are
+  // already resolved server-side for the connection locale.
+
+  // flow_id: identifier of the running flow this step belongs to
+  flow_id: string;
+  // step_id: stable slug identifying this step
+  step_id: string;
+  type: FlowStepType;
+  title?: string | null;
+  description?: string | null;
+  // entries [FORM]: the config entries that make up the form fields
+  entries: ConfigEntry[];
+  // errors [FORM]: field-key (or "base") -> localized error message
+  errors: Record<string, string>;
+  // last_step [FORM]: hint for the submit button label (final step vs. continue)
+  last_step?: boolean | null;
+  // url [EXTERNAL]: url the user must open (e.g. an OAuth authorize url)
+  url?: string | null;
+  // progress_text [PROGRESS]: localized status message
+  progress_text?: string | null;
+  // progress [PROGRESS]: optional completion fraction between 0 and 1
+  progress?: number | null;
+  // image [PROGRESS]: optional data-URI illustration (e.g. a pairing QR code)
+  image?: string | null;
+  // expires_at [FORM/EXTERNAL/PROGRESS]: UTC epoch deadline for this step; the client
+  // countdown is cosmetic, the server enforces the deadline
+  expires_at?: number | null;
+  // result [FINISH]: reference to the created/updated object (e.g. {"instance_id": ...})
+  result?: Record<string, string> | null;
+  // reason [ABORT]: localized reason the flow ended
+  reason?: string | null;
 }
 
 export interface ProviderConfig extends Config {
@@ -789,8 +900,8 @@ export interface AudioSource extends MediaItem {
 
 export interface Audiobook extends MediaItem {
   publisher: string;
-  authors: string[];
-  narrators: string[];
+  authors: string[] | Artist[];
+  narrators: string[] | Artist[];
   duration: number;
   fully_played?: boolean;
   resume_position_ms?: number;
@@ -857,6 +968,10 @@ export interface RecommendationFolder extends BrowseFolder {
   type?: RecommendationFolderType;
 }
 
+export interface MediaCollection<M extends MediaItemType> extends MediaItem {
+  items: M[];
+}
+
 export type MediaItemType =
   | Artist
   | Album
@@ -868,6 +983,7 @@ export type MediaItemType =
   | Podcast
   | PodcastEpisode
   | Genre
+  | MediaCollection<MediaItemType>
   | BrowseFolder;
 
 export type PlayableMediaItemType =
@@ -990,6 +1106,11 @@ export interface QueueItem {
 
 export interface PlayerQueue {
   queue_id: string;
+  // active: whether the player is currently playing this queue. Server-derived from the
+  // player's active_source: false only while an external source (line-in, Spotify Connect,
+  // another queue in a group) has taken the player over - a stopped or finished queue stays
+  // active and idle. Recalculated ~0.5s after the active_source change that causes it, so
+  // during a handover it can briefly still hold the value from before.
   active: boolean;
   display_name: string;
   available: boolean;
@@ -1014,6 +1135,11 @@ export interface PlayerQueue {
   overlay_volume: number;
   current_index?: number;
   index_in_buffer?: number;
+  // ended: whether the queue played all the way to its end and is waiting to be restarted
+  // (server-derived, read-only). The position stays on the last item, so this flag is what
+  // tells a finished queue apart from one that is merely stopped on that item. Pressing play
+  // on an ended queue starts it over from the beginning.
+  ended: boolean;
   elapsed_time: number;
   /**
    * UTC timestamp (seconds since epoch) when `elapsed_time` was last updated.
@@ -1158,6 +1284,10 @@ export interface Player {
   volume_muted?: boolean;
   group_members: string[];
   static_group_members: string[];
+  // active_source: id of the source the player is currently playing - its own queue_id for
+  // Music Assistant playback, or an external source id. PlayerQueue.active is derived from
+  // this, and PLAYER_UPDATED carries a new value before the queue is recalculated, so the
+  // two can disagree for about half a second during a source handover.
   active_source?: string;
   source_list: PlayerSource[];
   active_sound_mode?: string;
@@ -1174,6 +1304,8 @@ export interface Player {
   volume_control: string;
   mute_control: string;
   needs_setup: boolean;
+  // this player (or a wrapped protocol child) offers a setup flow that can be re-run on demand
+  has_setup_flow?: boolean;
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
@@ -1214,6 +1346,8 @@ export interface ProviderManifest {
   builtin: boolean;
   // allow_disable: whether this provider can be disabled (used with builtin)
   allow_disable: boolean;
+  // has_setup_flow: whether setup can be run again to reconfigure the provider
+  has_setup_flow?: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon?: string;
@@ -1506,4 +1640,114 @@ export interface SmartPlaylistRules {
 export interface SmartPlaylistTrackStats {
   count: number;
   duration_seconds: number;
+}
+
+// AI Radio interfaces
+
+export type AIRadioSectionType = "ai_text" | "ai_meta";
+export type AIRadioWebSearchMode = "disabled" | "allow" | "force";
+
+export interface AIRadioSectionConstraints {
+  max_chars?: number;
+}
+
+export interface AIRadioSection {
+  id: string;
+  name: string;
+  type: AIRadioSectionType;
+  prompt: string;
+  web_search?: AIRadioWebSearchMode;
+  constraints?: AIRadioSectionConstraints;
+  cover_image?: string;
+}
+
+export interface AIRadioOptionalGuards {
+  min_gap_songs?: number;
+  max_per_60min?: number;
+  require_placeholders_present?: string[];
+}
+
+export interface AIRadioAlternativeChoice {
+  section: string;
+  weight: number;
+}
+
+export interface AIRadioFlowMust {
+  MUST: string;
+}
+
+export interface AIRadioFlowAlternative {
+  ALTERNATIVE: {
+    choices: AIRadioAlternativeChoice[];
+  };
+}
+
+export interface AIRadioFlowOptional {
+  OPTIONAL: {
+    section: string;
+    chance?: number;
+    guards?: AIRadioOptionalGuards;
+  };
+}
+
+export type AIRadioFlowItem =
+  | AIRadioFlowMust
+  | AIRadioFlowAlternative
+  | AIRadioFlowOptional;
+
+export type AIRadioPlacement =
+  | "start_of_playlist"
+  | "between_songs"
+  | "end_of_playlist";
+
+export interface AIRadioSectionOrderRule {
+  when: AIRadioPlacement;
+  flow: AIRadioFlowItem[];
+}
+
+export interface AIRadioStationGeneral {
+  instructions: string;
+  weather_provider: string;
+  weather_timeout_seconds: number;
+}
+
+export interface AIRadioStation {
+  id: string;
+  name: string;
+  source_playlist_id: string;
+  source_playlist_provider: string;
+  default_player_id?: string;
+  max_duration_minutes?: number;
+  shuffle_source_tracks?: boolean;
+  merge_section_id?: string;
+  general?: AIRadioStationGeneral;
+  section_ids?: string[];
+  sections?: AIRadioSection[];
+  section_order?: AIRadioSectionOrderRule[];
+}
+
+export interface AIRadioSession {
+  session_id: string;
+  station_id: string;
+  status: "running" | "completed" | "failed" | "stopped";
+  created_at: string;
+  started_at?: string;
+  ended_at?: string;
+  error?: string;
+  skipped_sections?: number;
+  last_render_error?: string;
+  progress?: {
+    phase?: string;
+    [key: string]: unknown;
+  };
+  result?: {
+    queue_entries?: number;
+    planned_sections?: number;
+    skipped_sections?: number;
+    [key: string]: unknown;
+  };
+}
+
+export interface AIRadioStatus {
+  sessions: AIRadioSession[];
 }

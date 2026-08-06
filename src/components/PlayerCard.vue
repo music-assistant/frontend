@@ -4,9 +4,10 @@
     class="gap-0 rounded-lg p-2 shadow-none transition-colors"
     :class="{
       'border-primary bg-primary/15': player.player_id === store.activePlayerId,
-      'opacity-80': player.playback_state === PlaybackState.IDLE,
-      'opacity-60': player.powered === false,
-      'opacity-40': !player.available,
+      'opacity-80':
+        !player.needs_setup && player.playback_state === PlaybackState.IDLE,
+      'opacity-60': !player.needs_setup && player.powered === false,
+      'opacity-40': !player.available && !player.needs_setup,
     }"
     @click.capture="swallowClickAfterHold"
     @contextmenu.prevent.stop="openPlayerMenu"
@@ -16,7 +17,7 @@
       <button
         type="button"
         class="player-select-action focus-visible:ring-ring flex min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2"
-        :disabled="!player.available"
+        :disabled="!player.available && !player.needs_setup"
         @click="emit('click', player)"
       >
         <span class="sr-only">{{ $t("tooltip.select_player") }}: </span>
@@ -74,6 +75,15 @@
               >
                 <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
               </PlayerCardTitle>
+              <Badge
+                v-if="player.needs_setup"
+                variant="secondary"
+                class="mt-0.5 gap-1 text-[10px]"
+                :style="{ color: 'rgb(var(--v-theme-warning))' }"
+              >
+                <TriangleAlert class="size-3" />
+                {{ $t("settings.setup_required") }}
+              </Badge>
               <p
                 v-if="player.powered !== false && player.current_media?.title"
                 class="truncate text-xs font-medium"
@@ -86,6 +96,11 @@
               >
                 {{ mediaByline }}
               </p>
+              <span
+                v-else-if="isQueueEnded(playerQueue)"
+                class="sr-only"
+                :aria-label="$t('queue_ended')"
+              ></span>
               <span
                 v-else-if="playerQueue?.items === 0"
                 class="sr-only"
@@ -196,6 +211,7 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { isQueueEnded } from "@/helpers/queue_position";
 import {
   getMediaImageUrl,
   getPlayerName,
@@ -211,7 +227,14 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { EllipsisVertical, Pause, Play, Power, Speaker } from "@lucide/vue";
+import {
+  EllipsisVertical,
+  Pause,
+  Play,
+  Power,
+  Speaker,
+  TriangleAlert,
+} from "@lucide/vue";
 import { computed, ref, toRef, watch } from "vue";
 
 export interface Props {

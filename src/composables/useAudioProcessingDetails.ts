@@ -5,11 +5,13 @@ import {
   File as FileIcon,
   FileAudio,
   Gauge,
+  Merge,
   SlidersHorizontal,
   Speaker,
   Split,
 } from "@lucide/vue";
 import { useDSPPresets } from "@/composables/useDSPPresets";
+import { useDSPIRs } from "@/composables/useDSPIRs";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import {
   audioQualityToTier,
@@ -26,6 +28,7 @@ import {
   AudioQuality,
   ContentType,
   CrossfadeMode,
+  DSPFilterType,
   DSPState,
   type StreamDetails,
   VolumeNormalizationMode,
@@ -91,6 +94,7 @@ export interface AudioProcessingDetailsDependencies {
   getProviderName: (providerId: string) => string;
   getProviderDomain: (providerId: string) => string | undefined;
   getPresetName: (presetId: string | null | undefined) => string | undefined;
+  getIRName: (irId: string | null | undefined) => string | undefined;
   players: Record<string, AudioProcessingDisplayPlayer>;
 }
 
@@ -146,6 +150,7 @@ export function useAudioProcessingDetails(
 ) {
   const { t, locale } = useI18n({ useScope: "global" });
   const { getPresetName } = useDSPPresets({ optional: true });
+  const { getIRName } = useDSPIRs({ optional: true });
   const translate: Translate = (key, values) =>
     values ? t(key, values) : t(key);
   const display = computed(() => {
@@ -160,6 +165,7 @@ export function useAudioProcessingDetails(
         getProviderDomain: (providerId) =>
           api.getProviderManifest(providerId)?.domain,
         getPresetName,
+        getIRName,
         players: api.players,
       },
     );
@@ -282,7 +288,7 @@ function buildOutputDisplay(
   index: number,
   dependencies: AudioProcessingDetailsDependencies,
 ): AudioProcessingOutputDisplay {
-  const { translate, getPresetName } = dependencies;
+  const { translate, getPresetName, getIRName } = dependencies;
   const playerIds = output.player_ids ?? [];
   const stages: AudioProcessingDisplayStage[] = [];
 
@@ -316,10 +322,15 @@ function buildOutputDisplay(
       });
     }
     for (const [filterIndex, filter] of (output.dsp.filters ?? []).entries()) {
+      const irName =
+        filter.type === DSPFilterType.CONVOLUTION
+          ? getIRName(filter.ir_id)
+          : undefined;
       stages.push({
         key: `dsp-filter-${index}-${filterIndex}`,
         icon: SlidersHorizontal,
         title: dspFilterText(filter),
+        subtitleParts: irName ? [irName] : undefined,
       });
     }
     if (output.dsp.output_gain) {
@@ -334,12 +345,17 @@ function buildOutputDisplay(
   }
 
   if (output.source_channel) {
+    // ALL marks the fold-down of both source channels, so there is no single
+    // source channel to name here
+    const mixedToMono = output.source_channel === AudioChannel.ALL;
     stages.push({
       key: `source-channel-${index}`,
-      icon: Split,
-      title: translate("streamdetails.audio_processing.source_channel", [
-        sourceChannelLabel(output.source_channel, translate),
-      ]),
+      icon: mixedToMono ? Merge : Split,
+      title: mixedToMono
+        ? translate("streamdetails.audio_processing.mixed_to_mono")
+        : translate("streamdetails.audio_processing.source_channel", [
+            sourceChannelLabel(output.source_channel, translate),
+          ]),
     });
   }
   stages.push(finalOutputStage(output, index, translate, dependencies.locale));

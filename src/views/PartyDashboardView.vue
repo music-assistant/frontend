@@ -306,7 +306,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import {
   ImageColorPalette,
@@ -470,8 +470,10 @@ onBeforeUnmount(() => {
 // Album art background is always active
 const useAlbumArtBackground = computed(() => true);
 
+// The track cards show the queue's position, so their play state comes from
+// the queue too.
 const isPlaying = computed(
-  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+  () => store.activePlayerQueue?.state === PlaybackState.PLAYING,
 );
 
 // Queue items state
@@ -518,8 +520,7 @@ const lyricsEnabled = computed(() => karaokeMode.value);
 const lyricsTextColor = computed(() =>
   albumArtUrl.value ? "#FFFFFF" : isDark.value ? "#FFFFFF" : "#000000",
 );
-const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
-  useLyricsElapsedTime(lyricsEnabled);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsEnabled);
 
 const colorPalette = computed<ImageColorPalette>(() =>
   paletteFromServer(store.activePlayer?.current_media?.palette),
@@ -845,7 +846,6 @@ onBeforeUnmount(() => {
     clearInterval(burnInInterval);
     burnInInterval = null;
   }
-  stopTick();
   cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
@@ -893,12 +893,20 @@ watch(
 <style scoped>
 .party-view {
   width: 100%;
-  height: 100dvh;
+  height: 100vh;
   overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Keep the vh fallback in a separate rule: the minifier collapses duplicate
+   declarations, which would drop it and leave Android TV without a height. */
+@supports (height: 100dvh) {
+  .party-view {
+    height: 100dvh;
+  }
 }
 
 .background-image {
@@ -1098,7 +1106,7 @@ watch(
   max-width: 60vw;
   display: flex;
   justify-content: center;
-  padding-bottom: 1rem;
+  padding-bottom: calc(1rem + var(--party-player-bottom, 0px));
 }
 
 .karaoke-track-stack :deep(.track-artwork) {

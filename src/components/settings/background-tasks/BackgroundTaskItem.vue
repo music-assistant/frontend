@@ -151,7 +151,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import ListItem from "@/components/ListItem.vue";
-import { useBackgroundTaskDisplay } from "@/composables/useBackgroundTaskDisplay";
+import { useBackgroundTaskDisplay } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import type { BackgroundTask } from "@/plugins/api/interfaces";
 import { useI18n } from "vue-i18n";
 

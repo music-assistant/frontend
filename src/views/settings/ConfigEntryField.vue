@@ -23,6 +23,19 @@
       :text="displayLabel()"
     />
 
+    <!-- image value (presentational, e.g. a pairing QR code) -->
+    <div
+      v-else-if="confEntry.type == ConfigEntryType.IMAGE"
+      class="config-image"
+    >
+      <img
+        v-if="imageSrc"
+        :src="imageSrc"
+        :alt="displayLabel()"
+        loading="lazy"
+      />
+    </div>
+
     <!-- action type -->
     <v-btn
       v-else-if="
@@ -60,7 +73,11 @@
       v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
       class="dsp-config"
     >
-      <v-btn variant="outlined" @click="$emit('openOptions')">
+      <v-btn
+        variant="outlined"
+        :disabled="isFieldDisabled"
+        @click="$emit('openOptions')"
+      >
         {{ $t("player_options.open") }}
       </v-btn>
     </div>
@@ -107,6 +124,7 @@
         <div class="config-slider-input">
           <NumberField
             :model-value="confEntry.value as number"
+            :disabled="isFieldDisabled"
             :min="confEntry.range[0]"
             :max="confEntry.range[1]"
             :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
@@ -159,6 +177,7 @@
     <v-select
       v-else-if="confEntry.options && confEntry.options.length > 0"
       :model-value="confEntry.value"
+      :menu-props="{ zIndex: 10000 }"
       :chips="confEntry.multi_value"
       :clearable="true"
       :multiple="confEntry.multi_value"
@@ -214,9 +233,6 @@
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
       :label="displayLabel()"
-      :prepend-inner-icon="confEntry.value as string"
-      variant="outlined"
-      density="comfortable"
       @update:model-value="onUpdateValue($event)"
       @click:clear="onClear"
     />
@@ -227,6 +243,7 @@
         confEntry.type == ConfigEntryType.STRING && confEntry.multi_value
       "
       :model-value="confEntry.value as string[]"
+      :menu-props="{ zIndex: 10000 }"
       multiple
       chips
       :clearable="true"
@@ -295,6 +312,15 @@ const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
 });
 
+// Only surface an <img> when a source is actually available; otherwise the
+// element would render as a broken image (both value and default missing).
+const imageSrc = computed(
+  () =>
+    (props.confEntry.value ?? props.confEntry.default_value) as
+      | string
+      | undefined,
+);
+
 const emit = defineEmits<{
   (e: "togglePassword"): void;
   (e: "action"): void;
@@ -359,6 +385,18 @@ const displayOptions = computed(() => {
 
 .config-divider {
   padding: 8px 0;
+}
+
+.config-image {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.config-image img {
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: 8px;
 }
 
 .divider-label {

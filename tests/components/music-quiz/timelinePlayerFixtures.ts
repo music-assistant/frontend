@@ -2,7 +2,7 @@ import type {
   MusicQuizTimelinePersonalizedState,
   MusicQuizTimelineRound,
   MusicQuizTimelineBonusAnswer,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 
 export const anchor = {
   entry_id: "anchor",

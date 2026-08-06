@@ -32,8 +32,8 @@
     "details": "Detaljer",
     "enter_url": "Ange den URL som du vill lägga till manuellt i databasen",
     "external_source_active": "Extern källa aktiv: {0}",
-    "goto_album": "Gå till album {0}",
-    "goto_artist": "Gå till artist {0}",
+    "goto_album": "Visa album {0}",
+    "goto_artist": "Visa artist {0}",
     "items_selected": "{0} objekt har valts",
     "items_total": "{0} totalt antal objekt",
     "library": "Bibliotek",
@@ -224,12 +224,14 @@
                 "edited_channel": "Rita ut EQ svaret för den\/denna kanal (er)",
                 "channel": "Detta band kommer att tillämpas på",
                 "per_channel_preamp": "Ytterligare för förstärkning för {channel}",
-                "disable_multichannel_controls": "Inaktivera flerkanalskontroller"
+                "disable_multichannel_controls": "Inaktivera flerkanalskontroller",
+                "help": "Exakt tonformning: varje band riktar sig mot en frekvens och kan skära eller förstärka den. Skärningar är säkrare än förstärkningar, vilket kan orsaka klippning."
             },
             "tone_control": {
                 "bass_level": "Basnivå",
                 "mid_level": "Mellannivå",
-                "treble_level": "Diskantnivå"
+                "treble_level": "Diskantnivå",
+                "help": "En enkel trebandsjustering av bas, mellanregister och diskant. Använd Parametrisk EQ för finare kontroll."
             },
             "parameter": {
                 "frequency": "Frekvens",
@@ -241,7 +243,10 @@
                 "parametric_eq": "Parametrisk EQ",
                 "tone_control": "Tonkontroll",
                 "gain": "Nivå",
-                "balance": "Balans"
+                "balance": "Balans",
+                "transpose": "Transponera",
+                "stereo_width": "Stereobredd",
+                "crossfeed": "Korsmatning"
             },
             "channels": {
                 "ALL": "Alla",
@@ -261,6 +266,40 @@
                 "remove_confirm": "Är du säker på att du vill ta bort den här DSP förinställningen?",
                 "custom": "Anpassat",
                 "selected": "Förinställt: {0}"
+            },
+            "transpose": {
+                "help": "Flyttar musiken upp eller ner i tonart utan att ändra tempot. Användbart för att spela med i en mer bekväm tonart.",
+                "cpu_hint": "Transponering använder mer CPU än de andra filtren. På lågströmsdriven hårdvara är det bättre att använda det på en enda spelare.",
+                "original_key": "Originalnyckel",
+                "unit": "halvtoner",
+                "unit_singular": "halvton",
+                "concert_pitch_432": "A = 432 Hz",
+                "concert_pitch_432_hint": "Ställ in konserttonhöjden så att A är stämt till 432 Hz"
+            },
+            "input_gain_help": "Ställer in nivån som går in i kedjan. Sänk den för att lämna utrymme för filter som förstärker.",
+            "output_gain_help": "Justerar nivån som lämnar kedjan, efter att varje filter har tillämpats. Spelarvolymen tillämpas senare.",
+            "gain": {
+                "help": "Höjer eller sänker nivån på allt som passerar genom denna punkt i kedjan."
+            },
+            "balance": {
+                "help": "Flyttar ljudet mot vänster eller höger högtalare. Gäller endast stereoljud."
+            },
+            "stereo_width": {
+                "help": "Justerar stereobildens bredd. Vänster om mitten smalnar av mot mono, höger breddar ljudet.",
+                "clip_hint": "Att bredda filtret bortom originalet kan höja toppar och orsaka klippning. Överväg att lägga till en limiter efter det här filtret.",
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Original",
+                    "wide": "Bred"
+                }
+            },
+            "crossfeed": {
+                "help": "Gör att hörlurslyssning känns mer naturligt genom att försiktigt blanda vänster och höger kanal, ungefär som att lyssna på högtalare.",
+                "presets": {
+                    "low": "Låg",
+                    "medium": "Medium",
+                    "high": "Hög"
+                }
             }
         },
         "dsp_enabled": "DSP är aktiverat",
@@ -281,7 +320,7 @@
         "playerprovider": "Spelarleverantör",
         "plugin": "Plugin",
         "pluginprovider": "Plugin leverantör",
-        "providers_total": "{0} totalt leverantörer {1}",
+        "providers_total": "{count} totalt leverantör | {count} totalt antal leverantörer",
         "stage": {
             "label": "Etapp",
             "options": {
@@ -400,7 +439,7 @@
         "players_count": "{0} spelare{1}",
         "one_player": "1 spelare",
         "view_players": "Visa spelare",
-        "players_total": "{0}total spelare{1}",
+        "players_total": "{count} totalt spelare | {count} totalt antal spelare",
         "api_docs": "API Dokumentation",
         "no_group_providers": "Du har för närvarande inga leverantörer som stöder att skapa grupper",
         "provider_codeowners": "Denna leverantör tillhandahålls\/underhålls av",
@@ -582,7 +621,30 @@
         "customize_menu": {
             "label": "Anpassa menyn",
             "description": "Sätt navigeringsmenyn i redigeringsläge för att visa, dölja, ändra ordning och byta namn på dess objekt."
-        }
+        },
+        "start_setup": "Starta installationen",
+        "setup_required": "Installation krävs",
+        "setup_flow": {
+            "next": "Nästa",
+            "finish": "Avsluta",
+            "done": "Gjort",
+            "open_external": "Öppna",
+            "external_waiting": "Väntar på att du ska slutföra det här steget…",
+            "external_fallback": "Klicka här om fönstret inte öppnades",
+            "success_title": "Allt klart!",
+            "aborted_title": "Installationen avbröts",
+            "aborted_text": "Installationen slutfördes inte.",
+            "open_settings": "Öppna inställningar",
+            "setup_player_title": "Konfigurera spelaren",
+            "expires_in": "Löper ut om {0}",
+            "external_default_title": "Fortsätt i din webbläsare",
+            "external_default_text": "Ett nytt webbläsarfönster öppnas så att du kan logga in och auktorisera Musikassistenten. Kom tillbaka hit när du är klar – dialogrutan fortsätter automatiskt.",
+            "external_host": "Öppnar {0}",
+            "session_ended_title": "Installationssessionen avslutad",
+            "session_ended_text": "Installationssessionen avslutades – den kan ha slutförts. Kontrollera dina leverantörer eller spelare för att bekräfta."
+        },
+        "options": "Alternativ",
+        "add_group_player_desc": "Skapa en permanent spelargrupp med {0} spelare. När du spelar i den här spelargruppen synkroniseras medlemsspelarna automatiskt."
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -688,7 +750,9 @@
         "artwork": "Konstverk",
         "import_file": "Importera fil",
         "bpm": "Tempo (slag per minut)",
-        "musical_key": "Musikalisk tonart"
+        "musical_key": "Musikalisk tonart",
+        "show_dashboard": "Strömma instrumentpanelen till en enhet",
+        "collapse_collections": "Komprimera samlingar"
     },
     "topresult": "Toppresultat",
     "track": "Spår",
@@ -774,7 +838,6 @@
         "eq_band_count_singular": "1 band",
         "input_gain": "Ingångsförstärkning ({0} dB)",
         "output_gain": "Utgångsförstärkning ({0} dB)",
-        "output_limiter": "Utgångsbegränsare",
         "file_info": {
             "container": "Behållare: {0}",
             "codec": "Codec: {0}",
@@ -867,7 +930,7 @@
             "dsp_preset_label": "DSP förinställning",
             "dsp_title": "DSP",
             "bit_perfect_badge": "Bitperfekt",
-            "bit_perfect_detail": "Bitperfekt: ljudproverna är oförändrade från källan.",
+            "bit_perfect_detail": "Bitperfekt: avkodade källprover når utgången oförändrade.",
             "samples_changed_detail": "Ljudbehandling eller förlustfri formatkonvertering ändrade ljudproverna. Detta är inte bitperfekt, men borde inte orsaka en hörbar kvalitetsförlust.",
             "lossy_output_detail": "Utdata är kodad med en förlustbringande kodek. Detta är inte bitperfekt och kan försämra ljudkvaliteten.",
             "bit_perfect_unknown_detail": "Bitperfekt status är inte tillgänglig."
@@ -994,7 +1057,9 @@
         "select_providers": "Välj leverantörer",
         "save_changes": "Spara ändringar",
         "update_password": "Uppdatera lösenord",
-        "guest_role": "Gäst"
+        "guest_role": "Gäst",
+        "tokens_load_failed": "Misslyckades med att ladda åtkomst tokens",
+        "users_load_failed": "Misslyckades med att ladda användare"
     },
     "login": {
         "subtitle": "Anslut till din musikserver",
@@ -1042,7 +1107,26 @@
         "scan_qr_code": "Skanna QR koden",
         "scan_qr_hint": "Rikta kameran mot QR koden som visas i dina inställningar för Musik Assistant server.",
         "qr_invalid": "Ogiltig QR kod. Skanna en QR kod för Music Assistant fjärrkontrollens ID.",
-        "qr_camera_error": "Kunde inte komma åt kameran. Vänligen kontrollera behörigheterna."
+        "qr_camera_error": "Kunde inte komma åt kameran. Vänligen kontrollera behörigheterna.",
+        "error_party_auth_failed": "Kunde inte gå med i festen",
+        "remote_only_info": "Anslut till din Music Assistant-server på distans",
+        "server_address_hint": "Ange den fullständiga URL:en till din Music Assistant-server",
+        "connecting_ingress": "Ansluter via Home Assistant...",
+        "connecting_local_party": "Ansluter till festen...",
+        "connecting_remote_party": "Ansluter till festen...",
+        "joining_party": "Går med i festen...",
+        "reconnecting": "Återansluter",
+        "reconnecting_message": "Försöker återansluta till servern...",
+        "error_ingress_failed": "Kunde inte logga in via Home Assistant",
+        "error_invalid_credentials": "Det gick inte att logga in dig. Kontrollera ditt användarnamn och lösenord.",
+        "guest_ended_party_title": "Din festsession är avslutad",
+        "guest_ended_party_message": "Be värden att dela länken eller QR-koden till festen igen för att återansluta.",
+        "guest_ended_quiz_title": "Din quizsession är avslutad",
+        "guest_ended_quiz_message": "Be värden att dela quizlänken eller QR-koden igen för att återansluta.",
+        "guest_ended_dashboard_title": "Den här instrumentpanelssessionen har avslutats",
+        "guest_ended_dashboard_message": "Casta instrumentpanelen igen från Music Assistant för att fortsätta.",
+        "continue_to_app": "Fortsätt till Music Assistant",
+        "scan_qr_hint_guest": "Rikta kameran mot QR-koden som värden visar."
     },
     "yes": "Ja",
     "no": "Nej",
@@ -1443,13 +1527,199 @@
             "play_along": "Spela med",
             "host_controls": "Värdkontroller",
             "return_to_host_panel": "Återgå till värdpanelen"
+        },
+        "ai_radio": {
+            "title": "AI Radio",
+            "context": {
+                "run_with": "Spela som AI radio"
+            },
+            "actions": {
+                "discard": "Kassera",
+                "delete": "Radera",
+                "saving": "Sparar…...",
+                "up": "Upp",
+                "down": "Ner",
+                "remove": "Ta bort"
+            },
+            "fields": {
+                "source_playtime_cap": "Källa speltidsgräns (minuter)",
+                "default_playback_device": "Standarduppspelningsenhet (valfritt)",
+                "web_search_mode": "Webbsökningsläge",
+                "character_limit": "Teckengräns",
+                "prompt": "Punktlig",
+                "dynamic_batch_size": "Dynamisk batchstorlek",
+                "instructions": "Instruktioner för värd och program",
+                "shuffle_playlist_tracks": "Blanda spår i spellistan"
+            },
+            "field_descriptions": {
+                "source_playtime_cap": "Maximal total speltid för källmusiken, i minuter. Spår spelas i den ordning programmet spelar dem tills gränsen nås. Låt värdet vara 0 om du vill ha obegränsad tid.",
+                "dynamic_batch_size": "Hur många spår programledaren förbereder åt gången. Större omgångar innebär färre pauser medan nästa segment genereras, men en längre väntetid innan programmet börjar spelas.",
+                "instructions": "Beskriver värdens personlighet och hur segment ska skrivas. Detta skickas till AI:n med varje segment.",
+                "shuffle_playlist_tracks": "Spela upp källspellistan i slumpmässig ordning. Stäng av detta för att följa spellistan i dess egen ordning."
+            },
+            "web_search": {
+                "disabled": "inaktiverad (inget webbverktyg)",
+                "allow": "tillåt (modellen kan använda webben)",
+                "force": "tvinga (webbsökning krävs)",
+                "help": "Om värden får söka upp saker på webben för det här segmentet."
+            },
+            "plays": {
+                "start": "En gång i början",
+                "end": "En gång i slutet",
+                "every_song": "Varje låt",
+                "every_n_songs": "Varje ~{0} låtar",
+                "every_n_min": "Varje ~{0} minut",
+                "occasionally": "Ibland ({0}%)"
+            },
+            "validation": {
+                "invalid_import_file": "Filen är inte en giltig AI Radio export.",
+                "station_name_required": "Stationsnamn krävs",
+                "station_source_playlist_required": "Spellista för stationskälla krävs",
+                "select_section": "Välj minst ett avsnitt",
+                "section_order_required": "Sektionsordning kräver minst en regel",
+                "rule_requires_flow": "Regel {0} kräver minst ett flödesobjekt",
+                "must_needs_section": "Regel {0}, flöde {1}: MÅSTE behöver ett avsnitt",
+                "alternative_needs_choice": "Regel {0}, flöde {1}: ALTERNATIV behöver minst ett giltigt alternativ",
+                "optional_needs_section": "Regel {0}, flöde {1}: VALFRITT behöver ett avsnitt",
+                "optional_chance_numeric": "Regel {0}, flöde {1}: VALFRI chans måste vara numerisk",
+                "section_name_required": "Sektionsnamn krävs",
+                "section_prompt_required": "Sektionsprompt krävs",
+                "no_station_loaded": "Ingen station laddad",
+                "no_section_loaded": "Inget avsnitt laddat"
+            },
+            "confirm": {
+                "discard_changes_title": "Vill du ignorera ändringarna?",
+                "discard_changes": "Du har osparade ändringar som kommer att gå förlorade.",
+                "delete_station_title": "Ta bort stationen?",
+                "delete_station": "Ta bort den här stationen?"
+            },
+            "toast": {
+                "playlists_truncated": "Endast den första {0} spellistor laddades.",
+                "unavailable": "AI radio är inte aktiverad.",
+                "playlist_starting": "Genererar spellista – den kommer snart att visas i ditt bibliotek.",
+                "live_starting": "Live radio har startat",
+                "playlist_start_failed": "Misslyckades med att starta genereringen av spellistan",
+                "live_start_failed": "Misslyckades med att starta direktsänd radio",
+                "session_stopped": "AI radiosessionen har stoppats",
+                "session_stop_failed": "Misslyckades med att stoppa AI radiosessionen",
+                "station_saved": "Stationen sparad",
+                "station_save_failed": "Misslyckades med att spara stationen",
+                "station_deleted": "Stationen raderad",
+                "station_duplicated": "Stationen duplicerad",
+                "session_failed": "AI radiokörningen misslyckades: {0}"
+            },
+            "header": {
+                "subtitle": "Förvandla en spellista till ett radioprogram med en AI värd."
+            },
+            "gallery": {
+                "empty_title": "Skapa din första show",
+                "empty_description": "AI Radio förvandlar en av dina spellistor till ett radioprogram med en AI värd. AI Radio behöver en AI kompatibel leverantör (t.ex. Home Assistant) för att generera värden – konfigurera en under Inställningar → Plugins.",
+                "create_cta": "Skapa show",
+                "new_show": "Ny show",
+                "refresh": "Uppdatera"
+            },
+            "card": {
+                "play": "Spela",
+                "starting": "Startar...",
+                "stop": "Stopp",
+                "stopping": "Stoppar...",
+                "on_air": "I sändning",
+                "generate_playlist": "Generera och spara som spellistan",
+                "customize": "Anpassa",
+                "duplicate": "Duplicera",
+                "duplicate_name": "{0} (kopiera)",
+                "delete": "Radera",
+                "session_failed": "Senaste körningen misslyckades",
+                "open_playlist": "Öppna genererad spellista",
+                "status_failed": "Misslyckades {0}",
+                "status_playlist_ready": "Spellistan är klar · {0}",
+                "status_last_on_air": "Sist i sändning {0}",
+                "no_player": "Välj en spelare först",
+                "start_failed": "Misslyckades med att starta: {0}",
+                "switch_show_title": "Byta program?",
+                "switch_show_confirm": "«{0}» är i sändning. Stoppa den och spela «{1}»?",
+                "switch_show_confirm_label": "Växla"
+            },
+            "phase": {
+                "preparing": "Förbereder din show…",
+                "fetch_source_tracks": "Hämtar spår…",
+                "planning_sections": "Planering av showen…",
+                "generating_llm": "Att skriva programledarens repliker…",
+                "generating_tts": "Spelar in värdens röst…",
+                "publishing_playlist": "Publicerar spellista…",
+                "initializing_queue": "Förbereder kön…",
+                "queueing_batch": "Musik i kö…",
+                "waiting_for_playback": "Väntar på uppspelning…"
+            },
+            "create": {
+                "title": "Skapa en show",
+                "description": "Välj en spellista, en programledares stil och hur pratsam den ska vara.",
+                "playlist_label": "Källspellista",
+                "playlist_placeholder": "Välj en spellista",
+                "playlist_empty": "Inga spellistor hittades",
+                "preset_label": "Värdstil",
+                "talk_label": "Pratsamhet",
+                "name_label": "Visa namn",
+                "default_name": "{0} — {1}",
+                "create": "Skapa",
+                "create_and_play": "Skapa och spela",
+                "creating": "Skapar…...",
+                "validation": {
+                    "playlist_required": "Välj en källspellista",
+                    "name_required": "Visa namn krävs"
+                }
+            },
+            "presets": {
+                "morning_show": {
+                    "name": "Morgonshow",
+                    "description": "Varm, positiv värd med väder och nyheter."
+                },
+                "minimal_dj": {
+                    "name": "Minimalistisk DJ",
+                    "description": "Lugna, diskreta övergångar som håller sig ur vägen."
+                },
+                "music_nerd": {
+                    "name": "Musiknörd",
+                    "description": "Delar fakta och kuriosa om artister mellan låtarna."
+                },
+                "party_host": {
+                    "name": "Festvärd",
+                    "description": "Energiska skrika ut för att hålla festen igång."
+                }
+            },
+            "talk": {
+                "rarely": "Sällan",
+                "normal": "Normal",
+                "chatty": "Pratsam"
+            },
+            "prereq": {
+                "title": "AI leverantör behövs",
+                "description": "AI Radio behöver en AI kompatibel leverantör (t.ex. Home Assistant) för att generera värden.",
+                "action": "Gå till Inställningar → Plugins"
+            },
+            "customize": {
+                "title": "Anpassa showen",
+                "save": "Spara showen",
+                "advanced": "Avancerad",
+                "basics_title": "Grunderna",
+                "segments_title": "Segment",
+                "segments_empty": "Inga segment ännu — lägg till ett för att komma igång.",
+                "add_segment": "Lägg till segment",
+                "blank_segment": "Tomt segment",
+                "blank_segment_name": "Nytt segment",
+                "segment_name": "Segmentnamn",
+                "use_current_player": "Använd aktuell spelare",
+                "lossy_warning_title": "Förenklad vid sparande",
+                "lossy_warning_description": "Den här serien använder en avancerad konfiguration som inte kan representeras helt här. Om du sparar den skrivs den om i det förenklade segmentformatet ovan.",
+                "prompt_placeholders_hint": "Tillgängliga platshållare: {placeholders}"
+            }
         }
     },
     "no_lyrics_available": "Inga texter tillgängliga",
     "background_tasks": {
         "title": "Bakgrundsuppgifter",
         "description": "Övervaka schemalagda jobb och senaste långvariga åtgärder.",
-        "total": "{0} totalt bakgrundsuppgift {1}",
+        "total": "{count} total bakgrundsuppgift | {count} totalt antal bakgrundsuppgifter",
         "clear_finished": "Rensa färdiga",
         "empty_title": "Inga bakgrundsuppgifter",
         "empty_description": "Schemalagda jobb och långvariga åtgärder visas här.",
@@ -1731,12 +2001,12 @@
         "120": "2 timmar"
     },
     "shuffle_smart_active": "Smart blandning är på. Klicka för att stänga av den.",
-    "goto_album_radio": "Gå till Album Radion",
-    "goto_artist_radio": "Gå till Artist Radion",
-    "goto_genre_radio": "Gå till Genre Radion",
-    "goto_playlist_radio": "Gå till spellistan för Radion",
-    "goto_radio": "Gå till radion",
-    "goto_track_radio": "Gå till Radio Spår",
+    "goto_album_radio": "Visa album oändlig mix",
+    "goto_artist_radio": "Visa artistens oändliga mix",
+    "goto_genre_radio": "Visa genre oändlig mix",
+    "goto_playlist_radio": "Visa spellista oändlig mix",
+    "goto_radio": "Visa oändlig mix",
+    "goto_track_radio": "Visa spår oändlig mix",
     "autoplay_dynamic_title": "Automatisk uppspelning är aktiv",
     "autoplay_dynamic_lead": "Din kö fylls dynamiskt baserat på ditt val:",
     "autoplay_dynamic_desc": "Din kö fylls dynamiskt baserat på ditt val.",
@@ -1779,5 +2049,19 @@
     "searching": "Söker...",
     "pause": "Pausa",
     "play_failed": "Uppspelningsåtgärden misslyckades",
-    "show_audio_chain_details_for_quality": "Visa detaljer om ljudkedjan ({quality})"
+    "show_audio_chain_details_for_quality": "Visa detaljer om ljudkedjan ({quality})",
+    "dashboard": {
+        "disconnect": "Kopplar ifrån {0}",
+        "loading": "Laddar enheter...",
+        "no_devices": "Inga strömnings enheter hittades",
+        "started": "Strömmar till \"{0}\""
+    },
+    "reconfigure_player": "Konfigurera om spelaren",
+    "configure_player": "Konfigurera spelaren",
+    "plugins": "Plugins",
+    "queue_ended": "Uppspelningen klar",
+    "play_from_beginning": "Spela från början",
+    "audiobooks_in_collection": "Ljudböcker i den här samlingen",
+    "collection_no_audiobooks": "Den här samlingen innehåller inga ljudböcker.",
+    "error_generic": "Något gick fel. Vänligen försök igen."
 }

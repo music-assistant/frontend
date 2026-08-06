@@ -28,7 +28,7 @@ import { useGuessTheSongPlaybackPosition } from "@/components/music-quiz/game-ty
 import type {
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
@@ -73,7 +73,8 @@ const showRevealLyrics = computed(() => revealLyricsStatus.value !== "error");
 const { position: lyricsPosition } = useGuessTheSongPlaybackPosition({
   active: () =>
     props.state.phase === "reveal" && !!props.currentRound.track_uri,
-  startedAt: () => props.currentRound.started_at,
+  startedAt: () =>
+    props.currentRound.audio_started_at ?? props.currentRound.started_at,
   duration: () => props.currentRound.duration,
 });
 

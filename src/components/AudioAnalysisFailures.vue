@@ -139,7 +139,8 @@ import {
   rowId,
   useAudioAnalysisFailures,
   type FailureRow,
-} from "@/composables/useAudioAnalysisFailures";
+} from "@/composables/audio-analysis/useAudioAnalysisFailures";
+import { serverNow } from "@/composables/useServerTime";
 import { formatRelativeTime } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { api } from "@/plugins/api";
@@ -197,14 +198,14 @@ const pendingKey = ref<string | null>(null);
 const clearingAll = ref(false);
 
 function retryVariant(row: FailureRow): "warning" | "secondary" | "outline" {
-  const status = classifyRetry(row.nextRetry, Math.floor(Date.now() / 1000));
+  const status = classifyRetry(row.nextRetry, Math.floor(serverNow()));
   if (status.kind === "blocked") return "warning";
   if (status.kind === "eligible") return "secondary";
   return "outline";
 }
 
 function retryLabel(row: FailureRow): string {
-  const status = classifyRetry(row.nextRetry, Math.floor(Date.now() / 1000));
+  const status = classifyRetry(row.nextRetry, Math.floor(serverNow()));
   if (status.kind === "blocked")
     return $t("settings.audio_analysis_failures.retry_blocked");
   if (status.kind === "eligible")

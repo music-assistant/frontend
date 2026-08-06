@@ -62,9 +62,6 @@
     </v-toolbar>
 
     <v-container fluid class="pa-4">
-      <v-alert v-if="!dsp.enabled" type="info" class="mt-4" color="transparent">
-        {{ $t("settings.dsp.disabled_message") }}
-      </v-alert>
       <v-row :class="{ 'justify-center': mobile }" class="flex-nowrap">
         <!-- Timeline Column -->
         <v-col
@@ -146,6 +143,7 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.input_gain" type="gain" />
+            <DSPHelp :text="$t('settings.dsp.input_gain_help')" />
           </v-card>
 
           <!-- Settings of the Output stage -->
@@ -155,6 +153,7 @@
             :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
           >
             <DSPSlider v-model="dsp.output_gain" type="gain" />
+            <DSPHelp :text="$t('settings.dsp.output_gain_help')" />
           </v-card>
 
           <!-- Settings of the selected DSP Filter -->
@@ -175,28 +174,67 @@
               "
               v-model="dsp.filters[selectedStage] as ToneControlFilter"
             />
-            <DSPSlider
+            <template
               v-else-if="dsp.filters[selectedStage].type === DSPFilterType.GAIN"
-              v-model="(dsp.filters[selectedStage] as GainFilter).gain"
-              type="gain"
-            />
-            <DSPSlider
+            >
+              <DSPSlider
+                v-model="(dsp.filters[selectedStage] as GainFilter).gain"
+                type="gain"
+              />
+              <DSPHelp :text="$t('settings.dsp.gain.help')" />
+            </template>
+            <template
               v-else-if="
                 dsp.filters[selectedStage].type === DSPFilterType.BALANCE
               "
-              v-model="(dsp.filters[selectedStage] as BalanceFilter).balance"
-              :type="{
-                min: -100,
-                max: 100,
-                step: 1,
-                label: $t('settings.dsp.parameter.balance'),
-                unit: '%',
-                is_log: false,
-              }"
+            >
+              <DSPSlider
+                v-model="(dsp.filters[selectedStage] as BalanceFilter).balance"
+                :type="{
+                  min: -100,
+                  max: 100,
+                  step: 1,
+                  label: $t('settings.dsp.parameter.balance'),
+                  unit: '%',
+                  is_log: false,
+                }"
+              />
+              <DSPHelp :text="$t('settings.dsp.balance.help')" />
+            </template>
+            <DSPTranspose
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.TRANSPOSE
+              "
+              v-model="dsp.filters[selectedStage] as TransposeFilter"
+            />
+            <DSPConvolution
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CONVOLUTION
+              "
+              v-model="dsp.filters[selectedStage] as ConvolutionFilter"
+            />
+            <DSPStereoWidth
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.STEREO_WIDTH
+              "
+              v-model="dsp.filters[selectedStage] as StereoWidthFilter"
+            />
+            <DSPCrossfeed
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CROSSFEED
+              "
+              v-model="dsp.filters[selectedStage] as CrossfeedFilter"
             />
           </v-card>
         </v-col>
       </v-row>
+
+      <Alert v-if="!dsp.enabled" variant="warning" class="mt-5">
+        <TriangleAlert />
+        <AlertDescription>
+          {{ $t("settings.dsp.disabled_message") }}
+        </AlertDescription>
+      </Alert>
     </v-container>
 
     <!-- Save DSP Preset Dialog -->
@@ -263,6 +301,10 @@ import {
   DSPFilterType,
   type GainFilter,
   type BalanceFilter,
+  type TransposeFilter,
+  type ConvolutionFilter,
+  type StereoWidthFilter,
+  type CrossfeedFilter,
   ParametricEQFilter,
   ToneControlFilter,
   EventType,
@@ -272,6 +314,13 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
+import DSPConvolution from "@/components/dsp/DSPConvolution.vue";
+import DSPStereoWidth from "@/components/dsp/DSPStereoWidth.vue";
+import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
+import DSPHelp from "@/components/dsp/DSPHelp.vue";
+import { TriangleAlert } from "@lucide/vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
@@ -324,12 +373,14 @@ let pendingPresetApply: PresetApplyContext | undefined;
 
 let unsubPlayerDSP: (() => void) | undefined = undefined;
 
-const filterTypes = Object.values(DSPFilterType).map((value) => {
-  return {
-    value: value,
-    title: t(`settings.dsp.types.${value}`),
-  };
-});
+const filterTypes = Object.values(DSPFilterType)
+  .map((value) => {
+    return {
+      value: value,
+      title: t(`settings.dsp.types.${value}`),
+    };
+  })
+  .sort((a, b) => a.title.localeCompare(b.title));
 const selectedPresetLabel = computed(() => {
   const presetId = dsp.value?.preset_id;
   if (!presetId) return undefined;
@@ -391,6 +442,38 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.BALANCE,
         balance: 0,
+      };
+      break;
+    case DSPFilterType.TRANSPOSE:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.TRANSPOSE,
+        semitones: 0,
+      };
+      break;
+    case DSPFilterType.CONVOLUTION:
+      // An empty ir_id is valid: the filter is added first, the impulse
+      // response picked afterwards.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CONVOLUTION,
+        ir_id: "",
+        gain: 0,
+      };
+      break;
+    case DSPFilterType.STEREO_WIDTH:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.STEREO_WIDTH,
+        width: 1,
+      };
+      break;
+    case DSPFilterType.CROSSFEED:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CROSSFEED,
+        strength: 0.2,
+        soundstage: 0.5,
       };
       break;
     default:

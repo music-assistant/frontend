@@ -2,6 +2,12 @@ import { store } from "../store";
 
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
+import {
+  resetServerTime,
+  serverNow,
+  startServerTimeSync,
+  stopServerTimeSync,
+} from "@/composables/useServerTime";
 import { $t, i18n } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
@@ -25,6 +31,7 @@ import {
   type QueueItem,
   type Radio,
   type ServerInfoMessage,
+  type SetupFlowStep,
   type SuccessResultMessage,
   type TaskSchedule,
   type Track,
@@ -37,6 +44,7 @@ import {
   CoreConfig,
   DSPConfig,
   DSPConfigPreset,
+  DSPIRMetadata,
   EventType,
   ItemMapping,
   MediaItemTypeOrItemMapping,
@@ -58,6 +66,7 @@ import {
   SmartPlaylistRules,
   SoundEffect,
   UserRole,
+  MediaCollection,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -75,6 +84,14 @@ export enum ConnectionState {
   INITIALIZED = "initialized", // Initial state sync completed
   RECONNECTING = "reconnecting", // Lost connection, attempting to reconnect
   FAILED = "failed", // Connection failed permanently
+}
+
+/** Rejection for in-flight commands that can never be answered because the connection dropped. */
+export class ConnectionLostError extends Error {
+  constructor() {
+    super("Connection lost");
+    this.name = "ConnectionLostError";
+  }
 }
 
 export class MusicAssistantApi {
@@ -166,7 +183,6 @@ export class MusicAssistantApi {
       }
 
       transport = new WebSocketTransport({ url: wsUrl });
-      await transport.connect();
       baseUrl = httpBaseUrl;
     } else {
       // Transport instance provided (WebRTC)
@@ -200,45 +216,10 @@ export class MusicAssistantApi {
 
     // Listen for transport state changes (reconnecting, failed, etc.)
     transport.on("stateChange", (state) => {
-      console.log("[API] Transport state changed to:", state);
-      this.transportState.value = state;
-
-      // Handle specific state transitions
-      if (state === "reconnecting") {
-        // Transport is attempting to reconnect
-        this.state.value = ConnectionState.RECONNECTING;
-        this.signalEvent({
-          event: EventType.DISCONNECTED,
-          object_id: "",
-        });
-      } else if (state === "failed") {
-        // Failed could be transient (during reconnect) or permanent
-        // Wait to see if it transitions to reconnecting or stays failed
-        setTimeout(() => {
-          if (this.transportState.value === "failed") {
-            // Still failed after brief wait - this is permanent failure
-            this.state.value = ConnectionState.FAILED;
-            this.signalEvent({
-              event: EventType.DISCONNECTED,
-              object_id: "",
-            });
-          }
-          // Otherwise it transitioned to reconnecting - ignore this transient failure
-        }, 50);
-      } else if (state === "disconnected") {
-        // Check if this is an intentional disconnect (not followed by reconnecting)
-        // Use nextTick to allow reconnecting state to be set first
-        setTimeout(() => {
-          if (this.transportState.value === "disconnected") {
-            this.state.value = ConnectionState.DISCONNECTED;
-            this.signalEvent({
-              event: EventType.DISCONNECTED,
-              object_id: "",
-            });
-          }
-        }, 0);
-      }
+      this.handleTransportStateChange(state);
     });
+
+    await transport.connect();
 
     // Wait for initial ServerInfo message
     await this.waitForServerInfo();
@@ -364,8 +345,12 @@ export class MusicAssistantApi {
 
       return result;
     } catch (error) {
-      // Token is invalid - require user authentication
-      this.state.value = ConnectionState.AUTH_REQUIRED;
+      // a dropped connection says nothing about the token; leave the
+      // reconnect flow intact so re-auth runs again after reconnect
+      if (!(error instanceof ConnectionLostError)) {
+        // Token is invalid - require user authentication
+        this.state.value = ConnectionState.AUTH_REQUIRED;
+      }
       throw error;
     }
   }
@@ -389,6 +374,9 @@ export class MusicAssistantApi {
     }
     this.state.value = ConnectionState.DISCONNECTED;
     this.isRemoteConnection.value = false;
+    // the next connection may be to a different server, whose clock offset is unrelated
+    resetServerTime();
+    this._failPendingCommands();
 
     // Clear reactive state
     Object.keys(this.players).forEach((key) => delete this.players[key]);
@@ -991,7 +979,8 @@ export class MusicAssistantApi {
     order_by?: string,
     provider?: string | string[],
     genre?: number | number[],
-  ): Promise<Audiobook[]> {
+    collapse_collections?: boolean,
+  ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
       search,
@@ -1000,6 +989,7 @@ export class MusicAssistantApi {
       order_by,
       provider,
       genre,
+      collapse_collections,
     });
   }
 
@@ -1010,6 +1000,14 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/get_audiobook", {
       item_id,
       provider_instance_id_or_domain,
+    });
+  }
+
+  public getAudiobookCollection(
+    item_id: string,
+  ): Promise<MediaCollection<Audiobook>> {
+    return this.sendCommand("music/audiobooks/get_collection", {
+      item_id,
     });
   }
 
@@ -1960,6 +1958,7 @@ export class MusicAssistantApi {
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
     sort_by?: string,
+    start_from_beginning?: boolean,
   ): Promise<void> {
     if (
       !queue_id &&
@@ -1976,6 +1975,7 @@ export class MusicAssistantApi {
       option,
       start_item,
       sort_by,
+      start_from_beginning,
     });
   }
 
@@ -1998,21 +1998,23 @@ export class MusicAssistantApi {
   }
 
   public async getProviderConfigEntries(
-    provider_domain: string,
-    instance_id?: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
+    instance_id: string,
   ): Promise<ConfigEntry[]> {
-    // Return Config entries to setup/configure a provider.
-    // provider_domain: (mandatory) domain of the provider.
-    // instance_id: id of an existing provider instance (None for new instance setup).
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
+    // Return the config (options) entries for an existing provider instance.
     return this.sendCommand("config/providers/get_entries", {
-      provider_domain,
+      instance_id,
+    });
+  }
+
+  public async invokeProviderConfigAction(
+    instance_id: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a provider's options
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/providers/invoke_action", {
       instance_id,
       action,
-      values,
     });
   }
 
@@ -2071,17 +2073,22 @@ export class MusicAssistantApi {
 
   public async getPlayerConfigEntries(
     player_id: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
   ): Promise<ConfigEntry[]> {
-    // Return Config entries to setup/configure a player.
-    // player_id: (mandatory) id of the player.
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
+    // Return the config entries to configure a player.
     return this.sendCommand("config/players/get_entries", {
       player_id,
+    });
+  }
+
+  public async invokePlayerConfigAction(
+    player_id: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a player's config
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/players/invoke_action", {
+      player_id,
       action,
-      values,
     });
   }
 
@@ -2109,6 +2116,65 @@ export class MusicAssistantApi {
     return this.sendCommand("config/players/remove", {
       player_id,
     });
+  }
+
+  // Setup flow related functions
+
+  public setupProvider(provider_domain: string): Promise<SetupFlowStep> {
+    // Start the setup flow to add a new instance of the given provider.
+    // Returns the flow's first step (may already be a FINISH/ABORT step).
+    return this.sendCommand("config/providers/setup", { provider_domain });
+  }
+
+  public reconfigureProvider(instance_id: string): Promise<SetupFlowStep> {
+    // Start the reconfigure flow on an existing provider instance (covers reauth).
+    return this.sendCommand("config/providers/reconfigure", { instance_id });
+  }
+
+  public setupPlayer(player_id: string): Promise<SetupFlowStep> {
+    // Start the setup flow for a player (e.g. pairing).
+    return this.sendCommand("config/players/setup", { player_id });
+  }
+
+  public submitSetupFlow(
+    flow_id: string,
+    values: Record<string, ConfigValueType>,
+  ): Promise<SetupFlowStep> {
+    // Submit the user's values for the flow's pending FORM step.
+    // Returns the next step, or the same FORM step (with per-field errors) on validation failure.
+    return this.sendCommand("config/flows/submit", { flow_id, values });
+  }
+
+  public getSetupFlow(flow_id: string): Promise<SetupFlowStep> {
+    // Return the current step of a running flow (idempotent re-render, never advances).
+    // Rejects when the flow no longer exists; the caller handles that (e.g. show abort).
+    return this.sendCommand(
+      "config/flows/get",
+      { flow_id },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public abortSetupFlow(flow_id: string): Promise<void> {
+    // Abort a running flow (user cancelled). Best-effort: a stale/finished flow is ignored.
+    return this.sendCommand(
+      "config/flows/abort",
+      { flow_id },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public subscribeSetupFlow(
+    flow_id: string,
+    callback: (step: SetupFlowStep) => void,
+  ): () => void {
+    // Subscribe to step changes for a specific running flow (external/progress steps
+    // advance via this push). Returns a handle to remove the listener.
+    return this.subscribe(
+      EventType.SETUP_FLOW_UPDATED,
+      (evt: EventMessage) => callback(evt.data as SetupFlowStep),
+      flow_id,
+    ) as () => void;
   }
 
   // PlayerQueue Config related functions
@@ -2197,6 +2263,34 @@ export class MusicAssistantApi {
     });
   }
 
+  public async getDSPIRs(
+    suppressGlobalError = false,
+  ): Promise<DSPIRMetadata[]> {
+    // Return the metadata of all stored impulse responses.
+    return this.sendCommand(
+      "config/dsp_irs/list",
+      undefined,
+      suppressGlobalError ? { suppressGlobalError: true } : undefined,
+    );
+  }
+
+  public async uploadDSPIR(name: string, data: string): Promise<DSPIRMetadata> {
+    // Store an impulse response. `data` is the raw file, base64 encoded.
+    // Errors (size limit, invalid base64, not valid audio) are surfaced by the
+    // caller, so skip the global error toast.
+    return this.sendCommand(
+      "config/dsp_irs/upload",
+      { name, data },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async removeDSPIR(irId: string): Promise<void> {
+    // Remove a stored impulse response. The server blanks the ir_id of every
+    // convolution filter that referenced it.
+    return this.sendCommand("config/dsp_irs/remove", { ir_id: irId });
+  }
+
   // Core Config related functions
 
   public async getCoreConfigs(): Promise<CoreConfig[]> {
@@ -2217,28 +2311,26 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core/get_value", { domain, key });
   }
 
-  public async getCoreConfigEntries(
-    domain: string,
-    action?: string,
-    values?: Record<string, ConfigValueType>,
-  ): Promise<ConfigEntry[]> {
+  public async getCoreConfigEntries(domain: string): Promise<ConfigEntry[]> {
     // Return Config entries to configure a core controller.
-    // domain: (mandatory) domain of the core module.
-    // action: [optional] action key called from config entries UI.
-    // values: the (intermediate) raw values for config entries sent with the action.
-    return this.sendCommand("config/core/get_entries", {
-      domain,
-      action,
-      values,
-    });
+    return this.sendCommand("config/core/get_entries", { domain });
+  }
+
+  public async invokeCoreConfigAction(
+    domain: string,
+    action: string,
+  ): Promise<ConfigEntry[]> {
+    // Run a one-shot action button from a core module's config
+    // and return the (re-rendered) config entries.
+    return this.sendCommand("config/core/invoke_action", { domain, action });
   }
 
   public async saveCoreConfig(
     domain: string,
     values: Record<string, ConfigValueType>,
-  ): Promise<ProviderConfig> {
+  ): Promise<CoreConfig> {
     // Save Core controller Config.
-    // domain: (mandatory) domain of the provider.
+    // domain: (mandatory) domain of the core controller.
     // values: the raw values for config entries that need to be stored/updated.
     // action: [optional] action key called from config entries UI.
     return this.sendCommand("config/core/save", {
@@ -2457,7 +2549,10 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
       if (queueId in this.queues) {
-        const now = Date.now() / 1000;
+        // this event carries the elapsed time without a timestamp, so it is anchored
+        // here on arrival; in server time, to stay comparable with the timestamps that
+        // full queue updates carry.
+        const now = serverNow();
         const elapsed = msg.data as unknown as number;
         if (queueId in this.queueElapsedTime) {
           this.queueElapsedTime[queueId].elapsed_time = elapsed;
@@ -2494,6 +2589,61 @@ export class MusicAssistantApi {
     // signal + log all events
     if (DEBUG) console.log("[event]", msg);
     this.signalEvent(msg);
+  }
+
+  private handleTransportStateChange(state: string): void {
+    console.log("[API] Transport state changed to:", state);
+    this.transportState.value = state;
+
+    // the socket is already gone here, so nothing in flight can be answered
+    if (
+      state === "reconnecting" ||
+      state === "failed" ||
+      state === "disconnected"
+    ) {
+      this._failPendingCommands();
+    }
+
+    if (state === "reconnecting") {
+      // Transport is attempting to reconnect
+      this.state.value = ConnectionState.RECONNECTING;
+      // pause probing but keep the estimate: clock offsets don't change while the
+      // connection is down, and a slightly stale offset still beats no correction.
+      // A new ServerInfo message resumes it once the connection is back.
+      stopServerTimeSync();
+      this.signalEvent({
+        event: EventType.DISCONNECTED,
+        object_id: "",
+      });
+    } else if (state === "failed") {
+      // Failed could be transient (during reconnect) or permanent
+      // Wait to see if it transitions to reconnecting or stays failed
+      setTimeout(() => {
+        if (this.transportState.value === "failed") {
+          // Still failed after brief wait - this is permanent failure
+          this.state.value = ConnectionState.FAILED;
+          stopServerTimeSync();
+          this.signalEvent({
+            event: EventType.DISCONNECTED,
+            object_id: "",
+          });
+        }
+        // Otherwise it transitioned to reconnecting - ignore this transient failure
+      }, 50);
+    } else if (state === "disconnected") {
+      // Check if this is an intentional disconnect (not followed by reconnecting)
+      // Use nextTick to allow reconnecting state to be set first
+      setTimeout(() => {
+        if (this.transportState.value === "disconnected") {
+          this.state.value = ConnectionState.DISCONNECTED;
+          stopServerTimeSync();
+          this.signalEvent({
+            event: EventType.DISCONNECTED,
+            object_id: "",
+          });
+        }
+      }, 0);
+    }
   }
 
   private handleResultMessage(msg: SuccessResultMessage | ErrorResultMessage) {
@@ -2569,10 +2719,26 @@ export class MusicAssistantApi {
     // so it also works on the Ingress path where the frontend skips the auth command.
     // best-effort, fire-and-forget: a transport failure here shouldn't break the connect flow
     void this.setLocale(i18n.global.locale.value).catch(() => undefined);
+    // (re)estimate the offset between the server clock and this device's clock, so
+    // server timestamps render correctly even when one of the two clocks is unsynced.
+    // The command needs no authentication, so this also covers the pre-auth phase.
+    startServerTimeSync(() => this.getServerTime());
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
       data: msg,
+    });
+  }
+
+  /**
+   * Read the server's clock (UTC timestamp in seconds).
+   *
+   * Prefer `serverNow()` from `useServerTime`, which keeps a corrected local estimate;
+   * this command is the probe that estimate is built from.
+   */
+  public async getServerTime(): Promise<number> {
+    return await this.sendCommand<number>("time", undefined, {
+      suppressGlobalError: true,
     });
   }
 
@@ -3029,7 +3195,13 @@ export class MusicAssistantApi {
         reject,
         suppressGlobalError: options?.suppressGlobalError,
       });
-      this._sendCommand(command, args, cmdId);
+      try {
+        this._sendCommand(command, args, cmdId);
+      } catch (error) {
+        // a synchronous throw here rejects the promise but leaves the map entry behind
+        this.commands.delete(cmdId);
+        throw error;
+      }
     });
   }
 
@@ -3046,7 +3218,7 @@ export class MusicAssistantApi {
       this.state.value !== ConnectionState.AUTHENTICATED &&
       this.state.value !== ConnectionState.INITIALIZED
     ) {
-      throw new Error("Connection lost");
+      throw new ConnectionLostError();
     }
 
     if (!msgId) {
@@ -3066,10 +3238,15 @@ export class MusicAssistantApi {
     const msgStr = JSON.stringify(msg);
 
     if (!this.transport) {
-      throw new Error("No connection available");
+      throw new ConnectionLostError();
     }
 
-    this.transport.send(msgStr);
+    try {
+      this.transport.send(msgStr);
+    } catch {
+      // transport throws untyped errors; callers filter on ConnectionLostError
+      throw new ConnectionLostError();
+    }
   }
 
   public async fetchState() {
@@ -3099,6 +3276,21 @@ export class MusicAssistantApi {
     Object.keys(this.providers).forEach((key) => delete this.providers[key]);
     for (const provider of providers) {
       this.providers[provider.instance_id] = provider;
+    }
+  }
+
+  /** Reject commands still awaiting a reply; a dropped socket can never answer them. */
+  private _failPendingCommands(): void {
+    if (this.commands.size === 0) {
+      this.partialResult = {};
+      return;
+    }
+    // clear first: a rejection handler may immediately send a new command
+    const pending = [...this.commands.values()];
+    this.commands.clear();
+    this.partialResult = {};
+    for (const command of pending) {
+      command.reject(new ConnectionLostError());
     }
   }
 

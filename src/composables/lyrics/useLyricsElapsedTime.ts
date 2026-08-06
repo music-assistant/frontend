@@ -3,33 +3,30 @@
  *
  * Provides a reactive `elapsedTime` ref that updates at ~60fps while playing,
  * suitable for smooth lyrics synchronization. Automatically starts/stops the
- * rAF loop based on playback state and an optional `enabled` guard.
+ * rAF loop based on the active queue's playback state and an optional
+ * `enabled` guard.
+ *
+ * The position comes from that same queue, matching where its consumers take the
+ * lyrics from: the queue's current item. A source playing on the player outside a
+ * Music Assistant queue leaves them without lyrics, so there is nothing to
+ * synchronize either.
  */
 
 import { ref, watchEffect, onScopeDispose, type Ref } from "vue";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { computeElapsedTime } from "@/helpers/elapsed";
-import api from "@/plugins/api";
+import { resolveQueueElapsedTime } from "@/helpers/activeElapsedTime";
 
 export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
   const elapsedTime = ref(0);
   let rafId: number | null = null;
 
   const update = () => {
-    const queue = store.activePlayerQueue;
-    const queueId = queue?.queue_id;
-    const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-    if (
-      queueTime?.elapsed_time != null &&
-      queueTime?.elapsed_time_last_updated != null
-    ) {
-      elapsedTime.value =
-        computeElapsedTime(
-          queueTime.elapsed_time,
-          queueTime.elapsed_time_last_updated,
-          store.activePlayer?.playback_state,
-        ) ?? 0;
+    // Keep the last known position when the queue reports no position, so the
+    // lyrics do not snap back to the start of the track.
+    const elapsed = resolveQueueElapsedTime();
+    if (elapsed !== undefined) {
+      elapsedTime.value = elapsed;
     }
     rafId = requestAnimationFrame(update);
   };
@@ -60,10 +57,14 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
   };
   document.addEventListener("visibilitychange", handleVisibilityChange);
 
+  // The queue's own state and active flag both change rarely, unlike the resolved
+  // position: that is backed by a high-frequency reactive map, so reading it here
+  // would re-run the gate on every server timing push. The resolver checks
+  // `active` as well, for the position it returns; here it decides whether the
+  // loop burns frames at all.
   watchEffect(() => {
-    const playing =
-      store.activePlayer?.playback_state === PlaybackState.PLAYING;
     const queue = store.activePlayerQueue;
+    const playing = queue?.state === PlaybackState.PLAYING;
     const isEnabled = enabled ? enabled.value : true;
 
     shouldRun = playing && !!queue?.active && isEnabled;
@@ -80,5 +81,5 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
     document.removeEventListener("visibilitychange", handleVisibilityChange);
   });
 
-  return { elapsedTime, start, stop };
+  return { elapsedTime };
 }

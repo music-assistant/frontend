@@ -153,6 +153,8 @@ export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
   if (item.media_type == MediaType.FOLDER) return true;
+  if (item.media_type == MediaType.COLLECTION && item.provider == "library")
+    return true;
   if (
     (item.media_type == MediaType.GENRE ||
       item.media_type == MediaType.GENRE_ALIAS) &&
@@ -178,6 +180,40 @@ export const getSourceName = function (player: Player) {
     }
   }
   return source_id;
+};
+
+/**
+ * The queue playing on the given player, or undefined when it has none.
+ *
+ * A player either plays the queue of the source it is attached to, or its own
+ * queue when it has no source; an inactive own queue does not count.
+ *
+ * A player taken over by an external source is attached to no queue at all, so
+ * callers get undefined for it rather than an inactive queue. The queue that is
+ * returned reads `active` in every settled state, and reads inactive only while a
+ * handover back to it is still propagating.
+ */
+export function resolvePlayerQueue(player?: Player): PlayerQueue | undefined {
+  if (player?.active_source && player.active_source in api.queues) {
+    return api.queues[player.active_source];
+  }
+  if (
+    player &&
+    !player.active_source &&
+    player.player_id in api.queues &&
+    api.queues[player.player_id].active
+  ) {
+    return api.queues[player.player_id];
+  }
+  return undefined;
+}
+
+export const getCollectionMediaTypeFromItemId = function (itemId: string) {
+  // the item id is defined by the backend as "<MediaType>___<collection_name>"
+  const itemIdType = itemId.split("___", 1)[0];
+  return Object.values(MediaType).includes(itemIdType as MediaType)
+    ? (itemIdType as MediaType)
+    : MediaType.UNKNOWN;
 };
 
 /**

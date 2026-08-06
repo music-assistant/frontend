@@ -1,15 +1,12 @@
 <template>
-  <div
-    class="w-auto"
-    :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-6'"
-  >
+  <div class="w-auto" :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-6'">
     <div v-if="store.activePlayer">
       <SliderRoot
         v-model="wrappedCurTimeValue"
         data-slot="slider"
         class="relative flex items-center select-none touch-none w-full"
         :class="[
-          usesWaveformLayout ? 'h-11 md:h-12 lg:h-14' : 'h-8',
+          hasWaveform ? 'h-11 md:h-12 lg:h-14' : 'h-8',
           hasWaveform && canSeek ? 'cursor-pointer' : '',
         ]"
         :disabled="!canSeek"
@@ -24,37 +21,30 @@
           hoverPercent = null;
         "
       >
-        <!-- color-mix is the same logic as tailwind's bg-color/30 -->
         <SliderTrack
           data-slot="slider-track"
           class="relative grow rounded-full"
-          :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
-          :style="
-            usesWaveformLayout
-              ? undefined
-              : {
-                  'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
-                }
-          "
+          :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
         >
+          <div
+            v-if="!hasWaveform"
+            class="absolute inset-0 rounded-full"
+            :style="trackBackgroundStyle"
+          ></div>
           <WaveformTrack
-            v-if="hasWaveform"
+            v-else
             :data="waveform!"
             :color="color"
             :progress-percent="progressPercent"
             :hover-percent="hoverPercent"
           />
-          <div
-            v-else-if="waveformLoading"
-            class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full"
-            :style="{
-              'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
-            }"
-          />
+          <!-- Tailwind's translate utilities emit the standalone `translate`
+               property, which Android TV's Chrome ignores. Everything below
+               centres via the track box or an explicit transform instead. -->
           <SliderRange
             v-if="!hasWaveform"
             data-slot="slider-range"
-            class="absolute rounded-full h-1 top-1/2 -translate-y-1/2"
+            class="absolute inset-y-0 rounded-full"
             :style="{ 'background-color': color }"
           />
           <!-- pointerdown.stop prevents reka's slider track tap action -->
@@ -62,8 +52,11 @@
             v-for="tick in chapterTicks"
             :key="tick.position"
             type="button"
-            class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-4 w-3 items-center justify-center"
-            :style="{ left: `${tick.percent}%` }"
+            class="absolute top-1/2 flex h-4 w-3 items-center justify-center"
+            :style="{
+              left: `${tick.percent}%`,
+              transform: 'translate(-50%, -50%)',
+            }"
             :aria-label="tick.name"
             @pointerdown.stop
             @click.stop="chapterClicked(tick)"
@@ -94,8 +87,8 @@
             v-for="tick in chapterTicks"
             :key="`label-${tick.position}`"
             type="button"
-            class="absolute bottom-full mb-1 -translate-x-1/2 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
-            :style="{ left: `${tick.percent}%` }"
+            class="absolute bottom-full mb-1 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
+            :style="{ left: `${tick.percent}%`, transform: 'translateX(-50%)' }"
             @pointerdown.stop
             @click="chapterClicked(tick)"
           >
@@ -128,13 +121,20 @@
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { MediaType, type MediaItemChapter } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  PlaybackState,
+  type MediaItemChapter,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
-import computeElapsedTime from "@/helpers/elapsed";
+import {
+  resolveActiveElapsedTime,
+  resolveActiveTiming,
+} from "@/helpers/activeElapsedTime";
 import { computeChapterTicks } from "@/helpers/chapters";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
@@ -146,14 +146,12 @@ export interface Props {
   color?: string;
   // Precomputed waveform bins (0.0-1.0); when set, replaces the flat track.
   waveform?: number[] | null;
-  waveformLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: "var(--foreground)",
   waveform: null,
-  waveformLoading: false,
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -191,27 +189,40 @@ const wrappedCurTimeValue = computed<number[]>({
   },
 });
 
-const startTick = () => {
-  if (rafId === null) {
-    const tick = () => {
-      const now = Date.now();
-      if (now - nowTick.value >= 64) {
-        nowTick.value = now;
-      }
-      rafId = requestAnimationFrame(tick);
-    };
+const startRaf = () => {
+  if (rafId !== null) return;
+  const tick = () => {
+    const now = Date.now();
+    if (now - nowTick.value >= 64) {
+      nowTick.value = now;
+    }
     rafId = requestAnimationFrame(tick);
-  }
+  };
+  rafId = requestAnimationFrame(tick);
+};
+
+const stopRaf = () => {
+  if (rafId === null) return;
+  cancelAnimationFrame(rafId);
+  rafId = null;
+};
+
+const startTick = () => {
+  // The slider is scaled by the media duration, so without one (radio, or a
+  // player that only reports a bare elapsed_time) it stays pinned and the time
+  // label is the only thing that moves; the 1s interval alone keeps that fresh.
+  // Reading the duration here also makes it a dependency of the computed that
+  // drives the tick, so the rAF loop follows a duration arriving or going away.
+  if (store.activePlayer?.current_media?.duration) startRaf();
+  else stopRaf();
+
   if (fallbackTimer === null) {
     fallbackTimer = setInterval(() => (nowTick.value = Date.now()), 1000);
   }
 };
 
 const stopTick = () => {
-  if (rafId !== null) {
-    cancelAnimationFrame(rafId);
-    rafId = null;
-  }
+  stopRaf();
   if (fallbackTimer !== null) {
     clearInterval(fallbackTimer);
     fallbackTimer = null;
@@ -276,80 +287,20 @@ const playerTotalTimeStr = computed(() => {
   return formatDuration(duration);
 });
 
-const serverTiming = computed(() => {
-  // Prefer queue-level elapsed_time if available (from isolated reactive map)
-  const queue = store.activePlayerQueue;
-  const queueId = queue?.queue_id;
-  const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-  if (
-    queueTime?.elapsed_time != null &&
-    queueTime?.elapsed_time_last_updated != null
-  ) {
-    return {
-      elapsedTime: queueTime.elapsed_time,
-      lastUpdated: queueTime.elapsed_time_last_updated,
-      playbackState: queue!.state,
-    };
-  }
-
-  // Fallback to player-level elapsed_time. This is used for external/3rd-party
-  // sources currently playing on the player (not for Music Assistant queue
-  // playback). Use the player-level fields when no activePlayerQueue is set.
-  // Prefer current_media timing when available (external source playing on the player)
-  if (
-    store.activePlayer?.current_media?.elapsed_time != null &&
-    store.activePlayer?.current_media?.elapsed_time_last_updated != null
-  ) {
-    return {
-      elapsedTime: store.activePlayer.current_media.elapsed_time,
-      lastUpdated: store.activePlayer.current_media.elapsed_time_last_updated,
-      playbackState: store.activePlayer.playback_state,
-    };
-  }
-
-  // Fall back to player-level elapsed_time (legacy / provider-level value)
-  if (
-    store.activePlayer?.elapsed_time != null &&
-    store.activePlayer?.elapsed_time_last_updated != null
-  ) {
-    return {
-      elapsedTime: store.activePlayer.elapsed_time,
-      lastUpdated: store.activePlayer.elapsed_time_last_updated,
-      playbackState: store.activePlayer.playback_state,
-    };
-  }
-
-  return null;
-});
+const serverTiming = computed(() => resolveActiveTiming());
 
 const serverElapsedTime = computed(() => {
-  // include nowTick.value so this computed re-evaluates periodically while mounted
-  // and updates UI for fallback player-level current_media that relies on Date.now()
+  // include nowTick.value so this computed re-evaluates periodically while
+  // mounted; the resolved position extrapolates from the current time, which is
+  // not reactive by itself
   void nowTick.value;
 
-  // Adaptive tick: only run the timer when we have a playing source that relies on time progression
-  const isPlaying = store.activePlayer?.playback_state === "playing";
-  const usingQueue = !!(
-    store.activePlayerQueue && store.activePlayerQueue.active
-  );
-  const hasCurrentMedia =
-    store.activePlayer?.current_media?.elapsed_time != null;
-
-  // Start ticking when playing and either using queue or external current_media
-  if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
+  // Adaptive tick: the resolved position only advances on its own while the
+  // source it came from is playing.
+  if (serverTiming.value?.playbackState === PlaybackState.PLAYING) startTick();
   else stopTick();
 
-  const timing = serverTiming.value;
-  if (!timing) return 0;
-
-  return (
-    computeElapsedTime(
-      timing.elapsedTime,
-      timing.lastUpdated,
-      timing.playbackState,
-      store.curQueueItem?.extra_attributes?.playback_speed ?? 1,
-    ) ?? 0
-  );
+  return resolveActiveElapsedTime() ?? 0;
 });
 
 const displayedElapsedTime = computed(() => {
@@ -373,9 +324,11 @@ const chapterTicks = computed(() =>
 );
 
 const hasWaveform = computed(() => !!props.waveform?.length);
-const usesWaveformLayout = computed(
-  () => hasWaveform.value || props.waveformLoading,
-);
+// Older Cast and Android TV runtimes need an opacity layer instead of color-mix().
+const trackBackgroundStyle = computed(() => ({
+  backgroundColor: props.color,
+  opacity: 0.3,
+}));
 
 const progressPercent = computed(() => {
   const duration = store.activePlayer?.current_media?.duration;
@@ -409,11 +362,17 @@ watch(serverTiming, (timing) => {
   }
 });
 
-watch(displayedElapsedTime, (newTime) => {
-  if (!isDragging.value) {
-    curTimeValue.value = newTime;
-  }
-});
+// immediate, so a fresh mount adopts the position that is already playing or
+// paused; a paused one never changes again to trigger the watcher
+watch(
+  displayedElapsedTime,
+  (newTime) => {
+    if (!isDragging.value) {
+      curTimeValue.value = newTime;
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   () => store.curQueueItem?.queue_item_id,

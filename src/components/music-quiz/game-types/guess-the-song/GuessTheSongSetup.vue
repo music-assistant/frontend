@@ -73,7 +73,7 @@
       </Field>
     </div>
 
-    <slot name="before-sources" />
+    <slot name="before-sources"></slot>
 
     <MusicQuizSourceSelector
       v-model="sourceUris"
@@ -111,7 +111,7 @@ import {
 import type {
   MusicQuizDifficulty,
   MusicQuizGuessTheSongConfig,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { PartyPopper } from "@lucide/vue";
 import { computed, ref } from "vue";

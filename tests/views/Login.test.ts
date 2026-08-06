@@ -3,53 +3,70 @@ import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  apiState: { value: "disconnected" as string },
   authenticateWithToken: vi.fn(),
   clearAuth: vi.fn(),
   clearGuestSession: vi.fn(),
   connectRemote: vi.fn(),
   disconnectRemote: vi.fn(),
+  endRejectedGuestSession: vi.fn(),
   getCurrentUserInfo: vi.fn(),
   getPersistentToken: vi.fn(),
   getToken: vi.fn(),
   getStoredRemoteId: vi.fn(),
+  guestSessionKind: vi.fn(),
   leaveGuestSession: vi.fn(),
+  returnToFullApp: vi.fn(),
   routerReplace: vi.fn(),
   sendCommand: vi.fn(),
   serverInfo: {
-    value: { server_id: "server-id" } as { server_id: string } | null,
+    value: {
+      homeassistant_addon: false,
+      server_id: "server-id",
+    } as { homeassistant_addon: boolean; server_id: string } | null,
   },
   setToken: vi.fn(),
 }));
 
-vi.mock("@/plugins/api", () => ({
-  ConnectionState: {
-    AUTHENTICATED: "authenticated",
-    AUTHENTICATING: "authenticating",
-    AUTH_REQUIRED: "auth_required",
-    DISCONNECTED: "disconnected",
-    FAILED: "failed",
-    RECONNECTING: "reconnecting",
-  },
-  api: {
-    authenticateWithToken: mocks.authenticateWithToken,
-    disconnect: vi.fn(),
-    getCurrentUserInfo: mocks.getCurrentUserInfo,
-    sendCommand: mocks.sendCommand,
-    serverInfo: mocks.serverInfo,
-    state: { value: "disconnected" },
-  },
-}));
+vi.mock("@/plugins/api", async () => {
+  // Login.vue watches api.state, so the mock has to carry a real ref:
+  // assignments to a plain { value } would never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  mocks.apiState = ref(mocks.apiState.value);
+  return {
+    ConnectionLostError: class ConnectionLostError extends Error {},
+    ConnectionState: {
+      AUTHENTICATED: "authenticated",
+      AUTHENTICATING: "authenticating",
+      AUTH_REQUIRED: "auth_required",
+      DISCONNECTED: "disconnected",
+      FAILED: "failed",
+      RECONNECTING: "reconnecting",
+    },
+    api: {
+      authenticateWithToken: mocks.authenticateWithToken,
+      disconnect: vi.fn(),
+      getCurrentUserInfo: mocks.getCurrentUserInfo,
+      sendCommand: mocks.sendCommand,
+      serverInfo: mocks.serverInfo,
+      state: mocks.apiState,
+    },
+  };
+});
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
     clearAuth: mocks.clearAuth,
     clearGuestSession: mocks.clearGuestSession,
+    endRejectedGuestSession: mocks.endRejectedGuestSession,
     getPersistentToken: mocks.getPersistentToken,
     getToken: mocks.getToken,
+    guestSessionKind: mocks.guestSessionKind,
     isDashboardViewer: () => false,
     isGuestAccessSession: () =>
       sessionStorage.getItem("ma_guest_access_token") !== null,
     leaveGuestSession: mocks.leaveGuestSession,
+    returnToFullApp: mocks.returnToFullApp,
     setToken: mocks.setToken,
   },
 }));
@@ -214,6 +231,7 @@ beforeEach(() => {
   setLocation("");
   vi.clearAllMocks();
   vi.useRealTimers();
+  mocks.apiState.value = "disconnected";
   mocks.routerReplace.mockResolvedValue(undefined);
   vi.stubGlobal("WebSocket", WebSocketMock);
   mocks.clearAuth.mockImplementation(() => {
@@ -234,6 +252,20 @@ beforeEach(() => {
   mocks.leaveGuestSession.mockImplementation(() => {
     mocks.clearGuestSession();
   });
+  mocks.guestSessionKind.mockImplementation(() =>
+    sessionStorage.getItem("ma_guest_access_token") ? "party" : null,
+  );
+  mocks.endRejectedGuestSession.mockImplementation(() => {
+    const kind = mocks.guestSessionKind();
+    if (!kind) return { outcome: "no-guest-session" };
+    mocks.clearGuestSession();
+    if (mocks.getToken()) {
+      mocks.returnToFullApp();
+      return { outcome: "own-session-restored" };
+    }
+    sessionStorage.setItem("ma_guest_session_ended", kind);
+    return { outcome: "ended", kind };
+  });
   mocks.getToken.mockImplementation(
     () =>
       sessionStorage.getItem("ma_guest_access_token") ||
@@ -249,7 +281,10 @@ beforeEach(() => {
     username: "ingress-user",
     role: "admin",
   });
-  mocks.serverInfo.value = { server_id: "server-id" };
+  mocks.serverInfo.value = {
+    homeassistant_addon: false,
+    server_id: "server-id",
+  };
   mocks.setToken.mockImplementation((token: string) => {
     sessionStorage.setItem("ma_guest_access_token", token);
   });
@@ -277,16 +312,15 @@ describe("guest join login", () => {
 
       const wrapper = mountLogin();
 
-      await vi.waitFor(() => {
-        expect(wrapper.emitted("authenticated")).toEqual([
-          [
-            {
-              token: "guest-token",
-              user: { user_id: "guest-id", username, role: "guest" },
-            },
-          ],
-        ]);
-      });
+      await flushPromises();
+      expect(wrapper.emitted("authenticated")).toEqual([
+        [
+          {
+            token: "guest-token",
+            user: { user_id: "guest-id", username, role: "guest" },
+          },
+        ],
+      ]);
       expect(wrapper.emitted("local-connect")).toEqual([
         ["http://music-assistant.local:8095"],
       ]);
@@ -324,9 +358,8 @@ describe("guest join login", () => {
     await wrapper.find("input").setValue("http://selected-server:8095");
     await wrapper.find("button").trigger("click");
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(wrapper.emitted("local-connect")).toEqual([
       ["http://selected-server:8095"],
     ]);
@@ -352,9 +385,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
       code: "ABCD1234",
     });
@@ -376,15 +408,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "admin-token",
-        user: {
-          user_id: "regular-id",
-          username: "regular-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: {
+        user_id: "regular-id",
+        username: "regular-user",
+        role: "admin",
+      },
     });
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
@@ -415,21 +446,46 @@ describe("guest join login", () => {
     );
     mocks.sendCommand.mockResolvedValue({
       success: false,
-      error: "expired",
+      error: "Invalid or expired join code",
     });
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain(
-        "Failed to join party. The code may have expired.",
-      );
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Couldn't join the party");
+    expect(wrapper.get(".text-h6").text()).toBe("Couldn't join the party");
+    expect(wrapper.text()).toContain("Invalid or expired join code");
+    expect(wrapper.text()).not.toContain("Connection Failed");
     expect(sessionStorage.getItem("ma_pending_join_code")).toBeNull();
     expect(sessionStorage.getItem("ma_pending_join_type")).toBeNull();
     expect(sessionStorage.getItem("ma_guest_server_address")).toBeNull();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
     expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
+    expect(wrapper.emitted("authenticated")).toBeUndefined();
+  });
+
+  it("shows the server reason when the join code exchange is rate limited", async () => {
+    setLocation("?join=abcd1234");
+    mockStandaloneFrontend();
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+    mocks.sendCommand.mockResolvedValue({
+      success: false,
+      error: "Too many failed attempts. Please try again in 120 seconds.",
+    });
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Couldn't join the party");
+    expect(wrapper.get(".text-h6").text()).toBe("Couldn't join the party");
+    expect(wrapper.text()).toContain(
+      "Too many failed attempts. Please try again in 120 seconds.",
+    );
+    expect(wrapper.text()).not.toContain("expired");
+    expect(wrapper.text()).not.toContain("Connection Failed");
     expect(wrapper.emitted("authenticated")).toBeUndefined();
   });
 
@@ -439,9 +495,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(wrapper.emitted("local-connect")).toEqual([
       ["http://localhost:3000"],
     ]);
@@ -461,9 +516,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(mocks.connectRemote).toHaveBeenCalledWith(remoteId, {
       remember: false,
     });
@@ -484,15 +538,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "admin-token",
-        user: {
-          user_id: "regular-id",
-          username: "regular-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: {
+        user_id: "regular-id",
+        username: "regular-user",
+        role: "admin",
+      },
     });
     expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
     expect(mocks.sendCommand).not.toHaveBeenCalledWith(
@@ -516,15 +569,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "guest-token",
-        user: {
-          user_id: "guest-id",
-          username: "party_guest",
-          role: "guest",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "guest-token",
+      user: {
+        user_id: "guest-id",
+        username: "party_guest",
+        role: "guest",
+      },
     });
     expect(mocks.authenticateWithToken).not.toHaveBeenCalledWith("admin-token");
     expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
@@ -539,9 +591,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Network unavailable");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Network unavailable");
     expect(sessionStorage.getItem("ma_pending_join_code")).toBe("abcd1234");
     expect(sessionStorage.getItem("ma_pending_join_type")).toBe("remote");
     expect(sessionStorage.getItem("ma_guest_remote_id")).toBe(remoteId);
@@ -574,18 +625,22 @@ describe("guest join login", () => {
       "http://localhost:3000/hassio_ingress/server/?join=abcd1234#/guest",
     );
     mockHostedFrontend();
+    mocks.serverInfo.value = {
+      homeassistant_addon: true,
+      server_id: "server-id",
+    };
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        user: {
-          user_id: "ingress-user",
-          username: "ingress-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      user: {
+        user_id: "ingress-user",
+        username: "ingress-user",
+        role: "admin",
+      },
     });
+
     expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
     expect(mocks.sendCommand).not.toHaveBeenCalledWith(
       "auth/join_code/exchange",
@@ -603,12 +658,17 @@ describe("guest join login", () => {
     localStorage.setItem("mass_remote_id", regularRemoteId);
     mocks.authenticateWithToken.mockRejectedValueOnce(new Error("expired"));
 
-    mountLogin();
+    const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(mocks.leaveGuestSession).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
+    await flushPromises();
 
+    // The reload is already under way, so nothing should replace it with a
+    // sign-in form the guest would see flash past.
+    expect(wrapper.text()).not.toContain("Username");
+    expect(mocks.clearGuestSession).toHaveBeenCalledOnce();
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
     expect(mocks.connectRemote).toHaveBeenCalledWith(guestRemoteId, {
       remember: false,
     });
@@ -619,5 +679,199 @@ describe("guest join login", () => {
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
     expect(localStorage.getItem("mass_remote_id")).toBe(regularRemoteId);
+  });
+});
+
+describe("ended guest session", () => {
+  const stubExpiredGuestToken = (kind = "party") => {
+    setLocation("");
+    mockStandaloneFrontend();
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+    sessionStorage.setItem("ma_guest_access_token", "expired-guest-token");
+    sessionStorage.setItem(
+      "ma_guest_server_address",
+      "http://music-assistant.local:8095",
+    );
+    mocks.guestSessionKind.mockReturnValue(kind);
+    mocks.authenticateWithToken.mockRejectedValue(new Error("expired"));
+  };
+
+  it("explains an ended party session instead of asking for credentials", async () => {
+    stubExpiredGuestToken();
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
+    expect(wrapper.text()).toContain(
+      "Ask the host to share the party link or QR code again to rejoin.",
+    );
+    expect(wrapper.text()).toContain("Scan QR Code");
+    expect(wrapper.text()).not.toContain("Username");
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("party");
+    expect(mocks.clearGuestSession).toHaveBeenCalledOnce();
+    expect(mocks.returnToFullApp).not.toHaveBeenCalled();
+    expect(mocks.clearAuth).not.toHaveBeenCalled();
+  });
+
+  it("uses the quiz wording for an ended quiz session", async () => {
+    stubExpiredGuestToken("music_quiz");
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your quiz session has ended");
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("music_quiz");
+  });
+
+  it("keeps explaining an ended session after a reload", async () => {
+    setLocation("");
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
+    expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
+    expect(mocks.connectRemote).not.toHaveBeenCalled();
+  });
+
+  it("drops the ended marker when the guest scans a fresh join code", async () => {
+    setLocation("?join=abcd1234");
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+    localStorage.setItem(
+      "mass_server_address",
+      "http://music-assistant.local:8095",
+    );
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toBeTruthy();
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
+      code: "ABCD1234",
+    });
+  });
+
+  it("hands the tab back to the full app when the guest leaves", async () => {
+    stubExpiredGuestToken();
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
+    const leaveButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Continue to Music Assistant");
+    await leaveButton!.trigger("click");
+
+    expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
+    expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
+  });
+});
+
+describe("ingress login", () => {
+  it("uses ingress authentication for a Home Assistant add-on", async () => {
+    setLocation("hassio_ingress/server/");
+    mockHostedFrontend();
+    mocks.serverInfo.value = {
+      homeassistant_addon: true,
+      server_id: "server-id",
+    };
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      user: {
+        role: "admin",
+        user_id: "ingress-user",
+        username: "ingress-user",
+      },
+    });
+    expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
+    expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
+  });
+
+  it("uses stored authentication for a standalone server behind ingress", async () => {
+    setLocation("hassio_ingress/server/");
+    mockHostedFrontend();
+    localStorage.setItem("ma_access_token", "admin-token");
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: {
+        role: "admin",
+        user_id: "regular-id",
+        username: "regular-user",
+      },
+    });
+    expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
+    expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
+  });
+
+  it("shows the normal login for a standalone server behind ingress", async () => {
+    setLocation("hassio_ingress/server/");
+    mockHostedFrontend();
+
+    const wrapper = mountLogin();
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Username");
+    expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
+  });
+});
+
+describe("connection state changes", () => {
+  it("shows the reconnecting screen when the connection drops", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    mocks.apiState.value = "reconnecting";
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Reconnecting");
+    wrapper.unmount();
+  });
+
+  it("returns to the server picker when a reconnect fails", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+    mocks.apiState.value = "reconnecting";
+    await flushPromises();
+    expect(wrapper.text()).toContain("Reconnecting");
+
+    mocks.apiState.value = "disconnected";
+
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("Reconnecting");
+    expect(wrapper.text()).toContain("Connect");
+    wrapper.unmount();
+  });
+
+  it("keeps explaining an ended guest session while the connection churns", async () => {
+    mockStandaloneFrontend();
+    sessionStorage.setItem("ma_guest_session_ended", "party");
+    const wrapper = mountLogin();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
+
+    mocks.apiState.value = "reconnecting";
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Your party session has ended");
+    expect(wrapper.text()).not.toContain("Reconnecting");
+    wrapper.unmount();
   });
 });

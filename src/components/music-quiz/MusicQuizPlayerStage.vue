@@ -1,5 +1,10 @@
 <template>
-  <section v-if="state.phase === 'lobby'" class="flex flex-col gap-3">
+  <MusicQuizPreparingState
+    v-if="state.preparing"
+    class="rounded-xl border shadow-sm"
+  />
+
+  <section v-else-if="state.phase === 'lobby'" class="flex flex-col gap-3">
     <MusicQuizAutoStartStatus
       v-if="state.auto_start_at != null"
       :state="state"
@@ -63,11 +68,12 @@ import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
+import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import type {
   MusicQuizAnswerSubmission,
   MusicQuizCurrentRound,
   MusicQuizSupportedPersonalizedState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Trophy } from "@lucide/vue";
 import type { Component } from "vue";

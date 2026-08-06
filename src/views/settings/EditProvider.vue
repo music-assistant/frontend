@@ -24,7 +24,10 @@
 
       <!-- Error banner: shows why the provider failed to load -->
       <div
-        v-if="config.enabled && config.last_error"
+        v-if="
+          config.enabled &&
+          (config.last_error || config.status === ProviderStatus.AUTH_REQUIRED)
+        "
         class="mb-4 flex gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive"
       >
         <TriangleAlert class="size-5 shrink-0" />
@@ -35,11 +38,15 @@
           <div
             class="mt-0.5 text-sm whitespace-pre-wrap break-words opacity-90"
           >
-            {{ config.last_error?.message }}
+            {{
+              config.last_error?.message ||
+              $t("settings.provider_status_auth_required")
+            }}
           </div>
           <div
             v-if="
               config.status === ProviderStatus.INCOMPATIBLE ||
+              canReconfigure ||
               config.status === ProviderStatus.ERROR
             "
             class="mt-3 flex gap-2"
@@ -54,11 +61,28 @@
               <Trash2 class="size-4" />
               {{ $t("settings.remove_provider") }}
             </Button>
-            <!-- other errors: offer to retry loading -->
-            <Button v-else size="sm" variant="destructive" @click="onReload">
-              <RefreshCw class="size-4" />
-              {{ $t("settings.reload") }}
-            </Button>
+            <template v-else>
+              <!-- auth required / error: relaunch the setup (reconfigure) flow -->
+              <Button
+                v-if="canReconfigure"
+                size="sm"
+                variant="destructive"
+                @click="onReconfigure"
+              >
+                <RefreshCw class="size-4" />
+                {{ $t("settings.reconfigure") }}
+              </Button>
+              <!-- error: also offer a plain reload -->
+              <Button
+                v-if="config.status === ProviderStatus.ERROR"
+                size="sm"
+                variant="outline"
+                @click="onReload"
+              >
+                <RefreshCw class="size-4" />
+                {{ $t("settings.reload") }}
+              </Button>
+            </template>
           </div>
         </div>
       </div>
@@ -161,19 +185,7 @@
       persistent
       style="display: flex; align-items: center; justify-content: center"
     >
-      <v-card v-if="showAuthLink" style="background-color: white">
-        <v-card-title>Authenticating...</v-card-title>
-        <v-card-subtitle
-          >A new tab/popup should be opened where you can
-          authenticate</v-card-subtitle
-        >
-        <v-card-actions>
-          <a id="auth" href="" target="_blank"
-            ><v-btn>Click here if the popup did not open</v-btn></a
-          >
-        </v-card-actions>
-      </v-card>
-      <v-progress-circular v-else indeterminate size="64" color="primary" />
+      <v-progress-circular indeterminate size="64" color="primary" />
     </v-overlay>
 
     <provider-save-error-dialog
@@ -189,18 +201,19 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Button } from "@/components/ui/button";
+import { useConfigAction } from "@/composables/useConfigAction";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
+import { canReconfigureProvider } from "@/helpers/provider_config";
 import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
-  EventMessage,
   EventType,
   ProviderConfig,
   ProviderStatus,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { RefreshCw, Trash2, TriangleAlert } from "@lucide/vue";
-import { nanoid } from "nanoid";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -211,14 +224,15 @@ import EditConfig from "./EditConfig.vue";
 const router = useRouter();
 const { t } = useI18n();
 const config = ref<ProviderConfig>();
-const sessionId = nanoid(11);
 const loading = ref(false);
-const showAuthLink = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
+let configLoadRequestId = 0;
+let configRefreshRequestId = 0;
+let unsubProvidersUpdated: (() => void) | undefined;
 
 // props
 const props = defineProps<{
@@ -231,32 +245,20 @@ const allConfigEntries = computed(() => {
   return Object.values(config.value.values);
 });
 
-onMounted(() => {
-  //reload if/when item updates
-  const unsub = api.subscribe(EventType.AUTH_SESSION, (evt: EventMessage) => {
-    // handle AUTH_SESSION event (used for auth flows to open the auth url)
-    // ignore any events that not match our session id.
-    if (evt.object_id !== sessionId) return;
-    const url = evt.data as string;
-    // Some browsers (e.g. iOS) have a weird limitation that we're not allowed to do window.open,
-    // unless a user interaction has happened. So we need to do this the hard way
-    showAuthLink.value = true;
-    window.setTimeout(() => {
-      const a = document.getElementById("auth") as HTMLAnchorElement;
-      a.setAttribute("href", url);
-      a.click();
-    }, 100);
-  });
-  onBeforeUnmount(unsub);
-});
+// auth_required/error providers can relaunch their setup (reconfigure) flow
+const canReconfigure = computed(() =>
+  canReconfigureProvider(
+    config.value?.status,
+    api.providerManifests[config.value?.domain ?? ""]?.has_setup_flow,
+    config.value?.enabled,
+  ),
+);
 
 // watchers
 watch(
   () => props.instanceId,
-  async (val) => {
-    if (val) {
-      config.value = await api.getProviderConfig(val);
-    }
+  (val) => {
+    if (val) void loadConfig(val);
   },
   { immediate: true },
 );
@@ -265,6 +267,16 @@ watch(showRenameDialog, (val) => {
   if (val && config.value) {
     editName.value = config.value.name || null;
   }
+});
+
+onMounted(() => {
+  unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+    if (props.instanceId) void refreshProviderConfig(props.instanceId);
+  });
+});
+
+onBeforeUnmount(() => {
+  unsubProvidersUpdated?.();
 });
 
 // methods
@@ -282,6 +294,18 @@ const onReload = function () {
     .then(() => toast.success(t("settings.provider_reloading")))
     .catch((err) => toast.error(String(err)));
   backToProviders();
+};
+
+const onReconfigure = function () {
+  if (!config.value) return;
+  const instanceId = config.value.instance_id;
+  eventbus.emit("setupFlowDialog", {
+    kind: "reconfigure",
+    instanceId,
+    onFlowEnded: () => {
+      void refreshProviderConfig(instanceId);
+    },
+  });
 };
 
 const onRemove = function () {
@@ -328,7 +352,6 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     })
     .finally(() => {
       loading.value = false;
-      showAuthLink.value = false;
     });
 };
 
@@ -347,59 +370,18 @@ const onImmediateApply = async function (
   }
 };
 
-const onAction = async function (
-  action: string,
-  values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  // append existing ConfigEntry values to allow
-  // values be passed between flow steps
-  for (const entry of Object.values(config.value!.values)) {
-    if (entry.value !== undefined && values[entry.key] == undefined) {
-      values[entry.key] = entry.value;
-    }
-  }
-  // ensure the session id is passed along (for auth actions)
-  values["session_id"] = sessionId;
-  api
-    .getProviderConfigEntries(
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokeProviderConfigAction(config.value!.instance_id, action),
+  saveValues: (values) =>
+    api.saveProviderConfig(
       config.value!.domain,
-      config.value!.instance_id,
-      action,
       values,
-    )
-    .then(async (entries) => {
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.saveProviderConfig(
-          config.value!.domain,
-          saveValues,
-          config.value!.instance_id,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-    })
-    .catch((err) => {
-      toast.error(String(err));
-    })
-    .finally(() => {
-      loading.value = false;
-      showAuthLink.value = false;
-    });
-};
+      config.value!.instance_id,
+    ),
+});
 
 const getAuthorsMarkdown = function (authors: string[]) {
   const allAuthors: string[] = [];
@@ -441,6 +423,44 @@ const saveRename = function () {
       showRenameDialog.value = false;
     });
 };
+
+async function loadConfig(instanceId: string) {
+  const requestId = ++configLoadRequestId;
+  try {
+    const updatedConfig = await api.getProviderConfig(instanceId);
+    if (requestId === configLoadRequestId && props.instanceId === instanceId) {
+      config.value = updatedConfig;
+    }
+  } catch (err) {
+    if (requestId === configLoadRequestId) {
+      toast.error(String(err));
+    }
+  }
+}
+
+async function refreshProviderConfig(instanceId: string) {
+  if (config.value?.instance_id !== instanceId) return;
+  const requestId = ++configRefreshRequestId;
+  try {
+    const updatedConfig = await api.getProviderConfig(instanceId);
+    if (
+      requestId === configRefreshRequestId &&
+      props.instanceId === instanceId &&
+      config.value?.instance_id === instanceId
+    ) {
+      config.value.status = updatedConfig.status;
+      config.value.last_error = updatedConfig.last_error;
+      config.value.values = mergeConfigEntries(
+        config.value.values,
+        updatedConfig.values,
+      );
+    }
+  } catch (err) {
+    if (requestId === configRefreshRequestId) {
+      toast.error(String(err));
+    }
+  }
+}
 </script>
 
 <style scoped>

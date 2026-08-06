@@ -23,9 +23,11 @@
     <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
     <div class="flex min-h-0 flex-1 flex-col gap-4">
+      <MusicQuizPreparingState v-if="state.preparing" class="min-h-0 flex-1" />
+
       <component
         :is="game.adapters.presentBody"
-        v-if="
+        v-else-if="
           game.adapters.presentBody &&
           currentRound &&
           (state.phase === 'answering' || state.phase === 'reveal')
@@ -154,6 +156,7 @@ import MusicQuizLeaderboard, {
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
 import MusicQuizPlayerTile from "@/components/music-quiz/MusicQuizPlayerTile.vue";
+import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
 import type { MusicQuizGameDefinition } from "@/components/music-quiz/game_types";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
@@ -161,8 +164,8 @@ import { Button } from "@/components/ui/button";
 import type {
   MusicQuizCurrentRound,
   MusicQuizSupportedHostState,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizCelebration } from "@/composables/useMusicQuizCelebration";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizCelebration } from "@/composables/music-quiz/useMusicQuizCelebration";
 import { $t } from "@/plugins/i18n";
 import { Minimize2 } from "@lucide/vue";
 import { computed, watch, type Component } from "vue";

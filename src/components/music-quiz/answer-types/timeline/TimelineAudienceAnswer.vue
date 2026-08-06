@@ -110,9 +110,9 @@
         data-testid="timeline-leaderboard-region"
         class="lg:min-h-0 lg:overflow-hidden"
       >
-        <slot name="leaderboard" />
+        <slot name="leaderboard"></slot>
       </div>
-      <slot v-else name="leaderboard" />
+      <slot v-else name="leaderboard"></slot>
     </div>
   </div>
 </template>
@@ -125,8 +125,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX } from "@lucide/vue";

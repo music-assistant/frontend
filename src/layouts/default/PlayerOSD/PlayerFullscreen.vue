@@ -116,27 +116,33 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- subtitle: album -->
+            <!-- subtitle: album; placeholder when empty so the artwork
+                 above keeps a constant size -->
             <v-card-subtitle
-              v-else-if="
-                store.activePlayer?.current_media?.album && showAlbumSubtitle
-              "
-              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+              v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
+              :style="`font-size: ${subTitleFontSize};${
+                store.activePlayer.current_media.album ? 'cursor:pointer;' : ''
+              }`"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.album }}
+                {{ store.activePlayer.current_media.album || " " }}
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: artist -->
+            <!-- subtitle: artist; placeholder when empty, as above -->
             <v-card-subtitle
-              v-if="store.activePlayer?.current_media?.artist"
-              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+              v-if="
+                store.activePlayer?.powered != false &&
+                store.activePlayer?.current_media
+              "
+              :style="`font-size: ${subTitleFontSize};${
+                store.activePlayer.current_media.artist ? 'cursor:pointer;' : ''
+              }`"
               @click="onArtistClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.artist }}
+                {{ store.activePlayer.current_media.artist || " " }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -153,6 +159,9 @@
                   getSourceName(store.activePlayer),
                 ])
               }}
+            </v-card-subtitle>
+            <v-card-subtitle v-else-if="queueEnded" class="caption">
+              {{ $t("queue_ended") }}
             </v-card-subtitle>
             <v-card-subtitle
               v-else-if="
@@ -189,6 +198,11 @@
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
+            <!-- the queue played through: say so, rather than leaving its last
+                 track looking like it is still the current one -->
+            <div v-if="queueEnded" class="queue-ended">
+              {{ $t("queue_ended") }}
+            </div>
             <!-- empty state -->
             <div v-if="!totalItems" class="queue-empty">
               {{ $t("queue_empty") }}
@@ -328,7 +342,6 @@
             :show-labels="true"
             :color="sliderColor"
             :waveform="waveformData"
-            :waveform-loading="waveformLoading"
           />
         </div>
 
@@ -449,8 +462,8 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
-import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
-import { useLyricsOffset } from "@/composables/useLyricsOffset";
+import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
+import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -631,6 +644,7 @@ const {
   virtualRows,
   totalItems,
   upNextCount,
+  queueEnded,
   totalSize,
   measureRow,
   playerActive,
@@ -746,8 +760,7 @@ watch(
 );
 
 // Waveform for the current track — loaded centrally by useActiveTrackWaveform.
-const { waveformBins: waveformData, waveformLoading } =
-  useActiveTrackWaveform();
+const { waveformBins: waveformData } = useActiveTrackWaveform();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
 
@@ -1477,6 +1490,13 @@ watchEffect(() => {
   opacity: 0.6;
 }
 
+.queue-ended {
+  padding: 8px 4px 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
 .main-media-details-image {
   flex: 1;
   min-height: 0;
@@ -1489,6 +1509,9 @@ watchEffect(() => {
   container-type: size;
 }
 .main-media-details-image .v-img {
+  /* Fallback for engines without container query units; they drop the pair below and collapse the image to 0x0. */
+  width: 100%;
+  height: auto;
   width: min(100cqi, 100cqh);
   height: min(100cqi, 100cqh);
   flex: 0 0 auto;

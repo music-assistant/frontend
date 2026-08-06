@@ -2,6 +2,7 @@
   <div class="relative flex flex-col gap-5" :class="{ 'min-h-64': busy }">
     <MusicQuizPreparingState
       v-if="busy"
+      autofocus
       class="absolute inset-0 z-10 rounded-lg"
     />
 
@@ -134,7 +135,7 @@ import { Switch } from "@/components/ui/switch";
 import type {
   MusicQuizCreateRequest,
   MusicQuizPlaybackOptions,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import {
   getMusicQuizPlaybackCreateFields,
   isMusicQuizPlaybackSelectionValid,

@@ -1,37 +1,41 @@
 <template>
-  <v-card flat color="transparent">
-    <v-card-text class="d-flex align-center gap-4">
-      <span style="min-width: 100px" class="v-label pl-2">{{
-        config.label
-      }}</span>
-      <v-slider
-        v-model="sliderModel"
-        :min="sliderMin"
-        :max="sliderMax"
-        :step="sliderStep"
-        hide-details
-        class="flex-grow-1 pr-4"
-        density="compact"
-        color="primary"
-      />
-      <v-text-field
-        v-model="displayValue"
-        type="number"
-        hide-details
-        density="compact"
-        style="max-width: 100px"
-        :aria-label="config.label"
-        @focus="isEditing = true"
-        @blur="isEditing = false"
-      />
-      <span style="min-width: 40px" class="pl-2">{{ config.unit }}</span>
-    </v-card-text>
-  </v-card>
+  <div class="@container p-4">
+    <!-- Below @sm the value entry wraps below so the slider keeps a usable width. -->
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <span class="min-w-[100px] pl-2 text-muted-foreground">
+        {{ config.label }}
+      </span>
+      <div class="min-w-0 flex-1 pr-4">
+        <Slider
+          :model-value="[sliderModel]"
+          :min="sliderMin"
+          :max="sliderMax"
+          :step="sliderStep"
+          @update:model-value="onSlide"
+        />
+      </div>
+      <div
+        class="order-last flex w-full items-center justify-end gap-2 @sm:order-none @sm:w-auto @sm:justify-start"
+      >
+        <Input
+          v-model="displayValue"
+          type="number"
+          class="w-24 shrink-0"
+          :aria-label="config.label"
+          @focus="isEditing = true"
+          @blur="isEditing = false"
+        />
+        <span class="min-w-[40px]">{{ config.unit }}</span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { $t } from "@/plugins/i18n";
 import { ref, computed } from "vue";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 
 type ParameterConfig = {
   // Minimum value for the slider
@@ -118,6 +122,12 @@ const sliderModel = computed({
     }
   },
 });
+
+const onSlide = (value?: number[]) => {
+  if (!value?.length) return;
+  sliderModel.value = value[0];
+};
+
 const sliderMax = computed(() => {
   if (config.value.is_log) {
     return Math.log10(config.value.max);
@@ -133,8 +143,10 @@ const sliderMin = computed(() => {
   }
 });
 const sliderStep = computed(() => {
+  // Log sliders need a non-zero step: reka-ui divides by it when snapping, so
+  // Math.log10(1) = 0 would give NaN (Vuetify treated it as continuous).
   if (config.value.is_log) {
-    return Math.log10(config.value.step);
+    return 0.001;
   } else {
     return config.value.step;
   }

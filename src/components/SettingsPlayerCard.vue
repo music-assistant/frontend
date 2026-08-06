@@ -37,6 +37,16 @@
             $t("settings.player_needs_setup")
           }}</span>
         </div>
+        <v-btn
+          size="small"
+          color="warning"
+          variant="flat"
+          block
+          class="mt-2"
+          @click.stop="handleSetup"
+        >
+          {{ $t("settings.start_setup") }}
+        </v-btn>
       </div>
 
       <div class="card-footer">
@@ -105,6 +115,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "click", playerConfig: PlayerConfig): void;
   (e: "menu", event: Event, playerConfig: PlayerConfig): void;
+  (e: "setup", playerConfig: PlayerConfig): void;
 }>();
 
 const player = computed(() => api.players[props.playerConfig.player_id]);
@@ -145,6 +156,10 @@ const handleClick = () => {
 
 const handleMenu = (event: Event) => {
   emit("menu", event, props.playerConfig);
+};
+
+const handleSetup = () => {
+  emit("setup", props.playerConfig);
 };
 </script>
 

@@ -2,7 +2,7 @@ import MusicQuizHostControlsMenu from "@/components/music-quiz/MusicQuizHostCont
 import type {
   MusicQuizHostState,
   MusicQuizPhase,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,11 +23,11 @@ const {
   mockUseMusicQuizHost: vi.fn(),
 }));
 
-vi.mock("@/composables/useMusicQuizHost", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizHost", () => ({
   useMusicQuizHost: mockUseMusicQuizHost,
 }));
 
-vi.mock("@/composables/useMusicQuiz", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuiz", () => ({
   isSupportedMusicQuiz: (state: { answer_type?: string; quiz_type?: string }) =>
     state.quiz_type === "guess_the_song" &&
     state.answer_type === "multiple_choice",
@@ -179,6 +179,17 @@ describe("MusicQuizHostControlsMenu", () => {
     expect(
       wrapper.get('[data-testid="quiz-host-end"]').attributes("disabled"),
     ).toBeDefined();
+  });
+
+  it("keeps a pending indicator on the trigger after the menu closes", () => {
+    const idleTrigger = mountMenu().get('[data-testid="guest-host-controls"]');
+    expect(idleTrigger.find('[role="status"]').exists()).toBe(false);
+
+    busy.value = true;
+    const trigger = mountMenu().get('[data-testid="guest-host-controls"]');
+
+    expect(trigger.attributes("aria-busy")).toBe("true");
+    expect(trigger.find('[role="status"]').exists()).toBe(true);
   });
 
   it("loads only the host state needed by the menu", () => {

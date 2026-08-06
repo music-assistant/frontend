@@ -6,7 +6,7 @@
       `position-${position}`,
       { 'guest-request': isGuestRequest, 'white-text': forceWhiteText },
     ]"
-    :style="isGuestRequest ? { '--guest-color': badgeColor } : {}"
+    :style="isGuestRequest ? guestRequestStyle : {}"
   >
     <div :class="['track-artwork', sizeClass]">
       <MediaItemThumb :item="queueItem" />
@@ -45,11 +45,7 @@
       ></div>
     </div>
     <!-- Guest request badge -->
-    <div
-      v-if="isGuestRequest"
-      class="guest-badge"
-      :style="{ '--badge-color': badgeColor }"
-    >
+    <div v-if="isGuestRequest" class="guest-badge" :style="guestBadgeStyle">
       <Rocket v-if="isBoost" class="badge-icon" />
       <UserRound v-else class="badge-icon" />
       <span v-if="position === 'current'">{{ badgeText }}</span>
@@ -62,12 +58,11 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
-import computeElapsedTime from "@/helpers/elapsed";
-import api from "@/plugins/api";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { Rocket, UserRound } from "@lucide/vue";
+import Color from "color";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 const { config: partyConfig } = usePartyConfig();
@@ -152,6 +147,26 @@ const badgeColor = computed(() => {
   return color;
 });
 
+// Older Cast and Android TV runtimes need precomputed alpha colors.
+const guestRequestStyle = computed(() => {
+  const color = Color(badgeColor.value);
+  return {
+    "--guest-background": color.alpha(0.2).string(),
+    "--guest-border": color.alpha(0.4).string(),
+    "--guest-current-background": color.alpha(0.25).string(),
+    "--guest-current-border": color.alpha(0.5).string(),
+    "--guest-shadow": color.alpha(0.3).string(),
+  };
+});
+
+const guestBadgeStyle = computed(() => {
+  const color = Color(badgeColor.value);
+  return {
+    "--badge-background": color.alpha(0.35).string(),
+    "--badge-border": color.alpha(0.55).string(),
+  };
+});
+
 // Get badge text based on queue option
 const badgeText = computed(() => {
   if (!isGuestRequest.value) return "";
@@ -231,24 +246,8 @@ const progressPercentage = computed(() => {
     return 0;
   }
 
-  // Get elapsed time from the isolated reactive map
-  const queue = store.activePlayerQueue;
-  const queueId = queue?.queue_id;
-  const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-  if (
-    queueTime?.elapsed_time != null &&
-    queueTime?.elapsed_time_last_updated != null
-  ) {
-    const elapsed =
-      computeElapsedTime(
-        queueTime.elapsed_time,
-        queueTime.elapsed_time_last_updated,
-        queue!.state,
-      ) ?? 0;
-    return Math.min((elapsed / duration) * 100, 100);
-  }
-
-  return 0;
+  const elapsed = resolveActiveElapsedTime() ?? 0;
+  return Math.min((elapsed / duration) * 100, 100);
 });
 
 // Watch for changes in position and isPlaying to start/stop ticking
@@ -327,16 +326,16 @@ watch(
 
 /* Guest request highlighting - color set via inline style from config */
 .track-card.guest-request {
-  background: color-mix(in srgb, var(--guest-color) 20%, transparent);
-  border: 2px solid color-mix(in srgb, var(--guest-color) 40%, transparent);
+  background: var(--guest-background);
+  border: 2px solid var(--guest-border);
 }
 
 .track-card.guest-request.position-current {
-  background: color-mix(in srgb, var(--guest-color) 25%, transparent);
-  border: 2px solid color-mix(in srgb, var(--guest-color) 50%, transparent);
+  background: var(--guest-current-background);
+  border: 2px solid var(--guest-current-border);
   box-shadow:
     0 0.8vh 3.2vh rgba(0, 0, 0, 0.3),
-    0 0 2vh color-mix(in srgb, var(--guest-color) 30%, transparent);
+    0 0 2vh var(--guest-shadow);
 }
 
 .guest-badge {
@@ -345,8 +344,8 @@ watch(
   align-items: center;
   gap: 0.6vh;
   padding: 0.5vh 1.2vh;
-  background: color-mix(in srgb, var(--badge-color) 35%, transparent);
-  border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
+  background: var(--badge-background);
+  border: 1px solid var(--badge-border);
   border-radius: 999px;
   color: rgba(var(--v-theme-on-surface), 0.9);
   font-size: clamp(0.65rem, 1.2vh, 1.1rem);

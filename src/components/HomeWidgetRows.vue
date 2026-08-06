@@ -268,8 +268,12 @@
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  :title="row.hidden ? $t('enable') : $t('disable')"
-                  :aria-label="row.hidden ? $t('enable') : $t('disable')"
+                  :title="
+                    row.hidden ? $t('settings.enable') : $t('settings.disable')
+                  "
+                  :aria-label="
+                    row.hidden ? $t('settings.enable') : $t('settings.disable')
+                  "
                   @click="toggleRow(row)"
                 >
                   <Eye v-if="!row.hidden" />
@@ -313,9 +317,9 @@ import EditorialShelf, {
 } from "@/components/discover/EditorialShelf.vue";
 import EditorialTimeline from "@/components/discover/EditorialTimeline.vue";
 import {
+  DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
   PLAYERS_ROW_ID,
-  DEFAULT_PRIORITY_ROWS,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
   setDiscoverRowHidden,
@@ -1035,6 +1039,7 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 14px;
   height: 320px;
+  position: relative;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x proximity;

@@ -7,7 +7,7 @@
     />
 
     <div class="flex flex-col gap-4">
-      <slot name="game" />
+      <slot name="game"></slot>
 
       <div
         v-if="state.phase === 'lobby' && state.playback"
@@ -122,9 +122,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
-import { useMusicQuizAutoStart } from "@/composables/useMusicQuizAutoStart";
-import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
+import type { MusicQuizSupportedHostState } from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAutoStart } from "@/composables/music-quiz/useMusicQuizAutoStart";
+import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
 import { $t } from "@/plugins/i18n";
 import {
   ChevronDown,

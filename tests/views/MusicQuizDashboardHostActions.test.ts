@@ -1,8 +1,9 @@
+import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
 import type {
   MusicQuizSupportedHostState,
   MusicQuizTriviaHostState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,7 +24,7 @@ const {
   mockUseMusicQuizHost: vi.fn(),
 }));
 
-vi.mock("@/composables/useMusicQuizHost", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuizHost", () => ({
   useMusicQuizHost: mockUseMusicQuizHost,
 }));
 
@@ -230,6 +231,9 @@ describe("MusicQuizDashboardView host actions", () => {
     const status = wrapper.get('[data-testid="music-quiz-preparing"]');
     expect(status.attributes("role")).toBe("status");
     expect(status.text()).toContain("providers.music_quiz.preparing_game");
+    expect(
+      wrapper.findComponent(MusicQuizPreparingState).props("autofocus"),
+    ).toBe(true);
     expect(wrapper.find('[data-testid="start-now"]').exists()).toBe(false);
 
     finishStart();
@@ -238,6 +242,28 @@ describe("MusicQuizDashboardView host actions", () => {
     expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
       false,
     );
+  });
+
+  it("shows preparation progress when the server reports preparing", async () => {
+    state.value = { ...HOST_STATE, preparing: true };
+    const wrapper = mountDashboard();
+
+    expect(
+      wrapper.get('[data-testid="music-quiz-preparing"]').text(),
+    ).toContain("providers.music_quiz.preparing_game");
+    // A host tab that did not issue the action must not have focus pulled away.
+    expect(
+      wrapper.findComponent(MusicQuizPreparingState).props("autofocus"),
+    ).toBe(false);
+    expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(false);
+
+    state.value = { ...HOST_STATE, preparing: false };
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(true);
   });
 
   it("deletes the finished game before opening fresh setup", async () => {
@@ -301,10 +327,15 @@ describe("MusicQuizDashboardView host actions", () => {
       expect.arrayContaining(["mx-auto", "max-w-6xl", "p-4"]),
     );
     expect(root.classes()).not.toContain("lg:h-full");
+    expect(wrapper.find('[data-testid="music-quiz-cast"]').exists()).toBe(true);
 
     await wrapper.get('[data-testid="enter-present"]').trigger("click");
 
     expect(wrapper.find('[data-testid="present-stage"]').exists()).toBe(true);
+    // the header (and its cast button) gives way to the present stage
+    expect(wrapper.find('[data-testid="music-quiz-cast"]').exists()).toBe(
+      false,
+    );
     expect(root.classes()).toEqual(
       expect.arrayContaining([
         "w-full",
@@ -425,6 +456,9 @@ function mountDashboard() {
         MusicQuizSessionPanels: true,
         MusicQuizSetupWizard: {
           template: '<div data-testid="setup-wizard" />',
+        },
+        ShowDashboardButton: {
+          template: '<button data-testid="music-quiz-cast" />',
         },
         MusicQuizUnsupportedGame: true,
         Dialog: {

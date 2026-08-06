@@ -94,11 +94,7 @@ const volumePlayers = computed(() => {
   );
 });
 
-const groupMembers = computed(() =>
-  volumePlayers.value.filter(
-    (player) => player.player_id !== props.player.player_id,
-  ),
-);
+const groupMembers = computed(() => volumePlayers.value);
 
 const childVolumePlayers = computed(() =>
   volumePlayers.value.filter(

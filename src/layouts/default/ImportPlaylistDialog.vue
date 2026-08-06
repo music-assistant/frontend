@@ -149,6 +149,6 @@ const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }
-  return $t("error");
+  return $t("error_generic");
 };
 </script>

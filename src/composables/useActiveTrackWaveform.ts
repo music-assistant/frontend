@@ -1,4 +1,11 @@
-import { ref, watch } from "vue";
+import {
+  effectScope,
+  getCurrentScope,
+  onScopeDispose,
+  ref,
+  watch,
+  type WatchStopHandle,
+} from "vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { MediaType } from "@/plugins/api/interfaces";
@@ -9,70 +16,92 @@ import { useUserPreferences } from "@/composables/userPreferences";
 // duplicate API calls.
 const waveformBins = ref<number[] | null>(null);
 const trackDurationSecs = ref<number>(0);
-const waveformLoading = ref(false);
-
-let lastFetchKey: string | undefined;
-let loadingTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 const { getPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
 
-// Watch queue/stream IDs and the show_waveform preference together so that
-// toggling the preference re-triggers a fetch without a track change.
-watch(
-  () =>
-    [
-      store.curQueueItem?.queue_item_id,
-      store.curQueueItem?.streamdetails?.item_id,
-      showWaveformPref.value,
-    ] as const,
-  async ([queueItemId, streamItemId, showWaveform]) => {
-    const fetchKey = `${showWaveform}:${queueItemId}:${streamItemId}`;
-    if (fetchKey === lastFetchKey) return;
-    lastFetchKey = fetchKey;
+// Survives a watcher restart so that a consumer remounting on an unchanged
+// track keeps the cached bins instead of refetching them.
+let lastFetchKey: string | undefined;
 
-    if (loadingTimeoutId !== null) {
-      clearTimeout(loadingTimeoutId);
-      loadingTimeoutId = null;
-    }
+let consumerCount = 0;
+let stopWatcher: WatchStopHandle | undefined;
 
-    waveformBins.value = null;
-    waveformLoading.value = false;
-    trackDurationSecs.value = store.curQueueItem?.duration ?? 0;
+// Detached scope, so the shared watcher is not torn down together with the
+// effect scope of whichever consumer happened to register first.
+const watcherScope = effectScope(true);
 
-    const mediaItem = store.curQueueItem?.media_item;
-    if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
-    if (!showWaveform) return;
-
-    const streamDetails = store.curQueueItem?.streamdetails;
-    if (!streamDetails) {
-      waveformLoading.value = true;
-      // Safety net: clear loading if streamdetails never arrive for this item.
-      loadingTimeoutId = setTimeout(() => {
-        if (lastFetchKey === fetchKey) waveformLoading.value = false;
-      }, 5000);
-      return;
-    }
-
-    waveformLoading.value = true;
-    try {
-      const bins = await api.getWaveForm(
-        streamDetails.item_id,
-        streamDetails.provider,
-      );
-      const currentKey = `${showWaveformPref.value}:${store.curQueueItem?.queue_item_id}:${store.curQueueItem?.streamdetails?.item_id}`;
-      if (currentKey !== fetchKey) return;
-      waveformBins.value = bins?.length ? bins : null;
-    } catch {
-      // No audio analysis available.
-    } finally {
-      const currentKey = `${showWaveformPref.value}:${store.curQueueItem?.queue_item_id}:${store.curQueueItem?.streamdetails?.item_id}`;
-      if (currentKey === fetchKey) waveformLoading.value = false;
-    }
-  },
-  { immediate: true },
-);
-
+/**
+ * Waveform bins and duration of the currently playing track.
+ *
+ * The data is shared between all callers and fetched once per track. Fetching
+ * only runs while at least one caller is alive.
+ */
 export function useActiveTrackWaveform() {
-  return { waveformBins, trackDurationSecs, waveformLoading };
+  if (++consumerCount === 1) startWatcher();
+
+  // A caller outside an effect scope cannot signal teardown, so it keeps the
+  // watcher alive for the lifetime of the module.
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      if (--consumerCount === 0) {
+        stopWatcher?.();
+        stopWatcher = undefined;
+      }
+    });
+  }
+
+  return { waveformBins, trackDurationSecs };
+}
+
+function startWatcher() {
+  stopWatcher = watcherScope.run(() =>
+    watch(currentFetchKey, loadWaveform, { immediate: true }),
+  );
+}
+
+/**
+ * Identifies everything the waveform request depends on, so that a change in
+ * any of it triggers a fetch and cached bins are never reused across it.
+ */
+function currentFetchKey() {
+  const streamDetails = store.curQueueItem?.streamdetails;
+  return [
+    showWaveformPref.value,
+    store.curQueueItem?.queue_item_id,
+    streamDetails?.item_id,
+    streamDetails?.provider,
+  ].join(":");
+}
+
+async function loadWaveform(fetchKey: string) {
+  if (fetchKey === lastFetchKey) return;
+  lastFetchKey = fetchKey;
+
+  waveformBins.value = null;
+  trackDurationSecs.value = store.curQueueItem?.duration ?? 0;
+
+  const mediaItem = store.curQueueItem?.media_item;
+  if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
+  if (!showWaveformPref.value) return;
+
+  // Without streamdetails there is nothing to analyse yet; this refires once
+  // they arrive, because the key covers them.
+  const streamDetails = store.curQueueItem?.streamdetails;
+  if (!streamDetails) return;
+
+  try {
+    const bins = await api.getWaveForm(
+      streamDetails.item_id,
+      streamDetails.provider,
+    );
+    // Drop the result unless it still matches both what is playing and what the
+    // cache claims to hold; while the watcher is stopped the two can drift, and
+    // storing bins the cache key does not describe would serve them for the
+    // wrong track on the next mount.
+    if (currentFetchKey() !== fetchKey || lastFetchKey !== fetchKey) return;
+    waveformBins.value = bins?.length ? bins : null;
+  } catch {
+    // No audio analysis available.
+  }
 }

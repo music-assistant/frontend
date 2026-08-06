@@ -8,7 +8,7 @@ import TriviaQuestion from "@/components/music-quiz/game-types/trivia/TriviaQues
 import type {
   MusicQuizTriviaHostState,
   MusicQuizTriviaRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 
 defineProps<
   MusicQuizHostGameAdapterProps<MusicQuizTriviaHostState, MusicQuizTriviaRound>

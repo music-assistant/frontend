@@ -165,6 +165,14 @@
     >
       <div class="disabled-banner">
         <span>{{ $t("settings.player_needs_setup") }}</span>
+        <v-btn
+          size="small"
+          color="warning"
+          variant="flat"
+          @click="startPlayerSetup"
+        >
+          {{ $t("settings.start_setup") }}
+        </v-btn>
       </div>
     </v-alert>
 
@@ -251,21 +259,24 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { watch } from "vue";
 
-import { nanoid } from "nanoid";
 import {
   ConfigEntryUI,
   UI_ENTRY_TYPE,
   isInjected,
+  mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
+import { useConfigAction } from "@/composables/useConfigAction";
 import { openLinkInNewTab } from "@/helpers/utils";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
-const sessionId = nanoid(11);
 const loading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
+let configLoadRequestId = 0;
+let configRefreshRequestId = 0;
 
 // props
 const props = defineProps<{
@@ -292,6 +303,11 @@ const unsub = api.subscribe(
   },
 );
 onBeforeUnmount(unsub);
+
+const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+  if (props.playerId) void refreshPlayerConfig(props.playerId);
+});
+onBeforeUnmount(unsubProvidersUpdated);
 
 // computed properties
 const config_entries = computed(() => {
@@ -368,10 +384,8 @@ const config_entries = computed(() => {
 
 watch(
   () => props.playerId,
-  async (val) => {
-    if (val) {
-      config.value = await api.getPlayerConfig(val);
-    }
+  (val) => {
+    if (val) void loadConfig(val);
   },
   { immediate: true },
 );
@@ -409,6 +423,14 @@ const enablePlayer = function () {
     });
 };
 
+const startPlayerSetup = function () {
+  if (!props.playerId) return;
+  eventbus.emit("setupFlowDialog", {
+    kind: "player",
+    playerId: props.playerId,
+  });
+};
+
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   values["enabled"] = config.value!.enabled;
   loading.value = true;
@@ -442,52 +464,49 @@ const onImmediateApply = async function (
     });
 };
 
-const onAction = async function (
-  action: string,
-  values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  // append existing ConfigEntry values to allow
-  // values be passed between flow steps
-  for (const entry of Object.values(config.value!.values)) {
-    if (entry.value !== undefined && values[entry.key] == undefined) {
-      values[entry.key] = entry.value;
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokePlayerConfigAction(config.value!.player_id, action),
+  saveValues: (values) => api.savePlayerConfig(props.playerId!, values),
+});
+
+async function loadConfig(playerId: string) {
+  const requestId = ++configLoadRequestId;
+  try {
+    const updatedConfig = await api.getPlayerConfig(playerId);
+    if (requestId === configLoadRequestId && props.playerId === playerId) {
+      config.value = updatedConfig;
+    }
+  } catch (err) {
+    if (requestId === configLoadRequestId) {
+      toast.error(String(err));
     }
   }
-  // ensure the session id is passed along (for auth actions)
-  values["session_id"] = sessionId;
-  api
-    .getPlayerConfigEntries(config.value!.player_id, action, values)
-    .then(async (entries) => {
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.savePlayerConfig(
-          props.playerId!,
-          saveValues,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-    })
-    .catch((err) => {
+}
+
+async function refreshPlayerConfig(playerId: string) {
+  if (config.value?.player_id !== playerId) return;
+  const requestId = ++configRefreshRequestId;
+  try {
+    const updatedConfig = await api.getPlayerConfig(playerId);
+    if (
+      requestId === configRefreshRequestId &&
+      props.playerId === playerId &&
+      config.value?.player_id === playerId
+    ) {
+      config.value.values = mergeConfigEntries(
+        config.value.values,
+        updatedConfig.values,
+      );
+    }
+  } catch (err) {
+    if (requestId === configRefreshRequestId) {
       toast.error(String(err));
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-};
+    }
+  }
+}
 </script>
 
 <style scoped>

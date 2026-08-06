@@ -2,7 +2,7 @@
   <div class="lyrics-container">
     <div v-if="loading || externalLoading" class="lyrics-loading">
       <Spinner class="size-6" />
-      <div>{{ $t("loading_lyrics") }}</div>
+      <div>{{ $t("lyrics_loading") }}</div>
     </div>
     <div v-else-if="!displayLines.length" class="lyrics-empty">
       {{ $t("no_lyrics_available") }}
@@ -69,7 +69,7 @@
               :style="
                 activeLyricIndex === index && n === filledNoteCount + 1
                   ? {
-                      backgroundImage: `linear-gradient(to right, ${textColor} ${currentNoteFillPercent}%, color-mix(in srgb, ${textColor} 35%, transparent) ${currentNoteFillPercent}%)`,
+                      backgroundImage: `linear-gradient(to right, ${textColor} ${currentNoteFillPercent}%, ${unsungNoteColor} ${currentNoteFillPercent}%)`,
                       backgroundClip: 'text',
                       '-webkit-background-clip': 'text',
                       '-webkit-text-fill-color': 'transparent',
@@ -106,6 +106,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { parseLrcLine } from "@/helpers/lrcParser";
 import { MediaItemType, StreamDetails, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import Color from "color";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
 interface DisplayLine {
@@ -139,6 +140,18 @@ const props = withDefaults(defineProps<Props>(), {
   externalLoading: false,
   highlightAhead: true,
   offset: 0,
+});
+
+// Older Cast and Android TV runtimes have no color-mix(), and an unsupported
+// stop invalidates the whole gradient, which would blank the note entirely.
+// Keywords and var() references can only be resolved by the browser, so those
+// keep the color-mix() form.
+const unsungNoteColor = computed(() => {
+  try {
+    return Color(props.textColor).alpha(0.35).string();
+  } catch {
+    return `color-mix(in srgb, ${props.textColor} 35%, transparent)`;
+  }
 });
 
 // Core state

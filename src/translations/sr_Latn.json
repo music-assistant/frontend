@@ -32,8 +32,8 @@
     "details": "Detalji",
     "enter_url": "Unesite URL koji želite ručno da dodate u bazu podataka",
     "external_source_active": "Eksterna integracija je aktivna: {0}",
-    "goto_album": "Idite na album {0}",
-    "goto_artist": "Idite na izvođača {0}",
+    "goto_album": "Prikažite album {0}",
+    "goto_artist": "Prikažite izvođača {0}",
     "items_selected": "Izabranih stavki: {0}",
     "items_total": "Ukupno stavki: {0}",
     "library": "Biblioteka",
@@ -224,12 +224,14 @@
                 "edited_channel": "Nacrtajte odziv ekvilajzera za ove kanale",
                 "channel": "Ovaj opseg će biti primenjen na",
                 "per_channel_preamp": "Dodatno pojačanje pretpojačala za {channel}",
-                "disable_multichannel_controls": "Onemogući višekanalne kontrole"
+                "disable_multichannel_controls": "Onemogući višekanalne kontrole",
+                "help": "Precizno oblikovanje tona: svaki opseg cilja određenu frekvenciju i može je oslabiti ili pojačati. Slabljenje je bezbednije od pojačavanja, koje može izazvati kliping."
             },
             "tone_control": {
                 "bass_level": "Nivo basa",
                 "mid_level": "Srednji nivo",
-                "treble_level": "Nivo visokih tonova"
+                "treble_level": "Nivo visokih tonova",
+                "help": "Jednostavno troopsežno podešavanje niskih, srednjih i visokih frekvencija. Koristite parametarski ekvilajzer za finiju kontrolu."
             },
             "parameter": {
                 "frequency": "Frekvencija",
@@ -241,7 +243,10 @@
                 "parametric_eq": "Parametarski ekvilajzer",
                 "tone_control": "Kontrola tona",
                 "gain": "Pojačanje",
-                "balance": "Balans"
+                "balance": "Balans",
+                "transpose": "Transponovanje",
+                "stereo_width": "Širina stereo zvuka",
+                "crossfeed": "Mešanje kanala"
             },
             "channels": {
                 "ALL": "Svi",
@@ -261,6 +266,40 @@
                 "remove_confirm": "Da li ste sigurni da želite da uklonite ovo DSP podešavanje?",
                 "custom": "Prilagođeno",
                 "selected": "Preset: {0}"
+            },
+            "transpose": {
+                "help": "Pomera muziku naviše ili naniže po tonalitetu bez promene tempa. Korisno za sviranje ili pevanje uz muziku u tonalitetu koji vam više odgovara.",
+                "cpu_hint": "Transponovanje troši više procesorskog procesa od ostalih filtera. Na slabijem hardveru preporučuje se korišćenje na samo jednom plejeru.",
+                "original_key": "Originalni tonalitet",
+                "unit": "polustepeni",
+                "unit_singular": "polustepeni",
+                "concert_pitch_432": "A = 432 Hz",
+                "concert_pitch_432_hint": "Podesite koncertni stim tako da ton A bude podešen na 432 Hz."
+            },
+            "input_gain_help": "Podešava ulazni nivo u lanac. Smanjite ga da biste ostavili prostora za filtere koji pojačavaju signale.",
+            "output_gain_help": "Podešava izlazni nivo iz lanca nakon što su primenjeni svi filteri. Jačina zvuka uređaja se primenjuje kasnije.",
+            "gain": {
+                "help": "Povećava ili smanjuje nivo svega što prolazi kroz ovu tačku u lancu."
+            },
+            "balance": {
+                "help": "Pomera zvuk prema levom ili desnom zvučniku. Primenjuje se samo na stereo audio."
+            },
+            "stereo_width": {
+                "help": "Prilagođava širinu stereo slike. Levo od centra sužava zvuk ka mono režimu, dok desno proširuje zvuk.",
+                "clip_hint": "Proširivanje iznad opcije „Originalno” može povećati vrhove signala i izazvati izobličenje. Razmislite o dodavanju limitera nakon ovog filtera.",
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Originalno",
+                    "wide": "Široko"
+                }
+            },
+            "crossfeed": {
+                "help": "Čini slušanje preko slušalica prirodnijim nežnim mešanjem levog i desnog kanala, slično slušanju preko zvučnika.",
+                "presets": {
+                    "low": "Nisko",
+                    "medium": "Srednje",
+                    "high": "Visoko"
+                }
             }
         },
         "dsp_enabled": "DSP je omogućen",
@@ -281,7 +320,7 @@
         "playerprovider": "Integracija plejera",
         "plugin": "Dodatak",
         "pluginprovider": "Dodatak",
-        "providers_total": "Ukupno stavki: {0}",
+        "providers_total": "{count} servis | Ukupno servisa: {count}",
         "stage": {
             "label": "Status",
             "options": {
@@ -400,7 +439,7 @@
         "players_count": "Broj plejera: {0}",
         "one_player": "1 plejer",
         "view_players": "Prikažite plejere",
-        "players_total": "Ukupno plejera: {0}",
+        "players_total": "{count} uređaj | Ukupno uređaja: {count}",
         "api_docs": "API dokumentacija",
         "no_group_providers": "Trenutno nemate dostupne integracije koje podržavaju kreiranje grupa",
         "provider_codeowners": "Ovaj servis je razvijen i održavan od strane",
@@ -420,7 +459,7 @@
         "onboarding_player_title": "Plejeri",
         "onboarding_player_desc": "Povežite zvučnike i uređaje kao što su Sonos, Chromecast ili AirPlay.",
         "onboarding_add_player": "Dodajte plejere",
-        "onboarding_footer": "Nove servise uvek možete dodati kasnije preko ove stranice podešavanja.",
+        "onboarding_footer": "Nove integracije uvek možete dodati kasnije preko ove stranice podešavanja.",
         "remote_access_qr_code": "QR kod",
         "remote_access_qr_code_description": "Skenirajte kamerom telefona da biste se odmah povezali.",
         "reset_to_defaults": "Vratite na podrazumevano",
@@ -582,7 +621,30 @@
         "customize_menu": {
             "label": "Prilagodite meni",
             "description": "Postavite navigacioni meni u režim izmene da biste prikazali, sakrili, promenili redosled i preimenovali njegove stavke."
-        }
+        },
+        "start_setup": "Pokreni podešavanje",
+        "setup_required": "Potrebno je podešavanje",
+        "setup_flow": {
+            "next": "Dalje",
+            "finish": "Završi",
+            "done": "Gotovo",
+            "open_external": "Otvori",
+            "external_waiting": "Čeka se da završite ovaj korak...",
+            "external_fallback": "Kliknite ovde ako se prozor nije otvorio",
+            "success_title": "Sve je spremno!",
+            "aborted_title": "Podešavanje je otkazano",
+            "aborted_text": "Podešavanje nije dovršeno.",
+            "open_settings": "Otvori podešavanja",
+            "setup_player_title": "Podešavanje plejera",
+            "expires_in": "Istiće za {0}",
+            "external_default_title": "Nastavite u pregledaču",
+            "external_default_text": "Otvoriće se novi prozor pregledača kako biste mogli da se prijavite i autorizujete Music Assistant. Vratite se ovde kada završite – ovaj dijalog se nastavlja automatski.",
+            "external_host": "Otvara {0}",
+            "session_ended_title": "Sesija podešavanja je istekla",
+            "session_ended_text": "Sesija podešavanja je istekla – moguće je da je proces završen. Proverite svoje servise ili plejere radi potvrde."
+        },
+        "options": "Opcije",
+        "add_group_player_desc": "Kreirajte trajnu grupu plejera sa {0} plejera. Kada puštate muziku u ovoj grupi plejera, članovi grupe će se automatski sinhronizovati."
     },
     "show_info": "Prikažite informacije",
     "show_select_boxes": "Prikažite polja za potvrdu",
@@ -688,7 +750,9 @@
         "artwork": "Omot",
         "import_file": "Uvezite datoteku",
         "bpm": "Tempo (otkucaja u minuti)",
-        "musical_key": "Muzički ključ"
+        "musical_key": "Muzički ključ",
+        "show_dashboard": "Strimuj kontrolnu tablu na uređaj",
+        "collapse_collections": "Skupi kolekcije"
     },
     "topresult": "Najbolji rezultat",
     "track": "Numera",
@@ -774,7 +838,6 @@
         "eq_band_count_singular": "1 opseg",
         "input_gain": "Ulazno pojačanje ({0} dB)",
         "output_gain": "Izlazno pojačanje ({0} dB)",
-        "output_limiter": "Ograničivač izlaza",
         "file_info": {
             "container": "Kontejner: {0}",
             "codec": "Kodek: {0}",
@@ -787,7 +850,7 @@
         "audio_processing": {
             "unknown": "Nepoznato",
             "unknown_format": "Nepoznat format",
-            "provider": "Servis: {0}",
+            "provider": "Provajder: {0}",
             "source_format": "Izvor: {0}",
             "pcm_format": "Deljena obrada: {0}",
             "output_format": "Konačan izlaz: {0}",
@@ -804,7 +867,7 @@
             "measured_lufs": "Izmerena glasnoća: {0} LUFS",
             "applied_gain_db": "Primenjeno pojačanje: {0} dB",
             "playback_speed": "Brzina reprodukcije: {0}x",
-            "crossfade": "Postepeni prelaz: {0}",
+            "crossfade": "Prelaz: {0}",
             "overlay_active": "Audio preklapanje aktivno",
             "source_channel": "Izvorni kanal: {0}",
             "source_channel_left": "Levo",
@@ -862,12 +925,12 @@
             "internal_format_conversion_detail": "Music Assistant konvertuje interni format obrade pre slanja na izlaz.",
             "normalization_title": "Normalizacija glasnoće",
             "playback_speed_title": "Brzina reprodukcije",
-            "crossfade_title": "Postepeni prelaz",
-            "overlay_title": "Audio prekrivanje",
-            "dsp_preset_label": "Unapred podešeni DSP režim",
+            "crossfade_title": "Prelaz",
+            "overlay_title": "Audio preklapanje",
+            "dsp_preset_label": "DSP preset",
             "dsp_title": "DSP",
             "bit_perfect_badge": "Bit-perfect",
-            "bit_perfect_detail": "Bit-perfect: audio uzorci su nepromenjeni u odnosu na izvor.",
+            "bit_perfect_detail": "Bit-perfect: dekodirani uzorci izvora stižu do izlaza nepromenjeni.",
             "samples_changed_detail": "Obrada zvuka ili konverzija formata bez gubitaka promenili su audio uzorke. Ovo nije „bit-perfect” prenos, ali ne bi trebalo da izazove čujan gubitak kvaliteta.",
             "lossy_output_detail": "Izlaz je kodiran kodekom sa gubicima. Ovo nije „bit-perfect” prenos i može smanjiti kvalitet zvuka.",
             "bit_perfect_unknown_detail": "Status „bit-perfect” prenosa nije dostupan."
@@ -994,7 +1057,9 @@
         "select_providers": "Izaberite servise",
         "save_changes": "Sačuvajte izmene",
         "update_password": "Ažurirajte lozinku",
-        "guest_role": "Gost"
+        "guest_role": "Gost",
+        "tokens_load_failed": "Učitavanje pristupnih tokena nije uspelo",
+        "users_load_failed": "Učitavanje korisnika nije uspelo"
     },
     "login": {
         "subtitle": "Povežite se sa vašim muzičkim serverom",
@@ -1042,7 +1107,26 @@
         "scan_qr_code": "Skenirajte QR kod",
         "scan_qr_hint": "Usmerite kameru prema QR kodu koji je prikazan u podešavanjima Music Assistant servera.",
         "qr_invalid": "QR kod nije validan. Skenirajte QR kod za udaljeni ID za Music Assistant.",
-        "qr_camera_error": "Nije moguće pristupiti kameri. Molimo vas da proverite dozvole."
+        "qr_camera_error": "Nije moguće pristupiti kameri. Molimo vas da proverite dozvole.",
+        "error_party_auth_failed": "Pridruživanje grupi nije uspelo",
+        "remote_only_info": "Povežite se sa svojim Music Assistant serverom daljinski",
+        "server_address_hint": "Unesite punu URL adresu svog Music Assistant servera",
+        "connecting_ingress": "Povezivanje putem Home Assistant-a...",
+        "connecting_local_party": "Povezivanje na žurku...",
+        "connecting_remote_party": "Povezivanje na žurku...",
+        "joining_party": "Pridruživanje žurci...",
+        "reconnecting": "Ponovno povezivanje",
+        "reconnecting_message": "Pokušaj ponovnog povezivanja sa serverom...",
+        "error_ingress_failed": "Prijava putem Home Assistant-a nije uspela",
+        "error_invalid_credentials": "Prijava nije uspela. Proverite korisničko ime i lozinku.",
+        "guest_ended_party_title": "Vaša sesija žurke je završena",
+        "guest_ended_party_message": "Zatražite od domaćina da ponovo podeli vezu do žurke ili QR kod da biste se ponovo pridružili.",
+        "guest_ended_quiz_title": "Vaša sesija kviza je završena",
+        "guest_ended_quiz_message": "Zatražite od domaćina da ponovo podeli vezu do kviza ili QR kod da biste se ponovo pridružili.",
+        "guest_ended_dashboard_title": "Ova sesija kontrolne table je završena",
+        "guest_ended_dashboard_message": "Ponovo strimujte kontrolnu tablu iz Music Assistant-a da biste nastavili.",
+        "continue_to_app": "Nastavite ka Music Assistant-u",
+        "scan_qr_hint_guest": "Usmerite kameru prema QR kodu koji domaćin prikazuje."
     },
     "yes": "Da",
     "no": "Ne",
@@ -1266,7 +1350,7 @@
             "search_music": "Pretražite vašu biblioteku",
             "searching": "Pretraga...",
             "no_sources_found": "Nisu pronađene pesme niti plejliste",
-            "selected_music": "Izabrana muzika",
+            "selected_music": "Izaberite muziki",
             "pick_at_least_one_source": "Izaberite barem jedan izvor",
             "source_search_failed": "Nije moguće pretražiti izvore muzike",
             "playlist": "Plejlista",
@@ -1443,13 +1527,199 @@
             "play_along": "Igrajte i vi",
             "host_controls": "Kontrole domaćina",
             "return_to_host_panel": "Povratak na panel domaćina"
+        },
+        "ai_radio": {
+            "title": "AI Radio",
+            "context": {
+                "run_with": "Pusti kao AI radio"
+            },
+            "actions": {
+                "discard": "Odbaci",
+                "delete": "Obriši",
+                "saving": "Čuvanje...",
+                "up": "Gore",
+                "down": "Dole",
+                "remove": "Ukloni"
+            },
+            "fields": {
+                "source_playtime_cap": "Ograničenje vremena reprodukcije izvora (u minutima)",
+                "default_playback_device": "Podrazumevani uređaj za reprodukciju (opciono)",
+                "web_search_mode": "Režim veb pretrage",
+                "character_limit": "Ograničenje broja znakova",
+                "prompt": "Prompt",
+                "dynamic_batch_size": "Dinamička veličina serije",
+                "instructions": "Instrukcije za voditelja i program",
+                "shuffle_playlist_tracks": "Nasumično puštanje pesama sa plejliste"
+            },
+            "field_descriptions": {
+                "source_playtime_cap": "Maksimalno ukupno vreme puštanja izvorne muzike, u minutima. Pesme se uzimaju redosledom kojim ih emisija pušta sve dok se ne dostigne ograničenje. Ostavite na 0 ako nema ograničenja.",
+                "dynamic_batch_size": "Koliko numera voditelj priprema odjednom. Veće grupe znače manje pauza dok se generiše sledeći segment, ali duže čekanje pre nego što emisija počne sa puštanjem.",
+                "instructions": "Opisuje ličnost voditelja i način na koji segmenti treba da budu napisani. Ovo se šalje AI-ju uz svaki segment.",
+                "shuffle_playlist_tracks": "Puštajte izvornu plejlistu nasumičnim redosledom. Isključite ovo da biste pratili izvorni redosled plejliste."
+            },
+            "web_search": {
+                "disabled": "onemogućeno (bez veb alata)",
+                "allow": "dozvoli (model može da koristi veb)",
+                "force": "primoraj (obavezna veb pretraga)",
+                "help": "Da li voditelj može da pretražuje informacije na vebu za ovaj segment."
+            },
+            "plays": {
+                "start": "Jednom na početku",
+                "end": "Jednom na kraju",
+                "every_song": "Svaka pesma",
+                "every_n_songs": "Na svake {0} pesme",
+                "every_n_min": "Na svakih {0} min",
+                "occasionally": "Povremeno ({0}%)"
+            },
+            "validation": {
+                "invalid_import_file": "Datoteka nije validan izvoz AI Radija.",
+                "station_name_required": "Naziv stanice je obavezan.",
+                "station_source_playlist_required": "Izvorna plejlista stanice je obavezna.",
+                "select_section": "Izaberite bar jednu sekciju.",
+                "section_order_required": "Redosled sekcija zahteva bar jedno pravilo.",
+                "rule_requires_flow": "Pravilo {0} zahteva bar jednu stavku toka.",
+                "must_needs_section": "Pravilo {0}, tok {1}: MUST zahteva sekciju.",
+                "alternative_needs_choice": "Pravilo {0}, tok {1}: ALTERNATIVE zahteva bar jedan važeći izbor.",
+                "optional_needs_section": "Pravilo {0}, tok {1}: OPTIONAL zahteva sekciju.",
+                "optional_chance_numeric": "Pravilo {0}, tok {1}: Verovatnoća za OPTIONAL mora biti broj.",
+                "section_name_required": "Naziv sekcije je obavezan",
+                "section_prompt_required": "Prompt sekcije je obavezan",
+                "no_station_loaded": "Nijedna stanica nije učitana",
+                "no_section_loaded": "Nijedna sekcija nije učitana"
+            },
+            "confirm": {
+                "discard_changes_title": "Odbaciti izmene?",
+                "discard_changes": "Imate nesačuvane izmene koje će biti izgubljene.",
+                "delete_station_title": "Obrisati stanicu?",
+                "delete_station": "Obrisati ovu stanicu?"
+            },
+            "toast": {
+                "playlists_truncated": "Učitano je samo prvih {0} plejlista.",
+                "unavailable": "AI Radio nije omogućen.",
+                "playlist_starting": "Generisanje plejliste je u toku – uskoro će se pojaviti u vašoj biblioteci.",
+                "live_starting": "Radio uživo je pokrenut",
+                "playlist_start_failed": "Pokretanje generisanja plejliste nije uspelo",
+                "live_start_failed": "Pokretanje radija uživo nije uspelo",
+                "session_stopped": "AI Radio sesija je zaustavljena",
+                "session_stop_failed": "Zaustavljanje AI Radio sesije nije uspelo",
+                "station_saved": "Stanica je sačuvana",
+                "station_save_failed": "Čuvanje stanice nije uspelo",
+                "station_deleted": "Stanica je obrisana",
+                "station_duplicated": "Stanica je duplirana",
+                "session_failed": "Pokretanje AI Radija nije uspelo: {0}"
+            },
+            "header": {
+                "subtitle": "Pretvorite plejlistu u radio-emisiju sa AI voditeljem."
+            },
+            "gallery": {
+                "empty_title": "Napravite svoju prvu emisiju",
+                "empty_description": "AI Radio pretvara jednu od vaših plejlista u radio-emisiju sa AI voditeljem. Za generisanje voditelja, AI Radio zahteva servis sa AI mogućnostima (npr. Home Assistant) – konfigurišite ga u odeljku Podešavanja -> Dodaci.",
+                "create_cta": "Napravi emisiju",
+                "new_show": "Nova emisija",
+                "refresh": "Osveži"
+            },
+            "card": {
+                "play": "Pusti",
+                "starting": "Pokretanje...",
+                "stop": "Zaustavi",
+                "stopping": "Zaustavljanje...",
+                "on_air": "Emituje se",
+                "generate_playlist": "Generišite i sačuvajte kao plejlistu",
+                "customize": "Prilagodi",
+                "duplicate": "Dupliraj",
+                "duplicate_name": "{0} (kopija)",
+                "delete": "Obriši",
+                "session_failed": "Poslednje pokretanje nije uspelo",
+                "open_playlist": "Otvorite generisanu plejlistu",
+                "status_failed": "Neuspešno {0}",
+                "status_playlist_ready": "Plejlista je spremna - {0}",
+                "status_last_on_air": "Poslednje emitovano {0}",
+                "no_player": "Prvo izaberite plejer",
+                "start_failed": "Pokretanje nije uspelo: {0}",
+                "switch_show_title": "Promeniti emisiju?",
+                "switch_show_confirm": "«{0}» se emituje. Zaustavi i pusti «{1}»?",
+                "switch_show_confirm_label": "Prebaci"
+            },
+            "phase": {
+                "preparing": "Pripremanje vaše emisije...",
+                "fetch_source_tracks": "Preuzimanje numera...",
+                "planning_sections": "Planiranje emisije...",
+                "generating_llm": "Pisanje teksta za voditelja...",
+                "generating_tts": "Snimanje glasa voditelja...",
+                "publishing_playlist": "Objavljivanje plejliste...",
+                "initializing_queue": "Pripremanje reda...",
+                "queueing_batch": "Dodavanje muzike u red...",
+                "waiting_for_playback": "Čeka se puštanje..."
+            },
+            "create": {
+                "title": "Kreiraj emisiju",
+                "description": "Izaberite plejlistu, stil voditelja i koliko često treba da govori.",
+                "playlist_label": "Izvorna plejlista",
+                "playlist_placeholder": "Izaberi plejlistu",
+                "playlist_empty": "Nije pronađena nijedna plejlista",
+                "preset_label": "Stil voditelja",
+                "talk_label": "Učestalost govora",
+                "name_label": "Naziv emisije",
+                "default_name": "{0} — {1}",
+                "create": "Kreiraj",
+                "create_and_play": "Kreiraj i pusti",
+                "creating": "Kreiranje...",
+                "validation": {
+                    "playlist_required": "Izaberite izvornu plejlistu",
+                    "name_required": "Naziv emisije je obavezan"
+                }
+            },
+            "presets": {
+                "morning_show": {
+                    "name": "Jutarnji program",
+                    "description": "Srdačan, pozitivan voditelj sa vremenskom prognozom i kratkim vestima."
+                },
+                "minimal_dj": {
+                    "name": "Minimalistički DJ",
+                    "description": "Smireni, diskretni prelazi koji ne skreću pažnju na sebe."
+                },
+                "music_nerd": {
+                    "name": "Muzički znalac",
+                    "description": "Deli zanimljivosti i činjenice o izvođačima između pesama."
+                },
+                "party_host": {
+                    "name": "Voditelj zabave",
+                    "description": "Energični pozdravi i poruke za održavanje atmosfere na zabavi."
+                }
+            },
+            "talk": {
+                "rarely": "Retko",
+                "normal": "Normalan",
+                "chatty": "Pričljiv"
+            },
+            "prereq": {
+                "title": "Potreban je AI provajder",
+                "description": "AI Radio zahteva provajdera sa podrškom za veštačku inteligenciju (npr. Home Assistant) kako bi generisao voditelja.",
+                "action": "Idite na Podešavanja → Dodaci"
+            },
+            "customize": {
+                "title": "Prilagodi emisiju",
+                "save": "Sačuvaj emisiju",
+                "advanced": "Napredno",
+                "basics_title": "Osnovno",
+                "segments_title": "Segmenti",
+                "segments_empty": "Još uvek nema segmenata — dodajte jedan da biste započeli.",
+                "add_segment": "Dodaj segment",
+                "blank_segment": "Prazan segment",
+                "blank_segment_name": "Novi segment",
+                "segment_name": "Naziv segmenta",
+                "use_current_player": "Koristi trenutni plejer",
+                "lossy_warning_title": "Pojednostavljeno pri čuvanju",
+                "lossy_warning_description": "Ova emisija koristi naprednu konfiguraciju koja se ne može u potpunosti prikazati ovde. Čuvanje će je prepisati u pojednostavljeni format segmenta iznad.",
+                "prompt_placeholders_hint": "Dostupne promenljive: {placeholders}"
+            }
         }
     },
     "no_lyrics_available": "Tekst pesme nije dostupan",
     "background_tasks": {
         "title": "Pozadinski zadaci",
         "description": "Pratite zakazane zadatke i dugotrajne radnje.",
-        "total": "Ukupno pozadinskih zadataka: {0}",
+        "total": "{count} pozadinski zadatak | Ukupno pozadinskih zadataka: {count}",
         "clear_finished": "Očistite završene zadatke",
         "empty_title": "Nema pozadinskih zadataka",
         "empty_description": "Ovde će se pojaviti zakazani zadaci i dugotrajne radnje.",
@@ -1731,12 +2001,12 @@
         "120": "2 sata"
     },
     "shuffle_smart_active": "Pametno mešanje je uključeno. Kliknite da biste ga isključili.",
-    "goto_album_radio": "Otvorite radio albuma",
-    "goto_artist_radio": "Otvorite radio izvođača",
-    "goto_genre_radio": "Otvorite radio žanra",
-    "goto_playlist_radio": "Otvorite radio plejliste",
-    "goto_radio": "Otvorite radio",
-    "goto_track_radio": "Otvorite radio numere",
+    "goto_album_radio": "Prikaži beskonačni miks albuma",
+    "goto_artist_radio": "Prikaži beskonačni miks izvođača",
+    "goto_genre_radio": "Prikaži beskonačni miks žanra",
+    "goto_playlist_radio": "Prikaži beskonačni miks plejliste",
+    "goto_radio": "Prikaži beskonačni miks",
+    "goto_track_radio": "Prikaži beskonačni miks numere",
     "autoplay_dynamic_title": "Automatsko puštanje je aktivno",
     "autoplay_dynamic_lead": "Vaš red čekanja se dinamički popunjava na osnovu vašeg izbora:",
     "autoplay_dynamic_desc": "Vaš red čekanja se dinamički popunjava na osnovu vašeg izbora.",
@@ -1779,5 +2049,19 @@
     "searching": "Pretraga...",
     "pause": "Pauza",
     "play_failed": "Reprodukcije nije uspela.",
-    "show_audio_chain_details_for_quality": "Prikaži detalje audio lanca ({quality})"
+    "show_audio_chain_details_for_quality": "Prikaži detalje audio lanca ({quality})",
+    "dashboard": {
+        "disconnect": "Prekini vezu sa {0}",
+        "loading": "Učitavanje uređaja...",
+        "no_devices": "Nisu pronađeni uređaji za strimovanje",
+        "started": "Strimovanje na „{0}“"
+    },
+    "reconfigure_player": "Ponovno podešavanje plejera",
+    "configure_player": "Podesite plejer",
+    "plugins": "Dodaci",
+    "queue_ended": "Reprodukcija je završena",
+    "play_from_beginning": "Pusti od početka",
+    "audiobooks_in_collection": "Audio-knjige u ovoj kolekciji",
+    "collection_no_audiobooks": "Ova kolekcija ne sadrži audio-knjige.",
+    "error_generic": "Nešto je pošlo naopako. Pokušajte ponovo."
 }

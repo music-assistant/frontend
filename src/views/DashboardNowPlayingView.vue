@@ -29,12 +29,9 @@
               store.activePlayer.current_media?.title || store.activePlayer.name
             }}
           </MarqueeText>
-          <MarqueeText
-            v-if="store.activePlayer.current_media?.artist"
-            :sync="marqueeSync"
-            class="now-playing-subtitle"
-          >
-            {{ store.activePlayer.current_media.artist }}
+          <!-- placeholder when no artist, so the artwork position stays fixed -->
+          <MarqueeText :sync="marqueeSync" class="now-playing-subtitle">
+            {{ store.activePlayer.current_media?.artist || " " }}
           </MarqueeText>
         </template>
       </div>
@@ -44,7 +41,6 @@
           :show-labels="true"
           :color="timelineColor"
           :waveform="waveformData"
-          :waveform-loading="waveformLoading"
         />
       </div>
     </template>
@@ -83,8 +79,7 @@ onMounted(() => {
 const marqueeSync = new MarqueeTextSync();
 
 // Waveform is always on here: the guest session has no show_waveform preference, so it defaults on.
-const { waveformBins: waveformData, waveformLoading } =
-  useActiveTrackWaveform();
+const { waveformBins: waveformData } = useActiveTrackWaveform();
 
 const artworkUrl = computed(
   () => getMediaImageUrl(store.activePlayer?.current_media?.image_url) || null,
@@ -114,15 +109,24 @@ const backgroundGradient = computed(() => {
 <style scoped>
 .now-playing-view {
   width: 100%;
-  height: 100dvh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5vh;
-  padding: 5vh 5vw;
+  gap: 3vh;
+  /* Deeper bottom padding lifts the timeline clear of the screen edge. */
+  padding: 5vh 5vw 9vh;
   box-sizing: border-box;
   color: var(--text-color, #fff);
+}
+
+/* Keep the vh fallback in a separate rule: the minifier collapses duplicate
+   declarations, which would drop it and leave Android TV without a height. */
+@supports (height: 100dvh) {
+  .now-playing-view {
+    height: 100dvh;
+  }
 }
 
 .now-playing-empty {
@@ -130,9 +134,11 @@ const backgroundGradient = computed(() => {
   opacity: 0.7;
 }
 
+/* The row hugs the artwork rather than growing, so the leftover height is
+   shared with the auto margins below instead of pooling under the artwork. */
 .now-playing-artwork {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
+  margin-top: auto;
   width: 100%;
   display: flex;
   align-items: center;
@@ -140,8 +146,10 @@ const backgroundGradient = computed(() => {
 }
 
 .now-playing-artwork-image {
-  max-width: min(70vh, 90%);
-  max-height: 100%;
+  /* flex-basis auto with no shrink: the square must never be squashed to fit */
+  flex: 0 0 auto;
+  width: min(52vh, 85vw);
+  height: min(52vh, 85vw);
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 12px;
@@ -149,7 +157,9 @@ const backgroundGradient = computed(() => {
 }
 
 .now-playing-artwork-fallback {
-  width: min(70vh, 90%);
+  flex: 0 0 auto;
+  width: min(52vh, 85vw);
+  height: min(52vh, 85vw);
   aspect-ratio: 1;
   border-radius: 12px;
   display: flex;
@@ -160,26 +170,37 @@ const backgroundGradient = computed(() => {
 
 .now-playing-info {
   flex: 0 0 auto;
+  /* Centres the text between the artwork and the timeline. */
+  margin-block: auto;
   width: 100%;
   max-width: 900px;
   text-align: center;
   overflow: hidden;
 }
 
+/* A Nest Hub (1024x600) and a Chromecast on a TV (1280x720) report almost the
+   same viewport, so the steep slope plus a cap that bites around 1070px is what
+   lets the Hub catch up without the TV growing much. */
 .now-playing-title {
-  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-size: clamp(1.25rem, 3vw, 2rem);
   font-weight: 600;
 }
 
 .now-playing-subtitle {
-  font-size: clamp(1rem, 2.5vw, 1.75rem);
+  font-size: clamp(1rem, 2.2vw, 1.5rem);
   opacity: 0.8;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .now-playing-timeline {
   flex: 0 0 auto;
   width: 100%;
   max-width: 900px;
+}
+
+/* The timeline's elapsed/total labels come from a shared Vuetify caption class;
+   scale them here only, so the rest of the app keeps its 12px captions. */
+.now-playing-timeline :deep(.text-caption) {
+  font-size: clamp(0.75rem, 1.3vw, 0.9375rem);
 }
 </style>

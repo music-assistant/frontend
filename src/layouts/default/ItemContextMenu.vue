@@ -117,7 +117,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getLucideIcon } from "@/helpers/icon";
+import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -157,7 +157,7 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
     action: () => {
       store.activePlayerId = player.player_id;
     },
-    icon: getLucideIcon(player.icon) ?? player.icon,
+    icon: getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK),
     selected: store.activePlayerId == player.player_id,
     close_on_click: false,
   }));
@@ -258,14 +258,16 @@ import {
   Merge,
   MicVocal,
   MinusCircle,
+  Orbit,
   Pencil,
   Pin,
   PinOff,
   PlayCircle,
   PlusCircle,
-  RadioTower,
   RefreshCw,
+  RotateCcw,
   SkipForward,
+  Sparkles,
   Trash2,
 } from "@lucide/vue";
 import type { Component } from "vue";
@@ -452,6 +454,28 @@ export const getContextMenuItems = async function (
     });
   }
 
+  if (
+    items.length === 1 &&
+    firstItem.media_type === MediaType.PLAYLIST &&
+    store.enabledPlugins.has("ai_radio")
+  ) {
+    contextMenuItems.push({
+      label: "providers.ai_radio.context.run_with",
+      labelArgs: [],
+      action: () => {
+        router.push({
+          name: "ai-radio",
+          query: {
+            source_playlist_id: firstItem.item_id,
+            source_playlist_provider: firstItem.provider,
+            source_playlist_name: firstItem.name,
+          },
+        });
+      },
+      icon: Sparkles,
+    });
+  }
+
   // browse folder
   if (
     items.length === 1 &&
@@ -532,7 +556,7 @@ export const getContextMenuItems = async function (
       label: radioActionLabelKey(firstItem),
       labelArgs: [],
       action: () => gotoRadio(firstItem),
-      icon: RadioTower,
+      icon: Orbit,
       disabled: !radioSupported(firstItem),
     });
   }
@@ -761,34 +785,57 @@ export const getContextMenuItems = async function (
 
   if (
     items.length === 1 &&
-    "fully_played" in items[0] &&
-    "resume_position_ms" in items[0]
+    "fully_played" in firstItem &&
+    "resume_position_ms" in firstItem
   ) {
     // mark unplayed
-    if (items[0].fully_played || items[0].resume_position_ms) {
+    if (firstItem.fully_played || firstItem.resume_position_ms) {
       contextMenuItems.push({
         label: "mark_unplayed",
         icon: History,
         action: async () => {
-          await api.markItemUnPlayed(items[0]);
-          (items[0] as PodcastEpisode).fully_played = false;
+          await api.markItemUnPlayed(firstItem);
+          firstItem.fully_played = false;
+          firstItem.resume_position_ms = 0;
         },
       });
+      // play from beginning (podcast episode with saved progress)
+      if (firstItem.media_type === MediaType.PODCAST_EPISODE) {
+        contextMenuItems.push({
+          label: "play_from_beginning",
+          icon: RotateCcw,
+          action: () => {
+            api.playMedia(
+              firstItem.uri,
+              QueueOption.PLAY,
+              undefined,
+              undefined,
+              undefined,
+              true,
+            );
+          },
+          disabled: !store.activePlayer,
+        });
+      }
     } else {
       // mark played
       contextMenuItems.push({
         label: "mark_played",
         icon: History,
         action: async () => {
-          await api.markItemPlayed(items[0], true);
-          (items[0] as PodcastEpisode).fully_played = true;
+          await api.markItemPlayed(firstItem, true);
+          firstItem.fully_played = true;
         },
       });
     }
   }
 
   // update metadata
-  if (items.length === 1 && items[0] == parentItem) {
+  if (
+    items.length === 1 &&
+    items[0] == parentItem &&
+    items[0].media_type !== MediaType.COLLECTION
+  ) {
     contextMenuItems.push({
       label: "update_metadata",
       labelArgs: [],
@@ -847,6 +894,7 @@ export const getContextMenuItems = async function (
   // refresh item
   if (
     items.length === 1 &&
+    items[0].media_type !== MediaType.COLLECTION &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
   ) {
     contextMenuItems.push({
@@ -972,7 +1020,10 @@ export const getContextMenuItems = async function (
   // link to genre (library items only, non-genre)
   if (
     items.every(
-      (i) => i.media_type !== MediaType.GENRE && i.provider === "library",
+      (i) =>
+        i.media_type !== MediaType.GENRE &&
+        i.media_type !== MediaType.COLLECTION &&
+        i.provider === "library",
     )
   ) {
     contextMenuItems.push({
