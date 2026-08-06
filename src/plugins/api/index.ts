@@ -39,6 +39,7 @@ import {
   AlbumType,
   Audiobook,
   AuthProvider,
+  ConfigActionResult,
   ConfigEntry,
   ConfigValueType,
   CoreConfig,
@@ -2009,9 +2010,10 @@ export class MusicAssistantApi {
   public async invokeProviderConfigAction(
     instance_id: string,
     action: string,
-  ): Promise<ConfigEntry[]> {
-    // Run a one-shot action button from a provider's options
-    // and return the (re-rendered) config entries.
+  ): Promise<ConfigEntry[] | ConfigActionResult> {
+    // Run a one-shot action button from a provider's options.
+    // Returns either the (re-rendered) config entries, or a result
+    // reporting the outcome of the action.
     return this.sendCommand("config/providers/invoke_action", {
       instance_id,
       action,
@@ -2083,9 +2085,10 @@ export class MusicAssistantApi {
   public async invokePlayerConfigAction(
     player_id: string,
     action: string,
-  ): Promise<ConfigEntry[]> {
-    // Run a one-shot action button from a player's config
-    // and return the (re-rendered) config entries.
+  ): Promise<ConfigEntry[] | ConfigActionResult> {
+    // Run a one-shot action button from a player's config.
+    // Returns either the (re-rendered) config entries, or a result
+    // reporting the outcome of the action.
     return this.sendCommand("config/players/invoke_action", {
       player_id,
       action,
@@ -2319,9 +2322,10 @@ export class MusicAssistantApi {
   public async invokeCoreConfigAction(
     domain: string,
     action: string,
-  ): Promise<ConfigEntry[]> {
-    // Run a one-shot action button from a core module's config
-    // and return the (re-rendered) config entries.
+  ): Promise<ConfigEntry[] | ConfigActionResult> {
+    // Run a one-shot action button from a core module's config.
+    // Returns either the (re-rendered) config entries, or a result
+    // reporting the outcome of the action.
     return this.sendCommand("config/core/invoke_action", { domain, action });
   }
 
