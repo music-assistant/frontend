@@ -409,14 +409,7 @@ describe("App initialization", () => {
     const pluginConfigs = createDeferred<Array<{ enabled: boolean }>>();
     apiMock.fetchState.mockReturnValue(serverState.promise);
     apiMock.getProviderConfigs.mockReturnValue(pluginConfigs.promise);
-    const { default: App } = await import("@/App.vue");
-    wrapper = shallowMount(App, {
-      global: {
-        stubs: {
-          RouterView: true,
-        },
-      },
-    });
+    wrapper = await mountAppWithoutSettling();
 
     await flushPromises();
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
@@ -518,14 +511,7 @@ describe("App initialization", () => {
 
   it("remembers a temporary remote connection after regular login", async () => {
     apiMock.state.value = "auth_required";
-    const { default: App } = await import("@/App.vue");
-    wrapper = shallowMount(App, {
-      global: {
-        stubs: {
-          RouterView: true,
-        },
-      },
-    });
+    wrapper = await mountAppWithoutSettling();
 
     wrapper.findComponent({ name: "Login" }).vm.$emit("authenticated", {
       token: "regular-token",
@@ -547,14 +533,7 @@ describe("App initialization", () => {
 
   it("clears proxy mode before connecting to a local server", async () => {
     apiMock.state.value = "disconnected";
-    const { default: App } = await import("@/App.vue");
-    wrapper = shallowMount(App, {
-      global: {
-        stubs: {
-          RouterView: true,
-        },
-      },
-    });
+    wrapper = await mountAppWithoutSettling();
 
     wrapper
       .findComponent({ name: "Login" })
@@ -783,10 +762,23 @@ async function mountAuthenticatedApp() {
  * a timer anywhere in that path would need vi.waitFor instead.
  */
 async function mountApp() {
+  const mounted = await mountAppWithoutSettling();
+  await flushPromises();
+  expect(apiMock.state.value).toBe("initialized");
+  expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+  expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
+  return mounted;
+}
+
+/**
+ * Mount the app and register it for teardown, without waiting for
+ * initialization to settle; the test drives what happens next.
+ */
+async function mountAppWithoutSettling() {
   const { default: App } = await import("@/App.vue");
-  // Registered before the assertions below so afterEach unmounts the app even
-  // when one of them throws: a live instance keeps reacting to api.state and
-  // corrupts every later test.
+  // Registered at mount time so afterEach unmounts the app even when a
+  // caller's assertion throws: a live instance keeps reacting to api.state
+  // and corrupts every later test.
   wrapper = shallowMount(App, {
     global: {
       stubs: {
@@ -794,10 +786,6 @@ async function mountApp() {
       },
     },
   });
-  await flushPromises();
-  expect(apiMock.state.value).toBe("initialized");
-  expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
-  expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
   return wrapper;
 }
 
