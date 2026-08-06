@@ -60,6 +60,10 @@ vi.mock("@/helpers/utils", () => ({
   openActionUrlEntries: <T>(entries: T) => entries,
 }));
 
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
+
 vi.mock("vue-sonner", () => ({
   toast: toastMock,
 }));

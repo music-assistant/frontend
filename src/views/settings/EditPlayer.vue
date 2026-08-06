@@ -263,10 +263,10 @@ import {
   ConfigEntryUI,
   UI_ENTRY_TYPE,
   isInjected,
-  mergeActionEntries,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
-import { openActionUrlEntries, openLinkInNewTab } from "@/helpers/utils";
+import { useConfigAction } from "@/composables/useConfigAction";
+import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 // global refs
@@ -464,47 +464,13 @@ const onImmediateApply = async function (
     });
 };
 
-const onAction = async function (
-  action: string,
-  _values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  api
-    .invokePlayerConfigAction(config.value!.player_id, action)
-    .then(async (entries) => {
-      entries = openActionUrlEntries(entries);
-      // An empty response means the action was a one-off side effect with
-      // nothing to re-render: leave the form untouched.
-      if (entries.length === 0) {
-        toast.success($t("settings.action_completed"));
-        return;
-      }
-      config.value!.values = mergeActionEntries(config.value!.values, entries);
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of Object.values(config.value!.values)) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.savePlayerConfig(
-          props.playerId!,
-          saveValues,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-    })
-    .catch((err) => {
-      toast.error(String(err));
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-};
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokePlayerConfigAction(config.value!.player_id, action),
+  saveValues: (values) => api.savePlayerConfig(props.playerId!, values),
+});
 
 async function loadConfig(playerId: string) {
   const requestId = ++configLoadRequestId;

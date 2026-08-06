@@ -2328,9 +2328,9 @@ export class MusicAssistantApi {
   public async saveCoreConfig(
     domain: string,
     values: Record<string, ConfigValueType>,
-  ): Promise<ProviderConfig> {
+  ): Promise<CoreConfig> {
     // Save Core controller Config.
-    // domain: (mandatory) domain of the provider.
+    // domain: (mandatory) domain of the core controller.
     // values: the raw values for config entries that need to be stored/updated.
     // action: [optional] action key called from config entries UI.
     return this.sendCommand("config/core/save", {
