@@ -18,7 +18,12 @@
  * When not running in a companion app (e.g., in a browser), all functions are no-ops.
  */
 
-import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import {
+  ActiveTiming,
+  resolveActiveElapsedTime,
+  resolveActiveTiming,
+  toElapsedTime,
+} from "@/helpers/activeElapsedTime";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { PlaybackState, Player, PlayerSource } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -268,6 +273,8 @@ const extractNowPlaying = (player: Player | undefined): NowPlaying => {
 
 // Store the unwatch function for cleanup
 let unwatchNowPlaying: (() => void) | null = null;
+// Timer of a push that is waiting for the rest of a change to arrive
+let pendingPush: ReturnType<typeof setTimeout> | undefined;
 
 /**
  * Handle player commands from the companion app (tray controls)
@@ -328,6 +335,66 @@ const unregisterPlayerCommandHandler = (): void => {
 };
 
 /**
+ * Everything about the active player that decides whether the companion app
+ * needs a fresh now-playing push.
+ */
+interface NowPlayingSignal {
+  uri?: string;
+  title?: string;
+  artist?: string;
+  state?: PlaybackState;
+  playerId?: string;
+  timing?: ActiveTiming;
+}
+
+// How far the position may drift from the projection of the last push before it
+// counts as a jump rather than normal progression. The server applies the same
+// threshold before it reports a position change at all.
+const POSITION_JUMP_SECONDS = 2;
+
+// How long to let the rest of a change arrive before pushing it. One change
+// reaches the frontend as several messages - the queue's timing and the player's
+// media are separate events - so pushing on the first would send the new track
+// with the old position, and Discord may rate-limit the correction away.
+const PUSH_COALESCE_MS = 1000;
+
+/**
+ * Whether the companion app has to be told about this signal, given the one the
+ * last push was based on.
+ *
+ * Discord Rich Presence turns a push into absolute start/end timestamps and runs
+ * its own progress bar from them, so it needs one whenever the track, the state
+ * or the position moves off that projection - and none while the position merely
+ * advances, because Discord rate-limits activity updates.
+ */
+const needsNowPlayingPush = (
+  signal: NowPlayingSignal,
+  pushed: NowPlayingSignal,
+): boolean => {
+  if (
+    signal.uri !== pushed.uri ||
+    signal.title !== pushed.title ||
+    signal.artist !== pushed.artist ||
+    signal.state !== pushed.state ||
+    signal.playerId !== pushed.playerId
+  ) {
+    return true;
+  }
+
+  // A speed change leaves the position where it is but moves the end timestamp.
+  if (signal.timing?.playbackSpeed !== pushed.timing?.playbackSpeed)
+    return true;
+
+  const projected = toElapsedTime(pushed.timing);
+  const current = toElapsedTime(signal.timing);
+  if (projected === undefined || current === undefined) {
+    return projected !== current;
+  }
+
+  return Math.abs(current - projected) > POSITION_JUMP_SECONDS;
+};
+
+/**
  * Start watching the active player and push updates to Tauri
  */
 const startNowPlayingWatcher = (): void => {
@@ -349,30 +416,43 @@ const startNowPlayingWatcher = (): void => {
     console.warn("[Companion] Failed to start services:", e),
   );
 
-  // Watch for changes in track or playback state
+  // The signal the last push was based on, which every later one is judged
+  // against, and the most recent one seen, which the next push is built from.
+  let pushedSignal: NowPlayingSignal | undefined;
+  let latestSignal: NowPlayingSignal | undefined;
+
+  const push = (): void => {
+    pendingPush = undefined;
+    pushedSignal = latestSignal;
+    const nowPlaying = extractNowPlaying(store.activePlayer);
+    updateNowPlaying(nowPlaying);
+  };
+
+  // Watch for changes in track, playback state or position
   unwatchNowPlaying = watch(
-    () => ({
+    (): NowPlayingSignal => ({
       uri: store.activePlayer?.current_media?.uri,
       title: store.activePlayer?.current_media?.title,
       artist: store.activePlayer?.current_media?.artist,
       state: store.activePlayer?.playback_state,
       playerId: store.activePlayer?.player_id,
+      timing: resolveActiveTiming(store.activePlayer?.player_id),
     }),
-    (newVal, oldVal) => {
-      // Skip if nothing meaningful changed
-      if (
-        oldVal &&
-        newVal.uri === oldVal.uri &&
-        newVal.title === oldVal.title &&
-        newVal.artist === oldVal.artist &&
-        newVal.state === oldVal.state &&
-        newVal.playerId === oldVal.playerId
-      ) {
+    (signal) => {
+      latestSignal = signal;
+      if (pushedSignal && !needsNowPlayingPush(signal, pushedSignal)) return;
+
+      // The first push has nothing to coalesce with, and the companion app
+      // should not sit without any state until the next change.
+      if (!pushedSignal) {
+        push();
         return;
       }
 
-      const nowPlaying = extractNowPlaying(store.activePlayer);
-      updateNowPlaying(nowPlaying);
+      // Already waiting: the push takes whatever has arrived by the time it runs.
+      if (pendingPush === undefined) {
+        pendingPush = setTimeout(push, PUSH_COALESCE_MS);
+      }
     },
     { immediate: true },
   );
@@ -382,6 +462,11 @@ const startNowPlayingWatcher = (): void => {
  * Stop watching the active player queue
  */
 const stopNowPlayingWatcher = (): void => {
+  // A pending push would otherwise land after the cleared state and revive it
+  if (pendingPush !== undefined) {
+    clearTimeout(pendingPush);
+    pendingPush = undefined;
+  }
   if (unwatchNowPlaying) {
     console.log("[Companion] Stopping existing now-playing watcher");
     unwatchNowPlaying();
