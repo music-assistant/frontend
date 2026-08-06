@@ -397,10 +397,48 @@ describe("App initialization", () => {
       new Set<string>(["party", "music_quiz", "ai_radio"]),
     );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+    expectStartupDataRequestedBeforeReveal();
 
     await signalProvidersUpdated();
     expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(6);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
+  });
+
+  it("waits for the startup data before revealing the main app", async () => {
+    const serverState = createDeferred<void>();
+    const pluginConfigs = createDeferred<Array<{ enabled: boolean }>>();
+    apiMock.fetchState.mockReturnValue(serverState.promise);
+    apiMock.getProviderConfigs.mockReturnValue(pluginConfigs.promise);
+    const { default: App } = await import("@/App.vue");
+    wrapper = shallowMount(App, {
+      global: {
+        stubs: {
+          RouterView: true,
+        },
+      },
+    });
+
+    await flushPromises();
+    expect(apiMock.fetchState).toHaveBeenCalledOnce();
+    expectLibraryCountsNotCalled();
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+    expect(apiMock.state.value).not.toBe("initialized");
+
+    serverState.resolve();
+    await flushPromises();
+    expectLibraryCountsCalled();
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(3);
+    // The plugin lookups are still in flight: revealing the app here would
+    // render it with an unknown set of enabled plugins.
+    expect(apiMock.state.value).not.toBe("initialized");
+    expect(mockInitializeWebPlayerModeSync).not.toHaveBeenCalled();
+    expect(wrapper.find("router-view-stub").exists()).toBe(false);
+
+    pluginConfigs.resolve([{ enabled: true }]);
+    await flushPromises();
+    expect(apiMock.state.value).toBe("initialized");
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
+    expectStartupDataRequestedBeforeReveal();
   });
 
   it.each(["party", "music_quiz"] as const)(
@@ -791,6 +829,41 @@ function expectLibraryCountsCalled() {
   expect(apiMock.getLibraryPodcastsCount).toHaveBeenCalledOnce();
   expect(apiMock.getLibraryRadiosCount).toHaveBeenCalledOnce();
   expect(apiMock.getLibraryTracksCount).toHaveBeenCalledOnce();
+}
+
+/**
+ * Assert that every startup request is made before the app reveals itself,
+ * which it does right after marking the connection initialized.
+ */
+function expectStartupDataRequestedBeforeReveal() {
+  expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+  const [revealed] = mockInitializeWebPlayerModeSync.mock.invocationCallOrder;
+  for (const method of [
+    apiMock.fetchState,
+    apiMock.getLibraryAlbumsCount,
+    apiMock.getLibraryArtistsCount,
+    apiMock.getLibraryAudiobooksCount,
+    apiMock.getLibraryGenresCount,
+    apiMock.getLibraryPlaylistsCount,
+    apiMock.getLibraryPodcastsCount,
+    apiMock.getLibraryRadiosCount,
+    apiMock.getLibraryTracksCount,
+    apiMock.getProviderConfigs,
+  ]) {
+    expect(method).toHaveBeenCalled();
+    expect(Math.max(...method.mock.invocationCallOrder)).toBeLessThan(revealed);
+  }
+}
+
+/**
+ * Create a promise the test resolves itself, to hold a startup step open.
+ */
+function createDeferred<T = void>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
 }
 
 function createStorage(): Storage {
