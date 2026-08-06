@@ -39,7 +39,6 @@
 
 <script setup lang="ts">
 import { Palette } from "@lucide/vue";
-import { useColorMode } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -67,13 +66,14 @@ import EditConfig from "./EditConfig.vue";
 const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
 const loading = ref(false);
-const mode = useColorMode();
 
 onMounted(() => {
   // TODO: Remove localStorage fallbacks below once migration period is over
   // (theme and language moved from localStorage to user preferences)
+  // NOTE: the theme itself is owned by useThemePreference (applied at app
+  // startup); this page must not apply it — an extra useColorMode instance
+  // here would fight the composable and desync tailwind from Vuetify.
   const storedTheme = localStorage.getItem("frontend.settings.theme") || "auto";
-  mode.value = storedTheme as "light" | "dark" | "auto";
 
   const configEntries: ConfigEntry[] = [
     {
