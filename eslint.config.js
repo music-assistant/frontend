@@ -47,8 +47,8 @@ export default defineConfigWithVueTs(
   eslintConfigPrettier,
   oxlint.configs["flat/recommended"],
   {
-    // Must stay after the two blocks above: `eslint-config-prettier` turns
-    // `vue/html-self-closing` off wholesale, so configuring it any earlier
+    // Must stay after `eslintConfigPrettier`, which turns
+    // `vue/html-self-closing` off wholesale — configuring it any earlier
     // leaves it disabled. Prettier only dictates the `void` style (it always
     // self-closes `<img>` and friends), which is what `void: "always"` asks
     // for, so the two agree and the remaining tag styles stay ours to pick.
