@@ -110,9 +110,9 @@
         data-testid="timeline-leaderboard-region"
         class="lg:min-h-0 lg:overflow-hidden"
       >
-        <slot name="leaderboard" />
+        <slot name="leaderboard"></slot>
       </div>
-      <slot v-else name="leaderboard" />
+      <slot v-else name="leaderboard"></slot>
     </div>
   </div>
 </template>

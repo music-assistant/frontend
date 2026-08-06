@@ -30,7 +30,7 @@
             v-if="!hasWaveform"
             class="absolute inset-0 rounded-full"
             :style="trackBackgroundStyle"
-          />
+          ></div>
           <WaveformTrack
             v-else
             :data="waveform!"

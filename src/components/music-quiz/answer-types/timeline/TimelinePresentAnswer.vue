@@ -5,7 +5,7 @@
     :present="true"
   >
     <template #leaderboard>
-      <slot name="leaderboard" />
+      <slot name="leaderboard"></slot>
     </template>
   </TimelineAudienceAnswer>
 </template>
