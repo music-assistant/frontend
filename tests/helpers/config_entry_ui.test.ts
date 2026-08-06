@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  allRequiredValuesPresent,
   isEntryDisabled,
   mergeActionEntries,
   mergeConfigEntries,
@@ -117,6 +118,72 @@ describe("isEntryDisabled", () => {
     ];
 
     expect(isEntryDisabled(target, form)).toBe(false);
+  });
+});
+
+describe("allRequiredValuesPresent", () => {
+  const required = (overrides: Partial<ConfigEntry> = {}) =>
+    entry({ key: "token", required: true, ...overrides });
+
+  it("accepts a form without required entries", () => {
+    expect(allRequiredValuesPresent([entry()])).toBe(true);
+  });
+
+  it("rejects a required entry with neither a value nor a default", () => {
+    expect(allRequiredValuesPresent([required()])).toBe(false);
+  });
+
+  it("accepts a required entry the user filled in", () => {
+    expect(allRequiredValuesPresent([required({ value: "abc" })])).toBe(true);
+  });
+
+  it("accepts a required entry the server defaults", () => {
+    expect(allRequiredValuesPresent([required({ default_value: "abc" })])).toBe(
+      true,
+    );
+  });
+
+  it("accepts a falsy value as present", () => {
+    expect(allRequiredValuesPresent([required({ value: false })])).toBe(true);
+    expect(allRequiredValuesPresent([required({ default_value: 0 })])).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    ConfigEntryType.DIVIDER,
+    ConfigEntryType.LABEL,
+    ConfigEntryType.ALERT,
+    ConfigEntryType.IMAGE,
+    ConfigEntryType.ACTION,
+  ])("ignores a required %s, which holds no value to give", (type) => {
+    expect(allRequiredValuesPresent([required({ type })])).toBe(true);
+  });
+
+  it("ignores a required entry behind an unmet dependency", () => {
+    const form = [
+      entry({ key: "use_proxy", type: ConfigEntryType.BOOLEAN, value: false }),
+      required({ depends_on: "use_proxy" }),
+    ];
+
+    expect(allRequiredValuesPresent(form)).toBe(true);
+  });
+
+  it("enforces a required entry once its dependency is met", () => {
+    const form = [
+      entry({ key: "use_proxy", type: ConfigEntryType.BOOLEAN, value: true }),
+      required({ depends_on: "use_proxy" }),
+    ];
+
+    expect(allRequiredValuesPresent(form)).toBe(false);
+  });
+
+  // a dependency key that is not on the form leaves the entry permanently disabled,
+  // so enforcing it would deadlock the form rather than surface the mistake
+  it("ignores a required entry whose dependency key is not on the form", () => {
+    expect(allRequiredValuesPresent([required({ depends_on: "typo" })])).toBe(
+      true,
+    );
   });
 });
 

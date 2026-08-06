@@ -154,6 +154,53 @@ describe("EditConfig", () => {
 
     expect(saveDisabled(wrapper)).toBe(true);
   });
+
+  // an unmet dependency greys the input out, so a required entry behind one is
+  // unfillable and must not hold the whole form hostage
+  it("saves a dirty form despite a required entry behind an unmet dependency", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({
+        key: "use_proxy",
+        type: ConfigEntryType.BOOLEAN,
+        value: false,
+      }),
+      entry({
+        key: "proxy_url",
+        type: ConfigEntryType.STRING,
+        required: true,
+        depends_on: "use_proxy",
+      }),
+    ]);
+
+    dirty(wrapper);
+    await nextTick();
+
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
+
+  it("blocks saving again once the dependency is met", async () => {
+    const entries = [
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "use_proxy", type: ConfigEntryType.BOOLEAN, value: false }),
+      entry({
+        key: "proxy_url",
+        type: ConfigEntryType.STRING,
+        required: true,
+        depends_on: "use_proxy",
+      }),
+    ];
+    const wrapper = mountEntries(entries);
+    dirty(wrapper);
+
+    const toggle = wrapper
+      .findAllComponents({ name: "ConfigEntryRow" })[1]
+      .props("confEntry") as ConfigEntry;
+    toggle.value = true;
+    await nextTick();
+
+    expect(saveDisabled(wrapper)).toBe(true);
+  });
 });
 
 function entry(

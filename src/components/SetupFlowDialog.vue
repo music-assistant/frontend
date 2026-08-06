@@ -313,6 +313,7 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
 import {
+  allRequiredValuesPresent,
   isEntryDisabled,
   NON_INTERACTIVE_ENTRY_TYPES,
   VALUELESS_ENTRY_TYPES,
@@ -434,21 +435,9 @@ const visibleFormEntries = computed(() =>
   ),
 );
 
-const canSubmit = computed(() => {
-  if (busy.value) return false;
-  for (const entry of formEntries.value) {
-    if (VALUELESS_ENTRY_TYPES.includes(entry.type)) continue;
-    if (isDisabled(entry)) continue;
-    if (
-      entry.required &&
-      isNullOrUndefined(entry.value) &&
-      isNullOrUndefined(entry.default_value)
-    ) {
-      return false;
-    }
-  }
-  return true;
-});
+const canSubmit = computed(
+  () => !busy.value && allRequiredValuesPresent(formEntries.value),
+);
 
 const canOpenInstanceSettings = computed(
   () => launch.value?.kind === "provider" && !!step.value?.result?.instance_id,
@@ -776,9 +765,5 @@ function onEntryHelp(entry: ConfigEntry) {
 
 function isDisabled(entry: ConfigEntry): boolean {
   return isEntryDisabled(entry, formEntries.value);
-}
-
-function isNullOrUndefined(value: unknown): boolean {
-  return value === null || value === undefined;
 }
 </script>

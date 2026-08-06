@@ -1,4 +1,4 @@
-import { flushPromises, shallowMount } from "@vue/test-utils";
+import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigEntryType,
@@ -257,7 +257,59 @@ describe("SetupFlowDialog", () => {
     ).toEqual(["feature_detail"]);
     expect(rows[0].props("disabled")).toBe(true);
   });
+
+  it("offers the next step despite a required entry behind an unmet dependency", async () => {
+    const wrapper = await mountFormStep([
+      entry({ key: "use_proxy", type: ConfigEntryType.BOOLEAN, value: false }),
+      entry({
+        key: "proxy_url",
+        type: ConfigEntryType.STRING,
+        required: true,
+        depends_on: "use_proxy",
+      }),
+    ]);
+
+    expect(submitDisabled(wrapper)).toBe(false);
+  });
+
+  it("withholds the next step once that dependency is met", async () => {
+    const wrapper = await mountFormStep([
+      entry({ key: "use_proxy", type: ConfigEntryType.BOOLEAN, value: true }),
+      entry({
+        key: "proxy_url",
+        type: ConfigEntryType.STRING,
+        required: true,
+        depends_on: "use_proxy",
+      }),
+    ]);
+
+    expect(submitDisabled(wrapper)).toBe(true);
+  });
 });
+
+async function mountFormStep(entries: ConfigEntry[]) {
+  apiMock.reconfigureProvider.mockResolvedValue(formStep(entries));
+  const wrapper = shallowMount(SetupFlowDialog, {
+    global: { renderStubDefaultSlot: true },
+  });
+
+  await launchSetupFlow?.({
+    kind: "reconfigure",
+    instanceId: "spotify--test",
+    onFlowEnded: vi.fn(),
+  });
+  await flushPromises();
+
+  return wrapper;
+}
+
+function submitDisabled(wrapper: VueWrapper) {
+  const button = wrapper
+    .findAll("button-stub")
+    .find((btn) => btn.text() === "settings.setup_flow.next");
+  if (!button) throw new Error("submit button not rendered");
+  return button.attributes("disabled") === "true";
+}
 
 function terminalStep(type: FlowStepType): SetupFlowStep {
   return {
