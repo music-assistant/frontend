@@ -22,7 +22,7 @@
           :key="conf_entry.key"
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
-          :disabled="isDisabled(conf_entry)"
+          :disabled="isRowDisabled(conf_entry)"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
@@ -38,7 +38,7 @@
       :protocol-panels="protocolPanels"
       :visible-entries-by-category="visibleEntriesByCategory"
       :show-password-values="showPasswordValues"
-      :is-disabled="isDisabled"
+      :is-disabled="isRowDisabled"
       :output-protocols="outputProtocols"
       @update:value="onValueUpdate"
       @action="onEntryAction"
@@ -70,7 +70,7 @@
           :key="conf_entry.key"
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
-          :disabled="isDisabled(conf_entry)"
+          :disabled="isRowDisabled(conf_entry)"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
@@ -438,6 +438,12 @@ window.addEventListener("beforeunload", handleBeforeUnload);
 
 const isDisabled = function (entry: ConfigEntryUI) {
   return isEntryDisabled(entry, entries.value || []);
+};
+
+// the form-wide disabled state has to be handed to every field: v-form only reaches
+// Vuetify's own inputs, so the number field beside a slider would stay editable
+const isRowDisabled = function (entry: ConfigEntryUI) {
+  return props.disabled || isDisabled(entry);
 };
 
 const isVisible = function (entry: ConfigEntryUI) {
