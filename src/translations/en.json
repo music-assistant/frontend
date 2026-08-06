@@ -267,8 +267,8 @@
             },
             "compressor": {
                 "help": "Evens out the volume by turning down the loudest parts, so quieter detail stays audible.",
-                "basic": "Basic",
-                "advanced": "Advanced",
+                "preset": "Preset",
+                "custom": "Custom",
                 "threshold": "Threshold",
                 "ratio": "Ratio",
                 "attack": "Attack",

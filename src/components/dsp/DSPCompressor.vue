@@ -2,18 +2,18 @@
   <div>
     <Tabs v-model="mode">
       <TabsList class="m-4 grid w-64 grid-cols-2">
-        <TabsTrigger value="basic">
-          {{ $t("settings.dsp.compressor.basic") }}
+        <TabsTrigger value="preset">
+          {{ $t("settings.dsp.compressor.preset") }}
         </TabsTrigger>
-        <TabsTrigger value="advanced">
-          {{ $t("settings.dsp.compressor.advanced") }}
+        <TabsTrigger value="custom">
+          {{ $t("settings.dsp.compressor.custom") }}
         </TabsTrigger>
       </TabsList>
 
-      <!-- Basic: preset cards, each showing its own compression curve. The
+      <!-- Preset: preset cards, each showing its own compression curve. The
            active card is reverse-matched from the stored values; presets never
            leave the frontend. -->
-      <TabsContent value="basic">
+      <TabsContent value="preset">
         <div class="preset-grid">
           <button
             v-for="key in presetKeys"
@@ -50,8 +50,8 @@
         </div>
       </TabsContent>
 
-      <!-- Advanced: the six individual controls. -->
-      <TabsContent value="advanced">
+      <!-- Custom: the six individual controls. -->
+      <TabsContent value="custom">
         <DSPSlider
           v-model="compressor.threshold"
           :type="{
@@ -157,11 +157,9 @@ const presetKeys = COMPRESSOR_PRESET_KEYS;
 const activePreset = computed(() => matchCompressorPreset(compressor.value));
 
 // Mode is derived on mount (reverse-match), not stored in the model: a match
-// opens in Basic, anything else in Advanced. Editing in Advanced diverges the
-// values, so on the next reopen it comes back as Advanced.
-const mode = ref<"basic" | "advanced">(
-  activePreset.value ? "basic" : "advanced",
-);
+// opens in Preset, anything else in Custom. Editing in Custom diverges the
+// values, so on the next reopen it comes back as Custom.
+const mode = ref<"preset" | "custom">(activePreset.value ? "preset" : "custom");
 
 const applyPreset = (key: CompressorPresetKey) => {
   Object.assign(compressor.value, COMPRESSOR_PRESETS[key]);
