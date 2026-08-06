@@ -637,6 +637,24 @@ router.onError((error, to) => {
   }
 });
 
+// The pinned path is stored exactly as the server built it, where a player id's
+// ':' is percent-encoded. Navigating re-serializes the query without re-escaping
+// ':', so comparing the stored string against to.fullPath never matches and the
+// guard redirects forever. Parsing and re-resolving yields the same form the
+// router produces, so the comparison lines up. Falls back to the stored path
+// when it does not resolve.
+function normalizeDashboardViewerPath(
+  pinnedPath: string | null,
+): string | null {
+  if (!pinnedPath) return pinnedPath;
+  try {
+    const { path, query, hash } = router.resolve(pinnedPath);
+    return router.resolve({ path, query, hash }).fullPath;
+  } catch {
+    return pinnedPath;
+  }
+}
+
 // Navigation guard for admin-only routes and guest mode restrictions
 router.beforeEach(async (to) => {
   const guestRedirect = getGuestNavigationRedirect(
@@ -650,8 +668,8 @@ router.beforeEach(async (to) => {
   // Dashboard viewer sessions are pinned to their opened route and render kiosk-style (no nav/player chrome).
   if (authManager.isDashboardViewer()) {
     store.frameless = true;
-    const pinnedPath = sessionStorage.getItem(
-      DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+    const pinnedPath = normalizeDashboardViewerPath(
+      sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY),
     );
     // Compare fullPath (not path) so a pinned route with a query string (e.g. /now-playing?player=...) isn't a mismatch on every nav.
     const dashboardRedirect = getDashboardViewerNavigationRedirect(

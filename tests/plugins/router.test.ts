@@ -277,6 +277,30 @@ describe("global navigation guard", () => {
     expect(mocks.store.frameless).toBe(true);
   });
 
+  it("keeps a dashboard viewer on its pinned route when the pinned value is percent-encoded", async () => {
+    // The server builds this path with Python's urlencode, so a WiiM player
+    // id's ':' arrives as '%3A' in the stored pinned path. router.replace()
+    // round-trips a string location through a decoded query object before
+    // re-serializing it, and that re-serialization (vue-router's stringifyQuery)
+    // leaves ':' literal instead of re-escaping it — so to.fullPath for this
+    // exact route comes back with a literal ':', never a '%3A'.
+    mocks.isDashboardViewer.mockReturnValue(true);
+    sessionStorage.setItem(
+      DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+      "/now-playing?player=wiim_uuid%3AFF98F7F4-EEC9-70AF-5264-1F82FF98F7F4",
+    );
+
+    await expect(
+      invokeGuard(
+        globalGuard,
+        resolveRoute(
+          "/now-playing?player=wiim_uuid:FF98F7F4-EEC9-70AF-5264-1F82FF98F7F4",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    expect(mocks.store.frameless).toBe(true);
+  });
+
   it("leaves a dashboard viewer without a pinned route where it is", async () => {
     mocks.isDashboardViewer.mockReturnValue(true);
 
