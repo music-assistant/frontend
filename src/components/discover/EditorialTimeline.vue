@@ -156,7 +156,7 @@ const timelineItems = computed((): TimelineEvent[] => {
 
 <style scoped>
 .timeline-event {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
 }
