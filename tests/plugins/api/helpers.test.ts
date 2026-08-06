@@ -113,6 +113,14 @@ describe("resolvePlayerQueue", () => {
     expect(resolvePlayerQueue(player({}))?.queue_id).toBe("p1");
   });
 
+  it("returns the player's own queue reached through its source while inactive", () => {
+    api.queues["p1"] = { queue_id: "p1", active: false } as PlayerQueue;
+
+    expect(resolvePlayerQueue(player({ active_source: "p1" }))?.queue_id).toBe(
+      "p1",
+    );
+  });
+
   it("ignores the player's own queue while it is inactive", () => {
     api.queues["p1"] = { queue_id: "p1", active: false } as PlayerQueue;
 

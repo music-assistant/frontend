@@ -187,6 +187,11 @@ export const getSourceName = function (player: Player) {
  *
  * A player either plays the queue of the source it is attached to, or its own
  * queue when it has no source; an inactive own queue does not count.
+ *
+ * A player taken over by an external source is attached to no queue at all, so
+ * callers get undefined for it rather than an inactive queue. The queue that is
+ * returned reads `active` in every settled state, and reads inactive only while a
+ * handover back to it is still propagating.
  */
 export function resolvePlayerQueue(player?: Player): PlayerQueue | undefined {
   if (player?.active_source && player.active_source in api.queues) {
