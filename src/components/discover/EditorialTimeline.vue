@@ -1,59 +1,36 @@
 <template>
-  <div class="timeline-container" :class="{ dimmed }">
-    <div class="timeline-header">
-      <div class="timeline-title-row">
-        <h2 class="timeline-title">{{ title }}</h2>
-        <ProviderIcon
-          v-if="provider"
-          :domain="provider"
-          :size="24"
-          class="timeline-provider"
-        />
-        <slot name="actions"></slot>
-      </div>
-    </div>
+  <EditorialShelf
+    :title="title"
+    :provider="provider"
+    :dimmed="dimmed"
+    :tiles-per-view="tilesPerView"
+    :gap="gap"
+  >
+    <template #actions>
+      <slot name="actions" />
+    </template>
 
-    <!-- Artists in chronological order -->
-    <div class="timeline-scroll">
-      <div
-        ref="track"
-        class="timeline-events"
-        :style="{
-          '--ed-gap': gap + 'px',
-          ...(tileArt != null ? { '--ed-tile-art': tileArt + 'px' } : {}),
-        }"
-      >
-        <EditorialMediaCard
-          v-for="event in timelineItems"
-          :key="event.id"
-          :item="event.artist"
-          class="timeline-card"
-        >
-          <template #subtitle>
-            <span style="display: flex; align-items: center; gap: 6px">
-              <component
-                :is="EVENT_ICONS[event.eventType]"
-                :size="12"
-                style="flex-shrink: 0; opacity: 0.75"
-              />
-              <span>{{ event.dateLabel }}</span>
-            </span>
-          </template>
-        </EditorialMediaCard>
-      </div>
-    </div>
-  </div>
+    <EditorialMediaCard
+      v-for="event in timelineItems"
+      :key="event.id"
+      :item="event.artist"
+    >
+      <template #subtitle>
+        <span class="timeline-event">
+          <component
+            :is="EVENT_ICONS[event.eventType]"
+            :size="12"
+            class="timeline-event__icon"
+          />
+          <span>{{ event.dateLabel }}</span>
+        </span>
+      </template>
+    </EditorialMediaCard>
+  </EditorialShelf>
 </template>
 
 <script setup lang="ts">
-import {
-  computed,
-  ref,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-  type Component,
-} from "vue";
+import { computed, type Component } from "vue";
 import type {
   Artist,
   MediaItemTypeOrItemMapping,
@@ -62,8 +39,7 @@ import type {
 import { ArtistEntityType } from "@/plugins/api/interfaces";
 import { Cake, Heart, Users, UserMinus } from "@lucide/vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import { getBreakpointValue } from "@/plugins/breakpoint";
+import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 
 const props = defineProps<{
   title: string;
@@ -74,17 +50,6 @@ const props = defineProps<{
   maxDays?: number;
   gap?: number;
 }>();
-
-const CARD_PAD = 16;
-const PHONE_GAP = 4;
-const PHONE_CARD_PAD = 8;
-const MIN_ART = 120;
-const MAX_ART = 280;
-
-const track = ref<HTMLElement | null>(null);
-const tileArt = ref<number | null>(null);
-
-const gap = computed(() => props.gap ?? 14);
 
 const MAX_DAYS = computed(() => props.maxDays ?? 15);
 
@@ -115,7 +80,6 @@ function mmddOffset(mmdd: string): number {
   ) {
     return Number.NaN;
   }
-  // Pick the closest occurrence of this MM-DD across adjacent years.
   const candidates = [
     new Date(Date.UTC(year - 1, mm - 1, dd)),
     new Date(Date.UTC(year, mm - 1, dd)),
@@ -188,107 +152,17 @@ const timelineItems = computed((): TimelineEvent[] => {
 
   return events.sort((a, b) => a.offset - b.offset);
 });
-
-const updateTileArt = () => {
-  const el = track.value;
-  if (!el || !props.tilesPerView || props.tilesPerView <= 0) {
-    tileArt.value = null;
-    return;
-  }
-  const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
-  const gapVal = isPhone ? Math.min(gap.value, PHONE_GAP) : gap.value;
-  const cardPad = isPhone ? PHONE_CARD_PAD : CARD_PAD;
-  const size = el.clientWidth / props.tilesPerView - gapVal - cardPad;
-  tileArt.value = Math.round(Math.max(MIN_ART, Math.min(MAX_ART, size)));
-};
-
-let ro: ResizeObserver | undefined;
-onMounted(() => {
-  updateTileArt();
-  window.addEventListener("resize", updateTileArt);
-  if (track.value && "ResizeObserver" in window) {
-    ro = new ResizeObserver(updateTileArt);
-    ro.observe(track.value);
-  }
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener("resize", updateTileArt);
-  ro?.disconnect();
-});
-
-watch(() => props.tilesPerView, updateTileArt);
 </script>
 
 <style scoped>
-.timeline-container {
-  --ed-gutter: 28px;
-  --ed-card-pad: 8px;
-  padding: 16px 0;
-}
-
-.timeline-container.dimmed {
-  opacity: 0.5;
-}
-
-.timeline-header {
-  padding: 0 var(--ed-gutter) 16px;
-}
-
-.timeline-title-row {
+.timeline-event {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 }
 
-.timeline-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-  flex: 1;
-}
-
-.timeline-provider {
+.timeline-event__icon {
   flex-shrink: 0;
-}
-
-.timeline-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  touch-action: pan-x pan-y;
-
-  /* Hide scrollbar */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .timeline-scroll {
-    scroll-behavior: auto;
-  }
-}
-
-.timeline-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.timeline-events {
-  display: flex;
-  gap: var(--ed-gap, 14px);
-  padding-left: calc(var(--ed-gutter) - var(--ed-card-pad));
-  padding-right: var(--ed-gutter);
-  padding-bottom: 16px;
-}
-
-.timeline-card {
-  flex-shrink: 0;
-}
-
-@media (max-width: 600px) {
-  .timeline-container {
-    --ed-gutter: 16px;
-    --ed-card-pad: 4px;
-  }
+  opacity: 0.75;
 }
 </style>
