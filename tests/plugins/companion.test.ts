@@ -92,13 +92,18 @@ function seedPlayer(player: Omit<MockPlayer, "player_id">): void {
   apiMock.players[PLAYER_ID] = storeMock.activePlayer!;
 }
 
+/** Every now-playing payload pushed to the companion app, in order. */
+function nowPlayingPushes(): NowPlaying[] {
+  return invoke.mock.calls
+    .filter((call) => call[0] === "update_now_playing")
+    .map((call) => call[1].nowPlaying);
+}
+
 /** The most recent now-playing payload pushed to the companion app. */
 function lastNowPlaying(): NowPlaying {
-  const pushes = invoke.mock.calls.filter(
-    (call) => call[0] === "update_now_playing",
-  );
+  const pushes = nowPlayingPushes();
   expect(pushes.length).toBeGreaterThan(0);
-  return pushes[pushes.length - 1][1].nowPlaying;
+  return pushes[pushes.length - 1];
 }
 
 beforeEach(() => {
@@ -156,11 +161,14 @@ describe("companion now-playing position", () => {
   it("prefers current_media timing over the legacy player-level fields", async () => {
     seedPlayer({
       playback_state: PlaybackState.PLAYING,
-      current_media: { title: "Track", elapsed_time: 20 },
+      current_media: {
+        title: "Track",
+        elapsed_time: 20,
+        elapsed_time_last_updated: NOW,
+      },
       elapsed_time: 999,
       elapsed_time_last_updated: NOW,
     });
-    storeMock.activePlayer!.current_media!.elapsed_time_last_updated = NOW;
 
     vi.setSystemTime((NOW + 3) * 1000);
     await initializeCompanionIntegration("");
@@ -209,7 +217,7 @@ describe("companion now-playing position", () => {
     expect(lastNowPlaying().elapsed).toBeNull();
   });
 
-  it("resolves the position of the player the payload is about", async () => {
+  it("ignores the position of players the payload is not about", async () => {
     seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 10,
@@ -260,14 +268,35 @@ describe("companion now-playing position", () => {
       elapsed_time: 5,
       elapsed_time_last_updated: NOW + 28,
     };
-    storeMock.activePlayer = {
-      ...storeMock.activePlayer!,
-      current_media: { uri: "track://2", title: "Second" },
-    };
+    seedPlayer({ current_media: { uri: "track://2", title: "Second" } });
     await nextTick();
 
     const nowPlaying = lastNowPlaying();
     expect(nowPlaying.track).toBe("Second");
     expect(nowPlaying.elapsed).toBe(7); // 5 + (30 - 28)
+  });
+
+  it("does not push on its own while a track plays on", async () => {
+    // Guards the no-tick decision above: pushes follow track and state changes,
+    // not the clock, so nothing keeps re-sending a position Discord already has.
+    seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 0,
+      elapsed_time_last_updated: NOW,
+    };
+    seedPlayer({
+      playback_state: PlaybackState.PLAYING,
+      current_media: { uri: "track://1", title: "First" },
+    });
+
+    await initializeCompanionIntegration("");
+    const pushCount = nowPlayingPushes().length;
+
+    // the position advances and any interval would come due
+    vi.setSystemTime((NOW + 60) * 1000);
+    await vi.advanceTimersByTimeAsync(60_000);
+    await nextTick();
+
+    expect(nowPlayingPushes()).toHaveLength(pushCount);
   });
 });
