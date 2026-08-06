@@ -30,17 +30,7 @@
           }"
         />
         <!-- progress bar -->
-        <PlayerTimeline
-          v-if="getBreakpointValue('bp6')"
-          :is-progress-bar="false"
-          :disabled="
-            !store.activePlayerQueue?.active ||
-            !timelineMediaTypes.includes(
-              store.activePlayerQueue?.current_item?.media_item
-                ?.media_type as MediaType,
-            )
-          "
-        />
+        <PlayerTimeline v-if="getBreakpointValue('bp6')" />
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
@@ -114,7 +104,6 @@
 
 <script setup lang="ts">
 import { ImageColorPalette, paletteFromServer } from "@/helpers/utils";
-import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
@@ -152,10 +141,6 @@ const themeColor = computed(() =>
 const playIconStyle = computed(() => ({
   "--play-icon-color": vuetify.theme.current.value.dark ? "#212121" : "#fff",
 }));
-
-// Media types that get a fully-featured timeline. AudioSource items decide
-// seekability via their own can_seek flag (read inside PlayerTimeline).
-const timelineMediaTypes = [MediaType.TRACK, MediaType.AUDIO_SOURCE];
 </script>
 
 <style scoped lang="scss">
