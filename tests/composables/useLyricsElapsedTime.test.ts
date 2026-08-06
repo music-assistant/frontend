@@ -9,8 +9,23 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlaybackState } from "@/plugins/api/interfaces";
 
+interface MockQueue {
+  queue_id: string;
+  state: PlaybackState;
+  active: boolean;
+}
+
+interface MockPlayer {
+  player_id: string;
+  active_source?: string;
+  playback_state?: PlaybackState;
+  elapsed_time?: number;
+  elapsed_time_last_updated?: number;
+}
+
 const { apiMock, serverNowMock } = vi.hoisted(() => ({
   apiMock: {
+    queues: {} as Record<string, MockQueue>,
     queueElapsedTime: {} as Record<
       string,
       { elapsed_time?: number; elapsed_time_last_updated?: number }
@@ -30,19 +45,8 @@ vi.mock("@/composables/useServerTime", () => ({
 // Reactive so the composable's watchEffect reacts to mutations, mirroring
 // the pattern used by the other composable tests in this directory.
 const storeMock = reactive({
-  activePlayerQueue: undefined as
-    | { queue_id: string; state: PlaybackState; active: boolean }
-    | undefined,
-  activePlayer: undefined as
-    | {
-        playback_state?: PlaybackState;
-        elapsed_time?: number;
-        elapsed_time_last_updated?: number;
-      }
-    | undefined,
-  curQueueItem: undefined as
-    | { extra_attributes?: { playback_speed?: number } }
-    | undefined,
+  activePlayerQueue: undefined as MockQueue | undefined,
+  activePlayer: undefined as MockPlayer | undefined,
 });
 
 vi.mock("@/plugins/store", () => ({
@@ -67,12 +71,32 @@ function flushFrame(): void {
 
 const NOW = 1_700_000_000;
 
-function makeQueue(overrides: Record<string, unknown> = {}) {
-  return {
+const PLAYER_ID = "p1";
+
+/**
+ * Seed the active player's queue.
+ *
+ * The resolver reaches the queue through the player's `active_source`, while the
+ * composable's own gate reads it off the store, so both are pointed at it.
+ */
+function seedQueue(overrides: Partial<MockQueue> = {}): void {
+  const queue: MockQueue = {
     queue_id: "q1",
     state: PlaybackState.PLAYING,
     active: true,
     ...overrides,
+  };
+  storeMock.activePlayerQueue = queue;
+  apiMock.queues[queue.queue_id] = queue;
+  seedPlayer({ active_source: queue.queue_id });
+}
+
+/** Seed the active player's own fields, keeping any queue already seeded. */
+function seedPlayer(player: Omit<MockPlayer, "player_id">): void {
+  storeMock.activePlayer = {
+    ...storeMock.activePlayer,
+    player_id: PLAYER_ID,
+    ...player,
   };
 }
 
@@ -128,9 +152,9 @@ describe("useLyricsElapsedTime", () => {
     // reactive like the real map, so a timing push can be seen to (not) wake
     // anything that subscribed to it
     apiMock.queueElapsedTime = reactive({});
+    apiMock.queues = {};
     storeMock.activePlayerQueue = undefined;
     storeMock.activePlayer = undefined;
-    storeMock.curQueueItem = undefined;
     serverNowMock.mockReset();
     serverNowMock.mockReturnValue(NOW);
   });
@@ -142,8 +166,8 @@ describe("useLyricsElapsedTime", () => {
   });
 
   it("reads a frozen position from a paused queue even while the loop runs", async () => {
-    storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PAUSED });
-    storeMock.activePlayer = { playback_state: PlaybackState.PLAYING };
+    seedQueue({ state: PlaybackState.PAUSED });
+    seedPlayer({ playback_state: PlaybackState.PLAYING });
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 42,
       elapsed_time_last_updated: NOW,
@@ -165,7 +189,7 @@ describe("useLyricsElapsedTime", () => {
   });
 
   it("advances the position as serverNow advances while the queue plays", async () => {
-    storeMock.activePlayerQueue = makeQueue();
+    seedQueue();
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 10,
       elapsed_time_last_updated: NOW,
@@ -182,8 +206,8 @@ describe("useLyricsElapsedTime", () => {
   });
 
   it("runs the loop from the queue's state even when the player disagrees", async () => {
-    storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PLAYING });
-    storeMock.activePlayer = { playback_state: PlaybackState.PAUSED };
+    seedQueue({ state: PlaybackState.PLAYING });
+    seedPlayer({ playback_state: PlaybackState.PAUSED });
 
     await runComposable();
     await nextTick();
@@ -192,34 +216,34 @@ describe("useLyricsElapsedTime", () => {
   });
 
   it("stops the loop when the queue pauses even though the player keeps playing", async () => {
-    storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PLAYING });
-    storeMock.activePlayer = { playback_state: PlaybackState.PLAYING };
+    seedQueue({ state: PlaybackState.PLAYING });
+    seedPlayer({ playback_state: PlaybackState.PLAYING });
 
     await runComposable();
     await nextTick();
     expect(pendingFrames.size).toBe(1);
 
-    storeMock.activePlayerQueue = makeQueue({ state: PlaybackState.PAUSED });
+    seedQueue({ state: PlaybackState.PAUSED });
     await nextTick();
 
     expect(pendingFrames.size).toBe(0);
   });
 
   it("stops the loop when the queue becomes inactive", async () => {
-    storeMock.activePlayerQueue = makeQueue({ active: true });
+    seedQueue({ active: true });
 
     await runComposable();
     await nextTick();
     expect(pendingFrames.size).toBe(1);
 
-    storeMock.activePlayerQueue = makeQueue({ active: false });
+    seedQueue({ active: false });
     await nextTick();
 
     expect(pendingFrames.size).toBe(0);
   });
 
   it("stops the loop when the enabled ref flips to false", async () => {
-    storeMock.activePlayerQueue = makeQueue();
+    seedQueue();
     const enabled = ref(true);
 
     await runComposable(enabled);
@@ -233,7 +257,7 @@ describe("useLyricsElapsedTime", () => {
   });
 
   it("holds the last queue position rather than adopting the player's", async () => {
-    storeMock.activePlayerQueue = makeQueue();
+    seedQueue();
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 10,
       elapsed_time_last_updated: NOW,
@@ -246,11 +270,11 @@ describe("useLyricsElapsedTime", () => {
 
     // the queue stops reporting a position while the player still reports one
     delete apiMock.queueElapsedTime["q1"];
-    storeMock.activePlayer = {
+    seedPlayer({
       playback_state: PlaybackState.PLAYING,
       elapsed_time: 999,
       elapsed_time_last_updated: NOW,
-    };
+    });
     await nextTick();
     flushFrame();
 
@@ -258,7 +282,7 @@ describe("useLyricsElapsedTime", () => {
   });
 
   it("does not re-run the gate when the queue timing updates", async () => {
-    storeMock.activePlayerQueue = makeQueue();
+    seedQueue();
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 10,
       elapsed_time_last_updated: NOW,
@@ -285,7 +309,7 @@ describe("useLyricsElapsedTime", () => {
   it("stops the loop and removes the visibilitychange listener when the scope is disposed", async () => {
     const addEventListenerSpy = vi.spyOn(document, "addEventListener");
     const removeEventListenerSpy = vi.spyOn(document, "removeEventListener");
-    storeMock.activePlayerQueue = makeQueue();
+    seedQueue();
 
     const { scope } = await runComposable();
     await nextTick();

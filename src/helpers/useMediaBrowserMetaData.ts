@@ -1,6 +1,7 @@
 import { computeElapsedTime, queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import { getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
+import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import { MediaType, PlayerMedia } from "@/plugins/api/interfaces";
 import authManager from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -70,23 +71,7 @@ export function useMediaBrowserMetaData(player_id?: string) {
     );
   });
 
-  const playerQueue = computed(() => {
-    if (
-      player.value?.active_source &&
-      player.value.active_source in api.queues
-    ) {
-      return api.queues[player.value.active_source];
-    }
-    if (
-      player.value &&
-      !player.value.active_source &&
-      player.value.player_id in api.queues &&
-      api.queues[player.value.player_id].active
-    ) {
-      return api.queues[player.value.player_id];
-    }
-    return undefined;
-  });
+  const playerQueue = computed(() => resolvePlayerQueue(player.value));
 
   const mediaMetadata = computed(() => {
     if (shouldSuppressMetadata.value) {
