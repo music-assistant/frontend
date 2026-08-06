@@ -87,8 +87,9 @@ export function resolveQueueTiming(
   player_id?: string,
 ): ActiveTiming | undefined {
   const queue = resolvePlayerQueue(resolvePlayer(player_id));
-  // An inactive queue holds the position it stopped at, while its current item is
-  // already gone; pairing the two would mix a stale position with a default speed.
+  // The queue only reads inactive while a handover back to it is still propagating;
+  // the position it holds is then from before the source took over, so it is not
+  // reported as this queue's timing.
   if (!queue?.active) return undefined;
 
   const queueTime = api.queueElapsedTime[queue.queue_id];
