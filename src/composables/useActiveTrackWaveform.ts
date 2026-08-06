@@ -31,6 +31,12 @@ let stopWatcher: WatchStopHandle | undefined;
 // effect scope of whichever consumer happened to register first.
 const watcherScope = effectScope(true);
 
+// A hot update evaluates a fresh copy of this module, so the watcher of the
+// replaced copy has to be stopped or it keeps fetching alongside the new one.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => watcherScope.stop());
+}
+
 /**
  * Waveform bins and duration of the currently playing track.
  *
