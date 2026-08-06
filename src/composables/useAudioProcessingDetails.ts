@@ -5,6 +5,7 @@ import {
   File as FileIcon,
   FileAudio,
   Gauge,
+  Merge,
   SlidersHorizontal,
   Speaker,
   Split,
@@ -344,12 +345,17 @@ function buildOutputDisplay(
   }
 
   if (output.source_channel) {
+    // ALL marks the fold-down of both source channels, so there is no single
+    // source channel to name here
+    const mixedToMono = output.source_channel === AudioChannel.ALL;
     stages.push({
       key: `source-channel-${index}`,
-      icon: Split,
-      title: translate("streamdetails.audio_processing.source_channel", [
-        sourceChannelLabel(output.source_channel, translate),
-      ]),
+      icon: mixedToMono ? Merge : Split,
+      title: mixedToMono
+        ? translate("streamdetails.audio_processing.mixed_to_mono")
+        : translate("streamdetails.audio_processing.source_channel", [
+            sourceChannelLabel(output.source_channel, translate),
+          ]),
     });
   }
   stages.push(finalOutputStage(output, index, translate, dependencies.locale));

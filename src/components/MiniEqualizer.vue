@@ -5,7 +5,7 @@
     class="mini-eq"
     aria-hidden="true"
     role="presentation"
-  />
+  ></canvas>
 </template>
 
 <script setup lang="ts">

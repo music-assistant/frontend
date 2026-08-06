@@ -631,9 +631,14 @@ export interface ConfigEntry {
   help_link?: string;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
-  // depends_on [optional]: needs to be set before this setting shows up in frontend
+  // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
+  // as unmet. While unmet, input types and ACTION stay visible but render disabled;
+  // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
   depends_on?: string;
+  // depends_on_value [optional]: complementary to depends_on, the dependency is only met when
+  // the other entry holds this exact value (without it, any truthy value will do)
   depends_on_value?: ConfigValueType;
+  // depends_on_value_not [optional]: same as depends_on_value but inverted
   depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
@@ -1076,6 +1081,11 @@ export interface QueueItem {
 
 export interface PlayerQueue {
   queue_id: string;
+  // active: whether the player is currently playing this queue. Server-derived from the
+  // player's active_source: false only while an external source (line-in, Spotify Connect,
+  // another queue in a group) has taken the player over - a stopped or finished queue stays
+  // active and idle. Recalculated ~0.5s after the active_source change that causes it, so
+  // during a handover it can briefly still hold the value from before.
   active: boolean;
   display_name: string;
   available: boolean;
@@ -1249,6 +1259,10 @@ export interface Player {
   volume_muted?: boolean;
   group_members: string[];
   static_group_members: string[];
+  // active_source: id of the source the player is currently playing - its own queue_id for
+  // Music Assistant playback, or an external source id. PlayerQueue.active is derived from
+  // this, and PLAYER_UPDATED carries a new value before the queue is recalculated, so the
+  // two can disagree for about half a second during a source handover.
   active_source?: string;
   source_list: PlayerSource[];
   active_sound_mode?: string;

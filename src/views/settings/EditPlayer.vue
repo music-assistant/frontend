@@ -265,7 +265,8 @@ import {
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
-import { openActionUrlEntries, openLinkInNewTab } from "@/helpers/utils";
+import { useConfigAction } from "@/composables/useConfigAction";
+import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 // global refs
@@ -463,44 +464,13 @@ const onImmediateApply = async function (
     });
 };
 
-const onAction = async function (
-  action: string,
-  _values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  api
-    .invokePlayerConfigAction(config.value!.player_id, action)
-    .then(async (entries) => {
-      entries = openActionUrlEntries(entries);
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.savePlayerConfig(
-          props.playerId!,
-          saveValues,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-    })
-    .catch((err) => {
-      toast.error(String(err));
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-};
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokePlayerConfigAction(config.value!.player_id, action),
+  saveValues: (values) => api.savePlayerConfig(props.playerId!, values),
+});
 
 async function loadConfig(playerId: string) {
   const requestId = ++configLoadRequestId;

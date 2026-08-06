@@ -84,7 +84,7 @@
               data-testid="timeline-selected-boundary"
               class="w-full max-w-xl"
             >
-              <slot name="selected-boundary" />
+              <slot name="selected-boundary"></slot>
             </div>
           </li>
           <li

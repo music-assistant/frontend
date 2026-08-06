@@ -201,9 +201,10 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Button } from "@/components/ui/button";
+import { useConfigAction } from "@/composables/useConfigAction";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import { canReconfigureProvider } from "@/helpers/provider_config";
-import { markdownToHtml, openActionUrlEntries } from "@/helpers/utils";
+import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -369,45 +370,18 @@ const onImmediateApply = async function (
   }
 };
 
-const onAction = async function (
-  action: string,
-  _values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  api
-    .invokeProviderConfigAction(config.value!.instance_id, action)
-    .then(async (entries) => {
-      entries = openActionUrlEntries(entries);
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.saveProviderConfig(
-          config.value!.domain,
-          saveValues,
-          config.value!.instance_id,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-    })
-    .catch((err) => {
-      toast.error(String(err));
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-};
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokeProviderConfigAction(config.value!.instance_id, action),
+  saveValues: (values) =>
+    api.saveProviderConfig(
+      config.value!.domain,
+      values,
+      config.value!.instance_id,
+    ),
+});
 
 const getAuthorsMarkdown = function (authors: string[]) {
   const allAuthors: string[] = [];

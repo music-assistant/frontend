@@ -636,6 +636,7 @@
         "provider_saved": "Provider settings saved",
         "provider_reloading": "Reloading provider…",
         "provider_removed": "Provider removed",
+        "action_completed": "Action completed",
         "queue_settings": "Queue settings",
         "audio_analysis_failures": {
             "title": "Audio Analysis Failures",
@@ -925,6 +926,7 @@
             "source_channel": "Source channel: {0}",
             "source_channel_left": "Left",
             "source_channel_right": "Right",
+            "mixed_to_mono": "Mixed to mono",
             "dsp_preset": "DSP preset: {0}",
             "dsp_preset_label": "DSP preset",
             "dsp_title": "DSP",
