@@ -186,7 +186,6 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { ArrowLeft, Music, X } from "@lucide/vue";
 import {
   computed,
@@ -476,9 +475,6 @@ const refreshPartyPlayer = async () => {
   try {
     const partyPlayerId = await api.sendCommand<string | null>("party/player");
     partyQueueId.value = partyPlayerId;
-    if (partyPlayerId) {
-      store.activePlayerId = partyPlayerId;
-    }
   } catch (error) {
     console.error("Failed to fetch party player:", error);
   }
