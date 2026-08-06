@@ -275,6 +275,27 @@ describe("useLyricsElapsedTime", () => {
     expect(pendingFrames.size).toBe(0);
   });
 
+  it("resolves the position when the enabled ref flips to true on a paused queue", async () => {
+    seedQueue({ state: PlaybackState.PAUSED });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 42,
+      elapsed_time_last_updated: NOW,
+    };
+    const enabled = ref(false);
+
+    const { elapsedTime } = await runComposable(enabled);
+    await nextTick();
+    expect(elapsedTime.value).toBe(0);
+
+    enabled.value = true;
+    await nextTick();
+
+    // A paused queue schedules no frames, so the position has to be there
+    // without one.
+    expect(pendingFrames.size).toBe(0);
+    expect(elapsedTime.value).toBe(42);
+  });
+
   it("holds the last queue position rather than adopting the player's", async () => {
     seedQueue();
     apiMock.queueElapsedTime["q1"] = {
