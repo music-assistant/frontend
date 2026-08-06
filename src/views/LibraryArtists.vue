@@ -30,7 +30,6 @@ import {
   EventType,
   MediaType,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -38,7 +37,7 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref(store.libraryArtistsCount);
+const total = ref<number | undefined>(undefined);
 
 const sortKeys = [
   "name",
@@ -70,10 +69,6 @@ const loadItems = async function (params: LoadDataParams) {
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly && !params.albumArtistsFilter && !params.provider) {
-    total.value = store.libraryArtistsCount;
-    return;
-  }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
@@ -83,6 +78,7 @@ const setTotals = async function (params: LoadDataParams) {
   total.value = await api.getLibraryArtistsCount(
     params.favoritesOnly || false,
     params.albumArtistsFilter || false,
+    ArtistType.SINGER,
   );
 };
 

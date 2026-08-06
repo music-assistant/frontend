@@ -1,8 +1,8 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <!-- begin artist_type == ArtistType.SINGER -->
-    <div v-if="itemDetails && itemDetails.artist_type == ArtistType.SINGER">
+    <!-- music listings: any artist that is not an author/narrator -->
+    <div v-if="itemDetails && !isAudiobookArtist">
       <!-- albums in library (library artists only) -->
       <ItemsListing
         v-if="itemDetails && !loading && itemDetails.provider == 'library'"
@@ -163,16 +163,8 @@
         :allow-collapse="true"
       />
     </div>
-    <!-- end artist_type == ArtistType.SINGER -->
-    <!-- begin artist_type == ArtistType.AUTHOR or NARRATOR -->
-    <div
-      v-if="
-        itemDetails &&
-        [ArtistType.AUTHOR, ArtistType.NARRATOR].includes(
-          itemDetails.artist_type,
-        )
-      "
-    >
+    <!-- audiobook listings: authors and narrators -->
+    <div v-if="itemDetails && isAudiobookArtist">
       <!-- audiobooks in library (library artists only) -->
       <ItemsListing
         v-if="itemDetails && !loading && itemDetails.provider == 'library'"
@@ -226,7 +218,6 @@
         :allow-collapse="true"
       />
     </div>
-    <!-- end artist_type == ArtistType.AUTHOR or NARRATOR -->
     <!-- media images -->
     <MediaItemImages
       v-if="
@@ -250,8 +241,6 @@ import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
-import { authManager } from "@/plugins/auth";
-import { store } from "@/plugins/store";
 import {
   ArtistType,
   EventMessage,
@@ -261,6 +250,8 @@ import {
   ProviderType,
   type Artist,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 export interface Props {
@@ -369,12 +360,24 @@ const albumSourceMappings = sourceMappingsForFeature(
 const trackSourceMappings = sourceMappingsForFeature(
   ProviderFeature.ARTIST_TRACKS,
 );
-const audiobookSourceMappings = (() => {
-  if (itemDetails.value?.artist_type === ArtistType.AUTHOR) {
-    return sourceMappingsForFeature(ProviderFeature.AUTHOR_AUDIOBOOKS);
-  }
-  return sourceMappingsForFeature(ProviderFeature.NARRATOR_AUDIOBOOKS);
-})();
+
+const isAudiobookArtist = computed(() => {
+  const artistType = itemDetails.value?.artist_type;
+  return artistType === ArtistType.AUTHOR || artistType === ArtistType.NARRATOR;
+});
+
+const authorAudiobookSourceMappings = sourceMappingsForFeature(
+  ProviderFeature.AUTHOR_AUDIOBOOKS,
+);
+
+const narratorAudiobookSourceMappings = sourceMappingsForFeature(
+  ProviderFeature.NARRATOR_AUDIOBOOKS,
+);
+const audiobookSourceMappings = computed(() =>
+  itemDetails.value?.artist_type === ArtistType.AUTHOR
+    ? authorAudiobookSourceMappings.value
+    : narratorAudiobookSourceMappings.value,
+);
 
 const albumSourceProviderIds = computed(() =>
   albumSourceMappings.value.map((mapping) => mapping.provider_instance),

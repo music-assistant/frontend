@@ -855,7 +855,7 @@ export interface ItemMapping extends _MediaItemBase {
 }
 
 export interface Artist extends MediaItem {
-  artist_type: ArtistType;
+  artist_type?: ArtistType;
 }
 
 export interface Album extends MediaItem {

@@ -3,7 +3,7 @@
   <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
-      :icon="props.toolBarTabs === undefined ? icon : ''"
+      :icon="icon"
       :title="title"
       :subtitle="subtitle"
       :count="params.search ? pagedItems.length : total || allItems.length"
@@ -14,43 +14,30 @@
       @title-clicked="toggleExpand"
     >
       <template #title>
-        <div class="toolbar-title">
-          <slot v-if="props.toolBarTabs === undefined" name="title">{{
-            title
-          }}</slot>
-          <div v-else class="toolbar-tabs">
-            <button
-              v-for="tab in props.toolBarTabs"
-              :key="tab.id"
-              class="toolbar-tab"
-              :class="{ active: activeTabId === tab.id }"
-              @click.stop="
-                activeTabId = tab.id;
-                loadData(true, true);
-              "
-            >
-              <v-btn
-                :icon="typeof icon === 'string' ? icon : undefined"
-                size="small"
-                style="opacity: 0.8"
-              >
-                <component
-                  :is="tab.icon"
-                  v-if="typeof tab.icon !== 'string'"
-                  class="w-6 h-6"
-                  :class="{ 'active-icon': activeTabId === tab.id }"
-                />
-              </v-btn>
-              <span class="toolbar-tab-label">
-                {{ tab.label }}
-              </span>
-            </button>
-          </div>
-        </div>
+        <slot name="title">{{ title }}</slot>
       </template>
     </Toolbar>
 
     <v-divider />
+
+    <div v-if="props.toolBarTabs !== undefined" class="content-tabs">
+      <Tabs
+        :model-value="activeTabId"
+        class="items-start"
+        @update:model-value="(v) => onTabChange(v as string)"
+      >
+        <TabsList class="h-auto w-auto gap-6 bg-transparent p-0">
+          <TabsTrigger
+            v-for="tab in props.toolBarTabs"
+            :key="tab.id"
+            :value="tab.id"
+            class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 font-['JetBrains_Mono_Medium'] text-[15px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
+          >
+            {{ tab.label }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
 
     <v-text-field
       v-if="showSearchInput"
@@ -272,6 +259,7 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   handleMenuBtnClick,
@@ -314,14 +302,12 @@ import { toast } from "vue-sonner";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
-import ArtistIcon from "./icons/ArtistIcon.vue";
 
 type LoadPagedDataFn = (params: LoadDataParams) => Promise<MediaItemType[]>;
 
 export interface ToolBarTab {
   id: string;
   label: string;
-  icon: string | Component;
   loadPagedData?: LoadPagedDataFn;
 }
 
@@ -446,13 +432,26 @@ const route = useRoute();
 const { t, te } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
-const activeTabId = ref("");
-if (props.toolBarTabs !== undefined && props.toolBarTabs.length > 0) {
-  activeTabId.value = props.toolBarTabs[0].id;
-}
+const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
+watch(
+  () => props.toolBarTabs,
+  (tabs) => {
+    if (!tabs || tabs.length === 0) return;
+    if (tabs.some((tab) => tab.id === activeTabId.value)) return;
+    const hadActiveTab = activeTabId.value !== "";
+    activeTabId.value = tabs[0].id;
+    if (hadActiveTab) loadData(true);
+  },
+);
 
 const getActiveTab = () => {
   return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
+};
+
+const onTabChange = function (tabId: string) {
+  if (!tabId || tabId === activeTabId.value) return;
+  activeTabId.value = tabId;
+  loadData(true);
 };
 
 // local refs
@@ -1773,7 +1772,7 @@ const loadGenreOptions = async () => {
 
     genreOptions.value = all;
   } catch {
-    toast.error(t("error_loading_genres"));
+    toast.error(t("settings.error_loading_genres"));
   }
 };
 
@@ -2135,46 +2134,12 @@ defineExpose({
   flex-basis: 10%;
   padding: 8px;
 }
-.toolbar-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
-}
-.toolbar-tabs {
-  display: flex;
-  gap: 0.5rem;
-  flex: 1 1 auto;
-  min-width: 0;
-
+.content-tabs {
+  padding: 10px 16px 0;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  white-space: nowrap;
-
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-}
-.toolbar-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex: 0 0 auto;
-
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
-}
-.toolbar-tab.active {
-  font-weight: 600;
-}
-.active-icon {
-  transform: scale(1.2);
-}
-@media (max-width: 640px) {
-  .toolbar-tab-label {
-    display: none;
-  }
 }
 </style>
