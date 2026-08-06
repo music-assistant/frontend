@@ -16,6 +16,7 @@ vi.mock("@/plugins/api", () => ({
 // Reactive store mock so the composable's watch fires when we mutate it.
 const storeMock = reactive({
   curQueueItem: null as unknown,
+  currentUser: null as unknown,
 });
 
 vi.mock("@/plugins/store", () => ({
@@ -49,12 +50,15 @@ function makeQueueItem(overrides: Record<string, unknown> = {}) {
   };
 }
 
+type UseActiveTrackWaveform =
+  typeof import("@/composables/useActiveTrackWaveform").useActiveTrackWaveform;
+
 let scopes: EffectScope[] = [];
 
 /**
  * Imports a fresh copy of the composable module.
  */
-async function importComposable() {
+async function importComposable(): Promise<UseActiveTrackWaveform> {
   const module = await import("@/composables/useActiveTrackWaveform");
   return module.useActiveTrackWaveform;
 }
@@ -63,15 +67,10 @@ async function importComposable() {
  * Registers a consumer inside its own effect scope, mimicking a mounted
  * component. The returned scope can be stopped to simulate unmounting.
  */
-function addConsumer(useActiveTrackWaveform: () => unknown) {
+function addConsumer(useActiveTrackWaveform: UseActiveTrackWaveform) {
   const scope = effectScope();
   scopes.push(scope);
-  return {
-    scope,
-    ...(scope.run(useActiveTrackWaveform) as ReturnType<
-      typeof import("@/composables/useActiveTrackWaveform").useActiveTrackWaveform
-    >),
-  };
+  return { scope, ...scope.run(useActiveTrackWaveform)! };
 }
 
 // ---------------------------------------------------------------------------
@@ -81,10 +80,13 @@ function addConsumer(useActiveTrackWaveform: () => unknown) {
 describe("useActiveTrackWaveform", () => {
   beforeEach(async () => {
     // A fresh module per test, so the shared cache and consumer count reset.
+    // This relies on "vue" staying a single instance across the reset, so that
+    // effect scopes created here are the ones the composable sees.
     vi.resetModules();
     mockGetWaveForm.mockReset();
     scopes = [];
     storeMock.curQueueItem = null;
+    storeMock.currentUser = null;
     await nextTick();
   });
 
@@ -265,6 +267,104 @@ describe("useActiveTrackWaveform", () => {
     expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
     expect(first.waveformBins).toBe(second.waveformBins);
     expect(second.waveformBins.value).toEqual([0.5]);
+  });
+
+  it("does not fetch when the show_waveform preference is off", async () => {
+    mockGetWaveForm.mockResolvedValue([0.5]);
+    storeMock.currentUser = { preferences: { show_waveform: false } };
+
+    const { waveformBins } = addConsumer(await importComposable());
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).not.toHaveBeenCalled();
+    expect(waveformBins.value).toBeNull();
+  });
+
+  it("fetches once the show_waveform preference is switched back on", async () => {
+    mockGetWaveForm.mockResolvedValue([0.5]);
+    storeMock.currentUser = { preferences: { show_waveform: false } };
+
+    const { waveformBins } = addConsumer(await importComposable());
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+    expect(mockGetWaveForm).not.toHaveBeenCalled();
+
+    storeMock.currentUser = { preferences: { show_waveform: true } };
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(1);
+    expect(waveformBins.value).toEqual([0.5]);
+  });
+
+  it("refetches when the track changed while no consumer was alive", async () => {
+    mockGetWaveForm.mockResolvedValueOnce([0.5]).mockResolvedValueOnce([0.7]);
+
+    const useActiveTrackWaveform = await importComposable();
+    const first = addConsumer(useActiveTrackWaveform);
+
+    storeMock.curQueueItem = makeQueueItem();
+    await nextTick();
+    await nextTick();
+
+    first.scope.stop();
+
+    storeMock.curQueueItem = makeQueueItem({
+      queue_item_id: "qi-2",
+      streamdetails: { item_id: "stream-2", provider: "spotify" },
+    });
+
+    const second = addConsumer(useActiveTrackWaveform);
+    await nextTick();
+    await nextTick();
+
+    expect(mockGetWaveForm).toHaveBeenCalledTimes(2);
+    expect(second.waveformBins.value).toEqual([0.7]);
+  });
+
+  it("discards a fetch that resolves after the last consumer is torn down", async () => {
+    let resolveFirst!: (v: number[]) => void;
+    mockGetWaveForm
+      .mockReturnValueOnce(new Promise<number[]>((r) => (resolveFirst = r)))
+      .mockResolvedValueOnce([0.9]);
+
+    const useActiveTrackWaveform = await importComposable();
+    const first = addConsumer(useActiveTrackWaveform);
+
+    const trackA = makeQueueItem();
+    const trackB = makeQueueItem({
+      queue_item_id: "qi-2",
+      streamdetails: { item_id: "stream-2", provider: "spotify" },
+    });
+
+    // Track A's fetch hangs, then track B plays and resolves.
+    storeMock.curQueueItem = trackA;
+    await nextTick();
+    storeMock.curQueueItem = trackB;
+    await nextTick();
+    await nextTick();
+    expect(first.waveformBins.value).toEqual([0.9]);
+
+    first.scope.stop();
+
+    // Track A comes around again unobserved and its stale fetch resolves.
+    storeMock.curQueueItem = trackA;
+    resolveFirst([0.1]);
+    await nextTick();
+
+    // Track B is playing again when a consumer returns, so the cached bins
+    // must still be B's rather than the late arrival from A.
+    storeMock.curQueueItem = trackB;
+    const second = addConsumer(useActiveTrackWaveform);
+    await nextTick();
+    await nextTick();
+
+    expect(second.waveformBins.value).toEqual([0.9]);
   });
 
   it("reuses the cached bins when a consumer remounts on the same track", async () => {

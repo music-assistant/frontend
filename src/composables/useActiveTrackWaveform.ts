@@ -27,8 +27,8 @@ let lastFetchKey: string | undefined;
 let consumerCount = 0;
 let stopWatcher: WatchStopHandle | undefined;
 
-// Detached scope, so the watcher does not get collected by the effect scope of
-// whichever consumer happened to register first.
+// Detached scope, so the shared watcher is not torn down together with the
+// effect scope of whichever consumer happened to register first.
 const watcherScope = effectScope(true);
 
 /**
@@ -54,11 +54,12 @@ export function useActiveTrackWaveform() {
   return { waveformBins, trackDurationSecs };
 }
 
-// Watch queue/stream IDs and the show_waveform preference together so that
-// toggling the preference re-triggers a fetch without a track change.
 function startWatcher() {
   stopWatcher = watcherScope.run(() =>
     watch(
+      // Queue/stream IDs and the show_waveform preference are tracked together
+      // so that toggling the preference re-triggers a fetch without a track
+      // change.
       () =>
         [
           store.curQueueItem?.queue_item_id,
@@ -97,8 +98,12 @@ async function loadWaveform([
       streamDetails.item_id,
       streamDetails.provider,
     );
+    // Drop the result unless it still matches both what is playing and what the
+    // cache claims to hold; while the watcher is stopped the two can drift, and
+    // storing bins the cache key does not describe would serve them for the
+    // wrong track on the next mount.
     const currentKey = `${showWaveformPref.value}:${store.curQueueItem?.queue_item_id}:${store.curQueueItem?.streamdetails?.item_id}`;
-    if (currentKey !== fetchKey) return;
+    if (currentKey !== fetchKey || lastFetchKey !== fetchKey) return;
     waveformBins.value = bins?.length ? bins : null;
   } catch {
     // No audio analysis available.
