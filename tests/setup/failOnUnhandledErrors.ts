@@ -49,8 +49,8 @@ const reportEscapedErrors = async () => {
 
 // Vitest ignores an unhandled error as soon as a second listener is registered,
 // assuming user code took charge of it. Listening only while a test runs keeps
-// that hand-off scoped, so anything raised in between still gets reported
-// rather than landing in a buffer that nothing drains.
+// that hand-off scoped to the tests themselves and leaves anything raised in
+// between to Vitest.
 beforeEach(() => {
   // A throwing teardown hook skips the rest of the file's teardown, leaving the
   // previous test's listeners in place, so drop them before re-arming.
@@ -60,6 +60,6 @@ beforeEach(() => {
 
 afterEach(reportEscapedErrors);
 
-// Backstop for the same skipped-teardown case: without it, errors captured
-// after the last hook ran would be swallowed instead of failing the file.
+// Backstop for the same skipped-teardown case: drains whatever a skipped
+// afterEach left buffered, which would otherwise go unreported.
 afterAll(reportEscapedErrors);
