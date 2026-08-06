@@ -8,8 +8,8 @@
  * the current values on each call and holds no state, which makes them equally
  * usable inside a `computed` and inside a rAF/interval loop.
  *
- * Every function defaults to the active player; pass a `player_id` to resolve
- * another player, such as the one an OS media session targets.
+ * Every `resolve*` function defaults to the active player; pass a `player_id` to
+ * resolve another player, such as the one an OS media session targets.
  */
 import { computeElapsedTime, queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import api from "@/plugins/api";

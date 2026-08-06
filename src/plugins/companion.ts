@@ -273,8 +273,8 @@ const extractNowPlaying = (player: Player | undefined): NowPlaying => {
 
 // Store the unwatch function for cleanup
 let unwatchNowPlaying: (() => void) | null = null;
-// Timer of a push that is waiting for the rest of a change to arrive
-let pendingPush: ReturnType<typeof setTimeout> | undefined;
+// Drops a push that is still waiting for the rest of a change to arrive
+let cancelPendingPush: (() => void) | null = null;
 
 /**
  * Handle player commands from the companion app (tray controls)
@@ -337,6 +337,9 @@ const unregisterPlayerCommandHandler = (): void => {
 /**
  * Everything about the active player that decides whether the companion app
  * needs a fresh now-playing push.
+ *
+ * `timing` is a snapshot, carrying the playback state of the source it came from,
+ * so it stays usable as the baseline a later position is compared against.
  */
 interface NowPlayingSignal {
   uri?: string;
@@ -348,15 +351,19 @@ interface NowPlayingSignal {
 }
 
 // How far the position may drift from the projection of the last push before it
-// counts as a jump rather than normal progression. The server applies the same
-// threshold before it reports a position change at all.
+// counts as a jump rather than normal progression. Smaller offsets are not worth
+// an update: Discord's bar is only accurate to the second anyway. The comparison
+// cancels out the current time, so neither clock drift nor a refreshed server
+// time estimate can register as a jump.
 const POSITION_JUMP_SECONDS = 2;
 
 // How long to let the rest of a change arrive before pushing it. One change
 // reaches the frontend as several messages - the queue's timing and the player's
 // media are separate events - so pushing on the first would send the new track
-// with the old position, and Discord may rate-limit the correction away.
-const PUSH_COALESCE_MS = 1000;
+// with the old position, and Discord may rate-limit the correction away. Kept
+// short because the messages arrive in one burst, and because the tray and the
+// OS media controls consume the same push and should not visibly lag.
+const PUSH_COALESCE_MS = 250;
 
 /**
  * Whether the companion app has to be told about this signal, given the one the
@@ -420,12 +427,18 @@ const startNowPlayingWatcher = (): void => {
   // against, and the most recent one seen, which the next push is built from.
   let pushedSignal: NowPlayingSignal | undefined;
   let latestSignal: NowPlayingSignal | undefined;
+  let pushTimer: ReturnType<typeof setTimeout> | undefined;
 
   const push = (): void => {
-    pendingPush = undefined;
+    pushTimer = undefined;
     pushedSignal = latestSignal;
     const nowPlaying = extractNowPlaying(store.activePlayer);
     updateNowPlaying(nowPlaying);
+  };
+
+  cancelPendingPush = (): void => {
+    clearTimeout(pushTimer);
+    pushTimer = undefined;
   };
 
   // Watch for changes in track, playback state or position
@@ -442,16 +455,12 @@ const startNowPlayingWatcher = (): void => {
       latestSignal = signal;
       if (pushedSignal && !needsNowPlayingPush(signal, pushedSignal)) return;
 
-      // The first push has nothing to coalesce with, and the companion app
-      // should not sit without any state until the next change.
-      if (!pushedSignal) {
-        push();
-        return;
-      }
-
-      // Already waiting: the push takes whatever has arrived by the time it runs.
-      if (pendingPush === undefined) {
-        pendingPush = setTimeout(push, PUSH_COALESCE_MS);
+      // Every push waits, including the first: at startup the player and its
+      // timing arrive separately too. Already waiting means the push takes
+      // whatever has arrived by the time it runs, so the timer is not restarted
+      // - a steady stream of changes must not hold it off indefinitely.
+      if (pushTimer === undefined) {
+        pushTimer = setTimeout(push, PUSH_COALESCE_MS);
       }
     },
     { immediate: true },
@@ -463,9 +472,9 @@ const startNowPlayingWatcher = (): void => {
  */
 const stopNowPlayingWatcher = (): void => {
   // A pending push would otherwise land after the cleared state and revive it
-  if (pendingPush !== undefined) {
-    clearTimeout(pendingPush);
-    pendingPush = undefined;
+  if (cancelPendingPush) {
+    cancelPendingPush();
+    cancelPendingPush = null;
   }
   if (unwatchNowPlaying) {
     console.log("[Companion] Stopping existing now-playing watcher");

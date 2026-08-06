@@ -110,9 +110,18 @@ function lastNowPlaying(): NowPlaying {
 /**
  * Let the window in which a push waits for the rest of a change elapse, moving
  * the clock along with it the way real time would.
+ *
+ * Comfortably longer than the watcher's own window, which the positions expected
+ * below therefore round away rather than depend on.
  */
 async function settlePush(): Promise<void> {
-  await vi.advanceTimersByTimeAsync(1000);
+  await vi.advanceTimersByTimeAsync(500);
+}
+
+/** Start the integration and let its first push go out. */
+async function initializeAndSettle(): Promise<void> {
+  await initializeCompanionIntegration("");
+  await settlePush();
 }
 
 beforeEach(() => {
@@ -142,7 +151,7 @@ describe("companion now-playing position", () => {
     seedPlayer({ playback_state: PlaybackState.PLAYING });
 
     vi.setSystemTime((NOW + 4) * 1000);
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
 
     expect(lastNowPlaying().elapsed).toBe(14);
   });
@@ -162,7 +171,7 @@ describe("companion now-playing position", () => {
     seedPlayer({ playback_state: PlaybackState.PLAYING });
 
     vi.setSystemTime((NOW + 10) * 1000);
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
 
     expect(lastNowPlaying().elapsed).toBe(115); // 100 + 10 * 1.5
   });
@@ -180,7 +189,7 @@ describe("companion now-playing position", () => {
     });
 
     vi.setSystemTime((NOW + 3) * 1000);
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
 
     expect(lastNowPlaying().elapsed).toBe(23);
   });
@@ -194,7 +203,7 @@ describe("companion now-playing position", () => {
     });
 
     vi.setSystemTime((NOW + 6) * 1000);
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
 
     expect(lastNowPlaying().elapsed).toBe(36);
   });
@@ -208,7 +217,7 @@ describe("companion now-playing position", () => {
     seedPlayer({ playback_state: PlaybackState.PAUSED });
 
     vi.setSystemTime((NOW + 50) * 1000);
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
 
     const nowPlaying = lastNowPlaying();
     expect(nowPlaying.elapsed).toBe(42);
@@ -221,7 +230,7 @@ describe("companion now-playing position", () => {
       current_media: { title: "Track" },
     });
 
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
 
     expect(lastNowPlaying().elapsed).toBeNull();
   });
@@ -247,7 +256,7 @@ describe("companion now-playing position", () => {
     };
 
     vi.setSystemTime((NOW + 4) * 1000);
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
 
     const nowPlaying = lastNowPlaying();
     expect(nowPlaying.player_id).toBe(PLAYER_ID);
@@ -268,7 +277,7 @@ describe("companion now-playing position", () => {
       current_media: { uri: "track://1", title: "First" },
     });
 
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
     expect(lastNowPlaying().elapsed).toBe(0);
 
     // a track change 30s later re-pushes, with the position as of the push
@@ -283,7 +292,7 @@ describe("companion now-playing position", () => {
 
     const nowPlaying = lastNowPlaying();
     expect(nowPlaying.track).toBe("Second");
-    expect(nowPlaying.elapsed).toBe(8); // 5 + (31 - 28)
+    expect(nowPlaying.elapsed).toBe(7); // 5 + (30 - 28)
   });
 
   it("re-pushes after a seek, so Discord stops running from the old position", async () => {
@@ -297,7 +306,7 @@ describe("companion now-playing position", () => {
       current_media: { uri: "track://1", title: "First", duration: 300 },
     });
 
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
     const pushCount = nowPlayingPushes().length;
 
     // 5s later the user seeks to 2:00, which changes neither track nor state
@@ -310,7 +319,7 @@ describe("companion now-playing position", () => {
     await settlePush();
 
     expect(nowPlayingPushes()).toHaveLength(pushCount + 1);
-    expect(lastNowPlaying().elapsed).toBe(121); // 120, a second on into the push
+    expect(lastNowPlaying().elapsed).toBe(120);
   });
 
   it("pushes a seek once, not again for the player update that follows it", async () => {
@@ -326,7 +335,7 @@ describe("companion now-playing position", () => {
       current_media: { uri: "track://1", title: "First", duration: 300 },
     });
 
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
     const pushCount = nowPlayingPushes().length;
 
     vi.setSystemTime((NOW + 5) * 1000);
@@ -361,7 +370,7 @@ describe("companion now-playing position", () => {
       current_media: { uri: "track://1", title: "First", duration: 300 },
     });
 
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
 
     // seek, then disconnect before the push it scheduled comes due
     apiMock.queueElapsedTime["q1"] = {
@@ -375,9 +384,71 @@ describe("companion now-playing position", () => {
     expect(lastNowPlaying().track).toBeNull();
   });
 
-  it("does not push while the server merely ticks the position along", async () => {
-    // Discord rate-limits activity updates to roughly one per 15s, so the
-    // per-second position updates the server sends must not each become a push.
+  it("keeps pushing during a run of changes instead of holding off", async () => {
+    // Dragging a seek slider reports a new position over and over; each push
+    // waits for the rest of a change, but a next change must not defer it again.
+    seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 0,
+      elapsed_time_last_updated: NOW,
+    };
+    seedPlayer({
+      playback_state: PlaybackState.PLAYING,
+      current_media: { uri: "track://1", title: "First", duration: 600 },
+    });
+
+    await initializeAndSettle();
+    const pushCount = nowPlayingPushes().length;
+
+    for (let step = 1; step <= 5; step++) {
+      apiMock.queueElapsedTime["q1"] = {
+        elapsed_time: step * 30,
+        elapsed_time_last_updated: NOW,
+      };
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(100);
+    }
+    await settlePush();
+
+    expect(nowPlayingPushes().length).toBeGreaterThan(pushCount);
+    // the position last dragged to, not one of the four before it
+    expect(lastNowPlaying().elapsed).toBeGreaterThanOrEqual(150);
+    expect(lastNowPlaying().elapsed).toBeLessThan(155);
+  });
+
+  it("re-pushes after a reconnect rather than reusing the old watcher", async () => {
+    seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 10,
+      elapsed_time_last_updated: NOW,
+    };
+    seedPlayer({
+      playback_state: PlaybackState.PLAYING,
+      current_media: { uri: "track://1", title: "First", duration: 300 },
+    });
+
+    await initializeAndSettle();
+
+    // a seek arms a push, then the connection is re-established before it runs
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 120,
+      elapsed_time_last_updated: NOW,
+    };
+    await nextTick();
+    await initializeCompanionIntegration("");
+    const pushCount = nowPlayingPushes().length;
+    await settlePush();
+
+    // the fresh watcher pushes once; the abandoned one does not push at all
+    expect(nowPlayingPushes()).toHaveLength(pushCount + 1);
+    // and it carries the seeked-to position, not the one it started from
+    expect(lastNowPlaying().elapsed).toBeGreaterThanOrEqual(120);
+    expect(lastNowPlaying().elapsed).toBeLessThan(125);
+  });
+
+  it("does not push while the timing source only re-bases on itself", async () => {
+    // Discord rate-limits activity updates to roughly one per 15s, so a timing
+    // source that re-anchors as it goes must not turn each re-anchor into a push.
     seedQueue({ queue_id: "q1", state: PlaybackState.PLAYING, active: true });
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 0,
@@ -388,7 +459,7 @@ describe("companion now-playing position", () => {
       current_media: { uri: "track://1", title: "First", duration: 300 },
     });
 
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
     const pushCount = nowPlayingPushes().length;
 
     for (let second = 1; second <= 30; second++) {
@@ -424,7 +495,7 @@ describe("companion now-playing position", () => {
         current_media: { uri: "track://1", title: "First", duration: 240 },
       });
 
-      await initializeCompanionIntegration("");
+      await initializeAndSettle();
       const pushCount = nowPlayingPushes().length;
 
       vi.setSystemTime((NOW + 1) * 1000);
@@ -449,7 +520,7 @@ describe("companion now-playing position", () => {
       const nowPlaying = lastNowPlaying();
       expect(nowPlayingPushes()).toHaveLength(pushCount + 1);
       expect(nowPlaying.track).toBe("Second");
-      expect(nowPlaying.elapsed).toBe(1); // 0, a second on into the push
+      expect(nowPlaying.elapsed).toBe(0);
     },
   );
 
@@ -470,7 +541,7 @@ describe("companion now-playing position", () => {
       current_media: { uri: "book://1", title: "Chapter 1", duration: 3600 },
     });
 
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
     const pushCount = nowPlayingPushes().length;
 
     apiMock.queues["q1"].current_item = {
@@ -495,7 +566,7 @@ describe("companion now-playing position", () => {
       current_media: { uri: "track://1", title: "First" },
     });
 
-    await initializeCompanionIntegration("");
+    await initializeAndSettle();
     const pushCount = nowPlayingPushes().length;
 
     // the position advances and any interval would come due
