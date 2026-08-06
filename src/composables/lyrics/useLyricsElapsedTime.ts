@@ -81,5 +81,5 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
     document.removeEventListener("visibilitychange", handleVisibilityChange);
   });
 
-  return { elapsedTime, start, stop };
+  return { elapsedTime };
 }

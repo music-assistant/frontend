@@ -520,8 +520,7 @@ const lyricsEnabled = computed(() => karaokeMode.value);
 const lyricsTextColor = computed(() =>
   albumArtUrl.value ? "#FFFFFF" : isDark.value ? "#FFFFFF" : "#000000",
 );
-const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
-  useLyricsElapsedTime(lyricsEnabled);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsEnabled);
 
 const colorPalette = computed<ImageColorPalette>(() =>
   paletteFromServer(store.activePlayer?.current_media?.palette),
@@ -847,7 +846,6 @@ onBeforeUnmount(() => {
     clearInterval(burnInInterval);
     burnInInterval = null;
   }
-  stopTick();
   cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });

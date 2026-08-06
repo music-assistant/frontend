@@ -69,6 +69,21 @@ function flushFrame(): void {
   for (const callback of callbacks) callback(0);
 }
 
+// Hands back a driver for the frame the composable has scheduled, so a test can
+// keep ticking after the composable stopped scheduling frames itself. The frames
+// the callback re-arms are dropped, leaving `pendingFrames` a view of what the
+// composable scheduled on its own.
+function manualFrameDriver(): () => void {
+  const [callback] = pendingFrames.values();
+  if (!callback) throw new Error("no frame scheduled");
+
+  return () => {
+    const composableFrames = new Map(pendingFrames);
+    callback(0);
+    pendingFrames = composableFrames;
+  };
+}
+
 const NOW = 1_700_000_000;
 
 const PLAYER_ID = "p1";
@@ -166,25 +181,29 @@ describe("useLyricsElapsedTime", () => {
   });
 
   it("reads a frozen position from a paused queue even while the loop runs", async () => {
-    seedQueue({ state: PlaybackState.PAUSED });
+    seedQueue({ state: PlaybackState.PLAYING });
     seedPlayer({ playback_state: PlaybackState.PLAYING });
     apiMock.queueElapsedTime["q1"] = {
       elapsed_time: 42,
       elapsed_time_last_updated: NOW,
     };
 
-    const { elapsedTime, start } = await runComposable();
+    const { elapsedTime } = await runComposable();
+    await nextTick();
+    // Captured while the queue still plays: pausing it below cancels the loop.
+    const tick = manualFrameDriver();
+
+    seedQueue({ state: PlaybackState.PAUSED });
     await nextTick();
     expect(pendingFrames.size).toBe(0);
 
-    // Drive the loop by hand to prove the position itself is frozen rather
-    // than merely unpolled.
-    start();
-    flushFrame();
+    // Driving the loop proves the position itself is frozen rather than merely
+    // unpolled.
+    tick();
     expect(elapsedTime.value).toBe(42);
 
     serverNowMock.mockReturnValue(NOW + 50);
-    flushFrame();
+    tick();
     expect(elapsedTime.value).toBe(42);
   });
 
