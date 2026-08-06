@@ -8,8 +8,8 @@
  * the current values on each call and holds no state, which makes them equally
  * usable inside a `computed` and inside a rAF/interval loop.
  *
- * Every function defaults to the active player; pass a `player_id` to resolve
- * another player, such as the one an OS media session targets.
+ * Every `resolve*` function defaults to the active player; pass a `player_id` to
+ * resolve another player, such as the one an OS media session targets.
  */
 import { computeElapsedTime, queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import api from "@/plugins/api";
@@ -127,17 +127,16 @@ export function resolveQueueElapsedTime(
   return toElapsedTime(resolveQueueTiming(player_id));
 }
 
-function resolvePlayer(player_id?: string): Player | undefined {
-  if (player_id === undefined) return store.activePlayer;
-  return api.players[player_id];
-}
-
-function resolveCurrentItem(player?: Player): QueueItem | undefined {
-  const queue = resolvePlayerQueue(player);
-  return queue?.active ? queue.current_item : undefined;
-}
-
-function toElapsedTime(timing: ActiveTiming | undefined): number | undefined {
+/**
+ * The position a timing source reports as of now, in seconds, or undefined when
+ * there is no timing.
+ *
+ * Use this to project a timing that was captured earlier, such as the one a
+ * previous push was based on, forward to the current moment.
+ */
+export function toElapsedTime(
+  timing: ActiveTiming | undefined,
+): number | undefined {
   if (!timing) return undefined;
 
   return computeElapsedTime(
@@ -146,4 +145,14 @@ function toElapsedTime(timing: ActiveTiming | undefined): number | undefined {
     timing.playbackState,
     timing.playbackSpeed,
   );
+}
+
+function resolvePlayer(player_id?: string): Player | undefined {
+  if (player_id === undefined) return store.activePlayer;
+  return api.players[player_id];
+}
+
+function resolveCurrentItem(player?: Player): QueueItem | undefined {
+  const queue = resolvePlayerQueue(player);
+  return queue?.active ? queue.current_item : undefined;
 }
