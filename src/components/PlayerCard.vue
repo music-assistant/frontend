@@ -1,7 +1,7 @@
 <template>
   <Card
     v-hold="onHold"
-    class="gap-0 rounded-lg p-2 shadow-none transition-colors"
+    class="justify-center gap-0 rounded-lg p-2 shadow-none transition-colors"
     :class="{
       'border-primary bg-primary/15': player.player_id === store.activePlayerId,
       'opacity-80':
