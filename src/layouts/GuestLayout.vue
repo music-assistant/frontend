@@ -8,7 +8,7 @@
         class="justify-self-start"
         @open-host-panel="returnToHostPanel"
       />
-      <div v-else />
+      <div v-else></div>
       <img
         :src="logoSrc"
         alt="Music Assistant"

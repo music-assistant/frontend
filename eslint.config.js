@@ -38,6 +38,22 @@ export default defineConfigWithVueTs(
       // (see the inline disables it used). Empty/`{}` interface patterns are
       // used intentionally here (e.g. Vue SFC shims, nominal interfaces).
       "@typescript-eslint/no-empty-object-type": "off",
+    },
+  },
+  // `eslint-config-prettier` disables stylistic rules that conflict with
+  // Prettier (formatting lives in the standalone `format` script). `oxlint`
+  // then disables rules already covered by Oxlint, which runs first and
+  // faster, to avoid double-reporting.
+  eslintConfigPrettier,
+  oxlint.configs["flat/recommended"],
+  {
+    // Must stay after the two blocks above: `eslint-config-prettier` turns
+    // `vue/html-self-closing` off wholesale, so configuring it any earlier
+    // leaves it disabled. Prettier only dictates the `void` style (it always
+    // self-closes `<img>` and friends), which is what `void: "always"` asks
+    // for, so the two agree and the remaining tag styles stay ours to pick.
+    name: "app/overrides-post-prettier",
+    rules: {
       "vue/html-self-closing": [
         "error",
         {
@@ -48,10 +64,4 @@ export default defineConfigWithVueTs(
       ],
     },
   },
-  // Keep these LAST. `eslint-config-prettier` disables stylistic rules that
-  // conflict with Prettier (formatting lives in the standalone `format`
-  // script). `oxlint` then disables rules already covered by Oxlint, which
-  // runs first and faster, to avoid double-reporting.
-  eslintConfigPrettier,
-  oxlint.configs["flat/recommended"],
 );
