@@ -30,6 +30,7 @@ import {
   CrossfadeMode,
   DSPFilterType,
   DSPState,
+  type Player,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -76,17 +77,16 @@ export interface AudioProcessingDetailsDisplay {
   outputPaths: AudioProcessingOutputDisplay[];
 }
 
-export interface AudioProcessingDisplayPlayer {
-  player_id: string;
-  name: string;
-  provider: string;
-  active_output_protocol?: string | null;
-  output_protocols: Array<{
-    output_protocol_id: string;
-    is_native: boolean;
-    protocol_domain?: string | null;
-  }>;
-}
+// the fields of Player the display builder reads, derived so they cannot drift
+// from the player model
+export type AudioProcessingDisplayPlayer = Pick<
+  Player,
+  | "player_id"
+  | "name"
+  | "provider"
+  | "active_output_protocol"
+  | "output_protocols"
+>;
 
 export interface AudioProcessingDetailsDependencies {
   translate: Translate;
