@@ -8,7 +8,6 @@ import {
   ItemMapping,
   MediaItemImage,
   MediaItemType,
-  MediaItemTypeOrItemMapping,
   MediaType,
   Player,
   PlayerConfig,
@@ -20,21 +19,11 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 
-import {
-  showContextMenuForMediaItem,
-  showPlayMenuForMediaItem,
-} from "@/layouts/default/ItemContextMenu.vue";
-import { itemIsAvailable } from "@/plugins/api/helpers";
 import type {
   Audiobook,
   MediaCollection,
   MediaItemPalette,
 } from "@/plugins/api/interfaces";
-import router from "@/plugins/router";
-import { store } from "@/plugins/store";
-import { $t } from "@/plugins/i18n";
-import { toast } from "vue-sonner";
-import { webPlayer } from "@/plugins/web_player";
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
 export const openLinkInNewTab = function (url: string) {
@@ -753,178 +742,6 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     host.removeChild(textArea);
   }
 }
-
-export const isBuiltinPlayer = function (player: Player): boolean {
-  return (
-    player.player_id === webPlayer.player_id ||
-    player.player_id === store.companionPlayerId ||
-    player.output_protocols?.filter(
-      (x) =>
-        x.output_protocol_id === webPlayer.player_id ||
-        x.output_protocol_id === store.companionPlayerId,
-    ).length > 0
-  );
-};
-
-export const playerVisible = function (
-  player: Player,
-  allowGroupChilds = false,
-  allowNeedsSetup = false,
-): boolean {
-  // perform some basic checks if we may use/show the player
-  if (!player.enabled) return false;
-  if (player.synced_to && !allowGroupChilds) {
-    return false;
-  }
-  if (player.active_group && !allowGroupChilds) return false;
-  // A player that needs setup is serialized as unavailable. Only surface it
-  // (dimmed, with a "Setup required" affordance) where a click launches its
-  // setup flow (opt-in via allowNeedsSetup); elsewhere a click would select or
-  // play the player, so an unusable needs_setup player must stay hidden.
-  if (!player.available && !(player.needs_setup && allowNeedsSetup)) {
-    return false;
-  }
-  if (isBuiltinPlayer(player)) {
-    return true;
-  }
-  if (player.hide_in_ui) {
-    return false;
-  }
-  if (
-    store.currentUser &&
-    store.currentUser.player_filter.length > 0 &&
-    player.player_id != webPlayer.player_id &&
-    !store.currentUser.player_filter.includes(player.player_id)
-  ) {
-    // for non-admin users, the playerfilter is applied in the backend
-    // but for admin users we need to filter here as well
-    return false;
-  }
-  return true;
-};
-
-// Keep hidden players out of group pickers unless they represent this device or
-// are player types intended to be grouped with audio players.
-export const groupMemberPickerVisible = function (player: Player): boolean {
-  return (
-    !player.hide_in_ui ||
-    isBuiltinPlayer(player) ||
-    player.type === PlayerType.LIGHT ||
-    player.type === PlayerType.VISUALIZER
-  );
-};
-
-/* Handle play button click */
-export const handlePlayBtnClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-  forceMenu?: boolean,
-  sortBy?: string,
-) {
-  // a failed play action must never be silent: without feedback the play
-  // button appears dead (e.g. while the connection is re-establishing)
-  const onPlayError = (err: Error) => {
-    console.error("Play action failed:", err);
-    toast.error($t("play_failed"));
-  };
-  // we show the play menu for the item once (if playerTip has not been dismissed)
-  if (!forceMenu && store.activePlayer?.available) {
-    if (
-      item.media_type == MediaType.TRACK &&
-      (parentItem?.media_type == MediaType.PLAYLIST ||
-        parentItem?.media_type == MediaType.ALBUM) &&
-      store.activePlayerQueue
-    ) {
-      // special case: playing a track from a playlist/album - play from here
-      api
-        .playMedia(parentItem.uri, undefined, item.item_id, undefined, sortBy)
-        .catch(onPlayError);
-      return;
-    }
-    // else: play the item directly
-    api.playMedia(item).catch(onPlayError);
-    return;
-  }
-  showPlayMenuForMediaItem(item, parentItem, posX, posY).catch(onPlayError);
-};
-
-/* Handle media item click */
-export const handleMediaItemClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-) {
-  // open menu when item is unavailable so the user has a way to remove/refresh the item
-  if (!itemIsAvailable(item)) {
-    handleMenuBtnClick(item, posX, posY, undefined, false);
-    return;
-  }
-
-  // folder items always open in browse view
-  if (item.media_type == MediaType.FOLDER) {
-    router.push({
-      name: "browse",
-      query: {
-        path: (item as BrowseFolder).path,
-      },
-    });
-    return;
-  }
-
-  // podcast episode has no details view so show play menu directly
-  // TODO: revisit this once we have a proper podcast episode details view
-  if (item.media_type == MediaType.PODCAST_EPISODE) {
-    handlePlayBtnClick(item, posX, posY, parentItem, true);
-    return;
-  }
-
-  // open menu for collection items
-  if (item.media_type == MediaType.COLLECTION) {
-    router.push({
-      name: "collection",
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
-    return;
-  }
-
-  // all other: go to details view
-  router.push({
-    name: item.media_type,
-    params: {
-      itemId: item.item_id,
-      provider: item.provider,
-    },
-  });
-};
-
-/* Handle menu button click */
-export const handleMenuBtnClick = function (
-  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-  includePlayMenuItems = true,
-  sortBy?: string,
-) {
-  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
-    ? item
-    : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    parentItem,
-    posX,
-    posY,
-    includePlayMenuItems,
-    includePlayMenuItems,
-    sortBy,
-  );
-};
 
 /**
  * Check if a player config should be hidden from settings due to being a

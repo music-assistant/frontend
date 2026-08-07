@@ -77,7 +77,7 @@ vi.mock("@/composables/userPreferences", () => ({
   }),
 }));
 
-vi.mock("@/helpers/utils", () => ({
+vi.mock("@/helpers/players", () => ({
   isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
   playerVisible: () => true,
 }));

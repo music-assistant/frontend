@@ -211,12 +211,9 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { isBuiltinPlayer } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
-import {
-  getMediaImageUrl,
-  getPlayerName,
-  isBuiltinPlayer,
-} from "@/helpers/utils";
+import { getMediaImageUrl, getPlayerName } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import {
