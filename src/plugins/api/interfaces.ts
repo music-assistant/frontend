@@ -475,7 +475,6 @@ export enum ConfigEntryType {
   URL = "url",
 
   // Only used in the frontend
-  DSP_SETTINGS = "dsp_settings",
   OPTIONS = "options",
 }
 
