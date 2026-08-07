@@ -2,6 +2,12 @@ name: Download Lokalise translations
 on: 
   schedule:
     - cron: "0 2 * * 2"
+
+# Pushing the translations branch needs contents, opening the PR needs pull-requests.
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest

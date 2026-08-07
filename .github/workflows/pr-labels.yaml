@@ -11,6 +11,9 @@ on:
     branches:
       - main
 
+# The label check reads the event payload from disk, so it needs no token at all.
+permissions: {}
+
 jobs:
   pr_labels:
     name: Verify
