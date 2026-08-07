@@ -17,6 +17,7 @@ import {
   CrossfadeMode,
   DSPState,
   MediaType,
+  type OutputProtocol,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -119,11 +120,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       const protocolId = `${protocolDomain}-kitchen`;
       dependencies.players.kitchen.active_output_protocol = protocolId;
       dependencies.players.kitchen.output_protocols = [
-        {
-          output_protocol_id: protocolId,
-          is_native: false,
-          protocol_domain: protocolDomain,
-        },
+        makeOutputProtocol(protocolId, protocolDomain),
       ];
 
       const destination = buildDisplay({
@@ -157,11 +154,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("uses the protocol player provider when the active entry has no domain", () => {
     dependencies.players.kitchen.active_output_protocol = "sendspin-kitchen";
     dependencies.players.kitchen.output_protocols = [
-      {
-        output_protocol_id: "sendspin-kitchen",
-        is_native: false,
-        protocol_domain: null,
-      },
+      makeOutputProtocol("sendspin-kitchen", null),
     ];
     dependencies.players["sendspin-kitchen"] = {
       player_id: "sendspin-kitchen",
@@ -275,11 +268,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("uses a shared active protocol icon for grouped output", () => {
     dependencies.players.office.active_output_protocol = "airplay-office";
     dependencies.players.office.output_protocols = [
-      {
-        output_protocol_id: "airplay-office",
-        is_native: false,
-        protocol_domain: "airplay",
-      },
+      makeOutputProtocol("airplay-office", "airplay"),
     ];
     let destination = buildDisplay({
       outputs: [
@@ -607,13 +596,7 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
       name: "Kitchen",
       provider: "sonos--main",
       active_output_protocol: "airplay-kitchen",
-      output_protocols: [
-        {
-          output_protocol_id: "airplay-kitchen",
-          is_native: false,
-          protocol_domain: "airplay",
-        },
-      ],
+      output_protocols: [makeOutputProtocol("airplay-kitchen", "airplay")],
     },
     office: {
       player_id: "office",
@@ -622,6 +605,20 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
       active_output_protocol: null,
       output_protocols: [],
     },
+  };
+}
+
+function makeOutputProtocol(
+  outputProtocolId: string,
+  protocolDomain: string | null,
+): OutputProtocol {
+  return {
+    output_protocol_id: outputProtocolId,
+    name: outputProtocolId,
+    is_native: false,
+    protocol_domain: protocolDomain,
+    priority: 1,
+    available: true,
   };
 }
 
