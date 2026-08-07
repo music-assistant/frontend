@@ -1013,6 +1013,12 @@ export type PlayableMediaItemType =
   | PodcastEpisode;
 export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
+export enum ProviderSearchStatus {
+  COMPLETE = "complete",
+  TIMEOUT = "timeout",
+  FAILED = "failed",
+}
+
 export interface SearchResults {
   artists: Artist[];
   albums: Album[];
@@ -1022,6 +1028,9 @@ export interface SearchResults {
   podcasts: Podcast[];
   audiobooks: Audiobook[];
   genres: Genre[];
+  // keyed by provider instance_id, plus the special "library" key; absent
+  // on older servers that don't report per-provider search status
+  provider_search_statuses?: Record<string, ProviderSearchStatus>;
 }
 
 export interface AudioFormat {
