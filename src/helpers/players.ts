@@ -52,7 +52,6 @@ export const playerVisible = function (
   if (
     store.currentUser &&
     store.currentUser.player_filter.length > 0 &&
-    player.player_id != webPlayer.player_id &&
     !store.currentUser.player_filter.includes(player.player_id)
   ) {
     // for non-admin users, the playerfilter is applied in the backend
