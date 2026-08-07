@@ -771,6 +771,7 @@
         "copy_uri": "Copy URI to clipboard",
         "select_all": "Select all items",
         "filter_provider": "Filter by music provider",
+        "hide_provider": "Hide music provider",
         "in_provider_library": "This item is in the provider's library",
         "hide_empty_genres": "Hide empty genres",
         "show_empty_genres": "Show empty genres",

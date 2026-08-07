@@ -211,24 +211,45 @@
             :dimmed="editMode && row.hidden"
             :tiles-per-view="tilesPerView"
           >
-            <template v-if="editMode" #actions>
-              <button
-                class="ed-drag-handle"
-                :aria-label="$t('queue_reorder')"
-                @pointerdown.stop.prevent="startItemDrag($event, idx)"
-                @click.stop
+            <template
+              v-if="editMode || row.id === RECENTLY_PLAYED_ROW_ID"
+              #actions
+            >
+              <template v-if="editMode">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_row')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </template>
+              <FacetedFilter
+                v-if="row.id === RECENTLY_PLAYED_ROW_ID"
+                v-model="recentlyPlayedHiddenProviders"
+                :title="$t('tooltip.hide_provider')"
+                :options="recentlyPlayedProviderOptions"
               >
-                <GripVertical />
-              </button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                :aria-label="$t('tooltip.toggle_row')"
-                @click="toggleRow(row)"
-              >
-                <Eye v-if="!row.hidden" />
-                <EyeOff v-else />
-              </Button>
+                <template #trigger>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    :aria-label="$t('tooltip.hide_provider')"
+                  >
+                    <ListFilter />
+                  </Button>
+                </template>
+              </FacetedFilter>
             </template>
             <!-- Skeleton tiles while a fetch is in flight - and for hidden rows
                  in edit mode (never fetched until unhidden) - so every row
@@ -241,7 +262,7 @@
             </template>
             <template v-else>
               <EditorialMediaCard
-                v-for="item in rowItemsMap.get(row.id) ?? []"
+                v-for="item in visibleRowItems(row)"
                 :key="item.uri"
                 :item="item"
               />
@@ -320,6 +341,7 @@ import {
   DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
   PLAYERS_ROW_ID,
+  RECENTLY_PLAYED_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
   setDiscoverRowHidden,
@@ -329,8 +351,14 @@ import {
   isRecommendationRowVisible,
   rowIdsNeedingItems,
 } from "@/components/discover/utils/rowItems";
+import {
+  getRowHiddenProviders,
+  setRowHiddenProviders,
+} from "@/components/discover/utils/rowProviderFilter";
+import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { useResolvedItemProviders } from "@/composables/discover/useResolvedItemProviders";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { panelViewItemResponsive } from "@/helpers/utils";
@@ -355,6 +383,7 @@ import {
   Eye,
   EyeOff,
   GripVertical,
+  ListFilter,
   RefreshCw,
 } from "@lucide/vue";
 import {
@@ -442,6 +471,43 @@ watch(
 );
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
+
+// Per-row provider hide filter, keyed by rowId but only wired to Recently Played's UI; providers resolved separately since item.provider is unreliable.
+const { resolve: resolveItemProviders, providerIdsFor } =
+  useResolvedItemProviders();
+
+// Hidden if ANY (not ALL) of an item's providers matches -- "hide Spotify" should hide anything attributable to it.
+const visibleRowItems = (row: DiscoverRow): MediaItemTypeOrItemMapping[] => {
+  const items = rowItemsMap.value.get(row.id) ?? [];
+  const hidden = getRowHiddenProviders(row.id);
+  if (hidden.length === 0) return items;
+  const hiddenSet = new Set(hidden);
+  return items.filter((item) => {
+    const providerIds = providerIdsFor(item);
+    if (providerIds === undefined) return true;
+    return !providerIds.some((id) => hiddenSet.has(id));
+  });
+};
+
+const recentlyPlayedProviderOptions = computed(() => {
+  const items = rowItemsMap.value.get(RECENTLY_PLAYED_ROW_ID) ?? [];
+  const seen = new Map<string, string>();
+  for (const item of items) {
+    for (const id of providerIdsFor(item) ?? []) {
+      if (!seen.has(id)) seen.set(id, api.getProviderName(id));
+    }
+  }
+  return [...seen.entries()]
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+});
+
+const recentlyPlayedHiddenProviders = computed<string[]>({
+  get: () => getRowHiddenProviders(RECENTLY_PLAYED_ROW_ID),
+  set: (providerIds) => {
+    setRowHiddenProviders(RECENTLY_PLAYED_ROW_ID, providerIds);
+  },
+});
 
 // --- Top Picks (Model B): a balanced interleave of items across the rows the
 // user has enabled. Only shown, non-empty recommendation folders feed it, so
@@ -753,6 +819,7 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
         });
       if (items !== undefined) {
         rowItemsMap.value.set(id, items);
+        if (id === RECENTLY_PLAYED_ROW_ID) resolveItemProviders(items);
       } else if (!rowItemsMap.value.has(id)) {
         // first load failed: mark the row empty so it does not spin forever;
         // on a refresh failure keep the previously shown items instead
