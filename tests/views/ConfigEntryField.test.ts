@@ -146,6 +146,39 @@ describe("ConfigEntryField", () => {
     },
   );
 
+  it("offers the entity picker for a Home Assistant control list", () => {
+    const wrapper = mountField(hassControlsEntry(), false, "hass");
+
+    expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
+      true,
+    );
+    expect(wrapper.find(".v-select").exists()).toBe(false);
+  });
+
+  it("leaves the same key on another provider as a plain dropdown", () => {
+    const wrapper = mountField(hassControlsEntry(), false, "snapcast");
+
+    expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
+      false,
+    );
+    expect(wrapper.find(".v-select").exists()).toBe(true);
+  });
+
+  it("shows a value the options do not list yet", () => {
+    const wrapper = mountField(
+      entry({
+        key: "power_control",
+        type: ConfigEntryType.STRING,
+        options: [{ title: "None", value: "none" }],
+        value: "switch.registered_moments_ago",
+      }),
+    );
+
+    expect(wrapper.get(".v-select").text()).toContain(
+      "switch.registered_moments_ago",
+    );
+  });
+
   it("disables a read_only entry while the form itself is enabled", () => {
     const confEntry = entry({
       key: "server_id",
@@ -191,9 +224,23 @@ function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
   return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
 }
 
-function mountField(confEntry: ConfigEntryUI, disabled = false) {
+function hassControlsEntry(): ConfigEntry {
+  return entry({
+    key: "power_controls",
+    type: ConfigEntryType.STRING,
+    multi_value: true,
+    options: [{ title: "Living room TV", value: "switch.tv" }],
+    value: ["switch.tv"],
+  });
+}
+
+function mountField(
+  confEntry: ConfigEntryUI,
+  disabled = false,
+  providerDomain?: string,
+) {
   return mount(ConfigEntryField, {
-    props: { confEntry, showPasswordValues: false, disabled },
+    props: { confEntry, showPasswordValues: false, disabled, providerDomain },
     global: { plugins: [vuetify] },
   });
 }

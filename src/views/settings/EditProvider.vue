@@ -145,6 +145,7 @@
       v-if="config"
       :config-entries="allConfigEntries"
       :disabled="!config.enabled"
+      :provider-domain="config.domain"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"

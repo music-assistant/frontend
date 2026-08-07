@@ -343,6 +343,28 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
         },
+        "hass_controls": {
+            "add_hass_entity": "Add a Home Assistant entity...",
+            "add_entity": "Add entity...",
+            "title": {
+                "power_controls": "Select a power control",
+                "volume_controls": "Select a volume control",
+                "mute_controls": "Select a mute control"
+            },
+            "search_placeholder": "Search by entity, device or area...",
+            "no_results": "No matching entities",
+            "search_failed": "Could not search Home Assistant entities. Check that Home Assistant is connected.",
+            "truncated": "More entities match than can be shown here, refine your search to narrow it down.",
+            "no_device": "No device",
+            "no_area": "No area",
+            "none_selected": "No entities selected",
+            "already_added": "Added",
+            "role": {
+                "power": "Power",
+                "volume": "Volume",
+                "mute": "Mute"
+            }
+        },
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",
         "metadata": "Metadata",

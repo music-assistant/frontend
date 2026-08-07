@@ -261,10 +261,14 @@ import { watch } from "vue";
 
 import {
   ConfigEntryUI,
+  HASS_CONTROL_KEY_BY_PLAYER_KEY,
+  HassControlPickerEntry,
+  HassControlPlayerKey,
   UI_ENTRY_TYPE,
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
+import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
@@ -315,8 +319,34 @@ const config_entries = computed(() => {
   const player = api.players[config.value.player_id];
   if (!player) return [];
 
+  // offer the Home Assistant entity picker beneath each player control entry, but only
+  // while there is a Home Assistant provider to register the picked entity with
+  const hassInstance = getHassProviderInstance();
+  const entries: ConfigEntryUI[] = [];
+  for (const entry of Object.values(config.value.values)) {
+    entries.push(entry);
+    const hassControlKey =
+      HASS_CONTROL_KEY_BY_PLAYER_KEY[entry.key as HassControlPlayerKey];
+    if (!hassInstance || !hassControlKey) continue;
+    const pickerEntry: HassControlPickerEntry = {
+      injected: true,
+      key: `${entry.key}_${UI_ENTRY_TYPE.HASS_CONTROL_PICKER}`,
+      type: UI_ENTRY_TYPE.HASS_CONTROL_PICKER,
+      category: entry.category,
+      // stay with the entry it fills in when the form hides or folds that one away
+      advanced: entry.advanced,
+      hidden: entry.hidden,
+      label: "",
+      required: false,
+      default_value: null,
+      hass_instance_id: hassInstance.instance_id,
+      hass_control_key: hassControlKey,
+      target_key: entry.key as HassControlPlayerKey,
+    };
+    entries.push(pickerEntry);
+  }
+
   // inject a link to the DSP config if the player is not a group
-  const entries: ConfigEntryUI[] = Object.values(config.value.values);
   if (player.type !== PlayerType.GROUP) {
     entries.push({
       injected: true,
