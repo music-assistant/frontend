@@ -68,6 +68,26 @@
       </v-btn>
     </div>
 
+    <!-- Home Assistant entity picker for a single player control -->
+    <HassControlPickerField
+      v-else-if="isHassControlPickerEntry(confEntry)"
+      :entry="confEntry"
+      :disabled="isFieldDisabled"
+      @set-entry-value="
+        (key: string, value: ConfigValueType, label?: string) =>
+          emit('setEntryValue', key, value, label)
+      "
+    />
+
+    <!-- Home Assistant control entities: current selection plus an entity picker -->
+    <HassControlsField
+      v-else-if="isHassControlsEntry"
+      :entry="confEntry"
+      :label="displayLabel()"
+      :disabled="isFieldDisabled"
+      @update:value="onUpdateValue($event)"
+    />
+
     <!-- Player Options Button -->
     <div
       v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
@@ -297,8 +317,16 @@ import {
 } from "@/plugins/api/interfaces";
 import IconPicker from "@/components/IconPicker.vue";
 import AlertField from "./fields/AlertField.vue";
+import HassControlPickerField from "./fields/HassControlPickerField.vue";
+import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
-import { ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
+import {
+  ConfigEntryUI,
+  HASS_CONTROL_KEYS,
+  isDspLinkEntry,
+  isHassControlPickerEntry,
+} from "@/helpers/config_entry_ui";
+import { HASS_DOMAIN } from "@/helpers/hass_controls";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
@@ -306,7 +334,17 @@ const props = defineProps<{
   confEntry: ConfigEntryUI;
   showPasswordValues: boolean;
   disabled?: boolean;
+  // domain of the provider this config belongs to; absent for player and core configs
+  providerDomain?: string;
 }>();
+
+// only the Home Assistant provider's own control lists get the entity picker, not any
+// other provider that happens to use the same key names
+const isHassControlsEntry = computed(
+  () =>
+    props.providerDomain === HASS_DOMAIN &&
+    HASS_CONTROL_KEYS.has(props.confEntry.key),
+);
 
 const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
@@ -327,6 +365,13 @@ const emit = defineEmits<{
   (e: "openDsp"): void;
   (e: "openOptions"): void;
   (e: "update:value", value: ConfigValueType): void;
+  // set the value of another entry on the same form
+  (
+    e: "setEntryValue",
+    key: string,
+    value: ConfigValueType,
+    label?: string,
+  ): void;
 }>();
 
 // Labels arrive display-ready: server-provided entries are resolved server-side for the
@@ -372,6 +417,19 @@ const displayOptions = computed(() => {
       option.title += ` [${$t("settings.default")}]`;
     }
     options.push(option);
+  }
+  // a value the server has not listed yet - a player control registered moments ago -
+  // would leave the select blank, so it is offered as an option of its own
+  const listedValues = new Set(options.map((option) => option.value));
+  const values = Array.isArray(props.confEntry.value)
+    ? props.confEntry.value
+    : [props.confEntry.value];
+  for (const value of values) {
+    if (value === null || value === undefined || listedValues.has(value)) {
+      continue;
+    }
+    listedValues.add(value);
+    options.push({ title: value.toString(), value });
   }
   return options;
 });

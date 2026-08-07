@@ -7,11 +7,16 @@
       :conf-entry="confEntry"
       :show-password-values="showPasswordValues"
       :disabled="disabled"
+      :provider-domain="providerDomain"
       @toggle-password="emit('toggle-password')"
       @update:value="emit('update:value', $event)"
       @action="emit('action')"
       @open-dsp="emit('open-dsp')"
       @open-options="emit('open-options')"
+      @set-entry-value="
+        (key: string, value: ConfigValueType, label?: string) =>
+          emit('set-entry-value', key, value, label)
+      "
     />
     <v-chip
       v-if="confEntry.advanced"
@@ -49,6 +54,7 @@ const props = defineProps<{
   confEntry: ConfigEntryUI;
   showPasswordValues: boolean;
   disabled: boolean;
+  providerDomain?: string;
 }>();
 
 const emit = defineEmits<{
@@ -58,6 +64,12 @@ const emit = defineEmits<{
   (e: "open-dsp"): void;
   (e: "open-options"): void;
   (e: "help"): void;
+  (
+    e: "set-entry-value",
+    key: string,
+    value: ConfigValueType,
+    label?: string,
+  ): void;
 }>();
 
 const hasDescriptionOrHelpLink = computed(() => {

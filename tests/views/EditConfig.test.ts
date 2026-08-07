@@ -68,6 +68,30 @@ describe("EditConfig", () => {
     expect(renderedKeys(wrapper)).toEqual(["enable_feature", "feature_status"]);
   });
 
+  it("fills in the entry a field points at and offers the value under its name", async () => {
+    const wrapper = mountEntries([
+      entry({
+        key: "power_control",
+        type: ConfigEntryType.STRING,
+        value: "none",
+        options: [{ title: "None", value: "none" }],
+      }),
+    ]);
+
+    const row = wrapper.findAllComponents({ name: "ConfigEntryRow" })[0];
+    row.vm.$emit("set-entry-value", "power_control", "switch.amp", "Amplifier");
+    await nextTick();
+
+    const target = row.props("confEntry") as ConfigEntry;
+    expect(target.value).toBe("switch.amp");
+    // the server has not listed it yet, so the name must come from the field
+    expect(target.options).toContainEqual({
+      title: "Amplifier",
+      value: "switch.amp",
+    });
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
+
   it("keeps an input with an unmet dependency visible but disabled", () => {
     const wrapper = mountEntries([
       entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),

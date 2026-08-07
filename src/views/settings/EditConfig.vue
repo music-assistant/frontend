@@ -23,12 +23,14 @@
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
           :disabled="isRowDisabled(conf_entry)"
+          :provider-domain="providerDomain"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
           @open-dsp="openDspConfig"
           @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
+          @set-entry-value="onEntryValueSet"
         />
       </div>
     </div>
@@ -71,12 +73,14 @@
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
           :disabled="isRowDisabled(conf_entry)"
+          :provider-domain="providerDomain"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
           @open-dsp="openDspConfig"
           @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
+          @set-entry-value="onEntryValueSet"
         />
       </div>
     </div>
@@ -205,6 +209,9 @@ export interface Props {
   // Output protocols of the player being configured; drives derived-transport labelling
   // in the protocol section. Omitted for provider/core configs.
   outputProtocols?: OutputProtocol[];
+  // Domain of the provider being configured; lets a field recognise the entries of the
+  // provider it belongs to. Omitted for player/core configs.
+  providerDomain?: string;
 }
 
 const emit = defineEmits<{
@@ -360,6 +367,23 @@ const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
         : value;
   }
 };
+// a field can fill in another entry of the same form, e.g. the Home Assistant entity
+// picker setting the player control it sits under
+const onEntryValueSet = function (
+  key: string,
+  value: ConfigValueType,
+  label?: string,
+) {
+  const entry = entries.value?.find((e) => e.key === key);
+  if (!entry) return;
+  // the server does not know of the value yet, so carry the name the field gave us or
+  // the field would read back the bare id until the config is fetched again
+  if (label && !entry.options?.some((option) => option.value === value)) {
+    entry.options = [...(entry.options ?? []), { title: label, value }];
+  }
+  onValueUpdate(entry, value);
+};
+
 const openLink = function (url: string) {
   // window.open(url, "_blank");
   const a = document.createElement("a");
