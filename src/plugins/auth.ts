@@ -304,14 +304,10 @@ export class AuthManager {
 
     // Send logout command to server first (best effort)
     if (this.token) {
-      try {
-        // Send logout command but don't wait for response to avoid race condition
-        api.logout().catch(() => {
-          // Ignore errors - we're logging out anyway
-        });
-      } catch (error) {
+      // Send logout command but don't wait for response to avoid race condition
+      api.logout().catch(() => {
         // Ignore errors - we're logging out anyway
-      }
+      });
     }
 
     // Clear auth immediately to prevent any auth error messages
