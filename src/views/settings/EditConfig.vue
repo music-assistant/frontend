@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    <!-- No provider domain: that is only set for a provider config, which carries no protocol
+    <!-- No provider-domain: that is only set for a provider config, which carries no protocol
          categories. No set-entry-value handler: its only emitter is the Home Assistant entity
          picker, which sits with the player controls on the parent player. -->
     <ProtocolConfigSection
