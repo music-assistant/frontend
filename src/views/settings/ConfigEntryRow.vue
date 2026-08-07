@@ -14,8 +14,8 @@
       @open-dsp="emit('open-dsp')"
       @open-options="emit('open-options')"
       @set-entry-value="
-        (key: string, value: ConfigValueType) =>
-          emit('set-entry-value', key, value)
+        (key: string, value: ConfigValueType, label?: string) =>
+          emit('set-entry-value', key, value, label)
       "
     />
     <v-chip
@@ -64,7 +64,12 @@ const emit = defineEmits<{
   (e: "open-dsp"): void;
   (e: "open-options"): void;
   (e: "help"): void;
-  (e: "set-entry-value", key: string, value: ConfigValueType): void;
+  (
+    e: "set-entry-value",
+    key: string,
+    value: ConfigValueType,
+    label?: string,
+  ): void;
 }>();
 
 const hasDescriptionOrHelpLink = computed(() => {

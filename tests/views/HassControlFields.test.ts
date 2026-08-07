@@ -74,8 +74,10 @@ describe("HassControlPickerField", () => {
     );
     // the player entry is only filled in on the form; saving it is up to the user
     expect(apiMock.savePlayerConfig).not.toHaveBeenCalled();
+    // the name travels with it, so the field reads back "Amplifier" rather than the bare
+    // id while the server still knows nothing of the entity
     expect(wrapper.emitted("setEntryValue")).toEqual([
-      ["power_control", "switch.living_room_amp"],
+      ["power_control", "switch.living_room_amp", "Amplifier"],
     ]);
   });
 

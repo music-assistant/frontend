@@ -15,7 +15,9 @@ const props = defineProps<{
   disabled?: boolean;
 }>();
 
-const emit = defineEmits<{ setEntryValue: [key: string, value: string] }>();
+const emit = defineEmits<{
+  setEntryValue: [key: string, value: string, label?: string];
+}>();
 
 const showPicker = ref(false);
 const saving = ref(false);
@@ -31,7 +33,12 @@ const onPick = async (entity: HassControlEntity) => {
       props.entry.hass_control_key,
       entity.entity_id,
     );
-    emit("setEntryValue", props.entry.target_key, entity.entity_id);
+    emit(
+      "setEntryValue",
+      props.entry.target_key,
+      entity.entity_id,
+      entity.name,
+    );
   } catch {
     // the API layer reports the failure; leaving the entry untouched keeps the form in
     // step with what the provider actually holds

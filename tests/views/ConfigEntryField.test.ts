@@ -224,7 +224,7 @@ function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
   return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
 }
 
-function hassControlsEntry(): ConfigEntry {
+function hassControlsEntry(): ConfigEntryUI {
   return entry({
     key: "power_controls",
     type: ConfigEntryType.STRING,

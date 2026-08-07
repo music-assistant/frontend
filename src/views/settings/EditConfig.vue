@@ -369,9 +369,19 @@ const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
 };
 // a field can fill in another entry of the same form, e.g. the Home Assistant entity
 // picker setting the player control it sits under
-const onEntryValueSet = function (key: string, value: ConfigValueType) {
+const onEntryValueSet = function (
+  key: string,
+  value: ConfigValueType,
+  label?: string,
+) {
   const entry = entries.value?.find((e) => e.key === key);
-  if (entry) onValueUpdate(entry, value);
+  if (!entry) return;
+  // the server does not know of the value yet, so carry the name the field gave us or
+  // the field would read back the bare id until the config is fetched again
+  if (label && !entry.options?.some((option) => option.value === value)) {
+    entry.options = [...(entry.options ?? []), { title: label, value }];
+  }
+  onValueUpdate(entry, value);
 };
 
 const openLink = function (url: string) {

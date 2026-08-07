@@ -74,7 +74,8 @@
       :entry="confEntry"
       :disabled="isFieldDisabled"
       @set-entry-value="
-        (key: string, value: string) => emit('setEntryValue', key, value)
+        (key: string, value: string, label?: string) =>
+          emit('setEntryValue', key, value, label)
       "
     />
 
@@ -365,7 +366,12 @@ const emit = defineEmits<{
   (e: "openOptions"): void;
   (e: "update:value", value: ConfigValueType): void;
   // set the value of another entry on the same form
-  (e: "setEntryValue", key: string, value: ConfigValueType): void;
+  (
+    e: "setEntryValue",
+    key: string,
+    value: ConfigValueType,
+    label?: string,
+  ): void;
 }>();
 
 // Labels arrive display-ready: server-provided entries are resolved server-side for the
