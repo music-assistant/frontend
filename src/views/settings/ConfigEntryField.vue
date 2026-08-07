@@ -74,7 +74,7 @@
       :entry="confEntry"
       :disabled="isFieldDisabled"
       @set-entry-value="
-        (key: string, value: string, label?: string) =>
+        (key: string, value: ConfigValueType, label?: string) =>
           emit('setEntryValue', key, value, label)
       "
     />
@@ -428,6 +428,7 @@ const displayOptions = computed(() => {
     if (value === null || value === undefined || listedValues.has(value)) {
       continue;
     }
+    listedValues.add(value);
     options.push({ title: value.toString(), value });
   }
   return options;

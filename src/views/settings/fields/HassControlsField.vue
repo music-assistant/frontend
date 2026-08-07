@@ -52,7 +52,7 @@ const remove = (entityId: string) => {
           v-if="!disabled"
           type="button"
           class="hover:text-foreground ml-1 cursor-pointer"
-          :aria-label="$t('settings.hass_controls.remove_entity')"
+          :aria-label="`${$t('settings.hass_controls.remove_entity')}: ${entityTitle(entityId)}`"
           @click="remove(entityId)"
         >
           <X class="size-3" />
