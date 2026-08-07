@@ -27,7 +27,7 @@
         <template #append>
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
-            :lyrics-active="lyricsActive"
+            :lyrics-active="showLyrics"
             @toggle-lyrics="toggleLyrics"
           />
 
@@ -557,8 +557,6 @@ watch(
   { immediate: true },
 );
 
-const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
-
 // Local reactive state for lyrics
 const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
   plain: null,
@@ -594,11 +592,18 @@ const lyricsState = computed<
 // Lyrics are reached through a dedicated button in the header and shown in
 // their own panel, independent of the queue list (which has its own toggle).
 const showLyrics = ref(false);
-const lyricsActive = computed(() => showLyrics.value);
 
 const toggleLyrics = () => {
   showLyrics.value = !showLyrics.value;
 };
+
+// This component stays mounted while the dialog is closed and the lyrics panel
+// keeps its state across open/close, so both are checked: the ~60fps loop only
+// runs while the lyrics viewer it feeds is actually on screen.
+const lyricsVisible = computed(
+  () => store.showFullscreenPlayer && showLyrics.value,
+);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsVisible);
 
 // If the panel was opened optimistically while lyrics were still loading but
 // the track turns out to have none, close it again so we don't show an empty

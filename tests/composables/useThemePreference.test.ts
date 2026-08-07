@@ -44,10 +44,7 @@ describe("useThemePreference", () => {
     mocks.colorModeOptions = undefined;
     mocks.isGuestSession.value = false;
     mocks.store.currentUser.preferences = {};
-    Object.defineProperty(window, "matchMedia", {
-      configurable: true,
-      value: vi.fn().mockReturnValue({ matches: false }),
-    });
+    stubMatchMedia(createMediaQueryMock(false));
   });
 
   afterEach(() => {
@@ -117,10 +114,7 @@ describe("useThemePreference", () => {
   });
 
   it("follows the system appearance in auto mode", () => {
-    Object.defineProperty(window, "matchMedia", {
-      configurable: true,
-      value: vi.fn().mockReturnValue({ matches: true }),
-    });
+    stubMatchMedia(createMediaQueryMock(true));
     const { applyThemePreference } = useThemePreference();
 
     applyThemePreference();
@@ -128,4 +122,66 @@ describe("useThemePreference", () => {
     expect(mocks.changeTheme).toHaveBeenCalledWith("dark");
     expect(mocks.colorMode.value).toBe("auto");
   });
+
+  it("re-applies the Vuetify theme when the system scheme changes in auto mode", async () => {
+    const media = createMediaQueryMock(false);
+    stubMatchMedia(media);
+    const { applyThemePreference } = await freshComposable();
+
+    applyThemePreference();
+    expect(mocks.changeTheme).toHaveBeenLastCalledWith("light");
+
+    media.matches = true;
+    media.dispatch();
+
+    expect(mocks.changeTheme).toHaveBeenLastCalledWith("dark");
+  });
+
+  it("stops following the system scheme once a fixed theme is chosen", async () => {
+    const media = createMediaQueryMock(false);
+    stubMatchMedia(media);
+    const { applyThemePreference } = await freshComposable();
+    applyThemePreference();
+
+    mocks.store.currentUser.preferences.theme = "light";
+    applyThemePreference();
+    expect(media.removeEventListener).toHaveBeenCalled();
+
+    media.matches = true;
+    media.dispatch();
+
+    expect(mocks.changeTheme).toHaveBeenLastCalledWith("light");
+  });
+
+  // the composable keeps module-level listener state, so these tests import a
+  // fresh module copy to stay order-independent
+  async function freshComposable() {
+    vi.resetModules();
+    const mod = await import("@/composables/useThemePreference");
+    return mod.useThemePreference();
+  }
+
+  function stubMatchMedia(media: ReturnType<typeof createMediaQueryMock>) {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockReturnValue(media),
+    });
+  }
+
+  function createMediaQueryMock(matches: boolean) {
+    const listeners: Array<() => void> = [];
+    return {
+      matches,
+      addEventListener: vi.fn((_event: string, cb: () => void) => {
+        listeners.push(cb);
+      }),
+      removeEventListener: vi.fn((_event: string, cb: () => void) => {
+        const idx = listeners.indexOf(cb);
+        if (idx >= 0) listeners.splice(idx, 1);
+      }),
+      dispatch() {
+        for (const cb of listeners) cb();
+      },
+    };
+  }
 });

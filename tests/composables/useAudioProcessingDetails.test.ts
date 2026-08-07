@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils";
-import { File as FileIcon } from "@lucide/vue";
+import { File as FileIcon, Merge, Split } from "@lucide/vue";
 import { defineComponent, h, nextTick, ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/composables/useAudioProcessingDetails";
 import { $t, i18n } from "@/plugins/i18n";
 import {
+  AudioChannel,
   type AudioFormat,
   type AudioProcessingChain,
   AudioQuality,
@@ -418,6 +419,31 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     presetNames.set("preset-1", "Cinema");
     expect(buildDisplay(chain).outputPaths[0].stages[1].title).toBe("Cinema");
   });
+
+  it.each([
+    [AudioChannel.ALL, "Mixed to mono", Merge],
+    [AudioChannel.FL, "Source channel: Left", Split],
+    [AudioChannel.FR, "Source channel: Right", Split],
+  ])(
+    "pairs source channel %s with its own title and icon",
+    (sourceChannel, title, icon) => {
+      const display = buildDisplay({
+        outputs: [
+          {
+            player_ids: ["office"],
+            source_channel: sourceChannel,
+            output_format: makeFormat(),
+          },
+        ],
+      });
+
+      expect(
+        display.outputPaths[0].stages.find((stage) =>
+          stage.key.startsWith("source-channel-"),
+        ),
+      ).toMatchObject({ title, icon });
+    },
+  );
 
   it.each([CrossfadeMode.UNKNOWN, "future_crossfade" as CrossfadeMode])(
     "keeps %s crossfade in headroom reasons",

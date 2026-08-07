@@ -1,0 +1,363 @@
+{
+    "$comment": "Non-normative metadata for the icons in manifest.json — display names, gallery grouping, picker search terms, and artwork provenance (upstream set/name/version, required for attribution and re-vendoring). This file is NOT part of the icon-set contract: clients don't read it, and entries here can change freely without affecting consumers. Only manifest.json ids are the contract.",
+    "icons": {
+        "homepod-mini": {
+            "name": "HomePod mini",
+            "category": "device",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": ["apple", "smart speaker", "siri", "homepod"]
+        },
+        "sonos": {
+            "name": "Sonos",
+            "category": "device",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": ["speaker", "smart speaker"]
+        },
+        "mac": {
+            "name": "Mac",
+            "category": "device",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": ["apple", "computer", "macbook"]
+        },
+        "apple-tv": {
+            "name": "Apple TV",
+            "category": "device",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": ["apple", "media box", "set-top box", "appletv"]
+        },
+        "google-nest": {
+            "name": "Google Nest",
+            "category": "device",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": [
+                "google",
+                "nest",
+                "smart speaker",
+                "google home",
+                "assistant"
+            ]
+        },
+        "voice-pe": {
+            "name": "Voice PE",
+            "category": "device",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": ["home assistant", "voice", "assist", "preview edition"]
+        },
+        "wiim": {
+            "name": "WiiM",
+            "category": "device",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": ["streamer", "smart speaker", "amp"]
+        },
+        "speaker": {
+            "name": "Speaker",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "speaker",
+                "version": "1.24.0"
+            },
+            "keywords": ["audio", "hifi"]
+        },
+        "speakers": {
+            "name": "Speaker group",
+            "category": "player",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": ["group", "pair", "stereo", "multiple"]
+        },
+        "soundbar": {
+            "name": "Soundbar",
+            "category": "player",
+            "source": {
+                "set": "custom"
+            },
+            "keywords": ["bar", "tv audio", "home theater", "home cinema"]
+        },
+        "radio": {
+            "name": "Radio",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "radio",
+                "version": "1.24.0"
+            },
+            "keywords": ["tuner", "fm", "receiver"]
+        },
+        "tv": {
+            "name": "TV",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "tv",
+                "version": "1.24.0"
+            },
+            "keywords": ["television", "screen"]
+        },
+        "monitor": {
+            "name": "Monitor",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "monitor",
+                "version": "1.24.0"
+            },
+            "keywords": ["screen", "desktop", "display", "computer"]
+        },
+        "laptop": {
+            "name": "Laptop",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "laptop-minimal",
+                "version": "1.24.0"
+            },
+            "keywords": ["computer", "notebook"]
+        },
+        "smartphone": {
+            "name": "Smartphone",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "smartphone",
+                "version": "1.24.0"
+            },
+            "keywords": ["phone", "mobile", "cellphone", "android", "iphone"]
+        },
+        "tablet": {
+            "name": "Tablet",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "tablet",
+                "version": "1.24.0"
+            },
+            "keywords": ["ipad", "mobile"]
+        },
+        "headphones": {
+            "name": "Headphones",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "headphones",
+                "version": "1.24.0"
+            },
+            "keywords": ["headset", "audio"]
+        },
+        "bluetooth": {
+            "name": "Bluetooth",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "bluetooth",
+                "version": "1.24.0"
+            },
+            "keywords": ["wireless", "speaker"]
+        },
+        "airplay": {
+            "name": "AirPlay",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "airplay",
+                "version": "1.24.0"
+            },
+            "keywords": ["apple", "streaming"]
+        },
+        "cast": {
+            "name": "Cast",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "cast",
+                "version": "1.24.0"
+            },
+            "keywords": ["chromecast", "google", "streaming"]
+        },
+        "car": {
+            "name": "Car",
+            "category": "player",
+            "source": {
+                "set": "lucide",
+                "name": "car",
+                "version": "1.24.0"
+            },
+            "keywords": ["auto", "vehicle", "garage"]
+        },
+        "music": {
+            "name": "Music",
+            "category": "media",
+            "source": {
+                "set": "lucide",
+                "name": "music",
+                "version": "1.24.0"
+            },
+            "keywords": ["note", "song"]
+        },
+        "vinyl": {
+            "name": "Vinyl",
+            "category": "media",
+            "source": {
+                "set": "lucide",
+                "name": "disc-3",
+                "version": "1.24.0"
+            },
+            "keywords": ["record", "disc", "turntable", "lp"]
+        },
+        "mic": {
+            "name": "Microphone",
+            "category": "media",
+            "source": {
+                "set": "lucide",
+                "name": "mic",
+                "version": "1.24.0"
+            },
+            "keywords": ["karaoke", "voice", "vocal", "microphone"]
+        },
+        "volume": {
+            "name": "Volume",
+            "category": "media",
+            "source": {
+                "set": "lucide",
+                "name": "volume-2",
+                "version": "1.24.0"
+            },
+            "keywords": ["loud", "sound"]
+        },
+        "living-room": {
+            "name": "Living room",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "sofa",
+                "version": "1.24.0"
+            },
+            "keywords": ["sofa", "couch", "lounge"]
+        },
+        "bedroom": {
+            "name": "Bedroom",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "bed-double",
+                "version": "1.24.0"
+            },
+            "keywords": ["bed", "sleep"]
+        },
+        "bathroom": {
+            "name": "Bathroom",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "bath",
+                "version": "1.24.0"
+            },
+            "keywords": ["bath", "tub", "shower"]
+        },
+        "toilet": {
+            "name": "Toilet",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "toilet",
+                "version": "1.24.0"
+            },
+            "keywords": ["wc", "restroom", "washroom"]
+        },
+        "kitchen": {
+            "name": "Kitchen",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "utensils",
+                "version": "1.24.0"
+            },
+            "keywords": ["cooking", "dining", "utensils", "fork"]
+        },
+        "office": {
+            "name": "Office",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "briefcase",
+                "version": "1.24.0"
+            },
+            "keywords": ["work", "study", "desk", "briefcase"]
+        },
+        "hallway": {
+            "name": "Hallway",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "door-open",
+                "version": "1.24.0"
+            },
+            "keywords": ["door", "entrance", "entry", "corridor"]
+        },
+        "garden": {
+            "name": "Garden",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "flower-2",
+                "version": "1.24.0"
+            },
+            "keywords": ["flower", "plants", "yard"]
+        },
+        "outdoor": {
+            "name": "Outdoor",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "tree-pine",
+                "version": "1.24.0"
+            },
+            "keywords": ["tree", "terrace", "patio", "outside"]
+        },
+        "sun": {
+            "name": "Sun",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "sun",
+                "version": "1.24.0"
+            },
+            "keywords": ["patio", "terrace", "bright", "weather"]
+        },
+        "home": {
+            "name": "Home",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "house",
+                "version": "1.24.0"
+            },
+            "keywords": ["house", "whole home"]
+        },
+        "building": {
+            "name": "Building",
+            "category": "area",
+            "source": {
+                "set": "lucide",
+                "name": "building",
+                "version": "1.24.0"
+            },
+            "keywords": ["apartment", "flat", "office building"]
+        }
+    }
+}

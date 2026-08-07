@@ -312,16 +312,15 @@ describe("guest join login", () => {
 
       const wrapper = mountLogin();
 
-      await vi.waitFor(() => {
-        expect(wrapper.emitted("authenticated")).toEqual([
-          [
-            {
-              token: "guest-token",
-              user: { user_id: "guest-id", username, role: "guest" },
-            },
-          ],
-        ]);
-      });
+      await flushPromises();
+      expect(wrapper.emitted("authenticated")).toEqual([
+        [
+          {
+            token: "guest-token",
+            user: { user_id: "guest-id", username, role: "guest" },
+          },
+        ],
+      ]);
       expect(wrapper.emitted("local-connect")).toEqual([
         ["http://music-assistant.local:8095"],
       ]);
@@ -359,9 +358,8 @@ describe("guest join login", () => {
     await wrapper.find("input").setValue("http://selected-server:8095");
     await wrapper.find("button").trigger("click");
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(wrapper.emitted("local-connect")).toEqual([
       ["http://selected-server:8095"],
     ]);
@@ -387,9 +385,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
       code: "ABCD1234",
     });
@@ -411,15 +408,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "admin-token",
-        user: {
-          user_id: "regular-id",
-          username: "regular-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: {
+        user_id: "regular-id",
+        username: "regular-user",
+        role: "admin",
+      },
     });
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
@@ -455,9 +451,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Couldn't join the party");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Couldn't join the party");
     expect(wrapper.get(".text-h6").text()).toBe("Couldn't join the party");
     expect(wrapper.text()).toContain("Invalid or expired join code");
     expect(wrapper.text()).not.toContain("Connection Failed");
@@ -483,9 +478,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Couldn't join the party");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Couldn't join the party");
     expect(wrapper.get(".text-h6").text()).toBe("Couldn't join the party");
     expect(wrapper.text()).toContain(
       "Too many failed attempts. Please try again in 120 seconds.",
@@ -501,9 +495,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(wrapper.emitted("local-connect")).toEqual([
       ["http://localhost:3000"],
     ]);
@@ -523,9 +516,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toHaveLength(1);
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
     expect(mocks.connectRemote).toHaveBeenCalledWith(remoteId, {
       remember: false,
     });
@@ -546,15 +538,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "admin-token",
-        user: {
-          user_id: "regular-id",
-          username: "regular-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: {
+        user_id: "regular-id",
+        username: "regular-user",
+        role: "admin",
+      },
     });
     expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
     expect(mocks.sendCommand).not.toHaveBeenCalledWith(
@@ -578,15 +569,14 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "guest-token",
-        user: {
-          user_id: "guest-id",
-          username: "party_guest",
-          role: "guest",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "guest-token",
+      user: {
+        user_id: "guest-id",
+        username: "party_guest",
+        role: "guest",
+      },
     });
     expect(mocks.authenticateWithToken).not.toHaveBeenCalledWith("admin-token");
     expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
@@ -601,9 +591,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Network unavailable");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Network unavailable");
     expect(sessionStorage.getItem("ma_pending_join_code")).toBe("abcd1234");
     expect(sessionStorage.getItem("ma_pending_join_type")).toBe("remote");
     expect(sessionStorage.getItem("ma_guest_remote_id")).toBe(remoteId);
@@ -643,14 +632,13 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        user: {
-          user_id: "ingress-user",
-          username: "ingress-user",
-          role: "admin",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      user: {
+        user_id: "ingress-user",
+        username: "ingress-user",
+        role: "admin",
+      },
     });
 
     expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
@@ -672,9 +660,8 @@ describe("guest join login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(mocks.returnToFullApp).toHaveBeenCalledOnce();
     await flushPromises();
 
     // The reload is already under way, so nothing should replace it with a
@@ -717,9 +704,8 @@ describe("ended guest session", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Your party session has ended");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
     expect(wrapper.text()).toContain(
       "Ask the host to share the party link or QR code again to rejoin.",
     );
@@ -736,9 +722,8 @@ describe("ended guest session", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Your quiz session has ended");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your quiz session has ended");
     expect(sessionStorage.getItem("ma_guest_session_ended")).toBe("music_quiz");
   });
 
@@ -749,9 +734,8 @@ describe("ended guest session", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Your party session has ended");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
     expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
     expect(mocks.connectRemote).not.toHaveBeenCalled();
   });
@@ -767,9 +751,8 @@ describe("ended guest session", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")).toBeTruthy();
-    });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")).toBeTruthy();
     expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
     expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
       code: "ABCD1234",
@@ -781,9 +764,8 @@ describe("ended guest session", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Your party session has ended");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
     const leaveButton = wrapper
       .findAll("button")
       .find((button) => button.text() === "Continue to Music Assistant");
@@ -805,14 +787,13 @@ describe("ingress login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        user: {
-          role: "admin",
-          user_id: "ingress-user",
-          username: "ingress-user",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      user: {
+        role: "admin",
+        user_id: "ingress-user",
+        username: "ingress-user",
+      },
     });
     expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
     expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
@@ -825,15 +806,14 @@ describe("ingress login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-        token: "admin-token",
-        user: {
-          role: "admin",
-          user_id: "regular-id",
-          username: "regular-user",
-        },
-      });
+    await flushPromises();
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+      token: "admin-token",
+      user: {
+        role: "admin",
+        user_id: "regular-id",
+        username: "regular-user",
+      },
     });
     expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
     expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
@@ -845,9 +825,8 @@ describe("ingress login", () => {
 
     const wrapper = mountLogin();
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Username");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Username");
     expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();
   });
 });
@@ -860,9 +839,8 @@ describe("connection state changes", () => {
 
     mocks.apiState.value = "reconnecting";
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Reconnecting");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Reconnecting");
     wrapper.unmount();
   });
 
@@ -871,15 +849,13 @@ describe("connection state changes", () => {
     const wrapper = mountLogin();
     await flushPromises();
     mocks.apiState.value = "reconnecting";
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Reconnecting");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Reconnecting");
 
     mocks.apiState.value = "disconnected";
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).not.toContain("Reconnecting");
-    });
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("Reconnecting");
     expect(wrapper.text()).toContain("Connect");
     wrapper.unmount();
   });
@@ -888,9 +864,8 @@ describe("connection state changes", () => {
     mockStandaloneFrontend();
     sessionStorage.setItem("ma_guest_session_ended", "party");
     const wrapper = mountLogin();
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain("Your party session has ended");
-    });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Your party session has ended");
 
     mocks.apiState.value = "reconnecting";
     await flushPromises();

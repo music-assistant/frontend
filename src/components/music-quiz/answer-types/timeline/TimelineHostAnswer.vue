@@ -1,7 +1,7 @@
 <template>
   <TimelineAudienceAnswer :state="state" :current-round="currentRound">
     <template #leaderboard>
-      <slot name="leaderboard" />
+      <slot name="leaderboard"></slot>
     </template>
   </TimelineAudienceAnswer>
 </template>

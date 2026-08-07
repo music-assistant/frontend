@@ -200,6 +200,13 @@ export enum AlbumType {
   UNKNOWN = "unknown",
 }
 
+export enum ArtistType {
+  SINGER = "singer",
+  AUTHOR = "author",
+  NARRATOR = "narrator",
+  UNKNOWN = "unknown",
+}
+
 export enum ExternalID {
   MB_ARTIST = "musicbrainz_artistid", // MusicBrainz Artist ID (or AlbumArtist ID)
   MB_ALBUM = "musicbrainz_albumid", // MusicBrainz Album ID
@@ -419,6 +426,8 @@ export enum ProviderFeature {
   ARTIST_TRACKS = "artist_tracks",
   ARTIST_TOPTRACKS = "artist_toptracks",
   ARTIST_TOPALBUMS = "artist_topalbums",
+  AUTHOR_AUDIOBOOKS = "author_audiobooks",
+  NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",
@@ -475,7 +484,6 @@ export enum ConfigEntryType {
   URL = "url",
 
   // Only used in the frontend
-  DSP_SETTINGS = "dsp_settings",
   OPTIONS = "options",
 }
 
@@ -631,9 +639,14 @@ export interface ConfigEntry {
   help_link?: string;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
-  // depends_on [optional]: needs to be set before this setting shows up in frontend
+  // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
+  // as unmet. While unmet, input types and ACTION stay visible but render disabled;
+  // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
   depends_on?: string;
+  // depends_on_value [optional]: complementary to depends_on, the dependency is only met when
+  // the other entry holds this exact value (without it, any truthy value will do)
   depends_on_value?: ConfigValueType;
+  // depends_on_value_not [optional]: same as depends_on_value but inverted
   depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
@@ -661,6 +674,15 @@ export interface ConfigEntry {
 export interface Config {
   // Base Configuration object.
   values: Record<string, ConfigEntry>;
+}
+
+export interface ConfigActionResult {
+  // Outcome of a one-shot config action: a message to show to the user
+  // and/or a url to open once. Either may be null; a result that carries
+  // neither reports a generic success.
+  // message: already localized server-side for the connection locale
+  message: string | null;
+  open_url: string | null;
 }
 
 export enum FlowStepType {
@@ -816,6 +838,8 @@ export interface MediaItemMetadata {
   release_date?: string;
   cache_checksum?: string;
   chapters?: MediaItemChapter[];
+  life_span?: LifeSpan;
+  artist_entity_type?: ArtistEntityType;
 }
 
 interface _MediaItemBase {
@@ -845,7 +869,9 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number;
 }
 
-export interface Artist extends MediaItem {}
+export interface Artist extends MediaItem {
+  artist_type?: ArtistType;
+}
 
 export interface Album extends MediaItem {
   year?: number;
@@ -926,6 +952,29 @@ export interface BrowseFolder extends MediaItem {
 export enum RecommendationFolderType {
   DEFAULT = "default",
   TIMELINE = "timeline",
+}
+
+export enum ArtistEntityType {
+  PERSON = "Person",
+  GROUP = "Group",
+  ORCHESTRA = "Orchestra",
+  CHOIR = "Choir",
+  CHARACTER = "Character",
+  OTHER = "Other",
+}
+
+export interface LifeSpan {
+  begin?: string;
+  end?: string;
+  ended?: boolean;
+}
+
+export interface TimelineEvent {
+  id: string;
+  artist: Artist;
+  eventType: string;
+  dateLabel: string;
+  offset: number;
 }
 
 /** Mirrors music_assistant_models RecommendationFolder. `items` is populated by
@@ -1076,6 +1125,11 @@ export interface QueueItem {
 
 export interface PlayerQueue {
   queue_id: string;
+  // active: whether the player is currently playing this queue. Server-derived from the
+  // player's active_source: false only while an external source (line-in, Spotify Connect,
+  // another queue in a group) has taken the player over - a stopped or finished queue stays
+  // active and idle. Recalculated ~0.5s after the active_source change that causes it, so
+  // during a handover it can briefly still hold the value from before.
   active: boolean;
   display_name: string;
   available: boolean;
@@ -1249,6 +1303,10 @@ export interface Player {
   volume_muted?: boolean;
   group_members: string[];
   static_group_members: string[];
+  // active_source: id of the source the player is currently playing - its own queue_id for
+  // Music Assistant playback, or an external source id. PlayerQueue.active is derived from
+  // this, and PLAYER_UPDATED carries a new value before the queue is recalculated, so the
+  // two can disagree for about half a second during a source handover.
   active_source?: string;
   source_list: PlayerSource[];
   active_sound_mode?: string;

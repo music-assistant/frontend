@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
-import { handleMediaItemClick } from "@/helpers/utils";
+import { handleMediaItemClick } from "@/helpers/media_item_actions";
 import type { Genre } from "@/plugins/api/interfaces";
 import { computed } from "vue";
 

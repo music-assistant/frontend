@@ -65,7 +65,9 @@
       >
         {{ displayName }}
       </div>
-      <div class="ed-card__sub">{{ subtitle }}</div>
+      <div class="ed-card__sub">
+        <slot name="subtitle">{{ subtitle }}</slot>
+      </div>
       <span v-if="showPlay" class="ed-card__play" @click.stop="onPlay">
         <Play
           :size="18"
@@ -85,12 +87,14 @@ import { itemArtwork } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
-  getArtistsString,
-  getAuthorsNarratorsArray,
-  getBrowseFolderName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
+} from "@/helpers/media_item_actions";
+import {
+  getArtistsString,
+  getAuthorsNarratorsArray,
+  getBrowseFolderName,
 } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {

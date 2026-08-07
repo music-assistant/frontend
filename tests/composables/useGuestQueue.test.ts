@@ -1,19 +1,21 @@
-import { EventType, type PlayerQueue } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  PlaybackState,
+  type EventMessage,
+  type PlayerQueue,
+} from "@/plugins/api/interfaces";
+import { BEFORE_FIRST_INDEX } from "@/helpers/queue_position";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockSendCommand, mockGetPlayerQueueItems, mockSubscribe, storeMock } =
-  vi.hoisted(() => {
+const { mockSendCommand, mockGetPlayerQueueItems, mockSubscribe } = vi.hoisted(
+  () => {
     return {
       mockSendCommand: vi.fn(),
       mockGetPlayerQueueItems: vi.fn(),
       mockSubscribe: vi.fn(),
-      storeMock: {
-        activePlayerQueue: { queue_id: "queue1" } as {
-          queue_id: string;
-        } | null,
-      },
     };
-  });
+  },
+);
 
 vi.mock("@/plugins/api", () => {
   return {
@@ -26,11 +28,8 @@ vi.mock("@/plugins/api", () => {
   };
 });
 
-vi.mock("@/plugins/store", () => ({
-  store: storeMock,
-}));
-
 // Import after mocks so that composable uses the mocked modules
+import api from "@/plugins/api";
 import { useGuestQueue } from "@/composables/guest/useGuestQueue";
 
 describe("useGuestQueue", () => {
@@ -38,10 +37,10 @@ describe("useGuestQueue", () => {
     mockSendCommand.mockReset();
     mockGetPlayerQueueItems.mockReset();
     mockSubscribe.mockReset();
-    storeMock.activePlayerQueue = { queue_id: "queue1" };
+    for (const key of Object.keys(api.queues)) delete api.queues[key];
   });
 
-  it("fetches queue items using active player queue when no party queue id is set", async () => {
+  it("fetches queue items for the party queue", async () => {
     const queue = {
       queue_id: "queue1",
       current_index: 5,
@@ -52,8 +51,14 @@ describe("useGuestQueue", () => {
     mockSendCommand.mockResolvedValueOnce(queue);
     mockGetPlayerQueueItems.mockResolvedValueOnce(items);
 
-    const { queueItems, queueFetchOffset, queueTotalItems, fetchQueueItems } =
-      useGuestQueue();
+    const {
+      partyQueueId,
+      queueItems,
+      queueFetchOffset,
+      queueTotalItems,
+      fetchQueueItems,
+    } = useGuestQueue();
+    partyQueueId.value = "queue1";
 
     await fetchQueueItems(true);
 
@@ -67,8 +72,7 @@ describe("useGuestQueue", () => {
     expect(queueItems.value).toEqual(items);
   });
 
-  it("returns early when no active queue id is available", async () => {
-    storeMock.activePlayerQueue = null;
+  it("returns early when no party queue id is set", async () => {
     const { queueItems, fetchQueueItems } = useGuestQueue();
 
     await fetchQueueItems(true);
@@ -97,12 +101,14 @@ describe("useGuestQueue", () => {
       .mockResolvedValueOnce(moreItems);
 
     const {
+      partyQueueId,
       queueItems,
       queueFetchOffset,
       queueTotalItems,
       fetchQueueItems,
       handleQueueScroll,
     } = useGuestQueue();
+    partyQueueId.value = "queue1";
 
     await fetchQueueItems(true);
 
@@ -120,6 +126,39 @@ describe("useGuestQueue", () => {
 
     expect(mockGetPlayerQueueItems).toHaveBeenLastCalledWith("queue1", 50, 0);
     expect(queueFetchOffset.value).toBe(0);
+  });
+
+  it("exposes the party queue and its index from the same queue", () => {
+    api.queues["party-player"] = {
+      queue_id: "party-player",
+      current_index: 3,
+      state: PlaybackState.PLAYING,
+    } as PlayerQueue;
+    api.queues["queue1"] = {
+      queue_id: "queue1",
+      current_index: 7,
+      state: PlaybackState.PAUSED,
+    } as PlayerQueue;
+
+    const { partyQueueId, currentQueue, currentQueueIndex } = useGuestQueue();
+    partyQueueId.value = "party-player";
+
+    expect(currentQueue.value?.queue_id).toBe("party-player");
+    expect(currentQueue.value?.state).toBe(PlaybackState.PLAYING);
+    expect(currentQueueIndex.value).toBe(3);
+  });
+
+  it("exposes no queue when no party queue id is set", () => {
+    api.queues["queue1"] = {
+      queue_id: "queue1",
+      current_index: 7,
+      state: PlaybackState.PAUSED,
+    } as PlayerQueue;
+
+    const { currentQueue, currentQueueIndex } = useGuestQueue();
+
+    expect(currentQueue.value).toBeNull();
+    expect(currentQueueIndex.value).toBe(BEFORE_FIRST_INDEX);
   });
 
   it("subscribes to queue events and returns a cleanup function", () => {
@@ -148,5 +187,40 @@ describe("useGuestQueue", () => {
 
     expect(unsub1).toHaveBeenCalledTimes(1);
     expect(unsub2).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["QUEUE_ITEMS_UPDATED", 0],
+    ["QUEUE_UPDATED", 1],
+  ])("only refetches for %s events targeting the party queue", (_name, i) => {
+    mockSubscribe.mockReturnValue(vi.fn());
+    mockSendCommand.mockResolvedValue({
+      queue_id: "party-player",
+      current_index: 0,
+      items: 1,
+    });
+    mockGetPlayerQueueItems.mockResolvedValue([{ queue_item_id: "item1" }]);
+
+    const { partyQueueId, subscribeToEvents } = useGuestQueue();
+    subscribeToEvents();
+
+    const handler = mockSubscribe.mock.calls[i][1] as (
+      evt: EventMessage,
+    ) => void;
+
+    // Without a party queue id, an event carrying no object_id must not match either
+    handler({ object_id: "other-queue" } as EventMessage);
+    handler({} as EventMessage);
+    expect(mockSendCommand).not.toHaveBeenCalled();
+
+    partyQueueId.value = "party-player";
+
+    handler({ object_id: "other-queue" } as EventMessage);
+    expect(mockSendCommand).not.toHaveBeenCalled();
+
+    handler({ object_id: "party-player" } as EventMessage);
+    expect(mockSendCommand).toHaveBeenCalledWith("player_queues/get", {
+      queue_id: "party-player",
+    });
   });
 });

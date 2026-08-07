@@ -56,7 +56,7 @@
               <ConfigEntryRow
                 :conf-entry="entry"
                 :show-password-values="showPasswordValues"
-                :disabled="busy || isEntryDisabled(entry)"
+                :disabled="busy || isDisabled(entry)"
                 @update:value="onValueUpdate(entry, $event)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
                 @help="onEntryHelp(entry)"
@@ -312,6 +312,12 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
+import {
+  allRequiredValuesPresent,
+  isEntryDisabled,
+  NON_INTERACTIVE_ENTRY_TYPES,
+  VALUELESS_ENTRY_TYPES,
+} from "@/helpers/config_entry_ui";
 import { api, ConnectionState } from "@/plugins/api";
 import {
   type ConfigEntry,
@@ -377,14 +383,6 @@ let expiryReconciledFor: string | null = null;
 const SESSION_ENDED_STEP_ID = "__session_ended__";
 
 // terminal steps: closing them must not abort (the flow already ended server-side)
-const PRESENTATIONAL_TYPES = [
-  ConfigEntryType.DIVIDER,
-  ConfigEntryType.LABEL,
-  ConfigEntryType.ALERT,
-  ConfigEntryType.IMAGE,
-  ConfigEntryType.ACTION,
-];
-
 const isTerminal = computed(
   () =>
     step.value?.type === FlowStepType.FINISH ||
@@ -429,24 +427,17 @@ const dialogTitle = computed(() => {
 });
 
 const visibleFormEntries = computed(() =>
-  formEntries.value.filter((entry) => !entry.hidden),
+  formEntries.value.filter(
+    (entry) =>
+      !entry.hidden &&
+      // an unmet dependency can only be expressed by hiding these types
+      !(NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) && isDisabled(entry)),
+  ),
 );
 
-const canSubmit = computed(() => {
-  if (busy.value) return false;
-  for (const entry of formEntries.value) {
-    if (PRESENTATIONAL_TYPES.includes(entry.type)) continue;
-    if (isEntryDisabled(entry)) continue;
-    if (
-      entry.required &&
-      isNullOrUndefined(entry.value) &&
-      isNullOrUndefined(entry.default_value)
-    ) {
-      return false;
-    }
-  }
-  return true;
-});
+const canSubmit = computed(
+  () => !busy.value && allRequiredValuesPresent(formEntries.value),
+);
 
 const canOpenInstanceSettings = computed(
   () => launch.value?.kind === "provider" && !!step.value?.result?.instance_id,
@@ -625,7 +616,7 @@ async function submit() {
   if (!step.value || !canSubmit.value) return;
   const values: Record<string, ConfigValueType> = {};
   for (const entry of formEntries.value) {
-    if (PRESENTATIONAL_TYPES.includes(entry.type)) continue;
+    if (VALUELESS_ENTRY_TYPES.includes(entry.type)) continue;
     let value = entry.value;
     if (value === undefined) value = null;
     // don't send back the obfuscated placeholder for unchanged secure strings
@@ -772,21 +763,7 @@ function onEntryHelp(entry: ConfigEntry) {
   else if (entry.help_link) openLink(entry.help_link);
 }
 
-function isEntryDisabled(entry: ConfigEntry): boolean {
-  if (isNullOrUndefined(entry.depends_on)) return false;
-  const dependency = formEntries.value.find((e) => e.key === entry.depends_on);
-  if (!dependency) return false;
-  const dependencyValue = dependency.value;
-  if (!isNullOrUndefined(entry.depends_on_value)) {
-    return dependencyValue != entry.depends_on_value;
-  }
-  if (!isNullOrUndefined(entry.depends_on_value_not)) {
-    return dependencyValue == entry.depends_on_value_not;
-  }
-  return !dependencyValue;
-}
-
-function isNullOrUndefined(value: unknown): boolean {
-  return value === null || value === undefined;
+function isDisabled(entry: ConfigEntry): boolean {
+  return isEntryDisabled(entry, formEntries.value);
 }
 </script>

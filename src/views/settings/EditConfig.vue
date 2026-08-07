@@ -22,7 +22,7 @@
           :key="conf_entry.key"
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
-          :disabled="isDisabled(conf_entry)"
+          :disabled="isRowDisabled(conf_entry)"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
@@ -38,7 +38,7 @@
       :protocol-panels="protocolPanels"
       :visible-entries-by-category="visibleEntriesByCategory"
       :show-password-values="showPasswordValues"
-      :is-disabled="isDisabled"
+      :is-disabled="isRowDisabled"
       :output-protocols="outputProtocols"
       @update:value="onValueUpdate"
       @action="onEntryAction"
@@ -70,7 +70,7 @@
           :key="conf_entry.key"
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
-          :disabled="isDisabled(conf_entry)"
+          :disabled="isRowDisabled(conf_entry)"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
@@ -159,7 +159,14 @@
 </template>
 
 <script setup lang="ts">
-import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
+import {
+  allRequiredValuesPresent,
+  ConfigEntryUI,
+  isEntryDisabled,
+  isInjected,
+  NON_INTERACTIVE_ENTRY_TYPES,
+  VALUELESS_ENTRY_TYPES,
+} from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
 import {
   ConfigEntryType,
@@ -255,38 +262,15 @@ const protocolPanels = computed(() => {
   return panels.value.filter((p) => isProtocolCategory(p));
 });
 
-const requiredValuesPresent = computed(() => {
-  if (entries.value) {
-    for (const entry of entries.value) {
-      if (
-        entry.required &&
-        !(
-          !isNullOrUndefined(entry.value) ||
-          !isNullOrUndefined(entry.default_value) ||
-          entry.type == ConfigEntryType.DIVIDER ||
-          entry.type == ConfigEntryType.LABEL ||
-          entry.type == ConfigEntryType.ALERT ||
-          entry.type == ConfigEntryType.ACTION
-        )
-      )
-        return false;
-    }
-    return true;
-  }
-  return false;
-});
+const requiredValuesPresent = computed(() =>
+  entries.value ? allRequiredValuesPresent(entries.value) : false,
+);
 
 const hasUnsavedChanges = computed(() => {
   if (!entries.value) return false;
   for (const entry of entries.value) {
     // Skip non-value entry types
-    if (
-      entry.type == ConfigEntryType.DIVIDER ||
-      entry.type == ConfigEntryType.LABEL ||
-      entry.type == ConfigEntryType.ALERT ||
-      entry.type == ConfigEntryType.ACTION ||
-      isInjected(entry)
-    ) {
+    if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
       continue;
     }
     // Skip secure strings that haven't been modified (still showing substitute)
@@ -394,7 +378,6 @@ const openPlayerOptions = function () {
 
 const onEntryAction = function (entry: ConfigEntryUI) {
   action(entry.action || entry.key, !!entry.immediate_apply);
-  entry.value = entry.action ? null : entry.key;
 };
 
 const onEntryHelp = function (entry: ConfigEntryUI) {
@@ -452,34 +435,23 @@ onBeforeUnmount(() => {
 
 // Add listener when component mounts
 window.addEventListener("beforeunload", handleBeforeUnload);
-const isNullOrUndefined = function (value: unknown) {
-  return value === null || value === undefined;
+
+const isDisabled = function (entry: ConfigEntryUI) {
+  return isEntryDisabled(entry, entries.value || []);
+};
+
+// the form-wide disabled state has to be handed to every field: v-form only reaches
+// Vuetify's own inputs, so the number field beside a slider would stay editable
+const isRowDisabled = function (entry: ConfigEntryUI) {
+  return props.disabled || isDisabled(entry);
 };
 
 const isVisible = function (entry: ConfigEntryUI) {
-  return !entry.hidden;
-};
-
-const isDisabled = function (entry: ConfigEntryUI) {
-  if (!isNullOrUndefined(entry.depends_on)) {
-    const dependentEntry = entries.value?.find(
-      (x) => x.key == entry.depends_on,
-    );
-    if (!dependentEntry) return false;
-
-    const dependentValue = dependentEntry.value;
-
-    if (!isNullOrUndefined(entry.depends_on_value)) {
-      return dependentValue != entry.depends_on_value;
-    }
-
-    if (!isNullOrUndefined(entry.depends_on_value_not)) {
-      return dependentValue == entry.depends_on_value_not;
-    }
-
-    return !dependentValue;
-  }
-  return false;
+  if (entry.hidden) return false;
+  // an unmet dependency can only be expressed by hiding these types
+  return !(
+    NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) && isDisabled(entry)
+  );
 };
 
 const visibleEntriesByCategory = computed(() => {

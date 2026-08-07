@@ -512,18 +512,20 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { useUserPreferences } from "@/composables/userPreferences";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import {
+  handleMediaItemClick,
+  handlePlayBtnClick,
+} from "@/helpers/media_item_actions";
 import {
   getAuthorsNarratorsArray,
   getAudiobookCollectionArtists,
   getImageThumbForItem,
-  handleMediaItemClick,
-  handlePlayBtnClick,
   markdownToHtml,
   parseBool,
   truncateString,
 } from "@/helpers/utils";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import {

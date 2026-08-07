@@ -60,7 +60,8 @@
 import MAButton from "@/components/Button.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
-import { handleMenuBtnClick, parseBool } from "@/helpers/utils";
+import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { parseBool } from "@/helpers/utils";
 import { ContentType, type MediaItemType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";

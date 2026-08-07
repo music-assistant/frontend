@@ -73,7 +73,11 @@
       v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
       class="dsp-config"
     >
-      <v-btn variant="outlined" @click="$emit('openOptions')">
+      <v-btn
+        variant="outlined"
+        :disabled="isFieldDisabled"
+        @click="$emit('openOptions')"
+      >
         {{ $t("player_options.open") }}
       </v-btn>
     </div>
@@ -120,6 +124,7 @@
         <div class="config-slider-input">
           <NumberField
             :model-value="confEntry.value as number"
+            :disabled="isFieldDisabled"
             :min="confEntry.range[0]"
             :max="confEntry.range[1]"
             :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
@@ -228,9 +233,6 @@
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
       :label="displayLabel()"
-      :prepend-inner-icon="confEntry.value as string"
-      variant="outlined"
-      density="comfortable"
       @update:model-value="onUpdateValue($event)"
       @click:clear="onClear"
     />

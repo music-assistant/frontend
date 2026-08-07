@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { computeElapsedTime } from "./elapsed";
-import { PlaybackState } from "../plugins/api/interfaces";
+import { computeElapsedTime, queueItemPlaybackSpeed } from "./elapsed";
+import { PlaybackState, QueueItem } from "../plugins/api/interfaces";
 
 describe("computeElapsedTime", () => {
   const REAL_DATE_NOW = Date.now;
@@ -89,5 +89,39 @@ describe("computeElapsedTime", () => {
     const result = computeElapsedTime(t0, ts, PlaybackState.PLAYING);
     expect(result).toBeGreaterThanOrEqual(11.999);
     expect(result).toBeLessThanOrEqual(12.001);
+  });
+});
+
+describe("queueItemPlaybackSpeed", () => {
+  const itemWithSpeed = (playback_speed?: unknown) =>
+    ({
+      extra_attributes: { playback_speed },
+    }) as QueueItem;
+
+  it.each([
+    ["a speed above 1", 1.5, 1.5],
+    ["a speed below 1", 0.75, 0.75],
+    ["an explicit normal speed", 1, 1],
+  ])("returns %s as-is", (_label, playback_speed, expected) => {
+    expect(queueItemPlaybackSpeed(itemWithSpeed(playback_speed))).toBe(
+      expected,
+    );
+  });
+
+  it.each([
+    ["zero", 0],
+    ["a negative speed", -1],
+    ["infinity", Number.POSITIVE_INFINITY],
+    ["NaN", Number.NaN],
+    ["a non-numeric value", "1.5"],
+    ["null", null],
+    ["an absent speed", undefined],
+  ])("falls back to normal speed for %s", (_label, playback_speed) => {
+    expect(queueItemPlaybackSpeed(itemWithSpeed(playback_speed))).toBe(1);
+  });
+
+  it("falls back to normal speed without extra_attributes or item", () => {
+    expect(queueItemPlaybackSpeed({} as QueueItem)).toBe(1);
+    expect(queueItemPlaybackSpeed(undefined)).toBe(1);
   });
 });

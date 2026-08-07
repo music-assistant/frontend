@@ -182,10 +182,7 @@
       </div>
     </template>
   </v-list-item>
-  <PlayerFullscreen
-    :show-fullscreen="store.showFullscreenPlayer"
-    :color-palette="colorPalette"
-  />
+  <PlayerFullscreen :color-palette="colorPalette" />
 </template>
 
 <script setup lang="ts">

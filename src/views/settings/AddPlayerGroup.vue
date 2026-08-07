@@ -91,7 +91,8 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { groupMemberPickerVisible, markdownToHtml } from "@/helpers/utils";
+import { groupMemberPickerVisible } from "@/helpers/players";
+import { markdownToHtml } from "@/helpers/utils";
 import { PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 
 // global refs

@@ -24,7 +24,7 @@
       :statuses="roundPlayerStatuses"
       :answered-count="answeredPlayerCount"
     />
-    <slot name="leaderboard" />
+    <slot name="leaderboard"></slot>
   </div>
 </template>
 

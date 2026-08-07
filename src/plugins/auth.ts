@@ -12,6 +12,7 @@ import {
   setGuestSessionEnded,
 } from "@/helpers/guest_session";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
+import { api } from "./api";
 import type { User } from "./api/interfaces";
 import { store } from "./store";
 
@@ -303,16 +304,10 @@ export class AuthManager {
 
     // Send logout command to server first (best effort)
     if (this.token) {
-      try {
-        // Import api dynamically to avoid circular dependency
-        const { api } = await import("@/plugins/api");
-        // Send logout command but don't wait for response to avoid race condition
-        api.logout().catch(() => {
-          // Ignore errors - we're logging out anyway
-        });
-      } catch (error) {
+      // Send logout command but don't wait for response to avoid race condition
+      api.logout().catch(() => {
         // Ignore errors - we're logging out anyway
-      }
+      });
     }
 
     // Clear auth immediately to prevent any auth error messages
@@ -323,6 +318,8 @@ export class AuthManager {
 
     // Notify companion app launcher (if running in companion mode)
     // This navigates back to the server selection screen
+    // Imported dynamically: companion.ts imports this module statically, so a
+    // static import here would make the two plugins directly circular.
     const { notifyCompanionLogout, isCompanionApp } =
       await import("@/plugins/companion");
     if (isCompanionApp()) {

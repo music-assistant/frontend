@@ -39,6 +39,7 @@ import {
   AlbumType,
   Audiobook,
   AuthProvider,
+  ConfigActionResult,
   ConfigEntry,
   ConfigValueType,
   CoreConfig,
@@ -67,6 +68,7 @@ import {
   SoundEffect,
   UserRole,
   MediaCollection,
+  ArtistType,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -523,10 +525,12 @@ export class MusicAssistantApi {
   public getLibraryArtistsCount(
     favorite_only: boolean = false,
     album_artists_only: boolean = false,
+    artist_type?: ArtistType,
   ): Promise<number> {
     return this.sendCommand("music/artists/count", {
       favorite_only,
       album_artists_only,
+      artist_type,
     });
   }
   public getLibraryAlbumsCount(
@@ -598,6 +602,7 @@ export class MusicAssistantApi {
     album_artists_only?: boolean,
     provider?: string | string[],
     genre?: number | number[],
+    artist_type?: ArtistType,
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -608,6 +613,7 @@ export class MusicAssistantApi {
       album_artists_only,
       provider,
       genre,
+      artist_type,
     });
   }
 
@@ -681,6 +687,24 @@ export class MusicAssistantApi {
       provider_filter,
       limit,
     });
+  }
+
+  public getArtistAudiobooks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    artist_type?: ArtistType,
+    in_library_only?: boolean,
+  ): Promise<Audiobook[]> {
+    return this.sendCommand("music/artists/artist_audiobooks", {
+      item_id,
+      provider_instance_id_or_domain,
+      artist_type,
+      in_library_only,
+    });
+  }
+
+  public getLibraryArtistTypes(): Promise<ArtistType[]> {
+    return this.sendCommand("music/artists/library_artist_types");
   }
 
   /**
@@ -2009,9 +2033,10 @@ export class MusicAssistantApi {
   public async invokeProviderConfigAction(
     instance_id: string,
     action: string,
-  ): Promise<ConfigEntry[]> {
-    // Run a one-shot action button from a provider's options
-    // and return the (re-rendered) config entries.
+  ): Promise<ConfigEntry[] | ConfigActionResult> {
+    // Run a one-shot action button from a provider's options.
+    // Returns either the (re-rendered) config entries, or a result
+    // reporting the outcome of the action.
     return this.sendCommand("config/providers/invoke_action", {
       instance_id,
       action,
@@ -2083,9 +2108,10 @@ export class MusicAssistantApi {
   public async invokePlayerConfigAction(
     player_id: string,
     action: string,
-  ): Promise<ConfigEntry[]> {
-    // Run a one-shot action button from a player's config
-    // and return the (re-rendered) config entries.
+  ): Promise<ConfigEntry[] | ConfigActionResult> {
+    // Run a one-shot action button from a player's config.
+    // Returns either the (re-rendered) config entries, or a result
+    // reporting the outcome of the action.
     return this.sendCommand("config/players/invoke_action", {
       player_id,
       action,
@@ -2319,18 +2345,19 @@ export class MusicAssistantApi {
   public async invokeCoreConfigAction(
     domain: string,
     action: string,
-  ): Promise<ConfigEntry[]> {
-    // Run a one-shot action button from a core module's config
-    // and return the (re-rendered) config entries.
+  ): Promise<ConfigEntry[] | ConfigActionResult> {
+    // Run a one-shot action button from a core module's config.
+    // Returns either the (re-rendered) config entries, or a result
+    // reporting the outcome of the action.
     return this.sendCommand("config/core/invoke_action", { domain, action });
   }
 
   public async saveCoreConfig(
     domain: string,
     values: Record<string, ConfigValueType>,
-  ): Promise<ProviderConfig> {
+  ): Promise<CoreConfig> {
     // Save Core controller Config.
-    // domain: (mandatory) domain of the provider.
+    // domain: (mandatory) domain of the core controller.
     // values: the raw values for config entries that need to be stored/updated.
     // action: [optional] action key called from config entries UI.
     return this.sendCommand("config/core/save", {
@@ -2450,6 +2477,8 @@ export class MusicAssistantApi {
   }
 
   private async _openBackgroundTasks(): Promise<void> {
+    // Imported dynamically: router.ts imports this module statically, so a
+    // static import here would make the api client and the router directly circular.
     const { default: router } = await import("../router");
     if (router.currentRoute.value.name === "backgroundtasks") {
       return;

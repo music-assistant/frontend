@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { openActionUrlEntries } from "@/helpers/utils";
+import { useConfigAction } from "@/composables/useConfigAction";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
 import { computed, ref, watch } from "vue";
@@ -137,43 +137,13 @@ const onImmediateApply = async function (
   }
 };
 
-const onAction = async function (
-  action: string,
-  _values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  api
-    .invokeCoreConfigAction(config.value!.domain, action)
-    .then(async (entries) => {
-      entries = openActionUrlEntries(entries);
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.saveCoreConfig(
-          config.value!.domain,
-          saveValues,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-      loading.value = false;
-    })
-    .catch((err) => {
-      toast.error(err.message || err);
-      loading.value = false;
-    });
-};
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokeCoreConfigAction(config.value!.domain, action),
+  saveValues: (values) => api.saveCoreConfig(config.value!.domain, values),
+});
 </script>
 
 <style scoped>
