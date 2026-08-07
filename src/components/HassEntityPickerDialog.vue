@@ -12,6 +12,7 @@
       <div class="px-5 py-4">
         <SearchInput
           :model-value="search"
+          :aria-label="$t('settings.hass_controls.search_placeholder')"
           :placeholder="$t('settings.hass_controls.search_placeholder')"
           clearable
           @update:model-value="onSearchInput"
@@ -93,7 +94,7 @@
       </div>
 
       <DialogFooter class="border-t px-5 py-3">
-        <Button variant="outline" @click="model = false">
+        <Button type="button" variant="outline" @click="model = false">
           {{ $t("close") }}
         </Button>
       </DialogFooter>

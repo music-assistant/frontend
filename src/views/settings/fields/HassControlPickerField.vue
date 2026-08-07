@@ -51,6 +51,7 @@ const onPick = async (entity: HassControlEntity) => {
 <template>
   <div>
     <Button
+      type="button"
       variant="ghost"
       size="sm"
       class="text-primary -ml-2"

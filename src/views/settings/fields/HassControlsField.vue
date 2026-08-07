@@ -64,6 +64,7 @@ const remove = (entityId: string) => {
     </div>
     <div>
       <Button
+        type="button"
         variant="outline"
         size="sm"
         :disabled="disabled"
