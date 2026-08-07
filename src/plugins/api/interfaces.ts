@@ -669,7 +669,8 @@ export interface Config {
 
 export interface ConfigActionResult {
   // Outcome of a one-shot config action: a message to show to the user
-  // and/or a url to open once. Both are optional.
+  // and/or a url to open once. Either may be null; a result that carries
+  // neither reports a generic success.
   // message: already localized server-side for the connection locale
   message: string | null;
   open_url: string | null;
