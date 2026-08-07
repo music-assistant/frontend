@@ -234,4 +234,37 @@ describe("MediaSearch", () => {
     expect(rows.filter((row) => row.text().includes("Party"))).toHaveLength(2);
     vi.useRealTimers();
   });
+
+  it("collapses duplicates of a track that lists no artists", async () => {
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [
+          {
+            uri: "library://track/1",
+            name: "Untitled",
+            media_type: "track",
+            artists: [],
+          },
+          {
+            uri: "spotify://track/9",
+            name: "Untitled",
+            media_type: "track",
+            artists: [],
+          },
+        ],
+      }),
+    );
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.TRACK] });
+
+    await wrapper.find("input").setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+
+    const rows = wrapper.findAll(".media-search-result");
+    expect(rows.filter((row) => row.text().includes("Untitled"))).toHaveLength(
+      1,
+    );
+
+    vi.useRealTimers();
+  });
 });

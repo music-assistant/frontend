@@ -370,10 +370,10 @@ const floatExactMatches = function <T extends { name?: string }>(
 
 const collectField = function <T extends { name?: string }>(
   results: SearchResults[],
-  pick: (result: SearchResults) => T[] | undefined,
+  pick: (result: SearchResults) => T[],
   query: string,
 ): T[] {
   const items: T[] = [];
-  for (const result of results) items.push(...(pick(result) || []));
+  for (const result of results) items.push(...pick(result));
   return floatExactMatches(items, query);
 };
