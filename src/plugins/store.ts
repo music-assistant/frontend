@@ -8,9 +8,10 @@ import {
   User,
 } from "./api/interfaces";
 
-import { StoredState } from "@/components/ItemsListing.vue";
+import type { StoredState } from "@/components/ItemsListing.vue";
+import { isTouchscreenDevice } from "@/helpers/device";
 import { isHomeAssistantIngressSession } from "@/helpers/ingress";
-import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
+import { parseBool } from "@/helpers/parse";
 import api from "./api";
 import { resolvePlayerQueue } from "./api/helpers";
 

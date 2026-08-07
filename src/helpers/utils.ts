@@ -75,13 +75,6 @@ const openWebUrlOnce = (url: string) => {
   a.remove();
 };
 
-export const parseBool = (val: string | boolean | undefined | null) => {
-  if (val == undefined || val == null) return false;
-  if (!val) return false;
-  if (typeof val === "boolean") return val;
-  return !!JSON.parse(String(val).toLowerCase());
-};
-
 export const formatDuration = function (totalSeconds: number) {
   totalSeconds = Math.floor(totalSeconds); // round to whole seconds
   const hours = Math.floor(totalSeconds / 3600);
@@ -655,26 +648,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
     return 0;
   }
 };
-
-export function isTouchscreenDevice() {
-  // detect if device/browser is touch enabled
-  let result = false;
-  if (window.PointerEvent && "maxTouchPoints" in navigator) {
-    if (navigator.maxTouchPoints > 0) {
-      result = true;
-    }
-  } else {
-    if (
-      window.matchMedia &&
-      window.matchMedia("(any-pointer:coarse)").matches
-    ) {
-      result = true;
-    } else if (window.TouchEvent || "ontouchstart" in window) {
-      result = true;
-    }
-  }
-  return result;
-}
 
 export const markdownToHtml = function (text: string): string {
   text = text
