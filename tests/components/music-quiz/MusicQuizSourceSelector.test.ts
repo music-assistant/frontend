@@ -141,8 +141,6 @@ function createPlaylist(name: string, index: number): Playlist {
     provider_mappings: [],
     metadata: {},
     favorite: false,
-    timestamp_added: 0,
-    timestamp_modified: 0,
     owner: "",
     is_editable: false,
     supported_mediatypes: [MediaType.TRACK],

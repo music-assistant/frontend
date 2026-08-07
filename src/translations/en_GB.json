@@ -437,7 +437,6 @@
         "artist": "Artist",
         "name": "Alphabetically",
         "name_desc": "Alphabetically (descending)",
-        "recent": "Recently added",
         "year_desc": "Release year (descending)",
         "duration_desc": "Duration (descending)",
         "original": "Original",

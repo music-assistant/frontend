@@ -523,21 +523,20 @@ export const getContextMenuItems = async function (
     }
   }
   // go to album
-  if (
-    items.length === 1 &&
-    itemIsAvailable(items[0]) &&
-    "album" in items[0] &&
-    (items[0] as Track).album
-  ) {
+  const trackAlbum =
+    items.length === 1 && itemIsAvailable(items[0]) && "album" in items[0]
+      ? (items[0] as Track).album
+      : null;
+  if (trackAlbum) {
     contextMenuItems.push({
       label: "goto_album",
-      labelArgs: [(items[0] as Track).album.name],
+      labelArgs: [trackAlbum.name],
       action: () => {
         router.push({
           name: "album",
           params: {
-            itemId: (items[0] as Track).album.item_id,
-            provider: (items[0] as Track).album.provider,
+            itemId: trackAlbum.item_id,
+            provider: trackAlbum.provider,
           },
         });
       },

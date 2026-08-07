@@ -608,7 +608,9 @@ export type ConfigValueType =
 
 export interface ConfigValueOption {
   // Model for a value with separated name/value.
-  title: string;
+  // title: display title, resolved server-side from the translations; null when the
+  // option carries no in-code title and no translation matches - fall back to `value`
+  title: string | null;
   value: ConfigValueType;
   // disabled: when true the option is shown but not selectable (currently unavailable)
   disabled?: boolean;
@@ -625,8 +627,9 @@ export interface ConfigEntry {
   // key: used as identifier for the entry, also for localization
   key: string;
   type: ConfigEntryType;
-  // label: default label when no translation for the key is present
-  label: string;
+  // label: localized display label, resolved server-side; null when the entry carries no
+  // in-code label and no translation matches - fall back to `key`
+  label: string | null;
   default_value: ConfigValueType;
   required: boolean;
   // options [optional]: select from list of possible values/options
@@ -859,8 +862,6 @@ export interface MediaItem extends _MediaItemBase {
   metadata: MediaItemMetadata;
   favorite: boolean;
   position?: number; //required for playlist tracks, optional for all other
-  timestamp_added: number;
-  timestamp_modified: number;
 }
 
 export interface ItemMapping extends _MediaItemBase {
@@ -888,8 +889,8 @@ export interface AudioMetadata {
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
-  // album track only
-  album: ItemMapping | Album;
+  // album: the album this track appears on; null for tracks that are not album tracks
+  album: ItemMapping | Album | null;
   disc_number?: number;
   track_number?: number;
   // only populated when the full track is requested (get_track), never on listings
@@ -918,7 +919,7 @@ export interface AudioSource extends MediaItem {
 }
 
 export interface Audiobook extends MediaItem {
-  publisher: string;
+  publisher: string | null;
   authors: string[] | Artist[];
   narrators: string[] | Artist[];
   duration: number;
@@ -927,8 +928,8 @@ export interface Audiobook extends MediaItem {
 }
 
 export interface Podcast extends MediaItem {
-  publisher?: string;
-  total_episodes?: number;
+  publisher: string | null;
+  total_episodes: number | null;
 }
 
 export interface PodcastEpisode extends MediaItem {
@@ -1096,9 +1097,6 @@ export interface StreamDetails {
   stream_metadata?: StreamMetadata;
   duration?: number;
   audio_processing?: AudioProcessingChain | null;
-
-  queue_id?: string;
-  fade_in?: boolean;
 }
 
 // queue_item
@@ -1107,7 +1105,8 @@ export interface QueueItem {
   queue_id: string;
   queue_item_id: string;
   name: string;
-  duration: number;
+  // duration: null for items without a fixed length (radio stations, live sources)
+  duration: number | null;
   sort_index: number;
   streamdetails?: StreamDetails;
   media_item?: PlayableMediaItemType;
@@ -1180,7 +1179,6 @@ export interface PlayerQueue {
   // When one or more sources are dynamic, the queue runs in dynamic mode
   // (is_dynamic), implicitly enabling autoplay and smart shuffle.
   sources: ItemMapping[];
-  enqueued_media_items: MediaItemType[];
   is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
@@ -1407,8 +1405,6 @@ export interface ProviderInstance {
   type: ProviderType;
   domain: string;
   name: string;
-  default_name: string;
-  instance_name_postfix?: string;
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;
