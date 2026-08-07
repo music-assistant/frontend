@@ -14,7 +14,6 @@ categories:
 
   - title: "🚀 Features and enhancements"
     labels:
-      - "feature"
       - "enhancement"
       - "new-feature"
 
@@ -26,8 +25,8 @@ categories:
     collapse-after: 3
     labels:
       - "ci"
-      - "documentation"
       - "maintenance"
+      - "refactor"
       - "dependencies"
 
 template: |
