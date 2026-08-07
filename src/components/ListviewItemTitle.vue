@@ -49,7 +49,8 @@
 </template>
 
 <script setup lang="ts">
-import { getBrowseFolderName, parseBool } from "@/helpers/utils";
+import { parseBool } from "@/helpers/parse";
+import { getBrowseFolderName } from "@/helpers/utils";
 import {
   MediaType,
   type BrowseFolder,
