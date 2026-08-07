@@ -81,7 +81,7 @@ export interface AudioProcessingDisplayPlayer {
   name: string;
   provider: string;
   active_output_protocol?: string | null;
-  output_protocols?: Array<{
+  output_protocols: Array<{
     output_protocol_id: string;
     is_native: boolean;
     protocol_domain?: string | null;
@@ -445,7 +445,7 @@ function resolveDestination(
 ): DestinationResolution | undefined {
   for (const player of Object.values(dependencies.players)) {
     if (player.player_id === playerId) continue;
-    const protocol = player.output_protocols?.find(
+    const protocol = player.output_protocols.find(
       (outputProtocol) =>
         !outputProtocol.is_native &&
         outputProtocol.output_protocol_id === playerId,
@@ -473,7 +473,7 @@ function resolveDestination(
     };
   }
 
-  const activeProtocol = player.output_protocols?.find(
+  const activeProtocol = player.output_protocols.find(
     (protocol) => protocol.output_protocol_id === activeProtocolId,
   );
   return {

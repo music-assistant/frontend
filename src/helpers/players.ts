@@ -11,11 +11,11 @@ export const isBuiltinPlayer = function (player: Player): boolean {
   return (
     player.player_id === webPlayer.player_id ||
     player.player_id === store.companionPlayerId ||
-    player.output_protocols?.filter(
+    player.output_protocols.some(
       (x) =>
         x.output_protocol_id === webPlayer.player_id ||
         x.output_protocol_id === store.companionPlayerId,
-    ).length > 0
+    )
   );
 };
 
