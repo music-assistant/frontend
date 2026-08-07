@@ -15,6 +15,7 @@ export interface ItemsListingPreferences {
   expand?: boolean;
   search?: string;
   collapseCollections?: boolean;
+  activeTab?: string;
 }
 
 /**
