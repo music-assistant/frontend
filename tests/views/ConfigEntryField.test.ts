@@ -5,12 +5,14 @@ import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import {
   ConfigEntryType,
-  type ConfigEntry,
   type ConfigValueType,
 } from "@/plugins/api/interfaces";
 import {
   NON_INTERACTIVE_ENTRY_TYPES,
+  UI_ENTRY_TYPE,
   type ConfigEntryUI,
+  type ConfigEntryUIType,
+  type InjectedConfigEntry,
 } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
 
@@ -25,7 +27,11 @@ const vuetify = createVuetify({ components, directives });
 const IMAGE_DATA_URI =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==";
 
-const INTERACTIVE_ENTRIES: [string, ConfigEntry][] = [
+// Third element: text the field only renders on the branch under test. Every branch but
+// the two link buttons is picked by entry type alone, and an entry that matches none of
+// them still renders a text input that honours the disabled state — so without this the
+// link button rows would keep passing after losing their branch.
+const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
   ["a text input", entry({ key: "name", type: ConfigEntryType.STRING })],
   [
     "a password input",
@@ -52,6 +58,27 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntry][] = [
       type: ConfigEntryType.ACTION,
       action: "authenticate",
     }),
+  ],
+  // both link buttons are injected by EditPlayer; the DSP one is recognised by the
+  // `injected` flag alongside its type, so it carries the flag here too
+  [
+    "a DSP settings button",
+    entry({
+      key: "dsp_settings",
+      type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
+      injected: true,
+      read_only: false,
+    }),
+    "open_dsp_settings",
+  ],
+  [
+    "a player options button",
+    entry({
+      key: "player_options",
+      type: ConfigEntryType.OPTIONS,
+      injected: true,
+    }),
+    "player_options.open",
   ],
   [
     "a number input without a range",
@@ -88,10 +115,16 @@ describe("ConfigEntryField", () => {
     },
   );
 
-  it.each(INTERACTIVE_ENTRIES)("disables %s", (_label, confEntry) => {
-    expect(controlStates(mountField(confEntry))).toEqual([false]);
-    expect(controlStates(mountField(confEntry, true))).toEqual([true]);
-  });
+  it.each(INTERACTIVE_ENTRIES)(
+    "disables %s",
+    (_label, confEntry, branchText) => {
+      const wrapper = mountField(confEntry);
+
+      if (branchText) expect(wrapper.text()).toContain(branchText);
+      expect(controlStates(wrapper)).toEqual([false]);
+      expect(controlStates(mountField(confEntry, true))).toEqual([true]);
+    },
+  );
 
   // these types take no disabled binding; a form hides them while their dependency is unmet
   it.each(NON_INTERACTIVE_ENTRY_TYPES)(
@@ -101,7 +134,7 @@ describe("ConfigEntryField", () => {
       const wrapper = mountField(
         entry({
           key: "status",
-          type: type as ConfigEntryType,
+          type,
           label: "Nothing to configure",
           value: IMAGE_DATA_URI,
         }),
@@ -139,8 +172,11 @@ describe("ConfigEntryField", () => {
 });
 
 function entry(
-  overrides: Partial<ConfigEntry> & { key: string; type: ConfigEntryType },
-): ConfigEntry {
+  overrides: Partial<InjectedConfigEntry> & {
+    key: string;
+    type: ConfigEntryUIType;
+  },
+): ConfigEntryUI {
   return {
     category: "generic",
     default_value: null,
@@ -148,10 +184,10 @@ function entry(
     required: false,
     value: null as ConfigValueType,
     ...overrides,
-  } as ConfigEntry;
+  } as ConfigEntryUI;
 }
 
-function rangedEntry(type: ConfigEntryType): ConfigEntry {
+function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
   return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
 }
 
