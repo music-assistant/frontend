@@ -418,7 +418,7 @@ const getAllFilteredPlayers = function () {
 
       // Check if any output protocol's domain matches a selected provider domain
       const player = api.players[item.player_id];
-      if (player?.output_protocols) {
+      if (player) {
         return player.output_protocols.some(
           (protocol) =>
             protocol.protocol_domain &&

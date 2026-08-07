@@ -23,7 +23,7 @@ interface PlayerDisplayMock {
   name: string;
   provider: string;
   active_output_protocol?: string | null;
-  output_protocols?: Array<{
+  output_protocols: Array<{
     output_protocol_id: string;
     is_native: boolean;
     protocol_domain?: string | null;

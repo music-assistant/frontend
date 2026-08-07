@@ -680,7 +680,7 @@ const showLyricsOffset = computed(() => {
     player.active_output_protocol !== "native"
   ) {
     domain =
-      player.output_protocols?.find(
+      player.output_protocols.find(
         (p) => p.output_protocol_id === player.active_output_protocol,
       )?.protocol_domain ?? undefined;
   }

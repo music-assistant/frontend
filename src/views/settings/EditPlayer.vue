@@ -81,7 +81,7 @@
               </span>
             </div>
             <div
-              v-if="api.players[config.player_id]?.output_protocols?.length"
+              v-if="api.players[config.player_id]?.output_protocols.length"
               class="protocol-chips"
             >
               <v-chip
