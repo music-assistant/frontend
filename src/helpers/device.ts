@@ -4,10 +4,16 @@ export type DeviceType = "desktop" | "phone" | "tablet";
 
 const md = new MobileDetect(window.navigator.userAgent);
 
-// resolved once from the user agent, so it never changes while the app runs
-export const DEVICE_TYPE: DeviceType = md.tablet()
+// All resolved once from the user agent, so they never change while the app runs.
+// The three flags say nothing about the viewport and overlap: a phone or tablet is
+// also mobile, while mobile on its own covers devices too obscure to classify further.
+export const IS_TABLET_UA = Boolean(md.tablet());
+export const IS_PHONE_UA = Boolean(md.phone());
+export const IS_MOBILE_UA = Boolean(md.mobile());
+
+export const DEVICE_TYPE: DeviceType = IS_TABLET_UA
   ? "tablet"
-  : md.phone() || md.mobile()
+  : IS_PHONE_UA || IS_MOBILE_UA
     ? "phone"
     : "desktop";
 
