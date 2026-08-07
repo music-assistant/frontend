@@ -1,8 +1,7 @@
 import { App, reactive, toRefs, watch, Directive } from "vue";
-import MobileDetect from "mobile-detect";
+import { IS_MOBILE_UA, IS_PHONE_UA, IS_TABLET_UA } from "@/helpers/device";
 
 type MobileDeviceType = "mobile" | "phone" | "tablet";
-const md = new MobileDetect(window.navigator.userAgent);
 
 type Breakpoints =
   | "bp0"
@@ -73,19 +72,19 @@ export const getBreakpointValue = (key: Key): boolean => {
     if (typeof key === "object") condition = key.condition || "lt";
     switch (breakpoint) {
       case "mobile":
-        return md.mobile()
+        return IS_MOBILE_UA
           ? true
           : condition === "lt"
             ? state.width < breakpoints["bp3"]
             : state.width >= breakpoints["bp3"];
       case "phone":
-        return md.phone()
+        return IS_PHONE_UA
           ? true
           : condition === "lt"
             ? state.width < breakpoints["bp3"]
             : state.width >= breakpoints["bp3"];
       case "tablet":
-        return md.tablet()
+        return IS_TABLET_UA
           ? true
           : condition === "lt"
             ? state.width < breakpoints["bp3"]
@@ -127,24 +126,21 @@ const vBreakpoint: Directive = {
 
     const isMobileDevice = (device: MobileDeviceType) => {
       if (device === "mobile") {
-        const isMobileDevice = md.mobile() ? true : false;
-        return isMobileDevice
+        return IS_MOBILE_UA
           ? true
           : condition === "lt"
             ? state.width < breakpoints["bp3"]
             : state.width >= breakpoints["bp3"];
       }
       if (device === "phone") {
-        const isPhoneDevice = md.phone() ? true : false;
-        return isPhoneDevice
+        return IS_PHONE_UA
           ? true
           : condition === "lt"
             ? state.width < breakpoints["bp3"]
             : state.width >= breakpoints["bp3"];
       }
       if (device === "tablet") {
-        const isTabletDevice = md.tablet() ? true : false;
-        return isTabletDevice
+        return IS_TABLET_UA
           ? true
           : condition === "lt"
             ? state.width < breakpoints["bp3"]
