@@ -2450,6 +2450,8 @@ export class MusicAssistantApi {
   }
 
   private async _openBackgroundTasks(): Promise<void> {
+    // Imported dynamically: router.ts imports this module statically, so a
+    // static import here would make the api client and the router directly circular.
     const { default: router } = await import("../router");
     if (router.currentRoute.value.name === "backgroundtasks") {
       return;

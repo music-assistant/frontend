@@ -318,6 +318,8 @@ export class AuthManager {
 
     // Notify companion app launcher (if running in companion mode)
     // This navigates back to the server selection screen
+    // Imported dynamically: companion.ts imports this module statically, so a
+    // static import here would make the two plugins directly circular.
     const { notifyCompanionLogout, isCompanionApp } =
       await import("@/plugins/companion");
     if (isCompanionApp()) {
