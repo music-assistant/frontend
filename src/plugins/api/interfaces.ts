@@ -839,7 +839,6 @@ export interface MediaItemMetadata {
   replaygain?: number;
   popularity?: number;
   release_date?: string;
-  cache_checksum?: string;
   chapters?: MediaItemChapter[];
   life_span?: LifeSpan;
   artist_entity_type?: ArtistEntityType;
@@ -1197,7 +1196,7 @@ export interface OutputProtocol {
   output_protocol_id: string; // Unique ID: "native" or protocol player_id
   name: string; // Display name: "Native (Sonos)" or "AirPlay"
   is_native: boolean; // True if this is the player's native output
-  protocol_domain: string | null; // e.g., "airplay", "dlna" (null for native)
+  protocol_domain: string; // e.g., "airplay", "dlna"; the player's own domain for native
   priority: number; // Lower = more preferred (native = 0 if supported)
   available: boolean; // Whether this output protocol is currently available
   // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin

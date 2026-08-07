@@ -247,7 +247,7 @@ export const getStreamingProviderMappings = function (
 ) {
   const result: ProviderMapping[] = [];
   if (!itemDetails || !("provider_mappings" in itemDetails)) return result;
-  for (const provider_mapping of itemDetails.provider_mappings || []) {
+  for (const provider_mapping of itemDetails.provider_mappings) {
     if (provider_mapping.provider_domain.startsWith("filesystem")) continue;
     if (provider_mapping.provider_domain == "plex") continue;
     if (
@@ -424,9 +424,7 @@ export const getMediaItemImage = function (
 export const getMediaItemImageUrl = function (
   img: MediaItemImage,
   size?: number,
-  checksum?: string,
 ): string {
-  if (!checksum) checksum = "";
   if (!img || !img.path) return "";
   if (img.path.startsWith("data:image")) return img.path;
   if (
@@ -438,11 +436,9 @@ export const getMediaItemImageUrl = function (
     // Note that we play it safe here and always enforce the proxy if the schema is different
     const normalizedSize = normalizeImageProxySize(size);
     if (img.proxy_id && serverSupportsOpaqueImageProxy()) {
-      // canonical /imageproxy/<proxy_id>?size=&checksum= form. checksum is kept
-      // as a cache-buster query param (the server ignores unknown params).
+      // canonical /imageproxy/<proxy_id>?size= form
       const params = new URLSearchParams();
       if (normalizedSize) params.set("size", String(normalizedSize));
-      if (checksum) params.set("checksum", checksum);
       const qs = params.toString();
       return qs
         ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
@@ -450,7 +446,7 @@ export const getMediaItemImageUrl = function (
     }
     // legacy form, for servers on schema < 31 or images without a proxy_id
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
-    const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
+    const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}`;
     if (normalizedSize) return imageUrl + `&size=${normalizedSize}`;
     return imageUrl;
   }
@@ -470,9 +466,7 @@ export const getImageThumbForItem = function (
   // find image in mediaitem
   const img = getMediaItemImage(mediaItem, type);
   if (!img || !img.path) return undefined;
-  const checksum =
-    "metadata" in mediaItem ? mediaItem.metadata?.cache_checksum : "";
-  return getMediaItemImageUrl(img, size, checksum);
+  return getMediaItemImageUrl(img, size);
 };
 
 export const numberRange = function (start: number, end: number): number[] {

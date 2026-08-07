@@ -154,32 +154,6 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     expect(destination.details).toBeUndefined();
   });
 
-  it("uses the protocol player provider when the active entry has no domain", () => {
-    dependencies.players.kitchen.active_output_protocol = "sendspin-kitchen";
-    dependencies.players.kitchen.output_protocols = [
-      makeOutputProtocol({
-        output_protocol_id: "sendspin-kitchen",
-        protocol_domain: null,
-      }),
-    ];
-    dependencies.players["sendspin-kitchen"] = {
-      player_id: "sendspin-kitchen",
-      name: "Kitchen",
-      provider: "sendspin--bridge",
-      active_output_protocol: null,
-      output_protocols: [],
-    };
-
-    const destination = buildDisplay({
-      outputs: [{ player_ids: ["kitchen"], output_format: makeFormat() }],
-    }).outputPaths[0].destination;
-
-    expect(destination).toMatchObject({
-      title: "Kitchen",
-      providerIconDomain: "sendspin",
-    });
-  });
-
   it("never falls back to the base provider for an unresolved active protocol", () => {
     dependencies.players.kitchen.active_output_protocol = "missing-protocol";
     dependencies.players.kitchen.output_protocols = [];

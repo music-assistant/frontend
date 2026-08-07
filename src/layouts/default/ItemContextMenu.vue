@@ -858,7 +858,7 @@ export const getContextMenuItems = async function (
     )
   ) {
     const item = items[0] as Radio | Track | Playlist;
-    const hasBuiltinProvider = item.provider_mappings?.some(
+    const hasBuiltinProvider = item.provider_mappings.some(
       (pm) => pm.provider_domain === "builtin",
     );
     const builtinProvider = api.getProvider("builtin");
@@ -872,7 +872,7 @@ export const getContextMenuItems = async function (
       [MediaType.TRACK]: "edit_track",
       [MediaType.PLAYLIST]: "edit_playlist",
     };
-    const supportsEdit = builtinProvider?.supported_features?.includes(
+    const supportsEdit = builtinProvider?.supported_features.includes(
       featureMap[item.media_type],
     );
     // For playlists, also check is_editable flag (builtin special playlists are not editable)

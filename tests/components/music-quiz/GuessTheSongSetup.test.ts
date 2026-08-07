@@ -78,6 +78,20 @@ function mountConfig(includeSimilarMusic = false, sharedConfigValid = true) {
   });
 }
 
+// api.search always returns every result list, so fill the ones a case does not
+// exercise rather than letting a partial mock stand in for a server response
+const searchResults = <T extends Record<string, unknown>>(lists: T) => ({
+  artists: [],
+  albums: [],
+  tracks: [],
+  playlists: [],
+  radio: [],
+  podcasts: [],
+  audiobooks: [],
+  genres: [],
+  ...lists,
+});
+
 describe("GuessTheSongSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -120,29 +134,33 @@ describe("GuessTheSongSetup", () => {
       ["library"],
     );
 
-    newSearch.resolve({
-      tracks: [],
-      playlists: [
-        {
-          uri: "playlist:new",
-          name: "Newest result",
-          media_type: MediaType.PLAYLIST,
-        },
-      ],
-    });
+    newSearch.resolve(
+      searchResults({
+        tracks: [],
+        playlists: [
+          {
+            uri: "playlist:new",
+            name: "Newest result",
+            media_type: MediaType.PLAYLIST,
+          },
+        ],
+      }),
+    );
     await flushPromises();
     expect(wrapper.text()).toContain("Newest result");
 
-    oldSearch.resolve({
-      tracks: [],
-      playlists: [
-        {
-          uri: "playlist:old",
-          name: "Older result",
-          media_type: MediaType.PLAYLIST,
-        },
-      ],
-    });
+    oldSearch.resolve(
+      searchResults({
+        tracks: [],
+        playlists: [
+          {
+            uri: "playlist:old",
+            name: "Older result",
+            media_type: MediaType.PLAYLIST,
+          },
+        ],
+      }),
+    );
     await flushPromises();
 
     expect(wrapper.text()).toContain("Newest result");
@@ -150,16 +168,18 @@ describe("GuessTheSongSetup", () => {
   });
 
   it("emits a name-free discriminated create request", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [],
-      playlists: [
-        {
-          uri: "playlist:test",
-          name: "Test playlist",
-          media_type: MediaType.PLAYLIST,
-        },
-      ],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [],
+        playlists: [
+          {
+            uri: "playlist:test",
+            name: "Test playlist",
+            media_type: MediaType.PLAYLIST,
+          },
+        ],
+      }),
+    );
 
     const wrapper = mountConfig();
     expect(wrapper.find("#quiz-name").exists()).toBe(false);
@@ -193,16 +213,18 @@ describe("GuessTheSongSetup", () => {
   });
 
   it("blocks create when shared setup is invalid", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [],
-      playlists: [
-        {
-          uri: "playlist:test",
-          name: "Test playlist",
-          media_type: MediaType.PLAYLIST,
-        },
-      ],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [],
+        playlists: [
+          {
+            uri: "playlist:test",
+            name: "Test playlist",
+            media_type: MediaType.PLAYLIST,
+          },
+        ],
+      }),
+    );
     const wrapper = mountConfig(false, false);
 
     await wrapper
@@ -224,16 +246,18 @@ describe("GuessTheSongSetup", () => {
   });
 
   it("hides already selected items from the search results", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [],
-      playlists: [
-        {
-          uri: "playlist:test",
-          name: "Test playlist",
-          media_type: MediaType.PLAYLIST,
-        },
-      ],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [],
+        playlists: [
+          {
+            uri: "playlist:test",
+            name: "Test playlist",
+            media_type: MediaType.PLAYLIST,
+          },
+        ],
+      }),
+    );
     const wrapper = mountConfig();
 
     await wrapper
@@ -256,19 +280,21 @@ describe("GuessTheSongSetup", () => {
   });
 
   it("emits source uris for a playlist and a genre together", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [],
-      playlists: [
-        {
-          uri: "playlist:test",
-          name: "Test playlist",
-          media_type: MediaType.PLAYLIST,
-        },
-      ],
-      genres: [
-        { uri: "genre:rock", name: "Rock", media_type: MediaType.GENRE },
-      ],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [],
+        playlists: [
+          {
+            uri: "playlist:test",
+            name: "Test playlist",
+            media_type: MediaType.PLAYLIST,
+          },
+        ],
+        genres: [
+          { uri: "genre:rock", name: "Rock", media_type: MediaType.GENRE },
+        ],
+      }),
+    );
     const wrapper = mountConfig(true);
 
     const searchInput = wrapper.find(
@@ -303,16 +329,18 @@ describe("GuessTheSongSetup", () => {
   });
 
   it("removes a selected source when its chip is clicked", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [],
-      playlists: [
-        {
-          uri: "playlist:test",
-          name: "Test playlist",
-          media_type: MediaType.PLAYLIST,
-        },
-      ],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [],
+        playlists: [
+          {
+            uri: "playlist:test",
+            name: "Test playlist",
+            media_type: MediaType.PLAYLIST,
+          },
+        ],
+      }),
+    );
     const wrapper = mountConfig();
 
     await wrapper

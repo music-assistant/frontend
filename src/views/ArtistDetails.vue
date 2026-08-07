@@ -470,7 +470,7 @@ const aggregatedProviderIdsForFeature = (feature: ProviderFeature) =>
   computed(() => {
     if (!itemDetails.value) return [];
     const ids = new Set<string>();
-    for (const mapping of itemDetails.value.provider_mappings || []) {
+    for (const mapping of itemDetails.value.provider_mappings) {
       if (!providerAllowed(mapping.provider_instance)) continue;
       if (
         api.providers[mapping.provider_instance]?.supported_features.includes(

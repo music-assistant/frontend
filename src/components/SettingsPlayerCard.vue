@@ -61,13 +61,13 @@
           >
             <template #prepend>
               <ProviderIcon
-                :domain="protocol.protocol_domain!"
+                :domain="protocol.protocol_domain"
                 :size="14"
                 class="chip-icon"
               />
             </template>
             {{
-              api.getProviderManifest(protocol.protocol_domain!)?.name ||
+              api.getProviderManifest(protocol.protocol_domain)?.name ||
               protocol.protocol_domain
             }}
           </v-chip>
@@ -146,7 +146,7 @@ const playerName = computed(() => {
 });
 
 const outputProtocols = computed(() => {
-  // Return only non-native protocols (ones with a protocol_domain)
+  // all output methods for this player, native included
   return player.value?.output_protocols || [];
 });
 

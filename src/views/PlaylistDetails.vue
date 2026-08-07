@@ -109,7 +109,7 @@ const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
-  const isSmartPlaylist = itemDetails.value?.provider_mappings?.some(
+  const isSmartPlaylist = itemDetails.value?.provider_mappings.some(
     (m) => m.provider_domain === "smart_playlist",
   );
   if (isSmartPlaylist) {

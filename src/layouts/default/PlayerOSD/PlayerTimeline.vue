@@ -318,7 +318,7 @@ const displayedElapsedTime = computed(() => {
 
 const chapterTicks = computed(() =>
   computeChapterTicks(
-    store.curQueueItem?.media_item?.metadata?.chapters,
+    store.curQueueItem?.media_item?.metadata.chapters,
     store.activePlayer?.current_media?.duration,
   ),
 );
