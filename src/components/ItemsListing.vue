@@ -439,10 +439,21 @@ watch(
     if (!tabs || tabs.length === 0) return;
     if (tabs.some((tab) => tab.id === activeTabId.value)) return;
     const hadActiveTab = activeTabId.value !== "";
-    activeTabId.value = tabs[0].id;
-    if (hadActiveTab) loadData(true);
+    const preferred = savedPrefs.value.activeTab;
+    const target = tabs.find((tab) => tab.id === preferred) ?? tabs[0];
+
+    activeTabId.value = target.id;
+
+    if (restoredFromPrevState) {
+      if (preferred && !tabs.some((tab) => tab.id === preferred)) {
+        loadData(true);
+      }
+    } else if (hadActiveTab || target.id !== tabs[0].id) {
+      loadData(true);
+    }
   },
 );
+let restoredFromPrevState = false;
 
 const getActiveTab = () => {
   return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
@@ -451,6 +462,13 @@ const getActiveTab = () => {
 const onTabChange = function (tabId: string) {
   if (!tabId || tabId === activeTabId.value) return;
   activeTabId.value = tabId;
+
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "activeTab",
+    tabId,
+  );
   loadData(true);
 };
 
@@ -1501,6 +1519,13 @@ const restoreSettings = async function () {
   // restore settings for this path/itemtype
   const prefs = savedPrefs.value;
 
+  if (
+    prefs.activeTab &&
+    props.toolBarTabs?.some((tab) => tab.id === prefs.activeTab)
+  ) {
+    activeTabId.value = prefs.activeTab;
+  }
+
   // get stored/default viewMode for this itemtype
   if (props.forcedViewMode) {
     viewMode.value = props.forcedViewMode;
@@ -1787,6 +1812,7 @@ onMounted(async () => {
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
   if (props.restoreState && store.prevState?.path == key) {
+    restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
     allItems.value = store.prevState.allItems;
