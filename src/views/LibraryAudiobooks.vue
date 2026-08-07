@@ -211,7 +211,7 @@ onMounted(() => {
     refreshArtistTypes();
   });
   onBeforeUnmount(unsubSync);
-  
+
   const unsubArtistSync = onLibrarySyncCompleted(MediaType.ARTIST, () => {
     refreshArtistTypes();
   });
