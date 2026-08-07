@@ -173,7 +173,7 @@ const panelVisible = computed(
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
   if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
   const artist =
-    "artists" in item ? item.artists?.[0]?.name?.toLowerCase() || "" : "";
+    "artists" in item ? item.artists[0]?.name.toLowerCase() || "" : "";
   return `${item.media_type}:${item.name.toLowerCase()}:${artist}`;
 };
 
@@ -203,7 +203,7 @@ const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
   const label = $t(item.media_type);
   const artists =
-    "artists" in item && item.artists?.length
+    "artists" in item && item.artists.length
       ? getArtistsString(item.artists)
       : "";
   return artists ? `${label} • ${artists}` : label;

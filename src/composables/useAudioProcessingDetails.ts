@@ -453,9 +453,7 @@ function resolveDestination(
     if (!protocol) continue;
     return {
       player,
-      providerDomain:
-        protocol.protocol_domain ??
-        playerProviderDomain(dependencies.players[playerId], dependencies),
+      providerDomain: protocol.protocol_domain,
     };
   }
 
@@ -478,13 +476,7 @@ function resolveDestination(
   );
   return {
     player,
-    providerDomain: activeProtocol
-      ? (activeProtocol.protocol_domain ??
-        playerProviderDomain(
-          dependencies.players[activeProtocolId],
-          dependencies,
-        ))
-      : undefined,
+    providerDomain: activeProtocol?.protocol_domain,
   };
 }
 

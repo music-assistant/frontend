@@ -597,7 +597,7 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
   if (preserveValues) {
     for (const entry of formEntries.value) previous[entry.key] = entry.value;
   }
-  formEntries.value = (formStep.entries || []).map((entry) => {
+  formEntries.value = formStep.entries.map((entry) => {
     const copy: ConfigEntry = { ...entry };
     if (preserveValues && entry.key in previous) {
       copy.value = previous[entry.key];

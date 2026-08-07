@@ -71,7 +71,7 @@ function createOutputProtocol(
     output_protocol_id: "native",
     name: "Native",
     is_native: true,
-    protocol_domain: null,
+    protocol_domain: "test",
     priority: 0,
     available: true,
     ...overrides,

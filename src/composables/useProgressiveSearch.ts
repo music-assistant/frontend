@@ -344,14 +344,14 @@ const emptyResults = (): SearchResults => ({
 });
 
 const isEmptyResult = (result: SearchResults): boolean =>
-  !result.artists?.length &&
-  !result.albums?.length &&
-  !result.tracks?.length &&
-  !result.playlists?.length &&
-  !result.radio?.length &&
-  !result.podcasts?.length &&
-  !result.audiobooks?.length &&
-  !result.genres?.length;
+  !result.artists.length &&
+  !result.albums.length &&
+  !result.tracks.length &&
+  !result.playlists.length &&
+  !result.radio.length &&
+  !result.podcasts.length &&
+  !result.audiobooks.length &&
+  !result.genres.length;
 
 // Keeps the relative order but floats items whose name matches the query
 // exactly, so a late provider with the exact hit still lands on top.

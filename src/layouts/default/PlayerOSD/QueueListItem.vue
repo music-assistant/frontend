@@ -209,7 +209,7 @@ const title = computed(() => props.item.media_item?.name || props.item.name);
 
 const artistName = computed(() => {
   const mediaItem = props.item.media_item;
-  if (mediaItem && "artists" in mediaItem && mediaItem.artists?.length) {
+  if (mediaItem && "artists" in mediaItem && mediaItem.artists.length) {
     return mediaItem.artists.map((a) => a.name).join(", ");
   }
   return "";

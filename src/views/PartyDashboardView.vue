@@ -493,8 +493,8 @@ const fetchLyrics = async () => {
   if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
 
   const track = mediaItem as Track;
-  const existingPlain = track.metadata?.lyrics?.trim() || null;
-  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+  const existingPlain = track.metadata.lyrics?.trim() || null;
+  const existingSynced = track.metadata.lrc_lyrics?.trim() || null;
 
   if (existingPlain || existingSynced) {
     currentLyrics.value = { plain: existingPlain, synced: existingSynced };

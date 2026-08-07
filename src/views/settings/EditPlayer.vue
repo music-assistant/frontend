@@ -93,33 +93,33 @@
                 class="protocol-chip"
                 :class="{
                   'protocol-chip--clickable': api.getProviderManifest(
-                    protocol.protocol_domain!,
+                    protocol.protocol_domain,
                   )?.documentation,
                   'protocol-chip--unavailable': !protocol.available,
                 }"
                 @click="
-                  api.getProviderManifest(protocol.protocol_domain!)
+                  api.getProviderManifest(protocol.protocol_domain)
                     ?.documentation &&
                   openLinkInNewTab(
-                    api.getProviderManifest(protocol.protocol_domain!)!
+                    api.getProviderManifest(protocol.protocol_domain)!
                       .documentation!,
                   )
                 "
               >
                 <template #prepend>
                   <ProviderIcon
-                    :domain="protocol.protocol_domain!"
+                    :domain="protocol.protocol_domain"
                     :size="14"
                     class="chip-icon"
                   />
                 </template>
                 {{
-                  api.getProviderManifest(protocol.protocol_domain!)?.name ||
+                  api.getProviderManifest(protocol.protocol_domain)?.name ||
                   protocol.protocol_domain
                 }}
                 <v-icon
                   v-if="
-                    api.getProviderManifest(protocol.protocol_domain!)
+                    api.getProviderManifest(protocol.protocol_domain)
                       ?.documentation
                   "
                   size="12"

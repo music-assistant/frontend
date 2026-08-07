@@ -194,7 +194,7 @@ const artistName = computed(() => {
     props.mediaItem.media_type === "track"
   ) {
     const track = props.mediaItem as Track;
-    if (track.artists?.length) {
+    if (track.artists.length) {
       return track.artists.map((a) => a.name).join(", ");
     }
   }
