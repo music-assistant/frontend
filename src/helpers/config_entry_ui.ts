@@ -1,15 +1,8 @@
 import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 
-export const CONFIG_KEY_UI = {
-  DSP_SETTINGS_LINK: "dsp_settings_link",
-} as const;
-
-export type UiOnlyKey = (typeof CONFIG_KEY_UI)[keyof typeof CONFIG_KEY_UI];
-export type ConfigKeyUI = string | UiOnlyKey;
-
 export const UI_ENTRY_TYPE = {
-  // entry type equals key for dsp_settings_link
-  DSP_SETTINGS_LINK: CONFIG_KEY_UI.DSP_SETTINGS_LINK,
+  // the injected DSP entry carries key `dsp_settings` and this as its type
+  DSP_SETTINGS_LINK: "dsp_settings_link",
 } as const;
 
 export type UiOnlyEntryType =
