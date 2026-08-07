@@ -13,6 +13,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Checking out the code is all this workflow needs.
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: "22.x" # set this to the node version to use
 
