@@ -131,7 +131,8 @@ describe("HassControlsField", () => {
   it("removes a selected entity", async () => {
     const wrapper = mountControlsField(["switch.tv", "switch.amp"]);
 
-    await wrapper.get(".v-chip__close").trigger("click");
+    // the first badge's remove button, i.e. the one for switch.tv
+    await wrapper.findAll("button[aria-label]")[0].trigger("click");
 
     expect(wrapper.emitted("update:value")).toEqual([[["switch.amp"]]]);
   });

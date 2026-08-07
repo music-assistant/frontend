@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import HassEntityPickerDialog from "@/components/HassEntityPickerDialog.vue";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { ConfigEntryUI, HassControlKey } from "@/helpers/config_entry_ui";
 import type { HassControlEntity } from "@/helpers/hass_controls";
 import { $t } from "@/plugins/i18n";
+import { Plus, X } from "@lucide/vue";
 import { computed, ref } from "vue";
 
 const props = defineProps<{
@@ -40,32 +43,35 @@ const remove = (entityId: string) => {
 </script>
 
 <template>
-  <div class="hass-controls">
-    <v-label class="hass-controls-label">{{ label }}</v-label>
-    <div class="hass-controls-selection">
-      <v-chip
-        v-for="entityId of selected"
-        :key="entityId"
-        size="small"
-        :closable="!disabled"
-        :disabled="disabled"
-        @click:close="remove(entityId)"
-      >
+  <div class="flex flex-col gap-2 py-2">
+    <span class="text-muted-foreground text-sm">{{ label }}</span>
+    <div class="flex flex-wrap gap-1.5">
+      <Badge v-for="entityId of selected" :key="entityId" variant="secondary">
         {{ entityTitle(entityId) }}
-      </v-chip>
-      <span v-if="selected.length === 0" class="hass-controls-empty">
+        <button
+          v-if="!disabled"
+          type="button"
+          class="hover:text-foreground ml-1 cursor-pointer"
+          :aria-label="$t('settings.hass_controls.remove_entity')"
+          @click="remove(entityId)"
+        >
+          <X class="size-3" />
+        </button>
+      </Badge>
+      <span v-if="selected.length === 0" class="text-muted-foreground text-xs">
         {{ $t("settings.hass_controls.none_selected") }}
       </span>
     </div>
     <div>
-      <v-btn
-        variant="outlined"
-        size="small"
+      <Button
+        variant="outline"
+        size="sm"
         :disabled="disabled"
         @click="showPicker = true"
       >
+        <Plus class="size-4" />
         {{ $t("settings.hass_controls.add_entity") }}
-      </v-btn>
+      </Button>
     </div>
     <HassEntityPickerDialog
       v-model="showPicker"
@@ -75,28 +81,3 @@ const remove = (entityId: string) => {
     />
   </div>
 </template>
-
-<style scoped>
-.hass-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.hass-controls-label {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.hass-controls-selection {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.hass-controls-empty {
-  font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-}
-</style>

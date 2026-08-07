@@ -72,14 +72,15 @@
               <Badge v-if="isAdded(entity)" variant="secondary">
                 {{ $t("settings.hass_controls.already_added") }}
               </Badge>
-              <Badge
-                v-for="role of extraRoles(entity)"
-                v-else
-                :key="role"
-                variant="outline"
-              >
-                {{ $t(`settings.hass_controls.role.${role}`) }}
-              </Badge>
+              <template v-else>
+                <Badge
+                  v-for="role of extraRoles(entity)"
+                  :key="role"
+                  variant="outline"
+                >
+                  {{ $t(`settings.hass_controls.role.${role}`) }}
+                </Badge>
+              </template>
             </button>
           </div>
           <p
@@ -150,8 +151,9 @@ const searchThrottle = ref<number | undefined>();
 let searchRequestId = 0;
 
 watch(model, (open) => {
-  if (!open) return;
+  // also on close, or a search scheduled just before it still reaches Home Assistant
   clearTimeout(searchThrottle.value);
+  if (!open) return;
   search.value = "";
   groups.value = [];
   truncated.value = false;

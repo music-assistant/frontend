@@ -358,6 +358,7 @@
             "no_device": "No device",
             "no_area": "No area",
             "none_selected": "No entities selected",
+            "remove_entity": "Remove entity",
             "already_added": "Added",
             "role": {
                 "power": "Power",
