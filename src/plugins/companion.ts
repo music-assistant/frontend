@@ -27,6 +27,7 @@ import {
 import { getMediaImageUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { PlaybackState, Player, PlayerSource } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { ref, watch } from "vue";
 
@@ -508,7 +509,6 @@ export const initializeCompanionIntegration = async (
 
   // Configure native Sendspin player (backend will check if enabled)
   if (serverAddress) {
-    const { authManager } = await import("@/plugins/auth");
     const token = authManager.getToken();
     if (token) {
       const playerId = await configureSendspin(serverAddress, token);
