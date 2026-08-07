@@ -333,9 +333,12 @@ const config_entries = computed(() => {
       key: `${entry.key}_${UI_ENTRY_TYPE.HASS_CONTROL_PICKER}`,
       type: UI_ENTRY_TYPE.HASS_CONTROL_PICKER,
       category: entry.category,
-      // stay with the entry it fills in when the form hides or folds that one away
+      // stay with the entry it fills in when the form hides, folds away or gates that one
       advanced: entry.advanced,
       hidden: entry.hidden,
+      depends_on: entry.depends_on,
+      depends_on_value: entry.depends_on_value,
+      depends_on_value_not: entry.depends_on_value_not,
       label: "",
       required: false,
       default_value: null,

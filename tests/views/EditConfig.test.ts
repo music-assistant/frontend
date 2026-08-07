@@ -36,6 +36,38 @@ vi.mock("vue-router", async (importOriginal) => {
 });
 
 describe("EditConfig", () => {
+  it.each([
+    ConfigEntryType.DIVIDER,
+    ConfigEntryType.LABEL,
+    ConfigEntryType.ALERT,
+    ConfigEntryType.IMAGE,
+  ])("hides a %s entry while its dependency is unmet", (type) => {
+    const wrapper = mountEntries([
+      entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),
+      dependentEntry({ key: "feature_status", type }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["enable_feature"]);
+  });
+
+  it.each([
+    ConfigEntryType.DIVIDER,
+    ConfigEntryType.LABEL,
+    ConfigEntryType.ALERT,
+    ConfigEntryType.IMAGE,
+  ])("shows a %s entry once its dependency is met", (type) => {
+    const wrapper = mountEntries([
+      entry({
+        key: "enable_feature",
+        type: ConfigEntryType.BOOLEAN,
+        value: true,
+      }),
+      dependentEntry({ key: "feature_status", type }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["enable_feature", "feature_status"]);
+  });
+
   it("fills in the entry a field points at and offers the value under its name", async () => {
     const wrapper = mountEntries([
       entry({
