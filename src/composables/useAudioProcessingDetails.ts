@@ -77,8 +77,8 @@ export interface AudioProcessingDetailsDisplay {
   outputPaths: AudioProcessingOutputDisplay[];
 }
 
-// the subset of Player the display builder needs, so it stays independent of
-// the rest of the player model while tracking its types
+// the fields of Player the display builder reads, derived so they cannot drift
+// from the player model
 export type AudioProcessingDisplayPlayer = Pick<
   Player,
   | "player_id"

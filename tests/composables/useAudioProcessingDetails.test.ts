@@ -120,7 +120,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       const protocolId = `${protocolDomain}-kitchen`;
       dependencies.players.kitchen.active_output_protocol = protocolId;
       dependencies.players.kitchen.output_protocols = [
-        makeOutputProtocol(protocolId, protocolDomain),
+        makeOutputProtocol({
+          output_protocol_id: protocolId,
+          protocol_domain: protocolDomain,
+        }),
       ];
 
       const destination = buildDisplay({
@@ -154,7 +157,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("uses the protocol player provider when the active entry has no domain", () => {
     dependencies.players.kitchen.active_output_protocol = "sendspin-kitchen";
     dependencies.players.kitchen.output_protocols = [
-      makeOutputProtocol("sendspin-kitchen", null),
+      makeOutputProtocol({
+        output_protocol_id: "sendspin-kitchen",
+        protocol_domain: null,
+      }),
     ];
     dependencies.players["sendspin-kitchen"] = {
       player_id: "sendspin-kitchen",
@@ -268,7 +274,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("uses a shared active protocol icon for grouped output", () => {
     dependencies.players.office.active_output_protocol = "airplay-office";
     dependencies.players.office.output_protocols = [
-      makeOutputProtocol("airplay-office", "airplay"),
+      makeOutputProtocol({ output_protocol_id: "airplay-office" }),
     ];
     let destination = buildDisplay({
       outputs: [
@@ -596,7 +602,9 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
       name: "Kitchen",
       provider: "sonos--main",
       active_output_protocol: "airplay-kitchen",
-      output_protocols: [makeOutputProtocol("airplay-kitchen", "airplay")],
+      output_protocols: [
+        makeOutputProtocol({ output_protocol_id: "airplay-kitchen" }),
+      ],
     },
     office: {
       player_id: "office",
@@ -609,16 +617,16 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
 }
 
 function makeOutputProtocol(
-  outputProtocolId: string,
-  protocolDomain: string | null,
+  overrides: Partial<OutputProtocol> = {},
 ): OutputProtocol {
   return {
-    output_protocol_id: outputProtocolId,
-    name: outputProtocolId,
+    output_protocol_id: "airplay-kitchen",
+    name: "AirPlay",
     is_native: false,
-    protocol_domain: protocolDomain,
+    protocol_domain: "airplay",
     priority: 1,
     available: true,
+    ...overrides,
   };
 }
 
