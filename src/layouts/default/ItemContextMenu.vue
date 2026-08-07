@@ -213,13 +213,13 @@ import {
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
+import { playerVisible } from "@/helpers/players";
 import {
   gotoRadio,
   radioActionLabelKey,
   radioRelevant,
   radioSupported,
 } from "@/helpers/radio";
-import { playerVisible } from "@/helpers/utils";
 import { isItemInLibrary, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   Album,

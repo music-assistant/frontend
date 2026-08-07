@@ -308,12 +308,14 @@ import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
-  formatDuration,
-  getArtistsString,
-  getAuthorsNarratorsArray,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
+} from "@/helpers/media_item_actions";
+import {
+  formatDuration,
+  getArtistsString,
+  getAuthorsNarratorsArray,
   truncateString,
 } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";

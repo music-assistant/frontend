@@ -1,4 +1,4 @@
-import { isBuiltinPlayer, playerVisible } from "@/helpers/utils";
+import { isBuiltinPlayer, playerVisible } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlaybackState, type Player } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";

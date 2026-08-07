@@ -241,11 +241,8 @@ import {
   EmptyMedia,
 } from "@/components/ui/empty";
 import { useUserPreferences } from "@/composables/userPreferences";
-import {
-  handleMenuBtnClick,
-  panelViewItemResponsive,
-  scrollElement,
-} from "@/helpers/utils";
+import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {

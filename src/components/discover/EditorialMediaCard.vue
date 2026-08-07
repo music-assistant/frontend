@@ -87,12 +87,14 @@ import { itemArtwork } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
-  getArtistsString,
-  getAuthorsNarratorsArray,
-  getBrowseFolderName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
+} from "@/helpers/media_item_actions";
+import {
+  getArtistsString,
+  getAuthorsNarratorsArray,
+  getBrowseFolderName,
 } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {

@@ -20,7 +20,7 @@ vi.mock("@/plugins/api", async () => {
   return { api, default: api };
 });
 
-vi.mock("@/helpers/utils", () => ({
+vi.mock("@/helpers/players", () => ({
   groupMemberPickerVisible: () => true,
 }));
 
