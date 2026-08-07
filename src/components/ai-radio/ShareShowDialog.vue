@@ -141,7 +141,11 @@ watch(
     if (!isOpen || !props.station) return;
     json.value = "";
     lossy.value = false;
-    await buildJson(props.station);
+    try {
+      await buildJson(props.station);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    }
   },
 );
 </script>
