@@ -27,7 +27,7 @@
         <template #append>
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
-            :lyrics-active="lyricsActive"
+            :lyrics-active="showLyrics"
             @toggle-lyrics="toggleLyrics"
           />
 
@@ -592,7 +592,6 @@ const lyricsState = computed<
 // Lyrics are reached through a dedicated button in the header and shown in
 // their own panel, independent of the queue list (which has its own toggle).
 const showLyrics = ref(false);
-const lyricsActive = computed(() => showLyrics.value);
 
 const toggleLyrics = () => {
   showLyrics.value = !showLyrics.value;
