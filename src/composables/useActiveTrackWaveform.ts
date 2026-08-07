@@ -33,8 +33,11 @@ const watcherScope = effectScope(true);
 
 // A hot update evaluates a fresh copy of this module, so the watcher of the
 // replaced copy has to be stopped or it keeps fetching alongside the new one.
+// Accepting makes this module the boundary that receives that disposal, and
+// invalidating passes the update on so consumers render against the new copy.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => watcherScope.stop());
+  import.meta.hot.accept(() => import.meta.hot?.invalidate());
 }
 
 /**
