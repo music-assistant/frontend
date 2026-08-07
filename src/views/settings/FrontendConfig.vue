@@ -195,7 +195,7 @@ onMounted(() => {
   for (const entry of configEntries) {
     // fall back to the in-code label/category if a locale is missing the string, so we never
     // surface a raw i18n key in the UI.
-    entry.label = $t(`settings.${entry.key}.label`, entry.label);
+    entry.label = $t(`settings.${entry.key}.label`, entry.label ?? entry.key);
     if (entry.category) {
       // frontend-only entries carry their translated category heading directly (server entries
       // get category_label resolved server-side); EditConfig just reads category_label.
@@ -209,7 +209,10 @@ onMounted(() => {
     if (entry.options) {
       entry.options = entry.options.map((opt) => ({
         ...opt,
-        title: $t(`settings.${entry.key}.options.${opt.value}`, opt.title),
+        title: $t(
+          `settings.${entry.key}.options.${opt.value}`,
+          opt.title ?? String(opt.value),
+        ),
       }));
     }
   }

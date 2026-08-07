@@ -276,10 +276,9 @@
                 icon="mdi-album"
               />
               <MarqueeText :sync="marqueeSync">
-                <a
-                  style="color: secondary"
-                  @click="albumClick((item as Track)?.album)"
-                  >{{ item.album.name }}</a
+                <a style="color: secondary" @click="albumClick(item.album)">{{
+                  item.album.name
+                }}</a
                 ><span v-if="'year' in item.album && item.album.year">
                   • {{ item.album.year }}</span
                 ></MarqueeText

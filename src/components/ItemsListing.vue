@@ -1897,7 +1897,7 @@ export interface StoredState {
 }
 
 const getSortName = function (
-  item: MediaItemType | ItemMapping,
+  item: MediaItemType | ItemMapping | null,
   preferSortName = false,
 ) {
   if (!item) return "";
@@ -2021,13 +2021,6 @@ const getFilteredItems = function (
   }
   if (params.sortBy == "year_desc") {
     result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
-  }
-  if (params.sortBy == "recent") {
-    result.sort((a, b) => {
-      const aTimestamp = "timestamp_added" in a ? a.timestamp_added : 0;
-      const bTimestamp = "timestamp_added" in b ? b.timestamp_added : 0;
-      return bTimestamp - aTimestamp;
-    });
   }
 
   if (params.sortBy == "duration") {
