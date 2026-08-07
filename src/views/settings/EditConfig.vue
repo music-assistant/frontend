@@ -35,6 +35,10 @@
       </div>
     </div>
 
+    <!-- A protocol output only carries its own audio and transport settings. The player
+         controls, and the Home Assistant entity picker that fills them in, belong to the
+         parent player, so this section is given no provider domain or set-entry-value
+         handler. -->
     <ProtocolConfigSection
       :entries="entries || []"
       :protocol-panels="protocolPanels"
