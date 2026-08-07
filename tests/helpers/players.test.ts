@@ -177,6 +177,22 @@ describe("playerVisible", () => {
     expect(playerVisible(player, false, true)).toBe(true);
   });
 
+  it("keeps an unavailable player hidden when it does not need setup", () => {
+    const player = createPlayer({ available: false, needs_setup: false });
+
+    expect(playerVisible(player, false, true)).toBe(false);
+  });
+
+  it("hides an unavailable player of this device", () => {
+    const player = createPlayer({
+      player_id: "local-web-player",
+      available: false,
+    });
+    webPlayer.player_id = player.player_id;
+
+    expect(playerVisible(player)).toBe(false);
+  });
+
   it("hides a player that asks to be hidden", () => {
     expect(playerVisible(createPlayer({ hide_in_ui: true }))).toBe(false);
   });
@@ -238,6 +254,15 @@ describe("groupMemberPickerVisible", () => {
 
     expect(groupMemberPickerVisible(player)).toBe(true);
   });
+
+  it.each([PlayerType.LIGHT, PlayerType.VISUALIZER])(
+    "shows a hidden %s player",
+    (type) => {
+      const player = createPlayer({ type, hide_in_ui: true });
+
+      expect(groupMemberPickerVisible(player)).toBe(true);
+    },
+  );
 
   it("keeps unrelated hidden players out of the picker", () => {
     const player = createPlayer({
