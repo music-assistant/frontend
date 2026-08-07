@@ -3,7 +3,7 @@ on:
   schedule:
     - cron: "0 2 * * 2"
 
-# Pushing the translations branch needs contents, opening the PR needs pull-requests.
+# Pushing the translations branch needs contents, opening and labelling the PR needs pull-requests.
 permissions:
   contents: write
   pull-requests: write
@@ -47,5 +47,5 @@ jobs:
              else
               git commit -m 'Translations update'
               git push --set-upstream origin ${{ env.GITHUB_NEW_BRANCH_NAME }}
-              gh pr create --base main --head ${{ env.GITHUB_NEW_BRANCH_NAME }} --title "Lokalise translations update" --body ""
+              gh pr create --base main --head ${{ env.GITHUB_NEW_BRANCH_NAME }} --title "Lokalise translations update" --body "" --label maintenance
              fi
