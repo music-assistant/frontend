@@ -32,7 +32,15 @@ async function loadBreakpoint(
   return (await import("@/plugins/breakpoint")).getBreakpointValue;
 }
 
+const originalInnerWidth = Object.getOwnPropertyDescriptor(
+  window,
+  "innerWidth",
+);
+
 afterEach(() => {
+  if (originalInnerWidth) {
+    Object.defineProperty(window, "innerWidth", originalInnerWidth);
+  }
   vi.doUnmock("@/helpers/device");
   vi.resetModules();
 });
