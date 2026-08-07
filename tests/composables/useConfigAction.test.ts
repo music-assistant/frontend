@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useConfigAction } from "@/composables/useConfigAction";
 import {
   ConfigEntryType,
+  type ConfigActionResult,
   type ConfigEntry,
   type ConfigValueType,
 } from "@/plugins/api/interfaces";
@@ -87,6 +88,41 @@ describe("useConfigAction", () => {
     openSpy.mockRestore();
   });
 
+  it("toasts the localized message of an action result", async () => {
+    const { config, loading, invokeAction, saveValues, onAction } = setup();
+    invokeAction.mockResolvedValueOnce({
+      message: "Kopieer deze url naar je client",
+      open_url: null,
+    });
+
+    await onAction("do_thing", {}, true);
+
+    expect(config.value!.values).toEqual({ existing: entry() });
+    expect(saveValues).not.toHaveBeenCalled();
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "Kopieer deze url naar je client",
+    );
+    expect(loading.value).toBe(false);
+  });
+
+  it("opens the url of an action result and falls back to the generic message", async () => {
+    const openSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    const { config, invokeAction, onAction } = setup();
+    invokeAction.mockResolvedValueOnce({
+      message: null,
+      open_url: "https://example.com/mcp",
+    });
+
+    await onAction("do_thing", {}, false);
+
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    expect(config.value!.values).toEqual({ existing: entry() });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.action_completed");
+    openSpy.mockRestore();
+  });
+
   it("reports a failed action and clears loading", async () => {
     const { loading, invokeAction, onAction } = setup();
     invokeAction.mockRejectedValueOnce("action failed");
@@ -143,7 +179,8 @@ function setup() {
     values: { existing: entry() },
   });
   const loading = ref(false);
-  const invokeAction = vi.fn<(action: string) => Promise<ConfigEntry[]>>();
+  const invokeAction =
+    vi.fn<(action: string) => Promise<ConfigEntry[] | ConfigActionResult>>();
   const saveValues =
     vi.fn<
       (

@@ -7,7 +7,7 @@
     :gap="gap"
   >
     <template #actions>
-      <slot name="actions" />
+      <slot name="actions"></slot>
     </template>
 
     <EditorialMediaCard

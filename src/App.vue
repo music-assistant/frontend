@@ -141,7 +141,6 @@ const handleRemoteAuthenticated = async (credentials: {
   user?: User;
 }) => {
   try {
-    const { authManager } = await import("@/plugins/auth");
     let user = credentials.user;
 
     if (credentials.user && !credentials.token && !credentials.username) {
@@ -196,7 +195,6 @@ const handleLocalConnect = async (serverAddress: string) => {
     console.debug("[App] API already initialized, skipping");
     return;
   }
-  const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
   await httpProxyBridge.ensureReady();
   await httpProxyBridge.setTransport(null);
@@ -483,7 +481,6 @@ onMounted(async () => {
         // Reset initialization flag to allow re-initialization after reconnection
         initializationCompleted = false;
 
-        const { authManager } = await import("@/plugins/auth");
         if (store.isIngressSession) {
           // In Ingress mode, authentication happens via HA proxy headers
           try {

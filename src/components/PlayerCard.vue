@@ -218,6 +218,7 @@ import {
   isBuiltinPlayer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
+import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import {
   PlaybackState,
   type Player,
@@ -259,15 +260,7 @@ const emit = defineEmits<{
 const artworkFailed = ref(false);
 const { activeSource } = useActiveSource(toRef(props, "player"));
 
-const playerQueue = computed(() => {
-  if (props.player.active_source && props.player.active_source in api.queues) {
-    return api.queues[props.player.active_source];
-  }
-  if (!props.player.active_source && props.player.player_id in api.queues) {
-    return api.queues[props.player.player_id];
-  }
-  return undefined;
-});
+const playerQueue = computed(() => resolvePlayerQueue(props.player));
 
 const artworkUrl = computed(() => {
   if (

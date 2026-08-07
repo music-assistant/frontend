@@ -12,7 +12,7 @@
  * synchronize either.
  */
 
-import { ref, watchEffect, onScopeDispose, type Ref } from "vue";
+import { ref, watch, watchEffect, onScopeDispose, type Ref } from "vue";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { resolveQueueElapsedTime } from "@/helpers/activeElapsedTime";
@@ -21,13 +21,17 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
   const elapsedTime = ref(0);
   let rafId: number | null = null;
 
-  const update = () => {
-    // Keep the last known position when the queue reports no position, so the
-    // lyrics do not snap back to the start of the track.
+  // Keeps the last known position when the queue reports no position, so the
+  // lyrics do not snap back to the start of the track.
+  const syncPosition = () => {
     const elapsed = resolveQueueElapsedTime();
     if (elapsed !== undefined) {
       elapsedTime.value = elapsed;
     }
+  };
+
+  const update = () => {
+    syncPosition();
     rafId = requestAnimationFrame(update);
   };
 
@@ -56,6 +60,18 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
     }
   };
   document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  // A gated consumer renders the moment `enabled` flips, so it gets a position
+  // straight away rather than one frame late — and while the queue is paused no
+  // frame comes at all. The callback is untracked, keeping the high-frequency
+  // position out of the gate below.
+  watch(
+    () => enabled?.value ?? true,
+    (isEnabled) => {
+      if (isEnabled) syncPosition();
+    },
+    { immediate: true },
+  );
 
   // The queue's own state and active flag both change rarely, unlike the resolved
   // position: that is backed by a high-frequency reactive map, so reading it here

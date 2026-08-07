@@ -7,9 +7,10 @@
 import type { Ref } from "vue";
 import { toast } from "vue-sonner";
 import { mergeActionEntries } from "@/helpers/config_entry_ui";
-import { openActionUrlEntries } from "@/helpers/utils";
+import { openActionResultUrl, openActionUrlEntries } from "@/helpers/utils";
 import type {
   Config,
+  ConfigActionResult,
   ConfigEntry,
   ConfigValueType,
 } from "@/plugins/api/interfaces";
@@ -20,8 +21,8 @@ interface UseConfigActionOptions<T extends Config> {
   config: Ref<T | undefined>;
   /** Toggled around the invoke so the form can show its loading overlay. */
   loading: Ref<boolean>;
-  /** Runs the action on the server and returns the entries to re-render. */
-  invokeAction: (action: string) => Promise<ConfigEntry[]>;
+  /** Runs the action on the server and returns the entries to re-render, or its result. */
+  invokeAction: (action: string) => Promise<ConfigEntry[] | ConfigActionResult>;
   /** Persists the given raw values and returns the stored config. */
   saveValues: (values: Record<string, ConfigValueType>) => Promise<Config>;
 }
@@ -47,7 +48,15 @@ export function useConfigAction<T extends Config>({
   ) {
     loading.value = true;
     try {
-      const entries = openActionUrlEntries(await invokeAction(action));
+      const response = await invokeAction(action);
+      if (!Array.isArray(response)) {
+        // A result only reports the outcome of the action: it never carries
+        // values, so the form is left untouched.
+        openActionResultUrl(response.open_url);
+        toast.success(response.message || $t("settings.action_completed"));
+        return;
+      }
+      const entries = openActionUrlEntries(response);
       // An empty response means the action was a one-off side effect with
       // nothing to re-render: leave the form untouched.
       if (entries.length === 0) {

@@ -53,33 +53,37 @@ export const openLinkInNewTab = function (url: string) {
 };
 
 export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
-  // Open URL-type entries returned by a config invoke_action response (one-shot)
-  // via an anchor click, which browsers treat more leniently than window.open
-  // when the triggering user gesture has just expired. Only web URLs are
-  // opened, and all URL entries are dropped from the rendered form.
-  const urls: string[] = [];
+  // Open URL-type entries returned by a config invoke_action response (one-shot).
+  // Only web URLs are opened, and all URL entries are dropped from the rendered form.
   for (const entry of entries) {
     if (entry.type !== ConfigEntryType.URL) continue;
     const target = entry.value ?? entry.default_value;
-    if (typeof target !== "string") continue;
-    try {
-      if (["http:", "https:"].includes(new URL(target).protocol)) {
-        urls.push(target);
-      }
-    } catch {
-      // not a parseable url: drop silently
-    }
-  }
-  for (const url of urls) {
-    const a = document.createElement("a");
-    a.setAttribute("href", url);
-    a.setAttribute("target", "_blank");
-    a.setAttribute("rel", "noopener");
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    if (typeof target === "string") openWebUrlOnce(target);
   }
   return entries.filter((e) => e.type !== ConfigEntryType.URL);
+};
+
+export const openActionResultUrl = (url?: string | null) => {
+  // Open the url of a config action result (one-shot).
+  if (url) openWebUrlOnce(url);
+};
+
+const openWebUrlOnce = (url: string) => {
+  // Open via an anchor click, which browsers treat more leniently than
+  // window.open when the triggering user gesture has just expired.
+  try {
+    if (!["http:", "https:"].includes(new URL(url).protocol)) return;
+  } catch {
+    // not a parseable url: ignore silently
+    return;
+  }
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("target", "_blank");
+  a.setAttribute("rel", "noopener");
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 };
 
 export const parseBool = (val: string | boolean | undefined | null) => {
