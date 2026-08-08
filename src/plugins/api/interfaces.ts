@@ -1312,6 +1312,9 @@ export interface Player {
   active_group: string | null;
   synced_to: string | null;
 
+  // group_volume: the server currently substitutes 0 for an unset value, so null does not
+  // reach us today; it stays nullable because that substitution is a temporary shim for
+  // older Home Assistant integration versions.
   group_volume: number | null;
   group_volume_muted: boolean | null;
   hide_in_ui: boolean;
