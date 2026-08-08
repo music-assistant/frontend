@@ -409,19 +409,23 @@ const onReload = function () {
 const toggleEnabled = async function () {
   if (!config.value || !providerManifest.value?.allow_disable) return;
 
+  const instanceId = config.value.instance_id;
   loading.value = true;
   try {
     const updatedConfig = await api.saveProviderConfig(
       config.value.domain,
       { enabled: !config.value.enabled },
-      config.value.instance_id,
+      instanceId,
     );
+    if (!isCurrentProvider(instanceId)) return;
+
     config.value.enabled = updatedConfig.enabled;
     config.value.status = updatedConfig.status;
     config.value.last_error = updatedConfig.last_error;
     toast.success(t("settings.provider_saved"));
   } catch (err) {
     toast.error(String(err));
+    await refreshProviderConfig(instanceId);
   } finally {
     loading.value = false;
   }
@@ -579,6 +583,7 @@ async function refreshProviderConfig(instanceId: string) {
       props.instanceId === instanceId &&
       config.value?.instance_id === instanceId
     ) {
+      config.value.enabled = updatedConfig.enabled;
       config.value.status = updatedConfig.status;
       config.value.last_error = updatedConfig.last_error;
       config.value.values = mergeConfigEntries(
@@ -607,6 +612,12 @@ function getProviderStatusBadgeClass(status?: ProviderStatus) {
     default:
       return "border-muted-foreground/30 bg-muted text-muted-foreground";
   }
+}
+
+function isCurrentProvider(instanceId: string) {
+  return (
+    props.instanceId === instanceId && config.value?.instance_id === instanceId
+  );
 }
 </script>
 

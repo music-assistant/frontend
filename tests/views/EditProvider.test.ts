@@ -269,7 +269,111 @@ describe("EditProvider", () => {
     expect(
       wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
     ).toBe(false);
+    expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
     expect(toastMock.error).toHaveBeenCalledWith("Error: Save failed");
+  });
+
+  it("reconciles provider state when enabling fails after being saved", async () => {
+    apiMock.getProviderConfig
+      .mockResolvedValueOnce(
+        providerConfig(
+          ProviderStatus.DISABLED,
+          "current value",
+          undefined,
+          false,
+        ),
+      )
+      .mockResolvedValueOnce(providerConfig(ProviderStatus.ERROR));
+    apiMock.saveProviderConfig.mockRejectedValue(new Error("Load failed"));
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.get('[data-testid="provider-toggle-enabled"]').text(),
+    ).toContain("settings.enable");
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(false);
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_error",
+    );
+    expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("ignores a toggle response after navigating to another provider", async () => {
+    let resolveSave: (config: ProviderConfig) => void = () => {};
+    apiMock.getProviderConfig
+      .mockResolvedValueOnce(providerConfig(ProviderStatus.LOADED))
+      .mockResolvedValueOnce(
+        providerConfig(
+          ProviderStatus.LOADED,
+          "other value",
+          undefined,
+          true,
+          "spotify--other",
+        ),
+      );
+    apiMock.saveProviderConfig.mockImplementation(
+      () =>
+        new Promise<ProviderConfig>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await wrapper.setProps({ instanceId: "spotify--other" });
+    await flushPromises();
+
+    resolveSave(
+      providerConfig(
+        ProviderStatus.DISABLED,
+        "current value",
+        undefined,
+        false,
+      ),
+    );
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(false);
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_loaded",
+    );
   });
 
   it("hides the header menu when disabling is not supported", async () => {
@@ -564,11 +668,12 @@ function providerConfig(
   account: string = "current value",
   accountOptions?: { title: string; value: string }[],
   enabled: boolean = true,
+  instanceId: string = "spotify--test",
 ): ProviderConfig {
   return {
     domain: "spotify",
     enabled,
-    instance_id: "spotify--test",
+    instance_id: instanceId,
     last_error:
       status === ProviderStatus.AUTH_REQUIRED
         ? {
