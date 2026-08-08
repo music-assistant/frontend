@@ -164,6 +164,38 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: "/visualizer",
+        name: "visualizer",
+        component: () =>
+          import(
+            /* webpackChunkName: "visualizersettings" */ "@/views/settings/VisualizerConfig.vue"
+          ),
+        beforeEnter: async () => {
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
+                unwatch();
+                resolve();
+              }, 10000);
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    clearTimeout(timeout);
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          if (!store.enabledPlugins.has("milkdrop_visualizer")) {
+            return { name: "discover" };
+          }
+        },
+      },
+      {
         path: "/search",
         name: "search",
         component: () =>
