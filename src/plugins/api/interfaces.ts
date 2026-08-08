@@ -569,7 +569,9 @@ export interface ErrorResultMessage extends ResultMessageBase {
 
 export interface EventMessage {
   event: EventType;
-  object_id: string | null; // player_id, queue_id or uri
+  // the frontend also emits synthetic events (connect/disconnect, optimistic updates)
+  // without an object_id, so this stays optional as well as nullable
+  object_id?: string | null; // player_id, queue_id or uri
   data?: unknown; // optional data (such as the object)
 }
 export type MassEvent = EventMessage;
