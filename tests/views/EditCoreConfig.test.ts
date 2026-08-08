@@ -238,6 +238,7 @@ describe("EditCoreConfig", () => {
 function coreConfig(): CoreConfig {
   return {
     domain: "cache",
+    last_error: null,
     manifest: {
       allow_disable: false,
       builtin: true,
@@ -246,6 +247,9 @@ function coreConfig(): CoreConfig {
       description: "Cache controller",
       domain: "cache",
       icon_images: [],
+      documentation: null,
+      icon: null,
+      depends_on: null,
       has_setup_flow: false,
       multi_instance: false,
       name: "Cache",

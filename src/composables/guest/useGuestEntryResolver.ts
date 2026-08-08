@@ -169,7 +169,7 @@ export function useGuestEntryResolver() {
   // Lock onto the first Music Quiz provider instance we see events from, matching
   // the scoping convention used by useMusicQuizHost/useMusicQuizPlayer, so events
   // from an unrelated instance can't spuriously re-trigger resolution.
-  function isScopedQuizProviderEvent(objectId?: string) {
+  function isScopedQuizProviderEvent(objectId?: string | null) {
     if (!objectId) return false;
     if (!quizProviderInstanceId) {
       quizProviderInstanceId = objectId;
