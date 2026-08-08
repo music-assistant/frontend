@@ -93,9 +93,9 @@
           <ProviderIcon :domain="config.domain" :size="48" class="shrink-0" />
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
-              <CardTitle class="text-xl leading-tight">
+              <h2 class="text-xl leading-tight font-semibold">
                 {{ providerName }}
-              </CardTitle>
+              </h2>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -238,7 +238,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
@@ -538,14 +537,14 @@ async function refreshProviderConfig(instanceId: string) {
 function getProviderStatusBadgeClass(status?: ProviderStatus) {
   switch (status) {
     case ProviderStatus.LOADED:
-      return "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+      return "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
     case ProviderStatus.LOADING:
-      return "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400";
+      return "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400";
     case ProviderStatus.AUTH_REQUIRED:
     case ProviderStatus.INCOMPATIBLE:
-      return "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400";
+      return "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-400";
     case ProviderStatus.ERROR:
-      return "border-destructive/40 bg-destructive/10 text-destructive";
+      return "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400";
     default:
       return "border-muted-foreground/30 bg-muted text-muted-foreground";
   }

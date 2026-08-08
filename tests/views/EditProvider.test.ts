@@ -65,7 +65,6 @@ const providerDetailsStubs = {
   CardContent: SlotStub,
   CardDescription: SlotStub,
   CardHeader: SlotStub,
-  CardTitle: SlotStub,
 };
 
 vi.mock("@/plugins/api", () => ({
@@ -145,6 +144,7 @@ describe("EditProvider", () => {
     expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
       "settings.provider_status_loaded",
     );
+    expect(wrapper.get("h2").text()).toBe("Spotify");
     expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
       true,
     );

@@ -52,9 +52,15 @@ describe("provider configuration state", () => {
     expect(getProviderStatusTranslationKey(status)).toBe(expected);
   });
 
-  it("builds a provider-specific support issues link", () => {
-    expect(getProviderSupportIssuesUrl("youtube_music")).toBe(
-      "https://github.com/music-assistant/support/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22youtube_music%22",
+  it.each([
+    ["spotify", "spotify"],
+    ["spotify_connect", "Spotify Connect"],
+    ["ytmusic", "youtube_music"],
+  ])("builds a support issues link for %s", (domain, label) => {
+    expect(getProviderSupportIssuesUrl(domain)).toBe(
+      `https://github.com/music-assistant/support/issues?q=${encodeURIComponent(
+        `is:issue state:open label:"${label}"`,
+      )}`,
     );
   });
 });
