@@ -1,7 +1,10 @@
 <template>
   <div
     class="config-entry"
-    :class="{ 'config-entry-advanced': confEntry.advanced }"
+    :class="{
+      'config-entry-advanced': confEntry.advanced,
+      'config-entry-hass-picker': isHassControlPickerEntry(confEntry),
+    }"
   >
     <ConfigEntryField
       :conf-entry="confEntry"
@@ -45,7 +48,10 @@
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "@lucide/vue";
-import { ConfigEntryUI } from "@/helpers/config_entry_ui";
+import {
+  ConfigEntryUI,
+  isHassControlPickerEntry,
+} from "@/helpers/config_entry_ui";
 import { ConfigValueType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import ConfigEntryField from "./ConfigEntryField.vue";
@@ -86,6 +92,11 @@ const hasDescriptionOrHelpLink = computed(() => {
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.config-entry-hass-picker {
+  margin-top: -8px;
+  margin-bottom: 16px;
 }
 
 .config-entry:last-child {
