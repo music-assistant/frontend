@@ -951,8 +951,8 @@ export interface BrowseFolder extends _MediaItemBase {
   // always FOLDER: lets TS drop the folder from the MediaItemType union on any
   // other media_type check, and makes Exclude<MediaItemType, BrowseFolder> work
   media_type: MediaType.FOLDER;
-  path?: string;
-  image?: MediaItemImage;
+  path: string;
+  image: MediaItemImage | null;
 }
 export enum RecommendationFolderType {
   DEFAULT = "default",
