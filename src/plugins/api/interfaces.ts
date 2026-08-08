@@ -783,6 +783,14 @@ export interface PlayerQueueConfig extends Config {
 
 //// media_items
 
+// Media item types are the one place where `foo?: X | null` is deliberate rather than
+// sloppy. Library listings return the slim summary variant of an item, which leaves out
+// the fields it has no value for, while fetching the item in full carries every key with
+// null instead - and both shapes deserialize as the interfaces below. Only the types that
+// have such a summary variant (artist, album, track, playlist, radio, audiobook, podcast,
+// genre, item mapping and their metadata) are spelled that way; everything else here,
+// including podcast episodes, gets a plain nullable field.
+
 export interface ProviderMapping {
   // Model for a MediaItem's provider mapping details.
   item_id: string;
@@ -810,8 +818,8 @@ export interface MediaItemImage {
   remotely_accessible: boolean;
   // Opaque sha256(provider+path) id used to address the image via the
   // canonical /imageproxy/<proxy_id> endpoint. Injected by the server on
-  // schema_version >= 31; absent on older servers.
-  proxy_id?: string;
+  // schema_version >= 31; null when it issues no id, absent on older servers.
+  proxy_id?: string | null;
 }
 
 export interface MediaItemChapter {
@@ -821,9 +829,6 @@ export interface MediaItemChapter {
   end: number | null;
 }
 
-// Library listings return the slim summary variant of an item, which leaves out the
-// fields it has no value for; the full item carries every key with null instead. Both
-// shapes deserialize as this interface, so these fields can be absent or null.
 export interface MediaItemMetadata {
   description?: string | null;
   review?: string | null;
