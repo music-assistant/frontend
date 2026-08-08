@@ -68,12 +68,8 @@ describe("useGuestArtistTracks", () => {
       useGuestArtistTracks();
 
     const artist = {
-      provider_mappings: [
-        providerMapping({
-          item_id: "artist-id",
-          provider_instance: "provider-1",
-        }),
-      ],
+      item_id: "artist-id",
+      provider: "library",
     } as unknown as Artist;
 
     await selectArtist(artist);
@@ -93,12 +89,8 @@ describe("useGuestArtistTracks", () => {
       useGuestArtistTracks();
 
     await selectArtist({
-      provider_mappings: [
-        providerMapping({
-          item_id: "artist-id",
-          provider_instance: "provider-1",
-        }),
-      ],
+      item_id: "artist-id",
+      provider: "library",
     } as unknown as Artist);
     clearArtistSelection();
 
@@ -123,12 +115,8 @@ describe("useGuestArtistTracks", () => {
     } = useGuestArtistTracks();
 
     const pending = selectArtist({
-      provider_mappings: [
-        providerMapping({
-          item_id: "artist-id",
-          provider_instance: "provider-1",
-        }),
-      ],
+      item_id: "artist-id",
+      provider: "library",
     } as unknown as Artist);
     clearArtistSelection();
     expect(loadingArtistTracks.value).toBe(false);
@@ -156,15 +144,13 @@ describe("useGuestArtistTracks", () => {
 
     const first = selectArtist({
       name: "First",
-      provider_mappings: [
-        providerMapping({ item_id: "a1", provider_instance: "provider-1" }),
-      ],
+      item_id: "a1",
+      provider: "library",
     } as unknown as Artist);
     const second = selectArtist({
       name: "Second",
-      provider_mappings: [
-        providerMapping({ item_id: "a2", provider_instance: "provider-1" }),
-      ],
+      item_id: "a2",
+      provider: "library",
     } as unknown as Artist);
     await second;
     resolveFirst([{ id: "first-track" }]);
