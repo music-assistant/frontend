@@ -39,8 +39,11 @@ const getCurrentUtcReferenceMonday = () => {
 const toSortedUniqueDays = (days: number[]) =>
   [...new Set(days)].sort((left, right) => left - right);
 
-export const formatTaskScheduleClockTime = (hour?: number, minute?: number) => {
-  if (hour === undefined || minute === undefined) {
+export const formatTaskScheduleClockTime = (
+  hour?: number | null,
+  minute?: number | null,
+) => {
+  if (hour == null || minute == null) {
     return "";
   }
   return new Intl.DateTimeFormat(undefined, {

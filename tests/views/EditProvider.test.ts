@@ -379,7 +379,7 @@ function providerConfig(
             error_code: 1,
             message: "Authentication required",
           }
-        : undefined,
+        : null,
     manifest: {
       allow_disable: true,
       builtin: false,
@@ -388,6 +388,9 @@ function providerConfig(
       description: "Spotify music provider",
       domain: "spotify",
       icon_images: [],
+      documentation: null,
+      icon: null,
+      depends_on: null,
       has_setup_flow: true,
       multi_instance: true,
       name: "Spotify",
@@ -396,6 +399,7 @@ function providerConfig(
       type: ProviderType.MUSIC,
     },
     name: "Spotify",
+    default_name: null,
     status,
     type: ProviderType.MUSIC,
     values: {

@@ -38,7 +38,7 @@
           <v-list-item
             v-for="preset in dspPresets"
             v-else
-            :key="preset.preset_id"
+            :key="preset.preset_id ?? undefined"
             @click="loadPreset(preset)"
           >
             <v-list-item-title>{{ preset.name }}</v-list-item-title>
@@ -579,7 +579,7 @@ const savePreset = async () => {
   }
 };
 
-const removePreset = async (presetId: string | undefined) => {
+const removePreset = async (presetId?: string | null) => {
   if (!presetId || !confirm(t("settings.dsp.presets.remove_confirm"))) return;
 
   await api.removeDSPPreset(presetId);

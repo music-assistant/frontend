@@ -84,7 +84,7 @@ function captureSubscriptions() {
   );
   return {
     emit: (eventType: EventType, data: unknown) =>
-      callbacks.get(eventType)?.({ event: eventType, data }),
+      callbacks.get(eventType)?.({ event: eventType, object_id: null, data }),
   };
 }
 

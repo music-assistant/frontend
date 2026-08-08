@@ -85,6 +85,8 @@ function createAdminUser(playerFilter: string[]): User {
     role: UserRole.ADMIN,
     enabled: true,
     created_at: "",
+    display_name: null,
+    avatar_url: null,
     preferences: {},
     provider_filter: [],
     player_filter: playerFilter,
