@@ -48,6 +48,9 @@ type ParameterConfig = {
   unit: string;
   // Whether the slider should behave logarithmically
   is_log: boolean;
+  // Fixed decimal places for the readout; falls back to magnitude-based
+  // formatting when unset.
+  decimals?: number;
 };
 
 const props = defineProps<{
@@ -96,12 +99,18 @@ const displayValue = computed({
     if (isEditing.value) {
       return model.value.toString();
     }
+    if (config.value.decimals !== undefined) {
+      return model.value.toFixed(config.value.decimals);
+    }
     if (model.value > 1000) return model.value.toFixed(0);
     if (model.value > 100) return model.value.toFixed(1);
     return model.value.toFixed(2);
   },
   set: (value: string) => {
-    model.value = Number(value);
+    const num = Number(value);
+    if (Number.isNaN(num)) return;
+    // Clamp to range so a typed readout can't push a (log) slider out of bounds.
+    model.value = Math.min(config.value.max, Math.max(config.value.min, num));
   },
 });
 
