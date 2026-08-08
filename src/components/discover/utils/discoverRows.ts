@@ -6,6 +6,7 @@ import { store } from "@/plugins/store";
 export const PLAYERS_ROW_ID = "players";
 export const TOP_PICKS_ROW_ID = "top_picks";
 export const GENRES_ROW_ID = "genres";
+export const RECENTLY_PLAYED_ROW_ID = "library://folder/recently_played";
 
 // Default position of the well-known rows; every other (server) row follows
 // in the order the server returns it, with the genres grid pinned last.
@@ -13,7 +14,7 @@ export const DEFAULT_PRIORITY_ROWS = [
   PLAYERS_ROW_ID,
   TOP_PICKS_ROW_ID,
   "library://folder/in_progress",
-  "library://folder/recently_played",
+  RECENTLY_PLAYED_ROW_ID,
 ];
 
 // Per-user discover page customization, stored as a single preference object.
