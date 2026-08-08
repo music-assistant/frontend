@@ -207,6 +207,12 @@
               "
               v-model="dsp.filters[selectedStage] as TransposeFilter"
             />
+            <DSPConvolution
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CONVOLUTION
+              "
+              v-model="dsp.filters[selectedStage] as ConvolutionFilter"
+            />
             <DSPStereoWidth
               v-else-if="
                 dsp.filters[selectedStage].type === DSPFilterType.STEREO_WIDTH
@@ -296,6 +302,7 @@ import {
   type GainFilter,
   type BalanceFilter,
   type TransposeFilter,
+  type ConvolutionFilter,
   type StereoWidthFilter,
   type CrossfeedFilter,
   ParametricEQFilter,
@@ -308,6 +315,7 @@ import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
 import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
+import DSPConvolution from "@/components/dsp/DSPConvolution.vue";
 import DSPStereoWidth from "@/components/dsp/DSPStereoWidth.vue";
 import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
@@ -441,6 +449,16 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.TRANSPOSE,
         semitones: 0,
+      };
+      break;
+    case DSPFilterType.CONVOLUTION:
+      // An empty ir_id is valid: the filter is added first, the impulse
+      // response picked afterwards.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CONVOLUTION,
+        ir_id: "",
+        gain: 0,
       };
       break;
     case DSPFilterType.STEREO_WIDTH:

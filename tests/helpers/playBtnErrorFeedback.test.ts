@@ -59,7 +59,7 @@ vi.mock("vue-sonner", () => ({
   toast: { error: mockToastError },
 }));
 
-import { handlePlayBtnClick } from "@/helpers/utils";
+import { handlePlayBtnClick } from "@/helpers/media_item_actions";
 import { MediaType, type Playlist, type Track } from "@/plugins/api/interfaces";
 
 const track = {

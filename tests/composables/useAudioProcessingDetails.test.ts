@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils";
-import { File as FileIcon } from "@lucide/vue";
+import { File as FileIcon, Merge, Split } from "@lucide/vue";
 import { defineComponent, h, nextTick, ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/composables/useAudioProcessingDetails";
 import { $t, i18n } from "@/plugins/i18n";
 import {
+  AudioChannel,
   type AudioFormat,
   type AudioProcessingChain,
   AudioQuality,
@@ -16,6 +17,7 @@ import {
   CrossfadeMode,
   DSPState,
   MediaType,
+  type OutputProtocol,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -34,8 +36,14 @@ vi.mock("@/composables/useDSPPresets", () => ({
     getPresetName: vi.fn(),
   }),
 }));
+vi.mock("@/composables/useDSPIRs", () => ({
+  useDSPIRs: () => ({
+    getIRName: vi.fn(),
+  }),
+}));
 
 const presetNames = new Map<string, string>();
+const irNames = new Map<string, string>();
 const dependencies: AudioProcessingDetailsDependencies = {
   translate: (key, values) => (values ? $t(key, values) : $t(key)),
   locale: "en-US",
@@ -43,6 +51,7 @@ const dependencies: AudioProcessingDetailsDependencies = {
   getProviderDomain: (providerId) => providerId.split("--", 1)[0],
   getPresetName: (presetId) =>
     presetId ? presetNames.get(presetId) : undefined,
+  getIRName: (irId) => (irId ? irNames.get(irId) : undefined),
   players: makePlayers(),
 };
 
@@ -52,6 +61,8 @@ beforeEach(() => {
   dependencies.players = makePlayers();
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
+  irNames.clear();
+  irNames.set("ir-1", "Living room correction");
 });
 
 describe("buildAudioProcessingDetailsDisplay", () => {
@@ -109,11 +120,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       const protocolId = `${protocolDomain}-kitchen`;
       dependencies.players.kitchen.active_output_protocol = protocolId;
       dependencies.players.kitchen.output_protocols = [
-        {
+        makeOutputProtocol({
           output_protocol_id: protocolId,
-          is_native: false,
           protocol_domain: protocolDomain,
-        },
+        }),
       ];
 
       const destination = buildDisplay({
@@ -142,33 +152,6 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       providerIconDomain: "airplay",
     });
     expect(destination.details).toBeUndefined();
-  });
-
-  it("uses the protocol player provider when the active entry has no domain", () => {
-    dependencies.players.kitchen.active_output_protocol = "sendspin-kitchen";
-    dependencies.players.kitchen.output_protocols = [
-      {
-        output_protocol_id: "sendspin-kitchen",
-        is_native: false,
-        protocol_domain: null,
-      },
-    ];
-    dependencies.players["sendspin-kitchen"] = {
-      player_id: "sendspin-kitchen",
-      name: "Kitchen",
-      provider: "sendspin--bridge",
-      active_output_protocol: null,
-      output_protocols: [],
-    };
-
-    const destination = buildDisplay({
-      outputs: [{ player_ids: ["kitchen"], output_format: makeFormat() }],
-    }).outputPaths[0].destination;
-
-    expect(destination).toMatchObject({
-      title: "Kitchen",
-      providerIconDomain: "sendspin",
-    });
   });
 
   it("never falls back to the base provider for an unresolved active protocol", () => {
@@ -265,11 +248,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("uses a shared active protocol icon for grouped output", () => {
     dependencies.players.office.active_output_protocol = "airplay-office";
     dependencies.players.office.output_protocols = [
-      {
-        output_protocol_id: "airplay-office",
-        is_native: false,
-        protocol_domain: "airplay",
-      },
+      makeOutputProtocol({ output_protocol_id: "airplay-office" }),
     ];
     let destination = buildDisplay({
       outputs: [
@@ -409,6 +388,31 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     presetNames.set("preset-1", "Cinema");
     expect(buildDisplay(chain).outputPaths[0].stages[1].title).toBe("Cinema");
   });
+
+  it.each([
+    [AudioChannel.ALL, "Mixed to mono", Merge],
+    [AudioChannel.FL, "Source channel: Left", Split],
+    [AudioChannel.FR, "Source channel: Right", Split],
+  ])(
+    "pairs source channel %s with its own title and icon",
+    (sourceChannel, title, icon) => {
+      const display = buildDisplay({
+        outputs: [
+          {
+            player_ids: ["office"],
+            source_channel: sourceChannel,
+            output_format: makeFormat(),
+          },
+        ],
+      });
+
+      expect(
+        display.outputPaths[0].stages.find((stage) =>
+          stage.key.startsWith("source-channel-"),
+        ),
+      ).toMatchObject({ title, icon });
+    },
+  );
 
   it.each([CrossfadeMode.UNKNOWN, "future_crossfade" as CrossfadeMode])(
     "keeps %s crossfade in headroom reasons",
@@ -573,11 +577,7 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
       provider: "sonos--main",
       active_output_protocol: "airplay-kitchen",
       output_protocols: [
-        {
-          output_protocol_id: "airplay-kitchen",
-          is_native: false,
-          protocol_domain: "airplay",
-        },
+        makeOutputProtocol({ output_protocol_id: "airplay-kitchen" }),
       ],
     },
     office: {
@@ -587,6 +587,20 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
       active_output_protocol: null,
       output_protocols: [],
     },
+  };
+}
+
+function makeOutputProtocol(
+  overrides: Partial<OutputProtocol> = {},
+): OutputProtocol {
+  return {
+    output_protocol_id: "airplay-kitchen",
+    name: "AirPlay",
+    is_native: false,
+    protocol_domain: "airplay",
+    priority: 1,
+    available: true,
+    ...overrides,
   };
 }
 

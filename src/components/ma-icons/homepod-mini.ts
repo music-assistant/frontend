@@ -8,7 +8,7 @@ const PATH =
 
 /** HomePod mini – Apple's near-spherical smart speaker silhouette (fill-based, 32×32). */
 export const HomepodMini: Component = makeFillIcon(
-  "HomepodMini",
+  "homepod-mini",
   "0 0 32 32",
   h("path", {
     "fill-rule": "evenodd",

@@ -184,22 +184,6 @@
                 </NumberFieldContent>
               </NumberField>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <FieldLabel
-                :label="$t('providers.ai_radio.fields.dynamic_batch_size')"
-                :description="
-                  $t('providers.ai_radio.field_descriptions.dynamic_batch_size')
-                "
-              />
-              <NumberField v-model="draft.basics.dynamicBatchSize" :min="1">
-                <NumberFieldContent>
-                  <NumberFieldDecrement />
-                  <NumberFieldInput />
-                  <NumberFieldIncrement />
-                </NumberFieldContent>
-              </NumberField>
-            </div>
-
             <div class="flex items-center gap-3">
               <FieldLabel
                 html-for="customize-shuffle-source-tracks"

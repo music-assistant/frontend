@@ -403,7 +403,7 @@ const form = useForm({
         updates.password = value.password;
       }
 
-      const currentPlayerFilter = props.user.player_filter || [];
+      const currentPlayerFilter = props.user.player_filter;
       if (
         JSON.stringify([...value.playerFilter].sort()) !==
         JSON.stringify([...currentPlayerFilter].sort())
@@ -411,7 +411,7 @@ const form = useForm({
         updates.player_filter = value.playerFilter;
       }
 
-      const currentProviderFilter = props.user.provider_filter || [];
+      const currentProviderFilter = props.user.provider_filter;
       if (
         JSON.stringify([...value.providerFilter].sort()) !==
         JSON.stringify([...currentProviderFilter].sort())
@@ -445,8 +445,8 @@ const resetForm = () => {
     form.setFieldValue("role", props.user.role);
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
-    form.setFieldValue("playerFilter", props.user.player_filter || []);
-    form.setFieldValue("providerFilter", props.user.provider_filter || []);
+    form.setFieldValue("playerFilter", props.user.player_filter);
+    form.setFieldValue("providerFilter", props.user.provider_filter);
   }
 };
 

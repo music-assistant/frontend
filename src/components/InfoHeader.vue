@@ -276,10 +276,9 @@
                 icon="mdi-album"
               />
               <MarqueeText :sync="marqueeSync">
-                <a
-                  style="color: secondary"
-                  @click="albumClick((item as Track)?.album)"
-                  >{{ item.album.name }}</a
+                <a style="color: secondary" @click="albumClick(item.album)">{{
+                  item.album.name
+                }}</a
                 ><span v-if="'year' in item.album && item.album.year">
                   • {{ item.album.year }}</span
                 ></MarqueeText
@@ -512,18 +511,20 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { useUserPreferences } from "@/composables/userPreferences";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import {
+  handleMediaItemClick,
+  handlePlayBtnClick,
+} from "@/helpers/media_item_actions";
+import { parseBool } from "@/helpers/parse";
 import {
   getAuthorsNarratorsArray,
   getAudiobookCollectionArtists,
   getImageThumbForItem,
-  handleMediaItemClick,
-  handlePlayBtnClick,
   markdownToHtml,
-  parseBool,
   truncateString,
 } from "@/helpers/utils";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import {
@@ -534,6 +535,7 @@ import type {
   Album,
   Artist,
   Audiobook,
+  BrowseFolder,
   Genre,
   ItemMapping,
   MediaItemType,
@@ -560,7 +562,8 @@ import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
-  item?: MediaItemType;
+  // browse folders are listed, never opened in a details view
+  item?: Exclude<MediaItemType, BrowseFolder>;
   sortBy?: string;
 }
 const compProps = defineProps<Props>();

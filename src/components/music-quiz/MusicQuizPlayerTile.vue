@@ -5,7 +5,7 @@
   >
     <MusicQuizAvatar :name="name" class="size-8 shrink-0" />
     <span class="min-w-0 flex-1 truncate font-medium">{{ name }}</span>
-    <slot name="trailing" />
+    <slot name="trailing"></slot>
   </div>
 </template>
 

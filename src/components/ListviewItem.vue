@@ -212,7 +212,7 @@
         {{ truncateString(item.metadata.description, 150) }}
       </div>
       <!-- media type label -->
-      <div v-else-if="'media_type' in item && !item.provider_mappings">
+      <div v-else-if="!('provider_mappings' in item)">
         {{ $t(item.media_type) }}
       </div>
     </template>
@@ -308,12 +308,14 @@ import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
-  formatDuration,
-  getArtistsString,
-  getAuthorsNarratorsArray,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
+} from "@/helpers/media_item_actions";
+import {
+  formatDuration,
+  getArtistsString,
+  getAuthorsNarratorsArray,
   truncateString,
 } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
@@ -398,7 +400,6 @@ const collabArtists = computed(() => {
 const HiResDetails = computed(() => {
   if (!("provider_mappings" in compProps.item)) return "";
   for (const prov of compProps.item.provider_mappings) {
-    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![

@@ -229,7 +229,8 @@
             "tone_control": {
                 "bass_level": "Lage tonen",
                 "mid_level": "Midden tonen",
-                "treble_level": "Hoge tonen"
+                "treble_level": "Hoge tonen",
+                "help": "Een eenvoudige instelling met drie frequentiebanden: lage tonen, midden en hoge tonen. Gebruik de parametrische EQ voor een nauwkeurigere regeling."
             },
             "parameter": {
                 "frequency": "Frequentie",
@@ -271,6 +272,23 @@
                 "unit_singular": "halve toon",
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Stel de standaardtoonhoogte zo in dat A op 432 Hz is gestemd"
+            },
+            "balance": {
+                "help": "Verschuift het geluid naar de linker- of rechterluidspreker. Alleen van toepassing op stereogeluid."
+            },
+            "stereo_width": {
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Origineel",
+                    "wide": "Breed"
+                }
+            },
+            "crossfeed": {
+                "presets": {
+                    "low": "Laag",
+                    "medium": "Medium",
+                    "high": "Hoog"
+                }
             }
         },
         "dsp_enabled": "DSP is ingeschakeld",
@@ -631,7 +649,6 @@
         "artist": "Artiest",
         "name": "Alfabetisch",
         "name_desc": "Alfabetisch (aflopend)",
-        "recent": "Onlangs toegevoegd",
         "year_desc": "Jaar van uitgave (aflopend)",
         "duration_desc": "Duur (aflopend)",
         "original": "Origineel",
@@ -1026,7 +1043,8 @@
         "select_providers": "Selecteer providers",
         "save_changes": "Wijzigingen opslaan",
         "update_password": "Wachtwoord bijwerken",
-        "guest_role": "Gast"
+        "guest_role": "Gast",
+        "tokens_load_failed": "Het laden van toegangstokens is mislukt"
     },
     "login": {
         "subtitle": "Maak verbinding met je muziekserver",
@@ -1074,7 +1092,13 @@
         "scan_qr_code": "Scan QR-code",
         "scan_qr_hint": "Richt je camera op de QR-code die wordt weergegeven in de serverinstellingen van Music Assistant.",
         "qr_invalid": "Ongeldige QR-code. Scan een Music Assistant Externe ID QR-code.",
-        "qr_camera_error": "Kon camera niet benaderen. Controleer de machtigingen."
+        "qr_camera_error": "Kon camera niet benaderen. Controleer de machtigingen.",
+        "error_party_auth_failed": "Kon niet meedoen aan de party",
+        "connecting_ingress": "Verbinden via Home Assistant...",
+        "connecting_local_party": "Verbinden met de party...",
+        "connecting_remote_party": "Verbinden met de party...",
+        "joining_party": "Deelnemen aan de party...",
+        "reconnecting": "Opnieuw verbinden"
     },
     "yes": "Ja",
     "no": "Nee",
@@ -1495,15 +1519,15 @@
                 "web_search_mode": "Webzoekmodus",
                 "character_limit": "Tekenlimiet",
                 "prompt": "Opdracht",
-                "clear_queue_on_dynamic_start": "Wachtrij leegmaken bij dynamische start",
                 "dynamic_batch_size": "Dynamische batchgrootte",
-                "instructions": "Instructies voor presentatoren en programma’s"
+                "instructions": "Instructies voor presentatoren en programma’s",
+                "shuffle_playlist_tracks": "Nummers In Afspeellijst Shufflen"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximale totale afspeeltijd van de bronmuziek, in minuten. Nummers worden willekeurig geselecteerd totdat de limiet is bereikt, zodat je een willekeurige selectie uit de afspeellijst krijgt in plaats van alleen het eerste deel ervan. Laat dit veld op 0 staan als je geen limiet wilt instellen.",
-                "clear_queue_on_dynamic_start": "Vervang alles wat zich in de wachtrij bevindt wanneer het programma begint. Schakel deze optie uit om de uitzending in plaats daarvan aan het einde van de wachtrij toe te voegen en het huidige nummer te blijven afspelen.",
                 "dynamic_batch_size": "Hoeveel nummers de host tegelijkertijd voorbereidt. Grotere batches zorgen voor minder pauzes terwijl het volgende segment wordt gegenereerd, maar ook voor een langere wachttijd voordat het programma begint te spelen.",
-                "instructions": "Hierin wordt de persoonlijkheid van de presentator beschreven en aangegeven hoe de segmenten moeten worden geschreven. Dit wordt bij elk segment naar de AI gestuurd."
+                "instructions": "Hierin wordt de persoonlijkheid van de presentator beschreven en aangegeven hoe de segmenten moeten worden geschreven. Dit wordt bij elk segment naar de AI gestuurd.",
+                "shuffle_playlist_tracks": "Speel de afspeellijst van de bron in willekeurige volgorde af. Schakel deze optie uit om de volgorde van de afspeellijst zelf te volgen."
             },
             "web_search": {
                 "disabled": "uitgeschakeld (geen webtool)",

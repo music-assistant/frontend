@@ -2,6 +2,7 @@ import { mount } from "@vue/test-utils";
 import { nextTick, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AudioProcessingDetails from "@/components/AudioProcessingDetails.vue";
+import type { AudioProcessingDisplayPlayer } from "@/composables/useAudioProcessingDetails";
 import { i18n } from "@/plugins/i18n";
 import {
   AudioChannel,
@@ -18,24 +19,16 @@ import {
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 
-interface PlayerDisplayMock {
-  player_id: string;
-  name: string;
-  provider: string;
-  active_output_protocol?: string | null;
-  output_protocols?: Array<{
-    output_protocol_id: string;
-    is_native: boolean;
-    protocol_domain?: string | null;
-  }>;
-}
-
 const apiMock = vi.hoisted(() => ({
   getProviderName: vi.fn(() => "Test provider"),
   getProviderManifest: vi.fn((providerId: string) => ({
     domain: providerId.split("--", 1)[0],
   })),
-  players: {} as Record<string, PlayerDisplayMock>,
+  // useDSPIRs (via useAudioProcessingDetails) fetches the IR list and
+  // subscribes to config updates on mount; subscribe hands back an unsubscribe.
+  getDSPIRs: vi.fn(() => Promise.resolve([])),
+  subscribe: vi.fn(() => vi.fn()),
+  players: {} as Record<string, AudioProcessingDisplayPlayer>,
 }));
 const presetRegistryMock = vi.hoisted(() => ({
   names: undefined as Ref<Map<string, string>> | undefined,
@@ -293,6 +286,26 @@ describe("AudioProcessingDetails", () => {
         .findAll("li")
         .map((detail) => detail.text()),
     ).toContain("Floating-point headroom is available for: Crossfade.");
+  });
+
+  it("names a mono downmix instead of a selected source channel", () => {
+    const wrapper = mountDetails({
+      outputs: [
+        {
+          player_ids: ["player-1"],
+          dsp: { state: DSPState.DISABLED },
+          source_channel: AudioChannel.ALL,
+          output_format: makeFormat(),
+        },
+      ],
+    });
+
+    expect(
+      wrapper
+        .find('[data-stage="source-channel-0"] .audio-processing-stage-title')
+        .text(),
+    ).toBe("Mixed to mono");
+    expect(wrapper.text()).not.toContain("Source channel:");
   });
 
   it("excludes disabled crossfade from component headroom reasons", () => {
@@ -740,8 +753,11 @@ describe("AudioProcessingDetails", () => {
     apiMock.players["player-1"].output_protocols = [
       {
         output_protocol_id: "airplay-kitchen",
+        name: "AirPlay",
         is_native: false,
         protocol_domain: "airplay",
+        priority: 1,
+        available: true,
       },
     ];
     const wrapper = mountDetails({
@@ -771,8 +787,11 @@ describe("AudioProcessingDetails", () => {
     apiMock.players["player-1"].output_protocols = [
       {
         output_protocol_id: "airplay-kitchen",
+        name: "AirPlay",
         is_native: false,
         protocol_domain: "airplay",
+        priority: 1,
+        available: true,
       },
     ];
     const wrapper = mountDetails({

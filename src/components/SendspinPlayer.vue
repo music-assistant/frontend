@@ -9,6 +9,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import {
   isMediaSessionDisabled,
@@ -432,7 +433,7 @@ function registerMediaSessionActionHandlers(): void {
 
   navigator.mediaSession.setActionHandler("seekto", (evt) => {
     const targetId = getTargetPlayerId();
-    if (!targetId || !evt.seekTime) return;
+    if (!targetId || evt.seekTime == null) return;
     api.playerCommandSeek(targetId, Math.round(evt.seekTime));
   });
 
@@ -442,9 +443,8 @@ function registerMediaSessionActionHandlers(): void {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const queueId = store.activePlayerQueue?.queue_id;
-      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
+      const elapsed = lastSeekPos ?? resolveActiveElapsedTime(targetId);
+      if (elapsed == null) return;
       const newPos = Math.round(elapsed + offset);
       lastSeekPos = newPos;
       resetLastSeekPos();
@@ -455,9 +455,8 @@ function registerMediaSessionActionHandlers(): void {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const queueId = store.activePlayerQueue?.queue_id;
-      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
+      const elapsed = lastSeekPos ?? resolveActiveElapsedTime(targetId);
+      if (elapsed == null) return;
       const newPos = Math.round(Math.max(0, elapsed - offset));
       lastSeekPos = newPos;
       resetLastSeekPos();

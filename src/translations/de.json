@@ -32,8 +32,8 @@
     "details": "Details",
     "enter_url": "Gib die URL ein, die manuell zur Datenbank hinzugefügt werden soll.",
     "external_source_active": "Externe Quelle aktiv: {0}",
-    "goto_album": "Zum Album {0}",
-    "goto_artist": "Zum Interpreten {0}",
+    "goto_album": "Album {0} ansehen",
+    "goto_artist": "Interpreten {0} ansehen",
     "items_selected": "{0} Einträge ausgewählt",
     "items_total": "{0} Einträge",
     "library": "Bibliothek",
@@ -224,12 +224,14 @@
                 "edited_channel": "EQ-Antwort für diesen Kanal\/diese Kanäle aufzeichnen",
                 "channel": "Das Band wird angewendet auf",
                 "per_channel_preamp": "Zusätzlicher Pegel für Vorverstärker für {channel}",
-                "disable_multichannel_controls": "Mehrkanalsteuerung deaktivieren"
+                "disable_multichannel_controls": "Mehrkanalsteuerung deaktivieren",
+                "help": "Präzise Klangformung: Jedes Frequenzband ist auf eine bestimmte Frequenz ausgerichtet und kann diese entweder absenken oder anheben. Das Absenken ist sicherer als das Anheben, da es bei letzterem zu Clipping kommen kann."
             },
             "tone_control": {
                 "bass_level": "Basspegel",
                 "mid_level": "Mittenpegel",
-                "treble_level": "Höhenpegel"
+                "treble_level": "Höhenpegel",
+                "help": "Eine einfache Dreiband-Einstellung für Bässe, Mitten und Höhen. Verwende den parametrischen EQ für eine feinere Regelung."
             },
             "parameter": {
                 "frequency": "Frequenz",
@@ -242,7 +244,9 @@
                 "tone_control": "Klangregelung",
                 "gain": "Verstärkung",
                 "balance": "Balance",
-                "transpose": "Transponieren"
+                "transpose": "Transponieren",
+                "stereo_width": "Stereobreite",
+                "crossfeed": "Crossfeed"
             },
             "channels": {
                 "ALL": "Alle",
@@ -271,6 +275,31 @@
                 "unit_singular": "Halbton",
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Stelle die Konzertstimmung so ein, dass A auf 432 Hz gestimmt ist."
+            },
+            "input_gain_help": "Stellt den Eingangspegel in die Signalkette ein. Verringere ihn, um Headroom für Filter zu schaffen, die den Pegel anheben.",
+            "output_gain_help": "Stellt den Pegel am Ausgang der Signalkette ein, nachdem alle Filter angewendet wurden. Die Lautstärke des Wiedergabegeräts wird erst später eingestellt.",
+            "gain": {
+                "help": "Erhöht oder verringert den Pegel aller Signale, die diesen Punkt in der Kette passieren."
+            },
+            "balance": {
+                "help": "Verschiebt den Ton zum linken oder rechten Lautsprecher. Gilt nur für Stereo-Audio."
+            },
+            "stereo_width": {
+                "help": "Stellt die Breite des Stereobildes ein. Links von der Mitte verengt sich das Klangbild in Richtung Mono, rechts wird es breiter.",
+                "clip_hint": "Eine Einstellung, die über den Wert „Original“ hinausgeht, kann Spitzenwerte erzeugen und zu Clipping führen. Erwäge nach diesem Filter einen Limiter einzubinden.",
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Original",
+                    "wide": "Breit"
+                }
+            },
+            "crossfeed": {
+                "help": "Sorgt für ein natürlicheres Hörerlebnis beim Hören über Kopfhörer, indem der linke und der rechte Kanal sanft miteinander verschmolzen werden – ähnlich wie beim Hören über Lautsprecher.",
+                "presets": {
+                    "low": "Niedrig",
+                    "medium": "Mittel",
+                    "high": "Hoch"
+                }
             }
         },
         "dsp_enabled": "DSP ist aktiviert.",
@@ -614,7 +643,8 @@
             "session_ended_title": "Setup-Sitzung beendet",
             "session_ended_text": "Die Einrichtungssitzung ist beendet – möglicherweise ist sie bereits abgeschlossen. Überprüfe dies bitte bei deinen Anbietern oder Wiedergabegeräten."
         },
-        "options": "Optionen"
+        "options": "Optionen",
+        "add_group_player_desc": "Erstelle eine permanente Wiedergabegeräte-Gruppe mit {0} Wiedergabegeräten. Wenn du in dieser Wiedergabegeräte-Gruppe abspielst, werden die Mitglieds-Wiedergabegeräte automatisch synchronisiert."
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -631,7 +661,6 @@
         "artist": "Interpret",
         "name": "Alphabetisch",
         "name_desc": "Alphabetisch (absteigend)",
-        "recent": "Kürzlich hinzugefügt",
         "year_desc": "Erscheinungsjahr (absteigend)",
         "duration_desc": "Dauer (absteigend)",
         "original": "Standard",
@@ -721,7 +750,8 @@
         "import_file": "Datei importieren",
         "bpm": "Tempo (Schläge pro Minute)",
         "musical_key": "Tonart",
-        "show_dashboard": "Dashboard auf ein Gerät übertragen"
+        "show_dashboard": "Dashboard auf ein Gerät übertragen",
+        "collapse_collections": "Sammlungen ausblenden"
     },
     "topresult": "Top-Ergebnis",
     "track": "Titel",
@@ -1026,7 +1056,9 @@
         "select_providers": "Wähle Musikanbieter",
         "save_changes": "Änderungen speichern",
         "update_password": "Passwort aktualisieren",
-        "guest_role": "Gast"
+        "guest_role": "Gast",
+        "tokens_load_failed": "Zugriffstoken konnten nicht geladen werden",
+        "users_load_failed": "Benutzer konnten nicht geladen werden"
     },
     "login": {
         "subtitle": "Verbinde dich mit deinem Musikserver",
@@ -1074,7 +1106,18 @@
         "scan_qr_code": "Scanne den QR-Code.",
         "scan_qr_hint": "Richte deine Kamera auf den QR-Code, der in den Servereinstellungen deines Music Assistant angezeigt wird.",
         "qr_invalid": "Ungültiger QR-Code. Bitte scanne einen Music Assistant Fernbedienungs-ID QR-Code.",
-        "qr_camera_error": "Kann nicht auf Kamera zugreifen. Prüfe die Berechtigungen."
+        "qr_camera_error": "Kann nicht auf Kamera zugreifen. Prüfe die Berechtigungen.",
+        "error_party_auth_failed": "Konnte nicht an der Party teilnehmen",
+        "remote_only_info": "Stelle eine Remoteverbindung zu deinem Music Assistant-Server her.",
+        "server_address_hint": "Gib die vollständige URL deines Music Assistant-Servers ein.",
+        "connecting_ingress": "Verbindung über Home Assistant...",
+        "connecting_local_party": "Verbindung zur Party wird hergestellt...",
+        "connecting_remote_party": "Verbindung zur Party wird hergestellt...",
+        "joining_party": "Der Party beitreten...",
+        "reconnecting": "Wiederverbinden",
+        "reconnecting_message": "Es wird versucht, die Verbindung zum Server wiederherzustellen...",
+        "error_ingress_failed": "Anmeldung über Home Assistant nicht möglich",
+        "error_invalid_credentials": "Die Anmeldung ist fehlgeschlagen. Bitte überprüfe deinen Benutzernamen und dein Passwort."
     },
     "yes": "Ja",
     "no": "Nein",
@@ -1495,15 +1538,15 @@
                 "web_search_mode": "Web-Suchmodus",
                 "character_limit": "Zeichenbegrenzung",
                 "prompt": "Eingabeaufforderung",
-                "clear_queue_on_dynamic_start": "Warteschlange bei dynamischem Start leeren",
                 "dynamic_batch_size": "Dynamische Stapelgröße",
-                "instructions": "Anweisungen für Gastgeber und Programm"
+                "instructions": "Anweisungen für Gastgeber und Programm",
+                "shuffle_playlist_tracks": "Wiedergabeliste zufällig abspielen"
             },
             "field_descriptions": {
-                "source_playtime_cap": "Maximale Gesamtspielzeit der Hintergrundmusik in Minuten. Die Titel werden nach dem Zufallsprinzip ausgewählt, bis die Obergrenze erreicht ist. So erhältst du eine zufällige Auswahl aus der Wiedergabeliste und nicht nur den ersten Teil davon. Lasse den Wert auf 0 stehen, wenn du keine Begrenzung wünschst.",
-                "clear_queue_on_dynamic_start": "Ersetze den aktuellen Titel in der Wiedergabeliste, sobald die Sendung startet. Deaktiviere diese Option, um die Sendung stattdessen an die Wiedergabeliste anzuhängen und den aktuellen Titel weiterlaufen zu lassen.",
+                "source_playtime_cap": "Maximale Gesamtspielzeit der Hintergrundmusik in Minuten. Die Titel werden in der Reihenfolge abgespielt, in der sie in der Sendung vorkommen, bis die Obergrenze erreicht ist. Für keine Begrenzung den Wert auf 0 setzen.",
                 "dynamic_batch_size": "Wie viele Titel der Sender gleichzeitig vorbereitet. Größere Stapel bedeuten weniger Pausen, während das nächste Segment generiert wird, aber eine längere Wartezeit, bevor die Sendung beginnt.",
-                "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die KI gesendet."
+                "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die KI gesendet.",
+                "shuffle_playlist_tracks": "Die Quell-Playlist wird in zufälliger Reihenfolge abgespielt. Deaktiviere diese Option, um die Reihenfolge der Playlist beizubehalten."
             },
             "web_search": {
                 "disabled": "deaktiviert (kein Web-Tool)",
@@ -1949,12 +1992,12 @@
         "120": "2 Stunden"
     },
     "shuffle_smart_active": "Die automatische Zufallswiedergabe ist aktiviert. Klicke hier, um sie auszuschalten.",
-    "goto_album_radio": "Zum Album-Radio",
-    "goto_artist_radio": "Zum Interpreten-Radio",
-    "goto_genre_radio": "Zum Genre-Radio",
-    "goto_playlist_radio": "Zum Wiedergabelisten-Radio-Seite",
-    "goto_radio": "Zum Radio",
-    "goto_track_radio": "Zum Lieder-Radio",
+    "goto_album_radio": "Endlosen Album-Mix ansehen",
+    "goto_artist_radio": "Endlosen Interpreten-Mix ansehen",
+    "goto_genre_radio": "Endlosen Genre-Mix ansehen",
+    "goto_playlist_radio": "Endlosen Wiedergabelisten-Mix ansehen",
+    "goto_radio": "Endlosen Mix ansehen",
+    "goto_track_radio": "Endlosen Titel-Mix ansehen",
     "autoplay_dynamic_title": "Die automatische Wiedergabe ist aktiviert.",
     "autoplay_dynamic_lead": "Deine Warteschlange wird entsprechend deiner Auswahl dynamisch gefüllt:",
     "autoplay_dynamic_desc": "Deine Warteschlange wird entsprechend deiner Auswahl dynamisch gefüllt.",
@@ -2006,5 +2049,10 @@
     },
     "reconfigure_player": "Wiedergabegerät neu konfigurieren",
     "configure_player": "Wiedergabegerät konfigurieren",
-    "plugins": "Plugins"
+    "plugins": "Plugins",
+    "queue_ended": "Wiedergabe beendet",
+    "play_from_beginning": "Von Anfang an abspielen",
+    "audiobooks_in_collection": "Hörbücher in dieser Sammlung",
+    "collection_no_audiobooks": "Diese Sammlung enthält keine Hörbücher.",
+    "error_generic": "Es ist ein Fehler aufgetreten. Bitte versuche es erneut."
 }

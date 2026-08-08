@@ -20,6 +20,25 @@
 
     <v-divider />
 
+    <div v-if="props.toolBarTabs !== undefined" class="content-tabs">
+      <Tabs
+        :model-value="activeTabId"
+        class="items-start"
+        @update:model-value="(v) => onTabChange(v as string)"
+      >
+        <TabsList class="h-auto w-auto gap-6 bg-transparent p-0">
+          <TabsTrigger
+            v-for="tab in props.toolBarTabs"
+            :key="tab.id"
+            :value="tab.id"
+            class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 font-['JetBrains_Mono_Medium'] text-[15px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
+          >
+            {{ tab.label }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
+
     <v-text-field
       v-if="showSearchInput"
       id="searchInput"
@@ -240,12 +259,10 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserPreferences } from "@/composables/userPreferences";
-import {
-  handleMenuBtnClick,
-  panelViewItemResponsive,
-  scrollElement,
-} from "@/helpers/utils";
+import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -282,6 +299,14 @@ import { toast } from "vue-sonner";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
+
+type LoadPagedDataFn = (params: LoadDataParams) => Promise<MediaItemType[]>;
+
+export interface ToolBarTab {
+  id: string;
+  label: string;
+  loadPagedData?: LoadPagedDataFn;
+}
 
 export interface LoadDataParams {
   offset: number;
@@ -341,7 +366,7 @@ export interface Props {
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
-  loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  loadPagedData?: LoadPagedDataFn;
   // loadItems callback is provided for flat non-paged listings
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit?: number;
@@ -353,6 +378,7 @@ export interface Props {
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel" | "panel_compact";
+  toolBarTabs?: ToolBarTab[];
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -394,6 +420,7 @@ const props = withDefaults(defineProps<Props>(), {
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
+  toolBarTabs: undefined,
 });
 
 // global refs
@@ -402,6 +429,45 @@ const route = useRoute();
 const { t, te } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
+const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
+watch(
+  () => props.toolBarTabs,
+  (tabs) => {
+    if (!tabs || tabs.length === 0) return;
+    if (tabs.some((tab) => tab.id === activeTabId.value)) return;
+    const hadActiveTab = activeTabId.value !== "";
+    const preferred = savedPrefs.value.activeTab;
+    const target = tabs.find((tab) => tab.id === preferred) ?? tabs[0];
+
+    activeTabId.value = target.id;
+
+    if (restoredFromPrevState) {
+      if (preferred && !tabs.some((tab) => tab.id === preferred)) {
+        loadData(true);
+      }
+    } else if (hadActiveTab || target.id !== tabs[0].id) {
+      loadData(true);
+    }
+  },
+);
+let restoredFromPrevState = false;
+
+const getActiveTab = () => {
+  return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
+};
+
+const onTabChange = function (tabId: string) {
+  if (!tabId || tabId === activeTabId.value) return;
+  activeTabId.value = tabId;
+
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "activeTab",
+    tabId,
+  );
+  loadData(true);
+};
 
 // local refs
 const params = ref<LoadDataParams>({
@@ -1368,6 +1434,13 @@ const loadData = async function (
   FilterParamsChanged = false,
   offset = 0,
 ) {
+  let loadPagedData: LoadPagedDataFn | undefined = props.loadPagedData;
+  if (props.toolBarTabs !== undefined && props.toolBarTabs.length > 0) {
+    const activeTab = getActiveTab();
+    if (activeTab !== undefined && activeTab.loadPagedData !== undefined) {
+      loadPagedData = activeTab.loadPagedData;
+    }
+  }
   if (loading.value) {
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
@@ -1375,7 +1448,7 @@ const loadData = async function (
   }
   loading.value = true;
 
-  if (FilterParamsChanged && props.loadPagedData != null) {
+  if (FilterParamsChanged && loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
     clear = true;
   }
@@ -1397,9 +1470,9 @@ const loadData = async function (
   params.value.limit = props.limit;
   params.value.refresh = refresh;
 
-  if (props.loadPagedData != null) {
+  if (loadPagedData != null) {
     // server side paged listing (with filter support)
-    const nextItems = await props.loadPagedData(params.value);
+    const nextItems = await loadPagedData(params.value);
     if (params.value.offset) {
       pagedItems.value.push(...nextItems);
     } else {
@@ -1442,6 +1515,13 @@ const savedPrefs = computed(
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
   const prefs = savedPrefs.value;
+
+  if (
+    prefs.activeTab &&
+    props.toolBarTabs?.some((tab) => tab.id === prefs.activeTab)
+  ) {
+    activeTabId.value = prefs.activeTab;
+  }
 
   // get stored/default viewMode for this itemtype
   if (props.forcedViewMode) {
@@ -1729,6 +1809,7 @@ onMounted(async () => {
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
   if (props.restoreState && store.prevState?.path == key) {
+    restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
     allItems.value = store.prevState.allItems;
@@ -1816,7 +1897,7 @@ export interface StoredState {
 }
 
 const getSortName = function (
-  item: MediaItemType | ItemMapping,
+  item: MediaItemType | ItemMapping | null,
   preferSortName = false,
 ) {
   if (!item) return "";
@@ -1941,13 +2022,6 @@ const getFilteredItems = function (
   if (params.sortBy == "year_desc") {
     result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
   }
-  if (params.sortBy == "recent") {
-    result.sort((a, b) => {
-      const aTimestamp = "timestamp_added" in a ? a.timestamp_added : 0;
-      const bTimestamp = "timestamp_added" in b ? b.timestamp_added : 0;
-      return bTimestamp - aTimestamp;
-    });
-  }
 
   if (params.sortBy == "duration") {
     result.sort(
@@ -1965,7 +2039,7 @@ const getFilteredItems = function (
   }
 
   if (params.favoritesOnly) {
-    result = result.filter((x) => x.favorite);
+    result = result.filter((x) => "favorite" in x && x.favorite);
   }
 
   if (params.hideFullyPlayed) {
@@ -2075,5 +2149,13 @@ defineExpose({
   max-width: 10%;
   flex-basis: 10%;
   padding: 8px;
+}
+.content-tabs {
+  padding: 10px 16px 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 </style>

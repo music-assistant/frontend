@@ -1,6 +1,11 @@
-import { flushPromises, shallowMount } from "@vue/test-utils";
+import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { FlowStepType, type SetupFlowStep } from "@/plugins/api/interfaces";
+import {
+  ConfigEntryType,
+  FlowStepType,
+  type ConfigEntry,
+  type SetupFlowStep,
+} from "@/plugins/api/interfaces";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 
 const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
@@ -66,6 +71,8 @@ vi.mock("@/plugins/store", () => ({
 
 vi.mock("@/views/settings/ConfigEntryRow.vue", () => ({
   default: {
+    name: "ConfigEntryRow",
+    props: ["confEntry", "disabled"],
     template: "<div />",
   },
 }));
@@ -180,7 +187,129 @@ describe("SetupFlowDialog", () => {
 
     expect(wrapper.text()).toContain("submitted");
   });
+
+  it("hides an alert while its dependency is unmet, but keeps the input", async () => {
+    apiMock.reconfigureProvider.mockResolvedValue(
+      formStep([
+        entry({ key: "enable_feature", type: ConfigEntryType.BOOLEAN }),
+        entry({
+          key: "feature_warning",
+          type: ConfigEntryType.ALERT,
+          depends_on: "enable_feature",
+          depends_on_value: true,
+        }),
+        entry({
+          key: "feature_detail",
+          type: ConfigEntryType.STRING,
+          depends_on: "enable_feature",
+          depends_on_value: true,
+        }),
+      ]),
+    );
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({
+      kind: "reconfigure",
+      instanceId: "spotify--test",
+      onFlowEnded: vi.fn(),
+    });
+    await flushPromises();
+
+    const rows = wrapper.findAllComponents({ name: "ConfigEntryRow" });
+    expect(
+      rows.map((row) => (row.props("confEntry") as ConfigEntry).key),
+    ).toEqual(["enable_feature", "feature_detail"]);
+    expect(rows[0].props("disabled")).toBe(false);
+    expect(rows[1].props("disabled")).toBe(true);
+  });
+
+  it("gates an entry whose dependency key is not in the step", async () => {
+    apiMock.reconfigureProvider.mockResolvedValue(
+      formStep([
+        entry({
+          key: "feature_warning",
+          type: ConfigEntryType.ALERT,
+          depends_on: "typo_in_this_key",
+        }),
+        entry({
+          key: "feature_detail",
+          type: ConfigEntryType.STRING,
+          depends_on: "typo_in_this_key",
+        }),
+      ]),
+    );
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({
+      kind: "reconfigure",
+      instanceId: "spotify--test",
+      onFlowEnded: vi.fn(),
+    });
+    await flushPromises();
+
+    const rows = wrapper.findAllComponents({ name: "ConfigEntryRow" });
+    expect(
+      rows.map((row) => (row.props("confEntry") as ConfigEntry).key),
+    ).toEqual(["feature_detail"]);
+    expect(rows[0].props("disabled")).toBe(true);
+  });
+
+  it("offers the next step despite a required entry behind an unmet dependency", async () => {
+    const wrapper = await mountFormStep([
+      entry({ key: "use_proxy", type: ConfigEntryType.BOOLEAN, value: false }),
+      entry({
+        key: "proxy_url",
+        type: ConfigEntryType.STRING,
+        required: true,
+        depends_on: "use_proxy",
+      }),
+    ]);
+
+    expect(submitDisabled(wrapper)).toBe(false);
+  });
+
+  it("withholds the next step once that dependency is met", async () => {
+    const wrapper = await mountFormStep([
+      entry({ key: "use_proxy", type: ConfigEntryType.BOOLEAN, value: true }),
+      entry({
+        key: "proxy_url",
+        type: ConfigEntryType.STRING,
+        required: true,
+        depends_on: "use_proxy",
+      }),
+    ]);
+
+    expect(submitDisabled(wrapper)).toBe(true);
+  });
 });
+
+async function mountFormStep(entries: ConfigEntry[]) {
+  apiMock.reconfigureProvider.mockResolvedValue(formStep(entries));
+  const wrapper = shallowMount(SetupFlowDialog, {
+    global: { renderStubDefaultSlot: true },
+  });
+
+  await launchSetupFlow?.({
+    kind: "reconfigure",
+    instanceId: "spotify--test",
+    onFlowEnded: vi.fn(),
+  });
+  await flushPromises();
+
+  return wrapper;
+}
+
+function submitDisabled(wrapper: VueWrapper) {
+  const button = wrapper
+    .findAll("button-stub")
+    .find((btn) => btn.text() === "settings.setup_flow.next");
+  if (!button) throw new Error("submit button not rendered");
+  return button.attributes("disabled") === "true";
+}
 
 function terminalStep(type: FlowStepType): SetupFlowStep {
   return {
@@ -192,14 +321,28 @@ function terminalStep(type: FlowStepType): SetupFlowStep {
   };
 }
 
-function formStep(): SetupFlowStep {
+function formStep(entries: ConfigEntry[] = []): SetupFlowStep {
   return {
-    entries: [],
+    entries,
     errors: {},
     flow_id: "flow-1",
     step_id: "form",
     type: FlowStepType.FORM,
   };
+}
+
+function entry(
+  overrides: Partial<ConfigEntry> & { key: string; type: ConfigEntryType },
+): ConfigEntry {
+  return {
+    category: "generic",
+    default_value: null,
+    label: overrides.key,
+    required: false,
+    options: [],
+    value: null,
+    ...overrides,
+  } as ConfigEntry;
 }
 
 function progressStep(progressText: string): SetupFlowStep {

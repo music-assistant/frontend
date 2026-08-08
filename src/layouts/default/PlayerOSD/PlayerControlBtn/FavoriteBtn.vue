@@ -12,11 +12,11 @@
 <script setup lang="ts">
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
-import { type MediaItemType } from "@/plugins/api/interfaces";
+import { type MediaItem } from "@/plugins/api/interfaces";
 
 // properties
 export interface Props {
-  item?: MediaItemType;
+  item?: MediaItem;
   isVisible?: boolean;
   icon?: IconProps;
   disabled?: boolean;

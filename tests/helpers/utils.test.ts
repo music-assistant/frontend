@@ -2,26 +2,17 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
-  groupMemberPickerVisible,
   hexToRgb,
   kebabize,
   markdownToHtml,
   numberRange,
   paletteFromServer,
-  parseBool,
   rgbToHex,
   sleep,
   truncateString,
 } from "@/helpers/utils";
-import {
-  IdentifierType,
-  type MediaItemPalette,
-  type Player,
-  PlayerType,
-} from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => ({
   api: {
@@ -30,108 +21,9 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
-vi.mock("@/plugins/store", () => ({
-  store: { companionPlayerId: undefined },
-}));
-
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
 }));
-
-vi.mock("@/plugins/router", () => ({
-  default: { push: vi.fn() },
-}));
-
-vi.mock("@/plugins/web_player", () => ({
-  webPlayer: { player_id: null },
-  WebPlayerMode: {},
-}));
-
-vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
-  showContextMenuForMediaItem: vi.fn(),
-  showPlayMenuForMediaItem: vi.fn(),
-}));
-
-vi.mock("@/plugins/api/helpers", () => ({
-  itemIsAvailable: vi.fn(),
-}));
-
-function createPlayer(overrides: Partial<Player> = {}): Player {
-  return {
-    player_id: "player",
-    provider: "test",
-    type: PlayerType.PLAYER,
-    name: "Player",
-    available: true,
-    device_info: {
-      model: "Test",
-      manufacturer: "Test",
-      identifiers: {
-        [IdentifierType.MAC_ADDRESS]: "",
-        [IdentifierType.SERIAL_NUMBER]: "",
-        [IdentifierType.UUID]: "",
-        [IdentifierType.IP_ADDRESS]: "",
-        [IdentifierType.UNKNOWN]: "",
-      },
-    },
-    supported_features: [],
-    can_group_with: [],
-    enabled: true,
-    group_members: [],
-    static_group_members: [],
-    source_list: [],
-    sound_mode_list: [],
-    options: [],
-    group_volume: null,
-    group_volume_muted: null,
-    hide_in_ui: false,
-    icon: "speaker",
-    power_control: "power",
-    volume_control: "volume",
-    mute_control: "mute",
-    needs_setup: false,
-    output_protocols: [],
-    active_output_protocol: null,
-    ...overrides,
-  };
-}
-
-describe("groupMemberPickerVisible", () => {
-  beforeEach(() => {
-    store.companionPlayerId = undefined;
-    webPlayer.player_id = null;
-  });
-
-  it("shows the hidden web player owned by this browser", () => {
-    const player = createPlayer({
-      player_id: "local-web-player",
-      hide_in_ui: true,
-    });
-    webPlayer.player_id = player.player_id;
-
-    expect(groupMemberPickerVisible(player)).toBe(true);
-  });
-
-  it("shows the hidden companion player owned by this app", () => {
-    const player = createPlayer({
-      player_id: "local-companion-player",
-      hide_in_ui: true,
-    });
-    store.companionPlayerId = player.player_id;
-
-    expect(groupMemberPickerVisible(player)).toBe(true);
-  });
-
-  it("keeps unrelated hidden players out of the picker", () => {
-    const player = createPlayer({
-      player_id: "remote-web-player",
-      hide_in_ui: true,
-    });
-    webPlayer.player_id = "local-web-player";
-
-    expect(groupMemberPickerVisible(player)).toBe(false);
-  });
-});
 
 describe("formatDuration", () => {
   it("formats seconds correctly", () => {
@@ -176,30 +68,6 @@ describe("truncateString", () => {
     expect(truncateString(null, 5)).toBe("");
     // @ts-expect-error testing invalid input
     expect(truncateString(undefined, 5)).toBe("");
-  });
-});
-
-describe("parseBool", () => {
-  it("parses boolean values correctly", () => {
-    expect(parseBool(true)).toBe(true);
-    expect(parseBool(false)).toBe(false);
-  });
-
-  it("parses string values correctly", () => {
-    expect(parseBool("true")).toBe(true);
-    expect(parseBool("false")).toBe(false);
-    expect(parseBool("TRUE")).toBe(true);
-    expect(parseBool("FALSE")).toBe(false);
-  });
-
-  it("handles null/undefined", () => {
-    expect(parseBool(null)).toBe(false);
-    expect(parseBool(undefined)).toBe(false);
-  });
-
-  it("handles empty values", () => {
-    expect(parseBool("")).toBe(false);
-    expect(parseBool("0")).toBe(false);
   });
 });
 

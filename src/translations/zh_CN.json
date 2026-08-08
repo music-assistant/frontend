@@ -224,12 +224,14 @@
                 "edited_channel": "绘制该通道的 EQ 响应",
                 "channel": "该频段将用于",
                 "per_channel_preamp": "{channel}的额外前置放大器增益",
-                "disable_multichannel_controls": "禁用多通道控制"
+                "disable_multichannel_controls": "禁用多通道控制",
+                "help": "精确的音色塑造：每个频段针对特定频率，可对其进行衰减或提升。衰减比提升更安全，因为提升可能会导致削波。"
             },
             "tone_control": {
                 "bass_level": "低音等级",
                 "mid_level": "中音等级",
-                "treble_level": "高音等级"
+                "treble_level": "高音等级",
+                "help": "一个简单的三频段调节功能，分别针对低音、中音和高音。如需更精细的调节，请使用参量均衡器。"
             },
             "parameter": {
                 "frequency": "频率",
@@ -261,6 +263,14 @@
                 "remove_confirm": "您确定要移除此 DSP 预设吗？",
                 "custom": "自定义",
                 "selected": "预设： {0}"
+            },
+            "input_gain_help": "设置进入信号链的电平。将其调低，以便为提升型滤波器预留余量。",
+            "output_gain_help": "调整信号链中每个滤波器应用后的输出电平。播放器音量稍后应用。",
+            "gain": {
+                "help": "将流经链中该节点的所有内容的电平提高或降低。"
+            },
+            "balance": {
+                "help": "将声音向左或右扬声器偏移。仅适用于立体声音频。"
             }
         },
         "dsp_enabled": "DSP 已启用",
@@ -599,7 +609,6 @@
         "artist": "歌手",
         "name": "字母顺序",
         "name_desc": "字母顺序（降序）",
-        "recent": "最近添加",
         "year_desc": "发布年份（降序）",
         "duration_desc": "持续时间（降序）",
         "original": "原创",
@@ -1442,6 +1451,17 @@
             "play_along": "一起演奏",
             "host_controls": "主机控制",
             "return_to_host_panel": "返回主机面板"
+        },
+        "ai_radio": {
+            "customize": {
+                "prompt_placeholders_hint": "可用占位符： {placeholders}"
+            },
+            "fields": {
+                "shuffle_playlist_tracks": "随机播放列表曲目"
+            },
+            "field_descriptions": {
+                "shuffle_playlist_tracks": "以随机顺序播放源播放列表。关闭此选项可按播放列表本身的顺序播放。"
+            }
         }
     },
     "no_lyrics_available": "暂无歌词",

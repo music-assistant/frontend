@@ -14,7 +14,6 @@
       :sort-keys="['provider', 'sort_name']"
       :title="$t('other_versions')"
       :hide-on-empty="true"
-      :checksum="provider + itemId"
     />
     <br />
     <!-- provider mapping details -->

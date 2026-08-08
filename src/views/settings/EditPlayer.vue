@@ -81,7 +81,7 @@
               </span>
             </div>
             <div
-              v-if="api.players[config.player_id]?.output_protocols?.length"
+              v-if="api.players[config.player_id]?.output_protocols.length"
               class="protocol-chips"
             >
               <v-chip
@@ -93,33 +93,33 @@
                 class="protocol-chip"
                 :class="{
                   'protocol-chip--clickable': api.getProviderManifest(
-                    protocol.protocol_domain!,
+                    protocol.protocol_domain,
                   )?.documentation,
                   'protocol-chip--unavailable': !protocol.available,
                 }"
                 @click="
-                  api.getProviderManifest(protocol.protocol_domain!)
+                  api.getProviderManifest(protocol.protocol_domain)
                     ?.documentation &&
                   openLinkInNewTab(
-                    api.getProviderManifest(protocol.protocol_domain!)!
+                    api.getProviderManifest(protocol.protocol_domain)!
                       .documentation!,
                   )
                 "
               >
                 <template #prepend>
                   <ProviderIcon
-                    :domain="protocol.protocol_domain!"
+                    :domain="protocol.protocol_domain"
                     :size="14"
                     class="chip-icon"
                   />
                 </template>
                 {{
-                  api.getProviderManifest(protocol.protocol_domain!)?.name ||
+                  api.getProviderManifest(protocol.protocol_domain)?.name ||
                   protocol.protocol_domain
                 }}
                 <v-icon
                   v-if="
-                    api.getProviderManifest(protocol.protocol_domain!)
+                    api.getProviderManifest(protocol.protocol_domain)
                       ?.documentation
                   "
                   size="12"
@@ -261,10 +261,16 @@ import { watch } from "vue";
 
 import {
   ConfigEntryUI,
+  HASS_CONTROL_KEY_BY_PLAYER_KEY,
+  HassControlPickerEntry,
+  HassControlPlayerKey,
   UI_ENTRY_TYPE,
   isInjected,
+  mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
-import { openActionUrlEntries, openLinkInNewTab } from "@/helpers/utils";
+import { getHassProviderInstance } from "@/helpers/hass_controls";
+import { useConfigAction } from "@/composables/useConfigAction";
+import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 // global refs
@@ -273,6 +279,8 @@ const config = ref<PlayerConfig>();
 const loading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
+let configLoadRequestId = 0;
+let configRefreshRequestId = 0;
 
 // props
 const props = defineProps<{
@@ -300,14 +308,49 @@ const unsub = api.subscribe(
 );
 onBeforeUnmount(unsub);
 
+const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+  if (props.playerId) void refreshPlayerConfig(props.playerId);
+});
+onBeforeUnmount(unsubProvidersUpdated);
+
 // computed properties
 const config_entries = computed(() => {
   if (!config.value) return [];
   const player = api.players[config.value.player_id];
   if (!player) return [];
 
+  // offer the Home Assistant entity picker beneath each player control entry, but only
+  // while there is a Home Assistant provider to register the picked entity with
+  const hassInstance = getHassProviderInstance();
+  const entries: ConfigEntryUI[] = [];
+  for (const entry of Object.values(config.value.values)) {
+    entries.push(entry);
+    const hassControlKey =
+      HASS_CONTROL_KEY_BY_PLAYER_KEY[entry.key as HassControlPlayerKey];
+    if (!hassInstance || !hassControlKey) continue;
+    const pickerEntry: HassControlPickerEntry = {
+      injected: true,
+      key: `${entry.key}_${UI_ENTRY_TYPE.HASS_CONTROL_PICKER}`,
+      type: UI_ENTRY_TYPE.HASS_CONTROL_PICKER,
+      category: entry.category,
+      // stay with the entry it fills in when the form hides, folds away or gates that one
+      advanced: entry.advanced,
+      hidden: entry.hidden,
+      depends_on: entry.depends_on,
+      depends_on_value: entry.depends_on_value,
+      depends_on_value_not: entry.depends_on_value_not,
+      label: "",
+      required: false,
+      options: [],
+      default_value: null,
+      hass_instance_id: hassInstance.instance_id,
+      hass_control_key: hassControlKey,
+      target_key: entry.key as HassControlPlayerKey,
+    };
+    entries.push(pickerEntry);
+  }
+
   // inject a link to the DSP config if the player is not a group
-  const entries: ConfigEntryUI[] = Object.values(config.value.values);
   if (player.type !== PlayerType.GROUP) {
     entries.push({
       injected: true,
@@ -316,6 +359,7 @@ const config_entries = computed(() => {
       category: "dsp",
       label: "",
       required: false,
+      options: [],
       read_only: false,
       default_value: dspEnabled.value,
     });
@@ -329,6 +373,7 @@ const config_entries = computed(() => {
       label: $t("settings.dsp_note_multi_device_group.label"),
       default_value: null,
       required: false,
+      options: [],
       category: "dsp",
       injected: true,
     });
@@ -342,6 +387,7 @@ const config_entries = computed(() => {
       label: $t("settings.dsp_note_multi_device_group_unsupported.label"),
       default_value: null,
       required: false,
+      options: [],
       category: "dsp",
       injected: true,
     });
@@ -354,6 +400,7 @@ const config_entries = computed(() => {
       label: "",
       default_value: "",
       required: false,
+      options: [],
       category: "options",
       injected: true,
     });
@@ -375,10 +422,8 @@ const config_entries = computed(() => {
 
 watch(
   () => props.playerId,
-  async (val) => {
-    if (val) {
-      config.value = await api.getPlayerConfig(val);
-    }
+  (val) => {
+    if (val) void loadConfig(val);
   },
   { immediate: true },
 );
@@ -457,44 +502,49 @@ const onImmediateApply = async function (
     });
 };
 
-const onAction = async function (
-  action: string,
-  _values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  api
-    .invokePlayerConfigAction(config.value!.player_id, action)
-    .then(async (entries) => {
-      entries = openActionUrlEntries(entries);
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.savePlayerConfig(
-          props.playerId!,
-          saveValues,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-    })
-    .catch((err) => {
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokePlayerConfigAction(config.value!.player_id, action),
+  saveValues: (values) => api.savePlayerConfig(props.playerId!, values),
+});
+
+async function loadConfig(playerId: string) {
+  const requestId = ++configLoadRequestId;
+  try {
+    const updatedConfig = await api.getPlayerConfig(playerId);
+    if (requestId === configLoadRequestId && props.playerId === playerId) {
+      config.value = updatedConfig;
+    }
+  } catch (err) {
+    if (requestId === configLoadRequestId) {
       toast.error(String(err));
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-};
+    }
+  }
+}
+
+async function refreshPlayerConfig(playerId: string) {
+  if (config.value?.player_id !== playerId) return;
+  const requestId = ++configRefreshRequestId;
+  try {
+    const updatedConfig = await api.getPlayerConfig(playerId);
+    if (
+      requestId === configRefreshRequestId &&
+      props.playerId === playerId &&
+      config.value?.player_id === playerId
+    ) {
+      config.value.values = mergeConfigEntries(
+        config.value.values,
+        updatedConfig.values,
+      );
+    }
+  } catch (err) {
+    if (requestId === configRefreshRequestId) {
+      toast.error(String(err));
+    }
+  }
+}
 </script>
 
 <style scoped>

@@ -4,7 +4,7 @@
       <span class="player-card-name truncate text-sm font-medium">
         {{ playerName }}
       </span>
-      <slot />
+      <slot></slot>
     </div>
     <p
       v-if="memberNames.length > 0"

@@ -17,6 +17,7 @@ export enum DSPFilterType {
   GAIN = "gain",
   BALANCE = "balance",
   TRANSPOSE = "transpose",
+  CONVOLUTION = "convolution",
   STEREO_WIDTH = "stereo_width",
   CROSSFEED = "crossfeed",
 }
@@ -76,6 +77,26 @@ export interface TransposeFilter extends DSPFilterBase {
   semitones: number;
 }
 
+// Applies a stored impulse response to the audio. `ir_id` references an entry
+// in the server-side IR library; an empty string is valid and means "none
+// selected", which makes the filter a no-op. `gain` trims the output level,
+// since an impulse response changes overall loudness (-60..60 dB).
+export interface ConvolutionFilter extends DSPFilterBase {
+  type: DSPFilterType.CONVOLUTION;
+  ir_id: string;
+  gain: number;
+}
+
+// Metadata of a stored impulse response. Everything but `name` is probed from
+// the file server-side and is informational only.
+export interface DSPIRMetadata {
+  ir_id: string;
+  name: string;
+  sample_rate: number;
+  channels: number;
+  duration: number;
+}
+
 export interface StereoWidthFilter extends DSPFilterBase {
   type: DSPFilterType.STEREO_WIDTH;
   // 0.0 mono, 1.0 unchanged, 2.0 widest
@@ -95,6 +116,7 @@ export type DSPFilter =
   | GainFilter
   | BalanceFilter
   | TransposeFilter
+  | ConvolutionFilter
   | StereoWidthFilter
   | CrossfeedFilter;
 
@@ -175,6 +197,13 @@ export enum AlbumType {
   EP = "ep",
   LIVE = "live",
   SOUNDTRACK = "soundtrack",
+  UNKNOWN = "unknown",
+}
+
+export enum ArtistType {
+  SINGER = "singer",
+  AUTHOR = "author",
+  NARRATOR = "narrator",
   UNKNOWN = "unknown",
 }
 
@@ -360,6 +389,7 @@ export enum EventType {
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
   PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
+  DSP_IRS_UPDATED = "dsp_irs_updated",
   AUTH_SESSION = "auth_session",
   PROVIDER_EVENT = "provider_event",
   DASHBOARD_SESSIONS_UPDATED = "dashboard_sessions_updated",
@@ -396,6 +426,8 @@ export enum ProviderFeature {
   ARTIST_TRACKS = "artist_tracks",
   ARTIST_TOPTRACKS = "artist_toptracks",
   ARTIST_TOPALBUMS = "artist_topalbums",
+  AUTHOR_AUDIOBOOKS = "author_audiobooks",
+  NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",
@@ -452,7 +484,6 @@ export enum ConfigEntryType {
   URL = "url",
 
   // Only used in the frontend
-  DSP_SETTINGS = "dsp_settings",
   OPTIONS = "options",
 }
 
@@ -577,7 +608,9 @@ export type ConfigValueType =
 
 export interface ConfigValueOption {
   // Model for a value with separated name/value.
-  title: string;
+  // title: display title, resolved server-side from the translations; null when the
+  // option carries no in-code title and no translation matches - fall back to `value`
+  title: string | null;
   value: ConfigValueType;
   // disabled: when true the option is shown but not selectable (currently unavailable)
   disabled?: boolean;
@@ -594,12 +627,13 @@ export interface ConfigEntry {
   // key: used as identifier for the entry, also for localization
   key: string;
   type: ConfigEntryType;
-  // label: default label when no translation for the key is present
-  label: string;
+  // label: localized display label, resolved server-side; null when the entry carries no
+  // in-code label and no translation matches - fall back to `key`
+  label: string | null;
   default_value: ConfigValueType;
   required: boolean;
-  // options [optional]: select from list of possible values/options
-  options?: ConfigValueOption[];
+  // options: select from list of possible values/options, empty when the entry has no fixed set
+  options: ConfigValueOption[];
   // range [optional]: select values within range
   range?: number[];
   // description [optional]: extended description of the setting.
@@ -608,9 +642,14 @@ export interface ConfigEntry {
   help_link?: string;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
-  // depends_on [optional]: needs to be set before this setting shows up in frontend
+  // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
+  // as unmet. While unmet, input types and ACTION stay visible but render disabled;
+  // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
   depends_on?: string;
+  // depends_on_value [optional]: complementary to depends_on, the dependency is only met when
+  // the other entry holds this exact value (without it, any truthy value will do)
   depends_on_value?: ConfigValueType;
+  // depends_on_value_not [optional]: same as depends_on_value but inverted
   depends_on_value_not?: ConfigValueType;
   // hidden: hide from UI
   hidden?: boolean;
@@ -638,6 +677,15 @@ export interface ConfigEntry {
 export interface Config {
   // Base Configuration object.
   values: Record<string, ConfigEntry>;
+}
+
+export interface ConfigActionResult {
+  // Outcome of a one-shot config action: a message to show to the user
+  // and/or a url to open once. Either may be null; a result that carries
+  // neither reports a generic success.
+  // message: already localized server-side for the connection locale
+  message: string | null;
+  open_url: string | null;
 }
 
 export enum FlowStepType {
@@ -742,8 +790,8 @@ export interface ProviderMapping {
   provider_instance: string;
   available: boolean;
   in_library?: boolean;
-  // quality details (streamable content only)
-  audio_format?: AudioFormat;
+  // quality details, carrying defaults for anything but streamable content
+  audio_format: AudioFormat;
   // optional details to store provider specific details
   details?: string;
   // url = link to provider details page if exists
@@ -791,8 +839,9 @@ export interface MediaItemMetadata {
   replaygain?: number;
   popularity?: number;
   release_date?: string;
-  cache_checksum?: string;
   chapters?: MediaItemChapter[];
+  life_span?: LifeSpan;
+  artist_entity_type?: ArtistEntityType;
 }
 
 interface _MediaItemBase {
@@ -812,8 +861,6 @@ export interface MediaItem extends _MediaItemBase {
   metadata: MediaItemMetadata;
   favorite: boolean;
   position?: number; //required for playlist tracks, optional for all other
-  timestamp_added: number;
-  timestamp_modified: number;
 }
 
 export interface ItemMapping extends _MediaItemBase {
@@ -822,7 +869,9 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number;
 }
 
-export interface Artist extends MediaItem {}
+export interface Artist extends MediaItem {
+  artist_type?: ArtistType;
+}
 
 export interface Album extends MediaItem {
   year?: number;
@@ -839,8 +888,8 @@ export interface AudioMetadata {
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
-  // album track only
-  album: ItemMapping | Album;
+  // album: the album this track appears on; null for tracks that are not album tracks
+  album: ItemMapping | Album | null;
   disc_number?: number;
   track_number?: number;
   // only populated when the full track is requested (get_track), never on listings
@@ -869,7 +918,7 @@ export interface AudioSource extends MediaItem {
 }
 
 export interface Audiobook extends MediaItem {
-  publisher: string;
+  publisher: string | null;
   authors: string[] | Artist[];
   narrators: string[] | Artist[];
   duration: number;
@@ -878,8 +927,8 @@ export interface Audiobook extends MediaItem {
 }
 
 export interface Podcast extends MediaItem {
-  publisher?: string;
-  total_episodes?: number;
+  publisher: string | null;
+  total_episodes: number | null;
 }
 
 export interface PodcastEpisode extends MediaItem {
@@ -896,13 +945,41 @@ export interface Genre extends MediaItem {
   content_type?: MediaType | null;
 }
 
-export interface BrowseFolder extends MediaItem {
-  path?: string;
-  image?: MediaItemImage;
+// a browse folder is not a library item: it has no provider mappings, metadata,
+// favorite flag or position, so it extends the bare base instead of MediaItem
+export interface BrowseFolder extends _MediaItemBase {
+  // always FOLDER: lets TS drop the folder from the MediaItemType union on any
+  // other media_type check, and makes Exclude<MediaItemType, BrowseFolder> work
+  media_type: MediaType.FOLDER;
+  path: string;
+  image: MediaItemImage | null;
 }
 export enum RecommendationFolderType {
   DEFAULT = "default",
   TIMELINE = "timeline",
+}
+
+export enum ArtistEntityType {
+  PERSON = "Person",
+  GROUP = "Group",
+  ORCHESTRA = "Orchestra",
+  CHOIR = "Choir",
+  CHARACTER = "Character",
+  OTHER = "Other",
+}
+
+export interface LifeSpan {
+  begin?: string;
+  end?: string;
+  ended?: boolean;
+}
+
+export interface TimelineEvent {
+  id: string;
+  artist: Artist;
+  eventType: string;
+  dateLabel: string;
+  offset: number;
 }
 
 /** Mirrors music_assistant_models RecommendationFolder. `items` is populated by
@@ -919,6 +996,9 @@ export interface MediaCollection<M extends MediaItemType> extends MediaItem {
   items: M[];
 }
 
+// unlike the server alias of the same name this includes BrowseFolder, because
+// browse listings render folders and media items through the same components.
+// use Exclude<MediaItemType, BrowseFolder> where only real media items apply.
 export type MediaItemType =
   | Artist
   | Album
@@ -1024,9 +1104,6 @@ export interface StreamDetails {
   stream_metadata?: StreamMetadata;
   duration?: number;
   audio_processing?: AudioProcessingChain | null;
-
-  queue_id?: string;
-  fade_in?: boolean;
 }
 
 // queue_item
@@ -1035,7 +1112,8 @@ export interface QueueItem {
   queue_id: string;
   queue_item_id: string;
   name: string;
-  duration: number;
+  // duration: null for items without a fixed length (radio stations, live sources)
+  duration: number | null;
   sort_index: number;
   streamdetails?: StreamDetails;
   media_item?: PlayableMediaItemType;
@@ -1053,6 +1131,11 @@ export interface QueueItem {
 
 export interface PlayerQueue {
   queue_id: string;
+  // active: whether the player is currently playing this queue. Server-derived from the
+  // player's active_source: false only while an external source (line-in, Spotify Connect,
+  // another queue in a group) has taken the player over - a stopped or finished queue stays
+  // active and idle. Recalculated ~0.5s after the active_source change that causes it, so
+  // during a handover it can briefly still hold the value from before.
   active: boolean;
   display_name: string;
   available: boolean;
@@ -1103,7 +1186,6 @@ export interface PlayerQueue {
   // When one or more sources are dynamic, the queue runs in dynamic mode
   // (is_dynamic), implicitly enabling autoplay and smart shuffle.
   sources: ItemMapping[];
-  enqueued_media_items: MediaItemType[];
   is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
@@ -1122,7 +1204,7 @@ export interface OutputProtocol {
   output_protocol_id: string; // Unique ID: "native" or protocol player_id
   name: string; // Display name: "Native (Sonos)" or "AirPlay"
   is_native: boolean; // True if this is the player's native output
-  protocol_domain: string | null; // e.g., "airplay", "dlna" (null for native)
+  protocol_domain: string; // e.g., "airplay", "dlna"; the player's own domain for native
   priority: number; // Lower = more preferred (native = 0 if supported)
   available: boolean; // Whether this output protocol is currently available
   // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin
@@ -1226,6 +1308,10 @@ export interface Player {
   volume_muted?: boolean;
   group_members: string[];
   static_group_members: string[];
+  // active_source: id of the source the player is currently playing - its own queue_id for
+  // Music Assistant playback, or an external source id. PlayerQueue.active is derived from
+  // this, and PLAYER_UPDATED carries a new value before the queue is recalculated, so the
+  // two can disagree for about half a second during a source handover.
   active_source?: string;
   source_list: PlayerSource[];
   active_sound_mode?: string;
@@ -1326,8 +1412,6 @@ export interface ProviderInstance {
   type: ProviderType;
   domain: string;
   name: string;
-  default_name: string;
-  instance_name_postfix?: string;
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;
@@ -1582,8 +1666,6 @@ export interface SmartPlaylistTrackStats {
 
 // AI Radio interfaces
 
-export type AIRadioMode = "playlist" | "dynamic";
-
 export type AIRadioSectionType = "ai_text" | "ai_meta";
 export type AIRadioWebSearchMode = "disabled" | "allow" | "force";
 
@@ -1656,13 +1738,9 @@ export interface AIRadioStation {
   name: string;
   source_playlist_id: string;
   source_playlist_provider: string;
-  target_playlist_provider?: string;
   default_player_id?: string;
   max_duration_minutes?: number;
   shuffle_source_tracks?: boolean;
-  dynamic_batch_size?: number;
-  dynamic_poll_seconds?: number;
-  dynamic_prefetch_remaining_tracks?: number;
   merge_section_id?: string;
   general?: AIRadioStationGeneral;
   section_ids?: string[];
@@ -1673,19 +1751,21 @@ export interface AIRadioStation {
 export interface AIRadioSession {
   session_id: string;
   station_id: string;
-  mode: AIRadioMode;
   status: "running" | "completed" | "failed" | "stopped";
   created_at: string;
   started_at?: string;
   ended_at?: string;
   error?: string;
+  skipped_sections?: number;
+  last_render_error?: string;
   progress?: {
     phase?: string;
     [key: string]: unknown;
   };
   result?: {
-    target_playlist_id?: string;
-    target_playlist_name?: string;
+    queue_entries?: number;
+    planned_sections?: number;
+    skipped_sections?: number;
     [key: string]: unknown;
   };
 }

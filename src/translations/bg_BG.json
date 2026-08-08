@@ -204,6 +204,10 @@
             "types": {
                 "gain": "Усилване",
                 "balance": "Баланс"
+            },
+            "transpose": {
+                "original_key": "Оригинален ключ",
+                "concert_pitch_432": "A = 432 Hz"
             }
         },
         "dsp_enabled": "DSP е активиран",
@@ -432,7 +436,12 @@
         },
         "protocol_configure_title": "Конфигуриране на {name}",
         "download_diagnostics": "Изтегляне на диагностика",
-        "diagnostics": "Диагностика"
+        "diagnostics": "Диагностика",
+        "setup_flow": {
+            "setup_player_title": "Настройка на плейъра",
+            "external_default_title": "Продължете във вашия браузър"
+        },
+        "options": "Опции"
     },
     "show_info": "Показване на информация",
     "show_select_boxes": "Показване на полета за избор",
@@ -447,7 +456,6 @@
         "artist": "Изпълнител",
         "name": "По азбучен ред",
         "name_desc": "По азбучен ред (низходящо)",
-        "recent": "Наскоро добавени",
         "year_desc": "Година на издаване (низходящо)",
         "duration_desc": "Продължителност (низходящо)",
         "timestamp_added": "Дата на добавяне",
@@ -578,6 +586,7 @@
         },
         "more_info": "Повече информация",
         "audio_processing": {
+            "unknown": "Неизвестно",
             "unknown_format": "Неизвестен формат",
             "provider": "Доставчик: {0}",
             "source_format": "Източник: {0}",
@@ -594,18 +603,31 @@
             "destination_unknown": "Дестинация {0}",
             "quality": {
                 "low": "Ниско качество",
-                "standard": "Стандартно качество"
+                "standard": "Стандартно качество",
+                "unknown": "Качеството е неизвестно"
             },
             "normalization_mode": {
+                "disabled": "Деактивиран",
+                "dynamic": "Динамичен",
                 "fixed_gain": "Фиксирано усилване"
             },
             "measurement": {
                 "track": "Песен",
                 "album": "Албум"
             },
+            "crossfade_mode": {
+                "standard": "Стандартен",
+                "disabled": "Деактивиран"
+            },
+            "dsp_state": {
+                "disabled": "DSP е деактивиран",
+                "disabled_by_unsupported_group": "DSP не е наличен за тази група",
+                "unknown": "Състоянието на DSP е неизвестно"
+            },
             "mono": "Моно",
             "stereo": "Стерео",
             "integer_pcm": "{0}-bit PCM",
+            "internal_format_detail": "Вътрешен формат: {0}",
             "normalization_title": "Нормализиране на силата на звука",
             "playback_speed_title": "Скорост на възпроизвеждане",
             "dsp_title": "DSP"
@@ -975,6 +997,56 @@
             "timeline_place_before_year": "Преди {0}",
             "timeline_place_after_year": "След {0}",
             "timeline_place_between_years": "Между {0} и {1}"
+        },
+        "ai_radio": {
+            "actions": {
+                "delete": "Изтриване",
+                "saving": "Запазване...",
+                "up": "Нагоре",
+                "down": "Надолу",
+                "remove": "Премахване"
+            },
+            "plays": {
+                "start": "Веднъж в началото",
+                "end": "Веднъж в края",
+                "every_song": "Всяка песен",
+                "every_n_songs": "Всеки ~{0} песни"
+            },
+            "validation": {
+                "station_name_required": "Името на станцията е задължително"
+            },
+            "confirm": {
+                "discard_changes_title": "Да се отхвърлят ли промените?",
+                "discard_changes": "Имате незапазени промени, които ще бъдат загубени.",
+                "delete_station_title": "Изтриване на станцията?",
+                "delete_station": "Да се изтрие ли тази станция?"
+            },
+            "card": {
+                "stopping": "Спиране...",
+                "on_air": "В ефир",
+                "duplicate_name": "{0} (копие)",
+                "delete": "Изтриване"
+            },
+            "create": {
+                "playlist_placeholder": "Изберете плейлист",
+                "playlist_empty": "Няма намерени плейлисти",
+                "default_name": "{0} — {1}",
+                "create": "Създаване",
+                "create_and_play": "Създаване & възпроизвеждане",
+                "creating": "Създаване..."
+            },
+            "prereq": {
+                "description": "AI Radio се нуждае от доставчик с AI възможности (напр. Home Assistant), за да генерира хоста.",
+                "action": "Отидете в Настройки → Добавки"
+            },
+            "customize": {
+                "segments_title": "Сегменти",
+                "segments_empty": "Все още няма сегменти — добавете един, за да започнете.",
+                "add_segment": "Добавяне на сегмент",
+                "blank_segment": "Празен сегмент",
+                "blank_segment_name": "Нов сегмент",
+                "segment_name": "Име на сегмента"
+            }
         }
     },
     "no_lyrics_available": "Няма налични текстове на песни",
@@ -1139,6 +1211,7 @@
         "seed_heading": "Открийте музика, подобна на следните песни, изпълнители, албуми или плейлисти",
         "type_library": "От моята библиотека",
         "type_seed": "Откриване",
+        "type_seed_desc": "Открийте музика чрез вашите стрийминг доставчици.",
         "seed_album_pick": "Изберете албум",
         "seed_playlist_pick": "Изберете плейлист",
         "name_label": "Име",
@@ -1219,5 +1292,7 @@
         "return_to_app": "Назад към Music Assistant"
     },
     "searching": "Търсене...",
-    "pause": "Пауза"
+    "pause": "Пауза",
+    "plugins": "Добавки",
+    "queue_ended": "Възпроизвеждането приключи"
 }

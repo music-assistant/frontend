@@ -34,7 +34,7 @@
         <template #append>
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
-            :lyrics-active="lyricsActive"
+            :lyrics-active="showLyrics"
             @toggle-lyrics="toggleLyrics"
           />
 
@@ -568,8 +568,6 @@ watch(
   { immediate: true },
 );
 
-const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
-
 // Local reactive state for lyrics
 const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
   plain: null,
@@ -605,11 +603,18 @@ const lyricsState = computed<
 // Lyrics are reached through a dedicated button in the header and shown in
 // their own panel, independent of the queue list (which has its own toggle).
 const showLyrics = ref(false);
-const lyricsActive = computed(() => showLyrics.value);
 
 const toggleLyrics = () => {
   showLyrics.value = !showLyrics.value;
 };
+
+// This component stays mounted while the dialog is closed and the lyrics panel
+// keeps its state across open/close, so both are checked: the ~60fps loop only
+// runs while the lyrics viewer it feeds is actually on screen.
+const lyricsVisible = computed(
+  () => store.showFullscreenPlayer && showLyrics.value,
+);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsVisible);
 
 // If the panel was opened optimistically while lyrics were still loading but
 // the track turns out to have none, close it again so we don't show an empty
@@ -685,10 +690,9 @@ const showLyricsOffset = computed(() => {
     player.active_output_protocol &&
     player.active_output_protocol !== "native"
   ) {
-    domain =
-      player.output_protocols?.find(
-        (p) => p.output_protocol_id === player.active_output_protocol,
-      )?.protocol_domain ?? undefined;
+    domain = player.output_protocols.find(
+      (p) => p.output_protocol_id === player.active_output_protocol,
+    )?.protocol_domain;
   }
   if (!domain) {
     domain = player.provider.split("--")[0];
@@ -723,8 +727,8 @@ const fetchLyrics = async () => {
   const track = mediaItem as Track;
 
   // Check if lyrics are already in metadata
-  const existingPlain = track.metadata?.lyrics?.trim() || null;
-  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+  const existingPlain = track.metadata.lyrics?.trim() || null;
+  const existingSynced = track.metadata.lrc_lyrics?.trim() || null;
 
   if (existingPlain || existingSynced) {
     currentLyrics.value = { plain: existingPlain, synced: existingSynced };
@@ -920,7 +924,7 @@ const onTitleClick = async function () {
           const exactMatch = results.find(
             (track) =>
               track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
-              track.artists?.some(
+              track.artists.some(
                 (artist) =>
                   artist.name.toLowerCase() ===
                   currentMedia.artist!.toLowerCase(),
@@ -996,7 +1000,7 @@ const onAlbumClick = async function () {
         // If we have artist info, try to find album by same artist
         if (currentMedia.artist) {
           const matchWithArtist = results.find((album) =>
-            album.artists?.some(
+            album.artists.some(
               (artist) =>
                 artist.name.toLowerCase() ===
                   currentMedia.artist!.toLowerCase() ||

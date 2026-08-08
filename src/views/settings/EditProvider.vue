@@ -145,6 +145,7 @@
       v-if="config"
       :config-entries="allConfigEntries"
       :disabled="!config.enabled"
+      :provider-domain="config.domain"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -201,8 +202,10 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Button } from "@/components/ui/button";
+import { useConfigAction } from "@/composables/useConfigAction";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import { canReconfigureProvider } from "@/helpers/provider_config";
-import { markdownToHtml, openActionUrlEntries } from "@/helpers/utils";
+import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -229,7 +232,7 @@ const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
 let configLoadRequestId = 0;
-let statusRefreshRequestId = 0;
+let configRefreshRequestId = 0;
 let unsubProvidersUpdated: (() => void) | undefined;
 
 // props
@@ -269,7 +272,7 @@ watch(showRenameDialog, (val) => {
 
 onMounted(() => {
   unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-    if (props.instanceId) void refreshProviderStatus(props.instanceId);
+    if (props.instanceId) void refreshProviderConfig(props.instanceId);
   });
 });
 
@@ -301,7 +304,7 @@ const onReconfigure = function () {
     kind: "reconfigure",
     instanceId,
     onFlowEnded: () => {
-      void refreshProviderStatus(instanceId);
+      void refreshProviderConfig(instanceId);
     },
   });
 };
@@ -368,45 +371,18 @@ const onImmediateApply = async function (
   }
 };
 
-const onAction = async function (
-  action: string,
-  _values: Record<string, ConfigValueType>,
-  immediateApply: boolean,
-) {
-  loading.value = true;
-  api
-    .invokeProviderConfigAction(config.value!.instance_id, action)
-    .then(async (entries) => {
-      entries = openActionUrlEntries(entries);
-      config.value!.values = {};
-      for (const entry of entries) {
-        config.value!.values[entry.key] = entry;
-      }
-      // If the action has immediate_apply, save the updated values right away
-      if (immediateApply) {
-        const saveValues: Record<string, ConfigValueType> = {};
-        for (const entry of entries) {
-          if (entry.value !== undefined) {
-            saveValues[entry.key] = entry.value;
-          }
-        }
-        const updatedConfig = await api.saveProviderConfig(
-          config.value!.domain,
-          saveValues,
-          config.value!.instance_id,
-        );
-        for (const [key, entry] of Object.entries(updatedConfig.values)) {
-          config.value!.values[key] = entry;
-        }
-      }
-    })
-    .catch((err) => {
-      toast.error(String(err));
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-};
+const { onAction } = useConfigAction({
+  config,
+  loading,
+  invokeAction: (action) =>
+    api.invokeProviderConfigAction(config.value!.instance_id, action),
+  saveValues: (values) =>
+    api.saveProviderConfig(
+      config.value!.domain,
+      values,
+      config.value!.instance_id,
+    ),
+});
 
 const getAuthorsMarkdown = function (authors: string[]) {
   const allAuthors: string[] = [];
@@ -463,21 +439,25 @@ async function loadConfig(instanceId: string) {
   }
 }
 
-async function refreshProviderStatus(instanceId: string) {
+async function refreshProviderConfig(instanceId: string) {
   if (config.value?.instance_id !== instanceId) return;
-  const requestId = ++statusRefreshRequestId;
+  const requestId = ++configRefreshRequestId;
   try {
     const updatedConfig = await api.getProviderConfig(instanceId);
     if (
-      requestId === statusRefreshRequestId &&
+      requestId === configRefreshRequestId &&
       props.instanceId === instanceId &&
       config.value?.instance_id === instanceId
     ) {
       config.value.status = updatedConfig.status;
       config.value.last_error = updatedConfig.last_error;
+      config.value.values = mergeConfigEntries(
+        config.value.values,
+        updatedConfig.values,
+      );
     }
   } catch (err) {
-    if (requestId === statusRefreshRequestId) {
+    if (requestId === configRefreshRequestId) {
       toast.error(String(err));
     }
   }

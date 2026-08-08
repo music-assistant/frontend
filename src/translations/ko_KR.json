@@ -181,6 +181,31 @@
         "dynamic_members": {
             "label": "유동적 그룹 맴버",
             "description": "그룹에 멤버들이 동적으로 (임시) 참여하거나 떠날 수 있도록 허용하여, 그룹이 수동으로 플레이어들을 함께 동기화하는 것과 거의 동일하게 작동하도록 합니다. 주요 차이점은 그룹 플레이어가 재생 대기열을 유지한다는 것입니다"
+        },
+        "dsp": {
+            "configure_on": "Configuring DSP on: {name}",
+            "disabled_message": "현재 DSP가 비활성화되어 있습니다. 상단의 스위치를 사용하여 활성화하십시오.",
+            "output": "출력",
+            "filter": {
+                "type": "필터 유형",
+                "new": "새 {type}"
+            },
+            "move_up": "위로 이동",
+            "move_down": "아래로 이동",
+            "delete_filter": "필터 초기화",
+            "tone_control": {
+                "bass_level": "저음 레벨",
+                "mid_level": "중간음 레벨",
+                "treble_level": "고음 레벨"
+            },
+            "parameter": {
+                "frequency": "주파수",
+                "gain": "게인(Gain)"
+            },
+            "types": {
+                "parametric_eq": "파라메트릭 EQ",
+                "tone_control": "톤 조절"
+            }
         }
     },
     "show_info": "정보 표시",
@@ -198,7 +223,6 @@
         "artist": "아티스트",
         "name": "이름순",
         "name_desc": "이름순 (내림차순)",
-        "recent": "최근에 추가됨",
         "year_desc": "발매년도 (내림차순)",
         "duration_desc": "재생시간 (내림차순)",
         "original": "오리지널",
@@ -220,7 +244,7 @@
         "paused": "일시 정지",
         "playing": "재생 중"
     },
-    "sync_now": "지금 {0} 동기화하세요",
+    "sync_now": "지금 동기화하기",
     "sync_running": "하나 이상의 음악 제공업체가 동기화 중입니다.",
     "tooltip": {
         "album_artist_filter": "앨범 아티스트 필터 전환",
@@ -299,5 +323,23 @@
     },
     "shuffle_disable": "셔플 비활성화",
     "shuffle_enable": "셔플 활성화",
-    "edit": "수정"
+    "open_dsp_settings": "DSP 설정 열기",
+    "searchtype_all": "ALL",
+    "edit": "수정",
+    "discover": "둘러보기",
+    "providers": {
+        "party": {
+            "guest_page": {
+                "search_failed": "검색 실패. 다시 시도해주세요.",
+                "searching": "검색중...",
+                "search_results_count": "검색 결과 ({0})"
+            }
+        },
+        "music_quiz": {
+            "search_music": "라이브러리에서 검색",
+            "searching": "검색중...",
+            "source_search_failed": "음악 소스를 검색할 수 없습니다"
+        }
+    },
+    "searching": "검색중..."
 }

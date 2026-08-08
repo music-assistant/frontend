@@ -67,7 +67,10 @@ vi.mock("colorthief", () => ({
   },
 }));
 
-import { handlePlayBtnClick, handleMenuBtnClick } from "@/helpers/utils";
+import {
+  handlePlayBtnClick,
+  handleMenuBtnClick,
+} from "@/helpers/media_item_actions";
 import {
   MediaType,
   type Album,

@@ -189,7 +189,6 @@ function makeQueue(streamdetails: StreamDetails): PlayerQueue {
       available: true,
     },
     sources: [],
-    enqueued_media_items: [],
     is_dynamic: false,
   };
 }

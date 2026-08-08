@@ -55,6 +55,20 @@ function mountSearch(
   return mount(MediaSearch, { props });
 }
 
+// api.search always returns every result list, so fill the ones a case does not
+// exercise rather than letting a partial mock stand in for a server response
+const searchResults = <T extends Record<string, unknown>>(lists: T) => ({
+  artists: [],
+  albums: [],
+  tracks: [],
+  playlists: [],
+  radio: [],
+  podcasts: [],
+  audiobooks: [],
+  genres: [],
+  ...lists,
+});
+
 describe("MediaSearch", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -64,12 +78,14 @@ describe("MediaSearch", () => {
   });
 
   it("searches only the default-selected media types", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [],
-      playlists: [],
-      albums: [],
-      artists: [],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [],
+        playlists: [],
+        albums: [],
+        artists: [],
+      }),
+    );
     const wrapper = mountSearch({
       allowedMediaTypes: MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
       defaultSelectedMediaTypes: [MediaType.PLAYLIST, MediaType.GENRE],
@@ -88,15 +104,19 @@ describe("MediaSearch", () => {
   });
 
   it("renders a result for each allowed media type", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [{ uri: "track:1", name: "Some track", media_type: "track" }],
-      playlists: [
-        { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
-      ],
-      albums: [{ uri: "album:1", name: "Some album", media_type: "album" }],
-      artists: [{ uri: "artist:1", name: "Some artist", media_type: "artist" }],
-      genres: [{ uri: "genre:1", name: "Some genre", media_type: "genre" }],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [{ uri: "track:1", name: "Some track", media_type: "track" }],
+        playlists: [
+          { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
+        ],
+        albums: [{ uri: "album:1", name: "Some album", media_type: "album" }],
+        artists: [
+          { uri: "artist:1", name: "Some artist", media_type: "artist" },
+        ],
+        genres: [{ uri: "genre:1", name: "Some genre", media_type: "genre" }],
+      }),
+    );
     const wrapper = mountSearch({
       allowedMediaTypes: MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
       defaultSelectedMediaTypes: MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
@@ -121,12 +141,14 @@ describe("MediaSearch", () => {
   });
 
   it("emits select with the chosen item", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [],
-      playlists: [
-        { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
-      ],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [],
+        playlists: [
+          { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
+        ],
+      }),
+    );
     const wrapper = mountSearch({
       allowedMediaTypes: MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
       defaultSelectedMediaTypes: [MediaType.PLAYLIST],
@@ -145,12 +167,14 @@ describe("MediaSearch", () => {
   });
 
   it("hides excluded uris from the results", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [],
-      playlists: [
-        { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
-      ],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [],
+        playlists: [
+          { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
+        ],
+      }),
+    );
     const wrapper = mountSearch({
       allowedMediaTypes: MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
       defaultSelectedMediaTypes: [MediaType.PLAYLIST],
@@ -166,26 +190,36 @@ describe("MediaSearch", () => {
   });
 
   it("collapses the same item from multiple providers", async () => {
-    mockSearch.mockResolvedValue({
-      tracks: [
-        {
-          uri: "library://track/1",
-          name: "Song",
-          media_type: "track",
-          artists: [{ name: "Band" }],
-        },
-        {
-          uri: "spotify://track/9",
-          name: "Song",
-          media_type: "track",
-          artists: [{ name: "Band" }],
-        },
-      ],
-      playlists: [
-        { uri: "library://playlist/1", name: "Party", media_type: "playlist" },
-        { uri: "spotify://playlist/9", name: "Party", media_type: "playlist" },
-      ],
-    });
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [
+          {
+            uri: "library://track/1",
+            name: "Song",
+            media_type: "track",
+            artists: [{ name: "Band" }],
+          },
+          {
+            uri: "spotify://track/9",
+            name: "Song",
+            media_type: "track",
+            artists: [{ name: "Band" }],
+          },
+        ],
+        playlists: [
+          {
+            uri: "library://playlist/1",
+            name: "Party",
+            media_type: "playlist",
+          },
+          {
+            uri: "spotify://playlist/9",
+            name: "Party",
+            media_type: "playlist",
+          },
+        ],
+      }),
+    );
     const wrapper = mountSearch({
       allowedMediaTypes: [MediaType.TRACK, MediaType.PLAYLIST],
     });
@@ -198,6 +232,39 @@ describe("MediaSearch", () => {
     // the duplicate track collapses, same-named playlists never do
     expect(rows.filter((row) => row.text().includes("Song"))).toHaveLength(1);
     expect(rows.filter((row) => row.text().includes("Party"))).toHaveLength(2);
+    vi.useRealTimers();
+  });
+
+  it("collapses duplicates of a track that lists no artists", async () => {
+    mockSearch.mockResolvedValue(
+      searchResults({
+        tracks: [
+          {
+            uri: "library://track/1",
+            name: "Untitled",
+            media_type: "track",
+            artists: [],
+          },
+          {
+            uri: "spotify://track/9",
+            name: "Untitled",
+            media_type: "track",
+            artists: [],
+          },
+        ],
+      }),
+    );
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.TRACK] });
+
+    await wrapper.find("input").setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+
+    const rows = wrapper.findAll(".media-search-result");
+    expect(rows.filter((row) => row.text().includes("Untitled"))).toHaveLength(
+      1,
+    );
+
     vi.useRealTimers();
   });
 });

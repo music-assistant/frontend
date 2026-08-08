@@ -5,5 +5,8 @@
 # may hold an old Node (e.g. 20.x) that pnpm 11 refuses to run on (needs >=22.13).
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-pnpm lint
-pnpm test:run
+# Lint and format the staged files only, then restage what was fixed.
+# CI (.github/workflows/test.yml) covers the rest on every push and pull
+# request: the repo-wide lint, the test suite, and the typecheck that
+# `pnpm build` runs ahead of the bundle.
+pnpm exec lint-staged

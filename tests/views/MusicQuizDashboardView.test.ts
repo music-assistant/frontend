@@ -1,9 +1,11 @@
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  apiMock,
   mockAdminState,
   mockGetProviderConfigs,
   mockResolveMusicQuizDefinition,
@@ -12,6 +14,7 @@ const {
   mockSubscribe,
   mockToastError,
 } = vi.hoisted(() => ({
+  apiMock: { state: { value: "connected" as string } },
   mockAdminState: {
     current: undefined as { value: boolean } | undefined,
   },
@@ -31,12 +34,16 @@ vi.mock("@/components/music-quiz/game_types", () => ({
   supportsMusicQuizListenIn: vi.fn(() => false),
 }));
 
-vi.mock("@/plugins/api", () => {
+vi.mock("@/plugins/api", async () => {
+  // The connection banner re-renders on api.state, so the mock has to carry a
+  // real ref: assignments to a plain { value } would never reach the computed.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  apiMock.state = ref(apiMock.state.value);
   const api = {
     sendCommand: mockSendCommand,
     subscribe: mockSubscribe,
     getProviderConfigs: mockGetProviderConfigs,
-    state: { value: "connected" },
+    state: apiMock.state,
   };
   return {
     api,
@@ -78,6 +85,7 @@ vi.mock("vue-sonner", () => ({
 
 describe("MusicQuizDashboardView", () => {
   beforeEach(() => {
+    apiMock.state.value = "connected";
     mockSendCommand.mockReset();
     mockSubscribe.mockReset();
     mockToastError.mockReset();
@@ -102,6 +110,21 @@ describe("MusicQuizDashboardView", () => {
       return Promise.resolve(null);
     });
     mockSubscribe.mockReturnValue(() => {});
+  });
+
+  it("warns the host when the connection degrades", async () => {
+    const wrapper = mountDashboard();
+    await flushPromises();
+    const banner = wrapper.findComponent({
+      name: "MusicQuizConnectionBanners",
+    });
+    expect(banner.props("degraded")).toBe(false);
+
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(banner.props("degraded")).toBe(true);
+    wrapper.unmount();
   });
 
   it("renders a compact empty state and opens setup on demand", async () => {

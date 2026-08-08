@@ -1,0 +1,281 @@
+import { mount, type DOMWrapper, type VueWrapper } from "@vue/test-utils";
+import { describe, expect, it, vi } from "vitest";
+import { createVuetify } from "vuetify";
+import * as components from "vuetify/components";
+import * as directives from "vuetify/directives";
+import {
+  ConfigEntryType,
+  type ConfigValueType,
+} from "@/plugins/api/interfaces";
+import {
+  NON_INTERACTIVE_ENTRY_TYPES,
+  UI_ENTRY_TYPE,
+  type ConfigEntryUI,
+  type ConfigEntryUIType,
+  type InjectedConfigEntry,
+} from "@/helpers/config_entry_ui";
+import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
+
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
+
+// A `disabled` binding only proves anything once it reaches a rendered control, so this
+// suite mounts the real Vuetify and reka-ui controls instead of stubbing them.
+const vuetify = createVuetify({ components, directives });
+
+const IMAGE_DATA_URI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==";
+
+// Third element: text the field only renders on the branch under test. Every branch but
+// the two link buttons is picked by entry type alone, and an entry that matches none of
+// them still renders a text input that honours the disabled state — so without this the
+// link button rows would keep passing after losing their branch.
+const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
+  ["a text input", entry({ key: "name", type: ConfigEntryType.STRING })],
+  [
+    "a password input",
+    entry({ key: "password", type: ConfigEntryType.SECURE_STRING }),
+  ],
+  ["a checkbox", entry({ key: "flow_mode", type: ConfigEntryType.BOOLEAN })],
+  ["an icon picker", entry({ key: "icon", type: ConfigEntryType.ICON })],
+  [
+    "a dropdown",
+    entry({
+      key: "output_codec",
+      type: ConfigEntryType.STRING,
+      options: [
+        { title: "FLAC", value: "flac" },
+        { title: "MP3", value: "mp3" },
+      ],
+      value: "flac",
+    }),
+  ],
+  [
+    "an action button",
+    entry({
+      key: "authenticate",
+      type: ConfigEntryType.ACTION,
+      action: "authenticate",
+    }),
+  ],
+  // both link buttons are injected by EditPlayer; the DSP one is recognised by the
+  // `injected` flag alongside its type, so it carries the flag here too
+  [
+    "a DSP settings button",
+    entry({
+      key: "dsp_settings",
+      type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
+      injected: true,
+      read_only: false,
+    }),
+    "open_dsp_settings",
+  ],
+  [
+    "a player options button",
+    entry({
+      key: "player_options",
+      type: ConfigEntryType.OPTIONS,
+      injected: true,
+    }),
+    "player_options.open",
+  ],
+  [
+    "a number input without a range",
+    entry({ key: "port", type: ConfigEntryType.INTEGER, value: 8095 }),
+  ],
+  [
+    "a multi-value combobox",
+    entry({
+      key: "manual_discovery_ips",
+      type: ConfigEntryType.STRING,
+      multi_value: true,
+      value: ["192.168.1.10"],
+    }),
+  ],
+];
+
+describe("ConfigEntryField", () => {
+  it.each([ConfigEntryType.INTEGER, ConfigEntryType.FLOAT])(
+    "disables the slider and the number input of a ranged %s entry together",
+    (type) => {
+      expect(sliderRowStates(mountField(rangedEntry(type)))).toEqual({
+        slider: false,
+        input: false,
+        decrement: false,
+        increment: false,
+      });
+
+      expect(sliderRowStates(mountField(rangedEntry(type), true))).toEqual({
+        slider: true,
+        input: true,
+        decrement: true,
+        increment: true,
+      });
+    },
+  );
+
+  it.each(INTERACTIVE_ENTRIES)(
+    "disables %s",
+    (_label, confEntry, branchText) => {
+      const wrapper = mountField(confEntry);
+
+      if (branchText) expect(wrapper.text()).toContain(branchText);
+      expect(controlStates(wrapper)).toEqual([false]);
+      expect(controlStates(mountField(confEntry, true))).toEqual([true]);
+    },
+  );
+
+  // these types take no disabled binding; a form hides them while their dependency is unmet
+  it.each(NON_INTERACTIVE_ENTRY_TYPES)(
+    "renders a %s entry with no control to disable",
+    (type) => {
+      // value is what the image branch renders; the other three ignore it
+      const wrapper = mountField(
+        entry({
+          key: "status",
+          type,
+          label: "Nothing to configure",
+          value: IMAGE_DATA_URI,
+        }),
+        true,
+      );
+
+      expect(wrapper.html()).toContain("Nothing to configure");
+      expect(controlStates(wrapper)).toEqual([]);
+    },
+  );
+
+  it("offers the entity picker for a Home Assistant control list", () => {
+    const wrapper = mountField(hassControlsEntry(), false, "hass");
+
+    expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
+      true,
+    );
+    expect(wrapper.find(".v-select").exists()).toBe(false);
+  });
+
+  it("leaves the same key on another provider as a plain dropdown", () => {
+    const wrapper = mountField(hassControlsEntry(), false, "snapcast");
+
+    expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
+      false,
+    );
+    expect(wrapper.find(".v-select").exists()).toBe(true);
+  });
+
+  it("shows a value the options do not list yet", () => {
+    const wrapper = mountField(
+      entry({
+        key: "power_control",
+        type: ConfigEntryType.STRING,
+        options: [{ title: "None", value: "none" }],
+        value: "switch.registered_moments_ago",
+      }),
+    );
+
+    expect(wrapper.get(".v-select").text()).toContain(
+      "switch.registered_moments_ago",
+    );
+  });
+
+  it("disables a read_only entry while the form itself is enabled", () => {
+    const confEntry = entry({
+      key: "server_id",
+      type: ConfigEntryType.STRING,
+      read_only: true,
+    });
+
+    expect(controlStates(mountField(confEntry))).toEqual([true]);
+  });
+
+  it("disables a read_only ranged entry while the form itself is enabled", () => {
+    const confEntry = {
+      ...rangedEntry(ConfigEntryType.INTEGER),
+      read_only: true,
+    };
+
+    expect(sliderRowStates(mountField(confEntry))).toEqual({
+      slider: true,
+      input: true,
+      decrement: true,
+      increment: true,
+    });
+  });
+});
+
+function entry(
+  overrides: Partial<InjectedConfigEntry> & {
+    key: string;
+    type: ConfigEntryUIType;
+  },
+): ConfigEntryUI {
+  return {
+    category: "generic",
+    default_value: null,
+    label: overrides.key,
+    required: false,
+    options: [],
+    value: null as ConfigValueType,
+    ...overrides,
+  } as ConfigEntryUI;
+}
+
+function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
+  return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
+}
+
+function hassControlsEntry(): ConfigEntryUI {
+  return entry({
+    key: "power_controls",
+    type: ConfigEntryType.STRING,
+    multi_value: true,
+    options: [{ title: "Living room TV", value: "switch.tv" }],
+    value: ["switch.tv"],
+  });
+}
+
+function mountField(
+  confEntry: ConfigEntryUI,
+  disabled = false,
+  providerDomain?: string,
+) {
+  return mount(ConfigEntryField, {
+    props: { confEntry, showPasswordValues: false, disabled, providerDomain },
+    global: { plugins: [vuetify] },
+  });
+}
+
+/**
+ * The disabled state of every control the field rendered, in document order.
+ *
+ * Elements carrying the `hidden` attribute are left out, since a v-select mirrors its
+ * value into a hidden native select that no user can reach. Everything else counts, so
+ * a control that escapes the field's disabled state fails the assertion rather than
+ * being filtered away.
+ */
+function controlStates(wrapper: VueWrapper): boolean[] {
+  return wrapper
+    .findAll("input, button, textarea, select")
+    .filter((el) => el.attributes("hidden") === undefined)
+    .map(isDisabled);
+}
+
+/**
+ * The disabled state of each control in the slider row: the value input Vuetify renders
+ * for the slider, plus the number field's own input and its two step buttons.
+ */
+function sliderRowStates(wrapper: VueWrapper): Record<string, boolean> {
+  const numberFieldParts = wrapper
+    .findAll(".config-slider-input [data-slot]")
+    .map((el) => [el.attributes("data-slot") as string, isDisabled(el)]);
+
+  return {
+    slider: isDisabled(wrapper.get(".config-slider input")),
+    ...Object.fromEntries(numberFieldParts),
+  };
+}
+
+function isDisabled(el: Pick<DOMWrapper<Element>, "attributes">): boolean {
+  return el.attributes("disabled") !== undefined;
+}

@@ -1,12 +1,13 @@
 import { EventType, ProviderType } from "@/plugins/api/interfaces";
-import { shallowMount, type VueWrapper } from "@vue/test-utils";
-import { nextTick, ref } from "vue";
+import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   apiMock,
   authManagerMock,
   guestType,
+  i18nMock,
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
   mockProxyEnsureReady,
@@ -15,6 +16,7 @@ const {
   mockRememberCurrentRemoteConnection,
   mockRouterPush,
   mockSetPreference,
+  proxyState,
   routeState,
   storeMock,
   webPlayerMock,
@@ -70,6 +72,12 @@ const {
     apiMock,
     authManagerMock,
     guestType,
+    i18nMock: {
+      global: {
+        locale: { value: "en" },
+        t: (key: string) => key,
+      },
+    },
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
     mockProxyEnsureReady: vi.fn(),
@@ -78,6 +86,7 @@ const {
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRouterPush: vi.fn(),
     mockSetPreference: vi.fn(),
+    proxyState: { isReady: { value: true } },
     routeState: {
       current: null as { meta: Record<string, unknown> } | null,
     },
@@ -108,9 +117,10 @@ const {
   };
 });
 
-vi.mock("@/plugins/api", () => {
+vi.mock("@/plugins/api", async () => {
   // App.vue watches api.state, so the mock has to carry a real ref: assignments
   // to a plain { value } would never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
   apiMock.state = ref(apiMock.state.value);
   return {
     api: apiMock,
@@ -166,27 +176,33 @@ vi.mock("@/plugins/companion", () => ({
 
 vi.mock("@/plugins/remote", () => ({
   remoteConnectionManager: {
+    currentRemoteId: { value: null as string | null },
     rememberCurrentRemoteConnection: mockRememberCurrentRemoteConnection,
     setAuthenticated: vi.fn(),
   },
 }));
 
-vi.mock("@/plugins/remote/http-proxy", () => ({
-  httpProxyBridge: {
-    ensureReady: mockProxyEnsureReady,
-    isReady: { value: true },
-    setTransport: mockProxySetTransport,
-  },
-}));
-
-vi.mock("@/plugins/i18n", () => ({
-  i18n: {
-    global: {
-      locale: { value: "en" },
-      t: (key: string) => key,
+vi.mock("@/plugins/remote/http-proxy", async () => {
+  // showMainApp reads this, so the mock has to carry a real ref: the gate only
+  // re-evaluates once the service worker reports ready if the read is tracked.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  proxyState.isReady = ref(proxyState.isReady.value);
+  return {
+    httpProxyBridge: {
+      ensureReady: mockProxyEnsureReady,
+      isReady: proxyState.isReady,
+      setTransport: mockProxySetTransport,
     },
-  },
-}));
+  };
+});
+
+vi.mock("@/plugins/i18n", async () => {
+  // App.vue watches the UI locale to push it to the server, so the mock has to
+  // carry a real ref: assignments to a plain { value } never reach the watcher.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  i18nMock.global.locale = ref(i18nMock.global.locale.value);
+  return { i18n: i18nMock };
+});
 
 vi.mock("@vueuse/core", () => ({
   useColorMode: () => ({ value: "auto" }),
@@ -245,7 +261,11 @@ describe("App initialization", () => {
     vi.clearAllMocks();
     vi.resetModules();
     guestType.value = null;
+    i18nMock.global.locale.value = "en";
     apiMock.state.value = "authenticated";
+    apiMock.isRemoteConnection.value = false;
+    apiMock.supportsServerSideTranslations = false;
+    proxyState.isReady.value = true;
     apiMock.serverInfo.value = {
       onboard_done: true,
       server_id: "server-id",
@@ -279,6 +299,7 @@ describe("App initialization", () => {
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
+    storeMock.isIngressSession = false;
     storeMock.isOnboarding = false;
     webPlayerMock.audioSource = "disabled";
     webPlayerMock.interacted = false;
@@ -386,10 +407,41 @@ describe("App initialization", () => {
       ]),
     );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+    expectStartupDataRequestedBeforeReveal();
 
     await signalProvidersUpdated();
     expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
+  });
+
+  it("waits for the startup data before revealing the main app", async () => {
+    const serverState = createDeferred<void>();
+    const pluginConfigs = createDeferred<Array<{ enabled: boolean }>>();
+    apiMock.fetchState.mockReturnValue(serverState.promise);
+    apiMock.getProviderConfigs.mockReturnValue(pluginConfigs.promise);
+    wrapper = await mountAppWithoutSettling();
+
+    await flushPromises();
+    expect(apiMock.fetchState).toHaveBeenCalledOnce();
+    expectLibraryCountsNotCalled();
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+    expect(apiMock.state.value).not.toBe("initialized");
+
+    serverState.resolve();
+    await flushPromises();
+    expectLibraryCountsCalled();
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(3);
+    // The plugin lookups are still in flight: revealing the app here would
+    // render it with an unknown set of enabled plugins.
+    expect(apiMock.state.value).not.toBe("initialized");
+    expect(mockInitializeWebPlayerModeSync).not.toHaveBeenCalled();
+    expect(wrapper.find("router-view-stub").exists()).toBe(false);
+
+    pluginConfigs.resolve([{ enabled: true }]);
+    await flushPromises();
+    expect(apiMock.state.value).toBe("initialized");
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
+    expectStartupDataRequestedBeforeReveal();
   });
 
   it.each(["party", "music_quiz"] as const)(
@@ -469,14 +521,7 @@ describe("App initialization", () => {
 
   it("remembers a temporary remote connection after regular login", async () => {
     apiMock.state.value = "auth_required";
-    const { default: App } = await import("@/App.vue");
-    wrapper = shallowMount(App, {
-      global: {
-        stubs: {
-          RouterView: true,
-        },
-      },
-    });
+    wrapper = await mountAppWithoutSettling();
 
     wrapper.findComponent({ name: "Login" }).vm.$emit("authenticated", {
       token: "regular-token",
@@ -488,9 +533,8 @@ describe("App initialization", () => {
       },
     });
 
-    await vi.waitFor(() => {
-      expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
     expect(authManagerMock.setToken).toHaveBeenCalledWith(
       "regular-token",
       "local:http://music-assistant.test",
@@ -499,29 +543,54 @@ describe("App initialization", () => {
 
   it("clears proxy mode before connecting to a local server", async () => {
     apiMock.state.value = "disconnected";
-    const { default: App } = await import("@/App.vue");
-    wrapper = shallowMount(App, {
-      global: {
-        stubs: {
-          RouterView: true,
-        },
-      },
-    });
+    wrapper = await mountAppWithoutSettling();
 
     wrapper
       .findComponent({ name: "Login" })
       .vm.$emit("local-connect", "http://music-assistant.local:8095");
 
-    await vi.waitFor(() => {
-      expect(apiMock.initialize).toHaveBeenCalledWith(
-        "http://music-assistant.local:8095",
-      );
-    });
+    await flushPromises();
+    expect(apiMock.initialize).toHaveBeenCalledWith(
+      "http://music-assistant.local:8095",
+    );
     expect(mockProxyEnsureReady).toHaveBeenCalledOnce();
     expect(mockProxySetTransport).toHaveBeenCalledWith(null);
     expect(mockProxySetTransport.mock.invocationCallOrder[0]).toBeLessThan(
       apiMock.initialize.mock.invocationCallOrder[0],
     );
+  });
+
+  it("withholds the main app on a remote connection until the proxy is ready", async () => {
+    apiMock.isRemoteConnection.value = true;
+    proxyState.isReady.value = false;
+
+    wrapper = await mountApp();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(false);
+    // The login screen is gone too: this is the proxy gate, not a sign-in prompt.
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+  });
+
+  it("shows the main app on a remote connection once the proxy is ready", async () => {
+    apiMock.isRemoteConnection.value = true;
+    proxyState.isReady.value = true;
+
+    wrapper = await mountApp();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
+  });
+
+  it("reveals the main app when the proxy turns ready after mount", async () => {
+    apiMock.isRemoteConnection.value = true;
+    proxyState.isReady.value = false;
+    wrapper = await mountApp();
+
+    // The service worker reports ready asynchronously, so the gate has to lift
+    // on a connection that mounted before it was controlling the page.
+    proxyState.isReady.value = true;
+    await nextTick();
+
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
   });
 
   it.each(["party", "music_quiz"] as const)(
@@ -570,36 +639,164 @@ describe("App initialization", () => {
     expect(authManagerMock.clearGuestSession).not.toHaveBeenCalled();
     expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
   });
+
+  it("re-authenticates an ingress session through the proxy on reconnect", async () => {
+    storeMock.isIngressSession = true;
+    wrapper = await mountApp();
+    const ingressUser = {
+      preferences: {},
+      role: "admin",
+      user_id: "ingress-user",
+      username: "ingress-user",
+    };
+    apiMock.getCurrentUserInfo.mockResolvedValue(ingressUser);
+
+    await startReconnect();
+
+    await flushPromises();
+    expect(authManagerMock.setCurrentUser).toHaveBeenCalledWith(ingressUser);
+    expect(apiMock.authenticateWithToken).not.toHaveBeenCalled();
+    expect(apiMock.requireAuthentication).not.toHaveBeenCalled();
+  });
+
+  it("asks for authentication when an ingress reconnect finds no user", async () => {
+    storeMock.isIngressSession = true;
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    apiMock.getCurrentUserInfo.mockResolvedValue(null);
+
+    await startReconnect();
+
+    await flushPromises();
+    expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
+  });
+
+  it("asks for authentication when an ingress reconnect fails", async () => {
+    storeMock.isIngressSession = true;
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    apiMock.getCurrentUserInfo.mockRejectedValue(new Error("proxy down"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await startReconnect();
+
+    await flushPromises();
+    expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
+  });
+
+  it("pushes a locale change to a server that localizes its own strings", async () => {
+    apiMock.supportsServerSideTranslations = true;
+    wrapper = await mountAuthenticatedApp();
+
+    i18nMock.global.locale.value = "de";
+
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
+    expect(apiMock.fetchState).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the locale local on a server without server-side translations", async () => {
+    wrapper = await mountAuthenticatedApp();
+
+    i18nMock.global.locale.value = "de";
+    await flushPromises();
+
+    expect(apiMock.setLocale).not.toHaveBeenCalled();
+    expect(apiMock.fetchState).not.toHaveBeenCalled();
+  });
+
+  it("skips the state refresh for a guest after a locale change", async () => {
+    apiMock.supportsServerSideTranslations = true;
+    guestType.value = "party";
+    wrapper = await mountAuthenticatedApp();
+
+    i18nMock.global.locale.value = "de";
+
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
+    expect(apiMock.fetchState).not.toHaveBeenCalled();
+  });
+
+  it("survives a failed locale push", async () => {
+    apiMock.supportsServerSideTranslations = true;
+    apiMock.setLocale.mockRejectedValue(new Error("offline"));
+    wrapper = await mountAuthenticatedApp();
+
+    i18nMock.global.locale.value = "de";
+
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
+    expect(apiMock.fetchState).not.toHaveBeenCalled();
+  });
 });
 
 /**
  * Drive the connection through a reconnect, which re-authenticates the token.
  */
 async function reconnect() {
+  await startReconnect();
+  await flushPromises();
+  expect(apiMock.authenticateWithToken).toHaveBeenCalled();
+}
+
+/**
+ * Take the connection down and back up, without waiting for a particular
+ * re-authentication route.
+ */
+async function startReconnect() {
   apiMock.state.value = "reconnecting";
   await nextTick();
   apiMock.state.value = "connected";
-  await vi.waitFor(() => {
-    expect(apiMock.authenticateWithToken).toHaveBeenCalled();
-  });
   await nextTick();
 }
 
+/**
+ * Mount the app and leave it in the authenticated state, with the calls made
+ * during initialization cleared so later assertions only see fresh ones.
+ */
+async function mountAuthenticatedApp() {
+  const mounted = await mountApp();
+  apiMock.state.value = "authenticated";
+  await nextTick();
+  apiMock.fetchState.mockClear();
+  return mounted;
+}
+
+/**
+ * Mount the app, register it for teardown, and wait for initialization to
+ * settle.
+ *
+ * Initialization runs entirely on the microtask queue, so one flush covers it;
+ * a timer anywhere in that path would need vi.waitFor instead.
+ */
 async function mountApp() {
+  const mounted = await mountAppWithoutSettling();
+  await flushPromises();
+  expect(apiMock.state.value).toBe("initialized");
+  expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+  expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
+  return mounted;
+}
+
+/**
+ * Mount the app and register it for teardown, without waiting for
+ * initialization to settle; the test drives what happens next.
+ */
+async function mountAppWithoutSettling() {
   const { default: App } = await import("@/App.vue");
-  const mounted = shallowMount(App, {
+  // Registered at mount time so afterEach unmounts the app even when a
+  // caller's assertion throws: a live instance keeps reacting to api.state
+  // and corrupts every later test.
+  wrapper = shallowMount(App, {
     global: {
       stubs: {
         RouterView: true,
       },
     },
   });
-  await vi.waitFor(() => {
-    expect(apiMock.state.value).toBe("initialized");
-    expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
-    expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
-  });
-  return mounted;
+  return wrapper;
 }
 
 async function signalProvidersUpdated() {
@@ -630,6 +827,41 @@ function expectLibraryCountsCalled() {
   expect(apiMock.getLibraryPodcastsCount).toHaveBeenCalledOnce();
   expect(apiMock.getLibraryRadiosCount).toHaveBeenCalledOnce();
   expect(apiMock.getLibraryTracksCount).toHaveBeenCalledOnce();
+}
+
+/**
+ * Assert that every startup request is made before the app reveals itself,
+ * which it does right after marking the connection initialized.
+ */
+function expectStartupDataRequestedBeforeReveal() {
+  expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+  const [revealed] = mockInitializeWebPlayerModeSync.mock.invocationCallOrder;
+  for (const method of [
+    apiMock.fetchState,
+    apiMock.getLibraryAlbumsCount,
+    apiMock.getLibraryArtistsCount,
+    apiMock.getLibraryAudiobooksCount,
+    apiMock.getLibraryGenresCount,
+    apiMock.getLibraryPlaylistsCount,
+    apiMock.getLibraryPodcastsCount,
+    apiMock.getLibraryRadiosCount,
+    apiMock.getLibraryTracksCount,
+    apiMock.getProviderConfigs,
+  ]) {
+    expect(method).toHaveBeenCalled();
+    expect(Math.max(...method.mock.invocationCallOrder)).toBeLessThan(revealed);
+  }
+}
+
+/**
+ * Create a promise the test resolves itself, to hold a startup step open.
+ */
+function createDeferred<T = void>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
 }
 
 function createStorage(): Storage {

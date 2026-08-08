@@ -5,11 +5,16 @@ name: PR Labels
 on:
   pull_request:
     types:
+      - opened
+      - reopened
       - synchronize
       - labeled
       - unlabeled
     branches:
       - main
+
+# The label check reads the event payload from disk, so it needs no token at all.
+permissions: {}
 
 jobs:
   pr_labels:
@@ -20,4 +25,4 @@ jobs:
         uses: ludeeus/action-require-labels@be19cd7f04c6fad46a85336f9e9cebdf961807bb # 2.0.0
         with:
           labels: >-
-            breaking-change, bugfix, refactor, new-feature, maintenance, ci, dependencies, documentation, new-provider, enhancement
+            breaking-change, bugfix, refactor, new-feature, maintenance, ci, dependencies, enhancement
