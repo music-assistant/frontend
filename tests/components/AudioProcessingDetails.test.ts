@@ -758,6 +758,7 @@ describe("AudioProcessingDetails", () => {
         protocol_domain: "airplay",
         priority: 1,
         available: true,
+        derived_from: null,
       },
     ];
     const wrapper = mountDetails({
@@ -792,6 +793,7 @@ describe("AudioProcessingDetails", () => {
         protocol_domain: "airplay",
         priority: 1,
         available: true,
+        derived_from: null,
       },
     ];
     const wrapper = mountDetails({

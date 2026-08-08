@@ -600,6 +600,7 @@ function makeOutputProtocol(
     protocol_domain: "airplay",
     priority: 1,
     available: true,
+    derived_from: null,
     ...overrides,
   };
 }

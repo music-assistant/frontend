@@ -59,6 +59,9 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     device_info: {
       model: "Test",
       manufacturer: "Test",
+      software_version: null,
+      model_id: null,
+      manufacturer_id: null,
       identifiers: {
         [IdentifierType.MAC_ADDRESS]: "",
         [IdentifierType.SERIAL_NUMBER]: "",
@@ -89,6 +92,14 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     needs_setup: false,
     output_protocols: [],
     active_output_protocol: null,
+    elapsed_time: null,
+    elapsed_time_last_updated: null,
+    current_media: null,
+    active_source: null,
+    active_sound_mode: null,
+    active_group: null,
+    synced_to: null,
+    sleep_timer_expires_at: null,
     ...overrides,
   };
 }

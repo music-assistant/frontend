@@ -11,7 +11,7 @@ export interface ChapterTick extends MediaItemChapter {
  */
 export function computeChapterTicks(
   chapters: MediaItemChapter[] | undefined,
-  duration: number | undefined,
+  duration: number | null | undefined,
 ): ChapterTick[] {
   if (!duration || !chapters?.length) return [];
   return chapters.map((chapter) => ({
