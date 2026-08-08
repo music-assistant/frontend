@@ -1305,8 +1305,14 @@ watchEffect(() => {
   // With a dominant visualizer the view is effectively dark content: force
   // light text and a dark palette-gradient base. At low opacity (<=50%) the
   // visualizer is only a faint overlay, so keep the completely normal
-  // theme/palette treatment instead of forcing the dark look.
-  if (visualizerActive.value && visualizerOpacityPref.value > 50) {
+  // theme/palette treatment instead of forcing the dark look. This component is
+  // permanently mounted via the OSD footer, so gate on the fullscreen player
+  // actually being open, or --text-color would stay forced app-wide.
+  if (
+    store.showFullscreenPlayer &&
+    visualizerActive.value &&
+    visualizerOpacityPref.value > 50
+  ) {
     document.documentElement.style.setProperty("--text-color", "#ffffff");
     document.documentElement.style.setProperty(
       "--text-color-inverse",

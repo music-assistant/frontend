@@ -151,10 +151,20 @@ export class VisualizerRelayClient {
 
   private handleMessage(event: MessageEvent): void {
     if (typeof event.data === "string") {
-      const message = JSON.parse(event.data);
+      let message: {
+        type?: string;
+        message?: string;
+        payload?: Record<string, number>;
+      };
+      try {
+        message = JSON.parse(event.data);
+      } catch {
+        console.warn("[visualizer] ignoring malformed relay message");
+        return;
+      }
       if (message.type === "auth_ok") {
         if (this.ws) this.startTimeSync(this.ws);
-      } else if (message.type === "server/time") {
+      } else if (message.type === "server/time" && message.payload) {
         const p = message.payload;
         this.clock.addSample(
           computeTimeSample(

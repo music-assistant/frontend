@@ -13,8 +13,12 @@
       ref="canvasRef"
       class="visualizer-layer__canvas"
       :style="canvasStyle"
-    />
-    <div v-if="streaming" class="visualizer-layer__scrim" :style="scrimStyle" />
+    ></canvas>
+    <div
+      v-if="streaming"
+      class="visualizer-layer__scrim"
+      :style="scrimStyle"
+    ></div>
   </div>
 </template>
 
@@ -191,20 +195,22 @@ const createEngine = async () => {
   if (engine) await applyPreset(0);
 };
 
-onMounted(() => {
+// Start once the canvas has real layout size, deferring via a ResizeObserver
+// when it hasn't yet. A canvas hidden behind a dialog transition (or briefly
+// laid out at zero) reports 0x0; initialising then sizes the drawing buffer to
+// nothing. Safe to call repeatedly: initialize() and the observer both no-op
+// once running.
+const initializeWhenSized = () => {
   const canvas = canvasRef.value;
-  if (!canvas) return;
+  if (!canvas || initialized) return;
   // Remote (WebRTC) sessions cannot reach the relay route; starting up would
   // only produce an endless connect/retry loop.
   if (api.isRemoteConnection.value) return;
-  if (covered.value) return;
-  // PlayerFullscreen is mounted twice (desktop + mobile OSD); the hidden twin
-  // has a zero-sized canvas and must stay idle: no engine, no relay socket.
-  // Initialize only once this instance actually has layout dimensions.
   if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
     void initialize();
     return;
   }
+  if (sizeObserver) return;
   sizeObserver = new ResizeObserver(() => {
     if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
       sizeObserver?.disconnect();
@@ -213,6 +219,11 @@ onMounted(() => {
     }
   });
   sizeObserver.observe(canvas);
+};
+
+onMounted(() => {
+  if (covered.value) return;
+  initializeWhenSized();
 });
 
 watch(
@@ -229,14 +240,18 @@ watch(
   },
 );
 
-// Release GPU and socket while covered; restore when revealed again.
+// Release GPU and socket while covered; restore when revealed again. A canvas
+// that first mounted while covered has never initialised, so uncovering it must
+// start it up rather than only reconnecting an existing engine.
 watch(covered, (isCovered) => {
-  if (!initialized) return;
   if (isCovered) {
+    if (!initialized) return;
     engine?.destroy();
     engine = null;
     relay?.close();
     relay = null;
+  } else if (!initialized) {
+    initializeWhenSized();
   } else {
     connectRelay();
     void createEngine();

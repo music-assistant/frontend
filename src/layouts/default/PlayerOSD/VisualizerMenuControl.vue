@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import {
   Blend,
   Focus,
@@ -142,9 +142,16 @@ const toggleFavorite = () => {
   void setPreference("visualizer_favorites", favorites);
 };
 
-onMounted(async () => {
-  presetNames.value = await listPresetNames();
-});
+// Loading the names pulls in the multi-megabyte preset packs, so defer it until
+// the visualizer is actually enabled rather than on every menu open.
+watch(
+  enabledPref,
+  async (enabled) => {
+    if (enabled && presetNames.value.length === 0)
+      presetNames.value = await listPresetNames();
+  },
+  { immediate: true },
+);
 
 // The dropdown reflects and controls the full selection: concrete preset
 // switches to fixed mode; the Random entries switch the mode back.
