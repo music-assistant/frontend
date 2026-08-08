@@ -10,6 +10,7 @@ const chapters: MediaItemChapter[] = [
 
 describe("computeChapterTicks", () => {
   it("returns [] when duration is missing or zero", () => {
+    expect(computeChapterTicks(chapters, null)).toEqual([]);
     expect(computeChapterTicks(chapters, undefined)).toEqual([]);
     expect(computeChapterTicks(chapters, 0)).toEqual([]);
   });

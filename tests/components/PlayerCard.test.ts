@@ -5,6 +5,7 @@ import {
   PlaybackState,
   type Player,
   PlayerFeature,
+  type PlayerMedia,
   PlayerType,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
@@ -115,6 +116,25 @@ const VolumeControlStub = {
   `,
 };
 
+// the server sends every PlayerMedia key, using null for the ones it has no value for
+function createPlayerMedia(overrides: Partial<PlayerMedia> = {}): PlayerMedia {
+  return {
+    uri: "test://track",
+    media_type: MediaType.TRACK,
+    title: null,
+    artist: null,
+    album: null,
+    image_url: null,
+    palette: null,
+    duration: null,
+    source_id: null,
+    elapsed_time: null,
+    elapsed_time_last_updated: null,
+    queue_item_id: null,
+    ...overrides,
+  };
+}
+
 function createPlayer(overrides: Partial<Player> = {}): Player {
   return {
     player_id: "player",
@@ -125,6 +145,9 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     device_info: {
       model: "Test",
       manufacturer: "Test",
+      software_version: null,
+      model_id: null,
+      manufacturer_id: null,
       identifiers: {
         [IdentifierType.MAC_ADDRESS]: "",
         [IdentifierType.SERIAL_NUMBER]: "",
@@ -155,6 +178,14 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     needs_setup: false,
     output_protocols: [],
     active_output_protocol: null,
+    elapsed_time: null,
+    elapsed_time_last_updated: null,
+    current_media: null,
+    active_source: null,
+    active_sound_mode: null,
+    active_group: null,
+    synced_to: null,
+    sleep_timer_expires_at: null,
     ...overrides,
   };
 }
@@ -335,12 +366,10 @@ describe("PlayerCard", () => {
   it("stacks player identity above loaded media only when requested", () => {
     const player = createPlayer({
       playback_state: PlaybackState.PLAYING,
-      current_media: {
-        uri: "test://track",
-        media_type: MediaType.TRACK,
+      current_media: createPlayerMedia({
         title: "Hate Me Now",
         artist: "Nas",
-      },
+      }),
     });
 
     const mainCard = mountPlayerCard(player);
@@ -391,11 +420,9 @@ describe("PlayerCard", () => {
       const wrapper = mountPlayerCard(
         createPlayer({
           playback_state: playbackState,
-          current_media: {
-            uri: "test://track",
-            media_type: MediaType.TRACK,
+          current_media: createPlayerMedia({
             image_url: "https://example.test/cover.jpg",
-          },
+          }),
         }),
       );
 
@@ -408,11 +435,9 @@ describe("PlayerCard", () => {
   it("shows the player icon instead of idle artwork", () => {
     const wrapper = mountPlayerCard(
       createPlayer({
-        current_media: {
-          uri: "test://track",
-          media_type: MediaType.TRACK,
+        current_media: createPlayerMedia({
           image_url: "https://example.test/cover.jpg",
-        },
+        }),
       }),
     );
 
