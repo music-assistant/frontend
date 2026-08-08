@@ -6,6 +6,7 @@ import {
   ConfigEntryType,
   PlayerType,
   type ConfigEntry,
+  type PlayerConfig,
 } from "@/plugins/api/interfaces";
 import EditPlayer from "@/views/settings/EditPlayer.vue";
 import { flushPromises, shallowMount } from "@vue/test-utils";
@@ -123,10 +124,10 @@ function controlEntry(key: string): ConfigEntry {
     default_value: "none",
     value: "none",
     options: [{ title: "none", value: "none" }],
-  } as ConfigEntry;
+  };
 }
 
-function playerConfig() {
+function playerConfig(): PlayerConfig {
   return {
     player_id: "player-1",
     provider: "chromecast--1",
@@ -137,6 +138,7 @@ function playerConfig() {
         type: ConfigEntryType.BOOLEAN,
         label: "volume_normalization",
         category: "audio",
+        options: [],
         required: false,
         default_value: true,
         value: true,

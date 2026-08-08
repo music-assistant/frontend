@@ -6,6 +6,8 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  type ConfigActionResult,
+  type ConfigEntry,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
 import EditProvider from "@/views/settings/EditProvider.vue";
@@ -15,7 +17,13 @@ const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
     apiMock: {
       getProvider: vi.fn(),
       getProviderConfig: vi.fn(),
-      invokeProviderConfigAction: vi.fn(),
+      invokeProviderConfigAction:
+        vi.fn<
+          (
+            instanceId: string,
+            action: string,
+          ) => Promise<ConfigEntry[] | ConfigActionResult>
+        >(),
       providerManifests: {
         spotify: {
           codeowners: [],
@@ -195,6 +203,7 @@ describe("EditProvider", () => {
         default_value: null,
         key: "account",
         label: "Account",
+        options: [],
         required: false,
         type: ConfigEntryType.STRING,
       },
@@ -330,6 +339,7 @@ describe("EditProvider", () => {
         default_value: null,
         key: "new_field",
         label: "New field",
+        options: [],
         required: false,
         type: ConfigEntryType.STRING,
         value: "server value",

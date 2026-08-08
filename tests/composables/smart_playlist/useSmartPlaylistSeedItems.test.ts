@@ -45,6 +45,7 @@ vi.mock("@/plugins/api", () => ({
 import api from "@/plugins/api";
 import { useSmartPlaylistSeedItems } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
 import type { Album, Track } from "@/plugins/api/interfaces";
+import { providerMapping } from "../../fixtures/providerMapping";
 
 interface SearchFnArg {
   searchFn: (q: string) => Promise<unknown[]>;
@@ -72,16 +73,16 @@ describe("useSmartPlaylistSeedItems", () => {
       {
         item_id: "fallback-track-id",
         provider_mappings: [
-          {
+          providerMapping({
             item_id: "lib-1",
             provider_instance: "library",
             provider_domain: "library",
-          },
-          {
+          }),
+          providerMapping({
             item_id: "sp-track-1",
             provider_instance: "spotify_instance",
             provider_domain: "spotify",
-          },
+          }),
         ],
         artists: [{ name: "Artist" }],
         name: "Song",
@@ -109,11 +110,11 @@ describe("useSmartPlaylistSeedItems", () => {
       {
         item_id: "62",
         provider_mappings: [
-          {
+          providerMapping({
             item_id: "tidal-album",
             provider_instance: "tidal_instance",
             provider_domain: "tidal",
-          },
+          }),
         ],
         artists: [{ name: "RAM" }],
         name: "One Last Call",
@@ -198,11 +199,14 @@ describe("useSmartPlaylistSeedItems", () => {
             item_id: "lib-1",
             name: "Library Track",
             provider_mappings: [
-              { provider_instance: "library", provider_domain: "library" },
-              {
+              providerMapping({
+                provider_instance: "library",
+                provider_domain: "library",
+              }),
+              providerMapping({
                 provider_instance: "filesystem_local",
                 provider_domain: "filesystem_local",
-              },
+              }),
             ],
           },
         ],

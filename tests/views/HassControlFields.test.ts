@@ -176,7 +176,7 @@ function controlsEntry(
     default_value: [],
     value,
     options: options ?? [],
-  } as ConfigEntryUI;
+  };
 }
 
 function mountPickerField() {
