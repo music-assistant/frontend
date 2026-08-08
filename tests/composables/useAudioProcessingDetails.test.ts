@@ -532,6 +532,9 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       item_id: "track-1",
       audio_format: makeFormat(),
       media_type: MediaType.TRACK,
+      stream_metadata: null,
+      duration: null,
+      audio_processing: null,
     });
     const harness = defineComponent({
       setup() {
@@ -569,6 +572,9 @@ function buildDisplay(chain: AudioProcessingChain, audioFormat = makeFormat()) {
     item_id: "track-1",
     audio_format: audioFormat,
     media_type: MediaType.TRACK,
+    stream_metadata: null,
+    duration: null,
+    audio_processing: null,
   };
   return buildAudioProcessingDetailsDisplay(chain, streamDetails, dependencies);
 }

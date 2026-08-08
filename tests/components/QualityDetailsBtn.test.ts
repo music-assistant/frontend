@@ -157,6 +157,9 @@ function makeStreamDetails(): StreamDetails {
       bit_rate: 0,
     },
     media_type: MediaType.TRACK,
+    stream_metadata: null,
+    duration: null,
+    audio_processing: null,
   };
 }
 
@@ -174,7 +177,10 @@ function makeQueue(streamdetails: StreamDetails): PlayerQueue {
     crossfade_enabled: false,
     smart_fades_active: false,
     overlay_enabled: false,
+    overlay_source: null,
     overlay_volume: 100,
+    current_index: null,
+    index_in_buffer: null,
     ended: false,
     elapsed_time: 0,
     elapsed_time_last_updated: 0,
@@ -186,8 +192,11 @@ function makeQueue(streamdetails: StreamDetails): PlayerQueue {
       duration: 180,
       sort_index: 0,
       streamdetails,
+      media_item: null,
+      image: null,
       available: true,
     },
+    next_item: null,
     sources: [],
     is_dynamic: false,
   };
