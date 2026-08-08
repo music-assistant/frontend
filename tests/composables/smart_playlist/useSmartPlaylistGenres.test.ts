@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { MediaType, type Genre } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 
 vi.mock("vue", async () => {
   const actual = await vi.importActual<typeof import("vue")>("vue");
@@ -12,16 +14,22 @@ vi.mock("vue-i18n", () => ({
   useI18n: () => ({ t: (k: string) => k, te: () => false }),
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
-    getLibraryGenres: vi.fn().mockResolvedValue([
-      { item_id: "9", name: "Synthwave" },
-      { item_id: "2", name: "Rock" },
-    ]),
+const { apiMock } = vi.hoisted(() => ({
+  apiMock: {
+    getLibraryGenres: vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
   },
 }));
 
+vi.mock("@/plugins/api", () => ({
+  default: apiMock,
+}));
+
 import { useSmartPlaylistGenres } from "@/composables/smart-playlist/useSmartPlaylistGenres";
+
+apiMock.getLibraryGenres.mockResolvedValue([
+  genreFixture("9", "Synthwave"),
+  genreFixture("2", "Rock"),
+]);
 
 describe("useSmartPlaylistGenres", () => {
   it("loads the genre list on mount and exposes options", async () => {
@@ -31,12 +39,8 @@ describe("useSmartPlaylistGenres", () => {
     await Promise.resolve();
     expect(genres.value.length).toBe(2);
     expect(genreOptions.value).toEqual([
-      {
-        id: 9,
-        name: "Synthwave",
-        item: { item_id: "9", name: "Synthwave" },
-      },
-      { id: 2, name: "Rock", item: { item_id: "2", name: "Rock" } },
+      { id: 9, name: "Synthwave", item: genreFixture("9", "Synthwave") },
+      { id: 2, name: "Rock", item: genreFixture("2", "Rock") },
     ]);
   });
 
@@ -49,3 +53,18 @@ describe("useSmartPlaylistGenres", () => {
     expect(genreName(42)).toBe("42");
   });
 });
+
+function genreFixture(item_id: string, name: string): Genre {
+  return {
+    item_id,
+    provider: "library",
+    name,
+    uri: `library://genre/${item_id}`,
+    is_playable: false,
+    media_type: MediaType.GENRE,
+    provider_mappings: [],
+    metadata: {},
+    favorite: false,
+    genre_aliases: null,
+  };
+}

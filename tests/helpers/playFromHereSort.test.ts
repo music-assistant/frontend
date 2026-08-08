@@ -2,11 +2,12 @@
  * Tests that "play from here" actions correctly pass the sortBy parameter
  * through handlePlayBtnClick and handleMenuBtnClick to the API / context menu.
  */
+import type { MusicAssistantApi } from "@/plugins/api";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { mockPlayMedia, mockShowContextMenu, mockShowPlayMenu } = vi.hoisted(
   () => ({
-    mockPlayMedia: vi.fn(),
+    mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
     mockShowContextMenu: vi.fn(),
     mockShowPlayMenu: vi.fn(),
   }),

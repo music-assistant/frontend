@@ -1,13 +1,15 @@
 import Players from "@/views/settings/Players.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { ProviderStage, ProviderType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock, emitEvent, routerPush } = vi.hoisted(() => ({
   apiMock: {
-    getPlayerConfigs: vi.fn(),
-    getProvider: vi.fn(),
-    getProviderManifest: vi.fn(),
+    getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
     playerManifests: {},
     players: {} as Record<
       string,
@@ -98,11 +100,26 @@ describe("Players", () => {
     };
     apiMock.getPlayerConfigs.mockResolvedValue([playerConfig]);
     apiMock.getProvider.mockReturnValue({
+      type: ProviderType.PLAYER,
       domain: "test",
+      name: "Test",
+      instance_id: "test",
       supported_features: [],
+      available: true,
     });
     apiMock.getProviderManifest.mockReturnValue({
+      type: ProviderType.PLAYER,
+      domain: "test",
       name: "Test",
+      description: "Test player provider",
+      codeowners: [],
+      credits: [],
+      requirements: [],
+      multi_instance: false,
+      builtin: false,
+      allow_disable: true,
+      stage: ProviderStage.STABLE,
+      icon_images: [],
     });
     apiMock.subscribe_multi.mockReturnValue(vi.fn());
   });

@@ -1,13 +1,18 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ProviderStatus, ProviderType } from "@/plugins/api/interfaces";
+import {
+  ProviderStage,
+  ProviderStatus,
+  ProviderType,
+} from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
 
 const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
   apiMock: {
-    getProvider: vi.fn(),
-    getProviderConfigs: vi.fn(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
     providerManifests: {
       spotify: {
         allow_disable: true,
@@ -20,10 +25,10 @@ const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
       },
     },
     providers: {},
-    reloadProvider: vi.fn(),
-    removeProviderConfig: vi.fn(),
-    saveProviderConfig: vi.fn(),
-    startSync: vi.fn(),
+    reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+    removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
+    startSync: vi.fn<MusicAssistantApi["startSync"]>(),
     subscribe: vi.fn(),
   },
   eventbusMock: {
@@ -273,9 +278,26 @@ async function mountProviders(
         error_code: 1,
         message: "Authentication required",
       },
+      manifest: {
+        allow_disable: true,
+        builtin: false,
+        codeowners: [],
+        credits: [],
+        description: "Spotify music provider",
+        documentation: "https://example.com",
+        domain: "spotify",
+        has_setup_flow: hasSetupFlow,
+        icon_images: [],
+        multi_instance: true,
+        name: "Spotify",
+        requirements: [],
+        stage: ProviderStage.STABLE,
+        type: ProviderType.MUSIC,
+      },
       name: "Spotify",
       status,
       type: ProviderType.MUSIC,
+      values: {},
     },
   ]);
 

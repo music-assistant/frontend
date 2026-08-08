@@ -1,12 +1,18 @@
 import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
-import { MediaType } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
+import {
+  MediaType,
+  type Genre,
+  type Playlist,
+  type SearchResults,
+} from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
-  mockSearch: vi.fn(),
-  mockGetLibraryGenres: vi.fn(),
+  mockSearch: vi.fn<MusicAssistantApi["search"]>(),
+  mockGetLibraryGenres: vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -36,24 +42,14 @@ vi.mock("@/components/MediaItemThumb.vue", () => ({
   },
 }));
 
-type ResultItem = { uri: string; name: string; media_type: MediaType };
-
-type SearchResult = {
-  tracks: ResultItem[];
-  playlists: ResultItem[];
-  albums?: ResultItem[];
-  artists?: ResultItem[];
-  genres?: ResultItem[];
-};
-
 type DeferredSearch = {
-  promise: Promise<SearchResult>;
-  resolve: (value: SearchResult) => void;
+  promise: Promise<SearchResults>;
+  resolve: (value: SearchResults) => void;
 };
 
 function deferredSearch(): DeferredSearch {
-  let resolvePromise: (value: SearchResult) => void = () => {};
-  const promise = new Promise<SearchResult>((resolve) => {
+  let resolvePromise: (value: SearchResults) => void = () => {};
+  const promise = new Promise<SearchResults>((resolve) => {
     resolvePromise = resolve;
   });
   return {
@@ -80,7 +76,7 @@ function mountConfig(includeSimilarMusic = false, sharedConfigValid = true) {
 
 // api.search always returns every result list, so fill the ones a case does not
 // exercise rather than letting a partial mock stand in for a server response
-const searchResults = <T extends Record<string, unknown>>(lists: T) => ({
+const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
   artists: [],
   albums: [],
   tracks: [],
@@ -91,6 +87,39 @@ const searchResults = <T extends Record<string, unknown>>(lists: T) => ({
   genres: [],
   ...lists,
 });
+
+function playlistResult(uri: string, name: string): Playlist {
+  return {
+    item_id: uri,
+    provider: "library",
+    name,
+    uri,
+    is_playable: true,
+    media_type: MediaType.PLAYLIST,
+    provider_mappings: [],
+    metadata: {},
+    favorite: false,
+    owner: "",
+    is_editable: false,
+    supported_mediatypes: [],
+    is_dynamic: false,
+  };
+}
+
+function genreResult(uri: string, name: string): Genre {
+  return {
+    item_id: uri,
+    provider: "library",
+    name,
+    uri,
+    is_playable: false,
+    media_type: MediaType.GENRE,
+    provider_mappings: [],
+    metadata: {},
+    favorite: false,
+    genre_aliases: null,
+  };
+}
 
 describe("GuessTheSongSetup", () => {
   beforeEach(() => {
@@ -137,13 +166,7 @@ describe("GuessTheSongSetup", () => {
     newSearch.resolve(
       searchResults({
         tracks: [],
-        playlists: [
-          {
-            uri: "playlist:new",
-            name: "Newest result",
-            media_type: MediaType.PLAYLIST,
-          },
-        ],
+        playlists: [playlistResult("playlist:new", "Newest result")],
       }),
     );
     await flushPromises();
@@ -152,13 +175,7 @@ describe("GuessTheSongSetup", () => {
     oldSearch.resolve(
       searchResults({
         tracks: [],
-        playlists: [
-          {
-            uri: "playlist:old",
-            name: "Older result",
-            media_type: MediaType.PLAYLIST,
-          },
-        ],
+        playlists: [playlistResult("playlist:old", "Older result")],
       }),
     );
     await flushPromises();
@@ -171,13 +188,7 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [
-          {
-            uri: "playlist:test",
-            name: "Test playlist",
-            media_type: MediaType.PLAYLIST,
-          },
-        ],
+        playlists: [playlistResult("playlist:test", "Test playlist")],
       }),
     );
 
@@ -216,13 +227,7 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [
-          {
-            uri: "playlist:test",
-            name: "Test playlist",
-            media_type: MediaType.PLAYLIST,
-          },
-        ],
+        playlists: [playlistResult("playlist:test", "Test playlist")],
       }),
     );
     const wrapper = mountConfig(false, false);
@@ -249,13 +254,7 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [
-          {
-            uri: "playlist:test",
-            name: "Test playlist",
-            media_type: MediaType.PLAYLIST,
-          },
-        ],
+        playlists: [playlistResult("playlist:test", "Test playlist")],
       }),
     );
     const wrapper = mountConfig();
@@ -283,16 +282,8 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [
-          {
-            uri: "playlist:test",
-            name: "Test playlist",
-            media_type: MediaType.PLAYLIST,
-          },
-        ],
-        genres: [
-          { uri: "genre:rock", name: "Rock", media_type: MediaType.GENRE },
-        ],
+        playlists: [playlistResult("playlist:test", "Test playlist")],
+        genres: [genreResult("genre:rock", "Rock")],
       }),
     );
     const wrapper = mountConfig(true);
@@ -332,13 +323,7 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [
-          {
-            uri: "playlist:test",
-            name: "Test playlist",
-            media_type: MediaType.PLAYLIST,
-          },
-        ],
+        playlists: [playlistResult("playlist:test", "Test playlist")],
       }),
     );
     const wrapper = mountConfig();

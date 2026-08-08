@@ -1,4 +1,13 @@
-import { EventType, ProviderType } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  ProviderStage,
+  ProviderStatus,
+  ProviderType,
+  UserRole,
+  type ProviderConfig,
+  type User,
+} from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,23 +32,27 @@ const {
 } = vi.hoisted(() => {
   const guestType = { value: null as "party" | "music_quiz" | null };
   const apiMock = {
-    authenticateWithToken: vi.fn(),
+    authenticateWithToken: vi.fn<MusicAssistantApi["authenticateWithToken"]>(),
     baseUrl: "http://music-assistant.test",
-    fetchState: vi.fn(),
-    fetchProviders: vi.fn(),
-    getCurrentUserInfo: vi.fn(),
-    getLibraryAlbumsCount: vi.fn(),
-    getLibraryArtistsCount: vi.fn(),
-    getLibraryAudiobooksCount: vi.fn(),
-    getLibraryGenresCount: vi.fn(),
-    getLibraryPlaylistsCount: vi.fn(),
-    getLibraryPodcastsCount: vi.fn(),
-    getLibraryRadiosCount: vi.fn(),
-    getLibraryTracksCount: vi.fn(),
-    getProviderConfigs: vi.fn(),
-    initialize: vi.fn(),
+    fetchState: vi.fn<MusicAssistantApi["fetchState"]>(),
+    fetchProviders: vi.fn<MusicAssistantApi["fetchProviders"]>(),
+    getCurrentUserInfo: vi.fn<MusicAssistantApi["getCurrentUserInfo"]>(),
+    getLibraryAlbumsCount: vi.fn<MusicAssistantApi["getLibraryAlbumsCount"]>(),
+    getLibraryArtistsCount:
+      vi.fn<MusicAssistantApi["getLibraryArtistsCount"]>(),
+    getLibraryAudiobooksCount:
+      vi.fn<MusicAssistantApi["getLibraryAudiobooksCount"]>(),
+    getLibraryGenresCount: vi.fn<MusicAssistantApi["getLibraryGenresCount"]>(),
+    getLibraryPlaylistsCount:
+      vi.fn<MusicAssistantApi["getLibraryPlaylistsCount"]>(),
+    getLibraryPodcastsCount:
+      vi.fn<MusicAssistantApi["getLibraryPodcastsCount"]>(),
+    getLibraryRadiosCount: vi.fn<MusicAssistantApi["getLibraryRadiosCount"]>(),
+    getLibraryTracksCount: vi.fn<MusicAssistantApi["getLibraryTracksCount"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
+    initialize: vi.fn<MusicAssistantApi["initialize"]>(),
     isRemoteConnection: { value: false },
-    requireAuthentication: vi.fn(),
+    requireAuthentication: vi.fn<MusicAssistantApi["requireAuthentication"]>(),
     serverInfo: {
       value: {
         onboard_done: true,
@@ -47,7 +60,7 @@ const {
         status: "running",
       },
     },
-    setLocale: vi.fn(),
+    setLocale: vi.fn<MusicAssistantApi["setLocale"]>(),
     state: { value: "authenticated" },
     subscribe: vi.fn((_event: string, _callback: CallableFunction) => () => {}),
     supportsServerSideTranslations: false,
@@ -271,16 +284,17 @@ describe("App initialization", () => {
       server_id: "server-id",
       status: "running",
     };
-    apiMock.getCurrentUserInfo.mockResolvedValue({
-      preferences: {},
-      role: "user",
-      user_id: "user-id",
-      username: "regular-user",
-    });
+    apiMock.getCurrentUserInfo.mockResolvedValue(
+      userFixture({
+        role: UserRole.USER,
+        user_id: "user-id",
+        username: "regular-user",
+      }),
+    );
     apiMock.fetchState.mockResolvedValue(undefined);
     apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.initialize.mockResolvedValue(undefined);
-    apiMock.getProviderConfigs.mockResolvedValue([{ enabled: true }]);
+    apiMock.getProviderConfigs.mockResolvedValue([providerConfigFixture()]);
     for (const method of [
       apiMock.getLibraryAlbumsCount,
       apiMock.getLibraryArtistsCount,
@@ -343,12 +357,13 @@ describe("App initialization", () => {
     "avoids regular-user commands for a %s guest while initializing audio",
     async (type) => {
       guestType.value = type;
-      apiMock.getCurrentUserInfo.mockResolvedValue({
-        preferences: {},
-        role: "guest",
-        user_id: "guest-id",
-        username: type === "party" ? "party_guest" : "music_quiz_guest",
-      });
+      apiMock.getCurrentUserInfo.mockResolvedValue(
+        userFixture({
+          role: UserRole.GUEST,
+          user_id: "guest-id",
+          username: type === "party" ? "party_guest" : "music_quiz_guest",
+        }),
+      );
 
       wrapper = await mountApp();
 
@@ -406,7 +421,7 @@ describe("App initialization", () => {
 
   it("waits for the startup data before revealing the main app", async () => {
     const serverState = createDeferred<void>();
-    const pluginConfigs = createDeferred<Array<{ enabled: boolean }>>();
+    const pluginConfigs = createDeferred<ProviderConfig[]>();
     apiMock.fetchState.mockReturnValue(serverState.promise);
     apiMock.getProviderConfigs.mockReturnValue(pluginConfigs.promise);
     wrapper = await mountAppWithoutSettling();
@@ -427,7 +442,7 @@ describe("App initialization", () => {
     expect(mockInitializeWebPlayerModeSync).not.toHaveBeenCalled();
     expect(wrapper.find("router-view-stub").exists()).toBe(false);
 
-    pluginConfigs.resolve([{ enabled: true }]);
+    pluginConfigs.resolve([providerConfigFixture()]);
     await flushPromises();
     expect(apiMock.state.value).toBe("initialized");
     expect(wrapper.find("router-view-stub").exists()).toBe(true);
@@ -438,12 +453,13 @@ describe("App initialization", () => {
     "does not mount browser media controls for a %s guest fallback tab",
     async (type) => {
       guestType.value = type;
-      apiMock.getCurrentUserInfo.mockResolvedValue({
-        preferences: {},
-        role: "guest",
-        user_id: "guest-id",
-        username: type === "party" ? "party_guest" : "music_quiz_guest",
-      });
+      apiMock.getCurrentUserInfo.mockResolvedValue(
+        userFixture({
+          role: UserRole.GUEST,
+          user_id: "guest-id",
+          username: type === "party" ? "party_guest" : "music_quiz_guest",
+        }),
+      );
       webPlayerMock.audioSource = "controls_only";
       webPlayerMock.interacted = true;
       webPlayerMock.tabMode = "controls_only";
@@ -633,12 +649,11 @@ describe("App initialization", () => {
   it("re-authenticates an ingress session through the proxy on reconnect", async () => {
     storeMock.isIngressSession = true;
     wrapper = await mountApp();
-    const ingressUser = {
-      preferences: {},
-      role: "admin",
+    const ingressUser = userFixture({
+      role: UserRole.ADMIN,
       user_id: "ingress-user",
       username: "ingress-user",
-    };
+    });
     apiMock.getCurrentUserInfo.mockResolvedValue(ingressUser);
 
     await startReconnect();
@@ -875,5 +890,47 @@ function createStorage(): Storage {
     setItem(key, value) {
       values.set(key, value);
     },
+  };
+}
+
+function userFixture(
+  overrides: Partial<User> & Pick<User, "role" | "user_id" | "username">,
+): User {
+  return {
+    created_at: "2024-01-01T00:00:00Z",
+    enabled: true,
+    player_filter: [],
+    preferences: {},
+    provider_filter: [],
+    ...overrides,
+  };
+}
+
+function providerConfigFixture(
+  overrides: Partial<ProviderConfig> = {},
+): ProviderConfig {
+  return {
+    domain: "party",
+    enabled: true,
+    instance_id: "party--test",
+    manifest: {
+      allow_disable: true,
+      builtin: false,
+      codeowners: [],
+      credits: [],
+      description: "",
+      domain: "party",
+      icon_images: [],
+      multi_instance: true,
+      name: "Party",
+      requirements: [],
+      stage: ProviderStage.STABLE,
+      type: ProviderType.PLUGIN,
+    },
+    name: "Party",
+    status: ProviderStatus.LOADED,
+    type: ProviderType.PLUGIN,
+    values: {},
+    ...overrides,
   };
 }

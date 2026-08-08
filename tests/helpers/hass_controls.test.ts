@@ -2,6 +2,13 @@ import {
   addHassControlEntity,
   getHassProviderInstance,
 } from "@/helpers/hass_controls";
+import type { MusicAssistantApi } from "@/plugins/api";
+import {
+  ConfigEntryType,
+  ProviderStage,
+  ProviderType,
+  type ProviderConfig,
+} from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock } = vi.hoisted(() => ({
@@ -10,8 +17,8 @@ const { apiMock } = vi.hoisted(() => ({
       string,
       { instance_id: string; domain: string; available: boolean }
     >,
-    getProviderConfig: vi.fn(),
-    saveProviderConfig: vi.fn(),
+    getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
   },
 }));
 
@@ -51,7 +58,7 @@ describe("getHassProviderInstance", () => {
 describe("addHassControlEntity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMock.saveProviderConfig.mockResolvedValue({});
+    apiMock.saveProviderConfig.mockResolvedValue(providerConfig(null));
   });
 
   it("appends the entity to the list the provider already holds", async () => {
@@ -88,9 +95,41 @@ describe("addHassControlEntity", () => {
 });
 
 function givenControls(value: string[] | null) {
-  apiMock.getProviderConfig.mockResolvedValue({
+  apiMock.getProviderConfig.mockResolvedValue(providerConfig(value));
+}
+
+function providerConfig(value: string[] | null): ProviderConfig {
+  return {
+    type: ProviderType.PLUGIN,
     domain: "hass",
     instance_id: "hass--1",
-    values: { power_controls: { key: "power_controls", value } },
-  });
+    enabled: true,
+    manifest: {
+      type: ProviderType.PLUGIN,
+      domain: "hass",
+      name: "Home Assistant",
+      description: "Home Assistant integration",
+      codeowners: [],
+      credits: [],
+      requirements: [],
+      multi_instance: false,
+      builtin: false,
+      allow_disable: true,
+      stage: ProviderStage.STABLE,
+      icon_images: [],
+    },
+    values: {
+      power_controls: {
+        key: "power_controls",
+        type: ConfigEntryType.STRING,
+        label: "Power controls",
+        default_value: [],
+        required: false,
+        options: [],
+        category: "generic",
+        multi_value: true,
+        value,
+      },
+    },
+  };
 }

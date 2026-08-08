@@ -1,5 +1,5 @@
 import VolumeControl from "@/components/VolumeControl.vue";
-import { api } from "@/plugins/api";
+import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   IdentifierType,
   PlaybackState,
@@ -14,8 +14,10 @@ vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
     players: {} as Record<string, Player>,
-    getPlayer: vi.fn(),
-    playerCommandSetMembers: vi.fn(() => Promise.resolve()),
+    getPlayer: vi.fn<MusicAssistantApi["getPlayer"]>(),
+    playerCommandSetMembers: vi.fn<
+      MusicAssistantApi["playerCommandSetMembers"]
+    >(() => Promise.resolve()),
   });
   return { api, default: api };
 });

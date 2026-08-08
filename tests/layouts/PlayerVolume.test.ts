@@ -1,5 +1,5 @@
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import { api } from "@/plugins/api";
+import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   IdentifierType,
   PlaybackState,
@@ -18,14 +18,21 @@ vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
     players: {} as Record<string, Player>,
-    playerCommandGroupVolume: vi.fn(),
-    playerCommandGroupVolumeDown: vi.fn(),
-    playerCommandGroupVolumeMute: vi.fn(),
-    playerCommandGroupVolumeUp: vi.fn(),
-    playerCommandMuteToggle: vi.fn(),
-    playerCommandVolumeDown: vi.fn(),
-    playerCommandVolumeSet: vi.fn(),
-    playerCommandVolumeUp: vi.fn(),
+    playerCommandGroupVolume:
+      vi.fn<MusicAssistantApi["playerCommandGroupVolume"]>(),
+    playerCommandGroupVolumeDown:
+      vi.fn<MusicAssistantApi["playerCommandGroupVolumeDown"]>(),
+    playerCommandGroupVolumeMute:
+      vi.fn<MusicAssistantApi["playerCommandGroupVolumeMute"]>(),
+    playerCommandGroupVolumeUp:
+      vi.fn<MusicAssistantApi["playerCommandGroupVolumeUp"]>(),
+    playerCommandMuteToggle:
+      vi.fn<MusicAssistantApi["playerCommandMuteToggle"]>(),
+    playerCommandVolumeDown:
+      vi.fn<MusicAssistantApi["playerCommandVolumeDown"]>(),
+    playerCommandVolumeSet:
+      vi.fn<MusicAssistantApi["playerCommandVolumeSet"]>(),
+    playerCommandVolumeUp: vi.fn<MusicAssistantApi["playerCommandVolumeUp"]>(),
   });
   return { api, default: api };
 });

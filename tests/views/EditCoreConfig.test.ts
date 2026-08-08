@@ -11,7 +11,7 @@ import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
-    getCoreConfig: vi.fn(),
+    getCoreConfig: vi.fn<MusicAssistantApi["getCoreConfig"]>(),
     invokeCoreConfigAction:
       vi.fn<MusicAssistantApi["invokeCoreConfigAction"]>(),
     providerManifests: {
@@ -23,7 +23,7 @@ const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
         name: "Cache",
       },
     },
-    saveCoreConfig: vi.fn(),
+    saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
   },
   routerMock: {
     push: vi.fn(),

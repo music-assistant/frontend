@@ -1,12 +1,17 @@
 import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
-import { MediaType } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
+import {
+  MediaType,
+  type Playlist,
+  type SearchResults,
+} from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
-  mockSearch: vi.fn(),
-  mockGetLibraryGenres: vi.fn(),
+  mockSearch: vi.fn<MusicAssistantApi["search"]>(),
+  mockGetLibraryGenres: vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -43,7 +48,7 @@ async function flushPromises() {
 
 // api.search always returns every result list, so fill the ones a case does not
 // exercise rather than letting a partial mock stand in for a server response
-const searchResults = <T extends Record<string, unknown>>(lists: T) => ({
+const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
   artists: [],
   albums: [],
   tracks: [],
@@ -55,6 +60,24 @@ const searchResults = <T extends Record<string, unknown>>(lists: T) => ({
   ...lists,
 });
 
+function playlistResult(uri: string, name: string): Playlist {
+  return {
+    item_id: uri,
+    provider: "library",
+    name,
+    uri,
+    is_playable: true,
+    media_type: MediaType.PLAYLIST,
+    provider_mappings: [],
+    metadata: {},
+    favorite: false,
+    owner: "",
+    is_editable: false,
+    supported_mediatypes: [],
+    is_dynamic: false,
+  };
+}
+
 describe("MusicTimelineSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -64,13 +87,7 @@ describe("MusicTimelineSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [
-          {
-            uri: "playlist:test",
-            name: "Test playlist",
-            media_type: MediaType.PLAYLIST,
-          },
-        ],
+        playlists: [playlistResult("playlist:test", "Test playlist")],
       }),
     );
   });

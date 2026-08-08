@@ -1,4 +1,5 @@
 import TriviaSetup from "@/components/music-quiz/game-types/trivia/TriviaSetup.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,8 +17,8 @@ vi.mock("@/plugins/api", () => ({
   api: {
     providers: {},
     providerManifests: {},
-    search: vi.fn(),
-    getLibraryGenres: vi.fn(),
+    search: vi.fn<MusicAssistantApi["search"]>(),
+    getLibraryGenres: vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
   },
 }));
 

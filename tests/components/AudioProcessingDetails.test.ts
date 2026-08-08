@@ -3,6 +3,7 @@ import { nextTick, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AudioProcessingDetails from "@/components/AudioProcessingDetails.vue";
 import type { AudioProcessingDisplayPlayer } from "@/composables/useAudioProcessingDetails";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { i18n } from "@/plugins/i18n";
 import {
   AudioChannel,
@@ -15,18 +16,35 @@ import {
   DSPFilterType,
   DSPState,
   MediaType,
+  ProviderStage,
+  ProviderType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 
 const apiMock = vi.hoisted(() => ({
-  getProviderName: vi.fn(() => "Test provider"),
-  getProviderManifest: vi.fn((providerId: string) => ({
-    domain: providerId.split("--", 1)[0],
-  })),
+  getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(
+    () => "Test provider",
+  ),
+  getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(
+    (providerId: string) => ({
+      allow_disable: true,
+      builtin: false,
+      codeowners: [],
+      credits: [],
+      description: "",
+      domain: providerId.split("--", 1)[0],
+      icon_images: [],
+      multi_instance: true,
+      name: providerId,
+      requirements: [],
+      stage: ProviderStage.STABLE,
+      type: ProviderType.MUSIC,
+    }),
+  ),
   // useDSPIRs (via useAudioProcessingDetails) fetches the IR list and
   // subscribes to config updates on mount; subscribe hands back an unsubscribe.
-  getDSPIRs: vi.fn(() => Promise.resolve([])),
+  getDSPIRs: vi.fn<MusicAssistantApi["getDSPIRs"]>(() => Promise.resolve([])),
   subscribe: vi.fn(() => vi.fn()),
   players: {} as Record<string, AudioProcessingDisplayPlayer>,
 }));

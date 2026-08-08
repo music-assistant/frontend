@@ -6,12 +6,13 @@ import {
   type ConfigEntry,
   type SetupFlowStep,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 
 const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
   () => ({
     apiMock: {
-      abortSetupFlow: vi.fn(),
+      abortSetupFlow: vi.fn<MusicAssistantApi["abortSetupFlow"]>(),
       players: {},
       providerManifests: {},
       providers: {
@@ -19,12 +20,12 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
           domain: "spotify",
         },
       },
-      reconfigureProvider: vi.fn(),
+      reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
       state: {
         value: "authenticated",
       },
-      submitSetupFlow: vi.fn(),
-      subscribeSetupFlow: vi.fn(),
+      submitSetupFlow: vi.fn<MusicAssistantApi["submitSetupFlow"]>(),
+      subscribeSetupFlow: vi.fn<MusicAssistantApi["subscribeSetupFlow"]>(),
     },
     eventbusMock: {
       off: vi.fn(),
