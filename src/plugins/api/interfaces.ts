@@ -1089,11 +1089,11 @@ export interface StreamMetadata {
   // mandatory fields
   title: string;
   // optional fields
-  artist?: string;
-  album?: string;
-  image_url?: string;
-  duration?: number;
-  uri?: string;
+  artist: string | null;
+  album: string | null;
+  image_url: string | null;
+  duration: number | null;
+  uri: string | null;
 }
 
 export interface StreamDetails {
@@ -1101,9 +1101,9 @@ export interface StreamDetails {
   item_id: string;
   audio_format: AudioFormat;
   media_type: MediaType;
-  stream_metadata?: StreamMetadata;
-  duration?: number;
-  audio_processing?: AudioProcessingChain | null;
+  stream_metadata: StreamMetadata | null;
+  duration: number | null;
+  audio_processing: AudioProcessingChain | null;
 }
 
 // queue_item
@@ -1115,9 +1115,9 @@ export interface QueueItem {
   // duration: null for items without a fixed length (radio stations, live sources)
   duration: number | null;
   sort_index: number;
-  streamdetails?: StreamDetails;
-  media_item?: PlayableMediaItemType;
-  image?: MediaItemImage;
+  streamdetails: StreamDetails | null;
+  media_item: PlayableMediaItemType | null;
+  image: MediaItemImage | null;
   available: boolean;
   // Party: extra_attributes for guest-added items
   extra_attributes?: {
@@ -1156,10 +1156,10 @@ export interface PlayerQueue {
   // disabled so it can be re-enabled with the same sound), overlay_volume is
   // the overlay loudness relative to the music in percent (100 = equally loud).
   overlay_enabled: boolean;
-  overlay_source?: ItemMapping;
+  overlay_source: ItemMapping | null;
   overlay_volume: number;
-  current_index?: number;
-  index_in_buffer?: number;
+  current_index: number | null;
+  index_in_buffer: number | null;
   // ended: whether the queue played all the way to its end and is waiting to be restarted
   // (server-derived, read-only). The position stays on the last item, so this flag is what
   // tells a finished queue apart from one that is merely stopped on that item. Pressing play
@@ -1180,8 +1180,8 @@ export interface PlayerQueue {
    */
   elapsed_time_last_updated: number;
   state: PlaybackState;
-  current_item?: QueueItem;
-  next_item?: QueueItem;
+  current_item: QueueItem | null;
+  next_item: QueueItem | null;
   // The queue's enqueued parent items (its origin), present regardless of mode.
   // When one or more sources are dynamic, the queue runs in dynamic mode
   // (is_dynamic), implicitly enabling autoplay and smart shuffle.

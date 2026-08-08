@@ -121,9 +121,9 @@ interface DisplayLine {
 }
 
 interface Props {
-  mediaItem?: PlayableMediaItemType;
+  mediaItem?: PlayableMediaItemType | null;
   position?: number;
-  streamDetails?: StreamDetails;
+  streamDetails?: StreamDetails | null;
   textColor?: string;
   lyrics?: string | null;
   lrcLyrics?: string | null;

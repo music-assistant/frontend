@@ -81,7 +81,7 @@ export const store: Store = reactive({
   activePlayerQueue: computed(() => resolvePlayerQueue(store.activePlayer)),
   curQueueItem: computed(() => {
     if (store.activePlayerQueue && store.activePlayerQueue.active)
-      return store.activePlayerQueue.current_item;
+      return store.activePlayerQueue.current_item ?? undefined;
     return undefined;
   }),
   globalSearchTerm: undefined,
