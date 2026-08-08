@@ -141,7 +141,7 @@ import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
-  type MediaItemType,
+  type MediaItem,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -151,7 +151,7 @@ import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 export interface Props {
-  itemDetails: MediaItemType;
+  itemDetails: MediaItem;
 }
 const props = defineProps<Props>();
 

@@ -2039,7 +2039,7 @@ const getFilteredItems = function (
   }
 
   if (params.favoritesOnly) {
-    result = result.filter((x) => x.favorite);
+    result = result.filter((x) => "favorite" in x && x.favorite);
   }
 
   if (params.hideFullyPlayed) {

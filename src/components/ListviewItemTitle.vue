@@ -25,7 +25,11 @@
   </span>
   <!-- explicit icon -->
   <template
-    v-if="item && item.metadata && parseBool(item.metadata.explicit || false)"
+    v-if="
+      'metadata' in item &&
+      item.metadata &&
+      parseBool(item.metadata.explicit || false)
+    "
   >
     <Tooltip>
       <TooltipTrigger as-child>

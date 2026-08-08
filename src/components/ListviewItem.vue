@@ -212,7 +212,7 @@
         {{ truncateString(item.metadata.description, 150) }}
       </div>
       <!-- media type label -->
-      <div v-else-if="'media_type' in item && !item.provider_mappings">
+      <div v-else-if="!('provider_mappings' in item)">
         {{ $t(item.media_type) }}
       </div>
     </template>

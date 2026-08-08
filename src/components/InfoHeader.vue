@@ -535,6 +535,7 @@ import type {
   Album,
   Artist,
   Audiobook,
+  BrowseFolder,
   Genre,
   ItemMapping,
   MediaItemType,
@@ -561,7 +562,8 @@ import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
-  item?: MediaItemType;
+  // browse folders are listed, never opened in a details view
+  item?: Exclude<MediaItemType, BrowseFolder>;
   sortBy?: string;
 }
 const compProps = defineProps<Props>();

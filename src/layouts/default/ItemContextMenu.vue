@@ -206,7 +206,7 @@ import router from "@/plugins/router";
 import {
   getShortcutMoveAvailability,
   isShortcutCapReached,
-  isShortcutMediaType,
+  isShortcutItem,
   isShortcutPinnedItem,
   moveShortcutStandaloneItem,
   pinShortcutStandalone,
@@ -941,11 +941,7 @@ export const getContextMenuItems = async function (
     });
   }
   // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook, genre)
-  if (
-    items.length === 1 &&
-    isShortcutMediaType(items[0].media_type) &&
-    !!items[0].uri
-  ) {
+  if (items.length === 1 && isShortcutItem(items[0]) && !!items[0].uri) {
     const shortcutItem = items[0];
     if (isShortcutPinnedItem(shortcutItem)) {
       // move up/down only make sense when the menu is opened on the
