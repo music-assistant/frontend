@@ -110,7 +110,10 @@
                 variant="outline"
                 :class="providerStatusClass"
               >
-                <span class="size-1.5 rounded-full bg-current"></span>
+                <span
+                  class="size-1.5 rounded-full bg-current"
+                  aria-hidden="true"
+                ></span>
                 {{ providerStatusLabel }}
               </Badge>
             </div>
