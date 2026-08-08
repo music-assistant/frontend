@@ -26,7 +26,7 @@ const selected = computed(() => (props.entry.value ?? []) as string[]);
 // it falls back to identifies the entity just as unambiguously
 const entityTitle = (entityId: string) =>
   props.entry.options
-    ?.find((option) => option.value === entityId)
+    .find((option) => option.value === entityId)
     ?.title?.toString() || entityId;
 
 const onPick = (entity: HassControlEntity) => {

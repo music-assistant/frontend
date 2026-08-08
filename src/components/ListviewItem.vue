@@ -400,7 +400,6 @@ const collabArtists = computed(() => {
 const HiResDetails = computed(() => {
   if (!("provider_mappings" in compProps.item)) return "";
   for (const prov of compProps.item.provider_mappings) {
-    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![

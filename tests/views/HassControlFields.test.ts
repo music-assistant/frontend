@@ -154,6 +154,7 @@ function pickerEntry(): HassControlPickerEntry {
     category: "player_controls",
     label: "",
     required: false,
+    options: [],
     default_value: null,
     hass_instance_id: "hass--1",
     hass_control_key: "power_controls",
@@ -174,7 +175,7 @@ function controlsEntry(
     required: false,
     default_value: [],
     value,
-    options,
+    options: options ?? [],
   } as ConfigEntryUI;
 }
 
