@@ -12,28 +12,32 @@ exclude-contributors:
 categories:
   - title: "⚠ Breaking Changes"
     exclusive: true
-    labels:
-      - "breaking-change"
+    when:
+      - labels:
+          - "breaking-change"
 
   - title: "🚀 Features and enhancements"
     exclusive: true
-    labels:
-      - "enhancement"
-      - "new-feature"
+    when:
+      - labels:
+          - "enhancement"
+          - "new-feature"
 
   - title: "🐛 Bugfixes"
     exclusive: true
-    labels:
-      - "bugfix"
+    when:
+      - labels:
+          - "bugfix"
 
   - title: "🧰 Maintenance and dependency bumps"
     exclusive: true
     collapse-after: 3
-    labels:
-      - "ci"
-      - "maintenance"
-      - "refactor"
-      - "dependencies"
+    when:
+      - labels:
+          - "ci"
+          - "maintenance"
+          - "refactor"
+          - "dependencies"
 
 template: |
 
