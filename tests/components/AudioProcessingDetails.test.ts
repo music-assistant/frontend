@@ -930,6 +930,9 @@ function makeStreamDetails(audioFormat = makeFormat()): StreamDetails {
     item_id: "track-1",
     audio_format: audioFormat,
     media_type: MediaType.TRACK,
+    stream_metadata: null,
+    duration: null,
+    audio_processing: null,
   };
 }
 

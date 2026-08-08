@@ -42,7 +42,7 @@ export function computeElapsedTime(
  * indicator, a negative value would run them backwards, and the OS media
  * session rejects such a rate outright. Anything else reads as normal speed.
  */
-export function queueItemPlaybackSpeed(item?: QueueItem): number {
+export function queueItemPlaybackSpeed(item?: QueueItem | null): number {
   const speed = item?.extra_attributes?.playback_speed;
   return typeof speed === "number" && Number.isFinite(speed) && speed > 0
     ? speed
