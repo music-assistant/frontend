@@ -204,9 +204,7 @@
         v-else-if="
           'metadata' in item &&
           item.metadata?.description &&
-          [MediaType.RADIO, MediaType.PLAYLIST, MediaType.FOLDER].includes(
-            item.media_type,
-          )
+          [MediaType.RADIO, MediaType.PLAYLIST].includes(item.media_type)
         "
       >
         {{ truncateString(item.metadata.description, 150) }}
