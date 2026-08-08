@@ -123,7 +123,7 @@ function controlEntry(key: string): ConfigEntry {
     default_value: "none",
     value: "none",
     options: [{ title: "none", value: "none" }],
-  } as ConfigEntry;
+  };
 }
 
 function playerConfig() {

@@ -204,9 +204,10 @@ function entry(overrides: Partial<ConfigEntry> = {}): ConfigEntry {
     default_value: null,
     key: "existing",
     label: "Existing",
+    options: [],
     required: false,
     type: ConfigEntryType.STRING,
     value: "current",
     ...overrides,
-  } as ConfigEntry;
+  };
 }

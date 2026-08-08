@@ -33,6 +33,7 @@ import {
   type ShortcutItem,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
+import { providerMapping } from "../fixtures/providerMapping";
 
 const PODCAST_FEED = "https://ronzheimer.podigee.io/feed/mp3";
 const ENCODED_PODCAST_URI = `itunes_podcasts://podcast/${encodeURIComponent(PODCAST_FEED)}`;
@@ -66,12 +67,12 @@ describe("useShortcuts standalone helpers", () => {
       media_type: MediaType.PODCAST,
       item_id: "42",
       provider_mappings: [
-        {
+        providerMapping({
           item_id: PODCAST_FEED,
           provider_instance: "itunes_podcasts--abc123",
           provider_domain: "itunes_podcasts",
           available: true,
-        },
+        }),
       ],
     };
 
@@ -91,12 +92,12 @@ describe("useShortcuts standalone helpers", () => {
       media_type: MediaType.PODCAST,
       item_id: "42",
       provider_mappings: [
-        {
+        providerMapping({
           item_id: PODCAST_FEED,
           provider_instance: "itunes_podcasts--abc123",
           provider_domain: "itunes_podcasts",
           available: true,
-        },
+        }),
       ],
     };
 

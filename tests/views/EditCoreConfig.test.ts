@@ -4,6 +4,8 @@ import {
   ConfigEntryType,
   ProviderStage,
   ProviderType,
+  type ConfigActionResult,
+  type ConfigEntry,
   type CoreConfig,
 } from "@/plugins/api/interfaces";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
@@ -11,7 +13,13 @@ import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     getCoreConfig: vi.fn(),
-    invokeCoreConfigAction: vi.fn(),
+    invokeCoreConfigAction:
+      vi.fn<
+        (
+          domain: string,
+          action: string,
+        ) => Promise<ConfigEntry[] | ConfigActionResult>
+      >(),
     providerManifests: {
       cache: {
         codeowners: [],
@@ -120,6 +128,7 @@ describe("EditCoreConfig", () => {
         default_value: null,
         key: "new_field",
         label: "New field",
+        options: [],
         required: false,
         type: ConfigEntryType.STRING,
         value: "server value",

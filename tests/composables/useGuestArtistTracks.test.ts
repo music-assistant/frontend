@@ -1,4 +1,5 @@
 import type { Artist } from "@/plugins/api/interfaces";
+import { providerMapping } from "../fixtures/providerMapping";
 import { $t } from "@/plugins/i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -43,7 +44,10 @@ describe("useGuestArtistTracks", () => {
       item_id: "artist-id",
       provider: "library",
       provider_mappings: [
-        { item_id: "mapping-id", provider_instance: "provider-1" },
+        providerMapping({
+          item_id: "mapping-id",
+          provider_instance: "provider-1",
+        }),
       ],
     } as unknown as Artist;
 
@@ -65,7 +69,10 @@ describe("useGuestArtistTracks", () => {
 
     const artist = {
       provider_mappings: [
-        { item_id: "artist-id", provider_instance: "provider-1" },
+        providerMapping({
+          item_id: "artist-id",
+          provider_instance: "provider-1",
+        }),
       ],
     } as unknown as Artist;
 
@@ -87,7 +94,10 @@ describe("useGuestArtistTracks", () => {
 
     await selectArtist({
       provider_mappings: [
-        { item_id: "artist-id", provider_instance: "provider-1" },
+        providerMapping({
+          item_id: "artist-id",
+          provider_instance: "provider-1",
+        }),
       ],
     } as unknown as Artist);
     clearArtistSelection();
@@ -114,7 +124,10 @@ describe("useGuestArtistTracks", () => {
 
     const pending = selectArtist({
       provider_mappings: [
-        { item_id: "artist-id", provider_instance: "provider-1" },
+        providerMapping({
+          item_id: "artist-id",
+          provider_instance: "provider-1",
+        }),
       ],
     } as unknown as Artist);
     clearArtistSelection();
@@ -143,11 +156,15 @@ describe("useGuestArtistTracks", () => {
 
     const first = selectArtist({
       name: "First",
-      provider_mappings: [{ item_id: "a1", provider_instance: "provider-1" }],
+      provider_mappings: [
+        providerMapping({ item_id: "a1", provider_instance: "provider-1" }),
+      ],
     } as unknown as Artist);
     const second = selectArtist({
       name: "Second",
-      provider_mappings: [{ item_id: "a2", provider_instance: "provider-1" }],
+      provider_mappings: [
+        providerMapping({ item_id: "a2", provider_instance: "provider-1" }),
+      ],
     } as unknown as Artist);
     await second;
     resolveFirst([{ id: "first-track" }]);

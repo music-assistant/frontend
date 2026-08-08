@@ -5,6 +5,7 @@ import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import {
   ConfigEntryType,
+  type ConfigEntry,
   type ConfigValueType,
 } from "@/plugins/api/interfaces";
 import {
@@ -210,15 +211,17 @@ function entry(
     type: ConfigEntryUIType;
   },
 ): ConfigEntryUI {
-  return {
+  // typed without key/type so the defaults stay checked against the server
+  // model, while the cast only covers the UI-only entry types
+  const base: Omit<ConfigEntry, "key" | "type"> = {
     category: "generic",
     default_value: null,
     label: overrides.key,
     required: false,
     options: [],
     value: null as ConfigValueType,
-    ...overrides,
-  } as ConfigEntryUI;
+  };
+  return { ...base, ...overrides } as ConfigEntryUI;
 }
 
 function rangedEntry(type: ConfigEntryType): ConfigEntryUI {

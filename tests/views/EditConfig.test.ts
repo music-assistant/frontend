@@ -263,7 +263,7 @@ function entry(
     options: [],
     value: null as ConfigValueType,
     ...overrides,
-  } as ConfigEntry;
+  };
 }
 
 function dependentEntry(
