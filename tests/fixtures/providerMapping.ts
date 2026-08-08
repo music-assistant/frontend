@@ -12,6 +12,9 @@ export function providerMapping(
     provider_domain: "test_provider",
     provider_instance: "test_provider--1",
     available: true,
+    in_library: null,
+    details: null,
+    url: null,
     audio_format: {
       content_type: ContentType.FLAC,
       codec_type: ContentType.FLAC,
