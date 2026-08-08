@@ -451,14 +451,27 @@ let pointerMoved = false;
 const isMouseDragging = ref(false);
 const mouseStartX = ref(0);
 const mouseStartValue = ref(0);
+// Latched once a mouse gesture has moved far enough to be a drag rather than a
+// click. Until then nothing is sent, so a click still reaches handleGroupTap().
+const mouseDragExceededThreshold = ref(false);
 
 let sliderUpdateDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 const SLIDER_UPDATE_DEBOUNCE_MS = 100;
 const POINTER_DRAG_THRESHOLD = 4;
 
+// Live drag updates: the volume follows the finger/mouse instead of waiting for
+// release. Throttled because every send is a separate websocket command.
+const LIVE_SEND_THROTTLE_MS = 100;
+let liveSendTimeout: ReturnType<typeof setTimeout> | null = null;
+let lastLiveSendTime = 0;
+// Scoped to one gesture (reset in startDragging) so an external volume change
+// between drags can never make a send look redundant.
+let lastSentValue: number | null = null;
+
 onUnmounted(() => {
   if (dragEndTimeout) clearTimeout(dragEndTimeout);
   if (sliderUpdateDebounceTimeout) clearTimeout(sliderUpdateDebounceTimeout);
+  if (liveSendTimeout) clearTimeout(liveSendTimeout);
   document.removeEventListener("mousemove", onMouseMove);
   document.removeEventListener("mouseup", onMouseUp);
 });
@@ -473,6 +486,7 @@ const roundToStep = (value: number) =>
 
 const startDragging = () => {
   isDragging.value = true;
+  lastSentValue = null;
   if (dragEndTimeout) {
     clearTimeout(dragEndTimeout);
     dragEndTimeout = null;
@@ -495,6 +509,47 @@ const setVolume = (value: number) => {
   } else {
     api.playerCommandVolumeSet(props.player.player_id, value);
   }
+};
+
+const cancelLiveSend = () => {
+  if (liveSendTimeout) {
+    clearTimeout(liveSendTimeout);
+    liveSendTimeout = null;
+  }
+};
+
+// Called while a drag is still in progress. Sends straight away when the last
+// send is old enough, otherwise schedules a trailing send that picks up
+// whatever the value has become by the time it fires.
+const sendVolumeLive = (value: number) => {
+  if (value === lastSentValue) return;
+
+  const elapsed = Date.now() - lastLiveSendTime;
+  if (elapsed >= LIVE_SEND_THROTTLE_MS) {
+    cancelLiveSend();
+    lastLiveSendTime = Date.now();
+    lastSentValue = value;
+    setVolume(value);
+    return;
+  }
+
+  cancelLiveSend();
+  liveSendTimeout = setTimeout(() => {
+    liveSendTimeout = null;
+    lastLiveSendTime = Date.now();
+    lastSentValue = displayValue.value;
+    setVolume(displayValue.value);
+  }, LIVE_SEND_THROTTLE_MS - elapsed);
+};
+
+// Called on release. This value is authoritative, so it cancels any pending
+// throttled send rather than racing it.
+const sendVolumeFinal = (value: number) => {
+  cancelLiveSend();
+  if (value === lastSentValue) return;
+  lastLiveSendTime = Date.now();
+  lastSentValue = value;
+  setVolume(value);
 };
 
 const volumeUp = () => {
@@ -631,6 +686,7 @@ const onTouchMove = (event: TouchEvent) => {
 
     if (valueChanged) {
       vibrate(5);
+      sendVolumeLive(newValue);
     }
   }
 };
@@ -652,6 +708,7 @@ const onTouchEnd = (event: TouchEvent) => {
         clearTimeout(sliderUpdateDebounceTimeout);
         sliderUpdateDebounceTimeout = null;
       }
+      cancelLiveSend();
       displayValue.value = touchStartValue.value;
       emit("update:local-value", touchStartValue.value);
       handleGroupTap();
@@ -670,12 +727,13 @@ const onTouchEnd = (event: TouchEvent) => {
       }
     }
   } else if (!isSliderDisabled.value) {
-    // Drag end: send the final value to the server
+    // Drag end: settle on the exact final value. The drag itself has already
+    // been sending, so this is usually a no-op.
     const touch = event.changedTouches[0];
     const finalValue = getDragValue(touch.clientX);
     displayValue.value = finalValue;
     emit("update:local-value", finalValue);
-    setVolume(finalValue);
+    sendVolumeFinal(finalValue);
     stopDragging();
   }
 
@@ -763,17 +821,28 @@ const resetPointerInteraction = () => {
 };
 
 const onTouchCancel = () => {
+  const wasDragging = isDrag.value;
   isDrag.value = false;
   isScrolling.value = false;
   touchMoveCount.value = 0;
   maxMovement.value = 0;
+  isTouching.value = false;
+
+  if (wasDragging) {
+    // The drag already changed the volume audibly, so an interruption settles
+    // where it left off rather than snapping back to the start.
+    sendVolumeFinal(displayValue.value);
+    stopDragging();
+    return;
+  }
+
+  cancelLiveSend();
   displayValue.value = touchStartValue.value;
   isDragging.value = false;
   if (dragEndTimeout) {
     clearTimeout(dragEndTimeout);
     dragEndTimeout = null;
   }
-  isTouching.value = false;
 };
 
 // --- Mouse drag handlers (relative mode only) ---
@@ -788,12 +857,25 @@ const MOUSE_DRAG_THRESHOLD_PX = 5;
 const onMouseMove = (event: MouseEvent) => {
   if (!isMouseDragging.value || isSliderDisabled.value) return;
 
-  const newValue = getValueFromDelta(
-    mouseStartValue.value,
-    event.clientX - mouseStartX.value,
-  );
+  const deltaX = event.clientX - mouseStartX.value;
+
+  // Hold off until the pointer has travelled far enough to be a drag. Without
+  // this, a click carrying a few pixels of hand jitter would change the volume
+  // before onMouseUp gets to classify it as a click and open the group popout.
+  if (!mouseDragExceededThreshold.value) {
+    if (Math.abs(deltaX) < MOUSE_DRAG_THRESHOLD_PX) return;
+    mouseDragExceededThreshold.value = true;
+  }
+
+  const newValue = getValueFromDelta(mouseStartValue.value, deltaX);
+  const valueChanged = newValue !== displayValue.value;
+
   displayValue.value = newValue;
   emit("update:local-value", newValue);
+
+  if (valueChanged) {
+    sendVolumeLive(newValue);
+  }
 };
 
 const onMouseUp = (event: MouseEvent) => {
@@ -802,6 +884,7 @@ const onMouseUp = (event: MouseEvent) => {
 
   if (!isMouseDragging.value) return;
   isMouseDragging.value = false;
+  mouseDragExceededThreshold.value = false;
 
   const deltaX = event.clientX - mouseStartX.value;
 
@@ -809,6 +892,7 @@ const onMouseUp = (event: MouseEvent) => {
     // Treated as a click rather than a drag: run the group action. This also
     // stamps lastPopoutToggleTime, so the click event that follows this
     // mouseup is a no-op in onSliderClick.
+    cancelLiveSend();
     if (handlesGroupTap.value) {
       handleGroupTap();
     }
@@ -816,7 +900,7 @@ const onMouseUp = (event: MouseEvent) => {
     const finalValue = getValueFromDelta(mouseStartValue.value, deltaX);
     displayValue.value = finalValue;
     emit("update:local-value", finalValue);
-    setVolume(finalValue);
+    sendVolumeFinal(finalValue);
   }
 
   stopDragging();
@@ -835,6 +919,7 @@ const onMouseDown = (event: MouseEvent) => {
   isMouseDragging.value = true;
   mouseStartX.value = event.clientX;
   mouseStartValue.value = displayValue.value;
+  mouseDragExceededThreshold.value = false;
   startDragging();
   // Suppress text selection while dragging
   event.preventDefault();
