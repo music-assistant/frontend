@@ -7,27 +7,32 @@ exclude-contributors:
   - github-actions
   - github-actions[bot]
 
+# A PR can carry labels from more than one category, so every category is
+# exclusive: the first one matching below wins and the PR is listed only once.
 categories:
   - title: "⚠ Breaking Changes"
+    exclusive: true
     labels:
       - "breaking-change"
 
   - title: "🚀 Features and enhancements"
+    exclusive: true
     labels:
-      - "feature"
       - "enhancement"
       - "new-feature"
 
   - title: "🐛 Bugfixes"
+    exclusive: true
     labels:
       - "bugfix"
 
   - title: "🧰 Maintenance and dependency bumps"
+    exclusive: true
     collapse-after: 3
     labels:
       - "ci"
-      - "documentation"
       - "maintenance"
+      - "refactor"
       - "dependencies"
 
 template: |
