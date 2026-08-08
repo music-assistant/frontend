@@ -272,6 +272,7 @@ import { useBackgroundTasks } from "@/composables/background-tasks/useBackground
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   canReconfigureProvider,
+  getProviderStatusTranslationKey,
   providerRequiresReconfiguration,
 } from "@/helpers/provider_config";
 import { openLinkInNewTab } from "@/helpers/utils";
@@ -611,17 +612,7 @@ const statusColor = function (status?: ProviderStatus) {
 };
 
 const statusLabel = function (status?: ProviderStatus) {
-  return match(status)
-    .with(ProviderStatus.DISABLED, () => $t("settings.provider_disabled"))
-    .with(ProviderStatus.LOADING, () => $t("settings.not_loaded"))
-    .with(ProviderStatus.AUTH_REQUIRED, () =>
-      $t("settings.provider_status_auth_required"),
-    )
-    .with(ProviderStatus.INCOMPATIBLE, () =>
-      $t("settings.provider_status_incompatible"),
-    )
-    .with(ProviderStatus.ERROR, () => $t("settings.provider_status_error"))
-    .otherwise(() => "");
+  return $t(getProviderStatusTranslationKey(status));
 };
 
 // an error status carries a (user-relevant) reason in last_error

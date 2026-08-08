@@ -1,6 +1,6 @@
 <template>
   <section class="edit-provider">
-    <div v-if="config && api.providerManifests[config.domain]">
+    <div v-if="config && providerManifest">
       <!-- Disabled banner -->
       <v-alert
         v-if="!config.enabled"
@@ -88,57 +88,87 @@
       </div>
 
       <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
-        <div class="header-content">
-          <div class="header-icon">
-            <provider-icon :domain="config.domain" :size="48" />
-          </div>
-          <div class="header-info">
-            <div class="header-title-row">
-              <h2 class="header-title">
-                {{
-                  config.name ||
-                  api.providers[config.instance_id]?.name ||
-                  api.providerManifests[config.domain].name
-                }}
-              </h2>
-              <v-btn
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                density="compact"
-                class="rename-btn"
+      <Card class="mb-4 gap-0 py-0">
+        <CardHeader class="flex flex-col gap-4 p-6 sm:flex-row">
+          <ProviderIcon :domain="config.domain" :size="48" class="shrink-0" />
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <CardTitle class="text-xl leading-tight">
+                {{ providerName }}
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :title="$t('settings.provider_name')"
                 @click="showRenameDialog = true"
-              />
+              >
+                <Pencil class="size-4" />
+                <span class="sr-only">{{ $t("settings.provider_name") }}</span>
+              </Button>
+              <Badge
+                data-testid="provider-status"
+                variant="outline"
+                :class="providerStatusClass"
+              >
+                <span class="size-1.5 rounded-full bg-current"></span>
+                {{ providerStatusLabel }}
+              </Badge>
             </div>
-            <p class="header-description">
-              {{ api.providerManifests[config.domain].description }}
-            </p>
+            <CardDescription class="mt-2 max-w-3xl leading-relaxed">
+              {{ providerManifest.description }}
+            </CardDescription>
             <div
-              v-if="api.providerManifests[config.domain].codeowners.length"
-              class="header-authors"
+              v-if="providerManifest.codeowners.length"
+              class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
               v-html="
-                markdownToHtml(
-                  getAuthorsMarkdown(
-                    api.providerManifests[config.domain].codeowners,
-                  ),
-                )
+                markdownToHtml(getAuthorsMarkdown(providerManifest.codeowners))
               "
             ></div>
             <div
-              v-if="api.providerManifests[config.domain].credits.length"
-              class="header-authors"
+              v-if="providerManifest.credits.length"
+              class="mt-1 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
               v-html="
-                markdownToHtml(
-                  getCreditsMarkdown(
-                    api.providerManifests[config.domain].credits,
-                  ),
-                )
+                markdownToHtml(getCreditsMarkdown(providerManifest.credits))
               "
             ></div>
           </div>
-        </div>
-      </v-card>
+        </CardHeader>
+        <CardContent
+          class="flex flex-wrap gap-2 border-t bg-muted/20 px-6 py-4"
+        >
+          <Button
+            v-if="canReconfigure"
+            data-testid="provider-reconfigure"
+            @click="onReconfigure"
+          >
+            <RefreshCw class="size-4" />
+            {{ $t("settings.reconfigure") }}
+          </Button>
+          <Button
+            v-if="providerManifest.documentation"
+            as="a"
+            data-testid="provider-documentation"
+            variant="outline"
+            :href="providerManifest.documentation"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <BookOpen class="size-4" />
+            {{ $t("settings.documentation") }}
+          </Button>
+          <Button
+            as="a"
+            data-testid="provider-known-issues"
+            variant="outline"
+            :href="knownIssuesUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <CircleAlert class="size-4" />
+            {{ $t("settings.known_issues") }}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
 
     <edit-config
@@ -201,10 +231,22 @@
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
-import { canReconfigureProvider } from "@/helpers/provider_config";
+import {
+  canReconfigureProvider,
+  getProviderStatusTranslationKey,
+  getProviderSupportIssuesUrl,
+} from "@/helpers/provider_config";
 import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -214,7 +256,14 @@ import {
   ProviderStatus,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { RefreshCw, Trash2, TriangleAlert } from "@lucide/vue";
+import {
+  BookOpen,
+  CircleAlert,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  TriangleAlert,
+} from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -246,13 +295,36 @@ const allConfigEntries = computed(() => {
   return Object.values(config.value.values);
 });
 
-// auth_required/error providers can relaunch their setup (reconfigure) flow
+const providerManifest = computed(() => {
+  if (!config.value) return undefined;
+  return api.providerManifests[config.value.domain] ?? config.value.manifest;
+});
+
+const providerName = computed(
+  () =>
+    config.value?.name ||
+    api.providers[config.value?.instance_id ?? ""]?.name ||
+    providerManifest.value?.name,
+);
+
 const canReconfigure = computed(() =>
   canReconfigureProvider(
     config.value?.status,
-    api.providerManifests[config.value?.domain ?? ""]?.has_setup_flow,
+    providerManifest.value?.has_setup_flow,
     config.value?.enabled,
   ),
+);
+
+const providerStatusLabel = computed(() =>
+  t(getProviderStatusTranslationKey(config.value?.status)),
+);
+
+const providerStatusClass = computed(() =>
+  getProviderStatusBadgeClass(config.value?.status),
+);
+
+const knownIssuesUrl = computed(() =>
+  getProviderSupportIssuesUrl(config.value?.domain ?? ""),
 );
 
 // watchers
@@ -462,6 +534,22 @@ async function refreshProviderConfig(instanceId: string) {
     }
   }
 }
+
+function getProviderStatusBadgeClass(status?: ProviderStatus) {
+  switch (status) {
+    case ProviderStatus.LOADED:
+      return "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+    case ProviderStatus.LOADING:
+      return "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400";
+    case ProviderStatus.AUTH_REQUIRED:
+    case ProviderStatus.INCOMPATIBLE:
+      return "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400";
+    case ProviderStatus.ERROR:
+      return "border-destructive/40 bg-destructive/10 text-destructive";
+    default:
+      return "border-muted-foreground/30 bg-muted text-muted-foreground";
+  }
+}
 </script>
 
 <style scoped>
@@ -469,81 +557,10 @@ async function refreshProviderConfig(instanceId: string) {
   padding: 16px;
 }
 
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.rename-btn {
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.rename-btn:hover {
-  opacity: 1;
-}
-
 .disabled-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-}
-
-.header-authors {
-  font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.header-authors :deep(a) {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-}
-
-.header-authors :deep(a:hover) {
-  text-decoration: underline;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 </style>

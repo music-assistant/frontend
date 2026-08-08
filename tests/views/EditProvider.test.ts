@@ -29,6 +29,7 @@ const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
           codeowners: [],
           credits: [],
           description: "Spotify music provider",
+          documentation: "https://example.com/spotify",
           has_setup_flow: true,
           name: "Spotify",
         },
@@ -53,6 +54,19 @@ const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
   }));
 
 let providersUpdated: (() => void) | undefined;
+
+const SlotStub = {
+  template: "<div><slot /></div>",
+};
+
+const providerDetailsStubs = {
+  Badge: SlotStub,
+  Card: SlotStub,
+  CardContent: SlotStub,
+  CardDescription: SlotStub,
+  CardHeader: SlotStub,
+  CardTitle: SlotStub,
+};
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -97,6 +111,7 @@ vi.mock("vue-router", async (importOriginal) => {
 beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
+  apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockImplementation(
     (event: EventType, callback: () => void) => {
@@ -109,6 +124,70 @@ beforeEach(() => {
 });
 
 describe("EditProvider", () => {
+  it("shows provider status and direct support actions", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      providerConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_loaded",
+    );
+    expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
+      true,
+    );
+    expect(
+      wrapper.get('[data-testid="provider-documentation"]').attributes(),
+    ).toMatchObject({
+      href: "https://example.com/spotify",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+    expect(
+      wrapper.get('[data-testid="provider-known-issues"]').attributes(),
+    ).toMatchObject({
+      href: "https://github.com/music-assistant/support/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22spotify%22",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+  });
+
+  it("hides reconfiguration when the provider has no setup flow", async () => {
+    apiMock.providerManifests.spotify.has_setup_flow = false;
+    apiMock.getProviderConfig.mockResolvedValue(
+      providerConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("refreshes provider state after a provider update", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(
