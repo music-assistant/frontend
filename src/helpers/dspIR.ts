@@ -32,8 +32,10 @@ export function dspIRDetailText(ir: DSPIRMetadata): string {
   return [
     `${(ir.sample_rate / 1000).toFixed(ir.sample_rate % 1000 === 0 ? 0 : 1)} kHz`,
     channelText(ir.channels),
-    `${ir.duration.toFixed(2)} s`,
-  ].join(" · ");
+    ir.duration === null ? null : `${ir.duration.toFixed(2)} s`,
+  ]
+    .filter((part) => part !== null)
+    .join(" · ");
 }
 
 function channelText(channels: number): string {

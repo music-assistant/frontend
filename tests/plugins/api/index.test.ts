@@ -38,6 +38,7 @@ const SERVER_INFO: ServerInfoMessage = {
   server_version: "0.0.0",
   schema_version: 0,
   min_supported_schema_version: 0,
+  name: null,
   base_url: "http://test.local",
   homeassistant_addon: false,
   onboard_done: true,

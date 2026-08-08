@@ -24,20 +24,20 @@ const PROVIDER_SUPPORT_LABELS: Record<string, string> = {
 };
 
 export const canReconfigureProvider = (
-  status?: ProviderStatus,
+  status?: ProviderStatus | null,
   hasSetupFlow?: boolean,
   enabled: boolean = true,
 ) => enabled && hasSetupFlow === true && status !== ProviderStatus.INCOMPATIBLE;
 
 export const providerRequiresReconfiguration = (
-  status?: ProviderStatus,
+  status?: ProviderStatus | null,
   hasSetupFlow?: boolean,
   enabled: boolean = true,
 ) =>
   status === ProviderStatus.AUTH_REQUIRED &&
   canReconfigureProvider(status, hasSetupFlow, enabled);
 
-export const getProviderStatusTranslationKey = (status?: ProviderStatus) =>
+export const getProviderStatusTranslationKey = (status?: ProviderStatus | null) =>
   (status && PROVIDER_STATUS_TRANSLATION_KEYS[status]) ??
   "settings.provider_status_unknown";
 

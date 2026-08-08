@@ -284,7 +284,10 @@ const canEditSchedule = computed(
   () => store.currentUser?.role === UserRole.ADMIN,
 );
 
-const resolveUserLabel = (userId: string | undefined, automatic = false) => {
+const resolveUserLabel = (
+  userId: string | null | undefined,
+  automatic = false,
+) => {
   if (!userId) {
     return automatic
       ? t("background_tasks.automatic_schedule")
@@ -354,7 +357,7 @@ const createdByLabel = computed(() => {
   return resolveUserLabel(props.task.user_id, false);
 });
 
-const formatDate = (value: string | undefined) =>
+const formatDate = (value: string | null | undefined) =>
   value ? formatBackgroundTaskDate(value, t) : t("background_tasks.no_value");
 </script>
 

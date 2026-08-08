@@ -48,7 +48,7 @@ export interface ParametricEQBand {
 
 // Specific filter types
 export interface ParametricEQFilter extends DSPFilterBase {
-  preamp?: number;
+  preamp?: number | null;
   per_channel_preamp: Partial<Record<AudioChannel, number>>;
   type: DSPFilterType.PARAMETRIC_EQ;
   bands: Array<ParametricEQBand>;
@@ -94,7 +94,7 @@ export interface DSPIRMetadata {
   name: string;
   sample_rate: number;
   channels: number;
-  duration: number;
+  duration: number | null;
 }
 
 export interface StereoWidthFilter extends DSPFilterBase {
@@ -131,7 +131,7 @@ export interface DSPConfig {
 
 // DSPConfigPreset represents a preset configuration for DSP
 export interface DSPConfigPreset {
-  preset_id?: string;
+  preset_id?: string | null;
   name: string;
   config: DSPConfig;
 }
@@ -564,12 +564,12 @@ export interface ErrorResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
 
   error_code: string;
-  details?: string;
+  details: string | null;
 }
 
 export interface EventMessage {
   event: EventType;
-  object_id?: string; // player_id, queue_id or uri
+  object_id: string | null; // player_id, queue_id or uri
   data?: unknown; // optional data (such as the object)
 }
 export type MassEvent = EventMessage;
@@ -582,7 +582,7 @@ export interface ServerInfoMessage {
   base_url: string;
   homeassistant_addon: boolean;
   onboard_done: boolean;
-  name?: string;
+  name: string | null;
   status?: CoreState;
 }
 
@@ -615,9 +615,9 @@ export interface ConfigValueOption {
   // disabled: when true the option is shown but not selectable (currently unavailable)
   disabled?: boolean;
   // disabled_reason: optional explanation of why the option is disabled
-  disabled_reason?: string;
+  disabled_reason?: string | null;
   // description: optional per-option help text shown under the option
-  description?: string;
+  description?: string | null;
 }
 
 export interface ConfigEntry {
@@ -635,17 +635,17 @@ export interface ConfigEntry {
   // options: select from list of possible values/options, empty when the entry has no fixed set
   options: ConfigValueOption[];
   // range [optional]: select values within range
-  range?: number[];
+  range?: number[] | null;
   // description [optional]: extended description of the setting.
-  description?: string;
+  description?: string | null;
   // help_link [optional]: link to help article.
-  help_link?: string;
+  help_link?: string | null;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
   // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
   // as unmet. While unmet, input types and ACTION stay visible but render disabled;
   // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
-  depends_on?: string;
+  depends_on?: string | null;
   // depends_on_value [optional]: complementary to depends_on, the dependency is only met when
   // the other entry holds this exact value (without it, any truthy value will do)
   depends_on_value?: ConfigValueType;
@@ -658,9 +658,9 @@ export interface ConfigEntry {
   // category: category to group this setting into in the frontend (e.g. advanced)
   category: string;
   // action: (configentry)action that is needed to get the value for this entry
-  action?: string;
+  action?: string | null;
   // action_label: default label for the action when no translation for the action is present
-  action_label?: string;
+  action_label?: string | null;
   // immediate_apply: whether changes to this config entry should be applied immediately
   immediate_apply?: boolean;
   // requires_reload: indicates that a reload of the provider (or player playback)
@@ -747,14 +747,14 @@ export interface ProviderConfig extends Config {
   manifest: ProviderManifest; // copied here for the UI only
   // enabled: boolean to indicate if the provider is enabled
   enabled: boolean;
-  // name: an (optional) custom name for this provider instance/config
-  name?: string;
+  // name: a custom name for this provider instance/config
+  name: string | null;
   // default_name: default name to use when there is name available
-  default_name?: string;
+  default_name: string | null;
   // last_error: structured error if the provider could not be setup with this config
-  last_error?: ProviderError;
+  last_error: ProviderError | null;
   // status: load/lifecycle status, derived server-side
-  status?: ProviderStatus;
+  status: ProviderStatus | null;
 }
 
 export interface PlayerConfig extends Config {
@@ -763,17 +763,17 @@ export interface PlayerConfig extends Config {
   player_id: string;
   // enabled: boolean to indicate if the player is enabled
   enabled: boolean;
-  // name: an (optional) custom name for this player
-  name?: string;
+  // name: a custom name for this player
+  name: string | null;
   // default_name: default name to use when there is name available
-  default_name?: string;
+  default_name: string | null;
 }
 
 export interface CoreConfig extends Config {
   // Core(controller) Configuration.
   domain: string;
   manifest: ProviderManifest; // copied here for the UI only
-  last_error?: string;
+  last_error: string | null;
 }
 
 export interface PlayerQueueConfig extends Config {
@@ -1375,7 +1375,7 @@ export interface ProviderManifest {
   credits: string[];
   requirements: string[];
   // documentation: link/url to documentation.
-  documentation?: string;
+  documentation: string | null;
   // multi_instance: whether multiple instances of the same provider are allowed/possible
   multi_instance: boolean;
   // builtin: whether this provider is a system/builtin and can not disabled/removed
@@ -1386,11 +1386,11 @@ export interface ProviderManifest {
   has_setup_flow?: boolean;
   stage: ProviderStage;
   // icon: material design icon
-  icon?: string;
+  icon: string | null;
   // icon_images: which icon variants this provider supplies as image files.
   icon_images: ProviderIconVariant[];
   // depends on: domain of another provider that is required for this provider
-  depends_on?: string;
+  depends_on: string | null;
 }
 
 export enum ProviderStage {
@@ -1427,7 +1427,7 @@ export interface ProviderInstance {
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;
-  is_streaming_provider?: boolean;
+  is_streaming_provider: boolean | null;
 }
 
 export interface DashboardDevice {
@@ -1435,7 +1435,7 @@ export interface DashboardDevice {
   dashboard_id: string;
   name: string;
   supported_types: DashboardType[];
-  provider_domain_hint?: string | null; // provider domain used to resolve this endpoint's icon
+  provider_domain_hint: string | null; // provider domain used to resolve this endpoint's icon
 }
 
 export type DashboardType = "party" | "now_playing" | "music_quiz";
@@ -1445,7 +1445,7 @@ export interface DashboardSession {
   dashboard_id: string;
   name: string;
   dashboard: DashboardType;
-  player_id?: string | null; // target player for the now_playing dashboard
+  player_id: string | null; // target player for the now_playing dashboard
 }
 
 export enum TaskStatus {
@@ -1469,10 +1469,10 @@ export enum TaskScheduleType {
 export interface TaskSchedule {
   type: TaskScheduleType;
   enabled: boolean;
-  every?: number;
-  days_of_week?: number[];
-  hour?: number;
-  minute?: number;
+  every?: number | null;
+  days_of_week?: number[] | null;
+  hour?: number | null;
+  minute?: number | null;
 }
 
 export type TaskMetadataValue =
@@ -1490,21 +1490,21 @@ export interface BackgroundTask {
   name: string;
   status: TaskStatus;
   logs: string[];
-  schedule?: TaskSchedule;
-  last_run?: string;
-  next_run?: string;
-  user_id?: string;
-  last_run_user_id?: string;
+  schedule: TaskSchedule | null;
+  last_run: string | null;
+  next_run: string | null;
+  user_id: string | null;
+  last_run_user_id: string | null;
   created_at: string;
   updated_at: string;
-  started_at?: string;
-  finished_at?: string;
-  last_error?: string;
+  started_at: string | null;
+  finished_at: string | null;
+  last_error: string | null;
   failure_count: number;
   failure_messages: string[];
   metadata: TaskMetadata;
-  progress?: number;
-  progress_text?: string;
+  progress: number | null;
+  progress_text: string | null;
   allow_retry: boolean;
   allow_cancel: boolean;
 }
@@ -1552,8 +1552,8 @@ export interface User {
   role: UserRole;
   enabled: boolean;
   created_at: string;
-  display_name?: string;
-  avatar_url?: string;
+  display_name: string | null;
+  avatar_url: string | null;
   preferences: Record<string, unknown>;
   provider_filter: string[];
   player_filter: string[];
@@ -1564,8 +1564,8 @@ export interface AuthToken {
   token_id: string;
   name: string;
   created_at: string;
-  last_used_at?: string;
-  expires_at?: string;
+  last_used_at: string | null;
+  expires_at: string | null;
   is_long_lived: boolean;
 }
 
@@ -1648,14 +1648,14 @@ export interface SmartPlaylistRules {
   seed_album_uris?: string[];
   seed_playlist_uris?: string[];
   seed_names?: Record<string, string>;
-  min_popularity?: number;
+  min_popularity?: number | null;
   logic: "AND" | "OR";
   limit: number;
   genre_names?: Record<number, string>;
   artist_names?: Record<number, string>;
   album_names?: Record<number, string>;
-  year_from?: number;
-  year_to?: number;
+  year_from?: number | null;
+  year_to?: number | null;
   excluded_artist_ids?: number[];
   excluded_album_ids?: number[];
   excluded_genre_ids?: number[];
@@ -1665,10 +1665,10 @@ export interface SmartPlaylistRules {
   excluded_genre_names?: Record<number, string>;
   album_types?: string[];
   excluded_album_types?: string[];
-  min_duration?: number;
-  max_duration?: number;
-  last_played_before_value?: number;
-  last_played_before_unit?: string;
+  min_duration?: number | null;
+  max_duration?: number | null;
+  last_played_before_value?: number | null;
+  last_played_before_unit?: string | null;
 }
 
 export interface SmartPlaylistTrackStats {
@@ -1765,11 +1765,11 @@ export interface AIRadioSession {
   station_id: string;
   status: "running" | "completed" | "failed" | "stopped";
   created_at: string;
-  started_at?: string;
-  ended_at?: string;
-  error?: string;
+  started_at: string | null;
+  ended_at: string | null;
+  error: string | null;
   skipped_sections?: number;
-  last_render_error?: string;
+  last_render_error: string | null;
   progress?: {
     phase?: string;
     [key: string]: unknown;
