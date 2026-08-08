@@ -342,7 +342,7 @@ function entry(
     options: [],
     value: null,
     ...overrides,
-  } as ConfigEntry;
+  };
 }
 
 function progressStep(progressText: string): SetupFlowStep {

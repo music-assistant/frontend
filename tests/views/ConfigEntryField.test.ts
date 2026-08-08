@@ -3,10 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
-import {
-  ConfigEntryType,
-  type ConfigValueType,
-} from "@/plugins/api/interfaces";
+import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 import {
   NON_INTERACTIVE_ENTRY_TYPES,
   UI_ENTRY_TYPE,
@@ -210,15 +207,17 @@ function entry(
     type: ConfigEntryUIType;
   },
 ): ConfigEntryUI {
-  return {
+  // typed without key/type so the defaults stay checked against the server
+  // model, while the cast only covers the UI-only entry types
+  const base: Omit<ConfigEntry, "key" | "type"> = {
     category: "generic",
     default_value: null,
     label: overrides.key,
     required: false,
     options: [],
-    value: null as ConfigValueType,
-    ...overrides,
-  } as ConfigEntryUI;
+    value: null,
+  };
+  return { ...base, ...overrides } as ConfigEntryUI;
 }
 
 function rangedEntry(type: ConfigEntryType): ConfigEntryUI {

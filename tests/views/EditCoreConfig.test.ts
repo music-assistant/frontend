@@ -6,12 +6,14 @@ import {
   ProviderType,
   type CoreConfig,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     getCoreConfig: vi.fn(),
-    invokeCoreConfigAction: vi.fn(),
+    invokeCoreConfigAction:
+      vi.fn<MusicAssistantApi["invokeCoreConfigAction"]>(),
     providerManifests: {
       cache: {
         codeowners: [],
@@ -120,6 +122,7 @@ describe("EditCoreConfig", () => {
         default_value: null,
         key: "new_field",
         label: "New field",
+        options: [],
         required: false,
         type: ConfigEntryType.STRING,
         value: "server value",
