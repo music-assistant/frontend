@@ -790,7 +790,7 @@ export interface ProviderMapping {
   provider_instance: string;
   available: boolean;
   in_library?: boolean;
-  // quality details (streamable content only)
+  // quality details, carrying defaults for anything but streamable content
   audio_format: AudioFormat;
   // optional details to store provider specific details
   details?: string;
