@@ -665,3 +665,217 @@ export const getQueryValue = (value: unknown) => {
   if (typeof value !== "string") return "";
   return value.trim();
 };
+
+// -----------------------------------------------------------------------
+// Share/import: a show as a portable JSON document. Only the transferable
+// creative content travels (host persona + segments) — the source playlist,
+// target player and station id stay behind, so an imported show can never
+// reference media or devices that don't exist on the importing instance.
+//
+// An imported document is authored by a stranger, so everything below is
+// built field by field from validated primitives. The parsed object is never
+// spread into the draft: that is what would let unknown keys ride along into
+// the saved station.
+// -----------------------------------------------------------------------
+
+export const SHOW_SHARE_KIND = "ai_radio_show";
+export const SHOW_SHARE_VERSION = 1;
+
+const SHARE_MAX_SEGMENTS = 50;
+const SHARE_MAX_PROMPT_CHARS = 8000;
+const SHARE_MAX_NAME_CHARS = 200;
+
+const SHARE_WEB_SEARCH_MODES: AIRadioWebSearchMode[] = [
+  "disabled",
+  "allow",
+  "force",
+];
+
+export interface SharedShowSegment {
+  name: string;
+  prompt: string;
+  webSearch: AIRadioWebSearchMode;
+  maxChars: number;
+  plays: PlaysRule;
+}
+
+export interface SharedShow {
+  kind: typeof SHOW_SHARE_KIND;
+  version: number;
+  name: string;
+  instructions: string;
+  segments: SharedShowSegment[];
+}
+
+/** Source playlist chosen by the importer; a shared show never carries one. */
+export interface SharedShowPlaylist {
+  itemId: string;
+  provider: string;
+}
+
+export const buildSharedShow = (draft: ShowDraft): SharedShow => {
+  return {
+    kind: SHOW_SHARE_KIND,
+    version: SHOW_SHARE_VERSION,
+    name: draft.basics.name.trim(),
+    instructions: draft.basics.general.instructions || "",
+    segments: draft.segments.map((segment) => ({
+      name: segment.name,
+      prompt: segment.prompt,
+      webSearch: segment.webSearch,
+      maxChars: segment.maxChars,
+      plays: deepClone(segment.plays),
+    })),
+  };
+};
+
+export const sharedShowToJson = (shared: SharedShow): string => {
+  return JSON.stringify(shared, null, 2);
+};
+
+export const sharedShowFileName = (name: string): string => {
+  return `${slugify(name)}.ai-radio-show.json`;
+};
+
+/** Parses and validates a shared show document, throwing on anything unexpected. */
+export const parseSharedShow = (text: string): SharedShow => {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    throw invalidImportError();
+  }
+  if (!isPlainObject(raw)) {
+    throw invalidImportError();
+  }
+  if (raw.kind !== SHOW_SHARE_KIND) {
+    throw invalidImportError();
+  }
+  const version = sharedInteger(raw.version, 0, 0);
+  if (version < 1 || version > SHOW_SHARE_VERSION) {
+    throw invalidImportError();
+  }
+  const segments = raw.segments;
+  if (
+    !Array.isArray(segments) ||
+    segments.length === 0 ||
+    segments.length > SHARE_MAX_SEGMENTS
+  ) {
+    throw invalidImportError();
+  }
+  return {
+    kind: SHOW_SHARE_KIND,
+    version: SHOW_SHARE_VERSION,
+    name: sharedString(raw.name, SHARE_MAX_NAME_CHARS, true),
+    instructions: sharedString(raw.instructions, SHARE_MAX_PROMPT_CHARS, false),
+    segments: segments.map((segment) => sharedSegment(segment)),
+  };
+};
+
+/** Turns a validated shared show into a draft, with the importer's own playlist. */
+export const sharedShowToDraft = (
+  shared: SharedShow,
+  playlist?: SharedShowPlaylist,
+): ShowDraft => {
+  const general = asGeneralDefaults(undefined);
+  general.instructions = shared.instructions;
+  const usedIds = new Set<string>();
+  return {
+    basics: {
+      name: shared.name,
+      sourcePlaylistId: playlist?.itemId || "",
+      sourcePlaylistProvider: playlist?.provider || "library",
+      defaultPlayerId: "",
+      maxDurationMinutes: 0,
+      shuffleSourceTracks: true,
+      general,
+    },
+    segments: shared.segments.map((segment) => ({
+      id: dedupeId(slugify(segment.name), usedIds),
+      name: segment.name,
+      prompt: segment.prompt,
+      webSearch: segment.webSearch,
+      maxChars: segment.maxChars,
+      plays: deepClone(segment.plays),
+    })),
+  };
+};
+
+const invalidImportError = (): Error => {
+  return new Error($t("providers.ai_radio.validation.invalid_import_file"));
+};
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+};
+
+/** Coerces an untrusted numeric field to an integer, clamped to a minimum. */
+const sharedInteger = (
+  value: unknown,
+  min: number,
+  fallback: number,
+): number => {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isNaN(parsed) ? fallback : Math.max(min, parsed);
+};
+
+/** Reads a string field, rejecting other types instead of coercing them. */
+const sharedString = (
+  value: unknown,
+  maxChars: number,
+  required: boolean,
+): string => {
+  if (value === undefined || value === null) {
+    if (required) throw invalidImportError();
+    return "";
+  }
+  if (typeof value !== "string" || value.length > maxChars) {
+    throw invalidImportError();
+  }
+  const trimmed = value.trim();
+  if (required && !trimmed) {
+    throw invalidImportError();
+  }
+  return trimmed;
+};
+
+const sharedWebSearch = (value: unknown): AIRadioWebSearchMode => {
+  return SHARE_WEB_SEARCH_MODES.includes(value as AIRadioWebSearchMode)
+    ? (value as AIRadioWebSearchMode)
+    : "disabled";
+};
+
+const sharedPlaysRule = (value: unknown): PlaysRule => {
+  if (!isPlainObject(value)) {
+    throw invalidImportError();
+  }
+  switch (value.kind) {
+    case "start":
+    case "end":
+    case "every_song":
+      return { kind: value.kind };
+    case "every_n_songs":
+    case "every_n_min":
+      return { kind: value.kind, n: sharedInteger(value.n, 1, 1) };
+    case "occasionally":
+      return {
+        kind: "occasionally",
+        percent: Math.min(100, sharedInteger(value.percent, 1, 10)),
+      };
+    default:
+      throw invalidImportError();
+  }
+};
+
+const sharedSegment = (value: unknown): SharedShowSegment => {
+  if (!isPlainObject(value)) {
+    throw invalidImportError();
+  }
+  return {
+    name: sharedString(value.name, SHARE_MAX_NAME_CHARS, true),
+    prompt: sharedString(value.prompt, SHARE_MAX_PROMPT_CHARS, true),
+    webSearch: sharedWebSearch(value.webSearch),
+    maxChars: sharedInteger(value.maxChars, 0, 0),
+    plays: sharedPlaysRule(value.plays),
+  };
+};
