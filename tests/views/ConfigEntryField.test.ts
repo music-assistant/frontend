@@ -3,11 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
-import {
-  ConfigEntryType,
-  type ConfigEntry,
-  type ConfigValueType,
-} from "@/plugins/api/interfaces";
+import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 import {
   NON_INTERACTIVE_ENTRY_TYPES,
   UI_ENTRY_TYPE,
@@ -219,7 +215,7 @@ function entry(
     label: overrides.key,
     required: false,
     options: [],
-    value: null as ConfigValueType,
+    value: null,
   };
   return { ...base, ...overrides } as ConfigEntryUI;
 }

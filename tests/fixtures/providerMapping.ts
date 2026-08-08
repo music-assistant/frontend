@@ -1,10 +1,12 @@
 import { ContentType, type ProviderMapping } from "@/plugins/api/interfaces";
 
+/**
+ * A complete provider mapping, for fixtures that only care about a few of its
+ * fields but should still model a payload the server can send.
+ */
 export function providerMapping(
   overrides: Partial<ProviderMapping> = {},
 ): ProviderMapping {
-  // Provider mapping with every field the server always sends, so tests that
-  // only care about a few of them still model a payload that can exist.
   return {
     item_id: "item-1",
     provider_domain: "test_provider",

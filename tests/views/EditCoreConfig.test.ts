@@ -4,22 +4,16 @@ import {
   ConfigEntryType,
   ProviderStage,
   ProviderType,
-  type ConfigActionResult,
-  type ConfigEntry,
   type CoreConfig,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     getCoreConfig: vi.fn(),
     invokeCoreConfigAction:
-      vi.fn<
-        (
-          domain: string,
-          action: string,
-        ) => Promise<ConfigEntry[] | ConfigActionResult>
-      >(),
+      vi.fn<MusicAssistantApi["invokeCoreConfigAction"]>(),
     providerManifests: {
       cache: {
         codeowners: [],
