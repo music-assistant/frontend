@@ -404,7 +404,7 @@ function providerConfig(
         default_value: null,
         key: "account",
         label: "Account",
-        options: accountOptions,
+        options: accountOptions ?? [],
         required: false,
         type: ConfigEntryType.STRING,
         value: account,

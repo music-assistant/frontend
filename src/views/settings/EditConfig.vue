@@ -381,8 +381,8 @@ const onEntryValueSet = function (
   if (!entry) return;
   // the server does not know of the value yet, so carry the name the field gave us or
   // the field would read back the bare id until the config is fetched again
-  if (label && !entry.options?.some((option) => option.value === value)) {
-    entry.options = [...(entry.options ?? []), { title: label, value }];
+  if (label && !entry.options.some((option) => option.value === value)) {
+    entry.options = [...entry.options, { title: label, value }];
   }
   onValueUpdate(entry, value);
 };

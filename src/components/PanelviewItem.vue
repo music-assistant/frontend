@@ -100,7 +100,6 @@ const emit = defineEmits<{
 // computed: hi-res audio details (kHz/bit-depth) for lossless formats
 const HiResDetails = computed(() => {
   for (const prov of compProps.item.provider_mappings) {
-    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![

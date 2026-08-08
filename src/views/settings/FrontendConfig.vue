@@ -118,6 +118,7 @@ onMounted(() => {
       action: "customize_menu",
       default_value: null,
       required: false,
+      options: [],
       multi_value: false,
       category: "preferences",
       value: null,
@@ -128,6 +129,7 @@ onMounted(() => {
       label: "enable_browser_controls",
       default_value: true,
       required: false,
+      options: [],
       multi_value: false,
       category: "display_settings",
       hidden: companionMode.value,
@@ -141,6 +143,7 @@ onMounted(() => {
       label: "force_mobile_layout",
       default_value: false,
       required: false,
+      options: [],
       multi_value: false,
       category: "display_settings",
       value:
@@ -153,6 +156,7 @@ onMounted(() => {
       label: "show_waveform",
       default_value: true,
       required: false,
+      options: [],
       multi_value: false,
       category: "display_settings",
       value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
@@ -182,6 +186,7 @@ onMounted(() => {
       label: "web_player_enabled",
       default_value: true,
       required: false,
+      options: [],
       category: "web_player",
       value:
         localStorage.getItem("frontend.settings.web_player_enabled") !==
@@ -206,15 +211,13 @@ onMounted(() => {
     }
     const desc = $t(`settings.${entry.key}.description`);
     if (desc !== `settings.${entry.key}.description`) entry.description = desc;
-    if (entry.options) {
-      entry.options = entry.options.map((opt) => ({
-        ...opt,
-        title: $t(
-          `settings.${entry.key}.options.${opt.value}`,
-          opt.title ?? String(opt.value),
-        ),
-      }));
-    }
+    entry.options = entry.options.map((opt) => ({
+      ...opt,
+      title: $t(
+        `settings.${entry.key}.options.${opt.value}`,
+        opt.title ?? String(opt.value),
+      ),
+    }));
   }
   config.value = configEntries;
 });

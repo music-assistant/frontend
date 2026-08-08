@@ -260,6 +260,7 @@ function entry(
     default_value: null,
     label: overrides.key,
     required: false,
+    options: [],
     value: null as ConfigValueType,
     ...overrides,
   } as ConfigEntry;

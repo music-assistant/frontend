@@ -632,8 +632,8 @@ export interface ConfigEntry {
   label: string | null;
   default_value: ConfigValueType;
   required: boolean;
-  // options [optional]: select from list of possible values/options
-  options?: ConfigValueOption[];
+  // options: select from list of possible values/options, empty when the entry has no fixed set
+  options: ConfigValueOption[];
   // range [optional]: select values within range
   range?: number[];
   // description [optional]: extended description of the setting.
@@ -791,7 +791,7 @@ export interface ProviderMapping {
   available: boolean;
   in_library?: boolean;
   // quality details (streamable content only)
-  audio_format?: AudioFormat;
+  audio_format: AudioFormat;
   // optional details to store provider specific details
   details?: string;
   // url = link to provider details page if exists

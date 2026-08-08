@@ -992,7 +992,7 @@ export const getContextMenuItems = async function (
     parentItem.item_id != resolvedItem.item_id &&
     parentItem.media_type == resolvedItem.media_type
   ) {
-    const mapping: ProviderMapping =
+    const mapping: Omit<ProviderMapping, "audio_format"> =
       "provider_mappings" in items[0]
         ? items[0].provider_mappings[0]
         : {

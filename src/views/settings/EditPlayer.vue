@@ -341,6 +341,7 @@ const config_entries = computed(() => {
       depends_on_value_not: entry.depends_on_value_not,
       label: "",
       required: false,
+      options: [],
       default_value: null,
       hass_instance_id: hassInstance.instance_id,
       hass_control_key: hassControlKey,
@@ -358,6 +359,7 @@ const config_entries = computed(() => {
       category: "dsp",
       label: "",
       required: false,
+      options: [],
       read_only: false,
       default_value: dspEnabled.value,
     });
@@ -371,6 +373,7 @@ const config_entries = computed(() => {
       label: $t("settings.dsp_note_multi_device_group.label"),
       default_value: null,
       required: false,
+      options: [],
       category: "dsp",
       injected: true,
     });
@@ -384,6 +387,7 @@ const config_entries = computed(() => {
       label: $t("settings.dsp_note_multi_device_group_unsupported.label"),
       default_value: null,
       required: false,
+      options: [],
       category: "dsp",
       injected: true,
     });
@@ -396,6 +400,7 @@ const config_entries = computed(() => {
       label: "",
       default_value: "",
       required: false,
+      options: [],
       category: "options",
       injected: true,
     });
