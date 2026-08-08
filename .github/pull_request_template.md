@@ -4,7 +4,7 @@
 
 **Related issue (if applicable):**
 
-- related issue <link to issue>
+- related issue `<link to issue>`
 
 **Related backend PR (if applicable):**
 
@@ -13,7 +13,7 @@ Link the music-assistant/server PR when this change relies on new server
 behaviour, so the two can be reviewed and released together.
 -->
 
-- related backend PR <link to PR>
+- related backend PR `<link to PR>`
 
 ## Types of changes
 
