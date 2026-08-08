@@ -1088,7 +1088,7 @@ export interface AudioProcessingChain {
 export interface StreamMetadata {
   // mandatory fields
   title: string;
-  // optional fields
+  // nullable fields (always present, null when not set)
   artist: string | null;
   album: string | null;
   image_url: string | null;
