@@ -2,6 +2,7 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
+  getExternalLinkUrl,
   hexToRgb,
   kebabize,
   markdownToHtml,
@@ -12,18 +13,51 @@ import {
   truncateString,
 } from "@/helpers/utils";
 import type { MediaItemPalette } from "@/plugins/api/interfaces";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/plugins/api", () => ({
-  api: {
-    serverInfo: { value: null },
+const { apiMock } = vi.hoisted(() => ({
+  apiMock: {
+    serverInfo: {
+      value: null as { server_version: string } | null,
+    },
     players: {},
   },
+}));
+
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
 }));
 
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
 }));
+
+beforeEach(() => {
+  apiMock.serverInfo.value = null;
+});
+
+describe("getExternalLinkUrl", () => {
+  it("returns valid web URLs unchanged", () => {
+    expect(getExternalLinkUrl("https://example.com/docs")).toBe(
+      "https://example.com/docs",
+    );
+  });
+
+  it("rejects unsafe URLs", () => {
+    expect(getExternalLinkUrl("javascript:alert(1)")).toBeUndefined();
+  });
+
+  it.each(["0.0.0", "2.17.0b4"])(
+    "uses beta documentation for server version %s",
+    (serverVersion) => {
+      apiMock.serverInfo.value = { server_version: serverVersion };
+
+      expect(getExternalLinkUrl("https://music-assistant.io/docs")).toBe(
+        "https://beta.music-assistant.io/docs",
+      );
+    },
+  );
+});
 
 describe("formatDuration", () => {
   it("formats seconds correctly", () => {

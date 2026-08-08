@@ -82,8 +82,8 @@ vi.mock("@/plugins/eventbus", () => ({
 }));
 
 vi.mock("@/helpers/utils", () => ({
-  isWebUrl: (url?: string) =>
-    url?.startsWith("http://") || url?.startsWith("https://"),
+  getExternalLinkUrl: (url?: string) =>
+    url?.startsWith("http://") || url?.startsWith("https://") ? url : undefined,
   markdownToHtml: (value: string) => value,
   openActionUrlEntries: <T>(entries: T) => entries,
 }));
@@ -404,7 +404,7 @@ describe("EditProvider", () => {
     );
   });
 
-  it("hides the header menu when disabling is not supported", async () => {
+  it("hides the header menu while enabled when disabling is not supported", async () => {
     apiMock.providerManifests.spotify.allow_disable = false;
     apiMock.getProviderConfig.mockResolvedValue(
       providerConfig(ProviderStatus.LOADED),
@@ -424,6 +424,49 @@ describe("EditProvider", () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="provider-menu"]').exists()).toBe(false);
+  });
+
+  it("enables a disabled provider when disabling is not supported", async () => {
+    apiMock.providerManifests.spotify.allow_disable = false;
+    apiMock.getProviderConfig.mockResolvedValue(
+      providerConfig(
+        ProviderStatus.DISABLED,
+        "current value",
+        undefined,
+        false,
+      ),
+    );
+    apiMock.saveProviderConfig.mockResolvedValue(
+      providerConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="provider-menu"]').exists()).toBe(true);
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledWith(
+      "spotify",
+      { enabled: true },
+      "spotify--test",
+    );
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(false);
   });
 
   it("refreshes provider state after a provider update", async () => {

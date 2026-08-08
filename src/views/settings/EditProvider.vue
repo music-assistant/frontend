@@ -135,7 +135,7 @@
               "
             ></div>
           </div>
-          <DropdownMenu v-if="providerManifest.allow_disable">
+          <DropdownMenu v-if="canToggleEnabled">
             <DropdownMenuTrigger as-child>
               <Button
                 data-testid="provider-menu"
@@ -282,7 +282,7 @@ import {
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
 } from "@/helpers/provider_config";
-import { isWebUrl, markdownToHtml } from "@/helpers/utils";
+import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -352,6 +352,12 @@ const canReconfigure = computed(() =>
   ),
 );
 
+const canToggleEnabled = computed(
+  () =>
+    !!config.value &&
+    (!config.value.enabled || providerManifest.value?.allow_disable === true),
+);
+
 const providerStatusLabel = computed(() =>
   t(getProviderStatusTranslationKey(config.value?.status)),
 );
@@ -365,8 +371,7 @@ const knownIssuesUrl = computed(() =>
 );
 
 const documentationUrl = computed(() => {
-  const url = providerManifest.value?.documentation;
-  return isWebUrl(url) ? url : undefined;
+  return getExternalLinkUrl(providerManifest.value?.documentation);
 });
 
 // watchers
@@ -412,7 +417,12 @@ const onReload = function () {
 };
 
 const toggleEnabled = async function () {
-  if (!config.value || !providerManifest.value?.allow_disable) return;
+  if (
+    !config.value ||
+    (config.value.enabled && !providerManifest.value?.allow_disable)
+  ) {
+    return;
+  }
 
   const instanceId = config.value.instance_id;
   loading.value = true;

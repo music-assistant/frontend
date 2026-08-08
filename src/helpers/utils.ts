@@ -26,19 +26,28 @@ import type {
 } from "@/plugins/api/interfaces";
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
-export const openLinkInNewTab = function (url: string) {
-  if (!url) return url;
-  // auto-translate music-assistant.io links to beta site
-  if (
-    api &&
-    api.serverInfo &&
-    api.serverInfo.value &&
-    (api.serverInfo.value.server_version == "0.0.0" ||
-      api.serverInfo.value.server_version.includes("b"))
-  ) {
-    url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
+export const isWebUrl = (url?: string | null): url is string => {
+  if (!url) return false;
+  try {
+    return ["http:", "https:"].includes(new URL(url).protocol);
+  } catch {
+    return false;
   }
-  window.open(url, "_blank");
+};
+
+export const getExternalLinkUrl = (url?: string | null) => {
+  if (!isWebUrl(url)) return undefined;
+
+  const serverVersion = api.serverInfo.value?.server_version;
+  if (serverVersion === "0.0.0" || serverVersion?.includes("b")) {
+    return url.replace("://music-assistant.io", "://beta.music-assistant.io");
+  }
+  return url;
+};
+
+export const openLinkInNewTab = function (url: string) {
+  const target = getExternalLinkUrl(url);
+  if (target) window.open(target, "_blank");
 };
 
 export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
@@ -55,15 +64,6 @@ export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
 export const openActionResultUrl = (url?: string | null) => {
   // Open the url of a config action result (one-shot).
   if (url) openWebUrlOnce(url);
-};
-
-export const isWebUrl = (url?: string | null): url is string => {
-  if (!url) return false;
-  try {
-    return ["http:", "https:"].includes(new URL(url).protocol);
-  } catch {
-    return false;
-  }
 };
 
 const openWebUrlOnce = (url: string) => {

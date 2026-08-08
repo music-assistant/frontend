@@ -84,22 +84,22 @@ describe("openActionUrlEntries", () => {
   });
 });
 
+describe("isWebUrl", () => {
+  it.each([
+    ["https://example.com", true],
+    ["http://192.168.1.10:8095", true],
+    ["javascript:alert(1)", false],
+    ["data:text/html,hi", false],
+    ["not a url", false],
+    [undefined, false],
+  ])("validates %s as %s", (url, expected) => {
+    expect(isWebUrl(url)).toBe(expected);
+  });
+});
+
 describe("openActionResultUrl", () => {
   afterEach(() => {
     vi.restoreAllMocks();
-  });
-
-  describe("isWebUrl", () => {
-    it.each([
-      ["https://example.com", true],
-      ["http://192.168.1.10:8095", true],
-      ["javascript:alert(1)", false],
-      ["data:text/html,hi", false],
-      ["not a url", false],
-      [undefined, false],
-    ])("validates %s as %s", (url, expected) => {
-      expect(isWebUrl(url)).toBe(expected);
-    });
   });
 
   it("opens a web url via an anchor click", () => {
