@@ -948,7 +948,8 @@ export interface Genre extends MediaItem {
 // a browse folder is not a library item: it has no provider mappings, metadata,
 // favorite flag or position, so it extends the bare base instead of MediaItem
 export interface BrowseFolder extends _MediaItemBase {
-  // always FOLDER, which makes it the discriminant that narrows MediaItemType
+  // always FOLDER: lets TS drop the folder from the MediaItemType union on any
+  // other media_type check, and makes Exclude<MediaItemType, BrowseFolder> work
   media_type: MediaType.FOLDER;
   path?: string;
   image?: MediaItemImage;
