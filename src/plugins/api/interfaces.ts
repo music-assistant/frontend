@@ -945,7 +945,11 @@ export interface Genre extends MediaItem {
   content_type?: MediaType | null;
 }
 
-export interface BrowseFolder extends MediaItem {
+// a browse folder is not a library item: it has no provider mappings, metadata,
+// favorite flag or position, so it extends the bare base instead of MediaItem
+export interface BrowseFolder extends _MediaItemBase {
+  // always FOLDER, which makes it the discriminant that narrows MediaItemType
+  media_type: MediaType.FOLDER;
   path?: string;
   image?: MediaItemImage;
 }
@@ -991,6 +995,9 @@ export interface MediaCollection<M extends MediaItemType> extends MediaItem {
   items: M[];
 }
 
+// unlike the server alias of the same name this includes BrowseFolder, because
+// browse listings render folders and media items through the same components.
+// use Exclude<MediaItemType, BrowseFolder> where only real media items apply.
 export type MediaItemType =
   | Artist
   | Album

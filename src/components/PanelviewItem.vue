@@ -14,7 +14,9 @@
     <template v-if="showActions" #actions>
       <div class="panel-item-actions" @click.stop>
         <v-icon
-          v-if="parseBool(item.metadata.explicit || false)"
+          v-if="
+            'metadata' in item && parseBool(item.metadata.explicit || false)
+          "
           size="30"
           icon="mdi-alpha-e-box"
         />
@@ -44,7 +46,10 @@
           <v-icon size="small" icon="mdi-music-circle-outline" />
           {{ item.position }}
         </span>
-        <FavouriteButton v-if="getBreakpointValue('bp3')" :item="item" />
+        <FavouriteButton
+          v-if="getBreakpointValue('bp3') && 'favorite' in item"
+          :item="item"
+        />
         <v-spacer />
         <MAButton
           variant="list"
@@ -99,6 +104,7 @@ const emit = defineEmits<{
 
 // computed: hi-res audio details (kHz/bit-depth) for lossless formats
 const HiResDetails = computed(() => {
+  if (!("provider_mappings" in compProps.item)) return "";
   for (const prov of compProps.item.provider_mappings) {
     if (prov.audio_format.content_type == undefined) continue;
     if (
