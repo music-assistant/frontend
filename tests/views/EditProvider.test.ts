@@ -26,6 +26,7 @@ const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
         >(),
       providerManifests: {
         spotify: {
+          allow_disable: true,
           codeowners: [],
           credits: [],
           description: "Spotify music provider",
@@ -65,6 +66,10 @@ const providerDetailsStubs = {
   CardContent: SlotStub,
   CardDescription: SlotStub,
   CardHeader: SlotStub,
+  DropdownMenu: SlotStub,
+  DropdownMenuContent: SlotStub,
+  DropdownMenuItem: SlotStub,
+  DropdownMenuTrigger: SlotStub,
 };
 
 vi.mock("@/plugins/api", () => ({
@@ -110,6 +115,7 @@ vi.mock("vue-router", async (importOriginal) => {
 beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
+  apiMock.providerManifests.spotify.allow_disable = true;
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockImplementation(
@@ -186,6 +192,106 @@ describe("EditProvider", () => {
     expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
       false,
     );
+  });
+
+  it("disables the provider from the header menu", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      providerConfig(ProviderStatus.LOADED),
+    );
+    apiMock.saveProviderConfig.mockResolvedValue(
+      providerConfig(
+        ProviderStatus.DISABLED,
+        "current value",
+        undefined,
+        false,
+      ),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.get('[data-testid="provider-toggle-enabled"]').text(),
+    ).toContain("settings.disable");
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledWith(
+      "spotify",
+      { enabled: false },
+      "spotify--test",
+    );
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_disabled",
+    );
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(true);
+    expect(toastMock.success).toHaveBeenCalledWith("settings.provider_saved");
+  });
+
+  it("keeps the provider enabled when disabling fails", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      providerConfig(ProviderStatus.LOADED),
+    );
+    apiMock.saveProviderConfig.mockRejectedValue(new Error("Save failed"));
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(false);
+    expect(toastMock.error).toHaveBeenCalledWith("Error: Save failed");
+  });
+
+  it("hides the header menu when disabling is not supported", async () => {
+    apiMock.providerManifests.spotify.allow_disable = false;
+    apiMock.getProviderConfig.mockResolvedValue(
+      providerConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="provider-menu"]').exists()).toBe(false);
   });
 
   it("refreshes provider state after a provider update", async () => {
@@ -457,10 +563,11 @@ function providerConfig(
   status: ProviderStatus,
   account: string = "current value",
   accountOptions?: { title: string; value: string }[],
+  enabled: boolean = true,
 ): ProviderConfig {
   return {
     domain: "spotify",
-    enabled: true,
+    enabled,
     instance_id: "spotify--test",
     last_error:
       status === ProviderStatus.AUTH_REQUIRED

@@ -15,7 +15,7 @@
             size="small"
             color="warning"
             variant="flat"
-            @click="config.enabled = true"
+            @click="toggleEnabled"
           >
             {{ $t("settings.enable_provider") }}
           </v-btn>
@@ -89,7 +89,7 @@
 
       <!-- Header card -->
       <Card class="mb-4 gap-0 py-0">
-        <CardHeader class="flex flex-col gap-4 p-6 sm:flex-row">
+        <CardHeader class="relative flex flex-col gap-4 p-6 pr-16 sm:flex-row">
           <ProviderIcon :domain="config.domain" :size="48" class="shrink-0" />
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
@@ -135,6 +135,33 @@
               "
             ></div>
           </div>
+          <DropdownMenu v-if="providerManifest.allow_disable">
+            <DropdownMenuTrigger as-child>
+              <Button
+                data-testid="provider-menu"
+                variant="ghost"
+                size="icon-sm"
+                class="absolute top-4 right-4"
+                :aria-label="$t('more_options')"
+              >
+                <MoreVertical class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                data-testid="provider-toggle-enabled"
+                :disabled="loading"
+                @click="toggleEnabled"
+              >
+                <Power class="size-4" />
+                {{
+                  config.enabled
+                    ? $t("settings.disable")
+                    : $t("settings.enable")
+                }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </CardHeader>
         <CardContent
           class="flex flex-wrap gap-2 border-t bg-muted/20 px-6 py-4"
@@ -242,6 +269,12 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
@@ -261,7 +294,9 @@ import { eventbus } from "@/plugins/eventbus";
 import {
   BookOpen,
   CircleAlert,
+  MoreVertical,
   Pencil,
+  Power,
   RefreshCw,
   Trash2,
   TriangleAlert,
@@ -369,6 +404,27 @@ const onReload = function () {
     .then(() => toast.success(t("settings.provider_reloading")))
     .catch((err) => toast.error(String(err)));
   backToProviders();
+};
+
+const toggleEnabled = async function () {
+  if (!config.value || !providerManifest.value?.allow_disable) return;
+
+  loading.value = true;
+  try {
+    const updatedConfig = await api.saveProviderConfig(
+      config.value.domain,
+      { enabled: !config.value.enabled },
+      config.value.instance_id,
+    );
+    config.value.enabled = updatedConfig.enabled;
+    config.value.status = updatedConfig.status;
+    config.value.last_error = updatedConfig.last_error;
+    toast.success(t("settings.provider_saved"));
+  } catch (err) {
+    toast.error(String(err));
+  } finally {
+    loading.value = false;
+  }
 };
 
 const onReconfigure = function () {
