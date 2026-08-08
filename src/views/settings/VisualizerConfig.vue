@@ -356,7 +356,9 @@ const providerAvailable = computed(() => visualizerProviderAvailable());
 const presetNames = ref<string[]>([]);
 
 onMounted(async () => {
-  presetNames.value = await listPresetNames();
+  // Nothing to configure when the plugin is absent (the page shows a
+  // "provider missing" notice), so skip the multi-MB preset download.
+  if (providerAvailable.value) presetNames.value = await listPresetNames();
 });
 
 const setPref = (key: string, value: unknown) => {

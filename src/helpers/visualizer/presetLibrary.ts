@@ -67,5 +67,8 @@ export async function getPreset(name: string): Promise<object | undefined> {
 
 export async function randomPresetName(): Promise<string> {
   const names = await listPresetNames();
+  // Empty only if the packs failed to load; return "" so callers fall back to
+  // butterchurn's own default rather than propagating undefined.
+  if (names.length === 0) return "";
   return names[Math.floor(Math.random() * names.length)];
 }

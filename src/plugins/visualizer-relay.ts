@@ -11,6 +11,7 @@
 import { parseVisualizerBinary } from "@/helpers/visualizer/binaryFrames";
 import { FrameScheduler } from "@/helpers/visualizer/frameScheduler";
 import { ClockSync, computeTimeSample } from "@/helpers/visualizer/timeSync";
+import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -48,6 +49,19 @@ export function visualizerProviderAvailable(): boolean {
     (provider) =>
       provider.domain === "milkdrop_visualizer" && provider.available,
   );
+}
+
+/**
+ * Whether this session can actually render the visualizer.
+ *
+ * The plugin being available is not enough: the canvas needs WebGL2, and a
+ * remote (WebRTC) session cannot reach the relay route at all. Views gate their
+ * "visualizer is on" state on this so the dark-palette / album-art-swap styling
+ * is never applied over a canvas that stays transparent.
+ */
+export function visualizerCanRender(): boolean {
+  if (api.isRemoteConnection.value) return false;
+  return isVisualizerSupported();
 }
 
 export class VisualizerRelayClient {

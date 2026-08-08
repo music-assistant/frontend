@@ -481,7 +481,10 @@ import {
 } from "@/helpers/utils";
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import { Droplet } from "@lucide/vue";
-import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
+import {
+  visualizerCanRender,
+  visualizerProviderAvailable,
+} from "@/plugins/visualizer-relay";
 import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
@@ -784,8 +787,14 @@ const visualizerBlurPref = getPreference("visualizer_blur", 0);
 const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
 // The visualizer only exists when the milkdrop_visualizer server plugin is loaded.
 const visualizerAvailable = computed(() => visualizerProviderAvailable());
+// Also require that this session can actually draw it: forcing the dark palette
+// and white text while the canvas stays transparent (no WebGL2, or a remote
+// session) would break the "keep the existing background" fallback.
 const visualizerActive = computed(
-  () => visualizerAvailable.value && visualizerEnabledPref.value,
+  () =>
+    visualizerAvailable.value &&
+    visualizerEnabledPref.value &&
+    visualizerCanRender(),
 );
 
 const titleFontSize = computed(() => {

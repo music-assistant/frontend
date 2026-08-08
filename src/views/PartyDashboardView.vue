@@ -354,7 +354,10 @@ import {
   Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
+import {
+  visualizerCanRender,
+  visualizerProviderAvailable,
+} from "@/plugins/visualizer-relay";
 import {
   Droplet,
   Maximize2,
@@ -509,8 +512,14 @@ const visualizerPresetPref = getPreference("visualizer_preset", "");
 const visualizerBlurPref = getPreference("visualizer_blur", 0);
 const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
 const visualizerAvailable = computed(() => visualizerProviderAvailable());
+// Gate on local render capability too: without it a no-WebGL2 or remote session
+// would take the visualizer branch (dropping the blurred album-art backdrop and
+// forcing white text) while the canvas stayed transparent.
 const visualizerActive = computed(
-  () => visualizerEnabledPref.value && visualizerAvailable.value,
+  () =>
+    visualizerEnabledPref.value &&
+    visualizerAvailable.value &&
+    visualizerCanRender(),
 );
 
 const toggleVisualizer = () => {
