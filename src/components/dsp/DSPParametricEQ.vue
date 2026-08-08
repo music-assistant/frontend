@@ -1,184 +1,193 @@
 <template>
-  <v-container fluid class="pa-2">
-    <div class="d-flex flex-wrap justify-end align-center ga-2 pr-2 eq-actions">
+  <div class="p-2">
+    <div class="flex flex-wrap items-center justify-end gap-2 pr-2">
       <!-- Multichannel options -->
-      <v-btn
+      <Button
         v-if="!showMultiChannelControls"
-        variant="outlined"
-        @click="
-          () => {
-            showMultiChannelControls = true;
-          }
-        "
+        variant="outline"
+        :class="eqActionClass"
+        @click="showMultiChannelControls = true"
       >
-        <v-icon start>mdi-speaker-multiple</v-icon>
+        <Speaker />
         {{ $t("settings.dsp.parametric_eq.show_multichannel_controls") }}
-      </v-btn>
+      </Button>
       <!-- Channel selector + collapse button behave as one action-sized unit so
            they wrap together and stay within the original button's width. -->
-      <div v-else class="eq-channel">
+      <div
+        v-else
+        class="eq-channel flex min-w-0 max-w-full shrink basis-72 items-center gap-1"
+      >
         <!-- Collapse back to the single-channel button. Only offered while no
              per-channel data exists; adding any L/R band re-locks the dropdown. -->
-        <v-btn
+        <Button
           v-if="!isMultiChannel"
-          class="eq-collapse"
-          icon="mdi-close"
-          variant="text"
+          variant="ghost"
+          size="icon-sm"
           :aria-label="
             $t('settings.dsp.parametric_eq.disable_multichannel_controls')
           "
           @click="disableMultiChannel"
-        />
-        <v-select
-          v-model="editedChannel"
-          :items="channelTypes"
-          :aria-label="$t('settings.dsp.parametric_eq.edited_channel')"
-          variant="outlined"
-          density="compact"
-          hide-details
-        />
+        >
+          <X />
+        </Button>
+        <Select
+          :model-value="editedChannel"
+          @update:model-value="setEditedChannel"
+        >
+          <SelectTrigger
+            :aria-label="$t('settings.dsp.parametric_eq.edited_channel')"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="channel in channelTypes"
+              :key="channel.value"
+              :value="channel.value"
+            >
+              {{ channel.title }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
-      <v-btn variant="outlined" @click="openApoFileImport">
-        <v-icon start>mdi-file-import</v-icon>
+      <Button
+        variant="outline"
+        :class="eqActionClass"
+        @click="openApoFileImport"
+      >
+        <Upload />
         {{ $t("settings.dsp.parametric_eq.import_apo") }}
-      </v-btn>
+      </Button>
 
-      <v-btn variant="outlined" @click="exportApoSettings">
-        <v-icon start>mdi-file-export</v-icon>
+      <Button
+        variant="outline"
+        :class="eqActionClass"
+        @click="exportApoSettings"
+      >
+        <Download />
         {{ $t("settings.dsp.parametric_eq.export_apo") }}
-      </v-btn>
+      </Button>
 
       <input
         ref="fileInputRef"
         type="file"
         accept=".txt"
-        class="d-none"
+        class="hidden"
         :aria-label="$t('tooltip.import_file')"
         @change="handleApoUpload"
       />
     </div>
 
-    <!-- Frequency Response Graph with Dark Theme Support -->
-    <v-card elevation="0" color="transparent">
-      <div ref="graphContainer" class="graph-container">
-        <canvas ref="canvas" class="frequency-graph"></canvas>
-      </div>
-    </v-card>
+    <!-- Frequency Response Graph -->
+    <div ref="graphContainer" class="graph-container">
+      <canvas ref="canvas" class="frequency-graph"></canvas>
+    </div>
 
-    <!-- Band Management Section -->
-    <v-card
-      elevation="0"
-      color="transparent"
-      class="border-t border-b rounded-0"
-    >
-      <!-- Band Selection with Visual Indicators -->
-      <v-card-text class="pa-0">
-        <v-chip-group
-          v-model="selectedBandIndex"
-          class="mb-0 pa-2"
-          mandatory
-          selected-class="primary"
-        >
-          <v-chip :key="-1" :value="-1" filter variant="elevated">
-            {{ $t("settings.dsp.parametric_eq.preamp", { index: 100 }) }}
-          </v-chip>
-          <v-chip
-            v-for="(band, index) in peq.bands"
-            :key="index"
-            :value="index"
-            :class="{
-              // Disabled or not show in the selected (graphed) channel
-              'opacity-50': !band.enabled,
-            }"
-            filter
-            variant="elevated"
-          >
-            {{
-              band.channel === AudioChannel.ALL
-                ? $t("settings.dsp.parametric_eq.band", { index: index + 1 })
-                : $t("settings.dsp.parametric_eq.band_channel", {
-                    index: index + 1,
-                    // Just uses `L` or `R` to save some space
-                    channel: $t(
-                      `settings.dsp.channels_compact.${band.channel}`,
-                    ),
-                  })
-            }}
-          </v-chip>
-          <v-chip variant="outlined" @click="addBand">
-            <v-icon icon="mdi-plus" start />
-            {{
-              editedChannel === AudioChannel.ALL
-                ? $t("settings.dsp.parametric_eq.add_band")
-                : $t("settings.dsp.parametric_eq.add_band_channel", {
-                    channel: $t(`settings.dsp.channels.${editedChannel}`),
-                  })
-            }}
-          </v-chip>
-        </v-chip-group>
-      </v-card-text>
-    </v-card>
-    <v-card v-if="selectedBandIndex === -1" elevation="0" color="transparent">
-      <v-card-text>
-        <!-- Filter Controls -->
-        <v-row dense>
-          <v-col cols="12">
-            <DSPSlider v-model="preamp" type="gain" />
-            <DSPSlider
-              v-if="editedChannel !== AudioChannel.ALL"
-              v-model="channelPreamp"
-              :type="{
-                min: -15,
-                max: 15,
-                step: 0.1,
-                label: $t('settings.dsp.parametric_eq.per_channel_preamp', {
-                  channel: $t(`settings.dsp.channels.${editedChannel}`),
-                }),
-                unit: 'dB',
-                is_log: false,
-              }"
-            />
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+    <!-- Band Selection with Visual Indicators -->
+    <div class="flex flex-wrap gap-2 border-y border-border p-2">
+      <Button
+        :variant="selectedBandIndex === -1 ? 'default' : 'secondary'"
+        size="sm"
+        :aria-pressed="selectedBandIndex === -1"
+        @click="selectedBandIndex = -1"
+      >
+        {{ $t("settings.dsp.parametric_eq.preamp", { index: 100 }) }}
+      </Button>
+      <Button
+        v-for="(band, index) in peq.bands"
+        :key="index"
+        :variant="selectedBandIndex === index ? 'default' : 'secondary'"
+        size="sm"
+        :aria-pressed="selectedBandIndex === index"
+        :class="{
+          // Disabled or not show in the selected (graphed) channel
+          'opacity-50': !band.enabled,
+        }"
+        @click="selectedBandIndex = index"
+      >
+        {{
+          band.channel === AudioChannel.ALL
+            ? $t("settings.dsp.parametric_eq.band", { index: index + 1 })
+            : $t("settings.dsp.parametric_eq.band_channel", {
+                index: index + 1,
+                // Just uses `L` or `R` to save some space
+                channel: $t(`settings.dsp.channels_compact.${band.channel}`),
+              })
+        }}
+      </Button>
+      <Button variant="outline" size="sm" @click="addBand">
+        <Plus />
+        {{
+          editedChannel === AudioChannel.ALL
+            ? $t("settings.dsp.parametric_eq.add_band")
+            : $t("settings.dsp.parametric_eq.add_band_channel", {
+                channel: $t(`settings.dsp.channels.${editedChannel}`),
+              })
+        }}
+      </Button>
+    </div>
+    <!-- Filter Controls -->
+    <div v-if="selectedBandIndex === -1">
+      <DSPSlider v-model="preamp" type="gain" />
+      <DSPSlider
+        v-if="editedChannel !== AudioChannel.ALL"
+        v-model="channelPreamp"
+        :type="{
+          min: -15,
+          max: 15,
+          step: 0.1,
+          label: $t('settings.dsp.parametric_eq.per_channel_preamp', {
+            channel: $t(`settings.dsp.channels.${editedChannel}`),
+          }),
+          unit: 'dB',
+          is_log: false,
+        }"
+      />
+    </div>
 
     <!-- Band Controls Card -->
     <template v-if="selectedBand">
-      <v-card-item>
-        <!-- Band Header -->
-        <div class="d-flex align-center pl-1">
-          <v-switch
-            v-model="selectedBand.enabled"
-            :label="$t('settings.dsp.parametric_eq.enable_band')"
-            density="comfortable"
-            hide-details
-            color="primary"
-          />
-          <v-spacer />
-          <v-btn
-            color="error"
-            variant="tonal"
-            @click="removeBand(selectedBandIndex)"
-          >
-            <v-icon>mdi-delete</v-icon>
-            {{ $t("settings.dsp.parametric_eq.delete_band") }}
-          </v-btn>
-        </div>
-      </v-card-item>
+      <!-- Band Header -->
+      <div class="flex flex-wrap items-center gap-3 p-4">
+        <Switch id="eq-band-enabled" v-model="selectedBand.enabled" />
+        <Label for="eq-band-enabled" class="min-w-0">
+          {{ $t("settings.dsp.parametric_eq.enable_band") }}
+        </Label>
+        <Button
+          variant="destructive"
+          class="ml-auto min-w-0 max-w-full shrink whitespace-normal"
+          @click="removeBand(selectedBandIndex)"
+        >
+          <Trash2 />
+          {{ $t("settings.dsp.parametric_eq.delete_band") }}
+        </Button>
+      </div>
 
       <!-- Filter Controls -->
-      <v-select
-        v-model="selectedBand.type"
-        :items="filterTypes"
-        :label="$t('settings.dsp.parametric_eq.filter_type')"
-        variant="outlined"
-        density="comfortable"
-        class="pa-4"
-        hide-details
-      />
+      <div class="grid gap-2 px-4 pb-4">
+        <Label for="eq-band-type">
+          {{ $t("settings.dsp.parametric_eq.filter_type") }}
+        </Label>
+        <Select
+          :model-value="selectedBand.type"
+          @update:model-value="setBandType"
+        >
+          <SelectTrigger id="eq-band-type" class="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="type in filterTypes"
+              :key="type.value"
+              :value="type.value"
+            >
+              {{ type.title }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <DSPSlider v-model="selectedBand.frequency" type="frequency" />
 
@@ -190,20 +199,32 @@
 
       <DSPSlider v-model="selectedBand.q" type="q" />
 
-      <v-select
-        v-if="showMultiChannelControls"
-        v-model="selectedBand.channel"
-        :items="channelTypes"
-        :label="$t('settings.dsp.parametric_eq.channel')"
-        variant="outlined"
-        density="comfortable"
-        class="pa-4"
-        hide-details
-      />
+      <div v-if="showMultiChannelControls" class="grid gap-2 p-4">
+        <Label for="eq-band-channel">
+          {{ $t("settings.dsp.parametric_eq.channel") }}
+        </Label>
+        <Select
+          :model-value="selectedBand.channel"
+          @update:model-value="setBandChannel"
+        >
+          <SelectTrigger id="eq-band-channel" class="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="channel in channelTypes"
+              :key="channel.value"
+              :value="channel.value"
+            >
+              {{ channel.title }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </template>
 
     <DSPHelp :text="$t('settings.dsp.parametric_eq.help')" />
-  </v-container>
+  </div>
 </template>
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, nextTick, watchEffect } from "vue";
@@ -216,7 +237,18 @@ import {
 import DSPSlider from "./DSPSlider.vue";
 import DSPHelp from "./DSPHelp.vue";
 import { $t } from "@/plugins/i18n";
-import { useTheme } from "vuetify";
+import { useMutationObserver } from "@vueuse/core";
+import { Download, Plus, Speaker, Trash2, Upload, X } from "@lucide/vue";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 const apoToBandType: Record<string, ParametricEQBandType> = {
   PK: ParametricEQBandType.PEAK,
@@ -241,6 +273,12 @@ const bandTypeToApo: Record<ParametricEQBandType, string> = {
   [ParametricEQBandType.HIGH_SHELF]: "HS",
   [ParametricEQBandType.NOTCH]: "NO",
 };
+
+// Actions share one width so they stay aligned however many wrap per row, and
+// override Button's shrink-0 and whitespace-nowrap so they can fit a narrow
+// column instead of spilling out of it.
+const eqActionClass =
+  "h-auto min-h-9 min-w-0 max-w-full shrink basis-72 whitespace-normal text-[0.8125rem] tracking-[0.02em]";
 
 const channelTypes = Object.entries(AudioChannel).map(([key, value]) => ({
   title: $t(`settings.dsp.channels.${key}`),
@@ -468,9 +506,30 @@ const exportApoSettings = () => {
   URL.revokeObjectURL(url);
 };
 
-const theme = useTheme();
-
 const peq = defineModel<ParametricEQFilter>({ required: true });
+
+// The canvas can't use CSS, so the theme tokens are resolved off the element
+// itself and handed to the drawing functions.
+type GraphColors = {
+  curve: string;
+  grid: string;
+  label: string;
+  isDark: boolean;
+};
+
+const graphColors = (element: HTMLElement): GraphColors => {
+  const styles = getComputedStyle(element);
+  const token = (name: string, fallback: string) =>
+    styles.getPropertyValue(name).trim() || fallback;
+  return {
+    curve: token("--foreground", "#000"),
+    grid: token("--border", "#666"),
+    label: token("--muted-foreground", "#222"),
+    // Band curves are a generated hue ramp rather than a token, so they still
+    // need to know which way to lean.
+    isDark: document.documentElement.classList.contains("dark"),
+  };
+};
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const graphContainer = ref<HTMLDivElement | null>(null);
@@ -518,7 +577,7 @@ const viewport = ref<Viewport>({
 // Graph drawing functions
 const drawGraph = () => {
   if (!canvas.value || !graphContainer.value) return;
-  const isDark = theme.global.current.value.dark;
+  const colors = graphColors(canvas.value);
 
   const ctx = canvas.value.getContext("2d");
   if (!ctx) return;
@@ -534,7 +593,7 @@ const drawGraph = () => {
   ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
 
   // Draw frequency grid
-  drawGrid(ctx, viewport.value);
+  drawGrid(ctx, viewport.value, colors);
 
   const width = ctx.canvas.width / 2;
   const height = ctx.canvas.height / 2;
@@ -545,12 +604,12 @@ const drawGraph = () => {
     index: number,
     ctx: CanvasRenderingContext2D,
   ) => {
-    let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${isDark ? 70 : 50}%, 0.5)`;
+    let color = `hsla(${(index * 360) / peq.value.bands.length}, 60%, ${colors.isDark ? 70 : 50}%, 0.5)`;
 
     ctx.beginPath();
     if (index === selectedBandIndex.value) {
       ctx.lineWidth = 5;
-      color = `hsla(${(index * 360) / peq.value.bands.length}, 70%, ${isDark ? 70 : 60}%, 1)`;
+      color = `hsla(${(index * 360) / peq.value.bands.length}, 70%, ${colors.isDark ? 70 : 60}%, 1)`;
     } else {
       ctx.lineWidth = 2;
     }
@@ -602,11 +661,7 @@ const drawGraph = () => {
     ctx: CanvasRenderingContext2D,
   ) => {
     ctx.lineWidth = 3;
-    if (isDark) {
-      ctx.strokeStyle = "#fff";
-    } else {
-      ctx.strokeStyle = "#000";
-    }
+    ctx.strokeStyle = colors.curve;
 
     ctx.beginPath();
     for (
@@ -763,6 +818,20 @@ const disableMultiChannel = () => {
 // Computed property for the selected band
 const selectedBand = computed(() => peq.value.bands[selectedBandIndex.value]);
 
+// Select emits reka-ui's loose value type, so each handler narrows it back to
+// the enum the model expects.
+const setEditedChannel = (value: unknown) => {
+  editedChannel.value = value as AudioChannel;
+};
+
+const setBandType = (value: unknown) => {
+  selectedBand.value.type = value as ParametricEQBandType;
+};
+
+const setBandChannel = (value: unknown) => {
+  selectedBand.value.channel = value as AudioChannel;
+};
+
 // Since preamp could be undefined if the EQ was made with an older version
 const preamp = computed({
   get: () => peq.value.preamp ?? 0,
@@ -819,7 +888,13 @@ watch(
   { deep: true },
 );
 watch(() => editedChannel.value, drawGraph);
-watch(() => theme.global.current.value.dark, drawGraph);
+
+// The theme toggle swaps the dark class on <html>, which is what the tokens
+// above resolve against, so the graph has to be redrawn when it changes.
+useMutationObserver(document.documentElement, drawGraph, {
+  attributes: true,
+  attributeFilter: ["class"],
+});
 
 // Auto enable if the user selects a multichannel EQ
 watchEffect(() => {
@@ -875,18 +950,16 @@ const yToGain = (y: number, viewport: Viewport): number => {
 };
 
 // Draw frequency response grid
-const drawGrid = (ctx: CanvasRenderingContext2D, viewport: Viewport) => {
+const drawGrid = (
+  ctx: CanvasRenderingContext2D,
+  viewport: Viewport,
+  colors: GraphColors,
+) => {
   const width = ctx.canvas.width / 2;
   const height = ctx.canvas.height / 2;
-  const isDark = theme.global.current.value.dark;
 
-  if (isDark) {
-    ctx.fillStyle = "#eee";
-    ctx.strokeStyle = "#eee";
-  } else {
-    ctx.fillStyle = "#222";
-    ctx.strokeStyle = "#666";
-  }
+  ctx.fillStyle = colors.label;
+  ctx.strokeStyle = colors.grid;
   ctx.lineWidth = 1;
 
   // Draw frequency lines
@@ -948,49 +1021,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Give every action the same width so they stay aligned (not staggered)
-   however many wrap per row on narrow displays */
-.eq-actions > .v-btn,
-.eq-actions > .eq-channel {
-  flex: 0 1 18rem;
-  min-width: 0;
-}
-/* Channel selector + collapse button share one action-sized slot: the select
-   flexes to fill, the collapse icon takes a fixed compact footprint. */
-.eq-channel {
-  display: flex;
-  align-items: center;
-  /* Fixed to the button height so toggling button <-> dropdown can't shift the row */
-  height: 40px;
-}
-.eq-channel > .v-select {
+/* The select fills the channel slot, leaving the collapse icon its own width. */
+.eq-channel > [data-slot="select-trigger"] {
   flex: 1 1 auto;
   min-width: 0;
-}
-/* Cap the compact field to the button height (its rendered height can otherwise
-   exceed the 40px control height and push the row down on toggle) */
-.eq-channel :deep(.v-field) {
-  height: 40px;
-}
-.eq-channel > .eq-collapse {
-  flex: 0 0 auto;
-  width: 2.25rem;
-  min-width: 0;
-  margin-inline-end: 3px;
-  transform: translateY(2px);
-}
-/* Smaller text and tighter letter-spacing so the longest label fits on one
-   line while the buttons stay narrow enough to share a single row */
-.eq-actions > .v-btn {
-  height: auto;
-  /* 40px matches the compact channel select so switching between the button
-     and the dropdown doesn't shift the content below */
-  min-height: 40px;
-  font-size: 0.8125rem;
-  letter-spacing: 0.02em;
-}
-.eq-actions :deep(.v-btn__content) {
-  white-space: normal;
 }
 
 .graph-container {
