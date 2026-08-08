@@ -20,6 +20,8 @@ describe("presetLibrary", () => {
 
   it("merges base and extra packs, sorted case-insensitively", async () => {
     const { listPresetNames } = await import("./presetLibrary");
+    // "beta" between "Alpha" and "Gamma" only holds under case-insensitive
+    // ordering; a case-sensitive sort would put both capitalised names first.
     expect(await listPresetNames()).toEqual([
       "Alpha - one",
       "beta - two",

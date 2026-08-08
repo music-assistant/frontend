@@ -53,7 +53,11 @@ export async function loadPresetLibrary(): Promise<PresetMap> {
 
 export async function listPresetNames(): Promise<string[]> {
   const presets = await loadPresetLibrary();
-  return Object.keys(presets).sort((a, b) => a.localeCompare(b));
+  // Case-insensitive so the order is stable regardless of the runtime's
+  // default collation (a TV's browser must match the desktop's).
+  return Object.keys(presets).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
 }
 
 export async function getPreset(name: string): Promise<object | undefined> {

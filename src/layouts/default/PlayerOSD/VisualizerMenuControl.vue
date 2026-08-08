@@ -118,7 +118,9 @@ const sortedPresetNames = computed(() => {
   return [...presetNames.value].sort((a, b) => {
     const favDiff =
       Number(favorites.includes(b)) - Number(favorites.includes(a));
-    return favDiff !== 0 ? favDiff : a.localeCompare(b);
+    return favDiff !== 0
+      ? favDiff
+      : a.localeCompare(b, undefined, { sensitivity: "base" });
   });
 });
 
