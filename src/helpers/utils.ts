@@ -57,15 +57,19 @@ export const openActionResultUrl = (url?: string | null) => {
   if (url) openWebUrlOnce(url);
 };
 
+export const isWebUrl = (url?: string | null): url is string => {
+  if (!url) return false;
+  try {
+    return ["http:", "https:"].includes(new URL(url).protocol);
+  } catch {
+    return false;
+  }
+};
+
 const openWebUrlOnce = (url: string) => {
   // Open via an anchor click, which browsers treat more leniently than
   // window.open when the triggering user gesture has just expired.
-  try {
-    if (!["http:", "https:"].includes(new URL(url).protocol)) return;
-  } catch {
-    // not a parseable url: ignore silently
-    return;
-  }
+  if (!isWebUrl(url)) return;
   const a = document.createElement("a");
   a.setAttribute("href", url);
   a.setAttribute("target", "_blank");

@@ -175,11 +175,11 @@
             {{ $t("settings.reconfigure") }}
           </Button>
           <Button
-            v-if="providerManifest.documentation"
+            v-if="documentationUrl"
             as="a"
             data-testid="provider-documentation"
             variant="outline"
-            :href="providerManifest.documentation"
+            :href="documentationUrl"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -282,7 +282,7 @@ import {
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
 } from "@/helpers/provider_config";
-import { markdownToHtml } from "@/helpers/utils";
+import { isWebUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -363,6 +363,11 @@ const providerStatusClass = computed(() =>
 const knownIssuesUrl = computed(() =>
   getProviderSupportIssuesUrl(config.value?.domain ?? ""),
 );
+
+const documentationUrl = computed(() => {
+  const url = providerManifest.value?.documentation;
+  return isWebUrl(url) ? url : undefined;
+});
 
 // watchers
 watch(

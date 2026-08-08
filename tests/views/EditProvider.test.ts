@@ -82,6 +82,8 @@ vi.mock("@/plugins/eventbus", () => ({
 }));
 
 vi.mock("@/helpers/utils", () => ({
+  isWebUrl: (url?: string) =>
+    url?.startsWith("http://") || url?.startsWith("https://"),
   markdownToHtml: (value: string) => value,
   openActionUrlEntries: <T>(entries: T) => entries,
 }));
@@ -116,6 +118,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
+  apiMock.providerManifests.spotify.documentation =
+    "https://example.com/spotify";
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockImplementation(
@@ -192,6 +196,30 @@ describe("EditProvider", () => {
     expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
       false,
     );
+  });
+
+  it("hides documentation links with an unsafe URL", async () => {
+    apiMock.providerManifests.spotify.documentation = "javascript:alert(1)";
+    apiMock.getProviderConfig.mockResolvedValue(
+      providerConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.find('[data-testid="provider-documentation"]').exists(),
+    ).toBe(false);
   });
 
   it("disables the provider from the header menu", async () => {
