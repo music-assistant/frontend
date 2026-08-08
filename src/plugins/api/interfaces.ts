@@ -891,7 +891,7 @@ export interface AudioMetadata {
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
-  // album: the album this track appears on; null for tracks that are not album tracks
+  // album: the album this track appears on; omitted on slim listings, null for tracks that are not album tracks
   album?: ItemMapping | Album | null;
   disc_number?: number;
   track_number?: number;
