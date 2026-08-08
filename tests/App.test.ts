@@ -430,7 +430,7 @@ describe("App initialization", () => {
     serverState.resolve();
     await flushPromises();
     expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(3);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(4);
     // The plugin lookups are still in flight: revealing the app here would
     // render it with an unknown set of enabled plugins.
     expect(apiMock.state.value).not.toBe("initialized");
