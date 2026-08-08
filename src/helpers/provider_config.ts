@@ -37,7 +37,9 @@ export const providerRequiresReconfiguration = (
   status === ProviderStatus.AUTH_REQUIRED &&
   canReconfigureProvider(status, hasSetupFlow, enabled);
 
-export const getProviderStatusTranslationKey = (status?: ProviderStatus | null) =>
+export const getProviderStatusTranslationKey = (
+  status?: ProviderStatus | null,
+) =>
   (status && PROVIDER_STATUS_TRANSLATION_KEYS[status]) ??
   "settings.provider_status_unknown";
 

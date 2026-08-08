@@ -621,7 +621,7 @@ async function refreshProviderConfig(instanceId: string) {
   }
 }
 
-function getProviderStatusBadgeClass(status?: ProviderStatus) {
+function getProviderStatusBadgeClass(status?: ProviderStatus | null) {
   switch (status) {
     case ProviderStatus.LOADED:
       return "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
