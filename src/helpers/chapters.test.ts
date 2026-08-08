@@ -3,9 +3,9 @@ import { computeChapterTicks } from "./chapters";
 import type { MediaItemChapter } from "@/plugins/api/interfaces";
 
 const chapters: MediaItemChapter[] = [
-  { position: 1, name: "Intro", start: 0 },
-  { position: 2, name: "Middle", start: 60 },
-  { position: 3, name: "End", start: 120 },
+  { position: 1, name: "Intro", start: 0, end: null },
+  { position: 2, name: "Middle", start: 60, end: null },
+  { position: 3, name: "End", start: 120, end: null },
 ];
 
 describe("computeChapterTicks", () => {
@@ -15,6 +15,7 @@ describe("computeChapterTicks", () => {
   });
 
   it("returns [] when there are no chapters", () => {
+    expect(computeChapterTicks(null, 120)).toEqual([]);
     expect(computeChapterTicks(undefined, 120)).toEqual([]);
     expect(computeChapterTicks([], 120)).toEqual([]);
   });
@@ -26,13 +27,18 @@ describe("computeChapterTicks", () => {
 
   it("preserves the original chapter fields", () => {
     const [first] = computeChapterTicks(chapters, 120);
-    expect(first).toMatchObject({ position: 1, name: "Intro", start: 0 });
+    expect(first).toMatchObject({
+      position: 1,
+      name: "Intro",
+      start: 0,
+      end: null,
+    });
   });
 
   it("clamps out-of-range chapters to [0, 100]", () => {
     const stray: MediaItemChapter[] = [
-      { position: 1, name: "before start", start: -30 },
-      { position: 2, name: "past end", start: 240 },
+      { position: 1, name: "before start", start: -30, end: null },
+      { position: 2, name: "past end", start: 240, end: null },
     ];
     expect(computeChapterTicks(stray, 120).map((t) => t.percent)).toEqual([
       0, 100,

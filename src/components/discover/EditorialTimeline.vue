@@ -119,7 +119,7 @@ const timelineItems = computed((): TimelineEvent[] => {
     const entityType = artist.metadata?.artist_entity_type;
     if (!lifeSpan) continue;
 
-    const isGroup = entityType !== undefined && GROUP_TYPES.has(entityType);
+    const isGroup = !!entityType && GROUP_TYPES.has(entityType);
 
     if (lifeSpan.begin && lifeSpan.begin.length >= 10) {
       const mmdd = lifeSpan.begin.substring(5, 10);

@@ -783,19 +783,27 @@ export interface PlayerQueueConfig extends Config {
 
 //// media_items
 
+// Media item types are the one place where `foo?: X | null` is deliberate rather than
+// sloppy. Library listings return the slim summary variant of an item, which leaves out
+// the fields it has no value for, while fetching the item in full carries every key with
+// null instead - and both shapes deserialize as the interfaces below. Only the types that
+// have such a summary variant (artist, album, track, playlist, radio, audiobook, podcast,
+// genre, item mapping and their metadata) are spelled that way; everything else here,
+// including podcast episodes, gets a plain nullable field.
+
 export interface ProviderMapping {
   // Model for a MediaItem's provider mapping details.
   item_id: string;
   provider_domain: string;
   provider_instance: string;
   available: boolean;
-  in_library?: boolean;
+  in_library: boolean | null;
   // quality details, carrying defaults for anything but streamable content
   audio_format: AudioFormat;
   // optional details to store provider specific details
-  details?: string;
+  details: string | null;
   // url = link to provider details page if exists
-  url?: string;
+  url: string | null;
 }
 
 export interface MediaItemLink {
@@ -810,38 +818,38 @@ export interface MediaItemImage {
   remotely_accessible: boolean;
   // Opaque sha256(provider+path) id used to address the image via the
   // canonical /imageproxy/<proxy_id> endpoint. Injected by the server on
-  // schema_version >= 31; absent on older servers.
-  proxy_id?: string;
+  // schema_version >= 31; null when it issues no id, absent on older servers.
+  proxy_id?: string | null;
 }
 
 export interface MediaItemChapter {
   position: number;
   name: string;
   start: number;
-  end?: number;
+  end: number | null;
 }
 
 export interface MediaItemMetadata {
-  description?: string;
-  review?: string;
-  explicit?: boolean;
-  images?: MediaItemImage[];
-  genres?: string[];
-  mood?: string;
-  style?: string;
-  copyright?: string;
-  lyrics?: string;
-  lrc_lyrics?: string;
-  label?: string;
-  links?: MediaItemLink[];
-  performers?: string[];
-  preview?: string;
+  description?: string | null;
+  review?: string | null;
+  explicit?: boolean | null;
+  images?: MediaItemImage[] | null;
+  genres?: string[] | null;
+  mood?: string | null;
+  style?: string | null;
+  copyright?: string | null;
+  lyrics?: string | null;
+  lrc_lyrics?: string | null;
+  label?: string | null;
+  links?: MediaItemLink[] | null;
+  performers?: string[] | null;
+  preview?: string | null;
   replaygain?: number;
-  popularity?: number;
-  release_date?: string;
-  chapters?: MediaItemChapter[];
-  life_span?: LifeSpan;
-  artist_entity_type?: ArtistEntityType;
+  popularity?: number | null;
+  release_date?: string | null;
+  chapters?: MediaItemChapter[] | null;
+  life_span?: LifeSpan | null;
+  artist_entity_type?: ArtistEntityType | null;
 }
 
 interface _MediaItemBase {
@@ -860,13 +868,13 @@ export interface MediaItem extends _MediaItemBase {
   provider_mappings: ProviderMapping[];
   metadata: MediaItemMetadata;
   favorite: boolean;
-  position?: number; //required for playlist tracks, optional for all other
+  position?: number | null; //required for playlist tracks, optional for all other
 }
 
 export interface ItemMapping extends _MediaItemBase {
   available: boolean;
-  image?: MediaItemImage;
-  year?: number;
+  image?: MediaItemImage | null;
+  year?: number | null;
 }
 
 export interface Artist extends MediaItem {
@@ -874,22 +882,23 @@ export interface Artist extends MediaItem {
 }
 
 export interface Album extends MediaItem {
-  year?: number;
+  year?: number | null;
   artists: Array<ItemMapping | Artist>;
   album_type: AlbumType;
 }
 
 export interface AudioMetadata {
   // Audio analysis details (e.g. bpm, musical key).
-  bpm?: number | null;
-  musical_key?: string | null;
+  bpm: number | null;
+  musical_key: string | null;
 }
 
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
-  // album: the album this track appears on; null for tracks that are not album tracks
-  album: ItemMapping | Album | null;
+  // album: the album this track appears on; omitted on slim listings, null for
+  // tracks that are not album tracks
+  album?: ItemMapping | Album | null;
   disc_number?: number;
   track_number?: number;
   // only populated when the full track is requested (get_track), never on listings
@@ -918,29 +927,29 @@ export interface AudioSource extends MediaItem {
 }
 
 export interface Audiobook extends MediaItem {
-  publisher: string | null;
+  publisher?: string | null;
   authors: string[] | Artist[];
   narrators: string[] | Artist[];
   duration: number;
-  fully_played?: boolean;
-  resume_position_ms?: number;
+  fully_played?: boolean | null;
+  resume_position_ms?: number | null;
 }
 
 export interface Podcast extends MediaItem {
-  publisher: string | null;
-  total_episodes: number | null;
+  publisher?: string | null;
+  total_episodes?: number | null;
 }
 
 export interface PodcastEpisode extends MediaItem {
   position: number;
   podcast: Podcast | ItemMapping;
   duration: number;
-  fully_played?: boolean;
-  resume_position_ms?: number;
+  fully_played: boolean | null;
+  resume_position_ms: number | null;
 }
 
 export interface Genre extends MediaItem {
-  genre_aliases: string[] | null;
+  genre_aliases?: string[] | null;
   // taxonomy this genre belongs to; null/undefined = music/general
   content_type?: MediaType | null;
 }
@@ -969,8 +978,8 @@ export enum ArtistEntityType {
 }
 
 export interface LifeSpan {
-  begin?: string;
-  end?: string;
+  begin: string | null;
+  end: string | null;
   ended?: boolean;
 }
 
@@ -985,8 +994,8 @@ export interface TimelineEvent {
 /** Mirrors music_assistant_models RecommendationFolder. `items` is populated by
  *  the server; per-user visibility is owned by the frontend (discover.rows). */
 export interface RecommendationFolder extends BrowseFolder {
-  icon?: string;
-  subtitle?: string;
+  icon: string | null;
+  subtitle: string | null;
   items: MediaItemTypeOrItemMapping[];
   enabled_by_default: boolean;
   type?: RecommendationFolderType;
