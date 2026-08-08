@@ -15,6 +15,7 @@ describe("computeChapterTicks", () => {
   });
 
   it("returns [] when there are no chapters", () => {
+    expect(computeChapterTicks(null, 120)).toEqual([]);
     expect(computeChapterTicks(undefined, 120)).toEqual([]);
     expect(computeChapterTicks([], 120)).toEqual([]);
   });
