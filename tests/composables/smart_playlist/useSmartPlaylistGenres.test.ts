@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MediaType, type Genre } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 
@@ -26,12 +26,14 @@ vi.mock("@/plugins/api", () => ({
 
 import { useSmartPlaylistGenres } from "@/composables/smart-playlist/useSmartPlaylistGenres";
 
-apiMock.getLibraryGenres.mockResolvedValue([
-  genreFixture("9", "Synthwave"),
-  genreFixture("2", "Rock"),
-]);
-
 describe("useSmartPlaylistGenres", () => {
+  beforeEach(() => {
+    apiMock.getLibraryGenres.mockResolvedValue([
+      genreFixture("9", "Synthwave"),
+      genreFixture("2", "Rock"),
+    ]);
+  });
+
   it("loads the genre list on mount and exposes options", async () => {
     const { genres, genreOptions } = useSmartPlaylistGenres();
     // wait a microtask for onMounted's promise resolution

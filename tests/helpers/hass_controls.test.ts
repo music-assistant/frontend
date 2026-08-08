@@ -58,7 +58,7 @@ describe("getHassProviderInstance", () => {
 describe("addHassControlEntity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMock.saveProviderConfig.mockResolvedValue(providerConfig(null));
+    apiMock.saveProviderConfig.mockResolvedValue(providerConfig(["switch.tv"]));
   });
 
   it("appends the entity to the list the provider already holds", async () => {

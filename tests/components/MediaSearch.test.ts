@@ -272,6 +272,13 @@ describe("MediaSearch", () => {
   });
 });
 
+// keep the fixture's provider in step with its uri, so the dedupe cases really
+// do carry results from two different providers
+function providerOf(uri: string): string {
+  const [scheme] = uri.split("://");
+  return scheme === uri ? "library" : scheme;
+}
+
 function artistRef(name: string): ItemMapping {
   return {
     available: true,
@@ -299,7 +306,7 @@ function trackFixture(overrides: {
     media_type: MediaType.TRACK,
     metadata: {},
     name: overrides.name,
-    provider: "library",
+    provider: providerOf(overrides.uri),
     provider_mappings: [],
     uri: overrides.uri,
   };
@@ -316,7 +323,7 @@ function playlistFixture(overrides: { uri: string; name: string }): Playlist {
     metadata: {},
     name: overrides.name,
     owner: "library",
-    provider: "library",
+    provider: providerOf(overrides.uri),
     provider_mappings: [],
     supported_mediatypes: [MediaType.TRACK],
     uri: overrides.uri,
@@ -333,7 +340,7 @@ function albumFixture(overrides: { uri: string; name: string }): Album {
     media_type: MediaType.ALBUM,
     metadata: {},
     name: overrides.name,
-    provider: "library",
+    provider: providerOf(overrides.uri),
     provider_mappings: [],
     uri: overrides.uri,
   };
@@ -347,7 +354,7 @@ function artistFixture(overrides: { uri: string; name: string }): Artist {
     media_type: MediaType.ARTIST,
     metadata: {},
     name: overrides.name,
-    provider: "library",
+    provider: providerOf(overrides.uri),
     provider_mappings: [],
     uri: overrides.uri,
   };
@@ -357,12 +364,12 @@ function genreFixture(overrides: { uri: string; name: string }): Genre {
   return {
     favorite: false,
     genre_aliases: null,
-    is_playable: true,
+    is_playable: false,
     item_id: overrides.uri,
     media_type: MediaType.GENRE,
     metadata: {},
     name: overrides.name,
-    provider: "library",
+    provider: providerOf(overrides.uri),
     provider_mappings: [],
     uri: overrides.uri,
   };

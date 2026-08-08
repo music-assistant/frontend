@@ -146,9 +146,7 @@ describe("HassControlsField", () => {
   });
 });
 
-function hassProviderConfig(
-  powerControls: string[] = ["switch.tv"],
-): ProviderConfig {
+function hassProviderConfig(): ProviderConfig {
   return {
     type: ProviderType.PLUGIN,
     domain: "hass",
@@ -178,7 +176,7 @@ function hassProviderConfig(
         options: [],
         category: "generic",
         multi_value: true,
-        value: powerControls,
+        value: ["switch.tv"],
       },
     },
   };

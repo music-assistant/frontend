@@ -50,9 +50,9 @@ const results = (partial: Partial<SearchResults>): SearchResults => ({
   ...partial,
 });
 
-const track = (itemId: string, name: string): Track => ({
+const track = (itemId: string, name: string, provider = "library"): Track => ({
   item_id: itemId,
-  provider: "library",
+  provider,
   name,
   uri: `test://track/${itemId}`,
   is_playable: true,
@@ -158,7 +158,7 @@ describe("useProgressiveSearch", () => {
           return Promise.resolve(results({ tracks: [track("l1", "Lib hit")] }));
         if (providers[0] === "spotify")
           return Promise.resolve(
-            results({ tracks: [track("s1", "Spotify hit")] }),
+            results({ tracks: [track("s1", "Spotify hit", "spotify")] }),
           );
         return Promise.resolve(emptyResults());
       },
@@ -189,7 +189,9 @@ describe("useProgressiveSearch", () => {
             results({ tracks: [track("l1", "Queen tribute")] }),
           );
         if (providers[0] === "spotify")
-          return Promise.resolve(results({ tracks: [track("s1", "Queen")] }));
+          return Promise.resolve(
+            results({ tracks: [track("s1", "Queen", "spotify")] }),
+          );
         return Promise.resolve(emptyResults());
       },
     );
@@ -278,7 +280,9 @@ describe("useProgressiveSearch", () => {
             setTimeout(() => resolve(emptyResults()), 8000),
           );
         }
-        return Promise.resolve(results({ tracks: [track("s1", "Late")] }));
+        return Promise.resolve(
+          results({ tracks: [track("s1", "Late", "spotify")] }),
+        );
       },
     );
     const { search, searchResult, loading } = setup();
