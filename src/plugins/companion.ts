@@ -342,8 +342,8 @@ const unregisterPlayerCommandHandler = (): void => {
  */
 interface NowPlayingSignal {
   uri?: string;
-  title?: string;
-  artist?: string;
+  title?: string | null;
+  artist?: string | null;
   state?: PlaybackState;
   playerId?: string;
   timing?: ActiveTiming;

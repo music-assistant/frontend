@@ -300,7 +300,7 @@ const normalizeImageProxySize = function (size?: number): number {
  * - Otherwise return the URL as-is
  */
 export const getMediaImageUrl = function (
-  imageUrl: string | undefined,
+  imageUrl: string | null | undefined,
 ): string {
   if (!imageUrl) return "";
 
