@@ -65,7 +65,7 @@ vi.mock("vuetify", async () => {
 });
 
 const SwitchStub = {
-  name: "VSwitch",
+  name: "Switch",
   props: ["modelValue"],
   emits: ["update:modelValue"],
   template:
@@ -655,36 +655,21 @@ async function mountEditor() {
       },
       stubs: {
         Badge: { template: "<span><slot /></span>" },
+        Button: { template: "<button><slot /></button>" },
+        DropdownMenu: { template: "<div><slot /></div>" },
+        DropdownMenuContent: { template: "<div><slot /></div>" },
+        DropdownMenuItem: {
+          template: '<button class="preset-item"><slot /></button>',
+        },
+        DropdownMenuTrigger: { template: "<div><slot /></div>" },
         DSPParametricEQ: true,
         DSPPipeline: PipelineStub,
         DSPSlider: true,
         DSPToneControl: ToneControlStub,
-        VAlert: true,
-        VBtn: { template: "<button><slot /></button>" },
-        VCard: { template: "<div><slot /></div>" },
-        VCardActions: { template: "<div><slot /></div>" },
-        VCardText: { template: "<div><slot /></div>" },
-        VCardTitle: { template: "<div><slot /></div>" },
+        Switch: SwitchStub,
         VCol: { template: "<div><slot /></div>" },
         VContainer: { template: "<div><slot /></div>" },
-        VDialog: { template: "<div><slot /></div>" },
-        VIcon: true,
-        VList: { template: "<div><slot /></div>" },
-        VListItem: {
-          template:
-            '<button class="preset-item"><slot /><slot name="append" /></button>',
-        },
-        VListItemTitle: { template: "<span><slot /></span>" },
-        VMenu: {
-          template: '<div><slot name="activator" :props="{}" /><slot /></div>',
-        },
         VRow: { template: "<div><slot /></div>" },
-        VSelect: { template: "<div />" },
-        VSpacer: true,
-        VSwitch: SwitchStub,
-        VTextField: { template: "<div />" },
-        VToolbar: { template: "<div><slot /></div>" },
-        VToolbarTitle: { template: "<span><slot /></span>" },
       },
     },
   });

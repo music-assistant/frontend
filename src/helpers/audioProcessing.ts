@@ -1,5 +1,19 @@
 import { $t } from "@/plugins/i18n";
-import { toRaw } from "vue";
+import { toRaw, type Component } from "vue";
+import {
+  ArrowDownToLine,
+  ArrowLeftRight,
+  ArrowUpDown,
+  AudioWaveform,
+  Blend,
+  ChevronsDownUp,
+  Expand,
+  Gauge,
+  SlidersHorizontal,
+  TrendingDown,
+  TrendingUp,
+  Waves,
+} from "@lucide/vue";
 import {
   DSPFilterType,
   type BalanceFilter,
@@ -30,6 +44,33 @@ export function areDSPConfigsEqual(left: DSPConfig, right: DSPConfig): boolean {
     (left.preset_id ?? null) === (right.preset_id ?? null) &&
     areDspFiltersEqual(left.filters, right.filters)
   );
+}
+
+// The raw-string keys are filter types still waiting on their own branches, so
+// the record stays keyed by string until their enum members land.
+const filterIcons: Record<string, Component> = {
+  [DSPFilterType.PARAMETRIC_EQ]: SlidersHorizontal,
+  [DSPFilterType.TONE_CONTROL]: AudioWaveform,
+  [DSPFilterType.GAIN]: Gauge,
+  [DSPFilterType.BALANCE]: ArrowLeftRight,
+  [DSPFilterType.TRANSPOSE]: ArrowUpDown,
+  [DSPFilterType.STEREO_WIDTH]: Expand,
+  [DSPFilterType.CROSSFEED]: Blend,
+  safety_limiter: ArrowDownToLine,
+  compressor: ChevronsDownUp,
+  convolution: Waves,
+};
+
+export function dspFilterIcon(filter: DSPFilter): Component {
+  // high_low_pass is one filter type with two directions, so its icon comes
+  // from the mode: the response curve either rises or falls. Only the two
+  // known modes claim a curve; anything else falls through to the default.
+  const { type, mode } = filter as { type: string; mode?: string };
+  if (type === "high_low_pass") {
+    if (mode === "low_pass") return TrendingDown;
+    if (mode === "high_pass") return TrendingUp;
+  }
+  return filterIcons[type] ?? SlidersHorizontal;
 }
 
 export function dspFilterText(filter: DSPFilter): string {
