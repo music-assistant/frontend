@@ -553,7 +553,6 @@
         "artist": "Artista",
         "name": "Por ordem alfabética",
         "name_desc": "Por ordem alfabética (descendente)",
-        "recent": "Adicionado recentemente",
         "year_desc": "Ano de lançamento (decrescente)",
         "duration_desc": "Duração (decrescente)",
         "original": "Original",

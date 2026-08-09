@@ -1,15 +1,9 @@
 <template>
   <section class="edit-player">
-    <div
-      v-if="
-        config &&
-        api.getProviderManifest(config.provider)!.domain in
-          api.providerManifests
-      "
-    >
+    <div v-if="config">
       <!-- Header card -->
-      <v-card v-if="config" class="header-card mb-4" elevation="0">
-        <div class="header-content">
+      <Card class="mb-4 gap-0 py-0">
+        <CardHeader class="relative flex flex-col gap-5 p-6 pr-16 sm:flex-row">
           <div class="header-icon">
             <PlayerIcon
               :icon="api.players[config.player_id]?.icon"
@@ -26,14 +20,16 @@
                   config.default_name
                 }}
               </h2>
-              <v-btn
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                density="compact"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 class="rename-btn"
+                :title="$t('settings.player_name')"
                 @click="showRenameDialog = true"
-              />
+              >
+                <Pencil class="size-4" />
+                <span class="sr-only">{{ $t("settings.player_name") }}</span>
+              </Button>
             </div>
             <div class="header-meta">
               <span class="meta-item">
@@ -81,7 +77,7 @@
               </span>
             </div>
             <div
-              v-if="api.players[config.player_id]?.output_protocols?.length"
+              v-if="api.players[config.player_id]?.output_protocols.length"
               class="protocol-chips"
             >
               <v-chip
@@ -93,33 +89,33 @@
                 class="protocol-chip"
                 :class="{
                   'protocol-chip--clickable': api.getProviderManifest(
-                    protocol.protocol_domain!,
+                    protocol.protocol_domain,
                   )?.documentation,
                   'protocol-chip--unavailable': !protocol.available,
                 }"
                 @click="
-                  api.getProviderManifest(protocol.protocol_domain!)
+                  api.getProviderManifest(protocol.protocol_domain)
                     ?.documentation &&
                   openLinkInNewTab(
-                    api.getProviderManifest(protocol.protocol_domain!)!
+                    api.getProviderManifest(protocol.protocol_domain)!
                       .documentation!,
                   )
                 "
               >
                 <template #prepend>
                   <ProviderIcon
-                    :domain="protocol.protocol_domain!"
+                    :domain="protocol.protocol_domain"
                     :size="14"
                     class="chip-icon"
                   />
                 </template>
                 {{
-                  api.getProviderManifest(protocol.protocol_domain!)?.name ||
+                  api.getProviderManifest(protocol.protocol_domain)?.name ||
                   protocol.protocol_domain
                 }}
                 <v-icon
                   v-if="
-                    api.getProviderManifest(protocol.protocol_domain!)
+                    api.getProviderManifest(protocol.protocol_domain)
                       ?.documentation
                   "
                   size="12"
@@ -129,8 +125,68 @@
               </v-chip>
             </div>
           </div>
-        </div>
-      </v-card>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                data-testid="player-menu"
+                variant="ghost"
+                size="icon-sm"
+                class="absolute top-4 right-4"
+                :aria-label="$t('more_options')"
+              >
+                <MoreVertical class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                v-if="owningProvider"
+                data-testid="player-reload-provider"
+                :disabled="toggleLoading"
+                @click="onReloadProvider"
+              >
+                <RefreshCw class="size-4" />
+                {{ $t("settings.reload_provider") }}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-testid="player-toggle-enabled"
+                :disabled="toggleLoading"
+                @click="toggleEnabled"
+              >
+                <Power class="size-4" />
+                {{
+                  config.enabled
+                    ? $t("settings.disable")
+                    : $t("settings.enable")
+                }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+        <CardContent
+          v-if="playerSetupLabel || owningProvider"
+          class="flex flex-wrap gap-2 border-t bg-muted/20 px-6 py-4"
+        >
+          <Button
+            v-if="playerSetupLabel"
+            data-testid="player-setup"
+            @click="startPlayerSetup"
+          >
+            <RefreshCw class="size-4" />
+            {{ $t(playerSetupLabel) }}
+          </Button>
+          <Button
+            v-if="owningProvider"
+            data-testid="player-provider-settings"
+            variant="outline"
+            @click="openProviderSettings"
+          >
+            <Settings class="size-4" />
+            {{
+              $t("settings.provider_settings", { name: owningProvider.name })
+            }}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
 
     <!-- Disabled banner -->
@@ -147,7 +203,8 @@
           size="small"
           color="warning"
           variant="flat"
-          @click="enablePlayer"
+          :loading="toggleLoading"
+          @click="toggleEnabled"
         >
           {{ $t("settings.enable_player") }}
         </v-btn>
@@ -229,7 +286,7 @@
       </v-card>
     </v-dialog>
     <v-overlay
-      v-model="loading"
+      :model-value="loading || toggleLoading"
       scrim="true"
       persistent
       style="display: flex; align-items: center; justify-content: center"
@@ -243,6 +300,14 @@
 import { computed, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -269,18 +334,22 @@ import {
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
+import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
+import { MoreVertical, Pencil, Power, RefreshCw, Settings } from "@lucide/vue";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
 const loading = ref(false);
+const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
+let toggleRequestId = 0;
 
 // props
 const props = defineProps<{
@@ -314,6 +383,25 @@ const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
 onBeforeUnmount(unsubProvidersUpdated);
 
 // computed properties
+const player = computed(() =>
+  config.value ? api.players[config.value.player_id] : undefined,
+);
+
+const owningProvider = computed(() => {
+  if (!config.value) return undefined;
+  const providerId = config.value.provider;
+  const provider = api.getProvider(providerId);
+  return {
+    instanceId: provider?.instance_id ?? providerId,
+    name:
+      provider?.name ?? api.getProviderManifest(providerId)?.name ?? providerId,
+  };
+});
+
+const playerSetupLabel = computed(() =>
+  config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
+);
+
 const config_entries = computed(() => {
   if (!config.value) return [];
   const player = api.players[config.value.player_id];
@@ -341,6 +429,7 @@ const config_entries = computed(() => {
       depends_on_value_not: entry.depends_on_value_not,
       label: "",
       required: false,
+      options: [],
       default_value: null,
       hass_instance_id: hassInstance.instance_id,
       hass_control_key: hassControlKey,
@@ -358,6 +447,7 @@ const config_entries = computed(() => {
       category: "dsp",
       label: "",
       required: false,
+      options: [],
       read_only: false,
       default_value: dspEnabled.value,
     });
@@ -371,6 +461,7 @@ const config_entries = computed(() => {
       label: $t("settings.dsp_note_multi_device_group.label"),
       default_value: null,
       required: false,
+      options: [],
       category: "dsp",
       injected: true,
     });
@@ -384,6 +475,7 @@ const config_entries = computed(() => {
       label: $t("settings.dsp_note_multi_device_group_unsupported.label"),
       default_value: null,
       required: false,
+      options: [],
       category: "dsp",
       injected: true,
     });
@@ -396,6 +488,7 @@ const config_entries = computed(() => {
       label: "",
       default_value: "",
       required: false,
+      options: [],
       category: "options",
       injected: true,
     });
@@ -418,6 +511,7 @@ const config_entries = computed(() => {
 watch(
   () => props.playerId,
   (val) => {
+    resetPlayerState(val);
     if (val) void loadConfig(val);
   },
   { immediate: true },
@@ -444,23 +538,70 @@ const saveRename = function () {
   showRenameDialog.value = false;
 };
 
-const enablePlayer = function () {
-  loading.value = true;
-  api
-    .savePlayerConfig(props.playerId!, { enabled: true })
+const openProviderSettings = async function () {
+  const instanceId = owningProvider.value?.instanceId;
+  const playerId = config.value?.player_id;
+  if (!instanceId || !playerId) return;
+
+  try {
+    const failure = await router.push({
+      name: "editprovider",
+      params: { instanceId },
+    });
+    if (failure && isCurrentPlayer(playerId)) {
+      toast.error(String(failure));
+    }
+  } catch (err) {
+    if (isCurrentPlayer(playerId)) toast.error(String(err));
+  }
+};
+
+const onReloadProvider = function () {
+  const instanceId = owningProvider.value?.instanceId;
+  const playerId = config.value?.player_id;
+  if (!instanceId || !playerId) return;
+
+  void api
+    .reloadProvider(instanceId)
     .then(() => {
-      router.back();
+      if (isCurrentPlayer(playerId)) {
+        toast.success($t("settings.provider_reloading"));
+      }
     })
-    .finally(() => {
-      loading.value = false;
+    .catch((err) => {
+      if (isCurrentPlayer(playerId)) toast.error(String(err));
     });
 };
 
+const toggleEnabled = async function () {
+  if (!config.value || toggleLoading.value) return;
+
+  const playerId = config.value.player_id;
+  const requestId = ++toggleRequestId;
+  toggleLoading.value = true;
+  try {
+    const updatedConfig = await api.savePlayerConfig(playerId, {
+      enabled: !config.value.enabled,
+    });
+    if (!isCurrentPlayer(playerId)) return;
+
+    applyPlayerConfig(updatedConfig);
+    toast.success($t("settings.player_saved"));
+  } catch (err) {
+    if (!isCurrentPlayer(playerId)) return;
+
+    toast.error(String(err));
+    await refreshPlayerConfig(playerId);
+  } finally {
+    if (requestId === toggleRequestId) toggleLoading.value = false;
+  }
+};
+
 const startPlayerSetup = function () {
-  if (!props.playerId) return;
+  if (!config.value?.enabled || !playerSetupLabel.value) return;
   eventbus.emit("setupFlowDialog", {
     kind: "player",
-    playerId: props.playerId,
+    playerId: config.value.player_id,
   });
 };
 
@@ -513,7 +654,7 @@ async function loadConfig(playerId: string) {
       config.value = updatedConfig;
     }
   } catch (err) {
-    if (requestId === configLoadRequestId) {
+    if (requestId === configLoadRequestId && props.playerId === playerId) {
       toast.error(String(err));
     }
   }
@@ -529,33 +670,42 @@ async function refreshPlayerConfig(playerId: string) {
       props.playerId === playerId &&
       config.value?.player_id === playerId
     ) {
-      config.value.values = mergeConfigEntries(
-        config.value.values,
-        updatedConfig.values,
-      );
+      applyPlayerConfig(updatedConfig);
     }
   } catch (err) {
-    if (requestId === configRefreshRequestId) {
+    if (
+      requestId === configRefreshRequestId &&
+      props.playerId === playerId &&
+      config.value?.player_id === playerId
+    ) {
       toast.error(String(err));
     }
   }
+}
+
+function applyPlayerConfig(updatedConfig: PlayerConfig) {
+  if (!config.value) return;
+  config.value = {
+    ...updatedConfig,
+    values: mergeConfigEntries(config.value.values, updatedConfig.values),
+  };
+}
+
+function isCurrentPlayer(playerId: string) {
+  return props.playerId === playerId && config.value?.player_id === playerId;
+}
+
+function resetPlayerState(playerId?: string) {
+  if (config.value?.player_id === playerId) return;
+  config.value = undefined;
+  toggleLoading.value = false;
+  toggleRequestId++;
 }
 </script>
 
 <style scoped>
 .edit-player {
   padding: 16px;
-}
-
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
 }
 
 .header-icon {
@@ -665,11 +815,6 @@ async function refreshPlayerConfig(playerId: string) {
 }
 
 @media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .header-meta {
     flex-direction: column;
     gap: 8px;

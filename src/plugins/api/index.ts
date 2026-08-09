@@ -22,6 +22,7 @@ import {
   type EventMessage,
   type Genre,
   type MassEvent,
+  type MediaItem,
   type MediaItemType,
   type Player,
   type PlayerOptionValueType,
@@ -1420,7 +1421,7 @@ export class MusicAssistantApi {
     });
   }
 
-  public toggleFavorite(item: MediaItemType) {
+  public toggleFavorite(item: MediaItem) {
     // Toggle favorite for a media item
     if (item.favorite) {
       this.removeItemFromFavorites(item.media_type, item.item_id);

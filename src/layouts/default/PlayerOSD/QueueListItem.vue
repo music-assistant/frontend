@@ -90,8 +90,11 @@
         v-if="!item.available"
         class="size-4 shrink-0 text-destructive"
       />
-      <!-- duration sits to the left of the always-visible action buttons -->
-      <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
+      <!-- duration sits to the left of the always-visible action buttons; items
+           without a fixed length (radio, live sources) simply show nothing -->
+      <span v-if="item.duration" class="qitem__duration">{{
+        formatDuration(item.duration)
+      }}</span>
       <!-- Fixed-width slot so the menu stays aligned whether or not a row has a
            grip (only up-next rows are reorderable). -->
       <div class="qitem__actions">
@@ -206,7 +209,7 @@ const title = computed(() => props.item.media_item?.name || props.item.name);
 
 const artistName = computed(() => {
   const mediaItem = props.item.media_item;
-  if (mediaItem && "artists" in mediaItem && mediaItem.artists?.length) {
+  if (mediaItem && "artists" in mediaItem && mediaItem.artists.length) {
     return mediaItem.artists.map((a) => a.name).join(", ");
   }
   return "";

@@ -100,13 +100,13 @@
                 >
                   <template #prepend>
                     <ProviderIcon
-                      :domain="protocol.protocol_domain!"
+                      :domain="protocol.protocol_domain"
                       :size="14"
                       class="chip-icon"
                     />
                   </template>
                   {{
-                    api.getProviderManifest(protocol.protocol_domain!)?.name ||
+                    api.getProviderManifest(protocol.protocol_domain)?.name ||
                     protocol.protocol_domain
                   }}
                 </v-chip>
@@ -319,7 +319,7 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
 };
 
 const getOutputProtocols = function (playerId: string) {
-  // Return only non-native protocols (ones with a protocol_domain)
+  // all output methods for this player, native included
   return api.players[playerId]?.output_protocols || [];
 };
 
@@ -418,11 +418,9 @@ const getAllFilteredPlayers = function () {
 
       // Check if any output protocol's domain matches a selected provider domain
       const player = api.players[item.player_id];
-      if (player?.output_protocols) {
-        return player.output_protocols.some(
-          (protocol) =>
-            protocol.protocol_domain &&
-            selectedProviderDomains.has(protocol.protocol_domain),
+      if (player) {
+        return player.output_protocols.some((protocol) =>
+          selectedProviderDomains.has(protocol.protocol_domain),
         );
       }
 

@@ -1,4 +1,5 @@
 import SendspinPlayer from "@/components/SendspinPlayer.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -64,11 +65,13 @@ const {
   mockUseMediaBrowserMetaData,
   routeState,
 } = vi.hoisted(() => {
-  const mockPlayerCommandNext = vi.fn();
-  const mockPlayerCommandPause = vi.fn();
-  const mockPlayerCommandPlay = vi.fn();
-  const mockPlayerCommandPrevious = vi.fn();
-  const mockPlayerCommandSeek = vi.fn();
+  const mockPlayerCommandNext = vi.fn<MusicAssistantApi["playerCommandNext"]>();
+  const mockPlayerCommandPause =
+    vi.fn<MusicAssistantApi["playerCommandPause"]>();
+  const mockPlayerCommandPlay = vi.fn<MusicAssistantApi["playerCommandPlay"]>();
+  const mockPlayerCommandPrevious =
+    vi.fn<MusicAssistantApi["playerCommandPrevious"]>();
+  const mockPlayerCommandSeek = vi.fn<MusicAssistantApi["playerCommandSeek"]>();
   return {
     authState: {
       guest: null as "music_quiz" | "party" | null,

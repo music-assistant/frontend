@@ -679,10 +679,9 @@ const showLyricsOffset = computed(() => {
     player.active_output_protocol &&
     player.active_output_protocol !== "native"
   ) {
-    domain =
-      player.output_protocols?.find(
-        (p) => p.output_protocol_id === player.active_output_protocol,
-      )?.protocol_domain ?? undefined;
+    domain = player.output_protocols.find(
+      (p) => p.output_protocol_id === player.active_output_protocol,
+    )?.protocol_domain;
   }
   if (!domain) {
     domain = player.provider.split("--")[0];
@@ -717,8 +716,8 @@ const fetchLyrics = async () => {
   const track = mediaItem as Track;
 
   // Check if lyrics are already in metadata
-  const existingPlain = track.metadata?.lyrics?.trim() || null;
-  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+  const existingPlain = track.metadata.lyrics?.trim() || null;
+  const existingSynced = track.metadata.lrc_lyrics?.trim() || null;
 
   if (existingPlain || existingSynced) {
     currentLyrics.value = { plain: existingPlain, synced: existingSynced };
@@ -905,7 +904,7 @@ const onTitleClick = async function () {
           const exactMatch = results.find(
             (track) =>
               track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
-              track.artists?.some(
+              track.artists.some(
                 (artist) =>
                   artist.name.toLowerCase() ===
                   currentMedia.artist!.toLowerCase(),
@@ -981,7 +980,7 @@ const onAlbumClick = async function () {
         // If we have artist info, try to find album by same artist
         if (currentMedia.artist) {
           const matchWithArtist = results.find((album) =>
-            album.artists?.some(
+            album.artists.some(
               (artist) =>
                 artist.name.toLowerCase() ===
                   currentMedia.artist!.toLowerCase() ||

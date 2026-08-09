@@ -7,6 +7,7 @@ import type {
   EventMessage,
   Genre,
   ItemMapping,
+  MediaItemTypeOrItemMapping,
   Playlist,
   Podcast,
   Radio,
@@ -169,8 +170,13 @@ function findPinnedUriByIdentities(
   return null;
 }
 
-export function isShortcutMediaType(mediaType: MediaType): boolean {
-  return SUPPORTED_TYPES.has(mediaType);
+/**
+ * Type guard for items that can be pinned as a sidebar shortcut.
+ */
+export function isShortcutItem(
+  item: MediaItemTypeOrItemMapping,
+): item is ShortcutItem | ItemMapping {
+  return SUPPORTED_TYPES.has(item.media_type);
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +225,7 @@ export async function unpinShortcutStandaloneItem(
 export async function pinShortcutStandalone(
   item: ShortcutItem | ItemMapping,
 ): Promise<void> {
-  if (!isShortcutMediaType(item.media_type)) return;
+  if (!isShortcutItem(item)) return;
   const uris = _getPinnedUris();
   if (uris.length >= MAX_SHORTCUTS) return;
   // Always construct a proper MA URI from provider/media_type/item_id.

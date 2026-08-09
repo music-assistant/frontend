@@ -2,29 +2,95 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
+  getExternalLinkUrl,
   hexToRgb,
   kebabize,
   markdownToHtml,
   numberRange,
+  openLinkInNewTab,
   paletteFromServer,
-  parseBool,
   rgbToHex,
   sleep,
   truncateString,
 } from "@/helpers/utils";
 import type { MediaItemPalette } from "@/plugins/api/interfaces";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/plugins/api", () => ({
-  api: {
-    serverInfo: { value: null },
+const { apiMock } = vi.hoisted(() => ({
+  apiMock: {
+    serverInfo: {
+      value: null as { server_version: string } | null,
+    },
     players: {},
   },
+}));
+
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
 }));
 
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
 }));
+
+beforeEach(() => {
+  apiMock.serverInfo.value = null;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe("getExternalLinkUrl", () => {
+  it("returns valid web URLs unchanged", () => {
+    expect(getExternalLinkUrl("https://example.com/docs")).toBe(
+      "https://example.com/docs",
+    );
+  });
+
+  it("rejects unsafe URLs", () => {
+    expect(getExternalLinkUrl("javascript:alert(1)")).toBeUndefined();
+  });
+
+  it.each(["0.0.0", "2.17.0b4"])(
+    "uses beta documentation for server version %s",
+    (serverVersion) => {
+      apiMock.serverInfo.value = { server_version: serverVersion };
+
+      expect(getExternalLinkUrl("https://music-assistant.io/docs")).toBe(
+        "https://beta.music-assistant.io/docs",
+      );
+    },
+  );
+
+  it("does not rewrite lookalike hostnames", () => {
+    apiMock.serverInfo.value = { server_version: "2.17.0b4" };
+
+    expect(getExternalLinkUrl("https://music-assistant.io.evil.com/docs")).toBe(
+      "https://music-assistant.io.evil.com/docs",
+    );
+  });
+});
+
+describe("openLinkInNewTab", () => {
+  it("opens normalized links without exposing the opener", () => {
+    apiMock.serverInfo.value = { server_version: "2.17.0b4" };
+    const anchors: HTMLAnchorElement[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      anchors.push(this);
+    });
+
+    openLinkInNewTab("https://music-assistant.io/docs");
+
+    expect(anchors[0].getAttribute("href")).toBe(
+      "https://beta.music-assistant.io/docs",
+    );
+    expect(anchors[0].getAttribute("target")).toBe("_blank");
+    expect(anchors[0].getAttribute("rel")).toBe("noopener");
+  });
+});
 
 describe("formatDuration", () => {
   it("formats seconds correctly", () => {
@@ -69,30 +135,6 @@ describe("truncateString", () => {
     expect(truncateString(null, 5)).toBe("");
     // @ts-expect-error testing invalid input
     expect(truncateString(undefined, 5)).toBe("");
-  });
-});
-
-describe("parseBool", () => {
-  it("parses boolean values correctly", () => {
-    expect(parseBool(true)).toBe(true);
-    expect(parseBool(false)).toBe(false);
-  });
-
-  it("parses string values correctly", () => {
-    expect(parseBool("true")).toBe(true);
-    expect(parseBool("false")).toBe(false);
-    expect(parseBool("TRUE")).toBe(true);
-    expect(parseBool("FALSE")).toBe(false);
-  });
-
-  it("handles null/undefined", () => {
-    expect(parseBool(null)).toBe(false);
-    expect(parseBool(undefined)).toBe(false);
-  });
-
-  it("handles empty values", () => {
-    expect(parseBool("")).toBe(false);
-    expect(parseBool("0")).toBe(false);
   });
 });
 

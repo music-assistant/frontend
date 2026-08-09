@@ -195,7 +195,7 @@
 
     <!-- value with dropdown -->
     <v-select
-      v-else-if="confEntry.options && confEntry.options.length > 0"
+      v-else-if="confEntry.options.length > 0"
       :model-value="confEntry.value"
       :menu-props="{ zIndex: 10000 }"
       :chips="confEntry.multi_value"
@@ -402,7 +402,6 @@ const onClear = () => {
 };
 
 const displayOptions = computed(() => {
-  if (!props.confEntry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of props.confEntry.options) {
     // option titles are resolved server-side for the connection locale; use them directly

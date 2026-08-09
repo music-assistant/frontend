@@ -37,11 +37,7 @@
             </v-chip>
           </template>
           <template #subtitle>
-            <span
-              v-if="
-                itemDetails.media_type == MediaType.TRACK &&
-                providerMapping.audio_format
-              "
+            <span v-if="itemDetails.media_type == MediaType.TRACK"
               >{{ providerMapping.audio_format.content_type }} |
               {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{
                 providerMapping.audio_format.bit_depth
@@ -65,10 +61,7 @@
           <template #append>
             <!-- hi res icon -->
             <v-img
-              v-if="
-                providerMapping.audio_format &&
-                providerMapping.audio_format.bit_depth > 16
-              "
+              v-if="providerMapping.audio_format.bit_depth > 16"
               :src="iconHiRes"
               width="30"
               alt=""
@@ -148,7 +141,7 @@ import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
-  type MediaItemType,
+  type MediaItem,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -158,7 +151,7 @@ import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 export interface Props {
-  itemDetails: MediaItemType;
+  itemDetails: MediaItem;
 }
 const props = defineProps<Props>();
 
@@ -192,7 +185,9 @@ const getPreviewUrl = function (provider: string, item_id: string) {
   }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
 };
 
-const getProviderUri = function (mapping: ProviderMapping) {
+const getProviderUri = function (
+  mapping: Omit<ProviderMapping, "audio_format">,
+) {
   return `${mapping.provider_instance}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
 
@@ -223,7 +218,10 @@ const toggleExpand = function () {
   expanded.value = !expanded.value;
 };
 
-const onMenu = function (evt: Event, providerMapping: ProviderMapping) {
+const onMenu = function (
+  evt: Event,
+  providerMapping: Omit<ProviderMapping, "audio_format">,
+) {
   const mouseEvt = evt as MouseEvent;
   const menuItems = [
     {

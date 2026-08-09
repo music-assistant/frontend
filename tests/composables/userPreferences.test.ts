@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { UserRole, type User } from "@/plugins/api/interfaces";
 
 const { mockUpdateUser, storeMock } = vi.hoisted(() => {
   return {
-    mockUpdateUser: vi.fn(),
+    mockUpdateUser: vi.fn<MusicAssistantApi["updateUser"]>(),
     storeMock: {
       currentUser: null as {
         user_id: string;
@@ -34,7 +36,7 @@ function readPrefs(path: string, itemtype: string) {
 describe("userPreferences - itemsListing", () => {
   beforeEach(() => {
     mockUpdateUser.mockReset();
-    mockUpdateUser.mockResolvedValue(undefined);
+    mockUpdateUser.mockResolvedValue(userFixture());
     storeMock.currentUser = { user_id: "u1", preferences: {} };
   });
 
@@ -111,3 +113,16 @@ describe("userPreferences - itemsListing", () => {
     expect(readPrefs("librarygenres", "genres").favoriteFilter).toBeUndefined();
   });
 });
+
+function userFixture(): User {
+  return {
+    user_id: "u1",
+    username: "u1",
+    role: UserRole.USER,
+    enabled: true,
+    created_at: "2024-01-01T00:00:00Z",
+    preferences: {},
+    provider_filter: [],
+    player_filter: [],
+  };
+}

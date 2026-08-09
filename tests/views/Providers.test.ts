@@ -1,13 +1,18 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ProviderStatus, ProviderType } from "@/plugins/api/interfaces";
+import {
+  ProviderStage,
+  ProviderStatus,
+  ProviderType,
+} from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
 
 const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
   apiMock: {
-    getProvider: vi.fn(),
-    getProviderConfigs: vi.fn(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
     providerManifests: {
       spotify: {
         allow_disable: true,
@@ -20,10 +25,10 @@ const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
       },
     },
     providers: {},
-    removeProviderConfig: vi.fn(),
-    saveProviderConfig: vi.fn(),
-    sendCommand: vi.fn(),
-    startSync: vi.fn(),
+    reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+    removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
+    startSync: vi.fn<MusicAssistantApi["startSync"]>(),
     subscribe: vi.fn(),
   },
   eventbusMock: {
@@ -105,6 +110,7 @@ const ButtonStub = {
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getProvider.mockReturnValue(undefined);
+  apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
 });
 
@@ -196,6 +202,22 @@ describe("Providers", () => {
     );
   });
 
+  it("reloads a provider through the shared API action", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
+
+    const contextMenuCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "contextmenu",
+    );
+    const reloadItem = contextMenuCall?.[1].items.find(
+      (item: { label: string }) => item.label === "settings.reload_provider",
+    );
+    reloadItem.action();
+
+    expect(apiMock.reloadProvider).toHaveBeenCalledWith("spotify--test");
+  });
+
   it("omits reconfigure from the menu when no setup flow exists", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED, false);
 
@@ -256,9 +278,26 @@ async function mountProviders(
         error_code: 1,
         message: "Authentication required",
       },
+      manifest: {
+        allow_disable: true,
+        builtin: false,
+        codeowners: [],
+        credits: [],
+        description: "Spotify music provider",
+        documentation: "https://example.com",
+        domain: "spotify",
+        has_setup_flow: hasSetupFlow,
+        icon_images: [],
+        multi_instance: true,
+        name: "Spotify",
+        requirements: [],
+        stage: ProviderStage.STABLE,
+        type: ProviderType.MUSIC,
+      },
       name: "Spotify",
       status,
       type: ProviderType.MUSIC,
+      values: {},
     },
   ]);
 

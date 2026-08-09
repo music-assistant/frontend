@@ -1,22 +1,32 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { openActionResultUrl, openActionUrlEntries } from "./utils";
-import { type ConfigEntry, ConfigEntryType } from "@/plugins/api/interfaces";
+import { isWebUrl, openActionResultUrl, openActionUrlEntries } from "./utils";
+import {
+  type ConfigEntry,
+  ConfigEntryType,
+  type ConfigValueType,
+} from "@/plugins/api/interfaces";
 
-const urlEntry = (value: unknown, key = "wizard"): ConfigEntry =>
-  ({
-    key,
-    type: ConfigEntryType.URL,
-    label: key,
-    value,
-  }) as ConfigEntry;
+const urlEntry = (value: ConfigValueType, key = "wizard"): ConfigEntry => ({
+  key,
+  type: ConfigEntryType.URL,
+  label: key,
+  category: "generic",
+  default_value: null,
+  options: [],
+  required: false,
+  value,
+});
 
-const stringEntry = (key = "server_url"): ConfigEntry =>
-  ({
-    key,
-    type: ConfigEntryType.STRING,
-    label: key,
-    value: "abc",
-  }) as ConfigEntry;
+const stringEntry = (key = "server_url"): ConfigEntry => ({
+  key,
+  type: ConfigEntryType.STRING,
+  label: key,
+  category: "generic",
+  default_value: null,
+  options: [],
+  required: false,
+  value: "abc",
+});
 
 describe("openActionUrlEntries", () => {
   afterEach(() => {
@@ -55,12 +65,10 @@ describe("openActionUrlEntries", () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => undefined);
-    const entry = {
-      key: "wizard",
-      type: ConfigEntryType.URL,
-      label: "wizard",
+    const entry: ConfigEntry = {
+      ...urlEntry(null),
       default_value: "https://example.com/from-default",
-    } as ConfigEntry;
+    };
     const result = openActionUrlEntries([entry, stringEntry()]);
     expect(click).toHaveBeenCalledTimes(1);
     expect(result.map((e) => e.key)).toEqual(["server_url"]);
@@ -73,6 +81,19 @@ describe("openActionUrlEntries", () => {
     const entries = [stringEntry("a"), stringEntry("b")];
     expect(openActionUrlEntries(entries)).toEqual(entries);
     expect(click).not.toHaveBeenCalled();
+  });
+});
+
+describe("isWebUrl", () => {
+  it.each([
+    ["https://example.com", true],
+    ["http://192.168.1.10:8095", true],
+    ["javascript:alert(1)", false],
+    ["data:text/html,hi", false],
+    ["not a url", false],
+    [undefined, false],
+  ])("validates %s as %s", (url, expected) => {
+    expect(isWebUrl(url)).toBe(expected);
   });
 });
 

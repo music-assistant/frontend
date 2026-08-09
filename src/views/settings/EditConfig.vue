@@ -35,6 +35,9 @@
       </div>
     </div>
 
+    <!-- No provider-domain: that is only set for a provider config, which carries no protocol
+         categories. No set-entry-value handler: its only emitter is the Home Assistant entity
+         picker, which sits with the player controls on the parent player. -->
     <ProtocolConfigSection
       :entries="entries || []"
       :protocol-panels="protocolPanels"
@@ -378,8 +381,8 @@ const onEntryValueSet = function (
   if (!entry) return;
   // the server does not know of the value yet, so carry the name the field gave us or
   // the field would read back the bare id until the config is fetched again
-  if (label && !entry.options?.some((option) => option.value === value)) {
-    entry.options = [...(entry.options ?? []), { title: label, value }];
+  if (label && !entry.options.some((option) => option.value === value)) {
+    entry.options = [...entry.options, { title: label, value }];
   }
   onValueUpdate(entry, value);
 };

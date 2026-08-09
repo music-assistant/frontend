@@ -1,10 +1,12 @@
-import type { Artist } from "@/plugins/api/interfaces";
+import { MediaType, type Artist, type Track } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { providerMapping } from "../fixtures/providerMapping";
 import { $t } from "@/plugins/i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGetArtistTracks, mockToast } = vi.hoisted(() => {
   return {
-    mockGetArtistTracks: vi.fn(),
+    mockGetArtistTracks: vi.fn<MusicAssistantApi["getArtistTracks"]>(),
     mockToast: {
       success: vi.fn(),
       error: vi.fn(),
@@ -33,7 +35,7 @@ describe("useGuestArtistTracks", () => {
   });
 
   it("selects artist and loads tracks", async () => {
-    const tracks = [{ id: "track1" }, { id: "track2" }];
+    const tracks = [trackFixture("track1"), trackFixture("track2")];
     mockGetArtistTracks.mockResolvedValueOnce(tracks);
 
     const { selectedArtist, artistTracks, loadingArtistTracks, selectArtist } =
@@ -43,7 +45,10 @@ describe("useGuestArtistTracks", () => {
       item_id: "artist-id",
       provider: "library",
       provider_mappings: [
-        { item_id: "mapping-id", provider_instance: "provider-1" },
+        providerMapping({
+          item_id: "mapping-id",
+          provider_instance: "provider-1",
+        }),
       ],
     } as unknown as Artist;
 
@@ -64,9 +69,8 @@ describe("useGuestArtistTracks", () => {
       useGuestArtistTracks();
 
     const artist = {
-      provider_mappings: [
-        { item_id: "artist-id", provider_instance: "provider-1" },
-      ],
+      item_id: "artist-id",
+      provider: "library",
     } as unknown as Artist;
 
     await selectArtist(artist);
@@ -80,15 +84,14 @@ describe("useGuestArtistTracks", () => {
   });
 
   it("clears the artist selection", async () => {
-    mockGetArtistTracks.mockResolvedValueOnce([{ id: "track1" }]);
+    mockGetArtistTracks.mockResolvedValueOnce([trackFixture("track1")]);
 
     const { selectedArtist, artistTracks, selectArtist, clearArtistSelection } =
       useGuestArtistTracks();
 
     await selectArtist({
-      provider_mappings: [
-        { item_id: "artist-id", provider_instance: "provider-1" },
-      ],
+      item_id: "artist-id",
+      provider: "library",
     } as unknown as Artist);
     clearArtistSelection();
 
@@ -97,7 +100,7 @@ describe("useGuestArtistTracks", () => {
   });
 
   it("ignores the response of a selection that was cleared meanwhile", async () => {
-    let resolveTracks!: (tracks: unknown[]) => void;
+    let resolveTracks!: (tracks: Track[]) => void;
     mockGetArtistTracks.mockReturnValueOnce(
       new Promise((resolve) => {
         resolveTracks = resolve;
@@ -113,14 +116,13 @@ describe("useGuestArtistTracks", () => {
     } = useGuestArtistTracks();
 
     const pending = selectArtist({
-      provider_mappings: [
-        { item_id: "artist-id", provider_instance: "provider-1" },
-      ],
+      item_id: "artist-id",
+      provider: "library",
     } as unknown as Artist);
     clearArtistSelection();
     expect(loadingArtistTracks.value).toBe(false);
 
-    resolveTracks([{ id: "track1" }]);
+    resolveTracks([trackFixture("track1")]);
     await pending;
 
     expect(selectedArtist.value).toBeNull();
@@ -129,11 +131,11 @@ describe("useGuestArtistTracks", () => {
   });
 
   it("keeps only the latest selection when artists are picked rapidly", async () => {
-    let resolveFirst!: (tracks: unknown[]) => void;
-    const firstTracks = new Promise((resolve) => {
+    let resolveFirst!: (tracks: Track[]) => void;
+    const firstTracks = new Promise<Track[]>((resolve) => {
       resolveFirst = resolve;
     });
-    const secondTracks = [{ id: "second-track" }];
+    const secondTracks = [trackFixture("second-track")];
     mockGetArtistTracks
       .mockReturnValueOnce(firstTracks)
       .mockResolvedValueOnce(secondTracks);
@@ -143,14 +145,16 @@ describe("useGuestArtistTracks", () => {
 
     const first = selectArtist({
       name: "First",
-      provider_mappings: [{ item_id: "a1", provider_instance: "provider-1" }],
+      item_id: "a1",
+      provider: "library",
     } as unknown as Artist);
     const second = selectArtist({
       name: "Second",
-      provider_mappings: [{ item_id: "a2", provider_instance: "provider-1" }],
+      item_id: "a2",
+      provider: "library",
     } as unknown as Artist);
     await second;
-    resolveFirst([{ id: "first-track" }]);
+    resolveFirst([trackFixture("first-track")]);
     await first;
 
     expect((selectedArtist.value as unknown as { name: string }).name).toBe(
@@ -159,3 +163,20 @@ describe("useGuestArtistTracks", () => {
     expect(artistTracks.value).toEqual(secondTracks);
   });
 });
+
+function trackFixture(itemId: string): Track {
+  return {
+    item_id: itemId,
+    provider: "library",
+    name: itemId,
+    uri: `library://track/${itemId}`,
+    is_playable: true,
+    media_type: MediaType.TRACK,
+    provider_mappings: [],
+    metadata: {},
+    favorite: false,
+    duration: 200,
+    artists: [],
+    album: null,
+  };
+}

@@ -6,12 +6,14 @@ import {
   ProviderType,
   type CoreConfig,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
-    getCoreConfig: vi.fn(),
-    invokeCoreConfigAction: vi.fn(),
+    getCoreConfig: vi.fn<MusicAssistantApi["getCoreConfig"]>(),
+    invokeCoreConfigAction:
+      vi.fn<MusicAssistantApi["invokeCoreConfigAction"]>(),
     providerManifests: {
       cache: {
         codeowners: [],
@@ -21,7 +23,7 @@ const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
         name: "Cache",
       },
     },
-    saveCoreConfig: vi.fn(),
+    saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
   },
   routerMock: {
     push: vi.fn(),
@@ -120,6 +122,7 @@ describe("EditCoreConfig", () => {
         default_value: null,
         key: "new_field",
         label: "New field",
+        options: [],
         required: false,
         type: ConfigEntryType.STRING,
         value: "server value",
@@ -162,6 +165,7 @@ describe("EditCoreConfig", () => {
         default_value: false,
         key: "clear_on_start",
         label: "Clear cache on start",
+        options: [],
         required: false,
         type: ConfigEntryType.BOOLEAN,
       },
@@ -200,6 +204,7 @@ describe("EditCoreConfig", () => {
         default_value: false,
         key: "clear_on_start",
         label: "Clear cache on start",
+        options: [],
         required: false,
         type: ConfigEntryType.BOOLEAN,
         value: null,
@@ -257,6 +262,7 @@ function coreConfig(): CoreConfig {
         default_value: false,
         key: "clear_on_start",
         label: "Clear cache on start",
+        options: [],
         required: false,
         type: ConfigEntryType.BOOLEAN,
         value: "current value",

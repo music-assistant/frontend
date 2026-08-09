@@ -7,6 +7,7 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,8 +24,10 @@ const { apiMock, emitContextMenu } = vi.hoisted(() => ({
         items?: number;
       }
     >,
-    playerCommandPlayPause: vi.fn(),
-    playerCommandPowerToggle: vi.fn(),
+    playerCommandPlayPause:
+      vi.fn<MusicAssistantApi["playerCommandPlayPause"]>(),
+    playerCommandPowerToggle:
+      vi.fn<MusicAssistantApi["playerCommandPowerToggle"]>(),
   },
   emitContextMenu: vi.fn(),
 }));

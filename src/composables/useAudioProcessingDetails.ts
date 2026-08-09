@@ -30,6 +30,7 @@ import {
   CrossfadeMode,
   DSPFilterType,
   DSPState,
+  type Player,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -76,17 +77,16 @@ export interface AudioProcessingDetailsDisplay {
   outputPaths: AudioProcessingOutputDisplay[];
 }
 
-export interface AudioProcessingDisplayPlayer {
-  player_id: string;
-  name: string;
-  provider: string;
-  active_output_protocol?: string | null;
-  output_protocols?: Array<{
-    output_protocol_id: string;
-    is_native: boolean;
-    protocol_domain?: string | null;
-  }>;
-}
+// the fields of Player the display builder reads, derived so they cannot drift
+// from the player model
+export type AudioProcessingDisplayPlayer = Pick<
+  Player,
+  | "player_id"
+  | "name"
+  | "provider"
+  | "active_output_protocol"
+  | "output_protocols"
+>;
 
 export interface AudioProcessingDetailsDependencies {
   translate: Translate;
@@ -445,7 +445,7 @@ function resolveDestination(
 ): DestinationResolution | undefined {
   for (const player of Object.values(dependencies.players)) {
     if (player.player_id === playerId) continue;
-    const protocol = player.output_protocols?.find(
+    const protocol = player.output_protocols.find(
       (outputProtocol) =>
         !outputProtocol.is_native &&
         outputProtocol.output_protocol_id === playerId,
@@ -453,9 +453,7 @@ function resolveDestination(
     if (!protocol) continue;
     return {
       player,
-      providerDomain:
-        protocol.protocol_domain ??
-        playerProviderDomain(dependencies.players[playerId], dependencies),
+      providerDomain: protocol.protocol_domain,
     };
   }
 
@@ -473,18 +471,12 @@ function resolveDestination(
     };
   }
 
-  const activeProtocol = player.output_protocols?.find(
+  const activeProtocol = player.output_protocols.find(
     (protocol) => protocol.output_protocol_id === activeProtocolId,
   );
   return {
     player,
-    providerDomain: activeProtocol
-      ? (activeProtocol.protocol_domain ??
-        playerProviderDomain(
-          dependencies.players[activeProtocolId],
-          dependencies,
-        ))
-      : undefined,
+    providerDomain: activeProtocol?.protocol_domain,
   };
 }
 

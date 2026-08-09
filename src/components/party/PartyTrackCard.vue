@@ -203,7 +203,7 @@ const artistName = computed(() => {
   if (
     props.queueItem.media_item &&
     "artists" in props.queueItem.media_item &&
-    props.queueItem.media_item.artists?.length
+    props.queueItem.media_item.artists.length
   ) {
     const artistStr = props.queueItem.media_item.artists
       .map((a: { name: string }) => a.name)

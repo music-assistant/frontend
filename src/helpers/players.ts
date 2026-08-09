@@ -11,11 +11,11 @@ export const isBuiltinPlayer = function (player: Player): boolean {
   return (
     player.player_id === webPlayer.player_id ||
     player.player_id === store.companionPlayerId ||
-    player.output_protocols?.filter(
+    player.output_protocols.some(
       (x) =>
         x.output_protocol_id === webPlayer.player_id ||
         x.output_protocol_id === store.companionPlayerId,
-    ).length > 0
+    )
   );
 };
 
@@ -52,7 +52,6 @@ export const playerVisible = function (
   if (
     store.currentUser &&
     store.currentUser.player_filter.length > 0 &&
-    player.player_id != webPlayer.player_id &&
     !store.currentUser.player_filter.includes(player.player_id)
   ) {
     // for non-admin users, the playerfilter is applied in the backend

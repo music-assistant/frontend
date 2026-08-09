@@ -1,5 +1,6 @@
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,7 +15,7 @@ vi.mock("@/plugins/api", async () => {
     queues: {},
     queueElapsedTime: {},
     subscribe: vi.fn(() => vi.fn()),
-    getTrackLyrics: vi.fn(),
+    getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
   });
   return { api, default: api };
 });

@@ -38,13 +38,15 @@ vi.mock("@/plugins/api", () => ({
         supported_features: [],
       },
     },
-    search: vi.fn(),
+    search: vi.fn<MusicAssistantApi["search"]>(),
   },
 }));
 
 import api from "@/plugins/api";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { useSmartPlaylistSeedItems } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
-import type { Album, Track } from "@/plugins/api/interfaces";
+import { MediaType, type Album, type Track } from "@/plugins/api/interfaces";
+import { providerMapping } from "../../fixtures/providerMapping";
 
 interface SearchFnArg {
   searchFn: (q: string) => Promise<unknown[]>;
@@ -72,16 +74,16 @@ describe("useSmartPlaylistSeedItems", () => {
       {
         item_id: "fallback-track-id",
         provider_mappings: [
-          {
+          providerMapping({
             item_id: "lib-1",
             provider_instance: "library",
             provider_domain: "library",
-          },
-          {
+          }),
+          providerMapping({
             item_id: "sp-track-1",
             provider_instance: "spotify_instance",
             provider_domain: "spotify",
-          },
+          }),
         ],
         artists: [{ name: "Artist" }],
         name: "Song",
@@ -109,11 +111,11 @@ describe("useSmartPlaylistSeedItems", () => {
       {
         item_id: "62",
         provider_mappings: [
-          {
+          providerMapping({
             item_id: "tidal-album",
             provider_instance: "tidal_instance",
             provider_domain: "tidal",
-          },
+          }),
         ],
         artists: [{ name: "RAM" }],
         name: "One Last Call",
@@ -194,17 +196,20 @@ describe("useSmartPlaylistSeedItems", () => {
 
       vi.mocked(api.search).mockResolvedValueOnce({
         tracks: [
-          {
+          trackFixture({
             item_id: "lib-1",
             name: "Library Track",
             provider_mappings: [
-              { provider_instance: "library", provider_domain: "library" },
-              {
+              providerMapping({
+                provider_instance: "library",
+                provider_domain: "library",
+              }),
+              providerMapping({
                 provider_instance: "filesystem_local",
                 provider_domain: "filesystem_local",
-              },
+              }),
             ],
-          },
+          }),
         ],
         artists: [],
         albums: [],
@@ -212,7 +217,8 @@ describe("useSmartPlaylistSeedItems", () => {
         radio: [],
         audiobooks: [],
         podcasts: [],
-      } as never);
+        genres: [],
+      });
 
       const results = await trackSearchFn("anything");
 
@@ -239,3 +245,21 @@ describe("useSmartPlaylistSeedItems", () => {
     });
   });
 });
+
+function trackFixture(overrides: Partial<Track> = {}): Track {
+  return {
+    item_id: "1",
+    provider: "library",
+    name: "Track",
+    uri: "library://track/1",
+    is_playable: true,
+    media_type: MediaType.TRACK,
+    provider_mappings: [],
+    metadata: {},
+    favorite: false,
+    duration: 200,
+    artists: [],
+    album: null,
+    ...overrides,
+  };
+}

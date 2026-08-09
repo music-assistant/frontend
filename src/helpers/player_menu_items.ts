@@ -15,14 +15,16 @@ import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { getPlayerSetupLabel } from "@/helpers/player_config";
 
 export const getPlayerSetupMenuItem = (
   player: Pick<Player, "player_id" | "needs_setup" | "has_setup_flow">,
 ): ContextMenuItem | undefined => {
-  if (!player.has_setup_flow && !player.needs_setup) return undefined;
+  const label = getPlayerSetupLabel(player);
+  if (!label) return undefined;
 
   return {
-    label: player.needs_setup ? "configure_player" : "reconfigure_player",
+    label,
     labelArgs: [],
     action: () => {
       store.showFullscreenPlayer = false;
@@ -269,8 +271,8 @@ export const getPlayerMenuItems = (
 
   // settings shortcuts (admin only)
   if (authManager.isAdmin()) {
-    // open queue settings (queue menu only)
-    if (isQueue) {
+    // open queue settings (queue menu, or player menu with an MA queue)
+    if (isQueue || playerQueue) {
       menuItems.push({
         label: "open_queue_settings",
         labelArgs: [],
@@ -285,19 +287,17 @@ export const getPlayerMenuItems = (
       });
     }
 
-    // open player settings (player menu only)
-    if (isPlayer) {
-      menuItems.push({
-        label: "open_player_settings",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}`);
-        },
-        icon: "mdi-cog-outline",
-      });
-    }
+    // open player settings (both menus)
+    menuItems.push({
+      label: "open_player_settings",
+      labelArgs: [],
+      action: () => {
+        store.showFullscreenPlayer = false;
+        store.showPlayersMenu = false;
+        router.push(`/settings/editplayer/${player.player_id}`);
+      },
+      icon: "mdi-cog-outline",
+    });
 
     // configure the player or re-run its setup flow on demand
     if (isPlayer) {

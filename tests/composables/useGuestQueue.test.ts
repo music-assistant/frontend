@@ -3,15 +3,18 @@ import {
   PlaybackState,
   type EventMessage,
   type PlayerQueue,
+  type QueueItem,
 } from "@/plugins/api/interfaces";
 import { BEFORE_FIRST_INDEX } from "@/helpers/queue_position";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
 
 const { mockSendCommand, mockGetPlayerQueueItems, mockSubscribe } = vi.hoisted(
   () => {
     return {
       mockSendCommand: vi.fn(),
-      mockGetPlayerQueueItems: vi.fn(),
+      mockGetPlayerQueueItems:
+        vi.fn<MusicAssistantApi["getPlayerQueueItems"]>(),
       mockSubscribe: vi.fn(),
     };
   },
@@ -46,7 +49,7 @@ describe("useGuestQueue", () => {
       current_index: 5,
       items: 20,
     };
-    const items = [{ queue_item_id: "item1" }, { queue_item_id: "item2" }];
+    const items = [queueItemFixture("item1"), queueItemFixture("item2")];
 
     mockSendCommand.mockResolvedValueOnce(queue);
     mockGetPlayerQueueItems.mockResolvedValueOnce(items);
@@ -88,12 +91,12 @@ describe("useGuestQueue", () => {
       current_index: 0,
       items: 100,
     };
-    const initialItems = Array.from({ length: 50 }, (_, i) => ({
-      queue_item_id: `item-${i}`,
-    }));
-    const moreItems = Array.from({ length: 10 }, (_, i) => ({
-      queue_item_id: `item-${50 + i}`,
-    }));
+    const initialItems = Array.from({ length: 50 }, (_, i) =>
+      queueItemFixture(`item-${i}`),
+    );
+    const moreItems = Array.from({ length: 10 }, (_, i) =>
+      queueItemFixture(`item-${50 + i}`),
+    );
 
     mockSendCommand.mockResolvedValue(queue);
     mockGetPlayerQueueItems
@@ -199,7 +202,7 @@ describe("useGuestQueue", () => {
       current_index: 0,
       items: 1,
     });
-    mockGetPlayerQueueItems.mockResolvedValue([{ queue_item_id: "item1" }]);
+    mockGetPlayerQueueItems.mockResolvedValue([queueItemFixture("item1")]);
 
     const { partyQueueId, subscribeToEvents } = useGuestQueue();
     subscribeToEvents();
@@ -224,3 +227,14 @@ describe("useGuestQueue", () => {
     });
   });
 });
+
+function queueItemFixture(queueItemId: string): QueueItem {
+  return {
+    queue_id: "queue1",
+    queue_item_id: queueItemId,
+    name: queueItemId,
+    duration: 200,
+    sort_index: 0,
+    available: true,
+  };
+}

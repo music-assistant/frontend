@@ -296,10 +296,7 @@ const getProtocolBaseName = function (category: string): string | undefined {
     (p) => p.output_protocol_id === derivedFrom,
   );
   if (!base) return undefined;
-  const provider = base.protocol_domain
-    ? api.getProvider(base.protocol_domain)
-    : undefined;
-  return provider?.name || base.name;
+  return api.getProvider(base.protocol_domain)?.name || base.name;
 };
 
 // Accordion title for a protocol's configuration section; derived transports include

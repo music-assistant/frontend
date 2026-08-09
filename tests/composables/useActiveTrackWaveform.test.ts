@@ -1,12 +1,13 @@
 import { effectScope, nextTick, reactive, type EffectScope } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
 const { mockGetWaveForm } = vi.hoisted(() => ({
-  mockGetWaveForm: vi.fn(),
+  mockGetWaveForm: vi.fn<MusicAssistantApi["getWaveForm"]>(),
 }));
 
 vi.mock("@/plugins/api", () => ({

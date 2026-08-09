@@ -8,23 +8,18 @@ import {
   User,
 } from "./api/interfaces";
 
-import { StoredState } from "@/components/ItemsListing.vue";
+import type { StoredState } from "@/components/ItemsListing.vue";
+import {
+  DEVICE_TYPE,
+  isTouchscreenDevice,
+  type DeviceType,
+} from "@/helpers/device";
 import { isHomeAssistantIngressSession } from "@/helpers/ingress";
-import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
+import { parseBool } from "@/helpers/parse";
 import api from "./api";
 import { resolvePlayerQueue } from "./api/helpers";
 
-import MobileDetect from "mobile-detect";
 import { getBreakpointValue } from "./breakpoint";
-
-type DeviceType = "desktop" | "phone" | "tablet";
-const md = new MobileDetect(window.navigator.userAgent);
-
-const DEVICE_TYPE: DeviceType = md.tablet()
-  ? "tablet"
-  : md.phone() || md.mobile()
-    ? "phone"
-    : "desktop";
 
 interface Store {
   activePlayerId?: string;

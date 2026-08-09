@@ -1,5 +1,6 @@
 import MusicQuizPlayerView from "@/views/MusicQuizPlayerView.vue";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { h, nextTick, ref } from "vue";
@@ -20,7 +21,7 @@ const {
   apiMock: { state: { value: "connected" as string } },
   mockGameAdapterSetup: vi.fn(),
   mockGetMusicQuizRoundScore: vi.fn(),
-  mockGetTrackLyrics: vi.fn(),
+  mockGetTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
   mockListenInSetup: vi.fn(),
   mockPrimeAudio: vi.fn(),
   mockResolveMusicQuizDefinition: vi.fn(),

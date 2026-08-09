@@ -1,11 +1,7 @@
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
-import {
-  ConfigEntryType,
-  type ConfigEntry,
-  type ConfigValueType,
-} from "@/plugins/api/interfaces";
+import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 import EditConfig from "@/views/settings/EditConfig.vue";
 
 const { apiMock, routerMock } = vi.hoisted(() => ({
@@ -260,9 +256,10 @@ function entry(
     default_value: null,
     label: overrides.key,
     required: false,
-    value: null as ConfigValueType,
+    options: [],
+    value: null,
     ...overrides,
-  } as ConfigEntry;
+  };
 }
 
 function dependentEntry(

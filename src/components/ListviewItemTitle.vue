@@ -25,7 +25,11 @@
   </span>
   <!-- explicit icon -->
   <template
-    v-if="item && item.metadata && parseBool(item.metadata.explicit || false)"
+    v-if="
+      'metadata' in item &&
+      item.metadata &&
+      parseBool(item.metadata.explicit || false)
+    "
   >
     <Tooltip>
       <TooltipTrigger as-child>
@@ -49,7 +53,8 @@
 </template>
 
 <script setup lang="ts">
-import { getBrowseFolderName, parseBool } from "@/helpers/utils";
+import { parseBool } from "@/helpers/parse";
+import { getBrowseFolderName } from "@/helpers/utils";
 import {
   MediaType,
   type BrowseFolder,

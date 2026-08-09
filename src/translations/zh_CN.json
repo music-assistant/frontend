@@ -609,7 +609,6 @@
         "artist": "歌手",
         "name": "字母顺序",
         "name_desc": "字母顺序（降序）",
-        "recent": "最近添加",
         "year_desc": "发布年份（降序）",
         "duration_desc": "持续时间（降序）",
         "original": "原创",

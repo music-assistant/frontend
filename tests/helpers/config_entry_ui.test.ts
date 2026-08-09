@@ -14,6 +14,7 @@ function entry(overrides: Partial<ConfigEntry> = {}): ConfigEntry {
     label: "Engine",
     default_value: null,
     required: false,
+    options: [],
     category: "generic",
     ...overrides,
   };

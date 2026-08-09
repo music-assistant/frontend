@@ -608,7 +608,9 @@ export type ConfigValueType =
 
 export interface ConfigValueOption {
   // Model for a value with separated name/value.
-  title: string;
+  // title: display title, resolved server-side from the translations; null when the
+  // option carries no in-code title and no translation matches - fall back to `value`
+  title: string | null;
   value: ConfigValueType;
   // disabled: when true the option is shown but not selectable (currently unavailable)
   disabled?: boolean;
@@ -625,12 +627,13 @@ export interface ConfigEntry {
   // key: used as identifier for the entry, also for localization
   key: string;
   type: ConfigEntryType;
-  // label: default label when no translation for the key is present
-  label: string;
+  // label: localized display label, resolved server-side; null when the entry carries no
+  // in-code label and no translation matches - fall back to `key`
+  label: string | null;
   default_value: ConfigValueType;
   required: boolean;
-  // options [optional]: select from list of possible values/options
-  options?: ConfigValueOption[];
+  // options: select from list of possible values/options, empty when the entry has no fixed set
+  options: ConfigValueOption[];
   // range [optional]: select values within range
   range?: number[];
   // description [optional]: extended description of the setting.
@@ -787,8 +790,8 @@ export interface ProviderMapping {
   provider_instance: string;
   available: boolean;
   in_library?: boolean;
-  // quality details (streamable content only)
-  audio_format?: AudioFormat;
+  // quality details, carrying defaults for anything but streamable content
+  audio_format: AudioFormat;
   // optional details to store provider specific details
   details?: string;
   // url = link to provider details page if exists
@@ -836,7 +839,6 @@ export interface MediaItemMetadata {
   replaygain?: number;
   popularity?: number;
   release_date?: string;
-  cache_checksum?: string;
   chapters?: MediaItemChapter[];
   life_span?: LifeSpan;
   artist_entity_type?: ArtistEntityType;
@@ -859,8 +861,6 @@ export interface MediaItem extends _MediaItemBase {
   metadata: MediaItemMetadata;
   favorite: boolean;
   position?: number; //required for playlist tracks, optional for all other
-  timestamp_added: number;
-  timestamp_modified: number;
 }
 
 export interface ItemMapping extends _MediaItemBase {
@@ -888,8 +888,8 @@ export interface AudioMetadata {
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
-  // album track only
-  album: ItemMapping | Album;
+  // album: the album this track appears on; null for tracks that are not album tracks
+  album: ItemMapping | Album | null;
   disc_number?: number;
   track_number?: number;
   // only populated when the full track is requested (get_track), never on listings
@@ -918,7 +918,7 @@ export interface AudioSource extends MediaItem {
 }
 
 export interface Audiobook extends MediaItem {
-  publisher: string;
+  publisher: string | null;
   authors: string[] | Artist[];
   narrators: string[] | Artist[];
   duration: number;
@@ -927,8 +927,8 @@ export interface Audiobook extends MediaItem {
 }
 
 export interface Podcast extends MediaItem {
-  publisher?: string;
-  total_episodes?: number;
+  publisher: string | null;
+  total_episodes: number | null;
 }
 
 export interface PodcastEpisode extends MediaItem {
@@ -945,9 +945,14 @@ export interface Genre extends MediaItem {
   content_type?: MediaType | null;
 }
 
-export interface BrowseFolder extends MediaItem {
-  path?: string;
-  image?: MediaItemImage;
+// a browse folder is not a library item: it has no provider mappings, metadata,
+// favorite flag or position, so it extends the bare base instead of MediaItem
+export interface BrowseFolder extends _MediaItemBase {
+  // always FOLDER: lets TS drop the folder from the MediaItemType union on any
+  // other media_type check, and makes Exclude<MediaItemType, BrowseFolder> work
+  media_type: MediaType.FOLDER;
+  path: string;
+  image: MediaItemImage | null;
 }
 export enum RecommendationFolderType {
   DEFAULT = "default",
@@ -991,6 +996,9 @@ export interface MediaCollection<M extends MediaItemType> extends MediaItem {
   items: M[];
 }
 
+// unlike the server alias of the same name this includes BrowseFolder, because
+// browse listings render folders and media items through the same components.
+// use Exclude<MediaItemType, BrowseFolder> where only real media items apply.
 export type MediaItemType =
   | Artist
   | Album
@@ -1096,9 +1104,6 @@ export interface StreamDetails {
   stream_metadata?: StreamMetadata;
   duration?: number;
   audio_processing?: AudioProcessingChain | null;
-
-  queue_id?: string;
-  fade_in?: boolean;
 }
 
 // queue_item
@@ -1107,7 +1112,8 @@ export interface QueueItem {
   queue_id: string;
   queue_item_id: string;
   name: string;
-  duration: number;
+  // duration: null for items without a fixed length (radio stations, live sources)
+  duration: number | null;
   sort_index: number;
   streamdetails?: StreamDetails;
   media_item?: PlayableMediaItemType;
@@ -1180,7 +1186,6 @@ export interface PlayerQueue {
   // When one or more sources are dynamic, the queue runs in dynamic mode
   // (is_dynamic), implicitly enabling autoplay and smart shuffle.
   sources: ItemMapping[];
-  enqueued_media_items: MediaItemType[];
   is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
@@ -1199,7 +1204,7 @@ export interface OutputProtocol {
   output_protocol_id: string; // Unique ID: "native" or protocol player_id
   name: string; // Display name: "Native (Sonos)" or "AirPlay"
   is_native: boolean; // True if this is the player's native output
-  protocol_domain: string | null; // e.g., "airplay", "dlna" (null for native)
+  protocol_domain: string; // e.g., "airplay", "dlna"; the player's own domain for native
   priority: number; // Lower = more preferred (native = 0 if supported)
   available: boolean; // Whether this output protocol is currently available
   // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin
@@ -1407,8 +1412,6 @@ export interface ProviderInstance {
   type: ProviderType;
   domain: string;
   name: string;
-  default_name: string;
-  instance_name_postfix?: string;
   instance_id: string;
   supported_features: ProviderFeature[];
   available: boolean;

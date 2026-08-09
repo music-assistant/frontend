@@ -1,4 +1,5 @@
 import PlayerBrowserMediaControls from "@/layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,7 +24,7 @@ const {
   mockPlayerCommandSeek,
   mockUseMediaBrowserMetaData,
 } = vi.hoisted(() => {
-  const mockPlayerCommandSeek = vi.fn();
+  const mockPlayerCommandSeek = vi.fn<MusicAssistantApi["playerCommandSeek"]>();
   return {
     apiMock: {
       players: {} as Record<string, MockPlayer>,
@@ -32,10 +33,11 @@ const {
         string,
         { elapsed_time?: number; elapsed_time_last_updated?: number }
       >,
-      playerCommandPlay: vi.fn(),
-      playerCommandPause: vi.fn(),
-      playerCommandNext: vi.fn(),
-      playerCommandPrevious: vi.fn(),
+      playerCommandPlay: vi.fn<MusicAssistantApi["playerCommandPlay"]>(),
+      playerCommandPause: vi.fn<MusicAssistantApi["playerCommandPause"]>(),
+      playerCommandNext: vi.fn<MusicAssistantApi["playerCommandNext"]>(),
+      playerCommandPrevious:
+        vi.fn<MusicAssistantApi["playerCommandPrevious"]>(),
       playerCommandSeek: mockPlayerCommandSeek,
     },
     storeMock: {
