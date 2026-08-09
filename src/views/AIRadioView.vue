@@ -1,7 +1,13 @@
 <template>
   <section class="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
+    <CustomizeHost
+      v-if="customizeHostOpen"
+      :host-id="customizeHostId || undefined"
+      @back="closeCustomizeHost"
+      @saved="closeCustomizeHost"
+    />
     <CustomizeShow
-      v-if="customizeShowId"
+      v-else-if="customizeShowId"
       :station-id="customizeShowId"
       @back="closeCustomize"
       @saved="closeCustomize"
@@ -34,6 +40,32 @@
           />
         </Button>
       </header>
+
+      <div class="space-y-3">
+        <h2 class="text-lg font-semibold tracking-tight">
+          {{ $t("providers.ai_radio.hosts.title") }}
+        </h2>
+        <div
+          class="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))]"
+        >
+          <HostCard
+            v-for="host in hosts"
+            :key="host.id"
+            :host="host"
+            @edit="openCustomizeHost"
+          />
+          <button
+            type="button"
+            class="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+            @click="openCustomizeHost()"
+          >
+            <Plus class="h-8 w-8" />
+            <span class="text-sm font-medium">
+              {{ $t("providers.ai_radio.hosts.new_host") }}
+            </span>
+          </button>
+        </div>
+      </div>
 
       <Alert v-if="noAiProviderAlert" variant="warning" class="relative pr-10">
         <TriangleAlert class="h-4 w-4" />
@@ -114,11 +146,14 @@
 <script setup lang="ts">
 import type { PlaylistSelection } from "@/components/ai-radio/AiRadioPlaylistPicker.vue";
 import CreateShowDialog from "@/components/ai-radio/CreateShowDialog.vue";
+import CustomizeHost from "@/components/ai-radio/CustomizeHost.vue";
 import CustomizeShow from "@/components/ai-radio/CustomizeShow.vue";
+import HostCard from "@/components/ai-radio/HostCard.vue";
 import OnAirHero from "@/components/ai-radio/OnAirHero.vue";
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
 import { errorMessage, getQueryValue } from "@/helpers/ai_radio";
 import { $t } from "@/plugins/i18n";
@@ -145,13 +180,18 @@ const {
   noAiProviderAlert,
   dismissNoAiProviderAlert,
 } = useShows();
+const { hosts, loadingHosts, loadHosts } = useHosts();
 
 const createDialogOpen = ref(false);
 const createDialogInitialPlaylist = ref<PlaylistSelection | undefined>();
 const customizeShowId = ref("");
+// null = closed; "" = creating a new host; otherwise the id being edited.
+const customizeHostId = ref<string | null>(null);
+const customizeHostOpen = computed(() => customizeHostId.value !== null);
 
 const isRefreshing = computed(
   () =>
+    loadingHosts.value ||
     loadingShows.value ||
     loadingSections.value ||
     loadingStatus.value ||
@@ -178,6 +218,14 @@ function closeCustomize() {
   customizeShowId.value = "";
 }
 
+function openCustomizeHost(hostId?: string) {
+  customizeHostId.value = hostId || "";
+}
+
+function closeCustomizeHost() {
+  customizeHostId.value = null;
+}
+
 function applyRouteQuery() {
   const stationId = getQueryValue(route.query.station_id);
   if (stationId) {
@@ -201,6 +249,7 @@ function applyRouteQuery() {
 async function handleRefresh() {
   try {
     await Promise.all([
+      loadHosts(),
       loadShows(),
       loadSections(),
       loadStatus(),
@@ -213,7 +262,12 @@ async function handleRefresh() {
 
 onMounted(async () => {
   try {
-    await Promise.all([loadShows(), loadSections(), loadPlaylists()]);
+    await Promise.all([
+      loadHosts(),
+      loadShows(),
+      loadSections(),
+      loadPlaylists(),
+    ]);
   } catch (error) {
     toast.error(errorMessage(error));
   }

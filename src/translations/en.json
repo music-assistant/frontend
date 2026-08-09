@@ -1395,7 +1395,8 @@
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "instructions": "Host and Program Instructions"
+                "instructions": "Host and Program Instructions",
+                "voice": "Voice"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
@@ -1436,7 +1437,9 @@
                 "discard_changes_title": "Discard changes?",
                 "discard_changes": "You have unsaved changes that will be lost.",
                 "delete_station_title": "Delete station?",
-                "delete_station": "Delete this station?"
+                "delete_station": "Delete this station?",
+                "delete_host_title": "Delete host?",
+                "delete_host": "Delete this host?"
             },
             "toast": {
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
@@ -1449,7 +1452,9 @@
                 "station_save_failed": "Failed to save station",
                 "station_deleted": "Station deleted",
                 "station_duplicated": "Station duplicated",
-                "session_failed": "AI Radio run failed: {0}"
+                "session_failed": "AI Radio run failed: {0}",
+                "host_saved": "Host saved",
+                "host_deleted": "Host deleted"
             },
             "header": {
                 "subtitle": "Turn a playlist into a radio show with an AI host."
@@ -1547,6 +1552,19 @@
                 "lossy_warning_title": "Simplified on save",
                 "lossy_warning_description": "This show uses an advanced configuration that can't be fully represented here. Saving will rewrite it in the simplified segment format above.",
                 "prompt_placeholders_hint": "Available placeholders: {placeholders}"
+            },
+            "hosts": {
+                "title": "Hosts",
+                "new_host": "New host",
+                "card": {
+                    "edit": "Edit"
+                },
+                "editor": {
+                    "title": "Customize host",
+                    "save": "Save host",
+                    "name_label": "Host name",
+                    "default_voice": "Default"
+                }
             }
         },
         "party": {

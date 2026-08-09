@@ -1,6 +1,8 @@
 import api from "@/plugins/api";
-import type { AIRadioHost } from "@/plugins/api/interfaces";
+import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { ref } from "vue";
+import { toast } from "vue-sonner";
 
 export interface AIRadioTtsEngine {
   uid: string;
@@ -41,12 +43,20 @@ async function getHost(hostId: string): Promise<AIRadioHost> {
   });
 }
 
+/** Persists a host's section content; callers must save all of a host's compiled sections before saveHost. */
+async function saveSections(sections: AIRadioSection[]): Promise<void> {
+  for (const section of sections) {
+    await api.sendCommand("ai_radio/sections/save", { section });
+  }
+}
+
 async function saveHost(host: AIRadioHost): Promise<AIRadioHost> {
   savingHost.value = true;
   try {
     const saved = await api.sendCommand<AIRadioHost>("ai_radio/hosts/save", {
       host,
     });
+    toast.success($t("providers.ai_radio.toast.host_saved"));
     await loadHosts();
     return saved;
   } finally {
@@ -58,6 +68,7 @@ async function deleteHost(hostId: string): Promise<void> {
   deletingHostId.value = hostId;
   try {
     await api.sendCommand("ai_radio/hosts/delete", { host_id: hostId });
+    toast.success($t("providers.ai_radio.toast.host_deleted"));
     await loadHosts();
   } finally {
     deletingHostId.value = "";
@@ -125,6 +136,7 @@ export function useHosts() {
     settingQueueDjId,
     loadHosts,
     getHost,
+    saveSections,
     saveHost,
     deleteHost,
     loadHostTemplate,
