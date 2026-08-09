@@ -1612,6 +1612,8 @@
             "leaderboard": "Leaderboard",
             "invite_players": "Invite players",
             "qr_unavailable": "Could not render QR code",
+            "dashboard_waiting": "Waiting for the quiz to start",
+            "name_that_track": "Name that track",
             "copied": "Copied",
             "copy_link": "Copy link",
             "join_link_copied": "Join link copied",
