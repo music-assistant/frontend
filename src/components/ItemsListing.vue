@@ -484,6 +484,8 @@ const searchHasFocus = ref(false);
 const pagedItems = ref<MediaItemType[]>([]);
 const allItems = ref<MediaItemType[]>([]);
 const loading = ref(false);
+let loadingTabId: string | undefined;
+let pendingTabLoad = false;
 const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
@@ -1441,12 +1443,19 @@ const loadData = async function (
       loadPagedData = activeTab.loadPagedData;
     }
   }
+  const currentTabId = props.toolBarTabs?.length
+    ? getActiveTab()?.id
+    : undefined;
   if (loading.value) {
+    if (currentTabId !== loadingTabId) {
+      pendingTabLoad = true;
+    }
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
     return;
   }
   loading.value = true;
+  loadingTabId = currentTabId;
 
   if (FilterParamsChanged && loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
@@ -1501,6 +1510,11 @@ const loadData = async function (
   params.value.refresh = false;
   loading.value = false;
   tempHide.value = false;
+
+  if (pendingTabLoad) {
+    pendingTabLoad = false;
+    await loadData(true);
+  }
 };
 
 // Re-derive from the current props.path: browse reuses one ItemsListing
