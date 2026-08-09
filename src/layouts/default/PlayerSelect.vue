@@ -10,8 +10,10 @@
         v-if="store.showPlayersMenu"
         type="button"
         :class="[
-          'player-select-backdrop fixed inset-x-0 top-0 z-[99999] bg-black/60 backdrop-blur-sm',
-          store.mobileLayout ? 'bottom-[60px]' : 'bottom-0',
+          'modal-backdrop player-select-backdrop fixed inset-x-0 top-0 z-[99999]',
+          store.mobileLayout
+            ? 'player-select-mobile-offset'
+            : 'player-select-desktop-offset',
         ]"
         :aria-label="$t('close')"
         @click="setMenuOpen(false)"
@@ -19,29 +21,58 @@
     </Transition>
   </Teleport>
 
-  <Sheet
-    :open="store.showPlayersMenu"
-    :modal="false"
-    @update:open="setMenuOpen"
-  >
-    <SheetContent
+  <Popover :open="store.showPlayersMenu" @update:open="setMenuOpen">
+    <PopoverAnchor :reference="playerBarEndAnchor" />
+    <PopoverContent
+      data-player-panel
       data-testid="player-select-sheet"
-      side="right"
+      side="top"
+      align="end"
+      :side-offset="
+        store.mobileLayout
+          ? MOBILE_PLAYER_BAR_POPOUT_GAP
+          : DESKTOP_PLAYER_BAR_POPOUT_GAP
+      "
+      :collision-padding="8"
       :class="[
-        'w-[90vw] gap-0 p-0 sm:max-w-[400px]',
-        store.mobileLayout ? 'bottom-[60px]' : 'bottom-0',
+        'player-bar-popout player-select-popover flex flex-col gap-0 overflow-hidden p-0',
+        store.mobileLayout
+          ? 'max-h-[78dvh] w-[calc(100vw-1rem)]'
+          : 'max-h-[min(82dvh,780px)] w-[400px] max-w-[calc(100vw-1rem)]',
       ]"
       @keydown="handleSheetKeydown"
+      @close-auto-focus="preventAutoFocus"
       @open-auto-focus="handleSheetOpenAutoFocus"
       @interact-outside="handleSheetInteractOutside"
     >
-      <SheetHeader class="flex-row items-center gap-2 border-b pr-14">
-        <Speaker class="size-5 text-muted-foreground" />
-        <SheetTitle class="text-lg">{{ $t("players") }}</SheetTitle>
-        <SheetDescription class="sr-only">
-          {{ $t("tooltip.select_player") }}
-        </SheetDescription>
-      </SheetHeader>
+      <PanelDragHandle @dismiss="setMenuOpen(false)" />
+      <div
+        data-panel-drag-region
+        class="flex items-center justify-between gap-3 border-b px-4 pt-1 pb-3"
+      >
+        <div class="flex min-w-0 items-center gap-2">
+          <Speaker class="text-muted-foreground size-5 shrink-0" />
+          <h2 class="truncate text-lg font-semibold">{{ $t("players") }}</h2>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('tooltip.more_options')"
+            >
+              <EllipsisVertical class="size-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="z-[100001]">
+            <DropdownMenuItem @click="openPlayerSettings">
+              <Settings2 class="size-4" />
+              {{ $t("settings.players") }}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <p class="sr-only">{{ $t("tooltip.select_player") }}</p>
+      </div>
 
       <div class="min-h-0 flex-1 overflow-y-auto pb-6">
         <div
@@ -83,29 +114,49 @@
           />
         </div>
       </div>
-    </SheetContent>
-  </Sheet>
+    </PopoverContent>
+  </Popover>
 </template>
 
 <script setup lang="ts">
+import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { SearchInput } from "@/components/ui/search-input";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  DESKTOP_PLAYER_BAR_POPOUT_GAP,
+  MOBILE_PLAYER_BAR_POPOUT_GAP,
+  playerBarEndAnchor,
+} from "@/helpers/player_bar";
 import { api } from "@/plugins/api";
 import type { Player } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { Speaker } from "@lucide/vue";
-import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
+import { EllipsisVertical, Settings2, Speaker } from "@lucide/vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from "vue";
 
 const SEARCH_PLAYER_THRESHOLD = 10;
 
@@ -114,6 +165,8 @@ const expandedVolumePlayerIds = reactive(new Set<string>());
 const expandedMemberPlayerIds = reactive(new Set<string>());
 const { getPreference, setPreference } = useUserPreferences();
 let menuTrigger: HTMLElement | null = null;
+let lastInteractionWasKeyboard = false;
+let restoreFocusOnClose = false;
 
 // PlayerSelect is the only surface that lists needs_setup players: a click here
 // launches the setup flow (see selectPlayer) instead of selecting/playing them.
@@ -136,6 +189,7 @@ watch(
   () => store.showPlayersMenu,
   (isOpen) => {
     if (isOpen) {
+      restoreFocusOnClose = lastInteractionWasKeyboard;
       const activeElement = document.activeElement;
       menuTrigger =
         activeElement instanceof HTMLElement && activeElement !== document.body
@@ -147,9 +201,12 @@ watch(
     nextTick(() => {
       const focusTarget = menuTrigger?.isConnected
         ? menuTrigger
-        : (document.getElementById("active-player-popover") ??
-          document.getElementById("extended-controls-speaker-button"));
-      focusTarget?.focus();
+        : document.getElementById("player-select-button");
+      if (restoreFocusOnClose) {
+        focusTarget?.focus();
+      } else {
+        focusTarget?.blur();
+      }
       menuTrigger = null;
     });
   },
@@ -180,7 +237,14 @@ watch(
 );
 
 onMounted(() => {
+  document.addEventListener("keydown", markKeyboardInteraction, true);
+  document.addEventListener("pointerdown", markPointerInteraction, true);
   checkDefaultPlayer();
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", markKeyboardInteraction, true);
+  document.removeEventListener("pointerdown", markPointerInteraction, true);
 });
 
 function setMenuOpen(isOpen: boolean) {
@@ -201,7 +265,32 @@ function handleSheetOpenAutoFocus(event: Event) {
 }
 
 function handleSheetInteractOutside(event: Event) {
-  if (store.dialogActive) event.preventDefault();
+  const originalEvent = (event as CustomEvent<{ originalEvent?: Event }>).detail
+    ?.originalEvent;
+  const target = originalEvent?.target;
+  if (
+    store.dialogActive ||
+    (target instanceof Element && target.closest("#player-select-button"))
+  ) {
+    event.preventDefault();
+  }
+}
+
+function preventAutoFocus(event: Event) {
+  event.preventDefault();
+}
+
+function openPlayerSettings() {
+  setMenuOpen(false);
+  router.push({ name: "playersettings" });
+}
+
+function markKeyboardInteraction() {
+  lastInteractionWasKeyboard = true;
+}
+
+function markPointerInteraction() {
+  lastInteractionWasKeyboard = false;
 }
 
 function selectPlayer(player: Player) {
@@ -275,3 +364,17 @@ function selectDefaultPlayer() {
   }
 }
 </script>
+
+<style>
+.player-select-desktop-offset {
+  bottom: 104px !important;
+}
+
+.player-select-mobile-offset {
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.player-select-popover {
+  z-index: 100000 !important;
+}
+</style>

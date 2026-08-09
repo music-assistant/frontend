@@ -1,12 +1,16 @@
 import {
+  canEditPlayerGroup,
+  getPlayerGroupMemberCount,
   groupMemberPickerVisible,
   isBuiltinPlayer,
+  isPlayerGrouped,
   playerVisible,
 } from "@/helpers/players";
 import {
   IdentifierType,
   type OutputProtocol,
   type Player,
+  PlayerFeature,
   PlayerType,
   type User,
   UserRole,
@@ -269,5 +273,69 @@ describe("groupMemberPickerVisible", () => {
     webPlayer.player_id = "local-web-player";
 
     expect(groupMemberPickerVisible(player)).toBe(false);
+  });
+});
+
+describe("player group controls", () => {
+  it("allows editing when compatible players are available", () => {
+    const player = createPlayer({
+      supported_features: [PlayerFeature.SET_MEMBERS],
+      can_group_with: ["office"],
+    });
+
+    expect(canEditPlayerGroup(player)).toBe(true);
+  });
+
+  it("allows removing dynamic members from an existing group", () => {
+    const player = createPlayer({
+      supported_features: [PlayerFeature.SET_MEMBERS],
+      group_members: ["player", "office"],
+    });
+
+    expect(canEditPlayerGroup(player)).toBe(true);
+  });
+
+  it("does not allow editing a fully static group", () => {
+    const player = createPlayer({
+      supported_features: [PlayerFeature.SET_MEMBERS],
+      group_members: ["player", "office"],
+      static_group_members: ["office"],
+    });
+
+    expect(canEditPlayerGroup(player)).toBe(false);
+  });
+
+  it("counts the leader and unique children for regular players", () => {
+    const player = createPlayer({
+      group_members: ["player", "office", "office", "kitchen"],
+    });
+
+    expect(getPlayerGroupMemberCount(player)).toBe(3);
+  });
+
+  it("counts only children for dedicated group players", () => {
+    const player = createPlayer({
+      type: PlayerType.GROUP,
+      group_members: ["office", "kitchen"],
+    });
+
+    expect(getPlayerGroupMemberCount(player)).toBe(2);
+  });
+
+  it("recognizes manual and dedicated groups", () => {
+    expect(
+      isPlayerGrouped(createPlayer({ group_members: ["player", "office"] })),
+    ).toBe(true);
+    expect(
+      isPlayerGrouped(
+        createPlayer({
+          type: PlayerType.GROUP,
+          group_members: ["office"],
+        }),
+      ),
+    ).toBe(true);
+    expect(isPlayerGrouped(createPlayer({ group_members: ["player"] }))).toBe(
+      false,
+    );
   });
 });

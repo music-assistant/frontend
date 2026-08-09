@@ -10,8 +10,11 @@ export function makeStrokeIcon(
 ): Component {
   return {
     name,
-    props: { size: { type: [Number, String], default: 24 } },
-    setup(props: { size?: number | string }) {
+    props: {
+      size: { type: [Number, String], default: 24 },
+      strokeWidth: { type: [Number, String], default: 2 },
+    },
+    setup(props: { size?: number | string; strokeWidth?: number | string }) {
       return () =>
         h(
           "svg",
@@ -22,7 +25,7 @@ export function makeStrokeIcon(
             viewBox,
             fill: "none",
             stroke: "currentColor",
-            "stroke-width": "2",
+            "stroke-width": props.strokeWidth ?? 2,
             "stroke-linecap": "round",
             "stroke-linejoin": "round",
           },
