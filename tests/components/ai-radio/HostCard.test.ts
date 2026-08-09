@@ -10,6 +10,8 @@ const { sendCommand } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({
   default: {
+    // useHosts derives ai_radio availability from the provider list.
+    providers: {},
     sendCommand,
   },
 }));
