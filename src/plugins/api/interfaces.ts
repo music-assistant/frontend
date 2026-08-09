@@ -1051,46 +1051,51 @@ export interface AudioFormat {
 }
 
 export interface AudioFidelity {
-  quality?: AudioQuality;
-  bit_perfect?: boolean | null;
+  quality: AudioQuality;
+  // null when bit-perfect status cannot be determined
+  bit_perfect: boolean | null;
 }
 
 export interface AudioNormalizationDetails {
-  mode?: VolumeNormalizationMode;
-  measurement_source?: AudioNormalizationMeasurementSource;
-  target_lufs?: number | null;
-  measured_lufs?: number | null;
-  applied_gain_db?: number | null;
+  mode: VolumeNormalizationMode;
+  measurement_source: AudioNormalizationMeasurementSource;
+  target_lufs: number | null;
+  measured_lufs: number | null;
+  applied_gain_db: number | null;
 }
 
 export interface AudioQueueProcessing {
-  pcm_format?: AudioFormat | null;
-  normalization?: AudioNormalizationDetails | null;
-  playback_speed?: number;
-  crossfade_mode?: CrossfadeMode;
-  overlay_active?: boolean;
+  // internal PCM format shared by queue processing, including F32 headroom
+  pcm_format: AudioFormat | null;
+  normalization: AudioNormalizationDetails | null;
+  playback_speed: number;
+  crossfade_mode: CrossfadeMode;
+  overlay_active: boolean;
 }
 
 export interface AudioDSPDetails {
-  state?: DSPState;
-  input_gain?: number;
-  filters?: DSPFilter[];
-  output_gain?: number;
-  preset_id?: string | null;
+  state: DSPState;
+  input_gain: number;
+  filters: DSPFilter[];
+  output_gain: number;
+  // cleared when the user changes DSP settings manually
+  preset_id: string | null;
 }
 
 export interface AudioOutputDetails {
-  player_ids?: string[];
-  dsp?: AudioDSPDetails;
-  source_channel?: AudioChannel | null;
-  output_format?: AudioFormat | null;
-  fidelity?: AudioFidelity;
+  player_ids: string[];
+  dsp: AudioDSPDetails;
+  // set only for explicit left/right routing; formats show mono/stereo conversion
+  source_channel: AudioChannel | null;
+  // furthest downstream format known to Music Assistant
+  output_format: AudioFormat | null;
+  fidelity: AudioFidelity;
 }
 
 export interface AudioProcessingChain {
-  input_fidelity?: AudioFidelity;
-  queue_processing?: AudioQueueProcessing | null;
-  outputs?: AudioOutputDetails[];
+  input_fidelity: AudioFidelity;
+  queue_processing: AudioQueueProcessing | null;
+  outputs: AudioOutputDetails[];
 }
 
 export interface StreamMetadata {

@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import {
   AudioQuality,
-  ContentType,
   MediaType,
   PlaybackState,
   type PlayerQueue,
@@ -12,6 +11,12 @@ import {
   type StreamDetails,
 } from "@/plugins/api/interfaces";
 import { i18n } from "@/plugins/i18n";
+import {
+  audioFidelity,
+  audioFormat,
+  audioOutputDetails,
+  audioProcessingChain,
+} from "../fixtures/audioProcessing";
 
 const storeMock = vi.hoisted(() => ({
   activePlayerQueue: undefined as PlayerQueue | undefined,
@@ -55,12 +60,12 @@ describe("QualityDetailsBtn", () => {
   it("renders embedded details and the authoritative quality range", () => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
+      audio_processing: audioProcessingChain({
         outputs: [
-          { fidelity: { quality: AudioQuality.LOW } },
-          { fidelity: { quality: AudioQuality.HI_RES } },
+          outputWithQuality(AudioQuality.LOW),
+          outputWithQuality(AudioQuality.HI_RES),
         ],
-      },
+      }),
     });
 
     const wrapper = mountButton();
@@ -81,9 +86,9 @@ describe("QualityDetailsBtn", () => {
   ])("uses the compact popover layout on the $side side", ({ pill, side }) => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
-        outputs: [{ fidelity: { quality: AudioQuality.STANDARD } }],
-      },
+      audio_processing: audioProcessingChain({
+        outputs: [outputWithQuality(AudioQuality.STANDARD)],
+      }),
     });
 
     const wrapper = mountButton({ pill });
@@ -101,9 +106,9 @@ describe("QualityDetailsBtn", () => {
   it("moves focus into the audio-chain popover when opened", async () => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
-        outputs: [{ fidelity: { quality: AudioQuality.STANDARD } }],
-      },
+      audio_processing: audioProcessingChain({
+        outputs: [outputWithQuality(AudioQuality.STANDARD)],
+      }),
     });
 
     const wrapper = mount(QualityDetailsBtn, {
@@ -143,19 +148,15 @@ function mountButton(props: { pill?: boolean } = {}) {
   });
 }
 
+function outputWithQuality(quality: AudioQuality) {
+  return audioOutputDetails({ fidelity: audioFidelity({ quality }) });
+}
+
 function makeStreamDetails(): StreamDetails {
   return {
     provider: "test",
     item_id: "track-1",
-    audio_format: {
-      content_type: ContentType.FLAC,
-      codec_type: ContentType.FLAC,
-      sample_rate: 44100,
-      bit_depth: 16,
-      channels: 2,
-      output_format_str: "",
-      bit_rate: 0,
-    },
+    audio_format: audioFormat(),
     media_type: MediaType.TRACK,
     stream_metadata: null,
     duration: null,
