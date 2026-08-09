@@ -95,7 +95,7 @@ const hasDescriptionOrHelpLink = computed(() => {
 }
 
 .config-entry:has(+ .config-entry-hass-picker) {
-  margin-bottom: 4px;
+  margin-bottom: 12px;
 }
 
 .config-entry:has(+ .config-entry-hass-picker)
@@ -104,6 +104,7 @@ const hasDescriptionOrHelpLink = computed(() => {
 }
 
 .config-entry-hass-picker {
+  margin-top: -8px;
   margin-bottom: 16px;
 }
 
