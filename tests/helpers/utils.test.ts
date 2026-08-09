@@ -57,6 +57,14 @@ describe("getExternalLinkUrl", () => {
       );
     },
   );
+
+  it("does not rewrite lookalike hostnames", () => {
+    apiMock.serverInfo.value = { server_version: "2.17.0b4" };
+
+    expect(getExternalLinkUrl("https://music-assistant.io.evil.com/docs")).toBe(
+      "https://music-assistant.io.evil.com/docs",
+    );
+  });
 });
 
 describe("formatDuration", () => {

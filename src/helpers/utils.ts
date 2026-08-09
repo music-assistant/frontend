@@ -38,9 +38,14 @@ export const isWebUrl = (url?: string | null): url is string => {
 export const getExternalLinkUrl = (url?: string | null) => {
   if (!isWebUrl(url)) return undefined;
 
+  const parsedUrl = new URL(url);
   const serverVersion = api.serverInfo.value?.server_version;
-  if (serverVersion === "0.0.0" || serverVersion?.includes("b")) {
-    return url.replace("://music-assistant.io", "://beta.music-assistant.io");
+  if (
+    (serverVersion === "0.0.0" || serverVersion?.includes("b")) &&
+    parsedUrl.hostname === "music-assistant.io"
+  ) {
+    parsedUrl.hostname = "beta.music-assistant.io";
+    return parsedUrl.toString();
   }
   return url;
 };
