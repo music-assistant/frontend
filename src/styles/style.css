@@ -118,3 +118,52 @@
   --sidebar-border: rgba(255, 255, 255, 0.2);
   --sidebar-ring: #03a9f4;
 }
+
+.player-control-button {
+  color: var(--muted-foreground) !important;
+}
+
+.player-control-button:hover:not([data-suppress-hover="true"]),
+.player-control-button[data-active="true"],
+.player-control-button[data-state="open"] {
+  color: var(--primary) !important;
+}
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(4px);
+}
+
+.player-bar-popout[data-state="open"] {
+  animation: player-bar-popout-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+}
+
+.player-bar-popout[data-state="closed"] {
+  animation: player-bar-popout-out 160ms ease-in both !important;
+}
+
+.player-bar-popout[data-drag-dismissed="true"][data-state="closed"] {
+  animation: none !important;
+}
+
+@keyframes player-bar-popout-in {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes player-bar-popout-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(32px) scale(0.985);
+  }
+}

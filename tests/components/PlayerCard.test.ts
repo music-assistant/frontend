@@ -85,9 +85,13 @@ vi.mock("@/helpers/utils", () => ({
   },
 }));
 
-vi.mock("@/helpers/players", () => ({
-  isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
-}));
+vi.mock("@/helpers/players", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/helpers/players")>();
+  return {
+    ...actual,
+    isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
+  };
+});
 
 const ButtonStub = {
   template: "<button><slot /></button>",

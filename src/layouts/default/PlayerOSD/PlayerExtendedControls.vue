@@ -1,55 +1,75 @@
 <template>
-  <PlayerTrackMenu v-if="contextMenu && contextMenu.isVisible" />
+  <div class="flex min-w-0 items-center">
+    <Button
+      v-if="favorite?.isVisible && favoriteItem"
+      variant="ghost"
+      class="player-control-button player-bar-action h-20 w-12 rounded-none px-1"
+      :aria-label="
+        $t(favoriteItem.favorite ? 'favorites_remove' : 'favorites_add')
+      "
+      @click="api.toggleFavorite(favoriteItem)"
+    >
+      <span class="player-bar-action-icon">
+        <Heart
+          class="size-7"
+          :fill="favoriteItem.favorite ? 'currentColor' : 'none'"
+        />
+      </span>
+      <span class="player-bar-action-label" aria-hidden="true">&nbsp;</span>
+    </Button>
 
-  <ActivePlayerPopover
-    v-if="!store.mobileLayout && player && player.isVisible"
-    auto-show
-    align="end"
-    child-element-id="extended-controls-speaker-button"
-  />
-  <SpeakerBtn id="extended-controls-speaker-button" :color="player.color" />
+    <SleepTimerBtn />
 
-  <SleepTimerBtn class="mr-1" />
+    <QueueBtn
+      v-if="queue?.isVisible"
+      player-bar
+      :size="28"
+      class="player-control-button player-bar-action h-20 w-12 rounded-none px-1"
+    />
 
-  <QueueBtn
-    v-if="queue && queue.isVisible"
-    :color="queue.color"
-    style="padding-right: 5px"
-  />
-  <PlayerVolume
-    v-if="volume && volume.isVisible && store.activePlayer"
-    :player="store.activePlayer"
-    :width="volume.volumeSize || '150px'"
-    :allow-wheel="true"
-    :prefer-group-volume="true"
-  />
+    <PlayerTrackMenu
+      v-if="contextMenu?.isVisible"
+      :show-favorite="favorite?.showInMenu ?? !favorite?.isVisible"
+      :show-queue="queue?.showInMenu ?? !queue?.isVisible"
+    />
+
+    <PlayerBarVolumeControl
+      v-if="volume?.isVisible && store.activePlayer"
+      :player="store.activePlayer"
+    />
+    <PlayerBarGroupControl v-if="player?.isVisible" />
+    <PlayerBarPlayerButton v-if="player?.isVisible" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
+import { Button } from "@/components/ui/button";
+import api from "@/plugins/api";
+import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { Heart } from "@lucide/vue";
+import { computed } from "vue";
+import PlayerBarGroupControl from "./PlayerBarGroupControl.vue";
+import PlayerBarPlayerButton from "./PlayerBarPlayerButton.vue";
+import PlayerBarVolumeControl from "./PlayerBarVolumeControl.vue";
 import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SleepTimerBtn from "./PlayerControlBtn/SleepTimerBtn.vue";
-import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
-import PlayerVolume from "./PlayerVolume.vue";
 
-// properties
 export interface Props {
+  favorite?: {
+    isVisible?: boolean;
+    showInMenu?: boolean;
+  };
   queue?: {
     isVisible?: boolean;
-    showQueueDialog?: boolean;
-    color?: string;
+    showInMenu?: boolean;
   };
   player?: {
     isVisible?: boolean;
-    color?: string;
   };
   volume?: {
     isVisible?: boolean;
-    volumeSize?: string;
-    responsiveVolumeSize?: boolean;
-    color?: string;
   };
   contextMenu?: {
     isVisible?: boolean;
@@ -57,13 +77,15 @@ export interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  queue: () => ({ isVisible: true, showQueueDialog: false }),
+  favorite: () => ({ isVisible: false }),
+  queue: () => ({ isVisible: true }),
   player: () => ({ isVisible: true }),
-  volume: () => ({
-    isVisible: true,
-    volumeSize: "150px",
-    responsiveVolumeSize: false,
-  }),
+  volume: () => ({ isVisible: true }),
   contextMenu: () => ({ isVisible: true }),
+});
+
+const favoriteItem = computed(() => {
+  const item = store.curQueueItem?.media_item;
+  return item?.media_type === MediaType.AUDIO_SOURCE ? undefined : item;
 });
 </script>

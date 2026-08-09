@@ -1,51 +1,46 @@
 <template>
   <Button
-    variant="icon"
-    :ripple="false"
-    icon
+    variant="ghost"
+    size="icon-lg"
     :aria-label="$t('tooltip.toggle_queue')"
     v-bind="$attrs"
-    :disabled="
-      !store.activePlayerQueue ||
-      !store.activePlayerId ||
-      (store.showFullscreenPlayer &&
-        !store.curQueueItem &&
-        !store.showQueueItems)
-    "
-    :color="activeColor"
-    @click="onClick"
+    :disabled="disabled"
+    :class="{ 'text-primary': active }"
+    @click="togglePlayerQueue"
   >
-    <ListVideo :size="size" />
+    <template v-if="playerBar">
+      <span class="player-bar-action-icon">
+        <ListVideo :size="size" />
+      </span>
+      <span class="player-bar-action-label" aria-hidden="true">&nbsp;</span>
+    </template>
+    <ListVideo v-else :size="size" />
   </Button>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import Button from "@/components/Button.vue";
+import { Button } from "@/components/ui/button";
+import {
+  isPlayerQueueControlDisabled,
+  togglePlayerQueue,
+} from "@/helpers/player_queue";
 import { store } from "@/plugins/store";
 import { ListVideo } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
+  playerBar?: boolean;
   size?: number;
 }
 
 withDefaults(defineProps<Props>(), {
+  playerBar: false,
   size: 20,
 });
 
-const activeColor = computed(() =>
-  store.showFullscreenPlayer && store.showQueueItems ? "primary" : undefined,
+const active = computed(
+  () => store.showFullscreenPlayer && store.showQueueItems,
 );
-
-const onClick = function () {
-  if (store.showFullscreenPlayer && store.showQueueItems) {
-    store.showQueueItems = false;
-  } else if (store.showFullscreenPlayer && !store.showQueueItems) {
-    store.showQueueItems = true;
-  } else {
-    store.showQueueItems = true;
-    store.showFullscreenPlayer = true;
-  }
-};
+const disabled = computed(isPlayerQueueControlDisabled);
 </script>

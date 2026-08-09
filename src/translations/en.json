@@ -61,6 +61,7 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_failed": "Play action failed",
+    "lights": "Lights",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -711,6 +712,7 @@
         }
     },
     "show_info": "Show info",
+    "speakers_in_group": "Speakers in group",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
     "sort": {
@@ -1212,6 +1214,8 @@
         "click_to_change": "Click below to change output device"
     },
     "more_options": "More options",
+    "visualizers": "Visualizers",
+    "volume": "Volume",
     "edit": "Edit",
     "authors": "Authors",
     "collection": "Collection",
@@ -1240,6 +1244,7 @@
     "delete_genre": "Delete genre",
     "description": "Description",
     "genre": "Genre",
+    "grouped_volume": "Grouped volume",
     "genres": "Genres",
     "link": "Link",
     "link_alias": "Link alias",

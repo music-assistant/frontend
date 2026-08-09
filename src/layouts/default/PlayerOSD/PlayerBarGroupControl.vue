@@ -1,0 +1,244 @@
+<template>
+  <template v-if="player && canEditGroup">
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition-opacity duration-200"
+        enter-from-class="opacity-0"
+        leave-active-class="transition-opacity duration-200"
+        leave-to-class="opacity-0"
+      >
+        <button
+          v-if="open"
+          type="button"
+          :class="[
+            'modal-backdrop player-group-backdrop fixed inset-x-0 top-0 z-[99999]',
+            store.mobileLayout
+              ? 'player-group-backdrop-mobile'
+              : 'player-group-backdrop-desktop',
+          ]"
+          :aria-label="$t('close')"
+          @click="handleOpenChange(false)"
+        ></button>
+      </Transition>
+    </Teleport>
+
+    <Popover :open="open" @update:open="handleOpenChange">
+      <PopoverAnchor :reference="playerBarEndAnchor" as-child>
+        <Button
+          data-player-group-trigger
+          variant="ghost"
+          :class="[
+            navigation
+              ? 'player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1'
+              : 'player-control-button player-bar-action player-bar-group-button h-20 w-[72px] rounded-none px-1',
+          ]"
+          :data-active="open"
+          :data-suppress-hover="suppressHover"
+          :aria-label="$t('tooltip.group_members')"
+          :aria-pressed="open"
+          @click="toggleOpen"
+          @pointerleave="suppressHover = false"
+        >
+          <span
+            :class="
+              navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
+            "
+          >
+            <GroupedPlayers :stroke-width="1.4" class="size-8" />
+          </span>
+          <span
+            :class="
+              navigation ? 'mobile-navigation-label' : 'player-bar-action-label'
+            "
+          >
+            {{ memberCount }}
+            {{ memberCount === 1 ? $t("player_type.player") : $t("players") }}
+          </span>
+        </Button>
+      </PopoverAnchor>
+
+      <PopoverContent
+        data-player-panel
+        side="top"
+        align="end"
+        :side-offset="
+          store.mobileLayout
+            ? MOBILE_PLAYER_BAR_POPOUT_GAP
+            : DESKTOP_PLAYER_BAR_POPOUT_GAP
+        "
+        :collision-padding="8"
+        :class="[
+          'player-bar-popout player-group-popover flex flex-col gap-0 overflow-hidden p-0',
+          store.mobileLayout
+            ? 'max-h-[75dvh] w-[calc(100vw-1rem)]'
+            : 'max-h-[min(70dvh,600px)] w-[400px] max-w-[calc(100vw-1rem)]',
+        ]"
+        @close-auto-focus="preventAutoFocus"
+        @open-auto-focus="preventAutoFocus"
+        @interact-outside="handleInteractOutside"
+      >
+        <PlayerGroupPanel
+          v-model:filter="filter"
+          :player="player"
+          :members="groupMembers"
+          :has-lights="hasLights"
+          :has-visualizers="hasVisualizers"
+          @dismiss="handleOpenChange(false)"
+        />
+      </PopoverContent>
+    </Popover>
+  </template>
+</template>
+
+<script setup lang="ts">
+import { GroupedPlayers } from "@/components/ma-icons";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  canEditPlayerGroup,
+  getPlayerGroupMemberCount,
+  groupMemberPickerVisible,
+} from "@/helpers/players";
+import type { PlayerGroupFilter } from "@/helpers/player_group";
+import {
+  DESKTOP_PLAYER_BAR_POPOUT_GAP,
+  MOBILE_PLAYER_BAR_POPOUT_GAP,
+  playerBarEndAnchor,
+} from "@/helpers/player_bar";
+import { api } from "@/plugins/api";
+import { type Player, PlayerType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import { computed, ref, watch } from "vue";
+import PlayerGroupPanel from "./PlayerGroupPanel.vue";
+
+withDefaults(
+  defineProps<{
+    navigation?: boolean;
+  }>(),
+  {
+    navigation: false,
+  },
+);
+
+const open = ref(false);
+const suppressHover = ref(false);
+const filter = ref<PlayerGroupFilter>("all");
+const player = computed(() => store.activePlayer);
+const canEditGroup = computed(
+  () => player.value && canEditPlayerGroup(player.value),
+);
+const memberCount = computed(() =>
+  player.value ? getPlayerGroupMemberCount(player.value) : 0,
+);
+const groupMembers = computed(() => {
+  if (!player.value) return [];
+  const playerIds = new Set(player.value.group_members);
+  const hasGroupMembers =
+    player.value.type === PlayerType.GROUP
+      ? playerIds.size > 0
+      : [...playerIds].some((playerId) => playerId !== player.value?.player_id);
+  if (player.value.type !== PlayerType.GROUP) {
+    if (hasGroupMembers) {
+      playerIds.add(player.value.player_id);
+    } else {
+      playerIds.delete(player.value.player_id);
+    }
+  }
+  return [...playerIds]
+    .map((playerId) => api.players[playerId])
+    .filter((member): member is Player => member?.available === true)
+    .sort((left, right) =>
+      left.name.localeCompare(right.name, undefined, {
+        sensitivity: "base",
+      }),
+    );
+});
+
+const groupCandidates = computed(() => {
+  if (!player.value) return [];
+  const memberIds = new Set(player.value.group_members);
+  return Object.values(api.players).filter(
+    (candidate) =>
+      candidate.available &&
+      groupMemberPickerVisible(candidate) &&
+      candidate.type !== PlayerType.GROUP &&
+      (!candidate.active_group ||
+        candidate.active_group === player.value?.player_id) &&
+      (memberIds.has(candidate.player_id) ||
+        (candidate.player_id !== player.value?.player_id &&
+          (player.value?.can_group_with.includes(candidate.player_id) ||
+            player.value?.can_group_with.includes(candidate.provider)))),
+  );
+});
+
+const hasLights = computed(() =>
+  groupCandidates.value.some(
+    (candidate) => candidate.type === PlayerType.LIGHT,
+  ),
+);
+const hasVisualizers = computed(() =>
+  groupCandidates.value.some(
+    (candidate) => candidate.type === PlayerType.VISUALIZER,
+  ),
+);
+
+watch(
+  () => store.activePlayerId,
+  () => handleOpenChange(false),
+);
+
+watch([hasLights, hasVisualizers], () => {
+  if (
+    (filter.value === "lights" && !hasLights.value) ||
+    (filter.value === "visualizers" && !hasVisualizers.value)
+  ) {
+    filter.value = "all";
+  }
+});
+
+function handleOpenChange(value: boolean) {
+  open.value = value;
+  if (!value) filter.value = "all";
+}
+
+function toggleOpen() {
+  suppressHover.value = open.value;
+  open.value = !open.value;
+}
+
+function preventAutoFocus(event: Event) {
+  event.preventDefault();
+}
+
+function handleInteractOutside(event: Event) {
+  const originalEvent = (event as CustomEvent<{ originalEvent?: Event }>).detail
+    ?.originalEvent;
+  const target = originalEvent?.target;
+  if (
+    target instanceof Element &&
+    target.closest(
+      "[data-player-group-trigger], [data-slot='dropdown-menu-content']",
+    )
+  ) {
+    event.preventDefault();
+  }
+}
+</script>
+
+<style>
+.player-group-backdrop-desktop {
+  bottom: 104px !important;
+}
+
+.player-group-backdrop-mobile {
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.player-group-popover {
+  z-index: 100000 !important;
+}
+</style>
