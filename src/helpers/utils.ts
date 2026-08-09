@@ -52,7 +52,7 @@ export const getExternalLinkUrl = (url?: string | null) => {
 
 export const openLinkInNewTab = function (url: string) {
   const target = getExternalLinkUrl(url);
-  if (target) window.open(target, "_blank");
+  if (target) openWebUrlOnce(target);
 };
 
 export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {

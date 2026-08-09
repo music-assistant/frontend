@@ -7,13 +7,14 @@ import {
   kebabize,
   markdownToHtml,
   numberRange,
+  openLinkInNewTab,
   paletteFromServer,
   rgbToHex,
   sleep,
   truncateString,
 } from "@/helpers/utils";
 import type { MediaItemPalette } from "@/plugins/api/interfaces";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
@@ -34,6 +35,10 @@ vi.mock("@/plugins/breakpoint", () => ({
 
 beforeEach(() => {
   apiMock.serverInfo.value = null;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe("getExternalLinkUrl", () => {
@@ -64,6 +69,26 @@ describe("getExternalLinkUrl", () => {
     expect(getExternalLinkUrl("https://music-assistant.io.evil.com/docs")).toBe(
       "https://music-assistant.io.evil.com/docs",
     );
+  });
+});
+
+describe("openLinkInNewTab", () => {
+  it("opens normalized links without exposing the opener", () => {
+    apiMock.serverInfo.value = { server_version: "2.17.0b4" };
+    const anchors: HTMLAnchorElement[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      anchors.push(this);
+    });
+
+    openLinkInNewTab("https://music-assistant.io/docs");
+
+    expect(anchors[0].getAttribute("href")).toBe(
+      "https://beta.music-assistant.io/docs",
+    );
+    expect(anchors[0].getAttribute("target")).toBe("_blank");
+    expect(anchors[0].getAttribute("rel")).toBe("noopener");
   });
 });
 
