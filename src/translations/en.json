@@ -1565,6 +1565,7 @@
                     "default_voice": "Default",
                     "validation": {
                         "name_required": "Host name is required",
+                        "duplicate_name": "A host named «{0}» already exists",
                         "segments_required": "Add at least one segment",
                         "segment_prompt_required": "Every segment needs a prompt"
                     }

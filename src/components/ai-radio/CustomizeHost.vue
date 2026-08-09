@@ -233,10 +233,17 @@ const TALK_LEVELS: TalkativenessLevel[] = ["rarely", "normal", "chatty"];
 
 const router = useRouter();
 const { sections, loadSections } = useShows();
-const { ttsEngines, getHost, saveSections, saveHost, loadTtsEngines } =
-  useHosts();
+const {
+  hosts,
+  ttsEngines,
+  getHost,
+  loadHosts,
+  saveSections,
+  saveHost,
+  loadTtsEngines,
+} = useHosts();
 
-const loading = ref(!!props.hostId);
+const loading = ref(true);
 const loadError = ref("");
 const saving = ref(false);
 const draft = ref<HostDraft | null>(null);
@@ -371,6 +378,20 @@ async function handleSave() {
   saving.value = true;
   try {
     const { host, sections: compiledSections } = compileHost(draft.value);
+    // The server upserts by id, and a new host's id is derived from its name,
+    // so an existing name would silently overwrite that host. A rename keeps
+    // its own id, hence the create-only check.
+    if (
+      !props.hostId &&
+      hosts.value.some((existing) => existing.id === host.id)
+    ) {
+      toast.error(
+        $t("providers.ai_radio.hosts.editor.validation.duplicate_name", [
+          host.name,
+        ]),
+      );
+      return;
+    }
     await saveSections(compiledSections);
     await saveHost(host);
     originalSnapshot = JSON.stringify(draft.value);
@@ -400,6 +421,9 @@ onMounted(async () => {
       const host = await getHost(props.hostId);
       draft.value = decompileHost(host, sections.value);
     } else {
+      // Needed by the save-time id collision check; not being able to list
+      // hosts must not block creating one.
+      await loadHosts().catch(() => undefined);
       draft.value = newHostDraft();
     }
     originalSnapshot = JSON.stringify(draft.value);
