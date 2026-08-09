@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { openActionResultUrl, openActionUrlEntries } from "./utils";
+import { isWebUrl, openActionResultUrl, openActionUrlEntries } from "./utils";
 import {
   type ConfigEntry,
   ConfigEntryType,
@@ -81,6 +81,19 @@ describe("openActionUrlEntries", () => {
     const entries = [stringEntry("a"), stringEntry("b")];
     expect(openActionUrlEntries(entries)).toEqual(entries);
     expect(click).not.toHaveBeenCalled();
+  });
+});
+
+describe("isWebUrl", () => {
+  it.each([
+    ["https://example.com", true],
+    ["http://192.168.1.10:8095", true],
+    ["javascript:alert(1)", false],
+    ["data:text/html,hi", false],
+    ["not a url", false],
+    [undefined, false],
+  ])("validates %s as %s", (url, expected) => {
+    expect(isWebUrl(url)).toBe(expected);
   });
 });
 

@@ -26,19 +26,33 @@ import type {
 } from "@/plugins/api/interfaces";
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
-export const openLinkInNewTab = function (url: string) {
-  if (!url) return url;
-  // auto-translate music-assistant.io links to beta site
-  if (
-    api &&
-    api.serverInfo &&
-    api.serverInfo.value &&
-    (api.serverInfo.value.server_version == "0.0.0" ||
-      api.serverInfo.value.server_version.includes("b"))
-  ) {
-    url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
+export const isWebUrl = (url?: string | null): url is string => {
+  if (!url) return false;
+  try {
+    return ["http:", "https:"].includes(new URL(url).protocol);
+  } catch {
+    return false;
   }
-  window.open(url, "_blank");
+};
+
+export const getExternalLinkUrl = (url?: string | null) => {
+  if (!isWebUrl(url)) return undefined;
+
+  const parsedUrl = new URL(url);
+  const serverVersion = api.serverInfo.value?.server_version;
+  if (
+    (serverVersion === "0.0.0" || serverVersion?.includes("b")) &&
+    parsedUrl.hostname === "music-assistant.io"
+  ) {
+    parsedUrl.hostname = "beta.music-assistant.io";
+    return parsedUrl.toString();
+  }
+  return url;
+};
+
+export const openLinkInNewTab = function (url: string) {
+  const target = getExternalLinkUrl(url);
+  if (target) openWebUrlOnce(target);
 };
 
 export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
@@ -60,12 +74,7 @@ export const openActionResultUrl = (url?: string | null) => {
 const openWebUrlOnce = (url: string) => {
   // Open via an anchor click, which browsers treat more leniently than
   // window.open when the triggering user gesture has just expired.
-  try {
-    if (!["http:", "https:"].includes(new URL(url).protocol)) return;
-  } catch {
-    // not a parseable url: ignore silently
-    return;
-  }
+  if (!isWebUrl(url)) return;
   const a = document.createElement("a");
   a.setAttribute("href", url);
   a.setAttribute("target", "_blank");
