@@ -432,16 +432,28 @@ interface CompiledSegments {
  * order, everything else -> a single between_songs rule where every_song is
  * MUST and the rest are OPTIONAL with derived chance/guards). `idBase` seeds
  * the merge section's id (station or host id). Shared by compileShow/compileHost.
+ * `namespaceIds` additionally prefixes every regular segment id with
+ * `idBase` (compileHost only — hosts' sections live in the flat shared
+ * ai_radio/sections namespace, unlike a show's self-contained station.sections,
+ * so two hosts must not be able to collide on e.g. both having an "intro").
+ * The prefix check is idempotent: an id already carrying it (round-tripped
+ * back from decompileHost into the draft) is left alone rather than
+ * re-prefixed on every subsequent compile.
  */
 const compileSegments = (
   segments: ShowSegment[],
   idBase: string,
+  namespaceIds = false,
 ): CompiledSegments => {
   const usedIds = new Set<string>();
 
   const sections: AIRadioSection[] = [];
   const resolved = segments.map((segment) => {
-    const id = dedupeId(slugify(segment.id || segment.name), usedIds);
+    const rawId = segment.id || segment.name;
+    const prefix = `${idBase}_`;
+    const namespacedId =
+      namespaceIds && !rawId.startsWith(prefix) ? `${prefix}${rawId}` : rawId;
+    const id = dedupeId(slugify(namespacedId), usedIds);
     sections.push({
       id,
       name: segment.name,
@@ -545,7 +557,8 @@ export interface CompiledHost {
  * running the same segment/section_order compilation as compileShow (see
  * compileSegments). Sections are returned rather than embedded: v3 hosts
  * don't carry section content, so callers must persist them explicitly
- * (ai_radio/sections/save) before saving the host.
+ * (ai_radio/sections/save) before saving the host. Section ids are namespaced
+ * with the host id so two hosts never collide in the shared sections library.
  */
 export const compileHost = (draft: HostDraft): CompiledHost => {
   const hostId = draft.id.trim() || slugify(draft.name);
@@ -553,6 +566,7 @@ export const compileHost = (draft: HostDraft): CompiledHost => {
   const { sections, sectionOrder, mergeSectionId } = compileSegments(
     segments,
     hostId,
+    true,
   );
 
   return {

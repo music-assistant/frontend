@@ -133,9 +133,41 @@ describe("compileHost", () => {
     // sections must carry full content (not just ids) so the host save flow
     // can persist them via ai_radio/sections/save before saving the host.
     expect(sections.map((s) => s.id)).toEqual(host.section_ids);
-    expect(sections.find((s) => s.id === "intro")?.prompt).toBe(
+    expect(sections.find((s) => s.id === "rick_intro")?.prompt).toBe(
       draft.segments[0].prompt,
     );
+  });
+
+  it("namespaces section ids with the host id, so two hosts never collide in the shared sections library", () => {
+    const draftFor = (hostId: string): HostDraft => ({
+      id: hostId,
+      name: hostId,
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
+      talkativeness: "normal",
+    });
+    const a = compileHost(draftFor("host_a"));
+    const b = compileHost(draftFor("host_b"));
+
+    const idsA = new Set(a.sections.map((s) => s.id));
+    const idsB = new Set(b.sections.map((s) => s.id));
+    expect(idsA.size).toBeGreaterThan(0);
+    expect([...idsA].some((id) => idsB.has(id))).toBe(false);
+    expect(a.host.merge_section_id).not.toBe(b.host.merge_section_id);
+  });
+
+  it("leaves an already-namespaced segment id alone (idempotent across repeated edit/save cycles)", () => {
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: [{ ...PRESETS[0].segments[0], id: "rick_intro" }],
+      talkativeness: "normal",
+    };
+    const { sections } = compileHost(draft);
+    expect(sections.map((s) => s.id)).toEqual(["rick_intro", "rick_smoother"]);
   });
 
   it("applies talkativeness the same way compileShow's callers do", () => {
@@ -153,7 +185,7 @@ describe("compileHost", () => {
     const betweenRule = host.section_order.find(
       (rule) => rule.when === "between_songs",
     );
-    expect(betweenRule?.flow).toEqual([{ MUST: "transition" }]);
+    expect(betweenRule?.flow).toEqual([{ MUST: "rick_transition" }]);
   });
 });
 
@@ -172,8 +204,11 @@ describe("decompileHost", () => {
     expect(round.name).toBe("Rick");
     expect(round.ttsEngine).toBe("engine-1");
     // "normal" talkativeness leaves segments untouched, so a real sectionMap
-    // lookup should recover them exactly (id, name, prompt, webSearch, maxChars, plays).
-    expect(round.segments).toEqual(draft.segments);
+    // lookup should recover them exactly aside from ids, which compileHost
+    // namespaces with the host id (see the compileHost describe block above).
+    expect(round.segments).toEqual(
+      draft.segments.map((s) => ({ ...s, id: `rick_${s.id}` })),
+    );
   });
 
   it("resets talkativeness to normal, since it can't be inverted from section_order", () => {

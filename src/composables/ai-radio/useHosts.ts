@@ -1,3 +1,4 @@
+import { useShows } from "@/composables/ai-radio/useShows";
 import api from "@/plugins/api";
 import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -43,11 +44,17 @@ async function getHost(hostId: string): Promise<AIRadioHost> {
   });
 }
 
-/** Persists a host's section content; callers must save all of a host's compiled sections before saveHost. */
+/**
+ * Persists a host's section content; callers must save all of a host's
+ * compiled sections before saveHost. Refreshes the shared sections cache
+ * (also used to decompile hosts/shows) so a subsequent decompile — e.g. the
+ * editor being reopened — doesn't read back stale, pre-save content.
+ */
 async function saveSections(sections: AIRadioSection[]): Promise<void> {
   for (const section of sections) {
     await api.sendCommand("ai_radio/sections/save", { section });
   }
+  await useShows().loadSections();
 }
 
 async function saveHost(host: AIRadioHost): Promise<AIRadioHost> {

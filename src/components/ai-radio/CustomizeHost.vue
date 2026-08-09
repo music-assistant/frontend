@@ -370,9 +370,9 @@ onMounted(async () => {
   try {
     void loadTtsEngines();
     if (props.hostId) {
-      if (sections.value.length === 0) {
-        await loadSections();
-      }
+      // Always fetch fresh: the shared sections cache can be stale right
+      // after a save (edit -> save -> reopen must not decompile old content).
+      await loadSections();
       const host = await getHost(props.hostId);
       draft.value = decompileHost(host, sections.value);
     } else {
