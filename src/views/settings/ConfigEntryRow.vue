@@ -94,8 +94,16 @@ const hasDescriptionOrHelpLink = computed(() => {
   margin-bottom: 8px;
 }
 
+.config-entry:has(+ .config-entry-hass-picker) {
+  margin-bottom: 4px;
+}
+
+.config-entry:has(+ .config-entry-hass-picker)
+  :deep(.v-input__details:not(:has(.v-messages__message))) {
+  display: none;
+}
+
 .config-entry-hass-picker {
-  margin-top: -8px;
   margin-bottom: 16px;
 }
 
