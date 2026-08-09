@@ -1,8 +1,19 @@
-import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
+import {
+  getPlayerMenuItems,
+  getPlayerSetupMenuItem,
+} from "@/helpers/player_menu_items";
+import {
+  PLAYER_CONTROL_NONE,
+  PlayerType,
+  type Player,
+  type PlayerQueue,
+} from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { emitEvent, storeMock } = vi.hoisted(() => ({
+const { emitEvent, isAdmin, routerPush, storeMock } = vi.hoisted(() => ({
   emitEvent: vi.fn(),
+  isAdmin: vi.fn(),
+  routerPush: vi.fn(),
   storeMock: {
     showFullscreenPlayer: true,
     showPlayersMenu: true,
@@ -10,18 +21,20 @@ const { emitEvent, storeMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/plugins/api", () => ({
-  default: {},
+  default: {
+    players: {},
+  },
 }));
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
-    isAdmin: () => false,
+    isAdmin,
   },
 }));
 
 vi.mock("@/plugins/router", () => ({
   default: {
-    push: vi.fn(),
+    push: routerPush,
   },
 }));
 
@@ -46,6 +59,28 @@ vi.mock("@/composables/useAudioOverlay", () => ({
     overlayAvailable: { value: false },
   }),
 }));
+
+function makePlayer(overrides: Partial<Player> = {}): Player {
+  return {
+    player_id: "kitchen",
+    type: PlayerType.PLAYER,
+    power_control: PLAYER_CONTROL_NONE,
+    source_list: [],
+    sound_mode_list: [],
+    options: [],
+    needs_setup: false,
+    ...overrides,
+  } as Player;
+}
+
+function makeQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
+  return {
+    queue_id: "kitchen",
+    active: true,
+    items: 0,
+    ...overrides,
+  } as PlayerQueue;
+}
 
 describe("getPlayerSetupMenuItem", () => {
   beforeEach(() => {
@@ -87,5 +122,54 @@ describe("getPlayerSetupMenuItem", () => {
       kind: "player",
       playerId: "kitchen",
     });
+  });
+});
+
+describe("getPlayerMenuItems settings shortcuts", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    isAdmin.mockReturnValue(true);
+    storeMock.showFullscreenPlayer = true;
+    storeMock.showPlayersMenu = true;
+  });
+
+  it("shows both settings shortcuts in the fullscreen queue menu", () => {
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+
+    expect(menuItems.map((item) => item.label)).toEqual(
+      expect.arrayContaining(["open_queue_settings", "open_player_settings"]),
+    );
+  });
+
+  it("shows queue settings in the player menu only for an active MA queue", () => {
+    const activeQueueItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "player",
+    });
+    const externalSourceItems = getPlayerMenuItems(makePlayer(), undefined, {
+      context: "player",
+    });
+
+    expect(activeQueueItems.map((item) => item.label)).toContain(
+      "open_queue_settings",
+    );
+    expect(externalSourceItems.map((item) => item.label)).not.toContain(
+      "open_queue_settings",
+    );
+  });
+
+  it("opens the settings page for each shortcut", () => {
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+
+    menuItems.find((item) => item.label === "open_queue_settings")?.action?.();
+    expect(routerPush).toHaveBeenCalledWith("/settings/editqueue/kitchen");
+
+    menuItems.find((item) => item.label === "open_player_settings")?.action?.();
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+    expect(storeMock.showPlayersMenu).toBe(false);
   });
 });

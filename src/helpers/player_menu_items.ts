@@ -271,8 +271,8 @@ export const getPlayerMenuItems = (
 
   // settings shortcuts (admin only)
   if (authManager.isAdmin()) {
-    // open queue settings (queue menu only)
-    if (isQueue) {
+    // open queue settings (queue menu, or player menu with an MA queue)
+    if (isQueue || playerQueue) {
       menuItems.push({
         label: "open_queue_settings",
         labelArgs: [],
@@ -287,19 +287,17 @@ export const getPlayerMenuItems = (
       });
     }
 
-    // open player settings (player menu only)
-    if (isPlayer) {
-      menuItems.push({
-        label: "open_player_settings",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}`);
-        },
-        icon: "mdi-cog-outline",
-      });
-    }
+    // open player settings (both menus)
+    menuItems.push({
+      label: "open_player_settings",
+      labelArgs: [],
+      action: () => {
+        store.showFullscreenPlayer = false;
+        store.showPlayersMenu = false;
+        router.push(`/settings/editplayer/${player.player_id}`);
+      },
+      icon: "mdi-cog-outline",
+    });
 
     // configure the player or re-run its setup flow on demand
     if (isPlayer) {
