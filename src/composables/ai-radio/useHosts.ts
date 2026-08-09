@@ -19,9 +19,8 @@ const loadingHosts = ref(false);
 const loadingTtsEngines = ref(false);
 const loadingQueueDjStatus = ref(false);
 const savingHost = ref(false);
-// Host/queue id currently being deleted/assigned, so only that row reflects it.
+// Host id currently being deleted, so only that row reflects it.
 const deletingHostId = ref("");
-const settingQueueDjId = ref("");
 
 // The queue menu's AI DJ submenu is only offered when the ai_radio provider
 // is loaded. Reactive on api.providers, so no network call is needed to
@@ -113,17 +112,12 @@ async function setQueueDj(
   queueId: string,
   hostId: string | null,
 ): Promise<Record<string, string>> {
-  settingQueueDjId.value = queueId;
-  try {
-    const result = await api.sendCommand<Record<string, string>>(
-      "ai_radio/queue_dj/set",
-      { queue_id: queueId, host_id: hostId },
-    );
-    queueDjStatus.value = result || {};
-    return queueDjStatus.value;
-  } finally {
-    settingQueueDjId.value = "";
-  }
+  const result = await api.sendCommand<Record<string, string>>(
+    "ai_radio/queue_dj/set",
+    { queue_id: queueId, host_id: hostId },
+  );
+  queueDjStatus.value = result || {};
+  return queueDjStatus.value;
 }
 
 async function loadQueueDjStatus(): Promise<Record<string, string>> {
@@ -150,7 +144,6 @@ export function useHosts() {
     loadingQueueDjStatus,
     savingHost,
     deletingHostId,
-    settingQueueDjId,
     loadHosts,
     getHost,
     saveSections,
