@@ -1,6 +1,6 @@
 import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { MediaType, type SearchResults } from "@/plugins/api/interfaces";
+import type { SearchResults } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

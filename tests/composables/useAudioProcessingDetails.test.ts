@@ -23,20 +23,18 @@ import {
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 
-const { providerManifest } = await vi.hoisted(async () => {
+vi.mock("@/plugins/api", async () => {
   const { providerManifest } = await import("../fixtures/providerManifest");
-  return { providerManifest };
+  return {
+    default: {
+      getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(),
+      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(
+        (providerId: string) => providerManifest({ domain: providerId }),
+      ),
+      players: {},
+    },
+  };
 });
-
-vi.mock("@/plugins/api", () => ({
-  default: {
-    getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(),
-    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(
-      (providerId: string) => providerManifest({ domain: providerId }),
-    ),
-    players: {},
-  },
-}));
 vi.mock("@/composables/useDSPPresets", () => ({
   useDSPPresets: () => ({
     getPresetName: vi.fn(),

@@ -4,7 +4,6 @@ import {
   ConfigEntryType,
   EventType,
   ProviderStatus,
-  type ConfigEntry,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
@@ -765,8 +764,8 @@ describe("EditProvider", () => {
 /**
  * The spotify provider config these tests load, with a single `account` entry.
  *
- * The view reads the manifest from `api.providerManifests`, not from the
- * config, so the config's own manifest stays at the shared default.
+ * The view resolves the manifest from `api.providerManifests` first, so this
+ * config's own manifest never surfaces.
  */
 function spotifyConfig(
   status: ProviderStatus,

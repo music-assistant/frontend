@@ -8,8 +8,8 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, nextTick, ref, type EffectScope } from "vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { track as trackFixture } from "../fixtures/track";
-import { genre as genreFixture } from "../fixtures/genre";
+import { track } from "../fixtures/track";
+import { genre } from "../fixtures/genre";
 
 const { mockSearch, mockGetLibraryGenres, mockProviders, mockManifests } =
   vi.hoisted(() => {
@@ -52,16 +52,20 @@ const results = (partial: Partial<SearchResults>): SearchResults => ({
   ...partial,
 });
 
-const track = (itemId: string, name: string, provider = "library"): Track =>
-  trackFixture({
+const trackFixture = (
+  itemId: string,
+  name: string,
+  provider = "library",
+): Track =>
+  track({
     item_id: itemId,
     provider,
     name,
     uri: `test://track/${itemId}`,
   });
 
-const genre = (itemId: string, name: string): Genre =>
-  genreFixture({ item_id: itemId, name, uri: `test://genre/${itemId}` });
+const genreFixture = (itemId: string, name: string): Genre =>
+  genre({ item_id: itemId, name, uri: `test://genre/${itemId}` });
 
 const provider = (
   instanceId: string,
@@ -140,10 +144,12 @@ describe("useProgressiveSearch", () => {
     mockSearch.mockImplementation(
       (_query, _mediaTypes, _limit, providers: string[] = []) => {
         if (providers[0] === LIBRARY_SEARCH_TARGET)
-          return Promise.resolve(results({ tracks: [track("l1", "Lib hit")] }));
+          return Promise.resolve(
+            results({ tracks: [trackFixture("l1", "Lib hit")] }),
+          );
         if (providers[0] === "spotify")
           return Promise.resolve(
-            results({ tracks: [track("s1", "Spotify hit", "spotify")] }),
+            results({ tracks: [trackFixture("s1", "Spotify hit", "spotify")] }),
           );
         return Promise.resolve(emptyResults());
       },
@@ -171,11 +177,11 @@ describe("useProgressiveSearch", () => {
       (_query, _mediaTypes, _limit, providers: string[] = []) => {
         if (providers[0] === LIBRARY_SEARCH_TARGET)
           return Promise.resolve(
-            results({ tracks: [track("l1", "Queen tribute")] }),
+            results({ tracks: [trackFixture("l1", "Queen tribute")] }),
           );
         if (providers[0] === "spotify")
           return Promise.resolve(
-            results({ tracks: [track("s1", "Queen", "spotify")] }),
+            results({ tracks: [trackFixture("s1", "Queen", "spotify")] }),
           );
         return Promise.resolve(emptyResults());
       },
@@ -236,13 +242,15 @@ describe("useProgressiveSearch", () => {
         return new Promise<SearchResults>((resolve) => {
           resolveFirst = resolve;
         });
-      return Promise.resolve(results({ tracks: [track("t2", "Second")] }));
+      return Promise.resolve(
+        results({ tracks: [trackFixture("t2", "Second")] }),
+      );
     });
     const { search, searchResult } = setup();
 
     await search("first");
     await search("second");
-    resolveFirst(results({ tracks: [track("t1", "First")] }));
+    resolveFirst(results({ tracks: [trackFixture("t1", "First")] }));
     await flush();
 
     expect(searchResult.value?.tracks.map((item) => item.name)).toEqual([
@@ -266,7 +274,7 @@ describe("useProgressiveSearch", () => {
           );
         }
         return Promise.resolve(
-          results({ tracks: [track("s1", "Late", "spotify")] }),
+          results({ tracks: [trackFixture("s1", "Late", "spotify")] }),
         );
       },
     );
@@ -286,7 +294,7 @@ describe("useProgressiveSearch", () => {
   });
 
   it("searches only the library for a genre-only search", async () => {
-    const genres = [genre("g1", "Rock")];
+    const genres = [genreFixture("g1", "Rock")];
     mockGetLibraryGenres.mockResolvedValue(genres);
     const mediaTypes = ref<MediaType[]>([MediaType.GENRE]);
     const { search, searchResult } = setup({ mediaTypes });

@@ -93,7 +93,13 @@ describe("EditPlayer", () => {
     });
     apiMock.getPlayerConfig.mockResolvedValue(playerConfig());
     apiMock.getProvider.mockReturnValue(providerInstance());
-    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+    apiMock.getProviderManifest.mockReturnValue(
+      providerManifest({
+        type: ProviderType.PLAYER,
+        domain: "chromecast",
+        name: "Chromecast",
+      }),
+    );
     apiMock.reloadProvider.mockResolvedValue(undefined);
     apiMock.savePlayerConfig.mockResolvedValue(playerConfig());
     apiMock.providerManifests = { chromecast: { name: "Chromecast" } };

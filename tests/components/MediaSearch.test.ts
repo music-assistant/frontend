@@ -294,7 +294,9 @@ function artistRef(name: string): ItemMapping {
   };
 }
 
-function trackFixture(overrides: Partial<Track> & Pick<Track, "uri">): Track {
+function trackFixture(
+  overrides: Omit<Partial<Track>, "item_id" | "provider"> & Pick<Track, "uri">,
+): Track {
   return track({
     ...overrides,
     item_id: overrides.uri,
@@ -303,7 +305,8 @@ function trackFixture(overrides: Partial<Track> & Pick<Track, "uri">): Track {
 }
 
 function playlistFixture(
-  overrides: Partial<Playlist> & Pick<Playlist, "uri">,
+  overrides: Omit<Partial<Playlist>, "item_id" | "provider"> &
+    Pick<Playlist, "uri">,
 ): Playlist {
   return playlist({
     ...overrides,
@@ -342,7 +345,9 @@ function artistFixture(overrides: { uri: string; name: string }): Artist {
   };
 }
 
-function genreFixture(overrides: Partial<Genre> & Pick<Genre, "uri">): Genre {
+function genreFixture(
+  overrides: Omit<Partial<Genre>, "item_id" | "provider"> & Pick<Genre, "uri">,
+): Genre {
   return genre({
     ...overrides,
     item_id: overrides.uri,

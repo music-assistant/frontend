@@ -1,6 +1,6 @@
 import MediaSearch from "@/components/MediaSearch.vue";
 import MusicQuizSourceSelector from "@/components/music-quiz/MusicQuizSourceSelector.vue";
-import { type Playlist } from "@/plugins/api/interfaces";
+import type { Playlist } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
