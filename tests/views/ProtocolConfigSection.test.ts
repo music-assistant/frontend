@@ -148,6 +148,7 @@ describe("ProtocolConfigSection", () => {
     expect(
       renderedRows(wrapper).map((configRow) => configRow.props("disabled")),
     ).toEqual([true, true]);
+    expect(wrapper.text()).toContain("settings.protocol_provider_unavailable");
   });
 });
 

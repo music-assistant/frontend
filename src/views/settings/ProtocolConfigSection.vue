@@ -59,6 +59,12 @@
               </span>
             </AccordionTrigger>
             <AccordionContent class="border-t pt-4">
+              <div
+                v-if="!isProtocolProviderAvailable(panel)"
+                class="protocol-empty-message"
+              >
+                {{ $t("settings.protocol_provider_unavailable") }}
+              </div>
               <ConfigEntryRow
                 v-for="conf_entry of protocolEntriesForCategory(panel)"
                 :key="conf_entry.key"
@@ -73,7 +79,10 @@
                 @help="emit('help', conf_entry)"
               />
               <div
-                v-if="entriesForCategory(panel).length === 0"
+                v-if="
+                  isProtocolProviderAvailable(panel) &&
+                  entriesForCategory(panel).length === 0
+                "
                 class="protocol-empty-message"
               >
                 {{ getProtocolEmptyMessage(panel) }}
@@ -239,13 +248,6 @@ const hasHiddenAdvancedSettings = function (category: string): boolean {
 };
 
 const getProtocolEmptyMessage = function (category: string): string {
-  const enabledEntry = getProtocolEnabledEntry(category);
-
-  // Optional protocol whose backing provider is unavailable
-  if (enabledEntry && !isProtocolProviderAvailable(category)) {
-    return $t("settings.protocol_provider_unavailable");
-  }
-
   if (hasHiddenAdvancedSettings(category)) {
     return $t("settings.protocol_no_settings_with_advanced");
   }
