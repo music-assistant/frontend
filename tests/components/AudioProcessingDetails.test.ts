@@ -22,12 +22,12 @@ import {
 import {
   audioDSPDetails,
   audioFidelity,
-  audioFormat,
   audioNormalizationDetails,
   audioOutputDetails,
   audioProcessingChain,
   audioQueueProcessing,
 } from "../fixtures/audioProcessing";
+import { audioFormat } from "../fixtures/audioFormat";
 import { providerManifest } from "../fixtures/providerManifest";
 
 const apiMock = vi.hoisted(() => ({
@@ -936,11 +936,11 @@ function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
   return audioFormat({ sample_rate: 96000, bit_depth: 24, ...overrides });
 }
 
-function makeStreamDetails(audioFormat = makeFormat()): StreamDetails {
+function makeStreamDetails(format = makeFormat()): StreamDetails {
   return {
     provider: "filesystem--music",
     item_id: "track-1",
-    audio_format: audioFormat,
+    audio_format: format,
     media_type: MediaType.TRACK,
     stream_metadata: null,
     duration: null,

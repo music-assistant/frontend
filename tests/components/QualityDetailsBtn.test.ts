@@ -13,10 +13,10 @@ import {
 import { i18n } from "@/plugins/i18n";
 import {
   audioFidelity,
-  audioFormat,
   audioOutputDetails,
   audioProcessingChain,
 } from "../fixtures/audioProcessing";
+import { audioFormat } from "../fixtures/audioFormat";
 
 const storeMock = vi.hoisted(() => ({
   activePlayerQueue: undefined as PlayerQueue | undefined,

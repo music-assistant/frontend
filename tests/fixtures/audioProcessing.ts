@@ -1,35 +1,16 @@
 import {
   type AudioDSPDetails,
   type AudioFidelity,
-  type AudioFormat,
   type AudioNormalizationDetails,
   AudioNormalizationMeasurementSource,
   type AudioOutputDetails,
   type AudioProcessingChain,
   AudioQuality,
   type AudioQueueProcessing,
-  ContentType,
   CrossfadeMode,
   DSPState,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
-
-/**
- * A complete audio format, for tests that only care about a few of its fields
- * but should still model a payload the server can send.
- */
-export function audioFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
-  return {
-    content_type: ContentType.FLAC,
-    codec_type: ContentType.FLAC,
-    sample_rate: 44100,
-    bit_depth: 16,
-    channels: 2,
-    output_format_str: "",
-    bit_rate: 0,
-    ...overrides,
-  };
-}
 
 /**
  * A complete audio fidelity, defaulting to an undetermined stream.

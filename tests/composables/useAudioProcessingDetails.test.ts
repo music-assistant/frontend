@@ -25,12 +25,12 @@ import {
 import {
   audioDSPDetails,
   audioFidelity,
-  audioFormat,
   audioNormalizationDetails,
   audioOutputDetails,
   audioProcessingChain,
   audioQueueProcessing,
 } from "../fixtures/audioProcessing";
+import { audioFormat } from "../fixtures/audioFormat";
 
 vi.mock("@/plugins/api", async () => {
   const { providerManifest } = await import("../fixtures/providerManifest");
