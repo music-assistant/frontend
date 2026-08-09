@@ -160,12 +160,14 @@ describe("getPlayerMenuItems settings shortcuts", () => {
   });
 
   it("opens the settings page for each shortcut", () => {
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "queue",
-    });
+    const menuItems = getPlayerMenuItems(
+      makePlayer(),
+      makeQueue({ queue_id: "source-queue" }),
+      { context: "player" },
+    );
 
     menuItems.find((item) => item.label === "open_queue_settings")?.action?.();
-    expect(routerPush).toHaveBeenCalledWith("/settings/editqueue/kitchen");
+    expect(routerPush).toHaveBeenCalledWith("/settings/editqueue/source-queue");
 
     menuItems.find((item) => item.label === "open_player_settings")?.action?.();
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
