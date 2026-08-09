@@ -561,7 +561,7 @@ export interface SuccessResultMessage extends ResultMessageBase {
 }
 
 export interface ErrorResultMessage extends ResultMessageBase {
-  // Message sent when a Command has been successfully executed.
+  // Message sent when a Command did not execute successfully.
 
   error_code: number;
   details: string | null;
