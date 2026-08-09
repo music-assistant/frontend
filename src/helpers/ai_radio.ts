@@ -1,6 +1,7 @@
 import type {
   AIRadioAlternativeChoice,
   AIRadioFlowItem,
+  AIRadioHost,
   AIRadioOptionalGuards,
   AIRadioSection,
   AIRadioSectionOrderRule,
@@ -419,19 +420,27 @@ const dedupeId = (id: string, used: Set<string>): string => {
   return candidate;
 };
 
+interface CompiledSegments {
+  sections: AIRadioSection[];
+  sectionOrder: AIRadioSectionOrderRule[];
+  mergeSectionId: string;
+}
+
 /**
- * Compiles a show draft into the full station payload the backend expects:
- * one AIRadioSection per segment plus a hidden ai_meta merge section, and a
- * section_order built per segment.plays (start/end -> MUST rules in list
+ * Builds one AIRadioSection per segment plus a hidden ai_meta merge section,
+ * and a section_order per segment.plays (start/end -> MUST rules in list
  * order, everything else -> a single between_songs rule where every_song is
- * MUST and the rest are OPTIONAL with derived chance/guards).
+ * MUST and the rest are OPTIONAL with derived chance/guards). `idBase` seeds
+ * the merge section's id (station or host id). Shared by compileShow/compileHost.
  */
-export const compileShow = (draft: ShowDraft): AIRadioStation => {
-  const stationId = draft.basics.id?.trim() || slugify(draft.basics.name);
+const compileSegments = (
+  segments: ShowSegment[],
+  idBase: string,
+): CompiledSegments => {
   const usedIds = new Set<string>();
 
   const sections: AIRadioSection[] = [];
-  const resolved = draft.segments.map((segment) => {
+  const resolved = segments.map((segment) => {
     const id = dedupeId(slugify(segment.id || segment.name), usedIds);
     sections.push({
       id,
@@ -474,13 +483,30 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
     });
   }
 
-  const mergeSectionId = dedupeId(`${stationId}_smoother`, usedIds);
+  const mergeSectionId = dedupeId(`${idBase}_smoother`, usedIds);
   sections.push({
     id: mergeSectionId,
     name: "Between Songs Mix",
     type: "ai_meta",
     prompt: MERGE_SECTION_PROMPT,
   });
+
+  return { sections, sectionOrder, mergeSectionId };
+};
+
+/**
+ * Compiles a show draft into the full station payload the backend expects:
+ * one AIRadioSection per segment plus a hidden ai_meta merge section, and a
+ * section_order built per segment.plays (start/end -> MUST rules in list
+ * order, everything else -> a single between_songs rule where every_song is
+ * MUST and the rest are OPTIONAL with derived chance/guards).
+ */
+export const compileShow = (draft: ShowDraft): AIRadioStation => {
+  const stationId = draft.basics.id?.trim() || slugify(draft.basics.name);
+  const { sections, sectionOrder, mergeSectionId } = compileSegments(
+    draft.segments,
+    stationId,
+  );
 
   return {
     id: stationId,
@@ -497,6 +523,41 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
   };
 };
 
+/** A host's persona/voice, edited in the Hosts UI and assignable to a queue's DJ. */
+export interface HostDraft {
+  id: string;
+  name: string;
+  instructions: string;
+  // ttsEngine: "" = provider default
+  ttsEngine: string;
+  segments: ShowSegment[];
+  talkativeness: TalkativenessLevel;
+}
+
+/**
+ * Compiles a host draft into the AIRadioHost payload the backend expects,
+ * applying talkativeness and running the same segment/section_order
+ * compilation as compileShow (see compileSegments).
+ */
+export const compileHost = (draft: HostDraft): AIRadioHost => {
+  const hostId = draft.id.trim() || slugify(draft.name);
+  const segments = applyTalkativeness(draft.segments, draft.talkativeness);
+  const { sections, sectionOrder, mergeSectionId } = compileSegments(
+    segments,
+    hostId,
+  );
+
+  return {
+    id: hostId,
+    name: draft.name.trim(),
+    instructions: draft.instructions,
+    tts_engine: draft.ttsEngine,
+    section_ids: sections.map((section) => section.id),
+    section_order: sectionOrder,
+    merge_section_id: mergeSectionId,
+  };
+};
+
 export interface DecompiledShow {
   basics: ShowBasics;
   segments: ShowSegment[];
@@ -507,6 +568,89 @@ export interface DecompiledShow {
    */
   lossy: boolean;
 }
+
+/**
+ * Inverts a section_order's start/between/end rules into a flat segment
+ * list, given a `toSegment` lookup that turns a section id + derived plays
+ * rule into a ShowSegment (or null to drop it, e.g. the hidden merge
+ * section). Mirrors compileShow/compileSegments' exact chance/guard
+ * formulas where possible, falling back to a raw "occasionally" percent
+ * otherwise (flagged via the returned `lossy` bit). Shared by
+ * decompileStation/decompileHost.
+ */
+const decompileSectionOrder = (
+  sectionOrder: AIRadioSectionOrderRule[] | undefined,
+  toSegment: (sectionId: string, plays: PlaysRule) => ShowSegment | null,
+): { segments: ShowSegment[]; lossy: boolean } => {
+  let lossy = false;
+
+  const decompileBetweenItem = (item: AIRadioFlowItem): ShowSegment[] => {
+    if ("MUST" in item) {
+      const segment = toSegment(item.MUST, { kind: "every_song" });
+      return segment ? [segment] : [];
+    }
+    if ("ALTERNATIVE" in item) {
+      const choices: AIRadioAlternativeChoice[] =
+        item.ALTERNATIVE.choices || [];
+      if (choices.length === 1) {
+        const segment = toSegment(choices[0].section, { kind: "every_song" });
+        return segment ? [segment] : [];
+      }
+      lossy = true;
+      const total = choices.reduce((sum, c) => sum + (c.weight || 0), 0) || 1;
+      return choices
+        .map((choice) =>
+          toSegment(choice.section, {
+            kind: "occasionally",
+            percent: Math.round((choice.weight / total) * 100),
+          }),
+        )
+        .filter((s): s is ShowSegment => s !== null);
+    }
+    // OPTIONAL: invert compileSegments' exact chance/guard formulas where
+    // possible, otherwise fall back to a plain "occasionally" percent.
+    const { section: sectionId, chance = 0, guards } = item.OPTIONAL;
+    const minGap = guards?.min_gap_songs || 0;
+    const maxPer60 = guards?.max_per_60min || 0;
+    let plays: PlaysRule;
+    if (maxPer60 > 0 && Math.abs(chance - 1) < 1e-6) {
+      plays = {
+        kind: "every_n_min",
+        n: Math.max(1, Math.round(60 / maxPer60)),
+      };
+    } else if (
+      minGap > 0 &&
+      Math.abs(chance - Math.min(1, 2 / (minGap + 1))) < 1e-6
+    ) {
+      plays = { kind: "every_n_songs", n: minGap + 1 };
+    } else {
+      lossy = true;
+      plays = { kind: "occasionally", percent: Math.round(chance * 100) };
+    }
+    const segment = toSegment(sectionId, plays);
+    return segment ? [segment] : [];
+  };
+
+  const segments: ShowSegment[] = [];
+  for (const rule of sectionOrder || []) {
+    if (rule.when === "start_of_playlist" || rule.when === "end_of_playlist") {
+      const kind: PlaysRule["kind"] =
+        rule.when === "start_of_playlist" ? "start" : "end";
+      for (const item of rule.flow) {
+        if ("MUST" in item) {
+          const segment = toSegment(item.MUST, { kind });
+          if (segment) segments.push(segment);
+        }
+      }
+      continue;
+    }
+    for (const item of rule.flow) {
+      segments.push(...decompileBetweenItem(item));
+    }
+  }
+
+  return { segments, lossy };
+};
 
 /**
  * Best-effort inverse of compileShow, for opening an existing/imported
@@ -524,7 +668,6 @@ export const decompileStation = (
   station: AIRadioStation,
   sections: AIRadioSection[],
 ): DecompiledShow => {
-  let lossy = false;
   const sectionMap = new Map<string, AIRadioSection>();
   for (const section of sections) {
     sectionMap.set(section.id, section);
@@ -553,70 +696,10 @@ export const decompileStation = (
     };
   };
 
-  const decompileBetweenItem = (item: AIRadioFlowItem): ShowSegment[] => {
-    if ("MUST" in item) {
-      const segment = toSegment(item.MUST, { kind: "every_song" });
-      return segment ? [segment] : [];
-    }
-    if ("ALTERNATIVE" in item) {
-      const choices: AIRadioAlternativeChoice[] =
-        item.ALTERNATIVE.choices || [];
-      if (choices.length === 1) {
-        const segment = toSegment(choices[0].section, { kind: "every_song" });
-        return segment ? [segment] : [];
-      }
-      lossy = true;
-      const total = choices.reduce((sum, c) => sum + (c.weight || 0), 0) || 1;
-      return choices
-        .map((choice) =>
-          toSegment(choice.section, {
-            kind: "occasionally",
-            percent: Math.round((choice.weight / total) * 100),
-          }),
-        )
-        .filter((s): s is ShowSegment => s !== null);
-    }
-    // OPTIONAL: invert compileShow's exact chance/guard formulas where
-    // possible, otherwise fall back to a plain "occasionally" percent.
-    const { section: sectionId, chance = 0, guards } = item.OPTIONAL;
-    const minGap = guards?.min_gap_songs || 0;
-    const maxPer60 = guards?.max_per_60min || 0;
-    let plays: PlaysRule;
-    if (maxPer60 > 0 && Math.abs(chance - 1) < 1e-6) {
-      plays = {
-        kind: "every_n_min",
-        n: Math.max(1, Math.round(60 / maxPer60)),
-      };
-    } else if (
-      minGap > 0 &&
-      Math.abs(chance - Math.min(1, 2 / (minGap + 1))) < 1e-6
-    ) {
-      plays = { kind: "every_n_songs", n: minGap + 1 };
-    } else {
-      lossy = true;
-      plays = { kind: "occasionally", percent: Math.round(chance * 100) };
-    }
-    const segment = toSegment(sectionId, plays);
-    return segment ? [segment] : [];
-  };
-
-  const segments: ShowSegment[] = [];
-  for (const rule of station.section_order || []) {
-    if (rule.when === "start_of_playlist" || rule.when === "end_of_playlist") {
-      const kind: PlaysRule["kind"] =
-        rule.when === "start_of_playlist" ? "start" : "end";
-      for (const item of rule.flow) {
-        if ("MUST" in item) {
-          const segment = toSegment(item.MUST, { kind });
-          if (segment) segments.push(segment);
-        }
-      }
-      continue;
-    }
-    for (const item of rule.flow) {
-      segments.push(...decompileBetweenItem(item));
-    }
-  }
+  const { segments, lossy } = decompileSectionOrder(
+    station.section_order,
+    toSegment,
+  );
 
   const basics: ShowBasics = {
     id: station.id,
@@ -630,6 +713,43 @@ export const decompileStation = (
   };
 
   return { basics, segments, lossy };
+};
+
+/**
+ * Best-effort inverse of compileHost, for opening an existing host in the
+ * Hosts UI. AIRadioHost only carries section_ids (not section content), so
+ * unlike decompileStation this can't recover name/prompt/webSearch/maxChars;
+ * segments come back with the section id standing in for those fields.
+ * talkativeness can't be inverted from section_order either, so it always
+ * resets to "normal".
+ */
+export const decompileHost = (host: AIRadioHost): HostDraft => {
+  const mergeId = host.merge_section_id || "";
+  const toSegment = (
+    sectionId: string,
+    plays: PlaysRule,
+  ): ShowSegment | null => {
+    if (sectionId === mergeId) return null;
+    return {
+      id: sectionId,
+      name: sectionId,
+      prompt: "",
+      webSearch: "disabled",
+      maxChars: 0,
+      plays,
+    };
+  };
+
+  const { segments } = decompileSectionOrder(host.section_order, toSegment);
+
+  return {
+    id: host.id,
+    name: host.name,
+    instructions: host.instructions,
+    ttsEngine: host.tts_engine,
+    segments,
+    talkativeness: "normal",
+  };
 };
 
 const PLAYS_RULE_LABEL_KEYS: Record<PlaysRule["kind"], string> = {

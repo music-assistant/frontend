@@ -1,12 +1,15 @@
 import {
   asGeneralDefaults,
+  compileHost,
   compileShow,
+  decompileHost,
   decompileStation,
   errorMessage,
+  PRESETS,
   relativeTimeFromIso,
   slugify,
 } from "@/helpers/ai_radio";
-import type { ShowDraft } from "@/helpers/ai_radio";
+import type { HostDraft, ShowDraft } from "@/helpers/ai_radio";
 import type { AIRadioSection, AIRadioStation } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
 
@@ -109,5 +112,89 @@ describe("decompileStation", () => {
   it("defaults shuffleSourceTracks to true when absent from the station", () => {
     const { basics } = decompileStation(makeStation(), [makeSection()]);
     expect(basics.shuffleSourceTracks).toBe(true);
+  });
+});
+
+describe("compileHost", () => {
+  it("compiles segments and talkativeness into section_order", () => {
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
+      talkativeness: "normal",
+    };
+    const host = compileHost(draft);
+    expect(host.id).toBe("rick");
+    expect(host.instructions).toBe("Persona.");
+    expect(host.section_ids.length).toBeGreaterThan(0);
+    expect(host.section_order.length).toBeGreaterThan(0);
+  });
+
+  it("applies talkativeness the same way compileShow's callers do", () => {
+    // PRESETS[0][1] is "transition", an every_n_songs:3 segment; "chatty"
+    // bumps every_song/every_n_songs segments to fire on every song (MUST).
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
+      talkativeness: "chatty",
+    };
+    const host = compileHost(draft);
+    const betweenRule = host.section_order.find(
+      (rule) => rule.when === "between_songs",
+    );
+    expect(betweenRule?.flow).toEqual([{ MUST: "transition" }]);
+  });
+});
+
+describe("decompileHost", () => {
+  it("round-trips a compiled host", () => {
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "engine-1",
+      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
+      talkativeness: "chatty",
+    };
+    const round = decompileHost(compileHost(draft));
+    expect(round.name).toBe("Rick");
+    expect(round.ttsEngine).toBe("engine-1");
+    expect(round.segments.map((s) => s.id)).toEqual(
+      draft.segments.map((s) => s.id),
+    );
+  });
+
+  it("resets talkativeness to normal, since it can't be inverted from section_order", () => {
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
+      talkativeness: "chatty",
+    };
+    const round = decompileHost(compileHost(draft));
+    expect(round.talkativeness).toBe("normal");
+  });
+
+  it("excludes the hidden merge section from segments", () => {
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
+      talkativeness: "normal",
+    };
+    const host = compileHost(draft);
+    const round = decompileHost(host);
+    expect(round.segments.some((s) => s.id === host.merge_section_id)).toBe(
+      false,
+    );
   });
 });

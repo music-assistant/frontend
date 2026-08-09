@@ -1816,6 +1816,17 @@ export interface AIRadioStationGeneral {
   weather_timeout_seconds: number;
 }
 
+export interface AIRadioHost {
+  id: string;
+  name: string;
+  instructions: string;
+  // tts_engine: "" means use the provider default engine
+  tts_engine: string;
+  section_ids: string[];
+  section_order: AIRadioSectionOrderRule[];
+  merge_section_id: string;
+}
+
 export interface AIRadioStation {
   id: string;
   name: string;
@@ -1824,11 +1835,7 @@ export interface AIRadioStation {
   default_player_id?: string;
   max_duration_minutes?: number;
   shuffle_source_tracks?: boolean;
-  merge_section_id?: string;
-  general?: AIRadioStationGeneral;
-  section_ids?: string[];
-  sections?: AIRadioSection[];
-  section_order?: AIRadioSectionOrderRule[];
+  host_id: string;
 }
 
 export interface AIRadioSession {
