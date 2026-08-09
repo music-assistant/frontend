@@ -763,9 +763,6 @@ describe("EditProvider", () => {
 
 /**
  * The spotify provider config these tests load, with a single `account` entry.
- *
- * The view resolves the manifest from `api.providerManifests` first, so this
- * config's own manifest never surfaces.
  */
 function spotifyConfig(
   status: ProviderStatus,

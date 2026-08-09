@@ -5,7 +5,6 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerConfig } from "../fixtures/providerConfig";
-import { providerManifest } from "../fixtures/providerManifest";
 
 const {
   apiMock,
@@ -304,12 +303,6 @@ function musicQuizProviderConfig(instanceId: string): ProviderConfig {
     type: ProviderType.PLUGIN,
     domain: "music_quiz",
     instance_id: instanceId,
-    manifest: providerManifest({
-      type: ProviderType.PLUGIN,
-      domain: "music_quiz",
-      name: "Music Quiz",
-      description: "Music Quiz plugin provider",
-    }),
   });
 }
 
