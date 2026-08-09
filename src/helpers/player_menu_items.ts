@@ -18,6 +18,7 @@ import {
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
 import { Droplet } from "@lucide/vue";
 import { markRaw } from "vue";
+import { useHosts } from "@/composables/ai-radio/useHosts";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -165,6 +166,49 @@ export const getPlayerMenuItems = (
       icon: "mdi-waveform",
       selected: playerQueue.overlay_enabled,
     });
+  }
+
+  // AI DJ (queue menu only; when a provider offering AI radio hosts is
+  // loaded). Lists configured hosts to assign as the queue's live DJ, plus an
+  // "Off" entry to clear it; a check marks whichever is currently active.
+  // Kicks off a refresh of both so a later re-open reflects any changes made
+  // elsewhere (e.g. the AI Radio settings page).
+  const {
+    hosts,
+    queueDjStatus,
+    aiRadioAvailable,
+    loadHosts,
+    loadQueueDjStatus,
+    setQueueDj,
+  } = useHosts();
+  if (isQueue && playerQueue && aiRadioAvailable.value) {
+    const queueId = playerQueue.queue_id;
+    const activeHostId = queueDjStatus.value[queueId];
+    menuItems.push({
+      label: "ai_dj",
+      labelArgs: [],
+      icon: "mdi-account-voice",
+      subItems: [
+        ...hosts.value.map((host) => ({
+          label: host.name,
+          labelArgs: [],
+          selected: activeHostId === host.id,
+          action: () => {
+            setQueueDj(queueId, host.id);
+          },
+        })),
+        {
+          label: "ai_dj_off",
+          labelArgs: [],
+          selected: !activeHostId,
+          action: () => {
+            setQueueDj(queueId, null);
+          },
+        },
+      ],
+    });
+    void loadHosts();
+    void loadQueueDjStatus();
   }
 
   // transfer queue (both menus; only when the queue is the active source)

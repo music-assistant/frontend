@@ -2,7 +2,7 @@ import { useShows } from "@/composables/ai-radio/useShows";
 import api from "@/plugins/api";
 import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
 
 export interface AIRadioTtsEngine {
@@ -22,6 +22,15 @@ const savingHost = ref(false);
 // Host/queue id currently being deleted/assigned, so only that row reflects it.
 const deletingHostId = ref("");
 const settingQueueDjId = ref("");
+
+// The queue menu's AI DJ submenu is only offered when the ai_radio provider
+// is loaded. Reactive on api.providers, so no network call is needed to
+// decide whether to show the menu item.
+const aiRadioAvailable = computed(() =>
+  Object.values(api.providers).some(
+    (provider) => provider.domain === "ai_radio" && provider.available,
+  ),
+);
 
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
@@ -135,6 +144,7 @@ export function useHosts() {
     hosts,
     ttsEngines,
     queueDjStatus,
+    aiRadioAvailable,
     loadingHosts,
     loadingTtsEngines,
     loadingQueueDjStatus,
