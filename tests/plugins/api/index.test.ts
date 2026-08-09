@@ -167,7 +167,7 @@ function createErrorResult(
   if (!command.message_id) throw new Error("Command has no message ID");
   return {
     message_id: command.message_id,
-    error_code: "test_error",
+    error_code: 999,
     details,
   };
 }
