@@ -81,7 +81,7 @@
                 @click="onReload"
               >
                 <RefreshCw class="size-4" />
-                {{ $t("settings.reload") }}
+                {{ $t("settings.reload_provider") }}
               </Button>
             </template>
           </div>

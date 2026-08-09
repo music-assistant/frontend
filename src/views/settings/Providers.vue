@@ -422,9 +422,7 @@ const toggleEnabled = function (config: ProviderConfig) {
 
 const reloadProvider = function (providerInstanceId: string) {
   api
-    .sendCommand("config/providers/reload", {
-      instance_id: providerInstanceId,
-    })
+    .reloadProvider(providerInstanceId)
     .catch((err) => toast.error(String(err)));
 };
 
@@ -482,7 +480,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       hide: providerManifest.builtin,
     },
     {
-      label: "settings.reload",
+      label: "settings.reload_provider",
       labelArgs: [],
       action: () => {
         reloadProvider(item.instance_id);

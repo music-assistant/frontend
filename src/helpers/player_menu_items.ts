@@ -15,14 +15,16 @@ import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { getPlayerSetupLabel } from "@/helpers/player_config";
 
 export const getPlayerSetupMenuItem = (
   player: Pick<Player, "player_id" | "needs_setup" | "has_setup_flow">,
 ): ContextMenuItem | undefined => {
-  if (!player.has_setup_flow && !player.needs_setup) return undefined;
+  const label = getPlayerSetupLabel(player);
+  if (!label) return undefined;
 
   return {
-    label: player.needs_setup ? "configure_player" : "reconfigure_player",
+    label,
     labelArgs: [],
     action: () => {
       store.showFullscreenPlayer = false;
