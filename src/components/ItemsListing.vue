@@ -484,8 +484,6 @@ const searchHasFocus = ref(false);
 const pagedItems = ref<MediaItemType[]>([]);
 const allItems = ref<MediaItemType[]>([]);
 const loading = ref(false);
-let loadingTabId: string | undefined;
-let pendingTabLoad = false;
 const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
 const newContentAvailable = ref(false);
 const showCheckboxes = ref(false);
@@ -494,6 +492,11 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+
+// used in tabbed item listings to prevent a timing-race condition, where
+// the selected tab shows items of the initial tab on entering the page
+let loadingTabId: string | undefined;
+let pendingTabLoad = false;
 
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
