@@ -1,9 +1,20 @@
 import CustomizeHost from "@/components/ai-radio/CustomizeHost.vue";
+import { Slider } from "@/components/ui/slider";
+import { useHosts } from "@/composables/ai-radio/useHosts";
+import type {
+  AIRadioHost,
+  AIRadioSectionOrderRule,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+type SendCommand = (
+  command: string,
+  args?: Record<string, unknown>,
+) => Promise<unknown>;
+
 const { sendCommand } = vi.hoisted(() => ({
-  sendCommand: vi.fn(async () => []),
+  sendCommand: vi.fn<SendCommand>(async () => []),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -48,11 +59,25 @@ async function save(wrapper: VueWrapper) {
 
 const aiRadioCommands = () =>
   sendCommand.mock.calls
-    .map((call) => call[0] as unknown as string)
+    .map(([command]) => command)
     .filter((command) => command.startsWith("ai_radio/"));
+
+const savedHost = (): AIRadioHost => {
+  const call = sendCommand.mock.calls.find(
+    ([command]) => command === "ai_radio/hosts/save",
+  );
+  const args = call?.[1] as { host: AIRadioHost } | undefined;
+  if (!args) throw new Error("no host was saved");
+  return args.host;
+};
+
+const betweenSongsFlow = (order: AIRadioSectionOrderRule[]) =>
+  order.find((rule) => rule.when === "between_songs")?.flow;
 
 afterEach(() => {
   vi.clearAllMocks();
+  sendCommand.mockImplementation(async () => []);
+  useHosts().hosts.value = [];
 });
 
 describe("CustomizeHost save", () => {
@@ -81,5 +106,47 @@ describe("CustomizeHost save", () => {
     expect(aiRadioCommands()).not.toContain("ai_radio/sections/save");
     expect(aiRadioCommands()).not.toContain("ai_radio/hosts/save");
     expect(toast.error).toHaveBeenCalledWith("Host name is required");
+  });
+
+  it("refuses to create a host that would overwrite one with the same name", async () => {
+    const { toast } = await import("vue-sonner");
+    const existing: AIRadioHost = {
+      id: "morning_crew",
+      name: "Morning Crew",
+      instructions: "",
+      tts_engine: "",
+      section_ids: [],
+      section_order: [],
+      merge_section_id: "",
+    };
+    sendCommand.mockImplementation(async (command) =>
+      command === "ai_radio/hosts/list" ? [existing] : [],
+    );
+    const wrapper = await mountEditor();
+    await wrapper.find("#customize-host-name").setValue("Morning Crew");
+
+    await save(wrapper);
+
+    expect(aiRadioCommands()).not.toContain("ai_radio/hosts/save");
+    expect(toast.error).toHaveBeenCalledWith(
+      "A host named «Morning Crew» already exists",
+    );
+  });
+
+  it("bakes the talkativeness level into the saved segments and neutralizes the slider", async () => {
+    const wrapper = await mountEditor();
+    await wrapper.find("#customize-host-name").setValue("Morning Crew");
+    // "chatty" promotes the preset's every-3-songs transition to every song.
+    await wrapper.findComponent(Slider).vm.$emit("update:modelValue", [2]);
+
+    await save(wrapper);
+
+    expect(betweenSongsFlow(savedHost().section_order)).toContainEqual({
+      MUST: "morning_crew_transition",
+    });
+    // The level is now part of the segments, so the slider must read neutral
+    // instead of re-applying itself on the next save.
+    const activeLevel = wrapper.find(".font-medium.text-foreground");
+    expect(activeLevel.text()).toBe("Normal");
   });
 });
