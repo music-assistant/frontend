@@ -8,6 +8,7 @@ import {
   useAudioProcessingDetails,
 } from "@/composables/useAudioProcessingDetails";
 import { $t, i18n } from "@/plugins/i18n";
+import type { MusicAssistantApi } from "@/plugins/api";
 import {
   AudioChannel,
   type AudioFormat,
@@ -18,16 +19,31 @@ import {
   DSPState,
   MediaType,
   type OutputProtocol,
+  ProviderStage,
+  ProviderType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 
 vi.mock("@/plugins/api", () => ({
   default: {
-    getProviderName: vi.fn(),
-    getProviderManifest: vi.fn((providerId: string) => ({
-      domain: providerId,
-    })),
+    getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(
+      (providerId: string) => ({
+        allow_disable: true,
+        builtin: false,
+        codeowners: [],
+        credits: [],
+        description: "",
+        domain: providerId,
+        icon_images: [],
+        multi_instance: true,
+        name: providerId,
+        requirements: [],
+        stage: ProviderStage.STABLE,
+        type: ProviderType.MUSIC,
+      }),
+    ),
     players: {},
   },
 }));

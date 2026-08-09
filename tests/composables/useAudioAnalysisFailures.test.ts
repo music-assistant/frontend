@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
+import {
+  MediaType,
+  type ItemMapping,
+  type Track,
+} from "@/plugins/api/interfaces";
 
 const { mockSendCommand, mockGetTrack } = vi.hoisted(() => {
   return {
     mockSendCommand: vi.fn(),
-    mockGetTrack: vi.fn(),
+    mockGetTrack: vi.fn<MusicAssistantApi["getTrack"]>(),
   };
 });
 
@@ -57,7 +63,12 @@ beforeEach(() => {
   mockSendCommand.mockReset();
   mockGetTrack.mockReset();
   mockGetTrack.mockImplementation((itemId: string) =>
-    Promise.resolve({ name: `Track ${itemId}`, artists: [{ name: "Artist" }] }),
+    Promise.resolve(
+      trackFixture({
+        name: `Track ${itemId}`,
+        artists: [artistMapping("Artist")],
+      }),
+    ),
   );
 });
 
@@ -208,10 +219,9 @@ describe("useAudioAnalysisFailures", () => {
 
   it("resolves the track name + artist for the current page", async () => {
     mockFailures([serverFailure({ item_id: "1", provider: "tidal" })]);
-    mockGetTrack.mockResolvedValueOnce({
-      name: "Creep",
-      artists: [{ name: "Radiohead" }],
-    });
+    mockGetTrack.mockResolvedValueOnce(
+      trackFixture({ name: "Creep", artists: [artistMapping("Radiohead")] }),
+    );
 
     const f = useAudioAnalysisFailures();
     await f.refresh();
@@ -228,7 +238,9 @@ describe("useAudioAnalysisFailures", () => {
     ]);
     mockGetTrack.mockImplementation((itemId: string) => {
       if (itemId === "gone") return Promise.reject(new Error("not found"));
-      return Promise.resolve({ name: "Fine", artists: [{ name: "Band" }] });
+      return Promise.resolve(
+        trackFixture({ name: "Fine", artists: [artistMapping("Band")] }),
+      );
     });
 
     const f = useAudioAnalysisFailures();
@@ -338,10 +350,11 @@ describe("useAudioAnalysisFailures", () => {
       serverFailure({ item_id: "1", provider: "qobuz" }),
     ]);
     mockGetTrack.mockImplementation((_itemId: string, provider: string) =>
-      Promise.resolve({
-        name: provider === "tidal" ? "Tidal Track" : "Qobuz Track",
-        artists: [],
-      }),
+      Promise.resolve(
+        trackFixture({
+          name: provider === "tidal" ? "Tidal Track" : "Qobuz Track",
+        }),
+      ),
     );
 
     const f = useAudioAnalysisFailures();
@@ -378,7 +391,7 @@ describe("useAudioAnalysisFailures", () => {
     mockGetTrack.mockImplementation((itemId: string) =>
       itemId === "1"
         ? Promise.reject(new Error("not found"))
-        : Promise.resolve({ name: "Two", artists: [] }),
+        : Promise.resolve(trackFixture({ name: "Two" })),
     );
 
     const f = useAudioAnalysisFailures({ pageSize: 1 });
@@ -553,3 +566,33 @@ describe("useAudioAnalysisFailures", () => {
 // Keep the RawFailure import meaningful so the public type is part of the contract.
 const _typecheck: RawFailure | undefined = undefined;
 void _typecheck;
+
+function trackFixture(overrides: Partial<Track> = {}): Track {
+  return {
+    item_id: "1",
+    provider: "tidal",
+    name: "Track",
+    uri: "tidal://track/1",
+    is_playable: true,
+    media_type: MediaType.TRACK,
+    provider_mappings: [],
+    metadata: {},
+    favorite: false,
+    duration: 200,
+    artists: [],
+    album: null,
+    ...overrides,
+  };
+}
+
+function artistMapping(name: string): ItemMapping {
+  return {
+    item_id: name,
+    provider: "tidal",
+    name,
+    uri: `tidal://artist/${name}`,
+    is_playable: true,
+    media_type: MediaType.ARTIST,
+    available: true,
+  };
+}

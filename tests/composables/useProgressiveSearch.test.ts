@@ -1,17 +1,19 @@
 import {
   MediaType,
   ProviderFeature,
+  type Genre,
   type SearchResults,
   type Track,
 } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, nextTick, ref, type EffectScope } from "vue";
+import type { MusicAssistantApi } from "@/plugins/api";
 
 const { mockSearch, mockGetLibraryGenres, mockProviders, mockManifests } =
   vi.hoisted(() => {
     return {
-      mockSearch: vi.fn(),
-      mockGetLibraryGenres: vi.fn(),
+      mockSearch: vi.fn<MusicAssistantApi["search"]>(),
+      mockGetLibraryGenres: vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
       mockProviders: {} as Record<string, unknown>,
       mockManifests: {} as Record<string, unknown>,
     };
@@ -48,13 +50,33 @@ const results = (partial: Partial<SearchResults>): SearchResults => ({
   ...partial,
 });
 
-const track = (itemId: string, name: string): Track =>
-  ({
-    item_id: itemId,
-    name,
-    uri: `test://track/${itemId}`,
-    media_type: MediaType.TRACK,
-  }) as Track;
+const track = (itemId: string, name: string, provider = "library"): Track => ({
+  item_id: itemId,
+  provider,
+  name,
+  uri: `test://track/${itemId}`,
+  is_playable: true,
+  media_type: MediaType.TRACK,
+  provider_mappings: [],
+  metadata: {},
+  favorite: false,
+  duration: 200,
+  artists: [],
+  album: null,
+});
+
+const genre = (itemId: string, name: string): Genre => ({
+  item_id: itemId,
+  provider: "library",
+  name,
+  uri: `test://genre/${itemId}`,
+  is_playable: false,
+  media_type: MediaType.GENRE,
+  provider_mappings: [],
+  metadata: {},
+  favorite: false,
+  genre_aliases: null,
+});
 
 const provider = (
   instanceId: string,
@@ -131,12 +153,12 @@ describe("useProgressiveSearch", () => {
 
   it("fires one request per target and merges results library first", async () => {
     mockSearch.mockImplementation(
-      (_query, _mediaTypes, _limit, providers: string[]) => {
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
         if (providers[0] === LIBRARY_SEARCH_TARGET)
           return Promise.resolve(results({ tracks: [track("l1", "Lib hit")] }));
         if (providers[0] === "spotify")
           return Promise.resolve(
-            results({ tracks: [track("s1", "Spotify hit")] }),
+            results({ tracks: [track("s1", "Spotify hit", "spotify")] }),
           );
         return Promise.resolve(emptyResults());
       },
@@ -161,13 +183,15 @@ describe("useProgressiveSearch", () => {
 
   it("floats exact name matches above earlier fuzzy results", async () => {
     mockSearch.mockImplementation(
-      (_query, _mediaTypes, _limit, providers: string[]) => {
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
         if (providers[0] === LIBRARY_SEARCH_TARGET)
           return Promise.resolve(
             results({ tracks: [track("l1", "Queen tribute")] }),
           );
         if (providers[0] === "spotify")
-          return Promise.resolve(results({ tracks: [track("s1", "Queen")] }));
+          return Promise.resolve(
+            results({ tracks: [track("s1", "Queen", "spotify")] }),
+          );
         return Promise.resolve(emptyResults());
       },
     );
@@ -247,7 +271,7 @@ describe("useProgressiveSearch", () => {
     vi.useFakeTimers();
     let spotifyCalls = 0;
     mockSearch.mockImplementation(
-      (_query, _mediaTypes, _limit, providers: string[]) => {
+      (_query, _mediaTypes, _limit, providers: string[] = []) => {
         if (providers[0] !== "spotify") return Promise.resolve(emptyResults());
         spotifyCalls += 1;
         if (spotifyCalls === 1) {
@@ -256,7 +280,9 @@ describe("useProgressiveSearch", () => {
             setTimeout(() => resolve(emptyResults()), 8000),
           );
         }
-        return Promise.resolve(results({ tracks: [track("s1", "Late")] }));
+        return Promise.resolve(
+          results({ tracks: [track("s1", "Late", "spotify")] }),
+        );
       },
     );
     const { search, searchResult, loading } = setup();
@@ -275,7 +301,7 @@ describe("useProgressiveSearch", () => {
   });
 
   it("searches only the library for a genre-only search", async () => {
-    const genres = [{ item_id: "g1", name: "Rock" }];
+    const genres = [genre("g1", "Rock")];
     mockGetLibraryGenres.mockResolvedValue(genres);
     const mediaTypes = ref<MediaType[]>([MediaType.GENRE]);
     const { search, searchResult } = setup({ mediaTypes });

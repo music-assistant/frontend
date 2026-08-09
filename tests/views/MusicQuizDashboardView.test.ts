@@ -1,5 +1,10 @@
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
-import { ProviderType } from "@/plugins/api/interfaces";
+import {
+  ProviderStage,
+  ProviderType,
+  type ProviderConfig,
+} from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,7 +23,7 @@ const {
   mockAdminState: {
     current: undefined as { value: boolean } | undefined,
   },
-  mockGetProviderConfigs: vi.fn(),
+  mockGetProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
   mockResolveMusicQuizDefinition: vi.fn(),
   mockRouterPush: vi.fn(),
   mockSendCommand: vi.fn(),
@@ -197,7 +202,7 @@ describe("MusicQuizDashboardView", () => {
   it("resolves the admin settings shortcut and routes to its provider config", async () => {
     if (mockAdminState.current) mockAdminState.current.value = true;
     mockGetProviderConfigs.mockResolvedValue([
-      { instance_id: "music_quiz--instance" },
+      musicQuizProviderConfig("music_quiz--instance"),
     ]);
     const wrapper = mountDashboard();
     await flushPromises();
@@ -239,7 +244,7 @@ describe("MusicQuizDashboardView", () => {
 
   it("resolves the settings shortcut when admin access arrives after mount", async () => {
     mockGetProviderConfigs.mockResolvedValue([
-      { instance_id: "music_quiz--instance" },
+      musicQuizProviderConfig("music_quiz--instance"),
     ]);
     const wrapper = mountDashboard();
     await flushPromises();
@@ -295,6 +300,30 @@ describe("MusicQuizDashboardView", () => {
     expect(mockRouterPush).toHaveBeenCalledWith({ name: "guest-quiz" });
   });
 });
+
+function musicQuizProviderConfig(instanceId: string): ProviderConfig {
+  return {
+    type: ProviderType.PLUGIN,
+    domain: "music_quiz",
+    instance_id: instanceId,
+    enabled: true,
+    manifest: {
+      type: ProviderType.PLUGIN,
+      domain: "music_quiz",
+      name: "Music Quiz",
+      description: "Music Quiz plugin provider",
+      codeowners: [],
+      credits: [],
+      requirements: [],
+      multi_instance: false,
+      builtin: false,
+      allow_disable: true,
+      stage: ProviderStage.STABLE,
+      icon_images: [],
+    },
+    values: {},
+  };
+}
 
 function mountDashboard() {
   return mount(MusicQuizDashboardView, {

@@ -1,12 +1,23 @@
 import MediaSearch from "@/components/MediaSearch.vue";
-import { MediaType } from "@/plugins/api/interfaces";
+import {
+  AlbumType,
+  MediaType,
+  type Album,
+  type Artist,
+  type Genre,
+  type ItemMapping,
+  type Playlist,
+  type SearchResults,
+  type Track,
+} from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
-  mockSearch: vi.fn(),
-  mockGetLibraryGenres: vi.fn(),
+  mockSearch: vi.fn<MusicAssistantApi["search"]>(),
+  mockGetLibraryGenres: vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -57,7 +68,7 @@ function mountSearch(
 
 // api.search always returns every result list, so fill the ones a case does not
 // exercise rather than letting a partial mock stand in for a server response
-const searchResults = <T extends Record<string, unknown>>(lists: T) => ({
+const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
   artists: [],
   albums: [],
   tracks: [],
@@ -106,15 +117,13 @@ describe("MediaSearch", () => {
   it("renders a result for each allowed media type", async () => {
     mockSearch.mockResolvedValue(
       searchResults({
-        tracks: [{ uri: "track:1", name: "Some track", media_type: "track" }],
+        tracks: [trackFixture({ uri: "track:1", name: "Some track" })],
         playlists: [
-          { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
+          playlistFixture({ uri: "playlist:1", name: "Some playlist" }),
         ],
-        albums: [{ uri: "album:1", name: "Some album", media_type: "album" }],
-        artists: [
-          { uri: "artist:1", name: "Some artist", media_type: "artist" },
-        ],
-        genres: [{ uri: "genre:1", name: "Some genre", media_type: "genre" }],
+        albums: [albumFixture({ uri: "album:1", name: "Some album" })],
+        artists: [artistFixture({ uri: "artist:1", name: "Some artist" })],
+        genres: [genreFixture({ uri: "genre:1", name: "Some genre" })],
       }),
     );
     const wrapper = mountSearch({
@@ -145,7 +154,7 @@ describe("MediaSearch", () => {
       searchResults({
         tracks: [],
         playlists: [
-          { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
+          playlistFixture({ uri: "playlist:1", name: "Some playlist" }),
         ],
       }),
     );
@@ -171,7 +180,7 @@ describe("MediaSearch", () => {
       searchResults({
         tracks: [],
         playlists: [
-          { uri: "playlist:1", name: "Some playlist", media_type: "playlist" },
+          playlistFixture({ uri: "playlist:1", name: "Some playlist" }),
         ],
       }),
     );
@@ -193,30 +202,26 @@ describe("MediaSearch", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [
-          {
+          trackFixture({
             uri: "library://track/1",
             name: "Song",
-            media_type: "track",
-            artists: [{ name: "Band" }],
-          },
-          {
+            artists: [artistRef("Band")],
+          }),
+          trackFixture({
             uri: "spotify://track/9",
             name: "Song",
-            media_type: "track",
-            artists: [{ name: "Band" }],
-          },
+            artists: [artistRef("Band")],
+          }),
         ],
         playlists: [
-          {
+          playlistFixture({
             uri: "library://playlist/1",
             name: "Party",
-            media_type: "playlist",
-          },
-          {
+          }),
+          playlistFixture({
             uri: "spotify://playlist/9",
             name: "Party",
-            media_type: "playlist",
-          },
+          }),
         ],
       }),
     );
@@ -239,18 +244,16 @@ describe("MediaSearch", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [
-          {
+          trackFixture({
             uri: "library://track/1",
             name: "Untitled",
-            media_type: "track",
             artists: [],
-          },
-          {
+          }),
+          trackFixture({
             uri: "spotify://track/9",
             name: "Untitled",
-            media_type: "track",
             artists: [],
-          },
+          }),
         ],
       }),
     );
@@ -268,3 +271,106 @@ describe("MediaSearch", () => {
     vi.useRealTimers();
   });
 });
+
+// keep the fixture's provider in step with its uri, so the dedupe cases really
+// do carry results from two different providers
+function providerOf(uri: string): string {
+  const [scheme] = uri.split("://");
+  return scheme === uri ? "library" : scheme;
+}
+
+function artistRef(name: string): ItemMapping {
+  return {
+    available: true,
+    is_playable: true,
+    item_id: name,
+    media_type: MediaType.ARTIST,
+    name,
+    provider: "library",
+    uri: `library://artist/${name}`,
+  };
+}
+
+function trackFixture(overrides: {
+  uri: string;
+  name: string;
+  artists?: Array<ItemMapping | Artist>;
+}): Track {
+  return {
+    album: null,
+    artists: overrides.artists ?? [],
+    duration: 180,
+    favorite: false,
+    is_playable: true,
+    item_id: overrides.uri,
+    media_type: MediaType.TRACK,
+    metadata: {},
+    name: overrides.name,
+    provider: providerOf(overrides.uri),
+    provider_mappings: [],
+    uri: overrides.uri,
+  };
+}
+
+function playlistFixture(overrides: { uri: string; name: string }): Playlist {
+  return {
+    favorite: false,
+    is_dynamic: false,
+    is_editable: false,
+    is_playable: true,
+    item_id: overrides.uri,
+    media_type: MediaType.PLAYLIST,
+    metadata: {},
+    name: overrides.name,
+    owner: "library",
+    provider: providerOf(overrides.uri),
+    provider_mappings: [],
+    supported_mediatypes: [MediaType.TRACK],
+    uri: overrides.uri,
+  };
+}
+
+function albumFixture(overrides: { uri: string; name: string }): Album {
+  return {
+    album_type: AlbumType.ALBUM,
+    artists: [],
+    favorite: false,
+    is_playable: true,
+    item_id: overrides.uri,
+    media_type: MediaType.ALBUM,
+    metadata: {},
+    name: overrides.name,
+    provider: providerOf(overrides.uri),
+    provider_mappings: [],
+    uri: overrides.uri,
+  };
+}
+
+function artistFixture(overrides: { uri: string; name: string }): Artist {
+  return {
+    favorite: false,
+    is_playable: true,
+    item_id: overrides.uri,
+    media_type: MediaType.ARTIST,
+    metadata: {},
+    name: overrides.name,
+    provider: providerOf(overrides.uri),
+    provider_mappings: [],
+    uri: overrides.uri,
+  };
+}
+
+function genreFixture(overrides: { uri: string; name: string }): Genre {
+  return {
+    favorite: false,
+    genre_aliases: null,
+    is_playable: false,
+    item_id: overrides.uri,
+    media_type: MediaType.GENRE,
+    metadata: {},
+    name: overrides.name,
+    provider: providerOf(overrides.uri),
+    provider_mappings: [],
+    uri: overrides.uri,
+  };
+}

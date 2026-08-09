@@ -1,9 +1,10 @@
 import { MediaType } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
 
 const { mockUpdateUser, storeMock } = vi.hoisted(() => {
   return {
-    mockUpdateUser: vi.fn(),
+    mockUpdateUser: vi.fn<MusicAssistantApi["updateUser"]>(),
     storeMock: {
       currentUser: {
         user_id: "user-1",

@@ -5,24 +5,29 @@ import {
 import {
   ConfigEntryType,
   PlayerType,
+  ProviderStage,
+  ProviderType,
   type ConfigEntry,
   type PlayerConfig,
+  type ProviderInstance,
+  type ProviderManifest,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditPlayer from "@/views/settings/EditPlayer.vue";
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock, eventbusMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
-    getDSPConfig: vi.fn(),
-    getPlayerConfig: vi.fn(),
-    getProvider: vi.fn(),
-    getProviderManifest: vi.fn(),
+    getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
+    getPlayerConfig: vi.fn<MusicAssistantApi["getPlayerConfig"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
     players: {} as Record<string, unknown>,
     providerManifests: {} as Record<string, unknown>,
     providers: {} as Record<string, unknown>,
-    reloadProvider: vi.fn(),
-    savePlayerConfig: vi.fn(),
+    reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+    savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
     subscribe: vi.fn(),
   },
   eventbusMock: {
@@ -81,16 +86,15 @@ describe("EditPlayer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.subscribe.mockReturnValue(vi.fn());
-    apiMock.getDSPConfig.mockResolvedValue({ enabled: false });
-    apiMock.getPlayerConfig.mockResolvedValue(playerConfig());
-    apiMock.getProvider.mockReturnValue({
-      available: true,
-      domain: "chromecast",
-      instance_id: "chromecast--1",
-      name: "Chromecast",
-      supported_features: [],
+    apiMock.getDSPConfig.mockResolvedValue({
+      enabled: false,
+      filters: [],
+      input_gain: 0,
+      output_gain: 0,
     });
-    apiMock.getProviderManifest.mockReturnValue({ domain: "chromecast" });
+    apiMock.getPlayerConfig.mockResolvedValue(playerConfig());
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
     apiMock.reloadProvider.mockResolvedValue(undefined);
     apiMock.savePlayerConfig.mockResolvedValue(playerConfig());
     apiMock.providerManifests = { chromecast: { name: "Chromecast" } };
@@ -469,6 +473,34 @@ function controlEntry(key: string): ConfigEntry {
     default_value: "none",
     value: "none",
     options: [{ title: "none", value: "none" }],
+  };
+}
+
+function providerManifest(): ProviderManifest {
+  return {
+    type: ProviderType.PLAYER,
+    domain: "chromecast",
+    name: "Chromecast",
+    description: "",
+    codeowners: [],
+    credits: [],
+    requirements: [],
+    multi_instance: false,
+    builtin: false,
+    allow_disable: true,
+    stage: ProviderStage.STABLE,
+    icon_images: [],
+  };
+}
+
+function providerInstance(): ProviderInstance {
+  return {
+    type: ProviderType.PLAYER,
+    domain: "chromecast",
+    instance_id: "chromecast--1",
+    name: "Chromecast",
+    available: true,
+    supported_features: [],
   };
 }
 

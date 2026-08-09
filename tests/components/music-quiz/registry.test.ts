@@ -23,6 +23,7 @@ import type {
   MusicQuizTriviaRound,
   MusicQuizType,
 } from "@/composables/music-quiz/useMusicQuiz";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { shallowMount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -50,9 +51,9 @@ vi.mock("@/helpers/utils", () => ({
 
 vi.mock("@/plugins/api", () => ({
   default: {
-    getItemByUri: vi.fn(),
-    getTrackLyrics: vi.fn(),
-    search: vi.fn(),
+    getItemByUri: vi.fn<MusicAssistantApi["getItemByUri"]>(),
+    getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
+    search: vi.fn<MusicAssistantApi["search"]>(),
   },
 }));
 

@@ -4,11 +4,12 @@
  * failures were swallowed, leaving the play button a silent no-op
  * (e.g. while the API connection is re-establishing after a server restart).
  */
+import type { MusicAssistantApi } from "@/plugins/api";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { mockPlayMedia, mockShowPlayMenu, mockToastError, mockStore } =
   vi.hoisted(() => ({
-    mockPlayMedia: vi.fn(),
+    mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
     mockShowPlayMenu: vi.fn(),
     mockToastError: vi.fn(),
     mockStore: {

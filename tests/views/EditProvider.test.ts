@@ -6,24 +6,19 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
-  type ConfigActionResult,
   type ConfigEntry,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditProvider from "@/views/settings/EditProvider.vue";
 
 const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
   vi.hoisted(() => ({
     apiMock: {
-      getProvider: vi.fn(),
-      getProviderConfig: vi.fn(),
+      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+      getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
       invokeProviderConfigAction:
-        vi.fn<
-          (
-            instanceId: string,
-            action: string,
-          ) => Promise<ConfigEntry[] | ConfigActionResult>
-        >(),
+        vi.fn<MusicAssistantApi["invokeProviderConfigAction"]>(),
       providerManifests: {
         spotify: {
           allow_disable: true,
@@ -36,9 +31,9 @@ const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
         },
       },
       providers: {},
-      reloadProvider: vi.fn(),
-      removeProviderConfig: vi.fn(),
-      saveProviderConfig: vi.fn(),
+      reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+      removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
+      saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
       subscribe: vi.fn(),
     },
     eventbusMock: {
