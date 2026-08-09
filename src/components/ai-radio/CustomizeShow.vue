@@ -321,9 +321,9 @@ onBeforeRouteLeave((to) => {
 
 onMounted(async () => {
   try {
-    if (hosts.value.length === 0) {
-      await loadHosts();
-    }
+    // Always refresh: a cached list still renders instantly, but host names
+    // edited elsewhere would otherwise show up stale in the picker.
+    await loadHosts();
     const station = await getShow(props.stationId);
     const decompiled = decompileStation(station);
     draft.value = { basics: decompiled.basics, hostId: decompiled.hostId };

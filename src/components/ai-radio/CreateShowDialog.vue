@@ -162,8 +162,12 @@ watch(
   async (isOpen) => {
     store.dialogActive = isOpen;
     if (!isOpen) return;
-    if (hosts.value.length === 0) {
+    // Always refresh: a cached list still renders instantly, but host names
+    // edited elsewhere would otherwise show up stale in the picker.
+    try {
       await loadHosts();
+    } catch (error) {
+      toast.error(errorMessage(error));
     }
     resetForm(props.initialPlaylist);
   },
