@@ -141,15 +141,15 @@
               <DropdownMenuItem
                 v-if="owningProvider"
                 data-testid="player-reload-provider"
-                :disabled="menuActionLoading"
+                :disabled="toggleLoading"
                 @click="onReloadProvider"
               >
                 <RefreshCw class="size-4" />
-                {{ $t("settings.reload") }}
+                {{ $t("settings.reload_provider") }}
               </DropdownMenuItem>
               <DropdownMenuItem
                 data-testid="player-toggle-enabled"
-                :disabled="menuActionLoading"
+                :disabled="toggleLoading"
                 @click="toggleEnabled"
               >
                 <Power class="size-4" />
@@ -178,7 +178,6 @@
             v-if="owningProvider"
             data-testid="player-provider-settings"
             variant="outline"
-            :disabled="reloadLoading"
             @click="openProviderSettings"
           >
             <Settings class="size-4" />
@@ -287,7 +286,7 @@
       </v-card>
     </v-dialog>
     <v-overlay
-      :model-value="loading || menuActionLoading"
+      :model-value="loading || toggleLoading"
       scrim="true"
       persistent
       style="display: flex; align-items: center; justify-content: center"
@@ -345,13 +344,11 @@ import { MoreVertical, Pencil, Power, RefreshCw, Settings } from "@lucide/vue";
 const router = useRouter();
 const config = ref<PlayerConfig>();
 const loading = ref(false);
-const reloadLoading = ref(false);
 const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
-let reloadRequestId = 0;
 let toggleRequestId = 0;
 
 // props
@@ -403,10 +400,6 @@ const owningProvider = computed(() => {
 
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
-);
-
-const menuActionLoading = computed(
-  () => reloadLoading.value || toggleLoading.value,
 );
 
 const config_entries = computed(() => {
@@ -563,23 +556,21 @@ const openProviderSettings = async function () {
   }
 };
 
-const onReloadProvider = async function () {
+const onReloadProvider = function () {
   const instanceId = owningProvider.value?.instanceId;
   const playerId = config.value?.player_id;
-  if (!instanceId || !playerId || reloadLoading.value) return;
+  if (!instanceId || !playerId) return;
 
-  const requestId = ++reloadRequestId;
-  reloadLoading.value = true;
-  try {
-    await api.reloadProvider(instanceId);
-    if (isCurrentPlayer(playerId)) {
-      toast.success($t("settings.provider_reloading"));
-    }
-  } catch (err) {
-    if (isCurrentPlayer(playerId)) toast.error(String(err));
-  } finally {
-    if (requestId === reloadRequestId) reloadLoading.value = false;
-  }
+  void api
+    .reloadProvider(instanceId)
+    .then(() => {
+      if (isCurrentPlayer(playerId)) {
+        toast.success($t("settings.provider_reloading"));
+      }
+    })
+    .catch((err) => {
+      if (isCurrentPlayer(playerId)) toast.error(String(err));
+    });
 };
 
 const toggleEnabled = async function () {
@@ -707,9 +698,7 @@ function isCurrentPlayer(playerId: string) {
 function resetPlayerState(playerId?: string) {
   if (config.value?.player_id === playerId) return;
   config.value = undefined;
-  reloadLoading.value = false;
   toggleLoading.value = false;
-  reloadRequestId++;
   toggleRequestId++;
 }
 </script>

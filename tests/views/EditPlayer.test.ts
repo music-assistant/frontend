@@ -114,7 +114,7 @@ describe("EditPlayer", () => {
     ).toContain("settings.provider_settings");
     expect(
       wrapper.get('[data-testid="player-reload-provider"]').text(),
-    ).toContain("settings.reload");
+    ).toContain("settings.reload_provider");
     expect(
       wrapper.get('[data-testid="player-toggle-enabled"]').text(),
     ).toContain("settings.disable");
@@ -244,6 +244,27 @@ describe("EditPlayer", () => {
     expect(routerMock.push).not.toHaveBeenCalled();
   });
 
+  it("keeps player settings available while the provider reload is pending", async () => {
+    let resolveReload: () => void = () => {};
+    apiMock.reloadProvider.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveReload = resolve;
+        }),
+    );
+    const wrapper = await mountPlayerPage();
+
+    await wrapper
+      .get('[data-testid="player-reload-provider"]')
+      .trigger("click");
+
+    expect(
+      wrapper.findComponent({ name: "VOverlay" }).props("modelValue"),
+    ).toBe(false);
+    resolveReload();
+    await flushPromises();
+  });
+
   it("disables the player from the header menu", async () => {
     apiMock.savePlayerConfig.mockResolvedValueOnce(
       playerConfig({ enabled: false }),
@@ -325,17 +346,21 @@ describe("EditPlayer", () => {
     expect(toastMock.error).toHaveBeenCalledWith("Error: Save failed");
   });
 
-  it("ignores stale toggle results after navigating to another player", async () => {
+  it("allows a new player toggle while the previous toggle is pending", async () => {
     let resolveSave: (config: PlayerConfig) => void = () => {};
     apiMock.getPlayerConfig
       .mockResolvedValueOnce(playerConfig())
       .mockResolvedValueOnce(playerConfig({ playerId: "player-2" }));
-    apiMock.savePlayerConfig.mockImplementationOnce(
-      () =>
-        new Promise<PlayerConfig>((resolve) => {
-          resolveSave = resolve;
-        }),
-    );
+    apiMock.savePlayerConfig
+      .mockImplementationOnce(
+        () =>
+          new Promise<PlayerConfig>((resolve) => {
+            resolveSave = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(
+        playerConfig({ enabled: false, playerId: "player-2" }),
+      );
     apiMock.players = {
       "player-1": playerState(),
       "player-2": playerState({ playerId: "player-2" }),
@@ -345,18 +370,19 @@ describe("EditPlayer", () => {
     await wrapper.get('[data-testid="player-toggle-enabled"]').trigger("click");
     await wrapper.setProps({ playerId: "player-2" });
     await flushPromises();
+    await wrapper.get('[data-testid="player-toggle-enabled"]').trigger("click");
+    await flushPromises();
+
+    expect(apiMock.savePlayerConfig).toHaveBeenNthCalledWith(2, "player-2", {
+      enabled: false,
+    });
     resolveSave(playerConfig({ enabled: false }));
     await flushPromises();
 
     expect(
       wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
-    ).toBe(false);
-    expect(
-      wrapper
-        .get('[data-testid="player-toggle-enabled"]')
-        .attributes("disabled"),
-    ).toBe("false");
-    expect(toastMock.success).not.toHaveBeenCalled();
+    ).toBe(true);
+    expect(toastMock.success).toHaveBeenCalledTimes(1);
   });
 
   it("ignores stale navigation failures after moving to another player", async () => {

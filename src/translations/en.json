@@ -129,6 +129,7 @@
         "provider_settings": "{name} settings",
         "providers": "Providers",
         "reload": "Reload",
+        "reload_provider": "Reload provider",
         "save": "Save",
         "settings": "Settings",
         "setup_provider": "Setup provider: {0}",

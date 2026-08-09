@@ -20,9 +20,9 @@ const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
       },
     },
     providers: {},
+    reloadProvider: vi.fn(),
     removeProviderConfig: vi.fn(),
     saveProviderConfig: vi.fn(),
-    sendCommand: vi.fn(),
     startSync: vi.fn(),
     subscribe: vi.fn(),
   },
@@ -105,6 +105,7 @@ const ButtonStub = {
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getProvider.mockReturnValue(undefined);
+  apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
 });
 
@@ -194,6 +195,22 @@ describe("Providers", () => {
     expect(routerMock.push).toHaveBeenCalledWith(
       "/settings/editprovider/spotify--test",
     );
+  });
+
+  it("reloads a provider through the shared API action", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
+
+    const contextMenuCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "contextmenu",
+    );
+    const reloadItem = contextMenuCall?.[1].items.find(
+      (item: { label: string }) => item.label === "settings.reload_provider",
+    );
+    reloadItem.action();
+
+    expect(apiMock.reloadProvider).toHaveBeenCalledWith("spotify--test");
   });
 
   it("omits reconfigure from the menu when no setup flow exists", async () => {
