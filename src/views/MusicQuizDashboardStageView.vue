@@ -378,6 +378,14 @@ watch(
   }
 }
 
+/* The answer tiles are the guest picker's buttons in their disabled state; at
+   50% opacity with muted text they turn unreadable on the black TV canvas. */
+.music-quiz-dashboard
+  :deep([data-testid="music-quiz-dashboard-round-body"] button:disabled) {
+  opacity: 1;
+  color: var(--color-white);
+}
+
 .music-quiz-dashboard-backdrop {
   position: absolute;
   /* overscanned so the blur has material to sample at every edge */
