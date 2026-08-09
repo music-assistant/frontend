@@ -14,7 +14,7 @@ export function streamDetails(
     audio_format: audioFormat(),
     media_type: MediaType.TRACK,
     stream_metadata: null,
-    duration: null,
+    duration: 200,
     audio_processing: null,
     ...overrides,
   };
