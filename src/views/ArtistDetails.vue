@@ -574,7 +574,7 @@ const loadArtistAudiobooks = async function (params: LoadDataParams) {
     itemDetails.value.item_id,
     itemDetails.value.provider,
     itemDetails.value.artist_type,
-    params.collapseCollections, // collapsing of collections is only available for in-library items
+    undefined,
     params.collapseCollections,
   );
 };
