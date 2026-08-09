@@ -293,7 +293,7 @@ describe("MusicQuizDashboardStageView", () => {
     wrapper.unmount();
   });
 
-  it("drives answering through the present adapters and caps the board at six", () => {
+  it("shows only the countdown and answer options while answering", () => {
     dashboardMock.state.value = lobbyState({
       phase: "answering",
       current_round: guessTheSongRound,
@@ -309,10 +309,11 @@ describe("MusicQuizDashboardStageView", () => {
     const wrapper = mountView();
 
     expect(wrapper.find('[data-testid="game-adapter"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="answer-adapter"]').exists()).toBe(true);
-    expect(
-      wrapper.get('[data-testid="leaderboard"]').attributes("data-rows"),
-    ).toBe("6");
+    const options = wrapper.get('[data-testid="music-quiz-dashboard-options"]');
+    expect(options.text()).toContain("One");
+    // the board and the answered-progress panel wait until the reveal
+    expect(wrapper.find('[data-testid="answer-adapter"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(false);
     expect(
       wrapper.get('[data-testid="music-quiz-dashboard-listening"]').text(),
     ).toBe("providers.music_quiz.name_that_track");

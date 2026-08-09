@@ -139,19 +139,32 @@
               :state="activeState"
               :current-round="currentRound"
             />
-            <component
-              :is="resolvedDefinition.answer.adapters.present"
-              :state="activeState"
-              :current-round="currentRound"
+            <div class="flex justify-center py-[1vh]">
+              <MusicQuizCountdown
+                :size="160"
+                :fraction="answerFraction"
+                :label="answerLabel || '…'"
+              />
+            </div>
+            <div
+              v-if="answerOptions.length"
+              data-testid="music-quiz-dashboard-options"
+              class="grid min-h-0 content-start gap-[1.5vh] sm:grid-cols-2 lg:gap-[1.5vw]"
             >
-              <template #leaderboard>
-                <MusicQuizLeaderboard
-                  class="min-h-0 flex-1"
-                  :rows="visibleLeaderboardRows"
-                  scrollable
-                />
-              </template>
-            </component>
+              <div
+                v-for="(option, index) in answerOptions"
+                :key="option.suggestion_id"
+                class="flex items-center gap-[0.9em] rounded-2xl bg-white/5 px-[1.1em] py-[0.9em] text-[clamp(1.1rem,2vw,2rem)] font-medium text-white/90"
+              >
+                <span
+                  class="grid size-[1.9em] shrink-0 place-items-center rounded-full bg-white/10 text-[0.75em] font-bold text-white/80"
+                  aria-hidden="true"
+                >
+                  {{ optionLetter(index) }}
+                </span>
+                <span class="min-w-0 break-words">{{ option.label }}</span>
+              </div>
+            </div>
           </template>
           <p
             v-if="revealCountdownText"
@@ -200,6 +213,7 @@
 <script setup lang="ts">
 import MusicQuizAutoStartStatus from "@/components/music-quiz/MusicQuizAutoStartStatus.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
+import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
@@ -211,7 +225,11 @@ import {
   getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
 } from "@/components/music-quiz/game_types";
-import { isSupportedMusicQuiz } from "@/composables/music-quiz/useMusicQuiz";
+import {
+  isSupportedMusicQuiz,
+  type MusicQuizSuggestion,
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { useMusicQuizCelebration } from "@/composables/music-quiz/useMusicQuizCelebration";
 import { useMusicQuizDashboard } from "@/composables/music-quiz/useMusicQuizDashboard";
 import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
@@ -270,10 +288,7 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
 
 // A TV is read from across the room: only the head of the board stays legible.
 const visibleLeaderboardRows = computed(() =>
-  leaderboardRows.value.slice(
-    0,
-    activeState.value?.phase === "answering" ? 6 : 8,
-  ),
+  leaderboardRows.value.slice(0, 8),
 );
 
 const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
@@ -303,6 +318,26 @@ const answeringPrompt = computed(() => {
     ? $t(promptKey)
     : "";
 });
+
+const OPTION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+function optionLetter(index: number): string {
+  return OPTION_LETTERS[index] ?? String(index + 1);
+}
+
+const answerOptions = computed<MusicQuizSuggestion[]>(() => {
+  const round = currentRound.value;
+  return round && "suggestions" in round && Array.isArray(round.suggestions)
+    ? round.suggestions
+    : [];
+});
+
+const { remainingLabel: answerLabel, remainingFraction: answerFraction } =
+  useMusicQuizAnswerDeadline({
+    active: () => activeState.value?.phase === "answering",
+    deadline: () => currentRound.value?.deadline,
+    duration: () => activeState.value?.answer_duration,
+  });
 
 const backdropUrl = computed(() => {
   const phase = activeState.value?.phase;
@@ -376,15 +411,6 @@ watch(
   .music-quiz-dashboard {
     height: 100dvh;
   }
-}
-
-/* The answer tiles are the guest picker's buttons in their disabled state; at
-   50% opacity with muted text they turn unreadable on the black TV canvas. */
-.music-quiz-dashboard
-  :deep([data-testid="music-quiz-dashboard-round-body"] button:disabled) {
-  /* !important because the tailwind build emits utilities with !important */
-  opacity: 1 !important;
-  color: var(--color-white);
 }
 
 .music-quiz-dashboard-backdrop {
