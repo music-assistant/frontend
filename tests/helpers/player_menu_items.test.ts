@@ -90,6 +90,12 @@ vi.mock("@/composables/ai-radio/useHosts", () => ({
   }),
 }));
 
+vi.mock("vue-sonner", () => ({
+  toast: {
+    error: vi.fn(),
+  },
+}));
+
 function makePlayer(overrides: Partial<Player> = {}): Player {
   return {
     player_id: "kitchen",
@@ -307,6 +313,23 @@ describe("getPlayerMenuItems ai dj", () => {
       ?.action?.();
 
     expect(setQueueDj).toHaveBeenCalledWith("kitchen", null);
+  });
+
+  it("reports a failed dj assignment instead of dropping the rejection", async () => {
+    const { toast } = await import("vue-sonner");
+    aiRadioAvailableRef.value = true;
+    hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
+    setQueueDj.mockRejectedValueOnce(new Error("Connection lost"));
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+    await menuItems
+      .find((item) => item.label === "ai_dj")
+      ?.subItems?.find((item) => item.label === "Robo DJ")
+      ?.action?.();
+
+    expect(toast.error).toHaveBeenCalledWith("Connection lost");
   });
 
   it("omits the ai_dj entry outside the queue menu context", () => {

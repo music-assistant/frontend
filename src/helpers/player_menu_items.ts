@@ -24,6 +24,8 @@ import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
+import { errorMessage } from "@/helpers/ai_radio";
+import { toast } from "vue-sonner";
 
 export const getPlayerSetupMenuItem = (
   player: Pick<Player, "player_id" | "needs_setup" | "has_setup_flow">,
@@ -171,7 +173,8 @@ export const getPlayerMenuItems = (
   // AI DJ (queue menu only; when a provider offering AI radio hosts is
   // loaded). Lists configured hosts to assign as the queue's live DJ, plus an
   // "Off" entry to clear it; a check marks whichever is currently active.
-  // Kicks off a refresh of both so a later re-open reflects any changes made
+  // Built from the caches useHosts prefetches on provider availability, and
+  // kicks off a refresh of both so a later re-open reflects any changes made
   // elsewhere (e.g. the AI Radio settings page).
   const {
     hosts,
@@ -179,7 +182,6 @@ export const getPlayerMenuItems = (
     aiRadioAvailable,
     loadHosts,
     loadQueueDjStatus,
-    setQueueDj,
   } = useHosts();
   if (isQueue && playerQueue && aiRadioAvailable.value) {
     const queueId = playerQueue.queue_id;
@@ -193,17 +195,13 @@ export const getPlayerMenuItems = (
           label: host.name,
           labelArgs: [],
           selected: activeHostId === host.id,
-          action: () => {
-            setQueueDj(queueId, host.id);
-          },
+          action: () => assignQueueDj(queueId, host.id),
         })),
         {
           label: "ai_dj_off",
           labelArgs: [],
           selected: !activeHostId,
-          action: () => {
-            setQueueDj(queueId, null);
-          },
+          action: () => assignQueueDj(queueId, null),
         },
       ],
     });
@@ -400,3 +398,15 @@ export const getPlayerMenuItems = (
 
   return menuItems;
 };
+
+/** Assigns (or clears) a queue's AI DJ host, reporting a failed command to the user. */
+async function assignQueueDj(
+  queueId: string,
+  hostId: string | null,
+): Promise<void> {
+  try {
+    await useHosts().setQueueDj(queueId, hostId);
+  } catch (error) {
+    toast.error(errorMessage(error));
+  }
+}
