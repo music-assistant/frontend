@@ -17,13 +17,13 @@ import type {
   MusicQuizPresentAnswerAdapterProps,
 } from "@/components/music-quiz/adapter_contracts";
 import type {
-  MusicQuizTimelineHostState,
+  MusicQuizTimelinePublicState,
   MusicQuizTimelineRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 
 defineProps<
   MusicQuizPresentAnswerAdapterProps<
-    MusicQuizTimelineHostState,
+    MusicQuizTimelinePublicState,
     MusicQuizTimelineRound
   >
 >();

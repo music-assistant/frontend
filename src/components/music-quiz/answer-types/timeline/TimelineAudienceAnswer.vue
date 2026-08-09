@@ -123,7 +123,7 @@ import TimelineProgress from "@/components/music-quiz/answer-types/timeline/Time
 import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
-  MusicQuizTimelineHostState,
+  MusicQuizTimelinePublicState,
   MusicQuizTimelineRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
@@ -134,7 +134,7 @@ import { computed, type VNode } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    state: MusicQuizTimelineHostState;
+    state: MusicQuizTimelinePublicState;
     currentRound: MusicQuizTimelineRound;
     present?: boolean;
     showTimeline?: boolean;

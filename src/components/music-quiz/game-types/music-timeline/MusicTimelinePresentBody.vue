@@ -44,13 +44,13 @@ import type { MusicQuizPresentBodyAdapterProps } from "@/components/music-quiz/a
 import MusicTimelinePresentRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentRound.vue";
 import MusicQuizLeaderboard from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import type {
-  MusicQuizTimelineHostState,
+  MusicQuizTimelinePublicState,
   MusicQuizTimelineRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 
 defineProps<
   MusicQuizPresentBodyAdapterProps<
-    MusicQuizTimelineHostState,
+    MusicQuizTimelinePublicState,
     MusicQuizTimelineRound
   >
 >();
