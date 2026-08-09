@@ -1,4 +1,5 @@
-import { ContentType, type ProviderMapping } from "@/plugins/api/interfaces";
+import { type ProviderMapping } from "@/plugins/api/interfaces";
+import { audioFormat } from "./audioFormat";
 
 /**
  * A complete provider mapping, for fixtures that only care about a few of its
@@ -15,15 +16,7 @@ export function providerMapping(
     in_library: null,
     details: null,
     url: null,
-    audio_format: {
-      content_type: ContentType.FLAC,
-      codec_type: ContentType.FLAC,
-      sample_rate: 44100,
-      bit_depth: 16,
-      channels: 2,
-      output_format_str: "flac",
-      bit_rate: 0,
-    },
+    audio_format: audioFormat(),
     ...overrides,
   };
 }
