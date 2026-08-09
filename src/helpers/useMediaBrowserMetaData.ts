@@ -23,10 +23,11 @@ function playerMediaToMetadata(item: PlayerMedia) {
     },
   ];
 
+  // MediaMetadata rejects null, so unset fields are passed through as undefined
   return new MediaMetadata({
-    title: item.title,
-    artist: item.artist,
-    album: item.album,
+    title: item.title ?? undefined,
+    artist: item.artist ?? undefined,
+    album: item.album ?? undefined,
     artwork,
   });
 }

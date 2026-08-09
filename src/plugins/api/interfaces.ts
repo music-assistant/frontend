@@ -1218,43 +1218,43 @@ export interface OutputProtocol {
   available: boolean; // Whether this output protocol is currently available
   // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin
   // bridge over an AirPlay player), the output_protocol_id of the base output; null for direct outputs
-  derived_from?: string | null;
+  derived_from: string | null;
 }
 
 export interface DeviceInfo {
   model: string;
   manufacturer: string;
-  software_version?: string;
-  model_id?: string;
-  manufacturer_id?: string;
+  software_version: string | null;
+  model_id: string | null;
+  manufacturer_id: string | null;
   // Identifiers for device identification and protocol player linking
   // Maps IdentifierType to value (e.g., MAC_ADDRESS -> "AA:BB:CC:DD:EE:FF")
   identifiers: Record<IdentifierType, string>;
 }
 
 export interface MediaItemPalette {
-  background_dark?: [number, number, number] | null;
-  background_light?: [number, number, number] | null;
-  primary?: [number, number, number] | null;
-  accent?: [number, number, number] | null;
-  on_dark?: [number, number, number] | null;
-  on_light?: [number, number, number] | null;
+  background_dark: [number, number, number] | null;
+  background_light: [number, number, number] | null;
+  primary: [number, number, number] | null;
+  accent: [number, number, number] | null;
+  on_dark: [number, number, number] | null;
+  on_light: [number, number, number] | null;
 }
 
 export interface PlayerMedia {
   uri: string; // uri or other identifier of the loaded media
   media_type: MediaType;
-  title?: string; // optional
-  artist?: string; // optional
-  album?: string; // optional
-  image_url?: string; // optional
-  palette?: MediaItemPalette | null; // optional
-  duration?: number; // optional
-  source_id?: string; // optional
-  elapsed_time?: number; // optional
-  elapsed_time_last_updated?: number; // optional
+  title: string | null;
+  artist: string | null;
+  album: string | null;
+  image_url: string | null;
+  palette: MediaItemPalette | null;
+  duration: number | null;
+  source_id: string | null;
+  elapsed_time: number | null;
+  elapsed_time_last_updated: number | null;
   queue_id?: string; // only present for requests from queue controller
-  queue_item_id?: string; // only present for requests from queue controller
+  queue_item_id: string | null; // only set for requests from the queue controller
 }
 
 export interface PlayerSource {
@@ -1290,11 +1290,11 @@ export interface PlayerOption {
   value: PlayerOptionValueType;
   read_only: boolean;
 
-  min_value?: number;
-  max_value?: number;
-  step?: number;
+  min_value: number | null;
+  max_value: number | null;
+  step: number | null;
 
-  options?: PlayerOptionEntry[];
+  options: PlayerOptionEntry[] | null;
 }
 
 export interface Player {
@@ -1308,27 +1308,30 @@ export interface Player {
   can_group_with: string[];
   enabled: boolean;
 
-  elapsed_time?: number;
-  elapsed_time_last_updated?: number;
-  current_media?: PlayerMedia;
+  elapsed_time: number | null;
+  elapsed_time_last_updated: number | null;
+  current_media: PlayerMedia | null;
   playback_state?: PlaybackState;
-  powered?: boolean;
-  volume_level?: number;
-  volume_muted?: boolean;
+  powered: boolean | null;
+  volume_level: number | null;
+  volume_muted: boolean | null;
   group_members: string[];
   static_group_members: string[];
   // active_source: id of the source the player is currently playing - its own queue_id for
   // Music Assistant playback, or an external source id. PlayerQueue.active is derived from
   // this, and PLAYER_UPDATED carries a new value before the queue is recalculated, so the
   // two can disagree for about half a second during a source handover.
-  active_source?: string;
+  active_source: string | null;
   source_list: PlayerSource[];
-  active_sound_mode?: string;
+  active_sound_mode: string | null;
   sound_mode_list: PlayerSoundMode[];
   options: PlayerOption[];
-  active_group?: string;
-  synced_to?: string;
+  active_group: string | null;
+  synced_to: string | null;
 
+  // group_volume: the server currently substitutes 0 for an unset value, so null does not
+  // reach us today; it stays nullable because that substitution is a temporary shim for
+  // older Home Assistant integration versions.
   group_volume: number | null;
   group_volume_muted: boolean | null;
   hide_in_ui: boolean;
@@ -1351,7 +1354,7 @@ export interface Player {
 
   // sleep_timer_expires_at: unix (utc) timestamp at which the active sleep timer
   // will stop playback, or null when no sleep timer is set.
-  sleep_timer_expires_at?: number | null;
+  sleep_timer_expires_at: number | null;
 }
 
 // provider

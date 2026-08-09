@@ -176,6 +176,19 @@ describe("color utilities", () => {
   });
 
   describe("paletteFromServer", () => {
+    // the server sends every palette key, using null for the colors it could not derive
+    const serverPalette = (
+      overrides: Partial<MediaItemPalette> = {},
+    ): MediaItemPalette => ({
+      background_dark: null,
+      background_light: null,
+      primary: null,
+      accent: null,
+      on_dark: null,
+      on_light: null,
+      ...overrides,
+    });
+
     it("returns empty palette for null", () => {
       expect(paletteFromServer(null)).toEqual({
         lightColor: "",
@@ -190,27 +203,18 @@ describe("color utilities", () => {
       });
     });
 
-    it("returns empty strings when on_dark and on_light are missing", () => {
-      const palette: MediaItemPalette = {};
-      expect(paletteFromServer(palette)).toEqual({
-        lightColor: "",
-        darkColor: "",
-      });
-    });
-
     it("returns empty strings when on_dark and on_light are null", () => {
-      const palette: MediaItemPalette = { on_dark: null, on_light: null };
-      expect(paletteFromServer(palette)).toEqual({
+      expect(paletteFromServer(serverPalette())).toEqual({
         lightColor: "",
         darkColor: "",
       });
     });
 
     it("maps on_dark to lightColor and on_light to darkColor", () => {
-      const palette: MediaItemPalette = {
+      const palette = serverPalette({
         on_dark: [255, 200, 100],
         on_light: [40, 20, 10],
-      };
+      });
       expect(paletteFromServer(palette)).toEqual({
         lightColor: "#ffc864",
         darkColor: "#28140a",
@@ -218,14 +222,18 @@ describe("color utilities", () => {
     });
 
     it("handles only one of on_dark/on_light being set", () => {
-      expect(paletteFromServer({ on_dark: [255, 255, 255] })).toEqual({
+      expect(
+        paletteFromServer(serverPalette({ on_dark: [255, 255, 255] })),
+      ).toEqual({
         lightColor: "#ffffff",
         darkColor: "",
       });
-      expect(paletteFromServer({ on_light: [0, 0, 0] })).toEqual({
-        lightColor: "",
-        darkColor: "#000000",
-      });
+      expect(paletteFromServer(serverPalette({ on_light: [0, 0, 0] }))).toEqual(
+        {
+          lightColor: "",
+          darkColor: "#000000",
+        },
+      );
     });
   });
 });
