@@ -134,6 +134,25 @@ describe("guest routes", () => {
   });
 });
 
+describe("music quiz dashboard route", () => {
+  it("is a top-level kiosk route in the music-quiz chunk", () => {
+    const dashboardRoute = routes.find(
+      (route) => route.path === "/music-quiz/dashboard",
+    );
+
+    expect(dashboardRoute).toBeDefined();
+    expect(dashboardRoute?.children?.map((route) => route.name)).toEqual([
+      "music-quiz-dashboard",
+    ]);
+  });
+
+  it("resolves without the app chrome routes' guards", () => {
+    expect(resolveRoute("/music-quiz/dashboard").name).toBe(
+      "music-quiz-dashboard",
+    );
+  });
+});
+
 describe("party dashboard guard", () => {
   it("redirects to Discover when the party plugin is disabled", async () => {
     await expect(
@@ -274,6 +293,22 @@ describe("global navigation guard", () => {
     await expect(
       invokeGuard(globalGuard, resolveRoute("/now-playing?player=kitchen")),
     ).resolves.toBeUndefined();
+    expect(mocks.store.frameless).toBe(true);
+  });
+
+  it("keeps a dashboard viewer on the pinned Music Quiz dashboard", async () => {
+    mocks.isDashboardViewer.mockReturnValue(true);
+    sessionStorage.setItem(
+      DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+      "/music-quiz/dashboard",
+    );
+
+    await expect(
+      invokeGuard(globalGuard, resolveRoute("/music-quiz/dashboard")),
+    ).resolves.toBeUndefined();
+    await expect(
+      invokeGuard(globalGuard, resolveRoute("/music-quiz")),
+    ).resolves.toBe("/music-quiz/dashboard");
     expect(mocks.store.frameless).toBe(true);
   });
 
