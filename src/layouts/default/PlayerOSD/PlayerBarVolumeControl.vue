@@ -23,7 +23,8 @@
   </Teleport>
 
   <Popover :open="open" @update:open="handleOpenChange">
-    <PopoverAnchor :reference="playerBarEndAnchor" as-child>
+    <PopoverAnchor :reference="playerBarEndAnchor" />
+    <PopoverTrigger as-child>
       <Button
         data-player-volume-trigger
         variant="ghost"
@@ -34,7 +35,7 @@
         :aria-label="`${$t('audio_overlay_volume')}: ${displayVolume}%`"
         :aria-expanded="open"
         aria-haspopup="dialog"
-        @click="toggleOpen"
+        @click.capture="handleTriggerClick"
         @pointerleave="suppressHover = false"
         @wheel="adjustVolume"
       >
@@ -52,7 +53,7 @@
           {{ displayVolume }}%
         </span>
       </Button>
-    </PopoverAnchor>
+    </PopoverTrigger>
     <PopoverContent
       data-player-panel
       side="top"
@@ -69,7 +70,6 @@
           ? 'w-[calc(100vw-1rem)]'
           : 'w-[340px] max-w-[calc(100vw-1rem)]',
       ]"
-      @close-auto-focus="preventAutoFocus"
       @open-auto-focus="preventAutoFocus"
       @interact-outside="handleInteractOutside"
     >
@@ -86,6 +86,7 @@ import {
   Popover,
   PopoverAnchor,
   PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import { isPlayerGrouped } from "@/helpers/players";
 import { getVolumeIconComponent } from "@/helpers/utils";
@@ -137,9 +138,8 @@ function handleOpenChange(value: boolean) {
   open.value = value;
 }
 
-function toggleOpen() {
+function handleTriggerClick() {
   suppressHover.value = open.value;
-  open.value = !open.value;
 }
 
 function preventAutoFocus(event: Event) {

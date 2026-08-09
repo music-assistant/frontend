@@ -54,6 +54,7 @@
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { groupMemberPickerVisible } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import {
@@ -67,7 +68,7 @@ const props = withDefaults(
   defineProps<{
     player: Player;
     members: Player[];
-    filter?: "all" | "players" | "lights" | "visualizers";
+    filter?: PlayerGroupFilter;
     groupHeading?: string;
     showSeparator?: boolean;
   }>(),

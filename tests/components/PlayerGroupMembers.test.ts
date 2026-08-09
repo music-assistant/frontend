@@ -1,4 +1,5 @@
 import PlayerGroupMembers from "@/components/PlayerGroupMembers.vue";
+import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   IdentifierType,
@@ -85,7 +86,7 @@ function mountGroupMembers(
   player: Player,
   members: Player[],
   props: {
-    filter?: "all" | "players" | "lights" | "visualizers";
+    filter?: PlayerGroupFilter;
     groupHeading?: string;
   } = {},
 ) {

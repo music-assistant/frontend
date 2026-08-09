@@ -8,6 +8,7 @@ import {
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
+import { h, inject, provide, type InjectionKey, type SetupContext } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", async () => {
@@ -36,10 +37,37 @@ vi.mock("@/helpers/utils", () => ({
   }),
 }));
 
+const popoverToggleKey: InjectionKey<() => void> = Symbol();
 const PopoverStub = {
-  props: ["open"],
+  props: {
+    open: {
+      type: Boolean,
+      required: true,
+    },
+  },
   emits: ["update:open"],
-  template: `<div class="popover" :data-open="String(open)"><slot /></div>`,
+  setup(
+    props: Readonly<{ open?: boolean }>,
+    { emit, slots }: SetupContext<["update:open"]>,
+  ) {
+    provide(popoverToggleKey, () => emit("update:open", !props.open));
+    return () =>
+      h(
+        "div",
+        {
+          class: "popover",
+          "data-open": String(props.open),
+        },
+        slots.default?.(),
+      );
+  },
+};
+const PopoverTriggerStub = {
+  setup(_: unknown, { slots }: SetupContext) {
+    const toggle = inject(popoverToggleKey);
+    if (!toggle) throw new Error("PopoverTrigger must be inside Popover");
+    return () => h("div", { onClick: toggle }, slots.default?.());
+  },
 };
 const passthroughStub = {
   template: "<div><slot /></div>",
@@ -116,6 +144,7 @@ function mountControl(player: Player) {
         Popover: PopoverStub,
         PopoverAnchor: passthroughStub,
         PopoverContent: passthroughStub,
+        PopoverTrigger: PopoverTriggerStub,
         Separator: passthroughStub,
         Teleport: true,
       },

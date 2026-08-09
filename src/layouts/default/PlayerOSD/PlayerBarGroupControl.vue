@@ -9,6 +9,7 @@
       >
         <button
           v-if="open"
+          data-player-group-backdrop
           type="button"
           :class="[
             'modal-backdrop player-group-backdrop fixed inset-x-0 top-0 z-[99999]',
@@ -17,13 +18,14 @@
               : 'player-group-backdrop-desktop',
           ]"
           :aria-label="$t('close')"
-          @click="handleOpenChange(false)"
+          @click.stop.prevent="handleOpenChange(false)"
         ></button>
       </Transition>
     </Teleport>
 
     <Popover :open="open" @update:open="handleOpenChange">
-      <PopoverAnchor :reference="playerBarEndAnchor" as-child>
+      <PopoverAnchor :reference="playerBarEndAnchor" />
+      <PopoverTrigger as-child>
         <Button
           data-player-group-trigger
           variant="ghost"
@@ -36,7 +38,7 @@
           :data-suppress-hover="suppressHover"
           :aria-label="$t('tooltip.group_members')"
           :aria-pressed="open"
-          @click="toggleOpen"
+          @click.capture="handleTriggerClick"
           @pointerleave="suppressHover = false"
         >
           <span
@@ -55,7 +57,7 @@
             {{ memberCount === 1 ? $t("player_type.player") : $t("players") }}
           </span>
         </Button>
-      </PopoverAnchor>
+      </PopoverTrigger>
 
       <PopoverContent
         data-player-panel
@@ -73,7 +75,6 @@
             ? 'max-h-[75dvh] w-[calc(100vw-1rem)]'
             : 'max-h-[min(70dvh,600px)] w-[400px] max-w-[calc(100vw-1rem)]',
         ]"
-        @close-auto-focus="preventAutoFocus"
         @open-auto-focus="preventAutoFocus"
         @interact-outside="handleInteractOutside"
       >
@@ -97,6 +98,7 @@ import {
   Popover,
   PopoverAnchor,
   PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import {
   canEditPlayerGroup,
@@ -205,9 +207,8 @@ function handleOpenChange(value: boolean) {
   if (!value) filter.value = "all";
 }
 
-function toggleOpen() {
+function handleTriggerClick() {
   suppressHover.value = open.value;
-  open.value = !open.value;
 }
 
 function preventAutoFocus(event: Event) {
@@ -221,7 +222,7 @@ function handleInteractOutside(event: Event) {
   if (
     target instanceof Element &&
     target.closest(
-      "[data-player-group-trigger], [data-slot='dropdown-menu-content']",
+      "[data-player-group-trigger], [data-player-group-backdrop], [data-slot='dropdown-menu-content']",
     )
   ) {
     event.preventDefault();
