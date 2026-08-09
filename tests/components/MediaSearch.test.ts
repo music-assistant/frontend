@@ -1,6 +1,5 @@
 import MediaSearch from "@/components/MediaSearch.vue";
 import {
-  AlbumType,
   MediaType,
   type Album,
   type Artist,
@@ -17,6 +16,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { track } from "../fixtures/track";
 import { playlist } from "../fixtures/playlist";
 import { genre } from "../fixtures/genre";
+import { album } from "../fixtures/album";
+import { artist } from "../fixtures/artist";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn<MusicAssistantApi["search"]>(),
@@ -315,34 +316,25 @@ function playlistFixture(
   });
 }
 
-function albumFixture(overrides: { uri: string; name: string }): Album {
-  return {
-    album_type: AlbumType.ALBUM,
-    artists: [],
-    favorite: false,
-    is_playable: true,
+function albumFixture(
+  overrides: Omit<Partial<Album>, "item_id" | "provider"> & Pick<Album, "uri">,
+): Album {
+  return album({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.ALBUM,
-    metadata: {},
-    name: overrides.name,
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    uri: overrides.uri,
-  };
+  });
 }
 
-function artistFixture(overrides: { uri: string; name: string }): Artist {
-  return {
-    favorite: false,
-    is_playable: true,
+function artistFixture(
+  overrides: Omit<Partial<Artist>, "item_id" | "provider"> &
+    Pick<Artist, "uri">,
+): Artist {
+  return artist({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.ARTIST,
-    metadata: {},
-    name: overrides.name,
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    uri: overrides.uri,
-  };
+  });
 }
 
 function genreFixture(
