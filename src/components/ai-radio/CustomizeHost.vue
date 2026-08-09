@@ -342,8 +342,32 @@ function handleBack() {
   confirmDiscard(() => emit("back"));
 }
 
+/**
+ * Localized reason the draft can't be saved, or null when it can.
+ * Runs before any write: sections are persisted before the host, so letting
+ * the server reject the host would leave those sections behind orphaned.
+ */
+function validate(host: HostDraft): string | null {
+  const prefix = "providers.ai_radio.hosts.editor.validation";
+  if (!host.name.trim()) {
+    return $t(`${prefix}.name_required`);
+  }
+  if (host.segments.length === 0) {
+    return $t(`${prefix}.segments_required`);
+  }
+  if (host.segments.some((segment) => !segment.prompt.trim())) {
+    return $t(`${prefix}.segment_prompt_required`);
+  }
+  return null;
+}
+
 async function handleSave() {
   if (!draft.value) return;
+  const validationError = validate(draft.value);
+  if (validationError) {
+    toast.error(validationError);
+    return;
+  }
   saving.value = true;
   try {
     const { host, sections: compiledSections } = compileHost(draft.value);

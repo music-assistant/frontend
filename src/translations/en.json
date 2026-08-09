@@ -1562,7 +1562,12 @@
                     "title": "Customize host",
                     "save": "Save host",
                     "name_label": "Host name",
-                    "default_voice": "Default"
+                    "default_voice": "Default",
+                    "validation": {
+                        "name_required": "Host name is required",
+                        "segments_required": "Add at least one segment",
+                        "segment_prompt_required": "Every segment needs a prompt"
+                    }
                 }
             }
         },
