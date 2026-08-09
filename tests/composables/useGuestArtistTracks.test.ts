@@ -1,4 +1,4 @@
-import type { Track } from "@/plugins/api/interfaces";
+import type { Artist, Track } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { artist } from "../fixtures/artist";
 import { track } from "../fixtures/track";
@@ -42,7 +42,7 @@ describe("useGuestArtistTracks", () => {
     const { selectedArtist, artistTracks, loadingArtistTracks, selectArtist } =
       useGuestArtistTracks();
 
-    const libraryArtist = artist({ item_id: "artist-id" });
+    const libraryArtist = artistFixture("artist-id");
 
     await selectArtist(libraryArtist);
 
@@ -124,8 +124,8 @@ describe("useGuestArtistTracks", () => {
     const { selectedArtist, artistTracks, selectArtist } =
       useGuestArtistTracks();
 
-    const first = selectArtist(artist({ item_id: "a1", name: "First" }));
-    const second = selectArtist(artist({ item_id: "a2", name: "Second" }));
+    const first = selectArtist(artistFixture("a1", "First"));
+    const second = selectArtist(artistFixture("a2", "Second"));
     await second;
     resolveFirst([trackFixture("first-track")]);
     await first;
@@ -134,6 +134,14 @@ describe("useGuestArtistTracks", () => {
     expect(artistTracks.value).toEqual(secondTracks);
   });
 });
+
+function artistFixture(itemId: string, name = itemId): Artist {
+  return artist({
+    item_id: itemId,
+    name,
+    uri: `library://artist/${itemId}`,
+  });
+}
 
 function trackFixture(itemId: string): Track {
   return track({
