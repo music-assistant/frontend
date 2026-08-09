@@ -746,7 +746,6 @@ export interface ProviderConfig extends Config {
   type: ProviderType;
   domain: string;
   instance_id: string;
-  manifest: ProviderManifest; // copied here for the UI only
   // enabled: boolean to indicate if the provider is enabled
   enabled: boolean;
   // name: a custom name for this provider instance/config
@@ -774,7 +773,6 @@ export interface PlayerConfig extends Config {
 export interface CoreConfig extends Config {
   // Core(controller) Configuration.
   domain: string;
-  manifest: ProviderManifest; // copied here for the UI only
   last_error: string | null;
 }
 
@@ -846,7 +844,6 @@ export interface MediaItemMetadata {
   links?: MediaItemLink[] | null;
   performers?: string[] | null;
   preview?: string | null;
-  replaygain?: number;
   popularity?: number | null;
   release_date?: string | null;
   chapters?: MediaItemChapter[] | null;
@@ -1255,7 +1252,6 @@ export interface PlayerMedia {
   source_id: string | null;
   elapsed_time: number | null;
   elapsed_time_last_updated: number | null;
-  queue_id?: string; // only present for requests from queue controller
   queue_item_id: string | null; // only set for requests from the queue controller
 }
 

@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigEntryType, type CoreConfig } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
-import { providerManifest } from "../fixtures/providerManifest";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -238,14 +237,6 @@ function coreConfig(): CoreConfig {
   return {
     domain: "cache",
     last_error: null,
-    manifest: providerManifest({
-      allow_disable: false,
-      builtin: true,
-      description: "Cache controller",
-      domain: "cache",
-      has_setup_flow: false,
-      name: "Cache",
-    }),
     values: {
       clear_on_start: {
         category: "generic",

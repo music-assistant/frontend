@@ -337,7 +337,7 @@ const allConfigEntries = computed(() => {
 
 const providerManifest = computed(() => {
   if (!config.value) return undefined;
-  return api.providerManifests[config.value.domain] ?? config.value.manifest;
+  return api.providerManifests[config.value.domain];
 });
 
 const providerName = computed(
