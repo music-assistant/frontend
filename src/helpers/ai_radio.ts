@@ -6,7 +6,6 @@ import type {
   AIRadioSection,
   AIRadioSectionOrderRule,
   AIRadioStation,
-  AIRadioStationGeneral,
   AIRadioWebSearchMode,
 } from "@/plugins/api/interfaces";
 import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
@@ -84,26 +83,14 @@ export const relativeTimeFromIso = (
   return rtf.format(Math.trunc(diffSeconds / 86400), "day");
 };
 
-export const asGeneralDefaults = (
-  general?: AIRadioStationGeneral,
-): AIRadioStationGeneral => {
-  return {
-    instructions: general?.instructions || "",
-    weather_provider: general?.weather_provider || "open_meteo",
-    weather_timeout_seconds:
-      typeof general?.weather_timeout_seconds === "number"
-        ? general.weather_timeout_seconds
-        : 8,
-  };
-};
-
 // -----------------------------------------------------------------------
-// Show model: the UI-facing "segment" representation of a station, and the
-// compiler/decompiler that translate it to/from the backend station+section
-// contract (MUST/ALTERNATIVE/OPTIONAL flow items + guards).
+// Host model: the UI-facing "segment" representation of a host's spoken
+// content, and the compiler/decompiler that translate it to/from the
+// backend host+section contract (MUST/ALTERNATIVE/OPTIONAL flow items +
+// guards).
 // -----------------------------------------------------------------------
 
-/** One spoken segment in a show, edited as a single row in the Customize UI. */
+/** One spoken segment a host can play, edited as a single row in the host editor. */
 export interface ShowSegment {
   id: string;
   name: string;
@@ -116,7 +103,7 @@ export interface ShowSegment {
 /**
  * When a segment plays, expressed in UI-friendly terms.
  * Compiles down to MUST (start/end/every_song) or OPTIONAL with derived
- * chance/guards (every_n_songs/every_n_min/occasionally) — see compileShow.
+ * chance/guards (every_n_songs/every_n_min/occasionally) — see compileHost.
  */
 export type PlaysRule =
   | { kind: "start" }
@@ -128,7 +115,7 @@ export type PlaysRule =
 
 export type TalkativenessLevel = "rarely" | "normal" | "chatty";
 
-/** Station-level fields the Customize UI edits outside of the segment list. */
+/** Station-level fields the Customize UI edits. */
 export interface ShowBasics {
   id?: string;
   name: string;
@@ -137,12 +124,12 @@ export interface ShowBasics {
   defaultPlayerId: string;
   maxDurationMinutes: number;
   shuffleSourceTracks: boolean;
-  general: AIRadioStationGeneral;
 }
 
+/** A show is just a playlist plus a reference to the host that voices it. */
 export interface ShowDraft {
   basics: ShowBasics;
-  segments: ShowSegment[];
+  hostId: string;
 }
 
 export type ShowPresetKey =
@@ -151,13 +138,13 @@ export type ShowPresetKey =
   | "music_nerd"
   | "party_host";
 
-/** A bundled host-style starting point offered in the create dialog. */
+/** A bundled starting point offered in the host editor. */
 export interface ShowPreset {
   key: ShowPresetKey;
   /** Kebab-case Lucide icon name, resolved via helpers/icon.ts#getLucideIcon. */
   icon: string;
   segments: ShowSegment[];
-  /** Seeds general.instructions — the host personality + program style. */
+  /** Seeds HostDraft.instructions — the host personality + program style. */
   instructions: string;
 }
 
@@ -430,29 +417,25 @@ interface CompiledSegments {
  * Builds one AIRadioSection per segment plus a hidden ai_meta merge section,
  * and a section_order per segment.plays (start/end -> MUST rules in list
  * order, everything else -> a single between_songs rule where every_song is
- * MUST and the rest are OPTIONAL with derived chance/guards). `idBase` seeds
- * the merge section's id (station or host id). Shared by compileShow/compileHost.
- * `namespaceIds` additionally prefixes every regular segment id with
- * `idBase` (compileHost only — hosts' sections live in the flat shared
- * ai_radio/sections namespace, unlike a show's self-contained station.sections,
- * so two hosts must not be able to collide on e.g. both having an "intro").
- * The prefix check is idempotent: an id already carrying it (round-tripped
- * back from decompileHost into the draft) is left alone rather than
- * re-prefixed on every subsequent compile.
+ * MUST and the rest are OPTIONAL with derived chance/guards). `hostId` seeds
+ * the merge section's id and namespaces every regular segment id (hosts'
+ * sections live in the flat shared ai_radio/sections namespace, so two hosts
+ * must not be able to collide on e.g. both having an "intro"). The prefix
+ * check is idempotent: an id already carrying it (round-tripped back from
+ * decompileHost into the draft) is left alone rather than re-prefixed on
+ * every subsequent compile.
  */
 const compileSegments = (
   segments: ShowSegment[],
-  idBase: string,
-  namespaceIds = false,
+  hostId: string,
 ): CompiledSegments => {
   const usedIds = new Set<string>();
 
   const sections: AIRadioSection[] = [];
   const resolved = segments.map((segment) => {
     const rawId = segment.id || segment.name;
-    const prefix = `${idBase}_`;
-    const namespacedId =
-      namespaceIds && !rawId.startsWith(prefix) ? `${prefix}${rawId}` : rawId;
+    const prefix = `${hostId}_`;
+    const namespacedId = rawId.startsWith(prefix) ? rawId : `${prefix}${rawId}`;
     const id = dedupeId(slugify(namespacedId), usedIds);
     sections.push({
       id,
@@ -495,7 +478,7 @@ const compileSegments = (
     });
   }
 
-  const mergeSectionId = dedupeId(`${idBase}_smoother`, usedIds);
+  const mergeSectionId = dedupeId(`${hostId}_smoother`, usedIds);
   sections.push({
     id: mergeSectionId,
     name: "Between Songs Mix",
@@ -506,19 +489,9 @@ const compileSegments = (
   return { sections, sectionOrder, mergeSectionId };
 };
 
-/**
- * Compiles a show draft into the full station payload the backend expects:
- * one AIRadioSection per segment plus a hidden ai_meta merge section, and a
- * section_order built per segment.plays (start/end -> MUST rules in list
- * order, everything else -> a single between_songs rule where every_song is
- * MUST and the rest are OPTIONAL with derived chance/guards).
- */
+/** Compiles a show draft into the station payload the backend expects: a playlist reference plus its host. */
 export const compileShow = (draft: ShowDraft): AIRadioStation => {
   const stationId = draft.basics.id?.trim() || slugify(draft.basics.name);
-  const { sections, sectionOrder, mergeSectionId } = compileSegments(
-    draft.segments,
-    stationId,
-  );
 
   return {
     id: stationId,
@@ -528,10 +501,7 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
     default_player_id: draft.basics.defaultPlayerId || "",
     max_duration_minutes: draft.basics.maxDurationMinutes,
     shuffle_source_tracks: draft.basics.shuffleSourceTracks,
-    merge_section_id: mergeSectionId,
-    general: draft.basics.general,
-    sections,
-    section_order: sectionOrder,
+    host_id: draft.hostId,
   };
 };
 
@@ -554,11 +524,11 @@ export interface CompiledHost {
 /**
  * Compiles a host draft into the AIRadioHost payload the backend expects
  * plus the AIRadioSection content it references, applying talkativeness and
- * running the same segment/section_order compilation as compileShow (see
- * compileSegments). Sections are returned rather than embedded: v3 hosts
- * don't carry section content, so callers must persist them explicitly
- * (ai_radio/sections/save) before saving the host. Section ids are namespaced
- * with the host id so two hosts never collide in the shared sections library.
+ * running the segment/section_order compilation (see compileSegments).
+ * Sections are returned rather than embedded: v3 hosts don't carry section
+ * content, so callers must persist them explicitly (ai_radio/sections/save)
+ * before saving the host. Section ids are namespaced with the host id so two
+ * hosts never collide in the shared sections library.
  */
 export const compileHost = (draft: HostDraft): CompiledHost => {
   const hostId = draft.id.trim() || slugify(draft.name);
@@ -566,7 +536,6 @@ export const compileHost = (draft: HostDraft): CompiledHost => {
   const { sections, sectionOrder, mergeSectionId } = compileSegments(
     segments,
     hostId,
-    true,
   );
 
   return {
@@ -585,23 +554,16 @@ export const compileHost = (draft: HostDraft): CompiledHost => {
 
 export interface DecompiledShow {
   basics: ShowBasics;
-  segments: ShowSegment[];
-  /**
-   * True when decompiling hit one of the lossy fallback cases below — the
-   * Customize UI shows a warning that saving will rewrite the show in the
-   * simplified segment format.
-   */
-  lossy: boolean;
+  hostId: string;
 }
 
 /**
  * Inverts a section_order's start/between/end rules into a flat segment
  * list, given a `toSegment` lookup that turns a section id + derived plays
  * rule into a ShowSegment (or null to drop it, e.g. the hidden merge
- * section). Mirrors compileShow/compileSegments' exact chance/guard
- * formulas where possible, falling back to a raw "occasionally" percent
- * otherwise (flagged via the returned `lossy` bit). Shared by
- * decompileStation/decompileHost.
+ * section). Mirrors compileSegments' exact chance/guard formulas where
+ * possible, falling back to a raw "occasionally" percent otherwise (flagged
+ * via the returned `lossy` bit). Used by decompileHost.
  */
 const decompileSectionOrder = (
   sectionOrder: AIRadioSectionOrderRule[] | undefined,
@@ -677,55 +639,8 @@ const decompileSectionOrder = (
   return { segments, lossy };
 };
 
-/**
- * Best-effort inverse of compileShow, for opening an existing/imported
- * station in the Customize view. Lossy cases (flagged via the returned
- * `lossy` bit):
- * - ALTERNATIVE with >1 choice decompiles to N independent "occasionally"
- *   segments (weight -> percent of the total); the original weighted
- *   pick-one semantics can't be reconstructed from independent chances.
- * - An OPTIONAL item whose guards don't match one of compileShow's exact
- *   chance/guard formulas falls back to "occasionally" using its raw chance.
- * The hidden merge section (station.merge_section_id / type "ai_meta") is
- * always excluded from the segment list.
- */
-export const decompileStation = (
-  station: AIRadioStation,
-  sections: AIRadioSection[],
-): DecompiledShow => {
-  const sectionMap = new Map<string, AIRadioSection>();
-  for (const section of sections) {
-    sectionMap.set(section.id, section);
-  }
-  // Embedded sections take precedence over the shared library fallback.
-  for (const section of station.sections || []) {
-    sectionMap.set(section.id, section);
-  }
-  const mergeId = station.merge_section_id || "";
-
-  const toSegment = (
-    sectionId: string,
-    plays: PlaysRule,
-  ): ShowSegment | null => {
-    const section = sectionMap.get(sectionId);
-    if (!section || section.id === mergeId || section.type === "ai_meta") {
-      return null;
-    }
-    return {
-      id: section.id,
-      name: section.name,
-      prompt: section.prompt,
-      webSearch: section.web_search || "disabled",
-      maxChars: section.constraints?.max_chars || 0,
-      plays,
-    };
-  };
-
-  const { segments, lossy } = decompileSectionOrder(
-    station.section_order,
-    toSegment,
-  );
-
+/** Inverse of compileShow, for opening an existing station in the Customize view. */
+export const decompileStation = (station: AIRadioStation): DecompiledShow => {
   const basics: ShowBasics = {
     id: station.id,
     name: station.name,
@@ -734,18 +649,17 @@ export const decompileStation = (
     defaultPlayerId: station.default_player_id || "",
     maxDurationMinutes: station.max_duration_minutes || 0,
     shuffleSourceTracks: station.shuffle_source_tracks !== false,
-    general: asGeneralDefaults(station.general),
   };
 
-  return { basics, segments, lossy };
+  return { basics, hostId: station.host_id };
 };
 
 /**
  * Best-effort inverse of compileHost, for opening an existing host in the
- * Hosts UI. Mirrors decompileStation: `sections` is the section content
- * library the host's section_ids reference (e.g. loaded via
- * ai_radio/sections/list). talkativeness can't be inverted from
- * section_order, so it always resets to "normal".
+ * Hosts UI. `sections` is the section content library the host's
+ * section_ids reference (e.g. loaded via ai_radio/sections/list).
+ * talkativeness can't be inverted from section_order, so it always resets
+ * to "normal".
  */
 export const decompileHost = (
   host: AIRadioHost,

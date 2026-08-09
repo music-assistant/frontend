@@ -1,5 +1,4 @@
 import {
-  asGeneralDefaults,
   compileHost,
   compileShow,
   decompileHost,
@@ -10,7 +9,7 @@ import {
   slugify,
 } from "@/helpers/ai_radio";
 import type { HostDraft, ShowDraft } from "@/helpers/ai_radio";
-import type { AIRadioSection, AIRadioStation } from "@/plugins/api/interfaces";
+import type { AIRadioStation } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
@@ -23,16 +22,6 @@ vi.mock("@/plugins/i18n", () => ({
   },
 }));
 
-const makeSection = (
-  overrides: Partial<AIRadioSection> = {},
-): AIRadioSection => ({
-  id: "intro",
-  name: "Intro",
-  type: "ai_text",
-  prompt: "Say hello",
-  ...overrides,
-});
-
 const makeDraft = (
   overrides: Partial<ShowDraft["basics"]> = {},
 ): ShowDraft => ({
@@ -43,10 +32,9 @@ const makeDraft = (
     defaultPlayerId: "",
     maxDurationMinutes: 0,
     shuffleSourceTracks: true,
-    general: asGeneralDefaults(undefined),
     ...overrides,
   },
-  segments: [],
+  hostId: "rick",
 });
 
 const makeStation = (
@@ -56,8 +44,7 @@ const makeStation = (
   name: "My Station",
   source_playlist_id: "42",
   source_playlist_provider: "library",
-  section_ids: ["intro"],
-  section_order: [{ when: "between_songs", flow: [{ MUST: "intro" }] }],
+  host_id: "rick",
   ...overrides,
 });
 
@@ -106,12 +93,22 @@ describe("compileShow", () => {
     const draft = makeDraft({ shuffleSourceTracks: false });
     expect(compileShow(draft).shuffle_source_tracks).toBe(false);
   });
+
+  it("carries the draft's host id as host_id", () => {
+    const draft = { ...makeDraft(), hostId: "morning_dj" };
+    expect(compileShow(draft).host_id).toBe("morning_dj");
+  });
 });
 
 describe("decompileStation", () => {
   it("defaults shuffleSourceTracks to true when absent from the station", () => {
-    const { basics } = decompileStation(makeStation(), [makeSection()]);
+    const { basics } = decompileStation(makeStation());
     expect(basics.shuffleSourceTracks).toBe(true);
+  });
+
+  it("carries the station's host_id as hostId", () => {
+    const { hostId } = decompileStation(makeStation({ host_id: "morning_dj" }));
+    expect(hostId).toBe("morning_dj");
   });
 });
 

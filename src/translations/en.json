@@ -1396,7 +1396,8 @@
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
                 "instructions": "Host and Program Instructions",
-                "voice": "Voice"
+                "voice": "Voice",
+                "host": "Host"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
@@ -1493,11 +1494,10 @@
             },
             "create": {
                 "title": "Create a show",
-                "description": "Pick a playlist, a host style, and how chatty it should be.",
+                "description": "Pick a playlist and a host for your show.",
                 "playlist_label": "Source playlist",
                 "playlist_placeholder": "Choose a playlist",
                 "playlist_empty": "No playlists found",
-                "preset_label": "Host style",
                 "talk_label": "Talkativeness",
                 "name_label": "Show name",
                 "default_name": "{0} — {1}",
@@ -1506,25 +1506,22 @@
                 "creating": "Creating...",
                 "validation": {
                     "playlist_required": "Choose a source playlist",
+                    "host_required": "Choose a host",
                     "name_required": "Show name is required"
                 }
             },
             "presets": {
                 "morning_show": {
-                    "name": "Morning show",
-                    "description": "Warm, upbeat host with weather and news breaks."
+                    "name": "Morning show"
                 },
                 "minimal_dj": {
-                    "name": "Minimal DJ",
-                    "description": "Calm, understated transitions that stay out of the way."
+                    "name": "Minimal DJ"
                 },
                 "music_nerd": {
-                    "name": "Music nerd",
-                    "description": "Shares artist facts and trivia between songs."
+                    "name": "Music nerd"
                 },
                 "party_host": {
-                    "name": "Party host",
-                    "description": "High-energy shout-outs to keep the party going."
+                    "name": "Party host"
                 }
             },
             "talk": {
@@ -1549,8 +1546,10 @@
                 "blank_segment_name": "New segment",
                 "segment_name": "Segment name",
                 "use_current_player": "Use current player",
-                "lossy_warning_title": "Simplified on save",
-                "lossy_warning_description": "This show uses an advanced configuration that can't be fully represented here. Saving will rewrite it in the simplified segment format above.",
+                "host_placeholder": "Choose a host",
+                "host_required": "Choose a host before saving",
+                "no_hosts_hint": "You need a host before you can save this show.",
+                "create_host_cta": "Create a host",
                 "prompt_placeholders_hint": "Available placeholders: {placeholders}"
             },
             "hosts": {

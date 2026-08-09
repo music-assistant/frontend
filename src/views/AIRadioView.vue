@@ -11,6 +11,7 @@
       :station-id="customizeShowId"
       @back="closeCustomize"
       @saved="closeCustomize"
+      @open-hosts="openCustomizeHost()"
     />
     <template v-else>
       <header
@@ -138,6 +139,7 @@
       <CreateShowDialog
         v-model:open="createDialogOpen"
         :initial-playlist="createDialogInitialPlaylist"
+        @open-hosts="openHostsFromCreateDialog"
       />
     </template>
   </section>
@@ -220,6 +222,12 @@ function closeCustomize() {
 
 function openCustomizeHost(hostId?: string) {
   customizeHostId.value = hostId || "";
+}
+
+/** The create dialog has no draft to return to, so opening the host editor from it just closes it. */
+function openHostsFromCreateDialog() {
+  createDialogOpen.value = false;
+  openCustomizeHost();
 }
 
 function closeCustomizeHost() {
