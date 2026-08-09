@@ -235,6 +235,9 @@ function queueItemFixture(queueItemId: string): QueueItem {
     name: queueItemId,
     duration: 200,
     sort_index: 0,
+    streamdetails: null,
+    media_item: null,
+    image: null,
     available: true,
   };
 }

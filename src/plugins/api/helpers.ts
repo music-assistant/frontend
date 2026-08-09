@@ -52,7 +52,7 @@ export const isQueueInfiniteStream = function (
  * flags drive which transport controls are surfaced when active.
  */
 export const isAudioSource = function (
-  item: MediaItemType | ItemMapping | undefined,
+  item: MediaItemType | ItemMapping | null | undefined,
 ): item is AudioSource {
   return item?.media_type === MediaType.AUDIO_SOURCE;
 };
