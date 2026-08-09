@@ -205,8 +205,10 @@ export const getPlayerMenuItems = (
         },
       ],
     });
-    void loadHosts();
-    void loadQueueDjStatus();
+    // Best-effort staleness refresh; the menu above is already built from
+    // the prefetched cache, so a failure here has nothing to surface.
+    void loadHosts().catch(() => undefined);
+    void loadQueueDjStatus().catch(() => undefined);
   }
 
   // transfer queue (both menus; only when the queue is the active source)

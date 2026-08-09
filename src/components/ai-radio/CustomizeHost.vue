@@ -422,7 +422,11 @@ onBeforeRouteLeave((to) => {
 
 onMounted(async () => {
   try {
-    void loadTtsEngines();
+    // Best effort: a failed engine list leaves the voice picker at "Default",
+    // so tell the user rather than failing silently.
+    void loadTtsEngines().catch(() =>
+      toast.error($t("providers.ai_radio.toast.tts_engines_load_failed")),
+    );
     if (props.hostId) {
       // Always fetch fresh: the shared sections cache can be stale right
       // after a save (edit -> save -> reopen must not decompile old content).

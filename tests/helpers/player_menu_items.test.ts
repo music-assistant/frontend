@@ -28,8 +28,8 @@ const {
   emitEvent: vi.fn(),
   hostsRef: { value: [] as AIRadioHost[] },
   isAdmin: vi.fn(),
-  loadHosts: vi.fn(),
-  loadQueueDjStatus: vi.fn(),
+  loadHosts: vi.fn().mockResolvedValue(undefined),
+  loadQueueDjStatus: vi.fn().mockResolvedValue(undefined),
   queueDjStatusRef: { value: {} as Record<string, string> },
   routerPush: vi.fn(),
   setQueueDj: vi.fn(),
@@ -351,5 +351,22 @@ describe("getPlayerMenuItems ai dj", () => {
 
     expect(loadHosts).toHaveBeenCalled();
     expect(loadQueueDjStatus).toHaveBeenCalled();
+  });
+
+  it("swallows a failed background refresh instead of rejecting unhandled", async () => {
+    aiRadioAvailableRef.value = true;
+    hostsRef.value = [makeHost()];
+    loadHosts.mockRejectedValueOnce(new Error("Connection lost"));
+    loadQueueDjStatus.mockRejectedValueOnce(new Error("Connection lost"));
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+
+    // The rejections settle on a microtask; flushing here is what would
+    // surface them as unhandled if the call sites didn't catch.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(menuItems.map((item) => item.label)).toContain("ai_dj");
   });
 });

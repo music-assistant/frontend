@@ -1455,7 +1455,8 @@
                 "station_duplicated": "Station duplicated",
                 "session_failed": "AI Radio run failed: {0}",
                 "host_saved": "Host saved",
-                "host_deleted": "Host deleted"
+                "host_deleted": "Host deleted",
+                "tts_engines_load_failed": "Failed to load voice options"
             },
             "header": {
                 "subtitle": "Turn a playlist into a radio show with an AI host."
