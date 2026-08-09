@@ -382,7 +382,8 @@ watch(
    50% opacity with muted text they turn unreadable on the black TV canvas. */
 .music-quiz-dashboard
   :deep([data-testid="music-quiz-dashboard-round-body"] button:disabled) {
-  opacity: 1;
+  /* !important because the tailwind build emits utilities with !important */
+  opacity: 1 !important;
   color: var(--color-white);
 }
 
