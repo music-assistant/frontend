@@ -404,6 +404,55 @@ describe("EditProvider", () => {
     );
   });
 
+  it("ignores a toggle error after navigating to another provider", async () => {
+    let rejectSave: (error: Error) => void = () => {};
+    apiMock.getProviderConfig
+      .mockResolvedValueOnce(providerConfig(ProviderStatus.LOADED))
+      .mockResolvedValueOnce(
+        providerConfig(
+          ProviderStatus.LOADED,
+          "other value",
+          undefined,
+          true,
+          "spotify--other",
+        ),
+      );
+    apiMock.saveProviderConfig.mockImplementation(
+      () =>
+        new Promise<ProviderConfig>((_resolve, reject) => {
+          rejectSave = reject;
+        }),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await wrapper.setProps({ instanceId: "spotify--other" });
+    await flushPromises();
+
+    rejectSave(new Error("Old provider failed"));
+    await flushPromises();
+
+    expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_loaded",
+    );
+  });
+
   it("hides the header menu while enabled when disabling is not supported", async () => {
     apiMock.providerManifests.spotify.allow_disable = false;
     apiMock.getProviderConfig.mockResolvedValue(

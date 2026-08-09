@@ -15,6 +15,7 @@
             size="small"
             color="warning"
             variant="flat"
+            :loading="toggleLoading"
             @click="toggleEnabled"
           >
             {{ $t("settings.enable_provider") }}
@@ -150,7 +151,7 @@
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 data-testid="provider-toggle-enabled"
-                :disabled="loading"
+                :disabled="toggleLoading"
                 @click="toggleEnabled"
               >
                 <Power class="size-4" />
@@ -241,7 +242,7 @@
       </v-card>
     </v-dialog>
     <v-overlay
-      v-model="loading"
+      :model-value="loading || toggleLoading"
       scrim="true"
       persistent
       style="display: flex; align-items: center; justify-content: center"
@@ -312,6 +313,7 @@ const router = useRouter();
 const { t } = useI18n();
 const config = ref<ProviderConfig>();
 const loading = ref(false);
+const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
@@ -319,6 +321,7 @@ const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
+let toggleRequestId = 0;
 let unsubProvidersUpdated: (() => void) | undefined;
 
 // props
@@ -425,7 +428,8 @@ const toggleEnabled = async function () {
   }
 
   const instanceId = config.value.instance_id;
-  loading.value = true;
+  const requestId = ++toggleRequestId;
+  toggleLoading.value = true;
   try {
     const updatedConfig = await api.saveProviderConfig(
       config.value.domain,
@@ -439,10 +443,14 @@ const toggleEnabled = async function () {
     config.value.last_error = updatedConfig.last_error;
     toast.success(t("settings.provider_saved"));
   } catch (err) {
+    if (!isCurrentProvider(instanceId)) return;
+
     toast.error(String(err));
     await refreshProviderConfig(instanceId);
   } finally {
-    loading.value = false;
+    if (requestId === toggleRequestId) {
+      toggleLoading.value = false;
+    }
   }
 };
 
