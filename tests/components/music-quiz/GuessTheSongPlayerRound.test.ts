@@ -5,14 +5,11 @@ import type {
   MusicQuizGuessTheSongRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import type { MusicAssistantApi } from "@/plugins/api";
-import {
-  MediaType,
-  type MediaItemType,
-  type Track,
-} from "@/plugins/api/interfaces";
+import type { MediaItemType } from "@/plugins/api/interfaces";
 import { shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { track } from "../../fixtures/track";
 
 const {
   mockCopyToClipboard,
@@ -92,7 +89,7 @@ describe("GuessTheSongPlayerRound", () => {
   });
 
   it("passes loaded lyrics and playback position to the reveal", async () => {
-    mockGetItemByUri.mockResolvedValue(trackItem("library://track/1"));
+    mockGetItemByUri.mockResolvedValue(track());
     mockGetTrackLyrics.mockResolvedValue(["Plain lyrics", "Synced lyrics"]);
     const wrapper = mountRound(createState("reveal"));
 
@@ -177,7 +174,7 @@ describe("GuessTheSongPlayerRound", () => {
 
   it("ignores lyrics returned for an older round", async () => {
     const firstLyrics = deferred<[string | null, string | null]>();
-    mockGetItemByUri.mockResolvedValue(trackItem("library://track/1"));
+    mockGetItemByUri.mockResolvedValue(track());
     mockGetTrackLyrics
       .mockReturnValueOnce(firstLyrics.promise)
       .mockResolvedValueOnce(["Second lyrics", null]);
@@ -248,21 +245,4 @@ function deferred<T>() {
     resolve = promiseResolve;
   });
   return { promise, resolve };
-}
-
-function trackItem(uri: string): Track {
-  return {
-    item_id: uri,
-    provider: "library",
-    name: "Track",
-    uri,
-    is_playable: true,
-    media_type: MediaType.TRACK,
-    provider_mappings: [],
-    metadata: {},
-    favorite: false,
-    duration: 120,
-    artists: [],
-    album: null,
-  };
 }

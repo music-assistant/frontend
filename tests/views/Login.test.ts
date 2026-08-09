@@ -1,8 +1,9 @@
 import Login from "@/views/Login.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { UserRole, type User } from "@/plugins/api/interfaces";
+import { UserRole } from "@/plugins/api/interfaces";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { user } from "../fixtures/user";
 
 const mocks = vi.hoisted(() => ({
   apiState: { value: "disconnected" as string },
@@ -202,7 +203,7 @@ function mockHostedFrontend() {
 }
 
 function mockSuccessfulGuest(username = "party_guest") {
-  const guestUser = testUser({
+  const guestUser = user({
     user_id: "guest-id",
     username,
     role: UserRole.GUEST,
@@ -222,27 +223,13 @@ function mockSuccessfulGuest(username = "party_guest") {
       user:
         token === "guest-token"
           ? guestUser
-          : testUser({
+          : user({
               user_id: "regular-id",
               username: "regular-user",
               role: UserRole.ADMIN,
             }),
     }),
   );
-}
-
-function testUser(overrides: Partial<User> = {}): User {
-  return {
-    user_id: "user-id",
-    username: "user",
-    role: UserRole.USER,
-    enabled: true,
-    created_at: "2024-01-01T00:00:00Z",
-    preferences: {},
-    provider_filter: [],
-    player_filter: [],
-    ...overrides,
-  };
 }
 
 beforeEach(() => {
@@ -297,7 +284,7 @@ beforeEach(() => {
       : null,
   );
   mocks.getCurrentUserInfo.mockResolvedValue(
-    testUser({
+    user({
       user_id: "ingress-user",
       username: "ingress-user",
       role: UserRole.ADMIN,
@@ -339,7 +326,7 @@ describe("guest join login", () => {
         [
           {
             token: "guest-token",
-            user: testUser({
+            user: user({
               user_id: "guest-id",
               username,
               role: UserRole.GUEST,
@@ -437,7 +424,7 @@ describe("guest join login", () => {
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
       token: "admin-token",
-      user: testUser({
+      user: user({
         user_id: "regular-id",
         username: "regular-user",
         role: UserRole.ADMIN,
@@ -567,7 +554,7 @@ describe("guest join login", () => {
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
       token: "admin-token",
-      user: testUser({
+      user: user({
         user_id: "regular-id",
         username: "regular-user",
         role: UserRole.ADMIN,
@@ -598,7 +585,7 @@ describe("guest join login", () => {
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
       token: "guest-token",
-      user: testUser({
+      user: user({
         user_id: "guest-id",
         username: "party_guest",
         role: UserRole.GUEST,
@@ -660,7 +647,7 @@ describe("guest join login", () => {
 
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-      user: testUser({
+      user: user({
         user_id: "ingress-user",
         username: "ingress-user",
         role: UserRole.ADMIN,
@@ -815,7 +802,7 @@ describe("ingress login", () => {
 
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-      user: testUser({
+      user: user({
         role: UserRole.ADMIN,
         user_id: "ingress-user",
         username: "ingress-user",
@@ -835,7 +822,7 @@ describe("ingress login", () => {
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
       token: "admin-token",
-      user: testUser({
+      user: user({
         role: UserRole.ADMIN,
         user_id: "regular-id",
         username: "regular-user",

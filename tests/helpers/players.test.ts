@@ -13,6 +13,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
+import { user } from "../fixtures/user";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/store", () => ({
@@ -79,16 +80,12 @@ function createOutputProtocol(
 }
 
 function createAdminUser(playerFilter: string[]): User {
-  return {
+  return user({
     user_id: "admin",
     username: "admin",
     role: UserRole.ADMIN,
-    enabled: true,
-    created_at: "",
-    preferences: {},
-    provider_filter: [],
     player_filter: playerFilter,
-  };
+  });
 }
 
 beforeEach(() => {

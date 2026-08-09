@@ -1,9 +1,10 @@
 import MediaSearch from "@/components/MediaSearch.vue";
 import MusicQuizSourceSelector from "@/components/music-quiz/MusicQuizSourceSelector.vue";
-import { MediaType, type Playlist } from "@/plugins/api/interfaces";
+import type { Playlist } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { playlist } from "../../fixtures/playlist";
 
 vi.mock("@/components/MediaSearch.vue", async () => {
   const { defineComponent } = await import("vue");
@@ -131,19 +132,5 @@ function getRemoveButtons(wrapper: ReturnType<typeof mountSelector>) {
 }
 
 function createPlaylist(name: string, index: number): Playlist {
-  return {
-    item_id: String(index),
-    provider: "library",
-    name,
-    uri: `library://playlist/${index}`,
-    is_playable: true,
-    media_type: MediaType.PLAYLIST,
-    provider_mappings: [],
-    metadata: {},
-    favorite: false,
-    owner: "",
-    is_editable: false,
-    supported_mediatypes: [MediaType.TRACK],
-    is_dynamic: false,
-  };
+  return playlist({ name, uri: `library://playlist/${index}` });
 }

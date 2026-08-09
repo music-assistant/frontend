@@ -1,13 +1,10 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  ProviderStage,
-  ProviderStatus,
-  ProviderType,
-} from "@/plugins/api/interfaces";
+import { ProviderStatus } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
+import { providerConfig } from "../fixtures/providerConfig";
 
 const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
   apiMock: {
@@ -270,7 +267,7 @@ async function mountProviders(
 ) {
   apiMock.providerManifests.spotify.has_setup_flow = hasSetupFlow;
   apiMock.getProviderConfigs.mockResolvedValue([
-    {
+    providerConfig({
       domain: "spotify",
       enabled,
       instance_id: "spotify--test",
@@ -278,27 +275,9 @@ async function mountProviders(
         error_code: 1,
         message: "Authentication required",
       },
-      manifest: {
-        allow_disable: true,
-        builtin: false,
-        codeowners: [],
-        credits: [],
-        description: "Spotify music provider",
-        documentation: "https://example.com",
-        domain: "spotify",
-        has_setup_flow: hasSetupFlow,
-        icon_images: [],
-        multi_instance: true,
-        name: "Spotify",
-        requirements: [],
-        stage: ProviderStage.STABLE,
-        type: ProviderType.MUSIC,
-      },
       name: "Spotify",
       status,
-      type: ProviderType.MUSIC,
-      values: {},
-    },
+    }),
   ]);
 
   const wrapper = shallowMount(Providers, {

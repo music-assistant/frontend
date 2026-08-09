@@ -45,8 +45,9 @@ vi.mock("@/plugins/api", () => ({
 import api from "@/plugins/api";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { useSmartPlaylistSeedItems } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
-import { MediaType, type Album, type Track } from "@/plugins/api/interfaces";
+import type { Album, Track } from "@/plugins/api/interfaces";
 import { providerMapping } from "../../fixtures/providerMapping";
+import { track } from "../../fixtures/track";
 
 interface SearchFnArg {
   searchFn: (q: string) => Promise<unknown[]>;
@@ -196,7 +197,7 @@ describe("useSmartPlaylistSeedItems", () => {
 
       vi.mocked(api.search).mockResolvedValueOnce({
         tracks: [
-          trackFixture({
+          track({
             item_id: "lib-1",
             name: "Library Track",
             provider_mappings: [
@@ -245,21 +246,3 @@ describe("useSmartPlaylistSeedItems", () => {
     });
   });
 });
-
-function trackFixture(overrides: Partial<Track> = {}): Track {
-  return {
-    item_id: "1",
-    provider: "library",
-    name: "Track",
-    uri: "library://track/1",
-    is_playable: true,
-    media_type: MediaType.TRACK,
-    provider_mappings: [],
-    metadata: {},
-    favorite: false,
-    duration: 200,
-    artists: [],
-    album: null,
-    ...overrides,
-  };
-}
