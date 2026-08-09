@@ -14,6 +14,9 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { track } from "../fixtures/track";
+import { playlist } from "../fixtures/playlist";
+import { genre } from "../fixtures/genre";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn<MusicAssistantApi["search"]>(),
@@ -291,43 +294,22 @@ function artistRef(name: string): ItemMapping {
   };
 }
 
-function trackFixture(overrides: {
-  uri: string;
-  name: string;
-  artists?: Array<ItemMapping | Artist>;
-}): Track {
-  return {
-    album: null,
-    artists: overrides.artists ?? [],
-    duration: 180,
-    favorite: false,
-    is_playable: true,
+function trackFixture(overrides: Partial<Track> & Pick<Track, "uri">): Track {
+  return track({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.TRACK,
-    metadata: {},
-    name: overrides.name,
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    uri: overrides.uri,
-  };
+  });
 }
 
-function playlistFixture(overrides: { uri: string; name: string }): Playlist {
-  return {
-    favorite: false,
-    is_dynamic: false,
-    is_editable: false,
-    is_playable: true,
+function playlistFixture(
+  overrides: Partial<Playlist> & Pick<Playlist, "uri">,
+): Playlist {
+  return playlist({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.PLAYLIST,
-    metadata: {},
-    name: overrides.name,
-    owner: "library",
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    supported_mediatypes: [MediaType.TRACK],
-    uri: overrides.uri,
-  };
+  });
 }
 
 function albumFixture(overrides: { uri: string; name: string }): Album {
@@ -360,17 +342,10 @@ function artistFixture(overrides: { uri: string; name: string }): Artist {
   };
 }
 
-function genreFixture(overrides: { uri: string; name: string }): Genre {
-  return {
-    favorite: false,
-    genre_aliases: null,
-    is_playable: false,
+function genreFixture(overrides: Partial<Genre> & Pick<Genre, "uri">): Genre {
+  return genre({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.GENRE,
-    metadata: {},
-    name: overrides.name,
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    uri: overrides.uri,
-  };
+  });
 }

@@ -16,32 +16,16 @@ import {
   DSPFilterType,
   DSPState,
   MediaType,
-  ProviderStage,
-  ProviderType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
+import { providerManifest } from "../fixtures/providerManifest";
 
 const apiMock = vi.hoisted(() => ({
   getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(
     () => "Test provider",
   ),
-  getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(
-    (providerId: string) => ({
-      allow_disable: true,
-      builtin: false,
-      codeowners: [],
-      credits: [],
-      description: "",
-      domain: providerId.split("--", 1)[0],
-      icon_images: [],
-      multi_instance: true,
-      name: providerId,
-      requirements: [],
-      stage: ProviderStage.STABLE,
-      type: ProviderType.MUSIC,
-    }),
-  ),
+  getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
   // useDSPIRs (via useAudioProcessingDetails) fetches the IR list and
   // subscribes to config updates on mount; subscribe hands back an unsubscribe.
   getDSPIRs: vi.fn<MusicAssistantApi["getDSPIRs"]>(() => Promise.resolve([])),
@@ -69,6 +53,10 @@ vi.mock("@/composables/useDSPPresets", async () => {
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
+  // the provider icon domain strips the instance suffix, e.g. "squeezelite--main" -> "squeezelite"
+  apiMock.getProviderManifest.mockImplementation((providerId: string) =>
+    providerManifest({ domain: providerId.split("--", 1)[0] }),
+  );
   apiMock.players = {
     "player-1": {
       player_id: "player-1",

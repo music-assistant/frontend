@@ -6,7 +6,6 @@ import { UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
 import type { HassControlEntity } from "@/helpers/hass_controls";
 import {
   ConfigEntryType,
-  ProviderStage,
   ProviderType,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
@@ -18,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
+import { providerConfig } from "../fixtures/providerConfig";
 
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
@@ -147,25 +147,9 @@ describe("HassControlsField", () => {
 });
 
 function hassProviderConfig(): ProviderConfig {
-  return {
+  return providerConfig({
     type: ProviderType.PLUGIN,
     domain: "hass",
-    instance_id: "hass--1",
-    enabled: true,
-    manifest: {
-      type: ProviderType.PLUGIN,
-      domain: "hass",
-      name: "Home Assistant",
-      description: "Home Assistant integration",
-      codeowners: [],
-      credits: [],
-      requirements: [],
-      multi_instance: false,
-      builtin: false,
-      allow_disable: true,
-      stage: ProviderStage.STABLE,
-      icon_images: [],
-    },
     values: {
       power_controls: {
         key: "power_controls",
@@ -179,7 +163,7 @@ function hassProviderConfig(): ProviderConfig {
         value: ["switch.tv"],
       },
     },
-  };
+  });
 }
 
 function pickerEntry(): HassControlPickerEntry {

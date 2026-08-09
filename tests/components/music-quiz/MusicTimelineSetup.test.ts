@@ -1,13 +1,10 @@
 import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import {
-  MediaType,
-  type Playlist,
-  type SearchResults,
-} from "@/plugins/api/interfaces";
+import { MediaType, type SearchResults } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { playlist } from "../../fixtures/playlist";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn<MusicAssistantApi["search"]>(),
@@ -60,24 +57,6 @@ const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
   ...lists,
 });
 
-function playlistResult(uri: string, name: string): Playlist {
-  return {
-    item_id: uri,
-    provider: "library",
-    name,
-    uri,
-    is_playable: true,
-    media_type: MediaType.PLAYLIST,
-    provider_mappings: [],
-    metadata: {},
-    favorite: false,
-    owner: "",
-    is_editable: false,
-    supported_mediatypes: [],
-    is_dynamic: false,
-  };
-}
-
 describe("MusicTimelineSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -87,7 +66,7 @@ describe("MusicTimelineSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [playlistResult("playlist:test", "Test playlist")],
+        playlists: [playlist({ uri: "playlist:test", name: "Test playlist" })],
       }),
     );
   });

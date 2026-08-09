@@ -3,14 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigEntryType,
   EventType,
-  ProviderStage,
   ProviderStatus,
-  ProviderType,
   type ConfigEntry,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import EditProvider from "@/views/settings/EditProvider.vue";
+import { providerConfig } from "../fixtures/providerConfig";
 
 const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
   vi.hoisted(() => ({
@@ -130,7 +129,7 @@ beforeEach(() => {
 describe("EditProvider", () => {
   it("shows provider status and direct support actions", async () => {
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
 
     const wrapper = shallowMount(EditProvider, {
@@ -172,7 +171,7 @@ describe("EditProvider", () => {
   it("hides reconfiguration when the provider has no setup flow", async () => {
     apiMock.providerManifests.spotify.has_setup_flow = false;
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
 
     const wrapper = shallowMount(EditProvider, {
@@ -196,7 +195,7 @@ describe("EditProvider", () => {
   it("hides documentation links with an unsafe URL", async () => {
     apiMock.providerManifests.spotify.documentation = "javascript:alert(1)";
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
 
     const wrapper = shallowMount(EditProvider, {
@@ -219,15 +218,10 @@ describe("EditProvider", () => {
 
   it("disables the provider from the header menu", async () => {
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
     apiMock.saveProviderConfig.mockResolvedValue(
-      providerConfig(
-        ProviderStatus.DISABLED,
-        "current value",
-        undefined,
-        false,
-      ),
+      spotifyConfig(ProviderStatus.DISABLED, "current value", undefined, false),
     );
 
     const wrapper = shallowMount(EditProvider, {
@@ -267,7 +261,7 @@ describe("EditProvider", () => {
 
   it("keeps the provider enabled when disabling fails", async () => {
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
     apiMock.saveProviderConfig.mockRejectedValue(new Error("Save failed"));
 
@@ -299,14 +293,14 @@ describe("EditProvider", () => {
   it("reconciles provider state when enabling fails after being saved", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(
-        providerConfig(
+        spotifyConfig(
           ProviderStatus.DISABLED,
           "current value",
           undefined,
           false,
         ),
       )
-      .mockResolvedValueOnce(providerConfig(ProviderStatus.ERROR));
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.ERROR));
     apiMock.saveProviderConfig.mockRejectedValue(new Error("Load failed"));
 
     const wrapper = shallowMount(EditProvider, {
@@ -345,9 +339,9 @@ describe("EditProvider", () => {
   it("ignores a toggle response after navigating to another provider", async () => {
     let resolveSave: (config: ProviderConfig) => void = () => {};
     apiMock.getProviderConfig
-      .mockResolvedValueOnce(providerConfig(ProviderStatus.LOADED))
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.LOADED))
       .mockResolvedValueOnce(
-        providerConfig(
+        spotifyConfig(
           ProviderStatus.LOADED,
           "other value",
           undefined,
@@ -382,12 +376,7 @@ describe("EditProvider", () => {
     await flushPromises();
 
     resolveSave(
-      providerConfig(
-        ProviderStatus.DISABLED,
-        "current value",
-        undefined,
-        false,
-      ),
+      spotifyConfig(ProviderStatus.DISABLED, "current value", undefined, false),
     );
     await flushPromises();
 
@@ -402,9 +391,9 @@ describe("EditProvider", () => {
   it("ignores a toggle error after navigating to another provider", async () => {
     let rejectSave: (error: Error) => void = () => {};
     apiMock.getProviderConfig
-      .mockResolvedValueOnce(providerConfig(ProviderStatus.LOADED))
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.LOADED))
       .mockResolvedValueOnce(
-        providerConfig(
+        spotifyConfig(
           ProviderStatus.LOADED,
           "other value",
           undefined,
@@ -451,7 +440,7 @@ describe("EditProvider", () => {
   it("hides the header menu while enabled when disabling is not supported", async () => {
     apiMock.providerManifests.spotify.allow_disable = false;
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
 
     const wrapper = shallowMount(EditProvider, {
@@ -473,15 +462,10 @@ describe("EditProvider", () => {
   it("enables a disabled provider when disabling is not supported", async () => {
     apiMock.providerManifests.spotify.allow_disable = false;
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(
-        ProviderStatus.DISABLED,
-        "current value",
-        undefined,
-        false,
-      ),
+      spotifyConfig(ProviderStatus.DISABLED, "current value", undefined, false),
     );
     apiMock.saveProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
 
     const wrapper = shallowMount(EditProvider, {
@@ -516,10 +500,10 @@ describe("EditProvider", () => {
   it("refreshes provider state after a provider update", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(
-        providerConfig(ProviderStatus.AUTH_REQUIRED, "current value"),
+        spotifyConfig(ProviderStatus.AUTH_REQUIRED, "current value"),
       )
       .mockResolvedValueOnce(
-        providerConfig(ProviderStatus.LOADED, "server refresh"),
+        spotifyConfig(ProviderStatus.LOADED, "server refresh"),
       );
 
     const wrapper = shallowMount(EditProvider, {
@@ -558,10 +542,10 @@ describe("EditProvider", () => {
   it("merges fresh entry definitions while keeping a pending local edit", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(
-        providerConfig(ProviderStatus.LOADED, "current value", []),
+        spotifyConfig(ProviderStatus.LOADED, "current value", []),
       )
       .mockResolvedValueOnce(
-        providerConfig(ProviderStatus.LOADED, "server refresh", [
+        spotifyConfig(ProviderStatus.LOADED, "server refresh", [
           { title: "Home Assistant", value: "ha" },
         ]),
       );
@@ -598,7 +582,7 @@ describe("EditProvider", () => {
 
   it("keeps form values when an action returns entries without them", async () => {
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED, "current value"),
+      spotifyConfig(ProviderStatus.LOADED, "current value"),
     );
     // an action response carries entry definitions only, never the stored values
     apiMock.invokeProviderConfigAction.mockResolvedValue([
@@ -639,8 +623,8 @@ describe("EditProvider", () => {
 
   it("refreshes provider status when reconfiguration ends", async () => {
     apiMock.getProviderConfig
-      .mockResolvedValueOnce(providerConfig(ProviderStatus.AUTH_REQUIRED))
-      .mockResolvedValueOnce(providerConfig(ProviderStatus.LOADED));
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.AUTH_REQUIRED))
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.LOADED));
 
     const wrapper = shallowMount(EditProvider, {
       props: {
@@ -670,7 +654,7 @@ describe("EditProvider", () => {
 
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
     apiMock.invokeProviderConfigAction.mockResolvedValueOnce([]);
 
@@ -709,7 +693,7 @@ describe("EditProvider", () => {
 
   it("does not save when an immediate-apply action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
     apiMock.invokeProviderConfigAction.mockResolvedValueOnce([]);
 
@@ -735,7 +719,7 @@ describe("EditProvider", () => {
 
   it("still replaces the form when an action returns entries (transitional path)", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
     apiMock.invokeProviderConfigAction.mockResolvedValueOnce([
       {
@@ -778,14 +762,20 @@ describe("EditProvider", () => {
   });
 });
 
-function providerConfig(
+/**
+ * The spotify provider config these tests load, with a single `account` entry.
+ *
+ * The view reads the manifest from `api.providerManifests`, not from the
+ * config, so the config's own manifest stays at the shared default.
+ */
+function spotifyConfig(
   status: ProviderStatus,
   account: string = "current value",
   accountOptions?: { title: string; value: string }[],
   enabled: boolean = true,
   instanceId: string = "spotify--test",
 ): ProviderConfig {
-  return {
+  return providerConfig({
     domain: "spotify",
     enabled,
     instance_id: instanceId,
@@ -796,24 +786,7 @@ function providerConfig(
             message: "Authentication required",
           }
         : undefined,
-    manifest: {
-      allow_disable: true,
-      builtin: false,
-      codeowners: [],
-      credits: [],
-      description: "Spotify music provider",
-      domain: "spotify",
-      icon_images: [],
-      has_setup_flow: true,
-      multi_instance: true,
-      name: "Spotify",
-      requirements: [],
-      stage: ProviderStage.STABLE,
-      type: ProviderType.MUSIC,
-    },
-    name: "Spotify",
     status,
-    type: ProviderType.MUSIC,
     values: {
       account: {
         category: "generic",
@@ -826,5 +799,5 @@ function providerConfig(
         value: account,
       },
     },
-  };
+  });
 }

@@ -1,13 +1,9 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  ConfigEntryType,
-  ProviderStage,
-  ProviderType,
-  type CoreConfig,
-} from "@/plugins/api/interfaces";
+import { ConfigEntryType, type CoreConfig } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
+import { providerManifest } from "../fixtures/providerManifest";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -241,21 +237,14 @@ describe("EditCoreConfig", () => {
 function coreConfig(): CoreConfig {
   return {
     domain: "cache",
-    manifest: {
+    manifest: providerManifest({
       allow_disable: false,
       builtin: true,
-      codeowners: [],
-      credits: [],
       description: "Cache controller",
       domain: "cache",
-      icon_images: [],
       has_setup_flow: false,
-      multi_instance: false,
       name: "Cache",
-      requirements: [],
-      stage: ProviderStage.STABLE,
-      type: ProviderType.MUSIC,
-    },
+    }),
     values: {
       clear_on_start: {
         category: "generic",

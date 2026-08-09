@@ -19,30 +19,20 @@ import {
   DSPState,
   MediaType,
   type OutputProtocol,
-  ProviderStage,
-  ProviderType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
+
+const { providerManifest } = await vi.hoisted(async () => {
+  const { providerManifest } = await import("../fixtures/providerManifest");
+  return { providerManifest };
+});
 
 vi.mock("@/plugins/api", () => ({
   default: {
     getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(),
     getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(
-      (providerId: string) => ({
-        allow_disable: true,
-        builtin: false,
-        codeowners: [],
-        credits: [],
-        description: "",
-        domain: providerId,
-        icon_images: [],
-        multi_instance: true,
-        name: providerId,
-        requirements: [],
-        stage: ProviderStage.STABLE,
-        type: ProviderType.MUSIC,
-      }),
+      (providerId: string) => providerManifest({ domain: providerId }),
     ),
     players: {},
   },

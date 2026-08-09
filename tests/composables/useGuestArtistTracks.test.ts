@@ -1,6 +1,7 @@
-import { MediaType, type Artist, type Track } from "@/plugins/api/interfaces";
+import type { Artist, Track } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { providerMapping } from "../fixtures/providerMapping";
+import { track } from "../fixtures/track";
 import { $t } from "@/plugins/i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -165,18 +166,9 @@ describe("useGuestArtistTracks", () => {
 });
 
 function trackFixture(itemId: string): Track {
-  return {
+  return track({
     item_id: itemId,
-    provider: "library",
     name: itemId,
     uri: `library://track/${itemId}`,
-    is_playable: true,
-    media_type: MediaType.TRACK,
-    provider_mappings: [],
-    metadata: {},
-    favorite: false,
-    duration: 200,
-    artists: [],
-    album: null,
-  };
+  });
 }

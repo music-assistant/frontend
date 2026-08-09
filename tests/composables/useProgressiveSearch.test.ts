@@ -8,6 +8,8 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, nextTick, ref, type EffectScope } from "vue";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { track as trackFixture } from "../fixtures/track";
+import { genre as genreFixture } from "../fixtures/genre";
 
 const { mockSearch, mockGetLibraryGenres, mockProviders, mockManifests } =
   vi.hoisted(() => {
@@ -50,33 +52,16 @@ const results = (partial: Partial<SearchResults>): SearchResults => ({
   ...partial,
 });
 
-const track = (itemId: string, name: string, provider = "library"): Track => ({
-  item_id: itemId,
-  provider,
-  name,
-  uri: `test://track/${itemId}`,
-  is_playable: true,
-  media_type: MediaType.TRACK,
-  provider_mappings: [],
-  metadata: {},
-  favorite: false,
-  duration: 200,
-  artists: [],
-  album: null,
-});
+const track = (itemId: string, name: string, provider = "library"): Track =>
+  trackFixture({
+    item_id: itemId,
+    provider,
+    name,
+    uri: `test://track/${itemId}`,
+  });
 
-const genre = (itemId: string, name: string): Genre => ({
-  item_id: itemId,
-  provider: "library",
-  name,
-  uri: `test://genre/${itemId}`,
-  is_playable: false,
-  media_type: MediaType.GENRE,
-  provider_mappings: [],
-  metadata: {},
-  favorite: false,
-  genre_aliases: null,
-});
+const genre = (itemId: string, name: string): Genre =>
+  genreFixture({ item_id: itemId, name, uri: `test://genre/${itemId}` });
 
 const provider = (
   instanceId: string,
