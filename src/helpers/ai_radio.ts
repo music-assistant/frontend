@@ -534,12 +534,20 @@ export interface HostDraft {
   talkativeness: TalkativenessLevel;
 }
 
+export interface CompiledHost {
+  host: AIRadioHost;
+  sections: AIRadioSection[];
+}
+
 /**
- * Compiles a host draft into the AIRadioHost payload the backend expects,
- * applying talkativeness and running the same segment/section_order
- * compilation as compileShow (see compileSegments).
+ * Compiles a host draft into the AIRadioHost payload the backend expects
+ * plus the AIRadioSection content it references, applying talkativeness and
+ * running the same segment/section_order compilation as compileShow (see
+ * compileSegments). Sections are returned rather than embedded: v3 hosts
+ * don't carry section content, so callers must persist them explicitly
+ * (ai_radio/sections/save) before saving the host.
  */
-export const compileHost = (draft: HostDraft): AIRadioHost => {
+export const compileHost = (draft: HostDraft): CompiledHost => {
   const hostId = draft.id.trim() || slugify(draft.name);
   const segments = applyTalkativeness(draft.segments, draft.talkativeness);
   const { sections, sectionOrder, mergeSectionId } = compileSegments(
@@ -548,13 +556,16 @@ export const compileHost = (draft: HostDraft): AIRadioHost => {
   );
 
   return {
-    id: hostId,
-    name: draft.name.trim(),
-    instructions: draft.instructions,
-    tts_engine: draft.ttsEngine,
-    section_ids: sections.map((section) => section.id),
-    section_order: sectionOrder,
-    merge_section_id: mergeSectionId,
+    host: {
+      id: hostId,
+      name: draft.name.trim(),
+      instructions: draft.instructions,
+      tts_engine: draft.ttsEngine,
+      section_ids: sections.map((section) => section.id),
+      section_order: sectionOrder,
+      merge_section_id: mergeSectionId,
+    },
+    sections,
   };
 };
 
@@ -717,25 +728,35 @@ export const decompileStation = (
 
 /**
  * Best-effort inverse of compileHost, for opening an existing host in the
- * Hosts UI. AIRadioHost only carries section_ids (not section content), so
- * unlike decompileStation this can't recover name/prompt/webSearch/maxChars;
- * segments come back with the section id standing in for those fields.
- * talkativeness can't be inverted from section_order either, so it always
- * resets to "normal".
+ * Hosts UI. Mirrors decompileStation: `sections` is the section content
+ * library the host's section_ids reference (e.g. loaded via
+ * ai_radio/sections/list). talkativeness can't be inverted from
+ * section_order, so it always resets to "normal".
  */
-export const decompileHost = (host: AIRadioHost): HostDraft => {
+export const decompileHost = (
+  host: AIRadioHost,
+  sections: AIRadioSection[],
+): HostDraft => {
+  const sectionMap = new Map<string, AIRadioSection>();
+  for (const section of sections) {
+    sectionMap.set(section.id, section);
+  }
   const mergeId = host.merge_section_id || "";
+
   const toSegment = (
     sectionId: string,
     plays: PlaysRule,
   ): ShowSegment | null => {
-    if (sectionId === mergeId) return null;
+    const section = sectionMap.get(sectionId);
+    if (!section || section.id === mergeId || section.type === "ai_meta") {
+      return null;
+    }
     return {
-      id: sectionId,
-      name: sectionId,
-      prompt: "",
-      webSearch: "disabled",
-      maxChars: 0,
+      id: section.id,
+      name: section.name,
+      prompt: section.prompt,
+      webSearch: section.web_search || "disabled",
+      maxChars: section.constraints?.max_chars || 0,
       plays,
     };
   };

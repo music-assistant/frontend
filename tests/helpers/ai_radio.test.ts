@@ -116,7 +116,7 @@ describe("decompileStation", () => {
 });
 
 describe("compileHost", () => {
-  it("compiles segments and talkativeness into section_order", () => {
+  it("compiles segments and talkativeness into section_order, returning section content", () => {
     const draft: HostDraft = {
       id: "rick",
       name: "Rick",
@@ -125,11 +125,17 @@ describe("compileHost", () => {
       segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
       talkativeness: "normal",
     };
-    const host = compileHost(draft);
+    const { host, sections } = compileHost(draft);
     expect(host.id).toBe("rick");
     expect(host.instructions).toBe("Persona.");
     expect(host.section_ids.length).toBeGreaterThan(0);
     expect(host.section_order.length).toBeGreaterThan(0);
+    // sections must carry full content (not just ids) so the host save flow
+    // can persist them via ai_radio/sections/save before saving the host.
+    expect(sections.map((s) => s.id)).toEqual(host.section_ids);
+    expect(sections.find((s) => s.id === "intro")?.prompt).toBe(
+      draft.segments[0].prompt,
+    );
   });
 
   it("applies talkativeness the same way compileShow's callers do", () => {
@@ -143,7 +149,7 @@ describe("compileHost", () => {
       segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
       talkativeness: "chatty",
     };
-    const host = compileHost(draft);
+    const { host } = compileHost(draft);
     const betweenRule = host.section_order.find(
       (rule) => rule.when === "between_songs",
     );
@@ -152,21 +158,22 @@ describe("compileHost", () => {
 });
 
 describe("decompileHost", () => {
-  it("round-trips a compiled host", () => {
+  it("round-trips a compiled host given its section content", () => {
     const draft: HostDraft = {
       id: "rick",
       name: "Rick",
       instructions: "Persona.",
       ttsEngine: "engine-1",
       segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
-      talkativeness: "chatty",
+      talkativeness: "normal",
     };
-    const round = decompileHost(compileHost(draft));
+    const { host, sections } = compileHost(draft);
+    const round = decompileHost(host, sections);
     expect(round.name).toBe("Rick");
     expect(round.ttsEngine).toBe("engine-1");
-    expect(round.segments.map((s) => s.id)).toEqual(
-      draft.segments.map((s) => s.id),
-    );
+    // "normal" talkativeness leaves segments untouched, so a real sectionMap
+    // lookup should recover them exactly (id, name, prompt, webSearch, maxChars, plays).
+    expect(round.segments).toEqual(draft.segments);
   });
 
   it("resets talkativeness to normal, since it can't be inverted from section_order", () => {
@@ -178,11 +185,12 @@ describe("decompileHost", () => {
       segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
       talkativeness: "chatty",
     };
-    const round = decompileHost(compileHost(draft));
+    const { host, sections } = compileHost(draft);
+    const round = decompileHost(host, sections);
     expect(round.talkativeness).toBe("normal");
   });
 
-  it("excludes the hidden merge section from segments", () => {
+  it("excludes the hidden merge section even when section_order references it directly", () => {
     const draft: HostDraft = {
       id: "rick",
       name: "Rick",
@@ -191,8 +199,21 @@ describe("decompileHost", () => {
       segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
       talkativeness: "normal",
     };
-    const host = compileHost(draft);
-    const round = decompileHost(host);
+    const { host, sections } = compileHost(draft);
+    // Force a MUST rule pointing straight at the merge section id, to prove
+    // toSegment's mergeId/ai_meta filter actually runs (rather than the
+    // merge section simply never showing up in a real section_order).
+    const hostWithMergeInOrder = {
+      ...host,
+      section_order: [
+        ...host.section_order,
+        {
+          when: "end_of_playlist" as const,
+          flow: [{ MUST: host.merge_section_id }],
+        },
+      ],
+    };
+    const round = decompileHost(hostWithMergeInOrder, sections);
     expect(round.segments.some((s) => s.id === host.merge_section_id)).toBe(
       false,
     );
