@@ -25,6 +25,13 @@ on:
 permissions:
   pull-requests: write
 
+# Overlapping runs for the same PR each read the label set from their own
+# event payload, so a second run can miss what the first just applied and
+# leave a stale label behind. Queue them instead — no cancel-in-progress,
+# because a cancelled run leaves this required check without a result.
+concurrency:
+  group: pr-labels-${{ github.event.pull_request.number }}
+
 jobs:
   # The job name is the context of the required status check on the
   # protect-main ruleset, so renaming it leaves that check waiting on
@@ -60,12 +67,14 @@ jobs:
               return;
             }
 
-            // Match a ticked checkbox bullet whose line ends with a
-            // backticked label, e.g.  - [x] CI / workflow change — `ci`
+            // Take the first backticked span on a ticked checkbox
+            // bullet, e.g.  - [x] CI / workflow change — `ci`
             // The PR template puts the canonical label name in
             // backticks at the end of each "Types of changes" bullet.
+            // GFM accepts -, * and + as bullet markers, so all three
+            // have to match or a reformatted list stops being read.
             const body = pr.body || '';
-            const re = /^\s*-\s*\[x\][^`\n]*`([^`]+)`/gim;
+            const re = /^\s*[-*+]\s*\[x\][^`\n]*`([^`\n]+)`/gim;
             const ticked = [];
             for (const m of body.matchAll(re)) {
               const name = m[1].trim();
@@ -96,9 +105,14 @@ jobs:
                 return;
               }
               core.setFailed(
-                'No "Types of changes" checkbox is ticked in the PR ' +
-                'description. Edit the description and tick exactly ' +
-                'one box so this PR can be release-noted.'
+                existing.length > 1
+                  ? `This PR carries more than one category label ` +
+                    `(${existing.join(', ')}), so the release notes ` +
+                    `section is ambiguous. Tick the "Types of changes" ` +
+                    `box for the one that should count.`
+                  : 'No "Types of changes" checkbox is ticked in the PR ' +
+                    'description. Edit the description and tick exactly ' +
+                    'one box so this PR can be release-noted.'
               );
               return;
             }
