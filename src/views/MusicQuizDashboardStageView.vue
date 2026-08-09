@@ -23,6 +23,9 @@
               {{ activeState.name || $t("providers.music_quiz.title") }}
             </h1>
             <p
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
               class="mt-1 text-[clamp(0.95rem,1.5vw,1.6rem)] font-semibold tracking-[0.15em] text-white/45 uppercase"
             >
               {{ phaseLabel }}
@@ -55,7 +58,7 @@
             hide-share-actions
             :caption="$t('providers.music_quiz.invite_players')"
           />
-          <div class="flex min-w-0 flex-col gap-[2vh]">
+          <div class="flex min-h-0 min-w-0 flex-col gap-[2vh] self-stretch">
             <h2
               class="text-[clamp(1.4rem,2.6vw,2.4rem)] font-bold text-white/90"
             >
@@ -70,7 +73,8 @@
             />
             <div
               v-if="activeState.players.length"
-              class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3"
+              data-testid="music-quiz-dashboard-player-grid"
+              class="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3 overflow-y-auto"
             >
               <MusicQuizPlayerTile
                 v-for="player in sortedPlayers"

@@ -260,6 +260,28 @@ describe("MusicQuizDashboardStageView", () => {
     wrapper.unmount();
   });
 
+  it("keeps the player grid scrollable so extra players don't clip off-screen", () => {
+    dashboardMock.state.value = lobbyState({
+      players: [player("Bob", 0), player("Alice", 0)],
+    });
+    const wrapper = mountView();
+
+    expect(
+      wrapper.get('[data-testid="music-quiz-dashboard-player-grid"]').classes(),
+    ).toContain("overflow-y-auto");
+    wrapper.unmount();
+  });
+
+  it("marks the phase label as a live region for screen readers", () => {
+    dashboardMock.state.value = lobbyState();
+    const wrapper = mountView();
+
+    const phaseLabel = wrapper.get('[role="status"]');
+    expect(phaseLabel.attributes("aria-live")).toBe("polite");
+    expect(phaseLabel.attributes("aria-atomic")).toBe("true");
+    wrapper.unmount();
+  });
+
   it("hides the join QR when the server does not report a join url", () => {
     dashboardMock.state.value = lobbyState({ join_url: undefined });
     const wrapper = mountView();
