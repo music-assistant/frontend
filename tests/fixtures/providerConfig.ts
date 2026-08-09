@@ -18,6 +18,10 @@ export function providerConfig(
     instance_id: `${domain}--1`,
     manifest: providerManifest({ type, domain }),
     enabled: true,
+    name: null,
+    default_name: null,
+    last_error: null,
+    status: null,
     values: {},
     ...overrides,
   };

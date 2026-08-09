@@ -784,7 +784,7 @@ function spotifyConfig(
             error_code: 1,
             message: "Authentication required",
           }
-        : undefined,
+        : null,
     status,
     values: {
       account: {

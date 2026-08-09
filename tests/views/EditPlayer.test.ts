@@ -488,6 +488,7 @@ function providerInstance(): ProviderInstance {
     instance_id: "chromecast--1",
     name: "Chromecast",
     available: true,
+    is_streaming_provider: null,
     supported_features: [],
   };
 }
@@ -503,6 +504,8 @@ function playerConfig({
     player_id: playerId,
     provider: "chromecast--1",
     enabled,
+    name: null,
+    default_name: null,
     values: {
       volume_normalization: {
         key: "volume_normalization",

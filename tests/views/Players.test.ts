@@ -63,6 +63,7 @@ vi.mock("vue-router", () => ({
 const playerConfig = {
   enabled: true,
   name: "Kitchen",
+  default_name: null,
   player_id: "kitchen",
   provider: "test",
   values: {},
@@ -107,6 +108,7 @@ describe("Players", () => {
       instance_id: "test",
       supported_features: [],
       available: true,
+      is_streaming_provider: null,
     });
     apiMock.getProviderManifest.mockReturnValue(providerManifest());
     apiMock.subscribe_multi.mockReturnValue(vi.fn());

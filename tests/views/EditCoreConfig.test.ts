@@ -237,6 +237,7 @@ describe("EditCoreConfig", () => {
 function coreConfig(): CoreConfig {
   return {
     domain: "cache",
+    last_error: null,
     manifest: providerManifest({
       allow_disable: false,
       builtin: true,

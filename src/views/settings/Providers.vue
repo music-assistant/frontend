@@ -588,7 +588,7 @@ const getStageColor = function (stage?: string) {
 };
 
 // status indicator helpers: a loaded (healthy) provider shows no indicator
-const statusIcon = function (status?: ProviderStatus) {
+const statusIcon = function (status?: ProviderStatus | null) {
   return match(status)
     .with(ProviderStatus.DISABLED, () => "mdi-cancel")
     .with(ProviderStatus.LOADING, () => "mdi-timer-sand")
@@ -598,7 +598,7 @@ const statusIcon = function (status?: ProviderStatus) {
     .otherwise(() => "");
 };
 
-const statusColor = function (status?: ProviderStatus) {
+const statusColor = function (status?: ProviderStatus | null) {
   return match(status)
     .with(
       ProviderStatus.AUTH_REQUIRED,
@@ -609,12 +609,12 @@ const statusColor = function (status?: ProviderStatus) {
     .otherwise(() => "grey");
 };
 
-const statusLabel = function (status?: ProviderStatus) {
+const statusLabel = function (status?: ProviderStatus | null) {
   return $t(getProviderStatusTranslationKey(status));
 };
 
 // an error status carries a (user-relevant) reason in last_error
-const isErrorStatus = function (status?: ProviderStatus) {
+const isErrorStatus = function (status?: ProviderStatus | null) {
   return (
     status === ProviderStatus.AUTH_REQUIRED ||
     status === ProviderStatus.INCOMPATIBLE ||
