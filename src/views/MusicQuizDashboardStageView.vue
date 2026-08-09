@@ -74,7 +74,7 @@
             <div
               v-if="activeState.players.length"
               data-testid="music-quiz-dashboard-player-grid"
-              class="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3 overflow-y-auto"
+              class="grid min-h-0 flex-1 content-start grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3 overflow-y-auto"
             >
               <MusicQuizPlayerTile
                 v-for="player in sortedPlayers"
