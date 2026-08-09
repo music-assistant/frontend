@@ -1,13 +1,11 @@
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
-import {
-  ProviderStage,
-  ProviderType,
-  type ProviderConfig,
-} from "@/plugins/api/interfaces";
+import { ProviderType, type ProviderConfig } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { providerConfig } from "../fixtures/providerConfig";
+import { providerManifest } from "../fixtures/providerManifest";
 
 const {
   apiMock,
@@ -302,27 +300,17 @@ describe("MusicQuizDashboardView", () => {
 });
 
 function musicQuizProviderConfig(instanceId: string): ProviderConfig {
-  return {
+  return providerConfig({
     type: ProviderType.PLUGIN,
     domain: "music_quiz",
     instance_id: instanceId,
-    enabled: true,
-    manifest: {
+    manifest: providerManifest({
       type: ProviderType.PLUGIN,
       domain: "music_quiz",
       name: "Music Quiz",
       description: "Music Quiz plugin provider",
-      codeowners: [],
-      credits: [],
-      requirements: [],
-      multi_instance: false,
-      builtin: false,
-      allow_disable: true,
-      stage: ProviderStage.STABLE,
-      icon_images: [],
-    },
-    values: {},
-  };
+    }),
+  });
 }
 
 function mountDashboard() {

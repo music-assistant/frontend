@@ -1,14 +1,11 @@
 import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import {
-  MediaType,
-  type Genre,
-  type Playlist,
-  type SearchResults,
-} from "@/plugins/api/interfaces";
+import { MediaType, type SearchResults } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { genre } from "../../fixtures/genre";
+import { playlist } from "../../fixtures/playlist";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn<MusicAssistantApi["search"]>(),
@@ -88,39 +85,6 @@ const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
   ...lists,
 });
 
-function playlistResult(uri: string, name: string): Playlist {
-  return {
-    item_id: uri,
-    provider: "library",
-    name,
-    uri,
-    is_playable: true,
-    media_type: MediaType.PLAYLIST,
-    provider_mappings: [],
-    metadata: {},
-    favorite: false,
-    owner: "",
-    is_editable: false,
-    supported_mediatypes: [],
-    is_dynamic: false,
-  };
-}
-
-function genreResult(uri: string, name: string): Genre {
-  return {
-    item_id: uri,
-    provider: "library",
-    name,
-    uri,
-    is_playable: false,
-    media_type: MediaType.GENRE,
-    provider_mappings: [],
-    metadata: {},
-    favorite: false,
-    genre_aliases: null,
-  };
-}
-
 describe("GuessTheSongSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -166,7 +130,7 @@ describe("GuessTheSongSetup", () => {
     newSearch.resolve(
       searchResults({
         tracks: [],
-        playlists: [playlistResult("playlist:new", "Newest result")],
+        playlists: [playlist({ uri: "playlist:new", name: "Newest result" })],
       }),
     );
     await flushPromises();
@@ -175,7 +139,7 @@ describe("GuessTheSongSetup", () => {
     oldSearch.resolve(
       searchResults({
         tracks: [],
-        playlists: [playlistResult("playlist:old", "Older result")],
+        playlists: [playlist({ uri: "playlist:old", name: "Older result" })],
       }),
     );
     await flushPromises();
@@ -188,7 +152,7 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [playlistResult("playlist:test", "Test playlist")],
+        playlists: [playlist({ uri: "playlist:test", name: "Test playlist" })],
       }),
     );
 
@@ -227,7 +191,7 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [playlistResult("playlist:test", "Test playlist")],
+        playlists: [playlist({ uri: "playlist:test", name: "Test playlist" })],
       }),
     );
     const wrapper = mountConfig(false, false);
@@ -254,7 +218,7 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [playlistResult("playlist:test", "Test playlist")],
+        playlists: [playlist({ uri: "playlist:test", name: "Test playlist" })],
       }),
     );
     const wrapper = mountConfig();
@@ -282,8 +246,8 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [playlistResult("playlist:test", "Test playlist")],
-        genres: [genreResult("genre:rock", "Rock")],
+        playlists: [playlist({ uri: "playlist:test", name: "Test playlist" })],
+        genres: [genre({ uri: "genre:rock", name: "Rock" })],
       }),
     );
     const wrapper = mountConfig(true);
@@ -323,7 +287,7 @@ describe("GuessTheSongSetup", () => {
     mockSearch.mockResolvedValue(
       searchResults({
         tracks: [],
-        playlists: [playlistResult("playlist:test", "Test playlist")],
+        playlists: [playlist({ uri: "playlist:test", name: "Test playlist" })],
       }),
     );
     const wrapper = mountConfig();

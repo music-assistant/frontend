@@ -5,17 +5,16 @@ import {
 import {
   ConfigEntryType,
   PlayerType,
-  ProviderStage,
   ProviderType,
   type ConfigEntry,
   type PlayerConfig,
   type ProviderInstance,
-  type ProviderManifest,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import EditPlayer from "@/views/settings/EditPlayer.vue";
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { providerManifest } from "../fixtures/providerManifest";
 
 const { apiMock, eventbusMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -94,7 +93,13 @@ describe("EditPlayer", () => {
     });
     apiMock.getPlayerConfig.mockResolvedValue(playerConfig());
     apiMock.getProvider.mockReturnValue(providerInstance());
-    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+    apiMock.getProviderManifest.mockReturnValue(
+      providerManifest({
+        type: ProviderType.PLAYER,
+        domain: "chromecast",
+        name: "Chromecast",
+      }),
+    );
     apiMock.reloadProvider.mockResolvedValue(undefined);
     apiMock.savePlayerConfig.mockResolvedValue(playerConfig());
     apiMock.providerManifests = { chromecast: { name: "Chromecast" } };
@@ -473,23 +478,6 @@ function controlEntry(key: string): ConfigEntry {
     default_value: "none",
     value: "none",
     options: [{ title: "none", value: "none" }],
-  };
-}
-
-function providerManifest(): ProviderManifest {
-  return {
-    type: ProviderType.PLAYER,
-    domain: "chromecast",
-    name: "Chromecast",
-    description: "",
-    codeowners: [],
-    credits: [],
-    requirements: [],
-    multi_instance: false,
-    builtin: false,
-    allow_disable: true,
-    stage: ProviderStage.STABLE,
-    icon_images: [],
   };
 }
 

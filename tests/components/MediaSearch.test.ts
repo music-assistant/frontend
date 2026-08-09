@@ -1,6 +1,5 @@
 import MediaSearch from "@/components/MediaSearch.vue";
 import {
-  AlbumType,
   MediaType,
   type Album,
   type Artist,
@@ -14,6 +13,11 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { track } from "../fixtures/track";
+import { playlist } from "../fixtures/playlist";
+import { genre } from "../fixtures/genre";
+import { album } from "../fixtures/album";
+import { artist } from "../fixtures/artist";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn<MusicAssistantApi["search"]>(),
@@ -291,86 +295,54 @@ function artistRef(name: string): ItemMapping {
   };
 }
 
-function trackFixture(overrides: {
-  uri: string;
-  name: string;
-  artists?: Array<ItemMapping | Artist>;
-}): Track {
-  return {
-    album: null,
-    artists: overrides.artists ?? [],
-    duration: 180,
-    favorite: false,
-    is_playable: true,
+function trackFixture(
+  overrides: Omit<Partial<Track>, "item_id" | "provider"> & Pick<Track, "uri">,
+): Track {
+  return track({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.TRACK,
-    metadata: {},
-    name: overrides.name,
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    uri: overrides.uri,
-  };
+  });
 }
 
-function playlistFixture(overrides: { uri: string; name: string }): Playlist {
-  return {
-    favorite: false,
-    is_dynamic: false,
-    is_editable: false,
-    is_playable: true,
+function playlistFixture(
+  overrides: Omit<Partial<Playlist>, "item_id" | "provider"> &
+    Pick<Playlist, "uri">,
+): Playlist {
+  return playlist({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.PLAYLIST,
-    metadata: {},
-    name: overrides.name,
-    owner: "library",
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    supported_mediatypes: [MediaType.TRACK],
-    uri: overrides.uri,
-  };
+  });
 }
 
-function albumFixture(overrides: { uri: string; name: string }): Album {
-  return {
-    album_type: AlbumType.ALBUM,
-    artists: [],
-    favorite: false,
-    is_playable: true,
+function albumFixture(
+  overrides: Omit<Partial<Album>, "item_id" | "provider"> & Pick<Album, "uri">,
+): Album {
+  return album({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.ALBUM,
-    metadata: {},
-    name: overrides.name,
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    uri: overrides.uri,
-  };
+  });
 }
 
-function artistFixture(overrides: { uri: string; name: string }): Artist {
-  return {
-    favorite: false,
-    is_playable: true,
+function artistFixture(
+  overrides: Omit<Partial<Artist>, "item_id" | "provider"> &
+    Pick<Artist, "uri">,
+): Artist {
+  return artist({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.ARTIST,
-    metadata: {},
-    name: overrides.name,
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    uri: overrides.uri,
-  };
+  });
 }
 
-function genreFixture(overrides: { uri: string; name: string }): Genre {
-  return {
-    favorite: false,
-    genre_aliases: null,
-    is_playable: false,
+function genreFixture(
+  overrides: Omit<Partial<Genre>, "item_id" | "provider"> & Pick<Genre, "uri">,
+): Genre {
+  return genre({
+    ...overrides,
     item_id: overrides.uri,
-    media_type: MediaType.GENRE,
-    metadata: {},
-    name: overrides.name,
     provider: providerOf(overrides.uri),
-    provider_mappings: [],
-    uri: overrides.uri,
-  };
+  });
 }
