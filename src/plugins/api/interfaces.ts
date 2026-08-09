@@ -1810,12 +1810,6 @@ export interface AIRadioSectionOrderRule {
   flow: AIRadioFlowItem[];
 }
 
-export interface AIRadioStationGeneral {
-  instructions: string;
-  weather_provider: string;
-  weather_timeout_seconds: number;
-}
-
 export interface AIRadioHost {
   id: string;
   name: string;
