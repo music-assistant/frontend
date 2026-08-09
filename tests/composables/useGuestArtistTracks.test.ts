@@ -1,6 +1,6 @@
 import type { Artist, Track } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { providerMapping } from "../fixtures/providerMapping";
+import { artist } from "../fixtures/artist";
 import { track } from "../fixtures/track";
 import { $t } from "@/plugins/i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -42,21 +42,12 @@ describe("useGuestArtistTracks", () => {
     const { selectedArtist, artistTracks, loadingArtistTracks, selectArtist } =
       useGuestArtistTracks();
 
-    const artist = {
-      item_id: "artist-id",
-      provider: "library",
-      provider_mappings: [
-        providerMapping({
-          item_id: "mapping-id",
-          provider_instance: "provider-1",
-        }),
-      ],
-    } as unknown as Artist;
+    const libraryArtist = artistFixture("artist-id");
 
-    await selectArtist(artist);
+    await selectArtist(libraryArtist);
 
     expect(loadingArtistTracks.value).toBe(false);
-    expect(selectedArtist.value).toStrictEqual(artist);
+    expect(selectedArtist.value).toStrictEqual(libraryArtist);
     expect(mockGetArtistTracks).toHaveBeenCalledWith("artist-id", "library");
     expect(artistTracks.value).toEqual(tracks);
   });
@@ -69,12 +60,7 @@ describe("useGuestArtistTracks", () => {
     const { selectedArtist, artistTracks, loadingArtistTracks, selectArtist } =
       useGuestArtistTracks();
 
-    const artist = {
-      item_id: "artist-id",
-      provider: "library",
-    } as unknown as Artist;
-
-    await selectArtist(artist);
+    await selectArtist(artist());
 
     expect(loadingArtistTracks.value).toBe(false);
     expect(selectedArtist.value).toBeNull();
@@ -90,10 +76,7 @@ describe("useGuestArtistTracks", () => {
     const { selectedArtist, artistTracks, selectArtist, clearArtistSelection } =
       useGuestArtistTracks();
 
-    await selectArtist({
-      item_id: "artist-id",
-      provider: "library",
-    } as unknown as Artist);
+    await selectArtist(artist());
     clearArtistSelection();
 
     expect(selectedArtist.value).toBeNull();
@@ -116,10 +99,7 @@ describe("useGuestArtistTracks", () => {
       clearArtistSelection,
     } = useGuestArtistTracks();
 
-    const pending = selectArtist({
-      item_id: "artist-id",
-      provider: "library",
-    } as unknown as Artist);
+    const pending = selectArtist(artist());
     clearArtistSelection();
     expect(loadingArtistTracks.value).toBe(false);
 
@@ -144,26 +124,24 @@ describe("useGuestArtistTracks", () => {
     const { selectedArtist, artistTracks, selectArtist } =
       useGuestArtistTracks();
 
-    const first = selectArtist({
-      name: "First",
-      item_id: "a1",
-      provider: "library",
-    } as unknown as Artist);
-    const second = selectArtist({
-      name: "Second",
-      item_id: "a2",
-      provider: "library",
-    } as unknown as Artist);
+    const first = selectArtist(artistFixture("a1", "First"));
+    const second = selectArtist(artistFixture("a2", "Second"));
     await second;
     resolveFirst([trackFixture("first-track")]);
     await first;
 
-    expect((selectedArtist.value as unknown as { name: string }).name).toBe(
-      "Second",
-    );
+    expect(selectedArtist.value?.name).toBe("Second");
     expect(artistTracks.value).toEqual(secondTracks);
   });
 });
+
+function artistFixture(itemId: string, name = itemId): Artist {
+  return artist({
+    item_id: itemId,
+    name,
+    uri: `library://artist/${itemId}`,
+  });
+}
 
 function trackFixture(itemId: string): Track {
   return track({
