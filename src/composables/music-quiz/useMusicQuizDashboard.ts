@@ -5,10 +5,10 @@ import {
   type MusicQuizCurrentRound,
   type MusicQuizPublicState,
 } from "@/composables/music-quiz/useMusicQuiz";
-import api from "@/plugins/api";
+import api, { ConnectionState } from "@/plugins/api";
 import { waitForApiInitialization } from "@/plugins/api/helpers";
 import { EventType } from "@/plugins/api/interfaces";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 /**
  * Viewer-only Music Quiz state for the cast/kiosk dashboard.
@@ -71,6 +71,18 @@ export function useMusicQuizDashboard() {
     stateRequestId += 1;
     unsubscribeProviderEvent?.();
   });
+
+  // A TV that drops its socket only gets a fresh game_updated once something
+  // changes in the game; refetch on reconnect so it isn't stuck showing stale
+  // state until then. Not immediate, so it only fires on an actual transition
+  // and doesn't duplicate the mount's own fetch; any edge-case overlap is
+  // harmless since fetchState()'s stateRequestId guard already dedupes it.
+  watch(
+    () => api.state.value,
+    (newState) => {
+      if (newState === ConnectionState.INITIALIZED) void fetchState();
+    },
+  );
 
   return { state, loading, currentRound, joinLink, fetchState };
 

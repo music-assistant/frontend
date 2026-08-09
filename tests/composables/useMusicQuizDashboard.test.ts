@@ -1,13 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGetMusicQuizPublicState, mockSubscribe, providerHandlers } =
-  vi.hoisted(() => ({
-    mockGetMusicQuizPublicState: vi.fn(),
-    mockSubscribe: vi.fn(),
-    providerHandlers: [] as Array<
-      (event: { object_id?: string; data?: unknown }) => void
-    >,
-  }));
+const {
+  mockGetMusicQuizPublicState,
+  mockSubscribe,
+  providerHandlers,
+  apiMock,
+} = vi.hoisted(() => ({
+  mockGetMusicQuizPublicState: vi.fn(),
+  mockSubscribe: vi.fn(),
+  providerHandlers: [] as Array<
+    (event: { object_id?: string; data?: unknown }) => void
+  >,
+  // A stable object identity: "@/plugins/api"'s default export. Its .state
+  // property gets replaced with a fresh ref per test so a prior test's
+  // reconnect watcher (never unmounted, since onBeforeUnmount is a no-op
+  // below) is left watching an orphaned ref instead of bleeding into the
+  // next test.
+  apiMock: {
+    default: {
+      subscribe: undefined as unknown,
+      state: { value: "initialized" as string },
+    },
+  },
+}));
 
 vi.mock("vue", async () => {
   const actual = await vi.importActual<typeof import("vue")>("vue");
@@ -33,11 +48,21 @@ vi.mock("@/composables/music-quiz/useMusicQuiz", () => ({
   },
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
-    subscribe: mockSubscribe,
-  },
-}));
+vi.mock("@/plugins/api", async () => {
+  // The reconnect watcher needs a real ref: assignments to a plain { value }
+  // would never reach the composable's watch callback.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  apiMock.default.subscribe = mockSubscribe;
+  apiMock.default.state = ref(apiMock.default.state.value);
+  return {
+    default: apiMock.default,
+    ConnectionState: {
+      INITIALIZED: "initialized",
+      RECONNECTING: "reconnecting",
+      DISCONNECTED: "disconnected",
+    },
+  };
+});
 
 vi.mock("@/plugins/api/helpers", () => ({
   waitForApiInitialization: () => Promise.resolve(),
@@ -45,6 +70,7 @@ vi.mock("@/plugins/api/helpers", () => ({
 
 import { EventType } from "@/plugins/api/interfaces";
 import { useMusicQuizDashboard } from "@/composables/music-quiz/useMusicQuizDashboard";
+import { ref } from "vue";
 
 const LOBBY_STATE = {
   quiz_type: "guess_the_song",
@@ -99,6 +125,7 @@ function deferred<T>() {
 describe("useMusicQuizDashboard", () => {
   beforeEach(() => {
     providerHandlers.length = 0;
+    apiMock.default.state = ref("initialized");
     mockGetMusicQuizPublicState.mockReset();
     mockSubscribe.mockReset();
     mockGetMusicQuizPublicState.mockResolvedValue({ ...LOBBY_STATE });
@@ -205,5 +232,21 @@ describe("useMusicQuizDashboard", () => {
     expect(dashboard.loading.value).toBe(false);
     expect(consoleWarn).toHaveBeenCalledOnce();
     consoleWarn.mockRestore();
+  });
+
+  it("refetches the public state once the connection re-initializes after a drop", async () => {
+    const dashboard = useMusicQuizDashboard();
+    await flushPromises();
+    expect(mockGetMusicQuizPublicState).toHaveBeenCalledOnce();
+
+    apiMock.default.state.value = "reconnecting";
+    await flushPromises();
+    expect(mockGetMusicQuizPublicState).toHaveBeenCalledOnce();
+
+    apiMock.default.state.value = "initialized";
+    await flushPromises();
+
+    expect(mockGetMusicQuizPublicState).toHaveBeenCalledTimes(2);
+    expect(dashboard.loading.value).toBe(false);
   });
 });

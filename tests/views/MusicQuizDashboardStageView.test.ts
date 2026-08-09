@@ -13,6 +13,7 @@ const {
   apiMock: { state: { value: "connected" as string } },
   dashboardMock: {
     state: { value: null } as { value: MusicQuizPublicState | null },
+    loading: { value: false },
   },
   mockCelebrate: vi.fn(),
   mockResolveMusicQuizDefinition: vi.fn(),
@@ -37,7 +38,9 @@ vi.mock("@/plugins/api", async () => {
 vi.mock("@/composables/music-quiz/useMusicQuizDashboard", async () => {
   const { computed, ref } = await vi.importActual<typeof import("vue")>("vue");
   const state = ref<MusicQuizPublicState | null>(null);
+  const loading = ref(dashboardMock.loading.value);
   dashboardMock.state = state;
+  dashboardMock.loading = loading;
   const currentRound = computed(() =>
     state.value && "current_round" in state.value
       ? (state.value.current_round ?? null)
@@ -47,7 +50,7 @@ vi.mock("@/composables/music-quiz/useMusicQuizDashboard", async () => {
   return {
     useMusicQuizDashboard: () => ({
       state,
-      loading: ref(false),
+      loading,
       currentRound,
       joinLink,
       fetchState: vi.fn(),
@@ -198,6 +201,7 @@ describe("MusicQuizDashboardStageView", () => {
   beforeEach(() => {
     apiMock.state.value = "connected";
     dashboardMock.state.value = null;
+    dashboardMock.loading.value = false;
     mockCelebrate.mockReset();
     mockResolveMusicQuizDefinition.mockReset();
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition());
@@ -211,6 +215,16 @@ describe("MusicQuizDashboardStageView", () => {
     ).toContain("providers.music_quiz.dashboard_waiting");
     expect(
       wrapper.find('[data-testid="music-quiz-dashboard-lobby"]').exists(),
+    ).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("hides the waiting screen while the cold fetch is still in flight", () => {
+    dashboardMock.loading.value = true;
+    const wrapper = mountView();
+
+    expect(
+      wrapper.find('[data-testid="music-quiz-dashboard-waiting"]').exists(),
     ).toBe(false);
     wrapper.unmount();
   });
@@ -311,6 +325,16 @@ describe("MusicQuizDashboardStageView", () => {
     expect(
       wrapper.get('[data-testid="leaderboard"]').attributes("data-rows"),
     ).toBe("1");
+    // reveal puts the answer/leaderboard column next to the game adapter,
+    // mirroring the host present stage's two-column layout
+    const layout = wrapper.get(
+      '[data-testid="music-quiz-dashboard-reveal-layout"]',
+    );
+    expect(layout.find('[data-testid="game-adapter"]').exists()).toBe(true);
+    expect(layout.find('[data-testid="answer-adapter"]').exists()).toBe(true);
+    expect(layout.classes()).toContain(
+      "lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]",
+    );
     wrapper.unmount();
   });
 

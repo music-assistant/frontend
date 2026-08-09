@@ -97,6 +97,31 @@
             :current-round="currentRound"
             :leaderboard-rows="visibleLeaderboardRows"
           />
+          <template v-else-if="activeState.phase === 'reveal'">
+            <div
+              data-testid="music-quiz-dashboard-reveal-layout"
+              class="grid min-h-0 flex-1 gap-[2vh] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-[2vw]"
+            >
+              <component
+                :is="resolvedDefinition.game.adapters.present"
+                :state="activeState"
+                :current-round="currentRound"
+              />
+              <component
+                :is="resolvedDefinition.answer.adapters.present"
+                :state="activeState"
+                :current-round="currentRound"
+              >
+                <template #leaderboard>
+                  <MusicQuizLeaderboard
+                    class="min-h-0 flex-1"
+                    :rows="visibleLeaderboardRows"
+                    scrollable
+                  />
+                </template>
+              </component>
+            </div>
+          </template>
           <template v-else>
             <p
               v-if="answeringPrompt"
@@ -155,7 +180,7 @@
       </template>
 
       <div
-        v-else
+        v-else-if="!loading"
         data-testid="music-quiz-dashboard-waiting"
         class="flex min-h-0 flex-1 flex-col items-center justify-center gap-[2vh] text-center"
       >
@@ -197,7 +222,7 @@ import { $t } from "@/plugins/i18n";
 import { Disc3 } from "@lucide/vue";
 import { computed, watch } from "vue";
 
-const { state, currentRound, joinLink } = useMusicQuizDashboard();
+const { state, currentRound, joinLink, loading } = useMusicQuizDashboard();
 
 const resolvedDefinition = computed(() => {
   const currentState = state.value;
