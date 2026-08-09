@@ -524,7 +524,9 @@ export interface CompiledHost {
 /**
  * Compiles a host draft into the AIRadioHost payload the backend expects
  * plus the AIRadioSection content it references, applying talkativeness and
- * running the segment/section_order compilation (see compileSegments).
+ * running the segment/section_order compilation (see compileSegments). The
+ * host editor bakes talkativeness into the draft's segments before saving and
+ * resets the level to "normal", so nothing is adjusted twice.
  * Sections are returned rather than embedded: v3 hosts don't carry section
  * content, so callers must persist them explicitly (ai_radio/sections/save)
  * before saving the host. Section ids are namespaced with the host id so two
@@ -658,8 +660,9 @@ export const decompileStation = (station: AIRadioStation): DecompiledShow => {
  * Best-effort inverse of compileHost, for opening an existing host in the
  * Hosts UI. `sections` is the section content library the host's
  * section_ids reference (e.g. loaded via ai_radio/sections/list).
- * talkativeness can't be inverted from section_order, so it always resets
- * to "normal".
+ * talkativeness can't be inverted from section_order, so it always resets to
+ * "normal" — which is what the saved segments already reflect, since the
+ * editor applies the level to them at save time.
  */
 export const decompileHost = (
   host: AIRadioHost,

@@ -202,6 +202,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
 import {
+  applyTalkativeness,
   compileHost,
   deepClone,
   decompileHost,
@@ -377,6 +378,14 @@ async function handleSave() {
   }
   saving.value = true;
   try {
+    // Bake the slider's adjustment into the segments, so what is saved is what
+    // the editor shows from here on: talkativeness itself isn't persisted and
+    // can't be recovered when the host is reopened.
+    draft.value.segments = applyTalkativeness(
+      draft.value.segments,
+      draft.value.talkativeness,
+    );
+    draft.value.talkativeness = "normal";
     const { host, sections: compiledSections } = compileHost(draft.value);
     // The server upserts by id, and a new host's id is derived from its name,
     // so an existing name would silently overwrite that host. A rename keeps
