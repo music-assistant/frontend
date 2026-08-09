@@ -1,4 +1,5 @@
 import PlayerGroupMembers from "@/components/PlayerGroupMembers.vue";
+import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   IdentifierType,
@@ -81,11 +82,19 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
   };
 }
 
-function mountGroupMembers(player: Player, members: Player[]) {
+function mountGroupMembers(
+  player: Player,
+  members: Player[],
+  props: {
+    filter?: PlayerGroupFilter;
+    groupHeading?: string;
+  } = {},
+) {
   return mount(PlayerGroupMembers, {
     props: {
       player,
       members,
+      ...props,
     },
     global: {
       mocks: {
@@ -139,6 +148,99 @@ describe("PlayerGroupMembers", () => {
     expect(wrapper.find(".member-checkbox").classes()).toEqual(
       expect.arrayContaining(["size-5", "border-2"]),
     );
+  });
+
+  it("separates players, lights, and visualizers", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    const light = createPlayer({
+      player_id: "light",
+      name: "Kitchen light",
+      type: PlayerType.LIGHT,
+    });
+    const visualizer = createPlayer({
+      player_id: "visualizer",
+      name: "TV visualizer",
+      type: PlayerType.VISUALIZER,
+    });
+    const parent = createPlayer({
+      can_group_with: [
+        speaker.player_id,
+        light.player_id,
+        visualizer.player_id,
+      ],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [light.player_id]: light,
+      [visualizer.player_id]: visualizer,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".player-group-section > p")
+        .map((section) => section.text()),
+    ).toEqual(["players", "lights", "visualizers"]);
+  });
+
+  it("separates current members from available players", () => {
+    const child = createPlayer({
+      player_id: "child",
+      name: "Office",
+    });
+    const available = createPlayer({
+      player_id: "available",
+      name: "Bedroom",
+    });
+    const parent = createPlayer({
+      can_group_with: [available.player_id],
+      group_members: ["parent", child.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [child.player_id]: child,
+      [available.player_id]: available,
+    };
+
+    const wrapper = mountGroupMembers(parent, [parent, child], {
+      groupHeading: parent.name,
+    });
+
+    expect(
+      wrapper
+        .findAll(".player-group-section > p")
+        .map((section) => section.text()),
+    ).toEqual(["Kitchen", "players"]);
+  });
+
+  it("keeps current members visible while filtering candidates", () => {
+    const child = createPlayer({
+      player_id: "child",
+      name: "Office",
+    });
+    const parent = createPlayer({
+      group_members: ["parent", child.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [child.player_id]: child,
+    };
+
+    const wrapper = mountGroupMembers(parent, [parent, child], {
+      filter: "lights",
+      groupHeading: "Speakers in group",
+    });
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen", "Office"]);
   });
 
   it("optimistically joins a player and sends the grouped update", async () => {
