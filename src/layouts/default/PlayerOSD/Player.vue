@@ -2,7 +2,7 @@
   <!-- Non-mobile: background gradient and player bar -->
   <template v-if="!useFloatingPlayer">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-    <div class="mediacontrols">
+    <div class="mediacontrols" :data-compact="!getBreakpointValue('bp6')">
       <div class="mediacontrols-left">
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
@@ -148,10 +148,10 @@ import vuetify from "@/plugins/vuetify";
 import { Heart } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
-import PlayerControls from "./PlayerControls.vue";
-import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import PlayerControls from "./PlayerControls.vue";
+import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 import PlayerTrackDetails from "./PlayerTrackDetails.vue";
 import PlayerVolume from "./PlayerVolume.vue";
@@ -319,6 +319,10 @@ watch(
   height: 40px;
   align-items: center;
   justify-content: center;
+}
+
+.mediacontrols[data-compact="true"] :deep(.player-bar-action) {
+  transform: translateY(10px);
 }
 
 .mediacontrols :deep(.player-bar-action-label) {

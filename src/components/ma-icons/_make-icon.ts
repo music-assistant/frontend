@@ -2,12 +2,13 @@
 import { h } from "vue";
 import type { Component } from "vue";
 
-/** Stroke-based icon (Lucide style). viewBox defaults to 24×24; supply a custom square viewBox for other coordinate spaces. */
+/** Stroke-based icon (Lucide style). viewBox defaults to 24×24; supply a custom square viewBox for other coordinate spaces. The strokeWidth prop is always in 24-unit (Lucide) terms — it is rescaled internally for larger coordinate spaces, which would otherwise render visibly thinner strokes at the same size. */
 export function makeStrokeIcon(
   name: string,
   viewBox = "0 0 24 24",
   ...children: ReturnType<typeof h>[]
 ): Component {
+  const strokeScale = (Number(viewBox.split(" ")[3]) || 24) / 24;
   return {
     name,
     props: {
@@ -25,7 +26,7 @@ export function makeStrokeIcon(
             viewBox,
             fill: "none",
             stroke: "currentColor",
-            "stroke-width": props.strokeWidth ?? 2,
+            "stroke-width": Number(props.strokeWidth ?? 2) * strokeScale,
             "stroke-linecap": "round",
             "stroke-linejoin": "round",
           },

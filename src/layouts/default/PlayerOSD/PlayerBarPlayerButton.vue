@@ -19,9 +19,9 @@
     >
       <PlayerIcon
         :icon="store.activePlayer?.icon"
-        :size="32"
+        :size="28"
         :stroke-width="1.4"
-        :class="navigation ? 'size-7' : 'size-8'"
+        class="size-7"
       />
     </span>
     <span

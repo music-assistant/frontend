@@ -43,7 +43,7 @@
           <component
             :is="volumeIcon"
             :stroke-width="1.4"
-            class="size-8"
+            class="size-7"
             :style="{ transform: `translateX(${volumeIconOffset}px)` }"
           />
         </span>
