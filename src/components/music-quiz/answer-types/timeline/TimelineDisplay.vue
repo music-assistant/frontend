@@ -248,8 +248,7 @@ function scrollEntryIntoView(entryId: string) {
   const entry = Array.from(
     containerRef.value?.querySelectorAll<HTMLElement>("[data-entry-id]") ?? [],
   ).find((element) => element.dataset.entryId === entryId);
-  // scroll only the strip's own container; scrollIntoView would also drag
-  // scrollable ancestors along and shift the whole kiosk page sideways
+  // scroll only the strip: scrollIntoView also drags scrollable ancestors along
   const scrollArea = entry?.closest<HTMLElement>("[data-timeline-scroll]");
   if (!entry || !scrollArea?.scrollTo) return;
 
