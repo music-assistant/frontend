@@ -61,11 +61,10 @@ const trackFixture = (
     item_id: itemId,
     provider,
     name,
-    uri: `test://track/${itemId}`,
   });
 
 const genreFixture = (itemId: string, name: string): Genre =>
-  genre({ item_id: itemId, name, uri: `test://genre/${itemId}` });
+  genre({ item_id: itemId, name });
 
 const provider = (
   instanceId: string,
