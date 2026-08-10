@@ -1450,9 +1450,11 @@ const loadData = async function (
     ? getActiveTab()?.id
     : undefined;
   if (loading.value) {
-    if (currentTabId !== loadingTabId) {
-      pendingTabLoad = true;
-    }
+    // Record whether the currently requested tab differs from the tab being loaded.
+    // Using assignment (not only setting to true) avoids a redundant reload if the
+    // user switches tabs and then switches back before the current load finishes.
+    pendingTabLoad = currentTabId !== loadingTabId;
+
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
     return;
