@@ -46,7 +46,10 @@
               navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
             "
           >
-            <GroupedPlayers :stroke-width="1.4" class="size-8" />
+            <GroupedPlayers
+              :stroke-width="1.4"
+              :class="navigation ? 'size-7' : 'size-8'"
+            />
           </span>
           <span
             :class="

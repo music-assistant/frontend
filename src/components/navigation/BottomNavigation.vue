@@ -10,7 +10,7 @@
       @click="handleMenuClick"
     >
       <span class="mobile-navigation-icon">
-        <Menu :stroke-width="1.6" class="size-8" />
+        <Menu :stroke-width="1.6" class="size-7" />
       </span>
       <span class="mobile-navigation-label"> Menu </span>
     </Button>
@@ -24,7 +24,7 @@
     >
       <span class="mobile-navigation-icon">
         <Compass
-          class="size-8"
+          class="size-7"
           :stroke-width="isActive('discover') ? 2 : 1.6"
         />
       </span>
@@ -41,7 +41,7 @@
       @click="handleSearchClick"
     >
       <span class="mobile-navigation-icon">
-        <Search class="size-8" :stroke-width="isActive('search') ? 2 : 1.6" />
+        <Search class="size-7" :stroke-width="isActive('search') ? 2 : 1.6" />
       </span>
       <span class="mobile-navigation-label">
         {{ $t("search") }}
@@ -122,8 +122,8 @@ function closePlayersMenu() {
   align-content: center;
   justify-items: center;
   row-gap: 4px !important;
-  padding-top: 7px !important;
-  padding-bottom: 23px !important;
+  padding-top: 15px !important;
+  padding-bottom: 15px !important;
 }
 
 .mobile-navigation-icon {
