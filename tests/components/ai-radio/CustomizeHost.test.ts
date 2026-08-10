@@ -58,15 +58,6 @@ const aiRadioCommands = () =>
     .map(([command]) => command)
     .filter((command) => command.startsWith("ai_radio/"));
 
-const savedHost = (): AIRadioHost => {
-  const call = sendCommand.mock.calls.find(
-    ([command]) => command === "ai_radio/hosts/save",
-  );
-  const args = call?.[1] as { host: AIRadioHost } | undefined;
-  if (!args) throw new Error("no host was saved");
-  return args.host;
-};
-
 afterEach(() => {
   vi.clearAllMocks();
   sendCommand.mockImplementation(async () => []);

@@ -263,6 +263,7 @@ function addSegmentFromTemplate(template: ShowSegment) {
   draft.value.segments.push({
     ...deepClone(template),
     id: uniqueSegmentId(template.id),
+    name: $t(`providers.ai_radio.customize.segment_templates.${template.id}`),
   });
 }
 

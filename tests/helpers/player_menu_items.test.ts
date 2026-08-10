@@ -343,6 +343,42 @@ describe("getPlayerMenuItems ai dj", () => {
     expect(menuItems.map((item) => item.label)).not.toContain("ai_dj");
   });
 
+  it("lists ai_dj after select_source", () => {
+    aiRadioAvailableRef.value = true;
+    hostsRef.value = [makeHost()];
+    const player = makePlayer({
+      source_list: [
+        {
+          id: "kitchen",
+          name: "Kitchen",
+          passive: false,
+          can_play_pause: true,
+          can_seek: true,
+          can_next_previous: true,
+        },
+        {
+          id: "line_in",
+          name: "Line-in",
+          passive: false,
+          can_play_pause: false,
+          can_seek: false,
+          can_next_previous: false,
+        },
+      ],
+      active_source: "kitchen",
+    });
+
+    const menuItems = getPlayerMenuItems(player, makeQueue(), {
+      context: "queue",
+    });
+    const labels = menuItems.map((item) => item.label);
+
+    expect(labels.indexOf("select_source")).toBeGreaterThan(-1);
+    expect(labels.indexOf("ai_dj")).toBeGreaterThan(
+      labels.indexOf("select_source"),
+    );
+  });
+
   it("refreshes hosts and dj status when the ai_dj submenu is built", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost()];

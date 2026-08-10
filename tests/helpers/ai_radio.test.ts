@@ -5,12 +5,24 @@ import {
   decompileStation,
   errorMessage,
   GENERIC_SEGMENT_TEMPLATES,
+  MERGE_SECTION_PROMPT,
   relativeTimeFromIso,
   slugify,
 } from "@/helpers/ai_radio";
 import type { HostDraft, ShowDraft } from "@/helpers/ai_radio";
-import type { AIRadioStation } from "@/plugins/api/interfaces";
+import type {
+  AIRadioHost,
+  AIRadioSection,
+  AIRadioStation,
+} from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
+
+const artistFactTemplate = GENERIC_SEGMENT_TEMPLATES.find(
+  (t) => t.id === "artist_fact",
+);
+if (!artistFactTemplate) {
+  throw new Error("GENERIC_SEGMENT_TEMPLATES is missing artist_fact");
+}
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
@@ -175,7 +187,7 @@ describe("compileHost", () => {
       ttsEngine: "",
       segments: [
         {
-          ...GENERIC_SEGMENT_TEMPLATES[4],
+          ...artistFactTemplate,
           plays: { kind: "every_n_songs", n: 3 },
         },
       ],
@@ -249,12 +261,92 @@ describe("decompileHost", () => {
       name: "Rick",
       instructions: "Persona.",
       ttsEngine: "",
-      segments: [{ ...GENERIC_SEGMENT_TEMPLATES[4] }], // artist_fact, every_n_songs n: 3
+      segments: [{ ...artistFactTemplate }], // every_n_songs n: 3
     };
     const { host, sections } = compileHost(draft);
     const round = decompileHost(host, sections);
     expect(round.segments).toEqual([
       { ...draft.segments[0], id: "rick_artist_fact" },
     ]);
+  });
+
+  it("decompiles the legacy every_n_songs shape (min_gap = n - 1) and upgrades it to the new shape on recompile", () => {
+    // Released builds compiled every_n_songs with min_gap_songs = n - 1;
+    // the v2->v3 migration copies section_order verbatim, so old hosts can
+    // still carry this shape. It must decompile to the intended n, and
+    // recompiling should upgrade it to the current min_gap_songs = n shape
+    // without changing the segment's meaning.
+    const legacySection: AIRadioSection = {
+      id: "rick_artist_fact",
+      name: "Artist fact",
+      type: "ai_text",
+      web_search: "allow",
+      prompt: artistFactTemplate.prompt,
+      constraints: { max_chars: 500 },
+    };
+    const mergeSection: AIRadioSection = {
+      id: "rick_smoother",
+      name: "Between Songs Mix",
+      type: "ai_meta",
+      prompt: MERGE_SECTION_PROMPT,
+    };
+    const legacyHost: AIRadioHost = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      tts_engine: "",
+      section_ids: [legacySection.id, mergeSection.id],
+      section_order: [
+        {
+          when: "between_songs",
+          flow: [
+            {
+              OPTIONAL: {
+                section: legacySection.id,
+                chance: 2 / 3,
+                guards: {
+                  min_gap_songs: 2,
+                  max_per_60min: 0,
+                  require_placeholders_present: [],
+                },
+              },
+            },
+          ],
+        },
+      ],
+      merge_section_id: mergeSection.id,
+    };
+
+    const round = decompileHost(legacyHost, [legacySection, mergeSection]);
+    expect(round.segments).toEqual([
+      {
+        id: legacySection.id,
+        name: legacySection.name,
+        prompt: legacySection.prompt,
+        webSearch: "allow",
+        maxChars: 500,
+        plays: { kind: "every_n_songs", n: 3 },
+      },
+    ]);
+
+    const { host: recompiled } = compileHost({
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: round.segments,
+    });
+    const rule = recompiled.section_order.find(
+      (r) => r.when === "between_songs",
+    );
+    const item = rule?.flow[0];
+    expect(
+      item && "OPTIONAL" in item
+        ? item.OPTIONAL.guards?.min_gap_songs
+        : undefined,
+    ).toBe(3);
+    expect(
+      item && "OPTIONAL" in item ? item.OPTIONAL.chance : undefined,
+    ).toBeCloseTo(2 / 3);
   });
 });

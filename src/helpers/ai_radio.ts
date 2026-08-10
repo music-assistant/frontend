@@ -437,15 +437,13 @@ export interface DecompiledShow {
  * list, given a `toSegment` lookup that turns a section id + derived plays
  * rule into a ShowSegment (or null to drop it, e.g. the hidden merge
  * section). Mirrors compileSegments' exact chance/guard formulas where
- * possible, falling back to a raw "occasionally" percent otherwise (flagged
- * via the returned `lossy` bit). Used by decompileHost.
+ * possible, falling back to a raw "occasionally" percent otherwise. Used by
+ * decompileHost.
  */
 const decompileSectionOrder = (
   sectionOrder: AIRadioSectionOrderRule[] | undefined,
   toSegment: (sectionId: string, plays: PlaysRule) => ShowSegment | null,
-): { segments: ShowSegment[]; lossy: boolean } => {
-  let lossy = false;
-
+): { segments: ShowSegment[] } => {
   const decompileBetweenItem = (item: AIRadioFlowItem): ShowSegment[] => {
     if ("MUST" in item) {
       const segment = toSegment(item.MUST, { kind: "every_song" });
@@ -458,7 +456,6 @@ const decompileSectionOrder = (
         const segment = toSegment(choices[0].section, { kind: "every_song" });
         return segment ? [segment] : [];
       }
-      lossy = true;
       const total = choices.reduce((sum, c) => sum + (c.weight || 0), 0) || 1;
       return choices
         .map((choice) =>
@@ -485,8 +482,15 @@ const decompileSectionOrder = (
       Math.abs(chance - Math.min(1, 2 / minGap)) < 1e-6
     ) {
       plays = { kind: "every_n_songs", n: minGap };
+    } else if (
+      // Legacy min_gap_songs = n - 1 shape, still reachable via hosts the
+      // v2->v3 migration copied verbatim. minGap 1 is excluded so old n=2
+      // (min_gap 1/chance 1) keeps decompiling as "occasionally 100%".
+      minGap >= 2 &&
+      Math.abs(chance - Math.min(1, 2 / (minGap + 1))) < 1e-6
+    ) {
+      plays = { kind: "every_n_songs", n: minGap + 1 };
     } else {
-      lossy = true;
       plays = { kind: "occasionally", percent: Math.round(chance * 100) };
     }
     const segment = toSegment(sectionId, plays);
@@ -511,7 +515,7 @@ const decompileSectionOrder = (
     }
   }
 
-  return { segments, lossy };
+  return { segments };
 };
 
 /** Inverse of compileShow, for opening an existing station in the Customize view. */
