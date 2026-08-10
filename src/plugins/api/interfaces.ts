@@ -871,8 +871,17 @@ export interface MediaItemChapter {
   end: number | null;
 }
 
+// a collection groups related items, most commonly an audiobook series
+export interface MediaItemCollection {
+  title: string;
+  // sorts the item within the collection, e.g. the book number in a series
+  sequence: number | string | null;
+}
+
 export interface MediaItemMetadata {
   description?: string | null;
+  // ISO 639-1 language code of `description`
+  description_language?: string | null;
   review?: string | null;
   explicit?: boolean | null;
   images?: MediaItemImage[] | null;
@@ -888,7 +897,11 @@ export interface MediaItemMetadata {
   preview?: string | null;
   popularity?: number | null;
   release_date?: string | null;
+  // spoken languages of the content, mostly set for audiobooks and podcasts.
+  // the spelling is whatever the provider reports, e.g. "en", "en-us" or "English"
+  languages?: string[] | null;
   chapters?: MediaItemChapter[] | null;
+  collections?: MediaItemCollection[] | null;
   life_span?: LifeSpan | null;
   artist_entity_type?: ArtistEntityType | null;
 }
