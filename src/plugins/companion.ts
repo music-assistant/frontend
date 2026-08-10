@@ -305,6 +305,9 @@ const handlePlayerCommand = async (command: string): Promise<void> => {
       case "previous":
         await api.playerCommandPrevious(player.player_id);
         break;
+      case "stop":
+        await api.playerCommandStop(player.player_id);
+        break;
       default:
         console.warn("[Companion] Unknown player command:", command);
     }
