@@ -11,14 +11,14 @@
 import type { MusicQuizPresentGameAdapterProps } from "@/components/music-quiz/adapter_contracts";
 import MusicTimelineRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineRound.vue";
 import type {
-  MusicQuizTimelineHostState,
+  MusicQuizTimelinePublicState,
   MusicQuizTimelineRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 
 withDefaults(
   defineProps<
     MusicQuizPresentGameAdapterProps<
-      MusicQuizTimelineHostState,
+      MusicQuizTimelinePublicState,
       MusicQuizTimelineRound
     > & {
       compact?: boolean;

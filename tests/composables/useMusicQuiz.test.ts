@@ -18,6 +18,7 @@ import {
   getAvailableMusicQuizTypes,
   getMusicQuizInfo,
   getMusicQuizPlaybackOptions,
+  getMusicQuizPublicState,
   heartbeatMusicQuiz,
   isMusicQuizProviderEvent,
   isSupportedMusicQuiz,
@@ -74,6 +75,26 @@ describe("useMusicQuiz commands", () => {
       await expect(getMusicQuizInfo()).resolves.toBe(info);
       expect(mockSendCommand).toHaveBeenCalledWith(
         "music_quiz/info",
+        undefined,
+        { suppressGlobalError: true },
+      );
+    });
+  });
+
+  describe("getMusicQuizPublicState", () => {
+    it("resolves null without a server round-trip when the provider is absent", async () => {
+      await expect(getMusicQuizPublicState()).resolves.toBeNull();
+      expect(mockSendCommand).not.toHaveBeenCalled();
+    });
+
+    it("fetches the guest-safe state as a best-effort command", async () => {
+      mockProviders.music_quiz = { domain: "music_quiz" };
+      const state = { phase: "lobby", join_url: "http://ma/join" };
+      mockSendCommand.mockResolvedValue(state);
+
+      await expect(getMusicQuizPublicState()).resolves.toBe(state);
+      expect(mockSendCommand).toHaveBeenCalledWith(
+        "music_quiz/public_state",
         undefined,
         { suppressGlobalError: true },
       );

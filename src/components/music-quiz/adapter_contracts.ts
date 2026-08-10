@@ -5,6 +5,7 @@ import type {
   MusicQuizRoundBase,
   MusicQuizSupportedHostState,
   MusicQuizSupportedPersonalizedState,
+  MusicQuizSupportedPublicState,
   MusicQuizSupportedRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import type { MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
@@ -54,13 +55,18 @@ export interface MusicQuizHostGameAdapterProps<
   currentRound: TRound;
 }
 
-export type MusicQuizPresentGameAdapterProps<
-  TState extends MusicQuizSupportedHostState = MusicQuizSupportedHostState,
+// Present adapters render the guest-safe public state: the dashboard feeds them
+// music_quiz/public_state, and host state is a superset so host callers still fit.
+export interface MusicQuizPresentGameAdapterProps<
+  TState extends MusicQuizSupportedPublicState = MusicQuizSupportedPublicState,
   TRound extends MusicQuizRoundBase = MusicQuizSupportedRound,
-> = MusicQuizHostGameAdapterProps<TState, TRound>;
+> {
+  state: TState;
+  currentRound: TRound;
+}
 
 export interface MusicQuizPresentBodyAdapterProps<
-  TState extends MusicQuizSupportedHostState = MusicQuizSupportedHostState,
+  TState extends MusicQuizSupportedPublicState = MusicQuizSupportedPublicState,
   TRound extends MusicQuizRoundBase = MusicQuizSupportedRound,
 > {
   state: TState;
@@ -92,10 +98,13 @@ export interface MusicQuizHostAnswerAdapterProps<
   currentRound: TRound;
 }
 
-export type MusicQuizPresentAnswerAdapterProps<
-  TState extends MusicQuizSupportedHostState = MusicQuizSupportedHostState,
+export interface MusicQuizPresentAnswerAdapterProps<
+  TState extends MusicQuizSupportedPublicState = MusicQuizSupportedPublicState,
   TRound extends MusicQuizRoundBase = MusicQuizSupportedRound,
-> = MusicQuizHostAnswerAdapterProps<TState, TRound>;
+> {
+  state: TState;
+  currentRound: TRound;
+}
 
 export interface MusicQuizAnswerAdapterSlots {
   leaderboard: () => VNode[];

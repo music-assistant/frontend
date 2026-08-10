@@ -345,6 +345,18 @@ describe("Music Quiz registries", () => {
     expect(trivia && isMusicQuizGameAvailable(trivia, ["trivia"])).toBe(true);
   });
 
+  it("declares an answering prompt only where the game renders none itself", () => {
+    const prompts = Object.fromEntries(
+      MUSIC_QUIZ_GAME_TYPES.map((game) => [game.id, game.answeringPromptKey]),
+    );
+
+    expect(prompts).toEqual({
+      guess_the_song: "providers.music_quiz.name_that_track",
+      music_timeline: undefined,
+      trivia: undefined,
+    });
+  });
+
   it.each(MUSIC_QUIZ_GAME_TYPES)("mounts every $id game adapter", (game) => {
     const fixture = GAME_MOUNT_FIXTURES[game.id];
     const wrappers = [
