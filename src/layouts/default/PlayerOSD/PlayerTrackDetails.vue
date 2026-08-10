@@ -72,24 +72,11 @@
           v-if="
             store.activePlayer &&
             store.activePlayer?.powered != false &&
-            store.activePlayer?.playback_state != PlaybackState.IDLE &&
-            !waveformBins
+            store.activePlayer?.playback_state != PlaybackState.IDLE
           "
           :show-badge="false"
           :show-icon="true"
           icon-style="margin-left: 12px; margin-bottom: 4px;"
-        />
-        <MiniEqualizer
-          v-else-if="
-            store.activePlayer &&
-            store.activePlayer?.powered != false &&
-            store.activePlayer?.playback_state != PlaybackState.IDLE &&
-            waveformBins
-          "
-          color="rgb(var(--v-theme-primary))"
-          :bars="4"
-          :height="16"
-          style="margin-left: 12px; margin-bottom: 4px"
         />
       </div>
     </template>
@@ -187,10 +174,8 @@
 
 <script setup lang="ts">
 import MarqueeText from "@/components/MarqueeText.vue";
-import MiniEqualizer from "@/components/MiniEqualizer.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
-import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { isQueueEnded } from "@/helpers/queue_position";
 import PlayerIcon from "@/components/PlayerIcon.vue";
@@ -206,7 +191,6 @@ import { store } from "@/plugins/store";
 import { computed } from "vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
-const { waveformBins } = useActiveTrackWaveform();
 const marqueeSync = new MarqueeTextSync();
 
 const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
