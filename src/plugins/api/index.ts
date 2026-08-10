@@ -11,6 +11,7 @@ import {
 import { $t, i18n } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
+import { ApiCommandError } from "./errors";
 import { getDeviceName } from "./helpers";
 import {
   type Album,
@@ -88,6 +89,8 @@ export enum ConnectionState {
   RECONNECTING = "reconnecting", // Lost connection, attempting to reconnect
   FAILED = "failed", // Connection failed permanently
 }
+
+export { ApiCommandError };
 
 /** Rejection for in-flight commands that can never be answered because the connection dropped. */
 export class ConnectionLostError extends Error {
@@ -2728,7 +2731,12 @@ export class MusicAssistantApi {
 
     this.commands.delete(msg.message_id);
     if ("error_code" in msg) {
-      resultPromise.reject(msg.details || String(msg.error_code));
+      resultPromise.reject(
+        new ApiCommandError(
+          msg.details || String(msg.error_code),
+          msg.error_code,
+        ),
+      );
     } else {
       msg = msg as SuccessResultMessage;
       resultPromise.resolve(msg.result);

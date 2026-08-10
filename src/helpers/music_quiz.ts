@@ -4,7 +4,14 @@ import type {
   MusicQuizSupportedPublicState,
 } from "@/composables/music-quiz/useMusicQuiz";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
+
+/** Error codes of the Music Quiz provider, as sent by the server. */
+export enum MusicQuizErrorCode {
+  NO_GAME = 1001,
+  UNKNOWN_PLAYER = 1009,
+}
 
 const MUSIC_QUIZ_PLAYER_ID_KEY = "music_quiz_player_id";
 const MUSIC_QUIZ_PLAYER_NAME_KEY = "music_quiz_player_name";
@@ -206,35 +213,21 @@ export function getMusicQuizErrorMessage(err: unknown, fallback = "") {
   return fallback;
 }
 
-// Detects the backend "no active Music Quiz game" error across its possible
-// shapes (plain string / Error / structured payload), since WS command
-// failures can arrive as strings rather than Error instances.
+/** Whether the command failed because there is no active Music Quiz game. */
 export function isNoActiveGameError(err: unknown): boolean {
-  const message = getMusicQuizErrorMessage(err).toLowerCase();
-  if (
-    message.includes("no active game") ||
-    message.includes("no active music quiz game") ||
-    (message.includes("no active") && message.includes("music quiz"))
-  ) {
-    return true;
-  }
-  if (err && typeof err === "object") {
-    const errorCode =
-      "error_code" in err && typeof err.error_code === "string"
-        ? err.error_code.toLowerCase()
-        : "";
-    const errorType =
-      "type" in err && typeof err.type === "string"
-        ? err.type.toLowerCase()
-        : "";
-    return (
-      errorCode === "musicquiznogameerror" ||
-      errorCode === "music_quiz_no_game" ||
-      errorType === "musicquiznogameerror" ||
-      errorType === "music_quiz_no_game"
-    );
-  }
-  return false;
+  return hasMusicQuizErrorCode(err, MusicQuizErrorCode.NO_GAME);
+}
+
+/** Whether the command failed because the game does not know this player. */
+export function isUnknownPlayerError(err: unknown): boolean {
+  return hasMusicQuizErrorCode(err, MusicQuizErrorCode.UNKNOWN_PLAYER);
+}
+
+function hasMusicQuizErrorCode(
+  err: unknown,
+  code: MusicQuizErrorCode,
+): boolean {
+  return err instanceof ApiCommandError && err.error_code === code;
 }
 
 function clearStoredMusicQuizPlayerName(): void {
