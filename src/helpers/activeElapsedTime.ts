@@ -155,5 +155,5 @@ function resolvePlayer(player_id?: string): Player | undefined {
 
 function resolveCurrentItem(player?: Player): QueueItem | undefined {
   const queue = resolvePlayerQueue(player);
-  return queue?.active ? queue.current_item : undefined;
+  return queue?.active ? (queue.current_item ?? undefined) : undefined;
 }

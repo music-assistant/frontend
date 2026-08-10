@@ -2,7 +2,7 @@
   <!-- Non-mobile: background gradient and player bar -->
   <template v-if="!useFloatingPlayer">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-    <div class="mediacontrols">
+    <div class="mediacontrols" :data-compact="!getBreakpointValue('bp6')">
       <div class="mediacontrols-left">
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
@@ -12,23 +12,46 @@
         />
       </div>
       <div class="mediacontrols-bottom-center">
-        <!-- player control buttons -->
-        <PlayerControls
-          :style="playIconStyle"
-          :visible-components="{
-            repeat: { isVisible: getBreakpointValue('bp3') },
-            shuffle: { isVisible: getBreakpointValue('bp3') },
-            play: {
-              isVisible: true,
-              icon: {
-                staticWidth: '48px',
-                staticHeight: '48px',
+        <div class="player-center-controls">
+          <div v-if="showWideCenterActions" class="player-center-side-action">
+            <Button
+              v-if="favoriteItem"
+              variant="ghost"
+              size="icon-lg"
+              class="player-control-button"
+              :aria-label="
+                $t(favoriteItem.favorite ? 'favorites_remove' : 'favorites_add')
+              "
+              @click="api.toggleFavorite(favoriteItem)"
+            >
+              <Heart
+                class="size-5"
+                :fill="favoriteItem.favorite ? 'currentColor' : 'none'"
+              />
+            </Button>
+          </div>
+
+          <PlayerControls
+            :style="playIconStyle"
+            :visible-components="{
+              repeat: { isVisible: getBreakpointValue('bp3') },
+              shuffle: { isVisible: getBreakpointValue('bp3') },
+              play: {
+                isVisible: true,
+                icon: {
+                  staticWidth: '48px',
+                  staticHeight: '48px',
+                },
               },
-            },
-            previous: { isVisible: getBreakpointValue('bp3') },
-            next: { isVisible: getBreakpointValue('bp3') },
-          }"
-        />
+              previous: { isVisible: getBreakpointValue('bp3') },
+              next: { isVisible: getBreakpointValue('bp3') },
+            }"
+          />
+
+          <div v-if="showWideCenterActions" class="player-center-side-action">
+            <QueueBtn :size="22" class="player-control-button" />
+          </div>
+        </div>
         <!-- progress bar -->
         <PlayerTimeline v-if="getBreakpointValue('bp6')" />
       </div>
@@ -36,15 +59,19 @@
         <div>
           <!-- player extended control buttons -->
           <PlayerExtendedControls
+            :favorite="{
+              isVisible: false,
+              showInMenu: true,
+            }"
             :queue="{
-              isVisible: getBreakpointValue('bp3'),
+              isVisible: false,
+              showInMenu: true,
             }"
             :player="{
               isVisible: true,
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
-              volumeSize: getBreakpointValue('bp8') ? '150px' : '130px',
             }"
           />
         </div>
@@ -65,7 +92,13 @@
         />
       </div>
       <div class="mediacontrols-bottom-right">
-        <div>
+        <div class="flex items-center">
+          <PlayerTrackMenu
+            compact
+            force-visible
+            :show-favorite="true"
+            :show-queue="true"
+          />
           <!-- player mobile control buttons -->
           <PlayerControls
             :style="[{ 'padding-right': '5px' }, playIconStyle]"
@@ -75,8 +108,8 @@
               play: {
                 isVisible: true,
                 icon: {
-                  staticWidth: '44px',
-                  staticHeight: '44px',
+                  staticWidth: '48px',
+                  staticHeight: '48px',
                 },
               },
               previous: { isVisible: false },
@@ -86,28 +119,37 @@
         </div>
       </div>
     </div>
-    <div
-      v-if="store.activePlayer"
-      :class="[
-        'volume-slider',
-        { 'volume-slider--no-safe-area': store.isIngressSession },
-      ]"
-    >
+    <div v-if="store.activePlayer" class="volume-slider">
       <PlayerVolume
         :player="store.activePlayer"
         width="100%"
         :prefer-group-volume="true"
+        :enable-popout="false"
+        :request-expand-on-group-tap="true"
+        @toggle-group-expansion="showMobileVolumeControls = true"
       />
     </div>
+    <PlayerBarMobileVolumeSheet
+      v-if="store.activePlayer"
+      v-model:open="showMobileVolumeControls"
+      :player="store.activePlayer"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import { ImageColorPalette, paletteFromServer } from "@/helpers/utils";
+import api from "@/plugins/api";
+import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { computed } from "vue";
+import { Heart } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
+import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
+import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
+import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
@@ -118,6 +160,12 @@ interface Props {
   useFloatingPlayer: boolean;
 }
 const props = defineProps<Props>();
+const showMobileVolumeControls = ref(false);
+const showWideCenterActions = computed(() => getBreakpointValue("bp6"));
+const favoriteItem = computed(() => {
+  const item = store.curQueueItem?.media_item;
+  return item?.media_type === MediaType.AUDIO_SOURCE ? undefined : item;
+});
 
 const coverImageColorPalette = computed<ImageColorPalette>(() =>
   paletteFromServer(store.activePlayer?.current_media?.palette),
@@ -141,6 +189,13 @@ const themeColor = computed(() =>
 const playIconStyle = computed(() => ({
   "--play-icon-color": vuetify.theme.current.value.dark ? "#212121" : "#fff",
 }));
+
+watch(
+  () => store.activePlayerId,
+  () => {
+    showMobileVolumeControls.value = false;
+  },
+);
 </script>
 
 <style scoped lang="scss">
@@ -159,10 +214,12 @@ const playIconStyle = computed(() => ({
 }
 
 .mediacontrols {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 40%) minmax(0, 1fr);
   align-items: center;
   width: 100%;
-  padding: 10px 15px;
+  min-height: 104px;
+  padding: 8px 15px;
   background-color: rgb(var(--v-theme-overlay));
   .mediacontrols-bottom-center {
     flex: 0 1 40%;
@@ -170,8 +227,13 @@ const playIconStyle = computed(() => ({
   }
 
   &[data-mobile="true"] {
+    display: flex;
     background-color: transparent;
+    min-height: 0;
     padding: 8px 10px;
+    .mediacontrols-bottom-right {
+      margin-right: 0;
+    }
     .mediacontrols-bottom-center {
       display: none;
     }
@@ -219,20 +281,96 @@ const playIconStyle = computed(() => ({
 }
 
 .mediacontrols-bottom-right {
-  flex: 1 1 0;
   min-width: 0;
   display: flex;
   justify-content: flex-end;
+  margin-right: -8px;
   > div {
     display: inline-flex;
     align-items: center;
   }
 }
 
+.player-center-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-center-side-action {
+  display: flex;
+  width: 46px;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+}
+
+.mediacontrols :deep(.player-bar-action) {
+  display: grid !important;
+  grid-template-rows: 40px 16px;
+  align-content: center;
+  justify-items: center;
+  row-gap: 4px;
+}
+
+.mediacontrols :deep(.player-bar-action-icon) {
+  display: flex;
+  width: 100%;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+}
+
+.mediacontrols[data-compact="true"] :deep(.player-bar-action) {
+  transform: translateY(10px);
+}
+
+.mediacontrols :deep(.player-bar-action-label) {
+  display: block;
+  width: 100%;
+  height: 16px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media screen and (min-width: 769px) and (max-width: 1099px) {
+  .mediacontrols .mediacontrols-bottom-center {
+    width: auto;
+  }
+
+  .mediacontrols-bottom-right {
+    min-width: 0;
+  }
+
+  .mediacontrols :deep(.player-bar-menu-button) {
+    width: 40px !important;
+    height: 72px !important;
+  }
+
+  .mediacontrols :deep(.player-bar-volume-button) {
+    width: 56px !important;
+    height: 72px !important;
+  }
+
+  .mediacontrols :deep(.player-bar-group-button) {
+    width: 60px !important;
+    height: 72px !important;
+  }
+
+  .mediacontrols :deep(.player-bar-player-button) {
+    width: 68px !important;
+    height: 72px !important;
+  }
+}
+
 .volume-slider {
   width: calc(100% - 34px);
   margin: -4px 6px 6px 14px;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .volume-slider :deep([data-slot="slider-range"]) {
@@ -249,9 +387,5 @@ const playIconStyle = computed(() => ({
     v-bind("themeColor") 24%,
     transparent
   ) !important;
-}
-
-.volume-slider--no-safe-area {
-  padding-bottom: 0 !important;
 }
 </style>

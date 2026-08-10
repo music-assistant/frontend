@@ -2,28 +2,95 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
+  getExternalLinkUrl,
   hexToRgb,
   kebabize,
   markdownToHtml,
   numberRange,
+  openLinkInNewTab,
   paletteFromServer,
   rgbToHex,
   sleep,
   truncateString,
 } from "@/helpers/utils";
 import type { MediaItemPalette } from "@/plugins/api/interfaces";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/plugins/api", () => ({
-  api: {
-    serverInfo: { value: null },
+const { apiMock } = vi.hoisted(() => ({
+  apiMock: {
+    serverInfo: {
+      value: null as { server_version: string } | null,
+    },
     players: {},
   },
+}));
+
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
 }));
 
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
 }));
+
+beforeEach(() => {
+  apiMock.serverInfo.value = null;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe("getExternalLinkUrl", () => {
+  it("returns valid web URLs unchanged", () => {
+    expect(getExternalLinkUrl("https://example.com/docs")).toBe(
+      "https://example.com/docs",
+    );
+  });
+
+  it("rejects unsafe URLs", () => {
+    expect(getExternalLinkUrl("javascript:alert(1)")).toBeUndefined();
+  });
+
+  it.each(["0.0.0", "2.17.0b4"])(
+    "uses beta documentation for server version %s",
+    (serverVersion) => {
+      apiMock.serverInfo.value = { server_version: serverVersion };
+
+      expect(getExternalLinkUrl("https://music-assistant.io/docs")).toBe(
+        "https://beta.music-assistant.io/docs",
+      );
+    },
+  );
+
+  it("does not rewrite lookalike hostnames", () => {
+    apiMock.serverInfo.value = { server_version: "2.17.0b4" };
+
+    expect(getExternalLinkUrl("https://music-assistant.io.evil.com/docs")).toBe(
+      "https://music-assistant.io.evil.com/docs",
+    );
+  });
+});
+
+describe("openLinkInNewTab", () => {
+  it("opens normalized links without exposing the opener", () => {
+    apiMock.serverInfo.value = { server_version: "2.17.0b4" };
+    const anchors: HTMLAnchorElement[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      anchors.push(this);
+    });
+
+    openLinkInNewTab("https://music-assistant.io/docs");
+
+    expect(anchors[0].getAttribute("href")).toBe(
+      "https://beta.music-assistant.io/docs",
+    );
+    expect(anchors[0].getAttribute("target")).toBe("_blank");
+    expect(anchors[0].getAttribute("rel")).toBe("noopener");
+  });
+});
 
 describe("formatDuration", () => {
   it("formats seconds correctly", () => {
@@ -109,6 +176,19 @@ describe("color utilities", () => {
   });
 
   describe("paletteFromServer", () => {
+    // the server sends every palette key, using null for the colors it could not derive
+    const serverPalette = (
+      overrides: Partial<MediaItemPalette> = {},
+    ): MediaItemPalette => ({
+      background_dark: null,
+      background_light: null,
+      primary: null,
+      accent: null,
+      on_dark: null,
+      on_light: null,
+      ...overrides,
+    });
+
     it("returns empty palette for null", () => {
       expect(paletteFromServer(null)).toEqual({
         lightColor: "",
@@ -123,27 +203,18 @@ describe("color utilities", () => {
       });
     });
 
-    it("returns empty strings when on_dark and on_light are missing", () => {
-      const palette: MediaItemPalette = {};
-      expect(paletteFromServer(palette)).toEqual({
-        lightColor: "",
-        darkColor: "",
-      });
-    });
-
     it("returns empty strings when on_dark and on_light are null", () => {
-      const palette: MediaItemPalette = { on_dark: null, on_light: null };
-      expect(paletteFromServer(palette)).toEqual({
+      expect(paletteFromServer(serverPalette())).toEqual({
         lightColor: "",
         darkColor: "",
       });
     });
 
     it("maps on_dark to lightColor and on_light to darkColor", () => {
-      const palette: MediaItemPalette = {
+      const palette = serverPalette({
         on_dark: [255, 200, 100],
         on_light: [40, 20, 10],
-      };
+      });
       expect(paletteFromServer(palette)).toEqual({
         lightColor: "#ffc864",
         darkColor: "#28140a",
@@ -151,14 +222,18 @@ describe("color utilities", () => {
     });
 
     it("handles only one of on_dark/on_light being set", () => {
-      expect(paletteFromServer({ on_dark: [255, 255, 255] })).toEqual({
+      expect(
+        paletteFromServer(serverPalette({ on_dark: [255, 255, 255] })),
+      ).toEqual({
         lightColor: "#ffffff",
         darkColor: "",
       });
-      expect(paletteFromServer({ on_light: [0, 0, 0] })).toEqual({
-        lightColor: "",
-        darkColor: "#000000",
-      });
+      expect(paletteFromServer(serverPalette({ on_light: [0, 0, 0] }))).toEqual(
+        {
+          lightColor: "",
+          darkColor: "#000000",
+        },
+      );
     });
   });
 });

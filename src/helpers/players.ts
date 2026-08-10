@@ -1,6 +1,11 @@
 // Shared predicates that decide which players this device owns and which of
 // them may be shown in the UI.
-import { Player, PlayerType } from "@/plugins/api/interfaces";
+import {
+  PlaybackState,
+  Player,
+  PlayerFeature,
+  PlayerType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 
@@ -16,6 +21,13 @@ export const isBuiltinPlayer = function (player: Player): boolean {
         x.output_protocol_id === webPlayer.player_id ||
         x.output_protocol_id === store.companionPlayerId,
     )
+  );
+};
+
+export const isPlayerActive = function (player: Player): boolean {
+  return (
+    player.playback_state === PlaybackState.PLAYING ||
+    player.playback_state === PlaybackState.PAUSED
   );
 };
 
@@ -70,4 +82,29 @@ export const groupMemberPickerVisible = function (player: Player): boolean {
     player.type === PlayerType.LIGHT ||
     player.type === PlayerType.VISUALIZER
   );
+};
+
+export const canEditPlayerGroup = function (player: Player): boolean {
+  return (
+    player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
+    (player.can_group_with.length > 0 ||
+      player.group_members.some(
+        (playerId) =>
+          playerId !== player.player_id &&
+          !player.static_group_members.includes(playerId),
+      ))
+  );
+};
+
+export const getPlayerGroupMemberCount = function (player: Player): number {
+  const childCount = new Set(
+    player.group_members.filter((playerId) => playerId !== player.player_id),
+  ).size;
+  return player.type === PlayerType.GROUP ? childCount : childCount + 1;
+};
+
+export const isPlayerGrouped = function (player: Player): boolean {
+  return player.type === PlayerType.GROUP
+    ? player.group_members.length > 0
+    : player.group_members.some((playerId) => playerId !== player.player_id);
 };

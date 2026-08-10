@@ -260,5 +260,52 @@ describe("timeline host and present answers", () => {
         .classes(),
     ).toContain("text-green-600");
     expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+
+    // the TV dashboard hides the per-round results; every other surface keeps them
+    const dashboard = mount(TimelineAudienceAnswer, {
+      props: {
+        state,
+        currentRound: revealedRound,
+        present: true,
+        dashboard: true,
+      },
+      slots: {
+        leaderboard: '<div data-testid="leaderboard">Leaderboard</div>',
+      },
+      global: {
+        stubs: {
+          MusicQuizCountdown: true,
+          TimelineDisplay: true,
+          TimelineProgress: true,
+        },
+      },
+    });
+    expect(
+      dashboard.find('[data-testid="timeline-round-results"]').exists(),
+    ).toBe(false);
+    expect(dashboard.find('[data-testid="leaderboard"]').exists()).toBe(true);
+  });
+
+  it("hides the dashboard leaderboard while guessing, keeps it for the host", () => {
+    for (const [dashboard, expected] of [
+      [true, false],
+      [false, true],
+    ] as const) {
+      const wrapper = shallowMount(TimelineAudienceAnswer, {
+        props: {
+          state: hostState,
+          currentRound,
+          present: true,
+          dashboard,
+        },
+        slots: {
+          leaderboard: '<div data-testid="leaderboard">Leaderboard</div>',
+        },
+      });
+      expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(
+        expected,
+      );
+      wrapper.unmount();
+    }
   });
 });

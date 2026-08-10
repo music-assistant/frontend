@@ -109,6 +109,21 @@ export const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  // Viewer-only Music Quiz kiosk route; top-level like /now-playing so it renders without nav/player chrome, and unlike /music-quiz it needs no host scope.
+  {
+    path: "/music-quiz/dashboard",
+    component: () => import("@/layouts/default/Default.vue"),
+    children: [
+      {
+        path: "",
+        name: "music-quiz-dashboard",
+        component: () =>
+          import(
+            /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizDashboardStageView.vue"
+          ),
+      },
+    ],
+  },
   // All other routes go through default layout with navigation/player controls
   {
     path: "/",

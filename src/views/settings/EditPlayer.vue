@@ -1,15 +1,9 @@
 <template>
   <section class="edit-player">
-    <div
-      v-if="
-        config &&
-        api.getProviderManifest(config.provider)!.domain in
-          api.providerManifests
-      "
-    >
+    <div v-if="config">
       <!-- Header card -->
-      <v-card v-if="config" class="header-card mb-4" elevation="0">
-        <div class="header-content">
+      <Card class="mb-4 gap-0 py-0">
+        <CardHeader class="relative flex flex-col gap-5 p-6 pr-16 sm:flex-row">
           <div class="header-icon">
             <PlayerIcon
               :icon="api.players[config.player_id]?.icon"
@@ -26,14 +20,16 @@
                   config.default_name
                 }}
               </h2>
-              <v-btn
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                density="compact"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 class="rename-btn"
+                :title="$t('settings.player_name')"
                 @click="showRenameDialog = true"
-              />
+              >
+                <Pencil class="size-4" />
+                <span class="sr-only">{{ $t("settings.player_name") }}</span>
+              </Button>
             </div>
             <div class="header-meta">
               <span class="meta-item">
@@ -129,8 +125,83 @@
               </v-chip>
             </div>
           </div>
-        </div>
-      </v-card>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                data-testid="player-menu"
+                variant="ghost"
+                size="icon-sm"
+                class="absolute top-4 right-4"
+                :aria-label="$t('more_options')"
+              >
+                <MoreVertical class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                v-if="owningProvider"
+                data-testid="player-provider-settings"
+                @click="openProviderSettings"
+              >
+                <Settings class="size-4" />
+                {{
+                  $t("settings.provider_settings", {
+                    name: owningProvider.name,
+                  })
+                }}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator v-if="owningProvider" />
+              <DropdownMenuItem
+                data-testid="player-reset-defaults"
+                :disabled="!config.enabled"
+                @click="resetToDefaults"
+              >
+                <RotateCcw class="size-4" />
+                {{ $t("settings.reset_to_defaults") }}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                data-testid="player-toggle-enabled"
+                :disabled="toggleLoading"
+                @click="toggleEnabled"
+              >
+                <Power class="size-4" />
+                {{
+                  config.enabled
+                    ? $t("settings.disable")
+                    : $t("settings.enable")
+                }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+        <CardContent
+          v-if="playerSetupLabel || config.enabled"
+          class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
+        >
+          <Button
+            v-if="playerSetupLabel"
+            data-testid="player-setup"
+            @click="startPlayerSetup"
+          >
+            <RefreshCw class="size-4" />
+            {{ $t(playerSetupLabel) }}
+          </Button>
+          <div
+            v-if="config.enabled"
+            class="flex w-full items-center gap-2 sm:ml-auto sm:w-auto"
+          >
+            <Switch
+              id="player-advanced-settings"
+              v-model="showAdvancedSettings"
+              data-testid="player-advanced-settings"
+            />
+            <Label for="player-advanced-settings" class="cursor-pointer">
+              {{ $t("settings.show_advanced_settings") }}
+            </Label>
+          </div>
+        </CardContent>
+      </Card>
     </div>
 
     <!-- Disabled banner -->
@@ -147,7 +218,8 @@
           size="small"
           color="warning"
           variant="flat"
-          @click="enablePlayer"
+          :loading="toggleLoading"
+          @click="toggleEnabled"
         >
           {{ $t("settings.enable_player") }}
         </v-btn>
@@ -192,6 +264,9 @@
 
     <edit-config
       v-if="config"
+      ref="editConfig"
+      v-model:show-advanced-settings="showAdvancedSettings"
+      action-layout="floating-save"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
@@ -208,7 +283,9 @@
           <v-text-field
             v-model="editName"
             :placeholder="
-              api.players[config?.player_id!]?.name || config?.default_name
+              api.players[config?.player_id!]?.name ||
+              config?.default_name ||
+              undefined
             "
             variant="outlined"
             density="comfortable"
@@ -229,7 +306,7 @@
       </v-card>
     </v-dialog>
     <v-overlay
-      v-model="loading"
+      :model-value="loading || toggleLoading"
       scrim="true"
       persistent
       style="display: flex; align-items: center; justify-content: center"
@@ -243,6 +320,17 @@
 import { computed, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -269,18 +357,31 @@ import {
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
+import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
+import {
+  MoreVertical,
+  Pencil,
+  Power,
+  RefreshCw,
+  RotateCcw,
+  Settings,
+} from "@lucide/vue";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
+const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
+const showAdvancedSettings = ref(false);
+const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
+let toggleRequestId = 0;
 
 // props
 const props = defineProps<{
@@ -314,6 +415,25 @@ const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
 onBeforeUnmount(unsubProvidersUpdated);
 
 // computed properties
+const player = computed(() =>
+  config.value ? api.players[config.value.player_id] : undefined,
+);
+
+const owningProvider = computed(() => {
+  if (!config.value) return undefined;
+  const providerId = config.value.provider;
+  const provider = api.getProvider(providerId);
+  return {
+    instanceId: provider?.instance_id ?? providerId,
+    name:
+      provider?.name ?? api.getProviderManifest(providerId)?.name ?? providerId,
+  };
+});
+
+const playerSetupLabel = computed(() =>
+  config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
+);
+
 const config_entries = computed(() => {
   if (!config.value) return [];
   const player = api.players[config.value.player_id];
@@ -423,6 +543,7 @@ const config_entries = computed(() => {
 watch(
   () => props.playerId,
   (val) => {
+    resetPlayerState(val);
     if (val) void loadConfig(val);
   },
   { immediate: true },
@@ -437,7 +558,7 @@ watch(showRenameDialog, (val) => {
 // methods
 const saveRename = function () {
   if (config.value) {
-    config.value.name = editName.value || undefined;
+    config.value.name = editName.value || null;
   }
   loading.value = true;
   api
@@ -449,23 +570,57 @@ const saveRename = function () {
   showRenameDialog.value = false;
 };
 
-const enablePlayer = function () {
-  loading.value = true;
-  api
-    .savePlayerConfig(props.playerId!, { enabled: true })
-    .then(() => {
-      router.back();
-    })
-    .finally(() => {
-      loading.value = false;
+const openProviderSettings = async function () {
+  const instanceId = owningProvider.value?.instanceId;
+  const playerId = config.value?.player_id;
+  if (!instanceId || !playerId) return;
+
+  try {
+    const failure = await router.push({
+      name: "editprovider",
+      params: { instanceId },
     });
+    if (failure && isCurrentPlayer(playerId)) {
+      toast.error(String(failure));
+    }
+  } catch (err) {
+    if (isCurrentPlayer(playerId)) toast.error(String(err));
+  }
+};
+
+const resetToDefaults = function () {
+  editConfig.value?.resetToDefaults();
+};
+
+const toggleEnabled = async function () {
+  if (!config.value || toggleLoading.value) return;
+
+  const playerId = config.value.player_id;
+  const requestId = ++toggleRequestId;
+  toggleLoading.value = true;
+  try {
+    const updatedConfig = await api.savePlayerConfig(playerId, {
+      enabled: !config.value.enabled,
+    });
+    if (!isCurrentPlayer(playerId)) return;
+
+    applyPlayerConfig(updatedConfig);
+    toast.success($t("settings.player_saved"));
+  } catch (err) {
+    if (!isCurrentPlayer(playerId)) return;
+
+    toast.error(String(err));
+    await refreshPlayerConfig(playerId);
+  } finally {
+    if (requestId === toggleRequestId) toggleLoading.value = false;
+  }
 };
 
 const startPlayerSetup = function () {
-  if (!props.playerId) return;
+  if (!config.value?.enabled || !playerSetupLabel.value) return;
   eventbus.emit("setupFlowDialog", {
     kind: "player",
-    playerId: props.playerId,
+    playerId: config.value.player_id,
   });
 };
 
@@ -518,7 +673,7 @@ async function loadConfig(playerId: string) {
       config.value = updatedConfig;
     }
   } catch (err) {
-    if (requestId === configLoadRequestId) {
+    if (requestId === configLoadRequestId && props.playerId === playerId) {
       toast.error(String(err));
     }
   }
@@ -534,33 +689,43 @@ async function refreshPlayerConfig(playerId: string) {
       props.playerId === playerId &&
       config.value?.player_id === playerId
     ) {
-      config.value.values = mergeConfigEntries(
-        config.value.values,
-        updatedConfig.values,
-      );
+      applyPlayerConfig(updatedConfig);
     }
   } catch (err) {
-    if (requestId === configRefreshRequestId) {
+    if (
+      requestId === configRefreshRequestId &&
+      props.playerId === playerId &&
+      config.value?.player_id === playerId
+    ) {
       toast.error(String(err));
     }
   }
+}
+
+function applyPlayerConfig(updatedConfig: PlayerConfig) {
+  if (!config.value) return;
+  config.value = {
+    ...updatedConfig,
+    values: mergeConfigEntries(config.value.values, updatedConfig.values),
+  };
+}
+
+function isCurrentPlayer(playerId: string) {
+  return props.playerId === playerId && config.value?.player_id === playerId;
+}
+
+function resetPlayerState(playerId?: string) {
+  if (config.value?.player_id === playerId) return;
+  config.value = undefined;
+  showAdvancedSettings.value = false;
+  toggleLoading.value = false;
+  toggleRequestId++;
 }
 </script>
 
 <style scoped>
 .edit-player {
   padding: 16px;
-}
-
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
 }
 
 .header-icon {
@@ -670,11 +835,6 @@ async function refreshPlayerConfig(playerId: string) {
 }
 
 @media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .header-meta {
     flex-direction: column;
     gap: 8px;

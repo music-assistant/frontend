@@ -88,7 +88,23 @@
       </div>
     </div>
 
-    <div v-if="!disabled" class="config-actions">
+    <div
+      v-if="!disabled && actionLayout === 'floating-save'"
+      class="floating-save"
+    >
+      <Button
+        data-testid="config-save"
+        type="button"
+        size="lg"
+        class="shadow-lg"
+        :disabled="!requiredValuesPresent || !hasUnsavedChanges"
+        @click="submit"
+      >
+        <Save class="size-4" />
+        {{ $t("settings.save") }}
+      </Button>
+    </div>
+    <div v-else-if="!disabled" class="config-actions">
       <!-- Show advanced settings toggle -->
       <div class="advanced-toggle-wrapper">
         <v-switch
@@ -174,6 +190,7 @@ import {
   NON_INTERACTIVE_ENTRY_TYPES,
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
+import { Button } from "@/components/ui/button";
 import { markdownToHtml } from "@/helpers/utils";
 import {
   ConfigEntryType,
@@ -192,6 +209,7 @@ import {
   PlayCircle,
   RadioTower,
   RefreshCw,
+  Save,
   Settings2,
   SlidersHorizontal,
   Speaker,
@@ -207,6 +225,7 @@ const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
 
 export interface Props {
+  actionLayout?: "default" | "floating-save";
   configEntries: ConfigEntryUI[];
   disabled: boolean;
   // Output protocols of the player being configured; drives derived-transport labelling
@@ -233,13 +252,15 @@ const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const showPasswordValues = ref(false);
-const showAdvancedSettings = ref(false);
 const showHelpInfo = ref<ConfigEntryUI>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
 
 // props
 const props = defineProps<Props>();
+const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
+  default: false,
+});
 
 // computed props
 const panels = computed(() => {
@@ -418,6 +439,8 @@ const resetToDefaults = function () {
     entry.value = entry.default_value;
   }
 };
+
+defineExpose({ resetToDefaults });
 
 const handleClose = function () {
   if (hasUnsavedChanges.value) {
@@ -622,6 +645,22 @@ const getCategoryIcon = function (category: string): Component {
 .config-actions .v-btn--disabled {
   background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
   color: rgba(var(--v-theme-on-surface), 0.38) !important;
+}
+
+.floating-save {
+  position: fixed;
+  right: 24px;
+  bottom: calc(var(--v-layout-bottom, 104px) + 16px);
+  z-index: 20;
+}
+
+:global(.content-section--mobile) .floating-save {
+  right: 16px;
+  bottom: calc(196px + env(safe-area-inset-bottom, 0px));
+}
+
+:global(.content-section--frameless) .floating-save {
+  bottom: 16px;
 }
 
 /* Advanced settings toggle */

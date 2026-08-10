@@ -1,5 +1,5 @@
 <template>
-  <Toaster rich-colors />
+  <Toaster rich-colors close-button />
 
   <!-- Login screen (when not authenticated) -->
   <Login

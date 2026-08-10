@@ -38,14 +38,16 @@ vi.mock("@/plugins/api", () => ({
         supported_features: [],
       },
     },
-    search: vi.fn(),
+    search: vi.fn<MusicAssistantApi["search"]>(),
   },
 }));
 
 import api from "@/plugins/api";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { useSmartPlaylistSeedItems } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
 import type { Album, Track } from "@/plugins/api/interfaces";
 import { providerMapping } from "../../fixtures/providerMapping";
+import { track } from "../../fixtures/track";
 
 interface SearchFnArg {
   searchFn: (q: string) => Promise<unknown[]>;
@@ -195,7 +197,7 @@ describe("useSmartPlaylistSeedItems", () => {
 
       vi.mocked(api.search).mockResolvedValueOnce({
         tracks: [
-          {
+          track({
             item_id: "lib-1",
             name: "Library Track",
             provider_mappings: [
@@ -208,7 +210,7 @@ describe("useSmartPlaylistSeedItems", () => {
                 provider_domain: "filesystem_local",
               }),
             ],
-          },
+          }),
         ],
         artists: [],
         albums: [],
@@ -216,7 +218,8 @@ describe("useSmartPlaylistSeedItems", () => {
         radio: [],
         audiobooks: [],
         podcasts: [],
-      } as never);
+        genres: [],
+      });
 
       const results = await trackSearchFn("anything");
 

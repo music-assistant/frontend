@@ -7,10 +7,12 @@ import {
   qualityTierToColor,
   useStreamQuality,
 } from "@/composables/useStreamQuality";
+import { AudioQuality } from "@/plugins/api/interfaces";
 import {
-  type AudioProcessingChain,
-  AudioQuality,
-} from "@/plugins/api/interfaces";
+  audioFidelity,
+  audioOutputDetails,
+  audioProcessingChain,
+} from "../fixtures/audioProcessing";
 
 describe("stream quality presentation", () => {
   it("maps authoritative qualities, colors, and labels", () => {
@@ -28,13 +30,15 @@ describe("stream quality presentation", () => {
 
   it("takes min and max from embedded output fidelity", () => {
     const quality = useStreamQuality(
-      ref<AudioProcessingChain>({
-        outputs: [
-          { fidelity: { quality: AudioQuality.STANDARD } },
-          { fidelity: { quality: AudioQuality.HI_RES } },
-          { fidelity: { quality: AudioQuality.LOW } },
-        ],
-      }),
+      ref(
+        audioProcessingChain({
+          outputs: [
+            outputWithQuality(AudioQuality.STANDARD),
+            outputWithQuality(AudioQuality.HI_RES),
+            outputWithQuality(AudioQuality.LOW),
+          ],
+        }),
+      ),
     );
 
     expect(quality.minOutputQualityTier.value).toBe(QualityTier.LOW);
@@ -43,13 +47,15 @@ describe("stream quality presentation", () => {
 
   it("excludes unknown qualities from the known output range", () => {
     const quality = useStreamQuality(
-      ref<AudioProcessingChain>({
-        outputs: [
-          { fidelity: { quality: AudioQuality.UNKNOWN } },
-          { fidelity: { quality: AudioQuality.LOW } },
-          { fidelity: { quality: AudioQuality.HI_RES } },
-        ],
-      }),
+      ref(
+        audioProcessingChain({
+          outputs: [
+            outputWithQuality(AudioQuality.UNKNOWN),
+            outputWithQuality(AudioQuality.LOW),
+            outputWithQuality(AudioQuality.HI_RES),
+          ],
+        }),
+      ),
     );
 
     expect(quality.minOutputQualityTier.value).toBe(QualityTier.LOW);
@@ -67,20 +73,22 @@ describe("stream quality presentation", () => {
       QualityTier.UNKNOWN,
     );
     expect(
-      useStreamQuality(ref<AudioProcessingChain>({ outputs: [] }))
+      useStreamQuality(ref(audioProcessingChain({ outputs: [] })))
         .maxOutputQualityTier.value,
     ).toBe(QualityTier.UNKNOWN);
   });
 
   it("returns unknown when all output qualities are unknown", () => {
     const quality = useStreamQuality(
-      ref<AudioProcessingChain>({
-        outputs: [
-          { fidelity: { quality: AudioQuality.UNKNOWN } },
-          { fidelity: { quality: "future" as AudioQuality } },
-          {},
-        ],
-      }),
+      ref(
+        audioProcessingChain({
+          outputs: [
+            outputWithQuality(AudioQuality.UNKNOWN),
+            outputWithQuality("future" as AudioQuality),
+            audioOutputDetails(),
+          ],
+        }),
+      ),
     );
 
     expect(quality.minOutputQualityTier.value).toBe(QualityTier.UNKNOWN);
@@ -88,15 +96,21 @@ describe("stream quality presentation", () => {
   });
 
   it("recomputes when the embedded chain changes", () => {
-    const chain = ref<AudioProcessingChain>({
-      outputs: [{ fidelity: { quality: AudioQuality.LOW } }],
-    });
+    const chain = ref(
+      audioProcessingChain({
+        outputs: [outputWithQuality(AudioQuality.LOW)],
+      }),
+    );
     const quality = useStreamQuality(chain);
 
     expect(quality.maxOutputQualityTier.value).toBe(QualityTier.LOW);
-    chain.value = {
-      outputs: [{ fidelity: { quality: AudioQuality.LOSSLESS } }],
-    };
+    chain.value = audioProcessingChain({
+      outputs: [outputWithQuality(AudioQuality.LOSSLESS)],
+    });
     expect(quality.maxOutputQualityTier.value).toBe(QualityTier.LOSSLESS);
   });
 });
+
+function outputWithQuality(quality: AudioQuality) {
+  return audioOutputDetails({ fidelity: audioFidelity({ quality }) });
+}

@@ -3,6 +3,7 @@ import { nextTick, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AudioProcessingDetails from "@/components/AudioProcessingDetails.vue";
 import type { AudioProcessingDisplayPlayer } from "@/composables/useAudioProcessingDetails";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { i18n } from "@/plugins/i18n";
 import {
   AudioChannel,
@@ -14,19 +15,29 @@ import {
   CrossfadeMode,
   DSPFilterType,
   DSPState,
-  MediaType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
+import {
+  audioDSPDetails,
+  audioFidelity,
+  audioNormalizationDetails,
+  audioOutputDetails,
+  audioProcessingChain,
+  audioQueueProcessing,
+} from "../fixtures/audioProcessing";
+import { audioFormat } from "../fixtures/audioFormat";
+import { providerManifest } from "../fixtures/providerManifest";
+import { streamDetails } from "../fixtures/streamDetails";
 
 const apiMock = vi.hoisted(() => ({
-  getProviderName: vi.fn(() => "Test provider"),
-  getProviderManifest: vi.fn((providerId: string) => ({
-    domain: providerId.split("--", 1)[0],
-  })),
+  getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(
+    () => "Test provider",
+  ),
+  getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
   // useDSPIRs (via useAudioProcessingDetails) fetches the IR list and
   // subscribes to config updates on mount; subscribe hands back an unsubscribe.
-  getDSPIRs: vi.fn(() => Promise.resolve([])),
+  getDSPIRs: vi.fn<MusicAssistantApi["getDSPIRs"]>(() => Promise.resolve([])),
   subscribe: vi.fn(() => vi.fn()),
   players: {} as Record<string, AudioProcessingDisplayPlayer>,
 }));
@@ -51,6 +62,10 @@ vi.mock("@/composables/useDSPPresets", async () => {
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
+  // the provider icon domain strips the instance suffix, e.g. "squeezelite--main" -> "squeezelite"
+  apiMock.getProviderManifest.mockImplementation((providerId: string) =>
+    providerManifest({ domain: providerId.split("--", 1)[0] }),
+  );
   apiMock.players = {
     "player-1": {
       player_id: "player-1",
@@ -255,22 +270,22 @@ describe("AudioProcessingDetails", () => {
 
   it("renders future enum values as safe unknown states", () => {
     const wrapper = mountDetails({
-      input_fidelity: { quality: "future" as AudioQuality },
-      queue_processing: {
+      input_fidelity: audioFidelity({ quality: "future" as AudioQuality }),
+      queue_processing: audioQueueProcessing({
         pcm_format: makeFormat({
           content_type: ContentType.PCM_F32LE,
           codec_type: ContentType.PCM_F32LE,
           bit_depth: 32,
         }),
         crossfade_mode: "future" as CrossfadeMode,
-      },
+      }),
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["player-1"],
-          dsp: { state: "future" as DSPState },
+          dsp: audioDSPDetails({ state: "future" as DSPState }),
           source_channel: "future" as AudioChannel,
-          fidelity: { quality: "future" as AudioQuality },
-        },
+          fidelity: audioFidelity({ quality: "future" as AudioQuality }),
+        }),
       ],
     });
 
@@ -291,12 +306,12 @@ describe("AudioProcessingDetails", () => {
   it("names a mono downmix instead of a selected source channel", () => {
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["player-1"],
-          dsp: { state: DSPState.DISABLED },
+          dsp: audioDSPDetails({ state: DSPState.DISABLED }),
           source_channel: AudioChannel.ALL,
           output_format: makeFormat(),
-        },
+        }),
       ],
     });
 
@@ -310,19 +325,19 @@ describe("AudioProcessingDetails", () => {
 
   it("excludes disabled crossfade from component headroom reasons", () => {
     const wrapper = mountDetails({
-      queue_processing: {
+      queue_processing: audioQueueProcessing({
         pcm_format: makeFormat({
           content_type: ContentType.PCM_F32LE,
           codec_type: ContentType.PCM_F32LE,
           bit_depth: 32,
         }),
         crossfade_mode: CrossfadeMode.DISABLED,
-      },
+      }),
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["player-1"],
-          fidelity: { bit_perfect: false },
-        },
+          fidelity: audioFidelity({ bit_perfect: false }),
+        }),
       ],
     });
 
@@ -345,28 +360,28 @@ describe("AudioProcessingDetails", () => {
     });
     const wrapper = mountDetails(
       {
-        input_fidelity: { quality: AudioQuality.STANDARD },
-        queue_processing: {
+        input_fidelity: audioFidelity({ quality: AudioQuality.STANDARD }),
+        queue_processing: audioQueueProcessing({
           pcm_format: makeFormat({
             content_type: ContentType.PCM_F32LE,
             codec_type: ContentType.PCM_F32LE,
             sample_rate: 48000,
             bit_depth: 32,
           }),
-        },
+        }),
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["player-1"],
-            dsp: { state: DSPState.DISABLED },
+            dsp: audioDSPDetails({ state: DSPState.DISABLED }),
             output_format: makeFormat({
               sample_rate: 48000,
               bit_depth: 16,
             }),
-            fidelity: {
+            fidelity: audioFidelity({
               quality: AudioQuality.STANDARD,
               bit_perfect: false,
-            },
-          },
+            }),
+          }),
         ],
       },
       makeStreamDetails(sourceFormat),
@@ -452,17 +467,17 @@ describe("AudioProcessingDetails", () => {
     ({ contentType, codecType }) => {
       const wrapper = mountDetails({
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["player-1"],
             output_format: makeFormat({
               content_type: contentType,
               codec_type: codecType,
             }),
-            fidelity: {
+            fidelity: audioFidelity({
               quality: AudioQuality.STANDARD,
               bit_perfect: false,
-            },
-          },
+            }),
+          }),
         ],
       });
 
@@ -493,17 +508,17 @@ describe("AudioProcessingDetails", () => {
     ({ contentType, codecType }) => {
       const wrapper = mountDetails({
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["player-1"],
             output_format: makeFormat({
               content_type: contentType,
               codec_type: codecType,
             }),
-            fidelity: {
+            fidelity: audioFidelity({
               quality: AudioQuality.LOSSLESS,
               bit_perfect: false,
-            },
-          },
+            }),
+          }),
         ],
       });
 
@@ -521,17 +536,17 @@ describe("AudioProcessingDetails", () => {
   it("prefers a known lossless codec over a lossy container", () => {
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["player-1"],
           output_format: makeFormat({
             content_type: ContentType.MP3,
             codec_type: ContentType.FLAC,
           }),
-          fidelity: {
+          fidelity: audioFidelity({
             quality: AudioQuality.LOSSLESS,
             bit_perfect: false,
-          },
-        },
+          }),
+        }),
       ],
     });
 
@@ -548,14 +563,14 @@ describe("AudioProcessingDetails", () => {
   it("explains unknown final-output fidelity in the format tooltip", () => {
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["player-1"],
           output_format: makeFormat({
             sample_rate: 48000,
             bit_depth: 16,
           }),
-          fidelity: { quality: AudioQuality.STANDARD },
-        },
+          fidelity: audioFidelity({ quality: AudioQuality.STANDARD }),
+        }),
       ],
     });
 
@@ -575,29 +590,31 @@ describe("AudioProcessingDetails", () => {
     });
     const wrapper = mountDetails(
       {
-        input_fidelity: { quality: AudioQuality.LOSSLESS },
-        queue_processing: {
+        input_fidelity: audioFidelity({ quality: AudioQuality.LOSSLESS }),
+        queue_processing: audioQueueProcessing({
           pcm_format: makeFormat({
             content_type: ContentType.PCM_S16LE,
             codec_type: ContentType.PCM_S16LE,
             sample_rate: 44100,
             bit_depth: 16,
           }),
-          normalization: { mode: VolumeNormalizationMode.DISABLED },
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.DISABLED,
+          }),
           playback_speed: 1,
           crossfade_mode: CrossfadeMode.DISABLED,
           overlay_active: false,
-        },
+        }),
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["player-1"],
-            dsp: { state: DSPState.DISABLED },
+            dsp: audioDSPDetails({ state: DSPState.DISABLED }),
             output_format: sourceFormat,
-            fidelity: {
+            fidelity: audioFidelity({
               quality: AudioQuality.LOSSLESS,
               bit_perfect: true,
-            },
-          },
+            }),
+          }),
         ],
       },
       makeStreamDetails(sourceFormat),
@@ -638,23 +655,23 @@ describe("AudioProcessingDetails", () => {
     });
     const wrapper = mountDetails(
       {
-        queue_processing: {
+        queue_processing: audioQueueProcessing({
           pcm_format: makeFormat({
             content_type: ContentType.PCM_S16LE,
             codec_type: ContentType.PCM_S16LE,
             sample_rate: 44100,
             bit_depth: 16,
           }),
-        },
+        }),
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["player-1"],
             output_format: sourceFormat,
-            fidelity: {
+            fidelity: audioFidelity({
               quality: AudioQuality.LOSSLESS,
               bit_perfect: false,
-            },
-          },
+            }),
+          }),
         ],
       },
       makeStreamDetails(sourceFormat),
@@ -674,11 +691,13 @@ describe("AudioProcessingDetails", () => {
   it("keeps unsupported-group DSP state visible", () => {
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["player-1"],
-          dsp: { state: DSPState.DISABLED_BY_UNSUPPORTED_GROUP },
+          dsp: audioDSPDetails({
+            state: DSPState.DISABLED_BY_UNSUPPORTED_GROUP,
+          }),
           output_format: makeFormat(),
-        },
+        }),
       ],
     });
 
@@ -696,22 +715,22 @@ describe("AudioProcessingDetails", () => {
     });
     const wrapper = mountDetails(
       {
-        queue_processing: {
+        queue_processing: audioQueueProcessing({
           pcm_format: makeFormat({
             content_type: ContentType.PCM_F32LE,
             codec_type: ContentType.PCM_F32LE,
             sample_rate: 48000,
             bit_depth: 32,
           }),
-        },
+        }),
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["player-1"],
-            dsp: {
+            dsp: audioDSPDetails({
               state: DSPState.DISABLED,
-            },
+            }),
             output_format: sourceFormat,
-          },
+          }),
         ],
       },
       makeStreamDetails(sourceFormat),
@@ -731,10 +750,10 @@ describe("AudioProcessingDetails", () => {
   it("keeps missing destination IDs visible in the grouped detail list", () => {
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["missing-1", "missing-2"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     });
 
@@ -758,14 +777,15 @@ describe("AudioProcessingDetails", () => {
         protocol_domain: "airplay",
         priority: 1,
         available: true,
+        derived_from: null,
       },
     ];
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["airplay-kitchen", "player-2"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     });
 
@@ -792,14 +812,15 @@ describe("AudioProcessingDetails", () => {
         protocol_domain: "airplay",
         priority: 1,
         available: true,
+        derived_from: null,
       },
     ];
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["player-1"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     });
 
@@ -827,10 +848,10 @@ describe("AudioProcessingDetails", () => {
     }
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: playerIds,
           output_format: makeFormat(),
-        },
+        }),
       ],
     });
 
@@ -845,14 +866,14 @@ describe("AudioProcessingDetails", () => {
   it("keeps multiple output paths separate and terminates the final path", () => {
     const wrapper = mountDetails({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["player-1"],
-          fidelity: { quality: AudioQuality.LOSSLESS },
-        },
-        {
+          fidelity: audioFidelity({ quality: AudioQuality.LOSSLESS }),
+        }),
+        audioOutputDetails({
           player_ids: ["player-2"],
-          fidelity: { quality: AudioQuality.HI_RES },
-        },
+          fidelity: audioFidelity({ quality: AudioQuality.HI_RES }),
+        }),
       ],
     });
 
@@ -880,12 +901,12 @@ describe("AudioProcessingDetails", () => {
 });
 
 function mountDetails(
-  chain: AudioProcessingChain,
+  chain: Partial<AudioProcessingChain> = {},
   streamDetails = makeStreamDetails(),
 ) {
   return mount(AudioProcessingDetails, {
     props: {
-      chain,
+      chain: audioProcessingChain(chain),
       streamDetails,
     },
     global: {
@@ -912,25 +933,15 @@ function getPresetNames(): Ref<Map<string, string>> {
 }
 
 function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
-  return {
-    content_type: ContentType.FLAC,
-    codec_type: ContentType.FLAC,
-    sample_rate: 96000,
-    bit_depth: 24,
-    channels: 2,
-    output_format_str: "",
-    bit_rate: 0,
-    ...overrides,
-  };
+  return audioFormat({ sample_rate: 96000, bit_depth: 24, ...overrides });
 }
 
-function makeStreamDetails(audioFormat = makeFormat()): StreamDetails {
-  return {
+function makeStreamDetails(format = makeFormat()): StreamDetails {
+  return streamDetails({
     provider: "filesystem--music",
     item_id: "track-1",
-    audio_format: audioFormat,
-    media_type: MediaType.TRACK,
-  };
+    audio_format: format,
+  });
 }
 
 function makeFullChain(): AudioProcessingChain {
@@ -940,25 +951,25 @@ function makeFullChain(): AudioProcessingChain {
     sample_rate: 48000,
     bit_depth: 32,
   });
-  return {
-    input_fidelity: { quality: AudioQuality.HI_RES },
-    queue_processing: {
+  return audioProcessingChain({
+    input_fidelity: audioFidelity({ quality: AudioQuality.HI_RES }),
+    queue_processing: audioQueueProcessing({
       pcm_format: floatPcm,
-      normalization: {
+      normalization: audioNormalizationDetails({
         mode: VolumeNormalizationMode.DYNAMIC,
         measurement_source: AudioNormalizationMeasurementSource.LIVE,
         target_lufs: -14,
         measured_lufs: -12.5,
         applied_gain_db: -1.5,
-      },
+      }),
       playback_speed: 1.25,
       crossfade_mode: CrossfadeMode.SMART_CROSSFADE,
       overlay_active: true,
-    },
+    }),
     outputs: [
-      {
+      audioOutputDetails({
         player_ids: ["player-1", "player-2"],
-        dsp: {
+        dsp: audioDSPDetails({
           state: DSPState.ENABLED,
           preset_id: "preset-1",
           input_gain: -1,
@@ -982,17 +993,17 @@ function makeFullChain(): AudioProcessingChain {
             },
           ],
           output_gain: 2,
-        },
+        }),
         source_channel: AudioChannel.FL,
         output_format: makeFormat({
           sample_rate: 48000,
           bit_depth: 16,
         }),
-        fidelity: {
+        fidelity: audioFidelity({
           quality: AudioQuality.LOSSLESS,
           bit_perfect: true,
-        },
-      },
+        }),
+      }),
     ],
-  };
+  });
 }

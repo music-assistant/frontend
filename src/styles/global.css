@@ -7,14 +7,6 @@
   src: url(@/assets/material-icons-outlined.woff2) format("woff2");
 }
 
-@font-face {
-  font-family: "JetBrains Mono Medium";
-  font-weight: 400;
-  font-style: normal;
-  font-display: auto;
-  src: url(@/assets/JetBrainsMono-Medium.woff2) format("woff2");
-}
-
 .material-icons-outlined {
   font-family: "Material Icons Outlined";
   font-weight: normal;

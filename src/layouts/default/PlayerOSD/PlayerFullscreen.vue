@@ -10,6 +10,8 @@
     no-click-animation
   >
     <v-card
+      ref="cardRef"
+      data-player-panel
       class="fullscreen-player-card"
       :style="{ background: backgroundColor }"
     >
@@ -20,9 +22,19 @@
         :opacity="visualizerOpacityPref"
         :player-id="store.activePlayer?.player_id"
       />
-      <v-toolbar class="v-toolbar-default" color="transparent">
+      <PanelDragHandle
+        v-if="store.mobileLayout"
+        @dismiss="store.showFullscreenPlayer = false"
+      />
+      <v-toolbar
+        data-panel-drag-region
+        class="v-toolbar-default"
+        color="transparent"
+      >
         <template #prepend>
+          <!-- on mobile the drag handle is the close affordance -->
           <Button
+            v-if="!store.mobileLayout"
             variant="ghost"
             size="icon-sm"
             :aria-label="$t('tooltip.close_fullscreen')"
@@ -467,10 +479,14 @@
 import Icon from "@/components/Icon.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
+import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { useUserPreferences } from "@/composables/userPreferences";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -497,7 +513,6 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
-import { useUserPreferences } from "@/composables/userPreferences";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
@@ -519,17 +534,17 @@ import Color from "color";
 import {
   computed,
   markRaw,
+  nextTick,
   onBeforeUnmount,
   onMounted,
   ref,
   watch,
   watchEffect,
+  type ComponentPublicInstance,
 } from "vue";
 import { useDisplay } from "vuetify";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
-import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 
 const { name, mdAndUp } = useDisplay();
 
@@ -557,6 +572,30 @@ const playBtnStyle = computed(() => {
 });
 
 const playerMarqueeSync = new MarqueeTextSync();
+
+// The dialog keeps its content mounted after the first open, so a drag-to-close
+// leaves PanelDragHandle's inline transform/opacity on the card; clear them
+// when the player is opened again.
+const cardRef = ref<ComponentPublicInstance | HTMLElement | null>(null);
+watch(
+  () => store.showFullscreenPlayer,
+  async (isOpen) => {
+    if (!isOpen) return;
+    await nextTick();
+    // template refs may resolve to either a component instance or a plain element
+    const raw = cardRef.value;
+    const el =
+      raw instanceof HTMLElement
+        ? raw
+        : ((raw?.$el ?? undefined) as HTMLElement | undefined);
+    if (!el?.dataset.dragDismissed) return;
+    delete el.dataset.dragDismissed;
+    el.style.removeProperty("transform");
+    el.style.removeProperty("opacity");
+    el.style.removeProperty("transition");
+    el.style.removeProperty("will-change");
+  },
+);
 
 // Track the favorite state of the current queue item independently from
 // media_item.favorite so optimistic updates survive server-side queue refreshes
@@ -1368,6 +1407,10 @@ watchEffect(() => {
 .fullscreen-player-card > :not(.visualizer-layer) {
   position: relative;
   z-index: 1;
+}
+
+.fullscreen-player-card :deep(.panel-drag-handle > div) {
+  background: color-mix(in srgb, var(--text-color) 40%, transparent);
 }
 
 .main {

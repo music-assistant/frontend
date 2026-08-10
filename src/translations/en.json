@@ -61,6 +61,7 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_failed": "Play action failed",
+    "lights": "Lights",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -68,6 +69,19 @@
         "sync_group": "Sync Group"
     },
     "players": "Players",
+    "player_select": {
+        "active_player_volume_only": "Only show volume sliders for active players",
+        "and_more": "...and {0} more",
+        "disable_player": "Disable player",
+        "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
+        "disable_player_title": "Disable {0}?",
+        "display_options": "Display options",
+        "rename_player": "Rename player",
+        "rename_player_description": "Enter a new name for this player.",
+        "show_active_players_first": "Show active players first",
+        "show_grouped_players": "Show group members",
+        "show_selected_player_first": "Show selected player first"
+    },
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
@@ -99,6 +113,7 @@
         "delete": "Delete",
         "disable": "Disable",
         "documentation": "Documentation",
+        "known_issues": "Known issues",
         "enable": "Enable",
         "enable_player": "Enable this player",
         "enable_provider": "Enable this provider entry",
@@ -117,6 +132,7 @@
         "player_name": "Custom player name",
         "player_not_available": "This player is not (yet) available",
         "player_provider": "Provider",
+        "player_saved": "Player settings saved",
         "player_settings": "Player settings",
         "player_type_label": "Player type",
         "playerproviders": "Player providers",
@@ -124,8 +140,10 @@
         "pluginproviders": "Plugin providers",
         "provider_disabled": "This provider entry is disabled",
         "provider_name": "Custom name for this provider entry",
+        "provider_settings": "{name} provider settings",
         "providers": "Providers",
         "reload": "Reload",
+        "reload_provider": "Reload provider",
         "save": "Save",
         "settings": "Settings",
         "setup_provider": "Setup provider: {0}",
@@ -261,6 +279,47 @@
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Set the concert pitch so A is tuned to 432 Hz"
             },
+            "safety_limiter": {
+                "help": "Catches peaks that would otherwise clip and may damage your speakers. Place it last in the chain.",
+                "ceiling": "Ceiling"
+            },
+            "compressor": {
+                "help": "Evens out the volume by turning down the loudest parts, so quieter detail stays audible.",
+                "preset": "Preset",
+                "custom": "Custom",
+                "threshold": "Threshold",
+                "ratio": "Ratio",
+                "attack": "Attack",
+                "release": "Release",
+                "knee": "Knee",
+                "makeup": "Makeup Gain",
+                "presets": {
+                    "light": "Light",
+                    "medium": "Medium",
+                    "heavy": "Heavy",
+                    "light_desc": "Gentle leveling",
+                    "medium_desc": "Balanced control",
+                    "heavy_desc": "Firm and punchy"
+                }
+            },
+            "high_low_pass": {
+                "help": "Removes everything on one side of the cutoff frequency. Often used to keep deep bass away from small speakers.",
+                "mode_label": "Mode",
+                "mode": {
+                    "high_pass": "High-pass",
+                    "low_pass": "Low-pass"
+                },
+                "mode_desc": {
+                    "high_pass": "Removes content below the cutoff",
+                    "low_pass": "Removes content above the cutoff"
+                },
+                "slope": "Slope",
+                "slope_desc": {
+                    "12": "Gentle",
+                    "24": "Medium",
+                    "48": "Steep"
+                }
+            },
             "convolution": {
                 "help": "Convolution applies a recorded impulse response to the audio \u2014 used for room or speaker correction and headphone simulation. Gain should be negative or zero, as an impulse response changes overall loudness.",
                 "impulse_response": "Impulse Response",
@@ -311,6 +370,9 @@
                 "gain": "Gain",
                 "balance": "Balance",
                 "transpose": "Transpose",
+                "safety_limiter": "Safety Limiter",
+                "compressor": "Compressor",
+                "high_low_pass": "High/Low-pass",
                 "convolution": "Convolution",
                 "stereo_width": "Stereo Width",
                 "crossfeed": "Crossfeed"
@@ -650,9 +712,13 @@
             "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
             "open_settings": "Open Streams settings"
         },
+        "provider_status_loaded": "Running",
+        "provider_status_loading": "Loading",
+        "provider_status_disabled": "Disabled",
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
         "provider_status_error": "Setup failed",
+        "provider_status_unknown": "Unknown",
         "remove_provider": "Remove provider",
         "remove_provider_confirm": "Remove this provider? This cannot be undone.",
         "save_failed": "Couldn't save the provider settings",
@@ -687,7 +753,8 @@
         "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
         "queue_global_settings_link": "Open global queue settings",
         "protocol_provider_unavailable": "The provider for this output protocol is currently unavailable.",
-        "protocol_multi_info": "This player supports multiple output protocols. Music Assistant links them automatically so they act as a single player — enable the ones you want to use.",
+        "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
+        "protocol_native_badge": "Native",
         "protocol_enable_label": "Enable output protocols",
         "protocol_configure_title": "Configure {name}",
         "protocol_configure_label": "Configure output protocols",
@@ -717,6 +784,7 @@
         }
     },
     "show_info": "Show info",
+    "speakers_in_group": "Speakers in group",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
     "sort": {
@@ -1218,6 +1286,8 @@
         "click_to_change": "Click below to change output device"
     },
     "more_options": "More options",
+    "visualizers": "Visualizers",
+    "volume": "Volume",
     "edit": "Edit",
     "authors": "Authors",
     "collection": "Collection",
@@ -1246,6 +1316,7 @@
     "delete_genre": "Delete genre",
     "description": "Description",
     "genre": "Genre",
+    "grouped_volume": "Grouped volume",
     "genres": "Genres",
     "link": "Link",
     "link_alias": "Link alias",
@@ -1618,6 +1689,8 @@
             "leaderboard": "Leaderboard",
             "invite_players": "Invite players",
             "qr_unavailable": "Could not render QR code",
+            "dashboard_waiting": "Waiting for the quiz to start",
+            "name_that_track": "Name that track",
             "copied": "Copied",
             "copy_link": "Copy link",
             "join_link_copied": "Join link copied",

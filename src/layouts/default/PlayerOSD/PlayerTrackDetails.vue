@@ -53,109 +53,33 @@
           color: primaryColor,
         }"
         class="d-flex align-center"
+        @click="onTitleClick"
       >
-        <div v-if="store.activePlayer && store.activePlayer?.powered != false">
-          {{ getPlayerName(store.activePlayer) }}
-        </div>
-        <!-- player name as title if its powered off-->
-        <div
-          v-else-if="store.activePlayer?.powered == false"
-          @click="store.showPlayersMenu = true"
-        >
-          {{ store.activePlayer?.name }}
-        </div>
         <!-- no player selected message -->
-        <div v-else @click="store.showPlayersMenu = true">
+        <div v-if="!store.activePlayer">
           {{ $t("no_player") }}
         </div>
-        <NowPlayingBadge
-          v-if="
-            store.activePlayer &&
-            store.activePlayer?.powered != false &&
-            store.activePlayer?.playback_state != PlaybackState.IDLE &&
-            !waveformBins
-          "
-          :show-badge="false"
-          :show-icon="true"
-          icon-style="margin-left: 12px; margin-bottom: 4px;"
-        />
-        <MiniEqualizer
-          v-else-if="
-            store.activePlayer &&
-            store.activePlayer?.powered != false &&
-            store.activePlayer?.playback_state != PlaybackState.IDLE &&
-            waveformBins
-          "
-          color="rgb(var(--v-theme-primary))"
-          :bars="4"
-          :height="16"
-          style="margin-left: 12px; margin-bottom: 4px"
-        />
-      </div>
-    </template>
-    <!-- append chip(s): quality -->
-    <template #append>
-      <!-- format -->
-      <div
-        v-if="
-          streamDetails?.audio_format.content_type &&
-          !getBreakpointValue({ breakpoint: 'phone' }) &&
-          showQualityDetailsBtn
-        "
-        class="pl-4"
-      >
-        <QualityDetailsBtn />
-      </div>
-    </template>
-    <!-- subtitle -->
-    <template #subtitle>
-      <div
-        :style="{
-          cursor: 'pointer',
-          color: primaryColor,
-        }"
-        @click="store.showFullscreenPlayer = true"
-      >
-        <!-- player powered off -->
-        <div v-if="store.activePlayer?.powered == false">
-          {{ $t("off") }}
+        <!-- player powered off: show the name so it's clear which player is off -->
+        <div
+          v-else-if="store.activePlayer.powered == false"
+          class="ma-line-clamp-1"
+        >
+          {{ store.activePlayer.name }}
         </div>
-        <template v-else-if="store.activePlayer?.current_media?.title">
-          <div class="ma-line-clamp-1">
-            <MarqueeText :sync="marqueeSync">
-              {{ store.activePlayer.current_media.title }}
-            </MarqueeText>
-          </div>
-          <div class="ma-line-clamp-1">
-            <MarqueeText :sync="marqueeSync">
-              <!-- artists(s) + album -->
-              <span
-                v-if="
-                  store.activePlayer?.current_media?.artist &&
-                  store.activePlayer?.current_media?.album &&
-                  !props.showOnlyArtist
-                "
-              >
-                {{ store.activePlayer?.current_media?.artist }} •
-                {{ store.activePlayer?.current_media?.album }}
-              </span>
-              <!-- artists(s) only -->
-              <span v-else-if="store.activePlayer?.current_media?.artist">
-                {{ store.activePlayer?.current_media?.artist }}
-              </span>
-              <!-- album only -->
-              <span v-else-if="store.activePlayer?.current_media?.album">
-                {{ store.activePlayer?.current_media?.album }}
-              </span>
-            </MarqueeText>
-          </div>
-        </template>
+        <!-- track title -->
+        <div
+          v-else-if="store.activePlayer.current_media?.title"
+          class="ma-line-clamp-1"
+          style="min-width: 0"
+        >
+          <MarqueeText :sync="marqueeSync">
+            {{ store.activePlayer.current_media.title }}
+          </MarqueeText>
+        </div>
         <!-- 3rd party source active -->
         <div
           v-else-if="
-            store.activePlayer &&
-            !store.activePlayerQueue &&
-            store.activePlayer?.active_source
+            !store.activePlayerQueue && store.activePlayer.active_source
           "
           class="ma-line-clamp-1"
         >
@@ -176,8 +100,73 @@
         >
           {{ $t("queue_empty") }}
         </div>
-        <div v-else-if="store.activePlayer">
-          {{ store.activePlayer?.name }}
+        <!-- fallback: player name, so the title never renders blank -->
+        <div v-else class="ma-line-clamp-1">
+          {{ store.activePlayer.name }}
+        </div>
+      </div>
+    </template>
+    <!-- append chip(s): quality -->
+    <template #append>
+      <!-- format -->
+      <div
+        v-if="
+          streamDetails?.audio_format.content_type &&
+          !getBreakpointValue({ breakpoint: 'phone' }) &&
+          showQualityDetailsBtn
+        "
+        class="pl-4"
+      >
+        <QualityDetailsBtn />
+      </div>
+    </template>
+    <!-- subtitle: off state or artist(s) + album -->
+    <template #subtitle>
+      <!-- player powered off -->
+      <div
+        v-if="store.activePlayer?.powered == false"
+        :style="{
+          cursor: 'pointer',
+          color: primaryColor,
+        }"
+        @click="store.showPlayersMenu = true"
+      >
+        {{ $t("off") }}
+      </div>
+      <div
+        v-else-if="
+          store.activePlayer?.current_media?.title &&
+          (store.activePlayer?.current_media?.artist ||
+            store.activePlayer?.current_media?.album)
+        "
+        :style="{
+          cursor: 'pointer',
+          color: primaryColor,
+        }"
+        @click="store.showFullscreenPlayer = true"
+      >
+        <div class="ma-line-clamp-1">
+          <MarqueeText :sync="marqueeSync">
+            <!-- artists(s) + album -->
+            <span
+              v-if="
+                store.activePlayer?.current_media?.artist &&
+                store.activePlayer?.current_media?.album &&
+                !props.showOnlyArtist
+              "
+            >
+              {{ store.activePlayer?.current_media?.artist }} •
+              {{ store.activePlayer?.current_media?.album }}
+            </span>
+            <!-- artists(s) only -->
+            <span v-else-if="store.activePlayer?.current_media?.artist">
+              {{ store.activePlayer?.current_media?.artist }}
+            </span>
+            <!-- album only -->
+            <span v-else-if="store.activePlayer?.current_media?.album">
+              {{ store.activePlayer?.current_media?.album }}
+            </span>
+          </MarqueeText>
         </div>
       </div>
     </template>
@@ -187,26 +176,18 @@
 
 <script setup lang="ts">
 import MarqueeText from "@/components/MarqueeText.vue";
-import MiniEqualizer from "@/components/MiniEqualizer.vue";
-import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
-import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { isQueueEnded } from "@/helpers/queue_position";
-import PlayerIcon from "@/components/PlayerIcon.vue";
-import {
-  ImageColorPalette,
-  getMediaImageUrl,
-  getPlayerName,
-} from "@/helpers/utils";
+import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
 import { getSourceName } from "@/plugins/api/helpers";
-import { PlaybackState, PlayerType } from "@/plugins/api/interfaces";
+import { PlayerType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
-const { waveformBins } = useActiveTrackWaveform();
 const marqueeSync = new MarqueeTextSync();
 
 const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
@@ -229,6 +210,14 @@ const props = withDefaults(defineProps<Props>(), {
 const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
 });
+
+function onTitleClick() {
+  if (!store.activePlayer || store.activePlayer.powered == false) {
+    store.showPlayersMenu = true;
+  } else {
+    store.showFullscreenPlayer = true;
+  }
+}
 </script>
 
 <style scoped>

@@ -11,12 +11,13 @@ import { Sonos } from "./sonos";
 import { Mac } from "./mac";
 import { AppleTv } from "./apple-tv";
 import { GoogleNest } from "./google-nest";
+import { GroupedPlayers } from "./grouped-players";
 import { VoicePe } from "./voice-pe";
 import { Wiim } from "./wiim";
 import { Speakers } from "./speakers";
 import { Soundbar } from "./soundbar";
 
-export { Speakers };
+export { GroupedPlayers, Speakers };
 
 /** Canonical id → component map. Ids are stored in player configs. */
 export const registry: Record<string, Component> = {
