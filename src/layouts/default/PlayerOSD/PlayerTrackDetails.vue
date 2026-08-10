@@ -100,6 +100,10 @@
         >
           {{ $t("queue_empty") }}
         </div>
+        <!-- fallback: player name, so the title never renders blank -->
+        <div v-else class="ma-line-clamp-1">
+          {{ store.activePlayer.name }}
+        </div>
       </div>
     </template>
     <!-- append chip(s): quality -->

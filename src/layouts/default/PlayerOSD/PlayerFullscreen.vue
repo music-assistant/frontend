@@ -568,10 +568,12 @@ watch(
   async (isOpen) => {
     if (!isOpen) return;
     await nextTick();
+    // template refs may resolve to either a component instance or a plain element
+    const raw = cardRef.value;
     const el =
-      cardRef.value && "$el" in cardRef.value
-        ? (cardRef.value.$el as HTMLElement | undefined)
-        : (cardRef.value as HTMLElement | null);
+      raw instanceof HTMLElement
+        ? raw
+        : ((raw?.$el ?? undefined) as HTMLElement | undefined);
     if (!el?.dataset.dragDismissed) return;
     delete el.dataset.dragDismissed;
     el.style.removeProperty("transform");
