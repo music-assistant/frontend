@@ -64,32 +64,15 @@
           {{ $t("off") }}
         </div>
         <!-- track title -->
-        <template v-else-if="store.activePlayer.current_media?.title">
-          <div class="ma-line-clamp-1" style="min-width: 0">
-            <MarqueeText :sync="marqueeSync">
-              {{ store.activePlayer.current_media.title }}
-            </MarqueeText>
-          </div>
-          <NowPlayingBadge
-            v-if="
-              store.activePlayer.playback_state != PlaybackState.IDLE &&
-              !waveformBins
-            "
-            :show-badge="false"
-            :show-icon="true"
-            icon-style="margin-left: 12px; margin-bottom: 4px;"
-          />
-          <MiniEqualizer
-            v-else-if="
-              store.activePlayer.playback_state != PlaybackState.IDLE &&
-              waveformBins
-            "
-            color="rgb(var(--v-theme-primary))"
-            :bars="4"
-            :height="16"
-            style="margin-left: 12px; margin-bottom: 4px"
-          />
-        </template>
+        <div
+          v-else-if="store.activePlayer.current_media?.title"
+          class="ma-line-clamp-1"
+          style="min-width: 0"
+        >
+          <MarqueeText :sync="marqueeSync">
+            {{ store.activePlayer.current_media.title }}
+          </MarqueeText>
+        </div>
         <!-- 3rd party source active -->
         <div
           v-else-if="
@@ -176,22 +159,18 @@
 
 <script setup lang="ts">
 import MarqueeText from "@/components/MarqueeText.vue";
-import MiniEqualizer from "@/components/MiniEqualizer.vue";
-import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
-import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
 import { getSourceName } from "@/plugins/api/helpers";
-import { PlaybackState, PlayerType } from "@/plugins/api/interfaces";
+import { PlayerType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
-const { waveformBins } = useActiveTrackWaveform();
 const marqueeSync = new MarqueeTextSync();
 
 const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
