@@ -562,13 +562,16 @@ const playerMarqueeSync = new MarqueeTextSync();
 // The dialog keeps its content mounted after the first open, so a drag-to-close
 // leaves PanelDragHandle's inline transform/opacity on the card; clear them
 // when the player is opened again.
-const cardRef = ref<ComponentPublicInstance | null>(null);
+const cardRef = ref<ComponentPublicInstance | HTMLElement | null>(null);
 watch(
   () => store.showFullscreenPlayer,
   async (isOpen) => {
     if (!isOpen) return;
     await nextTick();
-    const el = cardRef.value?.$el as HTMLElement | undefined;
+    const el =
+      cardRef.value && "$el" in cardRef.value
+        ? (cardRef.value.$el as HTMLElement | undefined)
+        : (cardRef.value as HTMLElement | null);
     if (!el?.dataset.dragDismissed) return;
     delete el.dataset.dragDismissed;
     el.style.removeProperty("transform");
