@@ -291,7 +291,9 @@ function artistRef(name: string): ItemMapping {
     media_type: MediaType.ARTIST,
     name,
     provider: "library",
+    version: "",
     uri: `library://artist/${name}`,
+    external_ids: [],
   };
 }
 

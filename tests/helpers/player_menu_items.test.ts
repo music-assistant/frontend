@@ -94,6 +94,7 @@ describe("getPlayerSetupMenuItem", () => {
       getPlayerSetupMenuItem({
         player_id: "kitchen",
         needs_setup: false,
+        has_setup_flow: false,
       }),
     ).toBeUndefined();
   });
@@ -112,6 +113,7 @@ describe("getPlayerSetupMenuItem", () => {
     const item = getPlayerSetupMenuItem({
       player_id: "kitchen",
       needs_setup: true,
+      has_setup_flow: false,
     });
 
     expect(item?.label).toBe("configure_player");

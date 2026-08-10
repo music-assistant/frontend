@@ -9,6 +9,7 @@ import {
 import {
   IdentifierType,
   type OutputProtocol,
+  PlaybackState,
   type Player,
   PlayerFeature,
   PlayerType,
@@ -66,6 +67,8 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     volume_control: "volume",
     mute_control: "mute",
     needs_setup: false,
+    has_setup_flow: false,
+    playback_state: PlaybackState.IDLE,
     output_protocols: [],
     active_output_protocol: null,
     elapsed_time: null,

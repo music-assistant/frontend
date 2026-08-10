@@ -1,5 +1,6 @@
 import {
   type CommandMessage,
+  CoreState,
   type DSPConfig,
   type ErrorResultMessage,
   type ServerInfoMessage,
@@ -42,6 +43,7 @@ const SERVER_INFO: ServerInfoMessage = {
   base_url: "http://test.local",
   homeassistant_addon: false,
   onboard_done: true,
+  status: CoreState.RUNNING,
 };
 
 class TestTransport extends BaseTransport {
@@ -155,6 +157,7 @@ describe("MusicAssistantApi error handling", () => {
     transport.receive({
       message_id: transport.lastCommand.message_id!,
       result: config,
+      partial: false,
     });
     await expect(result).resolves.toEqual(config);
   });

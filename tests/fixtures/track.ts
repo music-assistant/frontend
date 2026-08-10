@@ -9,7 +9,9 @@ export function track(overrides: Partial<Track> = {}): Track {
     item_id: "1",
     provider: "library",
     name: "Track",
+    version: "",
     uri: "library://track/1",
+    external_ids: [],
     is_playable: true,
     media_type: MediaType.TRACK,
     provider_mappings: [],
@@ -18,6 +20,8 @@ export function track(overrides: Partial<Track> = {}): Track {
     duration: 200,
     artists: [],
     album: null,
+    disc_number: 0,
+    track_number: 0,
     ...overrides,
   };
 }

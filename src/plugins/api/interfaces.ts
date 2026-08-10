@@ -599,7 +599,7 @@ export interface SuccessResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
 
   result: unknown;
-  partial?: boolean;
+  partial: boolean;
 }
 
 export interface ErrorResultMessage extends ResultMessageBase {
@@ -614,7 +614,9 @@ export interface EventMessage {
   // the frontend also emits synthetic events (connect/disconnect, optimistic updates)
   // without an object_id, so this stays optional as well as nullable
   object_id?: string | null; // player_id, queue_id or uri
-  data?: unknown; // optional data (such as the object)
+  // the server always sends data (null when the event carries none), but those same
+  // synthetic events leave it out entirely, so it stays optional
+  data?: unknown;
 }
 export type MassEvent = EventMessage;
 
@@ -627,7 +629,7 @@ export interface ServerInfoMessage {
   homeassistant_addon: boolean;
   onboard_done: boolean;
   name: string | null;
-  status?: CoreState;
+  status: CoreState;
 }
 
 export type MessageType =
@@ -649,6 +651,11 @@ export type ConfigValueType =
   | number[]
   | string[]
   | null;
+
+// The server sends every key of the two interfaces below, but the settings UI also
+// fabricates config entries and options of its own (frontend-only preferences, injected
+// player fields), setting only what it needs - so the fields that carry a server-side
+// default stay optional here rather than burdening every synthetic entry.
 
 export interface ConfigValueOption {
   // Model for a value with separated name/value.
@@ -910,10 +917,12 @@ interface _MediaItemBase {
   item_id: string;
   provider: string;
   name: string;
-  version?: string;
+  version: string;
+  // always sent by the server, but omitted from the payloads we send back so the server
+  // re-derives it from the (possibly edited) name
   sort_name?: string;
   uri: string;
-  external_ids?: Array<[ExternalID, string]>;
+  external_ids: Array<[ExternalID, string]>;
   is_playable: boolean; // if the item is playable (can be used in play_media command)
   media_type: MediaType;
 }
@@ -932,7 +941,7 @@ export interface ItemMapping extends _MediaItemBase {
 }
 
 export interface Artist extends MediaItem {
-  artist_type?: ArtistType;
+  artist_type: ArtistType;
 }
 
 export interface Album extends MediaItem {
@@ -953,8 +962,8 @@ export interface Track extends MediaItem {
   // album: the album this track appears on; omitted on slim listings, null for
   // tracks that are not album tracks
   album?: ItemMapping | Album | null;
-  disc_number?: number;
-  track_number?: number;
+  disc_number: number;
+  track_number: number;
   // only populated when the full track is requested (get_track), never on listings
   audio_metadata?: AudioMetadata | null;
 }
@@ -1034,7 +1043,7 @@ export enum ArtistEntityType {
 export interface LifeSpan {
   begin: string | null;
   end: string | null;
-  ended?: boolean;
+  ended: boolean;
 }
 
 export interface TimelineEvent {
@@ -1052,7 +1061,7 @@ export interface RecommendationFolder extends BrowseFolder {
   subtitle: string | null;
   items: MediaItemTypeOrItemMapping[];
   enabled_by_default: boolean;
-  type?: RecommendationFolderType;
+  type: RecommendationFolderType;
 }
 
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {
@@ -1343,7 +1352,7 @@ export interface PlayerOption {
   name: string;
   type: PlayerOptionType;
 
-  translation_key?: string;
+  translation_key: string;
 
   value: PlayerOptionValueType;
   read_only: boolean;
@@ -1369,7 +1378,7 @@ export interface Player {
   elapsed_time: number | null;
   elapsed_time_last_updated: number | null;
   current_media: PlayerMedia | null;
-  playback_state?: PlaybackState;
+  playback_state: PlaybackState;
   powered: boolean | null;
   volume_level: number | null;
   volume_muted: boolean | null;
@@ -1399,7 +1408,7 @@ export interface Player {
   mute_control: string;
   needs_setup: boolean;
   // this player (or a wrapped protocol child) offers a setup flow that can be re-run on demand
-  has_setup_flow?: boolean;
+  has_setup_flow: boolean;
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
@@ -1441,7 +1450,7 @@ export interface ProviderManifest {
   // allow_disable: whether this provider can be disabled (used with builtin)
   allow_disable: boolean;
   // has_setup_flow: whether setup can be run again to reconfigure the provider
-  has_setup_flow?: boolean;
+  has_setup_flow: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon: string | null;
