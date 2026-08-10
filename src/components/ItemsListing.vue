@@ -493,6 +493,11 @@ const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
 
+// used in tabbed item listings to prevent a timing-race condition, where
+// the selected tab shows items of the initial tab on entering the page
+let loadingTabId: string | undefined;
+let pendingTabLoad = false;
+
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
 const SEARCH_ITEM_THRESHOLD = 25;
@@ -1441,12 +1446,21 @@ const loadData = async function (
       loadPagedData = activeTab.loadPagedData;
     }
   }
+  const currentTabId = props.toolBarTabs?.length
+    ? getActiveTab()?.id
+    : undefined;
   if (loading.value) {
+    // Record whether the currently requested tab differs from the tab being loaded.
+    // Using assignment (not only setting to true) avoids a redundant reload if the
+    // user switches tabs and then switches back before the current load finishes.
+    pendingTabLoad = currentTabId !== loadingTabId;
+
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
     return;
   }
   loading.value = true;
+  loadingTabId = currentTabId;
 
   if (FilterParamsChanged && loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
@@ -1466,41 +1480,49 @@ const loadData = async function (
     newContentAvailable.value = false;
   }
 
-  params.value.offset = offset;
-  params.value.limit = props.limit;
-  params.value.refresh = refresh;
+  try {
+    params.value.offset = offset;
+    params.value.limit = props.limit;
+    params.value.refresh = refresh;
 
-  if (loadPagedData != null) {
-    // server side paged listing (with filter support)
-    const nextItems = await loadPagedData(params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
+    if (loadPagedData != null) {
+      // server side paged listing (with filter support)
+      const nextItems = await loadPagedData(params.value);
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
+      if (Math.abs(nextItems.length - props.limit) > 10) {
+        allItemsReceived.value = true;
+      }
+    } else if (props.loadItems != null) {
+      // grab items from loadItems callback
+      if (!initialDataReceived.value || refresh) {
+        // load all items from the callback
+        allItems.value = await props.loadItems(params.value);
+        initialDataReceived.value = true;
+      }
+      // filter items
+      const nextItems = getFilteredItems(allItems.value, params.value);
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
+      // mark allItemsReceived if we have all items
+      allItemsReceived.value = nextItems.length < props.limit;
     }
-    if (Math.abs(nextItems.length - props.limit) > 10) {
-      allItemsReceived.value = true;
-    }
-  } else if (props.loadItems != null) {
-    // grab items from loadItems callback
-    if (!initialDataReceived.value || refresh) {
-      // load all items from the callback
-      allItems.value = await props.loadItems(params.value);
-      initialDataReceived.value = true;
-    }
-    // filter items
-    const nextItems = getFilteredItems(allItems.value, params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
-    }
-    // mark allItemsReceived if we have all items
-    allItemsReceived.value = nextItems.length < props.limit;
+  } finally {
+    params.value.refresh = false;
+    loading.value = false;
+    tempHide.value = false;
   }
-  params.value.refresh = false;
-  loading.value = false;
-  tempHide.value = false;
+
+  if (pendingTabLoad) {
+    pendingTabLoad = false;
+    await loadData(true);
+  }
 };
 
 // Re-derive from the current props.path: browse reuses one ItemsListing
