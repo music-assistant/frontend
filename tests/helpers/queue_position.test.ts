@@ -5,17 +5,10 @@ import {
 } from "@/helpers/queue_position";
 import { type PlayerQueue } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
+import { playerQueue } from "../fixtures/playerQueue";
 
 function makeQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
-  return {
-    queue_id: "queue-1",
-    active: true,
-    display_name: "Queue",
-    available: true,
-    items: 5,
-    ended: false,
-    ...overrides,
-  } as PlayerQueue;
+  return playerQueue({ items: 5, ...overrides });
 }
 
 describe("currentQueueIndex", () => {

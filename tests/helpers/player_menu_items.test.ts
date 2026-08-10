@@ -9,6 +9,7 @@ import {
   type PlayerQueue,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { playerQueue } from "../fixtures/playerQueue";
 
 const { emitEvent, isAdmin, routerPush, storeMock } = vi.hoisted(() => ({
   emitEvent: vi.fn(),
@@ -74,12 +75,7 @@ function makePlayer(overrides: Partial<Player> = {}): Player {
 }
 
 function makeQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
-  return {
-    queue_id: "kitchen",
-    active: true,
-    items: 0,
-    ...overrides,
-  } as PlayerQueue;
+  return playerQueue({ queue_id: "kitchen", ...overrides });
 }
 
 describe("getPlayerSetupMenuItem", () => {
