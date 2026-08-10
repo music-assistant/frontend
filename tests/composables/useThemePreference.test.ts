@@ -33,6 +33,12 @@ vi.mock("@vueuse/core", () => ({
 vi.mock("vuetify", () => ({
   useTheme: () => ({
     change: mocks.changeTheme,
+    themes: {
+      value: {
+        light: { colors: { background: "#f5f5f5" } },
+        dark: { colors: { background: "#181818" } },
+      },
+    },
   }),
 }));
 
@@ -49,6 +55,11 @@ describe("useThemePreference", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    document.head
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((meta) => {
+        meta.remove();
+      });
   });
 
   it("applies the regular user's preference", () => {
@@ -122,6 +133,38 @@ describe("useThemePreference", () => {
     expect(mocks.changeTheme).toHaveBeenCalledWith("dark");
     expect(mocks.colorMode.value).toBe("auto");
   });
+
+  it("matches the status bar to the resolved theme background", () => {
+    mocks.store.currentUser.preferences.theme = "light";
+    const meta = createThemeColorMeta();
+    const { applyThemePreference } = useThemePreference();
+
+    applyThemePreference();
+
+    expect(meta.content).toBe("#f5f5f5");
+  });
+
+  it("moves the status bar with the system scheme in auto mode", async () => {
+    const media = createMediaQueryMock(false);
+    stubMatchMedia(media);
+    const meta = createThemeColorMeta();
+    const { applyThemePreference } = await freshComposable();
+
+    applyThemePreference();
+    expect(meta.content).toBe("#f5f5f5");
+
+    media.matches = true;
+    media.dispatch();
+
+    expect(meta.content).toBe("#181818");
+  });
+
+  function createThemeColorMeta(): HTMLMetaElement {
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+    return meta;
+  }
 
   it("re-applies the Vuetify theme when the system scheme changes in auto mode", async () => {
     const media = createMediaQueryMock(false);
