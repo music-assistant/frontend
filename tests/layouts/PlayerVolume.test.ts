@@ -90,6 +90,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     volume_control: "volume",
     mute_control: "mute",
     needs_setup: false,
+    has_setup_flow: false,
     output_protocols: [],
     active_output_protocol: null,
     elapsed_time: null,

@@ -6,6 +6,7 @@ describe("getPlayerSetupLabel", () => {
     expect(
       getPlayerSetupLabel({
         needs_setup: true,
+        has_setup_flow: false,
       }),
     ).toBe("configure_player");
   });
