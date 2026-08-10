@@ -385,10 +385,17 @@ const displayedGroupMemberNames = computed(() => {
   return groupMemberNames.value;
 });
 
+const accessibleGroupMemberNames = computed(() =>
+  props.player.type !== PlayerType.GROUP &&
+  props.groupMemberLayout !== "subtitle-list"
+    ? displayedGroupMemberNames.value.slice(1)
+    : displayedGroupMemberNames.value,
+);
+
 const accessiblePlayerLabel = computed(() =>
   [
     props.player.name,
-    ...displayedGroupMemberNames.value,
+    ...accessibleGroupMemberNames.value,
     props.player.current_media?.title,
     mediaByline.value,
   ]

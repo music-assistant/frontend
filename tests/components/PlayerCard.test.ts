@@ -365,6 +365,12 @@ describe("PlayerCard", () => {
     expect(wrapper.find(".player-card-name").text()).toBe("Kitchen +2");
     expect(members.text()).toBe("Kitchen • Office • Patio");
     expect(members.classes()).toContain("text-[11px]");
+    expect(
+      wrapper
+        .find(".player-select-action")
+        .text()
+        .match(/Kitchen/g),
+    ).toHaveLength(1);
   });
 
   it("can render grouped players as separate title lines", () => {
