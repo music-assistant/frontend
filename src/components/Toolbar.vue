@@ -218,7 +218,6 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 <style scoped>
 .header.v-toolbar {
   height: 55px;
-  font-family: "JetBrains Mono Medium";
 }
 
 .header.v-toolbar :deep(.v-toolbar__content) {

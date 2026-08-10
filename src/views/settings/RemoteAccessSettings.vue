@@ -692,7 +692,15 @@ watch(
 }
 
 .remote-id-box-text {
-  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    Liberation Mono,
+    Courier New,
+    monospace;
   font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0.05em;
