@@ -104,6 +104,16 @@ function isSameShortcutUri(
   return false;
 }
 
+function isUriMatchingItem(
+  uri: string,
+  item: ShortcutItem | ItemMapping,
+): boolean {
+  const parsedUri = parseShortcutUri(uri);
+  if (!parsedUri) return false;
+  const identities = getShortcutIdentities(item);
+  return hasShortcutIdentityMatch(parsedUri, identities);
+}
+
 function getShortcutIdentities(
   item: ShortcutItem | ItemMapping,
 ): ParsedShortcutUri[] {
@@ -156,20 +166,6 @@ function hasShortcutIdentityMatch(
   );
 }
 
-function findPinnedUriByIdentities(
-  identities: ParsedShortcutUri[],
-  pinnedUris: string[],
-): string | null {
-  for (const pinnedUri of pinnedUris) {
-    const parsed = parseShortcutUri(pinnedUri);
-    if (!parsed) continue;
-    if (hasShortcutIdentityMatch(parsed, identities)) {
-      return pinnedUri;
-    }
-  }
-  return null;
-}
-
 /**
  * Type guard for items that can be pinned as a sidebar shortcut.
  */
@@ -200,25 +196,15 @@ export function isShortcutCapReached(): boolean {
 export function isShortcutPinnedItem(
   item: ShortcutItem | ItemMapping,
 ): boolean {
-  const identities = getShortcutIdentities(item);
-  return _getPinnedUris().some((pinnedUri) => {
-    const parsed = parseShortcutUri(pinnedUri);
-    if (!parsed) return false;
-    return hasShortcutIdentityMatch(parsed, identities);
-  });
+  return _getPinnedUris().some((pinnedUri) => isUriMatchingItem(pinnedUri, item));
 }
 
 export async function unpinShortcutStandaloneItem(
   item: ShortcutItem | ItemMapping,
 ): Promise<void> {
-  const identities = getShortcutIdentities(item);
   await setUserPreference(
     PREF_KEY,
-    _getPinnedUris().filter((pinnedUri) => {
-      const parsed = parseShortcutUri(pinnedUri);
-      if (!parsed) return true;
-      return !hasShortcutIdentityMatch(parsed, identities);
-    }),
+    _getPinnedUris().filter((pinnedUri) => !isUriMatchingItem(pinnedUri, item)),
   );
 }
 
@@ -282,8 +268,7 @@ export async function reorderShortcutStandalone(
 }
 
 function findPinnedUriForItem(item: ShortcutItem | ItemMapping): string | null {
-  const identities = getShortcutIdentities(item);
-  return findPinnedUriByIdentities(identities, _getPinnedUris());
+  return _getPinnedUris().find((uri) => isUriMatchingItem(uri, item)) ?? null;
 }
 
 export function getShortcutMoveAvailability(item: ShortcutItem | ItemMapping): {
@@ -381,7 +366,10 @@ export function useShortcuts() {
     // Always construct a proper MA URI from provider/media_type/item_id.
     // item.uri may be a non-MA URL (e.g. a podcast website link).
     const maUri = getShortcutUri(item);
-    if (isPinned(maUri)) return;
+    const alreadyPinned = pinnedUris.value.some((pinnedUri) =>
+      isUriMatchingItem(pinnedUri, item),
+    );
+    if (alreadyPinned) return;
     if (pinnedUris.value.length >= MAX_SHORTCUTS) return;
     // Add immediately for instant sidebar feedback; watch won't re-add (already present)
     resolvedItems.value = [...resolvedItems.value, item];
@@ -391,7 +379,7 @@ export function useShortcuts() {
   async function unpinItem(uri: string) {
     // Remove immediately; watch won't re-remove (already absent)
     resolvedItems.value = resolvedItems.value.filter(
-      (p) => !isSameShortcutUri(uri, p),
+      (item) => !isUriMatchingItem(uri, item),
     );
     await setPreference(
       PREF_KEY,
@@ -403,15 +391,15 @@ export function useShortcuts() {
   watch(pinnedUris, async (newUris) => {
     const currentItems = resolvedItems.value;
 
-    // Remove items no longer in pinned list (smart URI matching avoids false removals
-    // when API-returned URIs differ in encoding from stored preference URIs)
+    // Remove items no longer in pinned list (identity matching via provider_mappings
+    // ensures we don't remove items that match via different provider instances)
     resolvedItems.value = currentItems.filter((item) =>
-      newUris.some((uri) => isSameShortcutUri(uri, item)),
+      newUris.some((uri) => isUriMatchingItem(uri, item)),
     );
 
     // Fetch and add newly pinned items not yet resolved
     const toAdd = newUris.filter(
-      (uri) => !currentItems.some((item) => isSameShortcutUri(uri, item)),
+      (uri) => !currentItems.some((item) => isUriMatchingItem(uri, item)),
     );
     if (toAdd.length > 0) {
       const settled = await Promise.allSettled(
@@ -443,8 +431,9 @@ export function useShortcuts() {
       (evt: EventMessage) => {
         const objectId = evt.object_id as string | undefined;
         if (!objectId) return;
+
         const idx = resolvedItems.value.findIndex((item) =>
-          isSameShortcutUri(objectId, item),
+          isUriMatchingItem(objectId, item),
         );
         if (
           idx >= 0 &&
@@ -467,7 +456,7 @@ export function useShortcuts() {
     pinnedItems: computed(() =>
       pinnedUris.value
         .map((uri) =>
-          resolvedItems.value.find((item) => isSameShortcutUri(uri, item)),
+          resolvedItems.value.find((item) => isUriMatchingItem(uri, item)),
         )
         .filter((item): item is ShortcutItem => item !== undefined),
     ),
