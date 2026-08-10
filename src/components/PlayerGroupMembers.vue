@@ -170,10 +170,7 @@ function isGroupMember(player: Player) {
 }
 
 function isRequiredMember(player: Player) {
-  if (
-    player.player_id === props.player.player_id &&
-    props.members.length <= 1
-  ) {
+  if (player.player_id === props.player.player_id) {
     return true;
   }
   return (
