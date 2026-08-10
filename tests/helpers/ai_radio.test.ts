@@ -4,7 +4,7 @@ import {
   decompileHost,
   decompileStation,
   errorMessage,
-  PRESETS,
+  GENERIC_SEGMENT_TEMPLATES,
   relativeTimeFromIso,
   slugify,
 } from "@/helpers/ai_radio";
@@ -113,14 +113,13 @@ describe("decompileStation", () => {
 });
 
 describe("compileHost", () => {
-  it("compiles segments and talkativeness into section_order, returning section content", () => {
+  it("compiles segments into section_order, returning section content", () => {
     const draft: HostDraft = {
       id: "rick",
       name: "Rick",
       instructions: "Persona.",
       ttsEngine: "",
-      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
-      talkativeness: "normal",
+      segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     };
     const { host, sections } = compileHost(draft);
     expect(host.id).toBe("rick");
@@ -141,8 +140,7 @@ describe("compileHost", () => {
       name: hostId,
       instructions: "Persona.",
       ttsEngine: "",
-      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
-      talkativeness: "normal",
+      segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     });
     const a = compileHost(draftFor("host_a"));
     const b = compileHost(draftFor("host_b"));
@@ -160,29 +158,10 @@ describe("compileHost", () => {
       name: "Rick",
       instructions: "Persona.",
       ttsEngine: "",
-      segments: [{ ...PRESETS[0].segments[0], id: "rick_intro" }],
-      talkativeness: "normal",
+      segments: [{ ...GENERIC_SEGMENT_TEMPLATES[0], id: "rick_intro" }],
     };
     const { sections } = compileHost(draft);
     expect(sections.map((s) => s.id)).toEqual(["rick_intro", "rick_smoother"]);
-  });
-
-  it("applies talkativeness the same way compileShow's callers do", () => {
-    // PRESETS[0][1] is "transition", an every_n_songs:3 segment; "chatty"
-    // bumps every_song/every_n_songs segments to fire on every song (MUST).
-    const draft: HostDraft = {
-      id: "rick",
-      name: "Rick",
-      instructions: "Persona.",
-      ttsEngine: "",
-      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
-      talkativeness: "chatty",
-    };
-    const { host } = compileHost(draft);
-    const betweenRule = host.section_order.find(
-      (rule) => rule.when === "between_songs",
-    );
-    expect(betweenRule?.flow).toEqual([{ MUST: "rick_transition" }]);
   });
 });
 
@@ -193,33 +172,18 @@ describe("decompileHost", () => {
       name: "Rick",
       instructions: "Persona.",
       ttsEngine: "engine-1",
-      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
-      talkativeness: "normal",
+      segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     };
     const { host, sections } = compileHost(draft);
     const round = decompileHost(host, sections);
     expect(round.name).toBe("Rick");
     expect(round.ttsEngine).toBe("engine-1");
-    // "normal" talkativeness leaves segments untouched, so a real sectionMap
-    // lookup should recover them exactly aside from ids, which compileHost
-    // namespaces with the host id (see the compileHost describe block above).
+    // A real sectionMap lookup should recover the segments exactly aside from
+    // ids, which compileHost namespaces with the host id (see the compileHost
+    // describe block above).
     expect(round.segments).toEqual(
       draft.segments.map((s) => ({ ...s, id: `rick_${s.id}` })),
     );
-  });
-
-  it("resets talkativeness to normal, since it can't be inverted from section_order", () => {
-    const draft: HostDraft = {
-      id: "rick",
-      name: "Rick",
-      instructions: "Persona.",
-      ttsEngine: "",
-      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
-      talkativeness: "chatty",
-    };
-    const { host, sections } = compileHost(draft);
-    const round = decompileHost(host, sections);
-    expect(round.talkativeness).toBe("normal");
   });
 
   it("excludes the hidden merge section even when section_order references it directly", () => {
@@ -228,8 +192,7 @@ describe("decompileHost", () => {
       name: "Rick",
       instructions: "Persona.",
       ttsEngine: "",
-      segments: PRESETS[0].segments.slice(0, 2).map((s) => ({ ...s })),
-      talkativeness: "normal",
+      segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     };
     const { host, sections } = compileHost(draft);
     // Force a MUST rule pointing straight at the merge section id, to prove

@@ -1501,7 +1501,6 @@
                 "playlist_label": "Source playlist",
                 "playlist_placeholder": "Choose a playlist",
                 "playlist_empty": "No playlists found",
-                "talk_label": "Talkativeness",
                 "name_label": "Show name",
                 "default_name": "{0} — {1}",
                 "create": "Create",
@@ -1512,25 +1511,6 @@
                     "host_required": "Choose a host",
                     "name_required": "Show name is required"
                 }
-            },
-            "presets": {
-                "morning_show": {
-                    "name": "Morning show"
-                },
-                "minimal_dj": {
-                    "name": "Minimal DJ"
-                },
-                "music_nerd": {
-                    "name": "Music nerd"
-                },
-                "party_host": {
-                    "name": "Party host"
-                }
-            },
-            "talk": {
-                "rarely": "Rarely",
-                "normal": "Normal",
-                "chatty": "Chatty"
             },
             "prereq": {
                 "title": "AI provider needed",

@@ -142,34 +142,6 @@
           />
         </CardContent>
       </Card>
-
-      <Card class="rounded-[6px]">
-        <CardHeader>
-          <CardTitle>{{
-            $t("providers.ai_radio.create.talk_label")
-          }}</CardTitle>
-        </CardHeader>
-        <CardContent class="flex flex-col gap-2">
-          <Slider
-            :model-value="[talkLevelIndex]"
-            :min="0"
-            :max="2"
-            :step="1"
-            @update:model-value="onTalkSlider"
-          />
-          <div class="flex justify-between text-xs text-muted-foreground">
-            <span
-              v-for="level in TALK_LEVELS"
-              :key="level"
-              :class="{
-                'font-medium text-foreground': draft.talkativeness === level,
-              }"
-            >
-              {{ $t(`providers.ai_radio.talk.${level}`) }}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
     </template>
   </div>
 </template>
@@ -195,12 +167,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
 import {
-  applyTalkativeness,
   compileHost,
   deepClone,
   decompileHost,
@@ -211,7 +181,6 @@ import {
   NONE_SELECT_VALUE,
   type HostDraft,
   type ShowSegment,
-  type TalkativenessLevel,
 } from "@/helpers/ai_radio";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -229,8 +198,6 @@ const emit = defineEmits<{
   back: [];
   saved: [];
 }>();
-
-const TALK_LEVELS: TalkativenessLevel[] = ["rarely", "normal", "chatty"];
 
 const router = useRouter();
 const { sections, loadSections } = useShows();
@@ -261,15 +228,6 @@ const voiceSelectValue = computed({
     draft.value.ttsEngine = value === NONE_SELECT_VALUE ? "" : value;
   },
 });
-
-const talkLevelIndex = computed(() =>
-  draft.value ? TALK_LEVELS.indexOf(draft.value.talkativeness) : 1,
-);
-
-function onTalkSlider(value: number[] | undefined) {
-  if (!draft.value) return;
-  draft.value.talkativeness = TALK_LEVELS[value?.[0] ?? 1] ?? "normal";
-}
 
 function updateSegment(index: number, segment: ShowSegment) {
   draft.value?.segments.splice(index, 1, segment);
@@ -328,7 +286,6 @@ function newHostDraft(): HostDraft {
     instructions: GENERIC_HOST_INSTRUCTIONS,
     ttsEngine: "",
     segments: deepClone(GENERIC_HOST_SEGMENTS),
-    talkativeness: "normal",
   };
 }
 
@@ -377,14 +334,6 @@ async function handleSave() {
   }
   saving.value = true;
   try {
-    // Bake the slider's adjustment into the segments, so what is saved is what
-    // the editor shows from here on: talkativeness itself isn't persisted and
-    // can't be recovered when the host is reopened.
-    draft.value.segments = applyTalkativeness(
-      draft.value.segments,
-      draft.value.talkativeness,
-    );
-    draft.value.talkativeness = "normal";
     const { host, sections: compiledSections } = compileHost(draft.value);
     // The server upserts by id, and a new host's id is derived from its name,
     // so an existing name would silently overwrite that host. A rename keeps

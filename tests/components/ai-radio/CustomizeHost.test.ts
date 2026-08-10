@@ -1,10 +1,6 @@
 import CustomizeHost from "@/components/ai-radio/CustomizeHost.vue";
-import { Slider } from "@/components/ui/slider";
 import { useHosts } from "@/composables/ai-radio/useHosts";
-import type {
-  AIRadioHost,
-  AIRadioSectionOrderRule,
-} from "@/plugins/api/interfaces";
+import type { AIRadioHost } from "@/plugins/api/interfaces";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -71,9 +67,6 @@ const savedHost = (): AIRadioHost => {
   return args.host;
 };
 
-const betweenSongsFlow = (order: AIRadioSectionOrderRule[]) =>
-  order.find((rule) => rule.when === "between_songs")?.flow;
-
 afterEach(() => {
   vi.clearAllMocks();
   sendCommand.mockImplementation(async () => []);
@@ -131,30 +124,5 @@ describe("CustomizeHost save", () => {
     expect(toast.error).toHaveBeenCalledWith(
       "A host named «Morning Crew» already exists",
     );
-  });
-
-  it("bakes the talkativeness level into the saved segments and neutralizes the slider", async () => {
-    const wrapper = await mountEditor();
-    await wrapper.find("#customize-host-name").setValue("Morning Crew");
-    // "rarely" demotes the generic seed's every-song transition to every 3 songs.
-    await wrapper.findComponent(Slider).vm.$emit("update:modelValue", [0]);
-
-    await save(wrapper);
-
-    expect(betweenSongsFlow(savedHost().section_order)).toContainEqual({
-      OPTIONAL: {
-        section: "morning_crew_transition",
-        chance: 2 / 3,
-        guards: {
-          min_gap_songs: 2,
-          max_per_60min: 0,
-          require_placeholders_present: [],
-        },
-      },
-    });
-    // The level is now part of the segments, so the slider must read neutral
-    // instead of re-applying itself on the next save.
-    const activeLevel = wrapper.find(".font-medium.text-foreground");
-    expect(activeLevel.text()).toBe("Normal");
   });
 });

@@ -113,8 +113,6 @@ export type PlaysRule =
   | { kind: "every_n_min"; n: number }
   | { kind: "occasionally"; percent: number };
 
-export type TalkativenessLevel = "rarely" | "normal" | "chatty";
-
 /** Station-level fields the Customize UI edits. */
 export interface ShowBasics {
   id?: string;
@@ -132,166 +130,8 @@ export interface ShowDraft {
   hostId: string;
 }
 
-export type ShowPresetKey =
-  | "morning_show"
-  | "minimal_dj"
-  | "music_nerd"
-  | "party_host";
-
-/** A bundled starting point offered in the host editor. */
-export interface ShowPreset {
-  key: ShowPresetKey;
-  /** Kebab-case Lucide icon name, resolved via helpers/icon.ts#getLucideIcon. */
-  icon: string;
-  segments: ShowSegment[];
-  /** Seeds HostDraft.instructions — the host personality + program style. */
-  instructions: string;
-}
-
 const SONG_TRANSITION_PROMPT =
   "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Create a natural radio transition that connects both songs, sounds informed but concise, and avoids filler or repetition.";
-
-export const PRESETS: ShowPreset[] = [
-  {
-    key: "morning_show",
-    icon: "sunrise",
-    instructions:
-      "Host personality: warm, energetic, upbeat morning-show host who sounds fully awake and glad to be on air. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid cliches, mention concrete details when available, and maintain a believable radio flow between sections.",
-    segments: [
-      {
-        id: "intro",
-        name: "Intro",
-        prompt:
-          "The next track is <next_songinfo>. Open the morning show like a warm, upbeat host: brief good-morning greeting, one concrete hook about the song or artist, and a clean handoff into the music.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "start" },
-      },
-      {
-        id: "transition",
-        name: "Transition",
-        prompt:
-          "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Create a natural, energetic morning-show transition that connects both songs, sounds informed but concise, and avoids filler or repetition.",
-        webSearch: "allow",
-        maxChars: 650,
-        plays: { kind: "every_n_songs", n: 3 },
-      },
-      {
-        id: "weather",
-        name: "Weather",
-        prompt:
-          "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth morning-show phrasing.",
-        webSearch: "disabled",
-        maxChars: 500,
-        plays: { kind: "every_n_min", n: 60 },
-      },
-      {
-        id: "news",
-        name: "News",
-        prompt:
-          "Create a short global news bulletin anchored to <timestamp>. Use web search. Include two or three current items that are broadly relevant, clearly separated, fact-focused, and written for spoken delivery.",
-        webSearch: "force",
-        maxChars: 700,
-        plays: { kind: "every_n_min", n: 60 },
-      },
-      {
-        id: "sign_off",
-        name: "Sign-off",
-        prompt:
-          "The last track played was <prev_songinfo>. Close the morning show with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "end" },
-      },
-    ],
-  },
-  {
-    key: "minimal_dj",
-    icon: "disc-3",
-    instructions:
-      "Host personality: minimal, calm, understated DJ who lets the music lead. Program instructions: keep every segment brief, avoid small talk, avoid cliches, and never overshadow the songs with unnecessary commentary.",
-    segments: [
-      {
-        id: "transition",
-        name: "Transition",
-        prompt:
-          "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Give a short, minimal DJ transition: one or two sentences, calm tone, no filler, just enough to bridge the songs.",
-        webSearch: "disabled",
-        maxChars: 300,
-        plays: { kind: "every_n_songs", n: 3 },
-      },
-    ],
-  },
-  {
-    key: "music_nerd",
-    icon: "book-open",
-    instructions:
-      "Host personality: knowledgeable, enthusiastic music nerd who loves sharing context without lecturing. Program instructions: write for spoken delivery, keep segments concise, favor concrete facts over generic praise, avoid cliches, and maintain a believable radio flow between sections.",
-    segments: [
-      {
-        id: "intro",
-        name: "Intro",
-        prompt:
-          "The next track is <next_songinfo>. Open the program like a knowledgeable music host: brief welcome, one genuinely interesting detail about the artist or genre, and a clean handoff into the music.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "start" },
-      },
-      {
-        id: "artist_fact",
-        name: "Artist fact",
-        prompt:
-          "The next track is <next_songinfo>. Share one specific, well-researched fact about the artist, the recording, or its influence. Keep it precise and avoid generic trivia.",
-        webSearch: "allow",
-        maxChars: 500,
-        plays: { kind: "every_n_songs", n: 2 },
-      },
-      {
-        id: "transition",
-        name: "Transition",
-        prompt: SONG_TRANSITION_PROMPT,
-        webSearch: "allow",
-        maxChars: 650,
-        plays: { kind: "every_song" },
-      },
-    ],
-  },
-  {
-    key: "party_host",
-    icon: "party-popper",
-    instructions:
-      "Host personality: high-energy, confident party host who keeps the crowd hyped. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid cliches, and maintain a believable, energetic radio flow between sections.",
-    segments: [
-      {
-        id: "hype_intro",
-        name: "Hype intro",
-        prompt:
-          "The next track is <next_songinfo>. Open the party like a hype radio host: high energy, one confident line about the song or artist, and a clean handoff that gets people moving.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "start" },
-      },
-      {
-        id: "shout_out",
-        name: "Shout-out",
-        prompt:
-          "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Deliver a high-energy party transition with a quick shout-out vibe: keep it fun, confident, and concise, and avoid filler or repetition.",
-        webSearch: "allow",
-        maxChars: 650,
-        plays: { kind: "every_n_songs", n: 3 },
-      },
-      {
-        id: "sign_off",
-        name: "Sign-off",
-        prompt:
-          "The last track played was <prev_songinfo>. Close the party with a memorable, high-energy sign-off: brief hype recap, warm farewell, and language that sounds like the end of a real party set.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "end" },
-      },
-    ],
-  },
-];
 
 /** Neutral starter instructions for a brand-new custom host, mirroring the server's built-in default. */
 export const GENERIC_HOST_INSTRUCTIONS =
@@ -372,49 +212,6 @@ export const GENERIC_HOST_SEGMENTS: ShowSegment[] =
   GENERIC_SEGMENT_TEMPLATES.filter((segment) =>
     (GENERIC_HOST_SEED_IDS as readonly string[]).includes(segment.id),
   );
-
-/**
- * Adjusts a preset's segment frequencies for the create dialog's talkativeness
- * slider. Treats every_song/every_n_songs segments as "the transition" (the
- * main recurring host segment) and every_n_min/occasionally segments as
- * "extras" (weather, news, facts); start/end segments are never adjusted.
- */
-export const applyTalkativeness = (
-  segments: ShowSegment[],
-  level: TalkativenessLevel,
-): ShowSegment[] => {
-  if (level === "normal") {
-    return segments;
-  }
-  return segments.map((segment) => {
-    const { plays } = segment;
-    if (plays.kind === "start" || plays.kind === "end") {
-      return segment;
-    }
-    if (plays.kind === "every_song" || plays.kind === "every_n_songs") {
-      if (level === "rarely") {
-        return { ...segment, plays: { kind: "every_n_songs", n: 3 } };
-      }
-      return { ...segment, plays: { kind: "every_song" } };
-    }
-    // Extras: halve frequency for "rarely", leave untouched for "chatty".
-    if (level === "rarely") {
-      if (plays.kind === "every_n_min") {
-        return { ...segment, plays: { kind: "every_n_min", n: plays.n * 2 } };
-      }
-      if (plays.kind === "occasionally") {
-        return {
-          ...segment,
-          plays: {
-            kind: "occasionally",
-            percent: Math.max(1, Math.round(plays.percent / 2)),
-          },
-        };
-      }
-    }
-    return segment;
-  });
-};
 
 /** Prompt for the hidden ai_meta merge section, verbatim from the backend example. */
 export const MERGE_SECTION_PROMPT =
@@ -593,7 +390,6 @@ export interface HostDraft {
   // ttsEngine: "" = provider default
   ttsEngine: string;
   segments: ShowSegment[];
-  talkativeness: TalkativenessLevel;
 }
 
 export interface CompiledHost {
@@ -603,10 +399,8 @@ export interface CompiledHost {
 
 /**
  * Compiles a host draft into the AIRadioHost payload the backend expects
- * plus the AIRadioSection content it references, applying talkativeness and
- * running the segment/section_order compilation (see compileSegments). The
- * host editor bakes talkativeness into the draft's segments before saving and
- * resets the level to "normal", so nothing is adjusted twice.
+ * plus the AIRadioSection content it references, running the segment/
+ * section_order compilation (see compileSegments).
  * Sections are returned rather than embedded: v3 hosts don't carry section
  * content, so callers must persist them explicitly (ai_radio/sections/save)
  * before saving the host. Section ids are namespaced with the host id so two
@@ -614,9 +408,8 @@ export interface CompiledHost {
  */
 export const compileHost = (draft: HostDraft): CompiledHost => {
   const hostId = draft.id.trim() || slugify(draft.name);
-  const segments = applyTalkativeness(draft.segments, draft.talkativeness);
   const { sections, sectionOrder, mergeSectionId } = compileSegments(
-    segments,
+    draft.segments,
     hostId,
   );
 
@@ -740,9 +533,6 @@ export const decompileStation = (station: AIRadioStation): DecompiledShow => {
  * Best-effort inverse of compileHost, for opening an existing host in the
  * Hosts UI. `sections` is the section content library the host's
  * section_ids reference (e.g. loaded via ai_radio/sections/list).
- * talkativeness can't be inverted from section_order, so it always resets to
- * "normal" — which is what the saved segments already reflect, since the
- * editor applies the level to them at save time.
  */
 export const decompileHost = (
   host: AIRadioHost,
@@ -780,7 +570,6 @@ export const decompileHost = (
     instructions: host.instructions,
     ttsEngine: host.tts_engine,
     segments,
-    talkativeness: "normal",
   };
 };
 
