@@ -15,7 +15,6 @@ import {
   CrossfadeMode,
   DSPFilterType,
   DSPState,
-  MediaType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -29,6 +28,7 @@ import {
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
 import { providerManifest } from "../fixtures/providerManifest";
+import { streamDetails } from "../fixtures/streamDetails";
 
 const apiMock = vi.hoisted(() => ({
   getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(
@@ -937,15 +937,11 @@ function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
 }
 
 function makeStreamDetails(format = makeFormat()): StreamDetails {
-  return {
+  return streamDetails({
     provider: "filesystem--music",
     item_id: "track-1",
     audio_format: format,
-    media_type: MediaType.TRACK,
-    stream_metadata: null,
-    duration: null,
-    audio_processing: null,
-  };
+  });
 }
 
 function makeFullChain(): AudioProcessingChain {

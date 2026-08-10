@@ -17,7 +17,6 @@ import {
   ContentType,
   CrossfadeMode,
   DSPState,
-  MediaType,
   type OutputProtocol,
   type StreamDetails,
   VolumeNormalizationMode,
@@ -31,6 +30,7 @@ import {
   audioQueueProcessing,
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { streamDetails } from "../fixtures/streamDetails";
 
 vi.mock("@/plugins/api", async () => {
   const { providerManifest } = await import("../fixtures/providerManifest");
@@ -557,21 +557,16 @@ describe("buildAudioProcessingDetailsDisplay", () => {
         queue_processing: audioQueueProcessing({ playback_speed: 1.25 }),
       }),
     );
-    const streamDetails = ref<StreamDetails>({
-      provider: "test",
-      item_id: "track-1",
-      audio_format: makeFormat(),
-      media_type: MediaType.TRACK,
-      stream_metadata: null,
-      duration: null,
-      audio_processing: null,
-    });
+    const details = ref<StreamDetails>(
+      streamDetails({
+        provider: "test",
+        item_id: "track-1",
+        audio_format: makeFormat(),
+      }),
+    );
     const harness = defineComponent({
       setup() {
-        const { processingStages } = useAudioProcessingDetails(
-          chain,
-          streamDetails,
-        );
+        const { processingStages } = useAudioProcessingDetails(chain, details);
         return () =>
           h(
             "span",
@@ -600,18 +595,13 @@ function buildDisplay(
   chain: Partial<AudioProcessingChain> = {},
   format = makeFormat(),
 ) {
-  const streamDetails: StreamDetails = {
-    provider: "test--instance",
-    item_id: "track-1",
-    audio_format: format,
-    media_type: MediaType.TRACK,
-    stream_metadata: null,
-    duration: null,
-    audio_processing: null,
-  };
   return buildAudioProcessingDetailsDisplay(
     audioProcessingChain(chain),
-    streamDetails,
+    streamDetails({
+      provider: "test--instance",
+      item_id: "track-1",
+      audio_format: format,
+    }),
     dependencies,
   );
 }

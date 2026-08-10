@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import {
   AudioQuality,
-  MediaType,
   PlaybackState,
   type PlayerQueue,
   RepeatMode,
@@ -16,7 +15,8 @@ import {
   audioOutputDetails,
   audioProcessingChain,
 } from "../fixtures/audioProcessing";
-import { audioFormat } from "../fixtures/audioFormat";
+import { queueItem } from "../fixtures/queueItem";
+import { streamDetails } from "../fixtures/streamDetails";
 
 const storeMock = vi.hoisted(() => ({
   activePlayerQueue: undefined as PlayerQueue | undefined,
@@ -153,15 +153,7 @@ function outputWithQuality(quality: AudioQuality) {
 }
 
 function makeStreamDetails(): StreamDetails {
-  return {
-    provider: "test",
-    item_id: "track-1",
-    audio_format: audioFormat(),
-    media_type: MediaType.TRACK,
-    stream_metadata: null,
-    duration: null,
-    audio_processing: null,
-  };
+  return streamDetails({ provider: "test", item_id: "track-1" });
 }
 
 function makeQueue(streamdetails: StreamDetails): PlayerQueue {
@@ -186,17 +178,7 @@ function makeQueue(streamdetails: StreamDetails): PlayerQueue {
     elapsed_time: 0,
     elapsed_time_last_updated: 0,
     state: PlaybackState.PLAYING,
-    current_item: {
-      queue_id: "queue-1",
-      queue_item_id: "item-1",
-      name: "Track",
-      duration: 180,
-      sort_index: 0,
-      streamdetails,
-      media_item: null,
-      image: null,
-      available: true,
-    },
+    current_item: queueItem({ name: "Track", duration: 180, streamdetails }),
     next_item: null,
     sources: [],
     is_dynamic: false,
