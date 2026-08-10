@@ -25,6 +25,8 @@
 
 html {
   overflow: hidden;
+  /* iOS Safari tints the status bar from this background. Must stay set. */
+  background-color: rgb(var(--v-theme-background));
 }
 
 * {

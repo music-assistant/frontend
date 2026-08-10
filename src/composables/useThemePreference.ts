@@ -1,5 +1,6 @@
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
+import { setStatusBarThemeColor } from "./useStatusBarColor";
 import { useColorMode } from "@vueuse/core";
 import { readonly, ref } from "vue";
 import { useTheme } from "vuetify";
@@ -57,6 +58,7 @@ export function useThemePreference() {
     themePreference.value = preference;
     theme.change(resolvedTheme);
     colorMode.value = preference === "auto" ? "auto" : resolvedTheme;
+    setStatusBarThemeColor(theme.themes.value[resolvedTheme].colors.background);
     syncVuetifyToSystemScheme(preference);
   }
 
@@ -65,7 +67,11 @@ export function useThemePreference() {
       if (!systemSchemeListener && typeof window.matchMedia === "function") {
         systemSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
         systemSchemeListener = () => {
-          theme.change(systemSchemeQuery!.matches ? "dark" : "light");
+          const resolvedTheme = systemSchemeQuery!.matches ? "dark" : "light";
+          theme.change(resolvedTheme);
+          setStatusBarThemeColor(
+            theme.themes.value[resolvedTheme].colors.background,
+          );
         };
         systemSchemeQuery.addEventListener("change", systemSchemeListener);
       }

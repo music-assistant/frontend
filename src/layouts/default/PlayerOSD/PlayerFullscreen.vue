@@ -478,6 +478,7 @@ import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -1322,6 +1323,13 @@ watchEffect(() => {
   const topColor = bgColor.lighten(0.25);
   const bottomColor = bgColor.darken(0.25);
   backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
+  setStatusBarColorOverride(
+    store.showFullscreenPlayer ? topColor.hex() : undefined,
+  );
+});
+
+onBeforeUnmount(() => {
+  setStatusBarColorOverride(undefined);
 });
 </script>
 
