@@ -207,6 +207,8 @@ import {
   deepClone,
   decompileHost,
   errorMessage,
+  GENERIC_HOST_INSTRUCTIONS,
+  GENERIC_HOST_SEGMENTS,
   NONE_SELECT_VALUE,
   PRESETS,
   type HostDraft,
@@ -320,15 +322,14 @@ function addBlankSegment() {
   });
 }
 
-/** Seed for a brand-new host: the first preset's persona and segments, like the show create dialog. */
+/** Seed for a brand-new host: one generic example segment per placement, no persona. */
 function newHostDraft(): HostDraft {
-  const preset = PRESETS[0];
   return {
     id: "",
     name: "",
-    instructions: preset.instructions,
+    instructions: GENERIC_HOST_INSTRUCTIONS,
     ttsEngine: "",
-    segments: deepClone(preset.segments),
+    segments: deepClone(GENERIC_HOST_SEGMENTS),
     talkativeness: "normal",
   };
 }

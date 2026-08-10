@@ -42,7 +42,7 @@ vi.mock("vue-sonner", () => ({
   },
 }));
 
-/** Mounts the editor in create mode (a new host seeded from the first preset). */
+/** Mounts the editor in create mode (a new host seeded with one generic example segment per placement). */
 async function mountEditor() {
   const wrapper = mount(CustomizeHost);
   await flushPromises();
@@ -136,13 +136,21 @@ describe("CustomizeHost save", () => {
   it("bakes the talkativeness level into the saved segments and neutralizes the slider", async () => {
     const wrapper = await mountEditor();
     await wrapper.find("#customize-host-name").setValue("Morning Crew");
-    // "chatty" promotes the preset's every-3-songs transition to every song.
-    await wrapper.findComponent(Slider).vm.$emit("update:modelValue", [2]);
+    // "rarely" demotes the generic seed's every-song transition to every 3 songs.
+    await wrapper.findComponent(Slider).vm.$emit("update:modelValue", [0]);
 
     await save(wrapper);
 
     expect(betweenSongsFlow(savedHost().section_order)).toContainEqual({
-      MUST: "morning_crew_transition",
+      OPTIONAL: {
+        section: "morning_crew_transition",
+        chance: 2 / 3,
+        guards: {
+          min_gap_songs: 2,
+          max_per_60min: 0,
+          require_placeholders_present: [],
+        },
+      },
     });
     // The level is now part of the segments, so the slider must read neutral
     // instead of re-applying itself on the next save.

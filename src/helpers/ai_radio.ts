@@ -293,6 +293,44 @@ export const PRESETS: ShowPreset[] = [
   },
 ];
 
+/** Neutral starter instructions for a brand-new custom host, mirroring the server's built-in default. */
+export const GENERIC_HOST_INSTRUCTIONS =
+  "Host personality: warm, sharp, music-literate, and slightly premium without sounding formal. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid clichés, mention concrete details when available, and maintain a believable radio flow between sections.";
+
+/**
+ * One example segment per placement (start/every_song/end) for a brand-new
+ * custom host, mirroring the server's built-in section defaults so a fresh
+ * host starts generic rather than cloned from a persona preset.
+ */
+export const GENERIC_HOST_SEGMENTS: ShowSegment[] = [
+  {
+    id: "intro",
+    name: "Intro",
+    prompt:
+      "The next track is <next_songinfo>. Open the program like a polished radio host: brief welcome, confident energy, one concrete hook about the song or artist, and a clean handoff into the music.",
+    webSearch: "disabled",
+    maxChars: 650,
+    plays: { kind: "start" },
+  },
+  {
+    id: "transition",
+    name: "Transition",
+    prompt: SONG_TRANSITION_PROMPT,
+    webSearch: "allow",
+    maxChars: 650,
+    plays: { kind: "every_song" },
+  },
+  {
+    id: "outro",
+    name: "Outro",
+    prompt:
+      "The last track played was <prev_songinfo>. Close the program with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
+    webSearch: "disabled",
+    maxChars: 650,
+    plays: { kind: "end" },
+  },
+];
+
 /**
  * Adjusts a preset's segment frequencies for the create dialog's talkativeness
  * slider. Treats every_song/every_n_songs segments as "the transition" (the
