@@ -433,9 +433,7 @@
             style="padding-bottom: 10px; cursor: pointer"
             @click="showFullInfo = !showFullInfo"
           >
-            <!-- eslint-disable vue/no-v-html -->
-            <div v-html="shortDescription"></div>
-            <!-- eslint-enable vue/no-v-html -->
+            <MarkdownText :text="shortDescription" />
           </v-card-subtitle>
 
           <!-- genres/tags -->
@@ -474,13 +472,11 @@
         <DialogHeader>
           <DialogTitle>{{ headerTitle }}</DialogTitle>
         </DialogHeader>
-        <!-- eslint-disable vue/no-v-html -->
-        <div
-          class="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
+        <MarkdownText
+          :text="rawDescription"
+          class="max-w-none text-sm leading-relaxed"
           style="max-height: 60vh; overflow-y: auto"
-          v-html="fullDescription"
-        ></div>
-        <!-- eslint-enable vue/no-v-html -->
+        />
         <DialogFooter>
           <Button @click="showFullInfo = false">{{ $t("close") }}</Button>
         </DialogFooter>
@@ -496,6 +492,7 @@
 </template>
 
 <script setup lang="ts">
+import MarkdownText from "@/components/MarkdownText.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import { Button } from "@/components/ui/button";
@@ -522,7 +519,6 @@ import {
   getAuthorsNarratorsArray,
   getAudiobookCollectionArtists,
   getImageThumbForItem,
-  markdownToHtml,
   truncateString,
 } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
@@ -749,16 +745,12 @@ const rawDescription = computed(() => {
   return "";
 });
 
-const fullDescription = computed(() => {
-  return markdownToHtml(rawDescription.value);
-});
-
 const shortDescription = computed(() => {
   const maxChars = 800;
   if (rawDescription.value.length > maxChars) {
-    return fullDescription.value.substring(0, maxChars) + "…";
+    return rawDescription.value.substring(0, maxChars) + "…";
   }
-  return fullDescription.value;
+  return rawDescription.value;
 });
 
 const artistLogo = computed(() => {
