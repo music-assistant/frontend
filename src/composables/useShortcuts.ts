@@ -196,7 +196,9 @@ export function isShortcutCapReached(): boolean {
 export function isShortcutPinnedItem(
   item: ShortcutItem | ItemMapping,
 ): boolean {
-  return _getPinnedUris().some((pinnedUri) => isUriMatchingItem(pinnedUri, item));
+  return _getPinnedUris().some((pinnedUri) =>
+    isUriMatchingItem(pinnedUri, item),
+  );
 }
 
 export async function unpinShortcutStandaloneItem(
