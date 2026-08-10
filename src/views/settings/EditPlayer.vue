@@ -265,7 +265,9 @@
           <v-text-field
             v-model="editName"
             :placeholder="
-              api.players[config?.player_id!]?.name || config?.default_name
+              api.players[config?.player_id!]?.name ||
+              config?.default_name ||
+              undefined
             "
             variant="outlined"
             density="comfortable"
@@ -526,7 +528,7 @@ watch(showRenameDialog, (val) => {
 // methods
 const saveRename = function () {
   if (config.value) {
-    config.value.name = editName.value || undefined;
+    config.value.name = editName.value || null;
   }
   loading.value = true;
   api

@@ -3,13 +3,8 @@ import {
   getHassProviderInstance,
 } from "@/helpers/hass_controls";
 import type { MusicAssistantApi } from "@/plugins/api";
-import {
-  ConfigEntryType,
-  ProviderStage,
-  ProviderType,
-  type ProviderConfig,
-} from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { hassProviderConfig } from "../fixtures/hassProviderConfig";
 
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
@@ -58,7 +53,9 @@ describe("getHassProviderInstance", () => {
 describe("addHassControlEntity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMock.saveProviderConfig.mockResolvedValue(providerConfig(["switch.tv"]));
+    apiMock.saveProviderConfig.mockResolvedValue(
+      hassProviderConfig(["switch.tv"]),
+    );
   });
 
   it("appends the entity to the list the provider already holds", async () => {
@@ -95,41 +92,5 @@ describe("addHassControlEntity", () => {
 });
 
 function givenControls(value: string[] | null) {
-  apiMock.getProviderConfig.mockResolvedValue(providerConfig(value));
-}
-
-function providerConfig(value: string[] | null): ProviderConfig {
-  return {
-    type: ProviderType.PLUGIN,
-    domain: "hass",
-    instance_id: "hass--1",
-    enabled: true,
-    manifest: {
-      type: ProviderType.PLUGIN,
-      domain: "hass",
-      name: "Home Assistant",
-      description: "Home Assistant integration",
-      codeowners: [],
-      credits: [],
-      requirements: [],
-      multi_instance: false,
-      builtin: false,
-      allow_disable: true,
-      stage: ProviderStage.STABLE,
-      icon_images: [],
-    },
-    values: {
-      power_controls: {
-        key: "power_controls",
-        type: ConfigEntryType.STRING,
-        label: "Power controls",
-        default_value: [],
-        required: false,
-        options: [],
-        category: "generic",
-        multi_value: true,
-        value,
-      },
-    },
-  };
+  apiMock.getProviderConfig.mockResolvedValue(hassProviderConfig(value));
 }

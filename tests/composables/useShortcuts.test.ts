@@ -1,4 +1,3 @@
-import { MediaType } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MusicAssistantApi } from "@/plugins/api";
 
@@ -31,9 +30,9 @@ import {
   moveShortcutStandaloneItem,
   pinShortcutStandalone,
   reorderShortcutStandalone,
-  type ShortcutItem,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
+import { podcast } from "../fixtures/podcast";
 import { providerMapping } from "../fixtures/providerMapping";
 
 const PODCAST_FEED = "https://ronzheimer.podigee.io/feed/mp3";
@@ -63,23 +62,17 @@ describe("useShortcuts standalone helpers", () => {
       ENCODED_PODCAST_URI,
     ];
 
-    const resolvedLibraryPodcast = {
-      provider: "library",
-      media_type: MediaType.PODCAST,
-      item_id: "42",
+    const resolvedLibraryPodcast = podcast({
       provider_mappings: [
         providerMapping({
           item_id: PODCAST_FEED,
           provider_instance: "itunes_podcasts--abc123",
           provider_domain: "itunes_podcasts",
-          available: true,
         }),
       ],
-    };
+    });
 
-    expect(
-      isShortcutPinnedItem(resolvedLibraryPodcast as unknown as ShortcutItem),
-    ).toBe(true);
+    expect(isShortcutPinnedItem(resolvedLibraryPodcast)).toBe(true);
   });
 
   it("removes pinned shortcut for resolved library podcast item", async () => {
@@ -88,23 +81,17 @@ describe("useShortcuts standalone helpers", () => {
       "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
     ];
 
-    const resolvedLibraryPodcast = {
-      provider: "library",
-      media_type: MediaType.PODCAST,
-      item_id: "42",
+    const resolvedLibraryPodcast = podcast({
       provider_mappings: [
         providerMapping({
           item_id: PODCAST_FEED,
           provider_instance: "itunes_podcasts--abc123",
           provider_domain: "itunes_podcasts",
-          available: true,
         }),
       ],
-    };
+    });
 
-    await unpinShortcutStandaloneItem(
-      resolvedLibraryPodcast as unknown as ShortcutItem,
-    );
+    await unpinShortcutStandaloneItem(resolvedLibraryPodcast);
 
     expect(mockUpdateUser).toHaveBeenCalledTimes(1);
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
@@ -117,14 +104,13 @@ describe("useShortcuts standalone helpers", () => {
       ENCODED_PODCAST_URI,
     ];
 
-    const podcastItem = {
+    const podcastItem = podcast({
       provider: "itunes_podcasts",
-      media_type: MediaType.PODCAST,
       item_id: PODCAST_FEED,
       uri: RAW_PODCAST_URI,
-    };
+    });
 
-    await pinShortcutStandalone(podcastItem as unknown as ShortcutItem);
+    await pinShortcutStandalone(podcastItem);
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
@@ -174,16 +160,13 @@ describe("useShortcuts standalone helpers", () => {
       "library://playlist/99",
     ];
 
-    const podcastItem = {
+    const podcastItem = podcast({
       provider: "itunes_podcasts",
-      media_type: MediaType.PODCAST,
       item_id: PODCAST_FEED,
       uri: RAW_PODCAST_URI,
-    };
+    });
 
-    expect(
-      getShortcutMoveAvailability(podcastItem as unknown as ShortcutItem),
-    ).toEqual({
+    expect(getShortcutMoveAvailability(podcastItem)).toEqual({
       canMoveUp: false,
       canMoveDown: true,
     });
@@ -196,17 +179,13 @@ describe("useShortcuts standalone helpers", () => {
       "library://playlist/99",
     ];
 
-    const podcastItem = {
+    const podcastItem = podcast({
       provider: "itunes_podcasts",
-      media_type: MediaType.PODCAST,
       item_id: PODCAST_FEED,
       uri: RAW_PODCAST_URI,
-    };
+    });
 
-    await moveShortcutStandaloneItem(
-      podcastItem as unknown as ShortcutItem,
-      "down",
-    );
+    await moveShortcutStandaloneItem(podcastItem, "down");
 
     expect(mockUpdateUser).toHaveBeenCalledTimes(1);
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
@@ -222,17 +201,13 @@ describe("useShortcuts standalone helpers", () => {
       "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
     ];
 
-    const podcastItem = {
+    const podcastItem = podcast({
       provider: "itunes_podcasts",
-      media_type: MediaType.PODCAST,
       item_id: PODCAST_FEED,
       uri: RAW_PODCAST_URI,
-    };
+    });
 
-    await moveShortcutStandaloneItem(
-      podcastItem as unknown as ShortcutItem,
-      "up",
-    );
+    await moveShortcutStandaloneItem(podcastItem, "up");
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([

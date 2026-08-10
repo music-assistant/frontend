@@ -1919,7 +1919,7 @@ export interface StoredState {
 }
 
 const getSortName = function (
-  item: MediaItemType | ItemMapping | null,
+  item: MediaItemType | ItemMapping | null | undefined,
   preferSortName = false,
 ) {
   if (!item) return "";

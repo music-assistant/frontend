@@ -101,6 +101,7 @@
                 provider_domain: 'library',
                 item_id: itemDetails.item_id,
                 available: true,
+                url: null,
               })
           "
         >
@@ -185,9 +186,14 @@ const getPreviewUrl = function (provider: string, item_id: string) {
   }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
 };
 
-const getProviderUri = function (
-  mapping: Omit<ProviderMapping, "audio_format">,
-) {
+// just enough of a provider mapping to identify an item: the library entry built for
+// the menu below carries only these fields, not the full server-sent mapping
+type ProviderMappingRef = Pick<
+  ProviderMapping,
+  "provider_instance" | "provider_domain" | "item_id" | "available" | "url"
+>;
+
+const getProviderUri = function (mapping: ProviderMappingRef) {
   return `${mapping.provider_instance}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
 
@@ -218,10 +224,7 @@ const toggleExpand = function () {
   expanded.value = !expanded.value;
 };
 
-const onMenu = function (
-  evt: Event,
-  providerMapping: Omit<ProviderMapping, "audio_format">,
-) {
+const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   const mouseEvt = evt as MouseEvent;
   const menuItems = [
     {

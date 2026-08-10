@@ -9,6 +9,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { queueItem } from "../fixtures/queueItem";
 
 // Reactive api mock so mutating a queue fires the composable's watchers.
 const { apiMock } = await vi.hoisted(async () => {
@@ -75,16 +76,13 @@ function makeQueue(
     queue_id: QUEUE_ID,
     active: true,
     state: PlaybackState.PLAYING,
-    current_item: {
+    current_item: queueItem({
       queue_id: QUEUE_ID,
       queue_item_id: "queue-item-1",
       name: "Item",
-      duration: 200,
-      sort_index: 0,
-      available: true,
       media_item: { media_type: MediaType.TRACK } as PlayableMediaItemType,
       ...currentItem,
-    },
+    }),
     ...queue,
   } as PlayerQueue;
   return apiMock.queues[QUEUE_ID];

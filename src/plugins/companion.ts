@@ -305,6 +305,9 @@ const handlePlayerCommand = async (command: string): Promise<void> => {
       case "previous":
         await api.playerCommandPrevious(player.player_id);
         break;
+      case "stop":
+        await api.playerCommandStop(player.player_id);
+        break;
       default:
         console.warn("[Companion] Unknown player command:", command);
     }
@@ -342,8 +345,8 @@ const unregisterPlayerCommandHandler = (): void => {
  */
 interface NowPlayingSignal {
   uri?: string;
-  title?: string;
-  artist?: string;
+  title?: string | null;
+  artist?: string | null;
   state?: PlaybackState;
   playerId?: string;
   timing?: ActiveTiming;

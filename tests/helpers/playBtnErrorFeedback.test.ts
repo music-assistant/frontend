@@ -61,23 +61,20 @@ vi.mock("vue-sonner", () => ({
 }));
 
 import { handlePlayBtnClick } from "@/helpers/media_item_actions";
-import { MediaType, type Playlist, type Track } from "@/plugins/api/interfaces";
+import { playlist } from "../fixtures/playlist";
+import { track } from "../fixtures/track";
 
-const track = {
+const playedTrack = track({
   item_id: "track1",
   uri: "library://track/track1",
-  media_type: MediaType.TRACK,
   name: "Track 1",
-  is_playable: true,
-} as unknown as Track;
+});
 
-const playlist = {
+const parentPlaylist = playlist({
   item_id: "pl1",
   uri: "library://playlist/pl1",
-  media_type: MediaType.PLAYLIST,
   name: "Playlist 1",
-  is_playable: true,
-} as unknown as Playlist;
+});
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -93,7 +90,7 @@ describe("handlePlayBtnClick error feedback", () => {
   it("shows a toast when direct play fails", async () => {
     mockPlayMedia.mockRejectedValue(new Error("Connection lost"));
 
-    handlePlayBtnClick(track, 0, 0);
+    handlePlayBtnClick(playedTrack, 0, 0);
     await flushPromises();
 
     expect(mockToastError).toHaveBeenCalledWith("play_failed");
@@ -102,7 +99,7 @@ describe("handlePlayBtnClick error feedback", () => {
   it("shows a toast when play-from-here fails", async () => {
     mockPlayMedia.mockRejectedValue(new Error("Connection lost"));
 
-    handlePlayBtnClick(track, 0, 0, playlist);
+    handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
     await flushPromises();
 
     expect(mockToastError).toHaveBeenCalledWith("play_failed");
@@ -112,7 +109,7 @@ describe("handlePlayBtnClick error feedback", () => {
     mockStore.activePlayer = undefined;
     mockShowPlayMenu.mockRejectedValue(new Error("Connection lost"));
 
-    handlePlayBtnClick(track, 0, 0);
+    handlePlayBtnClick(playedTrack, 0, 0);
     await flushPromises();
 
     expect(mockToastError).toHaveBeenCalledWith("play_failed");
@@ -121,7 +118,7 @@ describe("handlePlayBtnClick error feedback", () => {
   it("does not show a toast when play succeeds", async () => {
     mockPlayMedia.mockResolvedValue(undefined);
 
-    handlePlayBtnClick(track, 0, 0);
+    handlePlayBtnClick(playedTrack, 0, 0);
     await flushPromises();
 
     expect(mockToastError).not.toHaveBeenCalled();

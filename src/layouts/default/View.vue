@@ -97,11 +97,11 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  padding-bottom: 90px;
+  padding-bottom: 110px;
 }
 
 .content-section--mobile {
-  padding-bottom: 230px;
+  padding-bottom: 250px;
 }
 
 .content-section--frameless {

@@ -10,8 +10,8 @@ export interface ChapterTick extends MediaItemChapter {
  * percentage of the track, percentages are clamped to [0, 100]
  */
 export function computeChapterTicks(
-  chapters: MediaItemChapter[] | undefined,
-  duration: number | undefined,
+  chapters: MediaItemChapter[] | null | undefined,
+  duration: number | null | undefined,
 ): ChapterTick[] {
   if (!duration || !chapters?.length) return [];
   return chapters.map((chapter) => ({

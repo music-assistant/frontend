@@ -1,16 +1,16 @@
 import {
   EventType,
-  ProviderStage,
   ProviderStatus,
   ProviderType,
   UserRole,
   type ProviderConfig,
-  type User,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { providerConfig } from "./fixtures/providerConfig";
+import { user } from "./fixtures/user";
 
 const {
   apiMock,
@@ -285,7 +285,7 @@ describe("App initialization", () => {
       status: "running",
     };
     apiMock.getCurrentUserInfo.mockResolvedValue(
-      userFixture({
+      user({
         role: UserRole.USER,
         user_id: "user-id",
         username: "regular-user",
@@ -294,7 +294,7 @@ describe("App initialization", () => {
     apiMock.fetchState.mockResolvedValue(undefined);
     apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.initialize.mockResolvedValue(undefined);
-    apiMock.getProviderConfigs.mockResolvedValue([providerConfigFixture()]);
+    apiMock.getProviderConfigs.mockResolvedValue([partyPluginConfig()]);
     for (const method of [
       apiMock.getLibraryAlbumsCount,
       apiMock.getLibraryArtistsCount,
@@ -358,7 +358,7 @@ describe("App initialization", () => {
     async (type) => {
       guestType.value = type;
       apiMock.getCurrentUserInfo.mockResolvedValue(
-        userFixture({
+        user({
           role: UserRole.GUEST,
           user_id: "guest-id",
           username: type === "party" ? "party_guest" : "music_quiz_guest",
@@ -442,7 +442,7 @@ describe("App initialization", () => {
     expect(mockInitializeWebPlayerModeSync).not.toHaveBeenCalled();
     expect(wrapper.find("router-view-stub").exists()).toBe(false);
 
-    pluginConfigs.resolve([providerConfigFixture()]);
+    pluginConfigs.resolve([partyPluginConfig()]);
     await flushPromises();
     expect(apiMock.state.value).toBe("initialized");
     expect(wrapper.find("router-view-stub").exists()).toBe(true);
@@ -454,7 +454,7 @@ describe("App initialization", () => {
     async (type) => {
       guestType.value = type;
       apiMock.getCurrentUserInfo.mockResolvedValue(
-        userFixture({
+        user({
           role: UserRole.GUEST,
           user_id: "guest-id",
           username: type === "party" ? "party_guest" : "music_quiz_guest",
@@ -649,7 +649,7 @@ describe("App initialization", () => {
   it("re-authenticates an ingress session through the proxy on reconnect", async () => {
     storeMock.isIngressSession = true;
     wrapper = await mountApp();
-    const ingressUser = userFixture({
+    const ingressUser = user({
       role: UserRole.ADMIN,
       user_id: "ingress-user",
       username: "ingress-user",
@@ -893,44 +893,14 @@ function createStorage(): Storage {
   };
 }
 
-function userFixture(
-  overrides: Partial<User> & Pick<User, "role" | "user_id" | "username">,
-): User {
-  return {
-    created_at: "2024-01-01T00:00:00Z",
-    enabled: true,
-    player_filter: [],
-    preferences: {},
-    provider_filter: [],
-    ...overrides,
-  };
-}
-
-function providerConfigFixture(
-  overrides: Partial<ProviderConfig> = {},
-): ProviderConfig {
-  return {
+/**
+ * The party plugin config, as returned for the plugin lookups App runs on init.
+ */
+function partyPluginConfig(): ProviderConfig {
+  return providerConfig({
+    type: ProviderType.PLUGIN,
     domain: "party",
-    enabled: true,
-    instance_id: "party--test",
-    manifest: {
-      allow_disable: true,
-      builtin: false,
-      codeowners: [],
-      credits: [],
-      description: "",
-      domain: "party",
-      icon_images: [],
-      multi_instance: true,
-      name: "Party",
-      requirements: [],
-      stage: ProviderStage.STABLE,
-      type: ProviderType.PLUGIN,
-    },
     name: "Party",
     status: ProviderStatus.LOADED,
-    type: ProviderType.PLUGIN,
-    values: {},
-    ...overrides,
-  };
+  });
 }

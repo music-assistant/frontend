@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MediaType, type Genre } from "@/plugins/api/interfaces";
+import type { Genre } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { genre } from "../../fixtures/genre";
 
 vi.mock("vue", async () => {
   const actual = await vi.importActual<typeof import("vue")>("vue");
@@ -57,16 +58,5 @@ describe("useSmartPlaylistGenres", () => {
 });
 
 function genreFixture(item_id: string, name: string): Genre {
-  return {
-    item_id,
-    provider: "library",
-    name,
-    uri: `library://genre/${item_id}`,
-    is_playable: false,
-    media_type: MediaType.GENRE,
-    provider_mappings: [],
-    metadata: {},
-    favorite: false,
-    genre_aliases: null,
-  };
+  return genre({ item_id, name, uri: `library://genre/${item_id}` });
 }

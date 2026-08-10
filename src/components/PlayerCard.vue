@@ -211,7 +211,11 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { isBuiltinPlayer } from "@/helpers/players";
+import {
+  canEditPlayerGroup,
+  getPlayerGroupMemberCount,
+  isBuiltinPlayer,
+} from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { getMediaImageUrl, getPlayerName } from "@/helpers/utils";
 import api from "@/plugins/api";
@@ -220,7 +224,6 @@ import {
   PlaybackState,
   type Player,
   PLAYER_CONTROL_NONE,
-  PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -299,25 +302,12 @@ const playActionInProgress = computed(
 );
 
 const canEditGroupMembers = computed(
-  () =>
-    props.showGroupControls &&
-    props.player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
-    (props.player.can_group_with.length > 0 ||
-      props.player.group_members.some(
-        (playerId) =>
-          playerId !== props.player.player_id &&
-          !props.player.static_group_members.includes(playerId),
-      )),
+  () => props.showGroupControls && canEditPlayerGroup(props.player),
 );
 
-const groupMemberCount = computed(() => {
-  const childCount = new Set(
-    props.player.group_members.filter(
-      (playerId) => playerId !== props.player.player_id,
-    ),
-  ).size;
-  return props.player.type === PlayerType.GROUP ? childCount : childCount + 1;
-});
+const groupMemberCount = computed(() =>
+  getPlayerGroupMemberCount(props.player),
+);
 
 const groupMemberNames = computed(() => {
   if (!props.showGroupMemberNames) return [];

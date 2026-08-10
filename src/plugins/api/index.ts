@@ -2691,7 +2691,7 @@ export class MusicAssistantApi {
         console.error("[resultMessage]", msg);
 
         // Don't show toast for authentication errors - they're handled by the login UI
-        const errorMsg = msg.details || msg.error_code || "";
+        const errorMsg = msg.details || "";
         const isAuthError =
           errorMsg.includes("Invalid credentials") ||
           errorMsg.includes("Invalid username") ||
@@ -2701,7 +2701,7 @@ export class MusicAssistantApi {
           errorMsg.toLowerCase().includes("unauthorized");
 
         if (!isAuthError) {
-          toast.error(msg.details || msg.error_code);
+          toast.error(msg.details || String(msg.error_code));
         }
       }
     } else if (DEBUG) {
@@ -2728,7 +2728,7 @@ export class MusicAssistantApi {
 
     this.commands.delete(msg.message_id);
     if ("error_code" in msg) {
-      resultPromise.reject(msg.details || msg.error_code);
+      resultPromise.reject(msg.details || String(msg.error_code));
     } else {
       msg = msg as SuccessResultMessage;
       resultPromise.resolve(msg.result);

@@ -129,8 +129,8 @@ const SearchInputStub = {
 };
 
 const passthroughStub = { template: "<div><slot /></div>" };
-const SheetContentStub = {
-  name: "SheetContent",
+const PopoverContentStub = {
+  name: "PopoverContent",
   emits: ["interact-outside", "open-auto-focus"],
   template: `
     <div
@@ -156,6 +156,9 @@ function createPlayer(
     device_info: {
       model: "Test",
       manufacturer: "Test",
+      software_version: null,
+      model_id: null,
+      manufacturer_id: null,
       identifiers: {
         [IdentifierType.MAC_ADDRESS]: "",
         [IdentifierType.SERIAL_NUMBER]: "",
@@ -186,6 +189,14 @@ function createPlayer(
     needs_setup: false,
     output_protocols: [],
     active_output_protocol: null,
+    elapsed_time: null,
+    elapsed_time_last_updated: null,
+    current_media: null,
+    active_source: null,
+    active_sound_mode: null,
+    active_group: null,
+    synced_to: null,
+    sleep_timer_expires_at: null,
   };
 }
 
@@ -198,11 +209,9 @@ function mountPlayerSelect() {
       stubs: {
         PlayerCard: PlayerCardStub,
         SearchInput: SearchInputStub,
-        Sheet: passthroughStub,
-        SheetContent: SheetContentStub,
-        SheetDescription: passthroughStub,
-        SheetHeader: passthroughStub,
-        SheetTitle: passthroughStub,
+        Popover: passthroughStub,
+        PopoverAnchor: passthroughStub,
+        PopoverContent: PopoverContentStub,
         Teleport: true,
       },
     },
@@ -382,11 +391,11 @@ describe("PlayerSelect", () => {
     const wrapper = mountPlayerSelect();
 
     expect(wrapper.find(".player-select-backdrop").classes()).toContain(
-      "bottom-[60px]",
+      "player-select-mobile-offset",
     );
     expect(
       wrapper.find('[data-testid="player-select-sheet"]').classes(),
-    ).toContain("bottom-[60px]");
+    ).toContain("player-select-popover");
   });
 
   it("focuses the sheet instead of opening the mobile keyboard", () => {
@@ -398,14 +407,14 @@ describe("PlayerSelect", () => {
       }),
     );
     const wrapper = mountPlayerSelect();
-    const sheet = wrapper.get('[data-testid="player-select-sheet"]');
-    if (!(sheet.element instanceof HTMLElement)) {
-      throw new TypeError("Expected sheet to render as an HTML element");
+    const popover = wrapper.get('[data-testid="player-select-sheet"]');
+    if (!(popover.element instanceof HTMLElement)) {
+      throw new TypeError("Expected popover to render as an HTML element");
     }
-    const focus = vi.spyOn(sheet.element, "focus");
+    const focus = vi.spyOn(popover.element, "focus");
     const event = new Event("open-auto-focus", { cancelable: true });
 
-    sheet.element.dispatchEvent(event);
+    popover.element.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);
     expect(focus).toHaveBeenCalledWith({ preventScroll: true });
@@ -413,10 +422,10 @@ describe("PlayerSelect", () => {
 
   it("keeps the default focus behavior in desktop layout", () => {
     const wrapper = mountPlayerSelect();
-    const sheet = wrapper.get('[data-testid="player-select-sheet"]');
+    const popover = wrapper.get('[data-testid="player-select-sheet"]');
     const event = new Event("open-auto-focus", { cancelable: true });
 
-    sheet.element.dispatchEvent(event);
+    popover.element.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(false);
   });
@@ -426,6 +435,7 @@ describe("PlayerSelect", () => {
     const wrapper = mountPlayerSelect();
     const trigger = document.createElement("button");
     document.body.appendChild(trigger);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
     trigger.focus();
 
     store.showPlayersMenu = true;
@@ -442,8 +452,9 @@ describe("PlayerSelect", () => {
     const wrapper = mountPlayerSelect();
     const trigger = document.createElement("button");
     const fallback = document.createElement("button");
-    fallback.id = "active-player-popover";
+    fallback.id = "player-select-button";
     document.body.append(trigger, fallback);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
     trigger.focus();
 
     store.showPlayersMenu = true;
@@ -454,6 +465,23 @@ describe("PlayerSelect", () => {
 
     expect(document.activeElement).toBe(fallback);
     fallback.remove();
+  });
+
+  it("does not restore focus after pointer interaction", async () => {
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+    const trigger = document.createElement("button");
+    document.body.appendChild(trigger);
+    trigger.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    trigger.focus();
+
+    store.showPlayersMenu = true;
+    await nextTick();
+    await wrapper.find(".player-select-backdrop").trigger("click");
+    await nextTick();
+
+    expect(document.activeElement).not.toBe(trigger);
+    trigger.remove();
   });
 
   it("handles Escape inside the sheet without reaching the page", async () => {
@@ -475,10 +503,34 @@ describe("PlayerSelect", () => {
     const wrapper = mountPlayerSelect();
     const event = new Event("pointerdown", { cancelable: true });
 
-    wrapper.findComponent(SheetContentStub).vm.$emit("interact-outside", event);
+    wrapper
+      .findComponent(PopoverContentStub)
+      .vm.$emit("interact-outside", event);
 
     expect(event.defaultPrevented).toBe(true);
     expect(store.showPlayersMenu).toBe(true);
+  });
+
+  it("lets the player button close the open popover", () => {
+    const player = createPlayer("kitchen", "Kitchen");
+    api.players = { [player.player_id]: player };
+    const wrapper = mountPlayerSelect();
+    const trigger = document.createElement("button");
+    trigger.id = "player-select-button";
+    document.body.appendChild(trigger);
+    const originalEvent = new Event("pointerdown");
+    trigger.dispatchEvent(originalEvent);
+    const event = new CustomEvent("interact-outside", {
+      cancelable: true,
+      detail: { originalEvent },
+    });
+
+    wrapper
+      .findComponent(PopoverContentStub)
+      .vm.$emit("interact-outside", event);
+
+    expect(event.defaultPrevented).toBe(true);
+    trigger.remove();
   });
 
   it("keeps member and child-volume controls mutually exclusive", async () => {

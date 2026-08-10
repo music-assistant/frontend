@@ -4,12 +4,7 @@ import type {
 } from "@/helpers/config_entry_ui";
 import { UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
 import type { HassControlEntity } from "@/helpers/hass_controls";
-import {
-  ConfigEntryType,
-  ProviderStage,
-  ProviderType,
-  type ProviderConfig,
-} from "@/plugins/api/interfaces";
+import { ConfigEntryType } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import HassControlPickerField from "@/views/settings/fields/HassControlPickerField.vue";
 import HassControlsField from "@/views/settings/fields/HassControlsField.vue";
@@ -18,6 +13,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
+import { hassProviderConfig } from "../fixtures/hassProviderConfig";
 
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
@@ -56,8 +52,12 @@ const PICKED_ENTITY: HassControlEntity = {
 describe("HassControlPickerField", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMock.getProviderConfig.mockResolvedValue(hassProviderConfig());
-    apiMock.saveProviderConfig.mockResolvedValue(hassProviderConfig());
+    apiMock.getProviderConfig.mockResolvedValue(
+      hassProviderConfig(["switch.tv"]),
+    );
+    apiMock.saveProviderConfig.mockResolvedValue(
+      hassProviderConfig(["switch.tv"]),
+    );
   });
 
   it("registers the picked entity with the Home Assistant provider and fills in the player entry", async () => {
@@ -145,42 +145,6 @@ describe("HassControlsField", () => {
     ).toEqual(["switch.tv"]);
   });
 });
-
-function hassProviderConfig(): ProviderConfig {
-  return {
-    type: ProviderType.PLUGIN,
-    domain: "hass",
-    instance_id: "hass--1",
-    enabled: true,
-    manifest: {
-      type: ProviderType.PLUGIN,
-      domain: "hass",
-      name: "Home Assistant",
-      description: "Home Assistant integration",
-      codeowners: [],
-      credits: [],
-      requirements: [],
-      multi_instance: false,
-      builtin: false,
-      allow_disable: true,
-      stage: ProviderStage.STABLE,
-      icon_images: [],
-    },
-    values: {
-      power_controls: {
-        key: "power_controls",
-        type: ConfigEntryType.STRING,
-        label: "Power controls",
-        default_value: [],
-        required: false,
-        options: [],
-        category: "generic",
-        multi_value: true,
-        value: ["switch.tv"],
-      },
-    },
-  };
-}
 
 function pickerEntry(): HassControlPickerEntry {
   return {

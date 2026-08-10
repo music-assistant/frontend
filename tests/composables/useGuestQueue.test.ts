@@ -8,6 +8,7 @@ import {
 import { BEFORE_FIRST_INDEX } from "@/helpers/queue_position";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { queueItem } from "../fixtures/queueItem";
 
 const { mockSendCommand, mockGetPlayerQueueItems, mockSubscribe } = vi.hoisted(
   () => {
@@ -229,12 +230,9 @@ describe("useGuestQueue", () => {
 });
 
 function queueItemFixture(queueItemId: string): QueueItem {
-  return {
+  return queueItem({
     queue_id: "queue1",
     queue_item_id: queueItemId,
     name: queueItemId,
-    duration: 200,
-    sort_index: 0,
-    available: true,
-  };
+  });
 }

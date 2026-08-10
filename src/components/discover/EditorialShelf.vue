@@ -83,7 +83,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface Props {
   title?: string;
-  subtitle?: string;
+  subtitle?: string | null;
   provider?: string;
   gap?: number;
   navCenter?: number;
