@@ -250,6 +250,10 @@ watch(covered, (isCovered) => {
     engine = null;
     relay?.close();
     relay = null;
+    // Drop the shared preset name so the menu doesn't show (or let the star
+    // act on) a preset that is no longer rendering. A re-mounting canvas resets
+    // it asynchronously in applyPreset, always after this synchronous teardown.
+    currentVisualizerPreset.value = null;
   } else if (!initialized) {
     initializeWhenSized();
   } else {
@@ -274,6 +278,7 @@ onBeforeUnmount(() => {
   engine = null;
   relay?.close();
   relay = null;
+  currentVisualizerPreset.value = null;
 });
 </script>
 
