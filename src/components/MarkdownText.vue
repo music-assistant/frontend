@@ -13,7 +13,7 @@ const html = computed(() => (props.text ? markdownToHtml(props.text) : ""));
 <template>
   <!-- eslint-disable vue/no-v-html -->
   <div
-    class="[&_a]:text-primary [&_code]:bg-muted break-words [&>*]:mb-2 [&>*:last-child]:mb-0 [&_a]:underline [&_a]:underline-offset-2 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:text-start [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:text-start"
+    class="[&_a]:text-primary [&_code]:bg-muted break-words [&>*]:mb-2 [&>*:last-child]:mb-0 [&_a]:underline [&_a]:underline-offset-2 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_li]:mb-1 [&_li>p]:mb-2 [&_li>p:last-child]:mb-0 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:text-start [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:text-start"
     v-html="html"
   ></div>
   <!-- eslint-enable vue/no-v-html -->

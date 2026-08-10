@@ -98,6 +98,7 @@ vi.mock("vue-sonner", () => ({
 // shallowMount would stub the step copy away; render it as plain text instead
 // so the assertions below keep seeing it
 config.global.stubs = {
+  ...config.global.stubs,
   MarkdownText: {
     props: ["text"],
     template: "<div>{{ text }}</div>",

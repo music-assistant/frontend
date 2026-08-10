@@ -652,9 +652,12 @@ export const panelViewItemResponsive = function (displaySize: number) {
   }
 };
 
-// Rendered markdown only ever links to resources outside the app, so keep the
-// current view intact and never hand the opener over to the target page.
-DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+// Own instance, so the anchor rewrite below stays confined to rendered markdown
+const markdownPurifier = DOMPurify();
+
+// Send every link to a new tab (keeping the app itself loaded) and withhold the
+// opener from the target page.
+markdownPurifier.addHook("afterSanitizeAttributes", (node) => {
   if (node.nodeName === "A" && node.hasAttribute("href")) {
     node.setAttribute("target", "_blank");
     node.setAttribute("rel", "noopener noreferrer");
@@ -673,7 +676,7 @@ export const markdownToHtml = function (text: string): string {
   // some sources encode their line breaks literally; block syntax only parses on real ones
   const source = text.replaceAll("\\n", "\n").replaceAll(" \\", "\n");
   // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
-  return DOMPurify.sanitize(marked(source, { breaks: true }) as string, {
+  return markdownPurifier.sanitize(marked(source, { breaks: true }) as string, {
     SANITIZE_NAMED_PROPS: true,
   });
 };
