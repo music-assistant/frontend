@@ -74,7 +74,6 @@ describe("useSmartPlaylistSeedItems", () => {
 
     const added = seed.addSeedFromSearch(
       track({
-        item_id: "fallback-track-id",
         provider_mappings: [
           providerMapping({
             item_id: "lib-1",
@@ -87,7 +86,7 @@ describe("useSmartPlaylistSeedItems", () => {
             provider_domain: "spotify",
           }),
         ],
-        artists: [artist()],
+        artists: [artist({ name: "Artist" })],
         name: "Song",
       }),
       "track",
