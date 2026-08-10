@@ -230,35 +230,43 @@ describe("timeline host and present answers", () => {
         },
       ],
     } satisfies MusicQuizTimelineHostState;
-    const wrapper = mount(TimelineAudienceAnswer, {
-      props: {
-        state,
-        currentRound: revealedRound,
-        present: true,
-      },
-      slots: {
-        leaderboard: '<div data-testid="leaderboard">Leaderboard</div>',
-      },
-      global: {
-        stubs: {
-          MusicQuizCountdown: true,
-          TimelineDisplay: true,
-          TimelineProgress: true,
+    const mountVariant = (present: boolean) =>
+      mount(TimelineAudienceAnswer, {
+        props: {
+          state,
+          currentRound: revealedRound,
+          present,
         },
-      },
-    });
+        slots: {
+          leaderboard: '<div data-testid="leaderboard">Leaderboard</div>',
+        },
+        global: {
+          stubs: {
+            MusicQuizCountdown: true,
+            TimelineDisplay: true,
+            TimelineProgress: true,
+          },
+        },
+      });
 
-    expect(wrapper.text()).toContain("Complete");
-    expect(wrapper.text()).toContain("+250");
-    expect(wrapper.findComponent(TimelineProgress).exists()).toBe(false);
-    expect(wrapper.find(".sr-only").text()).toContain(
+    const audience = mountVariant(false);
+    expect(audience.text()).toContain("+250");
+    expect(audience.findComponent(TimelineProgress).exists()).toBe(false);
+    expect(audience.find(".sr-only").text()).toContain(
       "providers.music_quiz.timeline_incorrect_placement",
     );
     expect(
-      wrapper
+      audience
         .get('[data-testid="timeline-result-score"] span.truncate')
         .classes(),
     ).toContain("text-green-600");
-    expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+    expect(audience.find('[data-testid="leaderboard"]').exists()).toBe(true);
+
+    // the big screen leaves per-player results to the phones and keeps the board
+    const present = mountVariant(true);
+    expect(
+      present.find('[data-testid="timeline-round-results"]').exists(),
+    ).toBe(false);
+    expect(present.find('[data-testid="leaderboard"]').exists()).toBe(true);
   });
 });

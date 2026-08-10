@@ -102,7 +102,6 @@ describe("MusicTimelinePresentBody", () => {
     });
     const body = wrapper.get('[data-testid="music-timeline-present-body"]');
     const currentSong = wrapper.get('[data-testid="music-timeline-round"]');
-    const results = wrapper.get('[data-testid="timeline-round-results"]');
     const leaderboard = wrapper.get(
       '[aria-label="providers.music_quiz.leaderboard"]',
     );
@@ -119,18 +118,21 @@ describe("MusicTimelinePresentBody", () => {
       ]),
     );
     expect(body.classes()).not.toContain("overflow-hidden");
-    for (const panel of [currentSong, results, leaderboard]) {
+    // per-player round results stay on the phones; the big screen shows the board
+    expect(
+      wrapper.find('[data-testid="timeline-round-results"]').exists(),
+    ).toBe(false);
+    for (const panel of [currentSong, leaderboard]) {
       expect(
         panel.element.compareDocumentPosition(history.element) &
           Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
     }
     expect(currentSong.attributes("data-compact")).toBe("true");
-    expect(results.attributes("role")).toBe("region");
     expect(leaderboard.attributes("role")).toBe("region");
   });
 
-  it("bounds many-player results and gives the leaderboard internal scroll", () => {
+  it("gives the leaderboard internal scroll", () => {
     const wrapper = mount(MusicTimelinePresentBody, {
       props: {
         state,
@@ -138,25 +140,12 @@ describe("MusicTimelinePresentBody", () => {
         leaderboardRows,
       },
     });
-    const results = wrapper.get('[data-testid="timeline-round-results"]');
-    const resultsContent = results.get('[data-slot="card-content"]');
     const leaderboardRegion = wrapper.get(
       '[data-testid="timeline-leaderboard-region"]',
     );
     const leaderboard = leaderboardRegion.get('[data-slot="card"]');
     const leaderboardContent = leaderboard.get('[data-slot="card-content"]');
 
-    expect(results.classes()).toEqual(
-      expect.arrayContaining(["lg:min-h-0", "lg:overflow-hidden"]),
-    );
-    expect(resultsContent.classes()).toEqual(
-      expect.arrayContaining(["lg:min-h-0", "lg:overflow-y-auto"]),
-    );
-    const resultScore = results.get('[data-testid="timeline-result-score"]');
-    expect(resultScore.classes()).not.toContain("shrink-0");
-    expect(resultScore.get("span.truncate").classes()).toEqual(
-      expect.arrayContaining(["min-w-0", "flex-1"]),
-    );
     expect(leaderboardRegion.classes()).toEqual(
       expect.arrayContaining(["lg:min-h-0", "lg:overflow-hidden"]),
     );
@@ -166,7 +155,6 @@ describe("MusicTimelinePresentBody", () => {
     expect(leaderboardContent.classes()).toEqual(
       expect.arrayContaining(["min-h-0", "flex-1", "overflow-y-auto"]),
     );
-    expect(results.findAll("li")).toHaveLength(players.length);
     expect(leaderboard.findAll("li")).toHaveLength(players.length);
   });
 

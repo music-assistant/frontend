@@ -40,7 +40,7 @@
       />
 
       <Card
-        v-if="state.phase === 'reveal' && revealedResults.length"
+        v-if="state.phase === 'reveal' && revealedResults.length && !present"
         data-testid="timeline-round-results"
         role="region"
         :aria-label="$t('providers.music_quiz.timeline_round_results')"
@@ -105,14 +105,15 @@
         </CardContent>
       </Card>
 
+      <!-- the big screen keeps standings for the reveal; scores mid-guess spoil the race -->
       <div
-        v-if="present"
+        v-if="present && state.phase === 'reveal'"
         data-testid="timeline-leaderboard-region"
         class="lg:min-h-0 lg:overflow-hidden"
       >
         <slot name="leaderboard"></slot>
       </div>
-      <slot v-else name="leaderboard"></slot>
+      <slot v-else-if="!present" name="leaderboard"></slot>
     </div>
   </div>
 </template>
