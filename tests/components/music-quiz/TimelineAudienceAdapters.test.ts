@@ -189,7 +189,7 @@ describe("timeline host and present answers", () => {
     );
   });
 
-  it("shows aggregate reveal results and preserves the leaderboard slot", () => {
+  it("shows only the leaderboard at reveal on every surface", () => {
     const revealedEntry = {
       ...anchor,
       entry_id: "current",
@@ -249,24 +249,15 @@ describe("timeline host and present answers", () => {
         },
       });
 
-    const audience = mountVariant(false);
-    expect(audience.text()).toContain("+250");
-    expect(audience.findComponent(TimelineProgress).exists()).toBe(false);
-    expect(audience.find(".sr-only").text()).toContain(
-      "providers.music_quiz.timeline_incorrect_placement",
-    );
-    expect(
-      audience
-        .get('[data-testid="timeline-result-score"] span.truncate')
-        .classes(),
-    ).toContain("text-green-600");
-    expect(audience.find('[data-testid="leaderboard"]').exists()).toBe(true);
-
-    // the big screen leaves per-player results to the phones and keeps the board
-    const present = mountVariant(true);
-    expect(
-      present.find('[data-testid="timeline-round-results"]').exists(),
-    ).toBe(false);
-    expect(present.find('[data-testid="leaderboard"]').exists()).toBe(true);
+    // per-player results live on the phones; shared surfaces show only the board
+    for (const present of [false, true]) {
+      const wrapper = mountVariant(present);
+      expect(
+        wrapper.find('[data-testid="timeline-round-results"]').exists(),
+      ).toBe(false);
+      expect(wrapper.findComponent(TimelineProgress).exists()).toBe(false);
+      expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+      wrapper.unmount();
+    }
   });
 });
