@@ -64,17 +64,65 @@
               <EllipsisVertical class="size-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="z-[100001]">
-            <DropdownMenuItem @click="openPlayerSettings">
-              <Settings2 class="size-4" />
-              {{ $t("settings.players") }}
-            </DropdownMenuItem>
+          <DropdownMenuContent align="end" class="z-[100001] min-w-[280px]">
+            <DropdownMenuLabel>
+              {{ $t("player_select.display_options") }}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              :model-value="showSelectedPlayerFirst"
+              @select.prevent
+              @update:model-value="
+                setBooleanPreference(
+                  PLAYER_SELECT_PREFERENCES.showSelectedPlayerFirst,
+                  $event,
+                )
+              "
+            >
+              {{ $t("player_select.show_selected_player_first") }}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              :model-value="showActivePlayersFirst"
+              @select.prevent
+              @update:model-value="
+                setBooleanPreference(
+                  PLAYER_SELECT_PREFERENCES.showActivePlayersFirst,
+                  $event,
+                )
+              "
+            >
+              {{ $t("player_select.show_active_players_first") }}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              :model-value="showGroupMemberNames"
+              @select.prevent
+              @update:model-value="
+                setBooleanPreference(
+                  PLAYER_SELECT_PREFERENCES.showGroupMemberNames,
+                  $event,
+                )
+              "
+            >
+              {{ $t("player_select.show_grouped_players") }}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              :model-value="showVolumeForActivePlayersOnly"
+              @select.prevent
+              @update:model-value="
+                setBooleanPreference(
+                  PLAYER_SELECT_PREFERENCES.showVolumeForActivePlayersOnly,
+                  $event,
+                )
+              "
+            >
+              {{ $t("player_select.active_player_volume_only") }}
+            </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <p class="sr-only">{{ $t("tooltip.select_player") }}</p>
       </div>
 
-      <div class="min-h-0 flex-1 overflow-y-auto pb-6">
+      <div ref="playerList" class="min-h-0 flex-1 overflow-y-auto pb-6">
         <div
           v-if="showSearch"
           class="bg-background sticky top-0 z-10 px-3 pt-3 pb-2"
@@ -97,17 +145,26 @@
             v-for="player in filteredPlayers"
             :id="player.player_id"
             :key="player.player_id"
+            :data-player-id="player.player_id"
             :player="player"
-            :show-volume-control="true"
+            :show-volume-control="showVolumeControl(player)"
             :show-menu-button="true"
             :show-child-volumes="expandedVolumePlayerIds.has(player.player_id)"
             :show-member-controls="
               expandedMemberPlayerIds.has(player.player_id)
             "
             :show-group-controls="true"
-            :show-group-member-names="true"
+            :show-disabled-group-control="true"
+            :show-group-member-names="showGroupMemberNames"
+            group-member-layout="subtitle-list"
             :stack-media-details="true"
             :allow-power-control="true"
+            :group-control-expanded="
+              expandedMemberPlayerIds.has(player.player_id)
+            "
+            :group-controls-id="getGroupControlsId(player.player_id)"
+            :show-selected-indicator="true"
+            :player-menu-items="getPlayerManagementMenuItems(player)"
             @click="selectPlayer"
             @toggle-child-volumes="toggleChildVolumes"
             @toggle-member-controls="toggleMemberControls"
@@ -116,16 +173,25 @@
       </div>
     </PopoverContent>
   </Popover>
+
+  <PlayerRenameDialog
+    :open="renameDialogOpen"
+    :player="renamePlayer"
+    @update:open="setRenameDialogOpen"
+  />
 </template>
 
 <script setup lang="ts">
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
+import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -136,18 +202,21 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { useUserPreferences } from "@/composables/userPreferences";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   DESKTOP_PLAYER_BAR_POPOUT_GAP,
   MOBILE_PLAYER_BAR_POPOUT_GAP,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
+import { isPlayerActive } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import type { Player } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import router from "@/plugins/router";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { EllipsisVertical, Settings2, Speaker } from "@lucide/vue";
+import { CircleOff, EllipsisVertical, Pencil, Speaker } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -157,20 +226,51 @@ import {
   ref,
   watch,
 } from "vue";
+import { toast } from "vue-sonner";
 
 const SEARCH_PLAYER_THRESHOLD = 10;
+const PLAYER_SELECT_PREFERENCES = {
+  showVolumeForActivePlayersOnly: "playerSelect.showVolumeForActivePlayersOnly",
+  showSelectedPlayerFirst: "playerSelect.showSelectedPlayerFirst",
+  showActivePlayersFirst: "playerSelect.showActivePlayersFirst",
+  showGroupMemberNames: "playerSelect.showGroupMemberNames",
+} as const;
 
 const playerSearchQuery = ref("");
 const expandedVolumePlayerIds = reactive(new Set<string>());
 const expandedMemberPlayerIds = reactive(new Set<string>());
+const playerList = ref<HTMLElement>();
+const renamePlayer = ref<Player>();
+const renameDialogOpen = ref(false);
 const { getPreference, setPreference } = useUserPreferences();
+const showVolumeForActivePlayersOnly = getPreference<boolean>(
+  PLAYER_SELECT_PREFERENCES.showVolumeForActivePlayersOnly,
+  true,
+);
+const showSelectedPlayerFirst = getPreference<boolean>(
+  PLAYER_SELECT_PREFERENCES.showSelectedPlayerFirst,
+  true,
+);
+const showActivePlayersFirst = getPreference<boolean>(
+  PLAYER_SELECT_PREFERENCES.showActivePlayersFirst,
+  true,
+);
+const showGroupMemberNames = getPreference<boolean>(
+  PLAYER_SELECT_PREFERENCES.showGroupMemberNames,
+  true,
+);
 let menuTrigger: HTMLElement | null = null;
 let lastInteractionWasKeyboard = false;
 let restoreFocusOnClose = false;
 
 // PlayerSelect is the only surface that lists needs_setup players: a click here
 // launches the setup flow (see selectPlayer) instead of selecting/playing them.
-const orderedPlayers = useOrderedPlayers({ allowNeedsSetup: true });
+const orderedPlayers = useOrderedPlayers({
+  allowNeedsSetup: true,
+  selectedPlayerFirst: showSelectedPlayerFirst,
+  activePlayersFirst: showActivePlayersFirst,
+  includePausedAsActive: true,
+});
 
 const showSearch = computed(
   () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
@@ -195,6 +295,7 @@ watch(
         activeElement instanceof HTMLElement && activeElement !== document.body
           ? activeElement
           : null;
+      void scrollSelectedPlayerIntoView();
       return;
     }
     resetPanelState();
@@ -211,6 +312,12 @@ watch(
     });
   },
 );
+
+watch(showSelectedPlayerFirst, (showFirst) => {
+  if (!showFirst && store.showPlayersMenu) {
+    void scrollSelectedPlayerIntoView();
+  }
+});
 
 watch(showSearch, (isVisible) => {
   if (!isVisible) playerSearchQuery.value = "";
@@ -240,6 +347,7 @@ onMounted(() => {
   document.addEventListener("keydown", markKeyboardInteraction, true);
   document.addEventListener("pointerdown", markPointerInteraction, true);
   checkDefaultPlayer();
+  if (store.showPlayersMenu) void scrollSelectedPlayerIntoView();
 });
 
 onBeforeUnmount(() => {
@@ -270,7 +378,10 @@ function handleSheetInteractOutside(event: Event) {
   const target = originalEvent?.target;
   if (
     store.dialogActive ||
-    (target instanceof Element && target.closest("#player-select-button"))
+    (target instanceof Element &&
+      target.closest(
+        "#player-select-button, [data-slot='dropdown-menu-content']",
+      ))
   ) {
     event.preventDefault();
   }
@@ -280,9 +391,11 @@ function preventAutoFocus(event: Event) {
   event.preventDefault();
 }
 
-function openPlayerSettings() {
-  setMenuOpen(false);
-  router.push({ name: "playersettings" });
+function setBooleanPreference(
+  key: (typeof PLAYER_SELECT_PREFERENCES)[keyof typeof PLAYER_SELECT_PREFERENCES],
+  value: boolean | "indeterminate",
+) {
+  if (typeof value === "boolean") void setPreference(key, value);
 }
 
 function markKeyboardInteraction() {
@@ -307,6 +420,10 @@ function selectPlayer(player: Player) {
   store.showPlayersMenu = false;
 }
 
+function showVolumeControl(player: Player) {
+  return !showVolumeForActivePlayersOnly.value || isPlayerActive(player);
+}
+
 function toggleChildVolumes(player: Player) {
   const playerId = player.player_id;
   expandedMemberPlayerIds.delete(playerId);
@@ -327,6 +444,80 @@ function toggleExpandedPlayer(playerIds: Set<string>, playerId: string) {
   }
 }
 
+function getGroupControlsId(playerId: string) {
+  return `player-select-group-${encodeURIComponent(playerId)}`;
+}
+
+function getPlayerManagementMenuItems(player: Player): ContextMenuItem[] {
+  if (!authManager.isAdmin()) return [];
+
+  return [
+    {
+      label: "player_select.rename_player",
+      action: () => {
+        closeMenuThen(() => {
+          renamePlayer.value = player;
+          renameDialogOpen.value = true;
+        });
+      },
+      icon: Pencil,
+    },
+    {
+      label: "player_select.disable_player",
+      action: () => confirmDisablePlayer(player),
+      icon: CircleOff,
+      color: "error",
+    },
+  ];
+}
+
+function confirmDisablePlayer(player: Player) {
+  closeMenuThen(() => {
+    eventbus.emit("deleteConfirmationDialog", {
+      title: $t("player_select.disable_player_title", [player.name]),
+      message: $t("player_select.disable_player_confirmation"),
+      confirmLabel: $t("settings.disable"),
+      onConfirm: () => disablePlayer(player),
+    });
+  });
+}
+
+function closeMenuThen(action: () => void) {
+  setMenuOpen(false);
+  window.setTimeout(action, 0);
+}
+
+async function disablePlayer(player: Player) {
+  const fallbackPlayer = orderedPlayers.value.find(
+    (candidate) =>
+      candidate.player_id !== player.player_id &&
+      candidate.available &&
+      !candidate.needs_setup,
+  );
+
+  try {
+    await api.savePlayerConfig(player.player_id, { enabled: false });
+    if (api.players[player.player_id]) {
+      api.players[player.player_id].enabled = false;
+    }
+    if (store.activePlayerId === player.player_id) {
+      store.activePlayerId = fallbackPlayer?.player_id;
+      if (!fallbackPlayer) {
+        localStorage.removeItem("activePlayerId");
+        await setPreference("activePlayerId", null);
+      }
+    }
+    toast.success($t("settings.player_saved"));
+  } catch (error) {
+    toast.error(String(error));
+  }
+}
+
+function setRenameDialogOpen(open: boolean) {
+  renameDialogOpen.value = open;
+  if (!open) renamePlayer.value = undefined;
+}
+
 function resetPanelState() {
   playerSearchQuery.value = "";
   expandedVolumePlayerIds.clear();
@@ -345,23 +536,37 @@ function selectDefaultPlayer() {
   const lastPlayerId =
     localStorage.getItem("activePlayerId") ||
     getPreference<string>("activePlayerId").value;
-  if (lastPlayerId && lastPlayerId in api.players) {
-    return lastPlayerId;
+  if (lastPlayerId) {
+    if (!(lastPlayerId in api.players)) return;
+    if (isSelectablePlayer(lastPlayerId)) return lastPlayerId;
   }
-  if (
-    !lastPlayerId &&
-    webPlayer.player_id &&
-    webPlayer.player_id in api.players
-  ) {
+  if (isSelectablePlayer(webPlayer.player_id)) {
     return webPlayer.player_id;
   }
-  if (
-    !lastPlayerId &&
-    store.companionPlayerId &&
-    store.companionPlayerId in api.players
-  ) {
+  if (isSelectablePlayer(store.companionPlayerId)) {
     return store.companionPlayerId;
   }
+}
+
+function isSelectablePlayer(playerId: string | null | undefined) {
+  if (!playerId) return false;
+  const player = api.players[playerId];
+  return player?.enabled && player.available && !player.needs_setup;
+}
+
+async function scrollSelectedPlayerIntoView() {
+  if (showSelectedPlayerFirst.value || !store.showPlayersMenu) {
+    return;
+  }
+
+  await nextTick();
+  const activePlayerId = store.activePlayerId;
+  if (!activePlayerId) return;
+
+  const activePlayerElement = Array.from(
+    playerList.value?.querySelectorAll<HTMLElement>("[data-player-id]") ?? [],
+  ).find((element) => element.dataset.playerId === activePlayerId);
+  activePlayerElement?.scrollIntoView?.({ block: "nearest" });
 }
 </script>
 

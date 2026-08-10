@@ -69,6 +69,19 @@
         "sync_group": "Sync Group"
     },
     "players": "Players",
+    "player_select": {
+        "active_player_volume_only": "Only show volume sliders for active players",
+        "and_more": "...and {0} more",
+        "disable_player": "Disable player",
+        "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
+        "disable_player_title": "Disable {0}?",
+        "display_options": "Display options",
+        "rename_player": "Rename player",
+        "rename_player_description": "Enter a new name for this player.",
+        "show_active_players_first": "Show active players first",
+        "show_grouped_players": "Show group members",
+        "show_selected_player_first": "Show selected player first"
+    },
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
