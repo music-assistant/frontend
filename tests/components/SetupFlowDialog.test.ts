@@ -4,7 +4,7 @@ import {
   shallowMount,
   type VueWrapper,
 } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigEntryType,
   FlowStepType,
@@ -97,13 +97,18 @@ vi.mock("vue-sonner", () => ({
 
 // shallowMount would stub the step copy away; render it as plain text instead
 // so the assertions below keep seeing it
+const originalStubs = config.global.stubs;
 config.global.stubs = {
-  ...config.global.stubs,
+  ...originalStubs,
   MarkdownText: {
     props: ["text"],
     template: "<div>{{ text }}</div>",
   },
 };
+
+afterAll(() => {
+  config.global.stubs = originalStubs;
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
