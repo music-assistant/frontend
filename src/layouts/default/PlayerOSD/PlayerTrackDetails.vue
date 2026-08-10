@@ -59,9 +59,12 @@
         <div v-if="!store.activePlayer">
           {{ $t("no_player") }}
         </div>
-        <!-- player powered off -->
-        <div v-else-if="store.activePlayer.powered == false">
-          {{ $t("off") }}
+        <!-- player powered off: show the name so it's clear which player is off -->
+        <div
+          v-else-if="store.activePlayer.powered == false"
+          class="ma-line-clamp-1"
+        >
+          {{ store.activePlayer.name }}
         </div>
         <!-- track title -->
         <div
@@ -113,11 +116,21 @@
         <QualityDetailsBtn />
       </div>
     </template>
-    <!-- subtitle: artist(s) + album -->
+    <!-- subtitle: off state or artist(s) + album -->
     <template #subtitle>
+      <!-- player powered off -->
       <div
-        v-if="
-          store.activePlayer?.powered != false &&
+        v-if="store.activePlayer?.powered == false"
+        :style="{
+          cursor: 'pointer',
+          color: primaryColor,
+        }"
+        @click="store.showPlayersMenu = true"
+      >
+        {{ $t("off") }}
+      </div>
+      <div
+        v-else-if="
           store.activePlayer?.current_media?.title &&
           (store.activePlayer?.current_media?.artist ||
             store.activePlayer?.current_media?.album)
