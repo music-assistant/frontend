@@ -8,6 +8,7 @@ import {
 import { BEFORE_FIRST_INDEX } from "@/helpers/queue_position";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { playerQueue } from "../fixtures/playerQueue";
 import { queueItem } from "../fixtures/queueItem";
 
 const { mockSendCommand, mockGetPlayerQueueItems, mockSubscribe } = vi.hoisted(
@@ -45,11 +46,11 @@ describe("useGuestQueue", () => {
   });
 
   it("fetches queue items for the party queue", async () => {
-    const queue = {
+    const queue = playerQueue({
       queue_id: "queue1",
       current_index: 5,
       items: 20,
-    };
+    });
     const items = [queueItemFixture("item1"), queueItemFixture("item2")];
 
     mockSendCommand.mockResolvedValueOnce(queue);
@@ -87,11 +88,11 @@ describe("useGuestQueue", () => {
   });
 
   it("loads more items when scrolling near the bottom and more items are available", async () => {
-    const queue = {
+    const queue = playerQueue({
       queue_id: "queue1",
       current_index: 0,
       items: 100,
-    };
+    });
     const initialItems = Array.from({ length: 50 }, (_, i) =>
       queueItemFixture(`item-${i}`),
     );
@@ -133,16 +134,16 @@ describe("useGuestQueue", () => {
   });
 
   it("exposes the party queue and its index from the same queue", () => {
-    api.queues["party-player"] = {
+    api.queues["party-player"] = playerQueue({
       queue_id: "party-player",
       current_index: 3,
       state: PlaybackState.PLAYING,
-    } as PlayerQueue;
-    api.queues["queue1"] = {
+    });
+    api.queues["queue1"] = playerQueue({
       queue_id: "queue1",
       current_index: 7,
       state: PlaybackState.PAUSED,
-    } as PlayerQueue;
+    });
 
     const { partyQueueId, currentQueue, currentQueueIndex } = useGuestQueue();
     partyQueueId.value = "party-player";
@@ -153,11 +154,11 @@ describe("useGuestQueue", () => {
   });
 
   it("exposes no queue when no party queue id is set", () => {
-    api.queues["queue1"] = {
+    api.queues["queue1"] = playerQueue({
       queue_id: "queue1",
       current_index: 7,
       state: PlaybackState.PAUSED,
-    } as PlayerQueue;
+    });
 
     const { currentQueue, currentQueueIndex } = useGuestQueue();
 
@@ -198,11 +199,9 @@ describe("useGuestQueue", () => {
     ["QUEUE_UPDATED", 1],
   ])("only refetches for %s events targeting the party queue", (_name, i) => {
     mockSubscribe.mockReturnValue(vi.fn());
-    mockSendCommand.mockResolvedValue({
-      queue_id: "party-player",
-      current_index: 0,
-      items: 1,
-    });
+    mockSendCommand.mockResolvedValue(
+      playerQueue({ queue_id: "party-player", current_index: 0, items: 1 }),
+    );
     mockGetPlayerQueueItems.mockResolvedValue([queueItemFixture("item1")]);
 
     const { partyQueueId, subscribeToEvents } = useGuestQueue();

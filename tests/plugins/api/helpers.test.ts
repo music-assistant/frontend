@@ -31,9 +31,11 @@ import {
 import { MediaType } from "@/plugins/api/interfaces";
 import type {
   MediaItemType,
+  PlayableMediaItemType,
   Player,
-  PlayerQueue,
 } from "@/plugins/api/interfaces";
+import { playerQueue } from "../../fixtures/playerQueue";
+import { queueItem } from "../../fixtures/queueItem";
 
 describe("isAudioSource", () => {
   it("returns true for AUDIO_SOURCE media type", () => {
@@ -61,11 +63,13 @@ describe("isAudioSource", () => {
 
 describe("isQueueInfiniteStream", () => {
   const makeQueue = (mediaType: MediaType | undefined) =>
-    ({
+    playerQueue({
       current_item: mediaType
-        ? { media_item: { media_type: mediaType } }
-        : undefined,
-    }) as unknown as PlayerQueue;
+        ? queueItem({
+            media_item: { media_type: mediaType } as PlayableMediaItemType,
+          })
+        : null,
+    });
 
   it("returns true when the current item is a radio", () => {
     expect(isQueueInfiniteStream(makeQueue(MediaType.RADIO))).toBe(true);
@@ -100,7 +104,7 @@ describe("resolvePlayerQueue", () => {
   });
 
   it("returns the queue of the source the player is attached to", () => {
-    api.queues["source-q"] = { queue_id: "source-q" } as PlayerQueue;
+    api.queues["source-q"] = playerQueue({ queue_id: "source-q" });
 
     expect(
       resolvePlayerQueue(player({ active_source: "source-q" }))?.queue_id,
@@ -108,13 +112,13 @@ describe("resolvePlayerQueue", () => {
   });
 
   it("returns the player's own active queue when it has no source", () => {
-    api.queues["p1"] = { queue_id: "p1", active: true } as PlayerQueue;
+    api.queues["p1"] = playerQueue({ queue_id: "p1", active: true });
 
     expect(resolvePlayerQueue(player({}))?.queue_id).toBe("p1");
   });
 
   it("returns the player's own queue reached through its source while inactive", () => {
-    api.queues["p1"] = { queue_id: "p1", active: false } as PlayerQueue;
+    api.queues["p1"] = playerQueue({ queue_id: "p1", active: false });
 
     expect(resolvePlayerQueue(player({ active_source: "p1" }))?.queue_id).toBe(
       "p1",
@@ -122,7 +126,7 @@ describe("resolvePlayerQueue", () => {
   });
 
   it("ignores the player's own queue while it is inactive", () => {
-    api.queues["p1"] = { queue_id: "p1", active: false } as PlayerQueue;
+    api.queues["p1"] = playerQueue({ queue_id: "p1", active: false });
 
     expect(resolvePlayerQueue(player({}))).toBeUndefined();
   });
