@@ -40,7 +40,7 @@
       />
 
       <Card
-        v-if="state.phase === 'reveal' && revealedResults.length"
+        v-if="state.phase === 'reveal' && revealedResults.length && !dashboard"
         data-testid="timeline-round-results"
         role="region"
         :aria-label="$t('providers.music_quiz.timeline_round_results')"
@@ -106,13 +106,13 @@
       </Card>
 
       <div
-        v-if="present"
+        v-if="present && (!dashboard || state.phase === 'reveal')"
         data-testid="timeline-leaderboard-region"
         class="lg:min-h-0 lg:overflow-hidden"
       >
         <slot name="leaderboard"></slot>
       </div>
-      <slot v-else name="leaderboard"></slot>
+      <slot v-else-if="!present" name="leaderboard"></slot>
     </div>
   </div>
 </template>
@@ -138,10 +138,12 @@ const props = withDefaults(
     currentRound: MusicQuizTimelineRound;
     present?: boolean;
     showTimeline?: boolean;
+    dashboard?: boolean;
   }>(),
   {
     present: false,
     showTimeline: true,
+    dashboard: false,
   },
 );
 defineSlots<{ leaderboard: () => VNode[] }>();

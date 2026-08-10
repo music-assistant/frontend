@@ -15,6 +15,7 @@
       :state="state"
       :current-round="currentRound"
       :show-timeline="false"
+      :dashboard="dashboard"
       present
     >
       <template #leaderboard>

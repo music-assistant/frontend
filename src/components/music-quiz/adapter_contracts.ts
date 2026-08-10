@@ -72,6 +72,8 @@ export interface MusicQuizPresentBodyAdapterProps<
   state: TState;
   currentRound: TRound;
   leaderboardRows: MusicQuizLeaderboardRow[];
+  // set by the TV dashboard; the host's present mode leaves it unset
+  dashboard?: boolean;
 }
 
 export interface MusicQuizPlayerAnswerAdapterProps<

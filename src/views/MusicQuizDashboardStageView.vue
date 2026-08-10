@@ -103,6 +103,7 @@
             :state="activeState"
             :current-round="currentRound"
             :leaderboard-rows="visibleLeaderboardRows"
+            dashboard
           />
           <template v-else-if="activeState.phase === 'reveal'">
             <div
