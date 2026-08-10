@@ -35,19 +35,33 @@
       />
 
       <template v-if="protocolPanels.length > 0">
-        <Accordion type="single" collapsible class="space-y-2">
-          <AccordionItem
+        <component
+          :is="hasMultipleProtocols ? Accordion : 'div'"
+          :type="hasMultipleProtocols ? 'single' : undefined"
+          :collapsible="hasMultipleProtocols || undefined"
+          class="space-y-2"
+        >
+          <component
+            :is="hasMultipleProtocols ? AccordionItem : 'div'"
             v-for="panel of protocolPanels"
             :key="panel"
-            :value="panel"
+            :value="hasMultipleProtocols ? panel : undefined"
             class="rounded-[6px] border bg-card px-4 shadow-sm"
           >
-            <AccordionTrigger class="hover:no-underline">
+            <component
+              :is="hasMultipleProtocols ? AccordionTrigger : 'div'"
+              :class="
+                hasMultipleProtocols
+                  ? 'hover:no-underline'
+                  : 'flex items-start py-4 text-left text-sm font-medium'
+              "
+            >
               <span class="flex items-center gap-2">
                 <ProviderIcon
                   v-if="getProtocolDomain(panel)"
                   :domain="getProtocolDomain(panel)!"
                   :size="22"
+                  class="!ml-0"
                 />
                 <span>{{ getProtocolConfigureTitle(panel) }}</span>
                 <Badge
@@ -57,8 +71,11 @@
                   {{ $t("settings.protocol_native_badge") }}
                 </Badge>
               </span>
-            </AccordionTrigger>
-            <AccordionContent class="border-t pt-4">
+            </component>
+            <component
+              :is="hasMultipleProtocols ? AccordionContent : 'div'"
+              :class="['border-t pt-4', { 'pb-4': !hasMultipleProtocols }]"
+            >
               <div
                 v-if="!isProtocolProviderAvailable(panel)"
                 class="protocol-empty-message"
@@ -87,9 +104,9 @@
               >
                 {{ getProtocolEmptyMessage(panel) }}
               </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+            </component>
+          </component>
+        </component>
       </template>
     </div>
   </div>
@@ -148,6 +165,8 @@ const getCategoryTranslation = function (category: string) {
 const protocolGeneralEntries = computed(() =>
   entriesForCategory("protocol_general"),
 );
+
+const hasMultipleProtocols = computed(() => props.protocolPanels.length > 1);
 
 const getProtocolDomain = function (category: string): string | undefined {
   if (!category.startsWith("protocol_")) return undefined;

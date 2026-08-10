@@ -140,13 +140,26 @@
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 v-if="owningProvider"
-                data-testid="player-reload-provider"
-                :disabled="toggleLoading"
-                @click="onReloadProvider"
+                data-testid="player-provider-settings"
+                @click="openProviderSettings"
               >
-                <RefreshCw class="size-4" />
-                {{ $t("settings.reload_provider") }}
+                <Settings class="size-4" />
+                {{
+                  $t("settings.provider_settings", {
+                    name: owningProvider.name,
+                  })
+                }}
               </DropdownMenuItem>
+              <DropdownMenuSeparator v-if="owningProvider" />
+              <DropdownMenuItem
+                data-testid="player-reset-defaults"
+                :disabled="!config.enabled"
+                @click="resetToDefaults"
+              >
+                <RotateCcw class="size-4" />
+                {{ $t("settings.reset_to_defaults") }}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 data-testid="player-toggle-enabled"
                 :disabled="toggleLoading"
@@ -163,8 +176,8 @@
           </DropdownMenu>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel || owningProvider"
-          class="flex flex-wrap gap-2 border-t bg-muted/20 px-6 py-4"
+          v-if="playerSetupLabel || config.enabled"
+          class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
             v-if="playerSetupLabel"
@@ -174,17 +187,19 @@
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>
-          <Button
-            v-if="owningProvider"
-            data-testid="player-provider-settings"
-            variant="outline"
-            @click="openProviderSettings"
+          <div
+            v-if="config.enabled"
+            class="flex w-full items-center gap-2 sm:ml-auto sm:w-auto"
           >
-            <Settings class="size-4" />
-            {{
-              $t("settings.provider_settings", { name: owningProvider.name })
-            }}
-          </Button>
+            <Switch
+              id="player-advanced-settings"
+              v-model="showAdvancedSettings"
+              data-testid="player-advanced-settings"
+            />
+            <Label for="player-advanced-settings" class="cursor-pointer">
+              {{ $t("settings.show_advanced_settings") }}
+            </Label>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -249,6 +264,9 @@
 
     <edit-config
       v-if="config"
+      ref="editConfig"
+      v-model:show-advanced-settings="showAdvancedSettings"
+      action-layout="floating-save"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
@@ -308,8 +326,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -341,11 +362,20 @@ import { useConfigAction } from "@/composables/useConfigAction";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { MoreVertical, Pencil, Power, RefreshCw, Settings } from "@lucide/vue";
+import {
+  MoreVertical,
+  Pencil,
+  Power,
+  RefreshCw,
+  RotateCcw,
+  Settings,
+} from "@lucide/vue";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
+const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
+const showAdvancedSettings = ref(false);
 const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
@@ -558,21 +588,8 @@ const openProviderSettings = async function () {
   }
 };
 
-const onReloadProvider = function () {
-  const instanceId = owningProvider.value?.instanceId;
-  const playerId = config.value?.player_id;
-  if (!instanceId || !playerId) return;
-
-  void api
-    .reloadProvider(instanceId)
-    .then(() => {
-      if (isCurrentPlayer(playerId)) {
-        toast.success($t("settings.provider_reloading"));
-      }
-    })
-    .catch((err) => {
-      if (isCurrentPlayer(playerId)) toast.error(String(err));
-    });
+const resetToDefaults = function () {
+  editConfig.value?.resetToDefaults();
 };
 
 const toggleEnabled = async function () {
@@ -700,6 +717,7 @@ function isCurrentPlayer(playerId: string) {
 function resetPlayerState(playerId?: string) {
   if (config.value?.player_id === playerId) return;
   config.value = undefined;
+  showAdvancedSettings.value = false;
   toggleLoading.value = false;
   toggleRequestId++;
 }

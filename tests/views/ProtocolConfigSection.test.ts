@@ -70,6 +70,22 @@ describe("ProtocolConfigSection", () => {
     ]);
   });
 
+  it("renders a single protocol without an accordion", () => {
+    const wrapper = mountSection(
+      [entry("native_buffer", "protocol_sonos")],
+      [outputProtocol("native", "sonos", true)],
+    );
+
+    expect(wrapper.findComponent({ name: "Accordion" }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "AccordionTrigger" }).exists()).toBe(
+      false,
+    );
+    expect(renderedKeys(wrapper)).toEqual(["native_buffer"]);
+    expect(wrapper.getComponent({ name: "Badge" }).text()).toBe(
+      "settings.protocol_native_badge",
+    );
+  });
+
   it("keeps a disabled protocol configurable and gates its settings", async () => {
     const disabledEntries = [
       enabledEntry("airplay-output", "protocol_airplay", false),

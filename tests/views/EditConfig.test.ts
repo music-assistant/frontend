@@ -246,6 +246,24 @@ describe("EditConfig", () => {
 
     expect(saveDisabled(wrapper)).toBe(true);
   });
+
+  it("renders only a floating save action when requested", async () => {
+    const wrapper = mountEntries(
+      [entry({ key: "server", type: ConfigEntryType.STRING })],
+      false,
+      { actionLayout: "floating-save" },
+    );
+
+    dirty(wrapper);
+    await nextTick();
+
+    expect(wrapper.get('[data-testid="config-save"]').text()).toContain(
+      "settings.save",
+    );
+    expect(wrapper.text()).not.toContain("settings.show_advanced_settings");
+    expect(wrapper.text()).not.toContain("settings.reset_to_defaults");
+    expect(wrapper.find(".config-actions").exists()).toBe(false);
+  });
 });
 
 function entry(
@@ -272,9 +290,13 @@ function dependentEntry(
   });
 }
 
-function mountEntries(configEntries: ConfigEntry[], disabled = false) {
+function mountEntries(
+  configEntries: ConfigEntry[],
+  disabled = false,
+  props: { actionLayout?: "default" | "floating-save" } = {},
+) {
   return shallowMount(EditConfig, {
-    props: { configEntries, disabled },
+    props: { configEntries, disabled, ...props },
     global: { renderStubDefaultSlot: true },
   });
 }
