@@ -163,6 +163,35 @@ describe("compileHost", () => {
     const { sections } = compileHost(draft);
     expect(sections.map((s) => s.id)).toEqual(["rick_intro", "rick_smoother"]);
   });
+
+  it("compiles every_n_songs so a gap of exactly n songs since the last play satisfies the guard", () => {
+    // min_gap_songs must equal n, not n - 1: the server allows a section when
+    // (current song - last played song) >= min_gap_songs, and consecutive
+    // songs differ by exactly 1, so n - 1 fires one song too early.
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: [
+        {
+          ...GENERIC_SEGMENT_TEMPLATES[4],
+          plays: { kind: "every_n_songs", n: 3 },
+        },
+      ],
+    };
+    const { host } = compileHost(draft);
+    const rule = host.section_order.find((r) => r.when === "between_songs");
+    const item = rule?.flow[0];
+    expect(
+      item && "OPTIONAL" in item
+        ? item.OPTIONAL.guards?.min_gap_songs
+        : undefined,
+    ).toBe(3);
+    expect(
+      item && "OPTIONAL" in item ? item.OPTIONAL.chance : undefined,
+    ).toBeCloseTo(2 / 3);
+  });
 });
 
 describe("decompileHost", () => {
@@ -212,5 +241,20 @@ describe("decompileHost", () => {
     expect(round.segments.some((s) => s.id === host.merge_section_id)).toBe(
       false,
     );
+  });
+
+  it("round-trips every_n_songs without collapsing into occasionally", () => {
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: [{ ...GENERIC_SEGMENT_TEMPLATES[4] }], // artist_fact, every_n_songs n: 3
+    };
+    const { host, sections } = compileHost(draft);
+    const round = decompileHost(host, sections);
+    expect(round.segments).toEqual([
+      { ...draft.segments[0], id: "rick_artist_fact" },
+    ]);
   });
 });

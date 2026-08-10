@@ -242,7 +242,7 @@ const flowItemForBetweenSegment = (segment: ShowSegment): AIRadioFlowItem => {
         OPTIONAL: {
           section: segment.id,
           chance: Math.min(1, 2 / n),
-          guards: buildOptionalGuards(segment.prompt, n - 1, 0),
+          guards: buildOptionalGuards(segment.prompt, n, 0),
         },
       };
     }
@@ -481,10 +481,10 @@ const decompileSectionOrder = (
         n: Math.max(1, Math.round(60 / maxPer60)),
       };
     } else if (
-      minGap > 0 &&
-      Math.abs(chance - Math.min(1, 2 / (minGap + 1))) < 1e-6
+      minGap > 1 &&
+      Math.abs(chance - Math.min(1, 2 / minGap)) < 1e-6
     ) {
-      plays = { kind: "every_n_songs", n: minGap + 1 };
+      plays = { kind: "every_n_songs", n: minGap };
     } else {
       lossy = true;
       plays = { kind: "occasionally", percent: Math.round(chance * 100) };
