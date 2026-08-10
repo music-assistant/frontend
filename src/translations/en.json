@@ -1545,6 +1545,14 @@
                 "add_segment": "Add segment",
                 "blank_segment": "Blank segment",
                 "blank_segment_name": "New segment",
+                "segment_templates": {
+                    "intro": "Intro",
+                    "transition": "Transition",
+                    "weather": "Weather",
+                    "news": "News",
+                    "artist_fact": "Artist fact",
+                    "sign_off": "Sign-off"
+                },
                 "segment_name": "Segment name",
                 "use_current_player": "Use current player",
                 "host_placeholder": "Choose a host",

@@ -108,18 +108,17 @@
                 {{ $t("providers.ai_radio.customize.blank_segment") }}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <template v-for="preset in PRESETS" :key="preset.key">
-                <DropdownMenuLabel class="text-xs text-muted-foreground">
-                  {{ $t(`providers.ai_radio.presets.${preset.key}.name`) }}
-                </DropdownMenuLabel>
-                <DropdownMenuItem
-                  v-for="segment in preset.segments"
-                  :key="segment.id"
-                  @click="addSegmentFromTemplate(segment)"
-                >
-                  {{ segment.name }}
-                </DropdownMenuItem>
-              </template>
+              <DropdownMenuItem
+                v-for="template in GENERIC_SEGMENT_TEMPLATES"
+                :key="template.id"
+                @click="addSegmentFromTemplate(template)"
+              >
+                {{
+                  $t(
+                    `providers.ai_radio.customize.segment_templates.${template.id}`,
+                  )
+                }}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
@@ -184,7 +183,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -209,8 +207,8 @@ import {
   errorMessage,
   GENERIC_HOST_INSTRUCTIONS,
   GENERIC_HOST_SEGMENTS,
+  GENERIC_SEGMENT_TEMPLATES,
   NONE_SELECT_VALUE,
-  PRESETS,
   type HostDraft,
   type ShowSegment,
   type TalkativenessLevel,

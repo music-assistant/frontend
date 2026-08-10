@@ -298,11 +298,14 @@ export const GENERIC_HOST_INSTRUCTIONS =
   "Host personality: warm, sharp, music-literate, and slightly premium without sounding formal. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid clichés, mention concrete details when available, and maintain a believable radio flow between sections.";
 
 /**
- * One example segment per placement (start/every_song/end) for a brand-new
- * custom host, mirroring the server's built-in section defaults so a fresh
- * host starts generic rather than cloned from a persona preset.
+ * One persona-neutral template per segment type, offered by the host editor's
+ * "Add segment" menu. Prompts and cadences mirror the server's built-in
+ * section defaults (see ai_radio provider's `_default_sections_template`)
+ * where one exists; weather/news are ported verbatim, and artist fact (which
+ * has no server default) is written fresh since every preset's version of it
+ * is persona-flavored.
  */
-export const GENERIC_HOST_SEGMENTS: ShowSegment[] = [
+export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
   {
     id: "intro",
     name: "Intro",
@@ -321,8 +324,35 @@ export const GENERIC_HOST_SEGMENTS: ShowSegment[] = [
     plays: { kind: "every_song" },
   },
   {
-    id: "outro",
-    name: "Outro",
+    id: "weather",
+    name: "Weather",
+    prompt:
+      "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth radio phrasing.",
+    webSearch: "disabled",
+    maxChars: 500,
+    plays: { kind: "every_n_min", n: 60 },
+  },
+  {
+    id: "news",
+    name: "News",
+    prompt:
+      "Create a short global news bulletin anchored to <timestamp>. Use web search. Include two or three current items that are broadly relevant, clearly separated, fact-focused, and written for spoken delivery.",
+    webSearch: "force",
+    maxChars: 700,
+    plays: { kind: "every_n_min", n: 60 },
+  },
+  {
+    id: "artist_fact",
+    name: "Artist fact",
+    prompt:
+      "The next track is <next_songinfo>. Share one genuinely interesting fact about the track or its artist, keeping it precise, engaging, and free of generic trivia.",
+    webSearch: "allow",
+    maxChars: 500,
+    plays: { kind: "every_n_songs", n: 3 },
+  },
+  {
+    id: "sign_off",
+    name: "Sign-off",
     prompt:
       "The last track played was <prev_songinfo>. Close the program with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
     webSearch: "disabled",
@@ -330,6 +360,18 @@ export const GENERIC_HOST_SEGMENTS: ShowSegment[] = [
     plays: { kind: "end" },
   },
 ];
+
+const GENERIC_HOST_SEED_IDS = ["intro", "transition", "sign_off"] as const;
+
+/**
+ * One example segment per placement (start/every_song/end) for a brand-new
+ * custom host, mirroring the server's built-in section defaults so a fresh
+ * host starts generic rather than cloned from a persona preset.
+ */
+export const GENERIC_HOST_SEGMENTS: ShowSegment[] =
+  GENERIC_SEGMENT_TEMPLATES.filter((segment) =>
+    (GENERIC_HOST_SEED_IDS as readonly string[]).includes(segment.id),
+  );
 
 /**
  * Adjusts a preset's segment frequencies for the create dialog's talkativeness
