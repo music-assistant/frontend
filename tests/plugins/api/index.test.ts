@@ -31,7 +31,11 @@ vi.mock("@/plugins/store", () => ({
   store: {},
 }));
 
-import { ConnectionState, MusicAssistantApi } from "@/plugins/api";
+import {
+  ApiCommandError,
+  ConnectionState,
+  MusicAssistantApi,
+} from "@/plugins/api";
 
 const SERVER_INFO: ServerInfoMessage = {
   server_id: "test-server",
@@ -105,7 +109,10 @@ describe("MusicAssistantApi error handling", () => {
       transport.lastCommand,
       "Suppressed failure",
     );
-    const rejection = expect(command).rejects.toBe("Suppressed failure");
+    const rejection = expect(command).rejects.toMatchObject({
+      message: "Suppressed failure",
+      error_code: 999,
+    });
 
     transport.receive(error);
 
@@ -124,7 +131,10 @@ describe("MusicAssistantApi error handling", () => {
       .mockImplementation(() => {});
     const command = api.sendCommand("test/ordinary");
     const error = createErrorResult(transport.lastCommand, "Visible failure");
-    const rejection = expect(command).rejects.toBe("Visible failure");
+    const rejection = expect(command).rejects.toMatchObject({
+      message: "Visible failure",
+      error_code: 999,
+    });
 
     transport.receive(error);
 
@@ -132,6 +142,35 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleError).toHaveBeenCalledWith("[resultMessage]", error);
     expect(mockToastError).toHaveBeenCalledWith("Visible failure");
     expect(consoleDebug).not.toHaveBeenCalled();
+  });
+
+  it("rejects with the server error code and renders as the plain message", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const command = api.sendCommand("test/coded");
+
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    const err = await command.catch((reason: unknown) => reason);
+    expect(err).toBeInstanceOf(ApiCommandError);
+    expect((err as ApiCommandError).error_code).toBe(999);
+    expect(String(err)).toBe("Boom");
+    expect(`${err}`).toBe("Boom");
+  });
+
+  it("falls back to the error code when the server sends no details", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const command = api.sendCommand("test/no-details");
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      error_code: 1001,
+      details: null,
+    });
+
+    await expect(command).rejects.toMatchObject({
+      message: "1001",
+      error_code: 1001,
+    });
   });
 
   it("applies a DSP preset through the dedicated command", async () => {

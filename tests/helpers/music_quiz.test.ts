@@ -2,10 +2,48 @@ import {
   clearStoredMusicQuizPlayerId,
   getStoredMusicQuizPlayerId,
   getStoredMusicQuizPlayerName,
+  isNoActiveGameError,
+  isUnknownPlayerError,
   storeMusicQuizPlayerId,
   storeMusicQuizPlayerName,
 } from "@/helpers/music_quiz";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+describe("Music Quiz error detection", () => {
+  it("detects the no-game error regardless of the locale of the details", () => {
+    expect(
+      isNoActiveGameError(
+        new ApiCommandError("There is no active Music Quiz game.", 1001),
+      ),
+    ).toBe(true);
+    expect(
+      isNoActiveGameError(
+        new ApiCommandError("Er is geen actief Music Quiz spel.", 1001),
+      ),
+    ).toBe(true);
+  });
+
+  it("detects the unknown player error", () => {
+    expect(
+      isUnknownPlayerError(new ApiCommandError("Speler niet gevonden.", 1009)),
+    ).toBe(true);
+    expect(
+      isNoActiveGameError(new ApiCommandError("Speler niet gevonden.", 1009)),
+    ).toBe(false);
+  });
+
+  it("ignores other errors, including ones that merely mention no active game", () => {
+    expect(
+      isNoActiveGameError(new ApiCommandError("There is no active game", 1007)),
+    ).toBe(false);
+    expect(isNoActiveGameError("There is no active Music Quiz game.")).toBe(
+      false,
+    );
+    expect(isNoActiveGameError(new Error("boom"))).toBe(false);
+    expect(isNoActiveGameError(undefined)).toBe(false);
+  });
+});
 
 describe("Music Quiz guest name storage", () => {
   const storedValues = new Map<string, string>();

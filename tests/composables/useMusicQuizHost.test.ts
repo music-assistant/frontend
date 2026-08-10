@@ -70,6 +70,7 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+import { ApiCommandError } from "@/plugins/api/errors";
 import { EventType } from "@/plugins/api/interfaces";
 import type { MusicQuizCreateRequest } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
@@ -525,8 +526,10 @@ describe("useMusicQuizHost", () => {
     },
   );
 
-  it("treats a no-active-game string as an empty state without a toast", async () => {
-    mockGetMusicQuiz.mockRejectedValue("There is no active Music Quiz game");
+  it("treats a no-active-game error as an empty state without a toast", async () => {
+    mockGetMusicQuiz.mockRejectedValue(
+      new ApiCommandError("Er is geen actief Music Quiz spel.", 1001),
+    );
     const notifyError = vi.fn();
     const host = useMusicQuizHost({ notifyError });
     await flushPromises();
@@ -583,18 +586,6 @@ describe("useMusicQuizHost", () => {
 
     resolveDelete();
     await expect(deleting).resolves.toBe(true);
-    expect(host.state.value).toBeNull();
-  });
-
-  it("treats a no-active-game Error as an empty state without a toast", async () => {
-    mockGetMusicQuiz.mockRejectedValue(
-      new Error("There is no active Music Quiz game"),
-    );
-    const notifyError = vi.fn();
-    const host = useMusicQuizHost({ notifyError });
-    await flushPromises();
-
-    expect(notifyError).not.toHaveBeenCalled();
     expect(host.state.value).toBeNull();
   });
 
