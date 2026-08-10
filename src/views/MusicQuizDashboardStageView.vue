@@ -149,7 +149,7 @@
             <div
               v-if="answerOptions.length"
               data-testid="music-quiz-dashboard-options"
-              class="grid min-h-0 content-start gap-[1.5vh] sm:grid-cols-2 lg:gap-[1.5vw]"
+              class="mt-auto grid min-h-0 gap-[1.5vh] sm:grid-cols-2 lg:gap-[1.5vw]"
             >
               <div
                 v-for="(option, index) in answerOptions"
