@@ -127,7 +127,7 @@
         "pluginproviders": "Plugin providers",
         "provider_disabled": "This provider entry is disabled",
         "provider_name": "Custom name for this provider entry",
-        "provider_settings": "{name} settings",
+        "provider_settings": "{name} provider settings",
         "providers": "Providers",
         "reload": "Reload",
         "reload_provider": "Reload provider",

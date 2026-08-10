@@ -16,31 +16,32 @@ import { flushPromises, shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerManifest } from "../fixtures/providerManifest";
 
-const { apiMock, eventbusMock, routerMock, toastMock } = vi.hoisted(() => ({
-  apiMock: {
-    getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
-    getPlayerConfig: vi.fn<MusicAssistantApi["getPlayerConfig"]>(),
-    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
-    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
-    players: {} as Record<string, unknown>,
-    providerManifests: {} as Record<string, unknown>,
-    providers: {} as Record<string, unknown>,
-    reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
-    savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
-    subscribe: vi.fn(),
-  },
-  eventbusMock: {
-    emit: vi.fn(),
-  },
-  routerMock: {
-    back: vi.fn(),
-    push: vi.fn(),
-  },
-  toastMock: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
-}));
+const { apiMock, editConfigResetMock, eventbusMock, routerMock, toastMock } =
+  vi.hoisted(() => ({
+    apiMock: {
+      getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
+      getPlayerConfig: vi.fn<MusicAssistantApi["getPlayerConfig"]>(),
+      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
+      players: {} as Record<string, unknown>,
+      providerManifests: {} as Record<string, unknown>,
+      providers: {} as Record<string, unknown>,
+      savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
+      subscribe: vi.fn(),
+    },
+    editConfigResetMock: vi.fn(),
+    eventbusMock: {
+      emit: vi.fn(),
+    },
+    routerMock: {
+      back: vi.fn(),
+      push: vi.fn(),
+    },
+    toastMock: {
+      error: vi.fn(),
+      success: vi.fn(),
+    },
+  }));
 
 const SlotStub = {
   template: "<div><slot /></div>",
@@ -54,7 +55,22 @@ const playerDetailsStubs = {
   DropdownMenu: SlotStub,
   DropdownMenuContent: SlotStub,
   DropdownMenuItem: SlotStub,
+  DropdownMenuSeparator: true,
   DropdownMenuTrigger: SlotStub,
+  EditConfig: {
+    name: "EditConfig",
+    props: [
+      "actionLayout",
+      "configEntries",
+      "disabled",
+      "outputProtocols",
+      "showAdvancedSettings",
+    ],
+    methods: {
+      resetToDefaults: editConfigResetMock,
+    },
+    template: "<div />",
+  },
 };
 
 vi.mock("@/plugins/api", () => ({
@@ -100,7 +116,6 @@ describe("EditPlayer", () => {
         name: "Chromecast",
       }),
     );
-    apiMock.reloadProvider.mockResolvedValue(undefined);
     apiMock.savePlayerConfig.mockResolvedValue(playerConfig());
     apiMock.providerManifests = { chromecast: { name: "Chromecast" } };
     apiMock.players = {
@@ -112,7 +127,7 @@ describe("EditPlayer", () => {
     routerMock.push.mockResolvedValue(undefined);
   });
 
-  it("shows setup, provider, reload, and enable controls in the header", async () => {
+  it("shows setup, provider, reset, advanced, and enable controls", async () => {
     const wrapper = await mountPlayerPage();
 
     expect(wrapper.get('[data-testid="player-setup"]').text()).toContain(
@@ -122,11 +137,32 @@ describe("EditPlayer", () => {
       wrapper.get('[data-testid="player-provider-settings"]').text(),
     ).toContain("settings.provider_settings");
     expect(
-      wrapper.get('[data-testid="player-reload-provider"]').text(),
-    ).toContain("settings.reload_provider");
+      wrapper.find('[data-testid="player-reload-provider"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.get('[data-testid="player-reset-defaults"]').text(),
+    ).toContain("settings.reset_to_defaults");
+    expect(
+      wrapper.find('[data-testid="player-advanced-settings"]').exists(),
+    ).toBe(true);
     expect(
       wrapper.get('[data-testid="player-toggle-enabled"]').text(),
     ).toContain("settings.disable");
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("actionLayout"),
+    ).toBe("floating-save");
+  });
+
+  it("controls advanced settings from the header", async () => {
+    const wrapper = await mountPlayerPage();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+
+    wrapper
+      .findComponent({ name: "Switch" })
+      .vm.$emit("update:modelValue", true);
+    await wrapper.vm.$nextTick();
+
+    expect(editConfig.props("showAdvancedSettings")).toBe(true);
   });
 
   it("hides optional reconfiguration when the player has no setup flow", async () => {
@@ -214,64 +250,24 @@ describe("EditPlayer", () => {
     expect(
       wrapper.find('[data-testid="player-provider-settings"]').exists(),
     ).toBe(true);
-    expect(
-      wrapper.find('[data-testid="player-reload-provider"]').exists(),
-    ).toBe(true);
 
     await wrapper
-      .get('[data-testid="player-reload-provider"]')
+      .get('[data-testid="player-provider-settings"]')
       .trigger("click");
     await flushPromises();
 
-    expect(apiMock.reloadProvider).toHaveBeenCalledWith("chromecast--1");
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "editprovider",
+      params: { instanceId: "chromecast--1" },
+    });
   });
 
-  it("reloads the owning provider from the header menu", async () => {
+  it("resets player settings from the header menu", async () => {
     const wrapper = await mountPlayerPage();
 
-    await wrapper
-      .get('[data-testid="player-reload-provider"]')
-      .trigger("click");
-    await flushPromises();
+    await wrapper.get('[data-testid="player-reset-defaults"]').trigger("click");
 
-    expect(apiMock.reloadProvider).toHaveBeenCalledWith("chromecast--1");
-    expect(toastMock.success).toHaveBeenCalledWith(
-      "settings.provider_reloading",
-    );
-  });
-
-  it("reports provider reload failures without navigating", async () => {
-    apiMock.reloadProvider.mockRejectedValueOnce(new Error("Reload failed"));
-    const wrapper = await mountPlayerPage();
-
-    await wrapper
-      .get('[data-testid="player-reload-provider"]')
-      .trigger("click");
-    await flushPromises();
-
-    expect(toastMock.error).toHaveBeenCalledWith("Error: Reload failed");
-    expect(routerMock.push).not.toHaveBeenCalled();
-  });
-
-  it("keeps player settings available while the provider reload is pending", async () => {
-    let resolveReload: () => void = () => {};
-    apiMock.reloadProvider.mockImplementationOnce(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveReload = resolve;
-        }),
-    );
-    const wrapper = await mountPlayerPage();
-
-    await wrapper
-      .get('[data-testid="player-reload-provider"]')
-      .trigger("click");
-
-    expect(
-      wrapper.findComponent({ name: "VOverlay" }).props("modelValue"),
-    ).toBe(false);
-    resolveReload();
-    await flushPromises();
+    expect(editConfigResetMock).toHaveBeenCalledOnce();
   });
 
   it("disables the player from the header menu", async () => {
