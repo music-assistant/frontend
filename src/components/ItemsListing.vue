@@ -1480,41 +1480,44 @@ const loadData = async function (
     newContentAvailable.value = false;
   }
 
-  params.value.offset = offset;
-  params.value.limit = props.limit;
-  params.value.refresh = refresh;
+  try {
+    params.value.offset = offset;
+    params.value.limit = props.limit;
+    params.value.refresh = refresh;
 
-  if (loadPagedData != null) {
-    // server side paged listing (with filter support)
-    const nextItems = await loadPagedData(params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
+    if (loadPagedData != null) {
+      // server side paged listing (with filter support)
+      const nextItems = await loadPagedData(params.value);
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
+      if (Math.abs(nextItems.length - props.limit) > 10) {
+        allItemsReceived.value = true;
+      }
+    } else if (props.loadItems != null) {
+      // grab items from loadItems callback
+      if (!initialDataReceived.value || refresh) {
+        // load all items from the callback
+        allItems.value = await props.loadItems(params.value);
+        initialDataReceived.value = true;
+      }
+      // filter items
+      const nextItems = getFilteredItems(allItems.value, params.value);
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
+      // mark allItemsReceived if we have all items
+      allItemsReceived.value = nextItems.length < props.limit;
     }
-    if (Math.abs(nextItems.length - props.limit) > 10) {
-      allItemsReceived.value = true;
-    }
-  } else if (props.loadItems != null) {
-    // grab items from loadItems callback
-    if (!initialDataReceived.value || refresh) {
-      // load all items from the callback
-      allItems.value = await props.loadItems(params.value);
-      initialDataReceived.value = true;
-    }
-    // filter items
-    const nextItems = getFilteredItems(allItems.value, params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
-    }
-    // mark allItemsReceived if we have all items
-    allItemsReceived.value = nextItems.length < props.limit;
+  } finally {
+    params.value.refresh = false;
+    loading.value = false;
+    tempHide.value = false;
   }
-  params.value.refresh = false;
-  loading.value = false;
-  tempHide.value = false;
 
   if (pendingTabLoad) {
     pendingTabLoad = false;
