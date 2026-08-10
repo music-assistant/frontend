@@ -1,6 +1,6 @@
 <template>
   <div
-    class="music-quiz-dashboard dark text-white"
+    class="music-quiz-dashboard text-foreground"
     data-testid="music-quiz-dashboard-stage"
   >
     <div
@@ -18,7 +18,7 @@
         <header class="flex items-start justify-between gap-6">
           <div class="min-w-0">
             <h1
-              class="truncate text-[clamp(1.75rem,3.4vw,3rem)] leading-tight font-bold text-white/95"
+              class="truncate text-[clamp(1.75rem,3.4vw,3rem)] leading-tight font-bold text-foreground/95"
             >
               {{ activeState.name || $t("providers.music_quiz.title") }}
             </h1>
@@ -26,14 +26,14 @@
               role="status"
               aria-live="polite"
               aria-atomic="true"
-              class="mt-1 text-[clamp(0.95rem,1.5vw,1.6rem)] font-semibold tracking-[0.15em] text-white/45 uppercase"
+              class="mt-1 text-[clamp(0.95rem,1.5vw,1.6rem)] font-semibold tracking-[0.15em] text-foreground/45 uppercase"
             >
               {{ phaseLabel }}
             </p>
           </div>
           <p
             v-if="roundLabel"
-            class="shrink-0 rounded-full bg-white/10 px-[1.2em] py-[0.45em] text-[clamp(1rem,1.7vw,1.9rem)] font-semibold text-white/70"
+            class="shrink-0 rounded-full bg-foreground/10 px-[1.2em] py-[0.45em] text-[clamp(1rem,1.7vw,1.9rem)] font-semibold text-foreground/70"
             data-testid="music-quiz-dashboard-round"
           >
             {{ roundLabel }}
@@ -60,16 +60,16 @@
           />
           <div class="flex min-h-0 min-w-0 flex-col gap-[2vh] self-stretch">
             <h2
-              class="text-[clamp(1.4rem,2.6vw,2.4rem)] font-bold text-white/90"
+              class="text-[clamp(1.4rem,2.6vw,2.4rem)] font-bold text-foreground/90"
             >
               {{ $t("providers.music_quiz.players") }}
-              <span class="text-white/50">
+              <span class="text-foreground/50">
                 ({{ activeState.players.length }})
               </span>
             </h2>
             <MusicQuizAutoStartStatus
               :state="activeState"
-              class="w-fit rounded-full bg-white/10 px-[1.1em] py-[0.4em] text-[clamp(1rem,1.7vw,1.75rem)] font-semibold text-white/75"
+              class="w-fit rounded-full bg-foreground/10 px-[1.1em] py-[0.4em] text-[clamp(1rem,1.7vw,1.75rem)] font-semibold text-foreground/75"
             />
             <div
               v-if="activeState.players.length"
@@ -80,10 +80,13 @@
                 v-for="player in sortedPlayers"
                 :key="player.name"
                 :name="player.name"
-                class="border-white/10 bg-white/10 text-[clamp(1rem,1.4vw,1.5rem)]"
+                class="border-foreground/10 bg-foreground/10 text-[clamp(1rem,1.4vw,1.5rem)]"
               />
             </div>
-            <p v-else class="text-[clamp(1rem,1.7vw,1.75rem)] text-white/60">
+            <p
+              v-else
+              class="text-[clamp(1rem,1.7vw,1.75rem)] text-foreground/60"
+            >
               {{ $t("providers.music_quiz.waiting_for_start") }}
             </p>
           </div>
@@ -100,6 +103,7 @@
             :state="activeState"
             :current-round="currentRound"
             :leaderboard-rows="visibleLeaderboardRows"
+            dashboard
           />
           <template v-else-if="activeState.phase === 'reveal'">
             <div
@@ -130,7 +134,7 @@
             <p
               v-if="answeringPrompt"
               data-testid="music-quiz-dashboard-listening"
-              class="text-[clamp(1.5rem,3vw,2.8rem)] font-bold text-white/90"
+              class="text-[clamp(1.5rem,3vw,2.8rem)] font-bold text-foreground/90"
             >
               {{ answeringPrompt }}
             </p>
@@ -149,15 +153,15 @@
             <div
               v-if="answerOptions.length"
               data-testid="music-quiz-dashboard-options"
-              class="grid min-h-0 content-start gap-[1.5vh] sm:grid-cols-2 lg:gap-[1.5vw]"
+              class="mt-auto grid min-h-0 gap-[1.5vh] sm:grid-cols-2 lg:gap-[1.5vw]"
             >
               <div
                 v-for="(option, index) in answerOptions"
                 :key="option.suggestion_id"
-                class="flex items-center gap-[0.9em] rounded-2xl bg-white/5 px-[1.1em] py-[0.9em] text-[clamp(1.1rem,2vw,2rem)] font-medium text-white/90"
+                class="flex items-center gap-[0.9em] rounded-2xl bg-foreground/5 px-[1.1em] py-[0.9em] text-[clamp(1.1rem,2vw,2rem)] font-medium text-foreground/90"
               >
                 <span
-                  class="grid size-[1.9em] shrink-0 place-items-center rounded-full bg-white/10 text-[0.75em] font-bold text-white/80"
+                  class="grid size-[1.9em] shrink-0 place-items-center rounded-full bg-foreground/10 text-[0.75em] font-bold text-foreground/80"
                   aria-hidden="true"
                 >
                   {{ optionLetter(index) }}
@@ -170,7 +174,7 @@
             v-if="revealCountdownText"
             data-testid="music-quiz-dashboard-next-round"
             role="timer"
-            class="mx-auto w-fit rounded-full bg-white/10 px-[1.2em] py-[0.45em] text-[clamp(1rem,1.7vw,1.9rem)] font-semibold text-white/75"
+            class="mx-auto w-fit rounded-full bg-foreground/10 px-[1.2em] py-[0.45em] text-[clamp(1rem,1.7vw,1.9rem)] font-semibold text-foreground/75"
           >
             {{ revealCountdownText }}
           </p>
@@ -182,7 +186,7 @@
           class="flex min-h-0 flex-1 flex-col items-center justify-center gap-[3vh]"
         >
           <p
-            class="text-center text-[clamp(1.6rem,3vw,3rem)] font-bold text-white/95"
+            class="text-center text-[clamp(1.6rem,3vw,3rem)] font-bold text-foreground/95"
           >
             {{ winnerText }}
           </p>
@@ -201,8 +205,8 @@
         data-testid="music-quiz-dashboard-waiting"
         class="flex min-h-0 flex-1 flex-col items-center justify-center gap-[2vh] text-center"
       >
-        <Disc3 class="size-[12vh] text-white/25" aria-hidden="true" />
-        <p class="text-[clamp(1.25rem,2.4vw,2.25rem)] text-white/60">
+        <Disc3 class="size-[12vh] text-foreground/25" aria-hidden="true" />
+        <p class="text-[clamp(1.25rem,2.4vw,2.25rem)] text-foreground/60">
           {{ $t("providers.music_quiz.dashboard_waiting") }}
         </p>
       </div>
@@ -402,7 +406,7 @@ watch(
   height: 100vh;
   /* also crops the backdrop's blurred edges, which bleed past the viewport */
   overflow: hidden;
-  background: #000;
+  background: var(--background);
 }
 
 /* Keep the vh fallback in a separate rule: the minifier collapses duplicate
@@ -427,10 +431,11 @@ watch(
 .music-quiz-dashboard-scrim {
   position: absolute;
   inset: 0;
+  /* wash the blurred artwork toward the theme background so content stays readable */
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.35),
-    rgba(0, 0, 0, 0.75)
+    color-mix(in srgb, var(--background) 35%, transparent),
+    color-mix(in srgb, var(--background) 75%, transparent)
   );
 }
 
