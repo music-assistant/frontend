@@ -431,7 +431,7 @@
             v-if="shortDescription"
             class="body-2 justify-left description-text"
             style="padding-bottom: 10px; cursor: pointer"
-            @click="showFullInfo = !showFullInfo"
+            @click="onDescriptionClick"
           >
             <MarkdownText :text="shortDescription" />
           </v-card-subtitle>
@@ -752,6 +752,12 @@ const shortDescription = computed(() => {
   }
   return rawDescription.value;
 });
+
+const onDescriptionClick = (event: MouseEvent) => {
+  // a link in the description opens on its own; don't also expand the text
+  if ((event.target as HTMLElement).closest("a")) return;
+  showFullInfo.value = !showFullInfo.value;
+};
 
 const artistLogo = computed(() => {
   if (!compProps.item) return undefined;
