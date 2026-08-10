@@ -25,11 +25,18 @@
       class="grid gap-4"
       :class="{
         'lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_22rem] lg:overflow-hidden':
-          present && state.phase === 'answering',
-        'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(7rem,2fr)_minmax(9rem,3fr)] lg:overflow-hidden':
-          present && state.phase === 'reveal' && revealedResults.length,
+          present && state.phase === 'answering' && !dashboard,
+        // the dashboard has no side leaderboard while answering; progress gets the full row
         'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden':
-          present && state.phase === 'reveal' && !revealedResults.length,
+          present &&
+          ((state.phase === 'answering' && dashboard) ||
+            (state.phase === 'reveal' &&
+              (dashboard || !revealedResults.length))),
+        'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(7rem,2fr)_minmax(9rem,3fr)] lg:overflow-hidden':
+          present &&
+          state.phase === 'reveal' &&
+          !dashboard &&
+          revealedResults.length > 0,
         'lg:grid-cols-2': !present,
       }"
     >
