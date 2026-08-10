@@ -26,6 +26,7 @@ import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { errorMessage } from "@/helpers/ai_radio";
 import { toast } from "vue-sonner";
+import { Headset } from "@lucide/vue";
 
 export const getPlayerSetupMenuItem = (
   player: Pick<Player, "player_id" | "needs_setup" | "has_setup_flow">,
@@ -170,47 +171,6 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // AI DJ (queue menu only; when a provider offering AI radio hosts is
-  // loaded). Lists configured hosts to assign as the queue's live DJ, plus an
-  // "Off" entry to clear it; a check marks whichever is currently active.
-  // Built from the caches useHosts prefetches on provider availability, and
-  // kicks off a refresh of both so a later re-open reflects any changes made
-  // elsewhere (e.g. the AI Radio settings page).
-  const {
-    hosts,
-    queueDjStatus,
-    aiRadioAvailable,
-    loadHosts,
-    loadQueueDjStatus,
-  } = useHosts();
-  if (isQueue && playerQueue && aiRadioAvailable.value) {
-    const queueId = playerQueue.queue_id;
-    const activeHostId = queueDjStatus.value[queueId];
-    menuItems.push({
-      label: "ai_dj",
-      labelArgs: [],
-      icon: "mdi-account-voice",
-      subItems: [
-        ...hosts.value.map((host) => ({
-          label: host.name,
-          labelArgs: [],
-          selected: activeHostId === host.id,
-          action: () => assignQueueDj(queueId, host.id),
-        })),
-        {
-          label: "ai_dj_off",
-          labelArgs: [],
-          selected: !activeHostId,
-          action: () => assignQueueDj(queueId, null),
-        },
-      ],
-    });
-    // Best-effort staleness refresh; the menu above is already built from
-    // the prefetched cache, so a failure here has nothing to surface.
-    void loadHosts().catch(() => undefined);
-    void loadQueueDjStatus().catch(() => undefined);
-  }
-
   // transfer queue (both menus; only when the queue is the active source)
   if (playerQueue?.active && playerQueue.items > 0) {
     menuItems.push({
@@ -291,6 +251,47 @@ export const getPlayerMenuItems = (
           a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
         ),
     });
+  }
+
+  // AI DJ (queue menu only; when a provider offering AI radio hosts is
+  // loaded). Lists configured hosts to assign as the queue's live DJ, plus an
+  // "Off" entry to clear it; a check marks whichever is currently active.
+  // Built from the caches useHosts prefetches on provider availability, and
+  // kicks off a refresh of both so a later re-open reflects any changes made
+  // elsewhere (e.g. the AI Radio settings page).
+  const {
+    hosts,
+    queueDjStatus,
+    aiRadioAvailable,
+    loadHosts,
+    loadQueueDjStatus,
+  } = useHosts();
+  if (isQueue && playerQueue && aiRadioAvailable.value) {
+    const queueId = playerQueue.queue_id;
+    const activeHostId = queueDjStatus.value[queueId];
+    menuItems.push({
+      label: "ai_dj",
+      labelArgs: [],
+      icon: Headset,
+      subItems: [
+        ...hosts.value.map((host) => ({
+          label: host.name,
+          labelArgs: [],
+          selected: activeHostId === host.id,
+          action: () => assignQueueDj(queueId, host.id),
+        })),
+        {
+          label: "ai_dj_off",
+          labelArgs: [],
+          selected: !activeHostId,
+          action: () => assignQueueDj(queueId, null),
+        },
+      ],
+    });
+    // Best-effort staleness refresh; the menu above is already built from
+    // the prefetched cache, so a failure here has nothing to surface.
+    void loadHosts().catch(() => undefined);
+    void loadQueueDjStatus().catch(() => undefined);
   }
 
   // select sound mode (player menu only; only when more than one is selectable)

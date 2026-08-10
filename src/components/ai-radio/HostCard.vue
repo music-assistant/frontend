@@ -8,7 +8,7 @@
     @keydown.space.self.prevent="emit('edit', host.id)"
   >
     <div class="host-card__art">
-      <MicVocal class="host-card__icon" />
+      <Headset class="host-card__icon" />
 
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
@@ -58,7 +58,7 @@ import { errorMessage } from "@/helpers/ai_radio";
 import type { AIRadioHost } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { MicVocal, MoreVertical } from "@lucide/vue";
+import { Headset, MoreVertical } from "@lucide/vue";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
 
