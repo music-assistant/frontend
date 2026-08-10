@@ -10,6 +10,7 @@
     @update:open="onOpenChange"
   >
     <DropdownMenuContent
+      data-item-context-menu
       :reference="reference"
       align="end"
       :side-offset="0"
@@ -174,15 +175,36 @@ onMounted(() => {
       store.dialogActive = true;
     });
   });
-  onBeforeUnmount(() => {
-    eventbus.off("contextmenu");
-  });
+  document.addEventListener("pointerdown", closeOnOutsidePointer, true);
+});
+
+onBeforeUnmount(() => {
+  eventbus.off("contextmenu");
+  document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
 const onOpenChange = function (value: boolean) {
   show.value = value;
   store.dialogActive = value;
 };
+
+function closeOnOutsidePointer(event: PointerEvent) {
+  if (!show.value) return;
+  const target = event.target;
+  if (
+    target instanceof Element &&
+    target.closest(
+      "[data-item-context-menu], [data-slot='dropdown-menu-sub-content']",
+    )
+  ) {
+    return;
+  }
+
+  show.value = false;
+  queueMicrotask(() => {
+    if (!show.value) store.dialogActive = false;
+  });
+}
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
   if (menuItem.action) {
