@@ -111,6 +111,7 @@ describe("useSmartPlaylistSeedItems", () => {
     const added = seed.addSeedFromSearch(
       album({
         item_id: "62",
+        uri: "library://album/62",
         provider_mappings: [
           providerMapping({
             item_id: "tidal-album",
