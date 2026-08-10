@@ -1,7 +1,12 @@
 <template>
   <div
     data-testid="music-timeline-present-body"
-    class="flex min-h-0 flex-col gap-3 lg:grid lg:flex-1 lg:grid-cols-[minmax(16rem,1fr)_minmax(22rem,1fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:gap-4 lg:overflow-hidden"
+    class="flex min-h-0 flex-col gap-3 lg:grid lg:flex-1 lg:grid-rows-[minmax(0,1fr)_auto] lg:gap-4 lg:overflow-hidden"
+    :class="
+      dashboard
+        ? 'lg:grid-cols-[minmax(16rem,1fr)_minmax(22rem,1fr)]'
+        : 'lg:grid-cols-[minmax(16rem,2fr)_minmax(22rem,3fr)]'
+    "
   >
     <!-- guests read the listen instructions on their phones -->
     <MusicTimelinePresentRound
