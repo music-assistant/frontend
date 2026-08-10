@@ -1462,6 +1462,8 @@
                 "subtitle": "Turn a playlist into a radio show with an AI host."
             },
             "gallery": {
+                "title": "Shows",
+                "add_show": "Add show",
                 "empty_title": "Create your first show",
                 "empty_description": "AI Radio turns one of your playlists into a radio show with an AI host. AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host — configure one under Settings → Plugins.",
                 "create_cta": "Create show",
@@ -1563,7 +1565,7 @@
             },
             "hosts": {
                 "title": "Hosts",
-                "new_host": "New host",
+                "add_host": "Add host",
                 "card": {
                     "edit": "Edit"
                 },

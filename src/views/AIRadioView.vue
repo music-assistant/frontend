@@ -43,9 +43,15 @@
       </header>
 
       <div class="space-y-3">
-        <h2 class="text-lg font-semibold tracking-tight">
-          {{ $t("providers.ai_radio.hosts.title") }}
-        </h2>
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-lg font-semibold tracking-tight">
+            {{ $t("providers.ai_radio.hosts.title") }}
+          </h2>
+          <Button @click="openCustomizeHost()">
+            <Plus class="mr-1 h-4 w-4" />
+            {{ $t("providers.ai_radio.hosts.add_host") }}
+          </Button>
+        </div>
         <div
           class="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))]"
         >
@@ -55,16 +61,6 @@
             :host="host"
             @edit="openCustomizeHost"
           />
-          <button
-            type="button"
-            class="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-            @click="openCustomizeHost()"
-          >
-            <Plus class="h-8 w-8" />
-            <span class="text-sm font-medium">
-              {{ $t("providers.ai_radio.hosts.new_host") }}
-            </span>
-          </button>
         </div>
       </div>
 
@@ -95,45 +91,47 @@
 
       <OnAirHero />
 
-      <div
-        v-if="showEmptyState"
-        class="flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center"
-      >
-        <Sparkles class="h-10 w-10 text-muted-foreground" />
-        <div>
-          <h2 class="text-lg font-semibold">
-            {{ $t("providers.ai_radio.gallery.empty_title") }}
+      <div class="space-y-3">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-lg font-semibold tracking-tight">
+            {{ $t("providers.ai_radio.gallery.title") }}
           </h2>
-          <p class="mt-1 max-w-md text-sm text-muted-foreground">
-            {{ $t("providers.ai_radio.gallery.empty_description") }}
-          </p>
+          <Button @click="openCreateDialog()">
+            <Plus class="mr-1 h-4 w-4" />
+            {{ $t("providers.ai_radio.gallery.add_show") }}
+          </Button>
         </div>
-        <Button @click="openCreateDialog()">
-          <Plus class="mr-1 h-4 w-4" />
-          {{ $t("providers.ai_radio.gallery.create_cta") }}
-        </Button>
-      </div>
 
-      <div
-        v-else
-        class="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))]"
-      >
-        <ShowCard
-          v-for="show in shows"
-          :key="show.id"
-          :show="show"
-          @customize="onCustomize"
-        />
-        <button
-          type="button"
-          class="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-          @click="openCreateDialog()"
+        <div
+          v-if="showEmptyState"
+          class="flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center"
         >
-          <Plus class="h-8 w-8" />
-          <span class="text-sm font-medium">
-            {{ $t("providers.ai_radio.gallery.new_show") }}
-          </span>
-        </button>
+          <Sparkles class="h-10 w-10 text-muted-foreground" />
+          <div>
+            <h2 class="text-lg font-semibold">
+              {{ $t("providers.ai_radio.gallery.empty_title") }}
+            </h2>
+            <p class="mt-1 max-w-md text-sm text-muted-foreground">
+              {{ $t("providers.ai_radio.gallery.empty_description") }}
+            </p>
+          </div>
+          <Button @click="openCreateDialog()">
+            <Plus class="mr-1 h-4 w-4" />
+            {{ $t("providers.ai_radio.gallery.create_cta") }}
+          </Button>
+        </div>
+
+        <div
+          v-else
+          class="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))]"
+        >
+          <ShowCard
+            v-for="show in shows"
+            :key="show.id"
+            :show="show"
+            @customize="onCustomize"
+          />
+        </div>
       </div>
 
       <CreateShowDialog
