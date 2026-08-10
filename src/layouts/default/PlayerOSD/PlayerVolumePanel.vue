@@ -1,17 +1,11 @@
 <template>
   <div class="flex min-h-0 flex-col">
     <div data-panel-drag-region class="border-b px-4 pt-1 pb-3">
-      <div class="flex min-w-0 items-center gap-3">
-        <Volume2
-          :stroke-width="1.4"
-          class="text-muted-foreground size-8 shrink-0"
-        />
-        <div class="min-w-0">
-          <p class="text-base font-semibold">{{ $t("volume") }}</p>
-          <p class="text-muted-foreground truncate text-xs">
-            {{ playerDisplayName }}
-          </p>
-        </div>
+      <div class="min-w-0 ml-1">
+        <p class="text-base font-semibold">{{ $t("volume") }}</p>
+        <p class="text-muted-foreground truncate text-xs">
+          {{ playerDisplayName }}
+        </p>
       </div>
     </div>
 
@@ -71,7 +65,6 @@ import {
   PLAYER_CONTROL_NONE,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { Volume2 } from "@lucide/vue";
 import { computed } from "vue";
 import PlayerVolume from "./PlayerVolume.vue";
 

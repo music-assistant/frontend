@@ -12,7 +12,7 @@
           data-player-group-backdrop
           type="button"
           :class="[
-            'modal-backdrop player-group-backdrop fixed inset-x-0 top-0 z-[99999]',
+            'modal-backdrop player-group-backdrop fixed inset-x-0 top-0 z-[997]',
             store.mobileLayout
               ? 'player-group-backdrop-mobile'
               : 'player-group-backdrop-desktop',
@@ -101,16 +101,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  canEditPlayerGroup,
-  getPlayerGroupMemberCount,
-  groupMemberPickerVisible,
-} from "@/helpers/players";
-import type { PlayerGroupFilter } from "@/helpers/player_group";
-import {
   DESKTOP_PLAYER_BAR_POPOUT_GAP,
   MOBILE_PLAYER_BAR_POPOUT_GAP,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
+import type { PlayerGroupFilter } from "@/helpers/player_group";
+import {
+  canEditPlayerGroup,
+  getPlayerGroupMemberCount,
+  groupMemberPickerVisible,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -139,16 +139,8 @@ const memberCount = computed(() =>
 const groupMembers = computed(() => {
   if (!player.value) return [];
   const playerIds = new Set(player.value.group_members);
-  const hasGroupMembers =
-    player.value.type === PlayerType.GROUP
-      ? playerIds.size > 0
-      : [...playerIds].some((playerId) => playerId !== player.value?.player_id);
   if (player.value.type !== PlayerType.GROUP) {
-    if (hasGroupMembers) {
-      playerIds.add(player.value.player_id);
-    } else {
-      playerIds.delete(player.value.player_id);
-    }
+    playerIds.add(player.value.player_id);
   }
   return [...playerIds]
     .map((playerId) => api.players[playerId])
@@ -240,6 +232,6 @@ function handleInteractOutside(event: Event) {
 }
 
 .player-group-popover {
-  z-index: 100000 !important;
+  z-index: 998 !important;
 }
 </style>

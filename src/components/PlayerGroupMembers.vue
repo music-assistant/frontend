@@ -163,10 +163,19 @@ function getCheckboxId(player: Player) {
 }
 
 function isGroupMember(player: Player) {
-  return props.player.group_members.includes(player.player_id);
+  return (
+    player.player_id === props.player.player_id ||
+    props.player.group_members.includes(player.player_id)
+  );
 }
 
 function isRequiredMember(player: Player) {
+  if (
+    player.player_id === props.player.player_id &&
+    props.members.length <= 1
+  ) {
+    return true;
+  }
   return (
     props.player.static_group_members.includes(player.player_id) &&
     isGroupMember(player)

@@ -5,11 +5,7 @@
     class="flex items-center justify-between gap-3 border-b px-4 pt-1 pb-3"
   >
     <div class="flex min-w-0 items-center gap-3">
-      <GroupedPlayers
-        :stroke-width="1.4"
-        class="text-muted-foreground size-8 shrink-0"
-      />
-      <div class="min-w-0">
+      <div class="min-w-0 ml-1">
         <h2 class="text-base font-semibold">
           {{ $t("settings.group_members") }}
         </h2>
@@ -70,7 +66,6 @@
 <script setup lang="ts">
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerGroupMembers from "@/components/PlayerGroupMembers.vue";
-import { GroupedPlayers } from "@/components/ma-icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
