@@ -203,8 +203,48 @@ describe("ShowDashboardButton", () => {
     });
     const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
     expect(devices).toHaveLength(2);
-    expect(devices[0]!.text()).toContain("Living Room TV");
-    expect(devices[1]!.text()).toContain("Bedroom TV");
+    expect(devices[0]!.text()).toContain("Bedroom TV");
+    expect(devices[1]!.text()).toContain("Living Room TV");
+  });
+
+  it("sorts devices by provider, then by name, with unknown providers last", async () => {
+    mockCommands({
+      "dashboard/dashboards": () => [
+        {
+          dashboard_id: "device-1",
+          name: "Attic",
+          supported_types: ["party"],
+        },
+        {
+          dashboard_id: "device-2",
+          name: "Study",
+          supported_types: ["party"],
+          provider_domain_hint: "chromecast",
+        },
+        {
+          dashboard_id: "device-3",
+          name: "Bedroom",
+          supported_types: ["party"],
+          provider_domain_hint: "chromecast",
+        },
+        {
+          dashboard_id: "device-4",
+          name: "Kitchen",
+          supported_types: ["party"],
+          provider_domain_hint: "airplay",
+        },
+      ],
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    const names = wrapper
+      .findAll('[data-testid="cast-dashboard-device"]')
+      .map((device) => device.text());
+    expect(names).toEqual(["Kitchen", "Bedroom", "Study", "Attic"]);
   });
 
   it("passes each device's provider domain hint to its icon, one per device", async () => {
@@ -402,8 +442,9 @@ describe("ShowDashboardButton", () => {
     await flushAsync();
 
     const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
-    expect(devices[0]!.findComponent(Check).exists()).toBe(true);
-    expect(devices[1]!.findComponent(Check).exists()).toBe(false);
+    expect(devices[0]!.text()).toContain("Bedroom TV");
+    expect(devices[0]!.findComponent(Check).exists()).toBe(false);
+    expect(devices[1]!.findComponent(Check).exists()).toBe(true);
 
     const disconnect = wrapper.get('[data-testid="cast-dashboard-disconnect"]');
     expect(disconnect.attributes("data-variant")).toBe("destructive");
@@ -562,7 +603,7 @@ describe("ShowDashboardButton", () => {
     await flushAsync();
 
     const devices = wrapper.findAll('[data-testid="cast-dashboard-device"]');
-    await devices[1]!.trigger("click"); // Bedroom TV, currently inactive
+    await devices[0]!.trigger("click"); // Bedroom TV, currently inactive
     await flushAsync();
 
     const commandNames = apiMock.sendCommand.mock.calls.map((call) => call[0]);
