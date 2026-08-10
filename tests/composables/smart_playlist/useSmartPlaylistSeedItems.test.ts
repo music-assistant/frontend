@@ -45,7 +45,8 @@ vi.mock("@/plugins/api", () => ({
 import api from "@/plugins/api";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { useSmartPlaylistSeedItems } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
-import type { Album, Track } from "@/plugins/api/interfaces";
+import { album } from "../../fixtures/album";
+import { artist } from "../../fixtures/artist";
 import { providerMapping } from "../../fixtures/providerMapping";
 import { track } from "../../fixtures/track";
 
@@ -69,11 +70,10 @@ describe("useSmartPlaylistSeedItems", () => {
     const seed = useSmartPlaylistSeedItems();
 
     seed.trackSearch.value = "query";
-    seed.trackResults.value = [{ item_id: "x" } as unknown as Track];
+    seed.trackResults.value = [track()];
 
     const added = seed.addSeedFromSearch(
-      {
-        item_id: "fallback-track-id",
+      track({
         provider_mappings: [
           providerMapping({
             item_id: "lib-1",
@@ -86,9 +86,9 @@ describe("useSmartPlaylistSeedItems", () => {
             provider_domain: "spotify",
           }),
         ],
-        artists: [{ name: "Artist" }],
+        artists: [artist({ name: "Artist" })],
         name: "Song",
-      } as unknown as Track,
+      }),
       "track",
     );
 
@@ -109,8 +109,9 @@ describe("useSmartPlaylistSeedItems", () => {
     const seed = useSmartPlaylistSeedItems();
 
     const added = seed.addSeedFromSearch(
-      {
+      album({
         item_id: "62",
+        uri: "library://album/62",
         provider_mappings: [
           providerMapping({
             item_id: "tidal-album",
@@ -118,9 +119,9 @@ describe("useSmartPlaylistSeedItems", () => {
             provider_domain: "tidal",
           }),
         ],
-        artists: [{ name: "RAM" }],
+        artists: [artist({ name: "RAM" })],
         name: "One Last Call",
-      } as unknown as Album,
+      }),
       "album",
     );
 
