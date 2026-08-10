@@ -2,11 +2,19 @@
   <div
     data-testid="timeline-audience-answer"
     class="flex flex-col gap-4"
-    :class="{ 'lg:h-full lg:min-h-0 lg:overflow-hidden': present }"
+    :class="{
+      'lg:h-full lg:min-h-0 lg:overflow-hidden': present,
+      // dashboard answering: progress fills the left half, countdown sits right
+      'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] lg:grid-rows-[minmax(0,1fr)]':
+        present && dashboard && state.phase === 'answering',
+    }"
   >
     <div
       v-if="state.phase === 'answering'"
       class="flex flex-col items-center gap-2"
+      :class="{
+        'lg:order-2 lg:justify-center': present && dashboard,
+      }"
     >
       <MusicQuizCountdown
         :size="present ? 150 : 112"
@@ -37,6 +45,8 @@
           state.phase === 'reveal' &&
           !dashboard &&
           revealedResults.length > 0,
+        'lg:order-1 lg:h-full':
+          present && dashboard && state.phase === 'answering',
         'lg:grid-cols-2': !present,
       }"
     >
