@@ -11,7 +11,7 @@
         data-player-volume-backdrop
         type="button"
         :class="[
-          'modal-backdrop player-volume-backdrop fixed inset-x-0 top-0 z-[99999]',
+          'modal-backdrop player-volume-backdrop fixed inset-x-0 top-0 z-[997]',
           store.mobileLayout
             ? 'player-volume-backdrop-mobile'
             : 'player-volume-backdrop-desktop',
@@ -88,13 +88,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { isPlayerGrouped } from "@/helpers/players";
-import { getVolumeIconComponent } from "@/helpers/utils";
 import {
   DESKTOP_PLAYER_BAR_POPOUT_GAP,
   MOBILE_PLAYER_BAR_POPOUT_GAP,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
+import { isPlayerGrouped } from "@/helpers/players";
+import { getVolumeIconComponent } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { type Player, PlayerFeature } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -198,6 +198,6 @@ function adjustVolume(event: WheelEvent) {
 }
 
 .player-volume-popover {
-  z-index: 100000 !important;
+  z-index: 998 !important;
 }
 </style>

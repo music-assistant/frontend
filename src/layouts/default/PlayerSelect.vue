@@ -10,7 +10,7 @@
         v-if="store.showPlayersMenu"
         type="button"
         :class="[
-          'modal-backdrop player-select-backdrop fixed inset-x-0 top-0 z-[99999]',
+          'modal-backdrop player-select-backdrop fixed inset-x-0 top-0 z-[997]',
           store.mobileLayout
             ? 'player-select-mobile-offset'
             : 'player-select-desktop-offset',
@@ -51,7 +51,6 @@
         class="flex items-center justify-between gap-3 border-b px-4 pt-1 pb-3"
       >
         <div class="flex min-w-0 items-center gap-2">
-          <Speaker class="text-muted-foreground size-5 shrink-0" />
           <h2 class="truncate text-lg font-semibold">{{ $t("players") }}</h2>
         </div>
         <DropdownMenu>
@@ -216,7 +215,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { CircleOff, EllipsisVertical, Pencil, Speaker } from "@lucide/vue";
+import { CircleOff, EllipsisVertical, Pencil } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -580,6 +579,6 @@ async function scrollSelectedPlayerIntoView() {
 }
 
 .player-select-popover {
-  z-index: 100000 !important;
+  z-index: 998 !important;
 }
 </style>
