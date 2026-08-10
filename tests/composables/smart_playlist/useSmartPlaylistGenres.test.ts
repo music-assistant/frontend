@@ -58,5 +58,5 @@ describe("useSmartPlaylistGenres", () => {
 });
 
 function genreFixture(item_id: string, name: string): Genre {
-  return genre({ item_id, name, uri: `library://genre/${item_id}` });
+  return genre({ item_id, name });
 }

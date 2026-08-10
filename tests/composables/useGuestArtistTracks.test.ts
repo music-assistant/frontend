@@ -139,7 +139,6 @@ function artistFixture(itemId: string, name = itemId): Artist {
   return artist({
     item_id: itemId,
     name,
-    uri: `library://artist/${itemId}`,
   });
 }
 
@@ -147,6 +146,5 @@ function trackFixture(itemId: string): Track {
   return track({
     item_id: itemId,
     name: itemId,
-    uri: `library://track/${itemId}`,
   });
 }

@@ -77,17 +77,15 @@ import { playlist } from "../fixtures/playlist";
 import { track } from "../fixtures/track";
 
 const makePlaylistTrack = (id: string) =>
-  track({ item_id: id, uri: `library://track/${id}`, name: `Track ${id}` });
+  track({ item_id: id, name: `Track ${id}` });
 
 const makePlaylist = (id: string) =>
   playlist({
     item_id: id,
-    uri: `library://playlist/${id}`,
     name: `Playlist ${id}`,
   });
 
-const makeAlbum = (id: string) =>
-  album({ item_id: id, uri: `library://album/${id}`, name: `Album ${id}` });
+const makeAlbum = (id: string) => album({ item_id: id, name: `Album ${id}` });
 
 beforeEach(() => {
   mockPlayMedia.mockReset();

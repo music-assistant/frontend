@@ -66,13 +66,11 @@ import { track } from "../fixtures/track";
 
 const playedTrack = track({
   item_id: "track1",
-  uri: "library://track/track1",
   name: "Track 1",
 });
 
 const parentPlaylist = playlist({
   item_id: "pl1",
-  uri: "library://playlist/pl1",
   name: "Playlist 1",
 });
 
