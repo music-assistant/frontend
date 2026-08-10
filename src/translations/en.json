@@ -47,7 +47,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Enter a name for the new playlist",
     "no_content": "No items found.",
-    "no_content_filter": "No items found for the current filter/search conditions.",
+    "no_content_filter": "No items found for the current filter\/search conditions.",
     "no_player": "No player selected",
     "off": "Off",
     "on": "On",
@@ -202,7 +202,7 @@
         "no_player_providers_detail": "Configure player providers to select devices where Music Assistant can output your music.",
         "dynamic_members": {
             "label": "Dynamic group members",
-            "description": "Allow members to (temporarily) join/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
+            "description": "Allow members to (temporarily) join\/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
         },
         "dsp": {
             "configure_on": "Configuring DSP on: {name}",
@@ -234,7 +234,7 @@
                     "high_pass": "High Pass",
                     "notch": "Notch"
                 },
-                "import_apo": "Import APO/REW Preset",
+                "import_apo": "Import APO\/REW Preset",
                 "export_apo": "Export APO Preset",
                 "preamp": "Preamp",
                 "add_band_channel": "Add Band ({channel} only)",
@@ -308,7 +308,7 @@
                 }
             },
             "convolution": {
-                "help": "Convolution applies a recorded impulse response to the audio — used for room or speaker correction and headphone simulation. Gain should be negative or zero, as an impulse response changes overall loudness.",
+                "help": "Convolution applies a recorded impulse response to the audio \u2014 used for room or speaker correction and headphone simulation. Gain should be negative or zero, as an impulse response changes overall loudness.",
                 "impulse_response": "Impulse Response",
                 "none": "None selected",
                 "missing": "Unavailable impulse response",
@@ -415,7 +415,7 @@
                 "mute": "Mute"
             }
         },
-        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
+        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",
         "metadata": "Metadata",
         "metadataprovider": "Metadata provider",
@@ -510,7 +510,7 @@
         "remote_access_feature_no_port_forwarding": "No port forwarding or VPN required",
         "remote_access_mode_optimized": "Optimized Mode (HA Cloud)",
         "remote_access_mode_basic": "Running in Basic Mode",
-        "remote_access_mode_optimized_description": "Using STUN/TURN servers from Home Assistant Cloud for optimal performance. Works reliably in all network configurations.",
+        "remote_access_mode_optimized_description": "Using STUN\/TURN servers from Home Assistant Cloud for optimal performance. Works reliably in all network configurations.",
         "remote_access_mode_basic_description": "Using public STUN servers. This may not work in complex network setups. Upgrade to Home Assistant Cloud for the best experience.",
         "remote_access_upgrade_to_optimized": "Upgrade to Home Assistant Cloud",
         "remote_access_status": "Remote Access Status",
@@ -538,7 +538,7 @@
         "remote_access_disabled_success": "Remote Access has been disabled",
         "remote_access_signaling_server_description": "Signaling server in the cloud, hosted by the Open Home Foundation.",
         "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
-        "remote_access_protocol_optimized": "WebRTC with optimized STUN/TURN servers from Home Assistant Cloud (works in all network setups).",
+        "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
         "frontend": "User Interface",
         "players_count": "{0} player{1}",
@@ -547,7 +547,7 @@
         "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "provider_codeowners": "This provider is contributed/maintained by",
+        "provider_codeowners": "This provider is contributed\/maintained by",
         "provider_credits": "Made possible by",
         "category": {
             "web_player": "Web Player",
@@ -579,7 +579,7 @@
         "fix_now": "Fix now",
         "web_player_enabled": {
             "label": "Enable built-in (Sendspin) Web Player",
-            "description": "Allow playback to this device/browser using the built-in Sendspin web player."
+            "description": "Allow playback to this device\/browser using the built-in Sendspin web player."
         },
         "enable_browser_controls": {
             "label": "Enable browser media controls",
@@ -802,21 +802,21 @@
         "album_artist_filter": "Toggle album-artist filter",
         "collapse_collections": "Collapse collections",
         "explicit": "Explicit",
-        "filter_library": "Toggle in-library/favorite filter",
-        "library": "Toggle in-library/favorite",
+        "filter_library": "Toggle in-library\/favorite filter",
+        "library": "Toggle in-library\/favorite",
         "linked": "This provideritem is linked to the current itemdetails",
         "refresh": "Refresh the items listing",
         "refresh_new_content": "New content is available, click to refresh the listing",
-        "search": "Show/hide search input",
+        "search": "Show\/hide search input",
         "select_items": "Select multiple items",
         "sort_options": "Sort options",
-        "toggle_view_mode": "Toggle view mode list/thumbs",
+        "toggle_view_mode": "Toggle view mode list\/thumbs",
         "filter_favorites": "Only show favorites",
-        "favorite": "Mark/unmark as a favorite",
+        "favorite": "Mark\/unmark as a favorite",
         "open_provider_link": "Open this item on the provider's website",
-        "collapse_expand": "Collapse/expand this listing",
+        "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
-        "show_menu": "Show/hide menu",
+        "show_menu": "Show\/hide menu",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",
@@ -1187,7 +1187,7 @@
         "remote_server": "Remote",
         "remote_only_info": "Connect to your Music Assistant server remotely",
         "server_address": "Server Address",
-        "server_address_placeholder": "http://192.168.1.100:8095",
+        "server_address_placeholder": "http:\/\/192.168.1.100:8095",
         "server_address_hint": "Enter the full URL of your Music Assistant server",
         "remote_id": "Remote ID",
         "remote_id_placeholder": "e.g., MA-X7K9-P2M4",
@@ -1778,6 +1778,7 @@
             "timeline_submit_bonus": "Submit bonus",
             "timeline_correct_placement": "Correct placement",
             "timeline_incorrect_placement": "Incorrect placement",
+            "timeline_round_results": "Round results",
             "add_music_sources": "Add music sources",
             "genre": "Genre",
             "album": "Album",
@@ -1864,7 +1865,7 @@
         "on_demand": "On demand",
         "automatic_schedule": "Automatic schedule",
         "system": "System",
-        "no_value": "n/a",
+        "no_value": "n\/a",
         "loading_log": "Loading log...",
         "no_log_output": "No log output available.",
         "open": "Open background tasks",
