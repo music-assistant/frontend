@@ -17,9 +17,17 @@ export enum DSPFilterType {
   GAIN = "gain",
   BALANCE = "balance",
   TRANSPOSE = "transpose",
+  SAFETY_LIMITER = "safety_limiter",
+  COMPRESSOR = "compressor",
+  HIGH_LOW_PASS = "high_low_pass",
   CONVOLUTION = "convolution",
   STEREO_WIDTH = "stereo_width",
   CROSSFEED = "crossfeed",
+}
+
+export enum HighLowPassMode {
+  HIGH_PASS = "high_pass",
+  LOW_PASS = "low_pass",
 }
 
 export enum ParametricEQBandType {
@@ -77,6 +85,37 @@ export interface TransposeFilter extends DSPFilterBase {
   semitones: number;
 }
 
+// All values are in user-facing units (dB/ms/ratio); the server converts to
+// ffmpeg parameters, so the UI must never send anything else.
+export interface SafetyLimiterFilter extends DSPFilterBase {
+  type: DSPFilterType.SAFETY_LIMITER;
+  ceiling: number;
+}
+
+export interface CompressorFilter extends DSPFilterBase {
+  type: DSPFilterType.COMPRESSOR;
+  threshold: number;
+  ratio: number;
+  attack: number;
+  release: number;
+  knee: number;
+  makeup: number;
+}
+
+// Slope in dB/octave. Each biquad section is 12 dB/oct, so the filter is a
+// cascade of 1/2/4 sections. The server coerces anything else to 12 without
+// reporting an error, so only these three values may be sent.
+export type HighLowPassSlope = 12 | 24 | 48;
+
+// A first-class high-pass / low-pass filter. `frequency` is the cutoff in Hz,
+// 20..20000.
+export interface HighLowPassFilter extends DSPFilterBase {
+  type: DSPFilterType.HIGH_LOW_PASS;
+  mode: HighLowPassMode;
+  frequency: number;
+  slope: HighLowPassSlope;
+}
+
 // Applies a stored impulse response to the audio. `ir_id` references an entry
 // in the server-side IR library; an empty string is valid and means "none
 // selected", which makes the filter a no-op. `gain` trims the output level,
@@ -116,6 +155,9 @@ export type DSPFilter =
   | GainFilter
   | BalanceFilter
   | TransposeFilter
+  | SafetyLimiterFilter
+  | CompressorFilter
+  | HighLowPassFilter
   | ConvolutionFilter
   | StereoWidthFilter
   | CrossfeedFilter;

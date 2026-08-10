@@ -266,6 +266,47 @@
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Set the concert pitch so A is tuned to 432 Hz"
             },
+            "safety_limiter": {
+                "help": "Catches peaks that would otherwise clip and may damage your speakers. Place it last in the chain.",
+                "ceiling": "Ceiling"
+            },
+            "compressor": {
+                "help": "Evens out the volume by turning down the loudest parts, so quieter detail stays audible.",
+                "preset": "Preset",
+                "custom": "Custom",
+                "threshold": "Threshold",
+                "ratio": "Ratio",
+                "attack": "Attack",
+                "release": "Release",
+                "knee": "Knee",
+                "makeup": "Makeup Gain",
+                "presets": {
+                    "light": "Light",
+                    "medium": "Medium",
+                    "heavy": "Heavy",
+                    "light_desc": "Gentle leveling",
+                    "medium_desc": "Balanced control",
+                    "heavy_desc": "Firm and punchy"
+                }
+            },
+            "high_low_pass": {
+                "help": "Removes everything on one side of the cutoff frequency. Often used to keep deep bass away from small speakers.",
+                "mode_label": "Mode",
+                "mode": {
+                    "high_pass": "High-pass",
+                    "low_pass": "Low-pass"
+                },
+                "mode_desc": {
+                    "high_pass": "Removes content below the cutoff",
+                    "low_pass": "Removes content above the cutoff"
+                },
+                "slope": "Slope",
+                "slope_desc": {
+                    "12": "Gentle",
+                    "24": "Medium",
+                    "48": "Steep"
+                }
+            },
             "convolution": {
                 "help": "Convolution applies a recorded impulse response to the audio \u2014 used for room or speaker correction and headphone simulation. Gain should be negative or zero, as an impulse response changes overall loudness.",
                 "impulse_response": "Impulse Response",
@@ -316,6 +357,9 @@
                 "gain": "Gain",
                 "balance": "Balance",
                 "transpose": "Transpose",
+                "safety_limiter": "Safety Limiter",
+                "compressor": "Compressor",
+                "high_low_pass": "High/Low-pass",
                 "convolution": "Convolution",
                 "stereo_width": "Stereo Width",
                 "crossfeed": "Crossfeed"
