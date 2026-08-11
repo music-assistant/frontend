@@ -1,6 +1,8 @@
 <template>
   <Card class="mb-4 gap-0 py-0">
-    <CardHeader class="relative flex flex-row items-center gap-5 p-6 pr-16">
+    <CardHeader
+      class="relative flex flex-col gap-5 p-6 pr-16 sm:flex-row sm:items-center"
+    >
       <div
         :class="
           cn(
@@ -45,11 +47,11 @@
       class="flex items-center gap-2 border-t bg-muted/20 px-6 py-4 sm:justify-end"
     >
       <Switch
-        id="settings-advanced-settings"
+        :id="advancedToggleId"
         v-model="showAdvancedSettings"
         data-testid="settings-advanced-settings"
       />
-      <Label for="settings-advanced-settings" class="cursor-pointer">
+      <Label :for="advancedToggleId" class="cursor-pointer">
         {{ $t("settings.show_advanced_settings") }}
       </Label>
     </CardContent>
@@ -75,7 +77,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { MoreVertical, RotateCcw } from "@lucide/vue";
-import type { Component } from "vue";
+import { useId, type Component } from "vue";
 
 /**
  * Header card shared by the settings screens that edit a plain config: it names what
@@ -85,8 +87,9 @@ defineProps<{
   icon: Component;
   title: string;
   description?: string;
-  // tints the icon and its tile, e.g. "text-orange-500"; defaults to the primary colour
+  /** Tints the icon and its tile, e.g. "text-orange-500"; defaults to the primary colour. */
   iconClass?: string;
+  /** Whether the config holds advanced entries the toggle can reveal. */
   showAdvancedToggle?: boolean;
 }>();
 
@@ -97,4 +100,6 @@ const emit = defineEmits<{
 const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
   default: false,
 });
+
+const advancedToggleId = useId();
 </script>

@@ -601,12 +601,12 @@ const getCategoryIcon = function (category: string): Component {
 :global(.content-section--mobile) .floating-save {
   right: 16px;
   /* Stay clear of whatever reaches highest above the bottom navigation: the player
-     bar, which grows by its volume row and sits 6px above the navigation, or the
-     gradient scrim behind it, which hides everything it covers. */
+     bar, which grows by its volume row and clears the navigation by its own 6px
+     margin, or the gradient scrim behind it, which hides everything it covers. */
   bottom: max(
     calc(
       var(--mobile-navigation-height) + var(--player-bar-overlay-height, 0px) +
-        22px
+        6px + 16px
     ),
     calc(var(--mobile-player-scrim-height) + 16px)
   );

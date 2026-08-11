@@ -262,6 +262,29 @@ describe("EditConfig", () => {
     expect(wrapper.text()).not.toContain("settings.reset_to_defaults");
   });
 
+  it("puts every entry back to its default value on request", async () => {
+    const wrapper = mountEntries([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "elsewhere",
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    await nextTick();
+
+    expect(
+      (
+        wrapper
+          .findAllComponents({ name: "ConfigEntryRow" })[0]
+          .props("confEntry") as ConfigEntry
+      ).value,
+    ).toBe("localhost");
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
+
   it("hides the save action on a disabled form", () => {
     const wrapper = mountEntries(
       [entry({ key: "server", type: ConfigEntryType.STRING })],

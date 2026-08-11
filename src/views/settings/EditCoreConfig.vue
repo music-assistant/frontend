@@ -21,10 +21,11 @@
       @immediate-apply="onImmediateApply"
     />
 
+    <!-- z-index clears the player bar (2001), which floats above page content -->
     <div
       v-if="loading"
       data-testid="loading-overlay"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
+      class="fixed inset-0 z-[2100] flex items-center justify-center bg-background/80"
     >
       <Spinner class="size-16" />
     </div>

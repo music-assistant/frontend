@@ -23,11 +23,11 @@
       @immediate-apply="onImmediateApply"
     />
 
-    <!-- Loading overlay -->
+    <!-- Loading overlay; z-index clears the player bar (2001) floating above it -->
     <div
       v-if="loading"
       data-testid="loading-overlay"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
+      class="fixed inset-0 z-[2100] flex items-center justify-center bg-background/80"
     >
       <Spinner class="size-16" />
     </div>
@@ -60,6 +60,8 @@ const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
+// no entry below is advanced today, so the toggle stays hidden; the wiring is what
+// makes an advanced entry reachable the moment one is added
 const showAdvancedSettings = ref(false);
 
 onMounted(() => {
