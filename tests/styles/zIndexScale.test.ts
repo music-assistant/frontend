@@ -1,34 +1,44 @@
+import globalCss from "@/styles/global.css?inline";
 import { describe, expect, it } from "vitest";
 
-// Below this, a z-index only orders elements inside a component's own
-// stacking context and is unrelated to the app-wide scale in global.css.
+// Below this, a z-index orders elements inside a component's own stacking
+// context rather than against the app-wide scale.
 const GLOBAL_BAND_FLOOR = 900;
 
-// The "Stacking order for anything pinned to the screen" block in
-// src/styles/global.css.
-const DOCUMENTED_BANDS = [
-  996, 997, 998, 999, 1000, 2000, 2001, 2100, 9000, 9001, 9002, 9999, 10000,
-  10001, 100000, 100001, 999999,
-];
-
-// z-index is declared in five syntaxes across the app. Requiring `:` or `=`
-// right after the property name keeps comment prose ("the overlay z-index
-// inline", "a dialog at z-index 9000") from reading as a declaration, and the
-// lookbehind keeps `--z-index` custom properties out.
+// z-index reaches the DOM through five syntaxes here: CSS declarations, Vue
+// attributes and bound props, JS object properties, and Tailwind's two forms
+// (`z-[998]` and the bare `z-998`, which v4 compiles just the same). Requiring
+// `:` or `=` right after the property name skips the surrounding prose that
+// mentions a band without setting it, and the lookbehind keeps the `--z-index`
+// custom properties in PartyTrackCard out.
 const PATTERNS = [
-  /(?<!-)z-index\s*[:=]\s*"?(\d+)/g, // CSS declaration, template attr, bound prop
-  /!?z-\[(\d+)\]/g, // Tailwind arbitrary utility
-  /zIndex\s*:\s*(\d+)/g, // JS/TS object property
+  /(?<!-)z-index\s*[:=]\s*"?(\d+)/g,
+  /zIndex\s*:\s*"?(\d+)/g,
+  /(?<![\w-])!?-?z-\[(\d+)\]/g,
+  /(?<![\w-])!?-?z-(\d+)(?![\w-])/g,
 ];
 
-const sources = import.meta.glob("../../src/**/*.{vue,ts,css}", {
+const sources = import.meta.glob("../../src/**/*.{vue,ts,css,scss}", {
   query: "?raw",
   import: "default",
   eager: true,
 }) as Record<string, string>;
 
-function scanGlobalBand() {
-  const offenders: { value: number; file: string }[] = [];
+// Read back from the comment block itself, so what this asserts against is the
+// documentation rather than a copy of it that could drift.
+function documentedBands() {
+  const block = globalCss.match(
+    /Stacking order for anything pinned[\s\S]*?\*\//,
+  )?.[0];
+  if (!block) throw new Error("scale block not found in src/styles/global.css");
+
+  return [...block.matchAll(/^\s*(\d{3,})\s{2,}\S/gm)].map(([, band]) =>
+    Number(band),
+  );
+}
+
+function scanGlobalBand(bands: number[]) {
+  const offenders = new Map<string, { value: number; file: string }>();
   const found = new Set<number>();
 
   for (const [path, content] of Object.entries(sources)) {
@@ -38,41 +48,44 @@ function scanGlobalBand() {
         const value = Number(match[1]);
         if (value < GLOBAL_BAND_FLOOR) continue;
         found.add(value);
-        if (!DOCUMENTED_BANDS.includes(value)) offenders.push({ value, file });
+        if (!bands.includes(value)) {
+          offenders.set(`${file}:${value}`, { value, file });
+        }
       }
     }
   }
 
-  return { offenders, found };
+  return { offenders: [...offenders.values()], found };
 }
 
 describe("z-index global scale", () => {
   it("documents every z-index used in the global band", () => {
-    const { offenders } = scanGlobalBand();
+    const { offenders } = scanGlobalBand(documentedBands());
 
     expect(
       offenders,
       offenders
         .map(
           ({ value, file }) =>
-            `${file} declares z-index ${value}, which isn't in the documented ` +
-            `scale. Add it to the "Stacking order" block in src/styles/global.css, ` +
-            `or reuse an existing band.`,
+            `${file} declares z-index ${value}, which the scale in ` +
+            `src/styles/global.css does not list. Give it a line there, or ` +
+            `reuse the band that describes it.`,
         )
         .join("\n"),
     ).toEqual([]);
   });
 
   it("finds every documented band in src/", () => {
-    // also guards against a broken pattern above silently matching nothing
-    const { found } = scanGlobalBand();
-    const missing = DOCUMENTED_BANDS.filter((value) => !found.has(value));
+    // also catches a pattern above quietly matching nothing at all
+    const bands = documentedBands();
+    const { found } = scanGlobalBand(bands);
+    const missing = bands.filter((band) => !found.has(band));
 
     expect(
       missing,
-      `${missing.join(", ")} no longer occurs in src/. Drop it from the ` +
-        `"Stacking order" block in src/styles/global.css, unless the patterns ` +
-        `above stopped matching how it is declared.`,
+      `nothing in src/ uses ${missing.join(", ")} any more. Drop it from the ` +
+        `scale in src/styles/global.css, unless the patterns above stopped ` +
+        `matching how it is written.`,
     ).toEqual([]);
   });
 });
