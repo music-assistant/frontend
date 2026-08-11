@@ -24,8 +24,8 @@ importers:
         specifier: 7.4.47
         version: 7.4.47
       '@scure/base':
-        specifier: ^2.2.0
-        version: 2.2.0
+        specifier: ^2.3.0
+        version: 2.3.0
       '@sendspin/sendspin-js':
         specifier: 3.2.1
         version: 3.2.1
@@ -1884,8 +1884,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@scure/base@2.2.0':
-    resolution: {integrity: sha512-b8XEupJibegiXV+tDUseI8oLQc8ei3d/4Jkb2RpbHh3MfE054ov3uIz2dhFkB3FI8iwYkEh0gGCApkrYggkPNg==}
+  '@scure/base@2.3.0':
+    resolution: {integrity: sha512-NsG6Y03tY6R5BUis4FdVtHVkur0U6FOzskgs9ZXNl78CUc9fkZ78HmENUle1nSOkCasDmbubmWD9qwB7mm4PZA==}
 
   '@sendspin/sendspin-js@3.2.1':
     resolution: {integrity: sha512-FlnHUV2hppNg/W3yIvV0v9XmDkHE/tbmHkc2/wWDE9CMfqNdCkGhaTsd4cRa4n5FafS3wTDccceFtPvNiacKvg==}
@@ -6401,7 +6401,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.62.2':
     optional: true
 
-  '@scure/base@2.2.0': {}
+  '@scure/base@2.3.0': {}
 
   '@sendspin/sendspin-js@3.2.1':
     dependencies:
