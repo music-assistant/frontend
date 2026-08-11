@@ -73,7 +73,8 @@ const showRevealLyrics = computed(() => revealLyricsStatus.value !== "error");
 const { position: lyricsPosition } = useGuessTheSongPlaybackPosition({
   active: () =>
     props.state.phase === "reveal" && !!props.currentRound.track_uri,
-  startedAt: () => props.currentRound.started_at,
+  startedAt: () =>
+    props.currentRound.audio_started_at ?? props.currentRound.started_at,
   duration: () => props.currentRound.duration,
 });
 

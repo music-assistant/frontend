@@ -61,6 +61,7 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_failed": "Play action failed",
+    "lights": "Lights",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -68,6 +69,19 @@
         "sync_group": "Sync Group"
     },
     "players": "Players",
+    "player_select": {
+        "active_player_volume_only": "Only show volume sliders for active players",
+        "and_more": "...and {0} more",
+        "disable_player": "Disable player",
+        "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
+        "disable_player_title": "Disable {0}?",
+        "display_options": "Display options",
+        "rename_player": "Rename player",
+        "rename_player_description": "Enter a new name for this player.",
+        "show_active_players_first": "Show active players first",
+        "show_grouped_players": "Show group members",
+        "show_selected_player_first": "Show selected player first"
+    },
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
@@ -99,6 +113,7 @@
         "delete": "Delete",
         "disable": "Disable",
         "documentation": "Documentation",
+        "known_issues": "Known issues",
         "enable": "Enable",
         "enable_player": "Enable this player",
         "enable_provider": "Enable this provider entry",
@@ -117,6 +132,7 @@
         "player_name": "Custom player name",
         "player_not_available": "This player is not (yet) available",
         "player_provider": "Provider",
+        "player_saved": "Player settings saved",
         "player_settings": "Player settings",
         "player_type_label": "Player type",
         "playerproviders": "Player providers",
@@ -124,8 +140,10 @@
         "pluginproviders": "Plugin providers",
         "provider_disabled": "This provider entry is disabled",
         "provider_name": "Custom name for this provider entry",
+        "provider_settings": "{name} provider settings",
         "providers": "Providers",
         "reload": "Reload",
+        "reload_provider": "Reload provider",
         "save": "Save",
         "settings": "Settings",
         "setup_provider": "Setup provider: {0}",
@@ -137,6 +155,7 @@
         "server_version": "Server version",
         "server_base_url": "Base URL",
         "server_as_addon": "Home Assistant add-on",
+        "server_clock_offset": "Clock offset (server vs this device)",
         "artists_in_library": "Artists in library",
         "albums_in_library": "Albums in library",
         "tracks_in_library": "Tracks in library",
@@ -203,8 +222,8 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
-            "input_gain_help": "Sets the level going into the chain. Lower it to leave headroom for filters that boost.",
-            "output_gain_help": "Adjusts the level leaving the chain, after every filter has been applied. Player volume is applied later.",
+            "input_gain_help": "Sets the level going into the pipeline. Lower it to leave headroom for filters that boost.",
+            "output_gain_help": "Adjusts the level leaving the pieline, after every filter has been applied. Player volume is applied later.",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
@@ -246,7 +265,7 @@
                 "treble_level": "Treble Level"
             },
             "gain": {
-                "help": "Raises or lowers the level of everything passing through this point in the chain."
+                "help": "Raises or lowers the level of everything passing through this point in the pipeline."
             },
             "balance": {
                 "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
@@ -259,6 +278,68 @@
                 "unit_singular": "semitone",
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Set the concert pitch so A is tuned to 432 Hz"
+            },
+            "safety_limiter": {
+                "help": "Catches peaks that would otherwise clip and may damage your speakers. Place it last in the pipeline.",
+                "ceiling": "Ceiling"
+            },
+            "compressor": {
+                "help": "Evens out the volume by turning down the loudest parts, so quieter detail stays audible.",
+                "preset": "Preset",
+                "custom": "Custom",
+                "threshold": "Threshold",
+                "ratio": "Ratio",
+                "attack": "Attack",
+                "release": "Release",
+                "knee": "Knee",
+                "makeup": "Makeup Gain",
+                "presets": {
+                    "light": "Light",
+                    "medium": "Medium",
+                    "heavy": "Heavy",
+                    "light_desc": "Gentle leveling",
+                    "medium_desc": "Balanced control",
+                    "heavy_desc": "Firm and punchy"
+                }
+            },
+            "high_low_pass": {
+                "help": "Removes everything on one side of the cutoff frequency. Often used to keep deep bass away from small speakers.",
+                "mode_label": "Mode",
+                "mode": {
+                    "high_pass": "High-pass",
+                    "low_pass": "Low-pass"
+                },
+                "mode_desc": {
+                    "high_pass": "Removes content below the cutoff",
+                    "low_pass": "Removes content above the cutoff"
+                },
+                "slope": "Slope",
+                "slope_desc": {
+                    "12": "Gentle",
+                    "24": "Medium",
+                    "48": "Steep"
+                }
+            },
+            "convolution": {
+                "help": "Convolution applies a recorded impulse response to the audio \u2014 used for room or speaker correction and headphone simulation. Gain should be negative or zero, as an impulse response changes overall loudness.",
+                "impulse_response": "Impulse Response",
+                "none": "None selected",
+                "missing": "Unavailable impulse response",
+                "manage_irs": "Manage IR Files",
+                "library": "Impulse Response Library",
+                "library_help": "Impulse responses are converted and stored on the server, so one you upload here is available to every player.",
+                "empty": "No impulse responses uploaded yet.",
+                "choose_file": "Choose File",
+                "no_file": "No file selected",
+                "name": "Name",
+                "upload": "Upload",
+                "upload_failed": "Upload failed",
+                "too_large": "This file is larger than the {0} MiB limit.",
+                "remove": "Delete impulse response",
+                "remove_confirm": "Delete \"{0}\"? Any convolution filter using it, on any player or preset, will be reset to no impulse response.",
+                "mono": "Mono",
+                "stereo": "Stereo",
+                "channel_count": "{0} channels"
             },
             "stereo_width": {
                 "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound.",
@@ -289,6 +370,10 @@
                 "gain": "Gain",
                 "balance": "Balance",
                 "transpose": "Transpose",
+                "safety_limiter": "Safety Limiter",
+                "compressor": "Compressor",
+                "high_low_pass": "High/Low-pass",
+                "convolution": "Convolution",
                 "stereo_width": "Stereo Width",
                 "crossfeed": "Crossfeed"
             },
@@ -319,6 +404,29 @@
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
+        },
+        "hass_controls": {
+            "add_hass_entity": "Add a Home Assistant entity...",
+            "add_entity": "Add entity...",
+            "title": {
+                "power_controls": "Select a power control",
+                "volume_controls": "Select a volume control",
+                "mute_controls": "Select a mute control"
+            },
+            "search_placeholder": "Search by entity, device or area...",
+            "no_results": "No matching entities",
+            "search_failed": "Could not search Home Assistant entities. Check that Home Assistant is connected.",
+            "truncated": "More entities match than can be shown here, refine your search to narrow it down.",
+            "no_device": "No device",
+            "no_area": "No area",
+            "none_selected": "No entities selected",
+            "remove_entity": "Remove entity",
+            "already_added": "Added",
+            "role": {
+                "power": "Power",
+                "volume": "Volume",
+                "mute": "Mute"
+            }
         },
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",
@@ -602,9 +710,13 @@
             "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
             "open_settings": "Open Streams settings"
         },
+        "provider_status_loaded": "Running",
+        "provider_status_loading": "Loading",
+        "provider_status_disabled": "Disabled",
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
         "provider_status_error": "Setup failed",
+        "provider_status_unknown": "Unknown",
         "remove_provider": "Remove provider",
         "remove_provider_confirm": "Remove this provider? This cannot be undone.",
         "save_failed": "Couldn't save the provider settings",
@@ -613,6 +725,7 @@
         "provider_saved": "Provider settings saved",
         "provider_reloading": "Reloading provider…",
         "provider_removed": "Provider removed",
+        "action_completed": "Action completed",
         "queue_settings": "Queue settings",
         "audio_analysis_failures": {
             "title": "Audio Analysis Failures",
@@ -638,7 +751,8 @@
         "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
         "queue_global_settings_link": "Open global queue settings",
         "protocol_provider_unavailable": "The provider for this output protocol is currently unavailable.",
-        "protocol_multi_info": "This player supports multiple output protocols. Music Assistant links them automatically so they act as a single player — enable the ones you want to use.",
+        "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
+        "protocol_native_badge": "Native",
         "protocol_enable_label": "Enable output protocols",
         "protocol_configure_title": "Configure {name}",
         "protocol_configure_label": "Configure output protocols",
@@ -656,6 +770,7 @@
         }
     },
     "show_info": "Show info",
+    "speakers_in_group": "Speakers in group",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
     "sort": {
@@ -670,7 +785,6 @@
         "artist": "Artist",
         "name": "Alphabetically",
         "name_desc": "Alphabetically (descending)",
-        "recent": "Recently added",
         "year_desc": "Release year (descending)",
         "duration_desc": "Duration (descending)",
         "original": "Original",
@@ -683,8 +797,10 @@
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
         "play_count_desc": "Play count (descending)",
-        "artist_name": "Album artist",
-        "artist_name_desc": "Album artist (descending)",
+        "album_artist_name": "Album artist",
+        "album_artist_name_desc": "Album artist (descending)",
+        "track_artist_name": "Track artist",
+        "track_artist_name_desc": "Track artist (descending)",
         "album_sort_name": "Album (sort name)"
     },
     "state": {
@@ -903,6 +1019,7 @@
             "source_channel": "Source channel: {0}",
             "source_channel_left": "Left",
             "source_channel_right": "Right",
+            "mixed_to_mono": "Mixed to mono",
             "dsp_preset": "DSP preset: {0}",
             "dsp_preset_label": "DSP preset",
             "dsp_title": "DSP",
@@ -1156,6 +1273,8 @@
         "click_to_change": "Click below to change output device"
     },
     "more_options": "More options",
+    "visualizers": "Visualizers",
+    "volume": "Volume",
     "edit": "Edit",
     "authors": "Authors",
     "collection": "Collection",
@@ -1184,6 +1303,7 @@
     "delete_genre": "Delete genre",
     "description": "Description",
     "genre": "Genre",
+    "grouped_volume": "Grouped volume",
     "genres": "Genres",
     "link": "Link",
     "link_alias": "Link alias",
@@ -1262,13 +1382,11 @@
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "dynamic_batch_size": "Dynamic Batch Size",
                 "instructions": "Host and Program Instructions"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
                 "shuffle_playlist_tracks": "Play the source playlist in random order. Turn this off to follow the playlist's own order.",
-                "dynamic_batch_size": "How many tracks the host prepares at a time. Larger batches mean fewer pauses while the next segment is generated, but a longer wait before the show starts playing.",
                 "instructions": "Describes the host's personality and how segments should be written. This is sent to the AI with every segment."
             },
             "web_search": {
@@ -1310,9 +1428,7 @@
             "toast": {
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
                 "unavailable": "AI Radio is not enabled.",
-                "playlist_starting": "Generating playlist — it will appear in your library shortly.",
                 "live_starting": "Live radio started",
-                "playlist_start_failed": "Failed to start playlist generation",
                 "live_start_failed": "Failed to start live radio",
                 "session_stopped": "AI Radio session stopped",
                 "session_stop_failed": "Failed to stop AI Radio session",
@@ -1338,15 +1454,12 @@
                 "stop": "Stop",
                 "stopping": "Stopping...",
                 "on_air": "On air",
-                "generate_playlist": "Generate and save as playlist",
                 "customize": "Customize",
                 "duplicate": "Duplicate",
                 "duplicate_name": "{0} (copy)",
                 "delete": "Delete",
                 "session_failed": "Last run failed",
-                "open_playlist": "Open generated playlist",
                 "status_failed": "Failed {0}",
-                "status_playlist_ready": "Playlist ready · {0}",
                 "status_last_on_air": "Last on air {0}",
                 "no_player": "Select a player first",
                 "start_failed": "Failed to start: {0}",
@@ -1358,12 +1471,7 @@
                 "preparing": "Preparing your show…",
                 "fetch_source_tracks": "Fetching tracks…",
                 "planning_sections": "Planning the show…",
-                "generating_llm": "Writing the host's lines…",
-                "generating_tts": "Recording the host's voice…",
-                "publishing_playlist": "Publishing playlist…",
-                "initializing_queue": "Preparing the queue…",
-                "queueing_batch": "Queueing music…",
-                "waiting_for_playback": "Waiting for playback…"
+                "initializing_queue": "Preparing the queue…"
             },
             "create": {
                 "title": "Create a show",
@@ -1568,6 +1676,8 @@
             "leaderboard": "Leaderboard",
             "invite_players": "Invite players",
             "qr_unavailable": "Could not render QR code",
+            "dashboard_waiting": "Waiting for the quiz to start",
+            "name_that_track": "Name that track",
             "copied": "Copied",
             "copy_link": "Copy link",
             "join_link_copied": "Join link copied",
@@ -1963,8 +2073,10 @@
     "artist_topalbums": "Top albums",
     "in_library": "In your library",
     "artist_no_library_albums": "You don't have any albums in your library for this artist.",
+    "artist_no_library_audiobooks": "You don't have any audiobooks in your library for this author/narrator.",
     "artist_no_library_tracks": "You don't have any tracks in your library for this artist.",
     "artist_all_albums": "All albums",
+    "artist_all_audiobooks": "All audiobooks",
     "artist_all_tracks": "All tracks",
     "on_provider": "On {0}",
     "open_queue_settings": "Open queue settings",
@@ -1996,8 +2108,8 @@
     "lyrics_show": "Show lyrics for this track",
     "lyrics_hide": "Hide lyrics for this track",
     "lyrics_loading": "Lyrics are being fetched...",
-    "show_audio_chain_details": "Show audio chain details",
-    "show_audio_chain_details_for_quality": "Show audio chain details ({quality})",
+    "show_audio_chain_details": "Show audio pipeline details",
+    "show_audio_chain_details_for_quality": "Show audio pipeline details ({quality})",
     "show_less": "Show less",
     "show_more": "Show more",
     "autoplay_on_title": "Autoplay is enabled",

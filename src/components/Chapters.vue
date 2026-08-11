@@ -41,11 +41,11 @@ import Toolbar from "@/components/Toolbar.vue";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import { MediaItemChapter, type MediaItemType } from "@/plugins/api/interfaces";
+import { MediaItemChapter, type MediaItem } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
 
 export interface Props {
-  itemDetails: MediaItemType;
+  itemDetails: MediaItem;
 }
 const props = defineProps<Props>();
 

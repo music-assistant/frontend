@@ -10,6 +10,7 @@
     @update:open="onOpenChange"
   >
     <DropdownMenuContent
+      data-item-context-menu
       :reference="reference"
       align="end"
       :side-offset="0"
@@ -117,7 +118,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getLucideIcon } from "@/helpers/icon";
+import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -157,7 +158,7 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
     action: () => {
       store.activePlayerId = player.player_id;
     },
-    icon: getLucideIcon(player.icon) ?? player.icon,
+    icon: getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK),
     selected: store.activePlayerId == player.player_id,
     close_on_click: false,
   }));
@@ -174,15 +175,36 @@ onMounted(() => {
       store.dialogActive = true;
     });
   });
-  onBeforeUnmount(() => {
-    eventbus.off("contextmenu");
-  });
+  document.addEventListener("pointerdown", closeOnOutsidePointer, true);
+});
+
+onBeforeUnmount(() => {
+  eventbus.off("contextmenu");
+  document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
 const onOpenChange = function (value: boolean) {
   show.value = value;
   store.dialogActive = value;
 };
+
+function closeOnOutsidePointer(event: PointerEvent) {
+  if (!show.value) return;
+  const target = event.target;
+  if (
+    target instanceof Element &&
+    target.closest(
+      "[data-item-context-menu], [data-slot='dropdown-menu-sub-content']",
+    )
+  ) {
+    return;
+  }
+
+  show.value = false;
+  queueMicrotask(() => {
+    if (!show.value) store.dialogActive = false;
+  });
+}
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
   if (menuItem.action) {
@@ -210,20 +232,20 @@ import router from "@/plugins/router";
 import {
   getShortcutMoveAvailability,
   isShortcutCapReached,
-  isShortcutMediaType,
+  isShortcutItem,
   isShortcutPinnedItem,
   moveShortcutStandaloneItem,
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
+import { playerVisible } from "@/helpers/players";
 import {
   gotoRadio,
   radioActionLabelKey,
   radioRelevant,
   radioSupported,
 } from "@/helpers/radio";
-import { playerVisible } from "@/helpers/utils";
 import { runWithConcurrency } from "@/helpers/concurrency";
 import {
   isItemInLibrary,
@@ -533,21 +555,20 @@ export const getContextMenuItems = async function (
     }
   }
   // go to album
-  if (
-    items.length === 1 &&
-    itemIsAvailable(items[0]) &&
-    "album" in items[0] &&
-    (items[0] as Track).album
-  ) {
+  const trackAlbum =
+    items.length === 1 && itemIsAvailable(items[0]) && "album" in items[0]
+      ? (items[0] as Track).album
+      : null;
+  if (trackAlbum) {
     contextMenuItems.push({
       label: "goto_album",
-      labelArgs: [(items[0] as Track).album.name],
+      labelArgs: [trackAlbum.name],
       action: () => {
         router.push({
           name: "album",
           params: {
-            itemId: (items[0] as Track).album.item_id,
-            provider: (items[0] as Track).album.provider,
+            itemId: trackAlbum.item_id,
+            provider: trackAlbum.provider,
           },
         });
       },
@@ -865,7 +886,7 @@ export const getContextMenuItems = async function (
     )
   ) {
     const item = items[0] as Radio | Track | Playlist;
-    const hasBuiltinProvider = item.provider_mappings?.some(
+    const hasBuiltinProvider = item.provider_mappings.some(
       (pm) => pm.provider_domain === "builtin",
     );
     const builtinProvider = api.getProvider("builtin");
@@ -879,7 +900,7 @@ export const getContextMenuItems = async function (
       [MediaType.TRACK]: "edit_track",
       [MediaType.PLAYLIST]: "edit_playlist",
     };
-    const supportsEdit = builtinProvider?.supported_features?.includes(
+    const supportsEdit = builtinProvider?.supported_features.includes(
       featureMap[item.media_type],
     );
     // For playlists, also check is_editable flag (builtin special playlists are not editable)
@@ -948,11 +969,7 @@ export const getContextMenuItems = async function (
     });
   }
   // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook, genre)
-  if (
-    items.length === 1 &&
-    isShortcutMediaType(items[0].media_type) &&
-    !!items[0].uri
-  ) {
+  if (items.length === 1 && isShortcutItem(items[0]) && !!items[0].uri) {
     const shortcutItem = items[0];
     if (isShortcutPinnedItem(shortcutItem)) {
       // move up/down only make sense when the menu is opened on the
@@ -999,7 +1016,10 @@ export const getContextMenuItems = async function (
     parentItem.item_id != resolvedItem.item_id &&
     parentItem.media_type == resolvedItem.media_type
   ) {
-    const mapping: ProviderMapping =
+    const mapping: Pick<
+      ProviderMapping,
+      "provider_instance" | "provider_domain" | "item_id" | "available"
+    > =
       "provider_mappings" in items[0]
         ? items[0].provider_mappings[0]
         : {

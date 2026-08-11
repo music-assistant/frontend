@@ -1,3 +1,4 @@
+import { serverNow } from "@/composables/useServerTime";
 import {
   computed,
   onScopeDispose,
@@ -71,7 +72,9 @@ export function useMusicQuizAnswerDeadline(
       return;
     }
 
-    const remaining = deadline - Date.now() / 1000;
+    // the deadline is on the server's clock: a guest device whose own clock is off would
+    // otherwise count down to the wrong moment, by exactly that error
+    const remaining = deadline - serverNow();
     remainingSeconds.value = Math.max(0, Math.ceil(remaining));
 
     const duration = toValue(options.duration) ?? 0;

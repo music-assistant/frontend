@@ -576,7 +576,6 @@
         "artist": "Előadó",
         "name": "ABC sorrendben",
         "name_desc": "ABC sorrendben (csökkenő)",
-        "recent": "Nemrég hozzáadott",
         "year_desc": "Megjelenés éve (csökkenő)",
         "duration_desc": "Időtartam (csökkenő)",
         "original": "Eredeti",
@@ -589,8 +588,6 @@
         "last_played_desc": "Utoljára lejátszott (csökkenő)",
         "play_count": "Lejátszások száma",
         "play_count_desc": "Lejátszások száma (csökkenő)",
-        "artist_name": "Album előadója",
-        "artist_name_desc": "Album előadója (csökkenő)",
         "album_sort_name": "Album (rendezési név)"
     },
     "state": {

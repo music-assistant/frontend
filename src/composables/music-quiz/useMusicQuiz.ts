@@ -101,6 +101,9 @@ interface MusicQuizStateIdentity<
   name: string | null;
   include_similar_music?: boolean;
   auto_start_at?: number | null;
+  // public and host state only, and only once the server resolved it: servers
+  // before the dashboard feature omit it, and then a display hides its join QR
+  join_url?: string;
 }
 
 interface MusicQuizGuessTheSongStateBase extends MusicQuizStateIdentity {
@@ -226,6 +229,10 @@ export interface MusicQuizTriviaHostState extends MusicQuizTriviaStateBase {
   rounds: MusicQuizTriviaHostRound[];
   playback?: MusicQuizHostPlayback;
 }
+
+export type MusicQuizMultipleChoicePublicState =
+  | MusicQuizGuessTheSongPublicState
+  | MusicQuizTriviaPublicState;
 
 export type MusicQuizMultipleChoiceHostState =
   | MusicQuizGuessTheSongHostState
@@ -386,6 +393,9 @@ export interface MusicQuizTimelineYourAnswer {
 export interface MusicQuizRoundBase {
   round_index: number;
   started_at: number | null;
+  // when the round's track became audible; anything that follows the audio
+  // (e.g. synced lyrics) should prefer this over started_at
+  audio_started_at?: number | null;
   deadline: number;
   auto_advance_at: number | null;
   ended_at?: number;
@@ -730,6 +740,21 @@ export function getMusicQuizInfo(): Promise<MusicQuizInfo | null> {
   return api.sendCommand<MusicQuizInfo | null>("music_quiz/info", undefined, {
     suppressGlobalError: true,
   });
+}
+
+export function getMusicQuizPublicState(): Promise<MusicQuizPublicState | null> {
+  // Without the music_quiz provider loaded the command isn't registered, and there
+  // can be no active quiz either — so don't bother the server.
+  const hasMusicQuiz = Object.values(api.providers).some(
+    (provider) => provider.domain === "music_quiz",
+  );
+  if (!hasMusicQuiz) return Promise.resolve(null);
+  // A kiosk display has nowhere to show a toast; callers handle failures locally.
+  return api.sendCommand<MusicQuizPublicState | null>(
+    "music_quiz/public_state",
+    undefined,
+    { suppressGlobalError: true },
+  );
 }
 
 export function joinMusicQuiz(name: string) {

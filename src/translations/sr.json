@@ -234,11 +234,15 @@
             "parameter": {
                 "frequency": "Фреквенција",
                 "gain": "Појачање",
-                "q_factor": "„Q“ фактор"
+                "q_factor": "„Q“ фактор",
+                "balance": "Баланс"
             },
             "types": {
                 "parametric_eq": "Параметарски еквилајзер",
-                "tone_control": "Контрола тона"
+                "tone_control": "Контрола тона",
+                "gain": "Појачање",
+                "balance": "Баланс",
+                "transpose": "Транспоновање"
             },
             "channels": {
                 "ALL": "Сви",
@@ -255,7 +259,12 @@
                 "save": "Сачувај „DSP“ пресет",
                 "name": "Име пресета",
                 "name_placeholder": "Мој нови пресет",
-                "remove_confirm": "Да ли сте сигурни да желите да уклоните овај „DSP“ пресет?"
+                "remove_confirm": "Да ли сте сигурни да желите да уклоните овај „DSP“ пресет?",
+                "custom": "Прилагођено",
+                "selected": "Пресет: {0}"
+            },
+            "transpose": {
+                "concert_pitch_432": "А = 432 Hz"
             }
         },
         "dsp_enabled": "„DSP“ је омогућен",
@@ -406,7 +415,7 @@
             "options": "Опције плејера",
             "preferences": "Поставке",
             "display_settings": "Приказ",
-            "dsp": "ДСП"
+            "dsp": "„ДСП“"
         },
         "onboarding_subtitle": "Хајде да почнемо тако што ћемо повезати ваше музичке изворе и аудио уређаје.",
         "onboarding_music_title": "Музика",
@@ -577,7 +586,21 @@
         "customize_menu": {
             "label": "Прилагодите мени",
             "description": "Поставите навигациони мени у режим измене да бисте приказали, сакрили, променили редослед и преименовали његове ставке."
-        }
+        },
+        "start_setup": "Покрени подешавање",
+        "setup_required": "Потребно је подешавање",
+        "setup_flow": {
+            "finish": "Заврши",
+            "done": "Готово",
+            "open_external": "Отвори",
+            "success_title": "Све је спремно!",
+            "aborted_title": "Подешавање је отказано",
+            "open_settings": "Отвори подешавања",
+            "setup_player_title": "Подешавање плејера",
+            "expires_in": "Истиче за {0}",
+            "external_host": "Отвара {0}"
+        },
+        "options": "Опције"
     },
     "show_info": "Прикажи информације",
     "show_select_boxes": "Прикажи оквире за избор",
@@ -594,7 +617,6 @@
         "artist": "Извођач",
         "name": "По абецедном реду",
         "name_desc": "По абецедном реду (опадајуће)",
-        "recent": "Недавно додато",
         "year_desc": "Година издавања (опадајуће)",
         "duration_desc": "Трајање (опадајуће)",
         "original": "Оригинал",
@@ -607,8 +629,6 @@
         "last_played_desc": "Последње репродуковано (опадајући)",
         "play_count": "Број репродукција",
         "play_count_desc": "Број репродукција (опадајући)",
-        "artist_name": "Извођач албума",
-        "artist_name_desc": "Извођач албума (опадајући редослед)",
         "album_sort_name": "Албум (назив за сортирање)"
     },
     "state": {
@@ -777,7 +797,41 @@
             "channels": "Канали: {0}",
             "bit_depth": "Дубина бита: {0}"
         },
-        "more_info": "Више информација"
+        "more_info": "Више информација",
+        "audio_processing": {
+            "provider": "Провајдер: {0}",
+            "sample_rate": "{0} kHz",
+            "bit_depth": "{0}-бита",
+            "channel_count": "{0} канали",
+            "bit_rate": "{0} kbps",
+            "applied_gain_db": "Примењено појачање: {0} dB",
+            "source_channel_left": "Лево",
+            "dsp_preset": "„DSP“ пресет: {0}",
+            "not_bit_perfect": "Обрађени излаз",
+            "destination_unknown": "Одредиште {0}",
+            "quality": {
+                "standard": "Стандардни квалитет",
+                "lossless": "Без губитака",
+                "hi_res": "Висока резолуција"
+            },
+            "normalization_mode": {
+                "disabled": "Онемогућено",
+                "fixed_gain": "Фиксно појачање"
+            },
+            "crossfade_mode": {
+                "smart": "Паметно",
+                "standard": "Стандардно",
+                "disabled": "Онемогућено"
+            },
+            "dsp_state": {
+                "disabled": "„DSP“ је онемогућен"
+            },
+            "playback_speed_title": "Брзина репродукције",
+            "crossfade_title": "Прелаз",
+            "overlay_title": "Аудио преклапање",
+            "dsp_preset_label": "„DSP“ пресет",
+            "dsp_title": "„ДСП“"
+        }
     },
     "select_source": "Изаберите извор",
     "play_replace_next": "Пусти следеће (обриши ред за репродукцију)",
@@ -1347,6 +1401,73 @@
             "play_along": "Играјте и ви",
             "host_controls": "Контроле домаћина",
             "return_to_host_panel": "Повратак на панел домаћина"
+        },
+        "ai_radio": {
+            "actions": {
+                "discard": "Одбаци",
+                "delete": "Обриши",
+                "saving": "Чување…",
+                "up": "Горе",
+                "down": "Доле",
+                "remove": "Уклони"
+            },
+            "fields": {
+                "web_search_mode": "Режим веб претраге",
+                "character_limit": "Ограничење броја знакова",
+                "prompt": "Промпт"
+            },
+            "confirm": {
+                "delete_station_title": "Обрисати станицу?",
+                "delete_station": "Обрисати ову станицу?"
+            },
+            "toast": {
+                "station_saved": "Станица је сачувана"
+            },
+            "gallery": {
+                "new_show": "Нова емисија",
+                "refresh": "Освежи"
+            },
+            "card": {
+                "play": "Пусти",
+                "stop": "Заустави",
+                "stopping": "Заустављање...",
+                "customize": "Прилагоди",
+                "duplicate": "Дуплирај",
+                "delete": "Обриши",
+                "status_failed": "Неуспешно {0}",
+                "start_failed": "Покретање није успело: {0}"
+            },
+            "phase": {
+                "fetch_source_tracks": "Преузимање нумера…"
+            },
+            "create": {
+                "playlist_label": "Изворна плејлиста",
+                "playlist_placeholder": "Изабери плејлисту",
+                "playlist_empty": "Није пронађена ниједна плејлиста",
+                "name_label": "Назив емисије",
+                "default_name": "{0} — {1}",
+                "create": "Креирај",
+                "creating": "Креирање…",
+                "validation": {
+                    "playlist_required": "Изаберите изворну плејлисту"
+                }
+            },
+            "presets": {
+                "minimal_dj": {
+                    "name": "Минималистички ди-џеј"
+                }
+            },
+            "customize": {
+                "title": "Прилагоди емисију",
+                "save": "Сачувај емисију",
+                "advanced": "Напредно",
+                "basics_title": "Основно",
+                "segments_title": "Сегменти",
+                "add_segment": "Додај сегмент",
+                "blank_segment": "Празан сегмент",
+                "blank_segment_name": "Нови сегмент",
+                "segment_name": "Назив сегмента"
+            }
         }
     },
     "no_lyrics_available": "Нема доступних текстова песама",
@@ -1682,5 +1803,10 @@
     },
     "searching": "Претрага...",
     "pause": "Пауза",
-    "play_failed": "Репродукције није успела."
+    "play_failed": "Репродукције није успела.",
+    "dashboard": {
+        "disconnect": "Прекини везу са {0}",
+        "loading": "Учитавање уређаја..."
+    },
+    "plugins": "Додаци"
 }

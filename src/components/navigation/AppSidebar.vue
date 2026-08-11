@@ -252,7 +252,6 @@ onUnmounted(() => {
 :deep([data-sidebar="group-label"]) {
   height: 1.75rem !important;
   padding-left: 1rem !important;
-  font-family: "JetBrains Mono Medium", ui-monospace, monospace !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
   letter-spacing: 0.01em !important;

@@ -2,6 +2,8 @@ import { ProviderStatus } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import {
   canReconfigureProvider,
+  getProviderStatusTranslationKey,
+  getProviderSupportIssuesUrl,
   providerRequiresReconfiguration,
 } from "./provider_config";
 
@@ -37,4 +39,28 @@ describe("provider configuration state", () => {
       ).toBe(expected);
     },
   );
+
+  it.each([
+    [ProviderStatus.LOADED, "settings.provider_status_loaded"],
+    [ProviderStatus.LOADING, "settings.provider_status_loading"],
+    [ProviderStatus.DISABLED, "settings.provider_status_disabled"],
+    [ProviderStatus.AUTH_REQUIRED, "settings.provider_status_auth_required"],
+    [ProviderStatus.INCOMPATIBLE, "settings.provider_status_incompatible"],
+    [ProviderStatus.ERROR, "settings.provider_status_error"],
+    [undefined, "settings.provider_status_unknown"],
+  ])("maps provider status %s to %s", (status, expected) => {
+    expect(getProviderStatusTranslationKey(status)).toBe(expected);
+  });
+
+  it.each([
+    ["spotify", "spotify"],
+    ["spotify_connect", "Spotify Connect"],
+    ["ytmusic", "youtube_music"],
+  ])("builds a support issues link for %s", (domain, label) => {
+    expect(getProviderSupportIssuesUrl(domain)).toBe(
+      `https://github.com/music-assistant/support/issues?q=${encodeURIComponent(
+        `is:issue state:open label:"${label}"`,
+      )}`,
+    );
+  });
 });

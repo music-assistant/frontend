@@ -343,7 +343,6 @@
         "artist": "Artista",
         "name": "Alfabeticamente",
         "name_desc": "Alfabeticamente (decrescente)",
-        "recent": "Adicionado recentemente",
         "year_desc": "Ano de lançamento (decrescente)",
         "duration_desc": "Duração (decrescente)",
         "original": "Original",
@@ -355,9 +354,7 @@
         "last_played": "Último reproduzido",
         "last_played_desc": "Último reproduzido (decrescente)",
         "play_count": "Contagem de reprodução",
-        "play_count_desc": "Contagem de reprodução (decrescente)",
-        "artist_name": "Artista",
-        "artist_name_desc": "Artista (decrescente)"
+        "play_count_desc": "Contagem de reprodução (decrescente)"
     },
     "state": {
         "idle": "ocioso",

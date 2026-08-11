@@ -8,22 +8,18 @@ import {
   User,
 } from "./api/interfaces";
 
-import { StoredState } from "@/components/ItemsListing.vue";
+import type { StoredState } from "@/components/ItemsListing.vue";
+import {
+  DEVICE_TYPE,
+  isTouchscreenDevice,
+  type DeviceType,
+} from "@/helpers/device";
 import { isHomeAssistantIngressSession } from "@/helpers/ingress";
-import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
+import { parseBool } from "@/helpers/parse";
 import api from "./api";
+import { resolvePlayerQueue } from "./api/helpers";
 
-import MobileDetect from "mobile-detect";
 import { getBreakpointValue } from "./breakpoint";
-
-type DeviceType = "desktop" | "phone" | "tablet";
-const md = new MobileDetect(window.navigator.userAgent);
-
-const DEVICE_TYPE: DeviceType = md.tablet()
-  ? "tablet"
-  : md.phone() || md.mobile()
-    ? "phone"
-    : "desktop";
 
 interface Store {
   activePlayerId?: string;
@@ -52,7 +48,6 @@ interface Store {
   libraryAudiobooksCount?: number;
   libraryGenresCount?: number;
   isTouchscreen: boolean;
-  playerTipShown: boolean;
   deviceType: DeviceType;
   forceMobileLayout?: boolean;
   mobileLayout: boolean;
@@ -82,26 +77,10 @@ export const store: Store = reactive({
     }
     return undefined;
   }),
-  activePlayerQueue: computed(() => {
-    if (
-      store.activePlayer?.active_source &&
-      store.activePlayer.active_source in api.queues
-    ) {
-      return api.queues[store.activePlayer.active_source];
-    }
-    if (
-      store.activePlayer &&
-      !store.activePlayer.active_source &&
-      store.activePlayer.player_id in api.queues &&
-      api.queues[store.activePlayer.player_id].active
-    ) {
-      return api.queues[store.activePlayer.player_id];
-    }
-    return undefined;
-  }),
+  activePlayerQueue: computed(() => resolvePlayerQueue(store.activePlayer)),
   curQueueItem: computed(() => {
     if (store.activePlayerQueue && store.activePlayerQueue.active)
-      return store.activePlayerQueue.current_item;
+      return store.activePlayerQueue.current_item ?? undefined;
     return undefined;
   }),
   globalSearchTerm: undefined,
@@ -116,7 +95,6 @@ export const store: Store = reactive({
   libraryGenresCount: undefined,
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
-  playerTipShown: false,
   deviceType: DEVICE_TYPE,
   mobileLayout: computed(() => {
     const isMobileDevice = getBreakpointValue({ breakpoint: "tablet" });

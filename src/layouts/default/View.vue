@@ -97,11 +97,12 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  padding-bottom: 90px;
+  padding-bottom: 110px;
 }
 
 .content-section--mobile {
-  padding-bottom: 230px;
+  /* clears the bottom navigation plus the floating player bar above it */
+  padding-bottom: calc(var(--mobile-navigation-height) + 162px);
 }
 
 .content-section--frameless {

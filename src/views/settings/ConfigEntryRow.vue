@@ -1,17 +1,25 @@
 <template>
   <div
     class="config-entry"
-    :class="{ 'config-entry-advanced': confEntry.advanced }"
+    :class="{
+      'config-entry-advanced': confEntry.advanced,
+      'config-entry-hass-picker': isHassControlPickerEntry(confEntry),
+    }"
   >
     <ConfigEntryField
       :conf-entry="confEntry"
       :show-password-values="showPasswordValues"
       :disabled="disabled"
+      :provider-domain="providerDomain"
       @toggle-password="emit('toggle-password')"
       @update:value="emit('update:value', $event)"
       @action="emit('action')"
       @open-dsp="emit('open-dsp')"
       @open-options="emit('open-options')"
+      @set-entry-value="
+        (key: string, value: ConfigValueType, label?: string) =>
+          emit('set-entry-value', key, value, label)
+      "
     />
     <v-chip
       v-if="confEntry.advanced"
@@ -40,7 +48,10 @@
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "@lucide/vue";
-import { ConfigEntryUI } from "@/helpers/config_entry_ui";
+import {
+  ConfigEntryUI,
+  isHassControlPickerEntry,
+} from "@/helpers/config_entry_ui";
 import { ConfigValueType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import ConfigEntryField from "./ConfigEntryField.vue";
@@ -49,6 +60,7 @@ const props = defineProps<{
   confEntry: ConfigEntryUI;
   showPasswordValues: boolean;
   disabled: boolean;
+  providerDomain?: string;
 }>();
 
 const emit = defineEmits<{
@@ -58,6 +70,12 @@ const emit = defineEmits<{
   (e: "open-dsp"): void;
   (e: "open-options"): void;
   (e: "help"): void;
+  (
+    e: "set-entry-value",
+    key: string,
+    value: ConfigValueType,
+    label?: string,
+  ): void;
 }>();
 
 const hasDescriptionOrHelpLink = computed(() => {
@@ -74,6 +92,20 @@ const hasDescriptionOrHelpLink = computed(() => {
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.config-entry:has(+ .config-entry-hass-picker) {
+  margin-bottom: 12px;
+}
+
+.config-entry:has(+ .config-entry-hass-picker)
+  :deep(.v-input__details:not(:has(.v-messages__message))) {
+  display: none;
+}
+
+.config-entry-hass-picker {
+  margin-top: -8px;
+  margin-bottom: 16px;
 }
 
 .config-entry:last-child {

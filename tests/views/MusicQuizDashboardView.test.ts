@@ -1,9 +1,13 @@
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderType, type ProviderConfig } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { providerConfig } from "../fixtures/providerConfig";
 
 const {
+  apiMock,
   mockAdminState,
   mockGetProviderConfigs,
   mockResolveMusicQuizDefinition,
@@ -12,10 +16,11 @@ const {
   mockSubscribe,
   mockToastError,
 } = vi.hoisted(() => ({
+  apiMock: { state: { value: "connected" as string } },
   mockAdminState: {
     current: undefined as { value: boolean } | undefined,
   },
-  mockGetProviderConfigs: vi.fn(),
+  mockGetProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
   mockResolveMusicQuizDefinition: vi.fn(),
   mockRouterPush: vi.fn(),
   mockSendCommand: vi.fn(),
@@ -31,12 +36,16 @@ vi.mock("@/components/music-quiz/game_types", () => ({
   supportsMusicQuizListenIn: vi.fn(() => false),
 }));
 
-vi.mock("@/plugins/api", () => {
+vi.mock("@/plugins/api", async () => {
+  // The connection banner re-renders on api.state, so the mock has to carry a
+  // real ref: assignments to a plain { value } would never reach the computed.
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  apiMock.state = ref(apiMock.state.value);
   const api = {
     sendCommand: mockSendCommand,
     subscribe: mockSubscribe,
     getProviderConfigs: mockGetProviderConfigs,
-    state: { value: "connected" },
+    state: apiMock.state,
   };
   return {
     api,
@@ -78,6 +87,7 @@ vi.mock("vue-sonner", () => ({
 
 describe("MusicQuizDashboardView", () => {
   beforeEach(() => {
+    apiMock.state.value = "connected";
     mockSendCommand.mockReset();
     mockSubscribe.mockReset();
     mockToastError.mockReset();
@@ -102,6 +112,21 @@ describe("MusicQuizDashboardView", () => {
       return Promise.resolve(null);
     });
     mockSubscribe.mockReturnValue(() => {});
+  });
+
+  it("warns the host when the connection degrades", async () => {
+    const wrapper = mountDashboard();
+    await flushPromises();
+    const banner = wrapper.findComponent({
+      name: "MusicQuizConnectionBanners",
+    });
+    expect(banner.props("degraded")).toBe(false);
+
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(banner.props("degraded")).toBe(true);
+    wrapper.unmount();
   });
 
   it("renders a compact empty state and opens setup on demand", async () => {
@@ -174,7 +199,7 @@ describe("MusicQuizDashboardView", () => {
   it("resolves the admin settings shortcut and routes to its provider config", async () => {
     if (mockAdminState.current) mockAdminState.current.value = true;
     mockGetProviderConfigs.mockResolvedValue([
-      { instance_id: "music_quiz--instance" },
+      musicQuizProviderConfig("music_quiz--instance"),
     ]);
     const wrapper = mountDashboard();
     await flushPromises();
@@ -216,7 +241,7 @@ describe("MusicQuizDashboardView", () => {
 
   it("resolves the settings shortcut when admin access arrives after mount", async () => {
     mockGetProviderConfigs.mockResolvedValue([
-      { instance_id: "music_quiz--instance" },
+      musicQuizProviderConfig("music_quiz--instance"),
     ]);
     const wrapper = mountDashboard();
     await flushPromises();
@@ -272,6 +297,14 @@ describe("MusicQuizDashboardView", () => {
     expect(mockRouterPush).toHaveBeenCalledWith({ name: "guest-quiz" });
   });
 });
+
+function musicQuizProviderConfig(instanceId: string): ProviderConfig {
+  return providerConfig({
+    type: ProviderType.PLUGIN,
+    domain: "music_quiz",
+    instance_id: instanceId,
+  });
+}
 
 function mountDashboard() {
   return mount(MusicQuizDashboardView, {

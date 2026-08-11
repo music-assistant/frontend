@@ -578,7 +578,6 @@
         "artist": "Wykonawca",
         "name": "Alfabetycznie",
         "name_desc": "Alfabetycznie (malejąco)",
-        "recent": "Ostatnio dodane",
         "year_desc": "Rok wydania (malejąco)",
         "duration_desc": "Czas trwania (malejąco)",
         "original": "Oryginał",
@@ -591,8 +590,6 @@
         "last_played_desc": "Ostatnio odtwarzane (malejąco)",
         "play_count": "Ilość odtworzeń",
         "play_count_desc": "Ilość odtworzeń (malejąco)",
-        "artist_name": "Wykonawca albumu",
-        "artist_name_desc": "Wykonawca albumu (malejąco)",
         "album_sort_name": "Album (sortowanie nazwy)"
     },
     "state": {

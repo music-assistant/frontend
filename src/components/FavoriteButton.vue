@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { type MediaItemType } from "@/plugins/api/interfaces";
+import { type MediaItem } from "@/plugins/api/interfaces";
 import { Heart } from "@lucide/vue";
 
 interface Props {
-  item: MediaItemType;
+  item: MediaItem;
 }
 
 const props = defineProps<Props>();

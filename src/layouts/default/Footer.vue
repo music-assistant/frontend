@@ -1,5 +1,3 @@
-import { store } from '@/plugins/store';
-
 <template>
   <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
   <div
@@ -8,17 +6,17 @@ import { store } from '@/plugins/store';
     :style="`
       position: fixed;
       width: 100%;
-      height: 180px;
+      height: calc(180px + var(--mobile-navigation-inset-bottom));
       bottom: 0px;
       z-index: 999;
     `"
   ></div>
 
   <!-- bottom navigation for mobile layout -->
-  <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
-  <BottomNavigation v-if="store.mobileLayout" app style="height: 60px" />
+  <BottomNavigation v-if="store.mobileLayout" />
 
   <v-footer
+    ref="playerBar"
     app
     color="default"
     :class="`py-0 px-0 ${
@@ -27,11 +25,9 @@ import { store } from '@/plugins/store';
         : 'mediacontrols-player-default'
     }`"
     :style="[
+      store.mobileLayout ? { bottom: 'var(--mobile-navigation-height)' } : {},
       store.mobileLayout && store.showPlayersMenu
         ? 'z-index: 999 !important;'
-        : '',
-      store.isInPWAMode && !store.isIngressSession
-        ? 'margin-bottom: 10px;'
         : '',
     ]"
   >
@@ -42,7 +38,36 @@ import { store } from '@/plugins/store';
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 import { store } from "@/plugins/store";
+import { useElementSize } from "@vueuse/core";
+import {
+  type ComponentPublicInstance,
+  onBeforeUnmount,
+  ref,
+  watchEffect,
+} from "vue";
 import Player from "./PlayerOSD/Player.vue";
+
+const OVERLAY_HEIGHT_PROPERTY = "--player-bar-overlay-height";
+
+const playerBar = ref<ComponentPublicInstance>();
+const { height: playerBarHeight } = useElementSize(playerBar, undefined, {
+  box: "border-box",
+});
+
+// on mobile the player bar floats on top of the player bar popouts, which read
+// this variable to keep their content clear of it
+watchEffect(() => {
+  document.documentElement.style.setProperty(
+    OVERLAY_HEIGHT_PROPERTY,
+    store.mobileLayout ? `${Math.ceil(playerBarHeight.value)}px` : "0px",
+  );
+});
+
+// the popouts outlive the player bar in frameless mode, so they must not keep
+// reserving room for a bar that is no longer there
+onBeforeUnmount(() => {
+  document.documentElement.style.removeProperty(OVERLAY_HEIGHT_PROPERTY);
+});
 </script>
 
 <style>
@@ -50,7 +75,7 @@ import Player from "./PlayerOSD/Player.vue";
   display: flex;
   flex-direction: column;
   margin: 5px;
-  margin-bottom: 0px;
+  margin-bottom: 6px;
   width: calc(100% - 10px) !important;
   border-radius: 10px !important;
 }
@@ -70,11 +95,6 @@ import Player from "./PlayerOSD/Player.vue";
     rgba(255, 255, 255, 0.9) 75%,
     rgba(255, 255, 255, 0) 100%
   );
-}
-
-.v-bottom-navigation--active {
-  box-shadow: none;
-  z-index: 2000 !important;
 }
 
 .v-footer {

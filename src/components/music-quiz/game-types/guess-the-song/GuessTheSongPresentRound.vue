@@ -23,7 +23,7 @@
 import type { MusicQuizPresentGameAdapterProps } from "@/components/music-quiz/adapter_contracts";
 import GuessTheSongReveal from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongReveal.vue";
 import type {
-  MusicQuizGuessTheSongHostState,
+  MusicQuizGuessTheSongPublicState,
   MusicQuizGuessTheSongRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { getMediaImageUrl } from "@/helpers/utils";
@@ -33,7 +33,7 @@ import { computed } from "vue";
 const props =
   defineProps<
     MusicQuizPresentGameAdapterProps<
-      MusicQuizGuessTheSongHostState,
+      MusicQuizGuessTheSongPublicState,
       MusicQuizGuessTheSongRound
     >
   >();

@@ -10,12 +10,24 @@
     no-click-animation
   >
     <v-card
+      ref="cardRef"
+      data-player-panel
       class="fullscreen-player-card"
       :style="{ background: backgroundColor }"
     >
-      <v-toolbar class="v-toolbar-default" color="transparent">
+      <PanelDragHandle
+        v-if="store.mobileLayout"
+        @dismiss="store.showFullscreenPlayer = false"
+      />
+      <v-toolbar
+        data-panel-drag-region
+        class="v-toolbar-default"
+        color="transparent"
+      >
         <template #prepend>
+          <!-- on mobile the drag handle is the close affordance -->
           <Button
+            v-if="!store.mobileLayout"
             variant="ghost"
             size="icon-sm"
             :aria-label="$t('tooltip.close_fullscreen')"
@@ -27,7 +39,7 @@
         <template #append>
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
-            :lyrics-active="lyricsActive"
+            :lyrics-active="showLyrics"
             @toggle-lyrics="toggleLyrics"
           />
 
@@ -460,10 +472,15 @@
 import Icon from "@/components/Icon.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
+import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
+import { useUserPreferences } from "@/composables/userPreferences";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -483,7 +500,6 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
-import { useUserPreferences } from "@/composables/userPreferences";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
@@ -505,17 +521,17 @@ import Color from "color";
 import {
   computed,
   markRaw,
+  nextTick,
   onBeforeUnmount,
   onMounted,
   ref,
   watch,
   watchEffect,
+  type ComponentPublicInstance,
 } from "vue";
 import { useDisplay } from "vuetify";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
-import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 
 const { name, mdAndUp } = useDisplay();
 
@@ -544,6 +560,30 @@ const playBtnStyle = computed(() => {
 
 const playerMarqueeSync = new MarqueeTextSync();
 
+// The dialog keeps its content mounted after the first open, so a drag-to-close
+// leaves PanelDragHandle's inline transform/opacity on the card; clear them
+// when the player is opened again.
+const cardRef = ref<ComponentPublicInstance | HTMLElement | null>(null);
+watch(
+  () => store.showFullscreenPlayer,
+  async (isOpen) => {
+    if (!isOpen) return;
+    await nextTick();
+    // template refs may resolve to either a component instance or a plain element
+    const raw = cardRef.value;
+    const el =
+      raw instanceof HTMLElement
+        ? raw
+        : ((raw?.$el ?? undefined) as HTMLElement | undefined);
+    if (!el?.dataset.dragDismissed) return;
+    delete el.dataset.dragDismissed;
+    el.style.removeProperty("transform");
+    el.style.removeProperty("opacity");
+    el.style.removeProperty("transition");
+    el.style.removeProperty("will-change");
+  },
+);
+
 // Track the favorite state of the current queue item independently from
 // media_item.favorite so optimistic updates survive server-side queue refreshes
 // (which replace the whole current_item object and would reset the field).
@@ -556,8 +596,6 @@ watch(
   },
   { immediate: true },
 );
-
-const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
 
 // Local reactive state for lyrics
 const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
@@ -594,11 +632,18 @@ const lyricsState = computed<
 // Lyrics are reached through a dedicated button in the header and shown in
 // their own panel, independent of the queue list (which has its own toggle).
 const showLyrics = ref(false);
-const lyricsActive = computed(() => showLyrics.value);
 
 const toggleLyrics = () => {
   showLyrics.value = !showLyrics.value;
 };
+
+// This component stays mounted while the dialog is closed and the lyrics panel
+// keeps its state across open/close, so both are checked: the ~60fps loop only
+// runs while the lyrics viewer it feeds is actually on screen.
+const lyricsVisible = computed(
+  () => store.showFullscreenPlayer && showLyrics.value,
+);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsVisible);
 
 // If the panel was opened optimistically while lyrics were still loading but
 // the track turns out to have none, close it again so we don't show an empty
@@ -674,10 +719,9 @@ const showLyricsOffset = computed(() => {
     player.active_output_protocol &&
     player.active_output_protocol !== "native"
   ) {
-    domain =
-      player.output_protocols?.find(
-        (p) => p.output_protocol_id === player.active_output_protocol,
-      )?.protocol_domain ?? undefined;
+    domain = player.output_protocols.find(
+      (p) => p.output_protocol_id === player.active_output_protocol,
+    )?.protocol_domain;
   }
   if (!domain) {
     domain = player.provider.split("--")[0];
@@ -712,8 +756,8 @@ const fetchLyrics = async () => {
   const track = mediaItem as Track;
 
   // Check if lyrics are already in metadata
-  const existingPlain = track.metadata?.lyrics?.trim() || null;
-  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+  const existingPlain = track.metadata.lyrics?.trim() || null;
+  const existingSynced = track.metadata.lrc_lyrics?.trim() || null;
 
   if (existingPlain || existingSynced) {
     currentLyrics.value = { plain: existingPlain, synced: existingSynced };
@@ -900,7 +944,7 @@ const onTitleClick = async function () {
           const exactMatch = results.find(
             (track) =>
               track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
-              track.artists?.some(
+              track.artists.some(
                 (artist) =>
                   artist.name.toLowerCase() ===
                   currentMedia.artist!.toLowerCase(),
@@ -976,7 +1020,7 @@ const onAlbumClick = async function () {
         // If we have artist info, try to find album by same artist
         if (currentMedia.artist) {
           const matchWithArtist = results.find((album) =>
-            album.artists?.some(
+            album.artists.some(
               (artist) =>
                 artist.name.toLowerCase() ===
                   currentMedia.artist!.toLowerCase() ||
@@ -1279,6 +1323,13 @@ watchEffect(() => {
   const topColor = bgColor.lighten(0.25);
   const bottomColor = bgColor.darken(0.25);
   backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
+  setStatusBarColorOverride(
+    store.showFullscreenPlayer ? topColor.hex() : undefined,
+  );
+});
+
+onBeforeUnmount(() => {
+  setStatusBarColorOverride(undefined);
 });
 </script>
 
@@ -1288,6 +1339,10 @@ watchEffect(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.fullscreen-player-card :deep(.panel-drag-handle > div) {
+  background: color-mix(in srgb, var(--text-color) 40%, transparent);
 }
 
 .main {

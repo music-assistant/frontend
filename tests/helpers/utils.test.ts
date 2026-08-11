@@ -2,134 +2,92 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
-  groupMemberPickerVisible,
+  getExternalLinkUrl,
   hexToRgb,
   kebabize,
-  markdownToHtml,
   numberRange,
+  openLinkInNewTab,
   paletteFromServer,
-  parseBool,
   rgbToHex,
   sleep,
   truncateString,
 } from "@/helpers/utils";
-import {
-  IdentifierType,
-  type MediaItemPalette,
-  type Player,
-  PlayerType,
-} from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/plugins/api", () => ({
-  api: {
-    serverInfo: { value: null },
+const { apiMock } = vi.hoisted(() => ({
+  apiMock: {
+    serverInfo: {
+      value: null as { server_version: string } | null,
+    },
     players: {},
   },
 }));
 
-vi.mock("@/plugins/store", () => ({
-  store: { companionPlayerId: undefined },
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
 }));
 
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
 }));
 
-vi.mock("@/plugins/router", () => ({
-  default: { push: vi.fn() },
-}));
+beforeEach(() => {
+  apiMock.serverInfo.value = null;
+});
 
-vi.mock("@/plugins/web_player", () => ({
-  webPlayer: { player_id: null },
-  WebPlayerMode: {},
-}));
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
-vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
-  showContextMenuForMediaItem: vi.fn(),
-  showPlayMenuForMediaItem: vi.fn(),
-}));
+describe("getExternalLinkUrl", () => {
+  it("returns valid web URLs unchanged", () => {
+    expect(getExternalLinkUrl("https://example.com/docs")).toBe(
+      "https://example.com/docs",
+    );
+  });
 
-vi.mock("@/plugins/api/helpers", () => ({
-  itemIsAvailable: vi.fn(),
-}));
+  it("rejects unsafe URLs", () => {
+    expect(getExternalLinkUrl("javascript:alert(1)")).toBeUndefined();
+  });
 
-function createPlayer(overrides: Partial<Player> = {}): Player {
-  return {
-    player_id: "player",
-    provider: "test",
-    type: PlayerType.PLAYER,
-    name: "Player",
-    available: true,
-    device_info: {
-      model: "Test",
-      manufacturer: "Test",
-      identifiers: {
-        [IdentifierType.MAC_ADDRESS]: "",
-        [IdentifierType.SERIAL_NUMBER]: "",
-        [IdentifierType.UUID]: "",
-        [IdentifierType.IP_ADDRESS]: "",
-        [IdentifierType.UNKNOWN]: "",
-      },
+  it.each(["0.0.0", "2.17.0b4"])(
+    "uses beta documentation for server version %s",
+    (serverVersion) => {
+      apiMock.serverInfo.value = { server_version: serverVersion };
+
+      expect(getExternalLinkUrl("https://music-assistant.io/docs")).toBe(
+        "https://beta.music-assistant.io/docs",
+      );
     },
-    supported_features: [],
-    can_group_with: [],
-    enabled: true,
-    group_members: [],
-    static_group_members: [],
-    source_list: [],
-    sound_mode_list: [],
-    options: [],
-    group_volume: null,
-    group_volume_muted: null,
-    hide_in_ui: false,
-    icon: "speaker",
-    power_control: "power",
-    volume_control: "volume",
-    mute_control: "mute",
-    needs_setup: false,
-    output_protocols: [],
-    active_output_protocol: null,
-    ...overrides,
-  };
-}
+  );
 
-describe("groupMemberPickerVisible", () => {
-  beforeEach(() => {
-    store.companionPlayerId = undefined;
-    webPlayer.player_id = null;
+  it("does not rewrite lookalike hostnames", () => {
+    apiMock.serverInfo.value = { server_version: "2.17.0b4" };
+
+    expect(getExternalLinkUrl("https://music-assistant.io.evil.com/docs")).toBe(
+      "https://music-assistant.io.evil.com/docs",
+    );
   });
+});
 
-  it("shows the hidden web player owned by this browser", () => {
-    const player = createPlayer({
-      player_id: "local-web-player",
-      hide_in_ui: true,
+describe("openLinkInNewTab", () => {
+  it("opens normalized links without exposing the opener", () => {
+    apiMock.serverInfo.value = { server_version: "2.17.0b4" };
+    const anchors: HTMLAnchorElement[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      anchors.push(this);
     });
-    webPlayer.player_id = player.player_id;
 
-    expect(groupMemberPickerVisible(player)).toBe(true);
-  });
+    openLinkInNewTab("https://music-assistant.io/docs");
 
-  it("shows the hidden companion player owned by this app", () => {
-    const player = createPlayer({
-      player_id: "local-companion-player",
-      hide_in_ui: true,
-    });
-    store.companionPlayerId = player.player_id;
-
-    expect(groupMemberPickerVisible(player)).toBe(true);
-  });
-
-  it("keeps unrelated hidden players out of the picker", () => {
-    const player = createPlayer({
-      player_id: "remote-web-player",
-      hide_in_ui: true,
-    });
-    webPlayer.player_id = "local-web-player";
-
-    expect(groupMemberPickerVisible(player)).toBe(false);
+    expect(anchors[0].getAttribute("href")).toBe(
+      "https://beta.music-assistant.io/docs",
+    );
+    expect(anchors[0].getAttribute("target")).toBe("_blank");
+    expect(anchors[0].getAttribute("rel")).toBe("noopener");
   });
 });
 
@@ -179,30 +137,6 @@ describe("truncateString", () => {
   });
 });
 
-describe("parseBool", () => {
-  it("parses boolean values correctly", () => {
-    expect(parseBool(true)).toBe(true);
-    expect(parseBool(false)).toBe(false);
-  });
-
-  it("parses string values correctly", () => {
-    expect(parseBool("true")).toBe(true);
-    expect(parseBool("false")).toBe(false);
-    expect(parseBool("TRUE")).toBe(true);
-    expect(parseBool("FALSE")).toBe(false);
-  });
-
-  it("handles null/undefined", () => {
-    expect(parseBool(null)).toBe(false);
-    expect(parseBool(undefined)).toBe(false);
-  });
-
-  it("handles empty values", () => {
-    expect(parseBool("")).toBe(false);
-    expect(parseBool("0")).toBe(false);
-  });
-});
-
 describe("kebabize", () => {
   it("converts camelCase to kebab-case", () => {
     expect(kebabize("camelCase")).toBe("camel-case");
@@ -241,6 +175,19 @@ describe("color utilities", () => {
   });
 
   describe("paletteFromServer", () => {
+    // the server sends every palette key, using null for the colors it could not derive
+    const serverPalette = (
+      overrides: Partial<MediaItemPalette> = {},
+    ): MediaItemPalette => ({
+      background_dark: null,
+      background_light: null,
+      primary: null,
+      accent: null,
+      on_dark: null,
+      on_light: null,
+      ...overrides,
+    });
+
     it("returns empty palette for null", () => {
       expect(paletteFromServer(null)).toEqual({
         lightColor: "",
@@ -255,27 +202,18 @@ describe("color utilities", () => {
       });
     });
 
-    it("returns empty strings when on_dark and on_light are missing", () => {
-      const palette: MediaItemPalette = {};
-      expect(paletteFromServer(palette)).toEqual({
-        lightColor: "",
-        darkColor: "",
-      });
-    });
-
     it("returns empty strings when on_dark and on_light are null", () => {
-      const palette: MediaItemPalette = { on_dark: null, on_light: null };
-      expect(paletteFromServer(palette)).toEqual({
+      expect(paletteFromServer(serverPalette())).toEqual({
         lightColor: "",
         darkColor: "",
       });
     });
 
     it("maps on_dark to lightColor and on_light to darkColor", () => {
-      const palette: MediaItemPalette = {
+      const palette = serverPalette({
         on_dark: [255, 200, 100],
         on_light: [40, 20, 10],
-      };
+      });
       expect(paletteFromServer(palette)).toEqual({
         lightColor: "#ffc864",
         darkColor: "#28140a",
@@ -283,14 +221,18 @@ describe("color utilities", () => {
     });
 
     it("handles only one of on_dark/on_light being set", () => {
-      expect(paletteFromServer({ on_dark: [255, 255, 255] })).toEqual({
+      expect(
+        paletteFromServer(serverPalette({ on_dark: [255, 255, 255] })),
+      ).toEqual({
         lightColor: "#ffffff",
         darkColor: "",
       });
-      expect(paletteFromServer({ on_light: [0, 0, 0] })).toEqual({
-        lightColor: "",
-        darkColor: "#000000",
-      });
+      expect(paletteFromServer(serverPalette({ on_light: [0, 0, 0] }))).toEqual(
+        {
+          lightColor: "",
+          darkColor: "#000000",
+        },
+      );
     });
   });
 });
@@ -338,29 +280,6 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(3660)).toBe("1h 1m");
     expect(formatRelativeTime(7200)).toBe("2h");
     expect(formatRelativeTime(7380)).toBe("2h 3m");
-  });
-});
-
-describe("markdownToHtml", () => {
-  it("neutralizes an onerror image payload", () => {
-    const html = markdownToHtml('<img src=x onerror="alert(1)">');
-    expect(html).not.toContain("onerror");
-  });
-
-  it("strips script tags", () => {
-    const html = markdownToHtml("<script>alert(1)</script>");
-    expect(html).not.toContain("<script>");
-  });
-
-  it("renders legitimate markdown", () => {
-    expect(markdownToHtml("**bold**")).toContain("<strong>bold</strong>");
-    expect(markdownToHtml("[link](https://example.com)")).toContain(
-      'href="https://example.com"',
-    );
-  });
-
-  it("converts line breaks", () => {
-    expect(markdownToHtml("line1\nline2")).toContain("<br>");
   });
 });
 

@@ -7,18 +7,19 @@ import type {
   ToneControlFilter,
 } from "@/plugins/api/interfaces";
 import { DSPFilterType, EventType } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditPlayerDsp from "@/views/settings/EditPlayerDsp.vue";
 
 const apiMock = vi.hoisted(() => ({
-  applyDSPPreset: vi.fn(),
-  getDSPConfig: vi.fn(),
+  applyDSPPreset: vi.fn<MusicAssistantApi["applyDSPPreset"]>(),
+  getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
   playerDSPCallback: undefined as
     | ((event: { data: DSPConfig }) => void)
     | undefined,
   players: { "player-1": {} },
-  removeDSPPreset: vi.fn(),
-  saveDSPConfig: vi.fn(),
-  saveDSPPreset: vi.fn(),
+  removeDSPPreset: vi.fn<MusicAssistantApi["removeDSPPreset"]>(),
+  saveDSPConfig: vi.fn<MusicAssistantApi["saveDSPConfig"]>(),
+  saveDSPPreset: vi.fn<MusicAssistantApi["saveDSPPreset"]>(),
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),
 }));

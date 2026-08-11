@@ -38,7 +38,7 @@
           <v-list-item
             v-for="preset in dspPresets"
             v-else
-            :key="preset.preset_id"
+            :key="preset.preset_id ?? undefined"
             @click="loadPreset(preset)"
           >
             <v-list-item-title>{{ preset.name }}</v-list-item-title>
@@ -207,6 +207,30 @@
               "
               v-model="dsp.filters[selectedStage] as TransposeFilter"
             />
+            <DSPSafetyLimiter
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.SAFETY_LIMITER
+              "
+              v-model="dsp.filters[selectedStage] as SafetyLimiterFilter"
+            />
+            <DSPCompressor
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.COMPRESSOR
+              "
+              v-model="dsp.filters[selectedStage] as CompressorFilter"
+            />
+            <DSPHighLowPass
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.HIGH_LOW_PASS
+              "
+              v-model="dsp.filters[selectedStage] as HighLowPassFilter"
+            />
+            <DSPConvolution
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CONVOLUTION
+              "
+              v-model="dsp.filters[selectedStage] as ConvolutionFilter"
+            />
             <DSPStereoWidth
               v-else-if="
                 dsp.filters[selectedStage].type === DSPFilterType.STEREO_WIDTH
@@ -296,10 +320,15 @@ import {
   type GainFilter,
   type BalanceFilter,
   type TransposeFilter,
+  type ConvolutionFilter,
   type StereoWidthFilter,
   type CrossfeedFilter,
   ParametricEQFilter,
   ToneControlFilter,
+  type SafetyLimiterFilter,
+  type CompressorFilter,
+  type HighLowPassFilter,
+  HighLowPassMode,
   EventType,
 } from "@/plugins/api/interfaces";
 import { getPlayerName } from "@/helpers/utils";
@@ -308,8 +337,14 @@ import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
 import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
+import DSPSafetyLimiter from "@/components/dsp/DSPSafetyLimiter.vue";
+import DSPCompressor from "@/components/dsp/DSPCompressor.vue";
+import DSPHighLowPass from "@/components/dsp/DSPHighLowPass.vue";
+import DSPConvolution from "@/components/dsp/DSPConvolution.vue";
 import DSPStereoWidth from "@/components/dsp/DSPStereoWidth.vue";
 import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
+import { COMPRESSOR_PRESETS } from "@/components/dsp/compressorPresets";
+import { DEFAULT_HIGH_PASS_FREQUENCY } from "@/components/dsp/highLowPass";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
 import { TriangleAlert } from "@lucide/vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -317,6 +352,7 @@ import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
+  dspFilterTypeLabel,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
 
@@ -395,7 +431,8 @@ const selectStage = (index: number | "input" | "output") => {
 const stageTitle = (index: number | "input" | "output") => {
   if (index === "input") return t("settings.dsp.input");
   if (index === "output") return t("settings.dsp.output");
-  return t(`settings.dsp.types.${dsp.value?.filters[index].type}`);
+  const filter = dsp.value?.filters[index];
+  return filter ? dspFilterTypeLabel(filter) : "";
 };
 
 const addFilter = () => {
@@ -441,6 +478,40 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.TRANSPOSE,
         semitones: 0,
+      };
+      break;
+    case DSPFilterType.SAFETY_LIMITER:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.SAFETY_LIMITER,
+        ceiling: -2.0,
+      };
+      break;
+    case DSPFilterType.COMPRESSOR:
+      // Start from the Light preset so a new compressor opens in Basic mode.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.COMPRESSOR,
+        ...COMPRESSOR_PRESETS.light,
+      };
+      break;
+    case DSPFilterType.HIGH_LOW_PASS:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.HIGH_LOW_PASS,
+        mode: HighLowPassMode.HIGH_PASS,
+        frequency: DEFAULT_HIGH_PASS_FREQUENCY,
+        slope: 12,
+      };
+      break;
+    case DSPFilterType.CONVOLUTION:
+      // An empty ir_id is valid: the filter is added first, the impulse
+      // response picked afterwards.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CONVOLUTION,
+        ir_id: "",
+        gain: 0,
       };
       break;
     case DSPFilterType.STEREO_WIDTH:
@@ -561,7 +632,7 @@ const savePreset = async () => {
   }
 };
 
-const removePreset = async (presetId: string | undefined) => {
+const removePreset = async (presetId?: string | null) => {
   if (!presetId || !confirm(t("settings.dsp.presets.remove_confirm"))) return;
 
   await api.removeDSPPreset(presetId);

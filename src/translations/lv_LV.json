@@ -494,7 +494,6 @@
         "artist": "Izpildītājs",
         "name": "Alfabētiski",
         "name_desc": "Alfabētiski (dilstoši)",
-        "recent": "Nesen pievienots",
         "year_desc": "Izdošanas gads (dilstoši)",
         "duration_desc": "Ilgums (dilstoši)",
         "original": "Oriģinālā secībā",
@@ -506,9 +505,7 @@
         "last_played": "Pēdējo reizi atskaņots",
         "last_played_desc": "Pēdējo reizi atskaņots (dilstoši)",
         "play_count": "Atskaņojumu skaits",
-        "play_count_desc": "Atskaņojumu skaits (dilstoši)",
-        "artist_name": "Albuma Izpildītājs",
-        "artist_name_desc": "Albuma Izpildītājs (dilstoši)"
+        "play_count_desc": "Atskaņojumu skaits (dilstoši)"
     },
     "state": {
         "idle": "dīkstāvē",

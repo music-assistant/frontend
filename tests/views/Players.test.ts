@@ -1,13 +1,16 @@
 import Players from "@/views/settings/Players.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { ProviderType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { providerManifest } from "../fixtures/providerManifest";
 
 const { apiMock, emitEvent, routerPush } = vi.hoisted(() => ({
   apiMock: {
-    getPlayerConfigs: vi.fn(),
-    getProvider: vi.fn(),
-    getProviderManifest: vi.fn(),
+    getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
     playerManifests: {},
     players: {} as Record<
       string,
@@ -60,6 +63,7 @@ vi.mock("vue-router", () => ({
 const playerConfig = {
   enabled: true,
   name: "Kitchen",
+  default_name: null,
   player_id: "kitchen",
   provider: "test",
   values: {},
@@ -98,12 +102,15 @@ describe("Players", () => {
     };
     apiMock.getPlayerConfigs.mockResolvedValue([playerConfig]);
     apiMock.getProvider.mockReturnValue({
+      type: ProviderType.PLAYER,
       domain: "test",
-      supported_features: [],
-    });
-    apiMock.getProviderManifest.mockReturnValue({
       name: "Test",
+      instance_id: "test",
+      supported_features: [],
+      available: true,
+      is_streaming_provider: null,
     });
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
     apiMock.subscribe_multi.mockReturnValue(vi.fn());
   });
 

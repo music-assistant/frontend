@@ -470,8 +470,10 @@ onBeforeUnmount(() => {
 // Album art background is always active
 const useAlbumArtBackground = computed(() => true);
 
+// The track cards show the queue's position, so their play state comes from
+// the queue too.
 const isPlaying = computed(
-  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+  () => store.activePlayerQueue?.state === PlaybackState.PLAYING,
 );
 
 // Queue items state
@@ -491,8 +493,8 @@ const fetchLyrics = async () => {
   if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
 
   const track = mediaItem as Track;
-  const existingPlain = track.metadata?.lyrics?.trim() || null;
-  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+  const existingPlain = track.metadata.lyrics?.trim() || null;
+  const existingSynced = track.metadata.lrc_lyrics?.trim() || null;
 
   if (existingPlain || existingSynced) {
     currentLyrics.value = { plain: existingPlain, synced: existingSynced };
@@ -518,8 +520,7 @@ const lyricsEnabled = computed(() => karaokeMode.value);
 const lyricsTextColor = computed(() =>
   albumArtUrl.value ? "#FFFFFF" : isDark.value ? "#FFFFFF" : "#000000",
 );
-const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
-  useLyricsElapsedTime(lyricsEnabled);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsEnabled);
 
 const colorPalette = computed<ImageColorPalette>(() =>
   paletteFromServer(store.activePlayer?.current_media?.palette),
@@ -845,7 +846,6 @@ onBeforeUnmount(() => {
     clearInterval(burnInInterval);
     burnInInterval = null;
   }
-  stopTick();
   cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
@@ -1342,7 +1342,9 @@ watch(
 
 .content-section--mobile.party-view-active {
   padding-bottom: 0 !important;
-  --party-player-bottom: 189px; /* 185px above Footer.vue gradient overlay + 4px (spacing-1) */
+  /* 185px above Footer.vue gradient overlay + 4px (spacing-1), following the
+     navigation inset the gradient and player bar move with */
+  --party-player-bottom: calc(189px + var(--mobile-navigation-inset-bottom));
 }
 
 .content-section--frameless.party-view-active {
