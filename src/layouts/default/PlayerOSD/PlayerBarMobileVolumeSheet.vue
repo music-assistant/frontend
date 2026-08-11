@@ -47,13 +47,13 @@ function preventAutoFocus(event: Event) {
 <style>
 .mobile-group-volume-sheet {
   right: 8px !important;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: calc(var(--mobile-navigation-height) + 8px) !important;
   left: 8px !important;
   width: auto !important;
 }
 
 .mobile-group-volume-overlay {
-  bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: var(--mobile-navigation-height) !important;
 }
 
 .mobile-group-volume-sheet [data-slot="slider-thumb"]::before {

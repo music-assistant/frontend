@@ -1342,7 +1342,9 @@ watch(
 
 .content-section--mobile.party-view-active {
   padding-bottom: 0 !important;
-  --party-player-bottom: 189px; /* 185px above Footer.vue gradient overlay + 4px (spacing-1) */
+  /* 185px above Footer.vue gradient overlay + 4px (spacing-1), following the
+     navigation inset the gradient and player bar move with */
+  --party-player-bottom: calc(189px + var(--mobile-navigation-inset-bottom));
 }
 
 .content-section--frameless.party-view-active {
