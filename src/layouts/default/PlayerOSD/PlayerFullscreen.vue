@@ -452,15 +452,11 @@
           "
         >
           <Button
+            id="fullscreen-player-select-button"
             variant="outline"
             size="xs"
             class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
-            @click="
-              () => {
-                store.showPlayersMenu = true;
-                store.showFullscreenPlayer = false;
-              }
-            "
+            @click="store.showPlayersMenu = true"
           >
             <PlayerIcon
               :icon="store.activePlayer?.icon"
