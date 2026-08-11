@@ -141,8 +141,8 @@ const memberCountLabel = computed(
       memberCount.value === 1 ? $t("player_type.player") : $t("players")
     }`,
 );
-// reka-ui names the panel after this trigger, so the label carries the visible
-// member count as well as the button's purpose
+// the spoken label has to contain the button's visible text, so it leads with
+// the purpose and keeps the member count; reka-ui names the panel after it too
 const groupMembersLabel = computed(
   () => `${$t("tooltip.group_members")}: ${memberCountLabel.value}`,
 );
