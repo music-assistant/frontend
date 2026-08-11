@@ -90,6 +90,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { currentVisualizerPreset } from "@/composables/visualizer/state";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -100,7 +101,10 @@ const RANDOM_VALUE = "__random__";
 const RANDOM_FAVORITES_VALUE = "__random_favorites__";
 
 const { getPreference, setPreference } = useUserPreferences();
-const enabledPref = getPreference("visualizer_enabled", false);
+// Per-player on/off state, matching the toggle above this control in the menu.
+const { visualizerEnabledPref: enabledPref } = useVisualizer(
+  () => store.activePlayer?.player_id,
+);
 const presetPref = getPreference("visualizer_preset", "");
 const blurPref = getPreference("visualizer_blur", 0);
 const opacityPref = getPreference("visualizer_opacity", 100);

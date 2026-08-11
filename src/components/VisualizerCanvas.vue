@@ -165,6 +165,9 @@ const initialize = async () => {
     relay?.reportError(reason);
     relay?.close();
     relay = null;
+    // Allow the mount/uncover/resize paths to retry from scratch (relay
+    // included); a later engine-only recreation would render against no relay.
+    initialized = false;
   }
 };
 
@@ -236,7 +239,9 @@ watch(
 watch(
   () => qualityPref.value,
   () => {
-    if (initialized) void createEngine();
+    // Not while covered: the engine is deliberately torn down then, and the
+    // uncover path recreates it at the current quality anyway.
+    if (initialized && !covered.value) void createEngine();
   },
 );
 

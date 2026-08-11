@@ -11,6 +11,13 @@ import {
 } from "@/plugins/api/interfaces";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
+import {
+  toggleVisualizerForPlayer,
+  visualizerEnabledForPlayer,
+} from "@/composables/visualizer/useVisualizer";
+import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
+import { Droplet } from "@lucide/vue";
+import { markRaw } from "vue";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -332,6 +339,19 @@ export const getPlayerMenuItems = (
         icon: "mdi-tune",
       });
     }
+  }
+
+  // MilkDrop visualizer on/off for this player (both menus; a player control,
+  // stored as a per-player user preference). Kept at the bottom, with the
+  // other display/appearance entries rather than the playback controls.
+  if (visualizerProviderAvailable()) {
+    menuItems.push({
+      label: "settings.visualizer_enabled.label",
+      action: () => toggleVisualizerForPlayer(player.player_id),
+      icon: markRaw(Droplet),
+      selected: visualizerEnabledForPlayer(player.player_id),
+      close_on_click: false,
+    });
   }
 
   return menuItems;

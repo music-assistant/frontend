@@ -765,7 +765,7 @@
         },
         "visualizer_enabled": {
             "label": "MilkDrop visualizer",
-            "description": "Render a MilkDrop (Butterchurn) music visualizer behind the fullscreen player, replacing the gradient background. Reacts live to the audio playing on the active player."
+            "description": "Render a MilkDrop (Butterchurn) music visualizer behind the fullscreen player, replacing the gradient background. Reacts live to the audio playing on the active player. This is the default for all players; the toggle in a player's fullscreen menu or party screen overrides it for that player only."
         },
         "visualizer_blur": {
             "label": "Visualizer blur",

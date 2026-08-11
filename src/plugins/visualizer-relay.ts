@@ -180,6 +180,17 @@ export class VisualizerRelayClient {
         if (this.ws) this.startTimeSync(this.ws);
       } else if (message.type === "server/time" && message.payload) {
         const p = message.payload;
+        // A missing/non-numeric field would produce a NaN sample, which
+        // ClockSync's lowest-delay compare can keep as "best" for the whole
+        // sliding window — stalling sync for minutes.
+        if (
+          !Number.isFinite(p.client_transmitted) ||
+          !Number.isFinite(p.server_received) ||
+          !Number.isFinite(p.server_transmitted)
+        ) {
+          console.warn("[visualizer] ignoring malformed time sync payload");
+          return;
+        }
         this.clock.addSample(
           computeTimeSample(
             p.client_transmitted,

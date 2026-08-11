@@ -496,11 +496,7 @@ import {
   getPlayerName,
 } from "@/helpers/utils";
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
-import { Droplet } from "@lucide/vue";
-import {
-  visualizerCanRender,
-  visualizerProviderAvailable,
-} from "@/plugins/visualizer-relay";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
@@ -820,21 +816,12 @@ watch(
 const { waveformBins: waveformData } = useActiveTrackWaveform();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
-const visualizerEnabledPref = getPreference("visualizer_enabled", false);
-const visualizerPresetPref = getPreference("visualizer_preset", "");
-const visualizerBlurPref = getPreference("visualizer_blur", 0);
-const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
-// The visualizer only exists when the milkdrop_visualizer server plugin is loaded.
-const visualizerAvailable = computed(() => visualizerProviderAvailable());
-// Also require that this session can actually draw it: forcing the dark palette
-// and white text while the canvas stays transparent (no WebGL2, or a remote
-// session) would break the "keep the existing background" fallback.
-const visualizerActive = computed(
-  () =>
-    visualizerAvailable.value &&
-    visualizerEnabledPref.value &&
-    visualizerCanRender(),
-);
+const {
+  visualizerPresetPref,
+  visualizerBlurPref,
+  visualizerOpacityPref,
+  visualizerActive,
+} = useVisualizer(() => store.activePlayer?.player_id);
 
 const titleFontSize = computed(() => {
   switch (name.value) {
@@ -1170,7 +1157,11 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value,
     },
   );
-  menuItems.push({
+  // The waveform toggle slots in above the visualizer entries, keeping the
+  // visualizer toggle + options grouped at the bottom of the menu. The on/off
+  // toggle itself comes from getPlayerMenuItems (it is a player control,
+  // listed last there).
+  const waveformItem = {
     label: "settings.show_waveform.label",
     action: () => {
       void setPreference("show_waveform", !showWaveformPref.value);
@@ -1178,20 +1169,17 @@ const openQueueMenu = function (evt: Event) {
     icon: "mdi-waveform",
     selected: showWaveformPref.value,
     close_on_click: false,
-  });
-  if (visualizerAvailable.value) {
-    menuItems.push({
-      label: "settings.visualizer_enabled.label",
-      action: () => {
-        void setPreference("visualizer_enabled", !visualizerEnabledPref.value);
-      },
-      icon: markRaw(Droplet),
-      selected: visualizerEnabledPref.value,
-      close_on_click: false,
-    });
-    // Always present (the menu item list is a snapshot); the control itself
-    // renders nothing while the visualizer is disabled, so it appears and
-    // disappears live as the toggle above is flipped.
+  };
+  const visualizerToggleIndex = menuItems.findIndex(
+    (item) => item.label === "settings.visualizer_enabled.label",
+  );
+  if (visualizerToggleIndex === -1) {
+    menuItems.push(waveformItem);
+  } else {
+    menuItems.splice(visualizerToggleIndex, 0, waveformItem);
+    // Always append the options control directly under the toggle (the menu
+    // item list is a snapshot); it renders nothing while the visualizer is
+    // disabled, so it appears and disappears live as the toggle is flipped.
     menuItems.push({
       label: "visualizer_options",
       component: markRaw(VisualizerMenuControl),

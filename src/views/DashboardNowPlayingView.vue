@@ -60,7 +60,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   type ImageColorPalette,
@@ -70,10 +70,6 @@ import {
 import PlayerTimeline from "@/layouts/default/PlayerOSD/PlayerTimeline.vue";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  visualizerCanRender,
-  visualizerProviderAvailable,
-} from "@/plugins/visualizer-relay";
 import { useColorMode } from "@vueuse/core";
 import Color from "color";
 import { computed, onMounted } from "vue";
@@ -99,19 +95,12 @@ const artworkUrl = computed(
   () => getMediaImageUrl(store.activePlayer?.current_media?.image_url) || null,
 );
 
-const { getPreference } = useUserPreferences();
-const visualizerEnabledPref = getPreference("visualizer_enabled", false);
-const visualizerPresetPref = getPreference("visualizer_preset", "");
-const visualizerBlurPref = getPreference("visualizer_blur", 0);
-const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
-// Also require local render capability, so the gradient/text treatment is not
-// applied on sessions where the canvas can never draw (no WebGL2, or remote).
-const visualizerActive = computed(
-  () =>
-    visualizerEnabledPref.value &&
-    visualizerProviderAvailable() &&
-    visualizerCanRender(),
-);
+const {
+  visualizerPresetPref,
+  visualizerBlurPref,
+  visualizerOpacityPref,
+  visualizerActive,
+} = useVisualizer(() => store.activePlayer?.player_id);
 
 const colorMode = useColorMode();
 const isDark = computed(() => colorMode.value === "dark");

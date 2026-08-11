@@ -338,7 +338,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import {
   ImageColorPalette,
   getMediaItemImageUrl,
@@ -354,10 +354,6 @@ import {
   Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import {
-  visualizerCanRender,
-  visualizerProviderAvailable,
-} from "@/plugins/visualizer-relay";
 import {
   Droplet,
   Maximize2,
@@ -506,25 +502,15 @@ onBeforeUnmount(() => {
 // Album art background is always active
 const useAlbumArtBackground = computed(() => true);
 
-const { getPreference, setPreference } = useUserPreferences();
-const visualizerEnabledPref = getPreference("visualizer_enabled", false);
-const visualizerPresetPref = getPreference("visualizer_preset", "");
-const visualizerBlurPref = getPreference("visualizer_blur", 0);
-const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
-const visualizerAvailable = computed(() => visualizerProviderAvailable());
-// Gate on local render capability too: without it a no-WebGL2 or remote session
-// would take the visualizer branch (dropping the blurred album-art backdrop and
-// forcing white text) while the canvas stayed transparent.
-const visualizerActive = computed(
-  () =>
-    visualizerEnabledPref.value &&
-    visualizerAvailable.value &&
-    visualizerCanRender(),
-);
-
-const toggleVisualizer = () => {
-  void setPreference("visualizer_enabled", !visualizerEnabledPref.value);
-};
+const {
+  visualizerEnabledPref,
+  visualizerPresetPref,
+  visualizerBlurPref,
+  visualizerOpacityPref,
+  visualizerAvailable,
+  visualizerActive,
+  toggleVisualizer,
+} = useVisualizer(() => store.activePlayer?.player_id);
 
 // The track cards show the queue's position, so their play state comes from
 // the queue too.
