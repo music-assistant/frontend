@@ -64,6 +64,19 @@ describe("useMobileSidebarSide", () => {
     expect(side.value).toBe("left");
   });
 
+  it("loads when site data is blocked", async () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () => {
+        throw new DOMException("Access denied", "SecurityError");
+      },
+    });
+
+    await expect(loadMobileSidebarSide()).resolves.toHaveProperty(
+      "value",
+      "left",
+    );
+  });
+
   it("ignores other device settings", async () => {
     const side = await loadMobileSidebarSide();
     localStorage.setItem(STORAGE_KEY, "right");

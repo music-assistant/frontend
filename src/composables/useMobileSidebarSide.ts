@@ -22,8 +22,13 @@ export function useMobileSidebarSide(): DeepReadonly<Ref<MobileSidebarSide>> {
 }
 
 function readStoredSide(): MobileSidebarSide {
-  if (typeof localStorage === "undefined") return "left";
-  return localStorage.getItem(MOBILE_SIDEBAR_SIDE_KEY) === "right"
-    ? "right"
-    : "left";
+  // this runs while the module loads, and reading storage throws when site data
+  // is blocked (a cross-origin iframe, for one): keep that off the import path
+  try {
+    return localStorage.getItem(MOBILE_SIDEBAR_SIDE_KEY) === "right"
+      ? "right"
+      : "left";
+  } catch {
+    return "left";
+  }
 }
