@@ -7,8 +7,9 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getVolumeIconComponent } = vi.hoisted(() => ({
   getVolumeIconComponent: vi.fn(() => "span"),
@@ -105,6 +106,19 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
   };
 }
 
+const sliderStub = {
+  Slider: {
+    emits: ["update:modelValue"],
+    template: `
+      <div
+        data-slot="slider"
+        role="slider"
+        @pointerdown="$emit('update:modelValue', [80])"
+      />
+    `,
+  },
+};
+
 function mountGroupVolume(player: Player) {
   return mount(PlayerVolume, {
     props: {
@@ -114,18 +128,19 @@ function mountGroupVolume(player: Player) {
       requestExpandOnGroupTap: true,
     },
     global: {
-      stubs: {
-        Slider: {
-          emits: ["update:modelValue"],
-          template: `
-            <div
-              data-slot="slider"
-              role="slider"
-              @pointerdown="$emit('update:modelValue', [80])"
-            />
-          `,
-        },
-      },
+      stubs: sliderStub,
+    },
+  });
+}
+
+function mountPopoutVolume(player: Player) {
+  return mount(PlayerVolume, {
+    props: {
+      player,
+      preferGroupVolume: true,
+    },
+    global: {
+      stubs: sliderStub,
     },
   });
 }
@@ -341,5 +356,68 @@ describe("PlayerVolume group expansion", () => {
 
     expect(wrapper.emitted("toggle-group-expansion")).toBeUndefined();
     expect(api.playerCommandGroupVolume).not.toHaveBeenCalled();
+  });
+});
+
+describe("PlayerVolume group popout", () => {
+  // the popout is anchored to the bottom of the slider, so this is both the
+  // room it has above it and the point it grows up from
+  const SLIDER_BOTTOM = 700;
+
+  function mountLargeGroup() {
+    const children = ["Office", "Kitchen", "Bedroom", "Bathroom", "Study"].map(
+      (name) => createPlayer({ player_id: name.toLowerCase(), name }),
+    );
+    const parent = createPlayer({
+      type: PlayerType.GROUP,
+      group_members: children.map((child) => child.player_id),
+    });
+    api.players = Object.fromEntries(
+      [parent, ...children].map((player) => [player.player_id, player]),
+    );
+    return { children, wrapper: mountPopoutVolume(parent) };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.players = {};
+    store.mobileLayout = false;
+    vi.spyOn(window, "innerHeight", "get").mockReturnValue(768);
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
+      top: SLIDER_BOTTOM - 40,
+      bottom: SLIDER_BOTTOM,
+      left: 100,
+      right: 300,
+      width: 200,
+      height: 40,
+    } as DOMRect);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.body.innerHTML = "";
+  });
+
+  it("caps the popout at the room above the slider", async () => {
+    const { children, wrapper } = mountLargeGroup();
+
+    await wrapper.find(".player-volume-container").trigger("click");
+
+    const popout = document.body.querySelector<HTMLElement>(".group-popout");
+    expect(popout).not.toBeNull();
+    expect(popout!.querySelectorAll(".group-popout-label")).toHaveLength(
+      children.length,
+    );
+    expect(popout!.style.maxHeight).toBe("692px");
+  });
+
+  it("caps the popout at the room above the slider on mobile", async () => {
+    store.mobileLayout = true;
+    const { wrapper } = mountLargeGroup();
+
+    await wrapper.find(".player-volume-container").trigger("click");
+
+    const popout = document.body.querySelector<HTMLElement>(".group-popout");
+    expect(popout!.style.maxHeight).toBe("692px");
   });
 });

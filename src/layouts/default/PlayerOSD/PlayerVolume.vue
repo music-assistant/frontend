@@ -284,12 +284,15 @@ const updatePopoutPosition = () => {
   const rect = wrapperRef.value.getBoundingClientRect();
   // Align popout bottom with wrapper bottom so the group volume slider overlaps the main one
   const bottom = `${window.innerHeight - rect.bottom}px`;
+  // It grows upwards from there, so a large group is capped at the room above
+  const maxHeight = `${rect.bottom - POPOUT_MARGIN}px`;
 
   if (store.mobileLayout) {
     // Full width with padding on mobile
     popoutStyle.value = {
       position: "fixed",
       bottom,
+      maxHeight,
       left: `${POPOUT_MARGIN}px`,
       right: `${POPOUT_MARGIN}px`,
     };
@@ -309,6 +312,7 @@ const updatePopoutPosition = () => {
     popoutStyle.value = {
       position: "fixed",
       bottom,
+      maxHeight,
       left: `${left}px`,
       width: `${popoutWidth}px`,
     };
@@ -888,6 +892,9 @@ watch(
   box-shadow:
     0 -4px 16px rgba(0, 0, 0, 0.15),
     0 -1px 4px rgba(0, 0, 0, 0.08);
+  /* the max-height is set inline from the room measured above the slider */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 10001;
 }
 
