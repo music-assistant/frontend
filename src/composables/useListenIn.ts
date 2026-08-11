@@ -6,6 +6,10 @@ import { webPlayer } from "@/plugins/web_player";
 let nextListenInOperationId = 0;
 const latestListenInOperationByPlayer = new Map<string, number>();
 
+// Coalesces the burst of updates the server emits when it rebuilds every player's
+// groupable set, so one re-check covers the whole burst.
+const FOREIGN_PLAYER_RECHECK_DELAY_MS = 400;
+
 export type ListenInMode = "venue" | "remote";
 
 export interface ListenInErrorMessages {
@@ -38,7 +42,8 @@ export interface UseListenInOptions {
  * Tracks whether listening-in is possible (`canListenIn`) and active (`isListeningIn`),
  * and exposes mode-aware UX flags: `shouldShowListenInToggle` (venue = opt-in) and
  * `shouldPromptListenIn` (remote = default-on). Availability is re-checked on our own
- * web player updates, the given `recheckEvents`, and on mount.
+ * web player updates, on another player's while it reads as unavailable, on the given
+ * `recheckEvents`, and on mount.
  */
 export function useListenIn(options: UseListenInOptions) {
   const {
@@ -60,6 +65,7 @@ export function useListenIn(options: UseListenInOptions) {
   let autoEnableAttemptedForGeneration: number | null = null;
   let availabilityRequestId = 0;
   let disposed = false;
+  let foreignPlayerRecheckTimer: ReturnType<typeof setTimeout> | null = null;
 
   const webPlayerId = computed(() => webPlayer.player_id ?? null);
   const webPlayerGeneration = computed(() => webPlayer.player_generation);
@@ -211,10 +217,22 @@ export function useListenIn(options: UseListenInOptions) {
   }
 
   function handlePlayerUpdated(event: { object_id?: string }) {
-    // Only react to updates for our own web player.
     if (event.object_id === webPlayerId.value) {
       checkCanListenIn();
+      return;
     }
+    // Availability is the host player's answer, and it only names our web player once the
+    // server has rebuilt every player's groupable set, a beat after ours turns up. Another
+    // player's update is the only signal that this happened, so coalesce a re-check while
+    // we still believe we cannot listen in.
+    if (canListenIn.value || disposed) return;
+    if (foreignPlayerRecheckTimer !== null) {
+      clearTimeout(foreignPlayerRecheckTimer);
+    }
+    foreignPlayerRecheckTimer = setTimeout(() => {
+      foreignPlayerRecheckTimer = null;
+      void checkCanListenIn();
+    }, FOREIGN_PLAYER_RECHECK_DELAY_MS);
   }
 
   watch([webPlayerId, webPlayerGeneration], ([newPlayerId]) => {
@@ -261,6 +279,10 @@ export function useListenIn(options: UseListenInOptions) {
   onBeforeUnmount(() => {
     disposed = true;
     availabilityRequestId++;
+    if (foreignPlayerRecheckTimer !== null) {
+      clearTimeout(foreignPlayerRecheckTimer);
+      foreignPlayerRecheckTimer = null;
+    }
     unsubscribePlayerUpdated?.();
     unsubscribeRecheckEvents?.();
   });
