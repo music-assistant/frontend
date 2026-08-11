@@ -324,6 +324,9 @@ onMounted(() => {
           baseUrl: "http://sendspin.local",
           audioElement,
           clientName: getDeviceName(),
+          // How the server recognizes us as its built-in player rather than a
+          // third-party client that has to be paired by hand.
+          productName: "Web Player",
           codecs,
           syncDelay,
           requiredLeadTimeMs: 250,
