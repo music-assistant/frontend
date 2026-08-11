@@ -341,7 +341,10 @@ export function useSmartPlaylistRulesForm(
       row.lastPlayedBeforeValue = initial.last_played_before_value;
       const unit = initial.last_played_before_unit;
       row.lastPlayedBeforeUnit =
-        unit === "hours" || unit === "days" || unit === "weeks" || unit === "months"
+        unit === "hours" ||
+        unit === "days" ||
+        unit === "weeks" ||
+        unit === "months"
           ? (unit as "hours" | "days" | "weeks" | "months")
           : "days";
       fresh.push(row);
