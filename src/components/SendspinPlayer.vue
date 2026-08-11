@@ -267,17 +267,16 @@ watch(correctionMode, (mode) => {
   player?.setCorrectionMode(mode);
 });
 
-// Hand this client's Pairing PSK to the server so it can pair us without an
-// operator step. Our API session is already authenticated, which is the
-// authorization for it; the server ignores the call once we are paired.
-const registerPairing = (instance: SendspinPlayer) => {
-  if (authManager.isGuestAccessSession()) return;
-  const pairingPsk = instance.pairingPsk;
-  if (!pairingPsk) return;
+// Hand this client's pairing token to the server so it can pair us without an
+// operator step. The server derives the client id from our authenticated
+// session, and ignores the call once we are paired.
+const registerPairing = () => {
+  const pairingToken = player?.pairingToken;
+  if (!pairingToken) return;
   api
     .sendCommand(
       "sendspin/pair_web_player",
-      { client_id: instance.clientId, pairing_psk: pairingPsk },
+      { pairing_token: pairingToken },
       { suppressGlobalError: true },
     )
     .catch((error) => console.warn("Sendspin: auto-pairing failed", error));
@@ -365,8 +364,7 @@ onMounted(() => {
           },
         });
 
-        registerPairing(player);
-        return player.connect();
+        return player.connect().then(registerPairing);
       })
       .catch((error) => {
         console.error("Sendspin: Failed to connect", error);
