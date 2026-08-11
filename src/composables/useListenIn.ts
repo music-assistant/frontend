@@ -218,6 +218,11 @@ export function useListenIn(options: UseListenInOptions) {
 
   function handlePlayerUpdated(event: { object_id?: string }) {
     if (event.object_id === webPlayerId.value) {
+      // Our own update re-checks right away, superseding any pending re-check.
+      if (foreignPlayerRecheckTimer !== null) {
+        clearTimeout(foreignPlayerRecheckTimer);
+        foreignPlayerRecheckTimer = null;
+      }
       checkCanListenIn();
       return;
     }
