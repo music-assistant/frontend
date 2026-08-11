@@ -6,7 +6,7 @@
     :style="`
       position: fixed;
       width: 100%;
-      height: calc(180px + var(--mobile-navigation-inset-bottom));
+      height: var(--mobile-player-scrim-height);
       bottom: 0px;
       z-index: 999;
     `"
@@ -24,12 +24,9 @@
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
-    :style="[
-      store.mobileLayout ? { bottom: 'var(--mobile-navigation-height)' } : {},
-      store.mobileLayout && store.showPlayersMenu
-        ? 'z-index: 999 !important;'
-        : '',
-    ]"
+    :style="
+      store.mobileLayout ? { bottom: 'var(--mobile-navigation-height)' } : {}
+    "
   >
     <Player :use-floating-player="store.mobileLayout" />
   </v-footer>
@@ -48,6 +45,7 @@ import {
 import Player from "./PlayerOSD/Player.vue";
 
 const OVERLAY_HEIGHT_PROPERTY = "--player-bar-overlay-height";
+const OVERLAY_MARKER_ATTRIBUTE = "data-player-bar-overlay";
 
 const playerBar = ref<ComponentPublicInstance>();
 const { height: playerBarHeight } = useElementSize(playerBar, undefined, {
@@ -55,19 +53,28 @@ const { height: playerBarHeight } = useElementSize(playerBar, undefined, {
 });
 
 // on mobile the player bar floats on top of the player bar popouts, which read
-// this variable to keep their content clear of it
+// this marker and height to keep their content clear of it
 watchEffect(() => {
+  if (!store.mobileLayout) {
+    clearOverlay();
+    return;
+  }
+
   document.documentElement.style.setProperty(
     OVERLAY_HEIGHT_PROPERTY,
-    store.mobileLayout ? `${Math.ceil(playerBarHeight.value)}px` : "0px",
+    `${Math.ceil(playerBarHeight.value)}px`,
   );
+  document.documentElement.setAttribute(OVERLAY_MARKER_ATTRIBUTE, "");
 });
 
 // the popouts outlive the player bar in frameless mode, so they must not keep
 // reserving room for a bar that is no longer there
-onBeforeUnmount(() => {
+onBeforeUnmount(clearOverlay);
+
+function clearOverlay() {
   document.documentElement.style.removeProperty(OVERLAY_HEIGHT_PROPERTY);
-});
+  document.documentElement.removeAttribute(OVERLAY_MARKER_ATTRIBUTE);
+}
 </script>
 
 <style>

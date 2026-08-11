@@ -529,7 +529,6 @@
         "remote_access_qr_code": "QR kod",
         "remote_access_qr_code_description": "Skenirajte kamerom telefona da biste se odmah povezali.",
         "reset_to_defaults": "Vratite na podrazumevano",
-        "reset_to_defaults_confirm": "Da li ste sigurni da želite da vratite sva podešavanja na podrazumevane vrednosti? Ova akcija će odmah sačuvati izmene.",
         "unsaved_changes": "Nesačuvane izmene",
         "unsaved_changes_message": "Imate nesačuvane izmene. Da li ste sigurni da želite da napustite stranicu bez čuvanja?",
         "stay": "Ostanite",

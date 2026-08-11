@@ -1,16 +1,13 @@
 <template>
-  <section class="edit-queue-config">
-    <v-card class="header-card mb-4" elevation="0">
-      <div class="header-content">
-        <div class="header-icon">
-          <v-icon size="32" color="primary">mdi-tune</v-icon>
-        </div>
-        <div class="header-info">
-          <h2 class="header-title">{{ $t("settings.queue_settings") }}</h2>
-          <p class="header-description">{{ queueName }}</p>
-        </div>
-      </div>
-    </v-card>
+  <section class="p-4">
+    <SettingsHeaderCard
+      v-model:show-advanced-settings="showAdvancedSettings"
+      :icon="SlidersHorizontal"
+      :title="$t('settings.queue_settings')"
+      :description="queueName"
+      :show-advanced-toggle="hasAdvancedEntries(allConfigEntries)"
+      @reset-to-defaults="resetToDefaults"
+    />
 
     <!-- Global queue settings hint -->
     <div
@@ -29,20 +26,22 @@
 
     <edit-config
       v-if="config"
+      ref="editConfig"
+      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="false"
       @submit="onSubmit"
       @immediate-apply="onImmediateApply"
     />
 
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      class="loading-overlay"
+    <!-- z-index clears the player bar (2001), which floats above page content -->
+    <div
+      v-if="loading"
+      data-testid="loading-overlay"
+      class="fixed inset-0 z-[2100] flex items-center justify-center bg-background/80"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
-    </v-overlay>
+      <Spinner class="size-16" />
+    </div>
   </section>
 </template>
 
@@ -50,16 +49,21 @@
 import { api } from "@/plugins/api";
 import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
-import { Info } from "@lucide/vue";
+import { Spinner } from "@/components/ui/spinner";
+import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
+import { Info, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
+import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
 // global refs
 const router = useRouter();
 const config = ref<PlayerQueueConfig>();
+const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
+const showAdvancedSettings = ref(false);
 
 // props
 const props = defineProps<{
@@ -88,6 +92,10 @@ watch(
 );
 
 // methods
+const resetToDefaults = function () {
+  editConfig.value?.resetToDefaults();
+};
+
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   loading.value = true;
   api
@@ -119,63 +127,3 @@ const onImmediateApply = async function (
     });
 };
 </script>
-
-<style scoped>
-.edit-queue-config {
-  padding: 16px;
-}
-
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.loading-overlay {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-</style>

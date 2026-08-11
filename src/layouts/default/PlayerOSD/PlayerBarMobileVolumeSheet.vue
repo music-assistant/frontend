@@ -4,7 +4,7 @@
       data-player-panel
       side="bottom"
       :show-close="false"
-      class="player-bar-popout mobile-group-volume-sheet z-[998] max-h-[70dvh] gap-0 overflow-hidden rounded-xl p-0"
+      class="player-bar-popout mobile-group-volume-sheet z-[998] gap-0 overflow-hidden rounded-xl p-0"
       overlay-class="mobile-group-volume-overlay z-[997]"
       @open-auto-focus="preventAutoFocus"
     >
@@ -52,7 +52,14 @@ function preventAutoFocus(event: Event) {
   width: auto !important;
 }
 
-.mobile-group-volume-overlay {
+/* a sheet has no popper measuring the free space for it, so it grows with the
+   group it shows up to the room left above the navigation instead */
+.player-bar-popout.mobile-group-volume-sheet {
+  max-height: calc(100dvh - var(--mobile-navigation-height) - 16px);
+}
+
+/* :root lifts this above the equally-!important inset-0 the backdrop carries */
+:root .mobile-group-volume-overlay {
   bottom: var(--mobile-navigation-height) !important;
 }
 

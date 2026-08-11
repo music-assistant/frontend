@@ -1,5 +1,9 @@
 import PlayerSelect from "@/layouts/default/PlayerSelect.vue";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  fullscreenPlayerSelectAnchor,
+  playerBarEndAnchor,
+} from "@/helpers/player_bar";
 import { api } from "@/plugins/api";
 import {
   IdentifierType,
@@ -9,9 +13,9 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   emitEvent,
@@ -20,33 +24,17 @@ const {
   preferenceState,
   savePlayerConfig,
   setPreference,
-  storage,
-} = vi.hoisted(() => {
-  const values = new Map<string, string>();
-  const storage = {
-    clear: () => values.clear(),
-    getItem: (key: string) => values.get(key) ?? null,
-    removeItem: (key: string) => {
-      values.delete(key);
-    },
-    setItem: (key: string, value: string) => {
-      values.set(key, value);
-    },
-  };
-  vi.stubGlobal("localStorage", storage);
-  return {
-    emitEvent: vi.fn(),
-    getPreference: vi.fn(),
-    isAdmin: vi.fn(() => true),
-    preferenceState: {
-      values: {} as Record<string, unknown>,
-      reactiveValues: undefined as Record<string, unknown> | undefined,
-    },
-    savePlayerConfig: vi.fn(),
-    setPreference: vi.fn(),
-    storage,
-  };
-});
+} = vi.hoisted(() => ({
+  emitEvent: vi.fn(),
+  getPreference: vi.fn(),
+  isAdmin: vi.fn(() => true),
+  preferenceState: {
+    values: {} as Record<string, unknown>,
+    reactiveValues: undefined as Record<string, unknown> | undefined,
+  },
+  savePlayerConfig: vi.fn(),
+  setPreference: vi.fn(),
+}));
 
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -58,14 +46,21 @@ vi.mock("@/plugins/api", async () => {
 });
 
 vi.mock("@/plugins/store", async () => {
-  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  const { computed, reactive } =
+    await vi.importActual<typeof import("vue")>("vue");
+  const { api } = await import("@/plugins/api");
   return {
     store: reactive({
-      activePlayer: undefined as Player | undefined,
+      // resolved from the player list like the real store, so the guard against
+      // overriding an existing selection behaves the same
+      activePlayer: computed(() =>
+        store.activePlayerId ? api.players[store.activePlayerId] : undefined,
+      ),
       activePlayerId: undefined as string | undefined,
       companionPlayerId: undefined as string | undefined,
       dialogActive: false,
       mobileLayout: false,
+      showFullscreenPlayer: false,
       showPlayersMenu: true,
     }),
   };
@@ -205,6 +200,11 @@ const DropdownMenuCheckboxItemStub = {
     </button>
   `,
 };
+const PopoverAnchorStub = {
+  name: "PopoverAnchor",
+  props: ["reference"],
+  template: `<div><slot /></div>`,
+};
 const PopoverContentStub = {
   name: "PopoverContent",
   emits: ["interact-outside", "open-auto-focus"],
@@ -288,11 +288,15 @@ function createPlayer(
   };
 }
 
-function setPlayerSelectPreference(key: string, value: boolean) {
+function setPlayerSelectPreference(key: string, value: boolean | string) {
   if (!preferenceState.reactiveValues) {
     throw new Error("Preference mock is not initialized");
   }
   preferenceState.reactiveValues[key] = value;
+}
+
+function setActivePlayerPreference(value: string) {
+  setPlayerSelectPreference("activePlayerId", value);
 }
 
 function mountPlayerSelect() {
@@ -313,7 +317,7 @@ function mountPlayerSelect() {
         DropdownMenuSeparator: passthroughStub,
         DropdownMenuTrigger: passthroughStub,
         Popover: passthroughStub,
-        PopoverAnchor: passthroughStub,
+        PopoverAnchor: PopoverAnchorStub,
         PopoverContent: PopoverContentStub,
         Teleport: true,
       },
@@ -321,10 +325,34 @@ function mountPlayerSelect() {
   });
 }
 
-describe("PlayerSelect", () => {
-  afterAll(() => {
-    vi.unstubAllGlobals();
+// the popover components render for real here, so the panel goes through
+// reka-ui's own labelling rather than a stub that echoes whatever it is passed
+function mountPlayerSelectWithPopover() {
+  return mount(PlayerSelect, {
+    global: {
+      mocks: {
+        $t: (key: string) => key,
+      },
+      stubs: {
+        PlayerCard: PlayerCardStub,
+        PlayerRenameDialog: PlayerRenameDialogStub,
+        SearchInput: SearchInputStub,
+        DropdownMenu: passthroughStub,
+        DropdownMenuCheckboxItem: DropdownMenuCheckboxItemStub,
+        DropdownMenuContent: passthroughStub,
+        DropdownMenuItem: passthroughStub,
+        DropdownMenuLabel: passthroughStub,
+        DropdownMenuSeparator: passthroughStub,
+        DropdownMenuTrigger: passthroughStub,
+      },
+    },
   });
+}
+
+describe("PlayerSelect", () => {
+  // the store and api mocks are module singletons, so a component left mounted
+  // keeps reacting to the next test's state
+  enableAutoUnmount(afterEach);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -336,14 +364,13 @@ describe("PlayerSelect", () => {
     }
     api.players = {};
     savePlayerConfig.mockResolvedValue({});
-    store.activePlayer = undefined;
     store.activePlayerId = undefined;
     store.companionPlayerId = undefined;
     store.dialogActive = false;
     store.mobileLayout = false;
+    store.showFullscreenPlayer = false;
     store.showPlayersMenu = true;
     webPlayer.player_id = null;
-    storage.clear();
   });
 
   it("orders the selected player, this device, then active players first", () => {
@@ -356,7 +383,6 @@ describe("PlayerSelect", () => {
       attic: createPlayer("attic", "Attic", PlaybackState.PLAYING),
       lounge: createPlayer("lounge", "Lounge"),
     };
-    store.activePlayer = activePlayer;
     store.activePlayerId = activePlayer.player_id;
 
     const wrapper = mountPlayerSelect();
@@ -377,7 +403,6 @@ describe("PlayerSelect", () => {
       selected: selectedPlayer,
       attic: createPlayer("attic", "Attic"),
     };
-    store.activePlayer = selectedPlayer;
     store.activePlayerId = selectedPlayer.player_id;
 
     const wrapper = mountPlayerSelect();
@@ -410,7 +435,7 @@ describe("PlayerSelect", () => {
   it("waits for a remembered player instead of selecting the web player", async () => {
     const web = createPlayer("web", "This device");
     const remembered = createPlayer("remembered", "Living room");
-    storage.setItem("activePlayerId", remembered.player_id);
+    setActivePlayerPreference(remembered.player_id);
     webPlayer.player_id = web.player_id;
     api.players = {
       [web.player_id]: web,
@@ -423,6 +448,164 @@ describe("PlayerSelect", () => {
     await nextTick();
 
     expect(store.activePlayerId).toBe(remembered.player_id);
+  });
+
+  it("waits for the built-in player when it is the remembered one", async () => {
+    const builtin = createPlayer("builtin", "This device");
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    setActivePlayerPreference("<builtinplayer>");
+    api.players = { [kitchen.player_id]: kitchen };
+
+    mountPlayerSelect();
+    expect(store.activePlayerId).toBeUndefined();
+
+    api.players[builtin.player_id] = builtin;
+    webPlayer.player_id = builtin.player_id;
+    await nextTick();
+
+    expect(store.activePlayerId).toBe(builtin.player_id);
+  });
+
+  it("falls back to the built-in player, then a playing one, then any", async () => {
+    const attic = createPlayer("attic", "Attic");
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    const builtin = createPlayer("builtin", "This device");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+    expect(store.activePlayerId).toBe(attic.player_id);
+
+    api.players[kitchen.player_id] = kitchen;
+    store.activePlayerId = undefined;
+    await nextTick();
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+
+    api.players[builtin.player_id] = builtin;
+    webPlayer.player_id = builtin.player_id;
+    store.activePlayerId = undefined;
+    await nextTick();
+    expect(store.activePlayerId).toBe(builtin.player_id);
+  });
+
+  it("remembers a selected player but not an automatic one", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    const office = createPlayer("office", "Office");
+    api.players = {
+      [kitchen.player_id]: kitchen,
+      [office.player_id]: office,
+    };
+
+    const wrapper = mountPlayerSelect();
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+
+    await wrapper
+      .get('[data-player-id="office"] .select-player')
+      .trigger("click");
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      office.player_id,
+    );
+  });
+
+  it("remembers the built-in player as a device independent placeholder", async () => {
+    const builtin = createPlayer("builtin", "This device");
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    setActivePlayerPreference(kitchen.player_id);
+    api.players = {
+      [builtin.player_id]: builtin,
+      [kitchen.player_id]: kitchen,
+    };
+    const wrapper = mountPlayerSelect();
+
+    await wrapper
+      .get('[data-player-id="builtin"] .select-player')
+      .trigger("click");
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      "<builtinplayer>",
+    );
+  });
+
+  it("remembers the player that was already selected automatically", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    api.players = { [kitchen.player_id]: kitchen };
+    const wrapper = mountPlayerSelect();
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+
+    await wrapper
+      .get('[data-player-id="kitchen"] .select-player')
+      .trigger("click");
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      kitchen.player_id,
+    );
+  });
+
+  it("replaces a remembered built-in player id with the placeholder", async () => {
+    const builtin = createPlayer("builtin", "This device");
+    setActivePlayerPreference(builtin.player_id);
+    api.players = { [builtin.player_id]: builtin };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(builtin.player_id);
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      "<builtinplayer>",
+    );
+  });
+
+  it("hands an automatic pick over to the built-in player registering late", async () => {
+    const attic = createPlayer("attic", "Attic");
+    const builtin = createPlayer("builtin", "This device");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+    expect(store.activePlayerId).toBe(attic.player_id);
+
+    api.players[builtin.player_id] = builtin;
+    store.companionPlayerId = builtin.player_id;
+    await nextTick();
+
+    expect(store.activePlayerId).toBe(builtin.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("keeps the remembered player when it is unavailable at startup", () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    kitchen.available = false;
+    const attic = createPlayer("attic", "Attic");
+    setActivePlayerPreference(kitchen.player_id);
+    api.players = {
+      [kitchen.player_id]: kitchen,
+      [attic.player_id]: attic,
+    };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(attic.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("keeps a remembered player when the built-in one registers late", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    const builtin = createPlayer("builtin", "This device");
+    setActivePlayerPreference(kitchen.player_id);
+    api.players = { [kitchen.player_id]: kitchen };
+
+    mountPlayerSelect();
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+
+    api.players[builtin.player_id] = builtin;
+    webPlayer.player_id = builtin.player_id;
+    await nextTick();
+
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
   });
 
   it("moves a newly active player to the front", async () => {
@@ -484,10 +667,14 @@ describe("PlayerSelect", () => {
 
   it("selects a player and closes the sheet from the card action", async () => {
     const player = createPlayer("kitchen", "Kitchen");
-    api.players = { [player.player_id]: player };
+    const other = createPlayer("attic", "Attic");
+    api.players = { [player.player_id]: player, [other.player_id]: other };
     const wrapper = mountPlayerSelect();
+    expect(store.activePlayerId).toBe(other.player_id);
 
-    await wrapper.find(".select-player").trigger("click");
+    await wrapper
+      .get('[data-player-id="kitchen"] .select-player')
+      .trigger("click");
 
     expect(store.activePlayerId).toBe(player.player_id);
     expect(store.showPlayersMenu).toBe(false);
@@ -606,6 +793,21 @@ describe("PlayerSelect", () => {
     expect(store.showPlayersMenu).toBe(false);
   });
 
+  it("names the panel for assistive tech", async () => {
+    // reka-ui names a panel after its PopoverTrigger, and this popout is
+    // anchored instead of triggered, so only a real mount shows the name lands
+    const wrapper = mountPlayerSelectWithPopover();
+    await nextTick();
+
+    const panel = document.body.querySelector(
+      '[data-testid="player-select-sheet"]',
+    );
+    expect(panel?.getAttribute("role")).toBe("dialog");
+    expect(panel?.getAttribute("aria-label")).toBe("players");
+
+    wrapper.unmount();
+  });
+
   it("stops above the bottom navigation in mobile layout", () => {
     store.mobileLayout = true;
 
@@ -614,9 +816,30 @@ describe("PlayerSelect", () => {
     expect(wrapper.find(".player-select-backdrop").classes()).toContain(
       "player-select-mobile-offset",
     );
-    expect(
-      wrapper.find('[data-testid="player-select-sheet"]').classes(),
-    ).toContain("player-select-popover");
+    const sheet = wrapper.find('[data-testid="player-select-sheet"]');
+    expect(sheet.classes()).toContain("player-select-popover");
+    expect(sheet.attributes("align")).toBe("end");
+    expect(wrapper.findComponent(PopoverAnchorStub).props("reference")).toBe(
+      playerBarEndAnchor,
+    );
+  });
+
+  it("pops out of the fullscreen player instead of behind it", () => {
+    store.mobileLayout = true;
+    store.showFullscreenPlayer = true;
+
+    const wrapper = mountPlayerSelect();
+
+    const backdrop = wrapper.find(".player-select-backdrop");
+    expect(backdrop.classes()).toContain("player-select-fullscreen-backdrop");
+    // the fullscreen offset replaces the layout ones instead of stacking on them
+    expect(backdrop.classes()).not.toContain("player-select-mobile-offset");
+    const sheet = wrapper.find('[data-testid="player-select-sheet"]');
+    expect(sheet.classes()).toContain("player-select-popover-fullscreen");
+    expect(sheet.attributes("align")).toBe("center");
+    expect(wrapper.findComponent(PopoverAnchorStub).props("reference")).toBe(
+      fullscreenPlayerSelectAnchor,
+    );
   });
 
   it("focuses the sheet instead of opening the mobile keyboard", () => {
@@ -806,7 +1029,6 @@ describe("PlayerSelect", () => {
       attic: createPlayer("attic", "Attic"),
       selected: selectedPlayer,
     };
-    store.activePlayer = selectedPlayer;
     store.activePlayerId = selectedPlayer.player_id;
     store.showPlayersMenu = false;
 
@@ -842,7 +1064,6 @@ describe("PlayerSelect", () => {
       [fallback.player_id]: fallback,
       [setupPlayer.player_id]: setupPlayer,
     };
-    store.activePlayer = player;
     store.activePlayerId = player.player_id;
     const wrapper = mountPlayerSelect();
     const menuItems = wrapper
@@ -881,5 +1102,27 @@ describe("PlayerSelect", () => {
     });
     expect(player.enabled).toBe(false);
     expect(store.activePlayerId).toBe(fallback.player_id);
+  });
+
+  it("forgets the remembered player when the last one is disabled", async () => {
+    const player = createPlayer("kitchen", "Kitchen");
+    setActivePlayerPreference(player.player_id);
+    api.players = { [player.player_id]: player };
+    const wrapper = mountPlayerSelect();
+    expect(store.activePlayerId).toBe(player.player_id);
+
+    const menuItems = wrapper
+      .getComponent(PlayerCardStub)
+      .props("playerMenuItems") as ContextMenuItem[];
+    menuItems[1].action?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const confirmation = emitEvent.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    )?.[1];
+    await confirmation.onConfirm();
+    await flushPromises();
+
+    expect(store.activePlayerId).toBeUndefined();
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
   });
 });

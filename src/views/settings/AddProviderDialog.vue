@@ -1,7 +1,8 @@
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
     <DialogContent
-      class="add-provider-dialog h-[60vh] max-h-[60vh] flex flex-col p-0"
+      class="h-[85dvh] max-h-[85dvh] sm:h-[60vh] sm:max-h-[60vh] flex flex-col p-0"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
@@ -9,11 +10,7 @@
 
       <div class="px-6 pb-2 flex-shrink-0">
         <InputGroup class="search-field">
-          <InputGroupInput
-            ref="searchInput"
-            v-model="searchQuery"
-            :placeholder="$t('search')"
-          />
+          <InputGroupInput v-model="searchQuery" :placeholder="$t('search')" />
           <InputGroupAddon>
             <Search />
           </InputGroupAddon>
@@ -90,6 +87,7 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { api } from "@/plugins/api";
 import {
   ProviderConfig,
@@ -102,7 +100,7 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, Search } from "@lucide/vue";
 import { match } from "ts-pattern";
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const props = defineProps<{
@@ -128,7 +126,6 @@ const route = useRoute();
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderStages = ref<string[]>([]);
-const searchInput = ref<{ focus: () => void } | null>(null);
 
 const activeTypeFilter = computed(() => (route.query.types as string) || null);
 
@@ -303,20 +300,12 @@ watch(
     if (isOpen) {
       // Refresh provider configs when dialog opens
       loadItems();
-      nextTick(() => {
-        searchInput.value?.focus();
-      });
     }
   },
 );
 </script>
 
 <style scoped>
-.add-provider-dialog {
-  display: flex;
-  flex-direction: column;
-}
-
 .search-field {
   width: 100%;
 }
@@ -414,11 +403,5 @@ watch(
   font-size: 14px;
   color: rgba(var(--v-theme-on-surface), 0.5);
   line-height: 1.4;
-}
-
-@media (max-width: 600px) {
-  .add-provider-dialog {
-    max-height: 500px;
-  }
 }
 </style>

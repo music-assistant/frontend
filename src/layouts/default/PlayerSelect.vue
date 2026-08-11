@@ -11,9 +11,11 @@
         type="button"
         :class="[
           'modal-backdrop player-select-backdrop fixed inset-x-0 top-0 z-[997]',
-          store.mobileLayout
-            ? 'player-select-mobile-offset'
-            : 'player-select-desktop-offset',
+          popoutFromFullscreen
+            ? 'player-select-fullscreen-backdrop'
+            : store.mobileLayout
+              ? 'player-select-mobile-offset'
+              : 'player-select-desktop-offset',
         ]"
         :aria-label="$t('close')"
         @click="setMenuOpen(false)"
@@ -22,12 +24,18 @@
   </Teleport>
 
   <Popover :open="store.showPlayersMenu" @update:open="setMenuOpen">
-    <PopoverAnchor :reference="playerBarEndAnchor" />
+    <PopoverAnchor :reference="popoutAnchor" />
+    <!-- reka-ui generates the panel id and only mounts the panel while it is
+         open, so the buttons that open it announce it with
+         aria-haspopup/aria-expanded rather than aria-controls. It also names the
+         panel after a PopoverTrigger, which this popout has no use for, so the
+         panel carries its own label. -->
     <PopoverContent
       data-player-panel
       data-testid="player-select-sheet"
+      :aria-label="$t('players')"
       side="top"
-      align="end"
+      :align="popoutFromFullscreen ? 'center' : 'end'"
       :side-offset="
         store.mobileLayout
           ? MOBILE_PLAYER_BAR_POPOUT_GAP
@@ -36,9 +44,10 @@
       :collision-padding="8"
       :class="[
         'player-bar-popout player-select-popover flex flex-col gap-0 overflow-hidden p-0',
+        popoutFromFullscreen && 'player-select-popover-fullscreen',
         store.mobileLayout
-          ? 'max-h-[78dvh] w-[calc(100vw-1rem)]'
-          : 'max-h-[min(82dvh,780px)] w-[400px] max-w-[calc(100vw-1rem)]',
+          ? 'w-[calc(100vw-1rem)]'
+          : 'w-[400px] max-w-[calc(100vw-1rem)]',
       ]"
       @keydown="handleSheetKeydown"
       @close-auto-focus="preventAutoFocus"
@@ -206,9 +215,10 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   DESKTOP_PLAYER_BAR_POPOUT_GAP,
   MOBILE_PLAYER_BAR_POPOUT_GAP,
+  fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
-import { isPlayerActive } from "@/helpers/players";
+import { isBuiltinPlayer, isPlayerActive } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import type { Player } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -229,6 +239,9 @@ import {
 import { toast } from "vue-sonner";
 
 const SEARCH_PLAYER_THRESHOLD = 10;
+// Stored instead of a built-in player id: those are unique per browser/app
+// session, so they are meaningless on the next visit or on another device.
+const BUILTIN_PLAYER_PREFERENCE = "<builtinplayer>";
 const PLAYER_SELECT_PREFERENCES = {
   showVolumeForActivePlayersOnly: "playerSelect.showVolumeForActivePlayersOnly",
   showSelectedPlayerFirst: "playerSelect.showSelectedPlayerFirst",
@@ -262,6 +275,7 @@ const showGroupMemberNames = getPreference<boolean>(
 let menuTrigger: HTMLElement | null = null;
 let lastInteractionWasKeyboard = false;
 let restoreFocusOnClose = false;
+let autoSelectedPlayerId: string | undefined;
 
 // PlayerSelect is the only surface that lists needs_setup players: a click here
 // launches the setup flow (see selectPlayer) instead of selecting/playing them.
@@ -274,6 +288,16 @@ const orderedPlayers = useOrderedPlayers({
 
 const showSearch = computed(
   () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
+);
+
+// the fullscreen player covers the player bar, so the panel pops out of the
+// player select button in there and stays on top of it
+const popoutFromFullscreen = computed(() => store.showFullscreenPlayer);
+
+const popoutAnchor = computed(() =>
+  popoutFromFullscreen.value
+    ? fullscreenPlayerSelectAnchor
+    : playerBarEndAnchor,
 );
 
 const filteredPlayers = computed(() => {
@@ -327,8 +351,11 @@ watch(
   () => store.activePlayerId,
   (playerId) => {
     if (!playerId) return;
-    setPreference("activePlayerId", playerId);
-    localStorage.setItem("activePlayerId", playerId);
+    // only a deliberate choice is remembered: persisting the automatic pick
+    // would overwrite the player the user actually selected earlier
+    if (playerId === autoSelectedPlayerId) return;
+    autoSelectedPlayerId = undefined;
+    rememberPlayer(playerId);
   },
 );
 
@@ -338,10 +365,10 @@ watch(
   { deep: true },
 );
 
-watch(
-  () => webPlayer.player_id,
-  () => checkDefaultPlayer(),
-);
+watch([() => webPlayer.player_id, () => store.companionPlayerId], () => {
+  checkDefaultPlayer();
+  preferBuiltinPlayer();
+});
 
 onMounted(() => {
   document.addEventListener("keydown", markKeyboardInteraction, true);
@@ -416,6 +443,10 @@ function selectPlayer(player: Player) {
     store.showPlayersMenu = false;
     return;
   }
+  // remember it here as well: picking the player that was already selected
+  // automatically leaves store.activePlayerId untouched
+  autoSelectedPlayerId = undefined;
+  rememberPlayer(player.player_id);
   store.activePlayerId = player.player_id;
   store.showPlayersMenu = false;
 }
@@ -503,7 +534,6 @@ async function disablePlayer(player: Player) {
     if (store.activePlayerId === player.player_id) {
       store.activePlayerId = fallbackPlayer?.player_id;
       if (!fallbackPlayer) {
-        localStorage.removeItem("activePlayerId");
         await setPreference("activePlayerId", null);
       }
     }
@@ -527,19 +557,60 @@ function resetPanelState() {
 function checkDefaultPlayer() {
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
-  if (defaultPlayerId) {
-    store.activePlayerId = defaultPlayerId;
+  if (!defaultPlayerId) return;
+  autoSelectedPlayerId = defaultPlayerId;
+  store.activePlayerId = defaultPlayerId;
+  // a built-in player id remembered before the placeholder existed only
+  // resolves in the browser session that created it: store the placeholder
+  if (getPreference<string>("activePlayerId").value === defaultPlayerId) {
+    rememberPlayer(defaultPlayerId);
   }
 }
 
+/**
+ * Hand an automatically picked player over to the built-in player of this
+ * device, which only registers a moment after the app has started.
+ */
+function preferBuiltinPlayer() {
+  if (store.activePlayerId !== autoSelectedPlayerId) return;
+  if (getPreference<string>("activePlayerId").value) return;
+  const builtinPlayerId = selectBuiltinPlayer();
+  if (!builtinPlayerId) return;
+  autoSelectedPlayerId = builtinPlayerId;
+  store.activePlayerId = builtinPlayerId;
+}
+
+function rememberPlayer(playerId: string) {
+  const player = api.players[playerId];
+  if (!player) return;
+  const rememberedPlayer = isBuiltinPlayer(player)
+    ? BUILTIN_PLAYER_PREFERENCE
+    : playerId;
+  if (getPreference<string>("activePlayerId").value === rememberedPlayer)
+    return;
+  void setPreference("activePlayerId", rememberedPlayer);
+}
+
 function selectDefaultPlayer() {
-  const lastPlayerId =
-    localStorage.getItem("activePlayerId") ||
-    getPreference<string>("activePlayerId").value;
+  const lastPlayerId = getPreference<string>("activePlayerId").value;
+  // both a remembered built-in player and a remembered player that is not known
+  // (yet) register a moment after startup, so leave the selection empty until
+  // they show up instead of settling for another player
+  if (lastPlayerId === BUILTIN_PLAYER_PREFERENCE) return selectBuiltinPlayer();
   if (lastPlayerId) {
     if (!(lastPlayerId in api.players)) return;
     if (isSelectablePlayer(lastPlayerId)) return lastPlayerId;
   }
+  const builtinPlayerId = selectBuiltinPlayer();
+  if (builtinPlayerId) return builtinPlayerId;
+  const selectablePlayers = orderedPlayers.value.filter((player) =>
+    isSelectablePlayer(player.player_id),
+  );
+  return (selectablePlayers.find(isPlayerActive) ?? selectablePlayers[0])
+    ?.player_id;
+}
+
+function selectBuiltinPlayer() {
   if (isSelectablePlayer(webPlayer.player_id)) {
     return webPlayer.player_id;
   }
@@ -572,14 +643,35 @@ async function scrollSelectedPlayerIntoView() {
 
 <style>
 .player-select-desktop-offset {
-  bottom: 104px !important;
+  bottom: var(--player-bar-height) !important;
 }
 
 .player-select-mobile-offset {
   bottom: var(--mobile-navigation-height) !important;
 }
 
-.player-select-popover {
+/* the paired class outweighs the equally-!important z-index utility the popover
+   component carries */
+.player-bar-popout.player-select-popover {
   z-index: 998 !important;
+}
+
+/* the fullscreen player is a dialog at z-index 9000, so both the panel and its
+   backdrop have to clear it; each rule pairs up its class to outweigh the
+   utility it overrides */
+.player-select-backdrop.player-select-fullscreen-backdrop {
+  bottom: 0 !important;
+  z-index: 9001 !important;
+}
+
+.player-bar-popout.player-select-popover.player-select-popover-fullscreen {
+  z-index: 9002 !important;
+}
+
+/* the fullscreen player covers the mobile player bar, so this popout has no
+   floating bar to stay clear of */
+:root[data-player-bar-overlay]
+  .player-bar-popout.player-select-popover-fullscreen {
+  padding-bottom: 0 !important;
 }
 </style>

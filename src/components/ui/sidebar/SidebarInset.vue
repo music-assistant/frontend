@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useMobileSidebarSide } from "@/composables/useMobileSidebarSide";
 import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "vue";
 import { ref } from "vue";
@@ -10,12 +11,7 @@ const props = defineProps<{
 
 const { isMobile, openMobile, setOpenMobile } = useSidebar();
 
-const mobileSidebarSide = ref<"left" | "right">("left");
-
-if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-  const stored = localStorage.getItem("frontend.settings.mobile_sidebar_side");
-  mobileSidebarSide.value = stored === "right" ? "right" : "left";
-}
+const mobileSidebarSide = useMobileSidebarSide();
 
 const touchStartX = ref(0);
 const touchStartY = ref(0);

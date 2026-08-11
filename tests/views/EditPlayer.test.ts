@@ -48,6 +48,8 @@ const SlotStub = {
 };
 
 const playerDetailsStubs = {
+  // rendered for real so this screen's advanced toggle stays assertable
+  AdvancedSettingsToggle: false,
   Button: SlotStub,
   Card: SlotStub,
   CardContent: SlotStub,
@@ -60,7 +62,6 @@ const playerDetailsStubs = {
   EditConfig: {
     name: "EditConfig",
     props: [
-      "actionLayout",
       "configEntries",
       "disabled",
       "outputProtocols",
@@ -148,9 +149,18 @@ describe("EditPlayer", () => {
     expect(
       wrapper.get('[data-testid="player-toggle-enabled"]').text(),
     ).toContain("settings.disable");
+  });
+
+  it("leaves out the advanced toggle without advanced settings to reveal", async () => {
+    const config = playerConfig();
+    delete config.values.sample_rates;
+    apiMock.getPlayerConfig.mockResolvedValue(config);
+
+    const wrapper = await mountPlayerPage();
+
     expect(
-      wrapper.findComponent({ name: "EditConfig" }).props("actionLayout"),
-    ).toBe("floating-save");
+      wrapper.find('[data-testid="player-advanced-settings"]').exists(),
+    ).toBe(false);
   });
 
   it("controls advanced settings from the header", async () => {
@@ -512,6 +522,17 @@ function playerConfig({
         required: false,
         default_value: true,
         value: true,
+      },
+      sample_rates: {
+        key: "sample_rates",
+        type: ConfigEntryType.INTEGER,
+        label: "sample_rates",
+        category: "audio",
+        advanced: true,
+        options: [],
+        required: false,
+        default_value: 44100,
+        value: 44100,
       },
       ...Object.fromEntries(
         CONTROL_KEYS.map((key) => [key, controlEntry(key)]),

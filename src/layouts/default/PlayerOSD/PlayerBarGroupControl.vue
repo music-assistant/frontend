@@ -36,8 +36,7 @@
           ]"
           :data-active="open"
           :data-suppress-hover="suppressHover"
-          :aria-label="$t('tooltip.group_members')"
-          :aria-pressed="open"
+          :aria-label="groupMembersLabel"
           @click.capture="handleTriggerClick"
           @pointerleave="suppressHover = false"
         >
@@ -53,8 +52,7 @@
               navigation ? 'mobile-navigation-label' : 'player-bar-action-label'
             "
           >
-            {{ memberCount }}
-            {{ memberCount === 1 ? $t("player_type.player") : $t("players") }}
+            {{ memberCountLabel }}
           </span>
         </Button>
       </PopoverTrigger>
@@ -72,8 +70,8 @@
         :class="[
           'player-bar-popout player-group-popover flex flex-col gap-0 overflow-hidden p-0',
           store.mobileLayout
-            ? 'max-h-[75dvh] w-[calc(100vw-1rem)]'
-            : 'max-h-[min(70dvh,600px)] w-[400px] max-w-[calc(100vw-1rem)]',
+            ? 'w-[calc(100vw-1rem)]'
+            : 'w-[400px] max-w-[calc(100vw-1rem)]',
         ]"
         @open-auto-focus="preventAutoFocus"
         @interact-outside="handleInteractOutside"
@@ -113,6 +111,7 @@ import {
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 import PlayerGroupPanel from "./PlayerGroupPanel.vue";
@@ -135,6 +134,17 @@ const canEditGroup = computed(
 );
 const memberCount = computed(() =>
   player.value ? getPlayerGroupMemberCount(player.value) : 0,
+);
+const memberCountLabel = computed(
+  () =>
+    `${memberCount.value} ${
+      memberCount.value === 1 ? $t("player_type.player") : $t("players")
+    }`,
+);
+// the spoken label has to contain the button's visible text, so it leads with
+// the purpose and keeps the member count; reka-ui names the panel after it too
+const groupMembersLabel = computed(
+  () => `${$t("tooltip.group_members")}: ${memberCountLabel.value}`,
 );
 const groupMembers = computed(() => {
   if (!player.value) return [];
@@ -224,14 +234,16 @@ function handleInteractOutside(event: Event) {
 
 <style>
 .player-group-backdrop-desktop {
-  bottom: 104px !important;
+  bottom: var(--player-bar-height) !important;
 }
 
 .player-group-backdrop-mobile {
   bottom: var(--mobile-navigation-height) !important;
 }
 
-.player-group-popover {
+/* the paired class outweighs the equally-!important z-index utility the popover
+   component carries */
+.player-bar-popout.player-group-popover {
   z-index: 998 !important;
 }
 </style>

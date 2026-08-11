@@ -176,7 +176,7 @@
           </DropdownMenu>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel || config.enabled"
+          v-if="playerSetupLabel || showAdvancedToggle"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
@@ -187,19 +187,11 @@
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>
-          <div
-            v-if="config.enabled"
-            class="flex w-full items-center gap-2 sm:ml-auto sm:w-auto"
-          >
-            <Switch
-              id="player-advanced-settings"
-              v-model="showAdvancedSettings"
-              data-testid="player-advanced-settings"
-            />
-            <Label for="player-advanced-settings" class="cursor-pointer">
-              {{ $t("settings.show_advanced_settings") }}
-            </Label>
-          </div>
+          <AdvancedSettingsToggle
+            v-if="showAdvancedToggle"
+            v-model:show-advanced-settings="showAdvancedSettings"
+            test-id="player-advanced-settings"
+          />
         </CardContent>
       </Card>
     </div>
@@ -266,7 +258,6 @@
       v-if="config"
       ref="editConfig"
       v-model:show-advanced-settings="showAdvancedSettings"
-      action-layout="floating-save"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
@@ -317,9 +308,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -329,8 +322,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -342,17 +333,13 @@ import {
   PlayerType,
   IdentifierType,
 } from "@/plugins/api/interfaces";
-import EditConfig from "./EditConfig.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import PlayerIcon from "@/components/PlayerIcon.vue";
-import { watch } from "vue";
-
 import {
   ConfigEntryUI,
   HASS_CONTROL_KEY_BY_PLAYER_KEY,
   HassControlPickerEntry,
   HassControlPlayerKey,
   UI_ENTRY_TYPE,
+  hasAdvancedEntries,
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
@@ -370,6 +357,8 @@ import {
   RotateCcw,
   Settings,
 } from "@lucide/vue";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
+import EditConfig from "./EditConfig.vue";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -537,6 +526,10 @@ const config_entries = computed(() => {
   }
   return entries;
 });
+
+const showAdvancedToggle = computed(
+  () => !!config.value?.enabled && hasAdvancedEntries(config_entries.value),
+);
 
 // watchers
 

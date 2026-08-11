@@ -1,0 +1,78 @@
+import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
+import { mount, type VueWrapper } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { groupSize } = vi.hoisted(() => ({ groupSize: { value: 3 } }));
+
+vi.mock("@/plugins/api", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  const api = reactive({ players: {} });
+  return { api, default: api };
+});
+
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    store: reactive({
+      activePlayer: { player_id: "kitchen", group_members: [], type: "player" },
+      mobileLayout: false,
+    }),
+  };
+});
+
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+vi.mock("@/helpers/players", () => ({
+  canEditPlayerGroup: () => true,
+  getPlayerGroupMemberCount: () => groupSize.value,
+  groupMemberPickerVisible: () => true,
+}));
+
+let wrapper: VueWrapper | undefined;
+
+function mountGroupButton() {
+  wrapper = mount(PlayerBarGroupControl, {
+    global: { stubs: { PlayerGroupPanel: true, Teleport: true } },
+  });
+  return wrapper.get("[data-player-group-trigger]");
+}
+
+describe("PlayerBarGroupControl", () => {
+  beforeEach(() => {
+    groupSize.value = 3;
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+  });
+
+  it("leaves the panel state to the popover trigger", () => {
+    const trigger = mountGroupButton();
+
+    // reka-ui's PopoverTrigger supplies the disclosure state; a second,
+    // contradictory toggle state must not ride along with it
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+    expect(trigger.attributes("aria-haspopup")).toBe("dialog");
+    expect(trigger.attributes("aria-pressed")).toBeUndefined();
+  });
+
+  it("keeps the visible member count in the accessible name", () => {
+    const trigger = mountGroupButton();
+
+    expect(trigger.attributes("aria-label")).toBe(
+      "tooltip.group_members: 3 players",
+    );
+    expect(trigger.text()).toContain("3 players");
+  });
+
+  it("names a single member in the singular", () => {
+    groupSize.value = 1;
+    const trigger = mountGroupButton();
+
+    expect(trigger.attributes("aria-label")).toBe(
+      "tooltip.group_members: 1 player_type.player",
+    );
+    expect(trigger.text()).toContain("1 player_type.player");
+  });
+});
