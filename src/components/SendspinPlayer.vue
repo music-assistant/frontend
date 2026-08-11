@@ -268,8 +268,8 @@ watch(correctionMode, (mode) => {
 });
 
 // Hand this client's pairing token to the server so it can pair us without an
-// operator step. The server derives the client id from our authenticated
-// session, and ignores the call once we are paired.
+// operator step. The server derives the client id from the token itself, and
+// ignores the call once we are paired.
 const registerPairing = () => {
   const pairingToken = player?.pairingToken;
   if (!pairingToken) return;
