@@ -231,7 +231,9 @@ function handleInteractOutside(event: Event) {
   bottom: var(--mobile-navigation-height) !important;
 }
 
-.player-group-popover {
+/* the paired class outweighs the equally-!important z-index utility the popover
+   component carries */
+.player-bar-popout.player-group-popover {
   z-index: 998 !important;
 }
 </style>
