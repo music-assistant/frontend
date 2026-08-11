@@ -23,8 +23,23 @@
   -webkit-font-smoothing: antialiased;
 }
 
+:root {
+  /* Space the OS keeps for itself at the bottom of the screen (home indicator,
+     system navigation bar). main.ts zeroes this when we are embedded, because
+     there the host sizes our viewport and browsers disagree on what to report. */
+  --device-inset-bottom: env(safe-area-inset-bottom, 0px);
+  /* Room below the bottom navigation buttons, so they are never flush with the
+     screen edge or the system controls. */
+  --mobile-navigation-inset-bottom: calc(10px + var(--device-inset-bottom));
+  /* Space the bottom navigation occupies. Anything anchored above it (sheets,
+     popovers, the player bar, scroll padding) is positioned from this. */
+  --mobile-navigation-height: calc(66px + var(--mobile-navigation-inset-bottom));
+}
+
 html {
   overflow: hidden;
+  /* iOS Safari tints the status bar from this background. Must stay set. */
+  background-color: rgb(var(--v-theme-background));
 }
 
 * {

@@ -22,6 +22,7 @@ export function providerManifest(
     multi_instance: false,
     builtin: false,
     allow_disable: true,
+    has_setup_flow: false,
     documentation: null,
     icon: null,
     depends_on: null,

@@ -135,7 +135,8 @@ const onItemClick = () => {
   if (props.item.media_type === MediaType.TRACK) {
     emit("toggleExpand", `${props.item.media_type}-${props.item.item_id}`);
   } else if (props.item.media_type === MediaType.ARTIST) {
-    emit("selectArtist", props.item);
+    // media_type is a plain enum on both members, so it does not narrow the union for TS
+    emit("selectArtist", props.item as Artist);
   }
 };
 

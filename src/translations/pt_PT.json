@@ -565,8 +565,6 @@
         "last_played_desc": "Último reproduzido (decrescente)",
         "play_count": "Contagem de reprodução",
         "play_count_desc": "Contagem de reprodução (decrescente)",
-        "artist_name": "Artista do álbum",
-        "artist_name_desc": "Artista do álbum (decrescente)",
         "album_sort_name": "Álbum (nome de ordenação)"
     },
     "state": {

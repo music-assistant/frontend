@@ -6,7 +6,6 @@ import {
   AudioQuality,
   PlaybackState,
   type PlayerQueue,
-  RepeatMode,
   type StreamDetails,
 } from "@/plugins/api/interfaces";
 import { i18n } from "@/plugins/i18n";
@@ -15,6 +14,7 @@ import {
   audioOutputDetails,
   audioProcessingChain,
 } from "../fixtures/audioProcessing";
+import { playerQueue } from "../fixtures/playerQueue";
 import { queueItem } from "../fixtures/queueItem";
 import { streamDetails } from "../fixtures/streamDetails";
 
@@ -76,7 +76,7 @@ describe("QualityDetailsBtn", () => {
     ).toBe(true);
     expect(wrapper.text()).toContain("LQ-HR");
     expect(wrapper.get("button").attributes("aria-label")).toBe(
-      "Show audio chain details (LQ-HR)",
+      "Show audio pipeline details (LQ-HR)",
     );
   });
 
@@ -121,7 +121,7 @@ describe("QualityDetailsBtn", () => {
       '[data-testid="audio-processing-popover-content"]',
     );
     expect(content?.getAttribute("aria-label")).toBe(
-      "Show audio chain details",
+      "Show audio pipeline details",
     );
     expect(content?.contains(document.activeElement)).toBe(true);
     expect(document.activeElement?.classList).toContain(
@@ -157,30 +157,10 @@ function makeStreamDetails(): StreamDetails {
 }
 
 function makeQueue(streamdetails: StreamDetails): PlayerQueue {
-  return {
-    queue_id: "queue-1",
-    active: true,
-    display_name: "Queue",
-    available: true,
+  return playerQueue({
+    // the button stays hidden for an empty queue
     items: 1,
-    shuffle_enabled: false,
-    smart_shuffle_active: false,
-    autoplay_enabled: false,
-    repeat_mode: RepeatMode.OFF,
-    crossfade_enabled: false,
-    smart_fades_active: false,
-    overlay_enabled: false,
-    overlay_source: null,
-    overlay_volume: 100,
-    current_index: null,
-    index_in_buffer: null,
-    ended: false,
-    elapsed_time: 0,
-    elapsed_time_last_updated: 0,
     state: PlaybackState.PLAYING,
     current_item: queueItem({ name: "Track", duration: 180, streamdetails }),
-    next_item: null,
-    sources: [],
-    is_dynamic: false,
-  };
+  });
 }

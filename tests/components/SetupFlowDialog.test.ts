@@ -1,5 +1,10 @@
-import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  config,
+  flushPromises,
+  shallowMount,
+  type VueWrapper,
+} from "@vue/test-utils";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigEntryType,
   FlowStepType,
@@ -89,6 +94,21 @@ vi.mock("vue-router", async (importOriginal) => {
 vi.mock("vue-sonner", () => ({
   toast: toastMock,
 }));
+
+// shallowMount would stub the step copy away; render it as plain text instead
+// so the assertions below keep seeing it
+const originalStubs = config.global.stubs;
+config.global.stubs = {
+  ...originalStubs,
+  MarkdownText: {
+    props: ["text"],
+    template: "<div>{{ text }}</div>",
+  },
+};
+
+afterAll(() => {
+  config.global.stubs = originalStubs;
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

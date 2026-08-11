@@ -122,9 +122,10 @@
       </div>
 
       <div ref="playerList" class="min-h-0 flex-1 overflow-y-auto pb-6">
+        <!-- outranks the selected player badge on the cards scrolling underneath -->
         <div
           v-if="showSearch"
-          class="bg-background sticky top-0 z-10 px-3 pt-3 pb-2"
+          class="bg-background sticky top-0 z-20 px-3 pt-3 pb-2"
         >
           <SearchInput
             v-model="playerSearchQuery"
@@ -575,7 +576,7 @@ async function scrollSelectedPlayerIntoView() {
 }
 
 .player-select-mobile-offset {
-  bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: var(--mobile-navigation-height) !important;
 }
 
 .player-select-popover {

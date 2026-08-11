@@ -222,8 +222,8 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
-            "input_gain_help": "Sets the level going into the chain. Lower it to leave headroom for filters that boost.",
-            "output_gain_help": "Adjusts the level leaving the chain, after every filter has been applied. Player volume is applied later.",
+            "input_gain_help": "Sets the level going into the pipeline. Lower it to leave headroom for filters that boost.",
+            "output_gain_help": "Adjusts the level leaving the pieline, after every filter has been applied. Player volume is applied later.",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
@@ -265,7 +265,7 @@
                 "treble_level": "Treble Level"
             },
             "gain": {
-                "help": "Raises or lowers the level of everything passing through this point in the chain."
+                "help": "Raises or lowers the level of everything passing through this point in the pipeline."
             },
             "balance": {
                 "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
@@ -280,7 +280,7 @@
                 "concert_pitch_432_hint": "Set the concert pitch so A is tuned to 432 Hz"
             },
             "safety_limiter": {
-                "help": "Catches peaks that would otherwise clip and may damage your speakers. Place it last in the chain.",
+                "help": "Catches peaks that would otherwise clip and may damage your speakers. Place it last in the pipeline.",
                 "ceiling": "Ceiling"
             },
             "compressor": {
@@ -961,6 +961,7 @@
     "duration_in_seconds": "{0} seconds",
     "mark_played": "Mark as played",
     "mark_unplayed": "Mark as unplayed",
+    "mark_played_partial_failure": "Could not update {0} episode(s)",
     "searchtype_all": "All",
     "global_search": "Global search",
     "podcast_episode": "Episode",
@@ -2158,8 +2159,8 @@
     "lyrics_show": "Show lyrics for this track",
     "lyrics_hide": "Hide lyrics for this track",
     "lyrics_loading": "Lyrics are being fetched...",
-    "show_audio_chain_details": "Show audio chain details",
-    "show_audio_chain_details_for_quality": "Show audio chain details ({quality})",
+    "show_audio_chain_details": "Show audio pipeline details",
+    "show_audio_chain_details_for_quality": "Show audio pipeline details ({quality})",
     "show_less": "Show less",
     "show_more": "Show more",
     "autoplay_on_title": "Autoplay is enabled",

@@ -652,13 +652,31 @@ export const panelViewItemResponsive = function (displaySize: number) {
   }
 };
 
+// Own instance, so the anchor rewrite below stays confined to rendered markdown
+const markdownPurifier = DOMPurify();
+
+// Send every link to a new tab (keeping the app itself loaded) and withhold the
+// opener from the target page.
+markdownPurifier.addHook("afterSanitizeAttributes", (node) => {
+  if (node.nodeName === "A" && node.hasAttribute("href")) {
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
+
+/**
+ * Render markdown as sanitized HTML, safe to pass to `v-html`.
+ *
+ * Supports the full block syntax (lists, paragraphs, ...) and turns single
+ * newlines into line breaks. Links always open in a new tab.
+ *
+ * @param text - Markdown source. May use escaped `\n` sequences as newlines.
+ */
 export const markdownToHtml = function (text: string): string {
-  text = text
-    .replaceAll(/\\n/g, "<br />")
-    .replaceAll("\n", "<br />")
-    .replaceAll(" \\", "<br />");
+  // some sources encode their line breaks literally; block syntax only parses on real ones
+  const source = text.replaceAll("\\n", "\n").replaceAll(" \\", "\n");
   // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
-  return DOMPurify.sanitize(marked(text) as string, {
+  return markdownPurifier.sanitize(marked(source, { breaks: true }) as string, {
     SANITIZE_NAMED_PROPS: true,
   });
 };

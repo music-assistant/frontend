@@ -588,8 +588,6 @@
         "last_played_desc": "Utoljára lejátszott (csökkenő)",
         "play_count": "Lejátszások száma",
         "play_count_desc": "Lejátszások száma (csökkenő)",
-        "artist_name": "Album előadója",
-        "artist_name_desc": "Album előadója (csökkenő)",
         "album_sort_name": "Album (rendezési név)"
     },
     "state": {

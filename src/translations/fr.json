@@ -519,8 +519,6 @@
         "last_played_desc": "Dernière lecture (décroissant)",
         "play_count": "Nombre de lectures",
         "play_count_desc": "Nombre de lectures (décroissant)",
-        "artist_name": "Artiste de l'album",
-        "artist_name_desc": "Artiste de l'album (décroissant)",
         "album_sort_name": "Album (nom de tri)"
     },
     "state": {

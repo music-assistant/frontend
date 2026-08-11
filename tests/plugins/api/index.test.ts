@@ -1,5 +1,6 @@
 import {
   type CommandMessage,
+  CoreState,
   type DSPConfig,
   type ErrorResultMessage,
   type ServerInfoMessage,
@@ -31,7 +32,12 @@ vi.mock("@/plugins/store", () => ({
   store: {},
 }));
 
-import { ConnectionState, MusicAssistantApi } from "@/plugins/api";
+import {
+  ApiCommandError,
+  ConnectionLostError,
+  ConnectionState,
+  MusicAssistantApi,
+} from "@/plugins/api";
 
 const SERVER_INFO: ServerInfoMessage = {
   server_id: "test-server",
@@ -42,6 +48,7 @@ const SERVER_INFO: ServerInfoMessage = {
   base_url: "http://test.local",
   homeassistant_addon: false,
   onboard_done: true,
+  status: CoreState.RUNNING,
 };
 
 class TestTransport extends BaseTransport {
@@ -58,6 +65,15 @@ class TestTransport extends BaseTransport {
 
   send(data: string): void {
     this.sentCommands.push(JSON.parse(data) as CommandMessage);
+  }
+
+  /**
+   * Simulate the socket dropping. The real transports move to a disconnected
+   * state before emitting close, so mirror that order here.
+   */
+  close(reason = "connection lost"): void {
+    this.setState(TransportState.DISCONNECTED);
+    this.emit("close", reason);
   }
 
   receive(
@@ -105,7 +121,10 @@ describe("MusicAssistantApi error handling", () => {
       transport.lastCommand,
       "Suppressed failure",
     );
-    const rejection = expect(command).rejects.toBe("Suppressed failure");
+    const rejection = expect(command).rejects.toMatchObject({
+      message: "Suppressed failure",
+      error_code: 999,
+    });
 
     transport.receive(error);
 
@@ -124,7 +143,10 @@ describe("MusicAssistantApi error handling", () => {
       .mockImplementation(() => {});
     const command = api.sendCommand("test/ordinary");
     const error = createErrorResult(transport.lastCommand, "Visible failure");
-    const rejection = expect(command).rejects.toBe("Visible failure");
+    const rejection = expect(command).rejects.toMatchObject({
+      message: "Visible failure",
+      error_code: 999,
+    });
 
     transport.receive(error);
 
@@ -132,6 +154,35 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleError).toHaveBeenCalledWith("[resultMessage]", error);
     expect(mockToastError).toHaveBeenCalledWith("Visible failure");
     expect(consoleDebug).not.toHaveBeenCalled();
+  });
+
+  it("rejects with the server error code and renders as the plain message", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const command = api.sendCommand("test/coded");
+
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    const err = await command.catch((reason: unknown) => reason);
+    expect(err).toBeInstanceOf(ApiCommandError);
+    expect((err as ApiCommandError).error_code).toBe(999);
+    expect(String(err)).toBe("Boom");
+    expect(`${err}`).toBe("Boom");
+  });
+
+  it("falls back to the error code when the server sends no details", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const command = api.sendCommand("test/no-details");
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      error_code: 1001,
+      details: null,
+    });
+
+    await expect(command).rejects.toMatchObject({
+      message: "1001",
+      error_code: 1001,
+    });
   });
 
   it("applies a DSP preset through the dedicated command", async () => {
@@ -155,8 +206,30 @@ describe("MusicAssistantApi error handling", () => {
     transport.receive({
       message_id: transport.lastCommand.message_id!,
       result: config,
+      partial: false,
     });
     await expect(result).resolves.toEqual(config);
+  });
+
+  it("rejects in-flight commands when the connection closes", async () => {
+    const command = api.sendCommand("test/pending");
+    const rejection =
+      expect(command).rejects.toBeInstanceOf(ConnectionLostError);
+
+    // a dropped socket emits close; the result can never arrive afterwards
+    transport.close();
+
+    await rejection;
+  });
+
+  it("rejects in-flight commands on an explicit disconnect", async () => {
+    const command = api.sendCommand("test/pending");
+    const rejection =
+      expect(command).rejects.toBeInstanceOf(ConnectionLostError);
+
+    api.disconnect();
+
+    await rejection;
   });
 });
 

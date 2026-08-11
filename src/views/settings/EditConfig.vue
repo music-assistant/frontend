@@ -144,11 +144,9 @@
           {{ showHelpInfo?.label || "" }}
         </h2>
       </v-card-text>
-      <!-- eslint-disable vue/no-v-html -->
-      <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-      <v-card-text v-html="markdownToHtml(showHelpInfo?.description || '')" />
-      <!-- eslint-enable vue/no-v-html -->
-      <!-- eslint-enable vue/no-v-text-v-html-on-component -->
+      <v-card-text>
+        <MarkdownText :text="showHelpInfo?.description" />
+      </v-card-text>
       <v-card-actions>
         <v-btn
           v-if="showHelpInfo?.help_link"
@@ -190,8 +188,8 @@ import {
   NON_INTERACTIVE_ENTRY_TYPES,
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
+import MarkdownText from "@/components/MarkdownText.vue";
 import { Button } from "@/components/ui/button";
-import { markdownToHtml } from "@/helpers/utils";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -656,7 +654,7 @@ const getCategoryIcon = function (category: string): Component {
 
 :global(.content-section--mobile) .floating-save {
   right: 16px;
-  bottom: calc(196px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--mobile-navigation-height) + 108px);
 }
 
 :global(.content-section--frameless) .floating-save {

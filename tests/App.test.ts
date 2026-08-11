@@ -224,6 +224,12 @@ vi.mock("@vueuse/core", () => ({
 vi.mock("vuetify", () => ({
   useTheme: () => ({
     change: vi.fn(),
+    themes: {
+      value: {
+        light: { colors: { background: "#f5f5f5" } },
+        dark: { colors: { background: "#181818" } },
+      },
+    },
   }),
 }));
 
