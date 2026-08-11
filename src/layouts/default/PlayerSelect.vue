@@ -607,7 +607,7 @@ async function scrollSelectedPlayerIntoView() {
   z-index: 9001 !important;
 }
 
-.player-bar-popout.player-select-popover-fullscreen {
+.player-bar-popout.player-select-popover.player-select-popover-fullscreen {
   z-index: 9002 !important;
 }
 
