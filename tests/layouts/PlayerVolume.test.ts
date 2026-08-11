@@ -379,11 +379,20 @@ describe("PlayerVolume group popout", () => {
     return { children, wrapper: mountPopoutVolume(parent) };
   }
 
+  const originalInnerHeight = Object.getOwnPropertyDescriptor(
+    window,
+    "innerHeight",
+  );
+
   beforeEach(() => {
     vi.clearAllMocks();
     api.players = {};
     store.mobileLayout = false;
-    vi.spyOn(window, "innerHeight", "get").mockReturnValue(768);
+    Object.defineProperty(window, "innerHeight", {
+      value: 768,
+      writable: true,
+      configurable: true,
+    });
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
       top: SLIDER_BOTTOM - 40,
       bottom: SLIDER_BOTTOM,
@@ -396,6 +405,9 @@ describe("PlayerVolume group popout", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    if (originalInnerHeight) {
+      Object.defineProperty(window, "innerHeight", originalInnerHeight);
+    }
     store.mobileLayout = false;
     document.body.innerHTML = "";
   });
