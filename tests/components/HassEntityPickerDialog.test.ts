@@ -6,9 +6,12 @@ import type {
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock } = vi.hoisted(() => ({
+const { apiMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     sendCommand: vi.fn(),
+  },
+  storeMock: {
+    isTouchscreen: false,
   },
 }));
 
@@ -16,6 +19,8 @@ vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
 }));
+
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
@@ -42,7 +47,9 @@ const ORPHAN_GROUP: HassControlEntityGroup = {
 describe("HassEntityPickerDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    storeMock.isTouchscreen = false;
     apiMock.sendCommand.mockResolvedValue({ groups: [], truncated: false });
+    document.body.innerHTML = "";
   });
 
   afterEach(() => {
@@ -151,7 +158,46 @@ describe("HassEntityPickerDialog", () => {
     );
     expect(entityButton.attributes("disabled")).toBeDefined();
   });
+
+  it("focuses the search field on a non-touch device", async () => {
+    const wrapper = await openRealDialog();
+
+    expect(document.activeElement).toBe(searchField());
+
+    wrapper.unmount();
+  });
+
+  it("leaves the search field alone on a touch device", async () => {
+    storeMock.isTouchscreen = true;
+
+    const wrapper = await openRealDialog();
+
+    // focusing the search field would open the on-screen keyboard over the
+    // results, so the dialog itself takes focus instead
+    expect(document.activeElement).not.toBe(searchField());
+    expect(document.activeElement).toBe(
+      document.querySelector("[data-slot='dialog-content']"),
+    );
+
+    wrapper.unmount();
+  });
 });
+
+function searchField() {
+  return document.querySelector("[data-slot='input-group-control']");
+}
+
+// the shared mount stubs the dialog away, but auto-focus is reka-ui's own
+// behaviour, so this one renders the real thing
+async function openRealDialog(): Promise<VueWrapper> {
+  const wrapper = mount(HassEntityPickerDialog, {
+    props: { modelValue: false, controlType: "power_controls" as const },
+    attachTo: document.body,
+  });
+  await wrapper.setProps({ modelValue: true });
+  await flushPromises();
+  return wrapper;
+}
 
 function entity(overrides: Partial<HassControlEntity>): HassControlEntity {
   return {
