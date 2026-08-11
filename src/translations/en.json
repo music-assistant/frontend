@@ -223,7 +223,7 @@
             "input": "Input",
             "output": "Output",
             "input_gain_help": "Sets the level going into the pipeline. Lower it to leave headroom for filters that boost.",
-            "output_gain_help": "Adjusts the level leaving the pieline, after every filter has been applied. Player volume is applied later.",
+            "output_gain_help": "Adjusts the level leaving the pipeline, after every filter has been applied. Player volume is applied later.",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
