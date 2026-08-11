@@ -179,6 +179,40 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: "/sendspin-sync",
+        name: "sendspin-sync",
+        component: () =>
+          import(
+            /* webpackChunkName: "sendspin-sync" */ "@/views/SendspinSyncView.vue"
+          ),
+        beforeEnter: async () => {
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            // Wait for the connection, but never block navigation forever.
+            await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
+                unwatch();
+                resolve();
+              }, 10000);
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    clearTimeout(timeout);
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          if (!store.enabledPlugins.has("sendspin_sync")) {
+            toast.error($t("providers.sendspin_sync.toast.unavailable"));
+            return { name: "discover" };
+          }
+        },
+      },
+      {
         path: "/visualizer",
         name: "visualizer",
         component: () =>

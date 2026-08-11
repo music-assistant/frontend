@@ -1849,6 +1849,105 @@
             "play_revealed_songs_help": "Music plays only after the answer is revealed.",
             "reveal_audio_on": "On",
             "reveal_audio_off": "Off"
+        },
+        "sendspin_sync": {
+            "title": "Sendspin Sync",
+            "toast": {
+                "unavailable": "Sendspin Sync is not enabled on this server."
+            },
+            "probe": {
+                "subtitle": "Check whether this phone can hear a calibration chirp accurately enough to sync your speakers.",
+                "idle": {
+                    "title": "Microphone check",
+                    "description": "Run this on the phone you will carry to each speaker. It listens for 30 seconds, so keep the screen on and stay still while it runs."
+                },
+                "start": "Start check",
+                "restart": "Run again",
+                "capturing": "Listening...",
+                "remaining": "{0} seconds left",
+                "copy": "Copy results as JSON",
+                "copied": "Results copied.",
+                "copy_failed": "Could not copy the results.",
+                "raw": "Raw results",
+                "verdict": {
+                    "ready": {
+                        "title": "This phone can measure",
+                        "description": "The microphone delivered unprocessed audio on a steady clock. Nothing here stands in the way of calibration."
+                    },
+                    "degraded": {
+                        "title": "Usable, with caveats",
+                        "description": "The microphone worked, but something below is worth a look before you trust a measurement. Copy the results and check the flagged rows."
+                    },
+                    "unsupported": {
+                        "title": "This phone cannot measure reliably",
+                        "description": "The browser altered or interrupted the audio it captured, which would move the measured arrival time. Try another phone or browser, and send the results along."
+                    },
+                    "blocked": {
+                        "title": "The check could not run",
+                        "description": "The browser refused microphone access before anything could be measured. That is about how Music Assistant is being served, not about this phone."
+                    }
+                },
+                "blocked": {
+                    "insecure": {
+                        "title": "Open Music Assistant over a secure connection",
+                        "description": "Browsers only offer microphone access on a secure origin, with no exception for local networks. Reach Music Assistant through the Home Assistant ingress, enable TLS in Music Assistant's own settings, or put a reverse proxy with a valid certificate in front of it."
+                    },
+                    "no_api": {
+                        "title": "This browser has no microphone API",
+                        "description": "The browser does not offer getUserMedia, so no audio can be captured. Try a current version of Chrome, Safari or Firefox."
+                    },
+                    "refused": {
+                        "title": "The microphone was not handed over",
+                        "description": "The browser did not open the microphone, so nothing could be measured. Allow microphone access for this site and run the check again. The exact reason is on the Voice processing row below."
+                    }
+                },
+                "status": {
+                    "pass": "Pass",
+                    "warn": "Check",
+                    "fail": "Fail",
+                    "not_evaluated": "Not run"
+                },
+                "values": {
+                    "yes": "yes",
+                    "no": "no",
+                    "on": "on",
+                    "off": "off",
+                    "available": "available",
+                    "unavailable": "unavailable",
+                    "not_reported": "not reported",
+                    "stayed_running": "stayed running"
+                },
+                "checks": {
+                    "secure_context": {
+                        "title": "Secure connection",
+                        "hint": "Microphone access is only offered on a secure origin."
+                    },
+                    "media_api": {
+                        "title": "Microphone API",
+                        "hint": "Whether this browser exposes audio capture at all."
+                    },
+                    "voice_processing": {
+                        "title": "Voice processing",
+                        "hint": "Echo cancellation, noise suppression and gain control were all asked to stay off. These are the values the browser actually applied."
+                    },
+                    "audio_context": {
+                        "title": "Audio pipeline",
+                        "hint": "The sample rate and the latencies this device reports for its audio path."
+                    },
+                    "capture": {
+                        "title": "Capture continuity",
+                        "hint": "Thirty seconds of audio, counted frame by frame against the system clock."
+                    },
+                    "wake_lock": {
+                        "title": "Screen wake lock",
+                        "hint": "Calibration needs the screen awake while you walk between speakers."
+                    },
+                    "context_state": {
+                        "title": "Uninterrupted recording",
+                        "hint": "Whether the audio engine kept running for the whole capture."
+                    }
+                }
+            }
         }
     },
     "no_lyrics_available": "No lyrics available",

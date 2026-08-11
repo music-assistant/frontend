@@ -84,6 +84,7 @@ vi.mock("vue-router", async () => {
 
 const partyGuard = beforeEnterGuard("party");
 const aiRadioGuard = beforeEnterGuard("ai-radio");
+const sendspinSyncGuard = beforeEnterGuard("sendspin-sync");
 const globalGuard = globalNavigationGuard();
 
 beforeEach(() => {
@@ -249,6 +250,44 @@ describe("AI Radio guard", () => {
     await expect(pending.result).resolves.toEqual({ name: "discover" });
     expect(mocks.toastError).toHaveBeenCalledWith(
       "providers.ai_radio.toast.unavailable",
+    );
+  });
+});
+
+describe("Sendspin Sync guard", () => {
+  it("redirects to Discover with a toast when the plugin is disabled", async () => {
+    await expect(
+      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
+    ).resolves.toEqual({ name: "discover" });
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "providers.sendspin_sync.toast.unavailable",
+    );
+  });
+
+  it("allows Sendspin Sync when the plugin is enabled", async () => {
+    mocks.store.enabledPlugins = new Set(["sendspin_sync"]);
+
+    await expect(
+      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
+    ).resolves.toBeUndefined();
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
+  it("stops waiting for the server connection after ten seconds", async () => {
+    vi.useFakeTimers();
+    mocks.apiState.value = ConnectionState.AUTHENTICATED;
+    const pending = trackGuard(
+      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
+    );
+
+    await vi.advanceTimersByTimeAsync(9999);
+    expect(pending.isSettled()).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+
+    await expect(pending.result).resolves.toEqual({ name: "discover" });
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "providers.sendspin_sync.toast.unavailable",
     );
   });
 });

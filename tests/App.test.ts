@@ -418,19 +418,25 @@ describe("App initialization", () => {
       ProviderType.PLUGIN,
       "milkdrop_visualizer",
     );
+    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
+      5,
+      ProviderType.PLUGIN,
+      "sendspin_sync",
+    );
     expect(storeMock.enabledPlugins).toEqual(
       new Set<string>([
         "party",
         "music_quiz",
         "ai_radio",
         "milkdrop_visualizer",
+        "sendspin_sync",
       ]),
     );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
     expectStartupDataRequestedBeforeReveal();
 
     await signalProvidersUpdated();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(10);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
   });
 
@@ -450,7 +456,7 @@ describe("App initialization", () => {
     serverState.resolve();
     await flushPromises();
     expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(4);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(5);
     // The plugin lookups are still in flight: revealing the app here would
     // render it with an unknown set of enabled plugins.
     expect(apiMock.state.value).not.toBe("initialized");
