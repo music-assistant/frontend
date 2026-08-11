@@ -176,7 +176,7 @@
           </DropdownMenu>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel || config.enabled"
+          v-if="playerSetupLabel || showAdvancedToggle"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
@@ -188,7 +188,7 @@
             {{ $t(playerSetupLabel) }}
           </Button>
           <div
-            v-if="config.enabled"
+            v-if="showAdvancedToggle"
             class="flex w-full items-center gap-2 sm:ml-auto sm:w-auto"
           >
             <Switch
@@ -266,7 +266,6 @@
       v-if="config"
       ref="editConfig"
       v-model:show-advanced-settings="showAdvancedSettings"
-      action-layout="floating-save"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
@@ -353,6 +352,7 @@ import {
   HassControlPickerEntry,
   HassControlPlayerKey,
   UI_ENTRY_TYPE,
+  hasAdvancedEntries,
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
@@ -537,6 +537,10 @@ const config_entries = computed(() => {
   }
   return entries;
 });
+
+const showAdvancedToggle = computed(
+  () => !!config.value?.enabled && hasAdvancedEntries(config_entries.value),
+);
 
 // watchers
 

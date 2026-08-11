@@ -88,10 +88,7 @@
       </div>
     </div>
 
-    <div
-      v-if="!disabled && actionLayout === 'floating-save'"
-      class="floating-save"
-    >
+    <div v-if="!disabled" class="floating-save">
       <Button
         data-testid="config-save"
         type="button"
@@ -103,34 +100,6 @@
         <Save class="size-4" />
         {{ $t("settings.save") }}
       </Button>
-    </div>
-    <div v-else-if="!disabled" class="config-actions">
-      <!-- Show advanced settings toggle -->
-      <div class="advanced-toggle-wrapper">
-        <v-switch
-          v-model="showAdvancedSettings"
-          color="primary"
-          hide-details
-          density="comfortable"
-          :label="$t('settings.show_advanced_settings')"
-          class="advanced-settings-switch"
-        />
-      </div>
-      <v-btn
-        block
-        color="primary"
-        size="large"
-        :disabled="!requiredValuesPresent || !hasUnsavedChanges"
-        @click="submit"
-      >
-        {{ $t("settings.save") }}
-      </v-btn>
-      <v-btn block variant="outlined" size="large" @click="handleClose">
-        {{ $t("close") }}
-      </v-btn>
-      <v-btn block variant="text" size="large" @click="resetToDefaults">
-        {{ $t("settings.reset_to_defaults") }}
-      </v-btn>
     </div>
   </v-form>
   <v-dialog
@@ -223,7 +192,6 @@ const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
 
 export interface Props {
-  actionLayout?: "default" | "floating-save";
   configEntries: ConfigEntryUI[];
   disabled: boolean;
   // Output protocols of the player being configured; drives derived-transport labelling
@@ -440,14 +408,6 @@ const resetToDefaults = function () {
 
 defineExpose({ resetToDefaults });
 
-const handleClose = function () {
-  if (hasUnsavedChanges.value) {
-    showUnsavedDialog.value = true;
-  } else {
-    router.back();
-  }
-};
-
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;
   allowNavigation.value = true;
@@ -631,20 +591,6 @@ const getCategoryIcon = function (category: string): Component {
   padding: 14px 16px;
 }
 
-/* Action buttons */
-.config-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 16px;
-}
-
-.config-actions .v-btn--disabled {
-  background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
-  color: rgba(var(--v-theme-on-surface), 0.38) !important;
-}
-
 .floating-save {
   position: fixed;
   right: 24px;
@@ -654,28 +600,19 @@ const getCategoryIcon = function (category: string): Component {
 
 :global(.content-section--mobile) .floating-save {
   right: 16px;
-  bottom: calc(var(--mobile-navigation-height) + 108px);
+  /* Stay clear of whatever reaches highest above the bottom navigation: the player
+     bar, which grows by its volume row and clears the navigation by its own 6px
+     margin, or the gradient scrim behind it, which hides everything it covers. */
+  bottom: max(
+    calc(
+      var(--mobile-navigation-height) + var(--player-bar-overlay-height, 0px) +
+        6px + 16px
+    ),
+    calc(var(--mobile-player-scrim-height) + 16px)
+  );
 }
 
 :global(.content-section--frameless) .floating-save {
   bottom: 16px;
-}
-
-/* Advanced settings toggle */
-.advanced-toggle-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0 16px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.advanced-settings-switch {
-  opacity: 0.85;
-  transition: opacity 0.2s ease;
-}
-
-.advanced-settings-switch:hover {
-  opacity: 1;
 }
 </style>

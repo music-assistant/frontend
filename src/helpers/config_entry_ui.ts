@@ -144,6 +144,16 @@ export const allRequiredValuesPresent = (
       !isNullOrUndefined(entry.default_value),
   );
 
+/**
+ * Whether `entries` holds anything the advanced settings toggle would reveal.
+ *
+ * A config without advanced entries has no use for the toggle, so the settings
+ * screens leave it out entirely.
+ */
+export const hasAdvancedEntries = (
+  entries: readonly Pick<ConfigEntry, "advanced" | "hidden">[],
+): boolean => entries.some((entry) => entry.advanced && !entry.hidden);
+
 export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
   (e as InjectedConfigEntry).injected === true;
 
