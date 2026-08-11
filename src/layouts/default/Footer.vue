@@ -24,12 +24,9 @@
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
-    :style="[
-      store.mobileLayout ? { bottom: 'var(--mobile-navigation-height)' } : {},
-      store.mobileLayout && store.showPlayersMenu
-        ? 'z-index: 999 !important;'
-        : '',
-    ]"
+    :style="
+      store.mobileLayout ? { bottom: 'var(--mobile-navigation-height)' } : {}
+    "
   >
     <Player :use-floating-player="store.mobileLayout" />
   </v-footer>
