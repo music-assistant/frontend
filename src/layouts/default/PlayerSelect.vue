@@ -349,12 +349,7 @@ watch(
     // would overwrite the player the user actually selected earlier
     if (playerId === autoSelectedPlayerId) return;
     autoSelectedPlayerId = undefined;
-    const player = api.players[playerId];
-    if (!player) return;
-    void setPreference(
-      "activePlayerId",
-      isBuiltinPlayer(player) ? BUILTIN_PLAYER_PREFERENCE : playerId,
-    );
+    rememberPlayer(playerId);
   },
 );
 
@@ -364,10 +359,10 @@ watch(
   { deep: true },
 );
 
-watch(
-  () => webPlayer.player_id,
-  () => checkDefaultPlayer(),
-);
+watch([() => webPlayer.player_id, () => store.companionPlayerId], () => {
+  checkDefaultPlayer();
+  preferBuiltinPlayer();
+});
 
 onMounted(() => {
   document.addEventListener("keydown", markKeyboardInteraction, true);
@@ -442,6 +437,10 @@ function selectPlayer(player: Player) {
     store.showPlayersMenu = false;
     return;
   }
+  // remember it here as well: picking the player that was already selected
+  // automatically leaves store.activePlayerId untouched
+  autoSelectedPlayerId = undefined;
+  rememberPlayer(player.player_id);
   store.activePlayerId = player.player_id;
   store.showPlayersMenu = false;
 }
@@ -552,10 +551,38 @@ function resetPanelState() {
 function checkDefaultPlayer() {
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
-  if (defaultPlayerId) {
-    autoSelectedPlayerId = defaultPlayerId;
-    store.activePlayerId = defaultPlayerId;
+  if (!defaultPlayerId) return;
+  autoSelectedPlayerId = defaultPlayerId;
+  store.activePlayerId = defaultPlayerId;
+  // a built-in player id remembered before the placeholder existed only
+  // resolves in the browser session that created it: store the placeholder
+  if (getPreference<string>("activePlayerId").value === defaultPlayerId) {
+    rememberPlayer(defaultPlayerId);
   }
+}
+
+/**
+ * Hand an automatically picked player over to the built-in player of this
+ * device, which only registers a moment after the app has started.
+ */
+function preferBuiltinPlayer() {
+  if (store.activePlayerId !== autoSelectedPlayerId) return;
+  if (getPreference<string>("activePlayerId").value) return;
+  const builtinPlayerId = selectBuiltinPlayer();
+  if (!builtinPlayerId) return;
+  autoSelectedPlayerId = builtinPlayerId;
+  store.activePlayerId = builtinPlayerId;
+}
+
+function rememberPlayer(playerId: string) {
+  const player = api.players[playerId];
+  if (!player) return;
+  const rememberedPlayer = isBuiltinPlayer(player)
+    ? BUILTIN_PLAYER_PREFERENCE
+    : playerId;
+  if (getPreference<string>("activePlayerId").value === rememberedPlayer)
+    return;
+  void setPreference("activePlayerId", rememberedPlayer);
 }
 
 function selectDefaultPlayer() {

@@ -46,10 +46,16 @@ vi.mock("@/plugins/api", async () => {
 });
 
 vi.mock("@/plugins/store", async () => {
-  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  const { computed, reactive } =
+    await vi.importActual<typeof import("vue")>("vue");
+  const { api } = await import("@/plugins/api");
   return {
     store: reactive({
-      activePlayer: undefined as Player | undefined,
+      // resolved from the player list like the real store, so the guard against
+      // overriding an existing selection behaves the same
+      activePlayer: computed(() =>
+        store.activePlayerId ? api.players[store.activePlayerId] : undefined,
+      ),
       activePlayerId: undefined as string | undefined,
       companionPlayerId: undefined as string | undefined,
       dialogActive: false,
@@ -334,7 +340,6 @@ describe("PlayerSelect", () => {
     }
     api.players = {};
     savePlayerConfig.mockResolvedValue({});
-    store.activePlayer = undefined;
     store.activePlayerId = undefined;
     store.companionPlayerId = undefined;
     store.dialogActive = false;
@@ -354,7 +359,6 @@ describe("PlayerSelect", () => {
       attic: createPlayer("attic", "Attic", PlaybackState.PLAYING),
       lounge: createPlayer("lounge", "Lounge"),
     };
-    store.activePlayer = activePlayer;
     store.activePlayerId = activePlayer.player_id;
 
     const wrapper = mountPlayerSelect();
@@ -375,7 +379,6 @@ describe("PlayerSelect", () => {
       selected: selectedPlayer,
       attic: createPlayer("attic", "Attic"),
     };
-    store.activePlayer = selectedPlayer;
     store.activePlayerId = selectedPlayer.player_id;
 
     const wrapper = mountPlayerSelect();
@@ -502,6 +505,85 @@ describe("PlayerSelect", () => {
     );
   });
 
+  it("remembers the player that was already selected automatically", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    api.players = { [kitchen.player_id]: kitchen };
+    const wrapper = mountPlayerSelect();
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+
+    await wrapper
+      .get('[data-player-id="kitchen"] .select-player')
+      .trigger("click");
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      kitchen.player_id,
+    );
+  });
+
+  it("replaces a remembered built-in player id with the placeholder", async () => {
+    const builtin = createPlayer("builtin", "This device");
+    setActivePlayerPreference(builtin.player_id);
+    api.players = { [builtin.player_id]: builtin };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(builtin.player_id);
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      "<builtinplayer>",
+    );
+  });
+
+  it("hands an automatic pick over to the built-in player registering late", async () => {
+    const attic = createPlayer("attic", "Attic");
+    const builtin = createPlayer("builtin", "This device");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+    expect(store.activePlayerId).toBe(attic.player_id);
+
+    api.players[builtin.player_id] = builtin;
+    store.companionPlayerId = builtin.player_id;
+    await nextTick();
+
+    expect(store.activePlayerId).toBe(builtin.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("keeps the remembered player when it is unavailable at startup", () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    kitchen.available = false;
+    const attic = createPlayer("attic", "Attic");
+    setActivePlayerPreference(kitchen.player_id);
+    api.players = {
+      [kitchen.player_id]: kitchen,
+      [attic.player_id]: attic,
+    };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(attic.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("keeps a remembered player when the built-in one registers late", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    const builtin = createPlayer("builtin", "This device");
+    setActivePlayerPreference(kitchen.player_id);
+    api.players = { [kitchen.player_id]: kitchen };
+
+    mountPlayerSelect();
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+
+    api.players[builtin.player_id] = builtin;
+    webPlayer.player_id = builtin.player_id;
+    await nextTick();
+
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
   it("moves a newly active player to the front", async () => {
     const kitchen = createPlayer("kitchen", "Kitchen");
     const office = createPlayer("office", "Office");
@@ -561,10 +643,14 @@ describe("PlayerSelect", () => {
 
   it("selects a player and closes the sheet from the card action", async () => {
     const player = createPlayer("kitchen", "Kitchen");
-    api.players = { [player.player_id]: player };
+    const other = createPlayer("attic", "Attic");
+    api.players = { [player.player_id]: player, [other.player_id]: other };
     const wrapper = mountPlayerSelect();
+    expect(store.activePlayerId).toBe(other.player_id);
 
-    await wrapper.find(".select-player").trigger("click");
+    await wrapper
+      .get('[data-player-id="kitchen"] .select-player')
+      .trigger("click");
 
     expect(store.activePlayerId).toBe(player.player_id);
     expect(store.showPlayersMenu).toBe(false);
@@ -904,7 +990,6 @@ describe("PlayerSelect", () => {
       attic: createPlayer("attic", "Attic"),
       selected: selectedPlayer,
     };
-    store.activePlayer = selectedPlayer;
     store.activePlayerId = selectedPlayer.player_id;
     store.showPlayersMenu = false;
 
@@ -940,7 +1025,6 @@ describe("PlayerSelect", () => {
       [fallback.player_id]: fallback,
       [setupPlayer.player_id]: setupPlayer,
     };
-    store.activePlayer = player;
     store.activePlayerId = player.player_id;
     const wrapper = mountPlayerSelect();
     const menuItems = wrapper
@@ -979,5 +1063,27 @@ describe("PlayerSelect", () => {
     });
     expect(player.enabled).toBe(false);
     expect(store.activePlayerId).toBe(fallback.player_id);
+  });
+
+  it("forgets the remembered player when the last one is disabled", async () => {
+    const player = createPlayer("kitchen", "Kitchen");
+    setActivePlayerPreference(player.player_id);
+    api.players = { [player.player_id]: player };
+    const wrapper = mountPlayerSelect();
+    expect(store.activePlayerId).toBe(player.player_id);
+
+    const menuItems = wrapper
+      .getComponent(PlayerCardStub)
+      .props("playerMenuItems") as ContextMenuItem[];
+    menuItems[1].action?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const confirmation = emitEvent.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    )?.[1];
+    await confirmation.onConfirm();
+    await flushPromises();
+
+    expect(store.activePlayerId).toBeUndefined();
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
   });
 });
