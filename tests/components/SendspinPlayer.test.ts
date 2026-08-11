@@ -61,9 +61,12 @@ const {
   mockPlayerCommandSeek,
   mockPrepareSendspinSession,
   mockRegisterWebPlayerAudioUnlock,
+  mockSendCommand,
+  mockSendspinConnect,
   mockSendspinUnlock,
   mockUseMediaBrowserMetaData,
   routeState,
+  sendspinState,
 } = vi.hoisted(() => {
   const mockPlayerCommandNext = vi.fn<MusicAssistantApi["playerCommandNext"]>();
   const mockPlayerCommandPause =
@@ -72,6 +75,7 @@ const {
   const mockPlayerCommandPrevious =
     vi.fn<MusicAssistantApi["playerCommandPrevious"]>();
   const mockPlayerCommandSeek = vi.fn<MusicAssistantApi["playerCommandSeek"]>();
+  const mockSendCommand = vi.fn<MusicAssistantApi["sendCommand"]>();
   return {
     authState: {
       guest: null as "music_quiz" | "party" | null,
@@ -89,6 +93,7 @@ const {
       playerCommandPlay: mockPlayerCommandPlay,
       playerCommandPrevious: mockPlayerCommandPrevious,
       playerCommandSeek: mockPlayerCommandSeek,
+      sendCommand: mockSendCommand,
     },
     storeMock: {
       activePlayerId: "active-player",
@@ -101,7 +106,12 @@ const {
     mockPlayerCommandSeek,
     mockPrepareSendspinSession: vi.fn(),
     mockRegisterWebPlayerAudioUnlock: vi.fn<(handler: () => boolean) => void>(),
+    mockSendCommand,
+    mockSendspinConnect: vi.fn<() => Promise<void>>(),
     mockSendspinUnlock: vi.fn<() => Promise<void>>(),
+    sendspinState: {
+      pairingToken: null as string | null,
+    },
     mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
     routeState: {
       current: null as { meta: Record<string, unknown> } | null,
@@ -168,7 +178,10 @@ vi.mock("@/plugins/api/helpers", async (importOriginal) => ({
 
 vi.mock("@sendspin/sendspin-js", () => ({
   SendspinPlayer: class {
-    connect = vi.fn();
+    connect = mockSendspinConnect;
+    get pairingToken() {
+      return sendspinState.pairingToken;
+    }
     disconnect = vi.fn();
     setCorrectionMode = vi.fn();
     setMuted = vi.fn();
@@ -224,6 +237,11 @@ describe("SendspinPlayer MediaSession", () => {
     mockPlayerCommandPrevious.mockReset();
     mockPlayerCommandSeek.mockReset();
     mockRegisterWebPlayerAudioUnlock.mockClear();
+    mockSendCommand.mockReset();
+    mockSendCommand.mockResolvedValue(undefined);
+    mockSendspinConnect.mockReset();
+    mockSendspinConnect.mockResolvedValue(undefined);
+    sendspinState.pairingToken = "SP:0TESTTOKEN";
     mockSendspinUnlock.mockReset();
     mockSendspinUnlock.mockResolvedValue(undefined);
     webPlayer.interacted = false;
@@ -314,6 +332,33 @@ describe("SendspinPlayer MediaSession", () => {
 
     expect(unlockAudio()).toBe(true);
     expect(mockSendspinUnlock).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("hands the server its pairing token once connected", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "sendspin/pair_web_player",
+      { pairing_token: "SP:0TESTTOKEN" },
+      { suppressGlobalError: true },
+    );
+    wrapper.unmount();
+  });
+
+  it("skips pairing when the client has no pairing token", async () => {
+    sendspinState.pairingToken = null;
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockSendCommand).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 
