@@ -213,9 +213,8 @@ describe("MusicAssistantApi error handling", () => {
 
   it("rejects in-flight commands when the connection closes", async () => {
     const command = api.sendCommand("test/pending");
-    const rejection = expect(command).rejects.toBeInstanceOf(
-      ConnectionLostError,
-    );
+    const rejection =
+      expect(command).rejects.toBeInstanceOf(ConnectionLostError);
 
     // a dropped socket emits close; the result can never arrive afterwards
     transport.close();
@@ -225,9 +224,8 @@ describe("MusicAssistantApi error handling", () => {
 
   it("rejects in-flight commands on an explicit disconnect", async () => {
     const command = api.sendCommand("test/pending");
-    const rejection = expect(command).rejects.toBeInstanceOf(
-      ConnectionLostError,
-    );
+    const rejection =
+      expect(command).rejects.toBeInstanceOf(ConnectionLostError);
 
     api.disconnect();
 
