@@ -91,4 +91,16 @@ describe("Footer", () => {
 
     expect(overlayHeight()).toBe("0px");
   });
+
+  it("stops reserving room once the player bar is gone", async () => {
+    store.mobileLayout = true;
+    playerBarHeight.value = 118;
+    const wrapper = mountFooter();
+    await nextTick();
+
+    wrapper.unmount();
+    await nextTick();
+
+    expect(overlayHeight()).toBe("");
+  });
 });
