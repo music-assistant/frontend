@@ -54,8 +54,8 @@ const { height: playerBarHeight } = useElementSize(playerBar, undefined, {
   box: "border-box",
 });
 
-// on mobile the player bar floats on top of the player bar popouts, which use
-// this to keep their content clear of it
+// on mobile the player bar floats on top of the player bar popouts, which read
+// this variable to keep their content clear of it
 watchEffect(() => {
   document.documentElement.style.setProperty(
     OVERLAY_HEIGHT_PROPERTY,

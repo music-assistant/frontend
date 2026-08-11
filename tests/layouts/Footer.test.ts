@@ -1,15 +1,19 @@
 import Footer from "@/layouts/default/Footer.vue";
 import { store } from "@/plugins/store";
-import { mount } from "@vue/test-utils";
+import { type VueWrapper, mount } from "@vue/test-utils";
+import { unrefElement } from "@vueuse/core";
 import { h, nextTick } from "vue";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { playerBarHeight } = await vi.hoisted(async () => {
+const { measured, playerBarHeight } = await vi.hoisted(async () => {
   const { ref } = await import("vue");
-  return { playerBarHeight: ref(0) };
+  return {
+    measured: { target: undefined as unknown, options: undefined as unknown },
+    playerBarHeight: ref(0),
+  };
 });
 
 vi.mock("@vueuse/core", async () => {
@@ -18,7 +22,11 @@ vi.mock("@vueuse/core", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   return {
     ...actual,
-    useElementSize: () => ({ width: ref(0), height: playerBarHeight }),
+    useElementSize: (target: unknown, _initial: unknown, options: unknown) => {
+      measured.target = target;
+      measured.options = options;
+      return { width: ref(0), height: playerBarHeight };
+    },
   };
 });
 
@@ -37,9 +45,11 @@ function overlayHeight() {
   return document.documentElement.style.getPropertyValue(OVERLAY_HEIGHT);
 }
 
+let wrapper: VueWrapper | undefined;
+
 // v-footer registers itself as an app layout item, so it needs a layout host
 function mountFooter() {
-  return mount(
+  wrapper = mount(
     {
       render: () => h(components.VLayout, null, { default: () => h(Footer) }),
     },
@@ -50,6 +60,7 @@ function mountFooter() {
       },
     },
   );
+  return wrapper;
 }
 
 describe("Footer", () => {
@@ -60,6 +71,10 @@ describe("Footer", () => {
   });
 
   afterEach(() => {
+    // the store is shared, so an instance left mounted would react to the next
+    // test's state and republish the variable
+    wrapper?.unmount();
+    wrapper = undefined;
     document.documentElement.style.removeProperty(OVERLAY_HEIGHT);
   });
 
@@ -95,12 +110,22 @@ describe("Footer", () => {
   it("stops reserving room once the player bar is gone", async () => {
     store.mobileLayout = true;
     playerBarHeight.value = 118;
-    const wrapper = mountFooter();
+    mountFooter();
     await nextTick();
 
-    wrapper.unmount();
+    wrapper?.unmount();
+    wrapper = undefined;
     await nextTick();
 
     expect(overlayHeight()).toBe("");
+  });
+
+  it("measures the rendered player bar, borders included", () => {
+    mountFooter();
+
+    expect(unrefElement(measured.target as never)).toBe(
+      wrapper?.find("footer").element,
+    );
+    expect(measured.options).toEqual({ box: "border-box" });
   });
 });
