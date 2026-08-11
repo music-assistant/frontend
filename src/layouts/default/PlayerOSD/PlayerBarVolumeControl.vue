@@ -169,7 +169,7 @@ function adjustVolume(event: WheelEvent) {
 
 <style>
 .player-volume-backdrop-desktop {
-  bottom: 104px;
+  bottom: var(--player-bar-height);
 }
 
 .player-volume-popover {

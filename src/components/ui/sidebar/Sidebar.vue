@@ -55,7 +55,6 @@ const mobileSheetSide = computed<"left" | "right">(() => {
       data-mobile="true"
       :side="mobileSheetSide"
       class="sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-      overlay-class="sidebar-mobile-overlay"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
       }"
@@ -124,9 +123,5 @@ const mobileSheetSide = computed<"left" | "right">(() => {
   bottom: 0 !important;
   height: 100dvh !important;
   border-radius: 0 !important;
-}
-
-.sidebar-mobile-overlay {
-  bottom: 0 !important;
 }
 </style>

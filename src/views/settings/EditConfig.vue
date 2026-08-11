@@ -594,7 +594,7 @@ const getCategoryIcon = function (category: string): Component {
 .floating-save {
   position: fixed;
   right: 24px;
-  bottom: calc(var(--v-layout-bottom, 104px) + 16px);
+  bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
   z-index: 20;
 }
 
