@@ -43,7 +43,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { DEVICE_SETTING_KEYS } from "@/constants";
 import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
-import { saveDeviceSetting } from "@/helpers/device_settings";
+import {
+  MOBILE_SIDEBAR_SIDE,
+  readDeviceSetting,
+  saveDeviceSetting,
+} from "@/helpers/device_settings";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -171,8 +175,7 @@ onMounted(() => {
       ],
       multi_value: false,
       category: "display_settings",
-      value:
-        localStorage.getItem("frontend.settings.mobile_sidebar_side") || "left",
+      value: readDeviceSetting(MOBILE_SIDEBAR_SIDE) || "left",
     },
   ];
 
@@ -281,7 +284,7 @@ const onAction = async function (
 
 const onImmediateApply = function (values: Record<string, ConfigValueType>) {
   for (const key in values) {
-    localStorage.setItem(`frontend.settings.${key}`, String(values[key]));
+    saveDeviceSetting(key, String(values[key]));
   }
 };
 </script>

@@ -1,14 +1,15 @@
-import { readonly, ref, type DeepReadonly, type Ref } from "vue";
 import {
-  MOBILE_SIDEBAR_SIDE_KEY,
+  MOBILE_SIDEBAR_SIDE,
+  readDeviceSetting,
   subscribeToDeviceSetting,
 } from "@/helpers/device_settings";
+import { readonly, ref, type DeepReadonly, type Ref } from "vue";
 
 export type MobileSidebarSide = "left" | "right";
 
 const mobileSidebarSide = ref<MobileSidebarSide>(readStoredSide());
 
-subscribeToDeviceSetting(MOBILE_SIDEBAR_SIDE_KEY, () => {
+subscribeToDeviceSetting(MOBILE_SIDEBAR_SIDE, () => {
   mobileSidebarSide.value = readStoredSide();
 });
 
@@ -22,13 +23,5 @@ export function useMobileSidebarSide(): DeepReadonly<Ref<MobileSidebarSide>> {
 }
 
 function readStoredSide(): MobileSidebarSide {
-  // this runs while the module loads, and reading storage throws when site data
-  // is blocked (a cross-origin iframe, for one): keep that off the import path
-  try {
-    return localStorage.getItem(MOBILE_SIDEBAR_SIDE_KEY) === "right"
-      ? "right"
-      : "left";
-  } catch {
-    return "left";
-  }
+  return readDeviceSetting(MOBILE_SIDEBAR_SIDE) === "right" ? "right" : "left";
 }

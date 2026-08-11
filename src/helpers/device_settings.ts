@@ -1,15 +1,29 @@
 // Per-device frontend settings (see DEVICE_SETTING_KEYS) live in localStorage
-// instead of the server side user preferences.
+// instead of the server side user preferences. Every function here takes the
+// bare setting key and owns the storage key it maps to.
 
-export const MOBILE_SIDEBAR_SIDE_KEY = "frontend.settings.mobile_sidebar_side";
+const STORAGE_KEY_PREFIX = "frontend.settings.";
+
+export const MOBILE_SIDEBAR_SIDE = "mobile_sidebar_side";
 
 /**
- * Store a per-device setting under its `frontend.settings.` key.
+ * Read a per-device setting, or null when it is unset.
  *
- * Pass null to clear it.
+ * Also null when site data is blocked, as it is in a cross-origin iframe.
+ */
+export function readDeviceSetting(key: string): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY_PREFIX + key);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Store a per-device setting. Pass null to clear it.
  */
 export function saveDeviceSetting(key: string, value: string | null) {
-  const storageKey = `frontend.settings.${key}`;
+  const storageKey = STORAGE_KEY_PREFIX + key;
   if (value === null) {
     localStorage.removeItem(storageKey);
   } else {
@@ -25,10 +39,8 @@ export function saveDeviceSetting(key: string, value: string | null) {
 /**
  * Run the callback whenever a per-device setting changes, in this tab or another.
  */
-export function subscribeToDeviceSetting(
-  storageKey: string,
-  onChange: () => void,
-) {
+export function subscribeToDeviceSetting(key: string, onChange: () => void) {
+  const storageKey = STORAGE_KEY_PREFIX + key;
   window.addEventListener("storage", (event) => {
     // a null key means the whole storage was cleared
     if (event.key !== null && event.key !== storageKey) return;
