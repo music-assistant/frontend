@@ -12,21 +12,22 @@
       </p>
     </header>
 
-    <Alert v-if="blocker" variant="warning">
+    <Alert v-if="blocker" variant="destructive">
       <TriangleAlert class="h-4 w-4" aria-hidden="true" />
       <AlertTitle>{{ $t(`${blocker}.title`) }}</AlertTitle>
       <AlertDescription>{{ $t(`${blocker}.description`) }}</AlertDescription>
     </Alert>
 
     <Card class="gap-4">
-      <CardHeader>
+      <!-- The verdict is what the wait was for, so it is what gets announced. -->
+      <CardHeader role="status" aria-live="polite">
         <CardTitle>{{ $t(`${headline}.title`) }}</CardTitle>
         <CardDescription>{{ $t(`${headline}.description`) }}</CardDescription>
       </CardHeader>
 
       <CardContent class="space-y-4">
         <Button class="w-full sm:w-auto" :disabled="running" @click="run">
-          <Spinner v-if="running" class="size-4" />
+          <Spinner v-if="running" class="size-4" aria-hidden="true" />
           <Mic v-else class="size-4" aria-hidden="true" />
           {{
             running
@@ -37,8 +38,13 @@
           }}
         </Button>
 
-        <div v-if="running" class="space-y-2" role="status" aria-live="polite">
-          <Progress :model-value="captureProgress" />
+        <!-- Deliberately not a live region: a per-second countdown would talk
+             over the screen reader for the whole capture. -->
+        <div v-if="running" class="space-y-2">
+          <Progress
+            :model-value="captureProgress"
+            :aria-label="$t('providers.sendspin_sync.probe.capturing')"
+          />
           <p class="text-sm text-muted-foreground">
             {{
               $t("providers.sendspin_sync.probe.remaining", [
@@ -128,12 +134,13 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import {
   PROBE_CHECKS,
-  summariseProbe,
+  summarizeProbe,
   useMicrophoneProbe,
   VOICE_PROCESSING,
   type CheckStatus,
   type MicrophoneProbeReport,
   type ProbeCheckId,
+  type ProbeError,
 } from "@/composables/sendspin-sync/useMicrophoneProbe";
 import { copyToClipboard } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
@@ -180,7 +187,7 @@ const {
 } = useMicrophoneProbe();
 
 const summary = computed(() =>
-  report.value ? summariseProbe(report.value) : null,
+  report.value ? summarizeProbe(report.value) : null,
 );
 
 const headline = computed(() =>
@@ -188,6 +195,14 @@ const headline = computed(() =>
     ? `providers.sendspin_sync.probe.verdict.${summary.value.verdict}`
     : "providers.sendspin_sync.probe.idle",
 );
+
+/** Errors that mean there was no usable microphone, rather than no permission. */
+const MISSING_DEVICE_ERRORS = [
+  "NotFoundError",
+  "NotReadableError",
+  "OverconstrainedError",
+  "NoAudioTrackError",
+];
 
 /** Names the reason the probe could not run, so the remedy can be spelled out. */
 const blocker = computed(() => {
@@ -197,7 +212,9 @@ const blocker = computed(() => {
     ? "insecure"
     : !current.mediaApi.getUserMedia
       ? "no_api"
-      : "refused";
+      : MISSING_DEVICE_ERRORS.includes(current.constraints?.error?.name ?? "")
+        ? "no_device"
+        : "refused";
   return `providers.sendspin_sync.probe.blocked.${reason}`;
 });
 
@@ -245,59 +262,49 @@ function detailsFor(
         { label: "device", value: constraints.trackLabel || "—" },
       ];
     }
-    case "audio_context":
-      return current.audioContext
-        ? [
-            {
-              label: "sampleRate",
-              value: `${current.audioContext.sampleRate} Hz`,
-            },
-            {
-              label: "baseLatency",
-              ...milliseconds(current.audioContext.baseLatency),
-            },
-            {
-              label: "outputLatency",
-              ...milliseconds(current.audioContext.outputLatency),
-            },
-          ]
-        : [];
-    case "capture":
-      return current.capture
-        ? [
-            {
-              label: "duration",
-              value: `${current.capture.measuredSeconds.toFixed(1)} s`,
-            },
-            {
-              label: "framesDelivered",
-              value: `${current.capture.framesDelivered}`,
-            },
-            {
-              label: "framesExpected",
-              value: `${Math.round(current.capture.expectedFrames)}`,
-            },
-            {
-              label: "discrepancy",
-              value: `${current.capture.discrepancyPpm.toFixed(1)} ppm`,
-            },
-            { label: "gaps", value: `${current.capture.gapCount}` },
-            {
-              label: "missingFrames",
-              value: `${current.capture.missingFrames}`,
-            },
-          ]
-        : [];
-    case "wake_lock":
-      return current.wakeLock
-        ? [
-            {
-              label: "navigator.wakeLock",
-              ...presence(current.wakeLock.supported),
-            },
-            { label: "screen lock", ...flag(current.wakeLock.acquired) },
-          ]
-        : [];
+    case "audio_context": {
+      const audio = current.audioContext;
+      if (!audio) return [];
+      return [
+        { label: "sampleRate", value: `${audio.sampleRate} Hz` },
+        { label: "baseLatency", ...milliseconds(audio.baseLatency) },
+        { label: "outputLatency", ...milliseconds(audio.outputLatency) },
+        // The device's own rate can differ from the context's, which is
+        // exactly the mismatch a chirp measurement has to allow for.
+        { label: "track sampleRate", ...hertz(trackSampleRate(current)) },
+      ];
+    }
+    case "capture": {
+      const capture = current.capture;
+      if (!capture) return [];
+      return [
+        { label: "duration", value: `${capture.measuredSeconds.toFixed(1)} s` },
+        { label: "framesDelivered", value: `${capture.framesDelivered}` },
+        {
+          label: "framesExpected",
+          value: `${Math.round(capture.expectedFrames)}`,
+        },
+        {
+          label: "frame discrepancy",
+          value: `${capture.frameDiscrepancyPpm.toFixed(1)} ppm`,
+        },
+        {
+          label: "clock drift",
+          value: `${capture.clockDriftPpm.toFixed(1)} ppm`,
+        },
+        { label: "silentQuanta", value: `${capture.silentQuanta}` },
+        { label: "renderQuanta", value: `${capture.quanta}` },
+      ];
+    }
+    case "wake_lock": {
+      const wakeLock = current.wakeLock;
+      if (!wakeLock) return [];
+      return [
+        { label: "navigator.wakeLock", ...presence(wakeLock.supported) },
+        { label: "screen lock", ...flag(wakeLock.acquired) },
+        { label: "held to end", ...flag(wakeLock.heldToEnd) },
+      ];
+    }
     case "context_state":
       return current.contextState
         ? [
@@ -320,10 +327,21 @@ function errorFor(
   id: ProbeCheckId,
   current: MicrophoneProbeReport,
 ): string | null {
-  if (id === "voice_processing") return current.constraints?.error ?? null;
-  if (id === "capture") return current.capture?.error ?? null;
-  if (id === "wake_lock") return current.wakeLock?.error ?? null;
-  return null;
+  const error: ProbeError | null | undefined =
+    id === "voice_processing"
+      ? current.constraints?.error
+      : id === "capture"
+        ? current.capture?.error
+        : id === "wake_lock"
+          ? current.wakeLock?.error
+          : null;
+  return error ? `${error.name}: ${error.message}` : null;
+}
+
+/** The rate the capture device itself runs at, when the browser discloses it. */
+function trackSampleRate(current: MicrophoneProbeReport): number | null {
+  const rate = current.constraints?.trackSettings.sampleRate;
+  return typeof rate === "number" ? rate : null;
 }
 
 /** A browser capability that is either there or not. */
@@ -346,6 +364,11 @@ function switchState(value: boolean | undefined): DetailValue {
 function milliseconds(seconds: number | null): DetailValue {
   if (seconds === null) return { valueKey: `${VALUES}.not_reported` };
   return { value: `${(seconds * 1000).toFixed(2)} ms` };
+}
+
+function hertz(rate: number | null): DetailValue {
+  if (rate === null) return { valueKey: `${VALUES}.not_reported` };
+  return { value: `${rate} Hz` };
 }
 
 async function copyReport(): Promise<void> {

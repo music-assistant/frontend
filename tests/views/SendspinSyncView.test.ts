@@ -1,6 +1,13 @@
-import type { MicrophoneProbeReport } from "@/composables/sendspin-sync/useMicrophoneProbe";
+import {
+  PROBE_CHECKS,
+  type CheckStatus,
+  type MicrophoneProbeReport,
+  type ProbeVerdict,
+} from "@/composables/sendspin-sync/useMicrophoneProbe";
 import SendspinSyncView from "@/views/SendspinSyncView.vue";
 import { mount } from "@vue/test-utils";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -71,7 +78,7 @@ describe("SendspinSyncView", () => {
   });
 
   it("shows every check with its reading once a report lands", async () => {
-    mocks.report.value = readyReport();
+    mocks.report.value = degradedReport();
     const wrapper = mountView();
     await wrapper.vm.$nextTick();
 
@@ -85,7 +92,11 @@ describe("SendspinSyncView", () => {
     );
     expect(wrapper.text()).toContain(`${SAMPLE_RATE} Hz`);
     expect(wrapper.text()).toContain("5.00 ms");
+    // The device's own rate is worth seeing next to the context's.
+    expect(wrapper.text()).toContain("44100 Hz");
+    // Both drift readings are shown, and neither is folded into the other.
     expect(wrapper.text()).toContain("-12.0 ppm");
+    expect(wrapper.text()).toContain("31.0 ppm");
     // A constraint the browser stayed silent on must not read as "off".
     expect(wrapper.text()).toContain(
       "providers.sendspin_sync.probe.values.not_reported",
@@ -96,7 +107,7 @@ describe("SendspinSyncView", () => {
   });
 
   it("copies the untranslated report as JSON", async () => {
-    mocks.report.value = readyReport();
+    mocks.report.value = degradedReport();
     const wrapper = mountView();
     await wrapper.vm.$nextTick();
 
@@ -109,7 +120,7 @@ describe("SendspinSyncView", () => {
     await wrapper.vm.$nextTick();
 
     const [payload] = mocks.copyToClipboard.mock.calls[0];
-    expect(JSON.parse(payload)).toEqual(readyReport());
+    expect(JSON.parse(payload)).toEqual(degradedReport());
     expect(mocks.toastSuccess).toHaveBeenCalledWith(
       "providers.sendspin_sync.probe.copied",
     );
@@ -117,7 +128,7 @@ describe("SendspinSyncView", () => {
 
   it("explains an insecure origin instead of blaming the phone", async () => {
     mocks.report.value = {
-      ...readyReport(),
+      ...degradedReport(),
       secureContext: {
         secure: false,
         origin: "http://ma.local:8095",
@@ -141,10 +152,96 @@ describe("SendspinSyncView", () => {
       "providers.sendspin_sync.probe.status.not_evaluated",
     );
   });
+
+  it("separates a missing microphone from a refused one", async () => {
+    const withError = (name: string): MicrophoneProbeReport => {
+      const report = degradedReport();
+      return {
+        ...report,
+        constraints: { ...report.constraints!, error: { name, message: "no" } },
+      };
+    };
+
+    mocks.report.value = withError("NotAllowedError");
+    const refused = mountView();
+    await refused.vm.$nextTick();
+    expect(refused.text()).toContain(
+      "providers.sendspin_sync.probe.blocked.refused.title",
+    );
+
+    mocks.report.value = withError("NotFoundError");
+    const missing = mountView();
+    await missing.vm.$nextTick();
+    expect(missing.text()).toContain(
+      "providers.sendspin_sync.probe.blocked.no_device.title",
+    );
+    // The raw failure stays on the row, whichever branch was taken.
+    expect(missing.text()).toContain("NotFoundError: no");
+  });
+});
+
+describe("SendspinSyncView translation keys", () => {
+  // Keys are composed from check ids, statuses and verdict names, so a rename
+  // would otherwise only surface as a missing string at runtime on a phone.
+  const base = "providers.sendspin_sync.probe";
+  const statuses: CheckStatus[] = ["pass", "warn", "fail", "not_evaluated"];
+  const verdicts: ProbeVerdict[] = [
+    "ready",
+    "degraded",
+    "unsupported",
+    "blocked",
+  ];
+  const composed = [
+    `${base}.idle.title`,
+    `${base}.idle.description`,
+    ...PROBE_CHECKS.flatMap((id) => [
+      `${base}.checks.${id}.title`,
+      `${base}.checks.${id}.hint`,
+    ]),
+    ...statuses.map((status) => `${base}.status.${status}`),
+    ...verdicts.flatMap((verdict) => [
+      `${base}.verdict.${verdict}.title`,
+      `${base}.verdict.${verdict}.description`,
+    ]),
+    ...["insecure", "no_api", "refused", "no_device"].flatMap((reason) => [
+      `${base}.blocked.${reason}.title`,
+      `${base}.blocked.${reason}.description`,
+    ]),
+    ...[
+      "yes",
+      "no",
+      "on",
+      "off",
+      "available",
+      "unavailable",
+      "not_reported",
+      "stayed_running",
+    ].map((value) => `${base}.values.${value}`),
+  ];
+
+  // Read from disk rather than imported: the i18n plugin precompiles anything
+  // under src/translations, so an import hands back message functions.
+  const en: unknown = JSON.parse(
+    readFileSync(resolve(process.cwd(), "src/translations/en.json"), "utf8"),
+  );
+
+  it.each(composed)("resolves %s in en.json", (key) => {
+    const message = key
+      .split(".")
+      .reduce<unknown>(
+        (node, part) =>
+          node && typeof node === "object"
+            ? (node as Record<string, unknown>)[part]
+            : undefined,
+        en,
+      );
+
+    expect(typeof message).toBe("string");
+  });
 });
 
 /** A run that measured everything but never heard back on autoGainControl. */
-function readyReport(): MicrophoneProbeReport {
+function degradedReport(): MicrophoneProbeReport {
   return {
     version: 1,
     startedAt: "2026-01-01T00:00:00.000Z",
@@ -167,8 +264,8 @@ function readyReport(): MicrophoneProbeReport {
         noiseSuppression: true,
         autoGainControl: true,
       },
-      honoured: false,
-      trackSettings: {},
+      honored: false,
+      trackSettings: { sampleRate: 44100 },
       trackLabel: "Fake microphone",
       error: null,
     },
@@ -180,15 +277,16 @@ function readyReport(): MicrophoneProbeReport {
     capture: {
       requestedSeconds: 30,
       measuredSeconds: 30,
-      framesDelivered: 1439982,
-      expectedFrames: 1440000,
-      discrepancyPpm: -12,
-      quanta: 11250,
-      gapCount: 0,
-      missingFrames: 0,
+      renderSeconds: 29.999,
+      framesDelivered: 1439935,
+      expectedFrames: 1439952,
+      frameDiscrepancyPpm: -12,
+      silentQuanta: 0,
+      quanta: 11249,
+      clockDriftPpm: 31,
       error: null,
     },
-    wakeLock: { supported: true, acquired: true, error: null },
+    wakeLock: { supported: true, acquired: true, heldToEnd: true, error: null },
     contextState: { stayedRunning: true, transitions: [] },
   };
 }

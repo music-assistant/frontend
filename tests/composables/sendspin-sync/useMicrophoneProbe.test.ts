@@ -1,6 +1,6 @@
 import {
   CAPTURE_SECONDS,
-  summariseProbe,
+  summarizeProbe,
   useMicrophoneProbe,
   type MicrophoneProbeReport,
 } from "@/composables/sendspin-sync/useMicrophoneProbe";
@@ -24,9 +24,9 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("summariseProbe", () => {
+describe("summarizeProbe", () => {
   it("calls an insecure origin blocked rather than a device failure", () => {
-    const summary = summariseProbe(
+    const summary = summarizeProbe(
       reportFixture({
         secureContext: {
           secure: false,
@@ -49,7 +49,7 @@ describe("summariseProbe", () => {
   });
 
   it("fails the run when the browser kept a voice processor on", () => {
-    const summary = summariseProbe(
+    const summary = summarizeProbe(
       reportFixture({
         constraints: constraintsFixture({
           applied: {
@@ -57,7 +57,7 @@ describe("summariseProbe", () => {
             noiseSuppression: false,
             autoGainControl: false,
           },
-          honoured: false,
+          honored: false,
         }),
       }),
     );
@@ -67,11 +67,11 @@ describe("summariseProbe", () => {
   });
 
   it("only warns when a constraint was never reported back", () => {
-    const summary = summariseProbe(
+    const summary = summarizeProbe(
       reportFixture({
         constraints: constraintsFixture({
           applied: { noiseSuppression: false, autoGainControl: false },
-          honoured: false,
+          honored: false,
         }),
       }),
     );
@@ -80,22 +80,42 @@ describe("summariseProbe", () => {
     expect(summary.verdict).toBe("degraded");
   });
 
-  it("warns on a drifting clock and on skipped quanta", () => {
-    const drifting = summariseProbe(
-      reportFixture({ capture: captureFixture({ discrepancyPpm: -2500 }) }),
-    );
-    const gapped = summariseProbe(
+  it("warns on either drift reading and on a quantum with no input", () => {
+    const frames = summarizeProbe(
       reportFixture({
-        capture: captureFixture({ gapCount: 1, missingFrames: 256 }),
+        capture: captureFixture({ frameDiscrepancyPpm: -2500 }),
+      }),
+    );
+    const clock = summarizeProbe(
+      reportFixture({ capture: captureFixture({ clockDriftPpm: 4000 }) }),
+    );
+    const silent = summarizeProbe(
+      reportFixture({ capture: captureFixture({ silentQuanta: 3 }) }),
+    );
+
+    expect(frames.checks.capture).toBe("warn");
+    expect(clock.checks.capture).toBe("warn");
+    expect(silent.checks.capture).toBe("warn");
+  });
+
+  it("warns when the browser took the wake lock back mid-run", () => {
+    const summary = summarizeProbe(
+      reportFixture({
+        wakeLock: {
+          supported: true,
+          acquired: true,
+          heldToEnd: false,
+          error: null,
+        },
       }),
     );
 
-    expect(drifting.checks.capture).toBe("warn");
-    expect(gapped.checks.capture).toBe("warn");
+    expect(summary.checks.wake_lock).toBe("warn");
+    expect(summary.verdict).toBe("degraded");
   });
 
   it("reports a clean run as ready", () => {
-    const summary = summariseProbe(reportFixture({}));
+    const summary = summarizeProbe(reportFixture({}));
 
     expect(summary.verdict).toBe("ready");
     expect(Object.values(summary.checks)).toEqual(Array(7).fill("pass"));
@@ -126,20 +146,35 @@ describe("useMicrophoneProbe", () => {
     const probe = withScope(() => useMicrophoneProbe());
     await probe.run();
 
-    expect(probe.report.value?.constraints?.error).toBe(
-      "NotAllowedError: Denied",
-    );
+    expect(probe.report.value?.constraints?.error).toEqual({
+      name: "NotAllowedError",
+      message: "Denied",
+    });
     expect(probe.report.value?.capture).toBeNull();
     expect(browser.context.close).toHaveBeenCalled();
-    expect(browser.track.stop).toHaveBeenCalledTimes(0);
+    expect(browser.track.stop).not.toHaveBeenCalled();
 
     // A refusal is a permission problem, not a verdict on the microphone.
-    const summary = summariseProbe(probe.report.value!);
+    const summary = summarizeProbe(probe.report.value!);
     expect(summary.verdict).toBe("blocked");
     expect(summary.checks.voice_processing).toBe("not_evaluated");
   });
 
-  it("reports the applied constraints and the measured frame drift", async () => {
+  it("reports a refused audio context instead of throwing at the click", async () => {
+    stubBrowser({ audioContextThrows: true });
+
+    const probe = withScope(() => useMicrophoneProbe());
+    await expect(probe.run()).resolves.toBeUndefined();
+
+    expect(probe.report.value?.capture?.error).toEqual({
+      name: "Error",
+      message: "Too many contexts",
+    });
+    expect(summarizeProbe(probe.report.value!).checks.capture).toBe("fail");
+    expect(probe.running.value).toBe(false);
+  });
+
+  it("reports the applied constraints and both drift readings", async () => {
     vi.useFakeTimers();
     const browser = stubBrowser({
       settings: {
@@ -155,15 +190,17 @@ describe("useMicrophoneProbe", () => {
 
     const worklet = workletNodes[0];
     expect(worklet).toBeDefined();
-    worklet.emit({ frames: 0, quanta: 0, contextTime: 0, gaps: [] });
+    worklet.emit({ frames: 0, quanta: 0, silentQuanta: 0, contextTime: 0 });
 
-    // Two thirds of the way in, the audio clock is 1000 ppm ahead.
+    // Two thirds of the way in, the audio thread has delivered 1000 ppm more
+    // frames than its own clock accounts for, and that clock in turn has
+    // fallen 1000 ppm behind the wall clock.
     await vi.advanceTimersByTimeAsync(20_000);
     worklet.emit({
-      frames: SAMPLE_RATE * 20 + SAMPLE_RATE * 20 * 1e-3,
-      quanta: 7500,
-      contextTime: 20,
-      gaps: [{ atFrame: 480_000, missingFrames: 256 }],
+      frames: SAMPLE_RATE * 19.98 * (1 + 1e-3),
+      quanta: 7492,
+      silentQuanta: 0,
+      contextTime: 19.98,
     });
 
     await vi.advanceTimersByTimeAsync(CAPTURE_SECONDS * 1000 - 20_000);
@@ -175,24 +212,60 @@ describe("useMicrophoneProbe", () => {
       noiseSuppression: false,
       autoGainControl: true,
     });
-    expect(report?.constraints?.honoured).toBe(false);
+    expect(report?.constraints?.honored).toBe(false);
     expect(report?.audioContext).toEqual({
       sampleRate: SAMPLE_RATE,
       baseLatency: 0.005,
       outputLatency: 0.02,
     });
     expect(report?.capture?.measuredSeconds).toBeCloseTo(20, 3);
-    expect(report?.capture?.discrepancyPpm).toBeCloseTo(1000, 3);
-    expect(report?.capture?.gapCount).toBe(1);
-    expect(report?.capture?.missingFrames).toBe(256);
+    expect(report?.capture?.renderSeconds).toBeCloseTo(19.98, 6);
+    expect(report?.capture?.frameDiscrepancyPpm).toBeCloseTo(1000, 3);
+    expect(report?.capture?.clockDriftPpm).toBeCloseTo(-1000, 3);
+    expect(report?.capture?.quanta).toBe(7492);
+    expect(report?.capture?.silentQuanta).toBe(0);
     expect(report?.contextState?.stayedRunning).toBe(true);
-    expect(summariseProbe(report!).verdict).toBe("unsupported");
+    expect(summarizeProbe(report!).verdict).toBe("unsupported");
 
     // The microphone must never outlive the run.
     expect(browser.track.stop).toHaveBeenCalledOnce();
     expect(browser.context.close).toHaveBeenCalledOnce();
     expect(browser.wakeLockSentinel.release).toHaveBeenCalledOnce();
     expect(probe.running.value).toBe(false);
+  });
+
+  it("does not read its own wake lock release as the browser's", async () => {
+    vi.useFakeTimers();
+    const browser = stubBrowser({});
+
+    const probe = withScope(() => useMicrophoneProbe());
+    const pending = probe.run();
+    await vi.advanceTimersByTimeAsync(0);
+    workletNodes[0].emit({
+      frames: 0,
+      quanta: 0,
+      silentQuanta: 0,
+      contextTime: 0,
+    });
+    await vi.advanceTimersByTimeAsync(CAPTURE_SECONDS * 1000);
+    await pending;
+
+    expect(browser.wakeLockSentinel.release).toHaveBeenCalledOnce();
+    expect(probe.report.value?.wakeLock?.heldToEnd).toBe(true);
+  });
+
+  it("records a wake lock the browser took back during the capture", async () => {
+    vi.useFakeTimers();
+    const browser = stubBrowser({});
+
+    const probe = withScope(() => useMicrophoneProbe());
+    const pending = probe.run();
+    await vi.advanceTimersByTimeAsync(0);
+    browser.wakeLockSentinel.dispatchEvent(new Event("release"));
+    await vi.advanceTimersByTimeAsync(CAPTURE_SECONDS * 1000);
+    await pending;
+
+    expect(probe.report.value?.wakeLock?.heldToEnd).toBe(false);
   });
 
   it("flags an audio context that left the running state", async () => {
@@ -203,15 +276,21 @@ describe("useMicrophoneProbe", () => {
     const pending = probe.run();
     await vi.advanceTimersByTimeAsync(0);
 
-    browser.context.setState("interrupted" as AudioContextState);
-    workletNodes[0].emit({ frames: 0, quanta: 0, contextTime: 0, gaps: [] });
+    browser.context.setState("interrupted");
+    workletNodes[0].emit({
+      frames: 0,
+      quanta: 0,
+      silentQuanta: 0,
+      contextTime: 0,
+    });
     await vi.advanceTimersByTimeAsync(CAPTURE_SECONDS * 1000);
     await pending;
 
     expect(probe.report.value?.contextState?.stayedRunning).toBe(false);
-    expect(probe.report.value?.capture?.error).toBe(
-      "The worklet delivered no measurable frames",
-    );
+    expect(probe.report.value?.capture?.error).toEqual({
+      name: "NoFramesError",
+      message: "The worklet delivered no measurable frames",
+    });
   });
 
   it("releases the microphone when the view goes away mid-capture", async () => {
@@ -229,6 +308,26 @@ describe("useMicrophoneProbe", () => {
     expect(browser.context.close).toHaveBeenCalledOnce();
     expect(probe.running.value).toBe(false);
   });
+
+  it("releases the microphone when the view goes away while the worklet loads", async () => {
+    vi.useFakeTimers();
+    const module = deferred();
+    const browser = stubBrowser({ addModule: () => module.promise });
+    const scope = effectScope();
+    const probe = scope.run(() => useMicrophoneProbe())!;
+
+    const pending = probe.run();
+    await vi.advanceTimersByTimeAsync(0);
+    // Aborting here leaves nothing listening for the abort event yet.
+    scope.stop();
+    module.resolve();
+    await pending;
+
+    expect(browser.track.stop).toHaveBeenCalledOnce();
+    expect(browser.context.close).toHaveBeenCalledOnce();
+    expect(browser.wakeLockSentinel.release).toHaveBeenCalledOnce();
+    expect(probe.running.value).toBe(false);
+  });
 });
 
 /** Runs a composable inside a scope the test tears down for it. */
@@ -239,11 +338,21 @@ function withScope<T>(factory: () => T): T {
   return value;
 }
 
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((settle) => {
+    resolve = settle;
+  });
+  return { promise, resolve };
+}
+
 interface BrowserStubOptions {
   secure?: boolean;
   mediaDevices?: boolean;
   getUserMedia?: () => Promise<MediaStream>;
   settings?: MediaTrackSettings;
+  addModule?: () => Promise<void>;
+  audioContextThrows?: boolean;
 }
 
 /**
@@ -276,10 +385,8 @@ function stubBrowser(options: BrowserStubOptions) {
       autoGainControl: true,
     }),
   };
-  const wakeLockSentinel = { release: vi.fn().mockResolvedValue(undefined) };
-  const wakeLock = {
-    request: vi.fn().mockResolvedValue(wakeLockSentinel),
-  };
+  const wakeLockSentinel = new FakeWakeLockSentinel();
+  const wakeLock = { request: vi.fn().mockResolvedValue(wakeLockSentinel) };
 
   defineOn(
     navigator,
@@ -290,10 +397,13 @@ function stubBrowser(options: BrowserStubOptions) {
   vi.stubGlobal("isSecureContext", options.secure ?? true);
 
   const context = new FakeAudioContext();
+  if (options.addModule)
+    context.audioWorklet.addModule = vi.fn(options.addModule);
   vi.stubGlobal(
     "AudioContext",
     class {
       constructor() {
+        if (options.audioContextThrows) throw new Error("Too many contexts");
         return context;
       }
     },
@@ -315,6 +425,10 @@ function defineOn(host: object, key: string, value: unknown): void {
     if (original) Object.defineProperty(host, key, original);
     else Reflect.deleteProperty(host, key);
   });
+}
+
+class FakeWakeLockSentinel extends EventTarget {
+  release = vi.fn().mockResolvedValue(undefined);
 }
 
 class FakeWorkletNode {
@@ -339,7 +453,7 @@ class FakeAudioContext extends EventTarget {
   baseLatency = 0.005;
   outputLatency = 0.02;
   currentTime = 0;
-  state: AudioContextState = "suspended";
+  state = "suspended";
   destination = {};
   audioWorklet = { addModule: vi.fn().mockResolvedValue(undefined) };
   resume = vi.fn(async () => {
@@ -358,7 +472,7 @@ class FakeAudioContext extends EventTarget {
     disconnect: vi.fn(),
   }));
 
-  setState(state: AudioContextState): void {
+  setState(state: string): void {
     this.state = state;
     this.dispatchEvent(new Event("statechange"));
   }
@@ -384,7 +498,7 @@ function reportFixture(
       outputLatency: 0.02,
     },
     capture: captureFixture({}),
-    wakeLock: { supported: true, acquired: true, error: null },
+    wakeLock: { supported: true, acquired: true, heldToEnd: true, error: null },
     contextState: { stayedRunning: true, transitions: [] },
     ...overrides,
   };
@@ -409,7 +523,7 @@ function constraintsFixture(
       noiseSuppression: true,
       autoGainControl: true,
     },
-    honoured: true,
+    honored: true,
     trackSettings: {},
     trackLabel: "Fake microphone",
     error: null,
@@ -423,12 +537,13 @@ function captureFixture(
   return {
     requestedSeconds: CAPTURE_SECONDS,
     measuredSeconds: CAPTURE_SECONDS,
+    renderSeconds: CAPTURE_SECONDS,
     framesDelivered: SAMPLE_RATE * CAPTURE_SECONDS,
     expectedFrames: SAMPLE_RATE * CAPTURE_SECONDS,
-    discrepancyPpm: 0,
+    frameDiscrepancyPpm: 0,
+    silentQuanta: 0,
     quanta: 11250,
-    gapCount: 0,
-    missingFrames: 0,
+    clockDriftPpm: 0,
     error: null,
     ...overrides,
   };

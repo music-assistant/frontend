@@ -1897,8 +1897,12 @@
                         "description": "The browser does not offer getUserMedia, so no audio can be captured. Try a current version of Chrome, Safari or Firefox."
                     },
                     "refused": {
-                        "title": "The microphone was not handed over",
-                        "description": "The browser did not open the microphone, so nothing could be measured. Allow microphone access for this site and run the check again. The exact reason is on the Voice processing row below."
+                        "title": "Microphone access was refused",
+                        "description": "The browser did not grant the microphone, so nothing could be measured. Allow microphone access for this site and run the check again. The exact reason is on the Voice processing row below."
+                    },
+                    "no_device": {
+                        "title": "No usable microphone was found",
+                        "description": "Access was allowed, but no microphone could be opened. Check that one is connected and not held by another app, then run the check again. The exact reason is on the Voice processing row below."
                     }
                 },
                 "status": {
@@ -1936,11 +1940,11 @@
                     },
                     "capture": {
                         "title": "Capture continuity",
-                        "hint": "Thirty seconds of audio, counted frame by frame against the system clock."
+                        "hint": "Thirty seconds of audio. Frames delivered are compared with the audio engine\u2019s own clock, and that clock in turn with the system clock."
                     },
                     "wake_lock": {
                         "title": "Screen wake lock",
-                        "hint": "Calibration needs the screen awake while you walk between speakers."
+                        "hint": "Calibration needs the screen awake while you walk between speakers, so this also records whether the lock survived the capture."
                     },
                     "context_state": {
                         "title": "Uninterrupted recording",

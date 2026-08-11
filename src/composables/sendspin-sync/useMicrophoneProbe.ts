@@ -42,8 +42,19 @@ export type VoiceProcessing = (typeof VOICE_PROCESSING)[number];
 interface FrameCounterReport {
   frames: number;
   quanta: number;
+  silentQuanta: number;
   contextTime: number;
-  gaps: { atFrame: number; missingFrames: number }[];
+}
+
+/** One worklet report, stamped with the main thread's clock on arrival. */
+interface CaptureSample extends FrameCounterReport {
+  at: number;
+}
+
+/** A failure kept whole: the name is what tells the reader which one it was. */
+export interface ProbeError {
+  name: string;
+  message: string;
 }
 
 export interface SecureContextCheck {
@@ -65,10 +76,10 @@ export interface ConstraintCheck {
   /** Whether the browser recognises each constraint at all. */
   supported: Record<VoiceProcessing, boolean>;
   /** True only when all three read back as explicitly off. */
-  honoured: boolean;
+  honored: boolean;
   trackSettings: MediaTrackSettings;
   trackLabel: string;
-  error: string | null;
+  error: ProbeError | null;
 }
 
 export interface AudioContextCheck {
@@ -81,25 +92,40 @@ export interface CaptureCheck {
   requestedSeconds: number;
   /** Wall-clock seconds between the first and last worklet report. */
   measuredSeconds: number;
+  /** Seconds the context's own render clock advanced over the same span. */
+  renderSeconds: number;
   framesDelivered: number;
+  /** What the render clock says should have arrived over `renderSeconds`. */
   expectedFrames: number;
-  /** Signed departure of delivered frames from the wall clock, in parts per million. */
-  discrepancyPpm: number;
+  /**
+   * Delivered frames against expected, in parts per million.
+   *
+   * Both terms come off the audio thread, so no main-thread jitter enters this.
+   */
+  frameDiscrepancyPpm: number;
+  /** Render quanta the input handed back no channel at all. */
+  silentQuanta: number;
   quanta: number;
-  gapCount: number;
-  missingFrames: number;
-  error: string | null;
+  /** The render clock against the system clock, in parts per million. */
+  clockDriftPpm: number;
+  error: ProbeError | null;
 }
 
 export interface WakeLockCheck {
   supported: boolean;
   acquired: boolean;
-  error: string | null;
+  /** False when the browser took the lock back before the run finished. */
+  heldToEnd: boolean;
+  error: ProbeError | null;
 }
 
+/** Safari reports a non-standard `interrupted` state the DOM types omit. */
+export type ProbeContextState = AudioContextState | "interrupted";
+
 export interface ContextStateTransition {
+  /** Seconds since the capture graph was built. */
   atSeconds: number;
-  state: AudioContextState;
+  state: ProbeContextState;
 }
 
 export interface ContextStateCheck {
@@ -123,7 +149,7 @@ export type CheckStatus = "pass" | "warn" | "fail" | "not_evaluated";
 
 /**
  * `blocked` means the browser never let the probe start, which is a deployment
- * problem rather than a verdict on the phone.
+ * or permission problem rather than a verdict on the phone.
  */
 export type ProbeVerdict = "ready" | "degraded" | "unsupported" | "blocked";
 
@@ -181,12 +207,21 @@ export function useMicrophoneProbe() {
     const result = startReport();
     report.value = result;
 
-    // Opened before any await so Safari still counts the user gesture.
-    const context = result.mediaApi.getUserMedia ? new AudioContext() : null;
-    const wakeLock = await holdScreenAwake(result.secureContext.secure);
-    result.wakeLock = wakeLock.check;
+    let context: AudioContext | null = null;
+    let wakeLock: ScreenAwake | null = null;
+    if (result.mediaApi.getUserMedia)
+      try {
+        // Opened before any await so Safari still counts the user gesture.
+        context = new AudioContext();
+      } catch (error) {
+        // Safari caps how many contexts a page may hold, and refusing one is a
+        // result worth reporting rather than an exception into a click handler.
+        result.capture = { ...emptyCapture(), error: describeError(error) };
+      }
 
     try {
+      wakeLock = await holdScreenAwake(result.secureContext.secure);
+      result.wakeLock = wakeLock.check;
       if (!context) return;
 
       const stream = await openMicrophone(result);
@@ -201,7 +236,7 @@ export function useMicrophoneProbe() {
       }
     } finally {
       await context?.close().catch(() => undefined);
-      await wakeLock.release();
+      await wakeLock?.release();
       running.value = false;
     }
   }
@@ -223,9 +258,10 @@ export function useMicrophoneProbe() {
  * most of the probe never runs, and calling that a device failure would send
  * people chasing the wrong problem.
  */
-export function summariseProbe(report: MicrophoneProbeReport): ProbeSummary {
+export function summarizeProbe(report: MicrophoneProbeReport): ProbeSummary {
   const constraints = report.constraints;
   const capture = report.capture;
+  const wakeLock = report.wakeLock;
 
   const checks: Record<ProbeCheckId, CheckStatus> = {
     secure_context: report.secureContext.secure ? "pass" : "fail",
@@ -237,7 +273,7 @@ export function summariseProbe(report: MicrophoneProbeReport): ProbeSummary {
         ? "not_evaluated"
         : VOICE_PROCESSING.some((name) => constraints.applied[name])
           ? "fail"
-          : constraints.honoured
+          : constraints.honored
             ? "pass"
             : "warn",
     audio_context: report.audioContext ? "pass" : "not_evaluated",
@@ -245,13 +281,14 @@ export function summariseProbe(report: MicrophoneProbeReport): ProbeSummary {
       ? "not_evaluated"
       : capture.error
         ? "fail"
-        : capture.gapCount > 0 ||
-            Math.abs(capture.discrepancyPpm) > DRIFT_WARN_PPM
+        : capture.silentQuanta > 0 ||
+            Math.abs(capture.frameDiscrepancyPpm) > DRIFT_WARN_PPM ||
+            Math.abs(capture.clockDriftPpm) > DRIFT_WARN_PPM
           ? "warn"
           : "pass",
-    wake_lock: !report.wakeLock
+    wake_lock: !wakeLock
       ? "not_evaluated"
-      : report.wakeLock.acquired
+      : wakeLock.acquired && wakeLock.heldToEnd
         ? "pass"
         : "warn",
     context_state: !report.contextState
@@ -322,7 +359,7 @@ async function openMicrophone(
       requested,
       applied: {},
       supported,
-      honoured: false,
+      honored: false,
       trackSettings: {},
       trackLabel: "",
       error: describeError(error),
@@ -342,10 +379,15 @@ async function openMicrophone(
     requested,
     applied,
     supported,
-    honoured: VOICE_PROCESSING.every((name) => applied[name] === false),
+    honored: VOICE_PROCESSING.every((name) => applied[name] === false),
     trackSettings: settings,
     trackLabel: track?.label ?? "",
-    error: track ? null : "No audio track in the captured stream",
+    error: track
+      ? null
+      : {
+          name: "NoAudioTrackError",
+          message: "The captured stream carried no audio track",
+        },
   };
   if (track) return stream;
 
@@ -356,9 +398,10 @@ async function openMicrophone(
 /**
  * Runs the microphone through the frame counter worklet for {@link CAPTURE_SECONDS}.
  *
- * Frames are counted on the audio thread and anchored to `performance.now()` at
- * the first and last report, so the ppm figure is the audio clock's drift
- * against the system clock rather than a one-off scheduling hiccup.
+ * What this measures is the *render* clock, not the microphone's own: the
+ * source node resamples the capture device into the context's rate before the
+ * worklet ever sees it. That is still the clock a chirp's arrival time is
+ * stamped against, so its steadiness is what calibration depends on.
  */
 async function capture(
   context: AudioContext,
@@ -371,8 +414,12 @@ async function capture(
   let source: MediaStreamAudioSourceNode | null = null;
   let counter: AudioWorkletNode | null = null;
   let sink: GainNode | null = null;
+  let baseline = 0;
   const onStateChange = () => {
-    transitions.push({ atSeconds: context.currentTime, state: context.state });
+    transitions.push({
+      atSeconds: context.currentTime - baseline,
+      state: context.state,
+    });
   };
 
   try {
@@ -382,8 +429,6 @@ async function capture(
       baseLatency: finiteOrNull(context.baseLatency),
       outputLatency: finiteOrNull(context.outputLatency),
     };
-    // Attached after the resume so its own transition is not counted.
-    context.addEventListener("statechange", onStateChange);
 
     await context.audioWorklet.addModule(frameCounterUrl);
     source = context.createMediaStreamSource(stream);
@@ -398,6 +443,8 @@ async function capture(
     sink.gain.value = 0;
     source.connect(counter).connect(sink).connect(context.destination);
 
+    baseline = context.currentTime;
+    context.addEventListener("statechange", onStateChange);
     result.capture = await countFrames(context, counter, signal, onProgress);
   } catch (error) {
     result.capture = { ...emptyCapture(), error: describeError(error) };
@@ -423,19 +470,9 @@ function countFrames(
   onProgress: (elapsedSeconds: number) => void,
 ): Promise<CaptureCheck> {
   return new Promise<CaptureCheck>((resolve) => {
-    let first: { at: number; frames: number } | null = null;
-    let last: { at: number; frames: number } | null = null;
-    let quanta = 0;
-    let gapCount = 0;
-    let missingFrames = 0;
-
+    const samples: CaptureSample[] = [];
     counter.port.onmessage = (event: MessageEvent<FrameCounterReport>) => {
-      const sample = { at: performance.now(), frames: event.data.frames };
-      first ??= sample;
-      last = sample;
-      quanta = event.data.quanta;
-      gapCount += event.data.gaps.length;
-      for (const gap of event.data.gaps) missingFrames += gap.missingFrames;
+      samples.push({ ...event.data, at: performance.now() });
     };
 
     const startedAt = performance.now();
@@ -443,66 +480,141 @@ function countFrames(
       onProgress((performance.now() - startedAt) / 1000);
     }, PROGRESS_INTERVAL_MS);
 
+    let settled = false;
     const finish = () => {
+      if (settled) return;
+      settled = true;
       clearInterval(progress);
       clearTimeout(deadline);
-      signal.removeEventListener("abort", finish);
       counter.port.onmessage = null;
-
-      const measuredSeconds = first && last ? (last.at - first.at) / 1000 : 0;
-      const framesDelivered = first && last ? last.frames - first.frames : 0;
-      const expectedFrames = context.sampleRate * measuredSeconds;
       onProgress((performance.now() - startedAt) / 1000);
-      resolve({
-        requestedSeconds: CAPTURE_SECONDS,
-        measuredSeconds,
-        framesDelivered,
-        expectedFrames,
-        discrepancyPpm:
-          expectedFrames > 0
-            ? ((framesDelivered - expectedFrames) / expectedFrames) * 1e6
-            : 0,
-        quanta,
-        gapCount,
-        missingFrames,
-        error:
-          expectedFrames > 0
-            ? null
-            : "The worklet delivered no measurable frames",
-      });
+      resolve(measure(context.sampleRate, samples));
     };
 
     const deadline = setTimeout(finish, CAPTURE_SECONDS * 1000);
-    signal.addEventListener("abort", finish);
+    signal.addEventListener("abort", finish, { once: true });
+    // A signal aborted before this point never fires the event.
+    if (signal.aborted) finish();
   });
+}
+
+/**
+ * Turns the collected reports into two independent readings.
+ *
+ * The frame totals and the render clock both come off the audio thread, so
+ * comparing them carries no main-thread jitter at all. Comparing the render
+ * clock with the system clock cannot avoid that jitter, so it is handled
+ * separately in {@link clockDriftPpm}.
+ */
+function measure(sampleRate: number, samples: CaptureSample[]): CaptureCheck {
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  const renderSeconds =
+    first && last ? last.contextTime - first.contextTime : 0;
+  if (!first || !last || renderSeconds <= 0)
+    return {
+      ...emptyCapture(),
+      error: {
+        name: "NoFramesError",
+        message: "The worklet delivered no measurable frames",
+      },
+    };
+
+  const framesDelivered = last.frames - first.frames;
+  const expectedFrames = sampleRate * renderSeconds;
+  return {
+    requestedSeconds: CAPTURE_SECONDS,
+    measuredSeconds: (last.at - first.at) / 1000,
+    renderSeconds,
+    framesDelivered,
+    expectedFrames,
+    frameDiscrepancyPpm:
+      ((framesDelivered - expectedFrames) / expectedFrames) * 1e6,
+    silentQuanta: last.silentQuanta - first.silentQuanta,
+    quanta: last.quanta - first.quanta,
+    clockDriftPpm: clockDriftPpm(samples),
+    error: null,
+  };
+}
+
+/**
+ * Slope of the render clock against the system clock, in ppm.
+ *
+ * A report can only ever arrive late, never early, so the least delayed report
+ * in a window is the closest thing to a true reading of the pair of clocks.
+ * Taking one from each end of the run keeps scheduling jitter out of the slope.
+ */
+function clockDriftPpm(samples: CaptureSample[]): number {
+  const window = Math.max(1, Math.floor(samples.length / 3));
+  const start = leastDelayed(samples.slice(0, window));
+  const end = leastDelayed(samples.slice(-window));
+  const wallMs = end.at - start.at;
+  if (wallMs <= 0) return 0;
+
+  const renderMs = (end.contextTime - start.contextTime) * 1000;
+  return ((renderMs - wallMs) / wallMs) * 1e6;
+}
+
+function leastDelayed(samples: CaptureSample[]): CaptureSample {
+  const delay = (sample: CaptureSample) =>
+    sample.at - sample.contextTime * 1000;
+  return samples.reduce((best, sample) =>
+    delay(sample) < delay(best) ? sample : best,
+  );
+}
+
+/** What the caller must release once the run is over. */
+interface ScreenAwake {
+  check: WakeLockCheck | null;
+  release: () => Promise<void>;
 }
 
 /**
  * Holds the screen awake for the run, and hands back the release.
  *
  * The API is secure-context only, so an insecure origin reports nothing rather
- * than a failure the device is not responsible for.
+ * than a failure the device is not responsible for. A lock the browser takes
+ * back mid-run is recorded, because calibration needs it for several minutes.
  */
-async function holdScreenAwake(secureContext: boolean): Promise<{
-  check: WakeLockCheck | null;
-  release: () => Promise<void>;
-}> {
+async function holdScreenAwake(secureContext: boolean): Promise<ScreenAwake> {
   const idle = { release: async () => undefined };
   if (!secureContext) return { check: null, ...idle };
 
   const supported = "wakeLock" in navigator;
   if (!supported)
-    return { check: { supported, acquired: false, error: null }, ...idle };
+    return {
+      check: { supported, acquired: false, heldToEnd: false, error: null },
+      ...idle,
+    };
 
   try {
     const sentinel = await navigator.wakeLock.request("screen");
+    const check: WakeLockCheck = {
+      supported,
+      acquired: true,
+      heldToEnd: true,
+      error: null,
+    };
+    const onRelease = () => {
+      check.heldToEnd = false;
+    };
+    sentinel.addEventListener("release", onRelease);
     return {
-      check: { supported, acquired: true, error: null },
-      release: () => sentinel.release().catch(() => undefined),
+      check,
+      release: async () => {
+        // Detached first so this release is not read as the browser's.
+        sentinel.removeEventListener("release", onRelease);
+        await sentinel.release().catch(() => undefined);
+      },
     };
   } catch (error) {
     return {
-      check: { supported, acquired: false, error: describeError(error) },
+      check: {
+        supported,
+        acquired: false,
+        heldToEnd: false,
+        error: describeError(error),
+      },
       ...idle,
     };
   }
@@ -512,12 +624,13 @@ function emptyCapture(): CaptureCheck {
   return {
     requestedSeconds: CAPTURE_SECONDS,
     measuredSeconds: 0,
+    renderSeconds: 0,
     framesDelivered: 0,
     expectedFrames: 0,
-    discrepancyPpm: 0,
+    frameDiscrepancyPpm: 0,
+    silentQuanta: 0,
     quanta: 0,
-    gapCount: 0,
-    missingFrames: 0,
+    clockDriftPpm: 0,
     error: null,
   };
 }
@@ -526,8 +639,8 @@ function finiteOrNull(value: number | undefined): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function describeError(error: unknown): string {
-  if (error instanceof DOMException) return `${error.name}: ${error.message}`;
-  if (error instanceof Error) return `${error.name}: ${error.message}`;
-  return String(error);
+function describeError(error: unknown): ProbeError {
+  if (error instanceof Error)
+    return { name: error.name, message: error.message };
+  return { name: "Error", message: String(error) };
 }
