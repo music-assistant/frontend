@@ -9,6 +9,9 @@ import { store } from "@/plugins/store";
  * Focus moves to the dialog itself instead, so the focus trap and the screen
  * reader announcement stay intact. Devices without a touchscreen keep the
  * default behaviour and land in the field.
+ *
+ * Dialogs only. A popover is not focus trapped, so focusing its content counts
+ * as a focus outside and dismisses it; use `@open-auto-focus.prevent` there.
  */
 export function preventOnScreenKeyboardOnOpen(event: Event) {
   if (!store.isTouchscreen) return;

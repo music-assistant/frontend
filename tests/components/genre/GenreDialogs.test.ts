@@ -77,13 +77,19 @@ describe.each(dialogs)("%s", (_name, component, open) => {
     // focusing the search field would open the on-screen keyboard over the
     // genre list
     expect(document.activeElement).not.toBe(searchField());
-    // and the list has to stay up: focusing the popover itself would dismiss it
+    // focus stays on the button that opened the list; moving it into the
+    // popover would count as a focus outside and dismiss the list
+    expect(document.activeElement).toBe(trigger());
     expect(genreList()).not.toBeNull();
   });
 });
 
 function searchField() {
   return document.querySelector("[data-slot='command-input']");
+}
+
+function trigger() {
+  return document.querySelector<HTMLElement>("[role='combobox']");
 }
 
 function genreList() {
@@ -102,7 +108,9 @@ async function openGenrePicker(
   await flushPromises();
 
   // the dialog is teleported out of the wrapper, so it is only in the document
-  document.querySelector<HTMLElement>("[role='combobox']")!.click();
+  // and a real click leaves the button focused
+  trigger()!.focus();
+  trigger()!.click();
   await flushPromises();
   // reka-ui focuses the command input from a 1ms timer, so a flush is not
   // enough to observe where focus ends up

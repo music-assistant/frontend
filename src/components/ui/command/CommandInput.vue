@@ -33,8 +33,9 @@ const { filterState } = useCommand();
     <Search class="size-4 shrink-0 opacity-50" />
     <!--
       Focusing this field on a touch device raises the on-screen keyboard over
-      the list it filters. A popover hosting a Command also has to prevent its
-      own open auto-focus, which would land on this field regardless.
+      the list it filters. A popover or dialog hosting a Command also has to
+      prevent its own open auto-focus, which would land on this field
+      regardless.
     -->
     <ListboxFilter
       v-bind="{ ...forwardedProps, ...$attrs }"

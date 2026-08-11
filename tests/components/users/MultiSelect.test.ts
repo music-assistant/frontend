@@ -41,8 +41,9 @@ describe("MultiSelect", () => {
     await openOptions();
 
     expect(document.activeElement).not.toBe(searchField());
-    // the options stay reachable: the popover keeps focus instead of handing it
-    // back outside and dismissing itself
+    // focus stays on the button that opened the list; moving it into the
+    // popover would count as a focus outside and dismiss the list
+    expect(document.activeElement).toBe(trigger());
     expect(optionsList()).not.toBeNull();
   });
 });
@@ -53,6 +54,10 @@ function searchField() {
 
 function optionsList() {
   return document.querySelector("[data-slot='popover-content']");
+}
+
+function trigger() {
+  return document.querySelector<HTMLElement>("[data-slot='popover-trigger']");
 }
 
 async function openOptions(): Promise<VueWrapper> {
@@ -68,7 +73,9 @@ async function openOptions(): Promise<VueWrapper> {
     global: { mocks: { $t: (key: string) => key } },
   });
 
-  await wrapper.get("button").trigger("click");
+  // a real click leaves the button focused, which a synthetic one does not
+  trigger()!.focus();
+  trigger()!.click();
   await flushPromises();
   // reka-ui focuses the command input from a 1ms timer, so a flush is not
   // enough to observe where focus ends up
