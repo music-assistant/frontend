@@ -9,8 +9,9 @@
     ]"
     :data-active="store.showPlayersMenu"
     :data-suppress-hover="suppressHover"
-    :aria-label="$t('tooltip.select_player')"
-    :aria-pressed="store.showPlayersMenu"
+    :aria-label="playerSelectLabel"
+    :aria-expanded="store.showPlayersMenu"
+    aria-haspopup="dialog"
     @click="togglePlayersMenu"
     @pointerleave="suppressHover = false"
   >
@@ -29,7 +30,7 @@
         navigation ? 'mobile-navigation-label' : 'player-bar-action-label'
       "
     >
-      {{ store.activePlayer?.name || $t("no_player") }}
+      {{ playerName }}
     </span>
   </Button>
 </template>
@@ -37,10 +38,15 @@
 <script setup lang="ts">
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 const suppressHover = ref(false);
+const playerName = computed(() => store.activePlayer?.name || $t("no_player"));
+const playerSelectLabel = computed(
+  () => `${$t("tooltip.select_player")}: ${playerName.value}`,
+);
 
 withDefaults(
   defineProps<{

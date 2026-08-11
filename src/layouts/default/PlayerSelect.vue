@@ -25,9 +25,15 @@
 
   <Popover :open="store.showPlayersMenu" @update:open="setMenuOpen">
     <PopoverAnchor :reference="popoutAnchor" />
+    <!-- reka-ui generates the panel id and only mounts the panel while it is
+         open, so the buttons that open it announce it with
+         aria-haspopup/aria-expanded rather than aria-controls. It also names the
+         panel after a PopoverTrigger, which this popout has no use for, so the
+         panel carries its own label. -->
     <PopoverContent
       data-player-panel
       data-testid="player-select-sheet"
+      :aria-label="$t('players')"
       side="top"
       :align="popoutFromFullscreen ? 'center' : 'end'"
       :side-offset="

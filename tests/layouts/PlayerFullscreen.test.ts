@@ -102,7 +102,12 @@ const NOW = 1_700_000_000;
 const QUEUE_ID = "q1";
 
 interface TestStore {
-  activePlayer?: { player_id: string; active_source?: string };
+  activePlayer?: {
+    player_id: string;
+    active_source?: string;
+    name?: string;
+    group_members?: string[];
+  };
   activePlayerQueue?: {
     queue_id: string;
     state: PlaybackState;
@@ -225,10 +230,9 @@ describe("PlayerFullscreen lyrics clock", () => {
 });
 
 describe("PlayerFullscreen player select button", () => {
-  it("opens the player list on top of the fullscreen player", async () => {
+  async function mountFullscreenDialog(): Promise<VueWrapper> {
     const { store } = await import("@/plugins/store");
-    const testStore = store as unknown as TestStore;
-    testStore.showFullscreenPlayer = true;
+    (store as unknown as TestStore).showFullscreenPlayer = true;
 
     wrapper = shallowMount(PlayerFullscreen, {
       props: { colorPalette: EMPTY_COLOR_PALETTE },
@@ -242,10 +246,51 @@ describe("PlayerFullscreen player select button", () => {
       },
     });
     await nextTick();
+    return wrapper;
+  }
 
-    await wrapper.find("#fullscreen-player-select-button").trigger("click");
+  it("opens the player list on top of the fullscreen player", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    const fullscreen = await mountFullscreenDialog();
+
+    await fullscreen.find("#fullscreen-player-select-button").trigger("click");
 
     expect(testStore.showPlayersMenu).toBe(true);
     expect(testStore.showFullscreenPlayer).toBe(true);
+  });
+
+  it("announces the player list panel it opens", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    const fullscreen = await mountFullscreenDialog();
+    const selectButton = fullscreen.get("#fullscreen-player-select-button");
+
+    expect(selectButton.attributes("aria-haspopup")).toBe("dialog");
+    expect(selectButton.attributes("aria-expanded")).toBe("false");
+    // no player selected, so the label carries no trailing player name
+    expect(selectButton.attributes("aria-label")).toBe("tooltip.select_player");
+
+    testStore.showPlayersMenu = true;
+    await nextTick();
+
+    expect(selectButton.attributes("aria-expanded")).toBe("true");
+  });
+
+  it("names the selected player it opens the list from", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+    };
+    const fullscreen = await mountFullscreenDialog();
+
+    expect(
+      fullscreen
+        .get("#fullscreen-player-select-button")
+        .attributes("aria-label"),
+    ).toBe("tooltip.select_player: Kitchen");
   });
 });

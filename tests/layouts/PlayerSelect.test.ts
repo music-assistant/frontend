@@ -325,6 +325,30 @@ function mountPlayerSelect() {
   });
 }
 
+// the popover components render for real here, so the panel goes through
+// reka-ui's own labelling rather than a stub that echoes whatever it is passed
+function mountPlayerSelectWithPopover() {
+  return mount(PlayerSelect, {
+    global: {
+      mocks: {
+        $t: (key: string) => key,
+      },
+      stubs: {
+        PlayerCard: PlayerCardStub,
+        PlayerRenameDialog: PlayerRenameDialogStub,
+        SearchInput: SearchInputStub,
+        DropdownMenu: passthroughStub,
+        DropdownMenuCheckboxItem: DropdownMenuCheckboxItemStub,
+        DropdownMenuContent: passthroughStub,
+        DropdownMenuItem: passthroughStub,
+        DropdownMenuLabel: passthroughStub,
+        DropdownMenuSeparator: passthroughStub,
+        DropdownMenuTrigger: passthroughStub,
+      },
+    },
+  });
+}
+
 describe("PlayerSelect", () => {
   // the store and api mocks are module singletons, so a component left mounted
   // keeps reacting to the next test's state
@@ -767,6 +791,21 @@ describe("PlayerSelect", () => {
     await wrapper.find(".player-select-backdrop").trigger("click");
 
     expect(store.showPlayersMenu).toBe(false);
+  });
+
+  it("names the panel for assistive tech", async () => {
+    // reka-ui names a panel after its PopoverTrigger, and this popout is
+    // anchored instead of triggered, so only a real mount shows the name lands
+    const wrapper = mountPlayerSelectWithPopover();
+    await nextTick();
+
+    const panel = document.body.querySelector(
+      '[data-testid="player-select-sheet"]',
+    );
+    expect(panel?.getAttribute("role")).toBe("dialog");
+    expect(panel?.getAttribute("aria-label")).toBe("players");
+
+    wrapper.unmount();
   });
 
   it("stops above the bottom navigation in mobile layout", () => {
