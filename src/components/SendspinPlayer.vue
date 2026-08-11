@@ -358,7 +358,13 @@ onMounted(() => {
             maxDelayMs: 30000,
             onReconnecting: (attempt: number) =>
               console.debug(`Sendspin: reconnecting (attempt ${attempt})`),
-            onReconnected: () => console.debug("Sendspin: reconnected"),
+            // Re-pair after a reconnect: the server may have dropped our pairing
+            // record in the meantime (guest pairings are removed on disconnect),
+            // leaving the new connection unpaired. A no-op while still paired.
+            onReconnected: () => {
+              console.debug("Sendspin: reconnected");
+              registerPairing();
+            },
             onExhausted: () =>
               console.warn("Sendspin: reconnect attempts exhausted"),
           },

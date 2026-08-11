@@ -111,6 +111,9 @@ const {
     mockSendspinUnlock: vi.fn<() => Promise<void>>(),
     sendspinState: {
       pairingToken: null as string | null,
+      lastOptions: null as {
+        reconnect?: { onReconnected?: () => void };
+      } | null,
     },
     mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
     routeState: {
@@ -178,6 +181,9 @@ vi.mock("@/plugins/api/helpers", async (importOriginal) => ({
 
 vi.mock("@sendspin/sendspin-js", () => ({
   SendspinPlayer: class {
+    constructor(options: (typeof sendspinState)["lastOptions"]) {
+      sendspinState.lastOptions = options;
+    }
     connect = mockSendspinConnect;
     get pairingToken() {
       return sendspinState.pairingToken;
@@ -242,6 +248,7 @@ describe("SendspinPlayer MediaSession", () => {
     mockSendspinConnect.mockReset();
     mockSendspinConnect.mockResolvedValue(undefined);
     sendspinState.pairingToken = "SP:0TESTTOKEN";
+    sendspinState.lastOptions = null;
     mockSendspinUnlock.mockReset();
     mockSendspinUnlock.mockResolvedValue(undefined);
     webPlayer.interacted = false;
@@ -341,6 +348,26 @@ describe("SendspinPlayer MediaSession", () => {
       props: { playerId: "web-player" },
     });
     await flushPromises();
+
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "sendspin/pair_web_player",
+      { pairing_token: "SP:0TESTTOKEN" },
+      { suppressGlobalError: true },
+    );
+    wrapper.unmount();
+  });
+
+  it("re-pairs after the sendspin transport reconnects on its own", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+    mockSendCommand.mockClear();
+
+    // The server may have dropped the pairing while we were away (guest
+    // pairings are removed on disconnect), so a reconnect pairs again.
+    sendspinState.lastOptions?.reconnect?.onReconnected?.();
 
     expect(mockSendCommand).toHaveBeenCalledWith(
       "sendspin/pair_web_player",
