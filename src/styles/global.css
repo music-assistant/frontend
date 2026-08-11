@@ -24,10 +24,13 @@
 }
 
 :root {
-  /* Room below the bottom navigation buttons: a fixed margin so they are never
-     flush with the screen edge, plus the device safe area (home indicator or
-     system navigation bar) when the OS reports one. */
-  --mobile-navigation-inset-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  /* Space the OS keeps for itself at the bottom of the screen (home indicator,
+     system navigation bar). App.vue zeroes this when we are embedded, because
+     there the host sizes our viewport and browsers disagree on what to report. */
+  --device-inset-bottom: env(safe-area-inset-bottom, 0px);
+  /* Room below the bottom navigation buttons, so they are never flush with the
+     screen edge or the system controls. */
+  --mobile-navigation-inset-bottom: calc(10px + var(--device-inset-bottom));
   /* Space the bottom navigation occupies. Anything anchored above it (sheets,
      popovers, the player bar, scroll padding) is positioned from this. */
   --mobile-navigation-height: calc(88px + var(--mobile-navigation-inset-bottom));
