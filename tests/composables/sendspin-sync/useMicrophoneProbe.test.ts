@@ -80,11 +80,9 @@ describe("summarizeProbe", () => {
     expect(summary.verdict).toBe("degraded");
   });
 
-  it("warns on either drift reading and on a quantum with no input", () => {
+  it("warns on either drift reading and on a quantum of silence", () => {
     const frames = summarizeProbe(
-      reportFixture({
-        capture: captureFixture({ frameDiscrepancyPpm: -2500 }),
-      }),
+      reportFixture({ capture: captureFixture({ discrepancyPpm: -2500 }) }),
     );
     const clock = summarizeProbe(
       reportFixture({ capture: captureFixture({ clockDriftPpm: 4000 }) }),
@@ -96,6 +94,26 @@ describe("summarizeProbe", () => {
     expect(frames.checks.capture).toBe("warn");
     expect(clock.checks.capture).toBe("warn");
     expect(silent.checks.capture).toBe("warn");
+  });
+
+  it("fails a capture that heard nothing at all", () => {
+    const summary = summarizeProbe(
+      reportFixture({ capture: captureFixture({ peakAmplitude: 0 }) }),
+    );
+
+    expect(summary.checks.capture).toBe("fail");
+    expect(summary.verdict).toBe("unsupported");
+  });
+
+  it("does not judge a capture the viewer walked away from", () => {
+    const summary = summarizeProbe(
+      reportFixture({
+        capture: captureFixture({ aborted: true, peakAmplitude: 0 }),
+      }),
+    );
+
+    expect(summary.checks.capture).toBe("not_evaluated");
+    expect(summary.verdict).toBe("ready");
   });
 
   it("warns when the browser took the wake lock back mid-run", () => {
@@ -170,7 +188,11 @@ describe("useMicrophoneProbe", () => {
       name: "Error",
       message: "Too many contexts",
     });
-    expect(summarizeProbe(probe.report.value!).checks.capture).toBe("fail");
+    // No pipeline ever opened, so this is a browser problem rather than a
+    // measurement that came back bad.
+    const summary = summarizeProbe(probe.report.value!);
+    expect(summary.checks.capture).toBe("not_evaluated");
+    expect(summary.verdict).toBe("blocked");
     expect(probe.running.value).toBe(false);
   });
 
@@ -190,18 +212,21 @@ describe("useMicrophoneProbe", () => {
 
     const worklet = workletNodes[0];
     expect(worklet).toBeDefined();
-    worklet.emit({ frames: 0, quanta: 0, silentQuanta: 0, contextTime: 0 });
+    worklet.emit(workletReport({}));
 
-    // Two thirds of the way in, the audio thread has delivered 1000 ppm more
-    // frames than its own clock accounts for, and that clock in turn has
-    // fallen 1000 ppm behind the wall clock.
+    // Twenty wall-clock seconds on, the render clock has advanced only 19.98 —
+    // 1000 ppm slow — and 0.18 s of what it did render arrived as silence, so
+    // the frame count is short by ten times as much.
     await vi.advanceTimersByTimeAsync(20_000);
-    worklet.emit({
-      frames: SAMPLE_RATE * 19.98 * (1 + 1e-3),
-      quanta: 7492,
-      silentQuanta: 0,
-      contextTime: 19.98,
-    });
+    worklet.emit(
+      workletReport({
+        frames: SAMPLE_RATE * 19.8,
+        quanta: 7492,
+        silentQuanta: 68,
+        peak: 0.2,
+        contextTime: 19.98,
+      }),
+    );
 
     await vi.advanceTimersByTimeAsync(CAPTURE_SECONDS * 1000 - 20_000);
     await pending;
@@ -220,10 +245,12 @@ describe("useMicrophoneProbe", () => {
     });
     expect(report?.capture?.measuredSeconds).toBeCloseTo(20, 3);
     expect(report?.capture?.renderSeconds).toBeCloseTo(19.98, 6);
-    expect(report?.capture?.frameDiscrepancyPpm).toBeCloseTo(1000, 3);
+    expect(report?.capture?.discrepancyPpm).toBeCloseTo(-10_000, 3);
     expect(report?.capture?.clockDriftPpm).toBeCloseTo(-1000, 3);
     expect(report?.capture?.quanta).toBe(7492);
-    expect(report?.capture?.silentQuanta).toBe(0);
+    expect(report?.capture?.silentQuanta).toBe(68);
+    expect(report?.capture?.unconnectedQuanta).toBe(0);
+    expect(report?.capture?.peakAmplitude).toBe(0.2);
     expect(report?.contextState?.stayedRunning).toBe(true);
     expect(summarizeProbe(report!).verdict).toBe("unsupported");
 
@@ -241,12 +268,7 @@ describe("useMicrophoneProbe", () => {
     const probe = withScope(() => useMicrophoneProbe());
     const pending = probe.run();
     await vi.advanceTimersByTimeAsync(0);
-    workletNodes[0].emit({
-      frames: 0,
-      quanta: 0,
-      silentQuanta: 0,
-      contextTime: 0,
-    });
+    workletNodes[0].emit(workletReport({}));
     await vi.advanceTimersByTimeAsync(CAPTURE_SECONDS * 1000);
     await pending;
 
@@ -277,12 +299,7 @@ describe("useMicrophoneProbe", () => {
     await vi.advanceTimersByTimeAsync(0);
 
     browser.context.setState("interrupted");
-    workletNodes[0].emit({
-      frames: 0,
-      quanta: 0,
-      silentQuanta: 0,
-      contextTime: 0,
-    });
+    workletNodes[0].emit(workletReport({}));
     await vi.advanceTimersByTimeAsync(CAPTURE_SECONDS * 1000);
     await pending;
 
@@ -336,6 +353,19 @@ function withScope<T>(factory: () => T): T {
   const value = scope.run(factory)!;
   restores.push(() => scope.stop());
   return value;
+}
+
+/** One worklet report, with the zeroed defaults a run starts from. */
+function workletReport(overrides: Record<string, number>) {
+  return {
+    frames: 0,
+    quanta: 0,
+    silentQuanta: 0,
+    unconnectedQuanta: 0,
+    peak: 0,
+    contextTime: 0,
+    ...overrides,
+  };
 }
 
 function deferred() {
@@ -536,14 +566,17 @@ function captureFixture(
 ): NonNullable<MicrophoneProbeReport["capture"]> {
   return {
     requestedSeconds: CAPTURE_SECONDS,
-    measuredSeconds: CAPTURE_SECONDS,
-    renderSeconds: CAPTURE_SECONDS,
-    framesDelivered: SAMPLE_RATE * CAPTURE_SECONDS,
-    expectedFrames: SAMPLE_RATE * CAPTURE_SECONDS,
-    frameDiscrepancyPpm: 0,
-    silentQuanta: 0,
-    quanta: 11250,
+    measuredSeconds: 20,
+    renderSeconds: 20,
+    framesDelivered: SAMPLE_RATE * 20,
+    expectedFrames: SAMPLE_RATE * 20,
+    discrepancyPpm: 0,
     clockDriftPpm: 0,
+    quanta: 7500,
+    silentQuanta: 0,
+    unconnectedQuanta: 0,
+    peakAmplitude: 0.21,
+    aborted: false,
     error: null,
     ...overrides,
   };

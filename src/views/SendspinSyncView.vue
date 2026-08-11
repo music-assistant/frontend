@@ -82,6 +82,9 @@
               </template>
             </dl>
 
+            <p v-if="check.noteKey" class="mt-2 text-sm text-destructive">
+              {{ $t(check.noteKey) }}
+            </p>
             <p v-if="check.error" class="mt-2 text-sm text-destructive">
               {{ check.error }}
             </p>
@@ -165,6 +168,8 @@ interface CheckRow {
   titleKey: string;
   hintKey: string;
   details: DetailRow[];
+  /** A finding the raw numbers alone would not spell out. */
+  noteKey: string | null;
   error: string | null;
 }
 
@@ -212,9 +217,11 @@ const blocker = computed(() => {
     ? "insecure"
     : !current.mediaApi.getUserMedia
       ? "no_api"
-      : MISSING_DEVICE_ERRORS.includes(current.constraints?.error?.name ?? "")
-        ? "no_device"
-        : "refused";
+      : !current.audioContext && current.capture?.error
+        ? "no_audio_context"
+        : MISSING_DEVICE_ERRORS.includes(current.constraints?.error?.name ?? "")
+          ? "no_device"
+          : "refused";
   return `providers.sendspin_sync.probe.blocked.${reason}`;
 });
 
@@ -229,9 +236,22 @@ const checks = computed<CheckRow[]>(() => {
     titleKey: `providers.sendspin_sync.probe.checks.${id}.title`,
     hintKey: `providers.sendspin_sync.probe.checks.${id}.hint`,
     details: detailsFor(id, current),
+    noteKey: noteFor(id, current),
     error: errorFor(id, current),
   }));
 });
+
+/** Spells out a finding the numbers on the row would leave the reader to infer. */
+function noteFor(
+  id: ProbeCheckId,
+  current: MicrophoneProbeReport,
+): string | null {
+  if (id !== "capture" || !current.capture || current.capture.error)
+    return null;
+  return current.capture.peakAmplitude === 0
+    ? "providers.sendspin_sync.probe.checks.capture.silent"
+    : null;
+}
 
 function detailsFor(
   id: ProbeCheckId,
@@ -278,21 +298,23 @@ function detailsFor(
       const capture = current.capture;
       if (!capture) return [];
       return [
-        { label: "duration", value: `${capture.measuredSeconds.toFixed(1)} s` },
+        { label: "measured", value: `${capture.measuredSeconds.toFixed(1)} s` },
         { label: "framesDelivered", value: `${capture.framesDelivered}` },
         {
           label: "framesExpected",
           value: `${Math.round(capture.expectedFrames)}`,
         },
         {
-          label: "frame discrepancy",
-          value: `${capture.frameDiscrepancyPpm.toFixed(1)} ppm`,
+          label: "discrepancy",
+          value: `${capture.discrepancyPpm.toFixed(1)} ppm`,
         },
         {
           label: "clock drift",
           value: `${capture.clockDriftPpm.toFixed(1)} ppm`,
         },
+        { label: "peak", value: capture.peakAmplitude.toFixed(4) },
         { label: "silentQuanta", value: `${capture.silentQuanta}` },
+        { label: "unconnectedQuanta", value: `${capture.unconnectedQuanta}` },
         { label: "renderQuanta", value: `${capture.quanta}` },
       ];
     }

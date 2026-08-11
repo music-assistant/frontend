@@ -178,6 +178,23 @@ describe("SendspinSyncView", () => {
     // The raw failure stays on the row, whichever branch was taken.
     expect(missing.text()).toContain("NotFoundError: no");
   });
+
+  it("spells out a capture that heard nothing rather than leaving a bare zero", async () => {
+    const report = degradedReport();
+    mocks.report.value = {
+      ...report,
+      capture: { ...report.capture!, peakAmplitude: 0 },
+    };
+    const wrapper = mountView();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain(
+      "providers.sendspin_sync.probe.checks.capture.silent",
+    );
+    expect(wrapper.text()).toContain(
+      "providers.sendspin_sync.probe.status.fail",
+    );
+  });
 });
 
 describe("SendspinSyncView translation keys", () => {
@@ -203,7 +220,14 @@ describe("SendspinSyncView translation keys", () => {
       `${base}.verdict.${verdict}.title`,
       `${base}.verdict.${verdict}.description`,
     ]),
-    ...["insecure", "no_api", "refused", "no_device"].flatMap((reason) => [
+    `${base}.checks.capture.silent`,
+    ...[
+      "insecure",
+      "no_api",
+      "refused",
+      "no_device",
+      "no_audio_context",
+    ].flatMap((reason) => [
       `${base}.blocked.${reason}.title`,
       `${base}.blocked.${reason}.description`,
     ]),
@@ -276,14 +300,17 @@ function degradedReport(): MicrophoneProbeReport {
     },
     capture: {
       requestedSeconds: 30,
-      measuredSeconds: 30,
-      renderSeconds: 29.999,
-      framesDelivered: 1439935,
-      expectedFrames: 1439952,
-      frameDiscrepancyPpm: -12,
-      silentQuanta: 0,
-      quanta: 11249,
+      measuredSeconds: 20,
+      renderSeconds: 19.99976,
+      framesDelivered: 959988,
+      expectedFrames: 960000,
+      discrepancyPpm: -12,
       clockDriftPpm: 31,
+      quanta: 7499,
+      silentQuanta: 0,
+      unconnectedQuanta: 0,
+      peakAmplitude: 0.1875,
+      aborted: false,
       error: null,
     },
     wakeLock: { supported: true, acquired: true, heldToEnd: true, error: null },
