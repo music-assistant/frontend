@@ -193,6 +193,20 @@
       @click:clear="onClear"
     />
 
+    <!-- value with all options expanded: radio group -->
+    <RadioGroupField
+      v-else-if="
+        confEntry.options.length > 0 &&
+        confEntry.expanded_options &&
+        !confEntry.multi_value
+      "
+      :label="displayLabel()"
+      :options="displayOptions"
+      :value="confEntry.value"
+      :disabled="isFieldDisabled"
+      @update:value="onUpdateValue($event)"
+    />
+
     <!-- value with dropdown -->
     <v-select
       v-else-if="confEntry.options.length > 0"
@@ -320,6 +334,7 @@ import AlertField from "./fields/AlertField.vue";
 import HassControlPickerField from "./fields/HassControlPickerField.vue";
 import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
+import RadioGroupField from "./fields/RadioGroupField.vue";
 import {
   ConfigEntryUI,
   HASS_CONTROL_KEYS,
