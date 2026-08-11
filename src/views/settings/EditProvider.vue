@@ -209,19 +209,11 @@
             <CircleAlert class="size-4" />
             {{ $t("settings.known_issues") }}
           </Button>
-          <div
+          <AdvancedSettingsToggle
             v-if="config.enabled && hasAdvancedEntries(allConfigEntries)"
-            class="flex w-full items-center gap-2 sm:ml-auto sm:w-auto"
-          >
-            <Switch
-              id="provider-advanced-settings"
-              v-model="showAdvancedSettings"
-              data-testid="provider-advanced-settings"
-            />
-            <Label for="provider-advanced-settings" class="cursor-pointer">
-              {{ $t("settings.show_advanced_settings") }}
-            </Label>
-          </div>
+            v-model:show-advanced-settings="showAdvancedSettings"
+            test-id="provider-advanced-settings"
+          />
         </CardContent>
       </Card>
     </div>
@@ -303,8 +295,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { useConfigAction } from "@/composables/useConfigAction";
 import {
   hasAdvancedEntries,
@@ -339,6 +329,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import EditConfig from "./EditConfig.vue";
 
 // global refs

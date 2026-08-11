@@ -54,6 +54,8 @@ const SlotStub = {
 };
 
 const providerDetailsStubs = {
+  // rendered for real so this screen's advanced toggle stays assertable
+  AdvancedSettingsToggle: false,
   Badge: SlotStub,
   Card: SlotStub,
   CardContent: SlotStub,

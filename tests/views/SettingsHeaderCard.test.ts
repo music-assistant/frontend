@@ -8,6 +8,8 @@ const SlotStub = {
 };
 
 const headerStubs = {
+  // rendered for real so this screen's advanced toggle stays assertable
+  AdvancedSettingsToggle: false,
   Button: SlotStub,
   Card: SlotStub,
   CardContent: SlotStub,
