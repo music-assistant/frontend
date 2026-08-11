@@ -22,8 +22,8 @@ function popoutInset() {
 }
 
 function utilityPaddingPriority() {
-  const rules = [...(appStyles.sheet?.cssRules ?? [])] as CSSStyleRule[];
-  return rules
+  return [...(appStyles.sheet?.cssRules ?? [])]
+    .filter((rule) => rule instanceof CSSStyleRule)
     .find((rule) => rule.selectorText === ".p-0")
     ?.style.getPropertyPriority("padding");
 }
@@ -43,9 +43,12 @@ describe("player bar popout inset", () => {
   });
 
   it("clears the player bar while the mobile bar is on screen", () => {
-    // the inset only proves anything while it still has to out-rank the
-    // utility, which the important-flagged Tailwind import makes a real contest
-    expect(utilityPaddingPriority()).toBe("important");
+    // the inset only proves anything while the utility it has to out-rank is
+    // itself !important
+    expect(
+      utilityPaddingPriority(),
+      "the Tailwind utilities import must stay `important` and unlayered",
+    ).toBe("important");
 
     document.documentElement.setAttribute(OVERLAY_MARKER, "");
     document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);

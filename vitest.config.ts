@@ -11,9 +11,9 @@ export default mergeConfig(
       // markdown pin themselves to jsdom with an @vitest-environment docblock.
       environment: "happy-dom",
       globals: true,
-      // the popout inset test asserts a real cascade result, so the app
-      // stylesheet has to be compiled instead of stubbed out; component styles
-      // stay unprocessed so the rest of the suite is unaffected
+      // The popout inset test asserts a real cascade result, so the app
+      // stylesheet has to be compiled instead of stubbed out. Component styles
+      // stay unprocessed, so the rest of the suite is unaffected.
       css: { include: [/src\/styles\/style\.css/] },
       setupFiles: ["./tests/setup/failOnUnhandledErrors.ts"],
       // Errors that escape a test must never be silently dropped; the setup
