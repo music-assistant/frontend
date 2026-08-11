@@ -43,8 +43,7 @@ export interface Props {
 const props = defineProps<Props>();
 const route = useRoute();
 
-// Versioned: delays saved before sendspin-js dropped its built-in 200ms default
-// were calibrated against it, so replaying them would play that much early.
+// Versioned: delays saved before sendspin-js 4.0.0 dropped its 200ms default would replay early.
 const SYNC_DELAY_STORAGE_KEY = "frontend.settings.sendspin_static_delay_v2";
 
 const audioRef = ref<HTMLAudioElement>();

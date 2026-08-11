@@ -6,8 +6,8 @@ import { webPlayer } from "@/plugins/web_player";
 let nextListenInOperationId = 0;
 const latestListenInOperationByPlayer = new Map<string, number>();
 
-// Coalesces the burst of updates the server emits when it rebuilds every player's
-// groupable set, so one re-check covers the whole burst.
+// Debounce window: the server emits one update per player when it rebuilds every
+// player's groupable set, and a single re-check covers the whole burst.
 const FOREIGN_PLAYER_RECHECK_DELAY_MS = 400;
 
 export type ListenInMode = "venue" | "remote";
