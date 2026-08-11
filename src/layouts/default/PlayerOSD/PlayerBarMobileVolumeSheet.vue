@@ -49,9 +49,13 @@ function preventAutoFocus(event: Event) {
   right: 8px !important;
   bottom: calc(var(--mobile-navigation-height) + 8px) !important;
   left: 8px !important;
-  /* grows with the group it shows, up to the room left above the navigation */
-  max-height: calc(100dvh - var(--mobile-navigation-height) - 16px);
   width: auto !important;
+}
+
+/* a sheet has no popper measuring the free space for it, so it grows with the
+   group it shows up to the room left above the navigation instead */
+.player-bar-popout.mobile-group-volume-sheet {
+  max-height: calc(100dvh - var(--mobile-navigation-height) - 16px);
 }
 
 .mobile-group-volume-overlay {

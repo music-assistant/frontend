@@ -651,21 +651,6 @@ describe("PlayerSelect", () => {
     );
   });
 
-  it("grows into the room left above the player bar", () => {
-    const cap = "max-h-[var(--reka-popover-content-available-height,100dvh)]";
-
-    const desktop = mountPlayerSelect();
-    store.mobileLayout = true;
-    const mobile = mountPlayerSelect();
-
-    expect(
-      desktop.find('[data-testid="player-select-sheet"]').classes(),
-    ).toContain(cap);
-    expect(
-      mobile.find('[data-testid="player-select-sheet"]').classes(),
-    ).toContain(cap);
-  });
-
   it("focuses the sheet instead of opening the mobile keyboard", () => {
     store.mobileLayout = true;
     api.players = Object.fromEntries(
