@@ -16,6 +16,7 @@
   <BottomNavigation v-if="store.mobileLayout" />
 
   <v-footer
+    ref="playerBar"
     app
     color="default"
     :class="`py-0 px-0 ${
@@ -37,7 +38,36 @@
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 import { store } from "@/plugins/store";
+import { useElementSize } from "@vueuse/core";
+import {
+  type ComponentPublicInstance,
+  onBeforeUnmount,
+  ref,
+  watchEffect,
+} from "vue";
 import Player from "./PlayerOSD/Player.vue";
+
+const OVERLAY_HEIGHT_PROPERTY = "--player-bar-overlay-height";
+
+const playerBar = ref<ComponentPublicInstance>();
+const { height: playerBarHeight } = useElementSize(playerBar, undefined, {
+  box: "border-box",
+});
+
+// on mobile the player bar floats on top of the player bar popouts, which read
+// this variable to keep their content clear of it
+watchEffect(() => {
+  document.documentElement.style.setProperty(
+    OVERLAY_HEIGHT_PROPERTY,
+    store.mobileLayout ? `${Math.ceil(playerBarHeight.value)}px` : "0px",
+  );
+});
+
+// the popouts outlive the player bar in frameless mode, so they must not keep
+// reserving room for a bar that is no longer there
+onBeforeUnmount(() => {
+  document.documentElement.style.removeProperty(OVERLAY_HEIGHT_PROPERTY);
+});
 </script>
 
 <style>
