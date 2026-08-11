@@ -44,16 +44,12 @@
     </CardHeader>
     <CardContent
       v-if="showAdvancedToggle"
-      class="flex items-center gap-2 border-t bg-muted/20 px-6 py-4 sm:justify-end"
+      class="flex items-center border-t bg-muted/20 px-6 py-4"
     >
-      <Switch
-        :id="advancedToggleId"
-        v-model="showAdvancedSettings"
-        data-testid="settings-advanced-settings"
+      <AdvancedSettingsToggle
+        v-model:show-advanced-settings="showAdvancedSettings"
+        test-id="settings-advanced-settings"
       />
-      <Label :for="advancedToggleId" class="cursor-pointer">
-        {{ $t("settings.show_advanced_settings") }}
-      </Label>
     </CardContent>
   </Card>
 </template>
@@ -73,11 +69,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { MoreVertical, RotateCcw } from "@lucide/vue";
-import { useId, type Component } from "vue";
+import type { Component } from "vue";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 
 /**
  * Header card shared by the settings screens that edit a plain config: it names what
@@ -100,6 +95,4 @@ const emit = defineEmits<{
 const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
   default: false,
 });
-
-const advancedToggleId = useId();
 </script>

@@ -187,19 +187,11 @@
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>
-          <div
+          <AdvancedSettingsToggle
             v-if="showAdvancedToggle"
-            class="flex w-full items-center gap-2 sm:ml-auto sm:w-auto"
-          >
-            <Switch
-              id="player-advanced-settings"
-              v-model="showAdvancedSettings"
-              data-testid="player-advanced-settings"
-            />
-            <Label for="player-advanced-settings" class="cursor-pointer">
-              {{ $t("settings.show_advanced_settings") }}
-            </Label>
-          </div>
+            v-model:show-advanced-settings="showAdvancedSettings"
+            test-id="player-advanced-settings"
+          />
         </CardContent>
       </Card>
     </div>
@@ -328,8 +320,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -341,6 +331,7 @@ import {
   PlayerType,
   IdentifierType,
 } from "@/plugins/api/interfaces";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import EditConfig from "./EditConfig.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
