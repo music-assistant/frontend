@@ -698,12 +698,14 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
     artist_type?: ArtistType,
     in_library_only?: boolean,
-  ): Promise<Audiobook[]> {
+    collapse_collections?: boolean,
+  ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/artists/artist_audiobooks", {
       item_id,
       provider_instance_id_or_domain,
       artist_type,
       in_library_only,
+      collapse_collections,
     });
   }
 

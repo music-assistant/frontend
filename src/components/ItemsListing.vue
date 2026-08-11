@@ -665,7 +665,7 @@ const toggleCollapseCollections = function () {
     "collapseCollections",
     params.value.collapseCollections,
   );
-  loadData(undefined, undefined, true);
+  loadData(true, undefined, true);
 };
 
 const toggleHideEmptyFilter = function () {
