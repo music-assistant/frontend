@@ -43,6 +43,10 @@ export interface Props {
 const props = defineProps<Props>();
 const route = useRoute();
 
+// Versioned: delays saved before sendspin-js dropped its built-in 200ms default
+// were calibrated against it, so replaying them would play that much early.
+const SYNC_DELAY_STORAGE_KEY = "frontend.settings.sendspin_static_delay_v2";
+
 const audioRef = ref<HTMLAudioElement>();
 const silentAudioRef = ref<HTMLAudioElement>();
 
@@ -299,9 +303,7 @@ onMounted(() => {
   if (audioRef.value) {
     const audioElement = isMobileOutput ? audioRef.value : undefined;
 
-    const savedSyncDelay = localStorage.getItem(
-      "frontend.settings.sendspin_static_delay",
-    );
+    const savedSyncDelay = localStorage.getItem(SYNC_DELAY_STORAGE_KEY);
     const parsed = savedSyncDelay !== null ? parseInt(savedSyncDelay, 10) : NaN;
     const syncDelay = isNaN(parsed) ? undefined : parsed;
 
@@ -340,10 +342,7 @@ onMounted(() => {
           onPairing: (event: string, detail?: string) =>
             console.debug(`Sendspin: pairing ${event}`, detail ?? ""),
           onDelayCommand: (delayMs: number) => {
-            localStorage.setItem(
-              "frontend.settings.sendspin_static_delay",
-              String(delayMs),
-            );
+            localStorage.setItem(SYNC_DELAY_STORAGE_KEY, String(delayMs));
           },
           // Recover a sendspin transport that drops on its own (e.g. its socket is
           // idle-timed-out while the main API connection stays up). Drops that also
