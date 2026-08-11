@@ -213,13 +213,7 @@ export class MusicAssistantApi {
 
     transport.on("close", () => {
       // Don't immediately emit DISCONNECTED - wait for stateChange
-      // to see if we're reconnecting or truly disconnected.
-      // In-flight commands can never be answered though: the server does not
-      // retain message ids across connections, so fail them instead of leaving
-      // their promises pending forever.
-      this.rejectPendingCommands(
-        "Connection closed before the command completed",
-      );
+      // to see if we're reconnecting or truly disconnected
     });
 
     transport.on("error", (error: Error) => {
@@ -405,23 +399,6 @@ export class MusicAssistantApi {
     );
     this._providerIconRequests.clear();
     this.serverInfo.value = undefined;
-    this.rejectPendingCommands("Disconnected before the command completed");
-  }
-
-  /**
-   * Fail every in-flight command. Their results can never arrive once the
-   * connection is gone, so without this their promises stay pending forever
-   * and any caller awaiting them stalls silently.
-   */
-  private rejectPendingCommands(reason: string): void {
-    if (this.commands.size === 0) return;
-    for (const command of this.commands.values()) {
-      command.reject(reason);
-    }
-    this.commands.clear();
-    for (const key of Object.keys(this.partialResult)) {
-      delete this.partialResult[key];
-    }
   }
 
   public subscribe(

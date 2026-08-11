@@ -34,6 +34,7 @@ vi.mock("@/plugins/store", () => ({
 
 import {
   ApiCommandError,
+  ConnectionLostError,
   ConnectionState,
   MusicAssistantApi,
 } from "@/plugins/api";
@@ -66,8 +67,12 @@ class TestTransport extends BaseTransport {
     this.sentCommands.push(JSON.parse(data) as CommandMessage);
   }
 
-  /** Simulate the socket dropping (emit is protected on the base class). */
+  /**
+   * Simulate the socket dropping. The real transports move to a disconnected
+   * state before emitting close, so mirror that order here.
+   */
   close(reason = "connection lost"): void {
+    this.setState(TransportState.DISCONNECTED);
     this.emit("close", reason);
   }
 
@@ -208,7 +213,9 @@ describe("MusicAssistantApi error handling", () => {
 
   it("rejects in-flight commands when the connection closes", async () => {
     const command = api.sendCommand("test/pending");
-    const rejection = expect(command).rejects.toContain("Connection closed");
+    const rejection = expect(command).rejects.toBeInstanceOf(
+      ConnectionLostError,
+    );
 
     // a dropped socket emits close; the result can never arrive afterwards
     transport.close();
@@ -218,7 +225,9 @@ describe("MusicAssistantApi error handling", () => {
 
   it("rejects in-flight commands on an explicit disconnect", async () => {
     const command = api.sendCommand("test/pending");
-    const rejection = expect(command).rejects.toContain("Disconnected");
+    const rejection = expect(command).rejects.toBeInstanceOf(
+      ConnectionLostError,
+    );
 
     api.disconnect();
 
