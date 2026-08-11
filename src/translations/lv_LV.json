@@ -505,9 +505,7 @@
         "last_played": "Pēdējo reizi atskaņots",
         "last_played_desc": "Pēdējo reizi atskaņots (dilstoši)",
         "play_count": "Atskaņojumu skaits",
-        "play_count_desc": "Atskaņojumu skaits (dilstoši)",
-        "artist_name": "Albuma Izpildītājs",
-        "artist_name_desc": "Albuma Izpildītājs (dilstoši)"
+        "play_count_desc": "Atskaņojumu skaits (dilstoši)"
     },
     "state": {
         "idle": "dīkstāvē",

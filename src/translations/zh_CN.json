@@ -621,8 +621,6 @@
         "last_played_desc": "上次播放（倒序）",
         "play_count": "播放次数",
         "play_count_desc": "播放次数（倒序）",
-        "artist_name": "唱片集歌手",
-        "artist_name_desc": "唱片集歌手（降序）",
         "album_sort_name": "唱片集（排序名称）"
     },
     "state": {
