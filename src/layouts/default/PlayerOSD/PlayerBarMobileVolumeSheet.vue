@@ -4,7 +4,7 @@
       data-player-panel
       side="bottom"
       :show-close="false"
-      class="player-bar-popout mobile-group-volume-sheet z-[998] max-h-[70dvh] gap-0 overflow-hidden rounded-xl p-0"
+      class="player-bar-popout mobile-group-volume-sheet z-[998] gap-0 overflow-hidden rounded-xl p-0"
       overlay-class="mobile-group-volume-overlay z-[997]"
       @open-auto-focus="preventAutoFocus"
     >
@@ -49,6 +49,8 @@ function preventAutoFocus(event: Event) {
   right: 8px !important;
   bottom: calc(var(--mobile-navigation-height) + 8px) !important;
   left: 8px !important;
+  /* grows with the group it shows, up to the room left above the navigation */
+  max-height: calc(100dvh - var(--mobile-navigation-height) - 16px);
   width: auto !important;
 }
 

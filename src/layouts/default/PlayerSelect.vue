@@ -37,11 +37,11 @@
       "
       :collision-padding="8"
       :class="[
-        'player-bar-popout player-select-popover flex flex-col gap-0 overflow-hidden p-0',
+        'player-bar-popout player-select-popover flex max-h-[var(--reka-popover-content-available-height,100dvh)] flex-col gap-0 overflow-hidden p-0',
         popoutFromFullscreen && 'player-select-popover-fullscreen',
         store.mobileLayout
-          ? 'max-h-[78dvh] w-[calc(100vw-1rem)]'
-          : 'max-h-[min(82dvh,780px)] w-[400px] max-w-[calc(100vw-1rem)]',
+          ? 'w-[calc(100vw-1rem)]'
+          : 'w-[400px] max-w-[calc(100vw-1rem)]',
       ]"
       @keydown="handleSheetKeydown"
       @close-auto-focus="preventAutoFocus"
