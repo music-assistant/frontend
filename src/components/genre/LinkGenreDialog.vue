@@ -20,7 +20,10 @@
               <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent class="w-[--reka-popover-trigger-width] p-0">
+          <PopoverContent
+            class="w-[--reka-popover-trigger-width] p-0"
+            @open-auto-focus.prevent
+          >
             <Command>
               <CommandInput :placeholder="t('search')" />
               <CommandList class="max-h-[250px] overflow-y-auto">

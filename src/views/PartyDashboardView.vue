@@ -1,8 +1,17 @@
 <template>
   <div class="party-view" :style="gradientBackgroundStyle">
+    <!-- MilkDrop visualizer takes over the backdrop when enabled -->
+    <VisualizerCanvas
+      v-if="visualizerActive"
+      :preset="visualizerPresetPref"
+      :blur="visualizerBlurPref"
+      :opacity="visualizerOpacityPref"
+      :player-id="store.activePlayer?.player_id"
+      covered-when-fullscreen
+    />
     <!-- Blurred album art background: separate element so the browser can cache the texture -->
     <div
-      v-if="useAlbumArtBackground && albumArtUrl"
+      v-else-if="useAlbumArtBackground && albumArtUrl"
       class="background-image"
       :style="{ backgroundImage: `url(${albumArtUrl})` }"
     ></div>
@@ -25,7 +34,8 @@
         'party-content',
         {
           'party-content--karaoke': karaokeMode,
-          'party-content--album-art': useAlbumArtBackground && !!albumArtUrl,
+          'party-content--album-art':
+            visualizerActive || (useAlbumArtBackground && !!albumArtUrl),
           'party-content--light-text': useLightChrome,
         },
       ]"
@@ -48,18 +58,7 @@
 
         <!-- Right: controls -->
         <div class="flex items-center gap-2 shrink-0">
-          <!-- Fullscreen: minimize button -->
-          <Button
-            v-if="isFullscreen && !hideBackButton"
-            variant="ghost-icon"
-            size="icon-sm"
-            :aria-label="$t('tooltip.exit_fullscreen')"
-            @click="goFullscreen(false)"
-          >
-            <Minimize2 :size="13" />
-          </Button>
-
-          <!-- Non-fullscreen: actions -->
+          <!-- Guest access badge sits ahead of the icon cluster -->
           <template v-if="!isFullscreen">
             <Badge
               v-if="qrAvailable"
@@ -79,6 +78,36 @@
               <WifiOff :size="11" />
               {{ $t("providers.party.guest_access_disabled") }}
             </Badge>
+          </template>
+
+          <!-- Visualizer toggle; also available in fullscreen, where the
+               party screen normally runs -->
+          <Button
+            v-if="visualizerAvailable"
+            variant="ghost-icon"
+            size="icon-sm"
+            :aria-label="$t('visualizer.toggle')"
+            @click="toggleVisualizer"
+          >
+            <Droplet
+              :size="13"
+              :fill="visualizerEnabledPref ? 'currentColor' : 'none'"
+            />
+          </Button>
+
+          <!-- Fullscreen: minimize button -->
+          <Button
+            v-if="isFullscreen && !hideBackButton"
+            variant="ghost-icon"
+            size="icon-sm"
+            :aria-label="$t('tooltip.exit_fullscreen')"
+            @click="goFullscreen(false)"
+          >
+            <Minimize2 :size="13" />
+          </Button>
+
+          <!-- Non-fullscreen: actions -->
+          <template v-if="!isFullscreen">
             <Button
               v-if="partyInstanceId"
               variant="ghost-icon"
@@ -294,6 +323,7 @@
 import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyQR from "@/components/party/PartyQR.vue";
+import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
 import {
   AlertDialog,
@@ -308,6 +338,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import {
   ImageColorPalette,
   getMediaItemImageUrl,
@@ -324,6 +355,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
+  Droplet,
   Maximize2,
   Minimize2,
   Music,
@@ -469,6 +501,16 @@ onBeforeUnmount(() => {
 
 // Album art background is always active
 const useAlbumArtBackground = computed(() => true);
+
+const {
+  visualizerEnabledPref,
+  visualizerPresetPref,
+  visualizerBlurPref,
+  visualizerOpacityPref,
+  visualizerAvailable,
+  visualizerActive,
+  toggleVisualizer,
+} = useVisualizer(() => store.activePlayer?.player_id);
 
 // The track cards show the queue's position, so their play state comes from
 // the queue too.
@@ -1342,7 +1384,9 @@ watch(
 
 .content-section--mobile.party-view-active {
   padding-bottom: 0 !important;
-  --party-player-bottom: 189px; /* 185px above Footer.vue gradient overlay + 4px (spacing-1) */
+  /* 185px above Footer.vue gradient overlay + 4px (spacing-1), following the
+     navigation inset the gradient and player bar move with */
+  --party-player-bottom: calc(189px + var(--mobile-navigation-inset-bottom));
 }
 
 .content-section--frameless.party-view-active {

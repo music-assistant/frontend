@@ -434,7 +434,6 @@
         "remote_access_qr_code": "二维码",
         "remote_access_qr_code_description": "使用手机摄像头扫描即可立即连接。",
         "reset_to_defaults": "重置为默认值",
-        "reset_to_defaults_confirm": "您确定要将所有设置重置为默认值吗？此操作将立即保存更改。",
         "unsaved_changes": "未保存的更改",
         "unsaved_changes_message": "您有未保存的更改。您确定要不保存就离开吗？",
         "stay": "停留",
@@ -621,8 +620,6 @@
         "last_played_desc": "上次播放（倒序）",
         "play_count": "播放次数",
         "play_count_desc": "播放次数（倒序）",
-        "artist_name": "唱片集歌手",
-        "artist_name_desc": "唱片集歌手（降序）",
         "album_sort_name": "唱片集（排序名称）"
     },
     "state": {

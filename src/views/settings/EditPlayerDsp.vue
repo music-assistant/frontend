@@ -1,65 +1,64 @@
 <template>
   <section v-if="dsp">
-    <v-toolbar color="transparent" class="border-b pr-4">
-      <v-switch
-        v-model="dsp.enabled"
-        hide-details
-        color="primary"
-        class="pl-4"
-      />
-      <v-toolbar-title>{{
-        $t("settings.dsp.configure_on", { name: playerName })
-      }}</v-toolbar-title>
-      <v-menu offset-y transition="slide-y-transition">
-        <template #activator="{ props: menuProps }">
-          <Badge
-            v-if="selectedPresetLabel"
-            :aria-label="selectedPresetLabel"
-            :title="selectedPresetLabel"
-            data-testid="selected-dsp-preset"
-            class="mr-2 max-w-24 md:mr-4 md:max-w-48"
-            variant="outline"
-          >
-            <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
-          </Badge>
-          <v-btn v-bind="menuProps" class="mr-4" :class="getButtonClass()">
-            <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-tray-arrow-down </v-icon>
-            <span class="d-none d-md-inline">
+    <div class="flex items-center gap-2 border-b px-4 py-2">
+      <Switch v-model="dsp.enabled" />
+      <h2 class="min-w-0 flex-1 truncate text-base font-medium">
+        {{ $t("settings.dsp.configure_on", { name: playerName }) }}
+      </h2>
+      <Badge
+        v-if="selectedPresetLabel"
+        :aria-label="selectedPresetLabel"
+        :title="selectedPresetLabel"
+        data-testid="selected-dsp-preset"
+        class="max-w-24 md:max-w-48"
+        variant="outline"
+      >
+        <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
+      </Badge>
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button variant="secondary">
+            <Download />
+            <span class="hidden md:inline">
               {{ $t("settings.dsp.presets.load") }}
             </span>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item v-if="dspPresets.length === 0">
-            <v-list-item-title>
-              {{ $t("settings.dsp.presets.empty_warning") }}
-            </v-list-item-title>
-          </v-list-item>
-          <v-list-item
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          class="min-w-[max(8rem,var(--reka-dropdown-menu-trigger-width))]"
+        >
+          <DropdownMenuItem v-if="dspPresets.length === 0" disabled>
+            {{ $t("settings.dsp.presets.empty_warning") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem
             v-for="preset in dspPresets"
             v-else
             :key="preset.preset_id ?? undefined"
+            class="justify-between gap-4"
             @click="loadPreset(preset)"
           >
-            <v-list-item-title>{{ preset.name }}</v-list-item-title>
-            <template #append>
-              <v-btn
-                icon="mdi-delete"
-                variant="text"
-                density="compact"
-                @click.stop="removePreset(preset.preset_id)"
-              />
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-      <v-btn :class="getButtonClass()" @click="showSavePresetDialog = true">
-        <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-content-save </v-icon>
-        <span class="d-none d-md-inline">
+            <span class="min-w-0 truncate">{{ preset.name }}</span>
+            <!-- .stop keeps the click off the item, which would otherwise
+                 select the preset and close the menu. -->
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              :aria-label="$t('delete')"
+              @click.stop="removePreset(preset.preset_id)"
+            >
+              <Trash2 />
+            </Button>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Button variant="secondary" @click="showSavePresetDialog = true">
+        <Save />
+        <span class="hidden md:inline">
           {{ $t("settings.dsp.presets.save") }}
         </span>
-      </v-btn>
-    </v-toolbar>
+      </Button>
+    </div>
 
     <v-container fluid class="pa-4">
       <v-row :class="{ 'justify-center': mobile }" class="flex-nowrap">
@@ -83,85 +82,78 @@
         <!-- Filter Settings Panel -->
         <v-col v-if="selectedStage != null" style="min-width: 0">
           <!-- Toolbar of the selected item -->
-          <v-toolbar
-            density="compact"
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-            class="border-b"
+          <div
+            class="flex min-h-12 items-center gap-1 border-b bg-muted px-2 py-1.5"
           >
-            <v-btn
+            <Button
               v-if="mobile"
-              class="hidden-xs-only"
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('back')"
               @click="selectedStage = null"
             >
-              <v-icon>mdi-arrow-left</v-icon>
-            </v-btn>
-            <v-toolbar-title>{{ stageTitle(selectedStage) }}</v-toolbar-title>
-            <v-btn
+              <ArrowLeft />
+            </Button>
+            <h3 class="min-w-0 flex-1 truncate px-2 font-medium">
+              {{ stageTitle(selectedStage) }}
+            </h3>
+            <Button
               v-if="
                 typeof selectedStage === 'number' &&
                 !mobile &&
                 selectedStage > 0
               "
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.move_up')"
               @click="moveFilter(selectedStage, 'up')"
             >
-              <v-icon>mdi-arrow-up</v-icon>
-            </v-btn>
-            <v-btn
+              <ArrowUp />
+            </Button>
+            <Button
               v-if="
                 typeof selectedStage === 'number' &&
                 !mobile &&
                 selectedStage < dsp.filters.length - 1
               "
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.move_down')"
               @click="moveFilter(selectedStage, 'down')"
             >
-              <v-icon>mdi-arrow-down</v-icon>
-            </v-btn>
+              <ArrowDown />
+            </Button>
 
-            <v-switch
+            <Switch
               v-if="typeof selectedStage === 'number'"
               v-model="dsp.filters[selectedStage].enabled"
-              hide-details
-              color="primary"
-              class="mr-4"
+              class="mx-2"
             />
-            <v-btn
+            <Button
               v-if="typeof selectedStage === 'number'"
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.delete_filter')"
               @click="removeFilter(selectedStage)"
             >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </v-toolbar>
+              <Trash2 />
+            </Button>
+          </div>
 
           <!-- Settings of the Input stage -->
-          <v-card
-            v-if="selectedStage === 'input'"
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-if="selectedStage === 'input'" class="bg-muted">
             <DSPSlider v-model="dsp.input_gain" type="gain" />
             <DSPHelp :text="$t('settings.dsp.input_gain_help')" />
-          </v-card>
+          </div>
 
           <!-- Settings of the Output stage -->
-          <v-card
-            v-else-if="selectedStage === 'output'"
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-else-if="selectedStage === 'output'" class="bg-muted">
             <DSPSlider v-model="dsp.output_gain" type="gain" />
             <DSPHelp :text="$t('settings.dsp.output_gain_help')" />
-          </v-card>
+          </div>
 
           <!-- Settings of the selected DSP Filter -->
-          <v-card
-            v-else
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-else class="bg-muted">
             <DSPParametricEQ
               v-if="
                 dsp.filters[selectedStage].type === DSPFilterType.PARAMETRIC_EQ
@@ -243,7 +235,7 @@
               "
               v-model="dsp.filters[selectedStage] as CrossfeedFilter"
             />
-          </v-card>
+          </div>
         </v-col>
       </v-row>
 
@@ -256,60 +248,79 @@
     </v-container>
 
     <!-- Save DSP Preset Dialog -->
-    <v-dialog v-model="showSavePresetDialog" max-width="300">
-      <v-card>
-        <v-card-title>{{ $t("settings.dsp.presets.save") }}</v-card-title>
-        <v-card-text>
-          <v-text-field
+    <Dialog v-model:open="showSavePresetDialog">
+      <DialogContent class="sm:max-w-[360px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.dsp.presets.save") }}</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-2">
+          <Label for="dsp-preset-name">
+            {{ $t("settings.dsp.presets.name") }}
+          </Label>
+          <Input
+            id="dsp-preset-name"
             v-model="newPresetName"
-            :label="$t('settings.dsp.presets.name')"
             :placeholder="$t('settings.dsp.presets.name_placeholder')"
-            variant="outlined"
           />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="showSavePresetDialog = false">
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showSavePresetDialog = false">
             {{ $t("cancel") }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            :disabled="!newPresetName.trim()"
-            @click="savePreset"
-          >
+          </Button>
+          <Button :disabled="!newPresetName.trim()" @click="savePreset">
             {{ $t("settings.dsp.presets.save") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Add Filter Dialog -->
-    <v-dialog v-model="showAddFilterDialog" max-width="300">
-      <v-card>
-        <v-card-title>{{ $t("settings.dsp.filter.add") }}</v-card-title>
-        <v-card-text>
-          <v-select
-            v-model="newFilterType"
-            :items="filterTypes"
-            :label="$t('settings.dsp.filter.type')"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="showAddFilterDialog = false">{{ $t("cancel") }}</v-btn>
-          <v-btn color="primary" @click="addFilter">{{
+    <Dialog v-model:open="showAddFilterDialog">
+      <DialogContent class="sm:max-w-[360px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.dsp.filter.add") }}</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-2">
+          <Label for="dsp-filter-type">
+            {{ $t("settings.dsp.filter.type") }}
+          </Label>
+          <Select
+            :model-value="newFilterType"
+            @update:model-value="
+              (value) => (newFilterType = value as DSPFilterType)
+            "
+          >
+            <SelectTrigger id="dsp-filter-type" class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="filterType in filterTypes"
+                :key="filterType.value"
+                :value="filterType.value"
+              >
+                {{ filterType.title }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showAddFilterDialog = false">
+            {{ $t("cancel") }}
+          </Button>
+          <Button @click="addFilter">{{
             $t("settings.dsp.filter.add")
-          }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, toRaw, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
-import { useDisplay, useTheme } from "vuetify";
+import { useDisplay } from "vuetify";
 import { api } from "@/plugins/api";
 import {
   DSPConfig,
@@ -346,9 +357,41 @@ import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
 import { COMPRESSOR_PRESETS } from "@/components/dsp/compressorPresets";
 import { DEFAULT_HIGH_PASS_FREQUENCY } from "@/components/dsp/highLowPass";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
-import { TriangleAlert } from "@lucide/vue";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Download,
+  Save,
+  Trash2,
+  TriangleAlert,
+} from "@lucide/vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
@@ -357,7 +400,6 @@ import {
 } from "@/helpers/audioProcessing";
 
 const { t } = useI18n();
-const theme = useTheme();
 
 const props = defineProps<{
   playerId?: string;
@@ -418,12 +460,6 @@ const selectedPresetLabel = computed(() => {
 });
 
 // Methods
-const getButtonClass = (): string => {
-  return theme.global.current.value.dark
-    ? "bg-grey-darken-3"
-    : "bg-grey-lighten-3";
-};
-
 const selectStage = (index: number | "input" | "output") => {
   selectedStage.value = index;
 };

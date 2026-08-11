@@ -191,6 +191,7 @@
         :subtitle="$t('in_library')"
         :empty-message="$t('artist_no_library_audiobooks')"
         :allow-collapse="true"
+        :show-collapse-collections="true"
       />
       <!-- all audiobooks (full per-provider listing) -->
       <ItemsListing
@@ -573,6 +574,8 @@ const loadArtistAudiobooks = async function (params: LoadDataParams) {
     itemDetails.value.item_id,
     itemDetails.value.provider,
     itemDetails.value.artist_type,
+    undefined,
+    params.collapseCollections,
   );
 };
 

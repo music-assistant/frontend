@@ -222,8 +222,8 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
-            "input_gain_help": "Sets the level going into the chain. Lower it to leave headroom for filters that boost.",
-            "output_gain_help": "Adjusts the level leaving the chain, after every filter has been applied. Player volume is applied later.",
+            "input_gain_help": "Sets the level going into the pipeline. Lower it to leave headroom for filters that boost.",
+            "output_gain_help": "Adjusts the level leaving the pieline, after every filter has been applied. Player volume is applied later.",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
@@ -265,7 +265,7 @@
                 "treble_level": "Treble Level"
             },
             "gain": {
-                "help": "Raises or lowers the level of everything passing through this point in the chain."
+                "help": "Raises or lowers the level of everything passing through this point in the pipeline."
             },
             "balance": {
                 "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
@@ -280,7 +280,7 @@
                 "concert_pitch_432_hint": "Set the concert pitch so A is tuned to 432 Hz"
             },
             "safety_limiter": {
-                "help": "Catches peaks that would otherwise clip and may damage your speakers. Place it last in the chain.",
+                "help": "Catches peaks that would otherwise clip and may damage your speakers. Place it last in the pipeline.",
                 "ceiling": "Ceiling"
             },
             "compressor": {
@@ -457,6 +457,7 @@
         "providers_description": "Manage your music sources, player providers and plugins",
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",
+        "visualizer_description": "Quality, presets and favorites for the MilkDrop music visualizer",
         "provider_type": "Type",
         "onboarding_title": "Welcome to Music Assistant!",
         "profile_description": "Manage your personal account settings and preferences",
@@ -554,6 +555,7 @@
         "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
         "frontend": "User Interface",
+        "visualizer": "Visualizer",
         "players_count": "{0} player{1}",
         "one_player": "1 player",
         "view_players": "View players",
@@ -581,7 +583,6 @@
         "remote_access_qr_code": "QR Code",
         "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
         "reset_to_defaults": "Reset to defaults",
-        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately.",
         "unsaved_changes": "Unsaved changes",
         "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
         "stay": "Stay",
@@ -760,6 +761,18 @@
         "show_waveform": {
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
+        },
+        "visualizer_enabled": {
+            "label": "MilkDrop visualizer",
+            "description": "Render a MilkDrop (Butterchurn) music visualizer behind the fullscreen player, replacing the gradient background. Reacts live to the audio playing on the active player. This is the default for all players; the toggle in a player's fullscreen menu or party screen overrides it for that player only."
+        },
+        "visualizer_blur": {
+            "label": "Visualizer blur",
+            "description": "Blur radius (in pixels) applied to the visualizer for a softer, ambient background. 0 disables blur."
+        },
+        "visualizer_opacity": {
+            "label": "Visualizer opacity",
+            "description": "Opacity of the visualizer layer; lower values blend the album-color gradient background through. Note: at 55% and above the view switches to an immersive dark look with light text; at 50% and below it keeps the normal theme background and text colors."
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
@@ -947,6 +960,7 @@
     "duration_in_seconds": "{0} seconds",
     "mark_played": "Mark as played",
     "mark_unplayed": "Mark as unplayed",
+    "mark_played_partial_failure": "Could not update {0} episode(s)",
     "searchtype_all": "All",
     "global_search": "Global search",
     "podcast_episode": "Episode",
@@ -1968,6 +1982,43 @@
     "edit_track": "Edit track",
     "uri_read_only": "URI (read-only)",
     "lyrics_offset": "Lyrics offset",
+    "visualizer": {
+        "title": "MilkDrop",
+        "preset_random": "Random preset",
+        "open_settings": "Visualizer settings",
+        "toggle": "Toggle the MilkDrop visualizer",
+        "preset_random_favorites": "Random from favorites",
+        "toggle_favorite": "Favorite this preset",
+        "provider_missing": "The MilkDrop Visualizer plugin is not installed or unavailable. Add it under Settings > Providers to use the visualizer.",
+        "section_general": "Appearance",
+        "section_presets": "Presets",
+        "quality": "Render quality",
+        "quality_description": "Higher tiers render sharper visuals at more GPU/CPU cost. Use low on tablets and TVs.",
+        "quality_options": {
+            "low": "Low (tablets / TVs)",
+            "medium": "Medium",
+            "high": "High",
+            "native": "Native"
+        },
+        "preset_mode": "Preset selection",
+        "preset_mode_description": "How the visualizer chooses which MilkDrop preset to show.",
+        "preset_mode_options": {
+            "random": "Random from all presets",
+            "random_favorites": "Random from favorites",
+            "fixed": "Fixed preset"
+        },
+        "fixed_preset": "Preset",
+        "beat_switch": "Switch preset on downbeat",
+        "beat_switch_description": "Automatically switch to another preset on a downbeat, using Music Assistant's beat analysis. Takes precedence over a fixed preset selection.",
+        "beat_dwell": "Minimum time between switches",
+        "beat_dwell_description": "How long a preset stays on screen before a downbeat may switch it.",
+        "favorites": "Favorite presets",
+        "no_favorites": "No favorites yet. Use the star next to the preset picker in the fullscreen player to favorite the preset currently showing.",
+        "remove_favorite": "Remove favorite",
+        "credits": "Credits",
+        "credits_butterchurn": "Rendering powered by Butterchurn by Jordan Berg (MIT license), the WebGL implementation of MilkDrop 2.",
+        "credits_milkdrop": "MilkDrop was originally created by Ryan Geiss as a visualizer for Winamp. Presets are the work of the MilkDrop preset community, bundled via butterchurn-presets."
+    },
     "similar_tracks": "Similar tracks",
     "similar_artists": "Similar artists",
     "audio_source": "Audio source",
@@ -2107,8 +2158,8 @@
     "lyrics_show": "Show lyrics for this track",
     "lyrics_hide": "Hide lyrics for this track",
     "lyrics_loading": "Lyrics are being fetched...",
-    "show_audio_chain_details": "Show audio chain details",
-    "show_audio_chain_details_for_quality": "Show audio chain details ({quality})",
+    "show_audio_chain_details": "Show audio pipeline details",
+    "show_audio_chain_details_for_quality": "Show audio pipeline details ({quality})",
     "show_less": "Show less",
     "show_more": "Show more",
     "autoplay_on_title": "Autoplay is enabled",

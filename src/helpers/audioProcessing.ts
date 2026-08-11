@@ -1,7 +1,22 @@
 import { $t } from "@/plugins/i18n";
-import { toRaw } from "vue";
+import { toRaw, type Component } from "vue";
+import {
+  ArrowDownToLine,
+  ArrowLeftRight,
+  ArrowUpDown,
+  AudioWaveform,
+  Blend,
+  ChevronsDownUp,
+  Expand,
+  Gauge,
+  SlidersHorizontal,
+  TrendingDown,
+  TrendingUp,
+  Waves,
+} from "@lucide/vue";
 import {
   DSPFilterType,
+  HighLowPassMode,
   type BalanceFilter,
   type CompressorFilter,
   type ConvolutionFilter,
@@ -43,6 +58,31 @@ export function dspFilterTypeLabel(filter: DSPFilter): string {
     return $t(`settings.dsp.high_low_pass.mode.${filter.mode}`);
   }
   return $t(`settings.dsp.types.${filter.type}`);
+}
+
+// Icon for a filter type. A high/low-pass has no entry of its own: it is one
+// type with two directions, so its icon comes from the mode below.
+const filterIcons: Partial<Record<DSPFilterType, Component>> = {
+  [DSPFilterType.PARAMETRIC_EQ]: SlidersHorizontal,
+  [DSPFilterType.TONE_CONTROL]: AudioWaveform,
+  [DSPFilterType.GAIN]: Gauge,
+  [DSPFilterType.BALANCE]: ArrowLeftRight,
+  [DSPFilterType.TRANSPOSE]: ArrowUpDown,
+  [DSPFilterType.STEREO_WIDTH]: Expand,
+  [DSPFilterType.CROSSFEED]: Blend,
+  [DSPFilterType.SAFETY_LIMITER]: ArrowDownToLine,
+  [DSPFilterType.COMPRESSOR]: ChevronsDownUp,
+  [DSPFilterType.CONVOLUTION]: Waves,
+};
+
+export function dspFilterIcon(filter: DSPFilter): Component {
+  // The response curve either rises or falls; an unknown mode falls through to
+  // the neutral icon.
+  if (filter.type === DSPFilterType.HIGH_LOW_PASS) {
+    if (filter.mode === HighLowPassMode.LOW_PASS) return TrendingDown;
+    if (filter.mode === HighLowPassMode.HIGH_PASS) return TrendingUp;
+  }
+  return filterIcons[filter.type] ?? SlidersHorizontal;
 }
 
 export function dspFilterText(filter: DSPFilter): string {

@@ -28,6 +28,7 @@ vi.mock("@/plugins/store", async () => {
       activePlayerQueue: undefined,
       curQueueItem: undefined,
       showFullscreenPlayer: false,
+      showPlayersMenu: false,
       showQueueItems: false,
     }),
   };
@@ -101,13 +102,19 @@ const NOW = 1_700_000_000;
 const QUEUE_ID = "q1";
 
 interface TestStore {
-  activePlayer?: { player_id: string; active_source?: string };
+  activePlayer?: {
+    player_id: string;
+    active_source?: string;
+    name?: string;
+    group_members?: string[];
+  };
   activePlayerQueue?: {
     queue_id: string;
     state: PlaybackState;
     active: boolean;
   };
   showFullscreenPlayer: boolean;
+  showPlayersMenu: boolean;
   showQueueItems: boolean;
 }
 
@@ -183,6 +190,7 @@ afterEach(async () => {
   testStore.activePlayer = undefined;
   testStore.activePlayerQueue = undefined;
   testStore.showFullscreenPlayer = false;
+  testStore.showPlayersMenu = false;
   testStore.showQueueItems = false;
   testApi.queues = {};
   testApi.queueElapsedTime = {};
@@ -218,5 +226,71 @@ describe("PlayerFullscreen lyrics clock", () => {
     testStore.showFullscreenPlayer = false;
     await nextTick();
     expect(pendingFrames.size).toBe(0);
+  });
+});
+
+describe("PlayerFullscreen player select button", () => {
+  async function mountFullscreenDialog(): Promise<VueWrapper> {
+    const { store } = await import("@/plugins/store");
+    (store as unknown as TestStore).showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        // the button lives inside the dialog, which a shallow mount leaves empty
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    await nextTick();
+    return wrapper;
+  }
+
+  it("opens the player list on top of the fullscreen player", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    const fullscreen = await mountFullscreenDialog();
+
+    await fullscreen.find("#fullscreen-player-select-button").trigger("click");
+
+    expect(testStore.showPlayersMenu).toBe(true);
+    expect(testStore.showFullscreenPlayer).toBe(true);
+  });
+
+  it("announces the player list panel it opens", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    const fullscreen = await mountFullscreenDialog();
+    const selectButton = fullscreen.get("#fullscreen-player-select-button");
+
+    expect(selectButton.attributes("aria-haspopup")).toBe("dialog");
+    expect(selectButton.attributes("aria-expanded")).toBe("false");
+    // no player selected, so the label carries no trailing player name
+    expect(selectButton.attributes("aria-label")).toBe("tooltip.select_player");
+
+    testStore.showPlayersMenu = true;
+    await nextTick();
+
+    expect(selectButton.attributes("aria-expanded")).toBe("true");
+  });
+
+  it("names the selected player it opens the list from", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+    };
+    const fullscreen = await mountFullscreenDialog();
+
+    expect(
+      fullscreen
+        .get("#fullscreen-player-select-button")
+        .attributes("aria-label"),
+    ).toBe("tooltip.select_player: Kitchen");
   });
 });

@@ -223,6 +223,7 @@ const refreshPluginEnabledStates = async () => {
     refreshPluginEnabledState("party"),
     refreshPluginEnabledState("music_quiz"),
     refreshPluginEnabledState("ai_radio"),
+    refreshPluginEnabledState("milkdrop_visualizer"),
   ]);
 };
 
@@ -398,13 +399,6 @@ const completeInitialization = async () => {
 
 onMounted(async () => {
   initGlobalShortcutsSync();
-
-  // Detect if running as installed PWA (works across iOS, Android, and desktop)
-  const nav = window.navigator as Navigator & { standalone?: boolean };
-  store.isInPWAMode =
-    nav.standalone === true ||
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.matchMedia("(display-mode: fullscreen)").matches;
 
   // TODO: Remove localStorage fallback once migration period is over (language moved to user preferences)
   const langPref =

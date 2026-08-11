@@ -134,6 +134,19 @@
   backdrop-filter: blur(4px);
 }
 
+/* the popouts grow with their content, up to the room the popper measured
+   between the player bar and the top of the screen */
+.player-bar-popout {
+  max-height: var(--reka-popover-content-available-height, calc(100dvh - 16px));
+}
+
+/* the popouts extend behind the floating mobile player bar, so their content is
+   inset to stay scrollable past it; the marker keeps desktop popouts untouched
+   and lifts this above the equally-!important p-0 utility they carry */
+:root[data-player-bar-overlay] .player-bar-popout {
+  padding-bottom: var(--player-bar-overlay-height) !important;
+}
+
 .player-bar-popout[data-state="open"] {
   animation: player-bar-popout-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
 }

@@ -136,7 +136,7 @@
               "
             ></div>
           </div>
-          <DropdownMenu v-if="canToggleEnabled">
+          <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button
                 data-testid="provider-menu"
@@ -150,22 +150,33 @@
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                data-testid="provider-toggle-enabled"
-                :disabled="toggleLoading"
-                @click="toggleEnabled"
+                data-testid="provider-reset-defaults"
+                :disabled="!config.enabled"
+                @click="resetToDefaults"
               >
-                <Power class="size-4" />
-                {{
-                  config.enabled
-                    ? $t("settings.disable")
-                    : $t("settings.enable")
-                }}
+                <RotateCcw class="size-4" />
+                {{ $t("settings.reset_to_defaults") }}
               </DropdownMenuItem>
+              <template v-if="canToggleEnabled">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  data-testid="provider-toggle-enabled"
+                  :disabled="toggleLoading"
+                  @click="toggleEnabled"
+                >
+                  <Power class="size-4" />
+                  {{
+                    config.enabled
+                      ? $t("settings.disable")
+                      : $t("settings.enable")
+                  }}
+                </DropdownMenuItem>
+              </template>
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
         <CardContent
-          class="flex flex-wrap gap-2 border-t bg-muted/20 px-6 py-4"
+          class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
             v-if="canReconfigure"
@@ -198,12 +209,19 @@
             <CircleAlert class="size-4" />
             {{ $t("settings.known_issues") }}
           </Button>
+          <AdvancedSettingsToggle
+            v-if="config.enabled && hasAdvancedEntries(allConfigEntries)"
+            v-model:show-advanced-settings="showAdvancedSettings"
+            test-id="provider-advanced-settings"
+          />
         </CardContent>
       </Card>
     </div>
 
     <edit-config
       v-if="config"
+      ref="editConfig"
+      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="!config.enabled"
       :provider-domain="config.domain"
@@ -274,10 +292,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useConfigAction } from "@/composables/useConfigAction";
-import { mergeConfigEntries } from "@/helpers/config_entry_ui";
+import {
+  hasAdvancedEntries,
+  mergeConfigEntries,
+} from "@/helpers/config_entry_ui";
 import {
   canReconfigureProvider,
   getProviderStatusTranslationKey,
@@ -299,6 +321,7 @@ import {
   Pencil,
   Power,
   RefreshCw,
+  RotateCcw,
   Trash2,
   TriangleAlert,
 } from "@lucide/vue";
@@ -306,13 +329,16 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();
 const { t } = useI18n();
 const config = ref<ProviderConfig>();
+const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
+const showAdvancedSettings = ref(false);
 const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
@@ -408,6 +434,10 @@ const backToProviders = function () {
     name: "providersettings",
     query: { types: config.value?.type },
   });
+};
+
+const resetToDefaults = function () {
+  editConfig.value?.resetToDefaults();
 };
 
 const onReload = function () {

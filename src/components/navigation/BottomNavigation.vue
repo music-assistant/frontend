@@ -100,9 +100,9 @@ function closePlayersMenu() {
 <style>
 .mobile-bottom-navigation {
   bottom: -2px !important;
-  height: calc(90px + env(safe-area-inset-bottom, 0px));
+  height: calc(var(--mobile-navigation-height) + 2px);
   background: var(--background);
-  padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--mobile-navigation-inset-bottom) + 2px);
 }
 
 .mobile-bottom-navigation::before {
@@ -117,13 +117,15 @@ function closePlayersMenu() {
 
 .mobile-navigation-item {
   display: grid !important;
-  height: 88px !important;
+  height: 66px !important;
   grid-template-rows: 38px 16px;
   align-content: center;
   justify-items: center;
   row-gap: 4px !important;
-  padding-top: 15px !important;
-  padding-bottom: 15px !important;
+  /* tight, so the buttons sit close to the player bar; the room that keeps them
+     clear of the screen edge comes from the bar's own bottom inset */
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 
 .mobile-navigation-icon {

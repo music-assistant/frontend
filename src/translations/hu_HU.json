@@ -418,7 +418,6 @@
         "remote_access_qr_code": "QR kód",
         "remote_access_qr_code_description": "Olvassa be telefonja kamerájával az azonnali csatlakozáshoz.",
         "reset_to_defaults": "Alapértékek visszaállítása",
-        "reset_to_defaults_confirm": "Biztosan vissza szeretné állítani az összes beállítást az alapértékekre? Ez azonnal menteni fogja a változtatásokat.",
         "unsaved_changes": "Nem mentett változtatások",
         "unsaved_changes_message": "Mentetlen módosításai vannak. Biztosan el szeretne menni mentés nélkül?",
         "stay": "Maradás",
@@ -588,8 +587,6 @@
         "last_played_desc": "Utoljára lejátszott (csökkenő)",
         "play_count": "Lejátszások száma",
         "play_count_desc": "Lejátszások száma (csökkenő)",
-        "artist_name": "Album előadója",
-        "artist_name_desc": "Album előadója (csökkenő)",
         "album_sort_name": "Album (rendezési név)"
     },
     "state": {

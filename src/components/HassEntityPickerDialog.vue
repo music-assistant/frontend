@@ -2,6 +2,7 @@
   <Dialog v-model:open="model">
     <DialogContent
       class="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[560px]"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
         <DialogTitle>
@@ -115,6 +116,7 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import { Spinner } from "@/components/ui/spinner";
 import type { HassControlKey } from "@/helpers/config_entry_ui";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import {
   searchHassControlEntities,
   type HassControlEntity,

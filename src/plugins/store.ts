@@ -23,7 +23,6 @@ import { getBreakpointValue } from "./breakpoint";
 
 interface Store {
   activePlayerId?: string;
-  isInPWAMode: boolean;
   showPlayersMenu: boolean;
   showFullscreenPlayer: boolean;
   frameless: boolean;
@@ -63,7 +62,6 @@ interface Store {
 
 export const store: Store = reactive({
   activePlayerId: undefined,
-  isInPWAMode: false,
   showPlayersMenu: false,
   showFullscreenPlayer: false,
   frameless: false,

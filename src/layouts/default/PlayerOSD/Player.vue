@@ -218,7 +218,7 @@ watch(
   grid-template-columns: minmax(0, 1fr) minmax(280px, 40%) minmax(0, 1fr);
   align-items: center;
   width: 100%;
-  min-height: 104px;
+  min-height: var(--player-bar-height);
   padding: 8px 15px;
   background-color: rgb(var(--v-theme-overlay));
   .mediacontrols-bottom-center {

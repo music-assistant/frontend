@@ -247,12 +247,10 @@ describe("EditConfig", () => {
     expect(saveDisabled(wrapper)).toBe(true);
   });
 
-  it("renders only a floating save action when requested", async () => {
-    const wrapper = mountEntries(
-      [entry({ key: "server", type: ConfigEntryType.STRING })],
-      false,
-      { actionLayout: "floating-save" },
-    );
+  it("leaves the form-wide controls to the settings screen around it", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
 
     dirty(wrapper);
     await nextTick();
@@ -262,7 +260,38 @@ describe("EditConfig", () => {
     );
     expect(wrapper.text()).not.toContain("settings.show_advanced_settings");
     expect(wrapper.text()).not.toContain("settings.reset_to_defaults");
-    expect(wrapper.find(".config-actions").exists()).toBe(false);
+  });
+
+  it("puts every entry back to its default value on request", async () => {
+    const wrapper = mountEntries([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "elsewhere",
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    await nextTick();
+
+    expect(
+      (
+        wrapper
+          .findAllComponents({ name: "ConfigEntryRow" })[0]
+          .props("confEntry") as ConfigEntry
+      ).value,
+    ).toBe("localhost");
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
+
+  it("hides the save action on a disabled form", () => {
+    const wrapper = mountEntries(
+      [entry({ key: "server", type: ConfigEntryType.STRING })],
+      true,
+    );
+
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
   });
 });
 
@@ -290,13 +319,9 @@ function dependentEntry(
   });
 }
 
-function mountEntries(
-  configEntries: ConfigEntry[],
-  disabled = false,
-  props: { actionLayout?: "default" | "floating-save" } = {},
-) {
+function mountEntries(configEntries: ConfigEntry[], disabled = false) {
   return shallowMount(EditConfig, {
-    props: { configEntries, disabled, ...props },
+    props: { configEntries, disabled },
     global: { renderStubDefaultSlot: true },
   });
 }
@@ -316,9 +341,7 @@ function dirty(wrapper: VueWrapper) {
 }
 
 function saveDisabled(wrapper: VueWrapper) {
-  const button = wrapper
-    .findAll("v-btn-stub")
-    .find((btn) => btn.text() === "settings.save");
-  if (!button) throw new Error("save button not rendered");
+  const button = wrapper.find('[data-testid="config-save"]');
+  if (!button.exists()) throw new Error("save button not rendered");
   return button.attributes("disabled") === "true";
 }

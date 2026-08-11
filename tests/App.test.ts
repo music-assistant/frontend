@@ -114,7 +114,6 @@ const {
         | undefined,
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
-      isInPWAMode: false,
       isIngressSession: false,
       isOnboarding: false,
       serverInfo: undefined as unknown,
@@ -414,14 +413,24 @@ describe("App initialization", () => {
       ProviderType.PLUGIN,
       "ai_radio",
     );
+    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
+      4,
+      ProviderType.PLUGIN,
+      "milkdrop_visualizer",
+    );
     expect(storeMock.enabledPlugins).toEqual(
-      new Set<string>(["party", "music_quiz", "ai_radio"]),
+      new Set<string>([
+        "party",
+        "music_quiz",
+        "ai_radio",
+        "milkdrop_visualizer",
+      ]),
     );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
     expectStartupDataRequestedBeforeReveal();
 
     await signalProvidersUpdated();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(6);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
   });
 
@@ -441,7 +450,7 @@ describe("App initialization", () => {
     serverState.resolve();
     await flushPromises();
     expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(3);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(4);
     // The plugin lookups are still in flight: revealing the app here would
     // render it with an unknown set of enabled plugins.
     expect(apiMock.state.value).not.toBe("initialized");

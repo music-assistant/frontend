@@ -343,9 +343,7 @@
         "last_played": "Sidst spillet",
         "last_played_desc": "Sidst spillet (faldende)",
         "play_count": "Antal afspilninger",
-        "play_count_desc": "Antal afspilninger (faldende)",
-        "artist_name": "Albumkunstner",
-        "artist_name_desc": "Albumkunstner (faldende)"
+        "play_count_desc": "Antal afspilninger (faldende)"
     },
     "state": {
         "idle": "keder sig",

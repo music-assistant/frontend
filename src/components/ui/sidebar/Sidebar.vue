@@ -3,8 +3,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import SheetDescription from "@/components/ui/sheet/SheetDescription.vue";
 import SheetHeader from "@/components/ui/sheet/SheetHeader.vue";
 import SheetTitle from "@/components/ui/sheet/SheetTitle.vue";
+import { useMobileSidebarSide } from "@/composables/useMobileSidebarSide";
 import { cn } from "@/lib/utils";
-import { computed } from "vue";
 import type { SidebarProps } from ".";
 import { SIDEBAR_WIDTH_MOBILE, useSidebar } from "./utils";
 
@@ -20,12 +20,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 
 const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
 
-const mobileSheetSide = computed<"left" | "right">(() => {
-  if (typeof localStorage === "undefined") return "left";
-  const stored = localStorage.getItem("frontend.settings.mobile_sidebar_side");
-
-  return stored === "right" ? "right" : "left";
-});
+const mobileSheetSide = useMobileSidebarSide();
 </script>
 
 <template>
@@ -55,7 +50,6 @@ const mobileSheetSide = computed<"left" | "right">(() => {
       data-mobile="true"
       :side="mobileSheetSide"
       class="sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-      overlay-class="sidebar-mobile-overlay"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
       }"
@@ -124,9 +118,5 @@ const mobileSheetSide = computed<"left" | "right">(() => {
   bottom: 0 !important;
   height: 100dvh !important;
   border-radius: 0 !important;
-}
-
-.sidebar-mobile-overlay {
-  bottom: 0 !important;
 }
 </style>
