@@ -10,14 +10,24 @@ const BAR_HEIGHT = "120px";
 const PLAYER_BAR_HEIGHT = "104px";
 const NAVIGATION_HEIGHT =
   "calc(66px + calc(10px + env(safe-area-inset-bottom, 0px)))";
+const SCRIM_HEIGHT =
+  "calc( 180px + calc(10px + env(safe-area-inset-bottom, 0px)) )";
 
 let appStyles: HTMLStyleElement;
 
 // happy-dom substitutes every var() but does not evaluate calc(), so the mobile
 // branch is only observable as the expression it composes
 function bottomBarsHeight() {
+  return customProperty("--bottom-bars-height");
+}
+
+function bottomObscuredHeight() {
+  return customProperty("--bottom-obscured-height");
+}
+
+function customProperty(name: string) {
   return getComputedStyle(document.documentElement)
-    .getPropertyValue("--bottom-bars-height")
+    .getPropertyValue(name)
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -57,6 +67,21 @@ describe("bottom bars height", () => {
 
     expect(bottomBarsHeight()).toBe(
       `calc( ${NAVIGATION_HEIGHT} + 6px + ${BAR_HEIGHT} )`,
+    );
+  });
+
+  it("reaches no further than the bars in the desktop layout", () => {
+    // the scrim is mobile-only, so pulling it in here would push everything
+    // that stacks below it far above the player bar
+    expect(bottomObscuredHeight()).toBe(PLAYER_BAR_HEIGHT);
+  });
+
+  it("reaches over the gradient scrim on mobile", () => {
+    document.documentElement.setAttribute(OVERLAY_MARKER, "");
+    document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);
+
+    expect(bottomObscuredHeight()).toBe(
+      `max( calc( ${NAVIGATION_HEIGHT} + 6px + ${BAR_HEIGHT} ), ${SCRIM_HEIGHT} )`,
     );
   });
 });

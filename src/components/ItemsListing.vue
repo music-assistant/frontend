@@ -214,12 +214,22 @@
 
       <!-- box shown when item(s) selected; vuetify writes the overlay z-index inline
            (default 2000), so it has to be lowered here to stay behind the player bar
-           popouts (998) and their backdrops (997) -->
+           popouts (998) and their backdrops (997). that also puts it below the mobile
+           scrim, so it clears what covers the bottom rather than just the bars.
+           vuetify pads the snackbar by the measured bar height on its own, so that
+           is taken off, with a 16px floor in case the bar outgrows the offset -->
       <v-snackbar
         :model-value="selectedItems.length > 1"
         :timeout="-1"
         :z-index="996"
-        style="margin-bottom: calc(var(--bottom-bars-height) + 16px)"
+        style="
+          margin-bottom: max(
+            16px,
+            calc(
+              var(--bottom-obscured-height) + 16px - var(--v-layout-bottom, 0px)
+            )
+          );
+        "
       >
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
