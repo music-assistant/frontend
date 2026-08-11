@@ -3,7 +3,12 @@ import type {
   HassControlEntity,
   HassControlEntityGroup,
 } from "@/helpers/hass_controls";
-import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
@@ -43,6 +48,10 @@ const ORPHAN_GROUP: HassControlEntityGroup = {
   area_name: null,
   entities: [entity({ entity_id: "switch.relay", name: "Relay" })],
 };
+
+// an open dialog keeps document-level focus trap listeners, so tear it down
+// even when an assertion fails
+enableAutoUnmount(afterEach);
 
 describe("HassEntityPickerDialog", () => {
   beforeEach(() => {
@@ -160,17 +169,15 @@ describe("HassEntityPickerDialog", () => {
   });
 
   it("focuses the search field on a non-touch device", async () => {
-    const wrapper = await openRealDialog();
+    await openRealDialog();
 
     expect(document.activeElement).toBe(searchField());
-
-    wrapper.unmount();
   });
 
   it("leaves the search field alone on a touch device", async () => {
     storeMock.isTouchscreen = true;
 
-    const wrapper = await openRealDialog();
+    await openRealDialog();
 
     // focusing the search field would open the on-screen keyboard over the
     // results, so the dialog itself takes focus instead
@@ -178,8 +185,6 @@ describe("HassEntityPickerDialog", () => {
     expect(document.activeElement).toBe(
       document.querySelector("[data-slot='dialog-content']"),
     );
-
-    wrapper.unmount();
   });
 });
 

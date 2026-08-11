@@ -1,7 +1,7 @@
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
     <DialogContent
-      class="add-provider-dialog h-[85dvh] max-h-[85dvh] sm:h-[60vh] sm:max-h-[60vh] flex flex-col p-0"
+      class="h-[85dvh] max-h-[85dvh] sm:h-[60vh] sm:max-h-[60vh] flex flex-col p-0"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
@@ -306,11 +306,6 @@ watch(
 </script>
 
 <style scoped>
-.add-provider-dialog {
-  display: flex;
-  flex-direction: column;
-}
-
 .search-field {
   width: 100%;
 }
