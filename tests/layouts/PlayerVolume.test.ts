@@ -10,6 +10,7 @@ import {
 import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 const { getVolumeIconComponent } = vi.hoisted(() => ({
   getVolumeIconComponent: vi.fn(() => "span"),
@@ -395,29 +396,82 @@ describe("PlayerVolume group popout", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    store.mobileLayout = false;
     document.body.innerHTML = "";
   });
+
+  async function openPopout(wrapper: ReturnType<typeof mountPopoutVolume>) {
+    await wrapper.find(".player-volume-container").trigger("click");
+    return document.body.querySelector<HTMLElement>(".group-popout")!;
+  }
 
   it("caps the popout at the room above the slider", async () => {
     const { children, wrapper } = mountLargeGroup();
 
-    await wrapper.find(".player-volume-container").trigger("click");
+    const popout = await openPopout(wrapper);
 
-    const popout = document.body.querySelector<HTMLElement>(".group-popout");
     expect(popout).not.toBeNull();
-    expect(popout!.querySelectorAll(".group-popout-label")).toHaveLength(
+    expect(popout.querySelectorAll(".group-popout-label")).toHaveLength(
       children.length,
     );
-    expect(popout!.style.maxHeight).toBe("692px");
+    expect(popout.style.maxHeight).toBe("692px");
+    // pins the desktop branch, which the shared cap alone cannot tell apart
+    expect(popout.style.width).toBe("300px");
+    expect(popout.style.right).toBe("");
   });
 
   it("caps the popout at the room above the slider on mobile", async () => {
     store.mobileLayout = true;
     const { wrapper } = mountLargeGroup();
 
-    await wrapper.find(".player-volume-container").trigger("click");
+    const popout = await openPopout(wrapper);
 
-    const popout = document.body.querySelector<HTMLElement>(".group-popout");
-    expect(popout!.style.maxHeight).toBe("692px");
+    expect(popout.style.maxHeight).toBe("692px");
+    expect(popout.style.right).toBe("8px");
+    expect(popout.style.width).toBe("");
+  });
+
+  it("opens at the group slider so it still overlaps the tapped one", async () => {
+    vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(900);
+    const { wrapper } = mountLargeGroup();
+
+    const popout = await openPopout(wrapper);
+    await nextTick();
+
+    expect(popout.scrollTop).toBe(900);
+  });
+
+  it("leaves the wheel to scroll the popout rows", async () => {
+    const { wrapper } = mountLargeGroup();
+    const popout = await openPopout(wrapper);
+    const row = popout.querySelector<HTMLElement>(".player-volume-container")!;
+
+    const event = new WheelEvent("wheel", {
+      deltaY: 120,
+      bubbles: true,
+      cancelable: true,
+    });
+    row.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("still claims the wheel where it changes volume", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mount(PlayerVolume, {
+      props: { player, allowWheel: true },
+      global: { stubs: sliderStub },
+    });
+
+    const event = new WheelEvent("wheel", {
+      deltaY: -120,
+      bubbles: true,
+      cancelable: true,
+    });
+    wrapper.find(".player-volume-container").element.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(api.playerCommandVolumeUp).toHaveBeenCalledWith(player.player_id);
   });
 });

@@ -74,7 +74,7 @@
       @pointermove.capture="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerCancel"
-      @wheel.prevent="onWheel"
+      @wheel="onWheel"
       @touchstart="onTouchStart"
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
@@ -129,7 +129,7 @@ import {
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { computed, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 
 export interface Props {
   /** The player to control — component handles all volume logic internally */
@@ -322,6 +322,13 @@ const updatePopoutPosition = () => {
 const toggleGroupPopout = () => {
   if (!showGroupPopout.value) {
     updatePopoutPosition();
+    // The group slider is the last row, so a capped list has to open scrolled
+    // to the bottom to keep it over the slider that was tapped
+    nextTick(() => {
+      if (popoutRef.value) {
+        popoutRef.value.scrollTop = popoutRef.value.scrollHeight;
+      }
+    });
   }
   showGroupPopout.value = !showGroupPopout.value;
   lastPopoutToggleTime = Date.now();
@@ -722,7 +729,10 @@ const onTouchCancel = () => {
 };
 
 const onWheel = (event: WheelEvent) => {
+  // Only claim the wheel when it changes volume, so sliders inside a scrollable
+  // container (the group popout) still scroll it
   if (!props.allowWheel || isSliderDisabled.value) return;
+  event.preventDefault();
 
   if (event.deltaY < 0) {
     volumeUp();
@@ -892,7 +902,7 @@ watch(
   box-shadow:
     0 -4px 16px rgba(0, 0, 0, 0.15),
     0 -1px 4px rgba(0, 0, 0, 0.08);
-  /* the max-height is set inline from the room measured above the slider */
+  /* Max-height is set inline: the room above the slider, less POPOUT_MARGIN */
   overflow-y: auto;
   overscroll-behavior: contain;
   z-index: 10001;
