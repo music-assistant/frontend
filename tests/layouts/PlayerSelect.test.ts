@@ -13,9 +13,9 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   emitEvent,
@@ -24,33 +24,17 @@ const {
   preferenceState,
   savePlayerConfig,
   setPreference,
-  storage,
-} = vi.hoisted(() => {
-  const values = new Map<string, string>();
-  const storage = {
-    clear: () => values.clear(),
-    getItem: (key: string) => values.get(key) ?? null,
-    removeItem: (key: string) => {
-      values.delete(key);
-    },
-    setItem: (key: string, value: string) => {
-      values.set(key, value);
-    },
-  };
-  vi.stubGlobal("localStorage", storage);
-  return {
-    emitEvent: vi.fn(),
-    getPreference: vi.fn(),
-    isAdmin: vi.fn(() => true),
-    preferenceState: {
-      values: {} as Record<string, unknown>,
-      reactiveValues: undefined as Record<string, unknown> | undefined,
-    },
-    savePlayerConfig: vi.fn(),
-    setPreference: vi.fn(),
-    storage,
-  };
-});
+} = vi.hoisted(() => ({
+  emitEvent: vi.fn(),
+  getPreference: vi.fn(),
+  isAdmin: vi.fn(() => true),
+  preferenceState: {
+    values: {} as Record<string, unknown>,
+    reactiveValues: undefined as Record<string, unknown> | undefined,
+  },
+  savePlayerConfig: vi.fn(),
+  setPreference: vi.fn(),
+}));
 
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -298,11 +282,15 @@ function createPlayer(
   };
 }
 
-function setPlayerSelectPreference(key: string, value: boolean) {
+function setPlayerSelectPreference(key: string, value: boolean | string) {
   if (!preferenceState.reactiveValues) {
     throw new Error("Preference mock is not initialized");
   }
   preferenceState.reactiveValues[key] = value;
+}
+
+function setActivePlayerPreference(value: string) {
+  setPlayerSelectPreference("activePlayerId", value);
 }
 
 function mountPlayerSelect() {
@@ -332,9 +320,9 @@ function mountPlayerSelect() {
 }
 
 describe("PlayerSelect", () => {
-  afterAll(() => {
-    vi.unstubAllGlobals();
-  });
+  // the store and api mocks are module singletons, so a component left mounted
+  // keeps reacting to the next test's state
+  enableAutoUnmount(afterEach);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -354,7 +342,6 @@ describe("PlayerSelect", () => {
     store.showFullscreenPlayer = false;
     store.showPlayersMenu = true;
     webPlayer.player_id = null;
-    storage.clear();
   });
 
   it("orders the selected player, this device, then active players first", () => {
@@ -421,7 +408,7 @@ describe("PlayerSelect", () => {
   it("waits for a remembered player instead of selecting the web player", async () => {
     const web = createPlayer("web", "This device");
     const remembered = createPlayer("remembered", "Living room");
-    storage.setItem("activePlayerId", remembered.player_id);
+    setActivePlayerPreference(remembered.player_id);
     webPlayer.player_id = web.player_id;
     api.players = {
       [web.player_id]: web,
@@ -434,6 +421,85 @@ describe("PlayerSelect", () => {
     await nextTick();
 
     expect(store.activePlayerId).toBe(remembered.player_id);
+  });
+
+  it("waits for the built-in player when it is the remembered one", async () => {
+    const builtin = createPlayer("builtin", "This device");
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    setActivePlayerPreference("<builtinplayer>");
+    api.players = { [kitchen.player_id]: kitchen };
+
+    mountPlayerSelect();
+    expect(store.activePlayerId).toBeUndefined();
+
+    api.players[builtin.player_id] = builtin;
+    webPlayer.player_id = builtin.player_id;
+    await nextTick();
+
+    expect(store.activePlayerId).toBe(builtin.player_id);
+  });
+
+  it("falls back to the built-in player, then a playing one, then any", async () => {
+    const attic = createPlayer("attic", "Attic");
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    const builtin = createPlayer("builtin", "This device");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+    expect(store.activePlayerId).toBe(attic.player_id);
+
+    api.players[kitchen.player_id] = kitchen;
+    store.activePlayerId = undefined;
+    await nextTick();
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+
+    api.players[builtin.player_id] = builtin;
+    webPlayer.player_id = builtin.player_id;
+    store.activePlayerId = undefined;
+    await nextTick();
+    expect(store.activePlayerId).toBe(builtin.player_id);
+  });
+
+  it("remembers a selected player but not an automatic one", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    const office = createPlayer("office", "Office");
+    api.players = {
+      [kitchen.player_id]: kitchen,
+      [office.player_id]: office,
+    };
+
+    const wrapper = mountPlayerSelect();
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+    expect(setPreference).not.toHaveBeenCalled();
+
+    await wrapper
+      .get('[data-player-id="office"] .select-player')
+      .trigger("click");
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      office.player_id,
+    );
+  });
+
+  it("remembers the built-in player as a device independent placeholder", async () => {
+    const builtin = createPlayer("builtin", "This device");
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    setActivePlayerPreference(kitchen.player_id);
+    api.players = {
+      [builtin.player_id]: builtin,
+      [kitchen.player_id]: kitchen,
+    };
+    const wrapper = mountPlayerSelect();
+
+    await wrapper
+      .get('[data-player-id="builtin"] .select-player')
+      .trigger("click");
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "activePlayerId",
+      "<builtinplayer>",
+    );
   });
 
   it("moves a newly active player to the front", async () => {
