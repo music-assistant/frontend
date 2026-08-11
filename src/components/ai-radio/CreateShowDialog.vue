@@ -11,12 +11,76 @@
       <div
         class="flex max-h-[60vh] flex-col gap-5 overflow-x-hidden overflow-y-auto -mx-6 px-6 py-1"
       >
+        <Tabs
+          :model-value="mode"
+          @update:model-value="(value) => (mode = value as CreateMode)"
+        >
+          <TabsList class="grid grid-cols-2">
+            <TabsTrigger value="preset">
+              {{ $t("providers.ai_radio.create.mode_preset") }}
+            </TabsTrigger>
+            <TabsTrigger value="import">
+              {{ $t("providers.ai_radio.create.mode_import") }}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <div class="flex flex-col gap-2">
           <Label>{{ $t("providers.ai_radio.create.playlist_label") }}</Label>
           <AiRadioPlaylistPicker v-model="selectedPlaylist" />
         </div>
 
-        <div class="flex flex-col gap-2">
+        <template v-if="mode === 'import'">
+          <Alert variant="warning">
+            <TriangleAlert class="h-4 w-4" />
+            <AlertTitle>
+              {{ $t("providers.ai_radio.create.import_warning_title") }}
+            </AlertTitle>
+            <AlertDescription>
+              {{ $t("providers.ai_radio.create.import_warning_description") }}
+            </AlertDescription>
+          </Alert>
+
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <Label for="ai-radio-import-json">
+                {{ $t("providers.ai_radio.create.import_label") }}
+              </Label>
+              <Button variant="outline" size="sm" @click="fileInput?.click()">
+                <Upload class="h-4 w-4" />
+                {{ $t("providers.ai_radio.create.import_file") }}
+              </Button>
+              <input
+                ref="fileInput"
+                type="file"
+                accept="application/json,.json"
+                class="hidden"
+                :aria-label="$t('providers.ai_radio.create.import_file')"
+                @change="onFileSelected"
+              />
+            </div>
+            <Textarea
+              id="ai-radio-import-json"
+              v-model="importText"
+              rows="8"
+              class="font-mono text-xs"
+              :placeholder="$t('providers.ai_radio.create.import_placeholder')"
+            />
+            <p v-if="importError" class="text-xs text-destructive">
+              {{ importError }}
+            </p>
+            <p v-else-if="importedShow" class="text-xs text-muted-foreground">
+              {{
+                $t("providers.ai_radio.create.import_summary", [
+                  importedShow.name,
+                  importedShow.segments.length,
+                ])
+              }}
+            </p>
+          </div>
+        </template>
+
+        <div v-else class="flex flex-col gap-2">
           <Label>{{ $t("providers.ai_radio.create.preset_label") }}</Label>
           <div class="grid grid-cols-2 gap-3">
             <button
@@ -42,7 +106,7 @@
           </div>
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div v-if="mode === 'preset'" class="flex flex-col gap-2">
           <Label>{{ $t("providers.ai_radio.create.talk_label") }}</Label>
           <Slider
             :model-value="[talkLevelIndex]"
@@ -101,6 +165,7 @@
 import AiRadioPlaylistPicker, {
   type PlaylistSelection,
 } from "@/components/ai-radio/AiRadioPlaylistPicker.vue";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -113,21 +178,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useShows } from "@/composables/ai-radio/useShows";
 import {
   applyTalkativeness,
   asGeneralDefaults,
   compileShow,
   errorMessage,
+  parseSharedShow,
   PRESETS,
   resolveShowPlayerId,
+  type SharedShow,
+  sharedShowToDraft,
   type ShowDraft,
   type ShowPresetKey,
+  slugify,
   type TalkativenessLevel,
 } from "@/helpers/ai_radio";
 import { getLucideIcon } from "@/helpers/icon";
+import type { AIRadioStation } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { TriangleAlert, Upload } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
@@ -142,8 +216,11 @@ const emit = defineEmits<{
 
 const TALK_LEVELS: TalkativenessLevel[] = ["rarely", "normal", "chatty"];
 
-const { saveShow, startShow, reportStartError } = useShows();
+type CreateMode = "preset" | "import";
 
+const { shows, saveShow, startShow, reportStartError } = useShows();
+
+const mode = ref<CreateMode>("preset");
 const selectedPlaylist = ref<PlaylistSelection | undefined>();
 const selectedPresetKey = ref<ShowPresetKey>("morning_show");
 const talkLevel = ref<TalkativenessLevel>("normal");
@@ -151,6 +228,10 @@ const showName = ref("");
 const nameManuallyEdited = ref(false);
 const creating = ref(false);
 const creatingAndPlaying = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
+const importText = ref("");
+const importError = ref("");
+const importedShow = ref<SharedShow | null>(null);
 
 const isBusy = computed(() => creating.value || creatingAndPlaying.value);
 const talkLevelIndex = computed(() => TALK_LEVELS.indexOf(talkLevel.value));
@@ -167,6 +248,9 @@ function onTalkSlider(value: number[] | undefined) {
 }
 
 function defaultShowName(): string {
+  if (mode.value === "import") {
+    return importedShow.value?.name || "";
+  }
   const presetName = $t(presetNameKey(selectedPresetKey.value));
   if (!selectedPlaylist.value) return presetName;
   return $t("providers.ai_radio.create.default_name", [
@@ -176,11 +260,39 @@ function defaultShowName(): string {
 }
 
 function resetForm(initialPlaylist?: PlaylistSelection) {
+  mode.value = "preset";
   selectedPlaylist.value = initialPlaylist;
   selectedPresetKey.value = "morning_show";
   talkLevel.value = "normal";
   nameManuallyEdited.value = false;
+  importText.value = "";
+  importError.value = "";
+  importedShow.value = null;
   showName.value = defaultShowName();
+}
+
+/** Re-parses the pasted/loaded document on every change so Create reflects it. */
+function parseImportText() {
+  importedShow.value = null;
+  if (!importText.value.trim()) {
+    importError.value = "";
+    return;
+  }
+  try {
+    importedShow.value = parseSharedShow(importText.value);
+    importError.value = "";
+  } catch (error) {
+    importError.value = errorMessage(error);
+  }
+}
+
+async function onFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  // reset first, so picking the same file twice still fires a change event
+  input.value = "";
+  if (!file) return;
+  importText.value = await file.text();
 }
 
 watch(
@@ -193,13 +305,23 @@ watch(
   },
 );
 
-watch([selectedPresetKey, selectedPlaylist], () => {
+watch([selectedPresetKey, selectedPlaylist, mode, importedShow], () => {
   if (!nameManuallyEdited.value) {
     showName.value = defaultShowName();
   }
 });
 
+watch(importText, parseImportText);
+
 function buildDraft(): ShowDraft {
+  if (mode.value === "import") {
+    if (!importedShow.value) {
+      throw new Error($t("providers.ai_radio.validation.invalid_import_file"));
+    }
+    const draft = sharedShowToDraft(importedShow.value, selectedPlaylist.value);
+    draft.basics.name = showName.value.trim();
+    return draft;
+  }
   const preset = PRESETS.find((item) => item.key === selectedPresetKey.value);
   if (!preset) {
     throw new Error(`Unknown preset: ${selectedPresetKey.value}`);
@@ -227,7 +349,22 @@ function validate(): string | null {
   if (!showName.value.trim()) {
     return $t("providers.ai_radio.create.validation.name_required");
   }
+  if (mode.value === "import" && !importedShow.value) {
+    return (
+      importError.value ||
+      $t("providers.ai_radio.create.validation.import_required")
+    );
+  }
   return null;
+}
+
+/**
+ * The show a save would replace, if any: compileShow derives the station id
+ * from the name, and saving under an existing id overwrites it server-side.
+ */
+function showToBeOverwritten(): AIRadioStation | undefined {
+  const targetId = slugify(showName.value.trim());
+  return shows.value.find((show) => show.id === targetId);
 }
 
 async function doCreate(andPlay: boolean) {
@@ -237,6 +374,20 @@ async function doCreate(andPlay: boolean) {
     toast.error(validationError);
     return;
   }
+  const existing = showToBeOverwritten();
+  if (!existing) {
+    await saveAndClose(andPlay);
+    return;
+  }
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("providers.ai_radio.confirm.overwrite_show_title"),
+    message: $t("providers.ai_radio.confirm.overwrite_show", [existing.name]),
+    confirmLabel: $t("providers.ai_radio.confirm.overwrite_show_label"),
+    onConfirm: () => saveAndClose(andPlay),
+  });
+}
+
+async function saveAndClose(andPlay: boolean) {
   const busyRef = andPlay ? creatingAndPlaying : creating;
   busyRef.value = true;
   try {
