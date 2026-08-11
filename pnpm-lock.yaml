@@ -87,8 +87,8 @@ importers:
         specifier: ^2.10.1
         version: 2.10.1(vue@3.5.41(typescript@6.0.3))
       swiper:
-        specifier: ^14.0.5
-        version: 14.0.5
+        specifier: ^14.1.0
+        version: 14.1.0
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -4310,8 +4310,8 @@ packages:
     engines: {node: '>=14.0.0'}
     hasBin: true
 
-  swiper@14.0.5:
-    resolution: {integrity: sha512-SMSKS0sj+lPIFzngfIKb5cyBtzmAuJw7rXgXdyYiDReb+pSpJXuNljHYgT4DXa5Stnl2Ew2/Lam5ipv4PIqZ7A==}
+  swiper@14.1.0:
+    resolution: {integrity: sha512-ppit/AqmGvThKlXy4I1/9N/gEyb9s/BDHWciWNeIxbfteFKUhPQXrYuOMKszomXKd9WiLd+/0vKdPHW+0N0mhA==}
     engines: {node: '>= 4.7.0'}
 
   symbol-tree@3.2.4:
@@ -9092,7 +9092,7 @@ snapshots:
       picocolors: 1.1.1
       sax: 1.6.0
 
-  swiper@14.0.5: {}
+  swiper@14.1.0: {}
 
   symbol-tree@3.2.4: {}
 
