@@ -135,9 +135,10 @@
 }
 
 /* the popouts extend behind the floating mobile player bar, so their content is
-   inset to stay scrollable past it */
-.player-bar-popout {
-  padding-bottom: var(--player-bar-overlay-height, 0px) !important;
+   inset to stay scrollable past it; the marker keeps desktop popouts untouched
+   and lifts this above the equally-!important p-0 utility they carry */
+:root[data-player-bar-overlay] .player-bar-popout {
+  padding-bottom: var(--player-bar-overlay-height) !important;
 }
 
 .player-bar-popout[data-state="open"] {
