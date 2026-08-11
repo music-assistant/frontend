@@ -43,6 +43,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { DEVICE_SETTING_KEYS } from "@/constants";
 import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
+import { saveDeviceSetting } from "@/helpers/device_settings";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -239,13 +240,8 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
 
       if (DEVICE_SETTING_KEYS.has(key)) {
         // Save to localStorage (per-device settings)
-        const storageKey = `frontend.settings.${key}`;
         const value = values[key];
-        if (value != null) {
-          localStorage.setItem(storageKey, value.toString());
-        } else {
-          localStorage.removeItem(storageKey);
-        }
+        saveDeviceSetting(key, value != null ? value.toString() : null);
       } else {
         // Save to backend via user preferences
         await setPreference(key, values[key]);
