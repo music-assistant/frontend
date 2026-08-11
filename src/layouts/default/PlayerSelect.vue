@@ -280,7 +280,7 @@ const showSearch = computed(
   () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
 );
 
-// the fullscreen player hides the player bar, so the panel pops out of the
+// the fullscreen player covers the player bar, so the panel pops out of the
 // player select button in there and stays on top of it
 const popoutFromFullscreen = computed(() => store.showFullscreenPlayer);
 
@@ -598,13 +598,14 @@ async function scrollSelectedPlayerIntoView() {
 }
 
 /* the fullscreen player is a dialog at z-index 9000: both the panel and its
-   backdrop have to clear it, and there is no player bar left to keep visible */
-.player-select-fullscreen-backdrop {
+   backdrop have to clear it, and there is no player bar left to keep visible.
+   Both rules pair up their class to outweigh the utility they override. */
+.player-select-backdrop.player-select-fullscreen-backdrop {
   bottom: 0 !important;
   z-index: 9001 !important;
 }
 
-.player-select-popover-fullscreen {
+.player-bar-popout.player-select-popover-fullscreen {
   z-index: 9002 !important;
   padding-bottom: 0 !important;
 }

@@ -625,9 +625,9 @@ describe("PlayerSelect", () => {
     expect(wrapper.find(".player-select-backdrop").classes()).toContain(
       "player-select-mobile-offset",
     );
-    expect(
-      wrapper.find('[data-testid="player-select-sheet"]').classes(),
-    ).toContain("player-select-popover");
+    const sheet = wrapper.find('[data-testid="player-select-sheet"]');
+    expect(sheet.classes()).toContain("player-select-popover");
+    expect(sheet.attributes("align")).toBe("end");
     expect(wrapper.findComponent(PopoverAnchorStub).props("reference")).toBe(
       playerBarEndAnchor,
     );
@@ -639,12 +639,13 @@ describe("PlayerSelect", () => {
 
     const wrapper = mountPlayerSelect();
 
-    expect(wrapper.find(".player-select-backdrop").classes()).toContain(
-      "player-select-fullscreen-backdrop",
-    );
-    expect(
-      wrapper.find('[data-testid="player-select-sheet"]').classes(),
-    ).toContain("player-select-popover-fullscreen");
+    const backdrop = wrapper.find(".player-select-backdrop");
+    expect(backdrop.classes()).toContain("player-select-fullscreen-backdrop");
+    // the fullscreen offset replaces the layout ones instead of stacking on them
+    expect(backdrop.classes()).not.toContain("player-select-mobile-offset");
+    const sheet = wrapper.find('[data-testid="player-select-sheet"]');
+    expect(sheet.classes()).toContain("player-select-popover-fullscreen");
+    expect(sheet.attributes("align")).toBe("center");
     expect(wrapper.findComponent(PopoverAnchorStub).props("reference")).toBe(
       fullscreenPlayerSelectAnchor,
     );
