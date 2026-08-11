@@ -33,7 +33,7 @@
   --mobile-navigation-inset-bottom: calc(10px + var(--device-inset-bottom));
   /* Space the bottom navigation occupies. Anything anchored above it (sheets,
      popovers, the player bar, scroll padding) is positioned from this. */
-  --mobile-navigation-height: calc(88px + var(--mobile-navigation-inset-bottom));
+  --mobile-navigation-height: calc(66px + var(--mobile-navigation-inset-bottom));
 }
 
 html {
