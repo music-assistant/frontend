@@ -56,6 +56,42 @@
   );
 }
 
+/* Stacking order for anything pinned to the screen, lowest first. Each value is
+   declared at its own call site (several are component props that cannot read a
+   custom property), so this is the reference for choosing one, not the source of
+   truth. Pick the band that describes the element rather than a number that
+   happens to be free.
+
+        996  multi-select "x items selected" bar
+        997  player bar popout backdrops
+        998  player bar popouts
+        999  scrim behind the floating mobile player bar
+       1000  desktop player bar
+       2000  mobile bottom navigation, and Vuetify's default overlay z-index
+       2001  floating mobile player bar
+       2100  settings loading overlays
+       9000  fullscreen player
+       9001  player select backdrop, opened from the fullscreen player
+       9002  player select popout, opened from the fullscreen player
+       9999  dialogs
+      10000  popovers, select menus, and their backdrops
+      10001  anything that has to clear those, whatever it is
+     100000  sheets
+     100001  menus opened from a sheet or a player bar popout
+     999999  item context menu
+
+   Values below this range mostly order elements inside a component's own
+   stacking context.
+
+   Two Vuetify behaviours to know about before placing something in this range:
+   - VOverlay writes its z-index as an inline style, so no stylesheet rule can
+     change one without !important. It defaults to 2000, which lands an
+     unconfigured overlay on top of the player bar; v-dialog raises that to 2400.
+   - An overlay activated while another Vuetify overlay is open takes that one's
+     z-index + 10 and ignores its own prop, so it can end up either side of where
+     the prop asked for. v-snackbar and v-tooltip are bumped this way as well:
+     leaving the shared stack only stops them raising the next overlay. */
+
 html {
   overflow: hidden;
   /* iOS Safari tints the status bar from this background. Must stay set. */
