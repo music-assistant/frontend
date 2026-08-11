@@ -111,7 +111,7 @@
       </Field>
     </div>
 
-    <slot name="before-sources" />
+    <slot name="before-sources"></slot>
 
     <MusicQuizSourceSelector
       v-model="sourceUris"

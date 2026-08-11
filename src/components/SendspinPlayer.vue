@@ -9,6 +9,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import {
   isMediaSessionDisabled,
@@ -309,9 +310,10 @@ onMounted(() => {
           codecs,
           syncDelay,
           requiredLeadTimeMs: 250,
-          // Ask for a larger buffer when we are being routed through WebRTC.
-          // This increases latency for live streams, but improves stability
-          minBufferMs: isDirectConnection() ? 2500 : 6000,
+          // Startup lead the server uses to schedule the first chunk, so it
+          // directly delays first audio and must stay small. Once playback is
+          // running the buffer grows well beyond this on its own.
+          minBufferMs: 500,
           onStateChange: (state) => {
             // Update reactive state when player state changes
             isPlaying.value = state.isPlaying;
@@ -431,7 +433,7 @@ function registerMediaSessionActionHandlers(): void {
 
   navigator.mediaSession.setActionHandler("seekto", (evt) => {
     const targetId = getTargetPlayerId();
-    if (!targetId || !evt.seekTime) return;
+    if (!targetId || evt.seekTime == null) return;
     api.playerCommandSeek(targetId, Math.round(evt.seekTime));
   });
 
@@ -441,9 +443,8 @@ function registerMediaSessionActionHandlers(): void {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const queueId = store.activePlayerQueue?.queue_id;
-      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
+      const elapsed = lastSeekPos ?? resolveActiveElapsedTime(targetId);
+      if (elapsed == null) return;
       const newPos = Math.round(elapsed + offset);
       lastSeekPos = newPos;
       resetLastSeekPos();
@@ -454,9 +455,8 @@ function registerMediaSessionActionHandlers(): void {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const queueId = store.activePlayerQueue?.queue_id;
-      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
+      const elapsed = lastSeekPos ?? resolveActiveElapsedTime(targetId);
+      if (elapsed == null) return;
       const newPos = Math.round(Math.max(0, elapsed - offset));
       lastSeekPos = newPos;
       resetLastSeekPos();

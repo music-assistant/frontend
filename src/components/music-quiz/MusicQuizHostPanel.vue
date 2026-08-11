@@ -7,7 +7,7 @@
     />
 
     <div class="flex flex-col gap-4">
-      <slot name="game" />
+      <slot name="game"></slot>
 
       <div
         v-if="state.phase === 'lobby' && state.playback"

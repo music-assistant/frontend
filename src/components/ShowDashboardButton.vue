@@ -28,7 +28,7 @@
         {{ $t("dashboard.no_devices") }}
       </div>
       <DropdownMenuItem
-        v-for="device in dashboards"
+        v-for="device in sortedDashboards"
         :key="device.dashboard_id"
         data-testid="cast-dashboard-device"
         @click="selectDevice(device)"
@@ -113,6 +113,10 @@ const showButton = computed(
 // Solid primary pill for the active state, matching the fullscreen player header's autoplay/crossfade toggles.
 const activePillClass =
   "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
+
+const sortedDashboards = computed(() =>
+  [...dashboards.value].sort(compareDashboards),
+);
 
 // Session (if any) showing this dashboard; now_playing also requires a matching player_id.
 const activeSession = computed(() =>
@@ -219,6 +223,20 @@ async function disconnect() {
     console.error("Failed to stop cast dashboard:", error);
     await fetchSessions(); // roll back the optimistic removal
   }
+}
+
+function compareDashboards(left: DashboardDevice, right: DashboardDevice) {
+  const leftProvider = left.provider_domain_hint ?? "";
+  const rightProvider = right.provider_domain_hint ?? "";
+  if (leftProvider !== rightProvider) {
+    // Endpoints without a known provider go last.
+    if (!leftProvider) return 1;
+    if (!rightProvider) return -1;
+    return leftProvider.localeCompare(rightProvider);
+  }
+  return left.name.localeCompare(right.name, undefined, {
+    sensitivity: "base",
+  });
 }
 
 function isActiveDevice(device: DashboardDevice): boolean {

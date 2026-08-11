@@ -292,14 +292,59 @@
                     >mdi-alert-circle</v-icon
                   >
                   <p class="text-h6 mb-2">
-                    {{ $t("login.connection_failed", "Connection Failed") }}
+                    {{
+                      connectionErrorTitle ??
+                      $t("login.connection_failed", "Connection Failed")
+                    }}
                   </p>
-                  <p class="text-body-2 text-medium-emphasis">
+                  <p
+                    v-if="connectionError"
+                    class="text-body-2 text-medium-emphasis"
+                  >
                     {{ connectionError }}
+                  </p>
+                  <p
+                    v-if="connectionErrorDetail"
+                    class="text-caption text-medium-emphasis mt-2"
+                  >
+                    {{ connectionErrorDetail }}
                   </p>
                 </div>
                 <v-btn color="primary" block rounded="lg" @click="retry">
                   {{ $t("login.try_again", "Try Again") }}
+                </v-btn>
+              </template>
+
+              <!-- Ended Guest Session -->
+              <template v-if="step === 'guest-ended'">
+                <div class="text-center py-6">
+                  <v-icon color="warning" size="64" class="mb-4"
+                    >mdi-account-clock</v-icon
+                  >
+                  <p class="text-h6 mb-2">{{ guestSessionEndedTitle }}</p>
+                  <p class="text-body-2 text-medium-emphasis">
+                    {{ guestSessionEndedMessage }}
+                  </p>
+                </div>
+                <v-btn
+                  v-if="guestSessionEndedKind !== 'dashboard'"
+                  color="primary"
+                  block
+                  rounded="lg"
+                  prepend-icon="mdi-qrcode-scan"
+                  @click="openQrScanner"
+                >
+                  {{ $t("login.scan_qr_code", "Scan QR Code") }}
+                </v-btn>
+                <v-btn
+                  variant="text"
+                  block
+                  class="mt-2"
+                  @click="dismissGuestSessionEnded"
+                >
+                  {{
+                    $t("login.continue_to_app", "Continue to Music Assistant")
+                  }}
                 </v-btn>
               </template>
 
@@ -313,7 +358,7 @@
                     class="mb-4"
                   />
                   <p class="text-h6 mb-2">
-                    {{ $t("login.reconnecting", "Connection Lost") }}
+                    {{ $t("login.reconnecting", "Reconnecting") }}
                   </p>
                   <p class="text-body-2 text-medium-emphasis">
                     {{
@@ -341,12 +386,7 @@
                 </v-card-title>
                 <v-card-text class="qr-scanner-content">
                   <p class="text-body-2 text-medium-emphasis mb-4">
-                    {{
-                      $t(
-                        "login.scan_qr_hint",
-                        "Point your camera at the QR code shown in your Music Assistant server settings.",
-                      )
-                    }}
+                    {{ scanQrHint }}
                   </p>
                   <div class="qr-scanner-wrapper">
                     <QrcodeStream
@@ -399,16 +439,19 @@
 </template>
 
 <script setup lang="ts">
-import { api, ConnectionState } from "@/plugins/api";
+import { api, ConnectionLostError, ConnectionState } from "@/plugins/api";
 import type {
   AuthProvider,
   ServerInfoMessage,
   User,
 } from "@/plugins/api/interfaces";
 import {
+  clearGuestSessionEnded,
   DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+  getGuestSessionEnded,
   GUEST_REMOTE_ID_STORAGE_KEY,
   GUEST_SERVER_ADDRESS_STORAGE_KEY,
+  type GuestSessionKind,
   PENDING_JOIN_CODE_STORAGE_KEY,
   PENDING_JOIN_TYPE_STORAGE_KEY,
 } from "@/helpers/guest_session";
@@ -533,8 +576,10 @@ type Step =
   | "login"
   | "connecting"
   | "reconnecting"
+  | "guest-ended"
   | "error";
 const step = ref<Step>("auto-connect");
+const guestSessionEndedKind = ref<GuestSessionKind | null>(null);
 const showLoginUI = ref(false);
 
 // Connection state
@@ -550,6 +595,10 @@ const showQrScanner = ref(false);
 const qrScannerError = ref<string | null>(null);
 const isConnecting = ref(false);
 const connectionError = ref<string | null>(null);
+// Overrides the error step's headline when the failure isn't a connection failure.
+const connectionErrorTitle = ref<string | null>(null);
+// Verbatim server-supplied reason shown under connectionError; not localized.
+const connectionErrorDetail = ref<string | null>(null);
 const connectionStatusMessage = ref("");
 const isRemoteConnection = ref(false);
 const connectedServerName = ref<string | null>(null);
@@ -579,6 +628,51 @@ const getSubtitle = computed(() => {
     return t("login.establishing_connection", "Establishing connection...");
   }
   return t("login.subtitle", "Connect to your music server");
+});
+
+const guestSessionEndedTitle = computed(() => {
+  if (guestSessionEndedKind.value === "music_quiz") {
+    return t("login.guest_ended_quiz_title", "Your quiz session has ended");
+  }
+  if (guestSessionEndedKind.value === "dashboard") {
+    return t(
+      "login.guest_ended_dashboard_title",
+      "This dashboard session has ended",
+    );
+  }
+  return t("login.guest_ended_party_title", "Your party session has ended");
+});
+
+// A rejoining guest needs the host's join QR, not the server settings one.
+const scanQrHint = computed(() =>
+  step.value === "guest-ended"
+    ? t(
+        "login.scan_qr_hint_guest",
+        "Point your camera at the QR code the host is showing.",
+      )
+    : t(
+        "login.scan_qr_hint",
+        "Point your camera at the QR code shown in your Music Assistant server settings.",
+      ),
+);
+
+const guestSessionEndedMessage = computed(() => {
+  if (guestSessionEndedKind.value === "music_quiz") {
+    return t(
+      "login.guest_ended_quiz_message",
+      "Ask the host to share the quiz link or QR code again to rejoin.",
+    );
+  }
+  if (guestSessionEndedKind.value === "dashboard") {
+    return t(
+      "login.guest_ended_dashboard_message",
+      "Cast the dashboard again from Music Assistant to continue.",
+    );
+  }
+  return t(
+    "login.guest_ended_party_message",
+    "Ask the host to share the party link or QR code again to rejoin.",
+  );
 });
 
 /**
@@ -658,13 +752,26 @@ const tryConnect = async (
   });
 };
 
+type StoredTokenAuthResult =
+  | "authenticated"
+  | "failed"
+  | "guest-session-ended"
+  | "reloading";
+
 /**
  * Try to authenticate with stored token after connection
+ *
+ * :param token: Token to use instead of the stored one; passing it also skips
+ *     the cleanup of a rejected stored session.
+ * :return: The outcome; only "failed" leaves the caller anything to do, as
+ *     every other outcome has already taken over the tab.
  */
-const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
+const tryStoredTokenAuth = async (
+  token?: string,
+): Promise<StoredTokenAuthResult> => {
   const authToken = token || authManager.getToken();
   if (!authToken) {
-    return false;
+    return "failed";
   }
 
   try {
@@ -675,26 +782,38 @@ const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
 
     const result = await api.authenticateWithToken(authToken);
     emit("authenticated", { token: authToken, user: result.user });
-    return true;
-  } catch {
-    if (!token) {
-      if (authManager.isGuestAccessSession()) {
-        authManager.leaveGuestSession();
-      } else {
+    return "authenticated";
+  } catch (error) {
+    // a blip says nothing about token validity; reconnect flow will retry
+    if (token || error instanceof ConnectionLostError) return "failed";
+
+    const ended = authManager.endRejectedGuestSession();
+    switch (ended.outcome) {
+      case "no-guest-session":
         authManager.clearAuth();
-      }
+        return "failed";
+      case "own-session-restored":
+        return "reloading";
+      case "ended":
+        showGuestSessionEnded(ended.kind);
+        return "guest-session-ended";
     }
-    return false;
   }
 };
 
 /**
  * Try to authenticate with a guest code (exchange for JWT)
  * This is the new short code system for party guest access
+ *
+ * The `error` of a rejected exchange is the server's plain-English reason
+ * (rate limited, invalid or expired code); callers surface it as detail
+ * alongside their own localized message.
  */
-const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
+const tryGuestCodeAuth = async (
+  code: string,
+): Promise<{ authenticated: boolean; error?: string }> => {
   if (!code) {
-    return false;
+    return { authenticated: false };
   }
 
   try {
@@ -713,7 +832,7 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
 
     if (!result.success || !result.access_token) {
       console.error("[Login] Guest code exchange failed:", result.error);
-      return false;
+      return { authenticated: false, error: result.error };
     }
 
     authManager.setToken(result.access_token);
@@ -726,11 +845,14 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
       token: result.access_token,
       user: authResult.user,
     });
-    return true;
+    return { authenticated: true };
   } catch (error) {
     console.error("[Login] Guest code authentication failed:", error);
     authManager.clearGuestSession();
-    return false;
+    return {
+      authenticated: false,
+      error: error instanceof Error ? error.message : undefined,
+    };
   }
 };
 
@@ -743,7 +865,7 @@ const completeDashboardAuth = async (
   rawPath: string | null,
 ): Promise<boolean> => {
   const path = sanitizeDashboardViewerPath(rawPath);
-  if (!(await tryGuestCodeAuth(dashboardCode))) {
+  if (!(await tryGuestCodeAuth(dashboardCode)).authenticated) {
     return false;
   }
 
@@ -765,6 +887,34 @@ const completeDashboardAuth = async (
   );
 
   return true;
+};
+
+/**
+ * Show the terminal screen for a guest session the server no longer accepts.
+ *
+ * :param kind: The kind of guest session that ended.
+ */
+function showGuestSessionEnded(kind: GuestSessionKind): void {
+  guestSessionEndedKind.value = kind;
+  step.value = "guest-ended";
+}
+
+/**
+ * Show the ended-guest-session screen if a previous attempt recorded one.
+ *
+ * :return: True when the screen was shown.
+ */
+function restoreGuestSessionEnded(): boolean {
+  const kind = getGuestSessionEnded();
+  if (!kind) return false;
+  showGuestSessionEnded(kind);
+  return true;
+}
+
+const dismissGuestSessionEnded = () => {
+  clearGuestSessionEnded();
+  guestSessionEndedKind.value = null;
+  authManager.returnToFullApp();
 };
 
 type PendingGuestAuthResult = "none" | "authenticated" | "failed";
@@ -867,17 +1017,22 @@ const tryPendingGuestAuth = async (): Promise<PendingGuestAuthResult> => {
     return "authenticated";
   }
 
-  if (await tryGuestCodeAuth(code)) {
+  const codeAuth = await tryGuestCodeAuth(code);
+  if (codeAuth.authenticated) {
     clearPendingGuestAuth();
     return "authenticated";
   }
 
   clearPendingGuestAuth();
   authManager.clearGuestSession();
-  connectionError.value = t(
+  // The code was rejected, not the connection: headline the join failure and
+  // let the server's reason stand as the only detail.
+  connectionErrorTitle.value = t(
     "login.error_party_auth_failed",
-    "Failed to join party. The code may have expired.",
+    "Couldn't join the party",
   );
+  connectionError.value = null;
+  connectionErrorDetail.value = codeAuth.error ?? null;
   step.value = "error";
   return "failed";
 };
@@ -955,6 +1110,15 @@ const autoConnect = async () => {
   const urlJoinCode = urlParams.get("join");
   // Dashboard code: same short-code exchange as a guest join, but for a Chromecast dashboard session; carries its own destination route.
   const urlDashboardCode = urlParams.get("dashboard");
+
+  // A guest session the server ended has nothing left to auto-connect with, so
+  // keep explaining that instead of falling through to the sign-in form. A fresh
+  // code in the URL supersedes it: that is the recovery we asked the guest for.
+  if (urlJoinCode || urlDashboardCode) {
+    clearGuestSessionEnded();
+  } else if (restoreGuestSessionEnded()) {
+    return;
+  }
 
   // Also check for pending guest code from sessionStorage (survives SW reload)
   const pendingJoinCode = sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY);
@@ -1265,10 +1429,11 @@ const autoConnect = async () => {
         }
 
         clearPendingGuestAuth();
-        connectionError.value = t(
+        connectionErrorTitle.value = t(
           "login.error_party_auth_failed",
-          "Failed to join party. The code may have expired.",
+          "Couldn't join the party",
         );
+        connectionError.value = null;
         step.value = "error";
         return;
       } catch (error) {
@@ -1308,9 +1473,12 @@ const autoConnect = async () => {
 
         if (await waitForApiConnection()) {
           // Try to authenticate with stored token (if available)
-          if (storedToken && (await tryStoredTokenAuth())) {
-            console.info("[Login] Remote auto-login successful!");
-            return; // Success - App.vue will take over
+          if (storedToken) {
+            const storedTokenAuth = await tryStoredTokenAuth();
+            if (storedTokenAuth === "authenticated") {
+              console.info("[Login] Remote auto-login successful!");
+            }
+            if (storedTokenAuth !== "failed") return;
           }
         }
 
@@ -1361,7 +1529,7 @@ const autoConnect = async () => {
         console.error("[Login] Ingress authentication failed");
         connectionError.value = t(
           "login.error_ingress_failed",
-          "Failed to authenticate via Home Assistant Ingress",
+          "Couldn't sign in through Home Assistant",
         );
         step.value = "error";
         return;
@@ -1375,8 +1543,9 @@ const autoConnect = async () => {
           return;
         }
 
-        if (storedToken && (await tryStoredTokenAuth())) {
-          return; // Success - App.vue will take over
+        if (storedToken) {
+          const storedTokenAuth = await tryStoredTokenAuth();
+          if (storedTokenAuth !== "failed") return;
         }
       }
 
@@ -1416,9 +1585,8 @@ const autoConnect = async () => {
           return;
         }
 
-        if (await tryStoredTokenAuth()) {
-          return; // Success - App.vue will take over
-        }
+        const storedTokenAuth = await tryStoredTokenAuth();
+        if (storedTokenAuth !== "failed") return;
       }
 
       // Token auth failed, show login form for this server
@@ -1467,9 +1635,8 @@ const autoConnect = async () => {
       emit("connected", transport);
 
       if (await waitForApiConnection()) {
-        if (await tryStoredTokenAuth()) {
-          return; // Success - App.vue will take over
-        }
+        const storedTokenAuth = await tryStoredTokenAuth();
+        if (storedTokenAuth !== "failed") return;
       }
 
       // Token auth failed, show login form
@@ -1658,6 +1825,8 @@ const setRemoteIdFromString = (value: string) => {
 const performLocalConnect = async (address: string) => {
   isConnecting.value = true;
   connectionError.value = null;
+  connectionErrorTitle.value = null;
+  connectionErrorDetail.value = null;
   isRemoteConnection.value = false;
   step.value = "connecting";
   connectionStatusMessage.value = t(
@@ -1735,6 +1904,8 @@ const connectToRemote = async () => {
 
   isConnecting.value = true;
   connectionError.value = null;
+  connectionErrorTitle.value = null;
+  connectionErrorDetail.value = null;
   isRemoteConnection.value = true;
   step.value = "connecting";
   connectionStatusMessage.value = t(
@@ -1900,13 +2071,13 @@ const handleAuthenticationError = (error: unknown) => {
   ) {
     errorMessage = t(
       "login.error_invalid_credentials",
-      "Invalid username or password. Please try again.",
+      "Couldn't sign you in. Please check your username and password.",
     );
   } else if (errorMessage.includes("Authentication required")) {
     // This happens when subsequent API calls fail due to auth issues
     errorMessage = t(
       "login.error_invalid_credentials",
-      "Invalid username or password. Please try again.",
+      "Couldn't sign you in. Please check your username and password.",
     );
   }
 
@@ -1970,6 +2141,8 @@ const cancelConnection = () => {
 
 const retry = () => {
   connectionError.value = null;
+  connectionErrorTitle.value = null;
+  connectionErrorDetail.value = null;
   remoteConnectionManager.disconnect();
   api.disconnect();
   step.value = "select-mode";
@@ -2053,12 +2226,19 @@ const onQrScannerError = (error: Error) => {
 watch(
   () => api.state.value,
   (connectionState) => {
+    // An ended guest session is terminal until the guest rejoins or leaves:
+    // connection churn must not replace the explanation with a sign-in form.
+    if (step.value === "guest-ended") return;
+
     if (connectionState === ConnectionState.RECONNECTING) {
       step.value = "reconnecting";
     } else if (connectionState === ConnectionState.AUTHENTICATING) {
       // Show connecting state during authentication
       step.value = "connecting";
     } else if (connectionState === ConnectionState.AUTH_REQUIRED) {
+      // A guest whose session the server dropped has no credentials to offer;
+      // App.vue records what ended so this can say so instead.
+      if (restoreGuestSessionEnded()) return;
       // In Ingress mode, we should never show the login form
       // The authentication is automatic via HA proxy headers
       if (!isIngressMode.value) {

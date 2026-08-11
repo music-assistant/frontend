@@ -1,6 +1,5 @@
 import api from "@/plugins/api";
 import type {
-  AIRadioMode,
   AIRadioSection,
   AIRadioSession,
   AIRadioStation,
@@ -48,7 +47,6 @@ interface StartShowOptions {
   sourcePlaylistIdOverride?: string;
   sourcePlaylistProviderOverride?: string;
   dynamicSourcePlaytimeCapOverride?: number;
-  dynamicBatchSizeOverride?: number;
 }
 
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
@@ -195,7 +193,6 @@ async function loadStatus(): Promise<AIRadioSession[]> {
 
 async function startShow(
   stationId: string,
-  mode: AIRadioMode,
   overrides?: StartShowOptions,
 ): Promise<AIRadioSession> {
   startingShowId.value = stationId;
@@ -203,9 +200,8 @@ async function startShow(
   try {
     const args: Record<string, unknown> = {
       station_id: stationId,
-      mode,
     };
-    if (overrides?.playerIdOverride && mode === "dynamic") {
+    if (overrides?.playerIdOverride) {
       args.player_id_override = overrides.playerIdOverride;
     }
     if (overrides?.sourcePlaylistIdOverride) {
@@ -219,9 +215,6 @@ async function startShow(
       args.dynamic_source_playtime_cap_override =
         overrides.dynamicSourcePlaytimeCapOverride;
     }
-    if (typeof overrides?.dynamicBatchSizeOverride === "number") {
-      args.dynamic_batch_size_override = overrides.dynamicBatchSizeOverride;
-    }
     const result = await api.sendCommand<AIRadioSession>(
       "ai_radio/start",
       args,
@@ -231,11 +224,7 @@ async function startShow(
       (item) => item.session_id === result.session_id,
     );
     if (current?.status !== "failed") {
-      toast.success(
-        mode === "playlist"
-          ? $t("providers.ai_radio.toast.playlist_starting")
-          : $t("providers.ai_radio.toast.live_starting"),
-      );
+      toast.success($t("providers.ai_radio.toast.live_starting"));
     }
     return current || result;
   } finally {

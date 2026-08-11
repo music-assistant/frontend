@@ -1,77 +1,65 @@
 <template>
-  <v-bottom-navigation
-    app
-    height="60"
-    bg-color="default"
-    grow
-    role="navigation"
+  <nav
+    class="mobile-bottom-navigation fixed inset-x-0 bottom-0 z-[2000] flex border-t px-1 shadow-lg"
+    aria-label="Main navigation"
   >
-    <v-btn
+    <Button
+      variant="ghost"
+      class="player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1"
       aria-label="Menu"
-      tabindex="0"
-      variant="text"
       @click="handleMenuClick"
     >
-      <Menu class="w-5 h-5" />
-      <span class="menuButton">Menu</span>
-    </v-btn>
+      <span class="mobile-navigation-icon">
+        <Menu :stroke-width="1.6" class="size-7" />
+      </span>
+      <span class="mobile-navigation-label"> Menu </span>
+    </Button>
 
-    <v-btn
+    <Button
+      variant="ghost"
+      class="player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1"
+      :data-active="isActive('discover')"
       :aria-label="$t('discover')"
-      tabindex="0"
-      variant="text"
-      :active="isActive('discover')"
-      active-color="fg"
       @click="handleDiscoverClick"
     >
-      <Compass class="w-5 h-5" :stroke-width="isActive('discover') ? 2.5 : 2" />
-      <span
-        class="menuButton"
-        :class="{ 'menuButton--active': isActive('discover') }"
-        >{{ $t("discover") }}</span
-      >
-    </v-btn>
+      <span class="mobile-navigation-icon">
+        <Compass
+          class="size-7"
+          :stroke-width="isActive('discover') ? 2 : 1.6"
+        />
+      </span>
+      <span class="mobile-navigation-label">
+        {{ $t("discover") }}
+      </span>
+    </Button>
 
-    <v-btn
+    <Button
+      variant="ghost"
+      class="player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1"
+      :data-active="isActive('search')"
       :aria-label="$t('search')"
-      tabindex="0"
-      variant="text"
-      :active="isActive('search')"
-      active-color="fg"
       @click="handleSearchClick"
     >
-      <Search class="w-5 h-5" :stroke-width="isActive('search') ? 2.5 : 2" />
-      <span
-        class="menuButton"
-        :class="{ 'menuButton--active': isActive('search') }"
-        >{{ $t("search") }}</span
-      >
-    </v-btn>
+      <span class="mobile-navigation-icon">
+        <Search class="size-7" :stroke-width="isActive('search') ? 2 : 1.6" />
+      </span>
+      <span class="mobile-navigation-label">
+        {{ $t("search") }}
+      </span>
+    </Button>
 
-    <ActivePlayerPopover
-      auto-show
-      align="end"
-      child-element-id="active-player-popover"
-    />
-
-    <v-btn
-      id="active-player-popover"
-      :aria-label="$t('players')"
-      tabindex="0"
-      variant="text"
-      @click="handlePlayersClick"
-    >
-      <Speaker class="w-5 h-5" />
-      <span class="menuButton">{{ $t("players") }}</span>
-    </v-btn>
-  </v-bottom-navigation>
+    <PlayerBarGroupControl navigation />
+    <PlayerBarPlayerButton navigation />
+  </nav>
 </template>
 
 <script setup lang="ts">
-import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
+import { Button } from "@/components/ui/button";
+import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
+import PlayerBarPlayerButton from "@/layouts/default/PlayerOSD/PlayerBarPlayerButton.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Compass, Menu, Search, Speaker } from "@lucide/vue";
+import { Compass, Menu, Search } from "@lucide/vue";
 import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
@@ -104,33 +92,59 @@ const handleSearchClick = () => {
   }
 };
 
-const handlePlayersClick = () => {
-  store.showPlayersMenu = !store.showPlayersMenu;
-};
-
 function closePlayersMenu() {
   store.showPlayersMenu = false;
 }
 </script>
 
 <style>
-.menuButton {
-  font-weight: 350;
-  font-size: x-small;
-  font-stretch: condensed;
-  text-transform: none;
-  margin-top: 5px;
+.mobile-bottom-navigation {
+  bottom: -2px !important;
+  height: calc(var(--mobile-navigation-height) + 2px);
+  background: var(--background);
+  padding-bottom: calc(var(--mobile-navigation-inset-bottom) + 2px);
 }
 
-.menuButton--active {
-  font-weight: 600;
+.mobile-bottom-navigation::before {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--background);
+  content: "";
 }
 
-.v-btn--active > .v-btn__overlay {
-  background: rgb(var(--v-theme-default)) !important;
+.mobile-navigation-item {
+  display: grid !important;
+  height: 66px !important;
+  grid-template-rows: 38px 16px;
+  align-content: center;
+  justify-items: center;
+  row-gap: 4px !important;
+  /* tight, so the buttons sit close to the player bar; the room that keeps them
+     clear of the screen edge comes from the bar's own bottom inset */
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 
-.v-slide-group-item--active {
-  opacity: 100%;
+.mobile-navigation-icon {
+  display: flex;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-navigation-label {
+  display: block;
+  width: 100%;
+  height: 16px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

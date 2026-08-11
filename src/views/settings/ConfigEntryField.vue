@@ -68,12 +68,36 @@
       </v-btn>
     </div>
 
+    <!-- Home Assistant entity picker for a single player control -->
+    <HassControlPickerField
+      v-else-if="isHassControlPickerEntry(confEntry)"
+      :entry="confEntry"
+      :disabled="isFieldDisabled"
+      @set-entry-value="
+        (key: string, value: ConfigValueType, label?: string) =>
+          emit('setEntryValue', key, value, label)
+      "
+    />
+
+    <!-- Home Assistant control entities: current selection plus an entity picker -->
+    <HassControlsField
+      v-else-if="isHassControlsEntry"
+      :entry="confEntry"
+      :label="displayLabel()"
+      :disabled="isFieldDisabled"
+      @update:value="onUpdateValue($event)"
+    />
+
     <!-- Player Options Button -->
     <div
       v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
       class="dsp-config"
     >
-      <v-btn variant="outlined" @click="$emit('openOptions')">
+      <v-btn
+        variant="outlined"
+        :disabled="isFieldDisabled"
+        @click="$emit('openOptions')"
+      >
         {{ $t("player_options.open") }}
       </v-btn>
     </div>
@@ -120,6 +144,7 @@
         <div class="config-slider-input">
           <NumberField
             :model-value="confEntry.value as number"
+            :disabled="isFieldDisabled"
             :min="confEntry.range[0]"
             :max="confEntry.range[1]"
             :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
@@ -170,7 +195,7 @@
 
     <!-- value with dropdown -->
     <v-select
-      v-else-if="confEntry.options && confEntry.options.length > 0"
+      v-else-if="confEntry.options.length > 0"
       :model-value="confEntry.value"
       :menu-props="{ zIndex: 10000 }"
       :chips="confEntry.multi_value"
@@ -228,9 +253,6 @@
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
       :label="displayLabel()"
-      :prepend-inner-icon="confEntry.value as string"
-      variant="outlined"
-      density="comfortable"
       @update:model-value="onUpdateValue($event)"
       @click:clear="onClear"
     />
@@ -295,8 +317,16 @@ import {
 } from "@/plugins/api/interfaces";
 import IconPicker from "@/components/IconPicker.vue";
 import AlertField from "./fields/AlertField.vue";
+import HassControlPickerField from "./fields/HassControlPickerField.vue";
+import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
-import { ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
+import {
+  ConfigEntryUI,
+  HASS_CONTROL_KEYS,
+  isDspLinkEntry,
+  isHassControlPickerEntry,
+} from "@/helpers/config_entry_ui";
+import { HASS_DOMAIN } from "@/helpers/hass_controls";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
@@ -304,7 +334,17 @@ const props = defineProps<{
   confEntry: ConfigEntryUI;
   showPasswordValues: boolean;
   disabled?: boolean;
+  // domain of the provider this config belongs to; absent for player and core configs
+  providerDomain?: string;
 }>();
+
+// only the Home Assistant provider's own control lists get the entity picker, not any
+// other provider that happens to use the same key names
+const isHassControlsEntry = computed(
+  () =>
+    props.providerDomain === HASS_DOMAIN &&
+    HASS_CONTROL_KEYS.has(props.confEntry.key),
+);
 
 const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
@@ -325,6 +365,13 @@ const emit = defineEmits<{
   (e: "openDsp"): void;
   (e: "openOptions"): void;
   (e: "update:value", value: ConfigValueType): void;
+  // set the value of another entry on the same form
+  (
+    e: "setEntryValue",
+    key: string,
+    value: ConfigValueType,
+    label?: string,
+  ): void;
 }>();
 
 // Labels arrive display-ready: server-provided entries are resolved server-side for the
@@ -355,7 +402,6 @@ const onClear = () => {
 };
 
 const displayOptions = computed(() => {
-  if (!props.confEntry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of props.confEntry.options) {
     // option titles are resolved server-side for the connection locale; use them directly
@@ -370,6 +416,19 @@ const displayOptions = computed(() => {
       option.title += ` [${$t("settings.default")}]`;
     }
     options.push(option);
+  }
+  // a value the server has not listed yet - a player control registered moments ago -
+  // would leave the select blank, so it is offered as an option of its own
+  const listedValues = new Set(options.map((option) => option.value));
+  const values = Array.isArray(props.confEntry.value)
+    ? props.confEntry.value
+    : [props.confEntry.value];
+  for (const value of values) {
+    if (value === null || value === undefined || listedValues.has(value)) {
+      continue;
+    }
+    listedValues.add(value);
+    options.push({ title: value.toString(), value });
   }
   return options;
 });

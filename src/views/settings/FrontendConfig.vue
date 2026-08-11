@@ -39,7 +39,6 @@
 
 <script setup lang="ts">
 import { Palette } from "@lucide/vue";
-import { useColorMode } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -67,13 +66,14 @@ import EditConfig from "./EditConfig.vue";
 const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
 const loading = ref(false);
-const mode = useColorMode();
 
 onMounted(() => {
   // TODO: Remove localStorage fallbacks below once migration period is over
   // (theme and language moved from localStorage to user preferences)
+  // NOTE: the theme itself is owned by useThemePreference (applied at app
+  // startup); this page must not apply it — an extra useColorMode instance
+  // here would fight the composable and desync tailwind from Vuetify.
   const storedTheme = localStorage.getItem("frontend.settings.theme") || "auto";
-  mode.value = storedTheme as "light" | "dark" | "auto";
 
   const configEntries: ConfigEntry[] = [
     {
@@ -118,6 +118,7 @@ onMounted(() => {
       action: "customize_menu",
       default_value: null,
       required: false,
+      options: [],
       multi_value: false,
       category: "preferences",
       value: null,
@@ -128,6 +129,7 @@ onMounted(() => {
       label: "enable_browser_controls",
       default_value: true,
       required: false,
+      options: [],
       multi_value: false,
       category: "display_settings",
       hidden: companionMode.value,
@@ -141,6 +143,7 @@ onMounted(() => {
       label: "force_mobile_layout",
       default_value: false,
       required: false,
+      options: [],
       multi_value: false,
       category: "display_settings",
       value:
@@ -153,6 +156,7 @@ onMounted(() => {
       label: "show_waveform",
       default_value: true,
       required: false,
+      options: [],
       multi_value: false,
       category: "display_settings",
       value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
@@ -182,6 +186,7 @@ onMounted(() => {
       label: "web_player_enabled",
       default_value: true,
       required: false,
+      options: [],
       category: "web_player",
       value:
         localStorage.getItem("frontend.settings.web_player_enabled") !==
@@ -195,7 +200,7 @@ onMounted(() => {
   for (const entry of configEntries) {
     // fall back to the in-code label/category if a locale is missing the string, so we never
     // surface a raw i18n key in the UI.
-    entry.label = $t(`settings.${entry.key}.label`, entry.label);
+    entry.label = $t(`settings.${entry.key}.label`, entry.label ?? entry.key);
     if (entry.category) {
       // frontend-only entries carry their translated category heading directly (server entries
       // get category_label resolved server-side); EditConfig just reads category_label.
@@ -206,12 +211,13 @@ onMounted(() => {
     }
     const desc = $t(`settings.${entry.key}.description`);
     if (desc !== `settings.${entry.key}.description`) entry.description = desc;
-    if (entry.options) {
-      entry.options = entry.options.map((opt) => ({
-        ...opt,
-        title: $t(`settings.${entry.key}.options.${opt.value}`, opt.title),
-      }));
-    }
+    entry.options = entry.options.map((opt) => ({
+      ...opt,
+      title: $t(
+        `settings.${entry.key}.options.${opt.value}`,
+        opt.title ?? String(opt.value),
+      ),
+    }));
   }
   config.value = configEntries;
 });

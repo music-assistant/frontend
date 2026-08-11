@@ -3,8 +3,8 @@
     <!-- Input -->
     <div class="dsp-chain-stage dsp-chain-stage--start">
       <span class="dsp-chain-connector" aria-hidden="true">
-        <span class="dsp-chain-tick" />
-        <span class="dsp-chain-dot" :class="dotClass('input')" />
+        <span class="dsp-chain-tick"></span>
+        <span class="dsp-chain-dot" :class="dotClass('input')"></span>
       </span>
       <button
         type="button"
@@ -32,8 +32,8 @@
            dot and no tick. -->
       <span class="dsp-chain-connector" aria-hidden="true">
         <template v-if="!isDisabled(index)">
-          <span class="dsp-chain-tick" />
-          <span class="dsp-chain-dot" :class="dotClass(index)" />
+          <span class="dsp-chain-tick"></span>
+          <span class="dsp-chain-dot" :class="dotClass(index)"></span>
         </template>
       </span>
       <button
@@ -51,15 +51,13 @@
           :size="18"
           class="dsp-chain-icon"
         />
-        <span class="dsp-chain-title">
-          {{ $t(`settings.dsp.types.${filter.type}`) }}
-        </span>
+        <span class="dsp-chain-title">{{ dspFilterTypeLabel(filter) }}</span>
       </button>
     </div>
 
     <!-- Add Filter -->
     <div class="dsp-chain-stage">
-      <span class="dsp-chain-connector" aria-hidden="true" />
+      <span class="dsp-chain-connector" aria-hidden="true"></span>
       <button
         type="button"
         class="dsp-chain-item dsp-chain-item--add"
@@ -73,8 +71,8 @@
     <!-- Output -->
     <div class="dsp-chain-stage dsp-chain-stage--end">
       <span class="dsp-chain-connector" aria-hidden="true">
-        <span class="dsp-chain-tick" />
-        <span class="dsp-chain-dot" :class="dotClass('output')" />
+        <span class="dsp-chain-tick"></span>
+        <span class="dsp-chain-dot" :class="dotClass('output')"></span>
       </span>
       <button
         type="button"
@@ -96,7 +94,7 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { DSPConfig } from "@/plugins/api/interfaces";
-import { dspFilterIcon } from "@/helpers/audioProcessing";
+import { dspFilterIcon, dspFilterTypeLabel } from "@/helpers/audioProcessing";
 import { eventbus } from "@/plugins/eventbus";
 import { AudioLines, Plus, Speaker } from "@lucide/vue";
 

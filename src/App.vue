@@ -1,5 +1,5 @@
 <template>
-  <Toaster rich-colors />
+  <Toaster rich-colors close-button />
 
   <!-- Login screen (when not authenticated) -->
   <Login
@@ -115,6 +115,15 @@ const interactedHandler = function () {
   window.removeEventListener("click", interactedHandler);
 };
 
+/**
+ * Tear down a guest session that the server no longer accepts.
+ *
+ * :return: True when the tab is being reloaded into the full application, so
+ *     the caller must not continue.
+ */
+const handleEndedGuestSession = (): boolean =>
+  authManager.endRejectedGuestSession().outcome === "own-session-restored";
+
 const handleRemoteConnected = async (transport: ITransport) => {
   isConnected.value = true;
 
@@ -132,7 +141,6 @@ const handleRemoteAuthenticated = async (credentials: {
   user?: User;
 }) => {
   try {
-    const { authManager } = await import("@/plugins/auth");
     let user = credentials.user;
 
     if (credentials.user && !credentials.token && !credentials.username) {
@@ -187,7 +195,6 @@ const handleLocalConnect = async (serverAddress: string) => {
     console.debug("[App] API already initialized, skipping");
     return;
   }
-  const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
   await httpProxyBridge.ensureReady();
   await httpProxyBridge.setTransport(null);
@@ -474,7 +481,6 @@ onMounted(async () => {
         // Reset initialization flag to allow re-initialization after reconnection
         initializationCompleted = false;
 
-        const { authManager } = await import("@/plugins/auth");
         if (store.isIngressSession) {
           // In Ingress mode, authentication happens via HA proxy headers
           try {
@@ -504,7 +510,9 @@ onMounted(async () => {
                 "[App] Re-authentication after reconnect failed:",
                 error,
               );
-              api.requireAuthentication();
+              if (!handleEndedGuestSession()) {
+                api.requireAuthentication();
+              }
             }
           } else {
             api.requireAuthentication();

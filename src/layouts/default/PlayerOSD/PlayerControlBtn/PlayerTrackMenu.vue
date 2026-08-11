@@ -1,39 +1,69 @@
 <template>
-  <DropdownMenu v-if="currentItem">
+  <DropdownMenu
+    v-if="forceVisible || (store.activePlayer && (currentItem || showQueue))"
+  >
     <DropdownMenuTrigger as-child>
-      <Button variant="icon" :ripple="false" icon :title="$t('more_options')">
-        <EllipsisIcon />
+      <Button
+        variant="ghost"
+        :class="
+          compact
+            ? 'player-control-button size-12 rounded-full p-0'
+            : 'player-control-button player-bar-action player-bar-menu-button h-20 w-12 rounded-none px-1'
+        "
+        :title="$t('more_options')"
+        :aria-label="$t('tooltip.more_options')"
+      >
+        <template v-if="compact">
+          <EllipsisVertical :stroke-width="1.5" class="size-6" />
+        </template>
+        <template v-else>
+          <span class="player-bar-action-icon">
+            <EllipsisVertical :stroke-width="1.5" class="size-7" />
+          </span>
+          <span class="player-bar-action-label" aria-hidden="true">&nbsp;</span>
+        </template>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="z-[100001]">
-      <DropdownMenuItem @click="onToggleFavorite">
-        <Heart
-          class="size-4"
-          :fill="currentItem?.favorite ? 'currentColor' : 'none'"
-        />
-        {{
-          currentItem?.favorite ? $t("favorites_remove") : $t("favorites_add")
-        }}
-      </DropdownMenuItem>
-      <DropdownMenuItem @click="onAddToPlaylist">
-        <PlusCircle class="size-4" />
-        {{ $t("add_playlist") }}
-      </DropdownMenuItem>
-      <DropdownMenuItem @click="onShowInfo">
-        <Info class="size-4" />
-        {{ $t("show_info") }}
-      </DropdownMenuItem>
-      <DropdownMenuItem v-if="radioAvailable" @click="onStartRadio">
-        <Orbit class="size-4" />
-        {{ $t(radioLabel) }}
-      </DropdownMenuItem>
       <DropdownMenuItem
-        v-if="playbackSpeedSupported"
-        @click="onOpenPlaybackSpeed"
+        v-if="showQueue"
+        :disabled="queueDisabled"
+        @click="togglePlayerQueue"
       >
-        <Gauge class="size-4" />
-        {{ $t("change_playback_speed") }}
+        <ListVideo class="size-4" />
+        {{ $t("queue") }}
       </DropdownMenuItem>
+      <DropdownMenuSeparator v-if="showQueue && currentItem" />
+      <template v-if="currentItem">
+        <DropdownMenuItem v-if="showFavorite" @click="onToggleFavorite">
+          <Heart
+            class="size-4"
+            :fill="currentItem.favorite ? 'currentColor' : 'none'"
+          />
+          {{
+            currentItem.favorite ? $t("favorites_remove") : $t("favorites_add")
+          }}
+        </DropdownMenuItem>
+        <DropdownMenuItem @click="onAddToPlaylist">
+          <PlusCircle class="size-4" />
+          {{ $t("add_playlist") }}
+        </DropdownMenuItem>
+        <DropdownMenuItem @click="onShowInfo">
+          <Info class="size-4" />
+          {{ $t("show_info") }}
+        </DropdownMenuItem>
+        <DropdownMenuItem v-if="radioAvailable" @click="onStartRadio">
+          <Orbit class="size-4" />
+          {{ $t(radioLabel) }}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          v-if="playbackSpeedSupported"
+          @click="onOpenPlaybackSpeed"
+        >
+          <Gauge class="size-4" />
+          {{ $t("change_playback_speed") }}
+        </DropdownMenuItem>
+      </template>
     </DropdownMenuContent>
   </DropdownMenu>
 
@@ -57,7 +87,7 @@
         <Button
           v-for="option in PLAYBACK_SPEED_OPTIONS"
           :key="option"
-          :variant="option === currentPlaybackSpeed ? 'default' : 'plain'"
+          :variant="option === currentPlaybackSpeed ? 'default' : 'outline'"
           @click="onSelectPlaybackSpeed(option)"
         >
           {{ formatSpeed(option) }}
@@ -68,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -79,9 +109,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
+import { queueItemPlaybackSpeed } from "@/helpers/elapsed";
+import {
+  isPlayerQueueControlDisabled,
+  togglePlayerQueue,
+} from "@/helpers/player_queue";
 import {
   gotoRadio,
   radioActionLabelKey,
@@ -99,10 +135,11 @@ import { eventbus } from "@/plugins/eventbus";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import {
-  EllipsisIcon,
+  EllipsisVertical,
   Gauge,
   Heart,
   Info,
+  ListVideo,
   Orbit,
   PlusCircle,
 } from "@lucide/vue";
@@ -112,8 +149,24 @@ const PLAYBACK_SPEED_OPTIONS = [1, 1.25, 1.5, 2, 3] as const;
 const PLAYBACK_SPEED_SLIDER_MIN = 0.5;
 const PLAYBACK_SPEED_SLIDER_MAX = 2;
 
+withDefaults(
+  defineProps<{
+    compact?: boolean;
+    forceVisible?: boolean;
+    showFavorite?: boolean;
+    showQueue?: boolean;
+  }>(),
+  {
+    compact: false,
+    forceVisible: false,
+    showFavorite: true,
+    showQueue: false,
+  },
+);
+
 const playbackSpeedDialogOpen = ref(false);
 const currentPlaybackSpeed = ref<number>(1);
+const queueDisabled = computed(isPlayerQueueControlDisabled);
 
 const formatSpeed = (value: number) =>
   Number.isInteger(value) ? value.toFixed(1) : value.toString();
@@ -167,8 +220,7 @@ const playbackSpeedSupported = computed(
 watch(
   () => store.curQueueItem,
   (queueItem) => {
-    currentPlaybackSpeed.value =
-      queueItem?.extra_attributes?.playback_speed ?? 1;
+    currentPlaybackSpeed.value = queueItemPlaybackSpeed(queueItem);
   },
   { immediate: true },
 );
@@ -210,8 +262,7 @@ const onStartRadio = () => {
 const onOpenPlaybackSpeed = () => {
   // Sync from latest queue state before opening so the displayed value is
   // current even if the queue item updated since the menu was last touched.
-  currentPlaybackSpeed.value =
-    store.curQueueItem?.extra_attributes?.playback_speed ?? 1;
+  currentPlaybackSpeed.value = queueItemPlaybackSpeed(store.curQueueItem);
   playbackSpeedDialogOpen.value = true;
 };
 
@@ -281,7 +332,7 @@ onBeforeUnmount(flushPendingSpeed);
   top: auto !important;
   left: auto !important;
   right: 1rem !important;
-  bottom: calc(env(safe-area-inset-bottom, 0) + 6rem) !important;
+  bottom: calc(var(--mobile-navigation-height) + 8px) !important;
   transform: none !important;
 }
 

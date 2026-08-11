@@ -309,7 +309,6 @@
         "artist": "Artista",
         "name": "In ordine alfabetico",
         "name_desc": "In ordine alfabetico (decrescente)",
-        "recent": "Aggiunto recentemente",
         "year_desc": "Anno di uscita (decrescente)",
         "duration_desc": "Durata (decrescente)",
         "original": "Originale",
@@ -322,8 +321,6 @@
         "last_played_desc": "Ultimo riprodotto (decrescente)",
         "play_count": "Conteggio delle riproduzioni",
         "play_count_desc": "Conteggio delle riproduzioni (decrescente)",
-        "artist_name": "Album artista",
-        "artist_name_desc": "Artista dell'album (decrescente)",
         "album_sort_name": "Album (in ordine alfabetico)"
     },
     "state": {

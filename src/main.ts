@@ -48,6 +48,14 @@ import { registerPlugins } from "@/plugins";
 import { installSendspinInterceptor } from "@/plugins/sendspin-connection";
 installSendspinInterceptor();
 
+// Embedded (e.g. the Home Assistant panel): the host sizes our viewport and
+// keeps it clear of the system controls, so don't reserve that space again.
+// Browsers disagree here anyway - Chrome reports no insets inside an iframe,
+// Safari reports the ones belonging to the page around us.
+if (window.self !== window.top) {
+  document.documentElement.style.setProperty("--device-inset-bottom", "0px");
+}
+
 const app = createApp(App);
 
 registerPlugins(app);

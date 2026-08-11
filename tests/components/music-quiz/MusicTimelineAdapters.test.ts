@@ -9,11 +9,12 @@ import type {
   MusicQuizTimelinePersonalizedState,
   MusicQuizTimelineRound,
 } from "@/composables/music-quiz/useMusicQuiz";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { mount, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGetTrackLyrics } = vi.hoisted(() => ({
-  mockGetTrackLyrics: vi.fn(),
+  mockGetTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
 }));
 
 vi.mock("@/plugins/api", () => ({

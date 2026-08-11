@@ -52,22 +52,6 @@
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <button
-        v-else-if="completedPlaylistSession"
-        type="button"
-        class="show-card__status-chip bg-primary/90 text-white"
-        :aria-label="$t('providers.ai_radio.card.open_playlist')"
-        @click.stop="onOpenGeneratedPlaylist"
-      >
-        <ListMusic class="h-3 w-3 shrink-0" />
-        <span class="truncate">
-          {{
-            $t("providers.ai_radio.card.status_playlist_ready", [
-              sessionRelativeTime(completedPlaylistSession),
-            ])
-          }}
-        </span>
-      </button>
       <span
         v-else-if="lastEndedSession"
         class="show-card__status-chip bg-black/50 text-white/90"
@@ -88,19 +72,13 @@
             variant="ghost-icon"
             size="icon-sm"
             class="show-card__menu rounded-full bg-background/70 backdrop-blur-sm hover:bg-background/90"
-            :aria-label="$t('open')"
+            :aria-label="$t('more_options')"
             @click.stop
           >
             <MoreVertical class="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            :disabled="isStarting"
-            @click="onGenerateAsPlaylist"
-          >
-            {{ $t("providers.ai_radio.card.generate_playlist") }}
-          </DropdownMenuItem>
           <DropdownMenuItem @click="emit('customize', show.id)">
             {{ $t("providers.ai_radio.card.customize") }}
           </DropdownMenuItem>
@@ -197,7 +175,6 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
   History,
-  ListMusic,
   Loader2,
   MoreVertical,
   Play,
@@ -205,7 +182,6 @@ import {
   TriangleAlert,
 } from "@lucide/vue";
 import { computed } from "vue";
-import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 const props = defineProps<{
@@ -261,39 +237,18 @@ const failedSession = computed(() =>
   latestSession.value?.status === "failed" ? latestSession.value : undefined,
 );
 
-const completedPlaylistSession = computed(() => {
-  const session = latestSession.value;
-
-  if (session?.status !== "completed" || session.mode !== "playlist")
-    return undefined;
-
-  return session.result?.target_playlist_id ? session : undefined;
-});
-
 const lastEndedSession = computed(() => {
   const session = latestSession.value;
 
   if (!session) return undefined;
 
   const endedLive =
-    session.status === "stopped" ||
-    (session.status === "completed" && session.mode === "dynamic");
+    session.status === "stopped" || session.status === "completed";
   return endedLive ? session : undefined;
 });
 
 function sessionRelativeTime(session: AIRadioSession): string {
   return relativeTimeFromIso(session.ended_at || session.created_at);
-}
-
-const router = useRouter();
-
-function onOpenGeneratedPlaylist(): void {
-  const playlistId = completedPlaylistSession.value?.result?.target_playlist_id;
-  if (!playlistId) return;
-  router.push({
-    name: "playlist",
-    params: { provider: "library", itemId: playlistId },
-  });
 }
 
 /** Any other station's running session, i.e. the one that would block this show from starting. */
@@ -322,9 +277,7 @@ function confirmSwitchAndPlay(
     onConfirm: async () => {
       try {
         await stopShow(otherSession.session_id);
-        await startShow(props.show.id, "dynamic", {
-          playerIdOverride: playerId,
-        });
+        await startShow(props.show.id, { playerIdOverride: playerId });
       } catch (error) {
         const message = errorMessage(error);
         toast.error($t("providers.ai_radio.card.start_failed", [message]));
@@ -346,7 +299,7 @@ async function onPlay() {
     return;
   }
   try {
-    await startShow(props.show.id, "dynamic", { playerIdOverride: playerId });
+    await startShow(props.show.id, { playerIdOverride: playerId });
   } catch (error) {
     // The server localizes error details, so the max-concurrent reason can't be
     // matched on text. Reconcile status instead: if another show turns out to be
@@ -374,16 +327,6 @@ async function onStop() {
         item.session_id === session.session_id && item.status === "running",
     );
     if (stillRunning) toast.error(errorMessage(error));
-  }
-}
-
-async function onGenerateAsPlaylist() {
-  try {
-    await startShow(props.show.id, "playlist");
-  } catch (error) {
-    const message = errorMessage(error);
-    toast.error($t("providers.ai_radio.card.start_failed", [message]));
-    reportStartError(message);
   }
 }
 

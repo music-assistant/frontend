@@ -5,14 +5,15 @@
     class="mini-eq"
     aria-hidden="true"
     role="presentation"
-  />
+  ></canvas>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import api from "@/plugins/api";
 
 export interface Props {
   color?: string;
@@ -31,33 +32,6 @@ const props = withDefaults(defineProps<Props>(), {
 const { waveformBins, trackDurationSecs } = useActiveTrackWaveform();
 const canvasEl = ref<HTMLCanvasElement>();
 let timerId: ReturnType<typeof setInterval> | null = null;
-
-function getElapsedSecs(): number {
-  const queueId = store.activePlayerQueue?.queue_id;
-  const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-  if (
-    queueTime?.elapsed_time != null &&
-    queueTime?.elapsed_time_last_updated != null
-  ) {
-    const isPlaying = store.activePlayerQueue?.state === "playing";
-    const delta = isPlaying
-      ? Date.now() / 1000 - queueTime.elapsed_time_last_updated
-      : 0;
-    return queueTime.elapsed_time + delta;
-  }
-  const player = store.activePlayer;
-  if (
-    player?.elapsed_time != null &&
-    player?.elapsed_time_last_updated != null
-  ) {
-    const isPlaying = player.playback_state === "playing";
-    const delta = isPlaying
-      ? Date.now() / 1000 - player.elapsed_time_last_updated
-      : 0;
-    return player.elapsed_time + delta;
-  }
-  return 0;
-}
 
 function resolveColor(color: string): string {
   // Canvas fillStyle cannot resolve CSS variables — extract and resolve them.
@@ -95,7 +69,7 @@ function draw() {
   const duration = trackDurationSecs.value;
   if (!duration) return;
 
-  const elapsed = getElapsedSecs();
+  const elapsed = resolveActiveElapsedTime() ?? 0;
   const progress = Math.min(1, Math.max(0, elapsed / duration));
   const centerBin = Math.floor(progress * (bins.length - 1));
 
@@ -141,7 +115,10 @@ function stopTimer() {
 }
 
 function syncTimer() {
-  if (store.activePlayerQueue?.state === "playing" && waveformBins.value) {
+  if (
+    store.activePlayerQueue?.state === PlaybackState.PLAYING &&
+    waveformBins.value
+  ) {
     startTimer();
   } else {
     stopTimer();
@@ -158,7 +135,7 @@ watch(
   () => store.activePlayerQueue?.state,
   (state) => {
     syncTimer();
-    if (state !== "playing") draw();
+    if (state !== PlaybackState.PLAYING) draw();
   },
   { immediate: true },
 );

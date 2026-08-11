@@ -204,7 +204,6 @@
         "artist": "Umetnik",
         "name": "Po abecednem vrstnem redu",
         "name_desc": "Po abecednem vrstnem redu (padajoče)",
-        "recent": "Nedavno dodano",
         "year_desc": "Leto izida (padajoče)",
         "duration_desc": "Trajanje (padajoče)",
         "original": "Izvirnik",
@@ -216,9 +215,7 @@
         "last_played": "Zadnje predvajano",
         "last_played_desc": "Zadnje predvajano (padajoče)",
         "play_count": "Število predvajanj",
-        "play_count_desc": "Število predvajanj (padajoče)",
-        "artist_name": "Izvajalec",
-        "artist_name_desc": "Izvajalec (padajoče)"
+        "play_count_desc": "Število predvajanj (padajoče)"
     },
     "state": {
         "idle": "mirovanje",

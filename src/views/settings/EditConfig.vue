@@ -22,23 +22,28 @@
           :key="conf_entry.key"
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
-          :disabled="isDisabled(conf_entry)"
+          :disabled="isRowDisabled(conf_entry)"
+          :provider-domain="providerDomain"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
           @open-dsp="openDspConfig"
           @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
+          @set-entry-value="onEntryValueSet"
         />
       </div>
     </div>
 
+    <!-- No provider-domain: that is only set for a provider config, which carries no protocol
+         categories. No set-entry-value handler: its only emitter is the Home Assistant entity
+         picker, which sits with the player controls on the parent player. -->
     <ProtocolConfigSection
       :entries="entries || []"
       :protocol-panels="protocolPanels"
       :visible-entries-by-category="visibleEntriesByCategory"
       :show-password-values="showPasswordValues"
-      :is-disabled="isDisabled"
+      :is-disabled="isRowDisabled"
       :output-protocols="outputProtocols"
       @update:value="onValueUpdate"
       @action="onEntryAction"
@@ -70,18 +75,36 @@
           :key="conf_entry.key"
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
-          :disabled="isDisabled(conf_entry)"
+          :disabled="isRowDisabled(conf_entry)"
+          :provider-domain="providerDomain"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
           @open-dsp="openDspConfig"
           @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
+          @set-entry-value="onEntryValueSet"
         />
       </div>
     </div>
 
-    <div v-if="!disabled" class="config-actions">
+    <div
+      v-if="!disabled && actionLayout === 'floating-save'"
+      class="floating-save"
+    >
+      <Button
+        data-testid="config-save"
+        type="button"
+        size="lg"
+        class="shadow-lg"
+        :disabled="!requiredValuesPresent || !hasUnsavedChanges"
+        @click="submit"
+      >
+        <Save class="size-4" />
+        {{ $t("settings.save") }}
+      </Button>
+    </div>
+    <div v-else-if="!disabled" class="config-actions">
       <!-- Show advanced settings toggle -->
       <div class="advanced-toggle-wrapper">
         <v-switch
@@ -121,11 +144,9 @@
           {{ showHelpInfo?.label || "" }}
         </h2>
       </v-card-text>
-      <!-- eslint-disable vue/no-v-html -->
-      <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-      <v-card-text v-html="markdownToHtml(showHelpInfo?.description || '')" />
-      <!-- eslint-enable vue/no-v-html -->
-      <!-- eslint-enable vue/no-v-text-v-html-on-component -->
+      <v-card-text>
+        <MarkdownText :text="showHelpInfo?.description" />
+      </v-card-text>
       <v-card-actions>
         <v-btn
           v-if="showHelpInfo?.help_link"
@@ -159,8 +180,16 @@
 </template>
 
 <script setup lang="ts">
-import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
-import { markdownToHtml } from "@/helpers/utils";
+import {
+  allRequiredValuesPresent,
+  ConfigEntryUI,
+  isEntryDisabled,
+  isInjected,
+  NON_INTERACTIVE_ENTRY_TYPES,
+  VALUELESS_ENTRY_TYPES,
+} from "@/helpers/config_entry_ui";
+import MarkdownText from "@/components/MarkdownText.vue";
+import { Button } from "@/components/ui/button";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -178,6 +207,7 @@ import {
   PlayCircle,
   RadioTower,
   RefreshCw,
+  Save,
   Settings2,
   SlidersHorizontal,
   Speaker,
@@ -193,11 +223,15 @@ const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
 
 export interface Props {
+  actionLayout?: "default" | "floating-save";
   configEntries: ConfigEntryUI[];
   disabled: boolean;
   // Output protocols of the player being configured; drives derived-transport labelling
   // in the protocol section. Omitted for provider/core configs.
   outputProtocols?: OutputProtocol[];
+  // Domain of the provider being configured; lets a field recognise the entries of the
+  // provider it belongs to. Omitted for player/core configs.
+  providerDomain?: string;
 }
 
 const emit = defineEmits<{
@@ -215,15 +249,16 @@ const emit = defineEmits<{
 const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
-const activePanel = ref<string[]>([]);
 const showPasswordValues = ref(false);
-const showAdvancedSettings = ref(false);
 const showHelpInfo = ref<ConfigEntryUI>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
 
 // props
 const props = defineProps<Props>();
+const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
+  default: false,
+});
 
 // computed props
 const panels = computed(() => {
@@ -256,38 +291,15 @@ const protocolPanels = computed(() => {
   return panels.value.filter((p) => isProtocolCategory(p));
 });
 
-const requiredValuesPresent = computed(() => {
-  if (entries.value) {
-    for (const entry of entries.value) {
-      if (
-        entry.required &&
-        !(
-          !isNullOrUndefined(entry.value) ||
-          !isNullOrUndefined(entry.default_value) ||
-          entry.type == ConfigEntryType.DIVIDER ||
-          entry.type == ConfigEntryType.LABEL ||
-          entry.type == ConfigEntryType.ALERT ||
-          entry.type == ConfigEntryType.ACTION
-        )
-      )
-        return false;
-    }
-    return true;
-  }
-  return false;
-});
+const requiredValuesPresent = computed(() =>
+  entries.value ? allRequiredValuesPresent(entries.value) : false,
+);
 
 const hasUnsavedChanges = computed(() => {
   if (!entries.value) return false;
   for (const entry of entries.value) {
     // Skip non-value entry types
-    if (
-      entry.type == ConfigEntryType.DIVIDER ||
-      entry.type == ConfigEntryType.LABEL ||
-      entry.type == ConfigEntryType.ALERT ||
-      entry.type == ConfigEntryType.ACTION ||
-      isInjected(entry)
-    ) {
+    if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
       continue;
     }
     // Skip secure strings that haven't been modified (still showing substitute)
@@ -344,12 +356,6 @@ watch(
       entries.value.push(entry);
     }
     oldValuesInitialized.value = true;
-    // Set active panels after entries are populated
-    // Expand all panels by default, except protocol categories which stay collapsed
-    const expandedPanels = panels.value.filter((p) => !isProtocolCategory(p));
-    activePanel.value = expandedPanels;
-    // Protocol config sections stay collapsed by default; the user opens the one
-    // they want to configure.
   },
   { immediate: true },
 );
@@ -383,6 +389,23 @@ const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
         : value;
   }
 };
+// a field can fill in another entry of the same form, e.g. the Home Assistant entity
+// picker setting the player control it sits under
+const onEntryValueSet = function (
+  key: string,
+  value: ConfigValueType,
+  label?: string,
+) {
+  const entry = entries.value?.find((e) => e.key === key);
+  if (!entry) return;
+  // the server does not know of the value yet, so carry the name the field gave us or
+  // the field would read back the bare id until the config is fetched again
+  if (label && !entry.options.some((option) => option.value === value)) {
+    entry.options = [...entry.options, { title: label, value }];
+  }
+  onValueUpdate(entry, value);
+};
+
 const openLink = function (url: string) {
   // window.open(url, "_blank");
   const a = document.createElement("a");
@@ -401,7 +424,6 @@ const openPlayerOptions = function () {
 
 const onEntryAction = function (entry: ConfigEntryUI) {
   action(entry.action || entry.key, !!entry.immediate_apply);
-  entry.value = entry.action ? null : entry.key;
 };
 
 const onEntryHelp = function (entry: ConfigEntryUI) {
@@ -415,6 +437,8 @@ const resetToDefaults = function () {
     entry.value = entry.default_value;
   }
 };
+
+defineExpose({ resetToDefaults });
 
 const handleClose = function () {
   if (hasUnsavedChanges.value) {
@@ -459,34 +483,23 @@ onBeforeUnmount(() => {
 
 // Add listener when component mounts
 window.addEventListener("beforeunload", handleBeforeUnload);
-const isNullOrUndefined = function (value: unknown) {
-  return value === null || value === undefined;
+
+const isDisabled = function (entry: ConfigEntryUI) {
+  return isEntryDisabled(entry, entries.value || []);
+};
+
+// the form-wide disabled state has to be handed to every field: v-form only reaches
+// Vuetify's own inputs, so the number field beside a slider would stay editable
+const isRowDisabled = function (entry: ConfigEntryUI) {
+  return props.disabled || isDisabled(entry);
 };
 
 const isVisible = function (entry: ConfigEntryUI) {
-  return !entry.hidden;
-};
-
-const isDisabled = function (entry: ConfigEntryUI) {
-  if (!isNullOrUndefined(entry.depends_on)) {
-    const dependentEntry = entries.value?.find(
-      (x) => x.key == entry.depends_on,
-    );
-    if (!dependentEntry) return false;
-
-    const dependentValue = dependentEntry.value;
-
-    if (!isNullOrUndefined(entry.depends_on_value)) {
-      return dependentValue != entry.depends_on_value;
-    }
-
-    if (!isNullOrUndefined(entry.depends_on_value_not)) {
-      return dependentValue == entry.depends_on_value_not;
-    }
-
-    return !dependentValue;
-  }
-  return false;
+  if (entry.hidden) return false;
+  // an unmet dependency can only be expressed by hiding these types
+  return !(
+    NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) && isDisabled(entry)
+  );
 };
 
 const visibleEntriesByCategory = computed(() => {
@@ -630,6 +643,22 @@ const getCategoryIcon = function (category: string): Component {
 .config-actions .v-btn--disabled {
   background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
   color: rgba(var(--v-theme-on-surface), 0.38) !important;
+}
+
+.floating-save {
+  position: fixed;
+  right: 24px;
+  bottom: calc(var(--v-layout-bottom, 104px) + 16px);
+  z-index: 20;
+}
+
+:global(.content-section--mobile) .floating-save {
+  right: 16px;
+  bottom: calc(var(--mobile-navigation-height) + 108px);
+}
+
+:global(.content-section--frameless) .floating-save {
+  bottom: 16px;
 }
 
 /* Advanced settings toggle */

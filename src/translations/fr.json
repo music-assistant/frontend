@@ -255,6 +255,13 @@
                 "name": "Nom du préréglage",
                 "name_placeholder": "Mon nouveau préréglage",
                 "remove_confirm": "Êtes-vous sûr de vouloir supprimer ce préréglage DSP ?"
+            },
+            "crossfeed": {
+                "presets": {
+                    "low": "Faible",
+                    "medium": "Moyen",
+                    "high": "Élevé"
+                }
             }
         },
         "dsp_enabled": "Le DSP est activé",
@@ -500,7 +507,6 @@
         "artist": "Artiste",
         "name": "Alphabétiquement",
         "name_desc": "Par ordre alphabétique (décroissant)",
-        "recent": "Récemment ajouté",
         "year_desc": "Année de sortie (décroissant)",
         "duration_desc": "Durée (décroissant)",
         "original": "Original",
@@ -513,8 +519,6 @@
         "last_played_desc": "Dernière lecture (décroissant)",
         "play_count": "Nombre de lectures",
         "play_count_desc": "Nombre de lectures (décroissant)",
-        "artist_name": "Artiste de l'album",
-        "artist_name_desc": "Artiste de l'album (décroissant)",
         "album_sort_name": "Album (nom de tri)"
     },
     "state": {
@@ -974,5 +978,7 @@
         "45": "45 minutes",
         "60": "1 heure",
         "120": "2 heures"
-    }
+    },
+    "queue_ended": "Lecture terminée",
+    "play_from_beginning": "Lire depuis le début"
 }

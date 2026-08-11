@@ -25,6 +25,7 @@ import {
   getStoredMusicQuizPlayerId,
   getMusicQuizErrorMessage,
   isNoActiveGameError,
+  isUnknownPlayerError,
   storeMusicQuizPlayerId,
   storeMusicQuizPlayerName,
   type MusicQuizParticipantStorageContext,
@@ -298,12 +299,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         ) {
           continue;
         }
-        if (
-          isNoActiveGameError(err) ||
-          getMusicQuizErrorMessage(err)
-            .toLowerCase()
-            .includes("player not found")
-        ) {
+        if (isNoActiveGameError(err) || isUnknownPlayerError(err)) {
           await resetToJoinInfo();
         } else {
           notifyError(
