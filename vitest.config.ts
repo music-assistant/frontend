@@ -18,7 +18,9 @@ export default mergeConfig(
       dangerouslyIgnoreUnhandledErrors: false,
       server: {
         deps: {
-          inline: ["vuetify"],
+          // sendspin-js ships ESM whose relative imports carry no file extension,
+          // which node cannot resolve, so let vite resolve them instead.
+          inline: ["vuetify", "@sendspin/sendspin-js"],
         },
       },
       // Ignore nested git worktrees so a sibling branch's tests under
