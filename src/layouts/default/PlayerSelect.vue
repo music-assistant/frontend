@@ -597,9 +597,9 @@ async function scrollSelectedPlayerIntoView() {
   z-index: 998 !important;
 }
 
-/* the fullscreen player is a dialog at z-index 9000: both the panel and its
-   backdrop have to clear it, and there is no player bar left to keep visible.
-   Both rules pair up their class to outweigh the utility they override. */
+/* the fullscreen player is a dialog at z-index 9000, so both the panel and its
+   backdrop have to clear it; each rule pairs up its class to outweigh the
+   utility it overrides */
 .player-select-backdrop.player-select-fullscreen-backdrop {
   bottom: 0 !important;
   z-index: 9001 !important;
@@ -607,6 +607,12 @@ async function scrollSelectedPlayerIntoView() {
 
 .player-bar-popout.player-select-popover-fullscreen {
   z-index: 9002 !important;
+}
+
+/* the fullscreen player covers the mobile player bar, so this popout has no
+   floating bar to stay clear of */
+:root[data-player-bar-overlay]
+  .player-bar-popout.player-select-popover-fullscreen {
   padding-bottom: 0 !important;
 }
 </style>
