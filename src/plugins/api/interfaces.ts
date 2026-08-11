@@ -693,6 +693,10 @@ export interface ConfigEntry {
   help_link?: string | null;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
+  // expanded_options [optional]: render the options inline - all of them, with their
+  // descriptions, visible at once (e.g. as a radio group) - instead of behind a dropdown.
+  // Ignored when the entry has no options or is multi_value.
+  expanded_options?: boolean;
   // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
   // as unmet. While unmet, input types and ACTION stay visible but render disabled;
   // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
