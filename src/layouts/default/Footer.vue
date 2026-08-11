@@ -6,7 +6,7 @@
     :style="`
       position: fixed;
       width: 100%;
-      height: calc(180px + var(--mobile-navigation-inset-bottom));
+      height: var(--mobile-player-scrim-height);
       bottom: 0px;
       z-index: 999;
     `"

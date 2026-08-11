@@ -34,6 +34,11 @@
   /* Space the bottom navigation occupies. Anything anchored above it (sheets,
      popovers, the player bar, scroll padding) is positioned from this. */
   --mobile-navigation-height: calc(66px + var(--mobile-navigation-inset-bottom));
+  /* Height of the gradient panel behind the floating player bar. It hides whatever
+     it covers, so anything that has to stay visible is positioned above it. */
+  --mobile-player-scrim-height: calc(
+    180px + var(--mobile-navigation-inset-bottom)
+  );
 }
 
 html {
