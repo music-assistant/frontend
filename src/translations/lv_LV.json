@@ -414,7 +414,6 @@
         "remote_access_qr_code": "QR Kods",
         "remote_access_qr_code_description": "Noskanē ar tālruņa kameru, lai izveidotu tūlītēju savienojumu.",
         "reset_to_defaults": "Atiestatīt uz noklusējuma",
-        "reset_to_defaults_confirm": "Vai tiešām vēlies atiestatīt visu iestatījumu vērtības uz noklusējuma? Tas nekavējoties saglabās izmaiņas.",
         "unsaved_changes": "Nesaglabātas Izmaiņas",
         "unsaved_changes_message": "Tev ir nesaglabātas izmaiņas. Vai tiešām vēlies iziet tās nesaglabājot?",
         "stay": "Palikt",

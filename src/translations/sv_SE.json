@@ -529,7 +529,6 @@
         "remote_access_qr_code": "QR kod",
         "remote_access_qr_code_description": "Skanna med din telefonkamera för att ansluta direkt.",
         "reset_to_defaults": "Återställ till standardinställningarna",
-        "reset_to_defaults_confirm": "Är du säker på att du vill återställa alla inställningar till standardvärdena? Detta sparar ändringarna omedelbart.",
         "unsaved_changes": "Osparade ändringar",
         "unsaved_changes_message": "Du har ändringar som inte sparats. Är du säker på att du vill avsluta utan att spara?",
         "stay": "Stanna",

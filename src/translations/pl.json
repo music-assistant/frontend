@@ -419,7 +419,6 @@
         "remote_access_qr_code": "Kod QR",
         "remote_access_qr_code_description": "Skanuj za pomocą aparatu w telefonie, aby natychmiast nawiązać połączenie.",
         "reset_to_defaults": "Przywróć ustawienia domyślne",
-        "reset_to_defaults_confirm": "Czy na pewno chcesz zresetować wszystkie ustawienia do wartości domyślnych? Spowoduje to natychmiastowe zapisanie zmian.",
         "unsaved_changes": "Niezapisane zmiany",
         "unsaved_changes_message": "Masz niezapisane zmiany. Czy na pewno chcesz wyjść bez zapisywania?",
         "stay": "Pozostań",

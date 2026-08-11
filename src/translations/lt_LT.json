@@ -415,7 +415,6 @@
         "remote_access_qr_code": "QR kodas",
         "remote_access_qr_code_description": "Nuskaitykite telefono kamera, kad galėtumėte akimirksniu prisijungti.",
         "reset_to_defaults": "Atkurti numatytuosius nustatymus",
-        "reset_to_defaults_confirm": "Ar tikrai norite atkurti visų nustatymų numatytąsias reikšmes? Tai iš karto išsaugos pakeitimus.",
         "unsaved_changes": "Neišsaugoti pakeitimai",
         "unsaved_changes_message": "Yra neišsaugotų pakeitimų. Ar tikrai norite išeiti neišsaugoję?",
         "stay": "Likti",

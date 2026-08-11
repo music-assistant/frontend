@@ -414,7 +414,6 @@
         "remote_access_qr_code": "QR kód",
         "remote_access_qr_code_description": "Naskenujte fotoaparátem telefonu pro okamžité připojení.",
         "reset_to_defaults": "Obnovit na výchozí nastavení",
-        "reset_to_defaults_confirm": "Opravdu chcete obnovit všechna nastavení na výchozí hodnoty? Tím se změny okamžitě uloží.",
         "unsaved_changes": "Neuložené změny",
         "unsaved_changes_message": "Máte neuložené změny. Opravdu chcete odejít bez uložení?",
         "stay": "Zůstat",
