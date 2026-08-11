@@ -418,7 +418,6 @@
         "remote_access_qr_code": "QR kód",
         "remote_access_qr_code_description": "Olvassa be telefonja kamerájával az azonnali csatlakozáshoz.",
         "reset_to_defaults": "Alapértékek visszaállítása",
-        "reset_to_defaults_confirm": "Biztosan vissza szeretné állítani az összes beállítást az alapértékekre? Ez azonnal menteni fogja a változtatásokat.",
         "unsaved_changes": "Nem mentett változtatások",
         "unsaved_changes_message": "Mentetlen módosításai vannak. Biztosan el szeretne menni mentés nélkül?",
         "stay": "Maradás",

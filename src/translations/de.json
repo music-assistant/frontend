@@ -529,7 +529,6 @@
         "remote_access_qr_code": "QR-Code",
         "remote_access_qr_code_description": "Scanne mit deiner Handykamera, um sofort eine Verbindung herzustellen.",
         "reset_to_defaults": "Auf Standardeinstellungen zurücksetzen",
-        "reset_to_defaults_confirm": "Möchtest du wirklich alle Einstellungen auf die Standardwerte zurücksetzen? Dadurch werden die Änderungen sofort gespeichert.",
         "unsaved_changes": "Ungesicherte Änderungen",
         "unsaved_changes_message": "Du hast ungespeicherte Änderungen. Möchtest du die Änderungen wirklich ohne Speichern beenden?",
         "stay": "Bleiben",
