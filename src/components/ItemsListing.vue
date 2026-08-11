@@ -212,10 +212,13 @@
         </EmptyContent>
       </Empty>
 
-      <!-- box shown when item(s) selected -->
+      <!-- box shown when item(s) selected; vuetify writes the overlay z-index inline
+           (default 2000), so it has to be lowered here to stay behind the player bar
+           popouts (998) and their backdrops (997) -->
       <v-snackbar
         :model-value="selectedItems.length > 1"
         :timeout="-1"
+        :z-index="996"
         style="margin-bottom: calc(var(--bottom-bars-height) + 16px)"
       >
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
