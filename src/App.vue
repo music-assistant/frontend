@@ -406,14 +406,6 @@ onMounted(async () => {
     window.matchMedia("(display-mode: standalone)").matches ||
     window.matchMedia("(display-mode: fullscreen)").matches;
 
-  // Embedded (e.g. the Home Assistant panel): the host sizes our viewport and
-  // keeps it clear of the system controls, so don't reserve that space again.
-  // Browsers disagree here anyway - Chrome reports no insets inside an iframe,
-  // Safari reports the ones belonging to the page around us.
-  if (window.self !== window.top) {
-    document.documentElement.style.setProperty("--device-inset-bottom", "0px");
-  }
-
   // TODO: Remove localStorage fallback once migration period is over (language moved to user preferences)
   const langPref =
     (store.currentUser?.preferences?.language as string | undefined) ||
