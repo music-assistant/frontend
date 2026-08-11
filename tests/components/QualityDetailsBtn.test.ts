@@ -76,7 +76,7 @@ describe("QualityDetailsBtn", () => {
     ).toBe(true);
     expect(wrapper.text()).toContain("LQ-HR");
     expect(wrapper.get("button").attributes("aria-label")).toBe(
-      "Show audio chain details (LQ-HR)",
+      "Show audio pipeline details (LQ-HR)",
     );
   });
 
@@ -121,7 +121,7 @@ describe("QualityDetailsBtn", () => {
       '[data-testid="audio-processing-popover-content"]',
     );
     expect(content?.getAttribute("aria-label")).toBe(
-      "Show audio chain details",
+      "Show audio pipeline details",
     );
     expect(content?.contains(document.activeElement)).toBe(true);
     expect(document.activeElement?.classList).toContain(
