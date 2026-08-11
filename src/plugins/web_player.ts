@@ -1,3 +1,4 @@
+import { loadSendspinClientIdentity } from "@sendspin/sendspin-js";
 import { reactive, ref, watch } from "vue";
 import { resetMediaSession } from "@/helpers/mediaSession";
 import authManager from "./auth";
@@ -350,16 +351,10 @@ export const webPlayer = reactive({
         mode === WebPlayerMode.SENDSPIN_WITH_CONTROLS
           ? WebPlayerMode.CONTROLS_ONLY
           : WebPlayerMode.DISABLED;
-      const saved_player_id = window.localStorage.getItem(
-        "sendspin_webplayer_id",
-      );
-
-      // Use saved player_id or generate a new one if none exists
-      let player_id = saved_player_id;
-      if (!player_id) {
-        player_id = `ma_${Math.random().toString(36).substring(2, 12)}`;
-        window.localStorage.setItem("sendspin_webplayer_id", player_id);
-      }
+      // The sendspin client id is its Noise public key, so the SDK owns it. Mirror
+      // it into localStorage for the tabs and the proxy handshake that read it.
+      const player_id = loadSendspinClientIdentity().clientId;
+      window.localStorage.setItem("sendspin_webplayer_id", player_id);
       this.player_id = player_id;
       this.lastUpdate = Date.now();
 

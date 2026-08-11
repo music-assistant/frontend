@@ -303,7 +303,6 @@ onMounted(() => {
         // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
         // The URL just needs to be valid and contain "/sendspin" for the interceptor
         player = new SendspinPlayer({
-          playerId: props.playerId,
           baseUrl: "http://sendspin.local",
           audioElement,
           clientName: getDeviceName(),
@@ -322,6 +321,8 @@ onMounted(() => {
             playerState.value = state.playerState;
           },
           correctionMode: correctionMode.value,
+          onPairing: (event: string, detail?: string) =>
+            console.debug(`Sendspin: pairing ${event}`, detail ?? ""),
           onDelayCommand: (delayMs: number) => {
             localStorage.setItem(
               "frontend.settings.sendspin_static_delay",

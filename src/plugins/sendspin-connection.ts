@@ -128,6 +128,9 @@ export interface SendspinWebSocketBridge {
 }
 
 function wrapWebSocket(ws: WebSocket): SendspinWebSocketBridge {
+  // sendspin-js reads encrypted frames as ArrayBuffer, and the binaryType it sets
+  // lands on the wrapper rather than on this socket.
+  ws.binaryType = "arraybuffer";
   const bridge: SendspinWebSocketBridge = {
     send: (data: string | ArrayBuffer) => {
       if (ws.readyState === WebSocket.OPEN) {
@@ -170,6 +173,8 @@ function wrapWebSocket(ws: WebSocket): SendspinWebSocketBridge {
  * Wraps an RTCDataChannel to match the SendspinWebSocketBridge interface.
  */
 function wrapDataChannel(channel: RTCDataChannel): SendspinWebSocketBridge {
+  // See wrapWebSocket: sendspin-js needs ArrayBuffer, not Blob.
+  channel.binaryType = "arraybuffer";
   const bridge: SendspinWebSocketBridge = {
     send: (data: string | ArrayBuffer) => {
       if (channel.readyState === "open") {
