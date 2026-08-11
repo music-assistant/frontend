@@ -1,5 +1,13 @@
 <template>
   <div class="now-playing-view" :style="{ background: backgroundGradient }">
+    <VisualizerCanvas
+      v-if="visualizerActive"
+      :preset="visualizerPresetPref"
+      :blur="visualizerBlurPref"
+      :opacity="visualizerOpacityPref"
+      :player-id="store.activePlayer?.player_id"
+      covered-when-fullscreen
+    />
     <div v-if="!store.activePlayer" class="now-playing-empty">
       {{ $t("no_player") }}
     </div>
@@ -49,8 +57,10 @@
 
 <script setup lang="ts">
 import MarqueeText from "@/components/MarqueeText.vue";
+import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   type ImageColorPalette,
@@ -85,6 +95,13 @@ const artworkUrl = computed(
   () => getMediaImageUrl(store.activePlayer?.current_media?.image_url) || null,
 );
 
+const {
+  visualizerPresetPref,
+  visualizerBlurPref,
+  visualizerOpacityPref,
+  visualizerActive,
+} = useVisualizer(() => store.activePlayer?.player_id);
+
 const colorMode = useColorMode();
 const isDark = computed(() => colorMode.value === "dark");
 
@@ -108,6 +125,7 @@ const backgroundGradient = computed(() => {
 
 <style scoped>
 .now-playing-view {
+  position: relative;
   width: 100%;
   height: 100vh;
   display: flex;
@@ -119,6 +137,12 @@ const backgroundGradient = computed(() => {
   padding: 5vh 5vw 9vh;
   box-sizing: border-box;
   color: var(--text-color, #fff);
+}
+
+/* Lift content above the visualizer layer (z-index 0). */
+.now-playing-view > *:not(.visualizer-layer) {
+  position: relative;
+  z-index: 1;
 }
 
 /* Keep the vh fallback in a separate rule: the minifier collapses duplicate
