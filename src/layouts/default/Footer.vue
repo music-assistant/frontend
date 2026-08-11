@@ -16,6 +16,7 @@
   <BottomNavigation v-if="store.mobileLayout" />
 
   <v-footer
+    ref="playerBar"
     app
     color="default"
     :class="`py-0 px-0 ${
@@ -37,7 +38,23 @@
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 import { store } from "@/plugins/store";
+import { useElementSize } from "@vueuse/core";
+import { type ComponentPublicInstance, ref, watchEffect } from "vue";
 import Player from "./PlayerOSD/Player.vue";
+
+const playerBar = ref<ComponentPublicInstance>();
+const { height: playerBarHeight } = useElementSize(playerBar, undefined, {
+  box: "border-box",
+});
+
+// on mobile the player bar floats on top of the player bar popouts, which use
+// this to keep their content clear of it
+watchEffect(() => {
+  document.documentElement.style.setProperty(
+    "--player-bar-overlay-height",
+    store.mobileLayout ? `${Math.ceil(playerBarHeight.value)}px` : "0px",
+  );
+});
 </script>
 
 <style>
