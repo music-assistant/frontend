@@ -48,9 +48,14 @@
         </Button>
       </slot>
     </PopoverTrigger>
-    <PopoverContent class="w-[220px] p-0" align="start">
+    <PopoverContent
+      class="w-[220px] p-0"
+      align="start"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+    >
       <div class="faceted-filter-content">
         <Input
+          v-if="showSearch"
           v-model="search"
           :placeholder="title"
           :aria-label="`Search ${title}`"
@@ -108,6 +113,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 
 interface FacetedOption {
   label: string;
@@ -125,7 +131,15 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: TValue[]): void;
 }>();
 
+// a list this short is quicker to scan than to search - and on a touch device
+// a search field opens the on-screen keyboard on top of the options
+const MAX_OPTIONS_WITHOUT_SEARCH = 8;
+
 const search = ref("");
+
+const showSearch = computed(
+  () => props.options.length > MAX_OPTIONS_WITHOUT_SEARCH,
+);
 
 const selectedSet = computed(() => new Set(props.modelValue || []));
 
@@ -136,7 +150,7 @@ const selectedOptionLabels = computed(() =>
 );
 
 const filteredOptions = computed(() => {
-  const term = search.value.toLowerCase().trim();
+  const term = showSearch.value ? search.value.toLowerCase().trim() : "";
   if (!term) return props.options;
   return props.options.filter((opt) => opt.label.toLowerCase().includes(term));
 });
