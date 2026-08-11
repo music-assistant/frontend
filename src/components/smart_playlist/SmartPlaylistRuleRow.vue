@@ -376,7 +376,10 @@ function handleDurationBlur(e: Event, field: "min" | "max") {
 function handleLastPlayedValueChange(value: number | undefined) {
   emit("change-last-played", {
     value,
-    unit: value !== undefined ? props.rule.lastPlayedBeforeUnit || "days" : undefined,
+    unit:
+      value !== undefined
+        ? props.rule.lastPlayedBeforeUnit || "days"
+        : undefined,
   });
 }
 
