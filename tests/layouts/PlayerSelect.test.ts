@@ -1,5 +1,9 @@
 import PlayerSelect from "@/layouts/default/PlayerSelect.vue";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  fullscreenPlayerSelectAnchor,
+  playerBarEndAnchor,
+} from "@/helpers/player_bar";
 import { api } from "@/plugins/api";
 import {
   IdentifierType,
@@ -66,6 +70,7 @@ vi.mock("@/plugins/store", async () => {
       companionPlayerId: undefined as string | undefined,
       dialogActive: false,
       mobileLayout: false,
+      showFullscreenPlayer: false,
       showPlayersMenu: true,
     }),
   };
@@ -205,6 +210,11 @@ const DropdownMenuCheckboxItemStub = {
     </button>
   `,
 };
+const PopoverAnchorStub = {
+  name: "PopoverAnchor",
+  props: ["reference"],
+  template: `<div><slot /></div>`,
+};
 const PopoverContentStub = {
   name: "PopoverContent",
   emits: ["interact-outside", "open-auto-focus"],
@@ -313,7 +323,7 @@ function mountPlayerSelect() {
         DropdownMenuSeparator: passthroughStub,
         DropdownMenuTrigger: passthroughStub,
         Popover: passthroughStub,
-        PopoverAnchor: passthroughStub,
+        PopoverAnchor: PopoverAnchorStub,
         PopoverContent: PopoverContentStub,
         Teleport: true,
       },
@@ -341,6 +351,7 @@ describe("PlayerSelect", () => {
     store.companionPlayerId = undefined;
     store.dialogActive = false;
     store.mobileLayout = false;
+    store.showFullscreenPlayer = false;
     store.showPlayersMenu = true;
     webPlayer.player_id = null;
     storage.clear();
@@ -614,9 +625,30 @@ describe("PlayerSelect", () => {
     expect(wrapper.find(".player-select-backdrop").classes()).toContain(
       "player-select-mobile-offset",
     );
-    expect(
-      wrapper.find('[data-testid="player-select-sheet"]').classes(),
-    ).toContain("player-select-popover");
+    const sheet = wrapper.find('[data-testid="player-select-sheet"]');
+    expect(sheet.classes()).toContain("player-select-popover");
+    expect(sheet.attributes("align")).toBe("end");
+    expect(wrapper.findComponent(PopoverAnchorStub).props("reference")).toBe(
+      playerBarEndAnchor,
+    );
+  });
+
+  it("pops out of the fullscreen player instead of behind it", () => {
+    store.mobileLayout = true;
+    store.showFullscreenPlayer = true;
+
+    const wrapper = mountPlayerSelect();
+
+    const backdrop = wrapper.find(".player-select-backdrop");
+    expect(backdrop.classes()).toContain("player-select-fullscreen-backdrop");
+    // the fullscreen offset replaces the layout ones instead of stacking on them
+    expect(backdrop.classes()).not.toContain("player-select-mobile-offset");
+    const sheet = wrapper.find('[data-testid="player-select-sheet"]');
+    expect(sheet.classes()).toContain("player-select-popover-fullscreen");
+    expect(sheet.attributes("align")).toBe("center");
+    expect(wrapper.findComponent(PopoverAnchorStub).props("reference")).toBe(
+      fullscreenPlayerSelectAnchor,
+    );
   });
 
   it("focuses the sheet instead of opening the mobile keyboard", () => {

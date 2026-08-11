@@ -28,6 +28,7 @@ vi.mock("@/plugins/store", async () => {
       activePlayerQueue: undefined,
       curQueueItem: undefined,
       showFullscreenPlayer: false,
+      showPlayersMenu: false,
       showQueueItems: false,
     }),
   };
@@ -108,6 +109,7 @@ interface TestStore {
     active: boolean;
   };
   showFullscreenPlayer: boolean;
+  showPlayersMenu: boolean;
   showQueueItems: boolean;
 }
 
@@ -183,6 +185,7 @@ afterEach(async () => {
   testStore.activePlayer = undefined;
   testStore.activePlayerQueue = undefined;
   testStore.showFullscreenPlayer = false;
+  testStore.showPlayersMenu = false;
   testStore.showQueueItems = false;
   testApi.queues = {};
   testApi.queueElapsedTime = {};
@@ -218,5 +221,31 @@ describe("PlayerFullscreen lyrics clock", () => {
     testStore.showFullscreenPlayer = false;
     await nextTick();
     expect(pendingFrames.size).toBe(0);
+  });
+});
+
+describe("PlayerFullscreen player select button", () => {
+  it("opens the player list on top of the fullscreen player", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        // the button lives inside the dialog, which a shallow mount leaves empty
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    await nextTick();
+
+    await wrapper.find("#fullscreen-player-select-button").trigger("click");
+
+    expect(testStore.showPlayersMenu).toBe(true);
+    expect(testStore.showFullscreenPlayer).toBe(true);
   });
 });

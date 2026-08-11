@@ -11,9 +11,11 @@
         type="button"
         :class="[
           'modal-backdrop player-select-backdrop fixed inset-x-0 top-0 z-[997]',
-          store.mobileLayout
-            ? 'player-select-mobile-offset'
-            : 'player-select-desktop-offset',
+          popoutFromFullscreen
+            ? 'player-select-fullscreen-backdrop'
+            : store.mobileLayout
+              ? 'player-select-mobile-offset'
+              : 'player-select-desktop-offset',
         ]"
         :aria-label="$t('close')"
         @click="setMenuOpen(false)"
@@ -22,12 +24,12 @@
   </Teleport>
 
   <Popover :open="store.showPlayersMenu" @update:open="setMenuOpen">
-    <PopoverAnchor :reference="playerBarEndAnchor" />
+    <PopoverAnchor :reference="popoutAnchor" />
     <PopoverContent
       data-player-panel
       data-testid="player-select-sheet"
       side="top"
-      align="end"
+      :align="popoutFromFullscreen ? 'center' : 'end'"
       :side-offset="
         store.mobileLayout
           ? MOBILE_PLAYER_BAR_POPOUT_GAP
@@ -36,6 +38,7 @@
       :collision-padding="8"
       :class="[
         'player-bar-popout player-select-popover flex flex-col gap-0 overflow-hidden p-0',
+        popoutFromFullscreen && 'player-select-popover-fullscreen',
         store.mobileLayout
           ? 'max-h-[78dvh] w-[calc(100vw-1rem)]'
           : 'max-h-[min(82dvh,780px)] w-[400px] max-w-[calc(100vw-1rem)]',
@@ -206,6 +209,7 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   DESKTOP_PLAYER_BAR_POPOUT_GAP,
   MOBILE_PLAYER_BAR_POPOUT_GAP,
+  fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
 import { isPlayerActive } from "@/helpers/players";
@@ -274,6 +278,16 @@ const orderedPlayers = useOrderedPlayers({
 
 const showSearch = computed(
   () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
+);
+
+// the fullscreen player covers the player bar, so the panel pops out of the
+// player select button in there and stays on top of it
+const popoutFromFullscreen = computed(() => store.showFullscreenPlayer);
+
+const popoutAnchor = computed(() =>
+  popoutFromFullscreen.value
+    ? fullscreenPlayerSelectAnchor
+    : playerBarEndAnchor,
 );
 
 const filteredPlayers = computed(() => {
@@ -581,5 +595,24 @@ async function scrollSelectedPlayerIntoView() {
 
 .player-select-popover {
   z-index: 998 !important;
+}
+
+/* the fullscreen player is a dialog at z-index 9000, so both the panel and its
+   backdrop have to clear it; each rule pairs up its class to outweigh the
+   utility it overrides */
+.player-select-backdrop.player-select-fullscreen-backdrop {
+  bottom: 0 !important;
+  z-index: 9001 !important;
+}
+
+.player-bar-popout.player-select-popover-fullscreen {
+  z-index: 9002 !important;
+}
+
+/* the fullscreen player covers the mobile player bar, so this popout has no
+   floating bar to stay clear of */
+:root[data-player-bar-overlay]
+  .player-bar-popout.player-select-popover-fullscreen {
+  padding-bottom: 0 !important;
 }
 </style>
