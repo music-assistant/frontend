@@ -456,6 +456,9 @@
             variant="outline"
             size="xs"
             class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
+            :aria-label="playerSelectLabel"
+            :aria-expanded="store.showPlayersMenu"
+            aria-haspopup="dialog"
             @click="store.showPlayersMenu = true"
           >
             <PlayerIcon
@@ -843,6 +846,12 @@ const subTitleFontSize = computed(() => {
   // Anchor album/artist size to the track title using the EditorialMediaCard
   // tile ratio (subtitle 12px / title 14px).
   return `${(parseFloat(titleFontSize.value) * (12 / 14)).toFixed(3)}em`;
+});
+
+const playerSelectLabel = computed(() => {
+  const selectPlayer = $t("tooltip.select_player");
+  if (!store.activePlayer) return selectPlayer;
+  return `${selectPlayer}: ${getPlayerName(store.activePlayer)}`;
 });
 
 const showExpandedPlayerSelectButton = computed(() => {

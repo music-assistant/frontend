@@ -25,6 +25,9 @@
 
   <Popover :open="store.showPlayersMenu" @update:open="setMenuOpen">
     <PopoverAnchor :reference="popoutAnchor" />
+    <!-- reka-ui generates the panel id and only mounts the panel while it is
+         open, so the buttons that open it announce it with
+         aria-haspopup/aria-expanded rather than aria-controls -->
     <PopoverContent
       data-player-panel
       data-testid="player-select-sheet"
