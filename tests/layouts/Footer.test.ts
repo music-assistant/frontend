@@ -40,9 +40,19 @@ vi.mock("@/plugins/store", async () => {
 const vuetify = createVuetify({ components, directives });
 
 const OVERLAY_HEIGHT = "--player-bar-overlay-height";
+const OVERLAY_MARKER = "data-player-bar-overlay";
 
 function overlayHeight() {
   return document.documentElement.style.getPropertyValue(OVERLAY_HEIGHT);
+}
+
+function overlayMarked() {
+  return document.documentElement.hasAttribute(OVERLAY_MARKER);
+}
+
+function clearOverlay() {
+  document.documentElement.style.removeProperty(OVERLAY_HEIGHT);
+  document.documentElement.removeAttribute(OVERLAY_MARKER);
 }
 
 let wrapper: VueWrapper | undefined;
@@ -67,7 +77,7 @@ describe("Footer", () => {
   beforeEach(() => {
     store.mobileLayout = false;
     playerBarHeight.value = 0;
-    document.documentElement.style.removeProperty(OVERLAY_HEIGHT);
+    clearOverlay();
   });
 
   afterEach(() => {
@@ -75,7 +85,7 @@ describe("Footer", () => {
     // test's state and republish the variable
     wrapper?.unmount();
     wrapper = undefined;
-    document.documentElement.style.removeProperty(OVERLAY_HEIGHT);
+    clearOverlay();
   });
 
   it("publishes the floating player bar height so popouts can clear it", async () => {
@@ -85,6 +95,7 @@ describe("Footer", () => {
     await nextTick();
 
     expect(overlayHeight()).toBe("119px");
+    expect(overlayMarked()).toBe(true);
   });
 
   it("tracks the player bar as it resizes", async () => {
@@ -99,12 +110,43 @@ describe("Footer", () => {
     expect(overlayHeight()).toBe("64px");
   });
 
-  it("reserves no room on desktop, where the popouts sit above the player bar", async () => {
+  it("leaves desktop popouts alone, as they sit above the player bar", async () => {
+    // seeded so the assertions fail unless mounting actively clears them
+    document.documentElement.style.setProperty(OVERLAY_HEIGHT, "118px");
+    document.documentElement.setAttribute(OVERLAY_MARKER, "");
     playerBarHeight.value = 104;
     mountFooter();
     await nextTick();
 
-    expect(overlayHeight()).toBe("0px");
+    expect(overlayMarked()).toBe(false);
+    expect(overlayHeight()).toBe("");
+  });
+
+  it("stops reserving room when the layout switches to desktop", async () => {
+    store.mobileLayout = true;
+    playerBarHeight.value = 118;
+    mountFooter();
+    await nextTick();
+
+    store.mobileLayout = false;
+    await nextTick();
+
+    expect(overlayMarked()).toBe(false);
+    expect(overlayHeight()).toBe("");
+  });
+
+  it("picks the player bar back up when the layout switches to mobile", async () => {
+    playerBarHeight.value = 104;
+    mountFooter();
+    await nextTick();
+
+    store.mobileLayout = true;
+    await nextTick();
+    playerBarHeight.value = 118;
+    await nextTick();
+
+    expect(overlayMarked()).toBe(true);
+    expect(overlayHeight()).toBe("118px");
   });
 
   it("stops reserving room once the player bar is gone", async () => {
@@ -117,6 +159,7 @@ describe("Footer", () => {
     wrapper = undefined;
     await nextTick();
 
+    expect(overlayMarked()).toBe(false);
     expect(overlayHeight()).toBe("");
   });
 
