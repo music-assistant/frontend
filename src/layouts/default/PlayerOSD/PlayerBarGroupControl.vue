@@ -36,8 +36,7 @@
           ]"
           :data-active="open"
           :data-suppress-hover="suppressHover"
-          :aria-label="$t('tooltip.group_members')"
-          :aria-pressed="open"
+          :aria-label="groupMembersLabel"
           @click.capture="handleTriggerClick"
           @pointerleave="suppressHover = false"
         >
@@ -53,8 +52,7 @@
               navigation ? 'mobile-navigation-label' : 'player-bar-action-label'
             "
           >
-            {{ memberCount }}
-            {{ memberCount === 1 ? $t("player_type.player") : $t("players") }}
+            {{ memberCountLabel }}
           </span>
         </Button>
       </PopoverTrigger>
@@ -113,6 +111,7 @@ import {
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 import PlayerGroupPanel from "./PlayerGroupPanel.vue";
@@ -135,6 +134,17 @@ const canEditGroup = computed(
 );
 const memberCount = computed(() =>
   player.value ? getPlayerGroupMemberCount(player.value) : 0,
+);
+const memberCountLabel = computed(
+  () =>
+    `${memberCount.value} ${
+      memberCount.value === 1 ? $t("player_type.player") : $t("players")
+    }`,
+);
+// reka-ui names the panel after this trigger, so the label carries the visible
+// member count as well as the button's purpose
+const groupMembersLabel = computed(
+  () => `${$t("tooltip.group_members")}: ${memberCountLabel.value}`,
 );
 const groupMembers = computed(() => {
   if (!player.value) return [];

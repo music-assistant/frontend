@@ -2,7 +2,6 @@ import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
-import { $t } from "@/plugins/i18n";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -103,7 +102,12 @@ const NOW = 1_700_000_000;
 const QUEUE_ID = "q1";
 
 interface TestStore {
-  activePlayer?: { player_id: string; active_source?: string };
+  activePlayer?: {
+    player_id: string;
+    active_source?: string;
+    name?: string;
+    group_members?: string[];
+  };
   activePlayerQueue?: {
     queue_id: string;
     state: PlaybackState;
@@ -265,13 +269,28 @@ describe("PlayerFullscreen player select button", () => {
     expect(selectButton.attributes("aria-haspopup")).toBe("dialog");
     expect(selectButton.attributes("aria-expanded")).toBe("false");
     // no player selected, so the label carries no trailing player name
-    expect(selectButton.attributes("aria-label")).toBe(
-      $t("tooltip.select_player"),
-    );
+    expect(selectButton.attributes("aria-label")).toBe("tooltip.select_player");
 
     testStore.showPlayersMenu = true;
     await nextTick();
 
     expect(selectButton.attributes("aria-expanded")).toBe("true");
+  });
+
+  it("names the selected player it opens the list from", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+    };
+    const fullscreen = await mountFullscreenDialog();
+
+    expect(
+      fullscreen
+        .get("#fullscreen-player-select-button")
+        .attributes("aria-label"),
+    ).toBe("tooltip.select_player: Kitchen");
   });
 });

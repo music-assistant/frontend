@@ -1,7 +1,7 @@
 import PlayerBarPlayerButton from "@/layouts/default/PlayerOSD/PlayerBarPlayerButton.vue";
 import { store } from "@/plugins/store";
-import { mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mount, type VueWrapper } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -24,13 +24,13 @@ interface TestStore {
 
 const testStore = store as unknown as TestStore;
 
+let wrapper: VueWrapper | undefined;
+
 function mountPlayerButton() {
-  return mount(PlayerBarPlayerButton, {
-    global: {
-      mocks: { $t: (key: string) => key },
-      stubs: { PlayerIcon: true },
-    },
+  wrapper = mount(PlayerBarPlayerButton, {
+    global: { stubs: { PlayerIcon: true } },
   });
+  return wrapper.get("#player-select-button");
 }
 
 describe("PlayerBarPlayerButton", () => {
@@ -39,9 +39,14 @@ describe("PlayerBarPlayerButton", () => {
     testStore.showPlayersMenu = false;
   });
 
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+  });
+
   it("announces the player list panel it opens", async () => {
     testStore.activePlayer = { name: "Kitchen" };
-    const button = mountPlayerButton().get("#player-select-button");
+    const button = mountPlayerButton();
 
     expect(button.attributes("aria-haspopup")).toBe("dialog");
     expect(button.attributes("aria-expanded")).toBe("false");
@@ -50,6 +55,7 @@ describe("PlayerBarPlayerButton", () => {
     );
     // a button that opens a panel reports its state through aria-expanded alone
     expect(button.attributes("aria-pressed")).toBeUndefined();
+    expect(button.text()).toContain("Kitchen");
 
     await button.trigger("click");
 
@@ -58,7 +64,7 @@ describe("PlayerBarPlayerButton", () => {
   });
 
   it("names the empty selection when no player is active", () => {
-    const button = mountPlayerButton().get("#player-select-button");
+    const button = mountPlayerButton();
 
     expect(button.attributes("aria-label")).toBe(
       "tooltip.select_player: no_player",

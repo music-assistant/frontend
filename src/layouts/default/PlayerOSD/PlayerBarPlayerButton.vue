@@ -9,7 +9,7 @@
     ]"
     :data-active="store.showPlayersMenu"
     :data-suppress-hover="suppressHover"
-    :aria-label="`${$t('tooltip.select_player')}: ${playerName}`"
+    :aria-label="playerSelectLabel"
     :aria-expanded="store.showPlayersMenu"
     aria-haspopup="dialog"
     @click="togglePlayersMenu"
@@ -44,6 +44,9 @@ import { computed, ref } from "vue";
 
 const suppressHover = ref(false);
 const playerName = computed(() => store.activePlayer?.name || $t("no_player"));
+const playerSelectLabel = computed(
+  () => `${$t("tooltip.select_player")}: ${playerName.value}`,
+);
 
 withDefaults(
   defineProps<{

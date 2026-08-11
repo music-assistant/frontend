@@ -769,6 +769,17 @@ describe("PlayerSelect", () => {
     expect(store.showPlayersMenu).toBe(false);
   });
 
+  it("names the panel for assistive tech", () => {
+    // no PopoverTrigger to borrow a name from, so the panel labels itself
+    const wrapper = mountPlayerSelect();
+
+    expect(
+      wrapper
+        .find('[data-testid="player-select-sheet"]')
+        .attributes("aria-label"),
+    ).toBe("players");
+  });
+
   it("stops above the bottom navigation in mobile layout", () => {
     store.mobileLayout = true;
 
