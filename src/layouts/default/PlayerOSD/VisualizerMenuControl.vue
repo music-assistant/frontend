@@ -43,26 +43,28 @@
     <div class="visualizer-menu__row">
       <Focus :size="20" class="visualizer-menu__icon" />
       <Slider
-        :model-value="[blurPref]"
+        :model-value="[blurDraft]"
         :min="0"
         :max="30"
         :step="1"
         class="visualizer-menu__slider"
         @update:model-value="onBlurChange"
+        @value-commit="onBlurCommit"
       />
-      <span class="visualizer-menu__value">{{ blurPref }}px</span>
+      <span class="visualizer-menu__value">{{ blurDraft }}px</span>
     </div>
     <div class="visualizer-menu__row">
       <Blend :size="20" class="visualizer-menu__icon" />
       <Slider
-        :model-value="[opacityPref]"
+        :model-value="[opacityDraft]"
         :min="10"
         :max="100"
         :step="5"
         class="visualizer-menu__slider"
         @update:model-value="onOpacityChange"
+        @value-commit="onOpacityCommit"
       />
-      <span class="visualizer-menu__value">{{ opacityPref }}%</span>
+      <span class="visualizer-menu__value">{{ opacityDraft }}%</span>
     </div>
     <DropdownMenuItem class="px-0" @select="openSettings">
       <SettingsIcon class="visualizer-menu__icon size-5" />
@@ -198,13 +200,29 @@ const onPresetChange = (value: unknown) => {
   void setPreference("visualizer_preset_mode", "fixed");
 };
 
+// Track drags locally so the labels stay live; the preference is persisted
+// only on commit (drag end) — every write is a full api.updateUser round-trip
+// that replaces the whole preferences object.
+const blurDraft = ref(blurPref.value);
+watch(blurPref, (value) => (blurDraft.value = value));
+const opacityDraft = ref(opacityPref.value);
+watch(opacityPref, (value) => (opacityDraft.value = value));
+
 const onBlurChange = (value: number[] | undefined) => {
   if (!value) return;
+  blurDraft.value = value[0] ?? 0;
+};
+
+const onBlurCommit = (value: number[]) => {
   void setPreference("visualizer_blur", value[0] ?? 0);
 };
 
 const onOpacityChange = (value: number[] | undefined) => {
   if (!value) return;
+  opacityDraft.value = value[0] ?? 100;
+};
+
+const onOpacityCommit = (value: number[]) => {
   void setPreference("visualizer_opacity", value[0] ?? 100);
 };
 

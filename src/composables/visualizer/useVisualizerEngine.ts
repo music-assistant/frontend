@@ -25,13 +25,23 @@ export interface VisualizerEngine {
 
 /**
  * Whether the browser can run butterchurn (WebGL2 required).
+ *
+ * Probed once and cached: this runs inside every hosting view's
+ * visualizerActive computed, which re-evaluates on each preference write.
+ * An uncached probe would spawn a throwaway WebGL2 context per call, and
+ * Chrome drops the oldest live context on overflow — the running visualizer.
  */
+let webgl2Supported: boolean | null = null;
+
 export function isVisualizerSupported(): boolean {
-  try {
-    return !!document.createElement("canvas").getContext("webgl2");
-  } catch {
-    return false;
+  if (webgl2Supported === null) {
+    try {
+      webgl2Supported = !!document.createElement("canvas").getContext("webgl2");
+    } catch {
+      webgl2Supported = false;
+    }
   }
+  return webgl2Supported;
 }
 
 // One never-resumed AudioContext satisfies butterchurn's constructor; the

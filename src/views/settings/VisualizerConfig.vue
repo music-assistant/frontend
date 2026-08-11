@@ -95,17 +95,19 @@
           </div>
           <div class="flex w-64 shrink-0 items-center gap-3">
             <Slider
-              :model-value="[opacityPref]"
+              :model-value="[opacityDraft]"
               :min="10"
               :max="100"
               :step="5"
               @update:model-value="
-                (v: number[] | undefined) =>
-                  setPref('visualizer_opacity', v?.[0] ?? 100)
+                (v: number[] | undefined) => (opacityDraft = v?.[0] ?? 100)
+              "
+              @value-commit="
+                (v: number[]) => setPref('visualizer_opacity', v[0] ?? 100)
               "
             />
             <span class="w-12 text-right text-sm tabular-nums"
-              >{{ opacityPref }}%</span
+              >{{ opacityDraft }}%</span
             >
           </div>
         </div>
@@ -121,17 +123,19 @@
           </div>
           <div class="flex w-64 shrink-0 items-center gap-3">
             <Slider
-              :model-value="[blurPref]"
+              :model-value="[blurDraft]"
               :min="0"
               :max="30"
               :step="1"
               @update:model-value="
-                (v: number[] | undefined) =>
-                  setPref('visualizer_blur', v?.[0] ?? 0)
+                (v: number[] | undefined) => (blurDraft = v?.[0] ?? 0)
+              "
+              @value-commit="
+                (v: number[]) => setPref('visualizer_blur', v[0] ?? 0)
               "
             />
             <span class="w-12 text-right text-sm tabular-nums"
-              >{{ blurPref }}px</span
+              >{{ blurDraft }}px</span
             >
           </div>
         </div>
@@ -225,17 +229,19 @@
           </div>
           <div class="flex w-64 shrink-0 items-center gap-3">
             <Slider
-              :model-value="[beatDwellPref]"
+              :model-value="[beatDwellDraft]"
               :min="5"
               :max="120"
               :step="5"
               @update:model-value="
-                (v: number[] | undefined) =>
-                  setPref('visualizer_beat_dwell', v?.[0] ?? 30)
+                (v: number[] | undefined) => (beatDwellDraft = v?.[0] ?? 30)
+              "
+              @value-commit="
+                (v: number[]) => setPref('visualizer_beat_dwell', v[0] ?? 30)
               "
             />
             <span class="w-12 text-right text-sm tabular-nums"
-              >{{ beatDwellPref }}s</span
+              >{{ beatDwellDraft }}s</span
             >
           </div>
         </div>
@@ -298,7 +304,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
   Droplet,
   Heart,
@@ -354,6 +360,16 @@ const favoritesPref = getPreference<string[]>("visualizer_favorites", []);
 
 const providerAvailable = computed(() => visualizerProviderAvailable());
 const presetNames = ref<string[]>([]);
+
+// Track slider drags locally so the labels stay live; the preference is
+// persisted only on commit (drag end) — every write is a full api.updateUser
+// round-trip that replaces the whole preferences object.
+const opacityDraft = ref(opacityPref.value);
+watch(opacityPref, (value) => (opacityDraft.value = value));
+const blurDraft = ref(blurPref.value);
+watch(blurPref, (value) => (blurDraft.value = value));
+const beatDwellDraft = ref(beatDwellPref.value);
+watch(beatDwellPref, (value) => (beatDwellDraft.value = value));
 
 onMounted(async () => {
   // Nothing to configure when the plugin is absent (the page shows a

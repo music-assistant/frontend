@@ -215,6 +215,11 @@ const initializeWhenSized = () => {
   }
   if (sizeObserver) return;
   sizeObserver = new ResizeObserver(() => {
+    // Re-check covered: the fullscreen player may have opened while this
+    // canvas was still waiting for layout; initialising then would start a
+    // second engine behind it. The uncover path calls initializeWhenSized
+    // again, so a held-back observer still gets its init.
+    if (covered.value) return;
     if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
       sizeObserver?.disconnect();
       sizeObserver = null;
