@@ -62,7 +62,7 @@ const onSelect = (index: unknown) => {
         />
         <Label
           :for="`${groupId}-${index}`"
-          class="flex flex-1 cursor-pointer flex-col items-start gap-1 font-normal"
+          class="flex flex-1 flex-col items-start gap-1 font-normal"
         >
           <span class="text-sm font-medium">{{ optionTitle(option) }}</span>
           <span
