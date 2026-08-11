@@ -545,8 +545,6 @@
         "last_played_desc": "Paskutinį kartą leista (mažėjimo tvarka)",
         "play_count": "Leidimų skaičius",
         "play_count_desc": "Peržiūrų skaičius (mažėjimo tvarka)",
-        "artist_name": "Albumo atlikėjas",
-        "artist_name_desc": "Albumo atlikėjas (mažėjimo tvarka)",
         "album_sort_name": "Albumas (rūšiavimo pavadinimas)"
     },
     "state": {

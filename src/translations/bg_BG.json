@@ -205,9 +205,29 @@
                 "gain": "Усилване",
                 "balance": "Баланс"
             },
+            "presets": {
+                "custom": "Персонализиран"
+            },
             "transpose": {
                 "original_key": "Оригинален ключ",
                 "concert_pitch_432": "A = 432 Hz"
+            },
+            "stereo_width": {
+                "scale": {
+                    "mono": "Моно"
+                }
+            },
+            "convolution": {
+                "none": "Няма избрано",
+                "choose_file": "Изберете файл",
+                "no_file": "Няма избран файл",
+                "name": "Име",
+                "upload": "Качване",
+                "upload_failed": "Качването не е успешно",
+                "too_large": "Този файл е по-голям от ограничението от {0} MiB.",
+                "mono": "Моно",
+                "stereo": "Стерео",
+                "channel_count": "{0} канала"
             }
         },
         "dsp_enabled": "DSP е активиран",
@@ -441,7 +461,8 @@
             "setup_player_title": "Настройка на плейъра",
             "external_default_title": "Продължете във вашия браузър"
         },
-        "options": "Опции"
+        "options": "Опции",
+        "server_clock_offset": "Разлика във времето (между сървъра и това устройство)"
     },
     "show_info": "Показване на информация",
     "show_select_boxes": "Показване на полета за избор",
@@ -742,7 +763,9 @@
         "select_providers": "Изберете доставчици",
         "save_changes": "Запазване на промените",
         "update_password": "Актуализиране на паролата",
-        "guest_role": "Гост"
+        "guest_role": "Гост",
+        "tokens_load_failed": "Зареждането на токените за достъп не е успешно",
+        "users_load_failed": "Зареждането на потребителите не е успешно"
     },
     "login": {
         "subtitle": "Свържете се с вашия музикален сървър",
@@ -787,7 +810,13 @@
         "scan_qr": "Сканиране на QR",
         "scan_qr_code": "Сканиране на QR код",
         "scan_qr_hint": "Насочете камерата си към QR кода, показан в настройките на вашия сървър Music Assistant.",
-        "qr_camera_error": "Няма достъп до камерата. Моля, проверете разрешенията."
+        "qr_camera_error": "Няма достъп до камерата. Моля, проверете разрешенията.",
+        "server_address_hint": "Въведете пълния URL на вашия сървър Music Assistant",
+        "connecting_ingress": "Свързване чрез Home Assistant...",
+        "reconnecting": "Възстановяване на връзката",
+        "reconnecting_message": "Опит за повторно свързване със сървъра...",
+        "guest_ended_dashboard_title": "Тази сесия на таблото приключи",
+        "continue_to_app": "Продължете към Music Assistant"
     },
     "yes": "Да",
     "no": "Не",
@@ -1010,7 +1039,8 @@
                 "start": "Веднъж в началото",
                 "end": "Веднъж в края",
                 "every_song": "Всяка песен",
-                "every_n_songs": "Всеки ~{0} песни"
+                "every_n_songs": "Всеки ~{0} песни",
+                "every_n_min": "Всеки ~{0} min"
             },
             "validation": {
                 "station_name_required": "Името на станцията е задължително"
@@ -1021,11 +1051,15 @@
                 "delete_station_title": "Изтриване на станцията?",
                 "delete_station": "Да се изтрие ли тази станция?"
             },
+            "gallery": {
+                "empty_title": "Създайте първото си шоу"
+            },
             "card": {
                 "stopping": "Спиране...",
                 "on_air": "В ефир",
                 "duplicate_name": "{0} (копие)",
-                "delete": "Изтриване"
+                "delete": "Изтриване",
+                "no_player": "Първо изберете плейър"
             },
             "create": {
                 "playlist_placeholder": "Изберете плейлист",
@@ -1033,7 +1067,15 @@
                 "default_name": "{0} — {1}",
                 "create": "Създаване",
                 "create_and_play": "Създаване & възпроизвеждане",
-                "creating": "Създаване..."
+                "creating": "Създаване...",
+                "validation": {
+                    "name_required": "Името на шоуто е задължително"
+                }
+            },
+            "presets": {
+                "morning_show": {
+                    "name": "Сутрешно шоу"
+                }
             },
             "prereq": {
                 "description": "AI Radio се нуждае от доставчик с AI възможности (напр. Home Assistant), за да генерира хоста.",
@@ -1293,6 +1335,11 @@
     },
     "searching": "Търсене...",
     "pause": "Пауза",
+    "dashboard": {
+        "loading": "Зареждане на устройства..."
+    },
     "plugins": "Добавки",
-    "queue_ended": "Възпроизвеждането приключи"
+    "queue_ended": "Възпроизвеждането приключи",
+    "audiobooks_in_collection": "Аудиокниги в тази колекция",
+    "error_generic": "Нещо се обърка. Моля, опитайте отново."
 }

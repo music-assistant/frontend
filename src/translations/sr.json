@@ -629,8 +629,6 @@
         "last_played_desc": "Последње репродуковано (опадајући)",
         "play_count": "Број репродукција",
         "play_count_desc": "Број репродукција (опадајући)",
-        "artist_name": "Извођач албума",
-        "artist_name_desc": "Извођач албума (опадајући редослед)",
         "album_sort_name": "Албум (назив за сортирање)"
     },
     "state": {
@@ -1416,8 +1414,7 @@
             "fields": {
                 "web_search_mode": "Режим веб претраге",
                 "character_limit": "Ограничење броја знакова",
-                "prompt": "Промпт",
-                "dynamic_batch_size": "Динамичка величина серије"
+                "prompt": "Промпт"
             },
             "confirm": {
                 "delete_station_title": "Обрисати станицу?",

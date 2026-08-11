@@ -505,9 +505,7 @@
         "last_played": "Naposledy hrané",
         "last_played_desc": "Naposledy hrané (sestupně)",
         "play_count": "Počet přehrání",
-        "play_count_desc": "Počet přehrání (sestupně)",
-        "artist_name": "Umělec alba",
-        "artist_name_desc": "Umělec alba (sestupně)"
+        "play_count_desc": "Počet přehrání (sestupně)"
     },
     "state": {
         "idle": "nečinný",
