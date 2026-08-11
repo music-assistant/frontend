@@ -57,7 +57,7 @@
   --bottom-bars-height: calc(
     var(--mobile-navigation-height) + 6px + var(--player-bar-overlay-height)
   );
-  /* the scrim outreaches the bars whenever the player bar has no volume row */
+  /* The scrim reaches higher than the bars unless the player bar has grown. */
   --bottom-obscured-height: max(
     var(--bottom-bars-height),
     var(--mobile-player-scrim-height)
