@@ -114,7 +114,6 @@ const {
         | undefined,
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
-      isInPWAMode: false,
       isIngressSession: false,
       isOnboarding: false,
       serverInfo: undefined as unknown,
