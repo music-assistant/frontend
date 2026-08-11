@@ -575,7 +575,7 @@ async function scrollSelectedPlayerIntoView() {
 }
 
 .player-select-mobile-offset {
-  bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: var(--mobile-navigation-height) !important;
 }
 
 .player-select-popover {

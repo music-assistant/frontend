@@ -24,7 +24,7 @@
         : 'mediacontrols-player-default'
     }`"
     :style="[
-      store.mobileLayout ? { bottom: MOBILE_NAVIGATION_HEIGHT } : {},
+      store.mobileLayout ? { bottom: 'var(--mobile-navigation-height)' } : {},
       store.mobileLayout && store.showPlayersMenu
         ? 'z-index: 999 !important;'
         : '',
@@ -36,7 +36,6 @@
 
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
-import { MOBILE_NAVIGATION_HEIGHT } from "@/helpers/layout";
 import { store } from "@/plugins/store";
 import Player from "./PlayerOSD/Player.vue";
 </script>

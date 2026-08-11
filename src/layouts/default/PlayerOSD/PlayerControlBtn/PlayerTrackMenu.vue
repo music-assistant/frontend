@@ -332,7 +332,7 @@ onBeforeUnmount(flushPendingSpeed);
   top: auto !important;
   left: auto !important;
   right: 1rem !important;
-  bottom: calc(env(safe-area-inset-bottom, 0) + 6rem) !important;
+  bottom: calc(var(--mobile-navigation-height) + 8px) !important;
   transform: none !important;
 }
 

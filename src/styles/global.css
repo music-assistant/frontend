@@ -23,6 +23,16 @@
   -webkit-font-smoothing: antialiased;
 }
 
+:root {
+  /* Room below the bottom navigation buttons: a fixed margin so they are never
+     flush with the screen edge, plus the device safe area (home indicator or
+     system navigation bar) when the OS reports one. */
+  --mobile-navigation-inset-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  /* Space the bottom navigation occupies. Anything anchored above it (sheets,
+     popovers, the player bar, scroll padding) is positioned from this. */
+  --mobile-navigation-height: calc(88px + var(--mobile-navigation-inset-bottom));
+}
+
 html {
   overflow: hidden;
   /* iOS Safari tints the status bar from this background. Must stay set. */

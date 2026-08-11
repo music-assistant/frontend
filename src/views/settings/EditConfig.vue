@@ -654,7 +654,7 @@ const getCategoryIcon = function (category: string): Component {
 
 :global(.content-section--mobile) .floating-save {
   right: 16px;
-  bottom: calc(196px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--mobile-navigation-height) + 108px);
 }
 
 :global(.content-section--frameless) .floating-save {

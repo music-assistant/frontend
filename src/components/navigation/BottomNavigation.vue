@@ -100,9 +100,9 @@ function closePlayersMenu() {
 <style>
 .mobile-bottom-navigation {
   bottom: -2px !important;
-  height: calc(90px + env(safe-area-inset-bottom, 0px));
+  height: calc(var(--mobile-navigation-height) + 2px);
   background: var(--background);
-  padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--mobile-navigation-inset-bottom) + 2px);
 }
 
 .mobile-bottom-navigation::before {

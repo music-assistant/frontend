@@ -216,7 +216,7 @@
       <v-snackbar
         :model-value="selectedItems.length > 1"
         :timeout="-1"
-        style="margin-bottom: 120px"
+        style="margin-bottom: calc(var(--mobile-navigation-height) + 22px)"
       >
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>

@@ -194,7 +194,7 @@ function adjustVolume(event: WheelEvent) {
 }
 
 .player-volume-backdrop-mobile {
-  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  bottom: var(--mobile-navigation-height);
 }
 
 .player-volume-popover {
