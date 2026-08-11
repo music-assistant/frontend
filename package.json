@@ -40,7 +40,7 @@
         "color": "5.0.3",
         "dompurify": "^3.4.11",
         "happy-dom": "^20.11.1",
-        "marked": "^18.0.7",
+        "marked": "^18.0.9",
         "mitt": "3.0.1",
         "mobile-detect": "1.4.5",
         "qrcode": "^1.5.4",
