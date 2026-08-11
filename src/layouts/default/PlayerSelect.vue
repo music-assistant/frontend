@@ -593,7 +593,9 @@ async function scrollSelectedPlayerIntoView() {
   bottom: var(--mobile-navigation-height) !important;
 }
 
-.player-select-popover {
+/* the paired class outweighs the equally-!important z-index utility the popover
+   component carries */
+.player-bar-popout.player-select-popover {
   z-index: 998 !important;
 }
 

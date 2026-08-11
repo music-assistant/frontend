@@ -172,7 +172,9 @@ function adjustVolume(event: WheelEvent) {
   bottom: var(--player-bar-height);
 }
 
-.player-volume-popover {
+/* the paired class outweighs the equally-!important z-index utility the popover
+   component carries */
+.player-bar-popout.player-volume-popover {
   z-index: 998 !important;
 }
 </style>
