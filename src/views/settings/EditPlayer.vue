@@ -308,9 +308,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -331,12 +333,6 @@ import {
   PlayerType,
   IdentifierType,
 } from "@/plugins/api/interfaces";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
-import EditConfig from "./EditConfig.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import PlayerIcon from "@/components/PlayerIcon.vue";
-import { watch } from "vue";
-
 import {
   ConfigEntryUI,
   HASS_CONTROL_KEY_BY_PLAYER_KEY,
@@ -361,6 +357,8 @@ import {
   RotateCcw,
   Settings,
 } from "@lucide/vue";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
+import EditConfig from "./EditConfig.vue";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
