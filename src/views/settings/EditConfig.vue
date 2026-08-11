@@ -594,20 +594,17 @@ const getCategoryIcon = function (category: string): Component {
 .floating-save {
   position: fixed;
   right: 24px;
-  bottom: calc(var(--v-layout-bottom, 104px) + 16px);
+  bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
   z-index: 20;
 }
 
 :global(.content-section--mobile) .floating-save {
   right: 16px;
-  /* Stay clear of whatever reaches highest above the bottom navigation: the player
-     bar, which grows by its volume row and clears the navigation by its own 6px
-     margin, or the gradient scrim behind it, which hides everything it covers. */
+  /* Stay clear of whatever reaches highest above the bottom navigation: the
+     bottom bars, or the gradient scrim behind them, which hides what it covers
+     and outlasts the player bar when that has no volume row to grow by. */
   bottom: max(
-    calc(
-      var(--mobile-navigation-height) + var(--player-bar-overlay-height, 0px) +
-        6px + 16px
-    ),
+    calc(var(--bottom-bars-height) + 16px),
     calc(var(--mobile-player-scrim-height) + 16px)
   );
 }

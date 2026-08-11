@@ -58,7 +58,8 @@ function preventAutoFocus(event: Event) {
   max-height: calc(100dvh - var(--mobile-navigation-height) - 16px);
 }
 
-.mobile-group-volume-overlay {
+/* :root lifts this above the equally-!important inset-0 the backdrop carries */
+:root .mobile-group-volume-overlay {
   bottom: var(--mobile-navigation-height) !important;
 }
 

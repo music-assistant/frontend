@@ -586,7 +586,7 @@ async function scrollSelectedPlayerIntoView() {
 
 <style>
 .player-select-desktop-offset {
-  bottom: 104px !important;
+  bottom: var(--player-bar-height) !important;
 }
 
 .player-select-mobile-offset {
