@@ -235,7 +235,7 @@ watch(
 .mediacontrols-mobile-container {
   position: relative;
   width: 100%;
-  border-radius: 10px;
+  border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   background-color: rgb(var(--v-theme-overlay));
@@ -258,8 +258,8 @@ watch(
     display: flex;
     background-color: transparent;
     min-height: 0;
-    /* the top matches the side inset, so the artwork sits the same distance
-       from both edges; the volume row carries the space below it */
+    /* the artwork ends up as far from the top as from the left once the row
+       centres it; the volume row carries the space below */
     padding: 8px 10px 5px;
     /* beats the global .player-control-button colour, which is tuned for the
        app surface rather than an artwork tint */
@@ -317,7 +317,7 @@ watch(
   );
 
   &[data-floating="true"] {
-    border-radius: 10px;
+    border-radius: 16px;
     width: 100%;
     background: v-bind("backgroundColor");
   }

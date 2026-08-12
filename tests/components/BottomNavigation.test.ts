@@ -74,6 +74,19 @@ describe("BottomNavigation", () => {
     expect(active).toEqual(["discover"]);
   });
 
+  it("names the current page for assistive tech, not just by tint", () => {
+    routeState.name = "search";
+    const wrapper = mountNavigation();
+    const current = wrapper
+      .findAll("button")
+      .filter((button) => button.attributes("aria-current") === "page")
+      .map((button) => button.attributes("aria-label"));
+
+    // search carries no visible label, so the tint alone would leave its state
+    // invisible to a screen reader
+    expect(current).toEqual(["search"]);
+  });
+
   it("hands the active state to an open player picker", async () => {
     const wrapper = mountNavigation();
     expect(wrapper.get("nav").attributes("data-picker-open")).toBe("false");

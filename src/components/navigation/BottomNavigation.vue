@@ -19,6 +19,7 @@
       variant="ghost"
       class="player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1"
       :data-active="isActive('discover')"
+      :aria-current="isActive('discover') ? 'page' : undefined"
       :aria-label="$t('discover')"
       @click="handleDiscoverClick"
     >
@@ -36,6 +37,7 @@
       variant="ghost"
       class="player-control-button mobile-navigation-item mobile-navigation-item--bare shrink-0 rounded-none px-1"
       :data-active="isActive('search')"
+      :aria-current="isActive('search') ? 'page' : undefined"
       :aria-label="$t('search')"
       @click="handleSearchClick"
     >
@@ -99,25 +101,25 @@ function closePlayersMenu() {
   /* the device insets are already covered by left/right, so this only keeps the
      two icon-only ends off the rounded corners */
   padding-inline: 12px !important;
-  border: 1px solid var(--border);
+  /* an outline rather than a border: it costs no layout, so the items still
+     get the full height and their focus ring is not clipped */
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-radius: 28px;
   /* only a tint: the blur comes from the scrim behind it, which ramps up from
      above the player, so the bar has no blur edge of its own */
   background: color-mix(in srgb, var(--background) 70%, transparent);
-  /* the items paint a full-height hover, which would otherwise square off the
-     rounded ends */
-  overflow: hidden;
 }
 
 /* darker than the muted grey the player controls use elsewhere, so the labels
-   hold their own against the blurred content behind them */
-.mobile-bottom-navigation .player-control-button {
-  color: color-mix(in srgb, var(--foreground) 80%, transparent) !important;
-}
-
-/* the state is carried by the dot and the heavier label, so nothing in the bar
-   switches to the primary colour */
-.mobile-bottom-navigation .player-control-button[data-active="true"] {
+   hold their own against the blurred content behind them. The field and the
+   heavier label carry the state instead, so nothing here turns primary - which
+   also stops a tap leaving an item stuck in its hover colour on iOS. */
+.mobile-bottom-navigation .player-control-button,
+.mobile-bottom-navigation
+  .player-control-button:hover:not([data-suppress-hover="true"]),
+.mobile-bottom-navigation .player-control-button[data-active="true"],
+.mobile-bottom-navigation .player-control-button[data-state="open"] {
   color: color-mix(in srgb, var(--foreground) 80%, transparent) !important;
 }
 
@@ -133,7 +135,7 @@ function closePlayersMenu() {
 }
 
 /* the active item sits on a faded field that repeats the bar's own corner
-   radius; -1 keeps it under the icon and label but over the bar's tint. An open
+   radius; it sits under the icon and label but over the bar's tint. An open
    picker takes the active state for itself, so the page underneath drops it and
    only one item is ever marked. */
 .mobile-bottom-navigation:not([data-picker-open="true"])
@@ -146,7 +148,7 @@ function closePlayersMenu() {
   .player-control-button[data-active="true"]:not(#player-select-button)::before,
 .mobile-bottom-navigation #player-select-button[data-active="true"]::before {
   position: absolute;
-  z-index: -1;
+  z-index: 0;
   inset: 4px 0;
   border-radius: 28px;
   background: color-mix(in srgb, var(--primary) 22%, transparent);
@@ -193,6 +195,7 @@ function closePlayersMenu() {
 }
 
 .mobile-navigation-label {
+  position: relative;
   display: block;
   width: 100%;
   height: 16px;
