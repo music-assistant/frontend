@@ -8,7 +8,7 @@
     <template #prepend>
       <div
         class="media-thumb player-media-thumb"
-        :style="`cursor: pointer; height: ${thumbSizePx}px; width: ${thumbSizePx}px;`"
+        :style="`cursor: pointer; height: ${outerThumbSizePx}px; width: ${outerThumbSizePx}px;`"
         @click="store.showFullscreenPlayer = true"
       >
         <!-- player.current_media has content loaded (will work for all sources)  -->
@@ -22,7 +22,7 @@
           <v-img
             class="media-thumb"
             style="border-radius: 4px"
-            :size="thumbSizePx"
+            :size="innerThumbSizePx"
             :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
             :alt="$t('tooltip.artwork')"
           />
@@ -31,7 +31,7 @@
         <div
           v-else
           class="icon-thumb"
-          :style="`height: ${thumbSizePx}px; width: ${thumbSizePx}px;`"
+          :style="`height: ${innerThumbSizePx}px; width: ${innerThumbSizePx}px;`"
         >
           <PlayerIcon
             :icon="store.activePlayer?.icon"
@@ -198,7 +198,7 @@ interface Props {
   showQualityDetailsBtn?: boolean;
   colorPalette: ImageColorPalette;
   primaryColor?: string;
-  /** Single title line and a smaller thumbnail: for the compact settings-route mobile player. */
+  /** Use a single title line and smaller artwork. */
   compact?: boolean;
 }
 
@@ -214,10 +214,14 @@ const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
 });
 
-const thumbSizePx = computed(() => {
+// clickable area around the artwork; matches the artwork size, except it
+// also grows on wider non-compact layouts to keep a comfortable tap target
+const outerThumbSizePx = computed(() => {
   if (props.compact) return 44;
   return getBreakpointValue({ breakpoint: "phone" }) ? 60 : 64;
 });
+
+const innerThumbSizePx = computed(() => (props.compact ? 44 : 60));
 
 function onTitleClick() {
   if (!store.activePlayer || store.activePlayer.powered == false) {
