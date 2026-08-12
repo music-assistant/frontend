@@ -421,7 +421,7 @@ watch(
   /* spacing the controls rather than the row keeps the popovers' own anchor
      elements, which sit between them and take no space, out of the count */
   .mediacontrols :deep(.player-bar-action-row > button ~ button) {
-    margin-inline-start: clamp(0px, 2vw - 24px, 16px);
+    margin-inline-start: clamp(0px, 2vw - 25px, 16px);
   }
 
   .mediacontrols :deep(.player-bar-group-button),
