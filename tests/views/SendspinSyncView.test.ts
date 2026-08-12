@@ -195,26 +195,6 @@ describe("SendspinSyncView", () => {
   });
 });
 
-describe("SendspinSyncView fixture", () => {
-  // The rendered numbers are only meaningful if they are numbers the worklet
-  // and the composable could actually have produced together.
-  it("describes a capture the worklet could really produce", () => {
-    const capture = degradedReport().capture!;
-
-    expect(capture.framesDelivered).toBe(capture.measuredQuanta * 128);
-    expect(capture.renderSeconds).toBeCloseTo(
-      capture.framesDelivered / SAMPLE_RATE,
-      9,
-    );
-    expect(capture.discrepancyPpm).toBeCloseTo(
-      ((capture.framesDelivered - capture.expectedFrames) /
-        capture.expectedFrames) *
-        1e6,
-      9,
-    );
-  });
-});
-
 describe("SendspinSyncView translation keys", () => {
   // Keys are composed from check ids, statuses and verdict names, so a rename
   // would otherwise only surface as a missing string at runtime on a phone.

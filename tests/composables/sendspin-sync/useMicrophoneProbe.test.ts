@@ -2,12 +2,22 @@ import {
   CAPTURE_SECONDS,
   summarizeProbe,
   useMicrophoneProbe,
+  type CaptureCheck,
   type MicrophoneProbeReport,
 } from "@/composables/sendspin-sync/useMicrophoneProbe";
 import { effectScope } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const SAMPLE_RATE = 48000;
+const RENDER_QUANTUM = 128;
+
+/** Everything a capture fixture may set; the rest is derived from these. */
+type CaptureOverrides = Partial<
+  Omit<
+    CaptureCheck,
+    "framesDelivered" | "expectedFrames" | "renderSeconds" | "discrepancyPpm"
+  >
+>;
 
 /** Worklet nodes the composable created, newest last. */
 let workletNodes: FakeWorkletNode[] = [];
@@ -26,23 +36,17 @@ afterEach(() => {
 
 describe("capture fixtures", () => {
   // Two passes of review were misled by fixtures encoding readings the worklet
-  // could not emit, so pin them to the invariants it actually holds to.
-  it("describe states the worklet could really produce", () => {
-    const capture = captureFixture({});
+  // could not emit, so the derived fields are pinned to hand-worked numbers.
+  it("derive their readings the way a real capture would", () => {
+    const clean = captureFixture({});
+    expect(clean.framesDelivered).toBe(960_000);
+    expect(clean.renderSeconds).toBe(20);
+    expect(clean.discrepancyPpm).toBe(0);
 
-    expect(capture.framesDelivered).toBe(capture.measuredQuanta * 128);
-    expect(capture.renderSeconds).toBeCloseTo(
-      capture.framesDelivered / SAMPLE_RATE,
-      9,
-    );
-    expect(capture.expectedFrames).toBe(SAMPLE_RATE * capture.measuredSeconds);
-    expect(capture.totalQuanta).toBeGreaterThanOrEqual(capture.measuredQuanta);
-    expect(capture.discrepancyPpm).toBeCloseTo(
-      ((capture.framesDelivered - capture.expectedFrames) /
-        capture.expectedFrames) *
-        1e6,
-      9,
-    );
+    const short = captureFixture({ measuredQuanta: 7481 });
+    expect(short.framesDelivered).toBe(957_568);
+    expect(short.renderSeconds).toBeCloseTo(19.949_333_333, 9);
+    expect(short.discrepancyPpm).toBeCloseTo(-2533.333_333_333, 6);
   });
 });
 
@@ -103,8 +107,9 @@ describe("summarizeProbe", () => {
   });
 
   it("warns on a drifting clock and on a gap in the audio", () => {
+    // 7481 quanta where 20 s at 48 kHz calls for 7500 is a 2533 ppm shortfall.
     const drifting = summarizeProbe(
-      reportFixture({ capture: captureFixture({ discrepancyPpm: -2500 }) }),
+      reportFixture({ capture: captureFixture({ measuredQuanta: 7481 }) }),
     );
     const dropped = summarizeProbe(
       reportFixture({ capture: captureFixture({ droppedQuanta: 3 }) }),
@@ -614,18 +619,19 @@ function constraintsFixture(
 /**
  * A clean twenty-second window: 7500 quanta of 128 frames, which is exactly
  * what 20 s at 48 kHz should produce.
+ *
+ * The four derived fields are computed the way the composable computes them and
+ * cannot be overridden, so no fixture can describe a reading the worklet and
+ * the anchors could not have produced together. Drive them through
+ * `measuredQuanta` or `measuredSeconds` instead.
  */
 function captureFixture(
-  overrides: Partial<NonNullable<MicrophoneProbeReport["capture"]>>,
+  overrides: CaptureOverrides,
 ): NonNullable<MicrophoneProbeReport["capture"]> {
-  return {
+  const base = {
     requestedSeconds: CAPTURE_SECONDS,
     measuredSeconds: 20,
-    renderSeconds: 20,
     measuredQuanta: 7500,
-    framesDelivered: SAMPLE_RATE * 20,
-    expectedFrames: SAMPLE_RATE * 20,
-    discrepancyPpm: 0,
     totalQuanta: 11250,
     leadInQuanta: 0,
     droppedQuanta: 0,
@@ -635,5 +641,14 @@ function captureFixture(
     aborted: false,
     error: null,
     ...overrides,
+  };
+  const framesDelivered = base.measuredQuanta * RENDER_QUANTUM;
+  const expectedFrames = SAMPLE_RATE * base.measuredSeconds;
+  return {
+    ...base,
+    framesDelivered,
+    expectedFrames,
+    renderSeconds: framesDelivered / SAMPLE_RATE,
+    discrepancyPpm: ((framesDelivered - expectedFrames) / expectedFrames) * 1e6,
   };
 }

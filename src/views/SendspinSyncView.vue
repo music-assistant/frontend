@@ -247,9 +247,10 @@ function noteFor(
   id: ProbeCheckId,
   current: MicrophoneProbeReport,
 ): string | null {
-  if (id !== "capture" || !current.capture || current.capture.error)
-    return null;
-  return current.capture.peakAmplitude === 0
+  const capture = id === "capture" ? current.capture : null;
+  // A capture that was cut short has no verdict to spell out.
+  if (!capture || capture.error || capture.aborted) return null;
+  return capture.peakAmplitude === 0
     ? "providers.sendspin_sync.probe.checks.capture.silent"
     : null;
 }

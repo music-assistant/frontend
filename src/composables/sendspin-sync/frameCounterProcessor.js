@@ -39,10 +39,11 @@ class FrameCounterProcessor extends AudioWorkletProcessor {
   /**
    * A dropout arrives as digital silence rather than as a missing channel, and
    * a live converter's noise floor is never bit-exact zero — so once anything
-   * has arrived, a silent quantum is a real gap. Before that it is the capture
-   * device still warming up, which phones do routinely and which must not read
-   * as a fault. The peak across the run is what proves the microphone heard
-   * anything at all.
+   * has arrived, a silent quantum means no audio reached the graph. Before that
+   * it is the capture device still warming up, which phones do routinely and
+   * which must not read as a fault. A noise gate or an OS-level mute produces
+   * the same silence, which is why the two counts are reported rather than
+   * judged here. The peak proves the microphone heard anything at all.
    */
   inspect(channel) {
     this.frames += channel.length;

@@ -105,7 +105,13 @@ export interface CaptureCheck {
   requestedSeconds: number;
   /** Wall-clock seconds the discrepancy was measured over. */
   measuredSeconds: number;
-  /** Seconds the audio pipeline's own clock advanced over the same span. */
+  /**
+   * Seconds the audio pipeline's own clock advanced over the same span.
+   *
+   * Expected to match `framesDelivered / sampleRate`, since a render quantum is
+   * a fixed 128 frames. Whether a browser really derives its clock that way is
+   * implementation-defined, and this is what checks it.
+   */
   renderSeconds: number;
   measuredQuanta: number;
   framesDelivered: number;
@@ -114,16 +120,22 @@ export interface CaptureCheck {
   /**
    * Delivered frames against expected, in parts per million.
    *
-   * The frame count and the pipeline's clock advance in lockstep — a quantum is
-   * a fixed 128 frames — so this is equally the audio clock measured against
-   * the system clock. Reporting it twice under two names would say no more.
+   * The frames are counted on the audio thread and the expectation comes from
+   * the system clock, so this is the audio pipeline measured against the
+   * system — the one figure a chirp's arrival time depends on.
    */
   discrepancyPpm: number;
   /** Render quanta over the whole capture, the denominator for the counts below. */
   totalQuanta: number;
   /** Silent quanta before any signal arrived: the capture device warming up. */
   leadInQuanta: number;
-  /** Silent quanta after signal had arrived, which is a real gap in the audio. */
+  /**
+   * Silent quanta after signal had arrived: a gap in the audio.
+   *
+   * A noise gate the browser would not switch off, or an OS-level mute, also
+   * produces true silence — so read this next to the voice processing check
+   * rather than as a dropout on its own.
+   */
   droppedQuanta: number;
   /** Quanta with no input connected at all; anything but zero means a broken graph. */
   unconnectedQuanta: number;
@@ -390,11 +402,35 @@ async function openMicrophone(
   ) as Record<VoiceProcessing, boolean>;
   const supported = {} as Record<VoiceProcessing, boolean>;
 
-  let stream: MediaStream;
+  let stream: MediaStream | null = null;
   try {
     const known = navigator.mediaDevices.getSupportedConstraints();
     for (const name of VOICE_PROCESSING) supported[name] = Boolean(known[name]);
     stream = await navigator.mediaDevices.getUserMedia({ audio: requested });
+
+    const track = stream.getAudioTracks()[0];
+    const settings = track?.getSettings() ?? {};
+    const applied: Partial<Record<VoiceProcessing, boolean>> = {};
+    for (const name of VOICE_PROCESSING) {
+      const value = settings[name];
+      if (typeof value === "boolean") applied[name] = value;
+    }
+
+    result.constraints = {
+      requested,
+      applied,
+      supported,
+      honored: VOICE_PROCESSING.every((name) => applied[name] === false),
+      trackSettings: settings,
+      trackLabel: track?.label ?? "",
+      error: track
+        ? null
+        : {
+            name: "NoAudioTrackError",
+            message: "The captured stream carried no audio track",
+          },
+    };
+    if (track) return stream;
   } catch (error) {
     result.constraints = {
       requested,
@@ -405,34 +441,10 @@ async function openMicrophone(
       trackLabel: "",
       error: describeError(error),
     };
-    return null;
   }
 
-  const track = stream.getAudioTracks()[0];
-  const settings = track?.getSettings() ?? {};
-  const applied: Partial<Record<VoiceProcessing, boolean>> = {};
-  for (const name of VOICE_PROCESSING) {
-    const value = settings[name];
-    if (typeof value === "boolean") applied[name] = value;
-  }
-
-  result.constraints = {
-    requested,
-    applied,
-    supported,
-    honored: VOICE_PROCESSING.every((name) => applied[name] === false),
-    trackSettings: settings,
-    trackLabel: track?.label ?? "",
-    error: track
-      ? null
-      : {
-          name: "NoAudioTrackError",
-          message: "The captured stream carried no audio track",
-        },
-  };
-  if (track) return stream;
-
-  for (const orphan of stream.getTracks()) orphan.stop();
+  // Nothing usable came back, and nothing else will be holding this stream.
+  for (const orphan of stream?.getTracks() ?? []) orphan.stop();
   return null;
 }
 
