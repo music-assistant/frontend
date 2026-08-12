@@ -2,13 +2,17 @@ import PlayerExtendedControls from "@/layouts/default/PlayerOSD/PlayerExtendedCo
 import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
 import type { Player as PlayerModel } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { enableAutoUnmount, shallowMount } from "@vue/test-utils";
+import { enableAutoUnmount, mount, shallowMount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => {
   const api = { toggleFavorite: vi.fn(), providers: {}, players: {} };
   return { api, default: api };
 });
+
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -21,6 +25,14 @@ vi.mock("@/plugins/store", async () => {
 });
 
 const mockStore = store as unknown as { activePlayer?: PlayerModel };
+
+// the countdown only renders while the timer still has time to run
+function playerWithSleepTimer() {
+  return {
+    player_id: "p1",
+    sleep_timer_expires_at: Date.now() / 1000 + 3600,
+  } as PlayerModel;
+}
 
 enableAutoUnmount(afterEach);
 
@@ -35,7 +47,7 @@ describe("PlayerExtendedControls", () => {
   ])(
     "renders the sleep timer for isVisible $isVisible: $present",
     ({ isVisible, present }) => {
-      mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
+      mockStore.activePlayer = playerWithSleepTimer();
 
       const controls = shallowMount(PlayerExtendedControls, {
         props: { sleepTimer: { isVisible } },
@@ -46,13 +58,23 @@ describe("PlayerExtendedControls", () => {
   );
 
   it("marks the sleep timer so the row can budget for it", () => {
-    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
+    mockStore.activePlayer = playerWithSleepTimer();
 
-    const controls = shallowMount(PlayerExtendedControls);
+    // the real countdown, so the class is checked where the layout reads it:
+    // on the button itself, past the fallthrough attrs it forwards
+    const controls = mount(PlayerExtendedControls, {
+      global: {
+        stubs: {
+          QueueBtn: true,
+          PlayerTrackMenu: true,
+          PlayerBarVolumeControl: true,
+          PlayerBarGroupControl: true,
+          PlayerBarPlayerButton: true,
+        },
+      },
+    });
 
     // the action widths key off this class to make room for the countdown
-    expect(controls.findComponent(SleepTimerBtn).classes()).toContain(
-      "player-bar-sleep-timer",
-    );
+    expect(controls.find("button.player-bar-sleep-timer").exists()).toBe(true);
   });
 });
