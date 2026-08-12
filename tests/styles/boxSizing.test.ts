@@ -1,5 +1,5 @@
-// happy-dom resolves neither `inherit` nor the specificity of `html` against
-// `*`, so the box model is only observable in the stylesheet itself
+// happy-dom, the suite default, reports `inherit` verbatim and picks `*` over
+// `html` for the root element, so the rules are asserted in the stylesheet
 import css from "@/styles/global.css?inline";
 import { describe, expect, it } from "vitest";
 
@@ -8,7 +8,10 @@ const declarations = css.replace(/\/\*[\s\S]*?\*\//g, "");
 
 describe("box model", () => {
   it("is declared by the app rather than borrowed from Vuetify", () => {
-    expect(declarations).toMatch(/html\s*\{[^}]*box-sizing:\s*border-box/);
+    // anchored, so a descendant selector ending in `html` cannot satisfy it
+    expect(declarations).toMatch(
+      /(^|[;}])\s*html\s*\{[^}]*box-sizing:\s*border-box/,
+    );
     expect(declarations).toMatch(
       /\*,\s*::before,\s*::after\s*\{[^}]*box-sizing:\s*inherit/,
     );
