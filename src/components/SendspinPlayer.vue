@@ -25,6 +25,7 @@ import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
   webPlayer,
+  isPlaybackMode,
   registerWebPlayerAudioUnlock,
   clearWebPlayerAudioUnlock,
   WebPlayerMode,
@@ -403,7 +404,13 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearWebPlayerAudioUnlock(primeAudio);
   if (player) {
-    player.disconnect();
+    // The server holds a player registered for minutes after a "restart"
+    // goodbye, which is what a reload or a hand-over to another tab needs. Once
+    // this browser wants no player at all, say so instead, or it stays
+    // targetable while nothing is listening.
+    player.disconnect(
+      isPlaybackMode(webPlayer.mode) ? "restart" : "user_request",
+    );
     player = null;
   }
   if (unsubMetadata) unsubMetadata();

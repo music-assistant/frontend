@@ -63,6 +63,7 @@ const {
   mockRegisterWebPlayerAudioUnlock,
   mockSendCommand,
   mockSendspinConnect,
+  mockSendspinDisconnect,
   mockSendspinUnlock,
   mockUseMediaBrowserMetaData,
   routeState,
@@ -108,6 +109,7 @@ const {
     mockRegisterWebPlayerAudioUnlock: vi.fn<(handler: () => boolean) => void>(),
     mockSendCommand,
     mockSendspinConnect: vi.fn<() => Promise<void>>(),
+    mockSendspinDisconnect: vi.fn<(reason?: string) => void>(),
     mockSendspinUnlock: vi.fn<() => Promise<void>>(),
     sendspinState: {
       pairingToken: null as string | null,
@@ -161,9 +163,12 @@ vi.mock("@/plugins/web_player", async () => {
       SENDSPIN_WITH_CONTROLS: "sendspin_with_controls",
     },
     clearWebPlayerAudioUnlock: vi.fn(),
+    isPlaybackMode: (mode: string) =>
+      mode === "sendspin_only" || mode === "sendspin_with_controls",
     registerWebPlayerAudioUnlock: mockRegisterWebPlayerAudioUnlock,
     webPlayer: reactive({
       interacted: false,
+      mode: "sendspin_only",
       tabMode: "sendspin_only",
     }),
   };
@@ -188,7 +193,7 @@ vi.mock("@sendspin/sendspin-js", () => ({
     get pairingToken() {
       return sendspinState.pairingToken;
     }
-    disconnect = vi.fn();
+    disconnect = mockSendspinDisconnect;
     setCorrectionMode = vi.fn();
     setMuted = vi.fn();
     setVolume = vi.fn();
@@ -247,11 +252,13 @@ describe("SendspinPlayer MediaSession", () => {
     mockSendCommand.mockResolvedValue(undefined);
     mockSendspinConnect.mockReset();
     mockSendspinConnect.mockResolvedValue(undefined);
+    mockSendspinDisconnect.mockReset();
     sendspinState.pairingToken = "SP:0TESTTOKEN";
     sendspinState.lastOptions = null;
     mockSendspinUnlock.mockReset();
     mockSendspinUnlock.mockResolvedValue(undefined);
     webPlayer.interacted = false;
+    webPlayer.mode = WebPlayerMode.SENDSPIN_ONLY;
     webPlayer.tabMode = WebPlayerMode.SENDSPIN_ONLY;
     if (routeState.current) routeState.current.meta = {};
     Object.defineProperty(navigator, "mediaSession", {
@@ -375,6 +382,34 @@ describe("SendspinPlayer MediaSession", () => {
       { suppressGlobalError: true },
     );
     wrapper.unmount();
+  });
+
+  it("keeps the player registered while another tab takes over playback", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    // Only this tab steps back; the browser still wants a player.
+    webPlayer.tabMode = WebPlayerMode.CONTROLS_ONLY;
+    wrapper.unmount();
+
+    expect(mockSendspinDisconnect).toHaveBeenCalledWith("restart");
+  });
+
+  it("unregisters the player once this browser wants none", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    webPlayer.mode = WebPlayerMode.CONTROLS_ONLY;
+    webPlayer.tabMode = WebPlayerMode.CONTROLS_ONLY;
+    wrapper.unmount();
+
+    expect(mockSendspinDisconnect).toHaveBeenCalledWith("user_request");
   });
 
   it("skips pairing when the client has no pairing token", async () => {
