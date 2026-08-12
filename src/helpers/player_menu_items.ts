@@ -16,9 +16,8 @@ import {
   visualizerEnabledForPlayer,
 } from "@/composables/visualizer/useVisualizer";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
-import { Droplet } from "@lucide/vue";
-import { h, markRaw } from "vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Droplet, Sparkles } from "@lucide/vue";
+import { markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
@@ -27,15 +26,6 @@ import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { errorMessage } from "@/helpers/ai_radio";
 import { toast } from "vue-sonner";
-
-// ProviderIcon.vue hardcodes side margins meant for larger galleries; cancel
-// them so the icon aligns like the other (unmargined) menu icons.
-const AiRadioDjIcon = () =>
-  h(ProviderIcon, {
-    domain: "ai_radio",
-    size: 20,
-    style: "margin: 0 !important",
-  });
 
 export const getPlayerSetupMenuItem = (
   player: Pick<Player, "player_id" | "needs_setup" | "has_setup_flow">,
@@ -277,7 +267,7 @@ export const getPlayerMenuItems = (
     menuItems.push({
       label: "ai_dj",
       labelArgs: [],
-      icon: markRaw(AiRadioDjIcon),
+      icon: markRaw(Sparkles),
       subItems: [
         ...hosts.value.map((host) => ({
           label: host.name,
