@@ -52,11 +52,14 @@ const openPopover = async (wrapper: VueWrapper) => {
   });
 };
 
-const closePopover = async (wrapper: VueWrapper) => {
-  await toggleTrigger(wrapper);
+const waitForClose = async () =>
   await vi.waitFor(() =>
     expect(document.querySelector("[data-slot='popover-content']")).toBeNull(),
   );
+
+const closePopover = async (wrapper: VueWrapper) => {
+  await toggleTrigger(wrapper);
+  await waitForClose();
 };
 
 // the field is portalled out of the wrapper, so drive the native input directly
@@ -93,6 +96,21 @@ describe("AiRadioPlaylistPicker", () => {
 
     expect(rows(content)).toHaveLength(1);
     expect(rows(content)[0].textContent).toContain("Jazz classics");
+  });
+
+  it("reopens on the full list after picking a playlist", async () => {
+    const wrapper = mountPicker();
+    const content = await openPopover(wrapper);
+
+    await typeSearch(content, "jazz");
+    rows(content)[0].click();
+    await flushPromises();
+    await waitForClose();
+
+    expect(wrapper.emitted("update:modelValue")).toEqual([
+      [{ itemId: "1", provider: "library", name: "Jazz classics" }],
+    ]);
+    expect(rows(await openPopover(wrapper))).toHaveLength(PLAYLISTS.length);
   });
 
   it("reopens on the full list after a search", async () => {
