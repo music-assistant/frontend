@@ -1474,7 +1474,6 @@
                 "play": "Play",
                 "starting": "Starting...",
                 "stop": "Stop",
-                "stopping": "Stopping...",
                 "on_air": "On air",
                 "customize": "Customize",
                 "duplicate": "Duplicate",
@@ -1488,12 +1487,6 @@
                 "switch_show_title": "Switch show?",
                 "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
                 "switch_show_confirm_label": "Switch"
-            },
-            "phase": {
-                "preparing": "Preparing your show…",
-                "fetch_source_tracks": "Fetching tracks…",
-                "planning_sections": "Planning the show…",
-                "initializing_queue": "Preparing the queue…"
             },
             "create": {
                 "title": "Create a show",

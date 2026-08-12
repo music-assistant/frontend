@@ -89,8 +89,6 @@
         </Button>
       </Alert>
 
-      <OnAirHero />
-
       <div class="space-y-3">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-lg font-semibold tracking-tight">
@@ -149,7 +147,6 @@ import CreateShowDialog from "@/components/ai-radio/CreateShowDialog.vue";
 import CustomizeHost from "@/components/ai-radio/CustomizeHost.vue";
 import CustomizeShow from "@/components/ai-radio/CustomizeShow.vue";
 import HostCard from "@/components/ai-radio/HostCard.vue";
-import OnAirHero from "@/components/ai-radio/OnAirHero.vue";
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
