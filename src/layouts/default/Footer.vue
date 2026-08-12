@@ -74,13 +74,14 @@ function clearOverlay() {
 .mediacontrols-player-float {
   display: flex;
   flex-direction: column;
-  margin: 5px calc(5px + var(--device-inset-right)) 5px
-    calc(5px + var(--device-inset-left));
+  /* the same inset the navigation below it uses, so the two line up */
+  margin: 5px calc(12px + var(--device-inset-right)) 5px
+    calc(12px + var(--device-inset-left));
   margin-bottom: var(--mobile-player-bar-gap);
   width: calc(
-    100% - 10px - var(--device-inset-right) - var(--device-inset-left)
+    100% - 24px - var(--device-inset-right) - var(--device-inset-left)
   ) !important;
-  border-radius: 10px !important;
+  border-radius: 16px !important;
 }
 
 .player-scrim {
@@ -95,11 +96,18 @@ function clearOverlay() {
   -webkit-backdrop-filter: blur(14px);
   /* the mask is what makes the blur ramp up towards the player instead of
      ending on a visible line */
-  mask-image: linear-gradient(to top, #000 0%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(
+    to top,
+    #000 0%,
+    #000 35%,
+    rgba(0, 0, 0, 0.55) 65%,
+    transparent 100%
+  );
   -webkit-mask-image: linear-gradient(
     to top,
     #000 0%,
-    #000 45%,
+    #000 35%,
+    rgba(0, 0, 0, 0.55) 65%,
     transparent 100%
   );
 }

@@ -1,18 +1,18 @@
 <template>
   <nav
-    class="mobile-bottom-navigation fixed inset-x-0 bottom-0 z-[2000] flex border-t px-1 shadow-lg"
+    class="mobile-bottom-navigation fixed inset-x-0 bottom-0 z-[2000] flex shadow-lg"
+    :data-picker-open="store.showPlayersMenu"
     aria-label="Main navigation"
   >
     <Button
       variant="ghost"
-      class="player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1"
+      class="player-control-button mobile-navigation-item mobile-navigation-item--bare shrink-0 rounded-none px-1"
       aria-label="Menu"
       @click="handleMenuClick"
     >
       <span class="mobile-navigation-icon">
-        <Menu :stroke-width="1.6" class="size-7" />
+        <Menu :stroke-width="1.6" class="size-8" />
       </span>
-      <span class="mobile-navigation-label"> Menu </span>
     </Button>
 
     <Button
@@ -23,10 +23,7 @@
       @click="handleDiscoverClick"
     >
       <span class="mobile-navigation-icon">
-        <Compass
-          class="size-7"
-          :stroke-width="isActive('discover') ? 2 : 1.6"
-        />
+        <Compass class="size-7" :stroke-width="1.6" />
       </span>
       <span class="mobile-navigation-label">
         {{ $t("discover") }}
@@ -37,16 +34,13 @@
 
     <Button
       variant="ghost"
-      class="player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1"
+      class="player-control-button mobile-navigation-item mobile-navigation-item--bare shrink-0 rounded-none px-1"
       :data-active="isActive('search')"
       :aria-label="$t('search')"
       @click="handleSearchClick"
     >
       <span class="mobile-navigation-icon">
-        <Search class="size-7" :stroke-width="isActive('search') ? 2 : 1.6" />
-      </span>
-      <span class="mobile-navigation-label">
-        {{ $t("search") }}
+        <Search class="size-8" :stroke-width="1.6" />
       </span>
     </Button>
   </nav>
@@ -96,36 +90,94 @@ function closePlayersMenu() {
 </script>
 
 <style>
-/* :root lifts this above the equally-!important bottom and padding utilities
-   the bar carries */
+/* :root lifts this above the equally-!important inset utilities the bar carries */
 :root .mobile-bottom-navigation {
-  bottom: -2px !important;
-  height: calc(var(--mobile-navigation-height) + 2px);
-  background: var(--background);
-  padding-right: calc(0.25rem + var(--device-inset-right)) !important;
-  padding-bottom: calc(var(--mobile-navigation-inset-bottom) + 2px);
-  padding-left: calc(0.25rem + var(--device-inset-left)) !important;
+  right: calc(12px + var(--device-inset-right)) !important;
+  bottom: var(--mobile-navigation-inset-bottom) !important;
+  left: calc(12px + var(--device-inset-left)) !important;
+  height: var(--mobile-navigation-item-height);
+  /* the device insets are already covered by left/right, so this only keeps the
+     two icon-only ends off the rounded corners */
+  padding-inline: 12px !important;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  /* only a tint: the blur comes from the scrim behind it, which ramps up from
+     above the player, so the bar has no blur edge of its own */
+  background: color-mix(in srgb, var(--background) 70%, transparent);
+  /* the items paint a full-height hover, which would otherwise square off the
+     rounded ends */
+  overflow: hidden;
 }
 
-.mobile-bottom-navigation::before {
+/* darker than the muted grey the player controls use elsewhere, so the labels
+   hold their own against the blurred content behind them */
+.mobile-bottom-navigation .player-control-button {
+  color: color-mix(in srgb, var(--foreground) 80%, transparent) !important;
+}
+
+/* the state is carried by the dot and the heavier label, so nothing in the bar
+   switches to the primary colour */
+.mobile-bottom-navigation .player-control-button[data-active="true"] {
+  color: color-mix(in srgb, var(--foreground) 80%, transparent) !important;
+}
+
+/* the open picker takes the active state for itself, so the page it sits over
+   stops claiming it too */
+.mobile-bottom-navigation:not([data-picker-open="true"])
+  .player-control-button[data-active="true"]:not(#player-select-button)
+  .mobile-navigation-label,
+.mobile-bottom-navigation
+  #player-select-button[data-active="true"]
+  .mobile-navigation-label {
+  font-weight: 600;
+}
+
+/* the active item sits on a faded field that repeats the bar's own corner
+   radius; -1 keeps it under the icon and label but over the bar's tint. An open
+   picker takes the active state for itself, so the page underneath drops it and
+   only one item is ever marked. */
+.mobile-bottom-navigation:not([data-picker-open="true"])
+  .player-control-button[data-active="true"]:not(#player-select-button),
+.mobile-bottom-navigation #player-select-button[data-active="true"] {
+  position: relative;
+}
+
+.mobile-bottom-navigation:not([data-picker-open="true"])
+  .player-control-button[data-active="true"]:not(#player-select-button)::before,
+.mobile-bottom-navigation #player-select-button[data-active="true"]::before {
   position: absolute;
-  top: -2px;
-  right: 0;
-  left: 0;
-  height: 2px;
-  background: var(--background);
+  z-index: -1;
+  inset: 4px 0;
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
   content: "";
+}
+
+/* the player name fills its button, so its field reaches past it to keep the
+   text off the edges; the page labels are short and need no such room */
+.mobile-bottom-navigation #player-select-button[data-active="true"]::before {
+  inset: 4px -6px;
+}
+
+/* no label, so the icon takes the whole height and the button only claims the
+   width it needs */
+.player-control-button.mobile-navigation-item--bare {
+  width: 60px;
+  grid-template-rows: 1fr !important;
 }
 
 /* the paired class outweighs the equally-!important layout utilities the button
    brings along with its base and size */
 .player-control-button.mobile-navigation-item {
   display: grid !important;
+  /* the ring follows the bar's own shape instead of cutting hard verticals
+     across it */
+  border-radius: 24px !important;
   height: var(--mobile-navigation-item-height) !important;
-  grid-template-rows: 34px 16px;
+  grid-template-rows: 30px 16px;
   align-content: center;
   justify-items: center;
-  row-gap: 4px !important;
+  row-gap: 1px !important;
   /* tight, so the buttons sit close to the player bar; the room that keeps them
      clear of the screen edge comes from the bar's own bottom inset */
   padding-top: 2px !important;
@@ -133,8 +185,9 @@ function closePlayersMenu() {
 }
 
 .mobile-navigation-icon {
+  position: relative;
   display: flex;
-  height: 34px;
+  height: 30px;
   align-items: center;
   justify-content: center;
 }

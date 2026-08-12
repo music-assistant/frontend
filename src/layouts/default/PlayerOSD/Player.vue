@@ -258,7 +258,9 @@ watch(
     display: flex;
     background-color: transparent;
     min-height: 0;
-    padding: 5px 10px;
+    /* the top matches the side inset, so the artwork sits the same distance
+       from both edges; the volume row carries the space below it */
+    padding: 8px 10px 5px;
     /* beats the global .player-control-button colour, which is tuned for the
        app surface rather than an artwork tint */
     :deep(.player-control-button) {
