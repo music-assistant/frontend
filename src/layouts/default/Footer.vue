@@ -85,7 +85,7 @@ function clearOverlay() {
   flex-direction: column;
   margin: 5px calc(5px + var(--device-inset-right)) 5px
     calc(5px + var(--device-inset-left));
-  margin-bottom: 6px;
+  margin-bottom: var(--mobile-player-bar-gap);
   width: calc(
     100% - 10px - var(--device-inset-right) - var(--device-inset-left)
   ) !important;

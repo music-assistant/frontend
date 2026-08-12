@@ -9,8 +9,8 @@ const OVERLAY_MARKER = "data-player-bar-overlay";
 const BAR_HEIGHT = "120px";
 const PLAYER_BAR_HEIGHT = "calc( 104px + env(safe-area-inset-bottom, 0px) )";
 const NAVIGATION_INSET =
-  "max( 6px, calc(env(safe-area-inset-bottom, 0px) * 0.6) )";
-const NAVIGATION_HEIGHT = `calc( 58px + ${NAVIGATION_INSET} )`;
+  "max( 6px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )";
+const NAVIGATION_HEIGHT = `calc( 64px + ${NAVIGATION_INSET} )`;
 const SCRIM_HEIGHT = `calc( 180px + ${NAVIGATION_INSET} )`;
 
 let appStyles: HTMLStyleElement;
@@ -70,7 +70,7 @@ describe("bottom bars height", () => {
     document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);
 
     expect(bottomBarsHeight()).toBe(
-      `calc( ${NAVIGATION_HEIGHT} + 6px + ${BAR_HEIGHT} )`,
+      `calc( ${NAVIGATION_HEIGHT} + 4px + ${BAR_HEIGHT} )`,
     );
   });
 
@@ -85,7 +85,7 @@ describe("bottom bars height", () => {
     document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);
 
     expect(bottomObscuredHeight()).toBe(
-      `max( calc( ${NAVIGATION_HEIGHT} + 6px + ${BAR_HEIGHT} ), ${SCRIM_HEIGHT} )`,
+      `max( calc( ${NAVIGATION_HEIGHT} + 4px + ${BAR_HEIGHT} ), ${SCRIM_HEIGHT} )`,
     );
   });
 });
