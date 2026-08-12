@@ -68,12 +68,8 @@
         data-player-panel
         side="top"
         align="end"
-        :side-offset="
-          store.mobileLayout
-            ? MOBILE_PLAYER_BAR_POPOUT_GAP
-            : DESKTOP_PLAYER_BAR_POPOUT_GAP
-        "
-        :collision-padding="8"
+        :side-offset="PLAYER_BAR_POPOUT_GAP"
+        :collision-padding="PLAYER_BAR_POPOUT_COLLISION_PADDING"
         :class="[
           'player-bar-popout player-group-popover flex flex-col gap-0 overflow-hidden p-0',
           store.mobileLayout
@@ -106,8 +102,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  DESKTOP_PLAYER_BAR_POPOUT_GAP,
-  MOBILE_PLAYER_BAR_POPOUT_GAP,
+  PLAYER_BAR_POPOUT_COLLISION_PADDING,
+  PLAYER_BAR_POPOUT_GAP,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
 import type { PlayerGroupFilter } from "@/helpers/player_group";

@@ -2,7 +2,12 @@
   <!-- Non-mobile: background gradient and player bar -->
   <template v-if="!useFloatingPlayer">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-    <div class="mediacontrols" :data-compact="!getBreakpointValue('bp6')">
+    <!-- the popouts find their top edge to hang above by this id -->
+    <div
+      id="player-bar"
+      class="mediacontrols"
+      :data-compact="!getBreakpointValue('bp6')"
+    >
       <div class="mediacontrols-left">
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"

@@ -36,12 +36,8 @@
       :aria-label="$t('players')"
       side="top"
       :align="popoutFromFullscreen ? 'center' : 'end'"
-      :side-offset="
-        store.mobileLayout
-          ? MOBILE_PLAYER_BAR_POPOUT_GAP
-          : DESKTOP_PLAYER_BAR_POPOUT_GAP
-      "
-      :collision-padding="8"
+      :side-offset="PLAYER_BAR_POPOUT_GAP"
+      :collision-padding="PLAYER_BAR_POPOUT_COLLISION_PADDING"
       :class="[
         'player-bar-popout player-select-popover flex flex-col gap-0 overflow-hidden p-0',
         popoutFromFullscreen && 'player-select-popover-fullscreen',
@@ -213,8 +209,8 @@ import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
-  DESKTOP_PLAYER_BAR_POPOUT_GAP,
-  MOBILE_PLAYER_BAR_POPOUT_GAP,
+  PLAYER_BAR_POPOUT_COLLISION_PADDING,
+  PLAYER_BAR_POPOUT_GAP,
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
