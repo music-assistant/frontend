@@ -74,13 +74,14 @@ function clearOverlay() {
 .mediacontrols-player-float {
   display: flex;
   flex-direction: column;
-  /* 4px inside the dock's own inset, so the surface shows evenly around the
-     card on every side. The vertical margins are omitted: the bar is fixed and
-     anchored by its bottom, so they would not move it. */
-  margin: 0 calc(16px + var(--device-inset-right)) 0
-    calc(16px + var(--device-inset-left));
+  /* the card's inset carries the dock's rim, so the surface shows the same
+     sliver down both sides as it does above. The vertical margins are omitted:
+     the bar is fixed and anchored by its bottom, so they would not move it. */
+  margin: 0 calc(var(--mobile-player-inset-x) + var(--device-inset-right)) 0
+    calc(var(--mobile-player-inset-x) + var(--device-inset-left));
   width: calc(
-    100% - 32px - var(--device-inset-right) - var(--device-inset-left)
+    100% - 2 * var(--mobile-player-inset-x) - var(--device-inset-right) -
+      var(--device-inset-left)
   ) !important;
   border-radius: 16px !important;
 }

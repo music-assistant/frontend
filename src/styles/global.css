@@ -38,10 +38,16 @@
   /* Size of a single bottom navigation button, which the bar sizes itself from,
      so the two can never drift apart. */
   --mobile-navigation-item-height: 72px;
-  /* How far the dock's surface shows around the player card sitting on it. The
-     top edge of the dock is this far above the card, so anything hovering above
-     the dock has to clear it too. */
+  /* How far the dock sits in from the sides of the screen. */
+  --mobile-dock-inset-x: 12px;
+  /* How far the dock's surface shows around the sides and top of the player card
+     sitting on it. The top edge of the dock is this far above the card, so
+     anything hovering above the dock has to clear it too. */
   --mobile-dock-rim: 4px;
+  /* Where the floating player card sits, one rim inside the dock it rides on. */
+  --mobile-player-inset-x: calc(
+    var(--mobile-dock-inset-x) + var(--mobile-dock-rim)
+  );
   /* Space the bottom navigation occupies. Anything anchored above it (sheets,
      popovers, the player bar, scroll padding) is positioned from this. */
   --mobile-navigation-height: calc(

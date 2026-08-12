@@ -101,9 +101,11 @@ function closePlayersMenu() {
 <style>
 /* :root lifts this above the equally-!important inset utilities the bar carries */
 :root .mobile-bottom-navigation {
-  right: calc(12px + var(--device-inset-right)) !important;
+  right: calc(
+    var(--mobile-dock-inset-x) + var(--device-inset-right)
+  ) !important;
   bottom: var(--mobile-navigation-inset-bottom) !important;
-  left: calc(12px + var(--device-inset-left)) !important;
+  left: calc(var(--mobile-dock-inset-x) + var(--device-inset-left)) !important;
   height: var(--mobile-navigation-item-height);
   /* the device insets are already covered by left/right, so this only keeps the
      two icon-only ends off the rounded corners */
