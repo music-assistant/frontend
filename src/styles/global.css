@@ -1,5 +1,18 @@
 /* Various global styles used throughout the app */
 
+/* The box model the whole app is written against - every width composed with
+   padding counts the padding in. Vuetify's reset declares the same thing; the
+   app owns it here so it survives that stylesheet leaving with the migration. */
+html {
+  box-sizing: border-box;
+}
+
+*,
+::before,
+::after {
+  box-sizing: inherit;
+}
+
 @font-face {
   font-family: "Material Icons Outlined";
   font-style: normal;
