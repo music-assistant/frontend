@@ -2238,5 +2238,7 @@
         "nothing_active_title": "Nothing is currently active",
         "nothing_active_description": "Ask the host to start a guest experience."
     },
-    "searching": "Searching..."
+    "searching": "Searching...",
+    "menu": "Menu",
+    "main_navigation": "Main"
 }
