@@ -116,30 +116,26 @@ const mobileSheetSide = useMobileSidebarSide();
 </template>
 
 <style>
-/* :root lifts these above the equally-!important inset, size, padding and radius
+/* :root lifts these above the equally-!important size, padding and radius
    utilities the sheet carries */
 :root .sidebar-mobile-sheet {
-  top: 0 !important;
-  bottom: 0 !important;
-  height: auto !important;
+  /* The panel keeps the edge-to-edge span its own utilities give it, so its
+     surface fills the strips the phone reserves for the status bar and the home
+     indicator, and pads its contents back out of them. */
   border-radius: 0 !important;
-  /* The panel reaches the edges of the screen so its surface fills the strips
-     the phone keeps for the status bar and the home indicator, and pads its
-     contents back out of them. The widths below count that padding in. */
-  box-sizing: border-box !important;
+  /* The widths below count that padding in. */
+  box-sizing: border-box;
   padding-top: var(--device-inset-top) !important;
   padding-bottom: var(--device-inset-bottom) !important;
 }
 
 /* Widened by the inset they pad away, so the menu keeps its full width. */
 :root .sidebar-mobile-sheet--left {
-  left: 0 !important;
   width: calc(var(--sidebar-width) + var(--device-inset-left)) !important;
   padding-left: var(--device-inset-left) !important;
 }
 
 :root .sidebar-mobile-sheet--right {
-  right: 0 !important;
   width: calc(var(--sidebar-width) + var(--device-inset-right)) !important;
   padding-right: var(--device-inset-right) !important;
 }
