@@ -12,7 +12,9 @@ const PLAYER_BAR_HEIGHT = "calc( 104px + env(safe-area-inset-bottom, 0px) )";
 const NAVIGATION_INSET =
   "max( 12px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )";
 const NAVIGATION_HEIGHT = `calc( 72px + ${NAVIGATION_INSET} )`;
-const DOCK_RIM = "4px";
+// distinct from the rim's own 4px, so the assertion cannot pass on a rule that
+// hardcodes the number instead of reading the property
+const DOCK_RIM = "7px";
 const GAP = "4px";
 
 // the view's own rules live in its unscoped block, the only one it can reach
@@ -61,10 +63,11 @@ describe("party dashboard bottom offset", () => {
   it("clears the dock the player card sits on, on mobile", () => {
     document.documentElement.setAttribute(OVERLAY_MARKER, "");
     document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);
+    document.documentElement.style.setProperty("--mobile-dock-rim", DOCK_RIM);
 
-    // the card is measured at runtime and the dock rises with it. Offset by a
-    // height of its own instead, this ends up either adrift above the dock or
-    // behind it, depending on how tall the card has grown.
+    // the card is measured at runtime and the dock rises with it, so the offset
+    // has to carry that measured height and the rim above it rather than a
+    // height of its own
     expect(playerBottom("content-section--mobile")).toBe(
       `calc( calc( ${NAVIGATION_HEIGHT} + ${BAR_HEIGHT} ) + ${DOCK_RIM} + ${GAP} )`,
     );
@@ -74,7 +77,7 @@ describe("party dashboard bottom offset", () => {
     document.documentElement.setAttribute(OVERLAY_MARKER, "");
     document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);
 
-    // frameless is mobile as well, and the two rules weigh the same, so only
+    // frameless can be mobile too, and the two rules weigh the same, so only
     // the order between them keeps the bars out of a layout without any
     expect(
       playerBottom("content-section--mobile", "content-section--frameless"),
