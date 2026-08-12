@@ -28,13 +28,22 @@
   --device-inset-right: env(safe-area-inset-right, 0px);
   --device-inset-bottom: env(safe-area-inset-bottom, 0px);
   --device-inset-left: env(safe-area-inset-left, 0px);
-  /* Room below the bottom navigation buttons. The device inset already clears
-     the system controls, so the fixed value is only a floor keeping the buttons
-     off the screen edge where nothing reports an inset. */
-  --mobile-navigation-inset-bottom: max(6px, var(--device-inset-bottom));
+  /* Room below the bottom navigation buttons. The home indicator and the
+     gesture bar sit well inside the inset reserved around them, so the buttons
+     take a share of it instead of all of it. The fixed value is the floor for
+     everywhere that reports no inset at all. */
+  --mobile-navigation-inset-bottom: max(
+    6px,
+    calc(var(--device-inset-bottom) * 0.6)
+  );
+  /* Size of a single bottom navigation button, which the bar sizes itself from,
+     so the two can never drift apart. */
+  --mobile-navigation-item-height: 58px;
   /* Space the bottom navigation occupies. Anything anchored above it (sheets,
      popovers, the player bar, scroll padding) is positioned from this. */
-  --mobile-navigation-height: calc(66px + var(--mobile-navigation-inset-bottom));
+  --mobile-navigation-height: calc(
+    var(--mobile-navigation-item-height) + var(--mobile-navigation-inset-bottom)
+  );
   /* Height of the gradient panel behind the floating player bar. It hides whatever
      it covers, so anything that has to stay visible is positioned above it. */
   --mobile-player-scrim-height: calc(

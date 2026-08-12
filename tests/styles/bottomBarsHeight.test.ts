@@ -8,10 +8,10 @@ const OVERLAY_HEIGHT = "--player-bar-overlay-height";
 const OVERLAY_MARKER = "data-player-bar-overlay";
 const BAR_HEIGHT = "120px";
 const PLAYER_BAR_HEIGHT = "calc( 104px + env(safe-area-inset-bottom, 0px) )";
-const NAVIGATION_HEIGHT =
-  "calc(66px + max(6px, env(safe-area-inset-bottom, 0px)))";
-const SCRIM_HEIGHT =
-  "calc( 180px + max(6px, env(safe-area-inset-bottom, 0px)) )";
+const NAVIGATION_INSET =
+  "max( 6px, calc(env(safe-area-inset-bottom, 0px) * 0.6) )";
+const NAVIGATION_HEIGHT = `calc( 58px + ${NAVIGATION_INSET} )`;
+const SCRIM_HEIGHT = `calc( 180px + ${NAVIGATION_INSET} )`;
 
 let appStyles: HTMLStyleElement;
 

@@ -119,20 +119,20 @@ function closePlayersMenu() {
 
 .mobile-navigation-item {
   display: grid !important;
-  height: 66px !important;
-  grid-template-rows: 38px 16px;
+  height: var(--mobile-navigation-item-height) !important;
+  grid-template-rows: 34px 16px;
   align-content: center;
   justify-items: center;
   row-gap: 4px !important;
   /* tight, so the buttons sit close to the player bar; the room that keeps them
      clear of the screen edge comes from the bar's own bottom inset */
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
 }
 
 .mobile-navigation-icon {
   display: flex;
-  height: 38px;
+  height: 34px;
   align-items: center;
   justify-content: center;
 }
