@@ -45,7 +45,13 @@
               navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
             "
           >
-            <PlayerGroupIcon :count="memberCount" class="size-7" />
+            <!-- the navigation bar draws its idle items lighter and reserves the
+                 full weight for the item you are on -->
+            <PlayerGroupIcon
+              :count="memberCount"
+              :stroke-width="navigation ? 1.6 : 1.4"
+              class="size-7"
+            />
           </span>
           <span
             :class="
