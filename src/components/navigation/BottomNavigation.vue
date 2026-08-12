@@ -98,7 +98,9 @@ function closePlayersMenu() {
 </script>
 
 <style>
-.mobile-bottom-navigation {
+/* :root lifts this above the equally-!important bottom and padding utilities
+   the bar carries */
+:root .mobile-bottom-navigation {
   bottom: -2px !important;
   height: calc(var(--mobile-navigation-height) + 2px);
   background: var(--background);
@@ -117,7 +119,9 @@ function closePlayersMenu() {
   content: "";
 }
 
-.mobile-navigation-item {
+/* the paired class outweighs the equally-!important layout utilities the button
+   brings along with its base and size */
+.player-control-button.mobile-navigation-item {
   display: grid !important;
   height: var(--mobile-navigation-item-height) !important;
   grid-template-rows: 34px 16px;

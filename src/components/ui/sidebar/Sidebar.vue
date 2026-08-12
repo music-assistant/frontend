@@ -116,18 +116,20 @@ const mobileSheetSide = useMobileSidebarSide();
 </template>
 
 <style>
-.sidebar-mobile-sheet {
+/* :root lifts these above the equally-!important inset and radius utilities the
+   sheet carries */
+:root .sidebar-mobile-sheet {
   top: var(--device-inset-top) !important;
   bottom: var(--device-inset-bottom) !important;
   height: auto !important;
   border-radius: 0 !important;
 }
 
-.sidebar-mobile-sheet--left {
+:root .sidebar-mobile-sheet--left {
   left: var(--device-inset-left) !important;
 }
 
-.sidebar-mobile-sheet--right {
+:root .sidebar-mobile-sheet--right {
   right: var(--device-inset-right) !important;
 }
 </style>
