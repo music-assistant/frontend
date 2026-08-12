@@ -45,7 +45,14 @@
               navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
             "
           >
-            <PlayerGroupIcon :count="memberCount" class="size-7" />
+            <!-- the navigation bar marks the current route with the full weight,
+                 so this button takes the lighter idle weight rather than looking
+                 like the route you are on -->
+            <PlayerGroupIcon
+              :count="memberCount"
+              :stroke-width="navigation ? 1.6 : 1.4"
+              class="size-7"
+            />
           </span>
           <span
             :class="

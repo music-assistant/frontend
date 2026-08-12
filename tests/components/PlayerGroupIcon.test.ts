@@ -18,6 +18,15 @@ describe("PlayerGroupIcon", () => {
     // the badge is anchored to the wrapper, so a caller's size must not land
     // on it or the count would be positioned against the wrong box
     expect(wrapper.get("svg").classes()).toContain("size-7");
-    expect(wrapper.element.classList.contains("size-7")).toBe(false);
+    expect(wrapper.get("span.relative").classes()).not.toContain("size-7");
+  });
+
+  it("lets a caller set the line weight of the speaker", () => {
+    const wrapper = mount(PlayerGroupIcon, {
+      props: { count: 2 },
+      attrs: { "stroke-width": 1.6 },
+    });
+
+    expect(wrapper.get("svg").attributes("stroke-width")).toBe("1.6");
   });
 });

@@ -30,8 +30,9 @@ vi.mock("@/helpers/players", () => ({
 
 let wrapper: VueWrapper | undefined;
 
-function mountGroupButton() {
+function mountGroupButton(props: { navigation?: boolean } = {}) {
   wrapper = mount(PlayerBarGroupControl, {
+    props,
     global: { stubs: { PlayerGroupPanel: true, Teleport: true } },
   });
   return wrapper.get("[data-player-group-trigger]");
@@ -70,6 +71,21 @@ describe("PlayerBarGroupControl", () => {
     const trigger = mountGroupButton();
 
     expect(trigger.get("[data-player-group-count]").text()).toBe("3");
+  });
+
+  it("draws the speaker at the line weight of the bar it sits in", () => {
+    expect(mountGroupButton().get("svg").attributes("stroke-width")).toBe(
+      "1.4",
+    );
+    wrapper?.unmount();
+
+    // 1.6 is the navigation bar's idle weight; it keeps the full weight for
+    // the route you are on
+    expect(
+      mountGroupButton({ navigation: true })
+        .get("svg")
+        .attributes("stroke-width"),
+    ).toBe("1.6");
   });
 
   it("names a single member in the singular", () => {
