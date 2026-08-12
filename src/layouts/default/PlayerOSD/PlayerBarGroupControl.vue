@@ -45,11 +45,7 @@
               navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
             "
           >
-            <PlayerGroupIcon
-              :count="memberCount"
-              :stroke-width="1.4"
-              class="size-7"
-            />
+            <PlayerGroupIcon :count="memberCount" class="size-7" />
           </span>
           <span
             :class="
