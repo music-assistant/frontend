@@ -603,7 +603,9 @@ const getCategoryIcon = function (category: string): Component {
 
 .floating-save {
   position: fixed;
-  right: 24px;
+  /* A landscape phone is wide enough to count as the desktop layout, so this
+     rule is what keeps the button clear of a side cutout. */
+  right: calc(24px + var(--device-inset-right));
   bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
   z-index: 20;
 }

@@ -142,8 +142,8 @@ onMounted(async () => {
 
 .ed-edit-done {
   position: fixed;
-  right: 24px;
-  top: 24px;
+  right: calc(24px + var(--device-inset-right));
+  top: calc(24px + var(--device-inset-top));
   /* Only has to clear the drag ghost in HomeWidgetRows, so it stays out of the
      global stacking scale and below the player bar and its backdrops. */
   z-index: 60;

@@ -331,7 +331,7 @@ onBeforeUnmount(flushPendingSpeed);
   max-width: calc(100vw - 2rem) !important;
   top: auto !important;
   left: auto !important;
-  right: 1rem !important;
+  right: calc(1rem + var(--device-inset-right)) !important;
   bottom: calc(var(--bottom-bars-height) + 8px) !important;
   transform: none !important;
 }
