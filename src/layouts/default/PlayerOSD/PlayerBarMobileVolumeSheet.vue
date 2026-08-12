@@ -45,16 +45,15 @@ function preventAutoFocus(event: Event) {
 </script>
 
 <style>
-.mobile-group-volume-sheet {
+/* the paired class outweighs the equally-!important inset utilities the sheet
+   carries */
+.player-bar-popout.mobile-group-volume-sheet {
   right: 8px !important;
   bottom: calc(var(--mobile-navigation-height) + 8px) !important;
   left: 8px !important;
   width: auto !important;
-}
-
-/* a sheet has no popper measuring the free space for it, so it grows with the
-   group it shows up to the room left above the navigation instead */
-.player-bar-popout.mobile-group-volume-sheet {
+  /* a sheet has no popper measuring the free space for it, so it grows with the
+     group it shows up to the room left above the navigation instead */
   max-height: calc(100dvh - var(--mobile-navigation-height) - 16px);
 }
 
