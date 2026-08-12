@@ -1,6 +1,7 @@
 // jsdom leaves var() unresolved in computed styles, so this cascade is only
 // observable under happy-dom
 // @vitest-environment happy-dom
+import footerSource from "@/layouts/default/Footer.vue?raw";
 import reloadPromptSource from "@/layouts/default/ReloadPrompt.vue?raw";
 import playerTrackMenuSource from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayerTrackMenu.vue?raw";
 import homeViewSource from "@/views/HomeView.vue?raw";
@@ -13,6 +14,9 @@ const INSET_RIGHT = "33px";
 const INSET_LEFT = "77px";
 const INSET_TOP = "55px";
 const INSET_BOTTOM = "11px";
+// Taller than the bottom inset it already folds in, so an element measuring
+// from the wrong one cannot read as the right number.
+const BARS_HEIGHT = "158px";
 
 // Use raw selectors so the tests do not depend on Vue's generated scope id.
 function extractStyle(source: string) {
@@ -50,6 +54,10 @@ beforeEach(() => {
     INSET_BOTTOM,
   );
   document.documentElement.style.setProperty("--device-inset-left", INSET_LEFT);
+  document.documentElement.style.setProperty(
+    "--bottom-bars-height",
+    BARS_HEIGHT,
+  );
 });
 
 afterEach(() => {
@@ -110,5 +118,36 @@ describe("update toast", () => {
     // The margin sets the gap, so the offset is the inset on its own.
     expect(normalize(getComputedStyle(element).right)).toBe(INSET_RIGHT);
     expect(normalize(getComputedStyle(element).marginRight)).toBe("16px");
+  });
+
+  it("sits its margin clear of the bars pinned to the bottom", () => {
+    const element = render(reloadPromptSource, "pwa-toast");
+
+    // Those already reserve the bottom inset, so this clears it as well.
+    expect(normalize(getComputedStyle(element).bottom)).toBe(BARS_HEIGHT);
+    expect(normalize(getComputedStyle(element).marginBottom)).toBe("16px");
+  });
+
+  it("clears only the bottom edge without the app frame", () => {
+    const element = render(
+      reloadPromptSource,
+      "pwa-toast pwa-toast--frameless",
+    );
+
+    expect(normalize(getComputedStyle(element).bottom)).toBe(INSET_BOTTOM);
+  });
+
+  it("paints above the player bar it floats over", () => {
+    const element = render(reloadPromptSource, "pwa-toast");
+    // It renders outside v-app, which is no stacking context, so the two
+    // compete directly.
+    const playerBar = render(
+      footerSource,
+      "v-footer mediacontrols-player-float",
+    );
+
+    expect(Number(getComputedStyle(element).zIndex)).toBeGreaterThan(
+      Number(getComputedStyle(playerBar).zIndex),
+    );
   });
 });

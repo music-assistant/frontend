@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { store } from "@/plugins/store";
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
 const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW();
@@ -10,7 +11,11 @@ const close = async () => {
 </script>
 
 <template>
-  <div v-if="offlineReady || needRefresh" class="pwa-toast" role="alert">
+  <div
+    v-if="offlineReady || needRefresh"
+    :class="['pwa-toast', { 'pwa-toast--frameless': store.frameless }]"
+    role="alert"
+  >
     <div class="message">
       <span v-if="offlineReady"> App ready to work offline </span>
       <span v-else>
@@ -25,18 +30,28 @@ const close = async () => {
 <style>
 .pwa-toast {
   position: fixed;
-  /* The margin below sets the gap, so this only has to clear a side cutout. */
+  /* The margin below sets the gap, so these only have to clear the bars pinned
+     to the bottom of the screen and a side cutout. */
   right: var(--device-inset-right);
-  bottom: 0;
+  bottom: var(--bottom-bars-height);
   margin: 16px;
   padding: 12px;
   border: 1px solid #8885;
   border-radius: 4px;
-  z-index: 1;
+  /* Renders outside v-app, so this competes with the player bar directly.
+     Above the bars, below the dialogs and menus that should cover it. */
+  z-index: 2100;
   text-align: left;
   box-shadow: 3px 4px 5px 0 #8885;
   background-color: white;
 }
+
+/* Without the app frame there are no bars to clear, only the screen's own
+   bottom edge. */
+.pwa-toast--frameless {
+  bottom: var(--device-inset-bottom);
+}
+
 .pwa-toast .message {
   margin-bottom: 8px;
 }
