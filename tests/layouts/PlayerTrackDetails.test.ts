@@ -1,4 +1,5 @@
 import PlayerTrackDetails from "@/layouts/default/PlayerOSD/PlayerTrackDetails.vue";
+import { store } from "@/plugins/store";
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -75,37 +76,48 @@ describe("PlayerTrackDetails compact mode", () => {
   afterEach(() => {
     wrapper?.unmount();
     wrapper = undefined;
+    store.activePlayer.current_media.image_url = undefined;
   });
 
-  it("keeps the existing two-line layout and 60px artwork outside compact mode", () => {
-    const details = mountDetails(false);
+  it.each([
+    { compact: false, lines: "two", size: 60, containerSize: 64 },
+    { compact: true, lines: "one", size: 44, containerSize: 44 },
+  ])(
+    "falls back to a $size px icon with lines=$lines when compact=$compact",
+    ({ compact, lines, size, containerSize }) => {
+      const details = mountDetails(compact);
 
-    expect(details.findComponent({ name: "VListItem" }).props("lines")).toBe(
-      "two",
-    );
-    const iconThumb = details.get(".icon-thumb");
-    expect(iconThumb.attributes("style")).toContain("height: 60px");
-    expect(iconThumb.attributes("style")).toContain("width: 60px");
-    // the wider non-phone container still grows to 64px, independent of the
-    // 60px artwork/fallback content size
-    expect(details.get(".player-media-thumb").attributes("style")).toContain(
-      "height: 64px",
-    );
-    expect(details.text()).toContain("Artist");
-  });
+      expect(details.findComponent({ name: "VListItem" }).props("lines")).toBe(
+        lines,
+      );
+      const iconThumb = details.get(".icon-thumb");
+      expect(iconThumb.attributes("style")).toContain(`height: ${size}px`);
+      expect(iconThumb.attributes("style")).toContain(`width: ${size}px`);
+      // the wider non-phone container still grows to 64px outside compact
+      // mode, independent of the fallback icon's own content size
+      expect(details.get(".player-media-thumb").attributes("style")).toContain(
+        `height: ${containerSize}px`,
+      );
+      expect(details.text().includes("Artist")).toBe(!compact);
+    },
+  );
 
-  it("collapses to one line, 44px artwork, and no subtitle in compact mode", () => {
-    const details = mountDetails(true);
+  it.each([
+    { compact: false, size: 60 },
+    { compact: true, size: 44 },
+  ])(
+    "renders cover art via VImg at $size px when compact=$compact",
+    ({ compact, size }) => {
+      store.activePlayer.current_media.image_url =
+        "https://example.com/art.jpg";
+      const details = mountDetails(compact);
 
-    expect(details.findComponent({ name: "VListItem" }).props("lines")).toBe(
-      "one",
-    );
-    const iconThumb = details.get(".icon-thumb");
-    expect(iconThumb.attributes("style")).toContain("height: 44px");
-    expect(iconThumb.attributes("style")).toContain("width: 44px");
-    expect(details.get(".player-media-thumb").attributes("style")).toContain(
-      "height: 44px",
-    );
-    expect(details.text()).not.toContain("Artist");
-  });
+      expect(details.find(".icon-thumb").exists()).toBe(false);
+      const artwork = details.findComponent({ name: "VImg" });
+      expect(artwork.exists()).toBe(true);
+      // VImg has no dedicated "size" prop, so the bound value falls through
+      // as a plain DOM attribute on the component's root element
+      expect(artwork.attributes("size")).toBe(String(size));
+    },
+  );
 });
