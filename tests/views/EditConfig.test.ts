@@ -1,16 +1,20 @@
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 import EditConfig from "@/views/settings/EditConfig.vue";
 
-const { apiMock, routerMock } = vi.hoisted(() => ({
+const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     players: {},
     providers: {},
   },
   routerMock: {
     push: vi.fn(),
+  },
+  storeMock: {
+    frameless: false,
+    mobileLayout: false,
   },
 }));
 
@@ -22,6 +26,7 @@ vi.mock("@/plugins/api", () => ({
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>();
@@ -32,6 +37,11 @@ vi.mock("vue-router", async (importOriginal) => {
 });
 
 describe("EditConfig", () => {
+  beforeEach(() => {
+    storeMock.frameless = false;
+    storeMock.mobileLayout = false;
+  });
+
   it.each([
     ConfigEntryType.DIVIDER,
     ConfigEntryType.LABEL,
@@ -293,6 +303,22 @@ describe("EditConfig", () => {
 
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
   });
+
+  it.each([
+    ["mobile", "mobileLayout", "floating-save--mobile"],
+    ["frameless", "frameless", "floating-save--frameless"],
+  ] as const)(
+    "uses the %s save position in that layout",
+    (_, layout, cssClass) => {
+      storeMock[layout] = true;
+
+      const wrapper = mountEntries([
+        entry({ key: "server", type: ConfigEntryType.STRING }),
+      ]);
+
+      expect(wrapper.get(".floating-save").classes()).toContain(cssClass);
+    },
+  );
 });
 
 function entry(
