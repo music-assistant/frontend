@@ -107,7 +107,6 @@
           <PlayerBarGroupControl floating />
           <!-- player mobile control buttons -->
           <PlayerControls
-            :style="playIconStyle"
             :visible-components="{
               repeat: { isVisible: false },
               shuffle: { isVisible: false },
@@ -260,19 +259,24 @@ watch(
     background-color: transparent;
     min-height: 0;
     padding: 5px 10px;
-    /* play stays the primary action but is outlined here, so the compact row
-       does not read as a solid block */
     /* beats the global .player-control-button colour, which is tuned for the
        app surface rather than an artwork tint */
     :deep(.player-control-button) {
       color: v-bind(floatingControlColor) !important;
     }
+    :deep(.player-control-button:hover:not([data-suppress-hover="true"])),
+    :deep(.player-control-button[data-active="true"]),
+    :deep(.player-control-button[data-state="open"]) {
+      color: var(--primary) !important;
+    }
     /* Icon.vue rests its buttons at 0.62 and only lifts them on hover, which a
        touch device never reaches, so play looked faded next to the grouping
        button beside it */
-    :deep(.icon-container--button) {
+    :deep(.icon-container--button:not(.icon-container--disabled)) {
       opacity: 1;
     }
+    /* play stays the primary action but is outlined here, so the compact row
+       does not read as a solid block */
     :deep(.play-btn-icon) {
       min-width: 40px;
       min-height: 40px;
@@ -421,8 +425,6 @@ watch(
   }
 }
 
-/* the left offset cancels the padding inside the volume icon's column so
-   it lines up with the artwork above it */
 .volume-slider {
   width: auto;
   margin: -4px 10px 2px 10px;
