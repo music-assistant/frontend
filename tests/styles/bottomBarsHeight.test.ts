@@ -9,8 +9,8 @@ const OVERLAY_MARKER = "data-player-bar-overlay";
 const BAR_HEIGHT = "120px";
 const PLAYER_BAR_HEIGHT = "calc( 104px + env(safe-area-inset-bottom, 0px) )";
 const NAVIGATION_INSET =
-  "max( 6px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )";
-const NAVIGATION_HEIGHT = `calc( 64px + ${NAVIGATION_INSET} )`;
+  "max( 12px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )";
+const NAVIGATION_HEIGHT = `calc( 72px + ${NAVIGATION_INSET} )`;
 
 let appStyles: HTMLStyleElement;
 
@@ -69,7 +69,7 @@ describe("bottom bars height", () => {
     document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);
 
     expect(bottomBarsHeight()).toBe(
-      `calc( ${NAVIGATION_HEIGHT} + 4px + ${BAR_HEIGHT} )`,
+      `calc( ${NAVIGATION_HEIGHT} + 0px + ${BAR_HEIGHT} )`,
     );
   });
 
@@ -86,7 +86,7 @@ describe("bottom bars height", () => {
     // the blur behind the bars softens what scrolls under it without hiding
     // it, so nothing has to clear more than the bars themselves
     expect(bottomObscuredHeight()).toBe(
-      `calc( ${NAVIGATION_HEIGHT} + 4px + ${BAR_HEIGHT} )`,
+      `calc( ${NAVIGATION_HEIGHT} + 0px + ${BAR_HEIGHT} )`,
     );
   });
 });

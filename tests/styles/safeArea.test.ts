@@ -37,7 +37,7 @@ describe("bottom navigation", () => {
         .getPropertyValue("--mobile-navigation-inset-bottom")
         .replace(/\s+/g, " ")
         .trim(),
-    ).toBe("max( 6px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )");
+    ).toBe("max( 12px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )");
   });
 });
 

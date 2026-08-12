@@ -260,7 +260,7 @@ watch(
     min-height: 0;
     /* the artwork ends up as far from the top as from the left once the row
        centres it; the volume row carries the space below */
-    padding: 8px 10px 5px;
+    padding: 10px 12px 6px;
     /* beats the global .player-control-button colour, which is tuned for the
        app surface rather than an artwork tint */
     :deep(.player-control-button) {

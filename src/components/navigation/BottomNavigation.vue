@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="mobile-bottom-navigation fixed inset-x-0 bottom-0 z-[2000] flex shadow-lg"
+    class="mobile-bottom-navigation fixed inset-x-0 bottom-0 z-[2000] flex"
     :data-picker-open="store.showPlayersMenu"
     aria-label="Main navigation"
   >
@@ -101,14 +101,27 @@ function closePlayersMenu() {
   /* the device insets are already covered by left/right, so this only keeps the
      two icon-only ends off the rounded corners */
   padding-inline: 12px !important;
-  /* an outline rather than a border: it costs no layout, so the items still
-     get the full height and their focus ring is not clipped */
-  outline: 1px solid var(--border);
-  outline-offset: -1px;
-  border-radius: 28px;
-  /* only a tint: the blur comes from the scrim behind it, which ramps up from
-     above the player, so the bar has no blur edge of its own */
+}
+
+/* one surface for the whole dock: it reaches up behind the player, which then
+   sits on it as its own card. The player's measured height is published by the
+   footer, so the two always meet. Only a tint - the blur comes from the scrim
+   behind it, which ramps up from above the player. */
+.mobile-bottom-navigation::before {
+  position: absolute;
+  z-index: -1;
+  top: calc(-1 * (var(--player-bar-overlay-height, 0px) + 4px));
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* the top stays concentric with the player card sitting on it; the bottom is
+     far rounder so it does not fight the screen's own corner curve */
+  border-radius: 20px 20px 32px 32px;
   background: color-mix(in srgb, var(--background) 70%, transparent);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  content: "";
 }
 
 /* darker than the muted grey the player controls use elsewhere, so the labels

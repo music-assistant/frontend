@@ -75,13 +75,16 @@ function clearOverlay() {
   display: flex;
   flex-direction: column;
   /* the same inset the navigation below it uses, so the two line up */
-  margin: 5px calc(12px + var(--device-inset-right)) 5px
-    calc(12px + var(--device-inset-left));
+  margin: 5px calc(16px + var(--device-inset-right)) 5px
+    calc(16px + var(--device-inset-left));
   margin-bottom: var(--mobile-player-bar-gap);
   width: calc(
-    100% - 24px - var(--device-inset-right) - var(--device-inset-left)
+    100% - 32px - var(--device-inset-right) - var(--device-inset-left)
   ) !important;
   border-radius: 16px !important;
+  /* the footer only positions the player; its own surface would otherwise show
+     as opaque wedges outside the player's rounded corners */
+  background: transparent !important;
 }
 
 .player-scrim {
