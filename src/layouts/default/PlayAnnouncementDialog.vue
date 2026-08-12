@@ -91,8 +91,8 @@ const showDialog = ref(false);
 const dialogKey = ref(0);
 const playerId = ref("");
 const message = ref("");
-// matches the server-side default; sent explicitly so the toggle's state is
-// always what gets played, whatever the player is configured with
+// seeded from the player's own setting when the dialog opens; sent explicitly,
+// so the toggle always shows what will actually be played
 const preAnnounce = ref(true);
 const sending = ref(false);
 
@@ -109,12 +109,28 @@ onMounted(() => {
     preAnnounce.value = true;
     dialogKey.value++;
     showDialog.value = true;
+    void seedPreAnnounce(evt.playerId);
   });
 });
 
 onBeforeUnmount(() => {
   eventbus.off("playAnnouncementDialog");
 });
+
+async function seedPreAnnounce(player: string): Promise<void> {
+  try {
+    const configured = await api.getPlayerConfigValue(
+      player,
+      "tts_pre_announce",
+    );
+    // the dialog may already have been reopened for another player
+    if (playerId.value === player && typeof configured === "boolean") {
+      preAnnounce.value = configured;
+    }
+  } catch {
+    // leave the toggle at the default the server would have applied anyway
+  }
+}
 
 async function submit(): Promise<void> {
   const text = message.value.trim();

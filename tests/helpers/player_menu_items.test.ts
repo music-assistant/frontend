@@ -284,20 +284,6 @@ describe("getPlayerMenuItems play announcement", () => {
   });
 
   it("omits the entry when no tts engine is set up", () => {
-    const menuItems = getPlayerMenuItems(
-      makePlayer({ supported_features: [PlayerFeature.PLAY_ANNOUNCEMENT] }),
-      undefined,
-      { context: "player" },
-    );
-
-    expect(menuItems.map((item) => item.label)).not.toContain(
-      "play_announcement",
-    );
-  });
-
-  it("omits the entry for a player that can not play announcements", () => {
-    announcementAvailableRef.value = true;
-
     const menuItems = getPlayerMenuItems(makePlayer(), undefined, {
       context: "player",
     });
@@ -307,11 +293,37 @@ describe("getPlayerMenuItems play announcement", () => {
     );
   });
 
+  it("omits the entry for a protocol player", () => {
+    announcementAvailableRef.value = true;
+
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ type: PlayerType.PROTOCOL }),
+      undefined,
+      { context: "player" },
+    );
+
+    expect(menuItems.map((item) => item.label)).not.toContain(
+      "play_announcement",
+    );
+  });
+
+  it("offers the entry for a player without native announcement support", () => {
+    // the server falls back to its own implementation, so this is not gated on
+    // PlayerFeature.PLAY_ANNOUNCEMENT
+    announcementAvailableRef.value = true;
+
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ supported_features: [] }),
+      undefined,
+      { context: "player" },
+    );
+
+    expect(menuItems.map((item) => item.label)).toContain("play_announcement");
+  });
+
   it("opens the announcement dialog for the player from both menus", () => {
     announcementAvailableRef.value = true;
-    const player = makePlayer({
-      supported_features: [PlayerFeature.PLAY_ANNOUNCEMENT],
-    });
+    const player = makePlayer();
 
     for (const context of ["player", "queue"] as const) {
       const menuItems = getPlayerMenuItems(player, makeQueue(), { context });

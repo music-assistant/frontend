@@ -8,6 +8,7 @@ const { apiMock, storeMock, toastSuccess } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
     playerCommandPlayAnnouncement: vi.fn(),
+    getPlayerConfigValue: vi.fn(),
   },
   storeMock: {
     dialogActive: false,
@@ -87,6 +88,7 @@ describe("PlayAnnouncementDialog", () => {
       kitchen: { player_id: "kitchen", name: "Kitchen" } as Player,
     };
     storeMock.dialogActive = false;
+    apiMock.getPlayerConfigValue.mockResolvedValue(true);
   });
 
   it("speaks the trimmed message with the chime enabled by default", async () => {
@@ -158,5 +160,57 @@ describe("PlayAnnouncementDialog", () => {
 
     await wrapper.get("textarea").setValue("Dinner is ready");
     expect(submitButton?.attributes("disabled")).toBeUndefined();
+  });
+
+  it("does not send a message that is only whitespace", async () => {
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+
+    await wrapper.get("textarea").setValue("   ");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(apiMock.playerCommandPlayAnnouncement).not.toHaveBeenCalled();
+  });
+
+  it("starts the chime toggle at the player's own setting", async () => {
+    apiMock.getPlayerConfigValue.mockResolvedValue(false);
+    apiMock.playerCommandPlayAnnouncement.mockResolvedValue(undefined);
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+
+    expect(apiMock.getPlayerConfigValue).toHaveBeenCalledWith(
+      "kitchen",
+      "tts_pre_announce",
+    );
+    await wrapper.get("textarea").setValue("Dinner is ready");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(apiMock.playerCommandPlayAnnouncement).toHaveBeenCalledWith(
+      "kitchen",
+      "Dinner is ready",
+      { preAnnounce: false },
+    );
+  });
+
+  it("does not carry the previous message over to the next announcement", async () => {
+    apiMock.playerCommandPlayAnnouncement.mockResolvedValue(undefined);
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+    await wrapper.get("textarea").setValue("Dinner is ready");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+
+    expect(wrapper.get("textarea").element.value).toBe("");
   });
 });

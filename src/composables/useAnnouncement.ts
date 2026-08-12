@@ -15,6 +15,10 @@ const ttsEngines = ref<AnnouncementTtsEngine[]>([]);
 // once at least one engine is set up.
 const announcementAvailable = computed(() => ttsEngines.value.length > 0);
 
+// the prefetch and every menu open share one request, so opening a menu
+// repeatedly never stacks up parallel fetches of the same catalog
+let inFlight: Promise<void> | null = null;
+
 void loadTtsEngines();
 
 export function useAnnouncement() {
@@ -32,11 +36,16 @@ function openAnnouncementDialog(playerId: string): void {
   eventbus.emit("playAnnouncementDialog", { playerId });
 }
 
-async function loadTtsEngines(): Promise<void> {
-  try {
-    await waitForApiInitialization();
-    ttsEngines.value = await api.getAnnouncementTtsEngines();
-  } catch {
-    // keep any previously loaded engines on failure
-  }
+function loadTtsEngines(): Promise<void> {
+  inFlight ??= (async () => {
+    try {
+      await waitForApiInitialization();
+      ttsEngines.value = await api.getAnnouncementTtsEngines();
+    } catch {
+      // keep any previously loaded engines on failure
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
 }

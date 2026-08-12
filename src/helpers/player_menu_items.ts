@@ -173,21 +173,20 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // play announcement (both menus; only when the player can play one and a TTS
-  // engine is set up to speak the message)
-  const { announcementAvailable, openAnnouncementDialog } = useAnnouncement();
-  if (
-    player.supported_features.includes(PlayerFeature.PLAY_ANNOUNCEMENT) &&
-    announcementAvailable.value
-  ) {
-    menuItems.push({
-      label: "play_announcement",
-      labelArgs: [],
-      action: () => {
-        openAnnouncementDialog(player.player_id);
-      },
-      icon: markRaw(Megaphone),
-    });
+  // play announcement (both menus; the server announces on any player, natively or
+  // through its own fallback, so this only needs a TTS engine to speak the message)
+  if (player.type !== PlayerType.PROTOCOL) {
+    const { announcementAvailable, openAnnouncementDialog } = useAnnouncement();
+    if (announcementAvailable.value) {
+      menuItems.push({
+        label: "play_announcement",
+        labelArgs: [],
+        action: () => {
+          openAnnouncementDialog(player.player_id);
+        },
+        icon: markRaw(Megaphone),
+      });
+    }
   }
 
   // transfer queue (both menus; only when the queue is the active source)
