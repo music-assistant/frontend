@@ -22,7 +22,6 @@
           <v-img
             class="media-thumb"
             style="border-radius: 4px"
-            :size="innerThumbSizePx"
             :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
             :alt="$t('tooltip.artwork')"
           />
@@ -31,7 +30,7 @@
         <div
           v-else
           class="icon-thumb"
-          :style="`height: ${innerThumbSizePx}px; width: ${innerThumbSizePx}px;`"
+          :style="`height: ${fallbackThumbSizePx}px; width: ${fallbackThumbSizePx}px;`"
         >
           <PlayerIcon
             :icon="store.activePlayer?.icon"
@@ -214,14 +213,16 @@ const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
 });
 
-// clickable area around the artwork; matches the artwork size, except it
-// also grows on wider non-compact layouts to keep a comfortable tap target
+// size of the clickable artwork area; cover art fills this via its
+// w-full h-full wrapper, so this is also the real artwork size
 const outerThumbSizePx = computed(() => {
   if (props.compact) return 44;
   return getBreakpointValue({ breakpoint: "phone" }) ? 60 : 64;
 });
 
-const innerThumbSizePx = computed(() => (props.compact ? 44 : 60));
+// the icon fallback (no cover art) has its own fixed size, independent of
+// the breakpoint-driven outer container
+const fallbackThumbSizePx = computed(() => (props.compact ? 44 : 60));
 
 function onTitleClick() {
   if (!store.activePlayer || store.activePlayer.powered == false) {

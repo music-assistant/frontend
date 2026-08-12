@@ -76,7 +76,7 @@ describe("PlayerTrackDetails compact mode", () => {
   afterEach(() => {
     wrapper?.unmount();
     wrapper = undefined;
-    store.activePlayer.current_media.image_url = undefined;
+    store.activePlayer!.current_media!.image_url = null;
   });
 
   it.each([
@@ -103,21 +103,22 @@ describe("PlayerTrackDetails compact mode", () => {
   );
 
   it.each([
-    { compact: false, size: 60 },
-    { compact: true, size: 44 },
+    { compact: false, containerSize: 64 },
+    { compact: true, containerSize: 44 },
   ])(
-    "renders cover art via VImg at $size px when compact=$compact",
-    ({ compact, size }) => {
-      store.activePlayer.current_media.image_url =
+    "renders cover art sized to its $containerSize px wrapper when compact=$compact",
+    ({ compact, containerSize }) => {
+      store.activePlayer!.current_media!.image_url =
         "https://example.com/art.jpg";
       const details = mountDetails(compact);
 
       expect(details.find(".icon-thumb").exists()).toBe(false);
-      const artwork = details.findComponent({ name: "VImg" });
-      expect(artwork.exists()).toBe(true);
-      // VImg has no dedicated "size" prop, so the bound value falls through
-      // as a plain DOM attribute on the component's root element
-      expect(artwork.attributes("size")).toBe(String(size));
+      expect(details.findComponent({ name: "VImg" }).exists()).toBe(true);
+      // cover art fills its w-full h-full wrapper, so the outer container
+      // is what actually controls the rendered artwork size
+      expect(details.get(".player-media-thumb").attributes("style")).toContain(
+        `height: ${containerSize}px`,
+      );
     },
   );
 });
