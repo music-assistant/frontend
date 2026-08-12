@@ -11,7 +11,6 @@ const PLAYER_BAR_HEIGHT = "calc( 104px + env(safe-area-inset-bottom, 0px) )";
 const NAVIGATION_INSET =
   "max( 6px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )";
 const NAVIGATION_HEIGHT = `calc( 64px + ${NAVIGATION_INSET} )`;
-const SCRIM_HEIGHT = `calc( 180px + ${NAVIGATION_INSET} )`;
 
 let appStyles: HTMLStyleElement;
 
@@ -80,12 +79,14 @@ describe("bottom bars height", () => {
     expect(bottomObscuredHeight()).toBe(PLAYER_BAR_HEIGHT);
   });
 
-  it("reaches over the gradient scrim on mobile", () => {
+  it("reaches no further than the bars on mobile either", () => {
     document.documentElement.setAttribute(OVERLAY_MARKER, "");
     document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);
 
+    // the blur behind the bars softens what scrolls under it without hiding
+    // it, so nothing has to clear more than the bars themselves
     expect(bottomObscuredHeight()).toBe(
-      `max( calc( ${NAVIGATION_HEIGHT} + 4px + ${BAR_HEIGHT} ), ${SCRIM_HEIGHT} )`,
+      `calc( ${NAVIGATION_HEIGHT} + 4px + ${BAR_HEIGHT} )`,
     );
   });
 });

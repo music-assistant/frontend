@@ -79,12 +79,6 @@
     var(--mobile-navigation-height) + var(--mobile-player-bar-gap) +
       var(--player-bar-overlay-height)
   );
-  /* The blur reaches higher than the bars, so it sets the floor for anything
-     that wants to clear the bottom of the screen. */
-  --bottom-obscured-height: max(
-    var(--bottom-bars-height),
-    var(--mobile-player-scrim-height)
-  );
 }
 
 /* Stacking order for anything pinned to the screen, lowest first. Each value is

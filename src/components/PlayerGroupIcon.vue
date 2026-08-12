@@ -4,13 +4,13 @@
        the accessible name, count included -->
   <span class="relative inline-flex p-1.5" aria-hidden="true">
     <Speaker v-bind="$attrs" />
-    <!-- filled with the speaker's own colour (text-inherit keeps currentColor
-         from the trigger), so the count reads on any background the bar takes -->
+    <!-- filled from the theme rather than the trigger's colour, which turns
+         primary while hovered or open and would leave the count unreadable -->
     <Badge
       data-player-group-count
       as="span"
       variant="outline"
-      class="absolute top-0 right-0 h-4.5 min-w-4.5 rounded-full border-transparent bg-current/80 px-1 text-[11px] font-normal text-inherit shadow-none"
+      class="absolute top-0 right-0 h-4.5 min-w-4.5 rounded-full border-transparent bg-foreground/80 px-1 text-[11px] font-normal shadow-none"
     >
       <span class="text-background">{{ count }}</span>
     </Badge>
