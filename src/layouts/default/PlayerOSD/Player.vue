@@ -80,13 +80,18 @@
   </template>
 
   <!-- Mobile: floating player with volume slider inside container -->
-  <div v-else class="mediacontrols-mobile-container">
+  <div
+    v-else
+    class="mediacontrols-mobile-container"
+    :data-compact="compactFloatingPlayer"
+  >
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
     <div class="mediacontrols" :data-mobile="true">
       <div class="mediacontrols-left">
         <PlayerTrackDetails
           :show-quality-details-btn="false"
           :show-only-artist="true"
+          :compact="compactFloatingPlayer"
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
         />
@@ -94,6 +99,7 @@
       <div class="mediacontrols-bottom-right">
         <div class="flex items-center">
           <PlayerTrackMenu
+            v-if="!compactFloatingPlayer"
             compact
             force-visible
             :show-favorite="true"
@@ -119,21 +125,23 @@
         </div>
       </div>
     </div>
-    <div v-if="store.activePlayer" class="volume-slider">
-      <PlayerVolume
+    <template v-if="!compactFloatingPlayer">
+      <div v-if="store.activePlayer" class="volume-slider">
+        <PlayerVolume
+          :player="store.activePlayer"
+          width="100%"
+          :prefer-group-volume="true"
+          :enable-popout="false"
+          :request-expand-on-group-tap="true"
+          @toggle-group-expansion="showMobileVolumeControls = true"
+        />
+      </div>
+      <PlayerBarMobileVolumeSheet
+        v-if="store.activePlayer"
+        v-model:open="showMobileVolumeControls"
         :player="store.activePlayer"
-        width="100%"
-        :prefer-group-volume="true"
-        :enable-popout="false"
-        :request-expand-on-group-tap="true"
-        @toggle-group-expansion="showMobileVolumeControls = true"
       />
-    </div>
-    <PlayerBarMobileVolumeSheet
-      v-if="store.activePlayer"
-      v-model:open="showMobileVolumeControls"
-      :player="store.activePlayer"
-    />
+    </template>
   </div>
 </template>
 
@@ -147,6 +155,7 @@ import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { Heart } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
 import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
@@ -160,12 +169,21 @@ interface Props {
   useFloatingPlayer: boolean;
 }
 const props = defineProps<Props>();
+const route = useRoute();
 const showMobileVolumeControls = ref(false);
 const showWideCenterActions = computed(() => getBreakpointValue("bp6"));
 const favoriteItem = computed(() => {
   const item = store.curQueueItem?.media_item;
   return item?.media_type === MediaType.AUDIO_SOURCE ? undefined : item;
 });
+
+// settings and its descendants collapse the floating mobile player to a
+// single row, since the fixed save button already competes for that space
+const compactFloatingPlayer = computed(
+  () =>
+    props.useFloatingPlayer &&
+    route.matched.some((record) => record.name === "settings"),
+);
 
 const coverImageColorPalette = computed<ImageColorPalette>(() =>
   paletteFromServer(store.activePlayer?.current_media?.palette),
@@ -196,6 +214,12 @@ watch(
     showMobileVolumeControls.value = false;
   },
 );
+
+// the volume sheet is unmounted while compact, but its open state is not:
+// reset it so it cannot resurface once the normal player returns
+watch(compactFloatingPlayer, (compact) => {
+  if (compact) showMobileVolumeControls.value = false;
+});
 </script>
 
 <style scoped lang="scss">
