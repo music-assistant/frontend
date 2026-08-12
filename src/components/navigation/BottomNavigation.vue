@@ -120,7 +120,7 @@ function closePlayersMenu() {
 }
 
 /* the paired class outweighs the equally-!important layout utilities the button
-   variant carries */
+   brings along with its base and size */
 .player-control-button.mobile-navigation-item {
   display: grid !important;
   height: var(--mobile-navigation-item-height) !important;
