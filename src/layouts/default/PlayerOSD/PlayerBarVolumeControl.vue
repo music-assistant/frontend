@@ -28,8 +28,6 @@
         :data-suppress-hover="suppressHover"
         :disabled="disabled"
         :aria-label="`${$t('audio_overlay_volume')}: ${displayVolume}%`"
-        :aria-expanded="open"
-        aria-haspopup="dialog"
         @click.capture="handleTriggerClick"
         @pointerleave="suppressHover = false"
         @wheel="adjustVolume"

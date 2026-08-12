@@ -7,9 +7,9 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { h, inject, provide, type InjectionKey, type SetupContext } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -164,11 +164,56 @@ function mountControl(player: Player) {
   });
 }
 
+// the popover stubs above keep the interaction tests independent of reka-ui;
+// the trigger's own attributes only show up with the real component
+function mountWithPopover(player: Player) {
+  return mount(PlayerBarVolumeControl, {
+    props: { player },
+    global: {
+      mocks: {
+        $t: (key: string) => key,
+      },
+      stubs: { PlayerVolumePanel: true, Teleport: true },
+    },
+  });
+}
+
+enableAutoUnmount(afterEach);
+
 describe("PlayerBarVolumeControl", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
     api.players = {};
+  });
+
+  it("leaves the panel state to the popover trigger", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mountWithPopover(player);
+    const trigger = wrapper.get("[data-player-volume-trigger]");
+
+    // reka-ui's PopoverTrigger supplies the disclosure state; a second,
+    // hand-written copy must not ride along and drift from it
+    expect(trigger.attributes("aria-haspopup")).toBe("dialog");
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+
+    await trigger.trigger("click");
+    expect(trigger.attributes("aria-expanded")).toBe("true");
+
+    // the volume in the accessible name is ours; reka-ui has no notion of it
+    expect(trigger.attributes("aria-label")).toBe("audio_overlay_volume: 25%");
+  });
+
+  it("does not announce the panel state itself", () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    // the stubbed trigger announces nothing, so whatever is left on the button
+    // is the component's own copy of what reka-ui already supplies
+    const trigger = mountControl(player).get("[data-player-volume-trigger]");
+
+    expect(trigger.attributes("aria-haspopup")).toBeUndefined();
+    expect(trigger.attributes("aria-expanded")).toBeUndefined();
   });
 
   it("does not open on hover", async () => {
