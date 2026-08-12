@@ -43,6 +43,9 @@ export interface Props {
 const props = defineProps<Props>();
 const route = useRoute();
 
+// Versioned: delays saved before sendspin-js 4.0.0 dropped its 200ms default would replay early.
+const SYNC_DELAY_STORAGE_KEY = "frontend.settings.sendspin_static_delay_v2";
+
 const audioRef = ref<HTMLAudioElement>();
 const silentAudioRef = ref<HTMLAudioElement>();
 
@@ -263,6 +266,21 @@ watch(correctionMode, (mode) => {
   player?.setCorrectionMode(mode);
 });
 
+// Hand this client's pairing token to the server so it can pair us without an
+// operator step. The server derives the client id from the token itself, and
+// ignores the call once we are paired.
+const registerPairing = () => {
+  const pairingToken = player?.pairingToken;
+  if (!pairingToken) return;
+  api
+    .sendCommand(
+      "sendspin/pair_web_player",
+      { pairing_token: pairingToken },
+      { suppressGlobalError: true },
+    )
+    .catch((error) => console.warn("Sendspin: auto-pairing failed", error));
+};
+
 // Setup on mount
 onMounted(() => {
   console.debug("Sendspin: Component mounted, connecting...");
@@ -283,9 +301,7 @@ onMounted(() => {
   if (audioRef.value) {
     const audioElement = isMobileOutput ? audioRef.value : undefined;
 
-    const savedSyncDelay = localStorage.getItem(
-      "frontend.settings.sendspin_static_delay",
-    );
+    const savedSyncDelay = localStorage.getItem(SYNC_DELAY_STORAGE_KEY);
     const parsed = savedSyncDelay !== null ? parseInt(savedSyncDelay, 10) : NaN;
     const syncDelay = isNaN(parsed) ? undefined : parsed;
 
@@ -303,10 +319,12 @@ onMounted(() => {
         // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
         // The URL just needs to be valid and contain "/sendspin" for the interceptor
         player = new SendspinPlayer({
-          playerId: props.playerId,
           baseUrl: "http://sendspin.local",
           audioElement,
           clientName: getDeviceName(),
+          // How the server recognizes us as its built-in player rather than a
+          // third-party client that has to be paired by hand.
+          productName: "Web Player",
           codecs,
           syncDelay,
           requiredLeadTimeMs: 250,
@@ -322,11 +340,10 @@ onMounted(() => {
             playerState.value = state.playerState;
           },
           correctionMode: correctionMode.value,
+          onPairing: (event: string, detail?: string) =>
+            console.debug(`Sendspin: pairing ${event}`, detail ?? ""),
           onDelayCommand: (delayMs: number) => {
-            localStorage.setItem(
-              "frontend.settings.sendspin_static_delay",
-              String(delayMs),
-            );
+            localStorage.setItem(SYNC_DELAY_STORAGE_KEY, String(delayMs));
           },
           // Recover a sendspin transport that drops on its own (e.g. its socket is
           // idle-timed-out while the main API connection stays up). Drops that also
@@ -340,13 +357,19 @@ onMounted(() => {
             maxDelayMs: 30000,
             onReconnecting: (attempt: number) =>
               console.debug(`Sendspin: reconnecting (attempt ${attempt})`),
-            onReconnected: () => console.debug("Sendspin: reconnected"),
+            // Re-pair after a reconnect: the server may have dropped our pairing
+            // record in the meantime (guest pairings are removed on disconnect),
+            // leaving the new connection unpaired. A no-op while still paired.
+            onReconnected: () => {
+              console.debug("Sendspin: reconnected");
+              registerPairing();
+            },
             onExhausted: () =>
               console.warn("Sendspin: reconnect attempts exhausted"),
           },
         });
 
-        return player.connect();
+        return player.connect().then(registerPairing);
       })
       .catch((error) => {
         console.error("Sendspin: Failed to connect", error);

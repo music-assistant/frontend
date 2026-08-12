@@ -27,8 +27,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
       '@sendspin/sendspin-js':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 5.0.0
+        version: 5.0.0
       '@tabler/icons-vue':
         specifier: ^3.45.0
         version: 3.45.0(vue@3.5.41(typescript@6.0.3))
@@ -188,7 +188,7 @@ importers:
         version: 9.1.7
       jsdom:
         specifier: ^29.1.1
-        version: 29.1.1
+        version: 29.1.1(@noble/hashes@1.8.0)
       lint-staged:
         specifier: ^16.4.0
         version: 16.4.0
@@ -236,7 +236,7 @@ importers:
         version: 5.1.1(vue@3.5.41(typescript@6.0.3))
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.1)(jsdom@29.1.1)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0))
+        version: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.1)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0))
       vue-tsc:
         specifier: 3.3.7
         version: 3.3.7(typescript@6.0.3)
@@ -1382,6 +1382,18 @@ packages:
       '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.3
       '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.3
 
+  '@noble/ciphers@1.3.0':
+    resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
+    engines: {node: ^14.21.3 || >=16}
+
+  '@noble/curves@1.9.7':
+    resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
+    engines: {node: ^14.21.3 || >=16}
+
+  '@noble/hashes@1.8.0':
+    resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
+    engines: {node: ^14.21.3 || >=16}
+
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -1899,8 +1911,8 @@ packages:
   '@scure/base@2.2.0':
     resolution: {integrity: sha512-b8XEupJibegiXV+tDUseI8oLQc8ei3d/4Jkb2RpbHh3MfE054ov3uIz2dhFkB3FI8iwYkEh0gGCApkrYggkPNg==}
 
-  '@sendspin/sendspin-js@3.2.1':
-    resolution: {integrity: sha512-FlnHUV2hppNg/W3yIvV0v9XmDkHE/tbmHkc2/wWDE9CMfqNdCkGhaTsd4cRa4n5FafS3wTDccceFtPvNiacKvg==}
+  '@sendspin/sendspin-js@5.0.0':
+    resolution: {integrity: sha512-yRRjPsz6TyR1GzRYO7ur7oAzwZ11tELK1PEp6Ci7fscXOI0JdtP6BbwPhw+/CR0TWQxu/VwtVPtXT9SH/xhzFw==}
     engines: {node: '>=16.0.0'}
 
   '@standard-schema/spec@1.1.0':
@@ -5955,7 +5967,9 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@exodus/bytes@1.15.1': {}
+  '@exodus/bytes@1.15.1(@noble/hashes@1.8.0)':
+    optionalDependencies:
+      '@noble/hashes': 1.8.0
 
   '@floating-ui/core@1.7.5':
     dependencies:
@@ -6131,6 +6145,14 @@ snapshots:
       '@emnapi/runtime': 1.11.1
       '@tybys/wasm-util': 0.10.3
     optional: true
+
+  '@noble/ciphers@1.3.0': {}
+
+  '@noble/curves@1.9.7':
+    dependencies:
+      '@noble/hashes': 1.8.0
+
+  '@noble/hashes@1.8.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -6438,8 +6460,11 @@ snapshots:
 
   '@scure/base@2.2.0': {}
 
-  '@sendspin/sendspin-js@3.2.1':
+  '@sendspin/sendspin-js@5.0.0':
     dependencies:
+      '@noble/ciphers': 1.3.0
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
       opus-encdec: 0.1.1
 
   '@standard-schema/spec@1.1.0': {}
@@ -6834,7 +6859,7 @@ snapshots:
       obug: 2.1.3
       std-env: 4.2.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.1)(jsdom@29.1.1)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0))
+      vitest: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.1)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0))
 
   '@vitest/expect@4.1.10':
     dependencies:
@@ -6880,7 +6905,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.1)(jsdom@29.1.1)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0))
+      vitest: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.1)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0))
 
   '@vitest/utils@4.1.10':
     dependencies:
@@ -7422,10 +7447,10 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  data-urls@7.0.0:
+  data-urls@7.0.0(@noble/hashes@1.8.0):
     dependencies:
       whatwg-mimetype: 5.0.0
-      whatwg-url: 16.0.1
+      whatwg-url: 16.0.1(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -8041,9 +8066,9 @@ snapshots:
 
   howler@2.2.4: {}
 
-  html-encoding-sniffer@6.0.0:
+  html-encoding-sniffer@6.0.0(@noble/hashes@1.8.0):
     dependencies:
-      '@exodus/bytes': 1.15.1
+      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -8253,17 +8278,17 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  jsdom@29.1.1:
+  jsdom@29.1.1(@noble/hashes@1.8.0):
     dependencies:
       '@asamuzakjp/css-color': 5.1.11
       '@asamuzakjp/dom-selector': 7.1.1
       '@bramus/specificity': 2.4.2
       '@csstools/css-syntax-patches-for-csstree': 1.1.5(css-tree@3.2.1)
-      '@exodus/bytes': 1.15.1
+      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
       css-tree: 3.2.1
-      data-urls: 7.0.0
+      data-urls: 7.0.0(@noble/hashes@1.8.0)
       decimal.js: 10.6.0
-      html-encoding-sniffer: 6.0.0
+      html-encoding-sniffer: 6.0.0(@noble/hashes@1.8.0)
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.1
       parse5: 8.0.1
@@ -8274,7 +8299,7 @@ snapshots:
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
-      whatwg-url: 16.0.1
+      whatwg-url: 16.0.1(@noble/hashes@1.8.0)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
@@ -9398,7 +9423,7 @@ snapshots:
       terser: 5.48.0
       yaml: 2.9.0
 
-  vitest@4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.1)(jsdom@29.1.1)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0)):
+  vitest@4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.11.1)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.10
       '@vitest/mocker': 4.1.10(vite@8.1.5(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.102.0)(terser@5.48.0)(yaml@2.9.0))
@@ -9425,7 +9450,7 @@ snapshots:
       '@vitest/coverage-v8': 4.1.10(vitest@4.1.10)
       '@vitest/ui': 4.1.10(vitest@4.1.10)
       happy-dom: 20.11.1
-      jsdom: 29.1.1
+      jsdom: 29.1.1(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - msw
 
@@ -9561,9 +9586,9 @@ snapshots:
 
   whatwg-mimetype@5.0.0: {}
 
-  whatwg-url@16.0.1:
+  whatwg-url@16.0.1(@noble/hashes@1.8.0):
     dependencies:
-      '@exodus/bytes': 1.15.1
+      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
       tr46: 6.0.0
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
