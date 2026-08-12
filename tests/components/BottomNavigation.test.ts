@@ -1,5 +1,5 @@
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
-import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { routeState, mockRouterPush, mockEmit } = vi.hoisted(() => ({
@@ -28,6 +28,13 @@ const { store } = await import("@/plugins/store");
 
 enableAutoUnmount(afterEach);
 
+/** Finds a bar item by its accessible name, so order changes cannot mislead. */
+function itemNamed(wrapper: VueWrapper, name: string) {
+  return wrapper
+    .findAll("button")
+    .find((button) => button.attributes("aria-label") === name)!;
+}
+
 function mountNavigation() {
   return mount(BottomNavigation, {
     global: {
@@ -55,13 +62,13 @@ describe("BottomNavigation", () => {
 
   it("names the icon-only ends without printing a label", () => {
     const wrapper = mountNavigation();
-    const [menu, , search] = wrapper.findAll("button");
-
     // both keep an accessible name; only the middle items show text
-    expect(menu.attributes("aria-label")).toBe("Menu");
-    expect(menu.find(".mobile-navigation-label").exists()).toBe(false);
-    expect(search.attributes("aria-label")).toBe("search");
-    expect(search.find(".mobile-navigation-label").exists()).toBe(false);
+    expect(
+      itemNamed(wrapper, "Menu").find(".mobile-navigation-label").exists(),
+    ).toBe(false);
+    expect(
+      itemNamed(wrapper, "search").find(".mobile-navigation-label").exists(),
+    ).toBe(false);
   });
 
   it("marks the page you are on", () => {
@@ -102,7 +109,7 @@ describe("BottomNavigation", () => {
     store.showPlayersMenu = true;
     const wrapper = mountNavigation();
 
-    await wrapper.findAll("button")[1].trigger("click");
+    await itemNamed(wrapper, "discover").trigger("click");
 
     expect(mockRouterPush).toHaveBeenCalledWith({ name: "discover" });
     expect(store.showPlayersMenu).toBe(false);
@@ -111,7 +118,7 @@ describe("BottomNavigation", () => {
   it("opens the sidebar from the menu button", async () => {
     const wrapper = mountNavigation();
 
-    await wrapper.findAll("button")[0].trigger("click");
+    await itemNamed(wrapper, "Menu").trigger("click");
 
     expect(mockEmit).toHaveBeenCalledWith("mobile-sidebar-open");
   });
