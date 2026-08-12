@@ -22,7 +22,7 @@
           </PopoverTrigger>
           <PopoverContent
             class="w-[--reka-popover-trigger-width] p-0"
-            @open-auto-focus.prevent
+            @open-auto-focus="preventOnScreenKeyboardOnOpen"
           >
             <Command>
               <CommandInput :placeholder="t('search')" />
@@ -81,6 +81,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { api } from "@/plugins/api";
 import type { Genre, MediaItemType } from "@/plugins/api/interfaces";
 import { eventbus, type LinkGenreDialogEvent } from "@/plugins/eventbus";
