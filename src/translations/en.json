@@ -2218,7 +2218,7 @@
     "audio_overlay_select_sound": "Select a sound",
     "audio_overlay_volume": "Volume",
     "audio_overlay_no_sounds": "No overlay sounds available. Add a provider that offers sound effects.",
-    "ai_dj": "AI Radio DJ",
+    "ai_dj": "Enable AI Radio DJ",
     "ai_dj_off": "Off",
     "menu_edit_enable": "Edit menu",
     "menu_edit_disable": "Leave edit mode",
