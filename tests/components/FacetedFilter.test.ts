@@ -71,6 +71,16 @@ const closePopover = async (wrapper: VueWrapper) => {
   );
 };
 
+// the field is portalled out of the wrapper, so drive the native input directly
+const typeSearch = async (content: Element, term: string) => {
+  const field = content.querySelector<HTMLInputElement>(
+    "input[data-slot='input']",
+  )!;
+  field.value = term;
+  field.dispatchEvent(new Event("input"));
+  await flushPromises();
+};
+
 const mountAndOpen = async (options: { label: string; value: string }[]) => {
   const wrapper = mount(FacetedFilter, {
     props: { title: "Providers", options, modelValue: [] },
@@ -154,23 +164,31 @@ describe("FacetedFilter", () => {
     expect(document.activeElement).toBe(content);
   });
 
-  it("skips the search field on a touch device with nothing left to show", async () => {
+  it("skips the search field of a long list on a touch device when it reopens", async () => {
     storeMock.isTouchscreen = true;
     const { wrapper, content } = await mountAndOpen(manyOptions(12));
 
-    const field = content.querySelector<HTMLInputElement>(
-      "input[data-slot='input']",
-    )!;
-    field.value = "no such provider";
-    field.dispatchEvent(new Event("input"));
-    await flushPromises();
-    expect(content.querySelectorAll(".faceted-filter-item")).toHaveLength(0);
-
-    // the term outlives the popover, so it reopens on an empty list
+    await typeSearch(content, "no such provider");
     await closePopover(wrapper);
     const reopened = await openPopover(wrapper);
 
     expect(document.activeElement).toBe(reopened);
+  });
+
+  it("reopens on the full list after a search", async () => {
+    const { wrapper, content } = await mountAndOpen(manyOptions(12));
+
+    await typeSearch(content, "no such provider");
+    expect(content.querySelectorAll(".faceted-filter-item")).toHaveLength(0);
+
+    await closePopover(wrapper);
+    const reopened = await openPopover(wrapper);
+
+    expect(
+      reopened.querySelector<HTMLInputElement>("input[data-slot='input']")!
+        .value,
+    ).toBe("");
+    expect(reopened.querySelectorAll(".faceted-filter-item")).toHaveLength(12);
   });
 
   it("focuses the search field of a long list on a desktop", async () => {
