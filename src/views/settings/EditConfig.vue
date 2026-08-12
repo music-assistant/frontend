@@ -609,7 +609,9 @@ const getCategoryIcon = function (category: string): Component {
 }
 
 .floating-save--mobile {
-  right: 16px;
+  /* the button floats directly above the player card, so it takes the card's
+     inset to line up with its right edge */
+  right: calc(var(--mobile-player-inset-x) + var(--device-inset-right));
   bottom: calc(var(--bottom-bars-height) + 16px);
   /* Above the player scrim, below the mobile bars. */
   z-index: 1000;
