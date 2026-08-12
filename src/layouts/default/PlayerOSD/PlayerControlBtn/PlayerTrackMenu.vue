@@ -328,7 +328,11 @@ onBeforeUnmount(flushPendingSpeed);
    opened it. */
 .playback-speed-dialog {
   width: 360px;
-  max-width: calc(100vw - 2rem) !important;
+  /* Both insets, so a dialog wide enough to be clamped still stops at the far
+     safe edge rather than running past it. */
+  max-width: calc(
+    100vw - 2rem - var(--device-inset-left) - var(--device-inset-right)
+  ) !important;
   top: auto !important;
   left: auto !important;
   right: calc(1rem + var(--device-inset-right)) !important;

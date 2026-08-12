@@ -79,6 +79,19 @@ describe.each([
   });
 });
 
+describe("playback speed dialog", () => {
+  // Offsetting only the near edge would push the far one off screen once the
+  // dialog is wide enough to be clamped.
+  it("clamps its width to both safe edges", () => {
+    const element = render(playerTrackMenuSource, "playback-speed-dialog");
+
+    // happy-dom resolves 100vw and 2rem before handing the expression back.
+    expect(normalize(getComputedStyle(element).maxWidth)).toBe(
+      `calc(${window.innerWidth}px-32px-${INSET_LEFT}-${INSET_RIGHT})`,
+    );
+  });
+});
+
 describe("update toast", () => {
   it("sits its margin clear of a side cutout", () => {
     const element = render(reloadPromptSource, "pwa-toast");
