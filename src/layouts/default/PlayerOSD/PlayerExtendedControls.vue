@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-w-0 items-center">
+  <div class="player-bar-action-row flex min-w-0 items-center">
     <Button
       v-if="favorite?.isVisible && favoriteItem"
       variant="ghost"

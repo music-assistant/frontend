@@ -402,6 +402,45 @@ watch(
   white-space: nowrap;
 }
 
+/* a wide screen leaves room to spare in this column, so the actions take a gap
+   between them and the two whose label varies in length grow with their text -
+   the player name is the first to run out. Growing only starts where the label
+   needs it, so a short name leaves no hole beside the button next to it. */
+@media screen and (min-width: 1100px) {
+  /* the room is only borrowed: these let the row hand it straight back when
+     another control joins it, such as the sleep timer, and send whatever still
+     does not fit towards the middle of the bar rather than off its end */
+  .mediacontrols-bottom-right > div {
+    min-width: 0;
+  }
+
+  .mediacontrols :deep(.player-bar-action-row) {
+    justify-content: flex-end;
+  }
+
+  /* spacing the controls rather than the row keeps the popovers' own anchor
+     elements, which sit between them and take no space, out of the count */
+  .mediacontrols :deep(.player-bar-action-row > button ~ button) {
+    margin-inline-start: clamp(0px, 2vw - 25px, 16px);
+  }
+
+  .mediacontrols :deep(.player-bar-group-button),
+  .mediacontrols :deep(.player-bar-player-button) {
+    width: auto !important;
+    flex-shrink: 1 !important;
+  }
+
+  .mediacontrols :deep(.player-bar-group-button) {
+    min-width: 72px !important;
+    max-width: clamp(72px, 5vw + 17px, 112px);
+  }
+
+  .mediacontrols :deep(.player-bar-player-button) {
+    min-width: 96px !important;
+    max-width: clamp(96px, 10vw - 14px, 176px);
+  }
+}
+
 @media screen and (min-width: 769px) and (max-width: 1099px) {
   .mediacontrols .mediacontrols-bottom-center {
     width: auto;
