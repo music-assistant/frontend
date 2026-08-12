@@ -75,16 +75,14 @@ function clearOverlay() {
   display: flex;
   flex-direction: column;
   /* 4px inside the dock's own inset, so the surface shows evenly around the
-     card on every side */
-  margin: 5px calc(16px + var(--device-inset-right)) 0
+     card on every side. The vertical margins are omitted: the bar is fixed and
+     anchored by its bottom, so they would not move it. */
+  margin: 0 calc(16px + var(--device-inset-right)) 0
     calc(16px + var(--device-inset-left));
   width: calc(
     100% - 32px - var(--device-inset-right) - var(--device-inset-left)
   ) !important;
   border-radius: 16px !important;
-  /* the footer only positions the player; its own surface would otherwise show
-     as opaque wedges outside the player's rounded corners */
-  background: transparent !important;
 }
 
 .player-scrim {
@@ -126,5 +124,9 @@ function clearOverlay() {
 
 .v-footer.mediacontrols-player-float {
   z-index: 2001 !important;
+  /* the footer only positions the player; its own surface would otherwise show
+     as opaque wedges outside the player's rounded corners. The paired class
+     outweighs the equally-!important bg-default the colour prop brings. */
+  background: transparent !important;
 }
 </style>

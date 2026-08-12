@@ -4,7 +4,7 @@
     variant="ghost"
     :class="[
       navigation
-        ? 'player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1'
+        ? 'player-control-button mobile-navigation-item min-w-0 flex-1 px-1'
         : 'player-control-button player-bar-action player-bar-player-button h-20 w-24 min-w-0 rounded-none px-1',
     ]"
     :data-active="store.showPlayersMenu"

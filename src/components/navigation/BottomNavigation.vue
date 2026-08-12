@@ -42,7 +42,7 @@
       @click="handleSearchClick"
     >
       <span class="mobile-navigation-icon">
-        <Search class="size-8" :stroke-width="1.6" />
+        <Search class="size-8" :stroke-width="isActive('search') ? 2.2 : 1.6" />
       </span>
     </Button>
   </nav>
@@ -111,6 +111,7 @@ function closePlayersMenu() {
   position: absolute;
   z-index: -1;
   top: calc(-1 * (var(--player-bar-overlay-height, 0px) + 4px));
+  pointer-events: none;
   right: 0;
   bottom: 0;
   left: 0;
@@ -152,13 +153,6 @@ function closePlayersMenu() {
   font-weight: 600;
 }
 
-/* no label, so the icon takes the whole height and the button only claims the
-   width it needs */
-.player-control-button.mobile-navigation-item--bare {
-  width: 60px;
-  grid-template-rows: 1fr !important;
-}
-
 /* the paired class outweighs the equally-!important layout utilities the button
    brings along with its base and size */
 .player-control-button.mobile-navigation-item {
@@ -177,8 +171,14 @@ function closePlayersMenu() {
   padding-bottom: 2px !important;
 }
 
+/* no label, so the icon takes the whole height and the button only claims the
+   width it needs */
+.player-control-button.mobile-navigation-item--bare {
+  width: 60px;
+  grid-template-rows: 1fr;
+}
+
 .mobile-navigation-icon {
-  position: relative;
   display: flex;
   height: 30px;
   align-items: center;
