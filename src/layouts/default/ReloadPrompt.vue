@@ -25,7 +25,8 @@ const close = async () => {
 <style>
 .pwa-toast {
   position: fixed;
-  right: 0;
+  /* The margin below sets the gap, so this only has to clear a side cutout. */
+  right: var(--device-inset-right);
   bottom: 0;
   margin: 16px;
   padding: 12px;
