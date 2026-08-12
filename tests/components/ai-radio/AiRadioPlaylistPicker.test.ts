@@ -9,6 +9,12 @@ import {
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const { storeMock } = vi.hoisted(() => ({
+  storeMock: { isTouchscreen: false },
+}));
+
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
+
 vi.mock("@/plugins/api", () => ({
   default: {
     sendCommand: vi.fn(async () => []),
@@ -81,6 +87,7 @@ enableAutoUnmount(afterEach);
 
 describe("AiRadioPlaylistPicker", () => {
   beforeEach(() => {
+    storeMock.isTouchscreen = false;
     useShows().playlists.value = PLAYLISTS;
     document.body.innerHTML = "";
   });
@@ -128,5 +135,32 @@ describe("AiRadioPlaylistPicker", () => {
         .value,
     ).toBe("");
     expect(rows(reopened)).toHaveLength(PLAYLISTS.length);
+  });
+
+  it("focuses the search field on a non-touch device", async () => {
+    const content = await openPopover(mountPicker());
+
+    expect(document.activeElement).toBe(
+      content.querySelector("input[data-slot='input']"),
+    );
+  });
+
+  it("names the search field after what it searches", async () => {
+    const content = await openPopover(mountPicker());
+
+    expect(
+      content
+        .querySelector("input[data-slot='input']")!
+        .getAttribute("aria-label"),
+    ).toBe("Search playlists");
+  });
+
+  it("focuses the playlist list itself on a touch device", async () => {
+    storeMock.isTouchscreen = true;
+
+    const content = await openPopover(mountPicker());
+
+    expect(content.querySelector("input[data-slot='input']")).not.toBeNull();
+    expect(document.activeElement).toBe(content);
   });
 });
