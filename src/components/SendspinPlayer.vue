@@ -25,6 +25,7 @@ import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
   webPlayer,
+  isPlaybackMode,
   registerWebPlayerAudioUnlock,
   clearWebPlayerAudioUnlock,
   WebPlayerMode,
@@ -58,6 +59,9 @@ const isMobileOutput = isAndroid || isIOS;
 
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
+// Set on teardown, so a session that is still being prepared does not connect a
+// player nothing owns.
+let unmounted = false;
 
 // iOS only lets audio start inside a user gesture, but listen-in audio starts
 // asynchronously (after the server groups this player), so the library would
@@ -308,6 +312,8 @@ onMounted(() => {
     // Prepare session first, then create player with appropriate codecs
     prepareSendspinSession()
       .then(() => {
+        if (unmounted) return;
+
         // Prefer opus for bandwidth efficiency, flac as fallback
         // (opus requires secure context which may not be available)
         const codecs: Codec[] = ["opus", "flac"];
@@ -401,9 +407,16 @@ onMounted(() => {
 
 // Cleanup on unmount
 onBeforeUnmount(() => {
+  unmounted = true;
   clearWebPlayerAudioUnlock(primeAudio);
   if (player) {
-    player.disconnect();
+    // The server holds a player registered for minutes after a "restart"
+    // goodbye, which is what a hand-over to another tab needs. Once this
+    // browser wants no player at all, say so instead, or it stays targetable
+    // while nothing is listening.
+    player.disconnect(
+      isPlaybackMode(webPlayer.mode) ? "restart" : "user_request",
+    );
     player = null;
   }
   if (unsubMetadata) unsubMetadata();
