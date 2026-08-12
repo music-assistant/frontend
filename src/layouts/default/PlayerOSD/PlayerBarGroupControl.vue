@@ -45,8 +45,9 @@
               navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
             "
           >
-            <!-- the navigation bar draws its idle items lighter and reserves the
-                 full weight for the item you are on -->
+            <!-- the navigation bar marks the current route with the full weight,
+                 so this button takes the lighter idle weight rather than looking
+                 like the route you are on -->
             <PlayerGroupIcon
               :count="memberCount"
               :stroke-width="navigation ? 1.6 : 1.4"

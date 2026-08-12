@@ -79,7 +79,8 @@ describe("PlayerBarGroupControl", () => {
     );
     wrapper?.unmount();
 
-    // the navigation bar keeps the heavier weight for the item you are on
+    // 1.6 is the navigation bar's idle weight; it keeps the full weight for
+    // the route you are on
     expect(
       mountGroupButton({ navigation: true })
         .get("svg")
