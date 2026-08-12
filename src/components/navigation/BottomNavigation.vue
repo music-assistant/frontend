@@ -1,4 +1,6 @@
 <template>
+  <!-- the label deliberately omits "navigation": screen readers append the
+       landmark role, so anything else reads as "... navigation navigation" -->
   <nav
     class="mobile-bottom-navigation fixed inset-x-0 bottom-0 z-[2000] flex"
     :data-picker-open="store.showPlayersMenu"
