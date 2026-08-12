@@ -4,6 +4,7 @@ import {
 } from "@/helpers/player_menu_items";
 import {
   PLAYER_CONTROL_NONE,
+  PlayerFeature,
   PlayerType,
   type AIRadioHost,
   type AIRadioSession,
@@ -16,12 +17,14 @@ import { playerQueue } from "../fixtures/playerQueue";
 
 const {
   aiRadioAvailableRef,
+  announcementAvailableRef,
   emitEvent,
   hostsRef,
   isAdmin,
   loadHosts,
   loadQueueDjStatus,
   loadStatus,
+  openAnnouncementDialog,
   queueDjStatusRef,
   routerPush,
   sessionsRef,
@@ -30,12 +33,14 @@ const {
   storeMock,
 } = vi.hoisted(() => ({
   aiRadioAvailableRef: { value: false },
+  announcementAvailableRef: { value: false },
   emitEvent: vi.fn(),
   hostsRef: { value: [] as AIRadioHost[] },
   isAdmin: vi.fn(),
   loadHosts: vi.fn().mockResolvedValue(undefined),
   loadQueueDjStatus: vi.fn().mockResolvedValue(undefined),
   loadStatus: vi.fn().mockResolvedValue(undefined),
+  openAnnouncementDialog: vi.fn(),
   queueDjStatusRef: { value: {} as Record<string, string> },
   routerPush: vi.fn(),
   sessionsRef: { value: [] as AIRadioSession[] },
@@ -80,6 +85,13 @@ vi.mock("@/helpers/sleep_timer", () => ({
   sleepTimerActive: () => false,
 }));
 
+vi.mock("@/composables/useAnnouncement", () => ({
+  useAnnouncement: () => ({
+    announcementAvailable: announcementAvailableRef,
+    openAnnouncementDialog,
+  }),
+}));
+
 vi.mock("@/composables/useAudioOverlay", () => ({
   useAudioOverlay: () => ({
     openOverlayDialog: vi.fn(),
@@ -117,6 +129,7 @@ function makePlayer(overrides: Partial<Player> = {}): Player {
     player_id: "kitchen",
     type: PlayerType.PLAYER,
     power_control: PLAYER_CONTROL_NONE,
+    supported_features: [],
     source_list: [],
     sound_mode_list: [],
     options: [],
@@ -261,6 +274,55 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
     expect(storeMock.showFullscreenPlayer).toBe(false);
     expect(storeMock.showPlayersMenu).toBe(false);
+  });
+});
+
+describe("getPlayerMenuItems play announcement", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    announcementAvailableRef.value = false;
+  });
+
+  it("omits the entry when no tts engine is set up", () => {
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ supported_features: [PlayerFeature.PLAY_ANNOUNCEMENT] }),
+      undefined,
+      { context: "player" },
+    );
+
+    expect(menuItems.map((item) => item.label)).not.toContain(
+      "play_announcement",
+    );
+  });
+
+  it("omits the entry for a player that can not play announcements", () => {
+    announcementAvailableRef.value = true;
+
+    const menuItems = getPlayerMenuItems(makePlayer(), undefined, {
+      context: "player",
+    });
+
+    expect(menuItems.map((item) => item.label)).not.toContain(
+      "play_announcement",
+    );
+  });
+
+  it("opens the announcement dialog for the player from both menus", () => {
+    announcementAvailableRef.value = true;
+    const player = makePlayer({
+      supported_features: [PlayerFeature.PLAY_ANNOUNCEMENT],
+    });
+
+    for (const context of ["player", "queue"] as const) {
+      const menuItems = getPlayerMenuItems(player, makeQueue(), { context });
+      const announcement = menuItems.find(
+        (item) => item.label === "play_announcement",
+      );
+
+      expect(announcement).toBeDefined();
+      announcement!.action!();
+      expect(openAnnouncementDialog).toHaveBeenCalledWith("kitchen");
+    }
   });
 });
 

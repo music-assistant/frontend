@@ -1343,6 +1343,13 @@ export interface PlayerSoundMode {
   passive: boolean;
 }
 
+// TTS engine that can speak an announcement; its name is already
+// formatted for display as "<provider> | <engine>".
+export interface AnnouncementTtsEngine {
+  uid: string;
+  name: string;
+}
+
 export interface PlayerOptionEntry {
   key: string;
   name: string;
