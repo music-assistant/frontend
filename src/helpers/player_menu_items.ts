@@ -253,12 +253,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // AI DJ (queue menu only; when a provider offering AI radio hosts is
-  // loaded). Lists configured hosts to assign as the queue's live DJ, plus an
-  // "Off" entry to clear it; a check marks whichever is currently active.
-  // Built from the caches useHosts prefetches on provider availability, and
-  // kicks off a refresh of both so a later re-open reflects any changes made
-  // elsewhere (e.g. the AI Radio settings page).
+  // Queue-only AI DJ submenu, built from useHosts' prefetched caches; hosts
+  // to assign as the live DJ, plus an "Off" entry to clear it.
   const {
     hosts,
     queueDjStatus,

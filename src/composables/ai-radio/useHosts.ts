@@ -24,9 +24,8 @@ const deletingHostId = ref("");
 
 let queueDjStatePrefetched = false;
 
-// The queue menu's AI DJ submenu is only offered when the ai_radio provider
-// is loaded. Reactive on api.providers, so no network call is needed to
-// decide whether to show the menu item.
+// Submenu only shown when the ai_radio provider is loaded; reactive on
+// api.providers so no network call is needed to decide.
 const aiRadioAvailable = computed(() =>
   Object.values(api.providers).some(
     (provider) => provider.domain === "ai_radio" && provider.available,
@@ -64,10 +63,8 @@ async function getHost(hostId: string): Promise<AIRadioHost> {
 }
 
 /**
- * Persists a host's section content; callers must save all of a host's
- * compiled sections before saveHost. Refreshes the shared sections cache
- * (also used to decompile hosts/shows) so a subsequent decompile — e.g. the
- * editor being reopened — doesn't read back stale, pre-save content.
+ * Persists a host's sections (call before saveHost) and refreshes the shared
+ * sections cache so a later decompile doesn't read back stale content.
  */
 async function saveSections(sections: AIRadioSection[]): Promise<void> {
   for (const section of sections) {
@@ -132,10 +129,8 @@ async function setQueueDj(
 }
 
 /**
- * Warms the caches the queue menu's AI DJ submenu is built from.
- * That submenu is handed to the eventbus as a plain array, so it can only
- * render what is already cached when the menu opens: without this, the first
- * open after a page load shows no hosts and a wrongly checked "Off".
+ * Warms the AI DJ submenu's caches. It's handed to the eventbus as a plain
+ * array, so without this the first open shows no hosts and a wrong "Off" check.
  */
 function prefetchQueueDjState(): void {
   if (queueDjStatePrefetched) return;

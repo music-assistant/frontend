@@ -177,9 +177,8 @@ describe("compileHost", () => {
   });
 
   it("compiles every_n_songs so a gap of exactly n songs since the last play satisfies the guard", () => {
-    // min_gap_songs must equal n, not n - 1: the server allows a section when
-    // (current song - last played song) >= min_gap_songs, and consecutive
-    // songs differ by exactly 1, so n - 1 fires one song too early.
+    // min_gap_songs must equal n, not n - 1: since consecutive songs differ
+    // by exactly 1, n - 1 would satisfy the server's gap check one song early.
     const draft: HostDraft = {
       id: "rick",
       name: "Rick",
@@ -219,9 +218,8 @@ describe("decompileHost", () => {
     const round = decompileHost(host, sections);
     expect(round.name).toBe("Rick");
     expect(round.ttsEngine).toBe("engine-1");
-    // A real sectionMap lookup should recover the segments exactly aside from
-    // ids, which compileHost namespaces with the host id (see the compileHost
-    // describe block above).
+    // A real sectionMap lookup recovers segments exactly except ids, which
+    // compileHost namespaces with the host id.
     expect(round.segments).toEqual(
       draft.segments.map((s) => ({ ...s, id: `rick_${s.id}` })),
     );
@@ -236,9 +234,8 @@ describe("decompileHost", () => {
       segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     };
     const { host, sections } = compileHost(draft);
-    // Force a MUST rule pointing straight at the merge section id, to prove
-    // toSegment's mergeId/ai_meta filter actually runs (rather than the
-    // merge section simply never showing up in a real section_order).
+    // Force a MUST rule pointing at the merge section id, to prove toSegment's
+    // mergeId/ai_meta filter runs (it never appears in a real section_order).
     const hostWithMergeInOrder = {
       ...host,
       section_order: [
@@ -271,11 +268,8 @@ describe("decompileHost", () => {
   });
 
   it("decompiles the legacy every_n_songs shape (min_gap = n - 1) and upgrades it to the new shape on recompile", () => {
-    // Released builds compiled every_n_songs with min_gap_songs = n - 1;
-    // the v2->v3 migration copies section_order verbatim, so old hosts can
-    // still carry this shape. It must decompile to the intended n, and
-    // recompiling should upgrade it to the current min_gap_songs = n shape
-    // without changing the segment's meaning.
+    // Released builds used min_gap_songs = n - 1 (v2->v3 migration copies
+    // section_order verbatim); must decompile to n and recompile to the n shape.
     const legacySection: AIRadioSection = {
       id: "rick_artist_fact",
       name: "Artist fact",

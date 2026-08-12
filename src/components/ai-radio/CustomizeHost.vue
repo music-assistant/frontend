@@ -308,9 +308,8 @@ function handleBack() {
 }
 
 /**
- * Localized reason the draft can't be saved, or null when it can.
- * Runs before any write: sections are persisted before the host, so letting
- * the server reject the host would leave those sections behind orphaned.
+ * Localized reason the draft can't be saved, or null when it can. Runs
+ * before any write so a rejected host save can't leave orphaned sections.
  */
 function validate(host: HostDraft): string | null {
   const prefix = "providers.ai_radio.hosts.editor.validation";
@@ -336,9 +335,8 @@ async function handleSave() {
   saving.value = true;
   try {
     const { host, sections: compiledSections } = compileHost(draft.value);
-    // The server upserts by id, and a new host's id is derived from its name,
-    // so an existing name would silently overwrite that host. A rename keeps
-    // its own id, hence the create-only check.
+    // The server upserts by id (derived from name for new hosts), so a
+    // duplicate name would silently overwrite; renames keep their own id.
     if (
       !props.hostId &&
       hosts.value.some((existing) => existing.id === host.id)

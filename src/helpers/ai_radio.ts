@@ -84,10 +84,8 @@ export const relativeTimeFromIso = (
 };
 
 // -----------------------------------------------------------------------
-// Host model: the UI-facing "segment" representation of a host's spoken
-// content, and the compiler/decompiler that translate it to/from the
-// backend host+section contract (MUST/ALTERNATIVE/OPTIONAL flow items +
-// guards).
+// Host model: the UI "segment" representation of a host's spoken content,
+// and the compiler/decompiler for the backend host+section contract.
 // -----------------------------------------------------------------------
 
 /** One spoken segment a host can play, edited as a single row in the host editor. */
@@ -138,12 +136,8 @@ export const GENERIC_HOST_INSTRUCTIONS =
   "Host personality: warm, sharp, music-literate, and slightly premium without sounding formal. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid clichés, mention concrete details when available, and maintain a believable radio flow between sections.";
 
 /**
- * One persona-neutral template per segment type, offered by the host editor's
- * "Add segment" menu. Prompts and cadences mirror the server's built-in
- * section defaults (see ai_radio provider's `_default_sections_template`)
- * where one exists; weather/news are ported verbatim, and artist fact (which
- * has no server default) is written fresh since every preset's version of it
- * is persona-flavored.
+ * Persona-neutral segment templates mirroring the server's built-in section
+ * defaults (ai_radio provider's `_default_sections_template`) where one exists.
  */
 export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
   {
@@ -204,9 +198,8 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
 const GENERIC_HOST_SEED_IDS = ["intro", "transition", "sign_off"] as const;
 
 /**
- * One example segment per placement (start/every_song/end) for a brand-new
- * custom host, mirroring the server's built-in section defaults so a fresh
- * host starts generic rather than cloned from a persona preset.
+ * One segment per placement (start/every_song/end) for a brand-new custom
+ * host, so it starts generic rather than cloned from a persona preset.
  */
 export const GENERIC_HOST_SEGMENTS: ShowSegment[] =
   GENERIC_SEGMENT_TEMPLATES.filter((segment) =>
@@ -291,16 +284,8 @@ interface CompiledSegments {
 }
 
 /**
- * Builds one AIRadioSection per segment plus a hidden ai_meta merge section,
- * and a section_order per segment.plays (start/end -> MUST rules in list
- * order, everything else -> a single between_songs rule where every_song is
- * MUST and the rest are OPTIONAL with derived chance/guards). `hostId` seeds
- * the merge section's id and namespaces every regular segment id (hosts'
- * sections live in the flat shared ai_radio/sections namespace, so two hosts
- * must not be able to collide on e.g. both having an "intro"). The prefix
- * check is idempotent: an id already carrying it (round-tripped back from
- * decompileHost into the draft) is left alone rather than re-prefixed on
- * every subsequent compile.
+ * Builds a host's sections + section_order, namespacing ids with hostId
+ * (shared sections library) idempotently for decompileHost round-trips.
  */
 const compileSegments = (
   segments: ShowSegment[],
@@ -398,13 +383,10 @@ export interface CompiledHost {
 }
 
 /**
- * Compiles a host draft into the AIRadioHost payload the backend expects
- * plus the AIRadioSection content it references, running the segment/
- * section_order compilation (see compileSegments).
- * Sections are returned rather than embedded: v3 hosts don't carry section
- * content, so callers must persist them explicitly (ai_radio/sections/save)
- * before saving the host. Section ids are namespaced with the host id so two
- * hosts never collide in the shared sections library.
+ * Compiles a host draft into the AIRadioHost payload plus the AIRadioSection
+ * content it references (see compileSegments). Sections are returned rather
+ * than embedded. v3 hosts don't carry section content, so callers must
+ * persist them (ai_radio/sections/save) before saving the host.
  */
 export const compileHost = (draft: HostDraft): CompiledHost => {
   const hostId = draft.id.trim() || slugify(draft.name);
@@ -432,14 +414,7 @@ export interface DecompiledShow {
   hostId: string;
 }
 
-/**
- * Inverts a section_order's start/between/end rules into a flat segment
- * list, given a `toSegment` lookup that turns a section id + derived plays
- * rule into a ShowSegment (or null to drop it, e.g. the hidden merge
- * section). Mirrors compileSegments' exact chance/guard formulas where
- * possible, falling back to a raw "occasionally" percent otherwise. Used by
- * decompileHost.
- */
+/** Inverts section_order into segments via `toSegment`, mirroring compileSegments' chance/guard formulas where possible. */
 const decompileSectionOrder = (
   sectionOrder: AIRadioSectionOrderRule[] | undefined,
   toSegment: (sectionId: string, plays: PlaysRule) => ShowSegment | null,
@@ -483,9 +458,8 @@ const decompileSectionOrder = (
     ) {
       plays = { kind: "every_n_songs", n: minGap };
     } else if (
-      // Legacy min_gap_songs = n - 1 shape, still reachable via hosts the
-      // v2->v3 migration copied verbatim. minGap 1 is excluded so old n=2
-      // (min_gap 1/chance 1) keeps decompiling as "occasionally 100%".
+      // Legacy min_gap_songs = n - 1 shape from the v2->v3 migration; minGap 1
+      // excluded so old n=2 (min_gap 1/chance 1) still decompiles as "occasionally 100%".
       minGap >= 2 &&
       Math.abs(chance - Math.min(1, 2 / (minGap + 1))) < 1e-6
     ) {
