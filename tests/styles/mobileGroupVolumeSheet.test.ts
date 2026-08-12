@@ -32,6 +32,13 @@ function extractStyle(source: string) {
   return source.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }
 
+// the classes the component hands the sheet and its backdrop, read off the
+// template so the probes cannot drift from what it renders
+function passedClasses(attribute: string) {
+  const tag = sheetSource.match(/<SheetContent[\s\S]*?>/)?.[0] ?? "";
+  return tag.match(new RegExp(`\\s${attribute}="([^"]*)"`))?.[1] ?? "";
+}
+
 // happy-dom caches an element's computed style from its first read, so every
 // case builds its probe after the tokens it measures are in place
 function probe(className: string) {
@@ -41,17 +48,16 @@ function probe(className: string) {
   return element;
 }
 
-// the classes SheetContent.vue composes for a bottom sheet, plus the ones the
-// volume sheet passes it
+// SheetContent.vue's own classes for a bottom sheet, plus the ones it is passed
 function sheet() {
-  return probe(
-    "fixed inset-x-0 bottom-0 h-auto p-0 player-bar-popout mobile-group-volume-sheet",
-  );
+  return probe(`fixed inset-x-0 bottom-0 h-auto ${passedClasses("class")}`);
 }
 
-// SheetOverlay.vue's backdrop, with the class the volume sheet passes it
+// SheetOverlay.vue's backdrop, plus the class it is passed
 function overlay() {
-  return probe("modal-backdrop fixed inset-0 mobile-group-volume-overlay");
+  return probe(
+    `modal-backdrop fixed inset-0 ${passedClasses("overlay-class")}`,
+  );
 }
 
 function utilityPriority(selector: string, property: string) {
@@ -61,12 +67,17 @@ function utilityPriority(selector: string, property: string) {
     ?.style.getPropertyPriority(property);
 }
 
-// the component's own selectors that land on this element
-function overrideSelectors(element: Element) {
+// the component's own rules that land on this element
+function overrideRules(element: Element) {
   return [...(sheetStyles.sheet?.cssRules ?? [])]
     .filter((rule) => rule instanceof CSSStyleRule)
-    .map((rule) => rule.selectorText)
-    .filter((selector) => element.matches(selector));
+    .filter((rule) => element.matches(rule.selectorText));
+}
+
+function overridePriority(element: Element, property: string) {
+  return overrideRules(element)
+    .find((rule) => rule.style.getPropertyValue(property) !== "")
+    ?.style.getPropertyPriority(property);
 }
 
 // happy-dom takes the last of two !important declarations rather than the most
@@ -74,13 +85,19 @@ function overrideSelectors(element: Element) {
 // off the selectors themselves. Neither side carries an id or an element name,
 // so counting their class-level compounds is the whole comparison.
 function rank(selector: string) {
-  return (selector.match(/\.[\w-]+|\[[^\]]+\]|:[\w-]+/g) ?? []).length;
+  // :where() is what global.css reaches for to contribute no specificity at
+  // all, so it drops out before anything is counted
+  return (
+    selector
+      .replace(/:where\([^)]*\)/g, "")
+      .match(/\.[\w-]+|\[[^\]]+\]|:[\w-]+/g) ?? []
+  ).length;
 }
 
 // which of two equally-!important declarations applies comes down to whichever
 // stylesheet loads last, unless one of them out-ranks the other
 function expectOutranks(element: Element, ...utilities: string[]) {
-  const selectors = overrideSelectors(element);
+  const selectors = overrideRules(element).map((rule) => rule.selectorText);
 
   expect(selectors, "the component has to place this element").not.toHaveLength(
     0,
@@ -89,7 +106,7 @@ function expectOutranks(element: Element, ...utilities: string[]) {
     for (const utility of utilities) {
       expect(
         rank(selector),
-        `${selector} has to out-rank ${utility}`,
+        `${selector} lands on this element, so it has to out-rank ${utility}: pair it with a second compound`,
       ).toBeGreaterThan(rank(utility));
     }
   }
@@ -155,14 +172,21 @@ describe("mobile grouped volume sheet", () => {
   });
 
   it("places both of them independently of the stylesheet load order", () => {
-    // the placements only prove anything while the utilities they have to
-    // out-rank are themselves !important
+    // specificity only settles a tie within one importance level, so the
+    // ranking below proves nothing unless both sides are !important
     for (const [utility, property] of UTILITIES) {
       expect(
         utilityPriority(utility, property),
         "the Tailwind utilities import must stay `important` and unlayered",
       ).toBe("important");
     }
+    // the sheet's own bottom is covered by its value instead: `.bottom-0` is a
+    // longhand happy-dom does model, so losing !important there reads as 0px
+    const stillWins = "the component's own placement has to stay !important";
+
+    expect(overridePriority(sheet(), "right"), stillWins).toBe("important");
+    expect(overridePriority(sheet(), "left"), stillWins).toBe("important");
+    expect(overridePriority(overlay(), "bottom"), stillWins).toBe("important");
 
     expectOutranks(sheet(), ".inset-x-0", ".bottom-0");
     expectOutranks(overlay(), ".inset-0");
