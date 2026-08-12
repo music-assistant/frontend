@@ -18,7 +18,10 @@
       <span class="player-bar-action-label" aria-hidden="true">&nbsp;</span>
     </Button>
 
-    <SleepTimerBtn />
+    <SleepTimerBtn
+      v-if="sleepTimer?.isVisible"
+      class="player-bar-sleep-timer"
+    />
 
     <QueueBtn
       v-if="queue?.isVisible"
@@ -74,6 +77,9 @@ export interface Props {
   contextMenu?: {
     isVisible?: boolean;
   };
+  sleepTimer?: {
+    isVisible?: boolean;
+  };
 }
 
 withDefaults(defineProps<Props>(), {
@@ -82,6 +88,7 @@ withDefaults(defineProps<Props>(), {
   player: () => ({ isVisible: true }),
   volume: () => ({ isVisible: true }),
   contextMenu: () => ({ isVisible: true }),
+  sleepTimer: () => ({ isVisible: true }),
 });
 
 const favoriteItem = computed(() => {

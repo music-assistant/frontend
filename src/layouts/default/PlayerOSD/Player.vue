@@ -62,7 +62,9 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- player extended control buttons -->
+          <!-- player extended control buttons. A narrower bar has no room for
+               the sleep timer beside the four actions, so the countdown is
+               left to the player menu and the full screen player there. -->
           <PlayerExtendedControls
             :favorite="{
               isVisible: false,
@@ -77,6 +79,9 @@
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
+            }"
+            :sleep-timer="{
+              isVisible: getBreakpointValue('bp7'),
             }"
           />
         </div>
@@ -438,6 +443,35 @@ watch(
   .mediacontrols :deep(.player-bar-player-button) {
     min-width: 96px !important;
     max-width: clamp(96px, 10vw - 14px, 176px);
+  }
+}
+
+/* the sleep timer joins the actions as a fifth control, which the widths above
+   do not budget for: they need a bar of about 1221px before the five of them
+   fit, and until then the timer reaches over the timeline. So while one runs
+   the actions keep the sizes they take below 1100px, up to the width where the
+   row starts spacing them out and has room to spare anyway. */
+@media screen and (min-width: 1100px) and (max-width: 1249px) {
+  .mediacontrols :deep(.player-bar-action-row:has(.player-bar-sleep-timer)) {
+    .player-bar-menu-button {
+      width: 40px !important;
+    }
+
+    .player-bar-volume-button {
+      width: 56px !important;
+    }
+
+    /* these two grow with their label from 1100px, so the floor that lets them
+       has to go as well for the width to take effect */
+    .player-bar-group-button {
+      width: 60px !important;
+      min-width: 0 !important;
+    }
+
+    .player-bar-player-button {
+      width: 68px !important;
+      min-width: 0 !important;
+    }
   }
 }
 
