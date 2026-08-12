@@ -41,6 +41,8 @@ vi.mock("@/plugins/api", async () => {
   const api = reactive({
     players: {} as Record<string, Player>,
     savePlayerConfig,
+    // the menu's ai dj entry derives availability from the provider list
+    providers: {},
   });
   return { api, default: api };
 });

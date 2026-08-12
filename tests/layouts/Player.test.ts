@@ -19,9 +19,11 @@ vi.mock("vue-router", async (importOriginal) => ({
 
 vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
-vi.mock("@/plugins/api", () => ({
-  default: { toggleFavorite: vi.fn() },
-}));
+vi.mock("@/plugins/api", () => {
+  // the menu's ai dj entry derives availability from the provider list
+  const api = { toggleFavorite: vi.fn(), providers: {}, players: {} };
+  return { api, default: api };
+});
 
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: () => false,
