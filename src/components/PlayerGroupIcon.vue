@@ -1,7 +1,8 @@
 <template>
   <!-- the padding is what the badge overlaps into, so the count keeps the same
-       grip on the speaker for every glyph size -->
-  <span class="relative inline-flex p-1.5">
+       grip on the speaker for every glyph size; the trigger around it carries
+       the accessible name, count included -->
+  <span class="relative inline-flex p-1.5" aria-hidden="true">
     <Speaker :stroke-width="1.4" v-bind="$attrs" />
     <Badge
       data-player-group-count

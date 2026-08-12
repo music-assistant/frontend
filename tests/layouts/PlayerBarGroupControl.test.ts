@@ -63,7 +63,7 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.attributes("aria-label")).toBe(
       "tooltip.group_members: 3 players",
     );
-    expect(trigger.text()).toContain("3 players");
+    expect(trigger.get(".player-bar-action-label").text()).toBe("3 players");
   });
 
   it("shows the member count on the icon badge", () => {
@@ -79,6 +79,8 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.attributes("aria-label")).toBe(
       "tooltip.group_members: 1 player_type.player",
     );
-    expect(trigger.text()).toContain("1 player_type.player");
+    expect(trigger.get(".player-bar-action-label").text()).toBe(
+      "1 player_type.player",
+    );
   });
 });
