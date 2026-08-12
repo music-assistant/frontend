@@ -1,16 +1,16 @@
 // jsdom leaves var() unresolved in computed styles, so this cascade is only
 // observable under happy-dom
 // @vitest-environment happy-dom
-import globalCss from "@/styles/global.css?inline";
 import editConfigSource from "@/views/settings/EditConfig.vue?raw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // happy-dom drops a declaration whose substituted custom property expands to a
-// nested calc(), so the button is measured with the card's inset flattened to a
-// literal
+// nested calc(), so the card's inset is read as a literal. The device inset
+// carries its own value so neither term can stand in for the other.
 const PLAYER_INSET = "99px";
+const DEVICE_INSET_RIGHT = "33px";
 
-let styles: HTMLStyleElement[];
+let appStyles: HTMLStyleElement;
 let saveButton: HTMLDivElement;
 
 // Use raw selectors so the test does not depend on Vue's generated scope id.
@@ -18,18 +18,17 @@ function extractStyle(source: string) {
   return source.match(/<style scoped>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }
 
+// the declarations wrap at different points once the token names are in them,
+// so compare them free of the source formatting
+function normalize(value: string) {
+  return value.replace(/\s+/g, "");
+}
+
 describe("mobile floating save position", () => {
   beforeEach(() => {
-    styles = [globalCss, extractStyle(editConfigSource)].map((css) => {
-      const element = document.createElement("style");
-      element.textContent = css;
-      document.head.appendChild(element);
-      return element;
-    });
-    // the device insets are env() values happy-dom cannot substitute, which
-    // would drop every declaration that adds one; the embedded layout zeroes
-    // them through the same cascade the app uses inside Home Assistant
-    document.documentElement.setAttribute("data-embedded-layout", "");
+    appStyles = document.createElement("style");
+    appStyles.textContent = extractStyle(editConfigSource);
+    document.head.appendChild(appStyles);
 
     document.documentElement.style.setProperty("--bottom-bars-height", "158px");
     // Taller than the bars, so a passing test proves the fix measures the
@@ -42,6 +41,10 @@ describe("mobile floating save position", () => {
       "--mobile-player-inset-x",
       PLAYER_INSET,
     );
+    document.documentElement.style.setProperty(
+      "--device-inset-right",
+      DEVICE_INSET_RIGHT,
+    );
 
     saveButton = document.createElement("div");
     saveButton.className = "floating-save floating-save--mobile";
@@ -49,21 +52,20 @@ describe("mobile floating save position", () => {
   });
 
   afterEach(() => {
-    styles.forEach((element) => element.remove());
-    document.documentElement.removeAttribute("data-embedded-layout");
+    appStyles.remove();
     document.documentElement.removeAttribute("style");
     document.body.innerHTML = "";
   });
 
   it("clears the bottom bars by 16px", () => {
-    expect(getComputedStyle(saveButton).bottom.replace(/\s+/g, "")).toBe(
+    expect(normalize(getComputedStyle(saveButton).bottom)).toBe(
       "calc(158px+16px)",
     );
   });
 
   it("lines up with the right edge of the player card below it", () => {
-    expect(getComputedStyle(saveButton).right.replace(/\s+/g, "")).toBe(
-      `calc(${PLAYER_INSET}+0px)`,
+    expect(normalize(getComputedStyle(saveButton).right)).toBe(
+      `calc(${PLAYER_INSET}+${DEVICE_INSET_RIGHT})`,
     );
   });
 
