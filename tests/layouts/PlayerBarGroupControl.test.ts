@@ -66,6 +66,12 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.text()).toContain("3 players");
   });
 
+  it("shows the member count on the icon badge", () => {
+    const trigger = mountGroupButton();
+
+    expect(trigger.get("[data-player-group-count]").text()).toBe("3");
+  });
+
   it("names a single member in the singular", () => {
     groupSize.value = 1;
     const trigger = mountGroupButton();
