@@ -45,7 +45,7 @@
               navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
             "
           >
-            <GroupedPlayers :stroke-width="1.4" class="size-7" />
+            <PlayerGroupIcon :count="memberCount" class="size-7" />
           </span>
           <span
             :class="
@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { GroupedPlayers } from "@/components/ma-icons";
+import PlayerGroupIcon from "@/components/PlayerGroupIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
