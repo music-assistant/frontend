@@ -25,12 +25,13 @@ function normalize(value: string) {
   return value.replace(/\s+/g, "");
 }
 
-let appStyles: HTMLStyleElement;
+const appStyles: HTMLStyleElement[] = [];
 
 function render(source: string, className: string) {
-  appStyles = document.createElement("style");
-  appStyles.textContent = extractStyle(source);
-  document.head.appendChild(appStyles);
+  const styles = document.createElement("style");
+  styles.textContent = extractStyle(source);
+  document.head.appendChild(styles);
+  appStyles.push(styles);
 
   const element = document.createElement("div");
   element.className = className;
@@ -52,7 +53,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  appStyles?.remove();
+  appStyles.splice(0).forEach((styles) => styles.remove());
   document.documentElement.removeAttribute("style");
   document.body.innerHTML = "";
 });
@@ -79,6 +80,16 @@ describe.each([
   });
 });
 
+describe("home screen edit button", () => {
+  it("clears the notch it sits under in portrait", () => {
+    const element = render(homeViewSource, "ed-edit-done");
+
+    expect(normalize(getComputedStyle(element).top)).toBe(
+      `calc(24px+${INSET_TOP})`,
+    );
+  });
+});
+
 describe("playback speed dialog", () => {
   // Offsetting only the near edge would push the far one off screen once the
   // dialog is wide enough to be clamped.
@@ -99,15 +110,5 @@ describe("update toast", () => {
     // The margin sets the gap, so the offset is the inset on its own.
     expect(normalize(getComputedStyle(element).right)).toBe(INSET_RIGHT);
     expect(normalize(getComputedStyle(element).marginRight)).toBe("16px");
-  });
-});
-
-describe("home screen edit button", () => {
-  it("clears the notch it sits under in portrait", () => {
-    const element = render(homeViewSource, "ed-edit-done");
-
-    expect(normalize(getComputedStyle(element).top)).toBe(
-      `calc(24px+${INSET_TOP})`,
-    );
   });
 });
