@@ -15,7 +15,7 @@
       </SheetDescription>
 
       <ScrollArea class="h-full max-h-full overflow-hidden flex-1">
-        <div class="pt-2 pb-8">
+        <div class="playlist-list pt-2">
           <button
             v-for="playlist of playlists"
             :key="playlist.item_id"
@@ -304,3 +304,9 @@ const close = function () {
   show.value = false;
 };
 </script>
+
+<style scoped>
+.playlist-list {
+  padding-bottom: calc(2rem + var(--device-inset-bottom));
+}
+</style>

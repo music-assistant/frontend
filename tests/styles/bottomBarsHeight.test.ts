@@ -7,11 +7,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 const OVERLAY_HEIGHT = "--player-bar-overlay-height";
 const OVERLAY_MARKER = "data-player-bar-overlay";
 const BAR_HEIGHT = "120px";
-const PLAYER_BAR_HEIGHT = "104px";
+const PLAYER_BAR_HEIGHT = "calc( 104px + env(safe-area-inset-bottom, 0px) )";
 const NAVIGATION_HEIGHT =
-  "calc(66px + calc(10px + env(safe-area-inset-bottom, 0px)))";
+  "calc(66px + calc(20px + env(safe-area-inset-bottom, 0px)))";
 const SCRIM_HEIGHT =
-  "calc( 180px + calc(10px + env(safe-area-inset-bottom, 0px)) )";
+  "calc( 180px + calc(20px + env(safe-area-inset-bottom, 0px)) )";
 
 let appStyles: HTMLStyleElement;
 
@@ -53,12 +53,16 @@ describe("bottom bars height", () => {
     document.body.innerHTML = "";
     document.documentElement.removeAttribute(OVERLAY_MARKER);
     document.documentElement.style.removeProperty(OVERLAY_HEIGHT);
+    document.documentElement.style.removeProperty("--device-inset-bottom");
   });
 
   it("reserves the player bar in the desktop layout", () => {
     expect(bottomBarsHeight()).toBe(PLAYER_BAR_HEIGHT);
     // always-rendered elements offset from this, so it has to reach them
-    expect(offsetFromBars()).toBe(PLAYER_BAR_HEIGHT);
+    document.documentElement.style.setProperty("--device-inset-bottom", "0px");
+    expect(offsetFromBars().replace(/\s+/g, " ").trim()).toBe(
+      "calc( 104px + 0px )",
+    );
   });
 
   it("stacks the floating player bar onto the navigation on mobile", () => {

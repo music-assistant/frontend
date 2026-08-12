@@ -234,7 +234,7 @@ function handleInteractOutside(event: Event) {
 
 <style>
 .player-group-backdrop-desktop {
-  bottom: var(--player-bar-height) !important;
+  bottom: var(--bottom-bars-height) !important;
 }
 
 .player-group-backdrop-mobile {

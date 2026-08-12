@@ -49,7 +49,10 @@ const mobileSheetSide = useMobileSidebarSide();
       data-slot="sidebar"
       data-mobile="true"
       :side="mobileSheetSide"
-      class="sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+      :class="[
+        'sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden',
+        `sidebar-mobile-sheet--${mobileSheetSide}`,
+      ]"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
       }"
@@ -114,9 +117,17 @@ const mobileSheetSide = useMobileSidebarSide();
 
 <style>
 .sidebar-mobile-sheet {
-  top: 0 !important;
-  bottom: 0 !important;
-  height: 100dvh !important;
+  top: var(--device-inset-top) !important;
+  bottom: var(--device-inset-bottom) !important;
+  height: auto !important;
   border-radius: 0 !important;
+}
+
+.sidebar-mobile-sheet--left {
+  left: var(--device-inset-left) !important;
+}
+
+.sidebar-mobile-sheet--right {
+  right: var(--device-inset-right) !important;
 }
 </style>

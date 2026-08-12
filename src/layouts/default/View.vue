@@ -83,13 +83,15 @@ onMounted(() => {
 
 <style scoped>
 .main-layout {
+  box-sizing: border-box;
   display: flex;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
   /* Reset Vuetify's automatic padding that accounts for drawers */
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding-top: var(--device-inset-top) !important;
+  padding-right: var(--device-inset-right) !important;
+  padding-left: var(--device-inset-left) !important;
 }
 
 .content-section {
@@ -97,7 +99,7 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  padding-bottom: 110px;
+  padding-bottom: calc(110px + var(--device-inset-bottom));
 }
 
 .content-section--mobile {
