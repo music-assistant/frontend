@@ -41,7 +41,9 @@ describe("mobile floating save position", () => {
   });
 
   it("clears the bottom bars by 16px", () => {
-    expect(getComputedStyle(saveButton).bottom).toBe("calc(158px + 16px)");
+    expect(getComputedStyle(saveButton).bottom.replace(/\s+/g, "")).toBe(
+      "calc(158px+16px)",
+    );
   });
 
   it("stacks above the player scrim, below the mobile bars", () => {
