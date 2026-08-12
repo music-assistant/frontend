@@ -402,6 +402,33 @@ watch(
   white-space: nowrap;
 }
 
+/* a wide screen leaves room to spare in this column, so the actions take a gap
+   between them and the two carrying a label grow with their text - the player
+   name is the first to run out. Growing only starts where the label needs it,
+   so a short name leaves no hole beside the button next to it. */
+@media screen and (min-width: 1100px) {
+  /* spacing the controls rather than the row keeps the popovers' own anchor
+     elements, which sit between them and take no space, out of the count */
+  .mediacontrols :deep(.player-bar-action-row > button ~ button) {
+    margin-inline-start: clamp(0px, 2vw - 22px, 16px);
+  }
+
+  .mediacontrols :deep(.player-bar-group-button),
+  .mediacontrols :deep(.player-bar-player-button) {
+    width: auto !important;
+  }
+
+  .mediacontrols :deep(.player-bar-group-button) {
+    min-width: 72px !important;
+    max-width: clamp(72px, 5vw + 17px, 112px);
+  }
+
+  .mediacontrols :deep(.player-bar-player-button) {
+    min-width: 96px !important;
+    max-width: clamp(96px, 10vw - 14px, 176px);
+  }
+}
+
 @media screen and (min-width: 769px) and (max-width: 1099px) {
   .mediacontrols .mediacontrols-bottom-center {
     width: auto;
