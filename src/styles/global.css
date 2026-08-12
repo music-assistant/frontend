@@ -32,15 +32,12 @@
      gesture bar sit well inside the inset reserved around them, so the buttons
      take a share of it instead of all of it, never dropping below the floor. */
   --mobile-navigation-inset-bottom: max(
-    6px,
+    12px,
     calc(var(--device-inset-bottom) * 0.65)
   );
   /* Size of a single bottom navigation button, which the bar sizes itself from,
      so the two can never drift apart. */
-  --mobile-navigation-item-height: 64px;
-  /* Gap the floating mobile player bar keeps above the navigation. The bar sets
-     it as its own margin, and anything stacking on top of the bar adds it. */
-  --mobile-player-bar-gap: 4px;
+  --mobile-navigation-item-height: 72px;
   /* Space the bottom navigation occupies. Anything anchored above it (sheets,
      popovers, the player bar, scroll padding) is positioned from this. */
   --mobile-navigation-height: calc(
@@ -73,11 +70,11 @@
 }
 
 /* The footer sets this marker while the mobile bars are on screen. There the
-   player bar floats above the navigation, keeping its gap from it. */
+   player bar sits on the navigation, so the two together are what has to be
+   cleared. */
 :root[data-player-bar-overlay] {
   --bottom-bars-height: calc(
-    var(--mobile-navigation-height) + var(--mobile-player-bar-gap) +
-      var(--player-bar-overlay-height)
+    var(--mobile-navigation-height) + var(--player-bar-overlay-height)
   );
 }
 

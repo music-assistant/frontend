@@ -74,13 +74,15 @@ function clearOverlay() {
 .mediacontrols-player-float {
   display: flex;
   flex-direction: column;
-  margin: 5px calc(5px + var(--device-inset-right)) 5px
-    calc(5px + var(--device-inset-left));
-  margin-bottom: var(--mobile-player-bar-gap);
+  /* 4px inside the dock's own inset, so the surface shows evenly around the
+     card on every side. The vertical margins are omitted: the bar is fixed and
+     anchored by its bottom, so they would not move it. */
+  margin: 0 calc(16px + var(--device-inset-right)) 0
+    calc(16px + var(--device-inset-left));
   width: calc(
-    100% - 10px - var(--device-inset-right) - var(--device-inset-left)
+    100% - 32px - var(--device-inset-right) - var(--device-inset-left)
   ) !important;
-  border-radius: 10px !important;
+  border-radius: 16px !important;
 }
 
 .player-scrim {
@@ -95,11 +97,18 @@ function clearOverlay() {
   -webkit-backdrop-filter: blur(14px);
   /* the mask is what makes the blur ramp up towards the player instead of
      ending on a visible line */
-  mask-image: linear-gradient(to top, #000 0%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(
+    to top,
+    #000 0%,
+    #000 35%,
+    rgba(0, 0, 0, 0.55) 65%,
+    transparent 100%
+  );
   -webkit-mask-image: linear-gradient(
     to top,
     #000 0%,
-    #000 45%,
+    #000 35%,
+    rgba(0, 0, 0, 0.55) 65%,
     transparent 100%
   );
 }
@@ -115,5 +124,9 @@ function clearOverlay() {
 
 .v-footer.mediacontrols-player-float {
   z-index: 2001 !important;
+  /* the footer only positions the player; its own surface would otherwise show
+     as opaque wedges outside the player's rounded corners. The paired class
+     outweighs the equally-!important bg-default the colour prop brings. */
+  background: transparent !important;
 }
 </style>
