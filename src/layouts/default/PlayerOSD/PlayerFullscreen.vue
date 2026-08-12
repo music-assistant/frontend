@@ -1396,10 +1396,13 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .fullscreen-player-card {
+  box-sizing: border-box;
   overflow: hidden;
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: var(--device-inset-top) var(--device-inset-right) 0
+    var(--device-inset-left);
   /* Containing block for the visualizer layer (z-index 0); everything else
      is lifted above it so the canvas renders strictly behind the content. */
   position: relative;
@@ -1668,7 +1671,7 @@ onBeforeUnmount(() => {
 .player-bottom {
   flex-shrink: 0;
   position: unset !important;
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), min(3%, 3vh));
+  padding-bottom: max(var(--device-inset-bottom), min(3%, 3vh));
   width: 100%;
 }
 

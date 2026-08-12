@@ -169,7 +169,7 @@ function adjustVolume(event: WheelEvent) {
 
 <style>
 .player-volume-backdrop-desktop {
-  bottom: var(--player-bar-height);
+  bottom: var(--bottom-bars-height);
 }
 
 /* the paired class outweighs the equally-!important z-index utility the popover

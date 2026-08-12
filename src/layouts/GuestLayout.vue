@@ -76,7 +76,7 @@
         </DropdownMenu>
       </div>
     </header>
-    <main class="min-h-0 flex-1 overflow-y-auto">
+    <main class="guest-layout-content min-h-0 flex-1 overflow-y-auto">
       <router-view />
     </main>
   </div>
@@ -161,9 +161,15 @@ function returnToHostPanel(): void {
 
 <style scoped>
 .guest-layout-header {
-  height: calc(3rem + env(safe-area-inset-top, 0px));
-  padding: env(safe-area-inset-top, 0px)
-    calc(0.5rem + env(safe-area-inset-right, 0px)) 0
-    calc(0.5rem + env(safe-area-inset-left, 0px));
+  height: calc(3rem + var(--device-inset-top));
+  padding: var(--device-inset-top) calc(0.5rem + var(--device-inset-right)) 0
+    calc(0.5rem + var(--device-inset-left));
+}
+
+.guest-layout-content {
+  box-sizing: border-box;
+  padding-right: var(--device-inset-right);
+  padding-bottom: var(--device-inset-bottom);
+  padding-left: var(--device-inset-left);
 }
 </style>

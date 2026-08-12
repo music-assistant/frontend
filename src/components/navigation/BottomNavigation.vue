@@ -102,7 +102,9 @@ function closePlayersMenu() {
   bottom: -2px !important;
   height: calc(var(--mobile-navigation-height) + 2px);
   background: var(--background);
+  padding-right: calc(0.25rem + var(--device-inset-right)) !important;
   padding-bottom: calc(var(--mobile-navigation-inset-bottom) + 2px);
+  padding-left: calc(0.25rem + var(--device-inset-left)) !important;
 }
 
 .mobile-bottom-navigation::before {

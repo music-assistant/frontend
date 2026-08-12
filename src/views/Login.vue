@@ -2307,6 +2307,7 @@ onMounted(() => {
   --success: #4caf50;
 
   background: var(--background);
+  box-sizing: border-box;
   min-height: 100vh;
   color: var(--fg);
   opacity: 0;
@@ -2314,6 +2315,8 @@ onMounted(() => {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: var(--device-inset-top) var(--device-inset-right)
+    var(--device-inset-bottom) var(--device-inset-left);
 }
 
 @keyframes fadeIn {
