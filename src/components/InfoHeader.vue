@@ -25,6 +25,8 @@
         :transition="false"
         eager
       />
+      <!-- The details layout below is transformed, which gives it a stacking
+           context, so the toolbar needs a rank to stay clickable above it. -->
       <Toolbar
         :icon="ArrowLeft"
         style="position: absolute; z-index: 1"
