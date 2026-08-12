@@ -1,5 +1,7 @@
 import CustomizeHost from "@/components/ai-radio/CustomizeHost.vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
+import { compileHost, GENERIC_SEGMENT_TEMPLATES } from "@/helpers/ai_radio";
+import type { HostDraft } from "@/helpers/ai_radio";
 import type { AIRadioHost } from "@/plugins/api/interfaces";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -45,11 +47,14 @@ async function mountEditor() {
   return wrapper;
 }
 
-async function save(wrapper: VueWrapper) {
-  const button = wrapper
+function saveButton(wrapper: VueWrapper) {
+  return wrapper
     .findAll("button")
-    .find((candidate) => candidate.text() === "Save host");
-  await button?.trigger("click");
+    .find((candidate) => /^Save host|Saving/.test(candidate.text()));
+}
+
+async function save(wrapper: VueWrapper) {
+  await saveButton(wrapper)?.trigger("click");
   await flushPromises();
 }
 
@@ -115,5 +120,86 @@ describe("CustomizeHost save", () => {
     expect(toast.error).toHaveBeenCalledWith(
       "A host named «Morning Crew» already exists",
     );
+  });
+
+  it("refuses to save a new host when the uniqueness check can't be verified", async () => {
+    const { toast } = await import("vue-sonner");
+    sendCommand.mockImplementation(async (command) => {
+      if (command === "ai_radio/hosts/list") {
+        throw new Error("network down");
+      }
+      return [];
+    });
+    const wrapper = await mountEditor();
+    await wrapper.find("#customize-host-name").setValue("Morning Crew");
+
+    await save(wrapper);
+
+    expect(aiRadioCommands()).not.toContain("ai_radio/hosts/save");
+    expect(toast.error).toHaveBeenCalledWith(
+      "Couldn't verify the name is unique. Nothing was saved",
+    );
+    // The button must recover to a clickable, non-stuck state.
+    expect(saveButton(wrapper)?.text()).toBe("Save host");
+    expect(saveButton(wrapper)?.attributes("disabled")).toBeUndefined();
+  });
+
+  it("still refuses a colliding name once the pre-save refresh reveals it", async () => {
+    const { toast } = await import("vue-sonner");
+    const existing: AIRadioHost = {
+      id: "morning_crew",
+      name: "Morning Crew",
+      instructions: "",
+      tts_engine: "",
+      section_ids: [],
+      section_order: [],
+      merge_section_id: "",
+    };
+    // Create mode no longer preloads hosts at mount, so this collision can
+    // only be caught by the pre-save refresh itself.
+    sendCommand.mockImplementation(async (command) =>
+      command === "ai_radio/hosts/list" ? [existing] : [],
+    );
+    const wrapper = await mountEditor();
+    await wrapper.find("#customize-host-name").setValue("Morning Crew");
+
+    await save(wrapper);
+
+    expect(aiRadioCommands()).not.toContain("ai_radio/hosts/save");
+    expect(toast.error).toHaveBeenCalledWith(
+      "A host named «Morning Crew» already exists",
+    );
+  });
+
+  it("saves an edited host without requiring an extra hosts refresh", async () => {
+    const { toast } = await import("vue-sonner");
+    const draft: HostDraft = {
+      id: "rick",
+      name: "Rick",
+      instructions: "Persona.",
+      ttsEngine: "",
+      segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 1).map((s) => ({ ...s })),
+    };
+    const { host, sections } = compileHost(draft);
+    sendCommand.mockImplementation(async (command) => {
+      if (command === "ai_radio/hosts/get") return host;
+      if (command === "ai_radio/sections/list") return sections;
+      return [];
+    });
+    const wrapper = mount(CustomizeHost, { props: { hostId: host.id } });
+    await flushPromises();
+
+    await save(wrapper);
+
+    const commands = aiRadioCommands();
+    expect(commands).toContain("ai_radio/hosts/save");
+    // Any hosts/list call in edit mode can only be saveHost's post-save
+    // refresh, never a pre-save uniqueness check (edit keeps its own id).
+    const listIndex = commands.indexOf("ai_radio/hosts/list");
+    const saveIndex = commands.indexOf("ai_radio/hosts/save");
+    if (listIndex !== -1) {
+      expect(listIndex).toBeGreaterThan(saveIndex);
+    }
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

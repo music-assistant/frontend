@@ -1550,6 +1550,7 @@
                     "validation": {
                         "name_required": "Host name is required",
                         "duplicate_name": "A host named «{0}» already exists",
+                        "name_check_failed": "Couldn't verify the name is unique. Nothing was saved",
                         "segments_required": "Add at least one segment",
                         "segment_prompt_required": "Every segment needs a prompt"
                     }

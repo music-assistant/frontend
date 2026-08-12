@@ -337,16 +337,25 @@ async function handleSave() {
     const { host, sections: compiledSections } = compileHost(draft.value);
     // The server upserts by id (derived from name for new hosts), so a
     // duplicate name would silently overwrite; renames keep their own id.
-    if (
-      !props.hostId &&
-      hosts.value.some((existing) => existing.id === host.id)
-    ) {
-      toast.error(
-        $t("providers.ai_radio.hosts.editor.validation.duplicate_name", [
-          host.name,
-        ]),
-      );
-      return;
+    if (!props.hostId) {
+      try {
+        await loadHosts();
+      } catch {
+        // A stale or empty list could hide a real collision, so an unverifiable
+        // name must block the save rather than risk overwriting another host.
+        toast.error(
+          $t("providers.ai_radio.hosts.editor.validation.name_check_failed"),
+        );
+        return;
+      }
+      if (hosts.value.some((existing) => existing.id === host.id)) {
+        toast.error(
+          $t("providers.ai_radio.hosts.editor.validation.duplicate_name", [
+            host.name,
+          ]),
+        );
+        return;
+      }
     }
     await saveSections(compiledSections);
     await saveHost(host);
@@ -381,9 +390,6 @@ onMounted(async () => {
       const host = await getHost(props.hostId);
       draft.value = decompileHost(host, sections.value);
     } else {
-      // Needed by the save-time id collision check; not being able to list
-      // hosts must not block creating one.
-      await loadHosts().catch(() => undefined);
       draft.value = newHostDraft();
     }
     originalSnapshot = JSON.stringify(draft.value);
