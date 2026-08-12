@@ -178,9 +178,15 @@ describe("SmartPlaylistRuleValuePicker", () => {
     await waitForClose();
 
     expect(wrapper.emitted("add")).toEqual([[{ id: 1, name: "Jazz" }]]);
+
+    // the rule row adds the picked value to its own list, so it comes back with
+    // one option fewer
+    await wrapper.setProps({ selectedIds: [1] });
     const reopened = await openPopover(wrapper);
+
     expect(searchTerm(reopened)).toBe("");
-    expect(rows(reopened)).toHaveLength(GENRES.length);
+    expect(rows(reopened)).toHaveLength(GENRES.length - 1);
+    expect(reopened.textContent).not.toContain("Jazz");
   });
 
   it("keeps a remote search that resolves after the close out of the next open", async () => {
