@@ -14,7 +14,11 @@
         {{ buttonLabel }}
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" class="w-[340px] p-2">
+    <PopoverContent
+      align="start"
+      class="w-[340px] p-2"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+    >
       <Tabs
         :model-value="kind"
         @update:model-value="(v) => emit('update:kind', v as SeedKind)"
@@ -33,6 +37,9 @@
       <Input
         :model-value="searchQuery"
         :placeholder="$t('search')"
+        :aria-label="
+          $t('smart_playlist.picker_search', { label: kindLabel.toLowerCase() })
+        "
         class="mb-2 h-8 text-sm"
         @update:model-value="emit('update:searchQuery', $event as string)"
         @keydown.stop
@@ -96,6 +103,7 @@ import {
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SeedKind } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Loader2, Plus } from "@lucide/vue";

@@ -10,10 +10,17 @@
         {{ addLabel }}
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" class="w-[340px] p-2">
+    <PopoverContent
+      align="start"
+      class="w-[340px] p-2"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+    >
       <Input
         v-model="query"
         :placeholder="$t('search')"
+        :aria-label="
+          $t('smart_playlist.picker_search', { label: addLabel.toLowerCase() })
+        "
         class="mb-2 h-8 text-sm"
         @keydown.stop
       />
@@ -60,6 +67,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import api from "@/plugins/api";
 import type { Album, Artist, Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
