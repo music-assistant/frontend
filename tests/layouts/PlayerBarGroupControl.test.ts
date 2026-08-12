@@ -30,7 +30,7 @@ vi.mock("@/helpers/players", () => ({
 
 let wrapper: VueWrapper | undefined;
 
-function mountGroupButton(props: { navigation?: boolean } = {}) {
+function mountGroupButton(props: { floating?: boolean } = {}) {
   wrapper = mount(PlayerBarGroupControl, {
     props,
     global: { stubs: { PlayerGroupPanel: true, Teleport: true } },
@@ -79,13 +79,24 @@ describe("PlayerBarGroupControl", () => {
     );
     wrapper?.unmount();
 
-    // 1.6 is the navigation bar's idle weight; it keeps the full weight for
-    // the route you are on
+    // 1.5 is the weight of the track menu the floating trigger sits next to
     expect(
-      mountGroupButton({ navigation: true })
+      mountGroupButton({ floating: true })
         .get("svg")
         .attributes("stroke-width"),
-    ).toBe("1.6");
+    ).toBe("1.5");
+  });
+
+  it("drops the member count label in the floating player", () => {
+    const trigger = mountGroupButton({ floating: true });
+
+    // the round floating trigger has no room for the label, so the badge is
+    // the only place the count shows; the accessible name still spells it out
+    expect(trigger.find(".player-bar-action-label").exists()).toBe(false);
+    expect(trigger.get("[data-player-group-count]").text()).toBe("3");
+    expect(trigger.attributes("aria-label")).toBe(
+      "tooltip.group_members: 3 players",
+    );
   });
 
   it("names a single member in the singular", () => {

@@ -46,8 +46,8 @@
   --mobile-navigation-height: calc(
     var(--mobile-navigation-item-height) + var(--mobile-navigation-inset-bottom)
   );
-  /* Height of the gradient panel behind the floating player bar. It hides whatever
-     it covers, so anything that has to stay visible is positioned above it. */
+  /* Height of the blur behind the floating player bar. It softens what scrolls
+     under it without hiding it, and fades out towards the top. */
   --mobile-player-scrim-height: calc(
     180px + var(--mobile-navigation-inset-bottom)
   );
@@ -78,11 +78,6 @@
   --bottom-bars-height: calc(
     var(--mobile-navigation-height) + var(--mobile-player-bar-gap) +
       var(--player-bar-overlay-height)
-  );
-  /* The scrim reaches higher than the bars unless the player bar has grown. */
-  --bottom-obscured-height: max(
-    var(--bottom-bars-height),
-    var(--mobile-player-scrim-height)
   );
 }
 

@@ -33,6 +33,8 @@
       </span>
     </Button>
 
+    <PlayerBarPlayerButton navigation />
+
     <Button
       variant="ghost"
       class="player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1"
@@ -47,15 +49,11 @@
         {{ $t("search") }}
       </span>
     </Button>
-
-    <PlayerBarGroupControl navigation />
-    <PlayerBarPlayerButton navigation />
   </nav>
 </template>
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
-import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
 import PlayerBarPlayerButton from "@/layouts/default/PlayerOSD/PlayerBarPlayerButton.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";

@@ -1,16 +1,7 @@
 <template>
-  <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
-  <div
-    v-if="store.mobileLayout"
-    :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
-    :style="`
-      position: fixed;
-      width: 100%;
-      height: var(--mobile-player-scrim-height);
-      bottom: 0px;
-      z-index: 999;
-    `"
-  ></div>
+  <!-- lifts the player off the content by blurring what scrolls under it,
+       fading out towards the top so there is no hard edge -->
+  <div v-if="store.mobileLayout" class="player-scrim"></div>
 
   <!-- bottom navigation for mobile layout -->
   <BottomNavigation v-if="store.mobileLayout" />
@@ -92,20 +83,24 @@ function clearOverlay() {
   border-radius: 10px !important;
 }
 
-.gradient-dark {
-  background: linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.9) 0%,
-    rgba(0, 0, 0, 0.9) 75%,
-    rgba(255, 255, 255, 0) 100%
-  );
-}
-.gradient-light {
-  background: linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.9) 0%,
-    rgba(255, 255, 255, 0.9) 75%,
-    rgba(255, 255, 255, 0) 100%
+.player-scrim {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: var(--mobile-player-scrim-height);
+  /* it only exists to soften what is behind it, so it never takes a tap */
+  pointer-events: none;
+  z-index: 999;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  /* the mask is what makes the blur ramp up towards the player instead of
+     ending on a visible line */
+  mask-image: linear-gradient(to top, #000 0%, #000 45%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to top,
+    #000 0%,
+    #000 45%,
+    transparent 100%
   );
 }
 
