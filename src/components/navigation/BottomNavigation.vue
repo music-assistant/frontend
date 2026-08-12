@@ -42,7 +42,12 @@
       @click="handleSearchClick"
     >
       <span class="mobile-navigation-icon">
-        <Search class="size-8" :stroke-width="isActive('search') ? 2.2 : 1.6" />
+        <Search
+          class="size-8"
+          :stroke-width="
+            isActive('search') && !store.showPlayersMenu ? 2.2 : 1.6
+          "
+        />
       </span>
     </Button>
   </nav>
