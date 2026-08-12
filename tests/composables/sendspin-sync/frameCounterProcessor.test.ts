@@ -14,7 +14,8 @@ const REPORT_INTERVAL_QUANTA = 64;
 interface Report {
   frames: number;
   quanta: number;
-  silentQuanta: number;
+  leadInQuanta: number;
+  droppedQuanta: number;
   unconnectedQuanta: number;
   peak: number;
   contextTime: number;
@@ -95,7 +96,8 @@ describe("frameCounterProcessor", () => {
       {
         frames: REPORT_INTERVAL_QUANTA * RENDER_QUANTUM,
         quanta: REPORT_INTERVAL_QUANTA,
-        silentQuanta: 0,
+        leadInQuanta: 0,
+        droppedQuanta: 0,
         unconnectedQuanta: 0,
         peak: 0.5,
         contextTime: 0.17,
@@ -107,14 +109,27 @@ describe("frameCounterProcessor", () => {
     const processor = new ProcessorClass();
     const dropped = 4;
 
+    render(processor, 1, tone());
     render(processor, dropped, new Float32Array(RENDER_QUANTUM));
-    render(processor, REPORT_INTERVAL_QUANTA - dropped, tone());
+    render(processor, REPORT_INTERVAL_QUANTA - dropped - 1, tone());
 
     expect(posted).toHaveLength(1);
-    expect(posted[0].silentQuanta).toBe(dropped);
+    expect(posted[0].droppedQuanta).toBe(dropped);
+    expect(posted[0].leadInQuanta).toBe(0);
     expect(posted[0].unconnectedQuanta).toBe(0);
     // Silence still carries frames, so the count alone would hide the gap.
     expect(posted[0].frames).toBe(REPORT_INTERVAL_QUANTA * RENDER_QUANTUM);
+  });
+
+  it("treats silence before any signal as the device warming up", () => {
+    const processor = new ProcessorClass();
+    const leadIn = 12;
+
+    render(processor, leadIn, new Float32Array(RENDER_QUANTUM));
+    render(processor, REPORT_INTERVAL_QUANTA - leadIn, tone());
+
+    expect(posted[0].leadInQuanta).toBe(leadIn);
+    expect(posted[0].droppedQuanta).toBe(0);
   });
 
   it("keeps the loudest sample of the whole run", () => {
@@ -132,8 +147,10 @@ describe("frameCounterProcessor", () => {
 
     render(processor, REPORT_INTERVAL_QUANTA, new Float32Array(RENDER_QUANTUM));
 
+    // Nothing ever arrived, so none of it counts as a gap in the audio.
     expect(posted[0].peak).toBe(0);
-    expect(posted[0].silentQuanta).toBe(REPORT_INTERVAL_QUANTA);
+    expect(posted[0].leadInQuanta).toBe(REPORT_INTERVAL_QUANTA);
+    expect(posted[0].droppedQuanta).toBe(0);
   });
 
   it("separates an unconnected input from a silent one", () => {
@@ -142,8 +159,18 @@ describe("frameCounterProcessor", () => {
     render(processor, REPORT_INTERVAL_QUANTA, undefined);
 
     expect(posted[0].unconnectedQuanta).toBe(REPORT_INTERVAL_QUANTA);
-    expect(posted[0].silentQuanta).toBe(0);
+    expect(posted[0].leadInQuanta).toBe(0);
     expect(posted[0].frames).toBe(0);
+  });
+
+  it("counts a zero-length channel as unconnected rather than as silence", () => {
+    const processor = new ProcessorClass();
+
+    render(processor, REPORT_INTERVAL_QUANTA, new Float32Array(0));
+
+    expect(posted[0].unconnectedQuanta).toBe(REPORT_INTERVAL_QUANTA);
+    expect(posted[0].leadInQuanta).toBe(0);
+    expect(posted[0].droppedQuanta).toBe(0);
   });
 
   it("keeps the totals cumulative across reports", () => {

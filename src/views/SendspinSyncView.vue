@@ -136,6 +136,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import {
+  pipelineNeverOpened,
   PROBE_CHECKS,
   summarizeProbe,
   useMicrophoneProbe,
@@ -217,8 +218,8 @@ const blocker = computed(() => {
     ? "insecure"
     : !current.mediaApi.getUserMedia
       ? "no_api"
-      : !current.audioContext && current.capture?.error
-        ? "no_audio_context"
+      : pipelineNeverOpened(current)
+        ? "no_audio_pipeline"
         : MISSING_DEVICE_ERRORS.includes(current.constraints?.error?.name ?? "")
           ? "no_device"
           : "refused";
@@ -308,14 +309,11 @@ function detailsFor(
           label: "discrepancy",
           value: `${capture.discrepancyPpm.toFixed(1)} ppm`,
         },
-        {
-          label: "clock drift",
-          value: `${capture.clockDriftPpm.toFixed(1)} ppm`,
-        },
         { label: "peak", value: capture.peakAmplitude.toFixed(4) },
-        { label: "silentQuanta", value: `${capture.silentQuanta}` },
+        { label: "droppedQuanta", value: `${capture.droppedQuanta}` },
+        { label: "leadInQuanta", value: `${capture.leadInQuanta}` },
         { label: "unconnectedQuanta", value: `${capture.unconnectedQuanta}` },
-        { label: "renderQuanta", value: `${capture.quanta}` },
+        { label: "totalQuanta", value: `${capture.totalQuanta}` },
       ];
     }
     case "wake_lock": {

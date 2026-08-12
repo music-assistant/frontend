@@ -24,6 +24,28 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("capture fixtures", () => {
+  // Two passes of review were misled by fixtures encoding readings the worklet
+  // could not emit, so pin them to the invariants it actually holds to.
+  it("describe states the worklet could really produce", () => {
+    const capture = captureFixture({});
+
+    expect(capture.framesDelivered).toBe(capture.measuredQuanta * 128);
+    expect(capture.renderSeconds).toBeCloseTo(
+      capture.framesDelivered / SAMPLE_RATE,
+      9,
+    );
+    expect(capture.expectedFrames).toBe(SAMPLE_RATE * capture.measuredSeconds);
+    expect(capture.totalQuanta).toBeGreaterThanOrEqual(capture.measuredQuanta);
+    expect(capture.discrepancyPpm).toBeCloseTo(
+      ((capture.framesDelivered - capture.expectedFrames) /
+        capture.expectedFrames) *
+        1e6,
+      9,
+    );
+  });
+});
+
 describe("summarizeProbe", () => {
   it("calls an insecure origin blocked rather than a device failure", () => {
     const summary = summarizeProbe(
@@ -80,20 +102,29 @@ describe("summarizeProbe", () => {
     expect(summary.verdict).toBe("degraded");
   });
 
-  it("warns on either drift reading and on a quantum of silence", () => {
-    const frames = summarizeProbe(
+  it("warns on a drifting clock and on a gap in the audio", () => {
+    const drifting = summarizeProbe(
       reportFixture({ capture: captureFixture({ discrepancyPpm: -2500 }) }),
     );
-    const clock = summarizeProbe(
-      reportFixture({ capture: captureFixture({ clockDriftPpm: 4000 }) }),
+    const dropped = summarizeProbe(
+      reportFixture({ capture: captureFixture({ droppedQuanta: 3 }) }),
     );
-    const silent = summarizeProbe(
-      reportFixture({ capture: captureFixture({ silentQuanta: 3 }) }),
+    const unconnected = summarizeProbe(
+      reportFixture({ capture: captureFixture({ unconnectedQuanta: 1 }) }),
     );
 
-    expect(frames.checks.capture).toBe("warn");
-    expect(clock.checks.capture).toBe("warn");
-    expect(silent.checks.capture).toBe("warn");
+    expect(drifting.checks.capture).toBe("warn");
+    expect(dropped.checks.capture).toBe("warn");
+    expect(unconnected.checks.capture).toBe("warn");
+  });
+
+  it("passes a run that only had to wait for the microphone to wake up", () => {
+    const summary = summarizeProbe(
+      reportFixture({ capture: captureFixture({ leadInQuanta: 40 }) }),
+    );
+
+    expect(summary.checks.capture).toBe("pass");
+    expect(summary.verdict).toBe("ready");
   });
 
   it("fails a capture that heard nothing at all", () => {
@@ -113,7 +144,21 @@ describe("summarizeProbe", () => {
     );
 
     expect(summary.checks.capture).toBe("not_evaluated");
-    expect(summary.verdict).toBe("ready");
+  });
+
+  it("blames the browser, not the phone, when the pipeline never opened", () => {
+    const summary = summarizeProbe(
+      reportFixture({
+        capture: {
+          ...captureFixture({}),
+          started: false,
+          error: { name: "AbortError", message: "worklet module failed" },
+        },
+      }),
+    );
+
+    expect(summary.checks.capture).toBe("not_evaluated");
+    expect(summary.verdict).toBe("blocked");
   });
 
   it("warns when the browser took the wake lock back mid-run", () => {
@@ -190,6 +235,7 @@ describe("useMicrophoneProbe", () => {
     });
     // No pipeline ever opened, so this is a browser problem rather than a
     // measurement that came back bad.
+    expect(probe.report.value?.capture?.started).toBe(false);
     const summary = summarizeProbe(probe.report.value!);
     expect(summary.checks.capture).toBe("not_evaluated");
     expect(summary.verdict).toBe("blocked");
@@ -214,17 +260,17 @@ describe("useMicrophoneProbe", () => {
     expect(worklet).toBeDefined();
     worklet.emit(workletReport({}));
 
-    // Twenty wall-clock seconds on, the render clock has advanced only 19.98 —
-    // 1000 ppm slow — and 0.18 s of what it did render arrived as silence, so
-    // the frame count is short by ten times as much.
+    // Twenty wall-clock seconds on, the pipeline has rendered 7485 quanta of
+    // 128 frames — 19.96 s of audio where the system clock expected 20, so it
+    // is running 2000 ppm slow. Sixty-eight of those quanta were silent.
     await vi.advanceTimersByTimeAsync(20_000);
     worklet.emit(
       workletReport({
-        frames: SAMPLE_RATE * 19.8,
-        quanta: 7492,
-        silentQuanta: 68,
+        frames: 7485 * 128,
+        quanta: 7485,
+        droppedQuanta: 68,
         peak: 0.2,
-        contextTime: 19.98,
+        contextTime: (7485 * 128) / SAMPLE_RATE,
       }),
     );
 
@@ -244,11 +290,14 @@ describe("useMicrophoneProbe", () => {
       outputLatency: 0.02,
     });
     expect(report?.capture?.measuredSeconds).toBeCloseTo(20, 3);
-    expect(report?.capture?.renderSeconds).toBeCloseTo(19.98, 6);
-    expect(report?.capture?.discrepancyPpm).toBeCloseTo(-10_000, 3);
-    expect(report?.capture?.clockDriftPpm).toBeCloseTo(-1000, 3);
-    expect(report?.capture?.quanta).toBe(7492);
-    expect(report?.capture?.silentQuanta).toBe(68);
+    expect(report?.capture?.renderSeconds).toBeCloseTo(19.96, 6);
+    expect(report?.capture?.framesDelivered).toBe(7485 * 128);
+    expect(report?.capture?.expectedFrames).toBe(SAMPLE_RATE * 20);
+    expect(report?.capture?.discrepancyPpm).toBeCloseTo(-2000, 6);
+    expect(report?.capture?.measuredQuanta).toBe(7485);
+    expect(report?.capture?.totalQuanta).toBe(7485);
+    expect(report?.capture?.droppedQuanta).toBe(68);
+    expect(report?.capture?.leadInQuanta).toBe(0);
     expect(report?.capture?.unconnectedQuanta).toBe(0);
     expect(report?.capture?.peakAmplitude).toBe(0.2);
     expect(report?.contextState?.stayedRunning).toBe(true);
@@ -360,7 +409,8 @@ function workletReport(overrides: Record<string, number>) {
   return {
     frames: 0,
     quanta: 0,
-    silentQuanta: 0,
+    leadInQuanta: 0,
+    droppedQuanta: 0,
     unconnectedQuanta: 0,
     peak: 0,
     contextTime: 0,
@@ -561,6 +611,10 @@ function constraintsFixture(
   };
 }
 
+/**
+ * A clean twenty-second window: 7500 quanta of 128 frames, which is exactly
+ * what 20 s at 48 kHz should produce.
+ */
 function captureFixture(
   overrides: Partial<NonNullable<MicrophoneProbeReport["capture"]>>,
 ): NonNullable<MicrophoneProbeReport["capture"]> {
@@ -568,14 +622,16 @@ function captureFixture(
     requestedSeconds: CAPTURE_SECONDS,
     measuredSeconds: 20,
     renderSeconds: 20,
+    measuredQuanta: 7500,
     framesDelivered: SAMPLE_RATE * 20,
     expectedFrames: SAMPLE_RATE * 20,
     discrepancyPpm: 0,
-    clockDriftPpm: 0,
-    quanta: 7500,
-    silentQuanta: 0,
+    totalQuanta: 11250,
+    leadInQuanta: 0,
+    droppedQuanta: 0,
     unconnectedQuanta: 0,
     peakAmplitude: 0.21,
+    started: true,
     aborted: false,
     error: null,
     ...overrides,

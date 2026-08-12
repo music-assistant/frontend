@@ -1904,9 +1904,9 @@
                         "title": "No usable microphone was found",
                         "description": "Access was allowed, but no microphone could be opened. Check that one is connected and not held by another app, then run the check again. The exact reason is on the Voice processing row below."
                     },
-                    "no_audio_context": {
+                    "no_audio_pipeline": {
                         "title": "The audio engine would not start",
-                        "description": "The browser refused to open an audio pipeline, so nothing could be captured. Reload the page and try again; if it keeps happening, close other tabs playing audio. The exact reason is on the Capture continuity row below."
+                        "description": "The browser never got as far as capturing, so this says nothing about the microphone. Reload the page and try again. The exact reason is on the Capture continuity row below."
                     }
                 },
                 "status": {

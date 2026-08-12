@@ -94,9 +94,7 @@ describe("SendspinSyncView", () => {
     expect(wrapper.text()).toContain("5.00 ms");
     // The device's own rate is worth seeing next to the context's.
     expect(wrapper.text()).toContain("44100 Hz");
-    // Both drift readings are shown, and neither is folded into the other.
-    expect(wrapper.text()).toContain("-12.0 ppm");
-    expect(wrapper.text()).toContain("31.0 ppm");
+    expect(wrapper.text()).toContain("-133.3 ppm");
     // A constraint the browser stayed silent on must not read as "off".
     expect(wrapper.text()).toContain(
       "providers.sendspin_sync.probe.values.not_reported",
@@ -197,6 +195,26 @@ describe("SendspinSyncView", () => {
   });
 });
 
+describe("SendspinSyncView fixture", () => {
+  // The rendered numbers are only meaningful if they are numbers the worklet
+  // and the composable could actually have produced together.
+  it("describes a capture the worklet could really produce", () => {
+    const capture = degradedReport().capture!;
+
+    expect(capture.framesDelivered).toBe(capture.measuredQuanta * 128);
+    expect(capture.renderSeconds).toBeCloseTo(
+      capture.framesDelivered / SAMPLE_RATE,
+      9,
+    );
+    expect(capture.discrepancyPpm).toBeCloseTo(
+      ((capture.framesDelivered - capture.expectedFrames) /
+        capture.expectedFrames) *
+        1e6,
+      9,
+    );
+  });
+});
+
 describe("SendspinSyncView translation keys", () => {
   // Keys are composed from check ids, statuses and verdict names, so a rename
   // would otherwise only surface as a missing string at runtime on a phone.
@@ -226,7 +244,7 @@ describe("SendspinSyncView translation keys", () => {
       "no_api",
       "refused",
       "no_device",
-      "no_audio_context",
+      "no_audio_pipeline",
     ].flatMap((reason) => [
       `${base}.blocked.${reason}.title`,
       `${base}.blocked.${reason}.description`,
@@ -298,18 +316,22 @@ function degradedReport(): MicrophoneProbeReport {
       baseLatency: 0.005,
       outputLatency: 0.02,
     },
+    // 7499 quanta of 128 frames is 19.99733 s of audio where the system clock
+    // expected 20, so the pipeline ran 133 ppm slow.
     capture: {
       requestedSeconds: 30,
       measuredSeconds: 20,
-      renderSeconds: 19.99976,
-      framesDelivered: 959988,
-      expectedFrames: 960000,
-      discrepancyPpm: -12,
-      clockDriftPpm: 31,
-      quanta: 7499,
-      silentQuanta: 0,
+      renderSeconds: (7499 * 128) / SAMPLE_RATE,
+      measuredQuanta: 7499,
+      framesDelivered: 7499 * 128,
+      expectedFrames: SAMPLE_RATE * 20,
+      discrepancyPpm: -133.33333333333334,
+      totalQuanta: 11250,
+      leadInQuanta: 9,
+      droppedQuanta: 0,
       unconnectedQuanta: 0,
       peakAmplitude: 0.1875,
+      started: true,
       aborted: false,
       error: null,
     },
