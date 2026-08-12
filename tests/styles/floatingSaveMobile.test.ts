@@ -31,8 +31,8 @@ describe("mobile floating save position", () => {
     document.head.appendChild(appStyles);
 
     document.documentElement.style.setProperty("--bottom-bars-height", "158px");
-    // Taller than the bars, so a passing test proves the fix measures the
-    // bars instead of falling back to the old max-with-scrim behavior.
+    // Taller than the bars, so the button only clears them by 16px if it is
+    // measured from the bars rather than the scrim.
     document.documentElement.style.setProperty(
       "--mobile-player-scrim-height",
       "200px",
