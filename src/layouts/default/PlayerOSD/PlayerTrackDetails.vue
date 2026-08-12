@@ -10,7 +10,7 @@
       <div
         class="media-thumb player-media-thumb"
         :style="`cursor: pointer; height: ${outerThumbSizePx}px; width: ${outerThumbSizePx}px;`"
-        @click.stop="store.showFullscreenPlayer = true"
+        @click.stop="openPlayer"
       >
         <!-- player.current_media has content loaded (will work for all sources)  -->
         <div
@@ -53,7 +53,7 @@
           color: primaryColor,
         }"
         class="d-flex align-center"
-        @click.stop="onTitleClick"
+        @click.stop="openPlayer"
       >
         <!-- no player selected message -->
         <div v-if="!store.activePlayer">
@@ -225,7 +225,7 @@ const outerThumbSizePx = computed(() => {
 // the breakpoint-driven outer container
 const fallbackThumbSizePx = computed(() => (props.compact ? 40 : 60));
 
-function onTitleClick() {
+function openPlayer() {
   if (!store.activePlayer || store.activePlayer.powered == false) {
     store.showPlayersMenu = true;
   } else {
