@@ -720,7 +720,7 @@ describe("PlayerCard", () => {
     expect(groupControl.attributes("disabled")).toBeDefined();
     // the badge takes the speaker's own colour rather than an accent, so a
     // disabled slot stays as quiet as the icon it sits on
-    expect(count.classes()).toContain("bg-foreground/80");
+    expect(count.classes()).toContain("bg-muted-foreground/90");
     expect(count.get("span").classes()).toContain("text-background");
     expect(count.classes()).not.toContain("bg-primary");
   });
