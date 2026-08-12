@@ -145,13 +145,15 @@
   );
 }
 
-/* the popouts extend behind the floating mobile player bar, so their content is
-   inset to stay scrollable past it; the bar sits on the navigation the popouts
-   hang above, so insetting by its height alone leaves them the popout gap. The
-   marker keeps desktop popouts untouched and lifts this above the
-   equally-!important p-0 utility they carry */
+/* the popouts extend behind the mobile dock, so their content is inset to stay
+   scrollable past it; the dock rises from the navigation the popouts hang
+   above, so insetting by what it covers leaves them the popout gap. The marker
+   keeps desktop popouts untouched and lifts this above the equally-!important
+   p-0 utility they carry */
 :root[data-player-bar-overlay] .player-bar-popout {
-  padding-bottom: var(--player-bar-overlay-height) !important;
+  padding-bottom: calc(
+    var(--player-bar-overlay-height) + var(--mobile-dock-rim)
+  ) !important;
 }
 
 .player-bar-popout[data-state="open"] {

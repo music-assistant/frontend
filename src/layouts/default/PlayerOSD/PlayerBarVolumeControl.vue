@@ -55,7 +55,7 @@
       align="end"
       :side-offset="PLAYER_BAR_POPOUT_GAP"
       :collision-padding="PLAYER_BAR_POPOUT_COLLISION_PADDING"
-      class="player-bar-popout player-volume-popover flex w-[340px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden p-0"
+      class="player-bar-popout player-volume-popover flex w-[340px] max-w-[calc(100vw-2*var(--player-bar-popout-gap))] flex-col overflow-hidden p-0"
       @open-auto-focus="preventAutoFocus"
       @interact-outside="handleInteractOutside"
     >

@@ -73,8 +73,8 @@
         :class="[
           'player-bar-popout player-group-popover flex flex-col gap-0 overflow-hidden p-0',
           store.mobileLayout
-            ? 'w-[calc(100vw-1rem)]'
-            : 'w-[400px] max-w-[calc(100vw-1rem)]',
+            ? 'w-[calc(100vw-2*var(--player-bar-popout-gap))]'
+            : 'w-[400px] max-w-[calc(100vw-2*var(--player-bar-popout-gap))]',
         ]"
         @open-auto-focus="preventAutoFocus"
         @interact-outside="handleInteractOutside"

@@ -42,8 +42,8 @@
         'player-bar-popout player-select-popover flex flex-col gap-0 overflow-hidden p-0',
         popoutFromFullscreen && 'player-select-popover-fullscreen',
         store.mobileLayout
-          ? 'w-[calc(100vw-1rem)]'
-          : 'w-[400px] max-w-[calc(100vw-1rem)]',
+          ? 'w-[calc(100vw-2*var(--player-bar-popout-gap))]'
+          : 'w-[400px] max-w-[calc(100vw-2*var(--player-bar-popout-gap))]',
       ]"
       @keydown="handleSheetKeydown"
       @close-auto-focus="preventAutoFocus"

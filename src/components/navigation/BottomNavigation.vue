@@ -117,7 +117,9 @@ function closePlayersMenu() {
 .mobile-bottom-navigation::before {
   position: absolute;
   z-index: -1;
-  top: calc(-1 * (var(--player-bar-overlay-height, 0px) + 4px));
+  top: calc(
+    -1 * (var(--player-bar-overlay-height, 0px) + var(--mobile-dock-rim))
+  );
   pointer-events: none;
   right: 0;
   bottom: 0;
