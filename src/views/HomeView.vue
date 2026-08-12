@@ -144,7 +144,9 @@ onMounted(async () => {
   position: fixed;
   right: 24px;
   top: 24px;
-  z-index: 1000;
+  /* Only has to clear the drag ghost in HomeWidgetRows, so it stays out of the
+     global stacking scale and below the player bar and its backdrops. */
+  z-index: 60;
   border-radius: 999px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }

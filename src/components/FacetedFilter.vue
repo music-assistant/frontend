@@ -1,5 +1,5 @@
 <template>
-  <Popover>
+  <Popover @update:open="onOpenChange">
     <PopoverTrigger as-child>
       <!-- custom trigger (e.g. a compact icon button inside an input) -->
       <slot name="trigger">
@@ -173,6 +173,13 @@ const removeFilter = (value: TValue) => {
 
 const clear = () => {
   emit("update:modelValue", []);
+};
+
+// only the popover content unmounts on close, so a term left in the field has to
+// be dropped by hand - on open, to leave the closing animation on the list the
+// user last saw
+const onOpenChange = (open: boolean) => {
+  if (open) search.value = "";
 };
 </script>
 

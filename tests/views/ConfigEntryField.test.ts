@@ -176,6 +176,43 @@ describe("ConfigEntryField", () => {
     );
   });
 
+  it("expands the options of an expanded_options entry, descriptions and all", () => {
+    const wrapper = mountField(expandedOptionsEntry());
+
+    expect(wrapper.find(".v-select").exists()).toBe(false);
+    expect(radioItems(wrapper)).toHaveLength(2);
+    // the whole point of the branch: no option (or its description) is hidden behind a click
+    expect(wrapper.text()).toContain("FLAC");
+    expect(wrapper.text()).toContain("Lossless, at a higher bitrate.");
+    expect(wrapper.text()).toContain("Not supported by this player.");
+  });
+
+  it("emits the value of the option behind the picked radio", async () => {
+    const wrapper = mountField(expandedOptionsEntry());
+
+    await radioItems(wrapper)[0].trigger("click");
+
+    expect(wrapper.emitted("update:value")).toEqual([["flac"]]);
+  });
+
+  it("keeps a multi_value entry on the dropdown", () => {
+    const wrapper = mountField({
+      ...expandedOptionsEntry(),
+      multi_value: true,
+      value: [],
+    });
+
+    expect(wrapper.find(".v-select").exists()).toBe(true);
+    expect(radioItems(wrapper)).toHaveLength(0);
+  });
+
+  it("disables every radio with the form", () => {
+    expect(controlStates(mountField(expandedOptionsEntry(), true))).toEqual([
+      true,
+      true,
+    ]);
+  });
+
   it("disables a read_only entry while the form itself is enabled", () => {
     const confEntry = entry({
       key: "server_id",
@@ -222,6 +259,28 @@ function entry(
 
 function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
   return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
+}
+
+function expandedOptionsEntry(): ConfigEntryUI {
+  return entry({
+    key: "output_codec",
+    type: ConfigEntryType.STRING,
+    required: true,
+    expanded_options: true,
+    options: [
+      {
+        title: "FLAC",
+        value: "flac",
+        description: "Lossless, at a higher bitrate.",
+      },
+      {
+        title: "MP3",
+        value: "mp3",
+        disabled: true,
+        disabled_reason: "Not supported by this player.",
+      },
+    ],
+  });
 }
 
 function hassControlsEntry(): ConfigEntryUI {
@@ -273,6 +332,10 @@ function sliderRowStates(wrapper: VueWrapper): Record<string, boolean> {
     slider: isDisabled(wrapper.get(".config-slider input")),
     ...Object.fromEntries(numberFieldParts),
   };
+}
+
+function radioItems(wrapper: VueWrapper): DOMWrapper<Element>[] {
+  return wrapper.findAll('[data-slot="radio-group-item"]');
 }
 
 function isDisabled(el: Pick<DOMWrapper<Element>, "attributes">): boolean {

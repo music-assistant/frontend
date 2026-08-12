@@ -45,7 +45,14 @@
               navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
             "
           >
-            <GroupedPlayers :stroke-width="1.4" class="size-7" />
+            <!-- the navigation bar marks the current route with the full weight,
+                 so this button takes the lighter idle weight rather than looking
+                 like the route you are on -->
+            <PlayerGroupIcon
+              :count="memberCount"
+              :stroke-width="navigation ? 1.6 : 1.4"
+              class="size-7"
+            />
           </span>
           <span
             :class="
@@ -90,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { GroupedPlayers } from "@/components/ma-icons";
+import PlayerGroupIcon from "@/components/PlayerGroupIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -234,7 +241,7 @@ function handleInteractOutside(event: Event) {
 
 <style>
 .player-group-backdrop-desktop {
-  bottom: var(--player-bar-height) !important;
+  bottom: var(--bottom-bars-height) !important;
 }
 
 .player-group-backdrop-mobile {

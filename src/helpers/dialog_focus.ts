@@ -15,9 +15,9 @@ const LAYER_SELECTOR = "[data-dismissable-layer]";
 export function preventOnScreenKeyboardOnOpen(event: Event) {
   if (!store.isTouchscreen) return;
   if (!(event.target instanceof HTMLElement)) return;
-  // a popover reports the event on its positioning wrapper, which sits outside
-  // the dismissable layer: focusing it counts as a focus outside and closes the
-  // popover, so aim for the layer itself. A dialog is that layer already.
+  // a popover reports the event on its positioning wrapper, which carries no
+  // tabindex and so cannot take focus: aim for the layer nested inside it. A
+  // dialog is that layer already.
   const layer = event.target.matches(LAYER_SELECTOR)
     ? event.target
     : event.target.querySelector<HTMLElement>(LAYER_SELECTOR);

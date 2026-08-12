@@ -53,7 +53,7 @@ installSendspinInterceptor();
 // Browsers disagree here anyway - Chrome reports no insets inside an iframe,
 // Safari reports the ones belonging to the page around us.
 if (window.self !== window.top) {
-  document.documentElement.style.setProperty("--device-inset-bottom", "0px");
+  document.documentElement.setAttribute("data-embedded-layout", "");
 }
 
 const app = createApp(App);

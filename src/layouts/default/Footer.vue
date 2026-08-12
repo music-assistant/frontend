@@ -24,9 +24,11 @@
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
-    :style="
-      store.mobileLayout ? { bottom: 'var(--mobile-navigation-height)' } : {}
-    "
+    :style="{
+      bottom: store.mobileLayout
+        ? 'var(--mobile-navigation-height)'
+        : 'var(--device-inset-bottom)',
+    }"
   >
     <Player :use-floating-player="store.mobileLayout" />
   </v-footer>
@@ -81,9 +83,12 @@ function clearOverlay() {
 .mediacontrols-player-float {
   display: flex;
   flex-direction: column;
-  margin: 5px;
-  margin-bottom: 6px;
-  width: calc(100% - 10px) !important;
+  margin: 5px calc(5px + var(--device-inset-right)) 5px
+    calc(5px + var(--device-inset-left));
+  margin-bottom: var(--mobile-player-bar-gap);
+  width: calc(
+    100% - 10px - var(--device-inset-right) - var(--device-inset-left)
+  ) !important;
   border-radius: 10px !important;
 }
 
@@ -106,6 +111,11 @@ function clearOverlay() {
 
 .v-footer {
   z-index: 1000 !important;
+}
+
+.v-footer.mediacontrols-player-default {
+  padding-right: var(--device-inset-right) !important;
+  padding-left: var(--device-inset-left) !important;
 }
 
 .v-footer.mediacontrols-player-float {

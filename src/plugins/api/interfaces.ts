@@ -693,6 +693,10 @@ export interface ConfigEntry {
   help_link?: string | null;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
+  // expanded_options [optional]: render the options inline - all of them, with their
+  // descriptions, visible at once (e.g. as a radio group) - instead of behind a dropdown.
+  // Ignored when the entry has no options or is multi_value.
+  expanded_options?: boolean;
   // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
   // as unmet. While unmet, input types and ACTION stay visible but render disabled;
   // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
@@ -1806,10 +1810,15 @@ export interface AIRadioSectionOrderRule {
   flow: AIRadioFlowItem[];
 }
 
-export interface AIRadioStationGeneral {
+export interface AIRadioHost {
+  id: string;
+  name: string;
   instructions: string;
-  weather_provider: string;
-  weather_timeout_seconds: number;
+  // tts_engine: "" means use the provider default engine
+  tts_engine: string;
+  section_ids: string[];
+  section_order: AIRadioSectionOrderRule[];
+  merge_section_id: string;
 }
 
 export interface AIRadioStation {
@@ -1820,16 +1829,13 @@ export interface AIRadioStation {
   default_player_id?: string;
   max_duration_minutes?: number;
   shuffle_source_tracks?: boolean;
-  merge_section_id?: string;
-  general?: AIRadioStationGeneral;
-  section_ids?: string[];
-  sections?: AIRadioSection[];
-  section_order?: AIRadioSectionOrderRule[];
+  host_id: string;
 }
 
 export interface AIRadioSession {
   session_id: string;
   station_id: string;
+  queue_id: string | null;
   status: "running" | "completed" | "failed" | "stopped";
   created_at: string;
   started_at: string | null;

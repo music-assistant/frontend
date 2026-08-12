@@ -1395,7 +1395,9 @@
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "instructions": "Host and Program Instructions"
+                "instructions": "Host and Program Instructions",
+                "voice": "Voice",
+                "host": "Host"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
@@ -1436,7 +1438,9 @@
                 "discard_changes_title": "Discard changes?",
                 "discard_changes": "You have unsaved changes that will be lost.",
                 "delete_station_title": "Delete station?",
-                "delete_station": "Delete this station?"
+                "delete_station": "Delete this station?",
+                "delete_host_title": "Delete host?",
+                "delete_host": "Delete this host?"
             },
             "toast": {
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
@@ -1449,12 +1453,17 @@
                 "station_save_failed": "Failed to save station",
                 "station_deleted": "Station deleted",
                 "station_duplicated": "Station duplicated",
-                "session_failed": "AI Radio run failed: {0}"
+                "session_failed": "AI Radio run failed: {0}",
+                "host_saved": "Host saved",
+                "host_deleted": "Host deleted",
+                "tts_engines_load_failed": "Failed to load voice options"
             },
             "header": {
                 "subtitle": "Turn a playlist into a radio show with an AI host."
             },
             "gallery": {
+                "title": "Shows",
+                "add_show": "Add show",
                 "empty_title": "Create your first show",
                 "empty_description": "AI Radio turns one of your playlists into a radio show with an AI host. AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host — configure one under Settings → Plugins.",
                 "create_cta": "Create show",
@@ -1465,7 +1474,6 @@
                 "play": "Play",
                 "starting": "Starting...",
                 "stop": "Stop",
-                "stopping": "Stopping...",
                 "on_air": "On air",
                 "customize": "Customize",
                 "duplicate": "Duplicate",
@@ -1480,20 +1488,12 @@
                 "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
                 "switch_show_confirm_label": "Switch"
             },
-            "phase": {
-                "preparing": "Preparing your show…",
-                "fetch_source_tracks": "Fetching tracks…",
-                "planning_sections": "Planning the show…",
-                "initializing_queue": "Preparing the queue…"
-            },
             "create": {
                 "title": "Create a show",
-                "description": "Pick a playlist, a host style, and how chatty it should be.",
+                "description": "Pick a playlist and a host for your show.",
                 "playlist_label": "Source playlist",
                 "playlist_placeholder": "Choose a playlist",
                 "playlist_empty": "No playlists found",
-                "preset_label": "Host style",
-                "talk_label": "Talkativeness",
                 "name_label": "Show name",
                 "default_name": "{0} — {1}",
                 "create": "Create",
@@ -1501,31 +1501,9 @@
                 "creating": "Creating...",
                 "validation": {
                     "playlist_required": "Choose a source playlist",
+                    "host_required": "Choose a host",
                     "name_required": "Show name is required"
                 }
-            },
-            "presets": {
-                "morning_show": {
-                    "name": "Morning show",
-                    "description": "Warm, upbeat host with weather and news breaks."
-                },
-                "minimal_dj": {
-                    "name": "Minimal DJ",
-                    "description": "Calm, understated transitions that stay out of the way."
-                },
-                "music_nerd": {
-                    "name": "Music nerd",
-                    "description": "Shares artist facts and trivia between songs."
-                },
-                "party_host": {
-                    "name": "Party host",
-                    "description": "High-energy shout-outs to keep the party going."
-                }
-            },
-            "talk": {
-                "rarely": "Rarely",
-                "normal": "Normal",
-                "chatty": "Chatty"
             },
             "prereq": {
                 "title": "AI provider needed",
@@ -1542,11 +1520,41 @@
                 "add_segment": "Add segment",
                 "blank_segment": "Blank segment",
                 "blank_segment_name": "New segment",
+                "segment_templates": {
+                    "intro": "Intro",
+                    "transition": "Transition",
+                    "weather": "Weather",
+                    "news": "News",
+                    "artist_fact": "Artist fact",
+                    "sign_off": "Sign-off"
+                },
                 "segment_name": "Segment name",
                 "use_current_player": "Use current player",
-                "lossy_warning_title": "Simplified on save",
-                "lossy_warning_description": "This show uses an advanced configuration that can't be fully represented here. Saving will rewrite it in the simplified segment format above.",
+                "host_placeholder": "Choose a host",
+                "host_required": "Choose a host before saving",
+                "no_hosts_hint": "You need a host before you can save this show.",
+                "create_host_cta": "Create a host",
                 "prompt_placeholders_hint": "Available placeholders: {placeholders}"
+            },
+            "hosts": {
+                "title": "Hosts",
+                "add_host": "Add host",
+                "card": {
+                    "edit": "Edit"
+                },
+                "editor": {
+                    "title": "Customize host",
+                    "save": "Save host",
+                    "name_label": "Host name",
+                    "default_voice": "Default",
+                    "validation": {
+                        "name_required": "Host name is required",
+                        "duplicate_name": "A host named «{0}» already exists",
+                        "name_check_failed": "Couldn't verify the name is unique. Nothing was saved",
+                        "segments_required": "Add at least one segment",
+                        "segment_prompt_required": "Every segment needs a prompt"
+                    }
+                }
             }
         },
         "party": {
@@ -2204,6 +2212,10 @@
     "audio_overlay_select_sound": "Select a sound",
     "audio_overlay_volume": "Volume",
     "audio_overlay_no_sounds": "No overlay sounds available. Add a provider that offers sound effects.",
+    "ai_dj": "Enable AI Radio DJ",
+    "ai_dj_off": "Off",
+    "ai_dj_show_on_air": "On air: {0}",
+    "ai_dj_show_on_air_unknown": "A show is on air",
     "menu_edit_enable": "Edit menu",
     "menu_edit_disable": "Leave edit mode",
     "menu_item_hide": "Hide menu item",

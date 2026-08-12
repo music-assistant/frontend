@@ -541,7 +541,7 @@ onBeforeUnmount(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
+  padding-bottom: 1.5rem;
   height: 100%;
   max-height: 100%;
   overflow: hidden;
@@ -635,7 +635,7 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .guest-view {
     padding: 0.75rem;
-    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
+    padding-bottom: 0.75rem;
   }
 
   .section-header {

@@ -24,6 +24,7 @@
       />
       <PanelDragHandle
         v-if="store.mobileLayout"
+        swipe-anywhere
         @dismiss="store.showFullscreenPlayer = false"
       />
       <v-toolbar
@@ -480,12 +481,14 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -495,10 +498,7 @@ import {
   getMediaImageUrl,
   getPlayerName,
 } from "@/helpers/utils";
-import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
-import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
-import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
@@ -508,6 +508,7 @@ import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFu
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
+import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
@@ -1396,10 +1397,13 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .fullscreen-player-card {
+  box-sizing: border-box;
   overflow: hidden;
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: var(--device-inset-top) var(--device-inset-right) 0
+    var(--device-inset-left);
   /* Containing block for the visualizer layer (z-index 0); everything else
      is lifted above it so the canvas renders strictly behind the content. */
   position: relative;
@@ -1448,6 +1452,7 @@ onBeforeUnmount(() => {
   /* Keep the list clear of the progress bar / controls below. */
   margin-bottom: 24px;
   scroll-behavior: auto;
+  overscroll-behavior-y: contain;
 }
 
 /* Virtual list: a spacer sized to the whole queue, with only the visible rows
@@ -1668,7 +1673,7 @@ onBeforeUnmount(() => {
 .player-bottom {
   flex-shrink: 0;
   position: unset !important;
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), min(3%, 3vh));
+  padding-bottom: max(var(--device-inset-bottom), min(3%, 3vh));
   width: 100%;
 }
 

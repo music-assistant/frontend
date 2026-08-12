@@ -98,11 +98,15 @@ function closePlayersMenu() {
 </script>
 
 <style>
-.mobile-bottom-navigation {
+/* :root lifts this above the equally-!important bottom and padding utilities
+   the bar carries */
+:root .mobile-bottom-navigation {
   bottom: -2px !important;
   height: calc(var(--mobile-navigation-height) + 2px);
   background: var(--background);
+  padding-right: calc(0.25rem + var(--device-inset-right)) !important;
   padding-bottom: calc(var(--mobile-navigation-inset-bottom) + 2px);
+  padding-left: calc(0.25rem + var(--device-inset-left)) !important;
 }
 
 .mobile-bottom-navigation::before {
@@ -115,22 +119,24 @@ function closePlayersMenu() {
   content: "";
 }
 
-.mobile-navigation-item {
+/* the paired class outweighs the equally-!important layout utilities the button
+   brings along with its base and size */
+.player-control-button.mobile-navigation-item {
   display: grid !important;
-  height: 66px !important;
-  grid-template-rows: 38px 16px;
+  height: var(--mobile-navigation-item-height) !important;
+  grid-template-rows: 34px 16px;
   align-content: center;
   justify-items: center;
   row-gap: 4px !important;
   /* tight, so the buttons sit close to the player bar; the room that keeps them
      clear of the screen edge comes from the bar's own bottom inset */
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
 }
 
 .mobile-navigation-icon {
   display: flex;
-  height: 38px;
+  height: 34px;
   align-items: center;
   justify-content: center;
 }

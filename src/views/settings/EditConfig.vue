@@ -88,7 +88,16 @@
       </div>
     </div>
 
-    <div v-if="!disabled" class="floating-save">
+    <div
+      v-if="!disabled"
+      :class="[
+        'floating-save',
+        {
+          'floating-save--mobile': store.mobileLayout,
+          'floating-save--frameless': store.frameless,
+        },
+      ]"
+    >
       <Button
         data-testid="config-save"
         type="button"
@@ -166,6 +175,7 @@ import {
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import {
   Airplay,
   Cast,
@@ -598,18 +608,14 @@ const getCategoryIcon = function (category: string): Component {
   z-index: 20;
 }
 
-:global(.content-section--mobile) .floating-save {
+.floating-save--mobile {
   right: 16px;
-  /* Stay clear of whatever reaches highest above the bottom navigation: the
-     bottom bars, or the gradient scrim behind them, which hides what it covers
-     and outlasts the player bar when that has no volume row to grow by. */
-  bottom: max(
-    calc(var(--bottom-bars-height) + 16px),
-    calc(var(--mobile-player-scrim-height) + 16px)
-  );
+  bottom: calc(var(--bottom-bars-height) + 16px);
+  /* Above the player scrim, below the mobile bars. */
+  z-index: 1000;
 }
 
-:global(.content-section--frameless) .floating-save {
+.floating-save--frameless {
   bottom: 16px;
 }
 </style>

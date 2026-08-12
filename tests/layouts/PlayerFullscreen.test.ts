@@ -14,6 +14,8 @@ vi.mock("@/plugins/api", async () => {
   const api = reactive({
     queues: {},
     queueElapsedTime: {},
+    // the menu's ai dj entry derives availability from the provider list
+    providers: {},
     subscribe: vi.fn(() => vi.fn()),
     getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
   });

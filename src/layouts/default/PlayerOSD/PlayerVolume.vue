@@ -62,6 +62,7 @@
     <!-- Main volume slider -->
     <div
       ref="sliderContainerRef"
+      data-no-panel-drag
       class="player-volume-container"
       :class="{
         disabled: isDisabled,

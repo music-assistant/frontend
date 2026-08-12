@@ -17,49 +17,33 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <Label>{{ $t("providers.ai_radio.create.preset_label") }}</Label>
-          <div class="grid grid-cols-2 gap-3">
+          <Label for="ai-radio-create-host">
+            {{ $t("providers.ai_radio.fields.host") }}
+          </Label>
+          <Select v-model="selectedHostId">
+            <SelectTrigger id="ai-radio-create-host" class="w-full">
+              <SelectValue
+                :placeholder="
+                  $t('providers.ai_radio.customize.host_placeholder')
+                "
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="host in hosts" :key="host.id" :value="host.id">
+                {{ host.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p v-if="hosts.length === 0" class="text-xs text-muted-foreground">
+            {{ $t("providers.ai_radio.customize.no_hosts_hint") }}
             <button
-              v-for="preset in PRESETS"
-              :key="preset.key"
               type="button"
-              class="flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-accent"
-              :class="
-                selectedPresetKey === preset.key
-                  ? 'border-primary ring-1 ring-primary'
-                  : 'border-border'
-              "
-              @click="selectedPresetKey = preset.key"
+              class="underline underline-offset-2 hover:text-foreground"
+              @click="emit('open-hosts')"
             >
-              <component :is="getLucideIcon(preset.icon)" class="h-5 w-5" />
-              <span class="text-sm font-medium">{{
-                $t(presetNameKey(preset.key))
-              }}</span>
-              <span class="line-clamp-2 text-xs text-muted-foreground">
-                {{ $t(presetDescriptionKey(preset.key)) }}
-              </span>
+              {{ $t("providers.ai_radio.customize.create_host_cta") }}
             </button>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <Label>{{ $t("providers.ai_radio.create.talk_label") }}</Label>
-          <Slider
-            :model-value="[talkLevelIndex]"
-            :min="0"
-            :max="2"
-            :step="1"
-            @update:model-value="onTalkSlider"
-          />
-          <div class="flex justify-between text-xs text-muted-foreground">
-            <span
-              v-for="level in TALK_LEVELS"
-              :key="level"
-              :class="{ 'font-medium text-foreground': talkLevel === level }"
-            >
-              {{ $t(`providers.ai_radio.talk.${level}`) }}
-            </span>
-          </div>
+          </p>
         </div>
 
         <div class="flex flex-col gap-2">
@@ -112,20 +96,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
 import {
-  applyTalkativeness,
-  asGeneralDefaults,
   compileShow,
   errorMessage,
-  PRESETS,
   resolveShowPlayerId,
   type ShowDraft,
-  type ShowPresetKey,
-  type TalkativenessLevel,
 } from "@/helpers/ai_radio";
-import { getLucideIcon } from "@/helpers/icon";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
@@ -138,74 +123,63 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:open": [value: boolean];
+  "open-hosts": [];
 }>();
 
-const TALK_LEVELS: TalkativenessLevel[] = ["rarely", "normal", "chatty"];
-
 const { saveShow, startShow, reportStartError } = useShows();
+const { hosts, loadHosts } = useHosts();
 
 const selectedPlaylist = ref<PlaylistSelection | undefined>();
-const selectedPresetKey = ref<ShowPresetKey>("morning_show");
-const talkLevel = ref<TalkativenessLevel>("normal");
+const selectedHostId = ref("");
 const showName = ref("");
 const nameManuallyEdited = ref(false);
 const creating = ref(false);
 const creatingAndPlaying = ref(false);
 
 const isBusy = computed(() => creating.value || creatingAndPlaying.value);
-const talkLevelIndex = computed(() => TALK_LEVELS.indexOf(talkLevel.value));
-
-function presetNameKey(key: ShowPresetKey) {
-  return `providers.ai_radio.presets.${key}.name`;
-}
-function presetDescriptionKey(key: ShowPresetKey) {
-  return `providers.ai_radio.presets.${key}.description`;
-}
-
-function onTalkSlider(value: number[] | undefined) {
-  talkLevel.value = TALK_LEVELS[value?.[0] ?? 1] ?? "normal";
-}
 
 function defaultShowName(): string {
-  const presetName = $t(presetNameKey(selectedPresetKey.value));
-  if (!selectedPlaylist.value) return presetName;
+  const hostName = hosts.value.find(
+    (host) => host.id === selectedHostId.value,
+  )?.name;
+  if (!hostName) return $t("providers.ai_radio.gallery.new_show");
+  if (!selectedPlaylist.value) return hostName;
   return $t("providers.ai_radio.create.default_name", [
-    presetName,
+    hostName,
     selectedPlaylist.value.name,
   ]);
 }
 
 function resetForm(initialPlaylist?: PlaylistSelection) {
   selectedPlaylist.value = initialPlaylist;
-  selectedPresetKey.value = "morning_show";
-  talkLevel.value = "normal";
+  selectedHostId.value = hosts.value[0]?.id || "";
   nameManuallyEdited.value = false;
   showName.value = defaultShowName();
 }
 
 watch(
   () => props.open,
-  (isOpen) => {
+  async (isOpen) => {
     store.dialogActive = isOpen;
-    if (isOpen) {
-      resetForm(props.initialPlaylist);
+    if (!isOpen) return;
+    // Always refresh: a cached list still renders instantly, but host names
+    // edited elsewhere would otherwise show up stale in the picker.
+    try {
+      await loadHosts();
+    } catch (error) {
+      toast.error(errorMessage(error));
     }
+    resetForm(props.initialPlaylist);
   },
 );
 
-watch([selectedPresetKey, selectedPlaylist], () => {
+watch([selectedHostId, selectedPlaylist], () => {
   if (!nameManuallyEdited.value) {
     showName.value = defaultShowName();
   }
 });
 
 function buildDraft(): ShowDraft {
-  const preset = PRESETS.find((item) => item.key === selectedPresetKey.value);
-  if (!preset) {
-    throw new Error(`Unknown preset: ${selectedPresetKey.value}`);
-  }
-  const general = asGeneralDefaults(undefined);
-  general.instructions = preset.instructions;
   return {
     basics: {
       name: showName.value.trim(),
@@ -214,15 +188,17 @@ function buildDraft(): ShowDraft {
       defaultPlayerId: "",
       maxDurationMinutes: 0,
       shuffleSourceTracks: true,
-      general,
     },
-    segments: applyTalkativeness(preset.segments, talkLevel.value),
+    hostId: selectedHostId.value,
   };
 }
 
 function validate(): string | null {
   if (!selectedPlaylist.value) {
     return $t("providers.ai_radio.create.validation.playlist_required");
+  }
+  if (!selectedHostId.value) {
+    return $t("providers.ai_radio.create.validation.host_required");
   }
   if (!showName.value.trim()) {
     return $t("providers.ai_radio.create.validation.name_required");
