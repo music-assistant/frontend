@@ -412,6 +412,25 @@ describe("SendspinPlayer MediaSession", () => {
     expect(mockSendspinDisconnect).toHaveBeenCalledWith("user_request");
   });
 
+  it("does not connect a player when unmounted while the session is prepared", async () => {
+    let resolvePrepare!: () => void;
+    mockPrepareSendspinSession.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolvePrepare = resolve;
+      }),
+    );
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    wrapper.unmount();
+    resolvePrepare();
+    await flushPromises();
+
+    // A player connected here would never be disconnected again.
+    expect(mockSendspinConnect).not.toHaveBeenCalled();
+  });
+
   it("skips pairing when the client has no pairing token", async () => {
     sendspinState.pairingToken = null;
     mockPrepareSendspinSession.mockResolvedValue(undefined);

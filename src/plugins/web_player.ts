@@ -1,5 +1,9 @@
 import { loadSendspinClientIdentity } from "@sendspin/sendspin-js";
 import { reactive, ref, watch } from "vue";
+import {
+  readDeviceSetting,
+  subscribeToDeviceSetting,
+} from "@/helpers/device_settings";
 import { resetMediaSession } from "@/helpers/mediaSession";
 import authManager from "./auth";
 import api from "./api";
@@ -161,6 +165,10 @@ async function isAnotherTabActive(): Promise<boolean> {
   });
 }
 
+// Per-device settings that feed resolvePreferredMode().
+const WEB_PLAYER_ENABLED = "web_player_enabled";
+const BROWSER_CONTROLS_ENABLED = "enable_browser_controls";
+
 let highestPriority: string | undefined;
 let modeSyncInitialized = false;
 let modeSyncInitializationPromise: Promise<void> | null = null;
@@ -194,12 +202,9 @@ function resolvePreferredMode(): WebPlayerMode {
     return WebPlayerMode.SENDSPIN_ONLY;
   }
 
-  const webPlayerEnabledPref =
-    window.localStorage.getItem("frontend.settings.web_player_enabled") ||
-    "true";
+  const webPlayerEnabledPref = readDeviceSetting(WEB_PLAYER_ENABLED) || "true";
   const browserControlsEnabledPref =
-    window.localStorage.getItem("frontend.settings.enable_browser_controls") ||
-    "true";
+    readDeviceSetting(BROWSER_CONTROLS_ENABLED) || "true";
 
   if (
     webPlayerEnabledPref !== "false" &&
@@ -261,6 +266,15 @@ export async function initializeWebPlayerModeSync(): Promise<void> {
     watch(partyListenInEnabled, () => {
       void queueModeApplication();
     });
+
+    // The settings page writes these straight to localStorage. Follow them here
+    // so switching the web player off tears it down right away, in every tab of
+    // this browser, instead of at the next navigation.
+    for (const setting of [WEB_PLAYER_ENABLED, BROWSER_CONTROLS_ENABLED]) {
+      subscribeToDeviceSetting(setting, () => {
+        void queueModeApplication();
+      });
+    }
 
     modeSyncInitialized = true;
     modeSyncInitializationPromise = null;
