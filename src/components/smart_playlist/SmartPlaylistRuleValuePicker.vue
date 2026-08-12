@@ -156,9 +156,10 @@ watch(query, (q) => {
   runSearch(q);
 });
 
-// Reset transient state when the popover closes.
+// Closing only unmounts the popover content, so the search has to be dropped by
+// hand - on open, to keep the restored list out of the closing animation.
 watch(open, (isOpen) => {
-  if (!isOpen) {
+  if (isOpen) {
     query.value = "";
     remoteResults.value = [];
     isSearching.value = false;
@@ -167,8 +168,6 @@ watch(open, (isOpen) => {
 
 function onPick(opt: Option) {
   emit("add", { id: opt.id, name: opt.name });
-  query.value = "";
-  remoteResults.value = [];
   open.value = false;
 }
 
