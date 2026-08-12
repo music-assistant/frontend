@@ -27,7 +27,7 @@
       />
       <Toolbar
         :icon="ArrowLeft"
-        style="position: absolute; z-index: 999999"
+        style="position: absolute; z-index: 1"
         :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :icon-action="backButtonClick"
