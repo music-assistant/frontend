@@ -3,16 +3,12 @@
   <v-list-item
     class="player-track-details"
     style="height: auto; margin: 0px; padding: 0px"
-    lines="two"
+    :lines="props.compact ? 'one' : 'two'"
   >
     <template #prepend>
       <div
         class="media-thumb player-media-thumb"
-        :style="`cursor: pointer;height: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-        }px; width: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-        }px; `"
+        :style="`cursor: pointer; height: ${outerThumbSizePx}px; width: ${outerThumbSizePx}px;`"
         @click="store.showFullscreenPlayer = true"
       >
         <!-- player.current_media has content loaded (will work for all sources)  -->
@@ -26,20 +22,23 @@
           <v-img
             class="media-thumb"
             style="border-radius: 4px"
-            size="60"
             :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
             :alt="$t('tooltip.artwork')"
           />
         </div>
         <!-- fallback: display player icon -->
-        <div v-else class="icon-thumb">
+        <div
+          v-else
+          class="icon-thumb"
+          :style="`height: ${fallbackThumbSizePx}px; width: ${fallbackThumbSizePx}px;`"
+        >
           <PlayerIcon
             :icon="store.activePlayer?.icon"
             :grouped="
               store.activePlayer?.type == PlayerType.PLAYER &&
               !!store.activePlayer?.group_members.length
             "
-            :size="32"
+            :size="props.compact ? 22 : 32"
           />
         </div>
       </div>
@@ -121,7 +120,7 @@
       </div>
     </template>
     <!-- subtitle: off state or artist(s) + album -->
-    <template #subtitle>
+    <template v-if="!props.compact" #subtitle>
       <!-- player powered off -->
       <div
         v-if="store.activePlayer?.powered == false"
@@ -198,18 +197,32 @@ interface Props {
   showQualityDetailsBtn?: boolean;
   colorPalette: ImageColorPalette;
   primaryColor?: string;
+  /** Use a single title line and smaller artwork. */
+  compact?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
   showQualityDetailsBtn: true,
   primaryColor: "",
+  compact: false,
 });
 
 // computed properties
 const streamDetails = computed(() => {
   return store.activePlayerQueue?.current_item?.streamdetails;
 });
+
+// size of the clickable artwork area; cover art fills this via its
+// w-full h-full wrapper, so this is also the real artwork size
+const outerThumbSizePx = computed(() => {
+  if (props.compact) return 44;
+  return getBreakpointValue({ breakpoint: "phone" }) ? 60 : 64;
+});
+
+// the icon fallback (no cover art) has its own fixed size, independent of
+// the breakpoint-driven outer container
+const fallbackThumbSizePx = computed(() => (props.compact ? 44 : 60));
 
 function onTitleClick() {
   if (!store.activePlayer || store.activePlayer.powered == false) {
