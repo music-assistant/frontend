@@ -47,10 +47,14 @@
   --mobile-navigation-height: calc(
     var(--mobile-navigation-item-height) + var(--mobile-navigation-inset-bottom)
   );
-  /* Height of the blur behind the floating player bar. It softens what scrolls
-     under it without hiding it, and fades out towards the top. */
+  /* Height of the blur behind the dock. It softens what scrolls under it without
+     hiding it, and fades out towards the top, so it clears the dock's own top by
+     a further 16px for the fade to finish above it rather than across it. The
+     card is measured at runtime, so this follows it rather than assuming a height
+     the card is free to outgrow. */
   --mobile-player-scrim-height: calc(
-    180px + var(--mobile-navigation-inset-bottom)
+    var(--mobile-navigation-height) + var(--player-bar-overlay-height, 0px) +
+      var(--mobile-dock-rim) + 16px
   );
   /* Space the player bar occupies in the desktop layout, where it sits flush
      against the bottom of the screen. The mobile player bar floats and varies
