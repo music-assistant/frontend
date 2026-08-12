@@ -2213,6 +2213,8 @@
     "audio_overlay_no_sounds": "No overlay sounds available. Add a provider that offers sound effects.",
     "ai_dj": "Enable AI Radio DJ",
     "ai_dj_off": "Off",
+    "ai_dj_show_on_air": "On air: {0}",
+    "ai_dj_show_on_air_unknown": "A show is on air",
     "menu_edit_enable": "Edit menu",
     "menu_edit_disable": "Leave edit mode",
     "menu_item_hide": "Hide menu item",

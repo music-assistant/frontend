@@ -6,6 +6,8 @@ import {
   PLAYER_CONTROL_NONE,
   PlayerType,
   type AIRadioHost,
+  type AIRadioSession,
+  type AIRadioStation,
   type Player,
   type PlayerQueue,
 } from "@/plugins/api/interfaces";
@@ -19,9 +21,12 @@ const {
   isAdmin,
   loadHosts,
   loadQueueDjStatus,
+  loadStatus,
   queueDjStatusRef,
   routerPush,
+  sessionsRef,
   setQueueDj,
+  showsRef,
   storeMock,
 } = vi.hoisted(() => ({
   aiRadioAvailableRef: { value: false },
@@ -30,9 +35,12 @@ const {
   isAdmin: vi.fn(),
   loadHosts: vi.fn().mockResolvedValue(undefined),
   loadQueueDjStatus: vi.fn().mockResolvedValue(undefined),
+  loadStatus: vi.fn().mockResolvedValue(undefined),
   queueDjStatusRef: { value: {} as Record<string, string> },
   routerPush: vi.fn(),
+  sessionsRef: { value: [] as AIRadioSession[] },
   setQueueDj: vi.fn(),
+  showsRef: { value: [] as AIRadioStation[] },
   storeMock: {
     showFullscreenPlayer: true,
     showPlayersMenu: true,
@@ -90,6 +98,14 @@ vi.mock("@/composables/ai-radio/useHosts", () => ({
   }),
 }));
 
+vi.mock("@/composables/ai-radio/useShows", () => ({
+  useShows: () => ({
+    sessions: sessionsRef,
+    shows: showsRef,
+    loadStatus,
+  }),
+}));
+
 vi.mock("vue-sonner", () => ({
   toast: {
     error: vi.fn(),
@@ -122,6 +138,32 @@ function makeHost(overrides: Partial<AIRadioHost> = {}): AIRadioHost {
     section_ids: [],
     section_order: [],
     merge_section_id: "",
+    ...overrides,
+  };
+}
+
+function makeShow(overrides: Partial<AIRadioStation> = {}): AIRadioStation {
+  return {
+    id: "show-1",
+    name: "Morning Mix",
+    source_playlist_id: "42",
+    source_playlist_provider: "library",
+    host_id: "host-1",
+    ...overrides,
+  };
+}
+
+function makeSession(overrides: Partial<AIRadioSession> = {}): AIRadioSession {
+  return {
+    session_id: "session-1",
+    station_id: "show-1",
+    queue_id: "kitchen",
+    status: "running",
+    created_at: "2026-08-01T00:00:00Z",
+    started_at: "2026-08-01T00:00:00Z",
+    ended_at: null,
+    error: null,
+    last_render_error: null,
     ...overrides,
   };
 }
@@ -228,6 +270,8 @@ describe("getPlayerMenuItems ai dj", () => {
     aiRadioAvailableRef.value = false;
     hostsRef.value = [];
     queueDjStatusRef.value = {};
+    sessionsRef.value = [];
+    showsRef.value = [];
   });
 
   it("omits the ai_dj entry without an available ai_radio provider", () => {
@@ -282,6 +326,71 @@ describe("getPlayerMenuItems ai dj", () => {
     expect(
       aiDj?.subItems?.find((item) => item.label === "ai_dj_off")?.selected,
     ).toBe(true);
+  });
+
+  it("shows a single disabled row naming the show's host while a show is on air on this queue", () => {
+    aiRadioAvailableRef.value = true;
+    hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
+    showsRef.value = [makeShow({ id: "show-1", host_id: "host-1" })];
+    sessionsRef.value = [
+      makeSession({ queue_id: "kitchen", station_id: "show-1" }),
+    ];
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+    const aiDj = menuItems.find((item) => item.label === "ai_dj_show_on_air");
+
+    expect(aiDj).toBeDefined();
+    expect(aiDj?.disabled).toBe(true);
+    expect(aiDj?.subItems).toBeUndefined();
+    expect(aiDj?.labelArgs).toEqual(["Robo DJ"]);
+    expect(menuItems.map((item) => item.label)).not.toContain("ai_dj");
+  });
+
+  it("renders the normal hosts submenu when the running show is on a different queue", () => {
+    aiRadioAvailableRef.value = true;
+    hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
+    showsRef.value = [makeShow({ id: "show-1", host_id: "host-1" })];
+    sessionsRef.value = [
+      makeSession({ queue_id: "other-queue", station_id: "show-1" }),
+    ];
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+    const aiDj = menuItems.find((item) => item.label === "ai_dj");
+
+    expect(aiDj).toBeDefined();
+    expect(aiDj?.subItems?.map((item) => item.label)).toEqual([
+      "Robo DJ",
+      "ai_dj_off",
+    ]);
+    expect(menuItems.map((item) => item.label)).not.toContain(
+      "ai_dj_show_on_air",
+    );
+  });
+
+  it("falls back to a nameless label when the on-air show's host can't be resolved", () => {
+    aiRadioAvailableRef.value = true;
+    hostsRef.value = [];
+    showsRef.value = [makeShow({ id: "show-1", host_id: "deleted-host" })];
+    sessionsRef.value = [
+      makeSession({ queue_id: "kitchen", station_id: "show-1" }),
+    ];
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+    const aiDj = menuItems.find(
+      (item) => item.label === "ai_dj_show_on_air_unknown",
+    );
+
+    expect(aiDj).toBeDefined();
+    expect(aiDj?.disabled).toBe(true);
+    expect(aiDj?.subItems).toBeUndefined();
+    expect(aiDj?.labelArgs).toEqual([]);
+    expect(menuItems.map((item) => item.label)).not.toContain("ai_dj");
   });
 
   it("assigns the clicked host as the queue's dj", () => {
@@ -379,7 +488,7 @@ describe("getPlayerMenuItems ai dj", () => {
     );
   });
 
-  it("refreshes hosts and dj status when the ai_dj submenu is built", () => {
+  it("refreshes hosts, dj status and session status when the ai_dj entry is built", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost()];
 
@@ -387,6 +496,7 @@ describe("getPlayerMenuItems ai dj", () => {
 
     expect(loadHosts).toHaveBeenCalled();
     expect(loadQueueDjStatus).toHaveBeenCalled();
+    expect(loadStatus).toHaveBeenCalled();
   });
 
   it("swallows a failed background refresh instead of rejecting unhandled", async () => {
@@ -394,6 +504,7 @@ describe("getPlayerMenuItems ai dj", () => {
     hostsRef.value = [makeHost()];
     loadHosts.mockRejectedValueOnce(new Error("Connection lost"));
     loadQueueDjStatus.mockRejectedValueOnce(new Error("Connection lost"));
+    loadStatus.mockRejectedValueOnce(new Error("Connection lost"));
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",

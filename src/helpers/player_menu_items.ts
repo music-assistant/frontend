@@ -19,6 +19,7 @@ import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
 import { Droplet, Sparkles } from "@lucide/vue";
 import { markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
+import { useShows } from "@/composables/ai-radio/useShows";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -252,8 +253,11 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // Queue-only AI DJ submenu, built from useHosts' prefetched caches; hosts
-  // to assign as the live DJ, plus an "Off" entry to clear it.
+  // Queue-only AI DJ entry, built from useHosts'/useShows' prefetched caches.
+  // A queue runs exactly one host at a time, so while a show is on air its
+  // host is that host: render it as a single disabled row rather than the
+  // hosts submenu, which would otherwise show the (now irrelevant) sticky
+  // queue-DJ assignment.
   const {
     hosts,
     queueDjStatus,
@@ -261,32 +265,50 @@ export const getPlayerMenuItems = (
     loadHosts,
     loadQueueDjStatus,
   } = useHosts();
+  const { sessions, shows, loadStatus } = useShows();
   if (isQueue && playerQueue && aiRadioAvailable.value) {
     const queueId = playerQueue.queue_id;
-    const activeHostId = queueDjStatus.value[queueId];
-    menuItems.push({
-      label: "ai_dj",
-      labelArgs: [],
-      icon: markRaw(Sparkles),
-      subItems: [
-        ...hosts.value.map((host) => ({
-          label: host.name,
-          labelArgs: [],
-          selected: activeHostId === host.id,
-          action: () => assignQueueDj(queueId, host.id),
-        })),
-        {
-          label: "ai_dj_off",
-          labelArgs: [],
-          selected: !activeHostId,
-          action: () => assignQueueDj(queueId, null),
-        },
-      ],
-    });
+    const runningSession = sessions.value.find(
+      (session) => session.status === "running" && session.queue_id === queueId,
+    );
+    if (runningSession) {
+      const show = shows.value.find((s) => s.id === runningSession.station_id);
+      const host = show
+        ? hosts.value.find((h) => h.id === show.host_id)
+        : undefined;
+      menuItems.push({
+        label: host ? "ai_dj_show_on_air" : "ai_dj_show_on_air_unknown",
+        labelArgs: host ? [host.name] : [],
+        icon: markRaw(Sparkles),
+        disabled: true,
+      });
+    } else {
+      const activeHostId = queueDjStatus.value[queueId];
+      menuItems.push({
+        label: "ai_dj",
+        labelArgs: [],
+        icon: markRaw(Sparkles),
+        subItems: [
+          ...hosts.value.map((host) => ({
+            label: host.name,
+            labelArgs: [],
+            selected: activeHostId === host.id,
+            action: () => assignQueueDj(queueId, host.id),
+          })),
+          {
+            label: "ai_dj_off",
+            labelArgs: [],
+            selected: !activeHostId,
+            action: () => assignQueueDj(queueId, null),
+          },
+        ],
+      });
+    }
     // Best-effort staleness refresh; the menu above is already built from
-    // the prefetched cache, so a failure here has nothing to surface.
+    // the prefetched caches, so a failure here has nothing to surface.
     void loadHosts().catch(() => undefined);
     void loadQueueDjStatus().catch(() => undefined);
+    void loadStatus().catch(() => undefined);
   }
 
   // select sound mode (player menu only; only when more than one is selectable)

@@ -1835,6 +1835,7 @@ export interface AIRadioStation {
 export interface AIRadioSession {
   session_id: string;
   station_id: string;
+  queue_id: string | null;
   status: "running" | "completed" | "failed" | "stopped";
   created_at: string;
   started_at: string | null;
