@@ -57,18 +57,25 @@ describe("BottomNavigation", () => {
       .findAll("button, player-bar-player-button-stub")
       .map((element) => element.attributes("aria-label") ?? "player");
 
-    expect(order).toEqual(["Menu", "discover", "player", "search"]);
+    expect(order).toEqual(["menu", "discover", "player", "search"]);
   });
 
   it("names the icon-only ends without printing a label", () => {
     const wrapper = mountNavigation();
     // both keep an accessible name; only the middle items show text
     expect(
-      itemNamed(wrapper, "Menu").find(".mobile-navigation-label").exists(),
+      itemNamed(wrapper, "menu").find(".mobile-navigation-label").exists(),
     ).toBe(false);
     expect(
       itemNamed(wrapper, "search").find(".mobile-navigation-label").exists(),
     ).toBe(false);
+  });
+
+  it("names the bar itself for landmark navigation", () => {
+    const wrapper = mountNavigation();
+
+    // $t is mocked to its key here, so a literal would mean an untranslated name
+    expect(wrapper.get("nav").attributes("aria-label")).toBe("main_navigation");
   });
 
   it("marks the page you are on", () => {
@@ -118,7 +125,7 @@ describe("BottomNavigation", () => {
   it("opens the sidebar from the menu button", async () => {
     const wrapper = mountNavigation();
 
-    await itemNamed(wrapper, "Menu").trigger("click");
+    await itemNamed(wrapper, "menu").trigger("click");
 
     expect(mockEmit).toHaveBeenCalledWith("mobile-sidebar-open");
   });

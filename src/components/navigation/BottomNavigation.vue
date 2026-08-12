@@ -2,12 +2,12 @@
   <nav
     class="mobile-bottom-navigation fixed inset-x-0 bottom-0 z-[2000] flex"
     :data-picker-open="store.showPlayersMenu"
-    aria-label="Main navigation"
+    :aria-label="$t('main_navigation')"
   >
     <Button
       variant="ghost"
       class="player-control-button mobile-navigation-item mobile-navigation-item--bare px-1"
-      aria-label="Menu"
+      :aria-label="$t('menu')"
       @click="handleMenuClick"
     >
       <span class="mobile-navigation-icon">
