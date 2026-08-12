@@ -69,7 +69,7 @@ describe("bottom bars height", () => {
     document.documentElement.style.setProperty(OVERLAY_HEIGHT, BAR_HEIGHT);
 
     expect(bottomBarsHeight()).toBe(
-      `calc( ${NAVIGATION_HEIGHT} + 0px + ${BAR_HEIGHT} )`,
+      `calc( ${NAVIGATION_HEIGHT} + ${BAR_HEIGHT} )`,
     );
   });
 
@@ -86,7 +86,7 @@ describe("bottom bars height", () => {
     // the blur behind the bars softens what scrolls under it without hiding
     // it, so nothing has to clear more than the bars themselves
     expect(bottomObscuredHeight()).toBe(
-      `calc( ${NAVIGATION_HEIGHT} + 0px + ${BAR_HEIGHT} )`,
+      `calc( ${NAVIGATION_HEIGHT} + ${BAR_HEIGHT} )`,
     );
   });
 });

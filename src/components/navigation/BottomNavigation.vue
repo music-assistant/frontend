@@ -6,7 +6,7 @@
   >
     <Button
       variant="ghost"
-      class="player-control-button mobile-navigation-item mobile-navigation-item--bare shrink-0 rounded-none px-1"
+      class="player-control-button mobile-navigation-item mobile-navigation-item--bare px-1"
       aria-label="Menu"
       @click="handleMenuClick"
     >
@@ -17,7 +17,7 @@
 
     <Button
       variant="ghost"
-      class="player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1"
+      class="player-control-button mobile-navigation-item min-w-0 flex-1 px-1"
       :data-active="isActive('discover')"
       :aria-current="isActive('discover') ? 'page' : undefined"
       :aria-label="$t('discover')"
@@ -35,7 +35,7 @@
 
     <Button
       variant="ghost"
-      class="player-control-button mobile-navigation-item mobile-navigation-item--bare shrink-0 rounded-none px-1"
+      class="player-control-button mobile-navigation-item mobile-navigation-item--bare px-1"
       :data-active="isActive('search')"
       :aria-current="isActive('search') ? 'page' : undefined"
       :aria-label="$t('search')"

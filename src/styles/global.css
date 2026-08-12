@@ -38,9 +38,6 @@
   /* Size of a single bottom navigation button, which the bar sizes itself from,
      so the two can never drift apart. */
   --mobile-navigation-item-height: 72px;
-  /* Gap the floating mobile player bar keeps above the navigation. The bar sets
-     it as its own margin, and anything stacking on top of the bar adds it. */
-  --mobile-player-bar-gap: 0px;
   /* Space the bottom navigation occupies. Anything anchored above it (sheets,
      popovers, the player bar, scroll padding) is positioned from this. */
   --mobile-navigation-height: calc(
@@ -76,8 +73,7 @@
    player bar floats above the navigation, keeping its gap from it. */
 :root[data-player-bar-overlay] {
   --bottom-bars-height: calc(
-    var(--mobile-navigation-height) + var(--mobile-player-bar-gap) +
-      var(--player-bar-overlay-height)
+    var(--mobile-navigation-height) + var(--player-bar-overlay-height)
   );
 }
 

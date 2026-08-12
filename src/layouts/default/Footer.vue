@@ -74,10 +74,10 @@ function clearOverlay() {
 .mediacontrols-player-float {
   display: flex;
   flex-direction: column;
-  /* the same inset the navigation below it uses, so the two line up */
-  margin: 5px calc(16px + var(--device-inset-right)) 5px
+  /* 4px inside the dock's own inset, so the surface shows evenly around the
+     card on every side */
+  margin: 5px calc(16px + var(--device-inset-right)) 0
     calc(16px + var(--device-inset-left));
-  margin-bottom: var(--mobile-player-bar-gap);
   width: calc(
     100% - 32px - var(--device-inset-right) - var(--device-inset-left)
   ) !important;
