@@ -1378,15 +1378,18 @@ watch(
   display: flex;
   flex-direction: column;
   padding-bottom: 0 !important;
-  /* total bottom offset for overlays (here, "Powered by"): player bar + tailwind spacing-1 gap */
-  --party-player-bottom: 94px; /* 90px player bar (View.vue .content-section) + 4px (spacing-1) */
+  /* total bottom offset for overlays (here, "Powered by"): the bars pinned to
+     the bottom of the screen + tailwind spacing-1 gap */
+  --party-player-bottom: calc(var(--bottom-bars-height) + 4px);
 }
 
 .content-section--mobile.party-view-active {
   padding-bottom: 0 !important;
-  /* 185px above Footer.vue gradient overlay + 4px (spacing-1), following the
-     navigation inset the gradient and player bar move with */
-  --party-player-bottom: calc(189px + var(--mobile-navigation-inset-bottom));
+  /* the player card sits on the dock, whose surface shows a rim further above
+     it, so the same gap is measured from there */
+  --party-player-bottom: calc(
+    var(--bottom-bars-height) + var(--mobile-dock-rim) + 4px
+  );
 }
 
 .content-section--frameless.party-view-active {
