@@ -3,6 +3,20 @@ import publicIndex from "../../public/index.html?raw";
 import css from "@/styles/global.css?inline";
 import { afterEach, describe, expect, it } from "vitest";
 
+// happy-dom substitutes every var() but does not evaluate calc() or max(), so
+// the insets are only observable as the expression they compose
+function applyGlobalStyles() {
+  const styles = document.createElement("style");
+  styles.dataset.safeAreaTest = "";
+  styles.textContent = css;
+  document.head.appendChild(styles);
+}
+
+afterEach(() => {
+  document.head.querySelector("[data-safe-area-test]")?.remove();
+  document.documentElement.removeAttribute("data-embedded-layout");
+});
+
 describe.each([
   ["development", appIndex],
   ["bundled", publicIndex],
@@ -14,21 +28,26 @@ describe.each([
   });
 });
 
+describe("bottom navigation", () => {
+  it("takes its clearance from the device inset rather than adding to it", () => {
+    applyGlobalStyles();
+
+    expect(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--mobile-navigation-inset-bottom")
+        .replace(/\s+/g, " ")
+        .trim(),
+    ).toBe("max( 6px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )");
+  });
+});
+
 describe("embedded safe area", () => {
   const insetProperties = ["top", "right", "bottom", "left"].map(
     (side) => `--device-inset-${side}`,
   );
 
-  afterEach(() => {
-    document.head.querySelector("[data-safe-area-test]")?.remove();
-    document.documentElement.removeAttribute("data-embedded-layout");
-  });
-
   it("leaves device insets to the embedding host", () => {
-    const styles = document.createElement("style");
-    styles.dataset.safeAreaTest = "";
-    styles.textContent = css;
-    document.head.appendChild(styles);
+    applyGlobalStyles();
     document.documentElement.setAttribute("data-embedded-layout", "");
 
     const computed = getComputedStyle(document.documentElement);
