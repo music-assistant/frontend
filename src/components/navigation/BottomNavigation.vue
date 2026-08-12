@@ -112,19 +112,24 @@ function closePlayersMenu() {
 }
 
 /* darker than the muted grey the player controls use elsewhere, so the labels
-   hold their own against the blurred content behind them. The field and the
-   heavier label carry the state instead, so nothing here turns primary - which
-   also stops a tap leaving an item stuck in its hover colour on iOS. */
-.mobile-bottom-navigation .player-control-button,
+   hold their own against the blurred content behind them. The active item is
+   left out so it keeps the primary colour, and hover is pinned here: iOS holds
+   hover after a tap, which would otherwise leave an item looking active. */
+.mobile-bottom-navigation .player-control-button:not([data-active="true"]),
 .mobile-bottom-navigation
-  .player-control-button:hover:not([data-suppress-hover="true"]),
-.mobile-bottom-navigation .player-control-button[data-active="true"],
-.mobile-bottom-navigation .player-control-button[data-state="open"] {
+  .player-control-button:not([data-active="true"]):hover:not(
+    [data-suppress-hover="true"]
+  ) {
   color: color-mix(in srgb, var(--foreground) 80%, transparent) !important;
 }
 
-/* the open picker takes the active state for itself, so the page it sits over
-   stops claiming it too */
+/* an open picker is the active item, so the page underneath gives up both the
+   colour and the weight and only one thing in the bar ever reads as active */
+.mobile-bottom-navigation[data-picker-open="true"]
+  .player-control-button[data-active="true"]:not(#player-select-button) {
+  color: color-mix(in srgb, var(--foreground) 80%, transparent) !important;
+}
+
 .mobile-bottom-navigation:not([data-picker-open="true"])
   .player-control-button[data-active="true"]:not(#player-select-button)
   .mobile-navigation-label,
@@ -132,33 +137,6 @@ function closePlayersMenu() {
   #player-select-button[data-active="true"]
   .mobile-navigation-label {
   font-weight: 600;
-}
-
-/* the active item sits on a faded field that repeats the bar's own corner
-   radius; it sits under the icon and label but over the bar's tint. An open
-   picker takes the active state for itself, so the page underneath drops it and
-   only one item is ever marked. */
-.mobile-bottom-navigation:not([data-picker-open="true"])
-  .player-control-button[data-active="true"]:not(#player-select-button),
-.mobile-bottom-navigation #player-select-button[data-active="true"] {
-  position: relative;
-}
-
-.mobile-bottom-navigation:not([data-picker-open="true"])
-  .player-control-button[data-active="true"]:not(#player-select-button)::before,
-.mobile-bottom-navigation #player-select-button[data-active="true"]::before {
-  position: absolute;
-  z-index: 0;
-  inset: 4px 0;
-  border-radius: 28px;
-  background: color-mix(in srgb, var(--primary) 22%, transparent);
-  content: "";
-}
-
-/* the player name fills its button, so its field reaches past it to keep the
-   text off the edges; the page labels are short and need no such room */
-.mobile-bottom-navigation #player-select-button[data-active="true"]::before {
-  inset: 4px -6px;
 }
 
 /* no label, so the icon takes the whole height and the button only claims the
@@ -195,7 +173,6 @@ function closePlayersMenu() {
 }
 
 .mobile-navigation-label {
-  position: relative;
   display: block;
   width: 100%;
   height: 16px;
