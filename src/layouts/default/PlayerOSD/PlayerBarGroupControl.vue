@@ -30,9 +30,10 @@
           data-player-group-trigger
           variant="ghost"
           :class="[
-            navigation
-              ? 'player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1'
-              : 'player-control-button player-bar-action player-bar-group-button h-20 w-[72px] rounded-none px-1',
+            'player-control-button rounded-none px-1',
+            floating
+              ? 'size-11 rounded-full me-3'
+              : 'player-bar-action player-bar-group-button h-20 w-[72px]',
           ]"
           :data-active="open"
           :data-suppress-hover="suppressHover"
@@ -40,27 +41,26 @@
           @click.capture="handleTriggerClick"
           @pointerleave="suppressHover = false"
         >
-          <span
-            :class="
-              navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
-            "
-          >
-            <!-- the navigation bar marks the current route with the full weight,
-                 so this button takes the lighter idle weight rather than looking
-                 like the route you are on -->
+          <span v-if="floating" class="inline-flex">
+            <!-- matches the track menu beside it in the floating bar -->
             <PlayerGroupIcon
               :count="memberCount"
-              :stroke-width="navigation ? 1.6 : 1.4"
-              class="size-7"
+              :stroke-width="1.5"
+              class="size-8"
             />
           </span>
-          <span
-            :class="
-              navigation ? 'mobile-navigation-label' : 'player-bar-action-label'
-            "
-          >
-            {{ memberCountLabel }}
-          </span>
+          <template v-else>
+            <span class="player-bar-action-icon">
+              <PlayerGroupIcon
+                :count="memberCount"
+                :stroke-width="1.4"
+                class="size-7"
+              />
+            </span>
+            <span class="player-bar-action-label">
+              {{ memberCountLabel }}
+            </span>
+          </template>
         </Button>
       </PopoverTrigger>
 
@@ -125,10 +125,11 @@ import PlayerGroupPanel from "./PlayerGroupPanel.vue";
 
 withDefaults(
   defineProps<{
-    navigation?: boolean;
+    /** compact round trigger for the floating mobile player */
+    floating?: boolean;
   }>(),
   {
-    navigation: false,
+    floating: false,
   },
 );
 

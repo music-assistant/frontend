@@ -80,18 +80,16 @@
   </template>
 
   <!-- Mobile: floating player with volume slider inside container -->
-  <div
-    v-else
-    class="mediacontrols-mobile-container"
-    :data-compact="compactFloatingPlayer"
-  >
+  <div v-else class="mediacontrols-mobile-container">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
     <div class="mediacontrols" :data-mobile="true">
-      <div class="mediacontrols-left">
+      <!-- the whole card opens the player, so the empty space around the
+           track details is clickable too; the controls stop their own clicks -->
+      <div class="mediacontrols-left" @click="openActivePlayer">
         <PlayerTrackDetails
           :show-quality-details-btn="false"
           :show-only-artist="true"
-          :compact="compactFloatingPlayer"
+          :compact="true"
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
         />
@@ -99,24 +97,27 @@
       <div class="mediacontrols-bottom-right">
         <div class="flex items-center">
           <PlayerTrackMenu
-            v-if="!compactFloatingPlayer"
+            v-if="showFloatingTrackMenu"
             compact
             force-visible
             :show-favorite="true"
             :show-queue="true"
           />
+          <!-- grouping sits beside play: both act on what this bar is playing -->
+          <PlayerBarGroupControl floating />
           <!-- player mobile control buttons -->
           <PlayerControls
-            :style="[{ 'padding-right': '5px' }, playIconStyle]"
+            :style="playIconStyle"
             :visible-components="{
               repeat: { isVisible: false },
               shuffle: { isVisible: false },
               play: {
                 isVisible: true,
                 icon: {
-                  staticWidth: '48px',
-                  staticHeight: '48px',
+                  staticWidth: '40px',
+                  staticHeight: '40px',
                 },
+                size: 18,
               },
               previous: { isVisible: false },
               next: { isVisible: false },
@@ -125,23 +126,21 @@
         </div>
       </div>
     </div>
-    <template v-if="!compactFloatingPlayer">
-      <div v-if="store.activePlayer" class="volume-slider">
-        <PlayerVolume
-          :player="store.activePlayer"
-          width="100%"
-          :prefer-group-volume="true"
-          :enable-popout="false"
-          :request-expand-on-group-tap="true"
-          @toggle-group-expansion="showMobileVolumeControls = true"
-        />
-      </div>
-      <PlayerBarMobileVolumeSheet
-        v-if="store.activePlayer"
-        v-model:open="showMobileVolumeControls"
+    <div v-if="store.activePlayer" class="volume-slider">
+      <PlayerVolume
         :player="store.activePlayer"
+        width="100%"
+        :prefer-group-volume="true"
+        :enable-popout="false"
+        :request-expand-on-group-tap="true"
+        @toggle-group-expansion="showMobileVolumeControls = true"
       />
-    </template>
+    </div>
+    <PlayerBarMobileVolumeSheet
+      v-if="store.activePlayer"
+      v-model:open="showMobileVolumeControls"
+      :player="store.activePlayer"
+    />
   </div>
 </template>
 
@@ -155,7 +154,7 @@ import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { Heart } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import PlayerBarGroupControl from "./PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
 import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
@@ -169,7 +168,6 @@ interface Props {
   useFloatingPlayer: boolean;
 }
 const props = defineProps<Props>();
-const route = useRoute();
 const showMobileVolumeControls = ref(false);
 const showWideCenterActions = computed(() => getBreakpointValue("bp6"));
 const favoriteItem = computed(() => {
@@ -177,13 +175,18 @@ const favoriteItem = computed(() => {
   return item?.media_type === MediaType.AUDIO_SOURCE ? undefined : item;
 });
 
-// settings and its descendants collapse the floating mobile player to a
-// single row, since the fixed save button already competes for that space
-const compactFloatingPlayer = computed(
-  () =>
-    props.useFloatingPlayer &&
-    route.matched.some((record) => record.name === "settings"),
-);
+// the floating row already carries grouping and play; the track menu only
+// joins them where there is width to spare
+const showFloatingTrackMenu = computed(() => getBreakpointValue("bp12"));
+
+/** Opens the fullscreen player, or the player picker when there is nothing to show. */
+function openActivePlayer() {
+  if (!store.activePlayer || store.activePlayer.powered === false) {
+    store.showPlayersMenu = true;
+    return;
+  }
+  store.showFullscreenPlayer = true;
+}
 
 const coverImageColorPalette = computed<ImageColorPalette>(() =>
   paletteFromServer(store.activePlayer?.current_media?.palette),
@@ -200,6 +203,15 @@ const backgroundColor = computed(() => {
   return "#CCCCCC26";
 });
 
+// this bar sits on an artwork tint rather than the app surface, so its
+// controls key off the theme contrast colour instead of the flat grey the
+// other player bars use
+const floatingControlColor = computed(() =>
+  vuetify.theme.current.value.dark
+    ? "rgba(255, 255, 255, 0.82)"
+    : "rgba(0, 0, 0, 0.72)",
+);
+
 const themeColor = computed(() =>
   vuetify.theme.current.value.dark ? "#fff" : "#000",
 );
@@ -214,12 +226,6 @@ watch(
     showMobileVolumeControls.value = false;
   },
 );
-
-// the volume sheet is unmounted while compact, but its open state is not:
-// reset it so it cannot resurface once the normal player returns
-watch(compactFloatingPlayer, (compact) => {
-  if (compact) showMobileVolumeControls.value = false;
-});
 </script>
 
 <style scoped lang="scss">
@@ -231,7 +237,6 @@ watch(compactFloatingPlayer, (compact) => {
   position: relative;
   width: 100%;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   background-color: rgb(var(--v-theme-overlay));
@@ -254,7 +259,27 @@ watch(compactFloatingPlayer, (compact) => {
     display: flex;
     background-color: transparent;
     min-height: 0;
-    padding: 8px 10px;
+    padding: 5px 10px;
+    /* play stays the primary action but is outlined here, so the compact row
+       does not read as a solid block */
+    /* beats the global .player-control-button colour, which is tuned for the
+       app surface rather than an artwork tint */
+    :deep(.player-control-button) {
+      color: v-bind(floatingControlColor) !important;
+    }
+    /* Icon.vue rests its buttons at 0.62 and only lifts them on hover, which a
+       touch device never reaches, so play looked faded next to the grouping
+       button beside it */
+    :deep(.icon-container--button) {
+      opacity: 1;
+    }
+    :deep(.play-btn-icon) {
+      min-width: 40px;
+      min-height: 40px;
+      border: 2px solid currentColor;
+      background-color: transparent;
+      color: v-bind(floatingControlColor);
+    }
     .mediacontrols-bottom-right {
       margin-right: 0;
     }
@@ -265,6 +290,7 @@ watch(compactFloatingPlayer, (compact) => {
       flex: 1;
       min-width: 0;
       max-width: none;
+      cursor: pointer;
     }
   }
 }
@@ -275,6 +301,9 @@ watch(compactFloatingPlayer, (compact) => {
   width: 320px;
   left: 0px;
   top: 0px;
+  /* it is positioned, so it paints over the row behind it; without this it
+     takes every click that does not land on the controls or the text */
+  pointer-events: none;
   background: linear-gradient(
     to right,
     v-bind("backgroundColor") 0%,
@@ -392,9 +421,16 @@ watch(compactFloatingPlayer, (compact) => {
   }
 }
 
+/* the left offset cancels the padding inside the volume icon's column so
+   it lines up with the artwork above it */
 .volume-slider {
-  width: calc(100% - 34px);
-  margin: -4px 6px 6px 14px;
+  width: auto;
+  margin: -4px 10px 2px 10px;
+}
+
+/* the slider only needs room for its own track in the floating bar */
+.volume-slider :deep(.player-volume-container) {
+  min-height: 28px;
 }
 
 .volume-slider :deep([data-slot="slider-range"]) {

@@ -1,21 +1,14 @@
 import Player from "@/layouts/default/PlayerOSD/Player.vue";
+import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "@/layouts/default/PlayerOSD/PlayerBarMobileVolumeSheet.vue";
 import PlayerTrackDetails from "@/layouts/default/PlayerOSD/PlayerTrackDetails.vue";
 import PlayerTrackMenu from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayerTrackMenu.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import type { Player as PlayerModel } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
-import { nextTick, shallowReactive } from "vue";
+import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-const routeState = vi.hoisted(() => ({
-  current: null as { matched: { name?: string }[] } | null,
-}));
-
-vi.mock("vue-router", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("vue-router")>()),
-  useRoute: () => routeState.current,
-}));
 
 vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
@@ -24,10 +17,6 @@ vi.mock("@/plugins/api", () => {
   const api = { toggleFavorite: vi.fn(), providers: {}, players: {} };
   return { api, default: api };
 });
-
-vi.mock("@/plugins/breakpoint", () => ({
-  getBreakpointValue: () => false,
-}));
 
 vi.mock("@/plugins/vuetify", () => ({
   default: { theme: { current: { value: { dark: false } } } },
@@ -44,7 +33,33 @@ vi.mock("@/plugins/store", async () => {
   };
 });
 
+// the real store derives the active player from the api players map, so the
+// mock is what makes these writable per test
+const mockStore = store as unknown as {
+  activePlayer?: PlayerModel;
+  activePlayerId?: string;
+};
+
+// bp12: the width from which the floating row has room for the track menu
+const TRACK_MENU_BREAKPOINT = 415;
+
+const originalInnerWidth = Object.getOwnPropertyDescriptor(
+  window,
+  "innerWidth",
+);
+
 let wrapper: VueWrapper | undefined;
+
+// the breakpoint plugin keeps the width in a module-level reactive that only
+// the resize event refreshes
+function setViewportWidth(width: number) {
+  Object.defineProperty(window, "innerWidth", {
+    value: width,
+    writable: true,
+    configurable: true,
+  });
+  window.dispatchEvent(new Event("resize"));
+}
 
 function mountPlayer(useFloatingPlayer: boolean) {
   wrapper = shallowMount(Player, {
@@ -56,59 +71,56 @@ function mountPlayer(useFloatingPlayer: boolean) {
   return wrapper;
 }
 
-describe("Player mobile settings compaction", () => {
-  afterEach(async () => {
+describe("Player floating mobile bar", () => {
+  afterEach(() => {
     wrapper?.unmount();
     wrapper = undefined;
-    routeState.current = null;
-    const { store } = await import("@/plugins/store");
-    (store as unknown as { activePlayer?: PlayerModel }).activePlayer =
-      undefined;
+    mockStore.activePlayer = undefined;
+    mockStore.activePlayerId = undefined;
+    if (originalInnerWidth) {
+      Object.defineProperty(window, "innerWidth", originalInnerWidth);
+    }
+    window.dispatchEvent(new Event("resize"));
   });
 
-  it("renders the full floating player outside settings", async () => {
-    const { store } = await import("@/plugins/store");
-    (store as unknown as { activePlayer?: PlayerModel }).activePlayer = {
-      player_id: "p1",
-    } as PlayerModel;
-    routeState.current = shallowReactive({ matched: [{ name: "discover" }] });
+  it("carries the grouping control, the volume slider and its sheet", () => {
+    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
     const player = mountPlayer(true);
 
-    expect(
-      player.find(".mediacontrols-mobile-container").attributes("data-compact"),
-    ).toBe("false");
-    expect(player.findComponent(PlayerTrackMenu).exists()).toBe(true);
+    expect(player.findComponent(PlayerBarGroupControl).props("floating")).toBe(
+      true,
+    );
+    expect(player.find(".volume-slider").exists()).toBe(true);
     expect(player.findComponent(PlayerVolume).exists()).toBe(true);
-    expect(player.findComponent(PlayerTrackDetails).props("compact")).toBe(
-      false,
+    expect(player.findComponent(PlayerBarMobileVolumeSheet).exists()).toBe(
+      true,
     );
   });
 
-  it("collapses to a compact single row on settings and its descendants", async () => {
-    const { store } = await import("@/plugins/store");
-    (store as unknown as { activePlayer?: PlayerModel }).activePlayer = {
-      player_id: "p1",
-    } as PlayerModel;
-    routeState.current = shallowReactive({
-      matched: [{ name: "settings" }, { name: "profile" }],
-    });
+  it("sizes the track details down to fit the shallow bar", () => {
+    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
     const player = mountPlayer(true);
 
-    expect(
-      player.find(".mediacontrols-mobile-container").attributes("data-compact"),
-    ).toBe("true");
-    expect(player.findComponent(PlayerTrackMenu).exists()).toBe(false);
-    expect(player.findComponent(PlayerVolume).exists()).toBe(false);
-    expect(player.findComponent(PlayerBarMobileVolumeSheet).exists()).toBe(
-      false,
-    );
     expect(player.findComponent(PlayerTrackDetails).props("compact")).toBe(
       true,
     );
   });
 
-  it("leaves the desktop player unaffected on settings routes", () => {
-    routeState.current = shallowReactive({ matched: [{ name: "settings" }] });
+  it.each([
+    { width: TRACK_MENU_BREAKPOINT, present: true },
+    { width: TRACK_MENU_BREAKPOINT - 1, present: false },
+  ])("shows the track menu at $width px: $present", ({ width, present }) => {
+    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
+    setViewportWidth(width);
+    const player = mountPlayer(true);
+
+    expect(player.findComponent(PlayerTrackMenu).exists()).toBe(present);
+    // the menu is the only control the narrow row gives up
+    expect(player.findComponent(PlayerBarGroupControl).exists()).toBe(true);
+    expect(player.findComponent(PlayerVolume).exists()).toBe(true);
+  });
+
+  it("leaves the desktop player outside the floating container", () => {
     const player = mountPlayer(false);
 
     expect(player.find(".mediacontrols-mobile-container").exists()).toBe(false);
@@ -117,12 +129,9 @@ describe("Player mobile settings compaction", () => {
     );
   });
 
-  it("resets an open volume sheet on entering settings so it cannot resurface", async () => {
-    const { store } = await import("@/plugins/store");
-    (store as unknown as { activePlayer?: PlayerModel }).activePlayer = {
-      player_id: "p1",
-    } as PlayerModel;
-    routeState.current = shallowReactive({ matched: [{ name: "discover" }] });
+  it("closes an open volume sheet when the active player changes", async () => {
+    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
+    mockStore.activePlayerId = "p1";
     const player = mountPlayer(true);
 
     await player.findComponent(PlayerVolume).vm.$emit("toggle-group-expansion");
@@ -131,15 +140,10 @@ describe("Player mobile settings compaction", () => {
       true,
     );
 
-    // entering settings unmounts the sheet, but the open state must not
-    // survive to reopen it once the normal player returns
-    routeState.current.matched = [{ name: "settings" }];
-    await nextTick();
-    expect(player.findComponent(PlayerBarMobileVolumeSheet).exists()).toBe(
-      false,
-    );
-
-    routeState.current.matched = [{ name: "discover" }];
+    // the sheet controls the volume of the player it was opened for, so it
+    // must not stay open over a player switch
+    mockStore.activePlayer = { player_id: "p2" } as PlayerModel;
+    mockStore.activePlayerId = "p2";
     await nextTick();
     expect(player.findComponent(PlayerBarMobileVolumeSheet).props("open")).toBe(
       false,

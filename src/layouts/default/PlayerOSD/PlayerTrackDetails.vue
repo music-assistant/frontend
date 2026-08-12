@@ -2,14 +2,15 @@
   <!-- now playing media -->
   <v-list-item
     class="player-track-details"
+    :class="{ 'player-track-details--compact': props.compact }"
     style="height: auto; margin: 0px; padding: 0px"
-    :lines="props.compact ? 'one' : 'two'"
+    lines="two"
   >
     <template #prepend>
       <div
         class="media-thumb player-media-thumb"
         :style="`cursor: pointer; height: ${outerThumbSizePx}px; width: ${outerThumbSizePx}px;`"
-        @click="store.showFullscreenPlayer = true"
+        @click.stop="store.showFullscreenPlayer = true"
       >
         <!-- player.current_media has content loaded (will work for all sources)  -->
         <div
@@ -52,7 +53,7 @@
           color: primaryColor,
         }"
         class="d-flex align-center"
-        @click="onTitleClick"
+        @click.stop="onTitleClick"
       >
         <!-- no player selected message -->
         <div v-if="!store.activePlayer">
@@ -120,7 +121,7 @@
       </div>
     </template>
     <!-- subtitle: off state or artist(s) + album -->
-    <template v-if="!props.compact" #subtitle>
+    <template #subtitle>
       <!-- player powered off -->
       <div
         v-if="store.activePlayer?.powered == false"
@@ -128,7 +129,7 @@
           cursor: 'pointer',
           color: primaryColor,
         }"
-        @click="store.showPlayersMenu = true"
+        @click.stop="store.showPlayersMenu = true"
       >
         {{ $t("off") }}
       </div>
@@ -142,7 +143,7 @@
           cursor: 'pointer',
           color: primaryColor,
         }"
-        @click="store.showFullscreenPlayer = true"
+        @click.stop="store.showFullscreenPlayer = true"
       >
         <div class="ma-line-clamp-1">
           <MarqueeText :sync="marqueeSync">
@@ -197,7 +198,7 @@ interface Props {
   showQualityDetailsBtn?: boolean;
   colorPalette: ImageColorPalette;
   primaryColor?: string;
-  /** Use a single title line and smaller artwork. */
+  /** Smaller artwork and a shallower row, for the floating mobile player. */
   compact?: boolean;
 }
 
@@ -216,13 +217,13 @@ const streamDetails = computed(() => {
 // size of the clickable artwork area; cover art fills this via its
 // w-full h-full wrapper, so this is also the real artwork size
 const outerThumbSizePx = computed(() => {
-  if (props.compact) return 44;
+  if (props.compact) return 40;
   return getBreakpointValue({ breakpoint: "phone" }) ? 60 : 64;
 });
 
 // the icon fallback (no cover art) has its own fixed size, independent of
 // the breakpoint-driven outer container
-const fallbackThumbSizePx = computed(() => (props.compact ? 44 : 60));
+const fallbackThumbSizePx = computed(() => (props.compact ? 40 : 60));
 
 function onTitleClick() {
   if (!store.activePlayer || store.activePlayer.powered == false) {
@@ -236,6 +237,12 @@ function onTitleClick() {
 <style scoped>
 .player-media-thumb {
   margin-right: 10px;
+}
+
+/* the floating player keeps both text lines but drops below the two-line
+   height Vuetify reserves, so the bar stays shallow */
+.player-track-details.player-track-details--compact {
+  min-height: 44px;
 }
 
 .player-track-content-type {
