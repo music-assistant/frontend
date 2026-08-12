@@ -1,19 +1,20 @@
 <template>
   <section class="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
+    <CustomizeShow
+      v-if="customizeShowId"
+      v-show="!customizeHostOpen"
+      :station-id="customizeShowId"
+      @back="closeCustomize"
+      @saved="closeCustomize"
+      @open-hosts="openCustomizeHost()"
+    />
     <CustomizeHost
       v-if="customizeHostOpen"
       :host-id="customizeHostId || undefined"
       @back="closeCustomizeHost"
       @saved="closeCustomizeHost"
     />
-    <CustomizeShow
-      v-else-if="customizeShowId"
-      :station-id="customizeShowId"
-      @back="closeCustomize"
-      @saved="closeCustomize"
-      @open-hosts="openCustomizeHost()"
-    />
-    <template v-else>
+    <template v-if="!customizeShowId && !customizeHostOpen">
       <header
         class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
       >
@@ -225,8 +226,17 @@ function openHostsFromCreateDialog() {
   openCustomizeHost();
 }
 
-function closeCustomizeHost() {
+async function closeCustomizeHost() {
   customizeHostId.value = null;
+  if (!customizeShowId.value) return;
+  // CustomizeShow stays mounted across the host editor detour, so its own
+  // onMounted refresh doesn't run again; refetch so a newly created host
+  // shows up in the picker.
+  try {
+    await loadHosts();
+  } catch (error) {
+    toast.error(errorMessage(error));
+  }
 }
 
 function applyRouteQuery() {
