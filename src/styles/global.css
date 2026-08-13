@@ -124,6 +124,7 @@ html {
        1000  desktop player bar
        2000  mobile bottom navigation, and Vuetify's default overlay z-index
        2001  floating mobile player bar
+       2002  app update prompt
        2100  settings loading overlays
        9000  fullscreen player
        9001  player select backdrop, opened from the fullscreen player
