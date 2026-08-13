@@ -13,6 +13,7 @@ import {
 import tokens from "@/styles/global.css?inline";
 import css from "@/styles/style.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { utilityPriority } from "./cascade";
 
 const OVERLAY_HEIGHT = "--player-bar-overlay-height";
 const OVERLAY_MARKER = "data-player-bar-overlay";
@@ -36,13 +37,6 @@ function customProperty(name: string) {
   return getComputedStyle(document.documentElement)
     .getPropertyValue(name)
     .trim();
-}
-
-function utilityPaddingPriority() {
-  return [...(appStyles.sheet?.cssRules ?? [])]
-    .filter((rule) => rule instanceof CSSStyleRule)
-    .find((rule) => rule.selectorText === ".p-0")
-    ?.style.getPropertyPriority("padding");
 }
 
 describe("player bar popout inset", () => {
@@ -69,7 +63,7 @@ describe("player bar popout inset", () => {
     // the inset only proves anything while the utility it has to out-rank is
     // itself !important
     expect(
-      utilityPaddingPriority(),
+      utilityPriority(appStyles, ".p-0", "padding"),
       "the Tailwind utilities import must stay `important` and unlayered",
     ).toBe("important");
 

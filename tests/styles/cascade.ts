@@ -48,6 +48,24 @@ export function selectorsSetting(
 }
 
 /**
+ * Whether `styles` declares `property` on `selector` as !important, or
+ * undefined when it carries no rule with exactly that selector.
+ *
+ * A rank only settles which rule wins within one importance level, so the tests
+ * that lean on it check the utility they out-rank is !important to begin with.
+ */
+export function utilityPriority(
+  styles: HTMLStyleElement,
+  selector: string,
+  property: string,
+) {
+  return [...(styles.sheet?.cssRules ?? [])]
+    .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
+    .find((rule) => rule.selectorText === selector)
+    ?.style.getPropertyPriority(property);
+}
+
+/**
  * How specific `selector` is, counted in class-level compounds.
  *
  * Comparable only between selectors that carry no id and no element name, which

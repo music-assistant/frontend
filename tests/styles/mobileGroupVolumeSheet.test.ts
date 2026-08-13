@@ -6,7 +6,7 @@ import sheetSource from "@/layouts/default/PlayerOSD/PlayerBarMobileVolumeSheet.
 import tokens from "@/styles/global.css?inline";
 import css from "@/styles/style.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { rank } from "./cascade";
+import { rank, utilityPriority } from "./cascade";
 
 // happy-dom does no calc() arithmetic, and drops a position whose tokens expand
 // to a nested one, so each token the sheet is placed from stands in as a plain
@@ -60,13 +60,6 @@ function overlay() {
   return probe(
     `modal-backdrop fixed inset-0 ${passedClasses("overlay-class")}`,
   );
-}
-
-function utilityPriority(selector: string, property: string) {
-  return [...(appStyles.sheet?.cssRules ?? [])]
-    .filter((rule) => rule instanceof CSSStyleRule)
-    .find((rule) => rule.selectorText === selector)
-    ?.style.getPropertyPriority(property);
 }
 
 // the component's own rules that land on this element
@@ -167,7 +160,7 @@ describe("mobile grouped volume sheet", () => {
     // ranking below proves nothing unless both sides are !important
     for (const [utility, property] of UTILITIES) {
       expect(
-        utilityPriority(utility, property),
+        utilityPriority(appStyles, utility, property),
         "the Tailwind utilities import must stay `important` and unlayered",
       ).toBe("important");
     }
