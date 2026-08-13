@@ -1,9 +1,11 @@
 import ItemsListing from "@/components/ItemsListing.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
+import type { Track } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { genre } from "../fixtures/genre";
+import { track } from "../fixtures/track";
 
 // Tracks live subscriptions the way the api does, so one that outlives the
 // listing stays listed here.
@@ -112,13 +114,16 @@ function clearSelectionHandlers() {
   return eventbus.all.get("clearSelection")?.length ?? 0;
 }
 
-function mountListingRaw() {
+function mountListingRaw(
+  props: Partial<InstanceType<typeof ItemsListing>["$props"]> = {},
+) {
   return mount(ItemsListing, {
     props: {
       itemtype: "tracks",
       path: "librarytracks",
       showGenreFilter: true,
       loadPagedData: vi.fn().mockResolvedValue([]),
+      ...props,
     },
     global: {
       mocks: {
@@ -144,7 +149,7 @@ function mountListingRaw() {
 
 enableAutoUnmount(afterEach);
 
-describe("ItemsListing startup cleanup", () => {
+describe("ItemsListing unmount cleanup", () => {
   beforeEach(() => {
     eventbus.all.clear();
     events.listeners.length = 0;
@@ -215,6 +220,52 @@ describe("ItemsListing startup cleanup", () => {
     await flushPromises();
 
     expect(mockGetLibraryGenres).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops paging through the library when the listing is closed mid-selection", async () => {
+    // a full page is what keeps the paging loop going; taking the size from the
+    // request keeps that true whatever page size the listing asks for
+    const fullPage = (limit: number) =>
+      Array.from({ length: limit }, (_, index) =>
+        track({ item_id: String(index), name: `Track ${index}` }),
+      );
+    let requestedPageSize = 0;
+    let resolveHeldPage: () => void = () => {};
+    const loadPagedData =
+      vi.fn<(params: { limit: number }) => Promise<Track[]>>();
+    loadPagedData
+      // the load on mount, leaving more pages for the selection to page through
+      .mockImplementationOnce(async ({ limit }) => fullPage(limit))
+      // the first page the selection asks for, held open across the unmount
+      .mockImplementationOnce(({ limit }) => {
+        requestedPageSize = limit;
+        return new Promise<Track[]>((resolve) => {
+          resolveHeldPage = () => resolve(fullPage(limit));
+        });
+      })
+      // a short page, so paging that carries on regardless still comes to an end
+      .mockResolvedValue([]);
+
+    const listing = mountListingRaw({ allowKeyHooks: true, loadPagedData });
+    await flushPromises();
+    expect(loadPagedData).toHaveBeenCalledTimes(1);
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "a", ctrlKey: true }),
+    );
+    await flushPromises();
+    // pin that selecting everything really is paused on a page request, so the
+    // closing assertion is about the resumed loop and not one that never started
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
+    // a page the listing never asked to fill would end the paging on its own,
+    // leaving the closing assertion true no matter what
+    expect(requestedPageSize).toBeGreaterThan(0);
+
+    listing.unmount();
+    resolveHeldPage();
+    await flushPromises();
+
+    expect(loadPagedData).toHaveBeenCalledTimes(2);
   });
 
   it("leaves a second listing on the page still clearing its own selection", async () => {
