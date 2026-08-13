@@ -137,4 +137,20 @@ describe("PlayerTrackMenu", () => {
 
     expect(trigger.attributes("data-state")).toBe("open");
   });
+
+  // the stubs cannot show the attribute surviving reka-ui's as-child merge onto
+  // the same button the player control colour keys off
+  it("suppresses hover color through the real menu too", async () => {
+    const trigger = mountWithDropdown().get("button.player-control-button");
+
+    expect(trigger.attributes("data-suppress-hover")).toBe("false");
+
+    await trigger.trigger("click", { button: 0, ctrlKey: false });
+    await flushPromises();
+    await trigger.trigger("click", { button: 0, ctrlKey: false });
+    await flushPromises();
+
+    expect(trigger.attributes("data-state")).toBe("closed");
+    expect(trigger.attributes("data-suppress-hover")).toBe("true");
+  });
 });

@@ -123,6 +123,14 @@
   color: var(--muted-foreground) !important;
 }
 
+/* the ghost variant's own hover colour outranks the resting colour above, so a
+   suppressed button needs this to settle back. Weight and order both matter:
+   the open states below match this specificity and must win, and the floating
+   player's overrides are heavier still. */
+.player-control-button[data-suppress-hover="true"] {
+  color: var(--muted-foreground) !important;
+}
+
 .player-control-button:hover:not([data-suppress-hover="true"]),
 .player-control-button[data-active="true"],
 .player-control-button[data-state="open"] {
