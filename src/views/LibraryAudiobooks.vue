@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    show-global-search
     itemtype="audiobooks"
     path="libraryaudiobooks"
     :show-duration="false"

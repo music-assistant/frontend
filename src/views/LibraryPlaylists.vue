@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     ref="listingRef"
+    show-global-search
     itemtype="playlists"
     path="libraryplaylists"
     :show-duration="false"

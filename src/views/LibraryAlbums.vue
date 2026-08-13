@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    show-global-search
     itemtype="albums"
     path="libraryalbums"
     :show-provider="false"

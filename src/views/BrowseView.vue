@@ -1,6 +1,7 @@
 <template>
   <section>
     <ItemsListing
+      show-global-search
       itemtype="browse"
       :show-provider="false"
       :show-library="false"

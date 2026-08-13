@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     ref="itemsListing"
+    show-global-search
     itemtype="radios"
     path="libraryradios"
     :show-duration="false"

@@ -3,12 +3,6 @@ import NavMain from "@/components/navigation/NavMain.vue";
 import NavShortcuts from "@/components/navigation/NavShortcuts.vue";
 import { Button } from "@/components/ui/button";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { Kbd } from "@/components/ui/kbd";
-import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -19,10 +13,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  commandCenterHotkeyLabel,
-  useCommandCenter,
-} from "@/composables/useCommandCenter";
 import { eventbus } from "@/plugins/eventbus";
 import { haState } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
@@ -99,15 +89,10 @@ const sections = computed(() => {
 const { toggleSidebar, setOpen, setOpenMobile, state, isMobile } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
 
-const { open: openCommandCenter } = useCommandCenter();
-
+// mobile drawer only: desktop opens the palette from the header search
 const onSearchClick = function () {
-  if (isMobile.value) {
-    setOpenMobile(false);
-    router.push({ name: "search" });
-    return;
-  }
-  openCommandCenter();
+  setOpenMobile(false);
+  router.push({ name: "search" });
 };
 
 // Editing needs the full (labeled) menu, so pop the sidebar open when edit
@@ -156,29 +141,10 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-        <SidebarMenuItem class="group-data-[collapsible=icon]:hidden">
-          <InputGroup class="cursor-pointer" @click="onSearchClick">
-            <InputGroupInput
-              readonly
-              class="cursor-pointer"
-              :placeholder="t('search')"
-              :aria-label="t('search')"
-              @keydown.enter="onSearchClick"
-            />
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-            <InputGroupAddon v-if="!isMobile" align="inline-end">
-              <Kbd>{{ commandCenterHotkeyLabel }}</Kbd>
-            </InputGroupAddon>
-          </InputGroup>
-        </SidebarMenuItem>
-        <SidebarMenuItem class="hidden group-data-[collapsible=icon]:block">
-          <SidebarMenuButton
-            class="sidebar-search-collapsed"
-            :tooltip="t('search')"
-            @click="onSearchClick"
-          >
+        <!-- mobile: the header search overlay is desktop-only, so the drawer
+             keeps its own entry to the search page -->
+        <SidebarMenuItem v-if="isMobile">
+          <SidebarMenuButton :tooltip="t('search')" @click="onSearchClick">
             <Search />
             <span>{{ t("search") }}</span>
           </SidebarMenuButton>
@@ -336,24 +302,6 @@ onUnmounted(() => {
     width: 1.4rem !important;
     height: 1.4rem !important;
   }
-}
-
-:deep([data-sidebar="menu-button"].sidebar-search-collapsed > svg) {
-  width: 1.2rem !important;
-  height: 1.2rem !important;
-  margin-right: 0 !important;
-}
-
-:deep([data-sidebar="menu-button"].sidebar-search-collapsed) {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  justify-content: center !important;
-  background: transparent;
-  border: none;
-}
-
-:deep([data-sidebar="menu-button"].sidebar-search-collapsed > span) {
-  display: none !important;
 }
 </style>
 

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Toolbar :icon="Settings">
+    <Toolbar :icon="Settings" show-search>
       <template #title>
         <ToolbarHeading
           :title="t('settings.settings')"

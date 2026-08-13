@@ -26,6 +26,15 @@
       </div>
     </template>
 
+    <!-- centered palette trigger for page-level toolbars (desktop only).
+         Placement is pure utilities: InputGroup's own classes carry w-full
+         and relative as important utilities, so scoped CSS would lose —
+         these displace them via the class merge instead. -->
+    <HeaderSearch
+      v-if="showSearch && !store.mobileLayout"
+      class="absolute top-1/2 left-1/2 z-[1] w-[min(400px,40vw)] -translate-x-1/2 -translate-y-1/2"
+    />
+
     <template v-if="$slots.append || menuItems?.length" #append>
       <slot name="append"></slot>
       <v-btn
@@ -133,11 +142,11 @@
 </template>
 
 <script setup lang="ts">
+import HeaderSearch from "@/components/HeaderSearch.vue";
 import {
   menuItemLabel,
   type ContextMenuItem,
 } from "@/helpers/context_menu_item";
-import { api } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { getBreakpointValue } from "../plugins/breakpoint";
@@ -189,6 +198,9 @@ interface Props {
   menuActive?: boolean;
   isDiscoverPage?: boolean;
   iconAction?: () => void;
+  // centered search field opening the command palette; page-level toolbars
+  // opt in so embedded toolbars (chapters, dialogs, ...) stay clean
+  showSearch?: boolean;
 }
 withDefaults(defineProps<Props>(), {
   color: "transparent",
@@ -200,6 +212,7 @@ withDefaults(defineProps<Props>(), {
   enforceOverflowMenu: false,
   menuActive: false,
   iconAction: undefined,
+  showSearch: false,
 });
 
 // emitters
