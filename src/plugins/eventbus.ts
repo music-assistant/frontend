@@ -63,6 +63,10 @@ export type AudioOverlayDialogEvent = {
   queueId: string;
 };
 
+export type PlayAnnouncementDialogEvent = {
+  playerId: string;
+};
+
 // Launches the setup flow dialog for one of: adding a provider (by domain),
 // reconfiguring a provider instance, or setting up a player.
 export type SetupFlowDialogEvent =
@@ -85,6 +89,7 @@ export type Events = {
   importPlaylistDialog: ImportPlaylistEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
+  playAnnouncementDialog: PlayAnnouncementDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

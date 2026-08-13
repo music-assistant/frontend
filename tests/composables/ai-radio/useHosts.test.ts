@@ -81,6 +81,7 @@ const player = {
   player_id: "kitchen",
   type: PlayerType.PLAYER,
   power_control: PLAYER_CONTROL_NONE,
+  supported_features: [],
   source_list: [],
   sound_mode_list: [],
   options: [],

@@ -15,6 +15,7 @@ import { ApiCommandError } from "./errors";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
+  type AnnouncementTtsEngine,
   type Artist,
   type AuthToken,
   type BackgroundTask,
@@ -1890,6 +1891,43 @@ export class MusicAssistantApi {
     });
   }
 
+  public playerCommandPlayAnnouncement(
+    playerId: string,
+    message: string,
+    options?: {
+      preAnnounce?: boolean;
+      volumeLevel?: number;
+      ttsEngine?: string;
+    },
+  ): Promise<void> {
+    /*
+      Handle PLAY_ANNOUNCEMENT on given player.
+          - playerId: playerId of the player to handle the command.
+          - message: text to speak as the announcement.
+          - options.preAnnounce: play the chime before the message.
+          - options.volumeLevel: volume level to play the announcement at.
+          - options.ttsEngine: uid of the engine that speaks the message.
+      Omitted options fall back to the player's announcement settings.
+    */
+    return this.playerCommand(playerId, "play_announcement", {
+      message,
+      pre_announce: options?.preAnnounce,
+      volume_level: options?.volumeLevel,
+      tts_engine: options?.ttsEngine,
+    });
+  }
+
+  public getAnnouncementTtsEngines(): Promise<AnnouncementTtsEngine[]> {
+    /*
+      Get the TTS engines that can speak an announcement.
+      Prefetched in the background, so a failure is not worth a toast:
+      it leaves the announcement entry hidden until a later attempt.
+    */
+    return this.sendCommand("players/tts_engines", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
   public playerCommand(
     player_id: string,
     command: string,
@@ -2143,7 +2181,7 @@ export class MusicAssistantApi {
   public async getPlayerConfigValue(
     player_id: string,
     key: string,
-  ): Promise<PlayerConfig> {
+  ): Promise<ConfigValueType> {
     // Return single configentry value for a player.
     return this.sendCommand("config/players/get_value", { player_id, key });
   }

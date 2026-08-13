@@ -4,19 +4,21 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import {
   Player,
+  PlayerFeature,
   PlayerQueue,
   PlayerType,
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
+import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import {
   toggleVisualizerForPlayer,
   visualizerEnabledForPlayer,
 } from "@/composables/visualizer/useVisualizer";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
-import { Droplet, Sparkles } from "@lucide/vue";
+import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
 import { markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
@@ -169,6 +171,22 @@ export const getPlayerMenuItems = (
       icon: "mdi-waveform",
       selected: playerQueue.overlay_enabled,
     });
+  }
+
+  // play announcement (both menus; the server announces on any player, natively or
+  // through its own fallback, so this only needs a TTS engine to speak the message)
+  if (player.type !== PlayerType.PROTOCOL) {
+    const { announcementAvailable, openAnnouncementDialog } = useAnnouncement();
+    if (announcementAvailable.value) {
+      menuItems.push({
+        label: "play_announcement",
+        labelArgs: [],
+        action: () => {
+          openAnnouncementDialog(player.player_id);
+        },
+        icon: markRaw(Megaphone),
+      });
+    }
   }
 
   // transfer queue (both menus; only when the queue is the active source)
