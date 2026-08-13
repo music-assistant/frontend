@@ -131,15 +131,11 @@
   color: var(--muted-foreground) !important;
 }
 
-/* the ghost variant paints a hover background as well as a colour. Tailwind gates
-   its hover: utilities behind @media (hover: hover), so unlike the colour above
-   this only reaches devices carrying a pointer, where a tap can still leave the
-   button hovered. The dark utility carries the extra .dark, so clearing the pill
-   needs the :hover here to outweigh both. A showing popout keeps its pill. */
-.player-control-button[data-suppress-hover="true"]:hover:not(
-    [data-active="true"],
-    [data-state="open"]
-  ) {
+/* the ghost variant paints a hover background as well as a colour. These buttons
+   carry their state in the colour and the weight alone, so the pill goes in
+   every state. :root lifts this over the equally-!important dark hover utility,
+   which brings an extra .dark of its own. */
+:root .player-control-button:hover {
   background-color: transparent !important;
 }
 
@@ -147,6 +143,17 @@
 .player-control-button[data-active="true"],
 .player-control-button[data-state="open"] {
   color: var(--primary) !important;
+}
+
+/* the label takes the weight that goes with the active colour, as it does in the
+   mobile navigation. :root lifts these over the player bar's own scoped rule,
+   which sets the resting weight at the same specificity. */
+:root
+  .player-control-button:hover:not([data-suppress-hover="true"])
+  .player-bar-action-label,
+:root .player-control-button[data-active="true"] .player-bar-action-label,
+:root .player-control-button[data-state="open"] .player-bar-action-label {
+  font-weight: 600;
 }
 
 .modal-backdrop {
