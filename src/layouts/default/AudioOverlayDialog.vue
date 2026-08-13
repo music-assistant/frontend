@@ -80,6 +80,32 @@
             @update:model-value="onVolumeInput"
           />
         </div>
+
+        <!-- user-added custom sounds on the ambient sounds provider -->
+        <div v-if="ambientSoundsAvailable" class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <Label>{{ $t("audio_overlay_custom_sounds") }}</Label>
+            <Button variant="ghost" size="sm" @click="onAddSound">
+              <Plus />
+              {{ $t("add") }}
+            </Button>
+          </div>
+          <div
+            v-for="sound in customSounds"
+            :key="sound.item_id"
+            class="flex items-center justify-between gap-2"
+          >
+            <span class="truncate text-sm">{{ sound.name }}</span>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('remove')"
+              @click="onRemoveSound(sound)"
+            >
+              <Trash2 />
+            </Button>
+          </div>
+        </div>
       </div>
 
       <DialogFooter>
@@ -89,11 +115,15 @@
       </DialogFooter>
     </DialogContent>
   </Dialog>
+
+  <AddAmbientSoundDialog v-model="showAddSoundDialog" />
 </template>
 
 <script setup lang="ts">
+import { Plus, Trash2 } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
+import AddAmbientSoundDialog from "@/components/AddAmbientSoundDialog.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -116,15 +146,23 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import api from "@/plugins/api";
+import type { SoundEffect } from "@/plugins/api/interfaces";
 import { type AudioOverlayDialogEvent, eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
 const VOLUME_DEBOUNCE_MS = 300;
 
-const { soundEffects, loading, loadSoundEffects } = useAudioOverlay();
+const {
+  soundEffects,
+  loading,
+  loadSoundEffects,
+  ambientSoundsAvailable,
+  isCustomAmbientSound,
+} = useAudioOverlay();
 
 const showDialog = ref(false);
+const showAddSoundDialog = ref(false);
 // force Dialog remount via dynamic key to prevent the enter animation from
 // stalling at opacity:0 when opened from a context menu
 const dialogKey = ref(0);
@@ -139,6 +177,9 @@ const queue = computed(() =>
 );
 const enabled = computed(() => queue.value?.overlay_enabled ?? false);
 const selectedSource = computed(() => queue.value?.overlay_source?.uri ?? "");
+const customSounds = computed(() =>
+  soundEffects.value.filter(isCustomAmbientSound),
+);
 
 watch(
   () => queue.value?.overlay_volume,
@@ -173,6 +214,29 @@ const onSelectSource = (uri: string) => {
 const onToggleEnabled = (value: boolean) => {
   if (!queueId.value) return;
   api.queueCommandOverlay(queueId.value, { enabled: value });
+};
+
+const onAddSound = () => {
+  // swap dialogs instead of stacking them: the overlay dialog's forced
+  // remount (dynamic key) makes its portal win the z-order fight, so hide it
+  // while the add dialog is open and restore it afterwards
+  showDialog.value = false;
+  showAddSoundDialog.value = true;
+};
+
+watch(showAddSoundDialog, (open) => {
+  if (open) return;
+  loadSoundEffects();
+  dialogKey.value++;
+  showDialog.value = true;
+});
+
+const onRemoveSound = async (sound: SoundEffect) => {
+  try {
+    await api.removeAmbientSound(sound.item_id);
+  } finally {
+    loadSoundEffects();
+  }
 };
 
 const onVolumeInput = (values: number[] | undefined) => {
