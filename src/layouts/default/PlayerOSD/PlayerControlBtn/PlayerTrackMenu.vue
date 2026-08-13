@@ -1,6 +1,9 @@
 <template>
+  <!-- reka keeps the open state; mirroring it rather than controlling it means
+       the v-if unmounting the menu while open cannot re-open it on remount -->
   <DropdownMenu
     v-if="forceVisible || (store.activePlayer && (currentItem || showQueue))"
+    @update:open="menuOpen = $event"
   >
     <DropdownMenuTrigger as-child>
       <Button
@@ -10,8 +13,10 @@
             ? 'player-control-button size-12 rounded-full p-0'
             : 'player-control-button player-bar-action player-bar-menu-button h-20 w-12 rounded-none px-1'
         "
+        :data-suppress-hover="suppressHover"
         :title="$t('more_options')"
         :aria-label="$t('tooltip.more_options')"
+        @pointerenter="releaseHover"
       >
         <template v-if="compact">
           <EllipsisVertical :stroke-width="1.5" class="size-6" />
@@ -113,6 +118,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
+import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
 import { queueItemPlaybackSpeed } from "@/helpers/elapsed";
 import {
   isPlayerQueueControlDisabled,
@@ -164,6 +170,10 @@ withDefaults(
   },
 );
 
+const menuOpen = ref(false);
+const { suppressHover, releaseHover } = usePopoutTriggerHover(
+  () => menuOpen.value,
+);
 const playbackSpeedDialogOpen = ref(false);
 const currentPlaybackSpeed = ref<number>(1);
 const queueDisabled = computed(isPlayerQueueControlDisabled);
