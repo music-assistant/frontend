@@ -7,11 +7,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { apiMock, storeMock, toastSuccess } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
+    baseUrl: "https://music.example",
+    isRemoteConnection: { value: false },
     playerCommandPlayAnnouncement: vi.fn(),
     getPlayerConfigValue: vi.fn(),
   },
   storeMock: {
     dialogActive: false,
+    isIngressSession: false,
   },
   toastSuccess: vi.fn(),
 }));
@@ -32,8 +35,27 @@ vi.mock("@/plugins/i18n", () => ({
 vi.mock("vue-sonner", () => ({
   toast: {
     success: toastSuccess,
+    error: vi.fn(),
   },
 }));
+
+function withMicrophone(): void {
+  Object.defineProperty(window, "isSecureContext", {
+    value: true,
+    configurable: true,
+  });
+  Object.defineProperty(navigator, "mediaDevices", {
+    value: { getUserMedia: vi.fn() },
+    configurable: true,
+  });
+}
+
+function withoutMicrophone(): void {
+  Object.defineProperty(navigator, "mediaDevices", {
+    value: undefined,
+    configurable: true,
+  });
+}
 
 const passthroughStub = { template: "<div><slot /></div>" };
 const ButtonStub = {
@@ -62,6 +84,14 @@ const SwitchStub = {
   `,
 };
 
+function speakTab(wrapper: ReturnType<typeof mountDialog>) {
+  const tab = wrapper
+    .findAll("button")
+    .find((button) => button.text() === "play_announcement_mode_speak");
+  if (!tab) throw new Error("speak tab not rendered");
+  return tab;
+}
+
 function mountDialog() {
   return mount(PlayAnnouncementDialog, {
     global: {
@@ -87,8 +117,10 @@ describe("PlayAnnouncementDialog", () => {
     apiMock.players = {
       kitchen: { player_id: "kitchen", name: "Kitchen" } as Player,
     };
+    apiMock.isRemoteConnection.value = false;
     storeMock.dialogActive = false;
     apiMock.getPlayerConfigValue.mockResolvedValue(true);
+    withoutMicrophone();
   });
 
   it("speaks the trimmed message with the chime enabled by default", async () => {
@@ -196,6 +228,56 @@ describe("PlayAnnouncementDialog", () => {
       "Dinner is ready",
       { preAnnounce: false },
     );
+  });
+
+  it("keeps the microphone out of the dialog when it cannot be used", async () => {
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("play_announcement_mode_speak");
+    expect(
+      wrapper.find('[aria-label="play_announcement_hold_to_speak"]').exists(),
+    ).toBe(false);
+  });
+
+  it("offers the microphone as a second way to announce", async () => {
+    withMicrophone();
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("play_announcement_mode_speak");
+    // typing stays the default, so the dialog opens unchanged
+    expect(wrapper.find("textarea").exists()).toBe(true);
+
+    // reka-ui switches tabs on mousedown, not on click
+    await speakTab(wrapper).trigger("mousedown", { button: 0 });
+
+    expect(wrapper.find("textarea").exists()).toBe(false);
+    expect(
+      wrapper.find('[aria-label="play_announcement_hold_to_speak"]').exists(),
+    ).toBe(true);
+    expect(
+      wrapper
+        .findAll("button")
+        .some(
+          (button) => button.attributes("form") === "play-announcement-form",
+        ),
+    ).toBe(false);
+  });
+
+  it("does not offer the microphone on a remote connection", async () => {
+    withMicrophone();
+    apiMock.isRemoteConnection.value = true;
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("play_announcement_mode_speak");
   });
 
   it("does not carry the previous message over to the next announcement", async () => {
