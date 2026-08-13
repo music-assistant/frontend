@@ -143,6 +143,7 @@ onUnmounted(() => {
         :label-hidden="sections.explore.labelHidden"
         section-id="explore"
         :edit-mode="editMode"
+        class="mt-1"
       />
       <NavMain
         :items="libraryItems"
