@@ -555,7 +555,9 @@ const onTouchMove = (event: TouchEvent) => {
   }
 
   if (!isDrag.value && !isScrolling.value) {
-    if (absDeltaY > 10 && absDeltaY > absDeltaX * 2) {
+    // A non-cancelable move means the browser already owns the gesture (panning
+    // the group popout), so a drag from here would fight a scroll it cannot stop
+    if (!event.cancelable || (absDeltaY > 10 && absDeltaY > absDeltaX * 2)) {
       isScrolling.value = true;
       displayValue.value = touchStartValue.value;
       emit("update:local-value", touchStartValue.value);
@@ -907,6 +909,14 @@ watch(
   overflow-y: auto;
   overscroll-behavior: contain;
   z-index: 10001;
+}
+
+/* touch-action is intersected from the touched row up to the scroll container,
+   so the rows have to allow the vertical pan themselves; horizontal drags still
+   reach onTouchMove, which claims them. The wrapper is named as well, to
+   out-rank the scoped rule whichever of the two blocks loads last. */
+.group-popout .player-volume-wrapper .player-volume-container {
+  touch-action: pan-y;
 }
 
 .group-popout-row {

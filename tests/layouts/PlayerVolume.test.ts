@@ -417,6 +417,38 @@ describe("PlayerVolume group popout", () => {
     return document.body.querySelector<HTMLElement>(".group-popout")!;
   }
 
+  // a diagonal swipe the browser may claim for the popout's own scrolling: far
+  // enough sideways to read as a slider drag, but not steep enough for the
+  // component's own scroll detection to catch it
+  const DIAGONAL = { from: { x: 150, y: 100 }, to: { x: 190, y: 116 } };
+  // where DIAGONAL.to lands on the mocked slider, rounded to the default step
+  const DRAGGED_VOLUME = 46;
+
+  function touchEvent(type: string, x: number, y: number, cancelable = true) {
+    const event = new Event(type, { bubbles: true, cancelable });
+    const touch = { clientX: x, clientY: y };
+    return Object.assign(event, { touches: [touch], changedTouches: [touch] });
+  }
+
+  // the first row's player, whose id mountLargeGroup derives from its name
+  function firstRow(popout: HTMLElement) {
+    const row = popout.querySelector<HTMLElement>(".group-popout-row")!;
+    const name = row.querySelector(".group-popout-label")!.textContent!.trim();
+    return {
+      container: row.querySelector<HTMLElement>(".player-volume-container")!,
+      level: () => row.querySelector(".volume-level-text")!.textContent!.trim(),
+      playerId: name.toLowerCase(),
+    };
+  }
+
+  async function swipeRow(row: HTMLElement, cancelable: boolean) {
+    const { from, to } = DIAGONAL;
+    row.dispatchEvent(touchEvent("touchstart", from.x, from.y));
+    row.dispatchEvent(touchEvent("touchmove", to.x, to.y, cancelable));
+    row.dispatchEvent(touchEvent("touchend", to.x, to.y));
+    await nextTick();
+  }
+
   it("caps the popout at the room above the slider", async () => {
     const { children, wrapper } = mountLargeGroup();
 
@@ -466,6 +498,44 @@ describe("PlayerVolume group popout", () => {
     row.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("nests the rows the way the touch-action override selects them", async () => {
+    const { wrapper } = mountLargeGroup();
+
+    const popout = await openPopout(wrapper);
+
+    // the override in the component's unscoped block names the wrapper as well,
+    // to out-rank the scoped rule; flattening a row would silently drop it
+    expect(
+      popout.querySelector(
+        ".group-popout .player-volume-wrapper .player-volume-container",
+      ),
+    ).not.toBeNull();
+  });
+
+  it("leaves a pan the browser already owns to scroll the popout", async () => {
+    const { wrapper } = mountLargeGroup();
+    const row = firstRow(await openPopout(wrapper));
+
+    await swipeRow(row.container, false);
+
+    expect(api.playerCommandVolumeSet).not.toHaveBeenCalled();
+    // the slider must not have followed the finger on its way past either
+    expect(row.level()).toBe("25");
+  });
+
+  it("still drags a popout row's volume while it can claim the gesture", async () => {
+    const { wrapper } = mountLargeGroup();
+    const row = firstRow(await openPopout(wrapper));
+
+    await swipeRow(row.container, true);
+
+    expect(api.playerCommandVolumeSet).toHaveBeenCalledWith(
+      row.playerId,
+      DRAGGED_VOLUME,
+    );
+    expect(row.level()).toBe(String(DRAGGED_VOLUME));
   });
 
   it("still claims the wheel where it changes volume", async () => {
