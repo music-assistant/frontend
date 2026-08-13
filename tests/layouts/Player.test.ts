@@ -1,6 +1,7 @@
 import Player from "@/layouts/default/PlayerOSD/Player.vue";
 import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "@/layouts/default/PlayerOSD/PlayerBarMobileVolumeSheet.vue";
+import PlayerExtendedControls from "@/layouts/default/PlayerOSD/PlayerExtendedControls.vue";
 import PlayerTrackDetails from "@/layouts/default/PlayerOSD/PlayerTrackDetails.vue";
 import PlayerTrackMenu from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayerTrackMenu.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
@@ -43,6 +44,9 @@ const mockStore = store as unknown as {
 // bp12: the width from which the floating row has room for the track menu
 const TRACK_MENU_BREAKPOINT = 415;
 
+// bp7: the width from which the desktop action row has room for the sleep timer
+const SLEEP_TIMER_BREAKPOINT = 1100;
+
 const originalInnerWidth = Object.getOwnPropertyDescriptor(
   window,
   "innerWidth",
@@ -71,18 +75,18 @@ function mountPlayer(useFloatingPlayer: boolean) {
   return wrapper;
 }
 
-describe("Player floating mobile bar", () => {
-  afterEach(() => {
-    wrapper?.unmount();
-    wrapper = undefined;
-    mockStore.activePlayer = undefined;
-    mockStore.activePlayerId = undefined;
-    if (originalInnerWidth) {
-      Object.defineProperty(window, "innerWidth", originalInnerWidth);
-    }
-    window.dispatchEvent(new Event("resize"));
-  });
+afterEach(() => {
+  wrapper?.unmount();
+  wrapper = undefined;
+  mockStore.activePlayer = undefined;
+  mockStore.activePlayerId = undefined;
+  if (originalInnerWidth) {
+    Object.defineProperty(window, "innerWidth", originalInnerWidth);
+  }
+  window.dispatchEvent(new Event("resize"));
+});
 
+describe("Player floating mobile bar", () => {
   it("carries the grouping control, the volume slider and its sheet", () => {
     mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
     const player = mountPlayer(true);
@@ -120,15 +124,6 @@ describe("Player floating mobile bar", () => {
     expect(player.findComponent(PlayerVolume).exists()).toBe(true);
   });
 
-  it("leaves the desktop player outside the floating container", () => {
-    const player = mountPlayer(false);
-
-    expect(player.find(".mediacontrols-mobile-container").exists()).toBe(false);
-    expect(player.find(".mediacontrols-bg").attributes("data-floating")).toBe(
-      "false",
-    );
-  });
-
   it("closes an open volume sheet when the active player changes", async () => {
     mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
     mockStore.activePlayerId = "p1";
@@ -148,5 +143,29 @@ describe("Player floating mobile bar", () => {
     expect(player.findComponent(PlayerBarMobileVolumeSheet).props("open")).toBe(
       false,
     );
+  });
+});
+
+describe("Player desktop bar", () => {
+  it("leaves the desktop player outside the floating container", () => {
+    const player = mountPlayer(false);
+
+    expect(player.find(".mediacontrols-mobile-container").exists()).toBe(false);
+    expect(player.find(".mediacontrols-bg").attributes("data-floating")).toBe(
+      "false",
+    );
+  });
+
+  it.each([
+    { width: SLEEP_TIMER_BREAKPOINT, visible: true },
+    { width: SLEEP_TIMER_BREAKPOINT - 1, visible: false },
+  ])("offers the sleep timer at $width px: $visible", ({ width, visible }) => {
+    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
+    setViewportWidth(width);
+    const player = mountPlayer(false);
+
+    expect(
+      player.findComponent(PlayerExtendedControls).props("sleepTimer"),
+    ).toEqual({ isVisible: visible });
   });
 });

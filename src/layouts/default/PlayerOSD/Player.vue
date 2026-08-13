@@ -62,7 +62,10 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- player extended control buttons -->
+          <!-- player extended control buttons. Below 1100px the bar drops to
+               its compact widths and the sleep timer goes with them, leaving
+               the countdown to the full screen player and the player card's
+               menu; it has no room of its own on the narrowest bars. -->
           <PlayerExtendedControls
             :favorite="{
               isVisible: false,
@@ -77,6 +80,9 @@
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
+            }"
+            :sleep-timer="{
+              isVisible: getBreakpointValue('bp7'),
             }"
           />
         </div>
@@ -438,6 +444,37 @@ watch(
   .mediacontrols :deep(.player-bar-player-button) {
     min-width: 96px !important;
     max-width: clamp(96px, 10vw - 14px, 176px);
+  }
+}
+
+/* the sleep timer joins the actions as a fifth control, which the widths above
+   do not budget for: they need a bar of about 1221px before the five of them
+   fit, and until then the timer reaches over the timeline. So while one runs
+   the actions take the widths they use below 1100px, which fit from 1034px up.
+   The full widths take over again at 1250px, where they clear the timeline by
+   about 9px - the tightest the row gets, so a sixth control or a wider button
+   would have to raise this bound with it. */
+@media screen and (min-width: 1100px) and (max-width: 1249px) {
+  .mediacontrols :deep(.player-bar-action-row:has(.player-bar-sleep-timer)) {
+    .player-bar-menu-button {
+      width: 40px !important;
+    }
+
+    .player-bar-volume-button {
+      width: 56px !important;
+    }
+
+    /* the floor these two carry above 1100px would outrank the width, so it
+       has to be reset for the width to take effect */
+    .player-bar-group-button {
+      width: 60px !important;
+      min-width: 0 !important;
+    }
+
+    .player-bar-player-button {
+      width: 68px !important;
+      min-width: 0 !important;
+    }
   }
 }
 
