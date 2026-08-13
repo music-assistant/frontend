@@ -96,12 +96,28 @@
         <Label>{{ $t("providers.ai_radio.fields.prompt") }}</Label>
         <Textarea v-model="prompt" rows="4" class="text-sm" />
         <p class="text-xs text-muted-foreground">
-          {{
-            $t("providers.ai_radio.customize.prompt_placeholders_hint", {
-              placeholders: PROMPT_PLACEHOLDERS.join(", "),
-            })
-          }}
+          {{ $t("providers.ai_radio.customize.prompt_placeholders_label") }}
         </p>
+        <div class="flex flex-wrap gap-1.5">
+          <Badge
+            v-for="token in PROMPT_PLACEHOLDERS"
+            :key="token"
+            as="button"
+            type="button"
+            variant="outline"
+            class="cursor-pointer font-mono hover:bg-accent hover:text-accent-foreground"
+            :aria-label="
+              $t('providers.ai_radio.customize.prompt_placeholder_copy_aria', [
+                token,
+              ])
+            "
+            @click="copyPlaceholder(token)"
+          >
+            {{ token }}
+            <Check v-if="copiedToken === token" />
+            <Copy v-else />
+          </Badge>
+        </div>
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
@@ -156,6 +172,7 @@
 </template>
 
 <script setup lang="ts">
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -179,10 +196,12 @@ import {
   type PlaysRule,
   type ShowSegment,
 } from "@/helpers/ai_radio";
+import { copyToClipboard } from "@/helpers/utils";
 import type { AIRadioWebSearchMode } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ChevronDown, ChevronUp, Trash2 } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { Check, ChevronDown, ChevronUp, Copy, Trash2 } from "@lucide/vue";
+import { computed, onUnmounted, ref } from "vue";
+import { toast } from "vue-sonner";
 
 // listed literally so translators never handle raw <placeholder> markup
 const PROMPT_PLACEHOLDERS = [
@@ -206,6 +225,32 @@ const emit = defineEmits<{
 }>();
 
 const expanded = ref(false);
+
+const COPIED_FEEDBACK_MS = 1500;
+const copiedToken = ref<string | null>(null);
+let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+
+async function copyPlaceholder(token: string) {
+  const success = await copyToClipboard(token);
+  if (!success) {
+    toast.error(
+      $t("providers.ai_radio.customize.prompt_placeholder_copy_failed", [
+        token,
+      ]),
+    );
+    return;
+  }
+  toast.success(
+    $t("providers.ai_radio.customize.prompt_placeholder_copied", [token]),
+  );
+  clearTimeout(copiedTimer);
+  copiedToken.value = token;
+  copiedTimer = setTimeout(() => {
+    copiedToken.value = null;
+  }, COPIED_FEEDBACK_MS);
+}
+
+onUnmounted(() => clearTimeout(copiedTimer));
 
 const DEFAULT_EVERY_N_SONGS = 3;
 const DEFAULT_EVERY_N_MIN = 60;
