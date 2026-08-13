@@ -43,7 +43,10 @@ const close = async () => {
   z-index: 2002;
   text-align: left;
   box-shadow: 3px 4px 5px 0 #8885;
-  background-color: white;
+  /* The same tokens the app's other toasts take, so it follows the theme. The
+     buttons below inherit the text colour from here. */
+  background-color: var(--popover);
+  color: var(--popover-foreground);
 }
 
 /* Without the app frame there are no bars to clear, only the screen's own
