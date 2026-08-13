@@ -22,9 +22,11 @@ const INSET_BOTTOM = "11px";
 // from the wrong one cannot read as the right number.
 const BARS_HEIGHT = "158px";
 
-// A scoped block arrives here without the [data-v-hash] compound the compiler
-// pairs each of its selectors with, so it is a rank short of what ships. The
-// utilities load first below to stand in for the tie that rank settles.
+// The unscoped blocks ship as written; a scoped one arrives without the
+// [data-v-hash] compound the compiler pairs each of its selectors with, so it
+// is a rank short. The utilities load first below to stand in for that rank,
+// which is why the order here is the opposite of mobileNavigationHeight's -
+// that bar declares its rules unscoped, so it can be held to the harder one.
 function extractStyle(source: string) {
   return source.match(/<style(?: scoped)?>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }
@@ -48,10 +50,12 @@ function dialogContentClasses(className: string) {
   return cn(base, className);
 }
 
+// each pattern stops at the tag's own `>`, so a tag that stops carrying a
+// static class list throws rather than reaching on to the next element's
 const PLAYBACK_SPEED_DIALOG = dialogContentClasses(
   templateClasses(
     playerTrackMenuSource,
-    /<DialogContent[\s\S]*?\sclass="([^"]*)"/,
+    /<DialogContent[^>]*\sclass="([^"]*)"/,
   ),
 );
 // a Button merges the classes it is passed onto its own, and its variants are
@@ -73,8 +77,10 @@ function normalize(value: string) {
 const appStyles: HTMLStyleElement[] = [];
 let utilityStyles: HTMLStyleElement;
 
-// an override proves nothing unless the ui component's own utilities really do
-// set the property, and set it !important
+// an override proves nothing unless a utility on the element really does set
+// the property, and set it !important. Only the top level is read: a utility
+// nested in a media query is a competitor at some widths, and what has to be
+// there is one that competes at every width.
 function expectUtilitiesCompete(element: Element, property: string) {
   const priorities = [...(utilityStyles.sheet?.cssRules ?? [])]
     .filter((rule) => rule instanceof CSSStyleRule)
@@ -87,7 +93,7 @@ function expectUtilitiesCompete(element: Element, property: string) {
 
   expect(
     priorities,
-    `the component the element is built from must keep setting ${property}`,
+    `a utility the element carries has to keep setting ${property}`,
   ).not.toHaveLength(0);
   expect(
     [...new Set(priorities)],
@@ -173,9 +179,9 @@ describe("home screen edit button", () => {
   it("keeps its pill shape against the corners every button gets", () => {
     const element = render(homeViewSource, EDIT_DONE);
 
-    // happy-dom keeps no declaration for the border-radius shorthand the
-    // variants carry, so the competition is only observable in the value: a
-    // pill that loses reads as the radius token every other button takes
+    // the radius the variants carry is a calc() holding a var(), which
+    // happy-dom drops from the CSSOM, so the competition is only observable in
+    // the value: a pill that loses reads as the token every other button takes
     expect(getComputedStyle(element).borderRadius).toBe("999px");
   });
 });
