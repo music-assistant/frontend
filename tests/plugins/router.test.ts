@@ -1,4 +1,5 @@
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import { ConnectionState } from "@/plugins/api";
 import { routes } from "@/plugins/router";
 import type {
@@ -410,6 +411,35 @@ describe("global navigation guard", () => {
 
     expect(pending.isSettled()).toBe(true);
     await expect(pending.result).resolves.toBeUndefined();
+  });
+});
+
+describe("media details back button", () => {
+  // A details view opened directly has no history to return to, so the back
+  // button goes up to a listing instead. Both ends of that step are route
+  // names, which this pins to the route table so a rename cannot break it.
+  it.each([
+    "album",
+    "artist",
+    "audiobook",
+    "collection",
+    "genre",
+    "playlist",
+    "podcast",
+    "radio",
+    "track",
+  ])("goes up from %s to a route that exists", (details) => {
+    const push = vi.fn<(to: { name: string }) => void>();
+    backFromMediaDetails({
+      back: vi.fn(),
+      push,
+      currentRoute: { value: { name: details } },
+      options: { history: { state: { back: null } } },
+    } as unknown as Router);
+
+    const [target] = push.mock.calls[0];
+    expect(findRouteRecord(details, routes)?.name).toBe(details);
+    expect(findRouteRecord(target.name, routes)?.name).toBe(target.name);
   });
 });
 

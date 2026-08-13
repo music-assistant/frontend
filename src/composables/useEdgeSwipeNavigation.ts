@@ -3,6 +3,7 @@ import {
   useMobileSidebarSide,
   type MobileSidebarSide,
 } from "@/composables/useMobileSidebarSide";
+import { canGoBack } from "@/helpers/navigation";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -78,7 +79,7 @@ export function useEdgeSwipeNavigation() {
 
     if (opensMenu) {
       setOpenMobile(true);
-    } else if (router.options.history.state.back != null) {
+    } else if (canGoBack(router)) {
       router.back();
     }
   }

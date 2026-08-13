@@ -755,7 +755,6 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to, from) => {
   if (!from?.path) return;
-  store.prevRoute = from.path;
 
   if (store.isIngressSession) {
     notifyHARouteChange(to.fullPath);
