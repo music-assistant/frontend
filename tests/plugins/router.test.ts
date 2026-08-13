@@ -575,6 +575,11 @@ function locationStub() {
       hash = value.startsWith("#") ? value : `#${value}`;
       steps.push("hash");
     },
+    // navigating by URL only moves the fragment, so a recovery doing that names
+    // itself here instead of failing on an empty step list
+    set href(value: string) {
+      steps.push("href");
+    },
     reload: () => {
       steps.push("reload");
     },
