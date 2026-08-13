@@ -62,6 +62,12 @@ function applySafeAreaInsets(insets: Partial<HASafeAreaInsets>): void {
 }
 
 function handleMessage(event: MessageEvent) {
+  // Home Assistant posts to the frame it embeds us in, so anything from another
+  // sender is not it.
+  if (event.source !== window.parent) {
+    return;
+  }
+
   if (event.data?.type === "home-assistant/properties") {
     const oldRoute = state.properties.route?.path;
     state.properties.narrow = event.data.narrow ?? false;

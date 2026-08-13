@@ -289,7 +289,7 @@ const completeInitialization = async () => {
   // Home Assistant pads its ingress iframe for the device safe area, leaving a
   // strip of its own background we cannot reach from in here. Take that padding
   // over so the app runs to the edge of the screen like it does anywhere else.
-  if (store.isIngressSession && serverInfo.homeassistant_addon) {
+  if (store.isIngressSession) {
     subscribeToHAProperties({ handleSafeArea: true });
   }
 

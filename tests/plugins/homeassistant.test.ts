@@ -24,10 +24,16 @@ function readInsets() {
   );
 }
 
-function reportProperties(data: Record<string, unknown>) {
+// Home Assistant posts to the frame it embeds us in, which is what puts itself
+// on the event as the source.
+function reportProperties(
+  data: Record<string, unknown>,
+  source: MessageEventSource | null = window.parent,
+) {
   window.dispatchEvent(
     new MessageEvent("message", {
       data: { type: "home-assistant/properties", narrow: false, ...data },
+      source,
     }),
   );
 }
@@ -45,6 +51,7 @@ describe("Home Assistant safe area", () => {
     // Also resets the module singleton and the tokens for the next test.
     unsubscribeFromHAProperties();
     postMessage.mockRestore();
+    document.querySelector("[data-foreign-frame]")?.remove();
   });
 
   it("asks Home Assistant to hand its safe area padding over", () => {
@@ -93,6 +100,22 @@ describe("Home Assistant safe area", () => {
     subscribeToHAProperties();
 
     reportProperties({ safeAreaInsets: PHONE_INSETS });
+
+    expect(readInsets()).toEqual(["", "", "", ""]);
+  });
+
+  it("ignores properties from anything but the frame it is embedded in", () => {
+    subscribeToHAProperties({ handleSafeArea: true });
+    const foreignFrame = document.createElement("iframe");
+    foreignFrame.dataset.foreignFrame = "";
+    document.body.appendChild(foreignFrame);
+    expect(foreignFrame.contentWindow).toBeTruthy();
+    expect(foreignFrame.contentWindow).not.toBe(window.parent);
+
+    reportProperties(
+      { safeAreaInsets: PHONE_INSETS },
+      foreignFrame.contentWindow,
+    );
 
     expect(readInsets()).toEqual(["", "", "", ""]);
   });
