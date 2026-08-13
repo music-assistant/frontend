@@ -386,6 +386,18 @@ describe("PlayAnnouncementDialog", () => {
     expect(liveMock.stop).not.toHaveBeenCalled();
   });
 
+  it("does not open the microphone on a right click", async () => {
+    withMicrophone();
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+    await speakTab(wrapper).trigger("mousedown", { button: 0 });
+    await micButton(wrapper).trigger("pointerdown", { button: 2 });
+
+    expect(liveMock.start).not.toHaveBeenCalled();
+  });
+
   it("ends a recording that loses focus", async () => {
     withMicrophone();
     const wrapper = mountDialog();

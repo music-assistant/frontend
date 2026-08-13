@@ -217,6 +217,8 @@ onBeforeUnmount(() => {
 });
 
 function onSpeakPointerDown(event: PointerEvent): void {
+  // a right or middle click must not open the microphone
+  if (event.button !== 0) return;
   // keep receiving the release even when the finger slides off the button
   (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
   startSpeaking();
