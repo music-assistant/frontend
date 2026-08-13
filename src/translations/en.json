@@ -2055,6 +2055,7 @@
     "similar_artists": "Similar artists",
     "audio_source": "Audio source",
     "change_playback_speed": "Change playback speed",
+    "playback_speed_value": "{0}x",
     "shortcut": {
         "add_to": "Add to shortcuts",
         "remove_from": "Remove from shortcuts"
