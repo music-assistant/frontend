@@ -430,7 +430,15 @@ const resetToDefaults = function () {
   }
 };
 
-defineExpose({ resetToDefaults });
+/**
+ * Reports a save that did not land, so the values stay guarded and leaving the
+ * screen asks about them again.
+ */
+const saveFailed = function () {
+  allowNavigation.value = false;
+};
+
+defineExpose({ resetToDefaults, saveFailed });
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;

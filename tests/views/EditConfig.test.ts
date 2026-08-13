@@ -413,6 +413,25 @@ describe("EditConfig unsaved changes", () => {
     expect(router.options.history.location).toBe("/settings/provider");
   });
 
+  // saving lets the screen navigate away without asking, but a save that never
+  // landed must not leave the values unguarded
+  it("asks again when the host reports a failed save", async () => {
+    const { router, wrapper } = await mountInRouter();
+    const form = wrapper.findComponent(EditConfig);
+    dirty(wrapper);
+    await nextTick();
+
+    await form.get('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+    form.vm.saveFailed();
+
+    router.push({ name: "music-quiz" });
+    await flushPromises();
+
+    expect(router.currentRoute.value.name).toBe("editprovider");
+    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
+  });
+
   it("lets an unchanged form go without asking", async () => {
     const { router, wrapper } = await mountInRouter();
 

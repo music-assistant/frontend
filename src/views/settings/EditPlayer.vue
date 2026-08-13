@@ -627,6 +627,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   } catch {
     // Error toast is already shown by the API layer (handleResultMessage).
     // We just prevent navigation so the user can correct values.
+    editConfig.value?.saveFailed();
   } finally {
     loading.value = false;
   }
