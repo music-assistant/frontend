@@ -8,17 +8,18 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { SCOPE_COMPOUND, rank, selectorsSetting, styleBlocks } from "./cascade";
 
 let styles: HTMLStyleElement;
+let barStyles: HTMLStyleElement;
 
-// the compiler rewrites `.a :deep(.b)` as `.a[data-v-hash] .b`, so unwrapping
-// the marker leaves a selector that matches; the compound it drops is what
-// SCOPE_COMPOUND credits back when the ranks compare
-function barStyles() {
-  const element = document.createElement("style");
-  element.textContent = styleBlocks(playerSource)
+// The bar declares its styles in scss, which happy-dom parses as plain css: the
+// nested blocks drop out and the resting weight, declared at the top level,
+// survives — which is what the assertion on `resting` below pins. The compiler
+// rewrites `.a :deep(.b)` as `.a[data-v-hash] .b`, so unwrapping the marker
+// leaves a selector that matches, and SCOPE_COMPOUND credits back the compound
+// that unwrapping drops.
+function barSource() {
+  return styleBlocks(playerSource)
     .join("\n")
     .replaceAll(/:deep\(([^)]*)\)/g, "$1");
-  document.head.appendChild(element);
-  return element;
 }
 
 // a player bar action as its components render it
@@ -74,10 +75,14 @@ describe("player control button state", () => {
     styles = document.createElement("style");
     styles.textContent = css;
     document.head.append(styles);
+    barStyles = document.createElement("style");
+    barStyles.textContent = barSource();
+    document.head.append(barStyles);
   });
 
   afterEach(() => {
-    document.head.innerHTML = "";
+    styles.remove();
+    barStyles.remove();
     document.body.innerHTML = "";
   });
 
@@ -124,7 +129,7 @@ describe("player control button state", () => {
       "data-state": "open",
       "data-active": "true",
     }).firstElementChild!;
-    const resting = selectorsSetting(barStyles(), label, "font-weight");
+    const resting = selectorsSetting(barStyles, label, "font-weight");
     const declaring = selectorsSetting(styles, label, "font-weight");
 
     expect(declaring.length).toBeGreaterThan(0);
