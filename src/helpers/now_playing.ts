@@ -85,6 +85,6 @@ export const openCurrentTrackDetails = async function () {
 
   // Not found in library - fall back to global search
   store.globalSearchTerm = searchTerm;
-  router.push({ name: "search" });
   store.showFullscreenPlayer = false;
+  router.push({ name: "search" });
 };

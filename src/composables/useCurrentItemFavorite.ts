@@ -59,6 +59,8 @@ function createCurrentItemFavorite() {
     if (!item) return;
     if (!isFavorite.value) {
       isFavorite.value = true;
+      // this one takes the item, so it marks it itself; removing takes ids
+      // only, which is why the other branch marks it here
       api.addItemToFavorites(item);
       return;
     }

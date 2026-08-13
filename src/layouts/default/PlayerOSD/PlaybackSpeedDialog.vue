@@ -132,7 +132,12 @@ watch(open, (isOpen) => {
   flushPendingSpeed();
 });
 
-onBeforeUnmount(flushPendingSpeed);
+onBeforeUnmount(() => {
+  // the flag is app-wide and nothing else would clear it, so it cannot be left
+  // behind by a host that goes away while this is still showing
+  if (open.value) store.dialogActive = false;
+  flushPendingSpeed();
+});
 </script>
 
 <style scoped>
