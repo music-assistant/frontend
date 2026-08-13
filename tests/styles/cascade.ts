@@ -1,10 +1,10 @@
 /**
  * Helpers for the tests that assert which of two competing CSS rules wins.
  *
- * Reading the winner back off getComputedStyle does not stand in for the
- * shipped cascade here: the raw source these tests inject carries no scope
- * hash, and happy-dom never expands an inset shorthand, so the competing rules
- * are weighed by ranking their selectors instead.
+ * Most of them read the winning value back off getComputedStyle. Where that
+ * cannot settle it — the raw source these tests inject carries no scope hash,
+ * and happy-dom never expands an inset shorthand — the rules are weighed by
+ * ranking their selectors instead.
  */
 
 /**
