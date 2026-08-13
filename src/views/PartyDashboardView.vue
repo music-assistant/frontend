@@ -464,8 +464,8 @@ const goToSettings = () => {
 };
 
 // A frameless session can also be started elsewhere (a dashboard viewer login,
-// a ?frameless deep link), and those are meant to stay frameless, so only the
-// fullscreen this view switched on is its to switch back off again.
+// a ?frameless deep link) and is meant to last, so this view only switches back
+// off the fullscreen it switched on itself.
 let enteredFullscreen = false;
 
 const goFullscreen = (frameless: boolean) => {
