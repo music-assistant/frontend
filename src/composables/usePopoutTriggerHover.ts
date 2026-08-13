@@ -15,16 +15,18 @@ export function usePopoutTriggerHover(isOpen: () => boolean) {
   // genuinely on the button after clicking the popout shut, and a click brings
   // no fresh pointerenter that could say so.
   const suppressHover = ref(false);
-  let hoveredByMouse = false;
+  // a finger landing on the button announces itself with its own pointerenter,
+  // so this needs no clearing when the mouse leaves
+  let lastPointerWasMouse = false;
 
   watch(isOpen, (open) => {
-    if (!open) suppressHover.value = !hoveredByMouse;
+    if (!open) suppressHover.value = !lastPointerWasMouse;
   });
 
   return {
     suppressHover: readonly(suppressHover),
     onPointerEnter: (event: PointerEvent) => {
-      hoveredByMouse = event.pointerType === "mouse";
+      lastPointerWasMouse = event.pointerType === "mouse";
       suppressHover.value = false;
     },
   };
