@@ -9,7 +9,9 @@
       </div>
     </div>
 
-    <div class="min-h-0 space-y-3 overflow-y-auto px-4 pt-3 pb-4">
+    <div
+      class="player-volume-scroller min-h-0 space-y-3 overflow-y-auto px-4 pt-3 pb-4"
+    >
       <template v-if="volumePlayers.length > 0">
         <div
           v-for="volumePlayer in volumePlayers"

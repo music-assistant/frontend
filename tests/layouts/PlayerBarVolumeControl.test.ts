@@ -285,6 +285,24 @@ describe("PlayerBarVolumeControl", () => {
     ).toBe("audio_overlay_volume: 70%");
   });
 
+  it("keeps the volume rows inside the list that scrolls", () => {
+    const child = createPlayer({ player_id: "child", name: "Office" });
+    const parent = createPlayer({
+      group_members: ["parent", child.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [child.player_id]: child,
+    };
+
+    const scroller = mountControl(parent).get(".player-volume-scroller");
+
+    // PlayerVolume grants the rows their vertical pan through this class;
+    // rendering them outside it would silently leave the list unscrollable
+    expect(scroller.classes()).toContain("overflow-y-auto");
+    expect(scroller.findAll(".player-volume")).toHaveLength(3);
+  });
+
   it("keeps every volume label centered without clipping", () => {
     const player = createPlayer({ volume_level: 5 });
     api.players = { [player.player_id]: player };

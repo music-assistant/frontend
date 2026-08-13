@@ -32,10 +32,14 @@ function row() {
   return popout.querySelector(".player-volume-container")!;
 }
 
-function rulesFor(element: Element) {
+// a rule may carry a selector list, of which only some parts land on the row
+function selectorsSettingTouchAction(element: Element) {
   return [...(styles.sheet?.cssRules ?? [])]
     .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
-    .filter((rule) => element.matches(rule.selectorText));
+    .filter((rule) => rule.style.getPropertyValue("touch-action") !== "")
+    .flatMap((rule) => rule.selectorText.split(","))
+    .map((selector) => selector.trim())
+    .filter((selector) => element.matches(selector));
 }
 
 // neither side carries an id or an element name, so counting their class-level
@@ -63,20 +67,18 @@ describe("group volume popout touch-action", () => {
   });
 
   it("keeps the rows panning independently of the stylesheet load order", () => {
-    const declaring = rulesFor(row()).filter(
-      (rule) => rule.style.getPropertyValue("touch-action") !== "",
-    );
+    const declaring = selectorsSettingTouchAction(row());
     const winner =
       ".group-popout .player-volume-wrapper .player-volume-container";
 
-    expect(declaring.map((rule) => rule.selectorText)).toContain(winner);
-    for (const rule of declaring) {
-      if (rule.selectorText === winner) continue;
+    expect(declaring).toContain(winner);
+    for (const selector of declaring) {
+      if (selector === winner) continue;
 
       expect(
         rank(winner),
-        `${rule.selectorText} also sets touch-action on a row, so the override has to out-rank it once scoped`,
-      ).toBeGreaterThan(rank(rule.selectorText) + SCOPE_COMPOUND);
+        `${selector} also sets touch-action on a row, so the override has to out-rank it once scoped`,
+      ).toBeGreaterThan(rank(selector) + SCOPE_COMPOUND);
     }
   });
 });

@@ -913,9 +913,11 @@ watch(
 
 /* touch-action is intersected from the touched row up to the scroll container,
    so the rows have to allow the vertical pan themselves; horizontal drags still
-   reach onTouchMove, which claims them. The wrapper is named as well, to
+   reach onTouchMove, which claims them. A scrolling list outside this component
+   opts in with .player-volume-scroller. The wrapper is named as well, to
    out-rank the scoped rule whichever of the two blocks loads last. */
-.group-popout .player-volume-wrapper .player-volume-container {
+.group-popout .player-volume-wrapper .player-volume-container,
+.player-volume-scroller .player-volume-wrapper .player-volume-container {
   touch-action: pan-y;
 }
 
