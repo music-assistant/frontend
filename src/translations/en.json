@@ -915,6 +915,8 @@
     "recently_played": "Recently played",
     "load_more_items": "Load more items...",
     "radio": "Radio",
+    "dynamic_radio_heading": "Dynamic station",
+    "dynamic_radio_empty_desc": "This station didn't return any tracks. Try again in a moment.",
     "muted": "muted",
     "enter_name": "Enter a new (custom) name",
     "image_url": "Input the URL to an image or icon (optional)",

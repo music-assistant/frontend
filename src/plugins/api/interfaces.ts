@@ -979,7 +979,9 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem {}
+export interface Radio extends MediaItem {
+  is_dynamic: boolean;
+}
 
 export interface SoundEffect extends MediaItem {
   duration: number;
