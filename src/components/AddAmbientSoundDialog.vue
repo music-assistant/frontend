@@ -109,7 +109,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { manualLinkSchema } from "@/lib/forms/manual-link";
-import api from "@/plugins/api";
+import api, { ApiCommandError } from "@/plugins/api";
 import { store } from "@/plugins/store";
 
 const model = defineModel<boolean>();
@@ -160,7 +160,14 @@ const save = async function (value: { url: string; name: string }) {
     model.value = false;
   } catch (e) {
     console.error("Failed to add ambient sound:", e);
-    toast.error(t("audio_overlay_custom_add_failed"));
+    // only a server-side rejection means the url failed the audio probe;
+    // anything else (connection loss, timeout) gets the actual error instead
+    // of misleadingly blaming the url
+    if (e instanceof ApiCommandError) {
+      toast.error(t("audio_overlay_custom_add_failed"));
+    } else {
+      toast.error(String(e));
+    }
   } finally {
     loading.value = false;
   }
