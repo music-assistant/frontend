@@ -109,7 +109,7 @@
             <v-card-title
               v-else-if="store.activePlayer?.current_media?.title"
               :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
-              @click="onTitleClick"
+              @click="openCurrentTrackDetails"
             >
               <MarqueeText :sync="playerMarqueeSync">
                 {{ store.activePlayer.current_media.title }}
@@ -488,6 +488,7 @@ import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   ImageColorPalette,
@@ -902,82 +903,6 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
   }
 };
 
-const onTitleClick = async function () {
-  const currentMedia = store.activePlayer?.current_media;
-  if (!currentMedia) return;
-
-  // Try to get the track from the full media item (for library items)
-  const mediaItem = store.curQueueItem?.media_item;
-
-  if (mediaItem && mediaItem.media_type === MediaType.TRACK) {
-    // Navigate directly to track detail page
-    store.showFullscreenPlayer = false;
-    router.push({
-      name: "track",
-      params: {
-        itemId: mediaItem.item_id,
-        provider: mediaItem.provider,
-      },
-    });
-  } else {
-    // Radio or non-library item - try to find in library first
-    const searchTerm = currentMedia.artist
-      ? `${currentMedia.artist} - ${currentMedia.title}`
-      : currentMedia.title || "";
-
-    try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, provider)
-      const results = await api.getLibraryTracks(
-        undefined, // favorite
-        searchTerm, // search
-        5, // limit - get a few results to find best match
-        undefined,
-        undefined,
-        undefined,
-        undefined, // genre_ids
-      );
-
-      if (results.length > 0) {
-        // Try to find best match by comparing artist and title
-        let bestMatch = results[0];
-
-        if (currentMedia.artist && currentMedia.title) {
-          const exactMatch = results.find(
-            (track) =>
-              track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
-              track.artists.some(
-                (artist) =>
-                  artist.name.toLowerCase() ===
-                  currentMedia.artist!.toLowerCase(),
-              ),
-          );
-          if (exactMatch) {
-            bestMatch = exactMatch;
-          }
-        }
-
-        // Found in library! Navigate to it
-        store.showFullscreenPlayer = false;
-        router.push({
-          name: "track",
-          params: {
-            itemId: bestMatch.item_id,
-            provider: bestMatch.provider,
-          },
-        });
-        return;
-      }
-    } catch (error) {
-      console.error("Error searching library for track:", error);
-    }
-
-    // Not found in library - fall back to global search
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
-    store.showFullscreenPlayer = false;
-  }
-};
-
 const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.album) return;
@@ -1134,6 +1059,16 @@ const onArtistClick = async function () {
 };
 
 const playbackSpeedDialogOpen = ref(false);
+
+// a route change closes the full screen player from under whatever is on top of
+// it, and vuetify then unmounts this card - the dialog has to go first, or it
+// leaves the app-wide dialog flag set and reappears on the next open
+watch(
+  () => store.showFullscreenPlayer,
+  (open) => {
+    if (!open) playbackSpeedDialogOpen.value = false;
+  },
+);
 
 // only audiobooks and podcast episodes carry a per-item playback speed
 const playbackSpeedSupported = computed(() => {

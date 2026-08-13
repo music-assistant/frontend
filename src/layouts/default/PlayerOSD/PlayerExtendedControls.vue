@@ -1,9 +1,6 @@
 <template>
   <div class="player-bar-action-row flex min-w-0 items-center">
-    <SleepTimerBtn
-      v-if="sleepTimer?.isVisible"
-      class="player-bar-sleep-timer"
-    />
+    <SleepTimerBtn v-if="sleepTimer?.isVisible" />
 
     <PlayerBarVolumeControl
       v-if="volume?.isVisible && store.activePlayer"

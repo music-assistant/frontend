@@ -14,6 +14,7 @@ import {
   h,
   inject,
   provide,
+  nextTick,
   ref,
   type InjectionKey,
   type SetupContext,
@@ -50,8 +51,16 @@ vi.mock("@/plugins/store", async () => {
 
 const mockStore = store as unknown as { curQueueItem?: QueueItem };
 
-function queueItemFor(mediaItem: PlayableMediaItemType) {
-  return queueItem({ media_item: mediaItem });
+// the favourite state is shared app-wide and only re-seeds when the playing
+// item changes, so every fixture stands for a different one
+let queueItemCount = 0;
+async function setPlaying(mediaItem: PlayableMediaItemType) {
+  mockStore.curQueueItem = queueItem({
+    queue_item_id: `item-${++queueItemCount}`,
+    media_item: mediaItem,
+  });
+  // the shared state re-seeds from a watcher, which vue flushes before render
+  await nextTick();
 }
 
 // reka-ui owns the open state, so the stub owns it too and reports every change
@@ -119,15 +128,17 @@ function mountButton() {
 // trigger's own attributes only show up with the real component
 function mountWithDropdown() {
   return mount(FavoriteMenuBtn, {
+    // the class the player bar passes, which the open-state colour keys off
+    attrs: { class: "player-control-button" },
     global: { mocks: { $t: (key: string) => key } },
   });
 }
 
 enableAutoUnmount(afterEach);
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
-  mockStore.curQueueItem = queueItemFor(track());
+  await setPlaying(track());
 });
 
 describe("FavoriteMenuBtn", () => {
@@ -136,18 +147,21 @@ describe("FavoriteMenuBtn", () => {
   it.each([
     { favorite: false, entry: "favorites_add" },
     { favorite: true, entry: "favorites_remove" },
-  ])("offers both entries for favorite $favorite", ({ favorite, entry }) => {
-    mockStore.curQueueItem = queueItemFor(track({ favorite }));
+  ])(
+    "offers both entries for favorite $favorite",
+    async ({ favorite, entry }) => {
+      await setPlaying(track({ favorite }));
 
-    const text = mountButton().text();
+      const text = mountButton().text();
 
-    expect(text).toContain(entry);
-    expect(text).toContain("add_playlist");
-  });
+      expect(text).toContain(entry);
+      expect(text).toContain("add_playlist");
+    },
+  );
 
   it("adds the playing item to the favourites", async () => {
     const item = track();
-    mockStore.curQueueItem = queueItemFor(item);
+    await setPlaying(item);
     const wrapper = mountButton();
 
     await wrapper.get(".dropdown-item").trigger("click");
@@ -159,7 +173,7 @@ describe("FavoriteMenuBtn", () => {
   // the queue can hold the provider's copy of the item, whose id the library
   // does not know
   it("removes the library item behind a provider item", async () => {
-    mockStore.curQueueItem = queueItemFor(
+    await setPlaying(
       track({ provider: "spotify", item_id: "sp1", favorite: true }),
     );
     getLibraryItem.mockResolvedValue(track({ item_id: "42", favorite: true }));
@@ -176,9 +190,36 @@ describe("FavoriteMenuBtn", () => {
     expect(removeItemFromFavorites).toHaveBeenCalledWith(MediaType.TRACK, "42");
   });
 
+  // the library already holds it under the id the queue carries
+  it("removes a library item without looking it up", async () => {
+    await setPlaying(track({ favorite: true }));
+    const wrapper = mountButton();
+
+    await wrapper.get(".dropdown-item").trigger("click");
+    await flushPromises();
+
+    expect(getLibraryItem).not.toHaveBeenCalled();
+    expect(removeItemFromFavorites).toHaveBeenCalledWith(MediaType.TRACK, "1");
+  });
+
+  // the favourite is still on the server, so the heart must not claim otherwise
+  it("keeps the favourite when the library cannot resolve the item", async () => {
+    await setPlaying(
+      track({ provider: "spotify", item_id: "sp1", favorite: true }),
+    );
+    getLibraryItem.mockResolvedValue(null);
+    const wrapper = mountButton();
+
+    await wrapper.get(".dropdown-item").trigger("click");
+    await flushPromises();
+
+    expect(removeItemFromFavorites).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("favorites_remove");
+  });
+
   it("hands the playing item to the playlist dialog", async () => {
     const item = track();
-    mockStore.curQueueItem = queueItemFor(item);
+    await setPlaying(item);
     const wrapper = mountButton();
 
     await wrapper.findAll(".dropdown-item")[1].trigger("click");
@@ -189,10 +230,8 @@ describe("FavoriteMenuBtn", () => {
   });
 
   // a line-in or other live source is not a library item
-  it("disables itself for an audio source", () => {
-    mockStore.curQueueItem = queueItemFor(
-      track({ media_type: MediaType.AUDIO_SOURCE }),
-    );
+  it("disables itself for an audio source", async () => {
+    await setPlaying(track({ media_type: MediaType.AUDIO_SOURCE }));
 
     expect(
       mountButton().get("button[aria-label]").attributes("disabled"),
@@ -252,10 +291,17 @@ describe("FavoriteMenuBtn", () => {
     const trigger = mountWithDropdown().get("button[aria-label]");
 
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
+    expect(trigger.attributes("data-state")).toBe("closed");
 
     await trigger.trigger("pointerenter", { pointerType: "touch" });
     await trigger.trigger("click", { button: 0, ctrlKey: false });
     await flushPromises();
+
+    // the bar colours the open button off this, so it has to survive reka's
+    // as-child merge onto the same button the call site's class lands on
+    expect(trigger.attributes("data-state")).toBe("open");
+    expect(trigger.classes()).toContain("player-control-button");
+
     await trigger.trigger("click", { button: 0, ctrlKey: false });
     await flushPromises();
 

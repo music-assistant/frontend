@@ -12,6 +12,7 @@
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
           :show-only-artist="getBreakpointValue('bp7') ? false : true"
+          title-opens-details
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
         />
@@ -374,7 +375,12 @@ watch(
 @media screen and (min-width: 1100px) {
   /* the room is only borrowed: these let the row hand it straight back when
      another control joins it, such as the sleep timer, and send whatever still
-     does not fit towards the middle of the bar rather than off its end */
+     does not fit towards the middle of the bar rather than off its end.
+
+     The budget, measured: the column offers 0.3 * (vw - 30) + 8 px, and the
+     three buttons rest at 64 + 72 + 96 = 232. A running sleep timer adds a
+     countdown of 82px, or 101px once it reads hh:mm:ss past the hour, which is
+     the only case that does not fit at 1100 - it needs about 1114. */
   .mediacontrols-bottom-right > div {
     min-width: 0;
   }

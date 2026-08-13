@@ -15,8 +15,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
 vi.mock("@/plugins/api", () => {
-  // the menu's ai dj entry derives availability from the provider list
-  const api = { toggleFavorite: vi.fn(), providers: {}, players: {} };
+  const api = { subscribe: vi.fn(() => () => {}), providers: {}, players: {} };
   return { api, default: api };
 });
 
