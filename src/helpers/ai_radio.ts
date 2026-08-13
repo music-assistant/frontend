@@ -376,6 +376,8 @@ export interface HostDraft {
   ttsEngine: string;
   // language: "" = follow the server language
   language: string;
+  // options: free-form key/value pairs passed straight through to the TTS engine
+  options: Record<string, unknown>;
   segments: ShowSegment[];
 }
 
@@ -404,6 +406,7 @@ export const compileHost = (draft: HostDraft): CompiledHost => {
       instructions: draft.instructions,
       tts_engine: draft.ttsEngine,
       language: draft.language,
+      options: draft.options,
       section_ids: sections.map((section) => section.id),
       section_order: sectionOrder,
       merge_section_id: mergeSectionId,
@@ -551,6 +554,7 @@ export const decompileHost = (
     instructions: host.instructions,
     ttsEngine: host.tts_engine,
     language: host.language || "",
+    options: host.options || {},
     segments,
   };
 };
@@ -606,4 +610,49 @@ export const uniqueHostName = (
     candidate = `${name} ${suffix}`;
   }
   return candidate;
+};
+
+// Plain integers/decimals only, so "007" and "1.2.3" stay strings.
+const NUMERIC_OPTION_VALUE = /^-?(0|[1-9]\d*)(\.\d+)?$/;
+
+/**
+ * Coerces a raw TTS option input into the JSON value the engine expects:
+ * "true"/"false" become booleans, a plain integer or decimal becomes a
+ * number, everything else (including "" and version-like strings) stays a string.
+ */
+export const coerceOptionValue = (raw: string): unknown => {
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  if (raw !== "" && NUMERIC_OPTION_VALUE.test(raw)) return Number(raw);
+  return raw;
+};
+
+/** Inverse of coerceOptionValue, for showing a stored option value back in its text input. */
+export const optionValueToText = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+};
+
+/**
+ * Builds a host's options Record from editable key/value rows: keys are
+ * trimmed, rows with an empty (or whitespace-only) key are dropped, and a
+ * duplicate key takes its last row's value.
+ */
+export const rowsToOptions = (
+  rows: { key: string; value: string }[],
+): Record<string, unknown> => {
+  const options: Record<string, unknown> = {};
+  for (const row of rows) {
+    const key = row.key.trim();
+    if (!key) continue;
+    options[key] = coerceOptionValue(row.value);
+  }
+  return options;
 };

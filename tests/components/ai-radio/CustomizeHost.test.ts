@@ -105,6 +105,7 @@ describe("CustomizeHost save", () => {
       instructions: "",
       tts_engine: "",
       language: "",
+      options: {},
       section_ids: [],
       section_order: [],
       merge_section_id: "",
@@ -153,6 +154,7 @@ describe("CustomizeHost save", () => {
       instructions: "",
       tts_engine: "",
       language: "",
+      options: {},
       section_ids: [],
       section_order: [],
       merge_section_id: "",
@@ -181,6 +183,7 @@ describe("CustomizeHost save", () => {
       instructions: "Persona.",
       ttsEngine: "",
       language: "",
+      options: {},
       segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 1).map((s) => ({ ...s })),
     };
     const { host, sections } = compileHost(draft);
