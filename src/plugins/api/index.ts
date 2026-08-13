@@ -991,6 +991,16 @@ export class MusicAssistantApi {
     });
   }
 
+  public getRadioTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/radios/radio_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   // Audiobook related endpoints
   /**
    * Get Audiobooks listing from the server.

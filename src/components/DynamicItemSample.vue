@@ -6,7 +6,13 @@
       </div>
       <div>
         <div class="text-h6">
-          {{ $t("smart_playlist.dynamic_sample_heading") }}
+          {{
+            $t(
+              isPlaylist
+                ? "smart_playlist.dynamic_sample_heading"
+                : "dynamic_radio_heading",
+            )
+          }}
         </div>
         <div class="text-body-2 text-medium-emphasis">
           {{ $t("smart_playlist.dynamic_sample_note") }}
@@ -45,10 +51,16 @@
         <EmptyHeader>
           <EmptyTitle>{{ $t("smart_playlist.empty_title") }}</EmptyTitle>
           <EmptyDescription>
-            {{ $t("smart_playlist.empty_desc") }}
+            {{
+              $t(
+                isPlaylist
+                  ? "smart_playlist.empty_desc"
+                  : "dynamic_radio_empty_desc",
+              )
+            }}
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
+        <EmptyContent v-if="isPlaylist">
           <Button variant="outline" size="sm" @click="emit('edit-rules')">
             <SlidersHorizontal class="h-3.5 w-3.5 mr-1.5" />
             {{ $t("smart_playlist.edit_rules") }}
@@ -75,6 +87,7 @@ import { Separator } from "@/components/ui/separator";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
+  MediaType,
   PlaybackState,
   type Audiobook,
   type MediaItemType,
@@ -85,14 +98,18 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Music2, SlidersHorizontal } from "@lucide/vue";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 export interface Props {
-  itemDetails: Playlist;
+  itemDetails: Playlist | Radio;
   provider: string;
 }
 const props = defineProps<Props>();
 const emit = defineEmits<{ (e: "edit-rules"): void }>();
+
+const isPlaylist = computed(
+  () => props.itemDetails.media_type === MediaType.PLAYLIST,
+);
 
 const loading = ref(true);
 const tracks = ref<(Track | Radio | PodcastEpisode | Audiobook)[]>([]);
@@ -102,12 +119,14 @@ const loadSample = async function () {
   try {
     // request a fresh evaluation: the overview should show a current sample rather than
     // a (possibly stale/empty) cached browse result.
-    const result = await api.getPlaylistTracks(
-      props.itemDetails.item_id,
-      props.provider,
-      false,
-    );
-    // the provider returns a bounded sample for dynamic playlists; cap defensively
+    const result = isPlaylist.value
+      ? await api.getPlaylistTracks(
+          props.itemDetails.item_id,
+          props.provider,
+          false,
+        )
+      : await api.getRadioTracks(props.itemDetails.item_id, props.provider);
+    // the provider returns a bounded sample for dynamic sources; cap defensively
     tracks.value = result.slice(0, 25);
   } catch {
     tracks.value = [];
