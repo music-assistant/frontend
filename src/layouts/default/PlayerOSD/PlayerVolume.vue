@@ -95,11 +95,20 @@
       @touchend="onTouchEnd"
       @touchcancel="onTouchCancel"
     >
-      <!-- Mute button with dynamic volume icon -->
-      <div class="volume-prepend" @touchstart.stop @touchend.stop>
+      <!-- Mute button with dynamic volume icon. The slot swallows the whole
+           touch sequence, moves included: a touch that starts on a button is
+           never the slider being dragged, and letting the moves through would
+           measure them against whatever the last touch on the track started at. -->
+      <div
+        class="volume-prepend"
+        @touchstart.stop
+        @touchmove.stop
+        @touchend.stop
+      >
         <button
           class="volume-icon-btn volume-slot-item"
           :class="{ 'is-hidden': showStepButtons }"
+          :inert="showStepButtons"
           :disabled="muteDisabled"
           @click.stop="onMuteToggle"
         >
@@ -110,10 +119,9 @@
           type="button"
           class="volume-step-btn volume-slot-item"
           :class="{ 'is-hidden': !showStepButtons }"
+          :inert="!showStepButtons"
           :aria-label="$t('tooltip.volume_down')"
-          @click.stop
-          @mousedown.stop="onStepDown"
-          @touchstart.stop.prevent="onStepDown"
+          @click.stop="onStepDown"
         >
           <Minus :size="iconSize" />
         </button>
@@ -135,12 +143,14 @@
         v-if="showVolumeLevel || expandOnTouch"
         class="volume-append"
         @touchstart.stop
+        @touchmove.stop
         @touchend.stop
       >
         <span
           v-if="showVolumeLevel"
           class="volume-level-text volume-slot-item"
           :class="{ 'is-hidden': showStepButtons }"
+          :inert="showStepButtons"
         >
           {{ Math.round(displayValue) }}
         </span>
@@ -149,10 +159,9 @@
           type="button"
           class="volume-step-btn volume-slot-item"
           :class="{ 'is-hidden': !showStepButtons }"
+          :inert="!showStepButtons"
           :aria-label="$t('tooltip.volume_up')"
-          @click.stop
-          @mousedown.stop="onStepUp"
-          @touchstart.stop.prevent="onStepUp"
+          @click.stop="onStepUp"
         >
           <Plus :size="iconSize" />
         </button>
@@ -467,6 +476,7 @@ const displayValue = ref(currentVolume.value);
 const touchStartX = ref(0);
 const touchStartY = ref(0);
 const touchStartValue = ref(0);
+const touchStartThumbCenter = ref<number | null>(null);
 const isScrolling = ref(false);
 const isDrag = ref(false);
 const touchMoveCount = ref(0);
@@ -649,6 +659,13 @@ const vibrate = (duration: number = 10) => {
   }
 };
 
+const getThumbCenter = (): number | null => {
+  const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
+  if (!thumb) return null;
+  const rect = thumb.getBoundingClientRect();
+  return rect.left + rect.width / 2;
+};
+
 const getPercentageFromX = (clientX: number): number => {
   if (!sliderContainerRef.value) return displayValue.value;
 
@@ -673,6 +690,9 @@ const onTouchStart = (event: TouchEvent) => {
   isDrag.value = false;
   touchMoveCount.value = 0;
   maxMovement.value = 0;
+  // read before expanding: the rail's ends draw in as it grows, so measuring at
+  // touchend would compare the tap against a thumb that has since moved
+  touchStartThumbCenter.value = getThumbCenter();
 
   // a group slider answers a tap by opening its own volume controls, so it waits
   // for a drag rather than swapping its buttons out from under the tap
@@ -740,16 +760,18 @@ const onTouchMove = (event: TouchEvent) => {
 };
 
 const onTouchEnd = (event: TouchEvent) => {
+  // ahead of the guard: a player that goes unavailable mid-touch would
+  // otherwise leave the slider latched open, to expand again on its own the
+  // moment it comes back
+  collapseControlsSoon();
   if (isSliderDisabled.value && !handlesGroupTap.value) return;
 
   if (isScrolling.value) {
     isScrolling.value = false;
     isTouching.value = false;
-    collapseControlsSoon();
     return;
   }
 
-  collapseControlsSoon();
   const isTap = !isDrag.value;
 
   if (isTap) {
@@ -764,10 +786,8 @@ const onTouchEnd = (event: TouchEvent) => {
     } else if (!isSliderDisabled.value) {
       // Single player: tap before/after handle for volume up/down
       const touch = event.changedTouches[0];
-      const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
-      if (thumb) {
-        const thumbRect = thumb.getBoundingClientRect();
-        const thumbCenter = thumbRect.left + thumbRect.width / 2;
+      const thumbCenter = touchStartThumbCenter.value ?? getThumbCenter();
+      if (thumbCenter !== null) {
         if (touch.clientX > thumbCenter) {
           volumeUp();
         } else {

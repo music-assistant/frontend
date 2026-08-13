@@ -772,14 +772,10 @@ describe("PlayerVolume touch expansion", () => {
     wrapper = mountExpandable(player);
     await touchStart(wrapper);
 
-    await wrapper
-      .find(".volume-prepend .volume-step-btn")
-      .trigger("touchstart", { touches: [{ clientX: 5, clientY: 10 }] });
+    await wrapper.find(".volume-prepend .volume-step-btn").trigger("click");
     expect(api.playerCommandVolumeDown).toHaveBeenCalledWith(player.player_id);
 
-    await wrapper
-      .find(".volume-append .volume-step-btn")
-      .trigger("touchstart", { touches: [{ clientX: 300, clientY: 10 }] });
+    await wrapper.find(".volume-append .volume-step-btn").trigger("click");
     expect(api.playerCommandVolumeUp).toHaveBeenCalledWith(player.player_id);
 
     expect(api.playerCommandVolumeSet).not.toHaveBeenCalled();
@@ -802,9 +798,7 @@ describe("PlayerVolume touch expansion", () => {
 
     // a step tap buys another full window, so a second press never lands on a
     // slider that is already collapsing
-    await wrapper
-      .find(".volume-append .volume-step-btn")
-      .trigger("touchstart", { touches: [{ clientX: 300, clientY: 10 }] });
+    await wrapper.find(".volume-append .volume-step-btn").trigger("click");
     await vi.advanceTimersByTimeAsync(1999);
     await nextTick();
     expect(container.classes()).toContain("expanded");
@@ -857,9 +851,7 @@ describe("PlayerVolume touch expansion", () => {
     await touchStart(wrapper);
     await touchDrag(wrapper);
 
-    await wrapper
-      .find(".volume-prepend .volume-step-btn")
-      .trigger("touchstart", { touches: [{ clientX: 5, clientY: 10 }] });
+    await wrapper.find(".volume-prepend .volume-step-btn").trigger("click");
 
     expect(api.playerCommandGroupVolumeDown).toHaveBeenCalledWith("parent");
     expect(api.playerCommandVolumeDown).not.toHaveBeenCalled();
@@ -877,6 +869,91 @@ describe("PlayerVolume touch expansion", () => {
     // the panels these rows sit in scroll, so a swipe must not leave a list of
     // them fattened in its wake
     await touchScroll(wrapper);
+
+    expect(container.classes()).not.toContain("expanded");
+  });
+
+  it("keeps a step tap from being read as a drag on the track", async () => {
+    const player = createPlayer({ volume_level: 20 });
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+
+    // a tap on the track, so the slider has a start position on record
+    await touchStart(wrapper);
+    await touchEnd(wrapper);
+
+    // tapping a step button far from that position must not be measured
+    // against it: the slot swallows the whole sequence, moves included
+    const plus = wrapper.find(".volume-append .volume-step-btn");
+    await plus.trigger("touchstart", {
+      touches: [{ clientX: 300, clientY: 10 }],
+    });
+    await plus.trigger("touchmove", {
+      touches: [{ clientX: 302, clientY: 11 }],
+    });
+    await plus.trigger("touchend", {
+      changedTouches: [{ clientX: 302, clientY: 11 }],
+    });
+
+    // a latched drag would block the server sync for good, because the touch
+    // that started it never reaches the handler that ends it
+    await wrapper.setProps({ player: { ...player, volume_level: 55 } });
+    await nextTick();
+
+    expect(wrapper.find(".volume-level-text").text()).toBe("55");
+  });
+
+  it("steps the volume from a click, so a keyboard can reach the buttons", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    await touchStart(wrapper);
+
+    await wrapper.find(".volume-append .volume-step-btn").trigger("click");
+    await wrapper.find(".volume-prepend .volume-step-btn").trigger("click");
+
+    expect(api.playerCommandVolumeUp).toHaveBeenCalledWith(player.player_id);
+    expect(api.playerCommandVolumeDown).toHaveBeenCalledWith(player.player_id);
+  });
+
+  it("takes the hidden half of each slot out of the tab order", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+
+    const inert = (selector: string) =>
+      wrapper!.find(selector).attributes("inert") !== undefined;
+
+    expect(inert(".volume-prepend .volume-step-btn")).toBe(true);
+    expect(inert(".volume-icon-btn")).toBe(false);
+
+    await touchStart(wrapper);
+
+    // both halves stay mounted to hold the slot's width, so the one that is
+    // faded out has to leave the a11y tree rather than just the screen
+    expect(inert(".volume-prepend .volume-step-btn")).toBe(false);
+    expect(inert(".volume-icon-btn")).toBe(true);
+    expect(inert(".volume-level-text")).toBe(true);
+  });
+
+  it("collapses on a touch that ends after the player goes unavailable", async () => {
+    vi.useFakeTimers();
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    const container = wrapper.find(".player-volume-container");
+
+    await touchStart(wrapper);
+    expect(container.classes()).toContain("expanded");
+
+    // it would otherwise stay latched and re-expand on its own once the player
+    // came back, with no touch behind it
+    api.players[player.player_id]!.available = false;
+    await wrapper.setProps({ player: { ...player, available: false } });
+    await touchEnd(wrapper);
+    await vi.advanceTimersByTimeAsync(2000);
+    await wrapper.setProps({ player: { ...player, available: true } });
+    await nextTick();
 
     expect(container.classes()).not.toContain("expanded");
   });
