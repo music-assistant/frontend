@@ -613,6 +613,10 @@
                 "right": "Right"
             }
         },
+        "ha_kiosk_mode": {
+            "label": "Use the full screen in Home Assistant",
+            "description": "Hide the Home Assistant header and sidebar so Music Assistant gets the whole screen. The Home Assistant button in the menu brings them back."
+        },
         "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "genre_management": "Genre Management",
@@ -915,6 +919,8 @@
     "recently_played": "Recently played",
     "load_more_items": "Load more items...",
     "radio": "Radio",
+    "dynamic_radio_heading": "Dynamic station",
+    "dynamic_radio_empty_desc": "This station didn't return any tracks. Try again in a moment.",
     "muted": "muted",
     "enter_name": "Enter a new (custom) name",
     "image_url": "Input the URL to an image or icon (optional)",
@@ -1519,6 +1525,7 @@
                 "save": "Save show",
                 "advanced": "Advanced",
                 "basics_title": "Basics",
+                "personality_title": "Personality",
                 "segments_title": "Segments",
                 "segments_empty": "No segments yet — add one to get started.",
                 "add_segment": "Add segment",
@@ -1533,6 +1540,14 @@
                     "sign_off": "Sign-off"
                 },
                 "segment_name": "Segment name",
+                "tts_options_title": "Advanced TTS options",
+                "tts_options_help": "Only add keys your selected engine supports, since an unsupported key can make it reject the whole clip.",
+                "option_key": "Option key",
+                "option_key_placeholder": "e.g. voice",
+                "option_value": "Option value",
+                "option_value_placeholder": "e.g. en_US-lessac-medium",
+                "add_option": "Add option",
+                "remove_option": "Remove option",
                 "use_current_player": "Use current player",
                 "host_placeholder": "Choose a host",
                 "host_required": "Choose a host before saving",
@@ -2040,6 +2055,7 @@
     "similar_artists": "Similar artists",
     "audio_source": "Audio source",
     "change_playback_speed": "Change playback speed",
+    "playback_speed_value": "{0}x",
     "shortcut": {
         "add_to": "Add to shortcuts",
         "remove_from": "Remove from shortcuts"
@@ -2275,5 +2291,6 @@
     },
     "searching": "Searching...",
     "menu": "Menu",
+    "home_assistant_menu": "Home Assistant",
     "main_navigation": "Main"
 }

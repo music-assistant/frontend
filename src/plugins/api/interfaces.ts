@@ -979,7 +979,9 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem {}
+export interface Radio extends MediaItem {
+  is_dynamic: boolean;
+}
 
 export interface SoundEffect extends MediaItem {
   duration: number;
@@ -1825,6 +1827,8 @@ export interface AIRadioHost {
   tts_engine: string;
   // language: "" means follow the server language
   language: string;
+  // options: free-form key/value pairs passed straight through to the TTS engine
+  options: Record<string, unknown>;
   section_ids: string[];
   section_order: AIRadioSectionOrderRule[];
   merge_section_id: string;

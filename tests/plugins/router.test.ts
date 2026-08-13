@@ -2,17 +2,21 @@ import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { ConnectionState } from "@/plugins/api";
 import { routes } from "@/plugins/router";
-import type {
-  NavigationGuardNext,
-  NavigationGuardWithThis,
-  RouteLocationNormalizedLoaded,
-  RouteRecordRaw,
-  Router,
-  RouterOptions,
+import {
+  NavigationFailureType,
+  type NavigationFailure,
+  type NavigationGuardNext,
+  type NavigationGuardWithThis,
+  type NavigationHookAfter,
+  type RouteLocationNormalizedLoaded,
+  type RouteRecordRaw,
+  type Router,
+  type RouterOptions,
 } from "vue-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  afterEachHooks: [] as NavigationHookAfter[],
   apiState: { value: "initialized" },
   globalGuards: [] as NavigationGuardWithThis<undefined>[],
   isDashboardViewer: vi.fn(() => false),
@@ -76,6 +80,11 @@ vi.mock("vue-router", async () => {
       router.beforeEach = (guard) => {
         mocks.globalGuards.push(guard);
         return addGuard(guard);
+      };
+      const addAfterEachHook = router.afterEach.bind(router);
+      router.afterEach = (hook) => {
+        mocks.afterEachHooks.push(hook);
+        return addAfterEachHook(hook);
       };
       mocks.router = router;
       return router;
@@ -452,6 +461,79 @@ describe("media details back button", () => {
   );
 });
 
+describe("chunk loading recovery", () => {
+  let location = locationStub();
+
+  beforeEach(() => {
+    location = locationStub();
+    vi.stubGlobal("location", location);
+    // both branches of the recovery log
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(console.warn).mockRestore();
+    vi.mocked(console.error).mockRestore();
+  });
+
+  // Moving the hash is a same-document navigation, so the reload is what
+  // refetches the app, and it has to come second to keep the intended route.
+  it("reloads onto the intended route when its chunk is gone", async () => {
+    await failNavigationWithChunkError("/artists");
+
+    expect(location.hash).toBe("#/artists");
+    expect(location.steps).toEqual(["hash", "reload"]);
+  });
+
+  // how a cached index.html hits this: the app opens straight onto the route
+  // whose chunk the update replaced
+  it("reloads when the app opened on the failing route", async () => {
+    location.hash = "#/artists";
+    location.steps.length = 0;
+
+    await failNavigationWithChunkError("/artists");
+
+    expect(location.hash).toBe("#/artists");
+    expect(location.steps).toEqual(["hash", "reload"]);
+  });
+
+  it("stops reloading while the chunk keeps failing", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.steps.length = 0;
+
+    await failNavigationWithChunkError("/albums");
+    await failNavigationWithChunkError("/tracks");
+
+    expect(location.steps).toEqual([]);
+  });
+
+  it("recovers again after a later update", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.steps.length = 0;
+    runAfterEachHooks();
+
+    await failNavigationWithChunkError("/albums");
+
+    expect(location.hash).toBe("#/albums");
+    expect(location.steps).toEqual(["hash", "reload"]);
+  });
+
+  it("keeps blocking reloads while no navigation completed", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.steps.length = 0;
+    // only the presence of a failure matters to the hook
+    runAfterEachHooks({
+      type: NavigationFailureType.aborted,
+    } as unknown as NavigationFailure);
+
+    await failNavigationWithChunkError("/albums");
+
+    expect(location.steps).toEqual([]);
+  });
+});
+
 /**
  * Build a navigation target for a guard.
  *
@@ -475,6 +557,62 @@ function invokeGuard(
 ) {
   const next = (() => {}) as NavigationGuardNext;
   return Promise.resolve(guard.call(undefined, to, from, next));
+}
+
+/**
+ * Stand in for window.location, recording the order of what is done to it.
+ */
+function locationStub() {
+  const steps: string[] = [];
+  let hash = "#/discover";
+  return {
+    steps,
+    get hash() {
+      return hash;
+    },
+    set hash(value: string) {
+      // a real Location normalises the assignment the same way
+      hash = value.startsWith("#") ? value : `#${value}`;
+      steps.push("hash");
+    },
+    // navigating by URL only moves the fragment, so a recovery doing that names
+    // itself here instead of failing on an empty step list
+    set href(value: string) {
+      steps.push("href");
+    },
+    reload: () => {
+      steps.push("reload");
+    },
+  };
+}
+
+/**
+ * Navigate to a route whose chunk is no longer on the server.
+ */
+async function failNavigationWithChunkError(fullPath: string) {
+  if (!mocks.router) {
+    throw new Error("The router module did not create a router");
+  }
+  const removeGuard = mocks.router.beforeEach(() => {
+    throw new Error(
+      "Failed to fetch dynamically imported module: /assets/index-Bq1xY2z3.js",
+    );
+  });
+  await mocks.router.push(fullPath).catch(() => {});
+  removeGuard();
+  // the mock records every guard, so drop this one from that list as well
+  mocks.globalGuards.pop();
+}
+
+/**
+ * Run the router's afterEach hooks the way a finished navigation does.
+ */
+function runAfterEachHooks(failure?: NavigationFailure) {
+  const to = resolveRoute("/artists");
+  const from = resolveRoute("/discover");
+  for (const hook of mocks.afterEachHooks) {
+    hook.call(undefined, to, from, failure);
+  }
 }
 
 /**

@@ -1,5 +1,6 @@
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import PlayerTrackDetails from "@/layouts/default/PlayerOSD/PlayerTrackDetails.vue";
+import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { store } from "@/plugins/store";
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import { mount, type VueWrapper } from "@vue/test-utils";
@@ -28,6 +29,10 @@ vi.mock("@/plugins/api", () => {
   return { api, default: api };
 });
 
+vi.mock("@/helpers/now_playing", () => ({
+  openCurrentTrackDetails: vi.fn(),
+}));
+
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   return {
@@ -55,10 +60,11 @@ const vuetify = createVuetify({ components, directives });
 let wrapper: VueWrapper | undefined;
 
 // MarqueeText pulls in resize/intersection observers unrelated to this test.
-function mountDetails(compact: boolean) {
+function mountDetails(compact: boolean, titleOpensDetails = false) {
   wrapper = mount(PlayerTrackDetails, {
     props: {
       compact,
+      titleOpensDetails,
       showQualityDetailsBtn: false,
       colorPalette: EMPTY_COLOR_PALETTE,
     },
@@ -130,4 +136,45 @@ describe("PlayerTrackDetails compact mode", () => {
       );
     },
   );
+});
+
+describe("PlayerTrackDetails title", () => {
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.showFullscreenPlayer = false;
+    vi.mocked(openCurrentTrackDetails).mockClear();
+  });
+
+  // the artwork and the bar around it are what open the player, so the title is
+  // free to be the way into the track itself
+  it("opens the track details where the bar asks for it", async () => {
+    const details = mountDetails(false, true);
+
+    await details.get(".v-list-item-title .ma-line-clamp-1").trigger("click");
+
+    expect(openCurrentTrackDetails).toHaveBeenCalled();
+    expect(store.showFullscreenPlayer).toBe(false);
+  });
+
+  // the floating mobile bar is one big target for the player, and the title is
+  // most of it
+  it("opens the player everywhere else", async () => {
+    const details = mountDetails(true);
+
+    await details.get(".v-list-item-title .ma-line-clamp-1").trigger("click");
+
+    expect(openCurrentTrackDetails).not.toHaveBeenCalled();
+    expect(store.showFullscreenPlayer).toBe(true);
+  });
+
+  // the artwork keeps opening the player on both bars
+  it("opens the player from the artwork even where the title does not", async () => {
+    const details = mountDetails(false, true);
+
+    await details.get(".player-media-thumb").trigger("click");
+
+    expect(openCurrentTrackDetails).not.toHaveBeenCalled();
+    expect(store.showFullscreenPlayer).toBe(true);
+  });
 });

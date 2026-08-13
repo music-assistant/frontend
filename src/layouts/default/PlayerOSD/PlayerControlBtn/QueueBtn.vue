@@ -8,13 +8,7 @@
     :class="{ 'text-primary': active }"
     @click="togglePlayerQueue"
   >
-    <template v-if="playerBar">
-      <span class="player-bar-action-icon">
-        <ListVideo :size="size" />
-      </span>
-      <span class="player-bar-action-label" aria-hidden="true">&nbsp;</span>
-    </template>
-    <ListVideo v-else :size="size" />
+    <ListVideo :size="size" />
   </Button>
 </template>
 
@@ -30,12 +24,10 @@ import { ListVideo } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
-  playerBar?: boolean;
   size?: number;
 }
 
 withDefaults(defineProps<Props>(), {
-  playerBar: false,
   size: 20,
 });
 

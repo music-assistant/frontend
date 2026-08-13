@@ -330,6 +330,10 @@ async function handleRefresh() {
   }
 }
 
+// Set by the unmount hook, so the startup below can tell that the view it is
+// setting things up for is already gone.
+let unmounted = false;
+
 onMounted(async () => {
   try {
     await Promise.all([
@@ -341,6 +345,10 @@ onMounted(async () => {
   } catch (error) {
     toast.error(errorMessage(error));
   }
+  // Leaving the view while the loads are in flight runs the unmount hook first,
+  // so bail out rather than start a poll loop nothing will stop and rewrite the
+  // query of a route this view no longer owns.
+  if (unmounted) return;
   // Best effort: the "Add host" menu still works with just "Blank host" if this fails.
   void loadPresets().catch(() => {});
   startStatusPolling();
@@ -350,6 +358,7 @@ onMounted(async () => {
 watch(() => route.query, applyRouteQuery);
 
 onUnmounted(() => {
+  unmounted = true;
   stopStatusPolling();
 });
 </script>

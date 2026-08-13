@@ -12,49 +12,45 @@
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
           :show-only-artist="getBreakpointValue('bp7') ? false : true"
+          title-opens-details
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
         />
       </div>
       <div class="mediacontrols-bottom-center">
         <div class="player-center-controls">
-          <div v-if="showWideCenterActions" class="player-center-side-action">
-            <Button
-              v-if="favoriteItem"
-              variant="ghost"
-              size="icon-lg"
-              class="player-control-button"
-              :aria-label="
-                $t(favoriteItem.favorite ? 'favorites_remove' : 'favorites_add')
-              "
-              @click="api.toggleFavorite(favoriteItem)"
-            >
-              <Heart
-                class="size-5"
-                :fill="favoriteItem.favorite ? 'currentColor' : 'none'"
-              />
-            </Button>
+          <div class="player-center-transport">
+            <div class="player-center-side-action">
+              <FavoriteMenuBtn class="player-control-button" />
+            </div>
+
+            <PlayerControls
+              :style="playIconStyle"
+              :visible-components="{
+                repeat: { isVisible: getBreakpointValue('bp3') },
+                shuffle: { isVisible: getBreakpointValue('bp3') },
+                play: {
+                  isVisible: true,
+                  icon: {
+                    staticWidth: '48px',
+                    staticHeight: '48px',
+                  },
+                },
+                previous: { isVisible: getBreakpointValue('bp3') },
+                next: { isVisible: getBreakpointValue('bp3') },
+              }"
+            />
+
+            <div class="player-center-side-action">
+              <QueueBtn :size="22" class="player-control-button" />
+            </div>
           </div>
 
-          <PlayerControls
-            :style="playIconStyle"
-            :visible-components="{
-              repeat: { isVisible: getBreakpointValue('bp3') },
-              shuffle: { isVisible: getBreakpointValue('bp3') },
-              play: {
-                isVisible: true,
-                icon: {
-                  staticWidth: '48px',
-                  staticHeight: '48px',
-                },
-              },
-              previous: { isVisible: getBreakpointValue('bp3') },
-              next: { isVisible: getBreakpointValue('bp3') },
-            }"
-          />
-
-          <div v-if="showWideCenterActions" class="player-center-side-action">
-            <QueueBtn :size="22" class="player-control-button" />
+          <!-- each of these shows only while it has something to say, so most
+               of the time this is empty and the row is the transport alone -->
+          <div v-if="showCenterExtras" class="player-center-extras">
+            <PlaybackSpeedBtn v-if="showPlaybackSpeed" />
+            <SleepTimerBtn />
           </div>
         </div>
         <!-- progress bar -->
@@ -62,27 +58,13 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- player extended control buttons. Below 1100px the bar drops to
-               its compact widths and the sleep timer goes with them, leaving
-               the countdown to the full screen player and the player card's
-               menu; it has no room of its own on the narrowest bars. -->
+          <!-- player extended control buttons -->
           <PlayerExtendedControls
-            :favorite="{
-              isVisible: false,
-              showInMenu: true,
-            }"
-            :queue="{
-              isVisible: false,
-              showInMenu: true,
-            }"
             :player="{
               isVisible: true,
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
-            }"
-            :sleep-timer="{
-              isVisible: getBreakpointValue('bp7'),
             }"
           />
         </div>
@@ -107,13 +89,6 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div class="flex items-center">
-          <PlayerTrackMenu
-            v-if="showFloatingTrackMenu"
-            compact
-            force-visible
-            :show-favorite="true"
-            :show-queue="true"
-          />
           <!-- grouping sits beside play: both act on what this bar is playing -->
           <PlayerBarGroupControl floating />
           <!-- player mobile control buttons -->
@@ -156,19 +131,17 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
 import { ImageColorPalette, paletteFromServer } from "@/helpers/utils";
-import api from "@/plugins/api";
-import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { Heart } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import PlayerBarGroupControl from "./PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
-import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
+import FavoriteMenuBtn from "./PlayerControlBtn/FavoriteMenuBtn.vue";
+import PlaybackSpeedBtn from "./PlayerControlBtn/PlaybackSpeedBtn.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import SleepTimerBtn from "./PlayerControlBtn/SleepTimerBtn.vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
@@ -180,15 +153,13 @@ interface Props {
 }
 const props = defineProps<Props>();
 const showMobileVolumeControls = ref(false);
-const showWideCenterActions = computed(() => getBreakpointValue("bp6"));
-const favoriteItem = computed(() => {
-  const item = store.curQueueItem?.media_item;
-  return item?.media_type === MediaType.AUDIO_SOURCE ? undefined : item;
-});
 
-// the floating row already carries grouping and play; the track menu only
-// joins them where there is width to spare
-const showFloatingTrackMenu = computed(() => getBreakpointValue("bp12"));
+// The controls beside the queue button reach into the room the actions to their
+// right leave free, so each waits for the width it fits in. Measured, that room
+// clears the 85px countdown on its own from 1100px, and the two of them together
+// only from 1160px - so the speed control waits for the next breakpoint up.
+const showCenterExtras = computed(() => getBreakpointValue("bp7"));
+const showPlaybackSpeed = computed(() => getBreakpointValue("bp8"));
 
 /** Opens the fullscreen player, or the player picker when there is nothing to show. */
 function openActivePlayer() {
@@ -362,10 +333,41 @@ watch(
   }
 }
 
+/* the transport takes the middle track and the extras the one after it. Neither
+   outer track asks for room of its own, so they stay equal and the play button
+   holds the centre of the bar whatever the extras beside it are showing; the
+   extras reach past the column into the room the actions leave to their left
+   instead. The middle track's own floor is waived so the transport still
+   shrinks to fit a narrow bar, which is all it did before it had a track. */
 .player-center-controls {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
   align-items: center;
+}
+
+.player-center-transport {
+  display: flex;
+  grid-column: 2;
+  align-items: center;
+  /* the transport controls between the two side actions hold a width of their
+     own, so from 769 to 809px the row is wider than the track it sits in.
+     Centring splits that overhang between the two ends rather than letting it
+     all fall to one, which is what keeps the play button centred there too. */
   justify-content: center;
+}
+
+/* the actions to the right claim their whole column even though they draw only
+   at the far end of it, so the extras have to be lifted over that to stay
+   clickable where they reach into the room it leaves free */
+.player-center-extras {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  grid-column: 3;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  margin-inline-start: 8px;
 }
 
 .player-center-side-action {
@@ -414,9 +416,13 @@ watch(
    the player name is the first to run out. Growing only starts where the label
    needs it, so a short name leaves no hole beside the button next to it. */
 @media screen and (min-width: 1100px) {
-  /* the room is only borrowed: these let the row hand it straight back when
-     another control joins it, such as the sleep timer, and send whatever still
-     does not fit towards the middle of the bar rather than off its end */
+  /* the room is only borrowed: these let the row hand it straight back should
+     another control ever join it, and send whatever still does not fit towards
+     the middle of the bar rather than off its end.
+
+     The budget, measured: the column offers 0.3 * (vw - 30) + 8 px, and the
+     three buttons rest at 64 + 72 + 96 = 232, so from 1100px up the row has
+     room to spare at every width. */
   .mediacontrols-bottom-right > div {
     min-width: 0;
   }
@@ -448,37 +454,6 @@ watch(
   }
 }
 
-/* the sleep timer joins the actions as a fifth control, which the widths above
-   do not budget for: they need a bar of about 1221px before the five of them
-   fit, and until then the timer reaches over the timeline. So while one runs
-   the actions take the widths they use below 1100px, which fit from 1034px up.
-   The full widths take over again at 1250px, where they clear the timeline by
-   about 9px - the tightest the row gets, so a sixth control or a wider button
-   would have to raise this bound with it. */
-@media screen and (min-width: 1100px) and (max-width: 1249px) {
-  .mediacontrols :deep(.player-bar-action-row:has(.player-bar-sleep-timer)) {
-    .player-bar-menu-button {
-      width: 40px !important;
-    }
-
-    .player-bar-volume-button {
-      width: 56px !important;
-    }
-
-    /* the floor these two carry above 1100px would outrank the width, so it
-       has to be reset for the width to take effect */
-    .player-bar-group-button {
-      width: 60px !important;
-      min-width: 0 !important;
-    }
-
-    .player-bar-player-button {
-      width: 68px !important;
-      min-width: 0 !important;
-    }
-  }
-}
-
 @media screen and (min-width: 769px) and (max-width: 1099px) {
   .mediacontrols .mediacontrols-bottom-center {
     width: auto;
@@ -486,11 +461,6 @@ watch(
 
   .mediacontrols-bottom-right {
     min-width: 0;
-  }
-
-  .mediacontrols :deep(.player-bar-menu-button) {
-    width: 40px !important;
-    height: 72px !important;
   }
 
   .mediacontrols :deep(.player-bar-volume-button) {

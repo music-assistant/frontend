@@ -1,5 +1,5 @@
 import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
-import { mount, type VueWrapper } from "@vue/test-utils";
+import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { groupSize } = vi.hoisted(() => ({ groupSize: { value: 3 } }));
@@ -56,6 +56,21 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.attributes("aria-expanded")).toBe("false");
     expect(trigger.attributes("aria-haspopup")).toBe("dialog");
     expect(trigger.attributes("aria-pressed")).toBeUndefined();
+  });
+
+  // the mouse that clicked the panel shut is still on the button, and no second
+  // pointerenter is coming to say so
+  it("keeps the hover color when a mouse clicks the panel closed", async () => {
+    const trigger = mountGroupButton();
+
+    await trigger.trigger("pointerenter", { pointerType: "mouse" });
+    await trigger.trigger("click", { button: 0, ctrlKey: false });
+    await flushPromises();
+    await trigger.trigger("click", { button: 0, ctrlKey: false });
+    await flushPromises();
+
+    expect(trigger.attributes("data-state")).toBe("closed");
+    expect(trigger.attributes("data-suppress-hover")).toBe("false");
   });
 
   it("keeps the visible member count in the accessible name", () => {

@@ -1,5 +1,5 @@
 import { serverNow } from "@/composables/useServerTime";
-import { PlaybackState, QueueItem } from "../plugins/api/interfaces";
+import { MediaType, PlaybackState, QueueItem } from "../plugins/api/interfaces";
 
 /**
  * Calculate the current elapsed playback time in seconds from a stored
@@ -47,4 +47,17 @@ export function queueItemPlaybackSpeed(item?: QueueItem | null): number {
   return typeof speed === "number" && Number.isFinite(speed) && speed > 0
     ? speed
     : 1;
+}
+
+/** Whether a queue item plays at a speed of its own that can be changed. */
+export function playbackSpeedSupported(item?: QueueItem | null): boolean {
+  const mediaType = item?.media_item?.media_type;
+  return (
+    mediaType === MediaType.AUDIOBOOK || mediaType === MediaType.PODCAST_EPISODE
+  );
+}
+
+/** Playback speed as it reads on screen, e.g. `1.5` for one and a half times. */
+export function formatPlaybackSpeed(speed: number): string {
+  return Number.isInteger(speed) ? speed.toFixed(1) : speed.toString();
 }
