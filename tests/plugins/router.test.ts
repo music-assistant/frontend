@@ -2,17 +2,21 @@ import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { ConnectionState } from "@/plugins/api";
 import { routes } from "@/plugins/router";
-import type {
-  NavigationGuardNext,
-  NavigationGuardWithThis,
-  RouteLocationNormalizedLoaded,
-  RouteRecordRaw,
-  Router,
-  RouterOptions,
+import {
+  NavigationFailureType,
+  type NavigationFailure,
+  type NavigationGuardNext,
+  type NavigationGuardWithThis,
+  type NavigationHookAfter,
+  type RouteLocationNormalizedLoaded,
+  type RouteRecordRaw,
+  type Router,
+  type RouterOptions,
 } from "vue-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  afterEachHooks: [] as NavigationHookAfter[],
   apiState: { value: "initialized" },
   globalGuards: [] as NavigationGuardWithThis<undefined>[],
   isDashboardViewer: vi.fn(() => false),
@@ -76,6 +80,11 @@ vi.mock("vue-router", async () => {
       router.beforeEach = (guard) => {
         mocks.globalGuards.push(guard);
         return addGuard(guard);
+      };
+      const addAfterEachHook = router.afterEach.bind(router);
+      router.afterEach = (hook) => {
+        mocks.afterEachHooks.push(hook);
+        return addAfterEachHook(hook);
       };
       mocks.router = router;
       return router;
@@ -452,6 +461,68 @@ describe("media details back button", () => {
   );
 });
 
+describe("chunk loading recovery", () => {
+  // A real Location normalises the assignment to "#/artists"; this stub keeps
+  // whatever the recovery hands it.
+  const location = { hash: "#/discover", reload: vi.fn() };
+
+  beforeEach(() => {
+    location.hash = "#/discover";
+    vi.stubGlobal("location", location);
+    // both branches of the recovery log
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(console.warn).mockRestore();
+    vi.mocked(console.error).mockRestore();
+  });
+
+  // Moving the hash alone is a same-document navigation, so without the reload
+  // the app never refetches and the route stays broken.
+  it("reloads onto the intended route when its chunk is gone", async () => {
+    await failNavigationWithChunkError("/artists");
+
+    expect(location.hash).toBe("/artists");
+    expect(location.reload).toHaveBeenCalledOnce();
+  });
+
+  it("stops reloading while the chunk keeps failing", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.reload.mockClear();
+
+    await failNavigationWithChunkError("/albums");
+
+    expect(location.reload).not.toHaveBeenCalled();
+  });
+
+  it("recovers again after a later update", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.reload.mockClear();
+    runAfterEachHooks();
+
+    await failNavigationWithChunkError("/albums");
+
+    expect(location.hash).toBe("/albums");
+    expect(location.reload).toHaveBeenCalledOnce();
+  });
+
+  it("keeps blocking reloads while no navigation completed", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.reload.mockClear();
+    // only the presence of a failure matters to the hook
+    runAfterEachHooks({
+      type: NavigationFailureType.aborted,
+    } as unknown as NavigationFailure);
+
+    await failNavigationWithChunkError("/albums");
+
+    expect(location.reload).not.toHaveBeenCalled();
+  });
+});
+
 /**
  * Build a navigation target for a guard.
  *
@@ -475,6 +546,33 @@ function invokeGuard(
 ) {
   const next = (() => {}) as NavigationGuardNext;
   return Promise.resolve(guard.call(undefined, to, from, next));
+}
+
+/**
+ * Navigate to a route whose chunk is no longer on the server.
+ */
+async function failNavigationWithChunkError(fullPath: string) {
+  if (!mocks.router) {
+    throw new Error("The router module did not create a router");
+  }
+  const removeGuard = mocks.router.beforeEach(() => {
+    throw new Error(
+      "Failed to fetch dynamically imported module: /assets/index-Bq1xY2z3.js",
+    );
+  });
+  await mocks.router.push(fullPath).catch(() => {});
+  removeGuard();
+}
+
+/**
+ * Run the router's afterEach hooks the way a finished navigation does.
+ */
+function runAfterEachHooks(failure?: NavigationFailure) {
+  const to = resolveRoute("/artists");
+  const from = resolveRoute("/discover");
+  for (const hook of mocks.afterEachHooks) {
+    hook.call(undefined, to, from, failure);
+  }
 }
 
 /**
