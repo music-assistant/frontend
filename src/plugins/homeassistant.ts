@@ -1,3 +1,8 @@
+import {
+  HA_KIOSK_MODE,
+  readDeviceSetting,
+  subscribeToDeviceSetting,
+} from "@/helpers/device_settings";
 import { reactive, readonly } from "vue";
 import type { Router } from "vue-router";
 
@@ -42,6 +47,7 @@ const SAFE_AREA_EDGES = ["top", "right", "bottom", "left"] as const;
 let messageHandler: ((event: MessageEvent) => void) | null = null;
 let routerInstance: Router | null = null;
 let isNavigatingFromHA = false;
+let reportedInsets: Partial<HASafeAreaInsets> | null = null;
 
 /**
  * The part of the reported safe area Music Assistant is left to cover.
@@ -53,17 +59,22 @@ let isNavigatingFromHA = false;
  */
 function ownedInsets(
   insets: Partial<HASafeAreaInsets>,
-  narrow: boolean,
 ): Partial<HASafeAreaInsets> {
-  return narrow ? { ...insets, top: "" } : insets;
+  const headerShown = state.properties.narrow && !state.kioskModeEnabled;
+
+  return headerShown ? { ...insets, top: "" } : insets;
 }
 
 /**
  * Apply the safe area Home Assistant reports to the device inset tokens.
  *
- * Edges Home Assistant reports nothing for are handed back to the stylesheet.
+ * Edges Home Assistant reports nothing for are handed back to the stylesheet,
+ * as is the whole safe area while Home Assistant is padding the frame itself.
  */
-function applySafeAreaInsets(insets: Partial<HASafeAreaInsets>): void {
+function applySafeAreaInsets(): void {
+  const insets =
+    state.safeAreaEnabled && reportedInsets ? ownedInsets(reportedInsets) : {};
+
   for (const edge of SAFE_AREA_EDGES) {
     const property = `--device-inset-${edge}`;
     // Setting these inline is what lifts them above the zeroed tokens an
@@ -89,12 +100,12 @@ function handleMessage(event: MessageEvent) {
     state.properties.route = event.data.route ?? null;
 
     // Home Assistant reports the insets whether or not we asked for them, and
-    // only stops padding the iframe itself once we did.
-    if (state.safeAreaEnabled && event.data.safeAreaInsets) {
-      applySafeAreaInsets(
-        ownedInsets(event.data.safeAreaInsets, state.properties.narrow),
-      );
+    // only stops padding the iframe itself once we did. Keep the last ones it
+    // sent: a later update may leave them out while still moving the header.
+    if (event.data.safeAreaInsets) {
+      reportedInsets = event.data.safeAreaInsets;
     }
+    applySafeAreaInsets();
 
     if (
       state.routeSyncEnabled &&
@@ -120,9 +131,9 @@ function handleMessage(event: MessageEvent) {
 
 /**
  * Subscribe to Home Assistant properties updates.
- * Optionally enables kiosk mode which hides HA's toolbar.
  *
- * @param options.kioskMode - If true, requests HA to hide its toolbar
+ * @param options.kioskMode - If true, asks Home Assistant to drop the header
+ *   and menu it draws around the frame and leave the app the whole screen
  * @param options.handleSafeArea - If true, takes the safe area padding HA puts
  *   around the ingress iframe over into the device inset tokens
  * @param options.router - Vue router instance for route synchronization
@@ -187,79 +198,56 @@ export function unsubscribeFromHAProperties(): void {
     "*",
   );
 
-  // Home Assistant pads the iframe again the moment we unsubscribe, so hand the
-  // safe area back rather than reserving it twice.
-  applySafeAreaInsets({});
-
   state.isSubscribed = false;
   state.kioskModeEnabled = false;
   state.routeSyncEnabled = false;
   state.safeAreaEnabled = false;
   routerInstance = null;
+  reportedInsets = null;
+
+  // Home Assistant pads the iframe again the moment we unsubscribe, so hand the
+  // safe area back rather than reserving it twice.
+  applySafeAreaInsets();
 
   console.debug("[HA Integration] Unsubscribed from HA properties");
 }
 
-let storedRouter: Router | null = null;
-
-const KIOSK_PREF_KEY = "ha.kioskModeEnabled";
-
+/**
+ * Whether Home Assistant should hand its whole screen estate to Music Assistant.
+ *
+ * On unless it was turned off for this device in the frontend settings.
+ */
 export function getKioskModePreference(): boolean {
-  const stored = localStorage.getItem(KIOSK_PREF_KEY);
-
-  return stored === null ? true : stored === "true";
-}
-
-function saveKioskModePreference(enabled: boolean): void {
-  localStorage.setItem(KIOSK_PREF_KEY, String(enabled));
+  return readDeviceSetting(HA_KIOSK_MODE) !== "false";
 }
 
 /**
- * Show the Home Assistant menu by disabling kiosk mode.
- * This unsubscribes from properties (which disables kiosk mode).
+ * Re-subscribe so a changed kiosk mode preference reaches Home Assistant.
+ *
+ * A subscription can only ever turn kiosk mode on, so leaving it takes an
+ * unsubscribe. Everything else the subscription carries has to come along:
+ * dropping the safe area handover would leave Home Assistant padding the frame
+ * for the rest of the visit.
  */
-export function showHAMenu(): void {
-  if (routerInstance) {
-    storedRouter = routerInstance;
+function applyKioskModePreference(): void {
+  const kioskMode = getKioskModePreference();
+
+  if (!state.isSubscribed || kioskMode === state.kioskModeEnabled) {
+    return;
   }
 
-  saveKioskModePreference(false);
+  const handleSafeArea = state.safeAreaEnabled;
+  const router = routerInstance ?? undefined;
+
   unsubscribeFromHAProperties();
+  subscribeToHAProperties({ kioskMode, handleSafeArea, router });
 }
 
-/**
- * Hide the Home Assistant menu by enabling kiosk mode.
- * This re-subscribes with kioskMode: true.
- */
-export function hideHAMenu(): void {
-  saveKioskModePreference(true);
-
-  if (routerInstance) {
-    storedRouter = routerInstance;
-  }
-
-  if (state.isSubscribed) {
-    unsubscribeFromHAProperties();
-  }
-
-  subscribeToHAProperties({
-    kioskMode: true,
-    router: storedRouter || undefined,
-  });
-}
-
-/**
- * Toggle the Home Assistant menu visibility.
- * When visible (kiosk mode off), hides it.
- * When hidden (kiosk mode on), shows it.
- */
-export function toggleHAMenuVisibility(): void {
-  if (state.kioskModeEnabled) {
-    showHAMenu();
-  } else {
-    hideHAMenu();
-  }
-}
+// Home Assistant keeps kiosk mode up across a reload of this frame, so the
+// preference has to be acted on where it is written rather than on the next
+// startup, which would find Home Assistant already in kiosk mode and leave it
+// there.
+subscribeToDeviceSetting(HA_KIOSK_MODE, applyKioskModePreference);
 
 /**
  * Notify Home Assistant of a route change in Music Assistant.
@@ -286,8 +274,10 @@ export function notifyHARouteChange(path: string): void {
 }
 
 /**
- * Toggle the Home Assistant sidebar menu.
- * Useful when in kiosk mode to let users access HA navigation.
+ * Open or close the Home Assistant sidebar over the app.
+ *
+ * Home Assistant opens it as an overlay while kiosk mode is on, which is what
+ * makes this the way back out of a full screen Music Assistant.
  */
 export function toggleHAMenu(): void {
   window.parent.postMessage(

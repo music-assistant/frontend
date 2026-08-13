@@ -12,11 +12,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { eventbus } from "@/plugins/eventbus";
+import { haState } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
 import { Check } from "@lucide/vue";
 import { computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import NavHomeAssistant from "./NavHomeAssistant.vue";
 import NavMobile from "./NavMobile.vue";
 import {
   getMenuItems,
@@ -177,6 +179,9 @@ onUnmounted(() => {
         <Check class="size-4" />
         {{ t("menu_edit_disable") }}
       </Button>
+      <!-- Kiosk mode leaves no Home Assistant chrome on screen, so this is the
+           only way back to it. -->
+      <NavHomeAssistant v-if="haState.kioskModeEnabled" />
       <NavMobile v-if="isMobile" />
       <SidebarTrigger v-else />
     </SidebarFooter>
@@ -219,27 +224,6 @@ onUnmounted(() => {
 .menu-edit-done {
   width: 100%;
   border-radius: 999px;
-}
-
-.ha-header-button {
-  border: none;
-  background: transparent;
-  padding: 0;
-  margin-right: 4px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ha-header-button:hover {
-  opacity: 0.9;
-}
-
-.ha-logo-icon {
-  width: 22px;
-  height: 22px;
-  display: block;
 }
 
 :deep([data-sidebar="group"]) {

@@ -21,6 +21,7 @@ const {
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
   mockSubscribeToHAProperties,
+  mockGetKioskModePreference,
   mockProxyEnsureReady,
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
@@ -93,10 +94,11 @@ const {
         t: (key: string) => key,
       },
     },
-    haStateMock: { isSubscribed: false },
+    haStateMock: { isSubscribed: false, kioskModeEnabled: false },
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
     mockSubscribeToHAProperties: vi.fn(),
+    mockGetKioskModePreference: vi.fn(() => true),
     mockProxyEnsureReady: vi.fn(),
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
@@ -194,6 +196,7 @@ vi.mock("@/plugins/homeassistant", () => ({
   haState: haStateMock,
   subscribeToHAProperties: mockSubscribeToHAProperties,
   unsubscribeFromHAProperties: vi.fn(),
+  getKioskModePreference: mockGetKioskModePreference,
 }));
 
 vi.mock("@/plugins/remote", () => ({
@@ -327,6 +330,8 @@ describe("App initialization", () => {
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
     haStateMock.isSubscribed = false;
+    haStateMock.kioskModeEnabled = false;
+    mockGetKioskModePreference.mockReturnValue(true);
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
@@ -679,7 +684,44 @@ describe("App initialization", () => {
 
     expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
       handleSafeArea: true,
+      kioskMode: true,
     });
+  });
+
+  it("leaves the Home Assistant chrome up when kiosk mode is turned off", async () => {
+    storeMock.isIngressSession = true;
+    mockGetKioskModePreference.mockReturnValue(false);
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
+      handleSafeArea: true,
+      kioskMode: false,
+    });
+  });
+
+  it("keeps a way back to Home Assistant while the server is away", async () => {
+    haStateMock.kioskModeEnabled = true;
+    wrapper = await mountApp();
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(false);
+
+    // This screen replaces the whole app, sidebar and all, and kiosk mode has
+    // left Home Assistant nothing on screen either: without this the panel is a
+    // spinner with nowhere to go for as long as the server stays away.
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(true);
+  });
+
+  it("leaves the escape button off while Home Assistant shows its own menu", async () => {
+    haStateMock.kioskModeEnabled = false;
+    wrapper = await mountApp();
+
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(false);
   });
 
   it("leaves the safe area to the host outside an ingress session", async () => {
