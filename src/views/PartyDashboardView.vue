@@ -376,8 +376,15 @@ const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
 const logoDarkSrc = new URL("@/assets/logo/logo-dark.svg", import.meta.url)
   .href;
 
+// Set by the unmount hook, so the async work below can tell that the view it
+// belongs to is gone before it acts on a result.
+let unmounted = false;
+
 const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>("party/player");
+  // Leaving the view mid-request would otherwise hand the whole app the party
+  // player, over whatever the next route picked.
+  if (unmounted) return;
   accessError.value = "";
   if (partyPlayerId) {
     store.activePlayerId = partyPlayerId;
@@ -753,13 +760,20 @@ let wakeLock: WakeLockSentinel | null = null;
 const requestWakeLock = async () => {
   if ("wakeLock" in navigator) {
     try {
-      wakeLock = await navigator.wakeLock.request("screen");
-      wakeLock.addEventListener("release", () => {
+      const sentinel = await navigator.wakeLock.request("screen");
+      // The request can outlive the view, and the unmount hook has no way to
+      // reach a sentinel that did not exist while it ran.
+      if (unmounted) {
+        sentinel.release();
+        return;
+      }
+      wakeLock = sentinel;
+      sentinel.addEventListener("release", () => {
         console.debug("Wake lock released");
         wakeLock = null;
         // Re-acquire wake lock if document is still visible
         // This handles cases where the system releases it unexpectedly
-        if (document.visibilityState === "visible") {
+        if (!unmounted && document.visibilityState === "visible") {
           requestWakeLock();
         }
       });
@@ -784,7 +798,6 @@ const BURN_IN_SWAP_MS = 10 * 60 * 1000; // 10 minutes
 // active instance and onBeforeUnmount would be a no-op, so the subscriptions
 // are collected here for the unmount hook registered at setup level.
 const unsubscribers: Array<() => void> = [];
-let unmounted = false;
 
 watch(antiBurnIn, (enabled) => {
   if (burnInInterval) {
