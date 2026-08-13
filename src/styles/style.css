@@ -131,6 +131,18 @@
   color: var(--muted-foreground) !important;
 }
 
+/* the ghost variant paints a hover background as well as a colour. Tailwind gates
+   its hover: utilities behind @media (hover: hover), so unlike the colour above
+   this only reaches devices carrying a pointer, where a tap can still leave the
+   button hovered. The dark utility carries the extra .dark, so clearing the pill
+   needs the :hover here to outweigh both. A showing popout keeps its pill. */
+.player-control-button[data-suppress-hover="true"]:hover:not(
+    [data-active="true"],
+    [data-state="open"]
+  ) {
+  background-color: transparent !important;
+}
+
 .player-control-button:hover:not([data-suppress-hover="true"]),
 .player-control-button[data-active="true"],
 .player-control-button[data-state="open"] {
