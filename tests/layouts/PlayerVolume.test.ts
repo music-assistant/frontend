@@ -475,9 +475,10 @@ describe("PlayerVolume group popout", () => {
     expect(popout.style.width).toBe("");
   });
 
-  // The popout is fixed, so the padding the fullscreen player keeps clear of the
-  // cutout never reaches it and it has to hold the margin off the safe edges
-  // itself. Each side carries its own inset, so a mix-up cannot pass.
+  // The popout is teleported out to the body, so the padding the fullscreen
+  // player keeps clear of the cutout never reaches it and it has to hold the
+  // margin off the safe edges itself. Each side carries its own inset, so a
+  // mix-up cannot pass.
   describe("with a cutout on both sides", () => {
     const INSET_LEFT = 77;
     const INSET_RIGHT = 44;

@@ -104,27 +104,24 @@ const GAP = "5px";
 const INSET_LEFT = "77px";
 const INSET_RIGHT = "44px";
 
-// Tailwind writes its arbitrary values without spaces around the operators and
-// resolves them at build time, which vitest does not run, so the widths are
-// lifted out of the templates and resolved here instead.
-function popoutWidths(source: string) {
+// the widths are Tailwind utilities, so the templates name them and the
+// compiled sheet is what they mean; taking the class from one and reading it
+// against the other covers both a term going missing and the utility itself
+// stopping being emitted
+function popoutWidthClasses(source: string) {
   return [
     ...source.matchAll(
-      /(?:max-)?w-\[(calc\([^\]]*--player-bar-popout-gap[^\]]*)\]/g,
+      /(?:max-)?w-\[calc\([^\]]*--player-bar-popout-gap[^\]]*\]/g,
     ),
-  ].map((match) => match[1]);
+  ].map((match) => match[0]);
 }
 
-function resolveWidth(value: string) {
-  const styles = document.createElement("style");
-  styles.textContent = `.popout-width { width: ${value}; }`;
-  document.head.appendChild(styles);
+function resolveWidth(className: string) {
   const element = document.createElement("div");
-  element.className = "popout-width";
+  element.className = className;
   document.body.appendChild(element);
-  const width = getComputedStyle(element).width;
-  styles.remove();
-  element.remove();
+  const styles = getComputedStyle(element);
+  const width = className.startsWith("max-") ? styles.maxWidth : styles.width;
   return width.replace(/\s+/g, "");
 }
 
@@ -133,7 +130,12 @@ describe.each([
   ["group control", groupControlSource],
   ["volume control", volumeControlSource],
 ])("%s popout width", (_name, source) => {
+  let widthStyles: HTMLStyleElement;
+
   beforeEach(() => {
+    widthStyles = document.createElement("style");
+    widthStyles.textContent = css;
+    document.head.appendChild(widthStyles);
     document.documentElement.style.setProperty("--player-bar-popout-gap", GAP);
     document.documentElement.style.setProperty(
       "--device-inset-left",
@@ -146,6 +148,7 @@ describe.each([
   });
 
   afterEach(() => {
+    widthStyles.remove();
     document.documentElement.removeAttribute("style");
     document.body.innerHTML = "";
   });
@@ -153,11 +156,11 @@ describe.each([
   // The popouts hang off the safe end of the bar, so a width measured from the
   // whole screen would push their far edge back under the opposite cutout.
   it("spans the screen less both cutouts", () => {
-    const widths = popoutWidths(source);
+    const classNames = popoutWidthClasses(source);
 
-    expect(widths.length).toBeGreaterThan(0);
-    for (const width of widths) {
-      expect(resolveWidth(width)).toBe(
+    expect(classNames.length).toBeGreaterThan(0);
+    for (const className of classNames) {
+      expect(resolveWidth(className)).toBe(
         `calc(${window.innerWidth}px-2*${GAP}-${INSET_LEFT}-${INSET_RIGHT})`,
       );
     }

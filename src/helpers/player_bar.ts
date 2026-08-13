@@ -17,8 +17,9 @@ const PLAYER_BAR_POPOUT_TOP_GAP = 24;
 export const PLAYER_BAR_POPOUT_COLLISION_PADDING = {
   top: PLAYER_BAR_POPOUT_TOP_GAP,
   // the boundary this is measured against spans the cutout, so the side gaps
-  // only stay clear of it by carrying the inset of the moment; reading them
-  // through a getter keeps this one object stable for floating-ui
+  // only stay clear of it by carrying the inset. Reading them through getters
+  // hands each popout the inset it opens under without handing floating-ui a
+  // new object to rebuild its middleware around
   get right() {
     return PLAYER_BAR_POPOUT_GAP + deviceInset("right");
   },

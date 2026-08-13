@@ -135,9 +135,9 @@ describe("PLAYER_BAR_POPOUT_COLLISION_PADDING", () => {
     );
   });
 
-  // The insets are read every time the padding is, so a rotation cannot leave
-  // the popouts holding the gaps of the orientation they opened in.
-  it("reads the insets of the moment", () => {
+  // The padding is read afresh for every popout that opens, so a rotation
+  // cannot leave the next one holding the gaps of the orientation before it.
+  it("reads the insets each time it is asked", () => {
     expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.right).toBe(
       PLAYER_BAR_POPOUT_GAP,
     );

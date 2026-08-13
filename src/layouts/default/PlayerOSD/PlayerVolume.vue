@@ -288,8 +288,9 @@ const updatePopoutPosition = () => {
   const bottom = `${window.innerHeight - rect.bottom}px`;
   // It grows upwards from there, so a large group is capped at the room above
   const maxHeight = `${rect.bottom - POPOUT_MARGIN}px`;
-  // The popout is fixed, so it escapes the padding its container keeps clear of
-  // the cutout and has to hold the margin off the safe edges itself
+  // The popout is teleported out to the body, so the padding its container
+  // keeps clear of the cutout never reaches it and it holds the margin off the
+  // safe edges itself
   const insetLeft = deviceInset("left");
   const insetRight = deviceInset("right");
 
