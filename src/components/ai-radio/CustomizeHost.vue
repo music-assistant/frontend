@@ -263,7 +263,11 @@ const languageOptions = computed(() =>
 );
 
 const languageSelectValue = computed({
-  get: () => draft.value?.language || NONE_SELECT_VALUE,
+  // Canonicalize for display only: writing back here would mark an untouched host dirty.
+  get: () =>
+    draft.value?.language
+      ? canonicalizeLocale(draft.value.language)
+      : NONE_SELECT_VALUE,
   set: (value: string) => {
     if (!draft.value) return;
     draft.value.language = value === NONE_SELECT_VALUE ? "" : value;

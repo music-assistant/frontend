@@ -591,17 +591,17 @@ export const getQueryValue = (value: unknown) => {
 
 /**
  * Appends " 2", " 3", ... until `name` doesn't collide with `existingNames`.
- * Matching ignores case: ids are slugified from the name, so case-only variants collide.
+ * Compares on the slug `compileHost` derives the id from, so "A b" and "A-b" collide.
  */
 export const uniqueHostName = (
   name: string,
   existingNames: string[],
 ): string => {
-  const used = new Set(existingNames.map((existing) => existing.toLowerCase()));
-  if (!used.has(name.toLowerCase())) return name;
+  const used = new Set(existingNames.map(slugify));
+  if (!used.has(slugify(name))) return name;
   let suffix = 2;
   let candidate = `${name} ${suffix}`;
-  while (used.has(candidate.toLowerCase())) {
+  while (used.has(slugify(candidate))) {
     suffix += 1;
     candidate = `${name} ${suffix}`;
   }

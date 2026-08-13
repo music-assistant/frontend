@@ -62,6 +62,21 @@ describe("uniqueHostName", () => {
       "morning show 2",
     );
   });
+
+  it("collides on names that slugify alike, not just on case", () => {
+    expect(uniqueHostName("Morning show", ["Morning-show"])).toBe(
+      "Morning show 2",
+    );
+    expect(uniqueHostName("Morning show", ["morning_show"])).toBe(
+      "Morning show 2",
+    );
+  });
+
+  it("collides on names that differ only in surrounding whitespace", () => {
+    expect(uniqueHostName("Morning show ", ["Morning show"])).not.toBe(
+      "Morning show ",
+    );
+  });
 });
 
 describe("language field round-trip", () => {
