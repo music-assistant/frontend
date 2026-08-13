@@ -3,8 +3,9 @@ import type { Router } from "vue-router";
 /**
  * Whether there is an earlier in-app view to return to.
  *
- * False when the current view was opened directly - a deep link, a reload or
- * a fresh tab - where going back would leave the app.
+ * False only on the view a session started at, reached by a deep link or in a
+ * fresh tab. History state outlives a reload, so anything navigated to inside
+ * the app keeps its way back.
  */
 export function canGoBack(router: Router): boolean {
   return router.options.history.state.back != null;

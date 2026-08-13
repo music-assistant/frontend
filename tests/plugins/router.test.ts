@@ -416,31 +416,31 @@ describe("global navigation guard", () => {
 
 describe("media details back button", () => {
   // A details view opened directly has no history to return to, so the back
-  // button goes up to a listing instead. Both ends of that step are route
-  // names, which this pins to the route table so a rename cannot break it.
-  it.each([
-    "album",
-    "artist",
-    "audiobook",
-    "collection",
-    "genre",
-    "playlist",
-    "podcast",
-    "radio",
-    "track",
-  ])("goes up from %s to a route that exists", (details) => {
-    const push = vi.fn<(to: { name: string }) => void>();
-    backFromMediaDetails({
-      back: vi.fn(),
-      push,
-      currentRoute: { value: { name: details } },
-      options: { history: { state: { back: null } } },
-    } as unknown as Router);
+  // button goes up to the listing above it instead. Both ends come out of the
+  // route table here, so a details route added without a target fails rather
+  // than quietly landing on discover.
+  const detailRoutes = mediaDetailRoutes(routes);
 
-    const [target] = push.mock.calls[0];
-    expect(findRouteRecord(details, routes)?.name).toBe(details);
-    expect(findRouteRecord(target.name, routes)?.name).toBe(target.name);
+  it("finds the media details routes to check", () => {
+    // guards the discovery below against silently matching nothing
+    expect(detailRoutes.length).toBeGreaterThanOrEqual(9);
   });
+
+  it.each(detailRoutes)(
+    "goes up from $name to $listing",
+    ({ name, listing }) => {
+      const push = vi.fn<(to: { name: string }) => void>();
+
+      backFromMediaDetails({
+        back: vi.fn(),
+        push,
+        currentRoute: { value: { name } },
+        options: { history: { state: { back: null } } },
+      } as unknown as Router);
+
+      expect(push).toHaveBeenCalledWith({ name: listing });
+    },
+  );
 });
 
 /**
@@ -488,6 +488,35 @@ function beforeEnterGuard(name: string): NavigationGuardWithThis<undefined> {
     throw new Error(`Route "${name}" has no single beforeEnter guard`);
   }
   return guard;
+}
+
+/**
+ * Every media details route paired with the listing it sits under.
+ *
+ * A details route is a provider-scoped child of a library section, and that
+ * section's index route is the listing above it.
+ */
+function mediaDetailRoutes(
+  records: RouteRecordRaw[],
+): { name: string; listing: string }[] {
+  const found: { name: string; listing: string }[] = [];
+  for (const record of records) {
+    const children = "children" in record ? record.children : undefined;
+    if (!children) continue;
+
+    const listing = children.find((child) => child.path === "")?.name;
+    if (typeof listing === "string") {
+      for (const child of children) {
+        if (
+          child.path.startsWith(":provider/") &&
+          typeof child.name === "string"
+        )
+          found.push({ name: child.name, listing });
+      }
+    }
+    found.push(...mediaDetailRoutes(children));
+  }
+  return found;
 }
 
 function findRouteRecord(
