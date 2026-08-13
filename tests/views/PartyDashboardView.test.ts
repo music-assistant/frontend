@@ -141,6 +141,52 @@ const enterFullscreen = (view: VueWrapper) =>
   view.get(ENTER_FULLSCREEN).trigger("click");
 
 /**
+ * Stands in for the Wake Lock API, which happy-dom does not implement.
+ *
+ * `settle()` resolves a pending request, so a test can leave the view while
+ * one is still in flight. Sentinels fire `release` on release, the way the
+ * browser does.
+ */
+function fakeWakeLock() {
+  const sentinels: { released: boolean }[] = [];
+  let pending: ((sentinel: unknown) => void) | undefined;
+  const request = vi.fn(
+    () =>
+      new Promise((resolve) => {
+        pending = resolve;
+      }),
+  );
+  Object.defineProperty(navigator, "wakeLock", {
+    configurable: true,
+    value: { request },
+  });
+  return {
+    request,
+    sentinels,
+    settle: () => {
+      const listeners: (() => void)[] = [];
+      const sentinel = {
+        released: false,
+        release: vi.fn(() => {
+          sentinel.released = true;
+          listeners.forEach((listener) => listener());
+          return Promise.resolve();
+        }),
+        addEventListener: (_type: string, listener: () => void) =>
+          listeners.push(listener),
+      };
+      sentinels.push(sentinel);
+      pending?.(sentinel);
+      pending = undefined;
+      return sentinel;
+    },
+    restore: () => {
+      delete (navigator as { wakeLock?: unknown }).wakeLock;
+    },
+  };
+}
+
+/**
  * Records document listeners while a view runs.
  *
  * `stop()` restores the originals and returns the event types still attached,
@@ -340,5 +386,93 @@ describe("PartyDashboardView event subscriptions", () => {
     const remaining = live.stop();
 
     expect(remaining).not.toContain("visibilitychange");
+  });
+});
+
+describe("PartyDashboardView screen wake lock", () => {
+  let wakeLock: ReturnType<typeof fakeWakeLock>;
+
+  beforeEach(() => {
+    store.frameless = false;
+    wakeLock = fakeWakeLock();
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    wakeLock.restore();
+  });
+
+  it("lets the screen sleep again once the dashboard is closed", async () => {
+    const view = mountViewRaw();
+    const sentinel = wakeLock.settle();
+    await flushPromises();
+    expect(wakeLock.request).toHaveBeenCalledTimes(1);
+
+    view.unmount();
+    wrapper = undefined;
+    await flushPromises();
+
+    expect(sentinel.released).toBe(true);
+    // releasing fires the sentinel's own release event, whose handler would
+    // otherwise take the still-visible page as a cue to acquire a new one
+    expect(wakeLock.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases a wake lock that only arrives after it closed", async () => {
+    const view = mountViewRaw();
+
+    view.unmount();
+    wrapper = undefined;
+    const sentinel = wakeLock.settle();
+    await flushPromises();
+
+    expect(sentinel.released).toBe(true);
+  });
+
+  it("re-acquires when the screen is released while still open", async () => {
+    // the handler exists because the system can drop the lock on its own, so
+    // pin that the guard above did not cost the view that behaviour
+    const view = mountViewRaw();
+    const sentinel = wakeLock.settle();
+    await flushPromises();
+
+    sentinel.release();
+    await flushPromises();
+
+    expect(wakeLock.request).toHaveBeenCalledTimes(2);
+    view.unmount();
+    wrapper = undefined;
+  });
+});
+
+describe("PartyDashboardView active player", () => {
+  beforeEach(() => {
+    store.frameless = false;
+    store.activePlayerId = "the_users_own_pick";
+    vi.mocked(api.sendCommand).mockResolvedValue("party_player_1" as never);
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.activePlayerId = undefined;
+    vi.mocked(api.sendCommand).mockResolvedValue(null as never);
+  });
+
+  it("takes over the active player while open", async () => {
+    await mountView();
+
+    expect(store.activePlayerId).toBe("party_player_1");
+  });
+
+  it("leaves the active player alone when closed mid-request", async () => {
+    const view = mountViewRaw();
+
+    view.unmount();
+    wrapper = undefined;
+    await flushPromises();
+
+    expect(store.activePlayerId).toBe("the_users_own_pick");
   });
 });
