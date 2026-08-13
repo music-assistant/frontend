@@ -188,20 +188,27 @@ describe("ItemsListing startup cleanup", () => {
   });
 
   it("stops paging through the genres when the listing is closed mid-load", async () => {
-    // a full page is what makes the loop ask for another one; a short page
-    // would end the paging on its own and prove nothing
-    const fullPage = Array.from({ length: 100 }, (_, index) =>
-      genre({ item_id: String(index), name: `Genre ${index}` }),
-    );
+    // a full page is what makes the loop ask for another one; taking the size
+    // from the request keeps that true whatever page size the listing asks for
+    let requestedPageSize = 0;
     let resolveFirstPage: () => void = () => {};
-    mockGetLibraryGenres.mockReturnValueOnce(
-      new Promise((resolve) => {
-        resolveFirstPage = () => resolve(fullPage);
-      }),
-    );
+    mockGetLibraryGenres.mockImplementationOnce(({ limit } = {}) => {
+      requestedPageSize = limit ?? 0;
+      return new Promise((resolve) => {
+        resolveFirstPage = () =>
+          resolve(
+            Array.from({ length: requestedPageSize }, (_, index) =>
+              genre({ item_id: String(index), name: `Genre ${index}` }),
+            ),
+          );
+      });
+    });
 
     const listing = mountListingRaw();
     expect(mockGetLibraryGenres).toHaveBeenCalledTimes(1);
+    // a page the listing never asked to fill would end the paging on its own,
+    // leaving the assertion below true no matter what
+    expect(requestedPageSize).toBeGreaterThan(0);
 
     listing.unmount();
     resolveFirstPage();

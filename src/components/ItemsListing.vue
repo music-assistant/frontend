@@ -1811,7 +1811,7 @@ const loadGenreOptions = async () => {
     const mediaType = itemtypeToMediaType[props.itemtype];
 
     do {
-      // the paging outlives the listing, so stop fetching once it is gone
+      // the paging can outlast the listing, so stop fetching once it is gone
       if (unmounted) return;
 
       page = await api.getLibraryGenres({
