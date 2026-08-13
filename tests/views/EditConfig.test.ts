@@ -1,16 +1,16 @@
 import {
+  enableAutoUnmount,
   flushPromises,
   mount,
   shallowMount,
   type VueWrapper,
 } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { h, nextTick } from "vue";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
-import { canGoBack } from "@/helpers/navigation";
 import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 import EditConfig from "@/views/settings/EditConfig.vue";
 
@@ -47,6 +47,9 @@ vi.mock("vue-router", async (importOriginal) => {
     useRouter: () => inject(actual.routerKey, routerMock as never),
   };
 });
+
+// the form listens for beforeunload, so a leaked instance keeps reacting
+enableAutoUnmount(afterEach);
 
 describe("EditConfig", () => {
   beforeEach(() => {
@@ -372,9 +375,42 @@ describe("EditConfig unsaved changes", () => {
     router.back();
     await flushPromises();
     await click(wrapper, "config-discard");
-
     expect(router.currentRoute.value.name).toBe("settings");
-    expect(canGoBack(router)).toBe(false);
+
+    router.back();
+    await flushPromises();
+
+    expect(router.currentRoute.value.name).toBe("players");
+  });
+
+  // the router runs the leave guards again for the route it redirects to
+  it("asks only once when the page picked redirects elsewhere", async () => {
+    const { router, wrapper } = await mountInRouter();
+    dirty(wrapper);
+    await nextTick();
+
+    router.push({ name: "redirects-away" });
+    await flushPromises();
+    await click(wrapper, "config-discard");
+
+    expect(router.currentRoute.value.name).toBe("music-quiz");
+  });
+
+  // a back press is how a phone dismisses a dialog, and the second one must not
+  // leave the history a step away from the page on screen
+  it("survives a back press on top of the dialog", async () => {
+    const { router, wrapper } = await mountInRouter();
+    dirty(wrapper);
+    await nextTick();
+
+    router.back();
+    await flushPromises();
+    router.back();
+    await flushPromises();
+    await click(wrapper, "config-stay");
+
+    expect(router.currentRoute.value.name).toBe("editprovider");
+    expect(router.options.history.location).toBe("/settings/provider");
   });
 
   it("lets an unchanged form go without asking", async () => {
@@ -448,6 +484,7 @@ async function mountInRouter() {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
+      { path: "/players", name: "players", component: blank },
       { path: "/settings", name: "settings", component: blank },
       {
         path: "/settings/provider",
@@ -457,10 +494,18 @@ async function mountInRouter() {
         },
       },
       { path: "/music-quiz", name: "music-quiz", component: blank },
+      // shaped like the plugin views, which send you away when disabled
+      {
+        path: "/redirects-away",
+        name: "redirects-away",
+        component: blank,
+        beforeEnter: () => ({ name: "music-quiz" }),
+      },
     ],
   });
-  router.push({ name: "settings" });
+  router.push({ name: "players" });
   await router.isReady();
+  await router.push({ name: "settings" });
   await router.push({ name: "editprovider" });
 
   const wrapper = mount(

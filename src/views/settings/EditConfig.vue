@@ -140,7 +140,13 @@
     </v-card>
   </v-dialog>
   <!-- Unsaved changes confirmation dialog -->
-  <v-dialog v-model="showUnsavedDialog" max-width="400" persistent>
+  <!-- any way out of this dialog has to answer the navigation it is holding -->
+  <v-dialog
+    :model-value="showUnsavedDialog"
+    max-width="400"
+    persistent
+    @update:model-value="cancelDiscard"
+  >
     <v-card>
       <v-card-title>{{ $t("settings.unsaved_changes") }}</v-card-title>
       <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
@@ -205,9 +211,9 @@ import ProtocolConfigSection from "./ProtocolConfigSection.vue";
 const router = useRouter();
 const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
-// lets the buttons in the unsaved-changes dialog release the navigation its
-// guard is holding
-let answerUnsavedDialog: ((discard: boolean) => void) | undefined;
+// answers the navigation the guard is holding; set only while one waits on the
+// unsaved-changes dialog
+let heldNavigation: ((discard: boolean) => void) | undefined;
 
 export interface Props {
   configEntries: ConfigEntryUI[];
@@ -428,22 +434,28 @@ defineExpose({ resetToDefaults });
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;
-  answerUnsavedDialog?.(true);
+  // a redirect has the router run the leave guards of the resumed navigation a
+  // second time, and it must not ask again
+  allowNavigation.value = true;
+  releaseNavigation(true);
 };
 
 const cancelDiscard = function () {
   showUnsavedDialog.value = false;
-  answerUnsavedDialog?.(false);
+  releaseNavigation(false);
 };
 
 // Navigation guard for route changes
 onBeforeRouteLeave(() => {
   if (allowNavigation.value || !hasUnsavedChanges.value) return true;
-  // hold the navigation the user asked for instead of cancelling it, so
-  // discarding resumes that very navigation rather than guessing a destination
+  // one is already waiting for an answer: turn this one away rather than hold
+  // both, or the history ends up out of step with the page on screen
+  if (heldNavigation) return false;
+  // holding it, rather than cancelling it, is what lets discarding carry on to
+  // the very page the user asked for
   showUnsavedDialog.value = true;
   return new Promise<boolean>((resolve) => {
-    answerUnsavedDialog = resolve;
+    heldNavigation = resolve;
   });
 });
 
@@ -461,6 +473,11 @@ onBeforeUnmount(() => {
 
 // Add listener when component mounts
 window.addEventListener("beforeunload", handleBeforeUnload);
+
+const releaseNavigation = function (discard: boolean) {
+  heldNavigation?.(discard);
+  heldNavigation = undefined;
+};
 
 const isDisabled = function (entry: ConfigEntryUI) {
   return isEntryDisabled(entry, entries.value || []);
