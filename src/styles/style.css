@@ -131,10 +131,10 @@
   color: var(--muted-foreground) !important;
 }
 
-/* the ghost variant paints a hover background as well as a colour. These buttons
+/* the ghost variant paints a hover background as well as a colour, behind the
+   @media (hover: hover) Tailwind gates its hover: utilities with. These buttons
    carry their state in the colour and the weight alone, so the pill goes in
-   every state. :root lifts this over the equally-!important dark hover utility,
-   which brings an extra .dark of its own. */
+   every state; :root lifts this over the dark utility's extra .dark. */
 :root .player-control-button:hover {
   background-color: transparent !important;
 }
@@ -146,8 +146,8 @@
 }
 
 /* the label takes the weight that goes with the active colour, as it does in the
-   mobile navigation. :root lifts these over the player bar's own scoped rule,
-   which sets the resting weight at the same specificity. */
+   mobile navigation. The player bar sets the resting weight from its own scoped
+   block, which the two attribute branches only out-rank with the :root here. */
 :root
   .player-control-button:hover:not([data-suppress-hover="true"])
   .player-bar-action-label,
