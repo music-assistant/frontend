@@ -5,6 +5,7 @@ import volumeSource from "@/layouts/default/PlayerOSD/PlayerVolume.vue?raw";
 import panelSource from "@/layouts/default/PlayerOSD/PlayerVolumePanel.vue?raw";
 import selectSource from "@/layouts/default/PlayerSelect.vue?raw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { SCOPE_COMPOUND, rank, selectorsSetting, styleBlocks } from "./cascade";
 
 // the lists outside PlayerVolume that opt their rows into the vertical pan
 const SCROLLERS = [
@@ -15,19 +16,7 @@ const SCROLLERS = [
 const OVERRIDE =
   ".player-volume-scroller .player-volume-wrapper .player-volume-container";
 
-// the scoped block's selectors each gain a [data-v-hash] compound at compile
-// time, which the raw source does not carry
-const SCOPE_COMPOUND = 1;
-
 let styles: HTMLStyleElement;
-
-// vitest only compiles the stylesheets under src/styles, so PlayerVolume's own
-// rules are lifted straight out of its source, in the order it declares them
-function styleBlocks(source: string) {
-  return [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(
-    (match) => match[1],
-  );
-}
 
 // the classes the list is rendered with, read off the template so the probe
 // cannot drift from the markup it stands in for
@@ -47,22 +36,6 @@ function row(classes: string) {
     </div>`;
   document.body.appendChild(list);
   return list.querySelector(".player-volume-container")!;
-}
-
-// a rule may carry a selector list, of which only some parts land on the row
-function selectorsSettingTouchAction(element: Element) {
-  return [...(styles.sheet?.cssRules ?? [])]
-    .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
-    .filter((rule) => rule.style.getPropertyValue("touch-action") !== "")
-    .flatMap((rule) => rule.selectorText.split(","))
-    .map((selector) => selector.trim())
-    .filter((selector) => element.matches(selector));
-}
-
-// neither side carries an id or an element name, so counting their class-level
-// compounds is the whole comparison
-function rank(selector: string) {
-  return (selector.match(/\.[\w-]+|\[[^\]]+\]|:[\w-]+/g) ?? []).length;
 }
 
 // the list has to still be the element that scrolls, or the rows would be
@@ -98,7 +71,11 @@ describe("volume rows in a scrolling list", () => {
   it.each(SCROLLERS)(
     "keeps %s panning independently of the stylesheet load order",
     (_name, source) => {
-      const declaring = selectorsSettingTouchAction(row(scroller(source)));
+      const declaring = selectorsSetting(
+        styles,
+        row(scroller(source)),
+        "touch-action",
+      );
 
       expect(declaring).toContain(OVERRIDE);
       for (const selector of declaring) {

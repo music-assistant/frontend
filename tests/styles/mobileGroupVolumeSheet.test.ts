@@ -6,6 +6,7 @@ import sheetSource from "@/layouts/default/PlayerOSD/PlayerBarMobileVolumeSheet.
 import tokens from "@/styles/global.css?inline";
 import css from "@/styles/style.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { rank } from "./cascade";
 
 // happy-dom does no calc() arithmetic, and drops a position whose tokens expand
 // to a nested one, so each token the sheet is placed from stands in as a plain
@@ -79,20 +80,6 @@ function overridePriority(element: Element, property: string) {
   return overrideRules(element)
     .find((rule) => rule.style.getPropertyValue(property) !== "")
     ?.style.getPropertyPriority(property);
-}
-
-// happy-dom takes the last of two !important declarations rather than the most
-// specific one, so the rank the component's selectors buy is only observable
-// off the selectors themselves. Neither side carries an id or an element name,
-// so counting their class-level compounds is the whole comparison.
-function rank(selector: string) {
-  // :where() is what global.css reaches for to contribute no specificity at
-  // all, so it drops out before anything is counted
-  return (
-    selector
-      .replace(/:where\([^)]*\)/g, "")
-      .match(/\.[\w-]+|\[[^\]]+\]|:[\w-]+/g) ?? []
-  ).length;
 }
 
 // which of two equally-!important declarations applies comes down to whichever
