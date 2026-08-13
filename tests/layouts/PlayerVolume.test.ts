@@ -475,6 +475,89 @@ describe("PlayerVolume group popout", () => {
     expect(popout.style.width).toBe("");
   });
 
+  // The popout is teleported out to the body, so the padding the fullscreen
+  // player keeps clear of the cutout never reaches it and it has to hold the
+  // margin off the safe edges itself. Each side carries its own inset, so a
+  // mix-up cannot pass.
+  describe("with a cutout on both sides", () => {
+    const INSET_LEFT = 77;
+    const INSET_RIGHT = 44;
+    const VIEWPORT_WIDTH = 1000;
+    const POPOUT_WIDTH = 300;
+    const MARGIN = 8;
+
+    const originalInnerWidth = Object.getOwnPropertyDescriptor(
+      window,
+      "innerWidth",
+    );
+
+    function placeSlider(left: number, width: number) {
+      vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
+        top: SLIDER_BOTTOM - 40,
+        bottom: SLIDER_BOTTOM,
+        left,
+        right: left + width,
+        width,
+        height: 40,
+      } as DOMRect);
+    }
+
+    beforeEach(() => {
+      Object.defineProperty(window, "innerWidth", {
+        value: VIEWPORT_WIDTH,
+        writable: true,
+        configurable: true,
+      });
+      document.documentElement.style.setProperty(
+        "--device-inset-left",
+        `${INSET_LEFT}px`,
+      );
+      document.documentElement.style.setProperty(
+        "--device-inset-right",
+        `${INSET_RIGHT}px`,
+      );
+    });
+
+    afterEach(() => {
+      document.documentElement.removeAttribute("style");
+      if (originalInnerWidth) {
+        Object.defineProperty(window, "innerWidth", originalInnerWidth);
+      }
+    });
+
+    it("stops the popout short of the cutout at the end of the screen", async () => {
+      // far enough over that centring it on the slider would run past the end
+      placeSlider(850, 140);
+      const { wrapper } = mountLargeGroup();
+
+      const popout = await openPopout(wrapper);
+
+      expect(popout.style.left).toBe(
+        `${VIEWPORT_WIDTH - MARGIN - INSET_RIGHT - POPOUT_WIDTH}px`,
+      );
+    });
+
+    it("stops it short of the one at the start of the screen", async () => {
+      placeSlider(20, 140);
+      const { wrapper } = mountLargeGroup();
+
+      const popout = await openPopout(wrapper);
+
+      expect(popout.style.left).toBe(`${MARGIN + INSET_LEFT}px`);
+    });
+
+    it("holds the margin off both safe edges on mobile", async () => {
+      store.mobileLayout = true;
+      placeSlider(100, 200);
+      const { wrapper } = mountLargeGroup();
+
+      const popout = await openPopout(wrapper);
+
+      expect(popout.style.left).toBe(`${MARGIN + INSET_LEFT}px`);
+      expect(popout.style.right).toBe(`${MARGIN + INSET_RIGHT}px`);
+    });
+  });
+
   it("opens at the group slider so it still overlaps the tapped one", async () => {
     vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(900);
     const { wrapper } = mountLargeGroup();

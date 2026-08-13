@@ -120,6 +120,7 @@
 
 <script setup lang="ts">
 import { Slider } from "@/components/ui/slider";
+import { deviceInset } from "@/helpers/device";
 import { getVolumeIconComponent, truncateString } from "@/helpers/utils";
 import { cn } from "@/lib/utils";
 import { api } from "@/plugins/api";
@@ -287,6 +288,11 @@ const updatePopoutPosition = () => {
   const bottom = `${window.innerHeight - rect.bottom}px`;
   // It grows upwards from there, so a large group is capped at the room above
   const maxHeight = `${rect.bottom - POPOUT_MARGIN}px`;
+  // The popout is teleported out to the body, so the padding its container
+  // keeps clear of the cutout never reaches it and it holds the margin off the
+  // safe edges itself
+  const insetLeft = deviceInset("left");
+  const insetRight = deviceInset("right");
 
   if (store.mobileLayout) {
     // Full width with padding on mobile
@@ -294,20 +300,20 @@ const updatePopoutPosition = () => {
       position: "fixed",
       bottom,
       maxHeight,
-      left: `${POPOUT_MARGIN}px`,
-      right: `${POPOUT_MARGIN}px`,
+      left: `${POPOUT_MARGIN + insetLeft}px`,
+      right: `${POPOUT_MARGIN + insetRight}px`,
     };
   } else {
     // Desktop: use wrapper width but at least POPOUT_MIN_WIDTH, centered
-    // on the wrapper, clamped to viewport edges
+    // on the wrapper, clamped to the safe edges
     const popoutWidth = Math.max(rect.width, POPOUT_MIN_WIDTH);
     const wrapperCenter = rect.left + rect.width / 2;
     let left = wrapperCenter - popoutWidth / 2;
 
-    // Clamp to viewport edges
-    if (left < POPOUT_MARGIN) left = POPOUT_MARGIN;
-    if (left + popoutWidth > window.innerWidth - POPOUT_MARGIN) {
-      left = window.innerWidth - POPOUT_MARGIN - popoutWidth;
+    // Clamp to the safe edges
+    if (left < POPOUT_MARGIN + insetLeft) left = POPOUT_MARGIN + insetLeft;
+    if (left + popoutWidth > window.innerWidth - POPOUT_MARGIN - insetRight) {
+      left = window.innerWidth - POPOUT_MARGIN - insetRight - popoutWidth;
     }
 
     popoutStyle.value = {
