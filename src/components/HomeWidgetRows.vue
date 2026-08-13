@@ -796,7 +796,7 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
-let isUnmounted = false;
+let unmounted = false;
 let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
 
 const cancelScheduledRecommendationRefresh = () => {
@@ -810,13 +810,13 @@ const scheduleRecommendationRefresh = () => {
   cancelScheduledRecommendationRefresh();
   refreshRecommendationsTimer = setTimeout(async () => {
     refreshRecommendationsTimer = undefined;
-    if (isUnmounted) return;
+    if (unmounted) return;
     // Refetches the catalog and the shown rows' content so play-history rows
     // and rotated picks stay current.
     await loadRecommendationRows();
-    if (isUnmounted) return;
+    if (unmounted) return;
     await refreshShownRowItems();
-    if (isUnmounted) return;
+    if (unmounted) return;
     resolveHeroPicks();
   }, 1500);
 };
@@ -847,19 +847,19 @@ onMounted(async () => {
   window.addEventListener("resize", updateHeroNav);
 
   await loadRecommendationRows();
-  if (isUnmounted) return;
+  if (unmounted) return;
   loading.value = false;
 
   await fetchMissingRowItems();
-  if (isUnmounted) return;
+  if (unmounted) return;
   resolveHeroPicks();
   nextTick(() => {
-    if (!isUnmounted) observeHero();
+    if (!unmounted) observeHero();
   });
 });
 
 onBeforeUnmount(() => {
-  isUnmounted = true;
+  unmounted = true;
   window.removeEventListener("resize", updateHeroNav);
   unsubscribeRecommendations();
   cancelScheduledRecommendationRefresh();
