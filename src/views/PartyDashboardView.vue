@@ -783,7 +783,7 @@ const BURN_IN_SWAP_MS = 10 * 60 * 1000; // 10 minutes
 // onMounted subscribes after its awaits, where the component is no longer the
 // active instance and onBeforeUnmount would be a no-op, so the subscriptions
 // are collected here for the unmount hook registered at setup level.
-const unsubscribes: (() => void)[] = [];
+const unsubscribers: Array<() => void> = [];
 let unmounted = false;
 
 watch(antiBurnIn, (enabled) => {
@@ -802,9 +802,13 @@ watch(antiBurnIn, (enabled) => {
 });
 
 onMounted(async () => {
+  // Registered before the first await, so that leaving the view while one is
+  // still pending cannot attach the listener after the unmount hook has
+  // already removed it.
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
   // Request wake lock to keep screen on
   await requestWakeLock();
-  document.addEventListener("visibilitychange", handleVisibilityChange);
 
   // Set active player from party config (needed when opened in a new tab
   // where the Default layout's player selection logic doesn't run)
@@ -837,7 +841,7 @@ onMounted(async () => {
   fetchQueueItems();
 
   // Subscribe to queue item updates
-  unsubscribes.push(
+  unsubscribers.push(
     api.subscribe(EventType.QUEUE_ITEMS_UPDATED, (evt: EventMessage) => {
       if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
       // Force refetch when items are added/removed (e.g., Play Next)
@@ -847,7 +851,7 @@ onMounted(async () => {
   );
 
   // Subscribe to queue updates (for index changes)
-  unsubscribes.push(
+  unsubscribers.push(
     api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
       if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
       // Don't force refetch for index changes - let buffer optimization work
@@ -856,7 +860,7 @@ onMounted(async () => {
   );
 
   // Subscribe to provider updates to detect party player config changes
-  unsubscribes.push(
+  unsubscribers.push(
     api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
       await refreshPartyPlayer();
       fetchQueueItems(true);
@@ -864,7 +868,7 @@ onMounted(async () => {
   );
 
   // Re-resolve party player when a different queue starts playing (auto mode)
-  unsubscribes.push(
+  unsubscribers.push(
     api.subscribe(EventType.QUEUE_UPDATED, async (evt: EventMessage) => {
       if (evt.object_id !== store.activePlayerQueue?.queue_id) {
         const updatedQueue = api.queues[evt.object_id as string];
@@ -880,7 +884,7 @@ onMounted(async () => {
 // Cleanup when leaving the party view
 onBeforeUnmount(() => {
   unmounted = true;
-  for (const unsubscribe of unsubscribes) unsubscribe();
+  unsubscribers.forEach((unsubscribe) => unsubscribe());
   // Release wake lock
   if (wakeLock) {
     wakeLock.release();
