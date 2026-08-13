@@ -350,6 +350,13 @@ export class WebRTCTransport extends BaseTransport {
     } catch {
       return; // not JSON; nothing on this channel to dispatch
     }
+    // a hex response big enough to be split arrives as chunk frames to reassemble first
+    if (parsed.type === "__chunk__") {
+      this.handleChunk(parsed, (message) =>
+        this.handleHttpProxyMessage(message),
+      );
+      return;
+    }
     if (parsed.type !== "http-proxy-response") return;
     // a response without a body length is the hex-in-JSON form, which a server that
     // predates the binary framing still answers with
@@ -642,6 +649,10 @@ export class WebRTCTransport extends BaseTransport {
       setTimeout(() => {
         if (this.httpProxyCallbacks.has(requestId)) {
           this.httpProxyCallbacks.delete(requestId);
+          // stop buffering frames nothing is waiting for any more
+          if (this.pendingProxyBody?.id === requestId) {
+            this.pendingProxyBody = null;
+          }
           reject(new Error("HTTP proxy request timeout"));
         }
       }, 30000);

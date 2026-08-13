@@ -127,6 +127,22 @@ function sentRequestId(channel: FakeDataChannel): string {
   return JSON.parse(channel.sent[0]).id;
 }
 
+// Split a message into "__chunk__" frames the way the server splits an oversized one.
+function makeChunks(text: string, id: number, pieceBytes = 8): string[] {
+  const bytes = new TextEncoder().encode(text);
+  const count = Math.max(1, Math.ceil(bytes.length / pieceBytes));
+  const frames: string[] = [];
+  for (let seq = 0; seq < count; seq++) {
+    const slice = bytes.slice(seq * pieceBytes, (seq + 1) * pieceBytes);
+    let binary = "";
+    slice.forEach((b) => (binary += String.fromCharCode(b)));
+    frames.push(
+      JSON.stringify({ type: "__chunk__", id, seq, count, b64: btoa(binary) }),
+    );
+  }
+  return frames;
+}
+
 describe("WebRTCTransport http_proxy channel", () => {
   it("keeps proxied requests on the API channel for a server that predates it", async () => {
     const { transport, apiChannel, channels } = makeTransport();
@@ -208,6 +224,25 @@ describe("WebRTCTransport http_proxy channel", () => {
     const { status, body } = await response;
     expect(status).toBe(200);
     expect(Array.from(body)).toEqual([4, 5, 6]);
+  });
+
+  it("still reads a chunked hex response on the dedicated channel", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    // that server splits any hex response past its chunk size, so most images arrive
+    // as several frames rather than one message
+    const response = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const message = proxyResponse(sentRequestId(proxyChannel), [1, 2, 3, 4, 5]);
+    const frames = makeChunks(message, 7);
+    expect(frames.length).toBeGreaterThan(1);
+    for (const frame of frames) proxyChannel.receive(frame);
+
+    const { body } = await response;
+    expect(Array.from(body)).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("negotiates the dedicated channel only once per connection", async () => {
