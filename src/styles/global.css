@@ -153,14 +153,12 @@ html {
 
 html {
   overflow: hidden;
-  /* Propagates to the viewport, same as the overflow above. The viewport never
-     scrolls, so a drag no in-page scroller consumes chains on to whatever
-     embeds us - out of the Home Assistant ingress iframe and into its app,
-     which takes it for a pull-to-refresh and reloads. Cutting it here is what
-     leaves the swipe-to-dismiss on the panels free to pick the drag up: the
-     panels are position: fixed, so the viewport is their scroll parent, and
-     the gesture only engages once past its slop. */
-  overscroll-behavior: none;
+  /* Nothing here scrolls, so a downward drag no in-page scroller consumes
+     chains out of the Home Assistant ingress iframe and its app takes that for
+     a pull-to-refresh, reloading. The root is where the viewport reads this
+     from - on body it is ignored. The horizontal axis stays open, so the
+     browser keeps its back-navigation swipe. */
+  overscroll-behavior-y: none;
   /* iOS Safari tints the status bar from this background. Must stay set. */
   background-color: rgb(var(--v-theme-background));
 }

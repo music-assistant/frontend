@@ -17,13 +17,27 @@ afterEach(() => {
 });
 
 describe("overscroll chaining", () => {
-  it("keeps a drag the app does not consume inside the document", () => {
+  it("keeps a downward drag the app does not consume inside the document", () => {
     // happy-dom hands back what the stylesheet declared rather than a resolved
-    // value, so the shorthand is what there is to read - and reading it whole
-    // is what holds the horizontal axis too, which a two-value form would drop
-    expect(getComputedStyle(document.documentElement).overscrollBehavior).toBe(
-      "none",
-    );
+    // value, so the axis has to be read under the name it is declared with
+    const root = getComputedStyle(document.documentElement);
+
+    expect(root.overscrollBehaviorY).toBe("none");
+  });
+
+  it("leaves the horizontal axis to the browser", () => {
+    // that is where the back-navigation swipe lives, and no drag out of the
+    // app goes sideways
+    expect(
+      selectorsSetting(
+        styles,
+        document.documentElement,
+        "overscroll-behavior-x",
+      ),
+    ).toEqual([]);
+    expect(
+      selectorsSetting(styles, document.documentElement, "overscroll-behavior"),
+    ).toEqual([]);
   });
 
   it("cuts only the last hop, out of the document", () => {
@@ -35,9 +49,13 @@ describe("overscroll chaining", () => {
     document.body.appendChild(scroller);
 
     expect(
-      selectorsSetting(styles, document.documentElement, "overscroll-behavior"),
+      selectorsSetting(
+        styles,
+        document.documentElement,
+        "overscroll-behavior-y",
+      ),
     ).toEqual(["html"]);
-    expect(selectorsSetting(styles, scroller, "overscroll-behavior")).toEqual(
+    expect(selectorsSetting(styles, scroller, "overscroll-behavior-y")).toEqual(
       [],
     );
   });
