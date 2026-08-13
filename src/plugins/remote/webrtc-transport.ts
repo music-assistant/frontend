@@ -49,11 +49,21 @@ const FALLBACK_ICE_SERVERS: IceServerConfig[] = [
 // otherwise a flapping loop (which briefly connects) keeps backoff flat.
 const STABLE_CONNECTION_THRESHOLD_MS = 5000;
 
+// Proxied HTTP requests (album art, previews) get their own channel so their large
+// payloads don't hold up API messages. Older servers take a label they don't know for
+// the API channel itself, so the channel is only opened once the server reports it
+// knows this one.
+const HTTP_PROXY_CHANNEL_LABEL = "http_proxy";
+const HTTP_PROXY_CHANNEL_SCHEMA_VERSION = 49;
+
 export class WebRTCTransport extends BaseTransport {
   private options: Required<WebRTCTransportOptions>;
   private signaling: SignalingClient;
   private peerConnection: RTCPeerConnection | null = null;
   private dataChannel: RTCDataChannel | null = null;
+  private httpProxyChannel: RTCDataChannel | null = null;
+  // The proxy channel is negotiated at most once per connection.
+  private httpProxyChannelRequested = false;
   private iceCandidateBuffer: RTCIceCandidateInit[] = [];
   private remoteDescriptionSet = false;
   private reconnectAttempts = 0;
@@ -74,9 +84,16 @@ export class WebRTCTransport extends BaseTransport {
     }
   >();
   // Reassembly buffers for oversized messages the server splits into chunks, keyed by group id.
+  // Group ids are unique across channels, so the dispatch of the channel a group started on
+  // is kept with it.
   private chunkGroups = new Map<
     number,
-    { count: number; parts: string[]; received: number }
+    {
+      count: number;
+      parts: string[];
+      received: number;
+      dispatch: (data: string) => void;
+    }
   >();
   // ICE servers received from the signaling server (provided by MA server)
   private iceServers: IceServerConfig[] = [];
@@ -255,21 +272,36 @@ export class WebRTCTransport extends BaseTransport {
       this.emit("error", new Error("Data channel error"));
     };
 
-    this.dataChannel.onmessage = (event) => {
-      // The server splits oversized messages into "__chunk__" frames (see gateway
-      // _send_ma_api); reassemble them before dispatching. Everything else is a whole message.
+    this.attachMessageHandler(this.dataChannel, (data) =>
+      this.dispatchMessage(data),
+    );
+  }
+
+  /**
+   * Deliver a channel's incoming messages to a dispatch function.
+   *
+   * @param channel - Channel to read from.
+   * @param dispatch - Receives every whole message from that channel.
+   */
+  private attachMessageHandler(
+    channel: RTCDataChannel,
+    dispatch: (data: string) => void,
+  ): void {
+    channel.onmessage = (event) => {
+      // The server splits oversized messages into "__chunk__" frames; reassemble them
+      // before dispatching. Everything else is a whole message.
       if (typeof event.data === "string") {
         try {
           const frame = JSON.parse(event.data);
           if (frame.type === "__chunk__") {
-            this.handleChunk(frame);
+            this.handleChunk(frame, dispatch);
             return;
           }
         } catch {
           // not a JSON chunk frame; fall through to normal dispatch
         }
       }
-      this.dispatchMessage(event.data);
+      dispatch(event.data);
     };
   }
 
@@ -281,24 +313,84 @@ export class WebRTCTransport extends BaseTransport {
         this.handleHttpProxyResponse(parsed);
         return;
       }
+      // server_info is the first message on this channel and carries the schema version.
+      if (typeof parsed.schema_version === "number") {
+        this.maybeOpenHttpProxyChannel(parsed.schema_version);
+      }
     } catch {
       // not JSON or not an HTTP proxy response
     }
     this.emit("message", data);
   }
 
-  private handleChunk(frame: {
-    id: number;
-    seq: number;
-    count: number;
-    b64: string;
-  }): void {
+  /**
+   * Handle a message from the http_proxy channel, which only ever carries proxy responses.
+   */
+  private dispatchHttpProxyMessage(data: string): void {
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed.type === "http-proxy-response") {
+        this.handleHttpProxyResponse(parsed);
+      }
+    } catch {
+      // not JSON; nothing on this channel to dispatch
+    }
+  }
+
+  private maybeOpenHttpProxyChannel(schemaVersion: number): void {
+    if (
+      this.httpProxyChannelRequested ||
+      schemaVersion < HTTP_PROXY_CHANNEL_SCHEMA_VERSION
+    ) {
+      return;
+    }
+    this.httpProxyChannelRequested = true;
+    void this.openHttpProxyChannel();
+  }
+
+  private async openHttpProxyChannel(): Promise<void> {
+    try {
+      const channel = await this.openDataChannel(HTTP_PROXY_CHANNEL_LABEL);
+      if (!channel) return;
+      if (!this.httpProxyChannelRequested) {
+        // the connection this channel was opened for is already torn down
+        channel.close();
+        return;
+      }
+      this.attachMessageHandler(channel, (data) =>
+        this.dispatchHttpProxyMessage(data),
+      );
+      channel.onclose = () => {
+        if (this.httpProxyChannel === channel) {
+          this.httpProxyChannel = null;
+        }
+      };
+      this.httpProxyChannel = channel;
+    } catch (error) {
+      // proxying over the API channel remains a working fallback
+      console.warn(
+        "[WebRTCTransport] http_proxy DataChannel unavailable:",
+        error,
+      );
+    }
+  }
+
+  private handleChunk(
+    frame: {
+      id: number;
+      seq: number;
+      count: number;
+      b64: string;
+    },
+    dispatch: (data: string) => void,
+  ): void {
     let pending = this.chunkGroups.get(frame.id);
     if (!pending) {
       pending = {
         count: frame.count,
         parts: Array.from<string>({ length: frame.count }),
         received: 0,
+        dispatch,
       };
       this.chunkGroups.set(frame.id, pending);
     }
@@ -310,7 +402,7 @@ export class WebRTCTransport extends BaseTransport {
 
     this.chunkGroups.delete(frame.id);
     const bytes = this.base64PartsToBytes(pending.parts);
-    this.dispatchMessage(new TextDecoder().decode(bytes));
+    pending.dispatch(new TextDecoder().decode(bytes));
   }
 
   private base64PartsToBytes(parts: string[]): Uint8Array {
@@ -460,7 +552,12 @@ export class WebRTCTransport extends BaseTransport {
     headers: Record<string, string>;
     body: Uint8Array;
   }> {
-    if (!this.dataChannel || this.dataChannel.readyState !== "open") {
+    // Falls back to the API channel when the server has no dedicated proxy channel.
+    const channel =
+      this.httpProxyChannel?.readyState === "open"
+        ? this.httpProxyChannel
+        : this.dataChannel;
+    if (!channel || channel.readyState !== "open") {
       throw new Error("DataChannel is not open");
     }
 
@@ -494,7 +591,7 @@ export class WebRTCTransport extends BaseTransport {
       headers,
     };
 
-    this.dataChannel.send(JSON.stringify(request));
+    channel.send(JSON.stringify(request));
 
     return responsePromise;
   }
@@ -629,6 +726,16 @@ export class WebRTCTransport extends BaseTransport {
       this.dataChannel.close();
       this.dataChannel = null;
     }
+
+    if (this.httpProxyChannel) {
+      this.httpProxyChannel.onopen = null;
+      this.httpProxyChannel.onclose = null;
+      this.httpProxyChannel.onerror = null;
+      this.httpProxyChannel.onmessage = null;
+      this.httpProxyChannel.close();
+      this.httpProxyChannel = null;
+    }
+    this.httpProxyChannelRequested = false;
 
     if (this.peerConnection) {
       // Detach first so close doesn't re-enter handleConnectionFailure().
