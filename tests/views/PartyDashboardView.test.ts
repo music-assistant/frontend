@@ -1,3 +1,5 @@
+import api from "@/plugins/api";
+import { EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import PartyDashboardView from "@/views/PartyDashboardView.vue";
 import { type VueWrapper, flushPromises, mount } from "@vue/test-utils";
@@ -17,6 +19,29 @@ vi.mock("@/plugins/store", async () => {
   };
 });
 
+// A real registry rather than a stub, so a subscription that outlives the view
+// is observable the way it is in the app: it stays listed and keeps firing.
+const events = vi.hoisted(() => {
+  type Listener = { type: unknown; handler: (evt: unknown) => unknown };
+  const listeners: Listener[] = [];
+  return {
+    listeners,
+    subscribe: (type: unknown, handler: (evt: unknown) => unknown) => {
+      const listener = { type, handler };
+      listeners.push(listener);
+      return () => {
+        const index = listeners.indexOf(listener);
+        if (index !== -1) listeners.splice(index, 1);
+      };
+    },
+    emit: (type: unknown, evt: unknown) => {
+      for (const listener of listeners) {
+        if (listener.type === type) listener.handler(evt);
+      }
+    },
+  };
+});
+
 vi.mock("@/plugins/api", () => ({
   default: {
     baseUrl: "",
@@ -24,7 +49,7 @@ vi.mock("@/plugins/api", () => ({
     providers: {},
     queues: {},
     sendCommand: vi.fn().mockResolvedValue(null),
-    subscribe: vi.fn(() => () => undefined),
+    subscribe: vi.fn(events.subscribe),
     getPlayerQueueItems: vi.fn().mockResolvedValue([]),
     getTrackLyrics: vi.fn().mockResolvedValue([null, null]),
   },
@@ -85,7 +110,7 @@ const ButtonStub = { template: "<button><slot /></button>" };
 
 let wrapper: VueWrapper | undefined;
 
-async function mountView() {
+function mountViewRaw() {
   wrapper = mount(PartyDashboardView, {
     global: {
       mocks: { $t: (key: string) => key },
@@ -100,8 +125,13 @@ async function mountView() {
       },
     },
   });
-  await flushPromises();
   return wrapper;
+}
+
+async function mountView() {
+  const view = mountViewRaw();
+  await flushPromises();
+  return view;
 }
 
 const ENTER_FULLSCREEN = '[aria-label="tooltip.enter_fullscreen"]';
@@ -211,5 +241,57 @@ describe("PartyDashboardView fullscreen", () => {
     wrapper = undefined;
 
     expect(store.frameless).toBe(true);
+  });
+});
+
+describe("PartyDashboardView event subscriptions", () => {
+  beforeEach(() => {
+    events.listeners.length = 0;
+    store.activePlayerQueue = { queue_id: "q1" } as never;
+    vi.mocked(api.getPlayerQueueItems).mockClear();
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.activePlayerQueue = undefined;
+  });
+
+  it("stops listening once the dashboard is closed", async () => {
+    const view = await mountView();
+    wrapper = undefined;
+    // the subscriptions are set up after several awaits, so pin that they ran
+    // at all before reading anything into them being gone
+    expect(events.listeners.length).toBeGreaterThan(0);
+
+    view.unmount();
+
+    expect(events.listeners).toHaveLength(0);
+  });
+
+  it("leaves the queue alone for events that arrive after it closed", async () => {
+    const view = await mountView();
+    wrapper = undefined;
+
+    view.unmount();
+    vi.mocked(api.getPlayerQueueItems).mockClear();
+    events.emit(EventType.QUEUE_ITEMS_UPDATED, { object_id: "q1" });
+    events.emit(EventType.QUEUE_UPDATED, { object_id: "q1" });
+    events.emit(EventType.PROVIDERS_UPDATED, {});
+    await flushPromises();
+
+    expect(api.getPlayerQueueItems).not.toHaveBeenCalled();
+  });
+
+  it("never starts listening when closed while still loading", async () => {
+    // leaving before the config round-trips resolve runs the unmount hook
+    // first, so anything subscribing afterwards would never be cleaned up
+    const view = mountViewRaw();
+    wrapper = undefined;
+
+    view.unmount();
+    await flushPromises();
+
+    expect(events.listeners).toHaveLength(0);
   });
 });
