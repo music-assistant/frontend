@@ -3,7 +3,7 @@ import PlayAnnouncementDialog from "@/layouts/default/PlayAnnouncementDialog.vue
 import type { Player } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock, storeMock, toastSuccess, liveMock } = await vi.hoisted(
   async () => {
@@ -61,6 +61,26 @@ vi.mock("vue-sonner", () => ({
     error: vi.fn(),
   },
 }));
+
+// the microphone gates live on globals, so they are restored between tests rather
+// than left for whatever runs next in this environment
+const originalSecureContext = Object.getOwnPropertyDescriptor(
+  window,
+  "isSecureContext",
+);
+const originalMediaDevices = Object.getOwnPropertyDescriptor(
+  navigator,
+  "mediaDevices",
+);
+
+function restoreMicrophoneGlobals(): void {
+  if (originalSecureContext) {
+    Object.defineProperty(window, "isSecureContext", originalSecureContext);
+  }
+  if (originalMediaDevices) {
+    Object.defineProperty(navigator, "mediaDevices", originalMediaDevices);
+  }
+}
 
 function withMicrophone(): void {
   Object.defineProperty(window, "isSecureContext", {
@@ -150,6 +170,10 @@ describe("PlayAnnouncementDialog", () => {
     storeMock.dialogActive = false;
     apiMock.getPlayerConfigValue.mockResolvedValue(true);
     withoutMicrophone();
+  });
+
+  afterEach(() => {
+    restoreMicrophoneGlobals();
   });
 
   it("speaks the trimmed message with the chime enabled by default", async () => {

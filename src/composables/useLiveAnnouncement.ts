@@ -157,8 +157,8 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
     }
 
     capture = opened;
-    // the clip is timed from its first audio, so neither the permission prompt
-    // nor the connect counts towards its length
+    // timed from the moment the microphone is ready to deliver, so the permission
+    // prompt does not count towards the length of the clip
     startedAt = Date.now();
     // recording starts here, not on "started", or the first word is clipped
     opened.worklet.port.onmessage = (event: MessageEvent) =>
