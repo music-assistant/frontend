@@ -2393,5 +2393,11 @@
     "offline_ready": "App ready to work offline",
     "update_available": "A new version is available. Reload to update.",
     "reload": "Reload",
-    "open_settings": "Settings"
+    "open_settings": "Settings",
+    "pages": "Pages",
+    "recent_searches": "Recent searches",
+    "see_all_results": "See all results for \"{0}\"",
+    "command_center_navigate": "navigate",
+    "command_center_open": "open",
+    "command_center_keep_typing": "Keep typing to search..."
 }

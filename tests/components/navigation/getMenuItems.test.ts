@@ -132,16 +132,26 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     setPreferences({
       [MENU_PREFERENCE_KEY]: {
         order: [
-          "search",
+          "browse",
           "discover",
           ...DEFAULT_MENU_ITEMS.filter(
-            (id) => id !== "search" && id !== "discover",
+            (id) => id !== "browse" && id !== "discover",
           ),
         ],
       },
     });
 
-    expect(getIds().slice(0, 2)).toEqual(["search", "discover"]);
+    expect(getIds().slice(0, 2)).toEqual(["browse", "discover"]);
+  });
+
+  it("drops the retired search entry from a saved order", () => {
+    // "search" moved into the sidebar header (command palette); orders saved
+    // while it was still a menu item must not resurrect it
+    setPreferences({
+      [MENU_PREFERENCE_KEY]: { order: ["search", ...DEFAULT_MENU_ITEMS] },
+    });
+
+    expect(getIds()).not.toContain("search");
   });
 
   it("slots newly added items at their default relative position", () => {

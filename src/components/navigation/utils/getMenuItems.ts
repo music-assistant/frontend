@@ -14,7 +14,6 @@ import {
   PartyPopper,
   Podcast,
   Radio,
-  Search,
   Settings,
   Sparkles,
 } from "@lucide/vue";
@@ -82,14 +81,6 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     label: "discover",
     icon: Compass,
     path: "/discover",
-    isLibraryNode: false,
-    group: "explore",
-  },
-  {
-    id: "search",
-    label: "search",
-    icon: Search,
-    path: "/search",
     isLibraryNode: false,
     group: "explore",
   },

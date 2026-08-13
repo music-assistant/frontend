@@ -290,7 +290,17 @@ const keyListener = function (e: KeyboardEvent) {
     return;
   }
 
-  if (store.showPlayersMenu) {
+  if (store.showPlayersMenu || store.dialogActive) {
+    return;
+  }
+
+  const target = e.target as HTMLElement | null;
+  if (
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable)
+  ) {
     return;
   }
 
