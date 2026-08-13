@@ -133,7 +133,6 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 
 const model = defineModel<boolean>();
-const emit = defineEmits<{ success: [] }>();
 const { t } = useI18n();
 
 const loading = ref<boolean>(false);
@@ -182,7 +181,6 @@ const save = async function (value: {
     await api.addAmbientSound(value.url, value.name, value.image || undefined);
     toast.success(t("audio_overlay_custom_added", [value.name]));
     model.value = false;
-    emit("success");
   } catch (e) {
     console.error("Failed to add ambient sound:", e);
     toast.error(t("audio_overlay_custom_add_failed"));

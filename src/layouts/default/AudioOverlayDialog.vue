@@ -96,10 +96,13 @@
             class="flex items-center justify-between gap-2"
           >
             <span class="truncate text-sm">{{ sound.name }}</span>
+            <!-- the sound currently set as overlay source can not be removed,
+                 that would leave the queue pointing at a nonexistent item -->
             <Button
               variant="ghost"
               size="icon-sm"
               :aria-label="$t('remove')"
+              :disabled="sound.uri === selectedSource"
               @click="onRemoveSound(sound)"
             >
               <Trash2 />
@@ -234,6 +237,9 @@ watch(showAddSoundDialog, (open) => {
 const onRemoveSound = async (sound: SoundEffect) => {
   try {
     await api.removeAmbientSound(sound.item_id);
+  } catch (e) {
+    // the api plugin already surfaces the failure via the global error toast
+    console.error("Failed to remove ambient sound:", e);
   } finally {
     loadSoundEffects();
   }

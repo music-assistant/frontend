@@ -45,10 +45,11 @@ export function useAudioOverlay() {
 
 function isCustomAmbientSound(effect: SoundEffect): boolean {
   // Custom sounds live on the ambient sounds provider with the stream url as
-  // item id, unlike the builtin presets which use plain preset ids.
+  // item id, unlike the builtin presets which use plain preset ids. Match any
+  // url scheme here: the server accepts whatever ffmpeg can probe.
   return (
     api.getProvider(effect.provider)?.domain === AMBIENT_SOUNDS_DOMAIN &&
-    ["http", "rtsp"].some((prefix) => effect.item_id.startsWith(prefix))
+    effect.item_id.includes("://")
   );
 }
 

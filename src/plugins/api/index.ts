@@ -1512,12 +1512,18 @@ export class MusicAssistantApi {
     image_url?: string,
   ): Promise<SoundEffect> {
     // Add a custom ambient sound (stream url) to the ambient sounds provider.
-    // The server probes the url and rejects it if it is not playable audio.
-    return this.sendCommand("ambient_sounds/add_sound", {
-      url,
-      name,
-      image_url,
-    });
+    // The server probes the url and rejects it if it is not playable audio;
+    // that is an expected failure the calling dialog handles itself, so opt
+    // out of the global error toast.
+    return this.sendCommand(
+      "ambient_sounds/add_sound",
+      {
+        url,
+        name,
+        image_url,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public async removeAmbientSound(url: string): Promise<void> {
