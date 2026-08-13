@@ -57,6 +57,9 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "",
         name: "party",
+        // the dashboard fills its container and scrolls internally, so the
+        // layout drops the content section's padding and outer scrolling
+        meta: { partyView: true },
         component: () =>
           import(
             /* webpackChunkName: "party" */ "@/views/PartyDashboardView.vue"

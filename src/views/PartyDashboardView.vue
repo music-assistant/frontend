@@ -767,25 +767,6 @@ const handleVisibilityChange = () => {
 };
 
 // Lifecycle and event subscriptions
-// Apply layout overrides to the parent .content-section so the party view
-// fills its container. Scoped to mount/unmount to avoid leaking global styles.
-const parentSection = ref<HTMLElement | null>(null);
-
-const applyParentStyles = () => {
-  const el = document.querySelector(".content-section");
-  if (el instanceof HTMLElement) {
-    parentSection.value = el;
-    el.classList.add("party-view-active");
-  }
-};
-
-const cleanupParentStyles = () => {
-  if (parentSection.value) {
-    parentSection.value.classList.remove("party-view-active");
-    parentSection.value = null;
-  }
-};
-
 const BURN_IN_SWAP_MS = 10 * 60 * 1000; // 10 minutes
 
 watch(antiBurnIn, (enabled) => {
@@ -804,9 +785,6 @@ watch(antiBurnIn, (enabled) => {
 });
 
 onMounted(async () => {
-  // Apply parent container overrides
-  applyParentStyles();
-
   // Request wake lock to keep screen on
   await requestWakeLock();
   document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -889,7 +867,6 @@ onBeforeUnmount(() => {
     clearInterval(burnInInterval);
     burnInInterval = null;
   }
-  cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 
@@ -1373,7 +1350,7 @@ watch(
 </style>
 
 <style>
-/* Classes toggled programmatically on .content-section by mount/unmount */
+/* .party-view-active is set by the Default layout for the party route */
 .content-section.party-view-active {
   overflow: hidden !important;
   display: flex;
