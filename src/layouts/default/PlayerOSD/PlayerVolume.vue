@@ -104,6 +104,7 @@
         @touchstart.stop
         @touchmove.stop
         @touchend.stop
+        @touchcancel.stop
       >
         <button
           class="volume-icon-btn volume-slot-item"
@@ -145,6 +146,7 @@
         @touchstart.stop
         @touchmove.stop
         @touchend.stop
+        @touchcancel.stop
       >
         <span
           v-if="showVolumeLevel"

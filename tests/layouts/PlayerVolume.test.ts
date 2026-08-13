@@ -922,6 +922,30 @@ describe("PlayerVolume touch expansion", () => {
     expect(wrapper.find(".volume-level-text").text()).toBe("55");
   });
 
+  it("keeps a cancelled step touch from rewinding the readout", async () => {
+    const player = createPlayer({ volume_level: 20 });
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+
+    // a touch on the track puts its starting value on record, then the volume
+    // moves on from there
+    await touchStart(wrapper);
+    await touchEnd(wrapper);
+    await wrapper.setProps({ player: { ...player, volume_level: 70 } });
+    await nextTick();
+    expect(wrapper.find(".volume-level-text").text()).toBe("70");
+
+    // the system cancelling a touch that began on a step button must not rewind
+    // the readout to that recorded value
+    await wrapper
+      .find(".volume-append .volume-step-btn")
+      .trigger("touchcancel", {
+        changedTouches: [{ clientX: 300, clientY: 10 }],
+      });
+
+    expect(wrapper.find(".volume-level-text").text()).toBe("70");
+  });
+
   it("steps the volume from a click, so a keyboard can reach the buttons", async () => {
     const player = createPlayer();
     api.players = { [player.player_id]: player };
