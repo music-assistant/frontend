@@ -66,6 +66,7 @@ const host: AIRadioHost = {
   name: "Robo DJ",
   instructions: "",
   tts_engine: "",
+  language: "",
   section_ids: [],
   section_order: [],
   merge_section_id: "",

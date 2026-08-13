@@ -1399,6 +1399,7 @@
                 "prompt": "Prompt",
                 "instructions": "Host and Program Instructions",
                 "voice": "Voice",
+                "language": "Language",
                 "host": "Host"
             },
             "field_descriptions": {
@@ -1537,11 +1538,15 @@
                 "host_required": "Choose a host before saving",
                 "no_hosts_hint": "You need a host before you can save this show.",
                 "create_host_cta": "Create a host",
-                "prompt_placeholders_hint": "Available placeholders: {placeholders}"
+                "prompt_placeholders_label": "Placeholders — tap to copy:",
+                "prompt_placeholder_copied": "Copied {0} to clipboard",
+                "prompt_placeholder_copy_failed": "Failed to copy {0} to clipboard",
+                "prompt_placeholder_copy_aria": "Copy {0}"
             },
             "hosts": {
                 "title": "Hosts",
                 "add_host": "Add host",
+                "blank_host": "Blank host",
                 "card": {
                     "edit": "Edit"
                 },
@@ -1550,6 +1555,7 @@
                     "save": "Save host",
                     "name_label": "Host name",
                     "default_voice": "Default",
+                    "default_language": "Follow server language",
                     "validation": {
                         "name_required": "Host name is required",
                         "duplicate_name": "A host named «{0}» already exists",

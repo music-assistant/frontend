@@ -1823,6 +1823,8 @@ export interface AIRadioHost {
   instructions: string;
   // tts_engine: "" means use the provider default engine
   tts_engine: string;
+  // language: "" means follow the server language
+  language: string;
   section_ids: string[];
   section_order: AIRadioSectionOrderRule[];
   merge_section_id: string;
