@@ -17,7 +17,7 @@ let appStyles: HTMLStyleElement;
 let tokenStyles: HTMLStyleElement;
 let sheetStyles: HTMLStyleElement;
 
-// Use raw selectors so the test does not depend on Vue's generated scope id.
+// the block is unscoped, so the selectors it declares are the shipped ones
 function extractStyle(source: string) {
   return source.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }

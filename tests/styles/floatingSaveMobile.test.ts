@@ -13,7 +13,9 @@ const DEVICE_INSET_RIGHT = "33px";
 let appStyles: HTMLStyleElement;
 let saveButton: HTMLDivElement;
 
-// Use raw selectors so the test does not depend on Vue's generated scope id.
+// the block is scoped, so it arrives without the [data-v-hash] compound the
+// compiler pairs each of its selectors with; nothing here competes with them,
+// so the raw selectors stand in for the shipped ones
 function extractStyle(source: string) {
   return source.match(/<style scoped>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }
