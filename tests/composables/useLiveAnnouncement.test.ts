@@ -124,6 +124,32 @@ class FakeAudioContext {
   }
 }
 
+// the microphone gates live on globals, so they are restored between tests rather
+// than left for whatever runs next in this environment
+const originalSecureContext = Object.getOwnPropertyDescriptor(
+  window,
+  "isSecureContext",
+);
+const originalMediaDevices = Object.getOwnPropertyDescriptor(
+  navigator,
+  "mediaDevices",
+);
+
+function restoreMicrophoneGlobals(): void {
+  // a property that did not exist is deleted rather than left defined as undefined,
+  // which an `in` check elsewhere would still see
+  if (originalSecureContext) {
+    Object.defineProperty(window, "isSecureContext", originalSecureContext);
+  } else {
+    Reflect.deleteProperty(window, "isSecureContext");
+  }
+  if (originalMediaDevices) {
+    Object.defineProperty(navigator, "mediaDevices", originalMediaDevices);
+  } else {
+    Reflect.deleteProperty(navigator, "mediaDevices");
+  }
+}
+
 const microphoneTrack = { stop: vi.fn() };
 const getUserMedia = vi.fn();
 const onFinished = vi.fn();
@@ -176,6 +202,7 @@ describe("useLiveAnnouncement", () => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    restoreMicrophoneGlobals();
   });
 
   it("announces the clip and streams what was recorded while connecting", async () => {

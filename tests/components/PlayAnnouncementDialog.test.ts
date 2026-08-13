@@ -74,11 +74,17 @@ const originalMediaDevices = Object.getOwnPropertyDescriptor(
 );
 
 function restoreMicrophoneGlobals(): void {
+  // a property that did not exist is deleted rather than left defined as undefined,
+  // which an `in` check elsewhere would still see
   if (originalSecureContext) {
     Object.defineProperty(window, "isSecureContext", originalSecureContext);
+  } else {
+    Reflect.deleteProperty(window, "isSecureContext");
   }
   if (originalMediaDevices) {
     Object.defineProperty(navigator, "mediaDevices", originalMediaDevices);
+  } else {
+    Reflect.deleteProperty(navigator, "mediaDevices");
   }
 }
 
