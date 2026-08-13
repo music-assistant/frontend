@@ -255,8 +255,22 @@ describe("PlayerBarVolumeControl", () => {
     expect(trigger.attributes("data-active")).toBe("false");
     expect(trigger.attributes("data-suppress-hover")).toBe("true");
 
-    await trigger.trigger("pointerleave");
+    await trigger.trigger("pointerenter");
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
+  });
+
+  // touch leaves the button hovered from the tap that opened the popover, so
+  // dismissing it anywhere but on the button would leave it reading as active
+  it("suppresses it just the same when the popover closes on its own", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mountControl(player);
+    const trigger = wrapper.get("[data-player-volume-trigger]");
+
+    await trigger.trigger("click");
+    await wrapper.get(".player-volume-backdrop").trigger("click");
+
+    expect(trigger.attributes("data-suppress-hover")).toBe("true");
   });
 
   it("shows child controls and the group volume", () => {

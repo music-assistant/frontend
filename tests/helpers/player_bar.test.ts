@@ -1,6 +1,7 @@
 import {
   PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
+  PLAYER_BAR_POPOUT_INSET_X,
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
@@ -100,19 +101,21 @@ describe("playerBarEndAnchor", () => {
     expect(rect.height).toBe(0);
   });
 
-  it("keeps the popout gap from the end of the screen", () => {
+  // The popouts line up with the dock they hang above, which sits further in
+  // than the gap they keep from the bar itself.
+  it("holds the popouts at their side inset from the end of the screen", () => {
     expect(playerBarEndAnchor.getBoundingClientRect().x).toBe(
-      window.innerWidth - PLAYER_BAR_POPOUT_GAP,
+      window.innerWidth - PLAYER_BAR_POPOUT_INSET_X,
     );
   });
 
   // The window reaches past the cutout, so hanging the popouts off it would
   // leave them tucked underneath one.
-  it("keeps that gap from the last safe column rather than the screen edge", () => {
+  it("holds it off the last safe column rather than the screen edge", () => {
     setDeviceInsets();
 
     expect(playerBarEndAnchor.getBoundingClientRect().x).toBe(
-      window.innerWidth - PLAYER_BAR_POPOUT_GAP - INSET_RIGHT,
+      window.innerWidth - PLAYER_BAR_POPOUT_INSET_X - INSET_RIGHT,
     );
   });
 });
@@ -128,24 +131,34 @@ describe("PLAYER_BAR_POPOUT_COLLISION_PADDING", () => {
     setDeviceInsets();
 
     expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.left).toBe(
-      PLAYER_BAR_POPOUT_GAP + INSET_LEFT,
+      PLAYER_BAR_POPOUT_INSET_X + INSET_LEFT,
     );
     expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.right).toBe(
-      PLAYER_BAR_POPOUT_GAP + INSET_RIGHT,
+      PLAYER_BAR_POPOUT_INSET_X + INSET_RIGHT,
     );
+  });
+
+  // The sides line up with the dock while the bottom only clears the bar, so a
+  // popout reaching for one of them in place of the other reads as the wrong
+  // number.
+  it("keeps the bar's own gap below the popouts", () => {
+    expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.bottom).toBe(
+      PLAYER_BAR_POPOUT_GAP,
+    );
+    expect(PLAYER_BAR_POPOUT_GAP).not.toBe(PLAYER_BAR_POPOUT_INSET_X);
   });
 
   // The padding is read afresh for every popout that opens, so a rotation
   // cannot leave the next one holding the gaps of the orientation before it.
   it("reads the insets each time it is asked", () => {
     expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.right).toBe(
-      PLAYER_BAR_POPOUT_GAP,
+      PLAYER_BAR_POPOUT_INSET_X,
     );
 
     setDeviceInsets();
 
     expect(PLAYER_BAR_POPOUT_COLLISION_PADDING.right).toBe(
-      PLAYER_BAR_POPOUT_GAP + INSET_RIGHT,
+      PLAYER_BAR_POPOUT_INSET_X + INSET_RIGHT,
     );
   });
 });

@@ -8,6 +8,7 @@ import playerSelectSource from "@/layouts/default/PlayerSelect.vue?raw";
 import {
   PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
+  PLAYER_BAR_POPOUT_INSET_X,
 } from "@/helpers/player_bar";
 import tokens from "@/styles/global.css?inline";
 import css from "@/styles/style.css?inline";
@@ -92,15 +93,26 @@ describe("player bar popout inset", () => {
     expect(customProperty("--player-bar-popout-gap")).toBe(
       `${PLAYER_BAR_POPOUT_GAP}px`,
     );
+    expect(customProperty("--player-bar-popout-inset-x")).toBe(
+      `${PLAYER_BAR_POPOUT_INSET_X}px`,
+    );
     expect(customProperty("--player-bar-popout-top-gap")).toBe(
       `${PLAYER_BAR_POPOUT_COLLISION_PADDING.top}px`,
+    );
+  });
+
+  // the popouts hang above the dock and reach down behind it, so anything but a
+  // shared edge leaves the two surfaces stepping over one another
+  it("sets the popouts in as far as the dock they hang above", () => {
+    expect(customProperty("--player-bar-popout-inset-x")).toBe(
+      customProperty("--mobile-dock-inset-x"),
     );
   });
 });
 
 // Every term carries its own value, so one going missing or landing on the
 // wrong side reads as the wrong number instead of quietly passing.
-const GAP = "5px";
+const INSET_X = "5px";
 const INSET_LEFT = "77px";
 const INSET_RIGHT = "44px";
 
@@ -111,7 +123,7 @@ const INSET_RIGHT = "44px";
 function popoutWidthClasses(source: string) {
   return [
     ...source.matchAll(
-      /(?:max-)?w-\[calc\([^\]]*--player-bar-popout-gap[^\]]*\]/g,
+      /(?:max-)?w-\[calc\([^\]]*--player-bar-popout-inset-x[^\]]*\]/g,
     ),
   ].map((match) => match[0]);
 }
@@ -136,7 +148,10 @@ describe.each([
     widthStyles = document.createElement("style");
     widthStyles.textContent = css;
     document.head.appendChild(widthStyles);
-    document.documentElement.style.setProperty("--player-bar-popout-gap", GAP);
+    document.documentElement.style.setProperty(
+      "--player-bar-popout-inset-x",
+      INSET_X,
+    );
     document.documentElement.style.setProperty(
       "--device-inset-left",
       INSET_LEFT,
@@ -161,7 +176,7 @@ describe.each([
     expect(classNames.length).toBeGreaterThan(0);
     for (const className of classNames) {
       expect(resolveWidth(className)).toBe(
-        `calc(${window.innerWidth}px-2*${GAP}-${INSET_LEFT}-${INSET_RIGHT})`,
+        `calc(${window.innerWidth}px-2*${INSET_X}-${INSET_LEFT}-${INSET_RIGHT})`,
       );
     }
   });
