@@ -19,6 +19,11 @@ const REJECTED_CODE = 4001;
 // Audio is streamed in frames of this length: short enough to keep the
 // announcement in step with the speaker, long enough to not thrash the socket.
 const FRAME_MS = 20;
+// Label of the data channel the server bridges to /live_announcement.
+const DATA_CHANNEL_LABEL = "live_announcement";
+// WebSocket readyState values; the data channel wrapper reports the same ones.
+const SOCKET_OPEN = 1;
+const SOCKET_CLOSED = 3;
 
 const PROCESSOR_NAME = "live-announcement-recorder";
 
@@ -80,15 +85,28 @@ interface Capture {
   worklet: AudioWorkletNode;
 }
 
+/** The part of the WebSocket interface the announcement protocol talks to. */
+interface LiveAnnouncementSocket {
+  readonly readyState: number;
+  send(data: string | ArrayBuffer): void;
+  close(): void;
+  onopen: ((event: Event) => void) | null;
+  onmessage: ((event: MessageEvent) => void) | null;
+  onclose: ((event: CloseEvent) => void) | null;
+}
+
 /**
  * Whether this session can speak a live announcement.
  */
 export function liveAnnouncementSupported(): boolean {
-  // A remote (WebRTC) session has no route to the webserver's endpoints, and
-  // getUserMedia needs a secure context - so a page served over plain http
+  // getUserMedia needs a secure context, so a page served over plain http
   // (a LAN address, typically) can never record.
-  if (api.isRemoteConnection.value || !api.baseUrl) return false;
-  return !!(window.isSecureContext && navigator.mediaDevices?.getUserMedia);
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    return false;
+  }
+  // a remote (WebRTC) session streams over a data channel; every other session
+  // needs the webserver's endpoint
+  return api.isRemoteConnection.value || !!api.baseUrl;
 }
 
 /**
@@ -101,7 +119,7 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
   const elapsedSeconds = ref(0);
 
   let capture: Capture | null = null;
-  let socket: WebSocket | null = null;
+  let socket: LiveAnnouncementSocket | null = null;
   // audio recorded before the server accepted the clip, flushed on "started"
   let pendingFrames: ArrayBuffer[] = [];
   let accepting = false;
@@ -124,7 +142,6 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
     const current = ++attempt;
     state.value = "connecting";
     elapsedSeconds.value = 0;
-    startedAt = Date.now();
 
     let opened: Capture;
     try {
@@ -140,10 +157,30 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
     }
 
     capture = opened;
+    // the clip is timed from its first audio, so neither the permission prompt
+    // nor the connect counts towards its length
+    startedAt = Date.now();
     // recording starts here, not on "started", or the first word is clipped
     opened.worklet.port.onmessage = (event: MessageEvent) =>
       queueFrame(event.data as ArrayBuffer);
-    openSocket(playerId, preAnnounce, opened.context.sampleRate);
+    startTimer = setTimeout(
+      () => fail($t("play_announcement_live_failed")),
+      START_TIMEOUT_MS,
+    );
+
+    let connection: LiveAnnouncementSocket;
+    try {
+      connection = await openConnection();
+    } catch {
+      if (current === attempt) fail($t("play_announcement_live_failed"));
+      return;
+    }
+    if (current !== attempt) {
+      // the clip was abandoned while the connection was being set up
+      connection.close();
+      return;
+    }
+    attachSocket(connection, playerId, preAnnounce, opened.context.sampleRate);
   }
 
   /**
@@ -184,8 +221,11 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
         autoGainControl: true,
       },
     });
-    const context = new AudioContext();
+    // every failure from here on has to hand the microphone back, or the
+    // browser keeps showing this tab as recording
+    let context: AudioContext | null = null;
     try {
+      context = new AudioContext();
       const moduleUrl = URL.createObjectURL(
         new Blob([PROCESSOR_SOURCE], { type: "text/javascript" }),
       );
@@ -212,32 +252,26 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
       return { stream, context, worklet };
     } catch (err) {
       for (const track of stream.getTracks()) track.stop();
-      void context.close().catch(() => {});
+      void context?.close().catch(() => {});
       throw err;
     }
   }
 
-  function openSocket(
+  function attachSocket(
+    connection: LiveAnnouncementSocket,
     playerId: string,
     preAnnounce: boolean,
     sampleRate: number,
   ): void {
-    const url = socketUrl();
-    if (!url) {
-      fail($t("play_announcement_live_failed"));
-      return;
-    }
-
-    const ws = new WebSocket(url);
-    socket = ws;
-    ws.onopen = () => {
+    socket = connection;
+    const handshake = () => {
       // ingress sessions are authenticated by Home Assistant via headers
       if (!store.isIngressSession) {
-        ws.send(
+        connection.send(
           JSON.stringify({ type: "auth", token: authManager.getToken() }),
         );
       }
-      ws.send(
+      connection.send(
         JSON.stringify({
           type: "start",
           player_id: playerId,
@@ -248,16 +282,15 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
         }),
       );
     };
-    ws.onmessage = (event) => handleMessage(event);
-    ws.onclose = (event) => {
+    connection.onopen = handshake;
+    connection.onmessage = (event) => handleMessage(event);
+    connection.onclose = (event) => {
       // a rejected session carries a human readable reason
       const rejected = event.code === REJECTED_CODE && event.reason;
       fail(rejected || $t("play_announcement_live_failed"));
     };
-    startTimer = setTimeout(
-      () => fail($t("play_announcement_live_failed")),
-      START_TIMEOUT_MS,
-    );
+    // a data channel is handed over open, so its onopen would never fire
+    if (connection.readyState === SOCKET_OPEN) handshake();
   }
 
   function handleMessage(event: MessageEvent): void {
@@ -299,12 +332,12 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
   }
 
   function sendFrame(frame: ArrayBuffer): void {
-    if (socket?.readyState === WebSocket.OPEN) socket.send(frame);
+    if (socket?.readyState === SOCKET_OPEN) socket.send(frame);
   }
 
   function sendStop(): void {
     state.value = "finishing";
-    if (socket?.readyState === WebSocket.OPEN) {
+    if (socket?.readyState === SOCKET_OPEN) {
       socket.send(JSON.stringify({ type: "stop" }));
     }
   }
@@ -341,13 +374,13 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
 
   function closeSocket(): void {
     if (!socket) return;
-    const ws = socket;
+    const connection = socket;
     socket = null;
     // our own close is not a failure, so drop the handlers before closing
-    ws.onopen = null;
-    ws.onmessage = null;
-    ws.onclose = null;
-    ws.close();
+    connection.onopen = null;
+    connection.onmessage = null;
+    connection.onclose = null;
+    connection.close();
   }
 
   function clearStartTimer(): void {
@@ -370,6 +403,51 @@ function closeCapture(capture: Capture): void {
   capture.worklet.disconnect();
   for (const track of capture.stream.getTracks()) track.stop();
   void capture.context.close().catch(() => {});
+}
+
+/**
+ * Open the transport a clip is streamed over: a data channel through the
+ * remote (WebRTC) connection, the webserver's endpoint on every other session.
+ */
+async function openConnection(): Promise<LiveAnnouncementSocket> {
+  if (api.isRemoteConnection.value) {
+    const channel = await api.openDataChannel(DATA_CHANNEL_LABEL);
+    if (!channel) throw new Error("no live announcement data channel");
+    return wrapDataChannel(channel);
+  }
+  const url = socketUrl();
+  if (!url) throw new Error("no live announcement endpoint");
+  // throws on mixed content: an https page cannot open a ws:// socket
+  return new WebSocket(url);
+}
+
+/**
+ * Presents a data channel as the socket the announcement protocol talks to.
+ */
+function wrapDataChannel(channel: RTCDataChannel): LiveAnnouncementSocket {
+  const socket: LiveAnnouncementSocket = {
+    send: (data: string | ArrayBuffer) => {
+      if (channel.readyState !== "open") return;
+      // send() overloads take one type each, so the union has to be narrowed
+      if (typeof data === "string") channel.send(data);
+      else channel.send(data);
+    },
+    close: () => channel.close(),
+    get readyState() {
+      // the channel is handed over open, so it is either still open or gone
+      return channel.readyState === "open" ? SOCKET_OPEN : SOCKET_CLOSED;
+    },
+    onopen: null,
+    onmessage: null,
+    onclose: null,
+  };
+
+  channel.onmessage = (event) => socket.onmessage?.(event);
+  // a channel that drops or errors ends the clip the same way a closed socket does
+  channel.onclose = () => socket.onclose?.(new CloseEvent("close"));
+  channel.onerror = () => socket.onclose?.(new CloseEvent("error"));
+
+  return socket;
 }
 
 function socketUrl(): string {

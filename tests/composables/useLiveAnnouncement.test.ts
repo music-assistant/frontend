@@ -5,6 +5,7 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     baseUrl: "https://music.example",
     isRemoteConnection: { value: false },
+    openDataChannel: vi.fn(),
   },
   storeMock: { isIngressSession: false },
 }));
@@ -21,10 +22,13 @@ import {
 } from "@/composables/useLiveAnnouncement";
 
 class FakeWebSocket {
+  static readonly CONNECTING = 0;
   static readonly OPEN = 1;
+  static readonly CLOSED = 3;
   static instances: FakeWebSocket[] = [];
 
-  readyState = FakeWebSocket.OPEN;
+  // a freshly constructed socket is still connecting, like the browser's own
+  readyState = FakeWebSocket.CONNECTING;
   sent: (string | ArrayBuffer)[] = [];
   closed = false;
   onopen: (() => void) | null = null;
@@ -41,9 +45,11 @@ class FakeWebSocket {
 
   close(): void {
     this.closed = true;
+    this.readyState = FakeWebSocket.CLOSED;
   }
 
   connect(): void {
+    this.readyState = FakeWebSocket.OPEN;
     this.onopen?.();
   }
 
@@ -53,6 +59,29 @@ class FakeWebSocket {
 
   reject(code: number, reason: string): void {
     this.onclose?.({ code, reason } as CloseEvent);
+  }
+}
+
+/** A data channel as it is handed over by the remote connection: already open. */
+class FakeDataChannel {
+  readyState = "open";
+  sent: (string | ArrayBuffer)[] = [];
+  closed = false;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  onclose: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+
+  send(data: string | ArrayBuffer): void {
+    this.sent.push(data);
+  }
+
+  close(): void {
+    this.closed = true;
+    this.readyState = "closed";
+  }
+
+  receive(message: Record<string, unknown>): void {
+    this.onmessage?.({ data: JSON.stringify(message) } as MessageEvent);
   }
 }
 
@@ -125,6 +154,7 @@ describe("useLiveAnnouncement", () => {
     FakeAudioContext.last = null;
     apiMock.baseUrl = "https://music.example";
     apiMock.isRemoteConnection.value = false;
+    apiMock.openDataChannel.mockReset();
     storeMock.isIngressSession = false;
     getUserMedia.mockResolvedValue({ getTracks: () => [microphoneTrack] });
     vi.stubGlobal("WebSocket", FakeWebSocket);
@@ -143,6 +173,7 @@ describe("useLiveAnnouncement", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -277,6 +308,119 @@ describe("useLiveAnnouncement", () => {
     expect(live.state.value).toBe("idle");
   });
 
+  it("hands the microphone back when the audio engine will not start", async () => {
+    // a browser only allows so many audio contexts per page
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        constructor() {
+          throw new Error("too many audio contexts");
+        }
+      },
+    );
+    const live = useLiveAnnouncement({ onFinished, onError });
+
+    await live.start("kitchen", true);
+
+    expect(microphoneTrack.stop).toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledWith($t("play_announcement_mic_failed"));
+    expect(live.state.value).toBe("idle");
+  });
+
+  it("recovers when the browser refuses to open the socket", async () => {
+    // an https page opening a ws:// socket throws from the constructor
+    vi.stubGlobal(
+      "WebSocket",
+      class {
+        constructor() {
+          throw new DOMException("mixed content", "SecurityError");
+        }
+      },
+    );
+    const live = useLiveAnnouncement({ onFinished, onError });
+
+    await live.start("kitchen", true);
+
+    expect(onError).toHaveBeenCalledWith($t("play_announcement_live_failed"));
+    expect(microphoneTrack.stop).toHaveBeenCalled();
+    expect(live.state.value).toBe("idle");
+  });
+
+  it("times the clip from its first audio, not from the press", async () => {
+    vi.useFakeTimers();
+    let handOverMicrophone = (_stream: unknown) => {};
+    getUserMedia.mockReturnValue(
+      new Promise((resolve) => {
+        handOverMicrophone = resolve;
+      }),
+    );
+    const live = useLiveAnnouncement({ onFinished, onError });
+    const starting = live.start("kitchen", true);
+
+    // the browser spends four seconds asking for permission
+    vi.advanceTimersByTime(4000);
+    handOverMicrophone({ getTracks: () => [microphoneTrack] });
+    await starting;
+    socket().connect();
+    socket().receive({ type: "started" });
+
+    vi.advanceTimersByTime(2000);
+
+    expect(live.elapsedSeconds.value).toBe(2);
+
+    live.cancel();
+  });
+
+  it("streams over the remote connection's data channel", async () => {
+    apiMock.isRemoteConnection.value = true;
+    apiMock.baseUrl = "";
+    const channel = new FakeDataChannel();
+    apiMock.openDataChannel.mockResolvedValue(channel);
+    const live = useLiveAnnouncement({ onFinished, onError });
+
+    await live.start("kitchen", true);
+
+    expect(apiMock.openDataChannel).toHaveBeenCalledWith("live_announcement");
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    // the channel is handed over open, so the handshake goes out right away
+    expect(JSON.parse(channel.sent[0] as string)).toEqual({
+      type: "auth",
+      token: "session-token",
+    });
+    expect(JSON.parse(channel.sent[1] as string)).toMatchObject({
+      type: "start",
+      player_id: "kitchen",
+      sample_rate: 48000,
+    });
+
+    channel.receive({ type: "started" });
+    const spoken = new ArrayBuffer(8);
+    worklet().record(spoken);
+    expect(channel.sent[2]).toBe(spoken);
+
+    live.stop();
+    expect(JSON.parse(channel.sent.at(-1) as string)).toEqual({ type: "stop" });
+
+    channel.receive({ type: "finished" });
+
+    expect(onFinished).toHaveBeenCalled();
+    expect(channel.closed).toBe(true);
+    expect(live.state.value).toBe("idle");
+  });
+
+  it("reports a data channel the remote connection cannot open", async () => {
+    apiMock.isRemoteConnection.value = true;
+    apiMock.baseUrl = "";
+    apiMock.openDataChannel.mockResolvedValue(null);
+    const live = useLiveAnnouncement({ onFinished, onError });
+
+    await live.start("kitchen", true);
+
+    expect(onError).toHaveBeenCalledWith($t("play_announcement_live_failed"));
+    expect(microphoneTrack.stop).toHaveBeenCalled();
+    expect(live.state.value).toBe("idle");
+  });
+
   it("reports a microphone the browser refuses to hand over", async () => {
     getUserMedia.mockRejectedValue(
       new DOMException("denied", "NotAllowedError"),
@@ -304,13 +448,19 @@ describe("useLiveAnnouncement", () => {
     expect(onFinished).not.toHaveBeenCalled();
   });
 
-  it("is only supported with a microphone on a local connection", () => {
+  it("is supported wherever the microphone is, remote connections included", () => {
     expect(liveAnnouncementSupported()).toBe(true);
 
+    // a remote session streams over its data channel, so it needs no endpoint
     apiMock.isRemoteConnection.value = true;
+    apiMock.baseUrl = "";
+    expect(liveAnnouncementSupported()).toBe(true);
+
+    // every other session has nothing to stream to without one
+    apiMock.isRemoteConnection.value = false;
     expect(liveAnnouncementSupported()).toBe(false);
 
-    apiMock.isRemoteConnection.value = false;
+    apiMock.baseUrl = "https://music.example";
     Object.defineProperty(navigator, "mediaDevices", {
       value: undefined,
       configurable: true,

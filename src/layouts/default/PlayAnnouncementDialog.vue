@@ -64,7 +64,7 @@
             @keydown.enter.prevent="onSpeakKeyDown"
             @keyup.space="stopSpeaking"
             @keyup.enter="stopSpeaking"
-            @blur="stopSpeaking"
+            @blur="onSpeakBlur"
             @contextmenu.prevent
           >
             <Mic class="size-8" />
@@ -233,6 +233,13 @@ function startSpeaking(): void {
 }
 
 function stopSpeaking(): void {
+  stopLive();
+}
+
+function onSpeakBlur(): void {
+  // the permission prompt takes focus off the button on the first press, so
+  // only a clip that is already recording is ended by losing focus
+  if (liveState.value !== "recording") return;
   stopLive();
 }
 

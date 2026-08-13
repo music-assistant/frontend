@@ -1,31 +1,50 @@
+import type { LiveAnnouncementState } from "@/composables/useLiveAnnouncement";
 import PlayAnnouncementDialog from "@/layouts/default/PlayAnnouncementDialog.vue";
 import type { Player } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, storeMock, toastSuccess } = await vi.hoisted(async () => {
-  // a real ref, like the api itself exposes, so the dialog reacts to it changing
-  const { shallowRef } = await import("vue");
-  return {
-    apiMock: {
-      players: {} as Record<string, Player>,
-      baseUrl: "https://music.example",
-      isRemoteConnection: shallowRef(false),
-      playerCommandPlayAnnouncement: vi.fn(),
-      getPlayerConfigValue: vi.fn(),
-    },
-    storeMock: {
-      dialogActive: false,
-      isIngressSession: false,
-    },
-    toastSuccess: vi.fn(),
-  };
-});
+const { apiMock, storeMock, toastSuccess, liveMock } = await vi.hoisted(
+  async () => {
+    // a real ref, like the api itself exposes, so the dialog reacts to it changing
+    const { ref, shallowRef } = await import("vue");
+    return {
+      apiMock: {
+        players: {} as Record<string, Player>,
+        baseUrl: "https://music.example",
+        isRemoteConnection: shallowRef(false),
+        playerCommandPlayAnnouncement: vi.fn(),
+        getPlayerConfigValue: vi.fn(),
+      },
+      storeMock: {
+        dialogActive: false,
+        isIngressSession: false,
+      },
+      toastSuccess: vi.fn(),
+      liveMock: {
+        state: ref<LiveAnnouncementState>("idle"),
+        elapsedSeconds: ref(0),
+        start: vi.fn(),
+        stop: vi.fn(),
+        cancel: vi.fn(),
+      },
+    };
+  },
+);
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
+}));
+
+// only the recording itself is faked; whether the microphone can be used at all
+// stays the real check, which most of these tests are about
+vi.mock("@/composables/useLiveAnnouncement", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("@/composables/useLiveAnnouncement")
+  >()),
+  useLiveAnnouncement: () => liveMock,
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -88,6 +107,10 @@ const SwitchStub = {
   `,
 };
 
+function micButton(wrapper: ReturnType<typeof mountDialog>) {
+  return wrapper.get('[aria-label="play_announcement_hold_to_speak"]');
+}
+
 function speakTab(wrapper: ReturnType<typeof mountDialog>) {
   const tab = wrapper
     .findAll("button")
@@ -121,7 +144,9 @@ describe("PlayAnnouncementDialog", () => {
     apiMock.players = {
       kitchen: { player_id: "kitchen", name: "Kitchen" } as Player,
     };
+    apiMock.baseUrl = "https://music.example";
     apiMock.isRemoteConnection.value = false;
+    liveMock.state.value = "idle";
     storeMock.dialogActive = false;
     apiMock.getPlayerConfigValue.mockResolvedValue(true);
     withoutMicrophone();
@@ -275,6 +300,9 @@ describe("PlayAnnouncementDialog", () => {
 
   it("falls back to typing when the microphone is withdrawn mid-dialog", async () => {
     withMicrophone();
+    // a remote session has no endpoint of its own; it streams over its channel
+    apiMock.isRemoteConnection.value = true;
+    apiMock.baseUrl = "";
     const wrapper = mountDialog();
 
     eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
@@ -282,8 +310,8 @@ describe("PlayAnnouncementDialog", () => {
     await speakTab(wrapper).trigger("mousedown", { button: 0 });
     expect(wrapper.find("textarea").exists()).toBe(false);
 
-    // switching to a remote connection takes the microphone away
-    apiMock.isRemoteConnection.value = true;
+    // losing the remote connection leaves nothing to stream to
+    apiMock.isRemoteConnection.value = false;
     await flushPromises();
 
     // without the fallback the speak panel would stay up with no tabs and no send button
@@ -298,15 +326,49 @@ describe("PlayAnnouncementDialog", () => {
     ).toBe(true);
   });
 
-  it("does not offer the microphone on a remote connection", async () => {
+  it("offers the microphone on a remote connection", async () => {
     withMicrophone();
     apiMock.isRemoteConnection.value = true;
+    apiMock.baseUrl = "";
     const wrapper = mountDialog();
 
     eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
     await flushPromises();
 
-    expect(wrapper.text()).not.toContain("play_announcement_mode_speak");
+    expect(wrapper.text()).toContain("play_announcement_mode_speak");
+  });
+
+  it("keeps recording while the browser asks for microphone permission", async () => {
+    withMicrophone();
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+    await speakTab(wrapper).trigger("mousedown", { button: 0 });
+    await micButton(wrapper).trigger("pointerdown");
+
+    expect(liveMock.start).toHaveBeenCalledWith("kitchen", true);
+
+    // the permission bubble takes focus off the button on the first press
+    liveMock.state.value = "connecting";
+    await micButton(wrapper).trigger("blur");
+
+    expect(liveMock.stop).not.toHaveBeenCalled();
+  });
+
+  it("ends a recording that loses focus", async () => {
+    withMicrophone();
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+    await speakTab(wrapper).trigger("mousedown", { button: 0 });
+    await micButton(wrapper).trigger("pointerdown");
+
+    liveMock.state.value = "recording";
+    await micButton(wrapper).trigger("blur");
+
+    expect(liveMock.stop).toHaveBeenCalled();
   });
 
   it("does not carry the previous message over to the next announcement", async () => {
