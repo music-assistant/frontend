@@ -651,12 +651,12 @@ const router = createRouter({
   routes,
 });
 
+const CHUNK_RELOAD_STORAGE_KEY = "chunkReloadAttempted";
+
 // Handle chunk loading errors (e.g., after frontend update with stale cache)
 // When a dynamic import fails with a 404, it means the chunk no longer exists
 // on the server (likely due to a new deployment with different hashes).
 // In this case, we reload the page to get the fresh assets.
-const CHUNK_RELOAD_STORAGE_KEY = "chunkReloadAttempted";
-
 router.onError((error, to) => {
   // Check if this is a chunk loading error
   const isChunkLoadError =
@@ -680,16 +680,17 @@ router.onError((error, to) => {
       "Chunk loading failed, likely due to app update. Reloading page...",
       error,
     );
-    // With hash history the intended route only differs from the current URL
-    // in its fragment, so assigning it would stay on the same document. Move
-    // the hash and reload explicitly to fetch fresh HTML and assets, keeping
-    // the rest of the URL (e.g. Home Assistant ingress query params) intact.
+    // The intended route differs from the current URL only in its fragment, so
+    // moving the hash stays on the same document and the reload is what fetches
+    // fresh HTML and assets. Moving only the hash also keeps the rest of the
+    // URL (e.g. Home Assistant ingress query params) intact.
     window.location.hash = to.fullPath;
     window.location.reload();
   }
 });
 
-// A completed navigation proves chunks load again, so a later update can
+// The reload above lands on the route that just failed, so a navigation
+// completing afterwards means the app loads again and a later update can
 // recover the same way.
 router.afterEach((_to, _from, failure) => {
   if (!failure) sessionStorage.removeItem(CHUNK_RELOAD_STORAGE_KEY);

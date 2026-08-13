@@ -462,12 +462,10 @@ describe("media details back button", () => {
 });
 
 describe("chunk loading recovery", () => {
-  // A real Location normalises the assignment to "#/artists"; this stub keeps
-  // whatever the recovery hands it.
-  const location = { hash: "#/discover", reload: vi.fn() };
+  let location = locationStub();
 
   beforeEach(() => {
-    location.hash = "#/discover";
+    location = locationStub();
     vi.stubGlobal("location", location);
     // both branches of the recovery log
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -480,38 +478,51 @@ describe("chunk loading recovery", () => {
     vi.mocked(console.error).mockRestore();
   });
 
-  // Moving the hash alone is a same-document navigation, so without the reload
-  // the app never refetches and the route stays broken.
+  // Moving the hash is a same-document navigation, so the reload is what
+  // refetches the app, and it has to come second to keep the intended route.
   it("reloads onto the intended route when its chunk is gone", async () => {
     await failNavigationWithChunkError("/artists");
 
-    expect(location.hash).toBe("/artists");
-    expect(location.reload).toHaveBeenCalledOnce();
+    expect(location.hash).toBe("#/artists");
+    expect(location.steps).toEqual(["hash", "reload"]);
+  });
+
+  // how a cached index.html hits this: the app opens straight onto the route
+  // whose chunk the update replaced
+  it("reloads when the app opened on the failing route", async () => {
+    location.hash = "#/artists";
+    location.steps.length = 0;
+
+    await failNavigationWithChunkError("/artists");
+
+    expect(location.hash).toBe("#/artists");
+    expect(location.steps).toEqual(["hash", "reload"]);
   });
 
   it("stops reloading while the chunk keeps failing", async () => {
     await failNavigationWithChunkError("/artists");
-    location.reload.mockClear();
+    location.steps.length = 0;
 
     await failNavigationWithChunkError("/albums");
+    await failNavigationWithChunkError("/tracks");
 
-    expect(location.reload).not.toHaveBeenCalled();
+    expect(location.steps).toEqual([]);
   });
 
   it("recovers again after a later update", async () => {
     await failNavigationWithChunkError("/artists");
-    location.reload.mockClear();
+    location.steps.length = 0;
     runAfterEachHooks();
 
     await failNavigationWithChunkError("/albums");
 
-    expect(location.hash).toBe("/albums");
-    expect(location.reload).toHaveBeenCalledOnce();
+    expect(location.hash).toBe("#/albums");
+    expect(location.steps).toEqual(["hash", "reload"]);
   });
 
   it("keeps blocking reloads while no navigation completed", async () => {
     await failNavigationWithChunkError("/artists");
-    location.reload.mockClear();
+    location.steps.length = 0;
     // only the presence of a failure matters to the hook
     runAfterEachHooks({
       type: NavigationFailureType.aborted,
@@ -519,7 +530,7 @@ describe("chunk loading recovery", () => {
 
     await failNavigationWithChunkError("/albums");
 
-    expect(location.reload).not.toHaveBeenCalled();
+    expect(location.steps).toEqual([]);
   });
 });
 
@@ -549,6 +560,28 @@ function invokeGuard(
 }
 
 /**
+ * Stand in for window.location, recording the order of what is done to it.
+ */
+function locationStub() {
+  const steps: string[] = [];
+  let hash = "#/discover";
+  return {
+    steps,
+    get hash() {
+      return hash;
+    },
+    set hash(value: string) {
+      // a real Location normalises the assignment the same way
+      hash = value.startsWith("#") ? value : `#${value}`;
+      steps.push("hash");
+    },
+    reload: () => {
+      steps.push("reload");
+    },
+  };
+}
+
+/**
  * Navigate to a route whose chunk is no longer on the server.
  */
 async function failNavigationWithChunkError(fullPath: string) {
@@ -562,6 +595,8 @@ async function failNavigationWithChunkError(fullPath: string) {
   });
   await mocks.router.push(fullPath).catch(() => {});
   removeGuard();
+  // the mock records every guard, so drop this one from that list as well
+  mocks.globalGuards.pop();
 }
 
 /**
