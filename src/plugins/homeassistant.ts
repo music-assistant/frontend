@@ -44,6 +44,21 @@ let routerInstance: Router | null = null;
 let isNavigatingFromHA = false;
 
 /**
+ * The part of the reported safe area Music Assistant is left to cover.
+ *
+ * While Home Assistant is narrow it puts a header of its own above the frame,
+ * and that header already takes the top inset, so claiming it again would only
+ * push the app further down the screen. Kiosk mode drops that header, and hands
+ * the top inset back to us along with it.
+ */
+function ownedInsets(
+  insets: Partial<HASafeAreaInsets>,
+  narrow: boolean,
+): Partial<HASafeAreaInsets> {
+  return narrow ? { ...insets, top: "" } : insets;
+}
+
+/**
  * Apply the safe area Home Assistant reports to the device inset tokens.
  *
  * Edges Home Assistant reports nothing for are handed back to the stylesheet.
@@ -76,7 +91,9 @@ function handleMessage(event: MessageEvent) {
     // Home Assistant reports the insets whether or not we asked for them, and
     // only stops padding the iframe itself once we did.
     if (state.safeAreaEnabled && event.data.safeAreaInsets) {
-      applySafeAreaInsets(event.data.safeAreaInsets);
+      applySafeAreaInsets(
+        ownedInsets(event.data.safeAreaInsets, state.properties.narrow),
+      );
     }
 
     if (

@@ -155,10 +155,12 @@ describe("mobile navigation height", () => {
   it("takes its clearance from the inset the host can zero", () => {
     document.documentElement.setAttribute("data-embedded-layout", "");
 
-    // embedded in Home Assistant the device insets are the host's to add, so the
-    // bar zeroes them and falls back on the floor under the inset. Reaching for
-    // the device inset directly reads the same until it is embedded, and then
-    // reserves the home indicator a second time on top of the host's own room.
+    // embedded the device insets are the host's to add, so the bar zeroes them
+    // and falls back on the floor under the inset. Reaching for the device inset
+    // directly reads the same until it is embedded, and then reserves the home
+    // indicator a second time on top of the host's own room. A host that hands
+    // the safe area over writes the same properties inline, and the bar follows
+    // them there without reading anything else.
     expect(customProperty("--mobile-navigation-height")).toBe(
       "calc(72px+max(12px,calc(0px*0.65)))",
     );

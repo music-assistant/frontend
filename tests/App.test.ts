@@ -17,8 +17,10 @@ const {
   authManagerMock,
   guestType,
   i18nMock,
+  haStateMock,
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
+  mockSubscribeToHAProperties,
   mockProxyEnsureReady,
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
@@ -91,8 +93,10 @@ const {
         t: (key: string) => key,
       },
     },
+    haStateMock: { isSubscribed: false },
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
+    mockSubscribeToHAProperties: vi.fn(),
     mockProxyEnsureReady: vi.fn(),
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
@@ -184,6 +188,12 @@ vi.mock("@/plugins/web_player", () => ({
 
 vi.mock("@/plugins/companion", () => ({
   initializeCompanionIntegration: mockInitializeCompanionIntegration,
+}));
+
+vi.mock("@/plugins/homeassistant", () => ({
+  haState: haStateMock,
+  subscribeToHAProperties: mockSubscribeToHAProperties,
+  unsubscribeFromHAProperties: vi.fn(),
 }));
 
 vi.mock("@/plugins/remote", () => ({
@@ -316,6 +326,7 @@ describe("App initialization", () => {
     mockProxyEnsureReady.mockResolvedValue(undefined);
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
+    haStateMock.isSubscribed = false;
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
@@ -659,6 +670,31 @@ describe("App initialization", () => {
     expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
     expect(authManagerMock.clearGuestSession).not.toHaveBeenCalled();
     expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
+  });
+
+  it("takes the safe area padding over in an ingress session", async () => {
+    storeMock.isIngressSession = true;
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
+      handleSafeArea: true,
+    });
+  });
+
+  it("leaves the safe area to the host outside an ingress session", async () => {
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).not.toHaveBeenCalled();
+  });
+
+  it("keeps the safe area subscription it already has across a reconnect", async () => {
+    storeMock.isIngressSession = true;
+    haStateMock.isSubscribed = true;
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).not.toHaveBeenCalled();
   });
 
   it("re-authenticates an ingress session through the proxy on reconnect", async () => {

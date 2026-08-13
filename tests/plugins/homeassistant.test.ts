@@ -75,6 +75,25 @@ describe("Home Assistant safe area", () => {
     expect(readInsets()).toEqual(["59px", "0px", "34px", "0px"]);
   });
 
+  it("leaves the top inset to the header Home Assistant shows when narrow", () => {
+    subscribeToHAProperties({ handleSafeArea: true });
+
+    // That header is as tall as the top inset and sits above the frame, so
+    // taking the inset as well would push the app down a second time.
+    reportProperties({ narrow: true, safeAreaInsets: PHONE_INSETS });
+
+    expect(readInsets()).toEqual(["", "0px", "34px", "0px"]);
+  });
+
+  it("drops the top inset again once Home Assistant shows its header", () => {
+    subscribeToHAProperties({ handleSafeArea: true });
+
+    reportProperties({ safeAreaInsets: PHONE_INSETS });
+    reportProperties({ narrow: true, safeAreaInsets: PHONE_INSETS });
+
+    expect(readInsets()).toEqual(["", "0px", "34px", "0px"]);
+  });
+
   it("writes nothing when Home Assistant reports no safe area", () => {
     subscribeToHAProperties({ handleSafeArea: true });
 

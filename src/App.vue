@@ -61,6 +61,7 @@ import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowse
 import { pruneStaleProviderFilters } from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
 import {
+  haState,
   subscribeToHAProperties,
   unsubscribeFromHAProperties,
 } from "./plugins/homeassistant";
@@ -270,6 +271,16 @@ const completeInitialization = async () => {
     console.error("[App] No server info received");
     return;
   }
+
+  // Home Assistant pads its ingress iframe for the device safe area, leaving a
+  // strip of its own background we cannot reach from in here. Take that padding
+  // over so the app runs to the edge of the screen like it does anywhere else.
+  // Ask before anything else is awaited, so the app lays itself out once.
+  // Reconnecting runs this again while the subscription is still standing.
+  if (store.isIngressSession && !haState.isSubscribed) {
+    subscribeToHAProperties({ handleSafeArea: true });
+  }
+
   const userInfo = await api.getCurrentUserInfo();
   if (!userInfo) {
     console.error("[App] No user info received");
@@ -284,13 +295,6 @@ const completeInitialization = async () => {
   const connectionIdentity = getCurrentAuthConnectionIdentity();
   if (!isGuestAccessSession && !isDashboardViewer && connectionIdentity) {
     authManager.bindPersistentToken(connectionIdentity);
-  }
-
-  // Home Assistant pads its ingress iframe for the device safe area, leaving a
-  // strip of its own background we cannot reach from in here. Take that padding
-  // over so the app runs to the edge of the screen like it does anywhere else.
-  if (store.isIngressSession) {
-    subscribeToHAProperties({ handleSafeArea: true });
   }
 
   // TODO: Remove this migration code in v2.9 release
