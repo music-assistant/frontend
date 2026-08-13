@@ -463,7 +463,13 @@ const goToSettings = () => {
   }
 };
 
+// A frameless session can also be started elsewhere (a dashboard viewer login,
+// a ?frameless deep link) and is meant to last, so this view only switches back
+// off the fullscreen it switched on itself.
+let enteredFullscreen = false;
+
 const goFullscreen = (frameless: boolean) => {
+  enteredFullscreen = frameless;
   store.frameless = frameless;
   if (frameless) {
     document.documentElement.requestFullscreen?.();
@@ -476,6 +482,7 @@ const goFullscreen = (frameless: boolean) => {
 const onFullscreenChange = () => {
   if (!document.fullscreenElement && store.frameless) {
     store.frameless = false;
+    enteredFullscreen = false;
   }
 };
 onMounted(() => {
@@ -487,6 +494,10 @@ onBeforeUnmount(() => {
   if (typeof document !== "undefined") {
     document.removeEventListener("fullscreenchange", onFullscreenChange);
   }
+  // Leaving without the minimize button — browser back, a redirect — takes the
+  // listener above with it, so the rest of the app would be left with no
+  // navigation and no player bar.
+  if (enteredFullscreen) goFullscreen(false);
 });
 
 // Compact mode: hide previous tracks on small screens to reclaim space
