@@ -88,6 +88,30 @@
               </SelectContent>
             </Select>
           </div>
+
+          <div class="flex flex-col gap-1.5">
+            <FieldLabel
+              html-for="customize-host-language"
+              :label="$t('providers.ai_radio.fields.language')"
+            />
+            <Select v-model="languageSelectValue">
+              <SelectTrigger id="customize-host-language" class="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem :value="NONE_SELECT_VALUE">
+                  {{ $t("providers.ai_radio.hosts.editor.default_language") }}
+                </SelectItem>
+                <SelectItem
+                  v-for="option in languageOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
@@ -183,7 +207,7 @@ import {
   type ShowSegment,
 } from "@/helpers/ai_radio";
 import { eventbus } from "@/plugins/eventbus";
-import { $t } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, getLocaleOptions, i18n } from "@/plugins/i18n";
 import { ArrowLeft, Loader2, Plus } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
@@ -192,6 +216,8 @@ import { toast } from "vue-sonner";
 const props = defineProps<{
   /** Existing host id to edit; omit (or empty) to create a new host. */
   hostId?: string;
+  /** Pre-filled unsaved draft to seed a new host from (e.g. a persona preset); ignored when hostId is set. */
+  presetDraft?: HostDraft;
 }>();
 
 const emit = defineEmits<{
@@ -226,6 +252,19 @@ const voiceSelectValue = computed({
   set: (value: string) => {
     if (!draft.value) return;
     draft.value.ttsEngine = value === NONE_SELECT_VALUE ? "" : value;
+  },
+});
+
+const languageOptions = computed(() =>
+  getLocaleOptions(i18n.global.availableLocales, i18n.global.locale.value),
+);
+
+const languageSelectValue = computed({
+  get: () => draft.value?.language || NONE_SELECT_VALUE,
+  set: (value: string) => {
+    if (!draft.value) return;
+    draft.value.language =
+      value === NONE_SELECT_VALUE ? "" : canonicalizeLocale(value);
   },
 });
 
@@ -286,6 +325,7 @@ function newHostDraft(): HostDraft {
     name: "",
     instructions: GENERIC_HOST_INSTRUCTIONS,
     ttsEngine: "",
+    language: "",
     segments: deepClone(GENERIC_HOST_SEGMENTS),
   };
 }
@@ -390,7 +430,9 @@ onMounted(async () => {
       const host = await getHost(props.hostId);
       draft.value = decompileHost(host, sections.value);
     } else {
-      draft.value = newHostDraft();
+      draft.value = props.presetDraft
+        ? deepClone(props.presetDraft)
+        : newHostDraft();
     }
     originalSnapshot = JSON.stringify(draft.value);
   } catch (error) {

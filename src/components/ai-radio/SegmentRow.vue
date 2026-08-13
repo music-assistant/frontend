@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-[6px] border bg-card/40 transition-colors hover:bg-card">
-    <div class="flex items-center gap-2 px-3 py-2">
-      <div class="flex flex-col">
+    <div class="flex items-start gap-2 px-3 py-2 sm:items-center">
+      <div class="flex shrink-0 flex-col">
         <Button
           variant="ghost-icon"
           size="icon-xs"
@@ -22,52 +22,56 @@
         </Button>
       </div>
 
-      <Input
-        v-model="name"
-        class="h-8 min-w-0 flex-1"
-        :aria-label="$t('providers.ai_radio.customize.segment_name')"
-      />
+      <div
+        class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center"
+      >
+        <Input
+          v-model="name"
+          class="h-8 min-w-0 flex-1"
+          :aria-label="$t('providers.ai_radio.customize.segment_name')"
+        />
 
-      <div class="flex w-[240px] shrink-0 items-center gap-2">
-        <Select v-model="playsKind">
-          <SelectTrigger class="h-8 min-w-0 flex-1 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem
-              v-for="option in playsKindOptions"
-              :key="option.kind"
-              :value="option.kind"
-              class="text-xs"
-            >
-              {{ option.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div class="flex w-full items-center gap-2 sm:w-[240px] sm:shrink-0">
+          <Select v-model="playsKind">
+            <SelectTrigger class="h-8 min-w-0 flex-1 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="option in playsKindOptions"
+                :key="option.kind"
+                :value="option.kind"
+                class="text-xs"
+              >
+                {{ option.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
-        <NumberField
-          v-if="needsN"
-          v-model="playsN"
-          class="w-16 shrink-0"
-          :min="1"
-          :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
-        >
-          <NumberFieldContent>
-            <NumberFieldInput class="h-8 text-xs" />
-          </NumberFieldContent>
-        </NumberField>
-        <NumberField
-          v-if="needsPercent"
-          v-model="playsPercent"
-          class="w-16 shrink-0"
-          :min="0"
-          :max="100"
-          :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
-        >
-          <NumberFieldContent>
-            <NumberFieldInput class="h-8 text-xs" />
-          </NumberFieldContent>
-        </NumberField>
+          <NumberField
+            v-if="needsN"
+            v-model="playsN"
+            class="w-16 shrink-0"
+            :min="1"
+            :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
+          >
+            <NumberFieldContent>
+              <NumberFieldInput class="h-8 text-xs" />
+            </NumberFieldContent>
+          </NumberField>
+          <NumberField
+            v-if="needsPercent"
+            v-model="playsPercent"
+            class="w-16 shrink-0"
+            :min="0"
+            :max="100"
+            :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
+          >
+            <NumberFieldContent>
+              <NumberFieldInput class="h-8 text-xs" />
+            </NumberFieldContent>
+          </NumberField>
+        </div>
       </div>
 
       <Button

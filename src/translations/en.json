@@ -1397,6 +1397,7 @@
                 "prompt": "Prompt",
                 "instructions": "Host and Program Instructions",
                 "voice": "Voice",
+                "language": "Language",
                 "host": "Host"
             },
             "field_descriptions": {
@@ -1540,6 +1541,7 @@
             "hosts": {
                 "title": "Hosts",
                 "add_host": "Add host",
+                "blank_host": "Blank host",
                 "card": {
                     "edit": "Edit"
                 },
@@ -1548,6 +1550,7 @@
                     "save": "Save host",
                     "name_label": "Host name",
                     "default_voice": "Default",
+                    "default_language": "Follow server language",
                     "validation": {
                         "name_required": "Host name is required",
                         "duplicate_name": "A host named «{0}» already exists",
