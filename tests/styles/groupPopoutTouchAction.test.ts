@@ -3,18 +3,7 @@
 // @vitest-environment happy-dom
 import volumeSource from "@/layouts/default/PlayerOSD/PlayerVolume.vue?raw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-
-// vitest only compiles the stylesheets under src/styles, so the component's own
-// rules are lifted straight out of its source, in the order it declares them
-function styleBlocks(source: string) {
-  return [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(
-    (match) => match[1],
-  );
-}
-
-// the scoped block's selectors each gain a [data-v-hash] compound at compile
-// time, which the raw source does not carry
-const SCOPE_COMPOUND = 1;
+import { SCOPE_COMPOUND, rank, selectorsSetting, styleBlocks } from "./cascade";
 
 let styles: HTMLStyleElement;
 
@@ -30,22 +19,6 @@ function row() {
     </div>`;
   document.body.appendChild(popout);
   return popout.querySelector(".player-volume-container")!;
-}
-
-// a rule may carry a selector list, of which only some parts land on the row
-function selectorsSettingTouchAction(element: Element) {
-  return [...(styles.sheet?.cssRules ?? [])]
-    .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
-    .filter((rule) => rule.style.getPropertyValue("touch-action") !== "")
-    .flatMap((rule) => rule.selectorText.split(","))
-    .map((selector) => selector.trim())
-    .filter((selector) => element.matches(selector));
-}
-
-// neither side carries an id or an element name, so counting their class-level
-// compounds is the whole comparison
-function rank(selector: string) {
-  return (selector.match(/\.[\w-]+|\[[^\]]+\]|:[\w-]+/g) ?? []).length;
 }
 
 describe("group volume popout touch-action", () => {
@@ -67,7 +40,7 @@ describe("group volume popout touch-action", () => {
   });
 
   it("keeps the rows panning independently of the stylesheet load order", () => {
-    const declaring = selectorsSettingTouchAction(row());
+    const declaring = selectorsSetting(styles, row(), "touch-action");
     const winner =
       ".group-popout .player-volume-wrapper .player-volume-container";
 

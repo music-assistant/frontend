@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import tokens from "@/styles/global.css?inline";
 import utilities from "@/styles/style.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { utilityPriority } from "./cascade";
 
 // Read off the template rather than copied, so a class the rules key on going
 // missing fails here instead of leaving the probe measuring rules the bar no
@@ -63,13 +64,6 @@ function probe(className: string) {
   return getComputedStyle(element);
 }
 
-function utilityBottomPriority() {
-  return [...(utilityStyles.sheet?.cssRules ?? [])]
-    .filter((rule) => rule instanceof CSSStyleRule)
-    .find((rule) => rule.selectorText === ".bottom-0")
-    ?.style.getPropertyPriority("bottom");
-}
-
 describe("mobile navigation height", () => {
   beforeEach(() => {
     styles = [tokens, extractStyle(navigationSource)].map((text) => {
@@ -120,7 +114,7 @@ describe("mobile navigation height", () => {
     // the offset only proves anything while the utility it has to out-rank is
     // itself !important
     expect(
-      utilityBottomPriority(),
+      utilityPriority(utilityStyles, ".bottom-0", "bottom"),
       "the Tailwind utilities import must stay `important` and unlayered",
     ).toBe("important");
 
