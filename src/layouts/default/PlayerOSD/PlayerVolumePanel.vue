@@ -9,7 +9,9 @@
       </div>
     </div>
 
-    <div class="min-h-0 space-y-3 overflow-y-auto px-4 pt-3 pb-4">
+    <div
+      class="player-volume-scroller min-h-0 space-y-3 overflow-y-auto px-4 pt-3 pb-4"
+    >
       <template v-if="volumePlayers.length > 0">
         <div
           v-for="volumePlayer in volumePlayers"
@@ -29,6 +31,7 @@
           <PlayerVolume
             :player="volumePlayer"
             :allow-wheel="allowWheel"
+            :expand-on-touch="expandOnTouch"
             width="100%"
           />
         </div>
@@ -47,6 +50,7 @@
           :allow-wheel="allowWheel"
           :prefer-group-volume="true"
           :enable-popout="false"
+          :expand-on-touch="expandOnTouch"
           width="100%"
         />
       </div>
@@ -65,6 +69,7 @@ import {
   PLAYER_CONTROL_NONE,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { computed } from "vue";
 import PlayerVolume from "./PlayerVolume.vue";
 
@@ -80,6 +85,10 @@ const props = withDefaults(
 
 const grouped = computed(() => isPlayerGrouped(props.player));
 const playerDisplayName = computed(() => getPlayerName(props.player, 36));
+
+// the same panel backs the desktop volume popout, where a pointer has no
+// trouble with the resting rail
+const expandOnTouch = computed(() => store.mobileLayout);
 
 const volumePlayers = computed(() => {
   if (!grouped.value) return [];

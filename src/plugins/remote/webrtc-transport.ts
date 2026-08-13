@@ -652,13 +652,15 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   /**
-   * Create a new DataChannel for sendspin.
-   * This allows sendspin to use the existing WebRTC connection for audio data.
+   * Open an additional DataChannel alongside the API one, so a feature can use
+   * the existing WebRTC connection for its own stream.
+   *
+   * @param label - Channel label the server routes on, e.g. "sendspin".
    */
-  async createSendspinDataChannel(): Promise<RTCDataChannel | null> {
+  async openDataChannel(label: string): Promise<RTCDataChannel | null> {
     if (!this.peerConnection) {
       console.warn(
-        "[WebRTCTransport] Cannot create sendspin channel: no peer connection",
+        `[WebRTCTransport] Cannot create ${label} channel: no peer connection`,
       );
       return null;
     }
@@ -668,36 +670,36 @@ export class WebRTCTransport extends BaseTransport {
       this.peerConnection.connectionState !== "connecting"
     ) {
       console.warn(
-        "[WebRTCTransport] Cannot create sendspin channel: connection state is",
+        `[WebRTCTransport] Cannot create ${label} channel: connection state is`,
         this.peerConnection.connectionState,
       );
       return null;
     }
 
-    console.debug("[WebRTCTransport] Creating sendspin DataChannel");
+    console.debug(`[WebRTCTransport] Creating ${label} DataChannel`);
 
-    // Create a new DataChannel labeled "sendspin" (ordered for TCP-like behavior)
-    const channel = this.peerConnection.createDataChannel("sendspin", {
+    // Ordered for TCP-like behavior
+    const channel = this.peerConnection.createDataChannel(label, {
       ordered: true,
     });
 
     // Wait for the channel to open
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        console.warn("[WebRTCTransport] Sendspin DataChannel open timeout");
-        reject(new Error("Sendspin DataChannel open timeout"));
+        console.warn(`[WebRTCTransport] ${label} DataChannel open timeout`);
+        reject(new Error(`${label} DataChannel open timeout`));
       }, 10000);
 
       channel.onopen = () => {
         clearTimeout(timeout);
-        console.debug("[WebRTCTransport] Sendspin DataChannel opened");
+        console.debug(`[WebRTCTransport] ${label} DataChannel opened`);
         resolve(channel);
       };
 
       channel.onerror = (event) => {
         clearTimeout(timeout);
-        console.error("[WebRTCTransport] Sendspin DataChannel error:", event);
-        reject(new Error("Sendspin DataChannel error"));
+        console.error(`[WebRTCTransport] ${label} DataChannel error:`, event);
+        reject(new Error(`${label} DataChannel error`));
       };
 
       // If channel is already open (unlikely but possible), resolve immediately

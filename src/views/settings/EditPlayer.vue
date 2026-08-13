@@ -344,6 +344,7 @@ import {
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
+import { goBack } from "@/helpers/navigation";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { openLinkInNewTab } from "@/helpers/utils";
@@ -622,10 +623,11 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   loading.value = true;
   try {
     await api.savePlayerConfig(props.playerId!, values);
-    router.back();
+    goBack(router, { name: "playersettings" });
   } catch {
     // Error toast is already shown by the API layer (handleResultMessage).
     // We just prevent navigation so the user can correct values.
+    editConfig.value?.saveFailed();
   } finally {
     loading.value = false;
   }

@@ -6,12 +6,14 @@ import sheetSource from "@/layouts/default/PlayerOSD/PlayerBarMobileVolumeSheet.
 import tokens from "@/styles/global.css?inline";
 import css from "@/styles/style.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { rank, utilityPriority } from "./cascade";
 
 // happy-dom does no calc() arithmetic, and drops a position whose tokens expand
 // to a nested one, so each token the sheet is placed from stands in as a plain
 // literal. They are distinct, so no assertion can pass on a coincidence.
 const NAV_HEIGHT = "111px";
 const GAP = "7px";
+const INSET_X = "9px";
 const TOP_GAP = "33px";
 
 // the equally-!important utilities the sheet and its backdrop carry, with the
@@ -60,13 +62,6 @@ function overlay() {
   );
 }
 
-function utilityPriority(selector: string, property: string) {
-  return [...(appStyles.sheet?.cssRules ?? [])]
-    .filter((rule) => rule instanceof CSSStyleRule)
-    .find((rule) => rule.selectorText === selector)
-    ?.style.getPropertyPriority(property);
-}
-
 // the component's own rules that land on this element
 function overrideRules(element: Element) {
   return [...(sheetStyles.sheet?.cssRules ?? [])]
@@ -78,20 +73,6 @@ function overridePriority(element: Element, property: string) {
   return overrideRules(element)
     .find((rule) => rule.style.getPropertyValue(property) !== "")
     ?.style.getPropertyPriority(property);
-}
-
-// happy-dom takes the last of two !important declarations rather than the most
-// specific one, so the rank the component's selectors buy is only observable
-// off the selectors themselves. Neither side carries an id or an element name,
-// so counting their class-level compounds is the whole comparison.
-function rank(selector: string) {
-  // :where() is what global.css reaches for to contribute no specificity at
-  // all, so it drops out before anything is counted
-  return (
-    selector
-      .replace(/:where\([^)]*\)/g, "")
-      .match(/\.[\w-]+|\[[^\]]+\]|:[\w-]+/g) ?? []
-  ).length;
 }
 
 // which of two equally-!important declarations applies comes down to whichever
@@ -133,6 +114,7 @@ describe("mobile grouped volume sheet", () => {
     for (const [token, value] of [
       ["--mobile-navigation-height", NAV_HEIGHT],
       ["--player-bar-popout-gap", GAP],
+      ["--player-bar-popout-inset-x", INSET_X],
       ["--player-bar-popout-top-gap", TOP_GAP],
     ]) {
       document.documentElement.style.setProperty(token, value);
@@ -150,8 +132,10 @@ describe("mobile grouped volume sheet", () => {
   it("floats the sheet clear of the navigation and the sides", () => {
     const style = getComputedStyle(sheet());
 
-    expect(style.right).toBe(GAP);
-    expect(style.left).toBe(GAP);
+    // the sides take the popouts' own inset, the bottom only clears the
+    // navigation
+    expect(style.right).toBe(INSET_X);
+    expect(style.left).toBe(INSET_X);
     expect(normalize(style.bottom)).toBe(`calc(${NAV_HEIGHT}+${GAP})`);
     // it spans between those edges instead of keeping a width of its own
     expect(style.width).toBe("auto");
@@ -176,7 +160,7 @@ describe("mobile grouped volume sheet", () => {
     // ranking below proves nothing unless both sides are !important
     for (const [utility, property] of UTILITIES) {
       expect(
-        utilityPriority(utility, property),
+        utilityPriority(appStyles, utility, property),
         "the Tailwind utilities import must stay `important` and unlayered",
       ).toBe("important");
     }

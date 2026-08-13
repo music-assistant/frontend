@@ -376,8 +376,15 @@ const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
 const logoDarkSrc = new URL("@/assets/logo/logo-dark.svg", import.meta.url)
   .href;
 
+// Set by the unmount hook, so the async work below can tell that the view it
+// belongs to is gone before it acts on a result.
+let unmounted = false;
+
 const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>("party/player");
+  // Leaving the view mid-request would otherwise hand the whole app the party
+  // player, over whatever the next route picked.
+  if (unmounted) return;
   accessError.value = "";
   if (partyPlayerId) {
     store.activePlayerId = partyPlayerId;
@@ -463,7 +470,13 @@ const goToSettings = () => {
   }
 };
 
+// A frameless session can also be started elsewhere (a dashboard viewer login,
+// a ?frameless deep link) and is meant to last, so this view only switches back
+// off the fullscreen it switched on itself.
+let enteredFullscreen = false;
+
 const goFullscreen = (frameless: boolean) => {
+  enteredFullscreen = frameless;
   store.frameless = frameless;
   if (frameless) {
     document.documentElement.requestFullscreen?.();
@@ -476,6 +489,7 @@ const goFullscreen = (frameless: boolean) => {
 const onFullscreenChange = () => {
   if (!document.fullscreenElement && store.frameless) {
     store.frameless = false;
+    enteredFullscreen = false;
   }
 };
 onMounted(() => {
@@ -487,6 +501,10 @@ onBeforeUnmount(() => {
   if (typeof document !== "undefined") {
     document.removeEventListener("fullscreenchange", onFullscreenChange);
   }
+  // Leaving without the minimize button — browser back, a redirect — takes the
+  // listener above with it, so the rest of the app would be left with no
+  // navigation and no player bar.
+  if (enteredFullscreen) goFullscreen(false);
 });
 
 // Compact mode: hide previous tracks on small screens to reclaim space
@@ -742,13 +760,20 @@ let wakeLock: WakeLockSentinel | null = null;
 const requestWakeLock = async () => {
   if ("wakeLock" in navigator) {
     try {
-      wakeLock = await navigator.wakeLock.request("screen");
-      wakeLock.addEventListener("release", () => {
+      const sentinel = await navigator.wakeLock.request("screen");
+      // The request can outlive the view, and the unmount hook has no way to
+      // reach a sentinel that did not exist while it ran.
+      if (unmounted) {
+        sentinel.release();
+        return;
+      }
+      wakeLock = sentinel;
+      sentinel.addEventListener("release", () => {
         console.debug("Wake lock released");
         wakeLock = null;
         // Re-acquire wake lock if document is still visible
         // This handles cases where the system releases it unexpectedly
-        if (document.visibilityState === "visible") {
+        if (!unmounted && document.visibilityState === "visible") {
           requestWakeLock();
         }
       });
@@ -767,26 +792,12 @@ const handleVisibilityChange = () => {
 };
 
 // Lifecycle and event subscriptions
-// Apply layout overrides to the parent .content-section so the party view
-// fills its container. Scoped to mount/unmount to avoid leaking global styles.
-const parentSection = ref<HTMLElement | null>(null);
-
-const applyParentStyles = () => {
-  const el = document.querySelector(".content-section");
-  if (el instanceof HTMLElement) {
-    parentSection.value = el;
-    el.classList.add("party-view-active");
-  }
-};
-
-const cleanupParentStyles = () => {
-  if (parentSection.value) {
-    parentSection.value.classList.remove("party-view-active");
-    parentSection.value = null;
-  }
-};
-
 const BURN_IN_SWAP_MS = 10 * 60 * 1000; // 10 minutes
+
+// onMounted subscribes after its awaits, where the component is no longer the
+// active instance and onBeforeUnmount would be a no-op, so the subscriptions
+// are collected here for the unmount hook registered at setup level.
+const unsubscribers: Array<() => void> = [];
 
 watch(antiBurnIn, (enabled) => {
   if (burnInInterval) {
@@ -804,12 +815,13 @@ watch(antiBurnIn, (enabled) => {
 });
 
 onMounted(async () => {
-  // Apply parent container overrides
-  applyParentStyles();
+  // Registered before the first await, so that leaving the view while one is
+  // still pending cannot attach the listener after the unmount hook has
+  // already removed it.
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 
   // Request wake lock to keep screen on
   await requestWakeLock();
-  document.addEventListener("visibilitychange", handleVisibilityChange);
 
   // Set active player from party config (needed when opened in a new tab
   // where the Default layout's player selection logic doesn't run)
@@ -817,6 +829,12 @@ onMounted(async () => {
 
   // Fetch party configuration via shared composable
   const config = await fetchConfig();
+
+  // Leaving the view while the awaits above are still in flight runs the
+  // unmount hook before anything below has been registered, so bail out
+  // rather than subscribe to events nothing will clean up.
+  if (unmounted) return;
+
   if (config) {
     if (config.karaoke_mode !== undefined) {
       karaokeMode.value = config.karaoke_mode;
@@ -836,36 +854,35 @@ onMounted(async () => {
   fetchQueueItems();
 
   // Subscribe to queue item updates
-  const unsub1 = api.subscribe(
-    EventType.QUEUE_ITEMS_UPDATED,
-    (evt: EventMessage) => {
+  unsubscribers.push(
+    api.subscribe(EventType.QUEUE_ITEMS_UPDATED, (evt: EventMessage) => {
       if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
       // Force refetch when items are added/removed (e.g., Play Next)
       // This ensures the view updates even if we're "within buffer"
       fetchQueueItems(true);
-    },
+    }),
   );
-  onBeforeUnmount(unsub1);
 
   // Subscribe to queue updates (for index changes)
-  const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
-    if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
-    // Don't force refetch for index changes - let buffer optimization work
-    fetchQueueItems();
-  });
-  onBeforeUnmount(unsub2);
+  unsubscribers.push(
+    api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
+      if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
+      // Don't force refetch for index changes - let buffer optimization work
+      fetchQueueItems();
+    }),
+  );
 
   // Subscribe to provider updates to detect party player config changes
-  const unsub3 = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    await refreshPartyPlayer();
-    fetchQueueItems(true);
-  });
-  onBeforeUnmount(unsub3);
+  unsubscribers.push(
+    api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+      await refreshPartyPlayer();
+      fetchQueueItems(true);
+    }),
+  );
 
   // Re-resolve party player when a different queue starts playing (auto mode)
-  const unsub4 = api.subscribe(
-    EventType.QUEUE_UPDATED,
-    async (evt: EventMessage) => {
+  unsubscribers.push(
+    api.subscribe(EventType.QUEUE_UPDATED, async (evt: EventMessage) => {
       if (evt.object_id !== store.activePlayerQueue?.queue_id) {
         const updatedQueue = api.queues[evt.object_id as string];
         if (updatedQueue?.state === PlaybackState.PLAYING) {
@@ -873,13 +890,14 @@ onMounted(async () => {
           fetchQueueItems(true);
         }
       }
-    },
+    }),
   );
-  onBeforeUnmount(unsub4);
 });
 
 // Cleanup when leaving the party view
 onBeforeUnmount(() => {
+  unmounted = true;
+  unsubscribers.forEach((unsubscribe) => unsubscribe());
   // Release wake lock
   if (wakeLock) {
     wakeLock.release();
@@ -889,7 +907,6 @@ onBeforeUnmount(() => {
     clearInterval(burnInInterval);
     burnInInterval = null;
   }
-  cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 
@@ -1373,7 +1390,7 @@ watch(
 </style>
 
 <style>
-/* Classes toggled programmatically on .content-section by mount/unmount */
+/* .party-view-active is set by layouts/default/View.vue for the party route */
 .content-section.party-view-active {
   overflow: hidden !important;
   display: flex;

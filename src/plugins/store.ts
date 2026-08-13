@@ -11,6 +11,7 @@ import {
 import type { StoredState } from "@/components/ItemsListing.vue";
 import {
   DEVICE_TYPE,
+  IS_TABLET_UA,
   isTouchscreenDevice,
   type DeviceType,
 } from "@/helpers/device";
@@ -19,7 +20,7 @@ import { parseBool } from "@/helpers/parse";
 import api from "./api";
 import { resolvePlayerQueue } from "./api/helpers";
 
-import { getBreakpointValue } from "./breakpoint";
+import { isPhoneSizedScreen } from "./breakpoint";
 
 interface Store {
   activePlayerId?: string;
@@ -37,7 +38,6 @@ interface Store {
   // media type filter for the global search; empty means all media types
   globalSearchMediaTypes: MediaType[];
   prevState?: StoredState;
-  prevRoute?: string;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
   libraryTracksCount?: number;
@@ -84,7 +84,6 @@ export const store: Store = reactive({
   globalSearchTerm: undefined,
   globalSearchMediaTypes: [],
   prevState: undefined,
-  prevRoute: undefined,
   libraryArtistsCount: undefined,
   libraryAlbumsCount: undefined,
   libraryTracksCount: undefined,
@@ -94,18 +93,14 @@ export const store: Store = reactive({
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
   deviceType: DEVICE_TYPE,
-  mobileLayout: computed(() => {
-    const isMobileDevice = getBreakpointValue({ breakpoint: "tablet" });
-    const isNarrowScreen = getBreakpointValue({
-      breakpoint: "bp5",
-      condition: "lt",
-      offset: -31, // bp5 (800px) - 31 ≈ 769px
-    });
-
-    return (
-      isMobileDevice || isNarrowScreen || parseBool(store.forceMobileLayout)
-    );
-  }),
+  // a tablet has the screen for a desktop layout and is laid out for touch all
+  // the same, so it is taken at its word rather than measured
+  mobileLayout: computed(
+    () =>
+      isPhoneSizedScreen() ||
+      IS_TABLET_UA ||
+      parseBool(store.forceMobileLayout),
+  ),
   currentUser: undefined,
   serverInfo: undefined,
   isIngressSession: computed(() =>

@@ -48,11 +48,11 @@ function preventAutoFocus(event: Event) {
 /* the paired class outweighs the equally-!important inset utilities the sheet
    carries */
 .player-bar-popout.mobile-group-volume-sheet {
-  right: var(--player-bar-popout-gap) !important;
+  right: var(--player-bar-popout-inset-x) !important;
   bottom: calc(
     var(--mobile-navigation-height) + var(--player-bar-popout-gap)
   ) !important;
-  left: var(--player-bar-popout-gap) !important;
+  left: var(--player-bar-popout-inset-x) !important;
   width: auto !important;
   /* a sheet has no popper measuring the free space for it, so it grows with the
      group it shows up to the room left above the navigation instead */
@@ -65,13 +65,5 @@ function preventAutoFocus(event: Event) {
 /* :root lifts this above the equally-!important inset-0 the backdrop carries */
 :root .mobile-group-volume-overlay {
   bottom: var(--mobile-navigation-height) !important;
-}
-
-.mobile-group-volume-sheet [data-slot="slider-thumb"]::before {
-  transition: transform 120ms ease;
-}
-
-.mobile-group-volume-sheet [data-slot="slider-thumb"]:active::before {
-  transform: scale(1.8);
 }
 </style>

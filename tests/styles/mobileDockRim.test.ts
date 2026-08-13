@@ -18,7 +18,7 @@ const DEVICE_INSET_RIGHT = "33px";
 
 let styles: HTMLStyleElement[];
 
-// Use raw selectors so the test does not depend on Vue's generated scope id.
+// both blocks are unscoped, so the selectors they declare are the shipped ones
 function extractStyle(source: string) {
   return source.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }

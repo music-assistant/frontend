@@ -11,6 +11,7 @@
     <CustomizeHost
       v-if="customizeHostOpen"
       :host-id="customizeHostId || undefined"
+      :preset-draft="presetDraft || undefined"
       @back="closeCustomizeHost"
       @saved="closeCustomizeHost"
     />
@@ -48,10 +49,29 @@
           <h2 class="text-lg font-semibold tracking-tight">
             {{ $t("providers.ai_radio.hosts.title") }}
           </h2>
-          <Button @click="openCustomizeHost()">
-            <Plus class="mr-1 h-4 w-4" />
-            {{ $t("providers.ai_radio.hosts.add_host") }}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button>
+                <Plus class="mr-1 h-4 w-4" />
+                {{ $t("providers.ai_radio.hosts.add_host") }}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem @click="openCustomizeHost()">
+                {{ $t("providers.ai_radio.hosts.blank_host") }}
+              </DropdownMenuItem>
+              <template v-if="presets.length">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  v-for="preset in presets"
+                  :key="preset.host.id"
+                  @click="openCustomizeHostFromPreset(preset)"
+                >
+                  {{ preset.host.name }}
+                </DropdownMenuItem>
+              </template>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div
           class="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))]"
@@ -151,9 +171,25 @@ import HostCard from "@/components/ai-radio/HostCard.vue";
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { useHosts } from "@/composables/ai-radio/useHosts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  useHosts,
+  type AIRadioHostPreset,
+} from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
-import { errorMessage, getQueryValue } from "@/helpers/ai_radio";
+import {
+  decompileHost,
+  errorMessage,
+  getQueryValue,
+  uniqueHostName,
+  type HostDraft,
+} from "@/helpers/ai_radio";
 import { $t } from "@/plugins/i18n";
 import { Plus, RefreshCw, Sparkles, TriangleAlert, X } from "@lucide/vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -178,7 +214,7 @@ const {
   noAiProviderAlert,
   dismissNoAiProviderAlert,
 } = useShows();
-const { hosts, loadingHosts, loadHosts } = useHosts();
+const { hosts, presets, loadingHosts, loadHosts, loadPresets } = useHosts();
 
 const createDialogOpen = ref(false);
 const createDialogInitialPlaylist = ref<PlaylistSelection | undefined>();
@@ -186,6 +222,7 @@ const customizeShowId = ref("");
 // null = closed; "" = creating a new host; otherwise the id being edited.
 const customizeHostId = ref<string | null>(null);
 const customizeHostOpen = computed(() => customizeHostId.value !== null);
+const presetDraft = ref<HostDraft | null>(null);
 
 const isRefreshing = computed(
   () =>
@@ -217,7 +254,27 @@ function closeCustomize() {
 }
 
 function openCustomizeHost(hostId?: string) {
+  presetDraft.value = null;
   customizeHostId.value = hostId || "";
+}
+
+/** Opens the host editor pre-filled with an unsaved draft cloned from a bundled persona preset. */
+function openCustomizeHostFromPreset(preset: AIRadioHostPreset) {
+  const draft = decompileHost(preset.host, preset.sections);
+  draft.id = "";
+  draft.name = uniqueHostName(
+    draft.name,
+    hosts.value.map((host) => host.name),
+  );
+  // compileHost namespaces ids with the new host id, so strip the preset's own prefix.
+  const presetPrefix = `${preset.host.id}_`;
+  for (const segment of draft.segments) {
+    if (segment.id.startsWith(presetPrefix)) {
+      segment.id = segment.id.slice(presetPrefix.length);
+    }
+  }
+  presetDraft.value = draft;
+  customizeHostId.value = "";
 }
 
 /** The create dialog has no draft to return to, so opening the host editor from it just closes it. */
@@ -284,6 +341,8 @@ onMounted(async () => {
   } catch (error) {
     toast.error(errorMessage(error));
   }
+  // Best effort: the "Add host" menu still works with just "Blank host" if this fails.
+  void loadPresets().catch(() => {});
   startStatusPolling();
   applyRouteQuery();
 });

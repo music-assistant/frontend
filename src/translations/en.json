@@ -873,6 +873,8 @@
         "exit_fullscreen": "Exit fullscreen",
         "decrease_offset": "Decrease offset",
         "increase_offset": "Increase offset",
+        "volume_down": "Volume down",
+        "volume_up": "Volume up",
         "toggle_queue": "Toggle queue",
         "select_player": "Select player",
         "show_dashboard": "Cast dashboard to a device",
@@ -1397,6 +1399,7 @@
                 "prompt": "Prompt",
                 "instructions": "Host and Program Instructions",
                 "voice": "Voice",
+                "language": "Language",
                 "host": "Host"
             },
             "field_descriptions": {
@@ -1535,11 +1538,15 @@
                 "host_required": "Choose a host before saving",
                 "no_hosts_hint": "You need a host before you can save this show.",
                 "create_host_cta": "Create a host",
-                "prompt_placeholders_hint": "Available placeholders: {placeholders}"
+                "prompt_placeholders_label": "Placeholders — tap to copy:",
+                "prompt_placeholder_copied": "Copied {0} to clipboard",
+                "prompt_placeholder_copy_failed": "Failed to copy {0} to clipboard",
+                "prompt_placeholder_copy_aria": "Copy {0}"
             },
             "hosts": {
                 "title": "Hosts",
                 "add_host": "Add host",
+                "blank_host": "Blank host",
                 "card": {
                     "edit": "Edit"
                 },
@@ -1548,6 +1555,7 @@
                     "save": "Save host",
                     "name_label": "Host name",
                     "default_voice": "Default",
+                    "default_language": "Follow server language",
                     "validation": {
                         "name_required": "Host name is required",
                         "duplicate_name": "A host named «{0}» already exists",
@@ -2225,8 +2233,20 @@
     "play_announcement_message": "Message",
     "play_announcement_message_placeholder": "Dinner is ready!",
     "play_announcement_pre_announce": "Play a chime first",
+    "play_announcement_playing": "Playing...",
+    "play_announcement_volume": "Volume",
+    "play_announcement_volume_default": "Player default",
     "play_announcement_send": "Announce",
     "play_announcement_sent": "Announcement sent to {0}",
+    "play_announcement_mode_type": "Type a message",
+    "play_announcement_mode_speak": "Speak",
+    "play_announcement_hold_to_speak": "Hold the button and speak",
+    "play_announcement_connecting": "Connecting...",
+    "play_announcement_speaking": "Speaking",
+    "play_announcement_finishing": "Finishing...",
+    "play_announcement_mic_denied": "Music Assistant is not allowed to use the microphone.",
+    "play_announcement_mic_failed": "The microphone could not be started.",
+    "play_announcement_live_failed": "The announcement could not be played.",
     "ai_dj": "Enable AI Radio DJ",
     "ai_dj_off": "Off",
     "ai_dj_show_on_air": "On air: {0}",

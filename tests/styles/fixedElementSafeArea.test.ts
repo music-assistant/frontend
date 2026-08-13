@@ -1,9 +1,13 @@
 // jsdom leaves var() unresolved in computed styles, so this cascade is only
 // observable under happy-dom
 // @vitest-environment happy-dom
+import { buttonVariants } from "@/components/ui/button";
+import dialogContentSource from "@/components/ui/dialog/DialogContent.vue?raw";
 import footerSource from "@/layouts/default/Footer.vue?raw";
 import reloadPromptSource from "@/layouts/default/ReloadPrompt.vue?raw";
 import playerTrackMenuSource from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayerTrackMenu.vue?raw";
+import { cn } from "@/lib/utils";
+import utilities from "@/styles/style.css?inline";
 import homeViewSource from "@/views/HomeView.vue?raw";
 import editConfigSource from "@/views/settings/EditConfig.vue?raw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -18,10 +22,51 @@ const INSET_BOTTOM = "11px";
 // from the wrong one cannot read as the right number.
 const BARS_HEIGHT = "158px";
 
-// Use raw selectors so the tests do not depend on Vue's generated scope id.
+// The unscoped blocks ship as written; a scoped one arrives without the
+// [data-v-hash] compound the compiler pairs each of its selectors with, so it
+// is a rank short. The utilities load first below to stand in for that rank,
+// which is why the order here is the opposite of mobileNavigationHeight's -
+// that bar declares its rules unscoped, so it can be held to the harder one.
 function extractStyle(source: string) {
   return source.match(/<style(?: scoped)?>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }
+
+// Read off the template rather than copied, so a class the rules key on going
+// missing fails here instead of leaving the probe measuring rules the element
+// no longer carries.
+function templateClasses(source: string, pattern: RegExp) {
+  const classes = source.match(pattern)?.[1];
+  if (!classes)
+    throw new Error(`the template carries no class list for ${pattern}`);
+  return classes;
+}
+
+// DialogContent composes its own list in the template, so the dialog is probed
+// the way it is rendered: the !important max-width in there is exactly what the
+// dialog's own placement has to beat.
+function dialogContentClasses(className: string) {
+  const base = dialogContentSource.match(/cn\(\s*'([^']*)'/)?.[1];
+  if (!base) throw new Error("DialogContent no longer composes a base list");
+  return cn(base, className);
+}
+
+// each pattern stops at the tag's own `>`, so a tag that stops carrying a
+// static class list throws rather than reaching on to the next element's
+const PLAYBACK_SPEED_DIALOG = dialogContentClasses(
+  templateClasses(
+    playerTrackMenuSource,
+    /<DialogContent[^>]*\sclass="([^"]*)"/,
+  ),
+);
+// a Button merges the classes it is passed onto its own, and its variants are
+// where the competing radius comes from
+const EDIT_DONE = cn(
+  buttonVariants(),
+  templateClasses(
+    homeViewSource,
+    /<Button[^>]*\sclass="([^"]*\bed-edit-done\b[^"]*)"/,
+  ),
+);
 
 // happy-dom substitutes var() but never evaluates calc(), so a sum is only
 // observable as the expression composing it
@@ -30,6 +75,31 @@ function normalize(value: string) {
 }
 
 const appStyles: HTMLStyleElement[] = [];
+let utilityStyles: HTMLStyleElement;
+
+// an override proves nothing unless a utility on the element really does set
+// the property, and set it !important. Only the top level is read: a utility
+// nested in a media query is a competitor at some widths, and what has to be
+// there is one that competes at every width.
+function expectUtilitiesCompete(element: Element, property: string) {
+  const priorities = [...(utilityStyles.sheet?.cssRules ?? [])]
+    .filter((rule) => rule instanceof CSSStyleRule)
+    .filter(
+      (rule) =>
+        element.matches(rule.selectorText) &&
+        rule.style.getPropertyValue(property) !== "",
+    )
+    .map((rule) => rule.style.getPropertyPriority(property));
+
+  expect(
+    priorities,
+    `a utility the element carries has to keep setting ${property}`,
+  ).not.toHaveLength(0);
+  expect(
+    [...new Set(priorities)],
+    "the Tailwind utilities import must stay `important` and unlayered",
+  ).toEqual(["important"]);
+}
 
 function render(source: string, className: string) {
   const styles = document.createElement("style");
@@ -44,6 +114,13 @@ function render(source: string, className: string) {
 }
 
 beforeEach(() => {
+  // first, so a rule the components declare still wins the ties their shipped
+  // selectors win on rank alone
+  utilityStyles = document.createElement("style");
+  utilityStyles.textContent = utilities;
+  document.head.appendChild(utilityStyles);
+  appStyles.push(utilityStyles);
+
   document.documentElement.style.setProperty("--device-inset-top", INSET_TOP);
   document.documentElement.style.setProperty(
     "--device-inset-right",
@@ -70,12 +147,12 @@ describe.each([
   // The desktop rule is what a landscape phone gets, so it carries the inset
   // even though the mobile variant has its own.
   ["settings save button", editConfigSource, "floating-save", "24px"],
-  ["home screen edit button", homeViewSource, "ed-edit-done", "24px"],
+  ["home screen edit button", homeViewSource, EDIT_DONE, "24px"],
   // The dialog writes its gap as 1rem, which resolves to the root font size.
   [
     "playback speed dialog",
     playerTrackMenuSource,
-    "playback-speed-dialog",
+    PLAYBACK_SPEED_DIALOG,
     "16px",
   ],
 ])("%s", (_name, source, className, gap) => {
@@ -90,11 +167,22 @@ describe.each([
 
 describe("home screen edit button", () => {
   it("clears the notch it sits under in portrait", () => {
-    const element = render(homeViewSource, "ed-edit-done");
+    const element = render(homeViewSource, EDIT_DONE);
 
     expect(normalize(getComputedStyle(element).top)).toBe(
       `calc(24px+${INSET_TOP})`,
     );
+  });
+
+  // It floats over the widgets rather than sitting in a row of controls, so it
+  // is shaped to read as its own thing instead of as one more button.
+  it("keeps its pill shape against the corners every button gets", () => {
+    const element = render(homeViewSource, EDIT_DONE);
+
+    // the radius the variants carry is a calc() holding a var(), which
+    // happy-dom drops from the CSSOM, so the competition is only observable in
+    // the value: a pill that loses reads as the token every other button takes
+    expect(getComputedStyle(element).borderRadius).toBe("999px");
   });
 });
 
@@ -102,8 +190,9 @@ describe("playback speed dialog", () => {
   // Offsetting only the near edge would push the far one off screen once the
   // dialog is wide enough to be clamped.
   it("clamps its width to both safe edges", () => {
-    const element = render(playerTrackMenuSource, "playback-speed-dialog");
+    const element = render(playerTrackMenuSource, PLAYBACK_SPEED_DIALOG);
 
+    expectUtilitiesCompete(element, "max-width");
     // happy-dom resolves 100vw and 2rem before handing the expression back.
     expect(normalize(getComputedStyle(element).maxWidth)).toBe(
       `calc(${window.innerWidth}px-32px-${INSET_LEFT}-${INSET_RIGHT})`,

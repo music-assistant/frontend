@@ -374,6 +374,8 @@ export interface HostDraft {
   instructions: string;
   // ttsEngine: "" = provider default
   ttsEngine: string;
+  // language: "" = follow the server language
+  language: string;
   segments: ShowSegment[];
 }
 
@@ -401,6 +403,7 @@ export const compileHost = (draft: HostDraft): CompiledHost => {
       name: draft.name.trim(),
       instructions: draft.instructions,
       tts_engine: draft.ttsEngine,
+      language: draft.language,
       section_ids: sections.map((section) => section.id),
       section_order: sectionOrder,
       merge_section_id: mergeSectionId,
@@ -547,6 +550,7 @@ export const decompileHost = (
     name: host.name,
     instructions: host.instructions,
     ttsEngine: host.tts_engine,
+    language: host.language || "",
     segments,
   };
 };
@@ -583,4 +587,23 @@ export const resolveShowPlayerId = (
 export const getQueryValue = (value: unknown) => {
   if (typeof value !== "string") return "";
   return value.trim();
+};
+
+/**
+ * Appends " 2", " 3", ... until `name` doesn't collide with `existingNames`.
+ * Compares on the slug `compileHost` derives the id from, so "A b" and "A-b" collide.
+ */
+export const uniqueHostName = (
+  name: string,
+  existingNames: string[],
+): string => {
+  const used = new Set(existingNames.map(slugify));
+  if (!used.has(slugify(name))) return name;
+  let suffix = 2;
+  let candidate = `${name} ${suffix}`;
+  while (used.has(slugify(candidate))) {
+    suffix += 1;
+    candidate = `${name} ${suffix}`;
+  }
+  return candidate;
 };

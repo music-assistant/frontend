@@ -255,8 +255,22 @@ describe("PlayerBarVolumeControl", () => {
     expect(trigger.attributes("data-active")).toBe("false");
     expect(trigger.attributes("data-suppress-hover")).toBe("true");
 
-    await trigger.trigger("pointerleave");
+    await trigger.trigger("pointerenter");
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
+  });
+
+  // touch leaves the button hovered from the tap that opened the popover, so
+  // dismissing it anywhere but on the button would leave it reading as active
+  it("suppresses it just the same when the popover closes on its own", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mountControl(player);
+    const trigger = wrapper.get("[data-player-volume-trigger]");
+
+    await trigger.trigger("click");
+    await wrapper.get(".player-volume-backdrop").trigger("click");
+
+    expect(trigger.attributes("data-suppress-hover")).toBe("true");
   });
 
   it("shows child controls and the group volume", () => {
@@ -283,6 +297,24 @@ describe("PlayerBarVolumeControl", () => {
     expect(
       wrapper.get("[data-player-volume-trigger]").attributes("aria-label"),
     ).toBe("audio_overlay_volume: 70%");
+  });
+
+  it("keeps the volume rows inside the list that scrolls", () => {
+    const child = createPlayer({ player_id: "child", name: "Office" });
+    const parent = createPlayer({
+      group_members: ["parent", child.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [child.player_id]: child,
+    };
+
+    const scroller = mountControl(parent).get(".player-volume-scroller");
+
+    // PlayerVolume grants the rows their vertical pan through this class;
+    // rendering them outside it would silently leave the list unscrollable
+    expect(scroller.classes()).toContain("overflow-y-auto");
+    expect(scroller.findAll(".player-volume")).toHaveLength(3);
   });
 
   it("keeps every volume label centered without clipping", () => {

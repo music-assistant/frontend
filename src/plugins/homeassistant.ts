@@ -11,10 +11,18 @@ export interface HAProperties {
   route: HARoute | null;
 }
 
+export interface HASafeAreaInsets {
+  top: string;
+  right: string;
+  bottom: string;
+  left: string;
+}
+
 interface HAState {
   isSubscribed: boolean;
   kioskModeEnabled: boolean;
   routeSyncEnabled: boolean;
+  safeAreaEnabled: boolean;
   properties: HAProperties;
 }
 
@@ -22,21 +30,71 @@ const state = reactive<HAState>({
   isSubscribed: false,
   kioskModeEnabled: false,
   routeSyncEnabled: false,
+  safeAreaEnabled: false,
   properties: {
     narrow: false,
     route: null,
   },
 });
 
+const SAFE_AREA_EDGES = ["top", "right", "bottom", "left"] as const;
+
 let messageHandler: ((event: MessageEvent) => void) | null = null;
 let routerInstance: Router | null = null;
 let isNavigatingFromHA = false;
 
+/**
+ * The part of the reported safe area Music Assistant is left to cover.
+ *
+ * While Home Assistant is narrow it puts a header of its own above the frame,
+ * and that header already takes the top inset, so claiming it again would only
+ * push the app further down the screen. Kiosk mode drops that header, and hands
+ * the top inset back to us along with it.
+ */
+function ownedInsets(
+  insets: Partial<HASafeAreaInsets>,
+  narrow: boolean,
+): Partial<HASafeAreaInsets> {
+  return narrow ? { ...insets, top: "" } : insets;
+}
+
+/**
+ * Apply the safe area Home Assistant reports to the device inset tokens.
+ *
+ * Edges Home Assistant reports nothing for are handed back to the stylesheet.
+ */
+function applySafeAreaInsets(insets: Partial<HASafeAreaInsets>): void {
+  for (const edge of SAFE_AREA_EDGES) {
+    const property = `--device-inset-${edge}`;
+    // Setting these inline is what lifts them above the zeroed tokens an
+    // embedded layout gets, which stay right for every host that reports none.
+    if (insets[edge]) {
+      document.documentElement.style.setProperty(property, insets[edge]);
+    } else {
+      document.documentElement.style.removeProperty(property);
+    }
+  }
+}
+
 function handleMessage(event: MessageEvent) {
+  // Home Assistant posts to the frame it embeds us in, so anything from another
+  // sender is not it.
+  if (event.source !== window.parent) {
+    return;
+  }
+
   if (event.data?.type === "home-assistant/properties") {
     const oldRoute = state.properties.route?.path;
     state.properties.narrow = event.data.narrow ?? false;
     state.properties.route = event.data.route ?? null;
+
+    // Home Assistant reports the insets whether or not we asked for them, and
+    // only stops padding the iframe itself once we did.
+    if (state.safeAreaEnabled && event.data.safeAreaInsets) {
+      applySafeAreaInsets(
+        ownedInsets(event.data.safeAreaInsets, state.properties.narrow),
+      );
+    }
 
     if (
       state.routeSyncEnabled &&
@@ -65,10 +123,16 @@ function handleMessage(event: MessageEvent) {
  * Optionally enables kiosk mode which hides HA's toolbar.
  *
  * @param options.kioskMode - If true, requests HA to hide its toolbar
+ * @param options.handleSafeArea - If true, takes the safe area padding HA puts
+ *   around the ingress iframe over into the device inset tokens
  * @param options.router - Vue router instance for route synchronization
  */
 export function subscribeToHAProperties(
-  options: { kioskMode?: boolean; router?: Router } = {},
+  options: {
+    kioskMode?: boolean;
+    handleSafeArea?: boolean;
+    router?: Router;
+  } = {},
 ): void {
   if (state.isSubscribed) {
     console.warn("[HA Integration] Already subscribed to HA properties");
@@ -87,12 +151,14 @@ export function subscribeToHAProperties(
     {
       type: "home-assistant/subscribe-properties",
       kioskMode: options.kioskMode ?? false,
+      handleSafeArea: options.handleSafeArea ?? false,
     },
     "*",
   );
 
   state.isSubscribed = true;
   state.kioskModeEnabled = options.kioskMode ?? false;
+  state.safeAreaEnabled = options.handleSafeArea ?? false;
 
   console.debug(
     "[HA Integration] Subscribed to HA properties",
@@ -121,9 +187,14 @@ export function unsubscribeFromHAProperties(): void {
     "*",
   );
 
+  // Home Assistant pads the iframe again the moment we unsubscribe, so hand the
+  // safe area back rather than reserving it twice.
+  applySafeAreaInsets({});
+
   state.isSubscribed = false;
   state.kioskModeEnabled = false;
   state.routeSyncEnabled = false;
+  state.safeAreaEnabled = false;
   routerInstance = null;
 
   console.debug("[HA Integration] Unsubscribed from HA properties");

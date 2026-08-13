@@ -129,6 +129,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     })
     .catch((err) => {
       toast.error(err.message || err);
+      editConfig.value?.saveFailed();
     })
     .finally(() => {
       loading.value = false;

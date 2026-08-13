@@ -1,10 +1,9 @@
 <template>
   <v-app>
-    <MainView v-if="store.frameless" />
-    <template v-else>
-      <MainView />
-      <Footer />
-    </template>
+    <!-- a single view across both modes, so toggling fullscreen swaps the
+         chrome without tearing down the view behind it -->
+    <MainView />
+    <Footer v-if="!store.frameless" />
   </v-app>
   <reload-prompt />
 </template>

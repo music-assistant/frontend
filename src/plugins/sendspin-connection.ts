@@ -263,7 +263,7 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
 
   if (api.isRemoteConnection.value) {
     console.debug("[Sendspin] In remote mode, trying DataChannel...");
-    const channel = await api.createSendspinDataChannel();
+    const channel = await api.openDataChannel("sendspin");
     if (channel) {
       console.info("[Sendspin] Using remote access DataChannel");
       _isDirectConnection = false;

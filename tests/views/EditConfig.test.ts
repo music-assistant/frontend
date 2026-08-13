@@ -1,6 +1,16 @@
-import { shallowMount, type VueWrapper } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { nextTick } from "vue";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  shallowMount,
+  type VueWrapper,
+} from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { h, nextTick } from "vue";
+import { createMemoryHistory, createRouter, RouterView } from "vue-router";
+import { createVuetify } from "vuetify";
+import * as components from "vuetify/components";
+import * as directives from "vuetify/directives";
 import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 import EditConfig from "@/views/settings/EditConfig.vue";
 
@@ -30,11 +40,16 @@ vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>();
+  const { inject } = await vi.importActual<typeof import("vue")>("vue");
   return {
     ...actual,
-    useRouter: () => routerMock,
+    // the routed tests install a real router; the rest mount the form on its own
+    useRouter: () => inject(actual.routerKey, routerMock as never),
   };
 });
+
+// the form listens for beforeunload, so a leaked instance keeps reacting
+enableAutoUnmount(afterEach);
 
 describe("EditConfig", () => {
   beforeEach(() => {
@@ -321,6 +336,112 @@ describe("EditConfig", () => {
   );
 });
 
+describe("EditConfig unsaved changes", () => {
+  it("carries on to the page the user picked once they discard", async () => {
+    const { router, wrapper } = await mountInRouter();
+    dirty(wrapper);
+    await nextTick();
+
+    // the user picks another entry in the settings menu
+    router.push({ name: "music-quiz" });
+    await flushPromises();
+    expect(router.currentRoute.value.name).toBe("editprovider");
+
+    await click(wrapper, "config-discard");
+
+    expect(router.currentRoute.value.name).toBe("music-quiz");
+  });
+
+  it("keeps the user on the form when they choose to stay", async () => {
+    const { router, wrapper } = await mountInRouter();
+    dirty(wrapper);
+    await nextTick();
+
+    router.push({ name: "music-quiz" });
+    await flushPromises();
+    await click(wrapper, "config-stay");
+
+    expect(router.currentRoute.value.name).toBe("editprovider");
+    expect(wrapper.findComponent(EditConfig).exists()).toBe(true);
+  });
+
+  // a discarded back has to stay a back, or the form the user just left would
+  // sit in the history waiting for the next back press
+  it("goes back rather than forward when a back press is discarded", async () => {
+    const { router, wrapper } = await mountInRouter();
+    dirty(wrapper);
+    await nextTick();
+
+    router.back();
+    await flushPromises();
+    await click(wrapper, "config-discard");
+    expect(router.currentRoute.value.name).toBe("settings");
+
+    router.back();
+    await flushPromises();
+
+    expect(router.currentRoute.value.name).toBe("players");
+  });
+
+  // the router runs the leave guards again for the route it redirects to
+  it("asks only once when the page picked redirects elsewhere", async () => {
+    const { router, wrapper } = await mountInRouter();
+    dirty(wrapper);
+    await nextTick();
+
+    router.push({ name: "redirects-away" });
+    await flushPromises();
+    await click(wrapper, "config-discard");
+
+    expect(router.currentRoute.value.name).toBe("music-quiz");
+  });
+
+  // a back press is how a phone dismisses a dialog, and the second one must not
+  // leave the history a step away from the page on screen
+  it("survives a back press on top of the dialog", async () => {
+    const { router, wrapper } = await mountInRouter();
+    dirty(wrapper);
+    await nextTick();
+
+    router.back();
+    await flushPromises();
+    router.back();
+    await flushPromises();
+    await click(wrapper, "config-stay");
+
+    expect(router.currentRoute.value.name).toBe("editprovider");
+    expect(router.options.history.location).toBe("/settings/provider");
+  });
+
+  // saving lets the screen navigate away without asking, but a save that never
+  // landed must not leave the values unguarded
+  it("asks again when the host reports a failed save", async () => {
+    const { router, wrapper } = await mountInRouter();
+    const form = wrapper.findComponent(EditConfig);
+    dirty(wrapper);
+    await nextTick();
+
+    await form.get('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+    form.vm.saveFailed();
+
+    router.push({ name: "music-quiz" });
+    await flushPromises();
+
+    expect(router.currentRoute.value.name).toBe("editprovider");
+    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
+  });
+
+  it("lets an unchanged form go without asking", async () => {
+    const { router, wrapper } = await mountInRouter();
+
+    await router.push({ name: "music-quiz" });
+
+    expect(router.currentRoute.value.name).toBe("music-quiz");
+    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(false);
+  });
+});
+
 function entry(
   overrides: Partial<ConfigEntry> & { key: string; type: ConfigEntryType },
 ): ConfigEntry {
@@ -370,4 +491,66 @@ function saveDisabled(wrapper: VueWrapper) {
   const button = wrapper.find('[data-testid="config-save"]');
   if (!button.exists()) throw new Error("save button not rendered");
   return button.attributes("disabled") === "true";
+}
+
+// the unsaved-changes guard only runs inside a routed view, so this mounts the
+// form the way the settings screens do: as the component of the current route
+async function mountInRouter() {
+  const configEntries = [
+    entry({ key: "server", type: ConfigEntryType.STRING }),
+  ];
+  const blank = { render: () => h("div") };
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: "/players", name: "players", component: blank },
+      { path: "/settings", name: "settings", component: blank },
+      {
+        path: "/settings/provider",
+        name: "editprovider",
+        component: {
+          render: () => h(EditConfig, { configEntries, disabled: false }),
+        },
+      },
+      { path: "/music-quiz", name: "music-quiz", component: blank },
+      // shaped like the plugin views, which send you away when disabled
+      {
+        path: "/redirects-away",
+        name: "redirects-away",
+        component: blank,
+        beforeEnter: () => ({ name: "music-quiz" }),
+      },
+    ],
+  });
+  router.push({ name: "players" });
+  await router.isReady();
+  await router.push({ name: "settings" });
+  await router.push({ name: "editprovider" });
+
+  const wrapper = mount(
+    { render: () => h(RouterView) },
+    {
+      global: {
+        plugins: [router, createVuetify({ components, directives })],
+        stubs: {
+          ConfigEntryRow: true,
+          ProtocolConfigSection: true,
+          // the real dialog teleports into an overlay container this bare app
+          // never mounts, so render it where it is declared instead
+          VDialog: {
+            props: ["modelValue"],
+            template: '<div v-if="modelValue"><slot /></div>',
+          },
+        },
+      },
+    },
+  );
+  await flushPromises();
+  return { router, wrapper };
+}
+
+// answering the dialog releases a navigation, so settle that too
+async function click(wrapper: VueWrapper, testId: string) {
+  await wrapper.get(`[data-testid="${testId}"]`).trigger("click");
+  await flushPromises();
 }

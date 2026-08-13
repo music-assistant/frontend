@@ -42,8 +42,8 @@
         'player-bar-popout player-select-popover flex flex-col gap-0 overflow-hidden p-0',
         popoutFromFullscreen && 'player-select-popover-fullscreen',
         store.mobileLayout
-          ? 'w-[calc(100vw-2*var(--player-bar-popout-gap))]'
-          : 'w-[400px] max-w-[calc(100vw-2*var(--player-bar-popout-gap))]',
+          ? 'w-[calc(100vw-2*var(--player-bar-popout-inset-x)-var(--device-inset-left)-var(--device-inset-right))]'
+          : 'w-[400px] max-w-[calc(100vw-2*var(--player-bar-popout-inset-x)-var(--device-inset-left)-var(--device-inset-right))]',
       ]"
       @keydown="handleSheetKeydown"
       @close-auto-focus="preventAutoFocus"
@@ -126,7 +126,10 @@
         <p class="sr-only">{{ $t("tooltip.select_player") }}</p>
       </div>
 
-      <div ref="playerList" class="min-h-0 flex-1 overflow-y-auto pb-6">
+      <div
+        ref="playerList"
+        class="player-volume-scroller min-h-0 flex-1 overflow-y-auto pb-6"
+      >
         <!-- outranks the selected player badge on the cards scrolling underneath -->
         <div
           v-if="showSearch"

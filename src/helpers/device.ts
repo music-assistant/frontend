@@ -17,6 +17,24 @@ export const DEVICE_TYPE: DeviceType = IS_TABLET_UA
     ? "phone"
     : "desktop";
 
+/**
+ * How far in from a side of the screen it is safe to draw, in pixels.
+ *
+ * The layout viewport spans the cutout and the rounded corners, so anything
+ * measured from `window.innerWidth` has to take this off to clear them.
+ */
+export function deviceInset(side: "left" | "right") {
+  // read off a padding rather than the custom property itself: WebKit reports 0
+  // for a custom property holding env(), while a length it lays a box out with
+  // carries the inset the page is actually drawn against
+  const probe = document.createElement("div");
+  probe.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-left:var(--device-inset-${side})`;
+  document.body.appendChild(probe);
+  const inset = parseFloat(getComputedStyle(probe).paddingLeft) || 0;
+  probe.remove();
+  return inset;
+}
+
 export function isTouchscreenDevice() {
   // detect if device/browser is touch enabled
   let result = false;
