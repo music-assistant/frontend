@@ -722,6 +722,20 @@ describe("PlayerSelect", () => {
     ).toBe("true");
   });
 
+  it("keeps the cards inside the list that scrolls", () => {
+    api.players = {
+      kitchen: createPlayer("kitchen", "Kitchen"),
+      office: createPlayer("office", "Office"),
+    };
+
+    const scroller = mountPlayerSelect().get(".player-volume-scroller");
+
+    // this class is what PlayerVolume reaches the volume rows on these cards
+    // through; a card rendered outside it would silently lose the pan
+    expect(scroller.classes()).toContain("overflow-y-auto");
+    expect(scroller.findAll(".player-card")).toHaveLength(2);
+  });
+
   it("shows volume controls only for playing and paused players by default", () => {
     api.players = {
       idle: createPlayer("idle", "Idle"),
