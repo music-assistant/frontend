@@ -1350,7 +1350,7 @@ watch(
 </style>
 
 <style>
-/* .party-view-active is set by the Default layout for the party route */
+/* .party-view-active is set by layouts/default/View.vue for the party route */
 .content-section.party-view-active {
   overflow: hidden !important;
   display: flex;

@@ -1,5 +1,4 @@
 import View from "@/layouts/default/View.vue";
-import { routes } from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { type VueWrapper, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -88,13 +87,5 @@ describe("View", () => {
 
     expect(section.classes()).toContain(mod);
     expect(section.classes()).toContain("party-view-active");
-  });
-
-  it("is the flag the party route hands the layout", () => {
-    const party = routes
-      .find((route) => route.path === "/party")
-      ?.children?.find((child) => child.name === "party");
-
-    expect(party?.meta?.partyView).toBe(true);
   });
 });

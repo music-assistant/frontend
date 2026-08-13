@@ -153,6 +153,18 @@ describe("music quiz dashboard route", () => {
   });
 });
 
+describe("party dashboard route", () => {
+  // the layout reads this to hand the dashboard its container whole, so the
+  // flag has to reach it through the route the layout is mounted by
+  it("asks the layout for a container it can fill", () => {
+    const dashboardRoute = routes
+      .find((route) => route.path === "/party")
+      ?.children?.find((route) => route.name === "party");
+
+    expect(dashboardRoute?.meta?.partyView).toBe(true);
+  });
+});
+
 describe("party dashboard guard", () => {
   it("redirects to Discover when the party plugin is disabled", async () => {
     await expect(
