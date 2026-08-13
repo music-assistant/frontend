@@ -132,6 +132,7 @@ describe("compileHost", () => {
       instructions: "Persona.",
       ttsEngine: "",
       language: "",
+      options: {},
       segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     };
     const { host, sections } = compileHost(draft);
@@ -154,6 +155,7 @@ describe("compileHost", () => {
       instructions: "Persona.",
       ttsEngine: "",
       language: "",
+      options: {},
       segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     });
     const a = compileHost(draftFor("host_a"));
@@ -173,6 +175,7 @@ describe("compileHost", () => {
       instructions: "Persona.",
       ttsEngine: "",
       language: "",
+      options: {},
       segments: [{ ...GENERIC_SEGMENT_TEMPLATES[0], id: "rick_intro" }],
     };
     const { sections } = compileHost(draft);
@@ -188,6 +191,7 @@ describe("compileHost", () => {
       instructions: "Persona.",
       ttsEngine: "",
       language: "",
+      options: {},
       segments: [
         {
           ...artistFactTemplate,
@@ -217,6 +221,7 @@ describe("decompileHost", () => {
       instructions: "Persona.",
       ttsEngine: "engine-1",
       language: "",
+      options: {},
       segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     };
     const { host, sections } = compileHost(draft);
@@ -237,6 +242,7 @@ describe("decompileHost", () => {
       instructions: "Persona.",
       ttsEngine: "",
       language: "",
+      options: {},
       segments: GENERIC_SEGMENT_TEMPLATES.slice(0, 2).map((s) => ({ ...s })),
     };
     const { host, sections } = compileHost(draft);
@@ -265,6 +271,7 @@ describe("decompileHost", () => {
       instructions: "Persona.",
       ttsEngine: "",
       language: "",
+      options: {},
       segments: [{ ...artistFactTemplate }], // every_n_songs n: 3
     };
     const { host, sections } = compileHost(draft);
@@ -297,6 +304,7 @@ describe("decompileHost", () => {
       instructions: "Persona.",
       tts_engine: "",
       language: "",
+      options: {},
       section_ids: [legacySection.id, mergeSection.id],
       section_order: [
         {
@@ -337,6 +345,7 @@ describe("decompileHost", () => {
       instructions: "Persona.",
       ttsEngine: "",
       language: "",
+      options: {},
       segments: round.segments,
     });
     const rule = recompiled.section_order.find(
