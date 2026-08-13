@@ -20,9 +20,13 @@ const INSET_BOTTOM = "17px";
 let styles: HTMLStyleElement[];
 let utilityStyles: HTMLStyleElement;
 
-// the block is unscoped, so the selectors it declares are the shipped ones
+// the block is unscoped, so the selectors it declares are the shipped ones. A
+// block that stops matching is compiled differently and no longer says what the
+// bar ships, so say that rather than measuring an empty stylesheet.
 function extractStyle(source: string) {
-  return source.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
+  const style = source.match(/<style>([\s\S]*?)<\/style>/)?.[1];
+  if (!style) throw new Error("the navigation's plain <style> block is gone");
+  return style;
 }
 
 // happy-dom substitutes every var() but does not evaluate calc(), so the height
