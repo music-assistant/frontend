@@ -22,9 +22,9 @@ let inFlight: Promise<void> | null = null;
 void loadTtsEngines();
 
 export function useAnnouncement() {
-  // Best-effort staleness refresh; engines come from plugins that can be set
-  // up while the app stays open. Callers read the catalog fetched above.
-  void loadTtsEngines();
+  // Retry only while there is nothing to speak with, so a plugin set up after
+  // the app was opened is picked up without costing a request per menu open.
+  if (!announcementAvailable.value) void loadTtsEngines();
   return {
     ttsEngines,
     announcementAvailable,
