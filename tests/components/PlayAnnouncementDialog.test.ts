@@ -4,20 +4,24 @@ import { eventbus } from "@/plugins/eventbus";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, storeMock, toastSuccess } = vi.hoisted(() => ({
-  apiMock: {
-    players: {} as Record<string, Player>,
-    baseUrl: "https://music.example",
-    isRemoteConnection: { value: false },
-    playerCommandPlayAnnouncement: vi.fn(),
-    getPlayerConfigValue: vi.fn(),
-  },
-  storeMock: {
-    dialogActive: false,
-    isIngressSession: false,
-  },
-  toastSuccess: vi.fn(),
-}));
+const { apiMock, storeMock, toastSuccess } = await vi.hoisted(async () => {
+  // a real ref, like the api itself exposes, so the dialog reacts to it changing
+  const { shallowRef } = await import("vue");
+  return {
+    apiMock: {
+      players: {} as Record<string, Player>,
+      baseUrl: "https://music.example",
+      isRemoteConnection: shallowRef(false),
+      playerCommandPlayAnnouncement: vi.fn(),
+      getPlayerConfigValue: vi.fn(),
+    },
+    storeMock: {
+      dialogActive: false,
+      isIngressSession: false,
+    },
+    toastSuccess: vi.fn(),
+  };
+});
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -267,6 +271,31 @@ describe("PlayAnnouncementDialog", () => {
           (button) => button.attributes("form") === "play-announcement-form",
         ),
     ).toBe(false);
+  });
+
+  it("falls back to typing when the microphone is withdrawn mid-dialog", async () => {
+    withMicrophone();
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+    await speakTab(wrapper).trigger("mousedown", { button: 0 });
+    expect(wrapper.find("textarea").exists()).toBe(false);
+
+    // switching to a remote connection takes the microphone away
+    apiMock.isRemoteConnection.value = true;
+    await flushPromises();
+
+    // without the fallback the speak panel would stay up with no tabs and no send button
+    expect(wrapper.text()).not.toContain("play_announcement_mode_speak");
+    expect(wrapper.find("textarea").exists()).toBe(true);
+    expect(
+      wrapper
+        .findAll("button")
+        .some(
+          (button) => button.attributes("form") === "play-announcement-form",
+        ),
+    ).toBe(true);
   });
 
   it("does not offer the microphone on a remote connection", async () => {

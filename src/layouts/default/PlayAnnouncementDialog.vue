@@ -191,6 +191,14 @@ watch(showDialog, (open) => {
   if (!open) cancelLive();
 });
 
+// a connection change can withdraw the microphone while the dialog is open, which
+// would otherwise leave the speak panel up with no tabs and no way to send
+watch(micAvailable, (available) => {
+  if (available) return;
+  cancelLive();
+  mode.value = "type";
+});
+
 onMounted(() => {
   eventbus.on("playAnnouncementDialog", (evt: PlayAnnouncementDialogEvent) => {
     playerId.value = evt.playerId;

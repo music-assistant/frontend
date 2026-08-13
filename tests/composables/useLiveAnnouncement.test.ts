@@ -130,8 +130,8 @@ describe("useLiveAnnouncement", () => {
     vi.stubGlobal("WebSocket", FakeWebSocket);
     vi.stubGlobal("AudioContext", FakeAudioContext);
     vi.stubGlobal("AudioWorkletNode", FakeAudioWorkletNode);
-    URL.createObjectURL = vi.fn(() => "blob:live-announcement");
-    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:live-announcement");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
     Object.defineProperty(window, "isSecureContext", {
       value: true,
       configurable: true,
@@ -144,6 +144,7 @@ describe("useLiveAnnouncement", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("announces the clip and streams what was recorded while connecting", async () => {
