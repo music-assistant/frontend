@@ -63,6 +63,19 @@ describe("PlayerBarPlayerButton", () => {
     expect(button.attributes("aria-expanded")).toBe("true");
   });
 
+  // the mouse that clicked the panel shut is still on the button, and no second
+  // pointerenter is coming to say so
+  it("keeps the hover color when a mouse clicks the panel closed", async () => {
+    const button = mountPlayerButton();
+
+    await button.trigger("pointerenter", { pointerType: "mouse" });
+    await button.trigger("click");
+    await button.trigger("click");
+
+    expect(testStore.showPlayersMenu).toBe(false);
+    expect(button.attributes("data-suppress-hover")).toBe("false");
+  });
+
   it("names the empty selection when no player is active", () => {
     const button = mountPlayerButton();
 

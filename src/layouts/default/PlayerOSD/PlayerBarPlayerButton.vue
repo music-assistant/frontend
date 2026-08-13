@@ -13,7 +13,7 @@
     :aria-expanded="store.showPlayersMenu"
     aria-haspopup="dialog"
     @click="togglePlayersMenu"
-    @pointerenter="releaseHover"
+    @pointerenter="onPointerEnter"
   >
     <span
       :class="navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'"
@@ -43,7 +43,7 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 
-const { suppressHover, releaseHover } = usePopoutTriggerHover(
+const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
   () => store.showPlayersMenu,
 );
 const playerName = computed(() => store.activePlayer?.name || $t("no_player"));

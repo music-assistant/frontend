@@ -38,7 +38,7 @@
           :data-active="open"
           :data-suppress-hover="suppressHover"
           :aria-label="groupMembersLabel"
-          @pointerenter="releaseHover"
+          @pointerenter="onPointerEnter"
         >
           <span v-if="floating" class="inline-flex">
             <!-- matches the track menu beside it in the floating bar -->
@@ -130,7 +130,9 @@ withDefaults(
 );
 
 const open = ref(false);
-const { suppressHover, releaseHover } = usePopoutTriggerHover(() => open.value);
+const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
+  () => open.value,
+);
 const filter = ref<PlayerGroupFilter>("all");
 const player = computed(() => store.activePlayer);
 const canEditGroup = computed(

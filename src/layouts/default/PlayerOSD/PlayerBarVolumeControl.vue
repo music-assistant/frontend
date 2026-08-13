@@ -28,7 +28,7 @@
         :data-suppress-hover="suppressHover"
         :disabled="disabled"
         :aria-label="`${$t('audio_overlay_volume')}: ${displayVolume}%`"
-        @pointerenter="releaseHover"
+        @pointerenter="onPointerEnter"
         @wheel="adjustVolume"
       >
         <span class="player-bar-action-icon">
@@ -89,7 +89,9 @@ const props = defineProps<{
 }>();
 
 const open = ref(false);
-const { suppressHover, releaseHover } = usePopoutTriggerHover(() => open.value);
+const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
+  () => open.value,
+);
 
 const grouped = computed(() => isPlayerGrouped(props.player));
 const displayVolume = computed(() =>
