@@ -939,6 +939,9 @@ const loadNextPage = async function ({
 
 const loadAllItems = async function () {
   while (!allItemsReceived.value) {
+    // the paging can outlast the listing, so stop fetching once it is gone
+    if (unmounted) return;
+
     await loadNextPage({ done: function () {} });
   }
 };
