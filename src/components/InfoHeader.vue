@@ -509,6 +509,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import {
   handleMediaItemClick,
   handlePlayBtnClick,
@@ -683,24 +684,7 @@ const artistClick = function (item: Artist | ItemMapping) {
 };
 
 const backButtonClick = function () {
-  // if we have stored routes, we can safely use history back
-  if (store.prevRoute) {
-    router.back();
-    return;
-  }
-  // back to main listing for itemtype
-  const curRoute = router.currentRoute.value.name?.toString() || "";
-  for (const itemType of ["artist", "album", "track", "playlist", "radio"]) {
-    if (curRoute.includes(itemType)) {
-      router.push({
-        name: `${itemType}s`,
-      });
-      return;
-    }
-  }
-  router.push({
-    name: "discover",
-  });
+  backFromMediaDetails(router);
 };
 
 // Resolve the queue playMedia targets directly, since activePlayerQueue is

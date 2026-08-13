@@ -37,7 +37,6 @@ interface Store {
   // media type filter for the global search; empty means all media types
   globalSearchMediaTypes: MediaType[];
   prevState?: StoredState;
-  prevRoute?: string;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
   libraryTracksCount?: number;
@@ -84,7 +83,6 @@ export const store: Store = reactive({
   globalSearchTerm: undefined,
   globalSearchMediaTypes: [],
   prevState: undefined,
-  prevRoute: undefined,
   libraryArtistsCount: undefined,
   libraryAlbumsCount: undefined,
   libraryTracksCount: undefined,

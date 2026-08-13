@@ -174,6 +174,7 @@ import {
   OutputProtocol,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
+import { goBack } from "@/helpers/navigation";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
@@ -422,7 +423,7 @@ const confirmDiscard = function () {
   showUnsavedDialog.value = false;
   allowNavigation.value = true;
   // Navigate back after setting the flag
-  router.back();
+  goBack(router, { name: "settings" });
 };
 
 const cancelDiscard = function () {
