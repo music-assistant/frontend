@@ -65,8 +65,6 @@ describe("PlayerExtendedControls", () => {
     const controls = mount(PlayerExtendedControls, {
       global: {
         stubs: {
-          QueueBtn: true,
-          PlayerTrackMenu: true,
           PlayerBarVolumeControl: true,
           PlayerBarGroupControl: true,
           PlayerBarPlayerButton: true,
