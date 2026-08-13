@@ -66,12 +66,4 @@ function preventAutoFocus(event: Event) {
 :root .mobile-group-volume-overlay {
   bottom: var(--mobile-navigation-height) !important;
 }
-
-.mobile-group-volume-sheet [data-slot="slider-thumb"]::before {
-  transition: transform 120ms ease;
-}
-
-.mobile-group-volume-sheet [data-slot="slider-thumb"]:active::before {
-  transform: scale(1.8);
-}
 </style>

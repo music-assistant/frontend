@@ -2,6 +2,18 @@
   <div ref="wrapperRef" class="player-volume-wrapper">
     <!-- Sonos-style group volume popout (teleported to body to escape overflow clipping) -->
     <Teleport to="body">
+      <!-- Volume readout, teleported for the same reason: the bars this slider
+           sits in clip their own overflow -->
+      <Transition name="volume-bubble">
+        <div
+          v-if="showStepButtons"
+          class="volume-bubble"
+          :style="bubbleStyle"
+          aria-hidden="true"
+        >
+          {{ Math.round(displayValue) }}
+        </div>
+      </Transition>
       <!-- Invisible backdrop: catches all clicks/taps outside the popout and stops propagation -->
       <Transition name="popout-backdrop">
         <div
@@ -68,6 +80,8 @@
         disabled: isDisabled,
         muted: isMuted,
         'not-powered': player.powered == false,
+        expandable: expandOnTouch,
+        expanded: showStepButtons,
       }"
       :style="{ width: width }"
       @click="onSliderClick"
@@ -81,14 +95,36 @@
       @touchend="onTouchEnd"
       @touchcancel="onTouchCancel"
     >
-      <!-- Mute button with dynamic volume icon -->
-      <div class="volume-prepend" @touchstart.stop @touchend.stop>
+      <!-- Mute button with dynamic volume icon. The slot swallows the whole
+           touch sequence, moves included: a touch that starts on a button is
+           never the slider being dragged, and letting the moves through would
+           measure them against whatever the last touch on the track started at. -->
+      <div
+        class="volume-prepend"
+        @touchstart.stop
+        @touchmove.stop
+        @touchend.stop
+        @touchcancel.stop
+      >
         <button
-          class="volume-icon-btn"
+          class="volume-icon-btn volume-slot-item"
+          :class="{ 'is-hidden': showStepButtons }"
+          :inert="showStepButtons"
           :disabled="muteDisabled"
           @click.stop="onMuteToggle"
         >
           <component :is="volumeIconComponent" :size="iconSize" />
+        </button>
+        <button
+          v-if="expandOnTouch"
+          type="button"
+          class="volume-step-btn volume-slot-item"
+          :class="{ 'is-hidden': !showStepButtons }"
+          :inert="!showStepButtons"
+          :aria-label="$t('tooltip.volume_down')"
+          @click.stop="onStepDown"
+        >
+          <Minus :size="iconSize" />
         </button>
       </div>
 
@@ -105,14 +141,32 @@
 
       <!-- Volume level display -->
       <div
-        v-if="showVolumeLevel"
+        v-if="showVolumeLevel || expandOnTouch"
         class="volume-append"
         @touchstart.stop
+        @touchmove.stop
         @touchend.stop
+        @touchcancel.stop
       >
-        <span class="volume-level-text">
+        <span
+          v-if="showVolumeLevel"
+          class="volume-level-text volume-slot-item"
+          :class="{ 'is-hidden': showStepButtons }"
+          :inert="showStepButtons"
+        >
           {{ Math.round(displayValue) }}
         </span>
+        <button
+          v-if="expandOnTouch"
+          type="button"
+          class="volume-step-btn volume-slot-item"
+          :class="{ 'is-hidden': !showStepButtons }"
+          :inert="!showStepButtons"
+          :aria-label="$t('tooltip.volume_up')"
+          @click.stop="onStepUp"
+        >
+          <Plus :size="iconSize" />
+        </button>
       </div>
     </div>
   </div>
@@ -131,6 +185,7 @@ import {
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { Minus, Plus } from "@lucide/vue";
 import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 
 export interface Props {
@@ -147,6 +202,8 @@ export interface Props {
   enablePopout?: boolean;
   /** Ask the parent to expand inline group controls when the slider is tapped */
   requestExpandOnGroupTap?: boolean;
+  /** Fatten the rail and swap the mute and level slots for step buttons while a finger is on it */
+  expandOnTouch?: boolean;
   width?: string;
   step?: number;
   allowWheel?: boolean;
@@ -161,6 +218,7 @@ const props = withDefaults(defineProps<Props>(), {
   preferGroupVolume: false,
   enablePopout: true,
   requestExpandOnGroupTap: false,
+  expandOnTouch: false,
   width: "100%",
   step: 2,
   allowWheel: false,
@@ -342,6 +400,9 @@ const toggleGroupPopout = () => {
 };
 
 const handleGroupTap = () => {
+  // the group controls carry their own volume rows, so the bar's own step
+  // buttons must not linger behind them
+  collapseControls();
   if (hasGroupPopout.value) {
     toggleGroupPopout();
   } else {
@@ -417,6 +478,7 @@ const displayValue = ref(currentVolume.value);
 const touchStartX = ref(0);
 const touchStartY = ref(0);
 const touchStartValue = ref(0);
+const touchStartThumbCenter = ref<number | null>(null);
 const isScrolling = ref(false);
 const isDrag = ref(false);
 const touchMoveCount = ref(0);
@@ -437,6 +499,8 @@ const POINTER_DRAG_THRESHOLD = 4;
 onUnmounted(() => {
   if (dragEndTimeout) clearTimeout(dragEndTimeout);
   if (sliderUpdateDebounceTimeout) clearTimeout(sliderUpdateDebounceTimeout);
+  stopTrackingBubble();
+  cancelCollapse();
 });
 
 const clamp = (value: number, min: number, max: number) =>
@@ -501,12 +565,109 @@ const onMuteToggle = () => {
   }
 };
 
+// --- Touch expansion ---
+
+const isExpanded = ref(false);
+const bubbleStyle = ref<Record<string, string>>({});
+let collapseTimeout: ReturnType<typeof setTimeout> | null = null;
+let bubbleFrame: number | null = null;
+const COLLAPSE_DELAY_MS = 2000;
+const BUBBLE_GAP = 10;
+
+// The step buttons take over the mute and level slots, so a slider that cannot
+// be dragged keeps the mute button the user needs to get out of that state
+const showStepButtons = computed(
+  () => props.expandOnTouch && !isSliderDisabled.value && isExpanded.value,
+);
+
+// Only the touch handlers reach this: a pointer hits the resting rail
+// accurately enough, so growing it under a mouse would be noise
+const expandControls = () => {
+  if (!props.expandOnTouch || isSliderDisabled.value) return;
+  // placed before the readout renders, so it never shows up at the last
+  // position it was dismissed from
+  updateBubblePosition();
+  isExpanded.value = true;
+  cancelCollapse();
+};
+
+const collapseControlsSoon = () => {
+  if (!isExpanded.value) return;
+  cancelCollapse();
+  collapseTimeout = setTimeout(() => {
+    isExpanded.value = false;
+    collapseTimeout = null;
+  }, COLLAPSE_DELAY_MS);
+};
+
+const collapseControls = () => {
+  cancelCollapse();
+  isExpanded.value = false;
+};
+
+const onStepDown = () => {
+  expandControls();
+  volumeDown();
+  collapseControlsSoon();
+};
+
+const onStepUp = () => {
+  expandControls();
+  volumeUp();
+  collapseControlsSoon();
+};
+
+const cancelCollapse = () => {
+  if (collapseTimeout) {
+    clearTimeout(collapseTimeout);
+    collapseTimeout = null;
+  }
+};
+
+// The readout rides the thumb, which sits at the value's fraction of the track
+// because the slider aligns its thumb by overflow rather than inset. It is
+// fixed to the viewport to clear the bars' own clipping, so it is re-measured
+// rather than assumed: the rail thickens under it, and the panel it sits in can
+// still be sliding open or scrolling.
+const updateBubblePosition = () => {
+  const track = sliderContainerRef.value?.querySelector(
+    '[data-slot="slider-track"]',
+  );
+  if (!track) return;
+  const rect = track.getBoundingClientRect();
+  const left = `${rect.left + (clamp(displayValue.value, 0, 100) / 100) * rect.width}px`;
+  const bottom = `${window.innerHeight - rect.top + BUBBLE_GAP}px`;
+  // settling on a position ends the re-renders until something moves again
+  if (bubbleStyle.value.left === left && bubbleStyle.value.bottom === bottom) {
+    return;
+  }
+  bubbleStyle.value = { left, bottom };
+};
+
+const trackBubble = () => {
+  updateBubblePosition();
+  bubbleFrame = requestAnimationFrame(trackBubble);
+};
+
+const stopTrackingBubble = () => {
+  if (bubbleFrame === null) return;
+  cancelAnimationFrame(bubbleFrame);
+  bubbleFrame = null;
+};
+
 // --- Helpers ---
 
 const vibrate = (duration: number = 10) => {
   if (store.isTouchscreen && "vibrate" in navigator && navigator.vibrate) {
     navigator.vibrate(duration);
   }
+};
+
+const getThumbCenter = (): number | null => {
+  const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
+  if (!thumb) return null;
+  const rect = thumb.getBoundingClientRect();
+  return rect.left + rect.width / 2;
 };
 
 const getPercentageFromX = (clientX: number): number => {
@@ -533,7 +694,13 @@ const onTouchStart = (event: TouchEvent) => {
   isDrag.value = false;
   touchMoveCount.value = 0;
   maxMovement.value = 0;
+  // read before expanding: the rail's ends draw in as it grows, so measuring at
+  // touchend would compare the tap against a thumb that has since moved
+  touchStartThumbCenter.value = getThumbCenter();
 
+  // a group slider answers a tap by opening its own volume controls, so it waits
+  // for a drag rather than swapping its buttons out from under the tap
+  if (!handlesGroupTap.value) expandControls();
   vibrate();
 };
 
@@ -565,6 +732,9 @@ const onTouchMove = (event: TouchEvent) => {
     // the group popout), so a drag from here would fight a scroll it cannot stop
     if (!event.cancelable || (absDeltaY > 10 && absDeltaY > absDeltaX * 2)) {
       isScrolling.value = true;
+      // the panels these sliders sit in scroll, so a list of them must not be
+      // left fattened in the wake of a swipe
+      collapseControls();
       displayValue.value = touchStartValue.value;
       emit("update:local-value", touchStartValue.value);
       return;
@@ -572,6 +742,7 @@ const onTouchMove = (event: TouchEvent) => {
 
     if (absDeltaX > 8) {
       isDrag.value = true;
+      expandControls();
       startDragging();
       event.preventDefault();
     }
@@ -593,6 +764,10 @@ const onTouchMove = (event: TouchEvent) => {
 };
 
 const onTouchEnd = (event: TouchEvent) => {
+  // ahead of the guard: a player that goes unavailable mid-touch would
+  // otherwise leave the slider latched open, to expand again on its own the
+  // moment it comes back
+  collapseControlsSoon();
   if (isSliderDisabled.value && !handlesGroupTap.value) return;
 
   if (isScrolling.value) {
@@ -615,10 +790,8 @@ const onTouchEnd = (event: TouchEvent) => {
     } else if (!isSliderDisabled.value) {
       // Single player: tap before/after handle for volume up/down
       const touch = event.changedTouches[0];
-      const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
-      if (thumb) {
-        const thumbRect = thumb.getBoundingClientRect();
-        const thumbCenter = thumbRect.left + thumbRect.width / 2;
+      const thumbCenter = touchStartThumbCenter.value ?? getThumbCenter();
+      if (thumbCenter !== null) {
         if (touch.clientX > thumbCenter) {
           volumeUp();
         } else {
@@ -670,6 +843,7 @@ const onPointerMove = (event: PointerEvent) => {
 };
 
 const onPointerUp = () => {
+  collapseControlsSoon();
   if (pointerStartX === null) return;
   const shouldExpand = !pointerMoved;
   resetPointerInteraction();
@@ -703,6 +877,7 @@ const onPointerUp = () => {
 };
 
 const onPointerCancel = () => {
+  collapseControlsSoon();
   if (pointerStartX === null) return;
   resetPointerInteraction();
   if (sliderUpdateDebounceTimeout) {
@@ -724,6 +899,7 @@ const resetPointerInteraction = () => {
 };
 
 const onTouchCancel = () => {
+  collapseControlsSoon();
   isDrag.value = false;
   isScrolling.value = false;
   touchMoveCount.value = 0;
@@ -784,6 +960,18 @@ const onSliderClick = () => {
   if (Date.now() - lastPopoutToggleTime < 500) return;
   handleGroupTap();
 };
+
+// a swapped-in player starts from the resting slider rather than inheriting
+// the step buttons the previous one was left with
+watch(() => props.player.player_id, collapseControls);
+
+watch(showStepButtons, (shown) => {
+  if (shown) {
+    if (bubbleFrame === null) trackBubble();
+  } else {
+    stopTrackingBubble();
+  }
+});
 
 // Sync server volume to display when not actively dragging
 watch(
@@ -881,6 +1069,81 @@ watch(
   margin-left: 8px;
 }
 
+/* --- Touch expansion --- */
+
+/* The step buttons are absolute so they cross-fade over the mute button and the
+   level readout without ever taking width from the track: the slider keeps the
+   same geometry expanded or not, so the thumb never jumps under the finger. */
+.player-volume-container.expandable .volume-prepend,
+.player-volume-container.expandable .volume-append {
+  position: relative;
+  align-self: stretch;
+  transition: width 0.15s ease;
+}
+
+/* both slots widen by the same amount, so the track loses length evenly at each
+   end and its midpoint - and with it the thumb - barely moves */
+.player-volume-container.expanded .volume-prepend,
+.player-volume-container.expanded .volume-append {
+  width: 38px;
+}
+
+.volume-slot-item {
+  transition: opacity 0.15s ease;
+}
+
+.volume-slot-item.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.volume-step-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* they also reach outwards, into the margin the row already keeps clear, which
+   buys the tap target width the track does not have to give up */
+.volume-prepend .volume-step-btn {
+  inset: 0 0 0 -8px;
+}
+
+.volume-append .volume-step-btn {
+  inset: 0 -8px 0 0;
+}
+
+.volume-step-btn:active {
+  opacity: 0.5;
+}
+
+/* the rail fattens in place: it stays well inside the row's height, so the bar
+   around it keeps the height it rests at */
+.player-volume-container.expandable :deep([data-slot="slider-track"]),
+.player-volume-container.expandable :deep([data-slot="slider-track"])::before,
+.player-volume-container.expandable :deep([data-slot="slider-thumb"])::before {
+  transition:
+    height 0.15s ease,
+    width 0.15s ease;
+}
+
+.player-volume-container.expanded :deep([data-slot="slider-track"]),
+.player-volume-container.expanded :deep([data-slot="slider-track"])::before {
+  height: 12px !important;
+}
+
+.player-volume-container.expanded :deep([data-slot="slider-thumb"])::before {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 /* --- Group volume popout styles are in the unscoped style block below --- */
 
 @media (pointer: coarse) {
@@ -891,8 +1154,36 @@ watch(
 }
 </style>
 
-<!-- Unscoped styles for the teleported popout -->
+<!-- Unscoped styles for the teleported popout and volume readout -->
 <style>
+/* left is the thumb's centre, so the readout is shifted back over it */
+.volume-bubble {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 10001;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-border-color), 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  /* it tracks the thumb the finger is already on, so it must never take a touch */
+  pointer-events: none;
+}
+
+.volume-bubble-enter-active,
+.volume-bubble-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.volume-bubble-enter-from,
+.volume-bubble-leave-to {
+  opacity: 0;
+}
+
 .group-popout-backdrop {
   position: fixed;
   top: 0;

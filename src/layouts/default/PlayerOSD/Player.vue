@@ -143,6 +143,7 @@
         :prefer-group-volume="true"
         :enable-popout="false"
         :request-expand-on-group-tap="true"
+        :expand-on-touch="true"
         @toggle-group-expansion="showMobileVolumeControls = true"
       />
     </div>

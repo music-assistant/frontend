@@ -873,6 +873,8 @@
         "exit_fullscreen": "Exit fullscreen",
         "decrease_offset": "Decrease offset",
         "increase_offset": "Increase offset",
+        "volume_down": "Volume down",
+        "volume_up": "Volume up",
         "toggle_queue": "Toggle queue",
         "select_player": "Select player",
         "show_dashboard": "Cast dashboard to a device",
