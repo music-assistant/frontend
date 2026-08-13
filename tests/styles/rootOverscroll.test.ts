@@ -18,6 +18,9 @@ afterEach(() => {
 
 describe("overscroll chaining", () => {
   it("keeps a drag the app does not consume inside the document", () => {
+    // happy-dom hands back what the stylesheet declared rather than a resolved
+    // value, so the shorthand is what there is to read - and reading it whole
+    // is what holds the horizontal axis too, which a two-value form would drop
     expect(getComputedStyle(document.documentElement).overscrollBehavior).toBe(
       "none",
     );
