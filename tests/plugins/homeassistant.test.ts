@@ -1,8 +1,10 @@
 import { HA_KIOSK_MODE, saveDeviceSetting } from "@/helpers/device_settings";
 import {
+  haState,
   subscribeToHAProperties,
   unsubscribeFromHAProperties,
 } from "@/plugins/homeassistant";
+import type { Router } from "vue-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const INSET_PROPERTIES = ["top", "right", "bottom", "left"].map(
@@ -257,6 +259,15 @@ describe("Home Assistant kiosk mode", () => {
       }),
       "*",
     );
+  });
+
+  it("keeps following Home Assistant's route across a kiosk mode change", () => {
+    const router = { currentRoute: { value: { fullPath: "/" } } } as Router;
+    subscribeToHAProperties({ kioskMode: true, router });
+
+    saveDeviceSetting(HA_KIOSK_MODE, "false");
+
+    expect(haState.routeSyncEnabled).toBe(true);
   });
 
   it("drops the top inset again once the header is back", () => {

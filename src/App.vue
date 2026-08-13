@@ -13,6 +13,14 @@
   <!-- Main app (when authenticated and service worker ready for remote) -->
   <router-view v-else-if="showMainApp" />
 
+  <!-- Kiosk mode leaves Home Assistant no chrome of its own, and this screen
+       carries none of ours: a server that is away or restarting would strand
+       the panel on a spinner with nowhere to go. -->
+  <HomeAssistantMenuButton
+    v-if="showLogin && haState.kioskModeEnabled"
+    class="ha-escape-button"
+  />
+
   <PlayerBrowserMediaControls
     v-if="
       webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
@@ -33,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
@@ -566,3 +575,14 @@ function getCurrentAuthConnectionIdentity() {
     : createLocalConnectionIdentity(api.baseUrl);
 }
 </script>
+
+<style scoped>
+/* Sits where Home Assistant's own menu button would be. Pinned to the viewport,
+   so it owns the device insets rather than inheriting a parent's padding. */
+.ha-escape-button {
+  position: fixed;
+  top: calc(var(--device-inset-top, 0px) + 0.75rem);
+  left: calc(var(--device-inset-left, 0px) + 0.75rem);
+  z-index: 1000;
+}
+</style>
