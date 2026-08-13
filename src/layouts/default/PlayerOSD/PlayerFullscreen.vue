@@ -1402,7 +1402,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .fullscreen-player-card {
   box-sizing: border-box;
-  overflow: hidden;
+  /* y is left to Vuetify, which holds it at auto from a more specific
+     .v-dialog > .v-overlay__content > .v-card. That keeps the card scrollable
+     when the viewport is too short for .player-bottom (flex-shrink: 0) to
+     fit; clipping instead would put the play button out of reach of the wheel
+     and of any pan global.css has not refused. */
+  overflow-x: hidden;
   height: 100%;
   display: flex;
   flex-direction: column;
