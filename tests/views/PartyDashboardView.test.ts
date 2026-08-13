@@ -1,3 +1,5 @@
+import api from "@/plugins/api";
+import { EventType, PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import PartyDashboardView from "@/views/PartyDashboardView.vue";
 import { type VueWrapper, flushPromises, mount } from "@vue/test-utils";
@@ -17,6 +19,29 @@ vi.mock("@/plugins/store", async () => {
   };
 });
 
+// Tracks live subscriptions the way the api does, so one that outlives the
+// view stays listed here and keeps receiving events.
+const events = vi.hoisted(() => {
+  type Listener = { type: unknown; handler: (evt: unknown) => unknown };
+  const listeners: Listener[] = [];
+  return {
+    listeners,
+    subscribe: (type: unknown, handler: (evt: unknown) => unknown) => {
+      const listener = { type, handler };
+      listeners.push(listener);
+      return () => {
+        const index = listeners.indexOf(listener);
+        if (index !== -1) listeners.splice(index, 1);
+      };
+    },
+    emit: (type: unknown, evt: unknown) => {
+      for (const listener of listeners) {
+        if (listener.type === type) listener.handler(evt);
+      }
+    },
+  };
+});
+
 vi.mock("@/plugins/api", () => ({
   default: {
     baseUrl: "",
@@ -24,7 +49,7 @@ vi.mock("@/plugins/api", () => ({
     providers: {},
     queues: {},
     sendCommand: vi.fn().mockResolvedValue(null),
-    subscribe: vi.fn(() => () => undefined),
+    subscribe: vi.fn(events.subscribe),
     getPlayerQueueItems: vi.fn().mockResolvedValue([]),
     getTrackLyrics: vi.fn().mockResolvedValue([null, null]),
   },
@@ -85,7 +110,7 @@ const ButtonStub = { template: "<button><slot /></button>" };
 
 let wrapper: VueWrapper | undefined;
 
-async function mountView() {
+function mountViewRaw() {
   wrapper = mount(PartyDashboardView, {
     global: {
       mocks: { $t: (key: string) => key },
@@ -100,8 +125,13 @@ async function mountView() {
       },
     },
   });
-  await flushPromises();
   return wrapper;
+}
+
+async function mountView() {
+  const view = mountViewRaw();
+  await flushPromises();
+  return view;
 }
 
 const ENTER_FULLSCREEN = '[aria-label="tooltip.enter_fullscreen"]';
@@ -109,6 +139,31 @@ const EXIT_FULLSCREEN = '[aria-label="tooltip.exit_fullscreen"]';
 
 const enterFullscreen = (view: VueWrapper) =>
   view.get(ENTER_FULLSCREEN).trigger("click");
+
+/**
+ * Records document listeners while a view runs.
+ *
+ * `stop()` restores the originals and returns the event types still attached,
+ * which is what tells a removed listener apart from one added back afterwards.
+ */
+function trackDocumentListeners() {
+  const attached = new Map<unknown, string>();
+  const { addEventListener, removeEventListener } = document;
+  document.addEventListener = ((type: string, handler: never) => {
+    attached.set(handler, type);
+    return addEventListener.call(document, type, handler);
+  }) as never;
+  document.removeEventListener = ((type: string, handler: never) => {
+    attached.delete(handler);
+    return removeEventListener.call(document, type, handler);
+  }) as never;
+  return {
+    stop: () => {
+      Object.assign(document, { addEventListener, removeEventListener });
+      return [...attached.values()];
+    },
+  };
+}
 
 describe("PartyDashboardView fullscreen", () => {
   beforeEach(() => {
@@ -211,5 +266,79 @@ describe("PartyDashboardView fullscreen", () => {
     wrapper = undefined;
 
     expect(store.frameless).toBe(true);
+  });
+});
+
+describe("PartyDashboardView event subscriptions", () => {
+  beforeEach(() => {
+    events.listeners.length = 0;
+    // the last fullscreen test deliberately leaves this set
+    store.frameless = false;
+    store.activePlayerQueue = { queue_id: "q1" } as never;
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.activePlayerQueue = undefined;
+  });
+
+  it("stops listening once the dashboard is closed", async () => {
+    const view = await mountView();
+    // the subscriptions are set up after several awaits, so pin that they ran
+    // at all before reading anything into them being gone
+    expect(events.listeners.length).toBeGreaterThan(0);
+
+    view.unmount();
+    wrapper = undefined;
+
+    expect(events.listeners).toHaveLength(0);
+  });
+
+  it("leaves the queue alone for events that arrive after it closed", async () => {
+    api.queues.other = {
+      queue_id: "other",
+      state: PlaybackState.PLAYING,
+    } as never;
+    const view = await mountView();
+
+    view.unmount();
+    wrapper = undefined;
+    vi.mocked(api.getPlayerQueueItems).mockClear();
+    vi.mocked(api.sendCommand).mockClear();
+    // one event per subscription, including the queue that is not the active
+    // one, which is what the fourth subscription watches for
+    events.emit(EventType.QUEUE_ITEMS_UPDATED, { object_id: "q1" });
+    events.emit(EventType.QUEUE_UPDATED, { object_id: "q1" });
+    events.emit(EventType.QUEUE_UPDATED, { object_id: "other" });
+    events.emit(EventType.PROVIDERS_UPDATED, {});
+    await flushPromises();
+
+    expect(api.getPlayerQueueItems).not.toHaveBeenCalled();
+    expect(api.sendCommand).not.toHaveBeenCalled();
+  });
+
+  it("never starts listening when closed while still loading", async () => {
+    // leaving before the config round-trips resolve runs the unmount hook
+    // first, so anything subscribing afterwards would never be cleaned up
+    const view = mountViewRaw();
+
+    view.unmount();
+    wrapper = undefined;
+    await flushPromises();
+
+    expect(events.listeners).toHaveLength(0);
+  });
+
+  it("drops its visibility listener when closed while still loading", async () => {
+    const live = trackDocumentListeners();
+    const view = mountViewRaw();
+
+    view.unmount();
+    wrapper = undefined;
+    await flushPromises();
+    const remaining = live.stop();
+
+    expect(remaining).not.toContain("visibilitychange");
   });
 });
