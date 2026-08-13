@@ -1,59 +1,44 @@
 <template>
-  <div :style="`width: ${width}px; height: 30px;`">
-    <v-btn
-      variant="tonal"
-      :style="`
-            width: ${width}px;
-            position: absolute;
-            border: 1px solid #cccccc4d;
-            height: 38px;
-            margin-top: -1px;
-            margin-left: -1px;
-          `"
-      :disabled="loading"
-      @click="emit('menu')"
-    >
-      <v-icon
-        icon="mdi-menu-down"
-        size="xx-large"
-        :style="`width: 20px; margin-left: ${width - 42}px`"
-      />
-    </v-btn>
-
-    <v-btn
-      color="primary"
-      flat
+  <ButtonGroup>
+    <Button
       :disabled="disabled || loading"
-      :style="`width: ${width - 40}px; justify-content: left;`"
-      :text="text"
+      class="min-w-40"
       @click="emit('click')"
     >
-      <template v-if="(icon && text!.length < 12) || loading" #prepend>
-        <v-progress-circular
-          v-if="loading"
-          color="grey-lighten-5"
-          indeterminate
-        />
-        <v-icon v-else :icon="icon" size="x-large" />
-      </template>
-    </v-btn>
-  </div>
+      <Spinner v-if="loading" class="size-5" />
+      <CirclePlay class="size-5" />
+      {{ text }}
+    </Button>
+    <ButtonGroupSeparator />
+    <Button
+      size="icon"
+      :disabled="loading"
+      :aria-label="$t('tooltip.show_menu')"
+      @click="emit('menu')"
+    >
+      <ChevronDown class="size-5" />
+    </Button>
+  </ButtonGroup>
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/components/ui/button-group";
+import { Spinner } from "@/components/ui/spinner";
+import { ChevronDown, CirclePlay } from "@lucide/vue";
+
 // properties
 export interface Props {
-  icon?: string;
   text?: string;
   disabled?: boolean;
-  width?: number;
   loading?: boolean;
 }
 withDefaults(defineProps<Props>(), {
-  icon: undefined,
   text: undefined,
   disabled: false,
-  width: 200,
   loading: false,
 });
 
