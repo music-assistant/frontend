@@ -6,7 +6,7 @@
       @click="emit('click')"
     >
       <Spinner v-if="loading" class="size-5" />
-      <CirclePlay class="size-5" />
+      <CirclePlay v-else class="size-5" />
       {{ text }}
     </Button>
     <ButtonGroupSeparator />
