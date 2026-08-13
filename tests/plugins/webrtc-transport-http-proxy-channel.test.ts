@@ -317,6 +317,28 @@ describe("WebRTCTransport http_proxy channel", () => {
     expect(internals.pendingProxyBody).toBeNull();
   });
 
+  it("drops half-received chunks when the dedicated channel closes", async () => {
+    const { transport, internals, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    const request = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const frames = makeChunks(
+      proxyResponse(sentRequestId(proxyChannel), [1, 2, 3, 4, 5]),
+      11,
+    );
+    // the channel drops with the hex response only partly reassembled
+    proxyChannel.receive(frames[0]);
+    expect(internals.chunkGroups.size).toBe(1);
+
+    proxyChannel.close();
+
+    await expect(request).rejects.toThrow();
+    expect(internals.chunkGroups.size).toBe(0);
+  });
+
   it("fails requests still in flight when the dedicated channel closes", async () => {
     const { transport, apiChannel, channels } = makeTransport();
 

@@ -86,14 +86,20 @@ export class WebRTCTransport extends BaseTransport {
     }
   >();
   // Reassembly buffers for oversized messages the server splits into chunks, keyed by group id.
+  // Group ids are unique across channels, so the dispatch of the channel a group started on
+  // is kept with it.
   private chunkGroups = new Map<
     number,
     {
       count: number;
       parts: string[];
       received: number;
+      dispatch: (data: string) => void;
     }
   >();
+  // Stable identity, so a closing proxy channel can find the groups it started.
+  private readonly dispatchHttpProxy = (data: string): void =>
+    this.handleHttpProxyMessage(data);
   // Response being reassembled on the proxy channel: its header, then raw body frames.
   private pendingProxyBody: {
     id: string;
@@ -352,9 +358,7 @@ export class WebRTCTransport extends BaseTransport {
     }
     // a hex response big enough to be split arrives as chunk frames to reassemble first
     if (parsed.type === "__chunk__") {
-      this.handleChunk(parsed, (message) =>
-        this.handleHttpProxyMessage(message),
-      );
+      this.handleChunk(parsed, this.dispatchHttpProxy);
       return;
     }
     if (parsed.type !== "http-proxy-response") return;
@@ -364,6 +368,8 @@ export class WebRTCTransport extends BaseTransport {
       this.handleHttpProxyResponse(parsed);
       return;
     }
+    // no point buffering frames for a request that already gave up
+    if (!this.httpProxyCallbacks.has(parsed.id)) return;
     this.pendingProxyBody = {
       id: parsed.id,
       status: parsed.status,
@@ -421,8 +427,13 @@ export class WebRTCTransport extends BaseTransport {
       channel.binaryType = "arraybuffer";
       channel.onmessage = (event) => this.handleHttpProxyMessage(event.data);
       channel.onclose = () => {
-        // a body cut off mid-transfer can never be completed, so drop what it left
+        // a response cut off mid-transfer can never be completed, so drop what it left
         this.pendingProxyBody = null;
+        for (const [id, group] of this.chunkGroups) {
+          if (group.dispatch === this.dispatchHttpProxy) {
+            this.chunkGroups.delete(id);
+          }
+        }
         if (this.httpProxyChannel === channel) {
           this.httpProxyChannel = null;
         }
@@ -459,6 +470,7 @@ export class WebRTCTransport extends BaseTransport {
         count: frame.count,
         parts: Array.from<string>({ length: frame.count }),
         received: 0,
+        dispatch,
       };
       this.chunkGroups.set(frame.id, pending);
     }
@@ -470,7 +482,7 @@ export class WebRTCTransport extends BaseTransport {
 
     this.chunkGroups.delete(frame.id);
     const bytes = this.base64PartsToBytes(pending.parts);
-    dispatch(new TextDecoder().decode(bytes));
+    pending.dispatch(new TextDecoder().decode(bytes));
   }
 
   private base64PartsToBytes(parts: string[]): Uint8Array {
