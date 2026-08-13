@@ -1834,8 +1834,19 @@ const loadGenreOptions = async () => {
 };
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
+
+const clearSelection = () => {
+  selectedItems.value = [];
+  showCheckboxes.value = false;
+};
+
+// Set by the unmount hook, so the startup below can tell that the listing it is
+// setting things up for is already gone.
+let unmounted = false;
+
 onBeforeUnmount(() => {
-  eventbus.off("clearSelection");
+  unmounted = true;
+  eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
 });
 
@@ -1868,12 +1879,12 @@ onMounted(async () => {
   }
 
   await loadGenreOptions();
+  // The await can outlast the listing, and the unmount hook only reaches what
+  // was already set up by the time it ran.
+  if (unmounted) return;
 
   // Listen for selection clearing events
-  eventbus.on("clearSelection", () => {
-    selectedItems.value = [];
-    showCheckboxes.value = false;
-  });
+  eventbus.on("clearSelection", clearSelection);
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(
