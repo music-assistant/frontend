@@ -98,7 +98,7 @@
         <p class="text-xs text-muted-foreground">
           {{ $t("providers.ai_radio.customize.prompt_placeholders_label") }}
         </p>
-        <div class="flex flex-wrap gap-1.5">
+        <div class="flex flex-wrap gap-1.5 pb-2">
           <Badge
             v-for="token in PROMPT_PLACEHOLDERS"
             :key="token"
