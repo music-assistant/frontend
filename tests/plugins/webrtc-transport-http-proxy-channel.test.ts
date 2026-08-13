@@ -39,6 +39,7 @@ type TransportInternals = {
   peerConnection: unknown;
   dataChannel: FakeDataChannel | null;
   httpProxyChannel: FakeDataChannel | null;
+  chunkGroups: Map<number, unknown>;
   setupDataChannelHandlers: () => void;
 };
 
@@ -207,6 +208,27 @@ describe("WebRTCTransport http_proxy channel", () => {
 
     apiChannel.receive(proxyResponse(sentRequestId(apiChannel), [5]));
     await expect(response).resolves.toMatchObject({ status: 200 });
+  });
+
+  it("drops half-received chunks when the dedicated channel closes", async () => {
+    const { transport, internals, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    void transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const frames = makeChunks(
+      proxyResponse(sentRequestId(proxyChannel), [1, 2, 3, 4, 5, 6, 7, 8]),
+      42,
+    );
+    // the channel drops with the response only partly delivered
+    proxyChannel.receive(frames[0]);
+    expect(internals.chunkGroups.size).toBe(1);
+
+    proxyChannel.close();
+
+    expect(internals.chunkGroups.size).toBe(0);
   });
 
   it("never emits a message that arrives on the dedicated channel", async () => {

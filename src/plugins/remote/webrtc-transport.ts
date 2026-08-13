@@ -357,10 +357,13 @@ export class WebRTCTransport extends BaseTransport {
         channel.close();
         return;
       }
-      this.attachMessageHandler(channel, (data) =>
-        this.dispatchHttpProxyMessage(data),
-      );
+      const dispatch = (data: string) => this.dispatchHttpProxyMessage(data);
+      this.attachMessageHandler(channel, dispatch);
       channel.onclose = () => {
+        // a response cut off mid-chunk can never be reassembled, so drop what it left
+        for (const [id, group] of this.chunkGroups) {
+          if (group.dispatch === dispatch) this.chunkGroups.delete(id);
+        }
         if (this.httpProxyChannel === channel) {
           this.httpProxyChannel = null;
         }
