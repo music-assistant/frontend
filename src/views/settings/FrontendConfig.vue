@@ -263,6 +263,7 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
   } catch (error) {
     console.error("Failed to save settings:", error);
     loading.value = false;
+    editConfig.value?.saveFailed();
   }
 };
 

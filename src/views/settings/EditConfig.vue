@@ -140,16 +140,27 @@
     </v-card>
   </v-dialog>
   <!-- Unsaved changes confirmation dialog -->
-  <v-dialog v-model="showUnsavedDialog" max-width="400" persistent>
+  <!-- any way out of this dialog has to answer the navigation it is holding -->
+  <v-dialog
+    :model-value="showUnsavedDialog"
+    max-width="400"
+    persistent
+    @update:model-value="cancelDiscard"
+  >
     <v-card>
       <v-card-title>{{ $t("settings.unsaved_changes") }}</v-card-title>
       <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="cancelDiscard">
+        <v-btn data-testid="config-stay" variant="text" @click="cancelDiscard">
           {{ $t("settings.stay") }}
         </v-btn>
-        <v-btn color="warning" variant="flat" @click="confirmDiscard">
+        <v-btn
+          data-testid="config-discard"
+          color="warning"
+          variant="flat"
+          @click="confirmDiscard"
+        >
           {{ $t("settings.discard") }}
         </v-btn>
       </v-card-actions>
@@ -174,7 +185,6 @@ import {
   OutputProtocol,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
-import { goBack } from "@/helpers/navigation";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
@@ -201,6 +211,9 @@ import ProtocolConfigSection from "./ProtocolConfigSection.vue";
 const router = useRouter();
 const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
+// answers the navigation the guard is holding; set only while one waits on the
+// unsaved-changes dialog
+let heldNavigation: ((discard: boolean) => void) | undefined;
 
 export interface Props {
   configEntries: ConfigEntryUI[];
@@ -417,27 +430,41 @@ const resetToDefaults = function () {
   }
 };
 
-defineExpose({ resetToDefaults });
+/**
+ * Reports a save that did not land, so the values stay guarded and leaving the
+ * screen asks about them again.
+ */
+const saveFailed = function () {
+  allowNavigation.value = false;
+};
+
+defineExpose({ resetToDefaults, saveFailed });
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;
+  // a redirect has the router run the leave guards of the resumed navigation a
+  // second time, and it must not ask again
   allowNavigation.value = true;
-  // Navigate back after setting the flag
-  goBack(router, { name: "settings" });
+  releaseNavigation(true);
 };
 
 const cancelDiscard = function () {
   showUnsavedDialog.value = false;
+  releaseNavigation(false);
 };
 
 // Navigation guard for route changes
-onBeforeRouteLeave((_to, _from, next) => {
-  if (allowNavigation.value || !hasUnsavedChanges.value) {
-    next();
-  } else {
-    showUnsavedDialog.value = true;
-    next(false);
-  }
+onBeforeRouteLeave(() => {
+  if (allowNavigation.value || !hasUnsavedChanges.value) return true;
+  // one is already waiting for an answer: turn this one away rather than hold
+  // both, or the history ends up out of step with the page on screen
+  if (heldNavigation) return false;
+  // holding it, rather than cancelling it, is what lets discarding carry on to
+  // the very page the user asked for
+  showUnsavedDialog.value = true;
+  return new Promise<boolean>((resolve) => {
+    heldNavigation = resolve;
+  });
 });
 
 // Handle browser back/refresh
@@ -454,6 +481,11 @@ onBeforeUnmount(() => {
 
 // Add listener when component mounts
 window.addEventListener("beforeunload", handleBeforeUnload);
+
+const releaseNavigation = function (discard: boolean) {
+  heldNavigation?.(discard);
+  heldNavigation = undefined;
+};
 
 const isDisabled = function (entry: ConfigEntryUI) {
   return isEntryDisabled(entry, entries.value || []);
