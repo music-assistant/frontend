@@ -29,14 +29,11 @@ function mountWithContent(swipeAnywhere = true) {
   return { panel, wrapper, content };
 }
 
-/** jsdom has no PointerEvent constructor; synthesize like wrapper.trigger. */
-function firePointer(
-  el: Element,
-  type: string,
-  props: Record<string, unknown>,
-) {
-  const event = new Event(type, { bubbles: true, cancelable: true });
-  Object.assign(event, {
+/** Dispatches a bubbling pointer event defaulting to a primary touch pointer. */
+function firePointer(el: Element, type: string, props: PointerEventInit) {
+  const event = new PointerEvent(type, {
+    bubbles: true,
+    cancelable: true,
     button: 0,
     isPrimary: true,
     pointerType: "touch",
