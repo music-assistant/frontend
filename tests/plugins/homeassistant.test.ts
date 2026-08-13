@@ -1,3 +1,4 @@
+import { HA_KIOSK_MODE, saveDeviceSetting } from "@/helpers/device_settings";
 import {
   subscribeToHAProperties,
   unsubscribeFromHAProperties,
@@ -22,6 +23,30 @@ function readInsets() {
   return INSET_PROPERTIES.map((property) =>
     document.documentElement.style.getPropertyValue(property),
   );
+}
+
+function createStorage(): Storage {
+  const values = new Map<string, string>();
+  return {
+    get length() {
+      return values.size;
+    },
+    clear() {
+      values.clear();
+    },
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    key(index) {
+      return Array.from(values.keys())[index] ?? null;
+    },
+    removeItem(key) {
+      values.delete(key);
+    },
+    setItem(key, value) {
+      values.set(key, value);
+    },
+  };
 }
 
 // Home Assistant posts to the frame it embeds us in, which is what puts itself
@@ -85,6 +110,15 @@ describe("Home Assistant safe area", () => {
     expect(readInsets()).toEqual(["", "0px", "34px", "0px"]);
   });
 
+  it("claims the top inset back from a narrow host in kiosk mode", () => {
+    subscribeToHAProperties({ handleSafeArea: true, kioskMode: true });
+
+    // Kiosk mode drops that header, so nothing else is covering the notch.
+    reportProperties({ narrow: true, safeAreaInsets: PHONE_INSETS });
+
+    expect(readInsets()).toEqual(["59px", "0px", "34px", "0px"]);
+  });
+
   it("drops the top inset again once Home Assistant shows its header", () => {
     subscribeToHAProperties({ handleSafeArea: true });
 
@@ -108,9 +142,20 @@ describe("Home Assistant safe area", () => {
     subscribeToHAProperties({ handleSafeArea: true });
 
     reportProperties({ safeAreaInsets: PHONE_INSETS });
-    reportProperties({ narrow: true });
+    reportProperties({});
 
     expect(readInsets()).toEqual(["59px", "0px", "34px", "0px"]);
+  });
+
+  it("gives the top inset up for a header that appears without new insets", () => {
+    subscribeToHAProperties({ handleSafeArea: true });
+
+    reportProperties({ safeAreaInsets: PHONE_INSETS });
+    // Whether the update repeats the insets says nothing about who owns them:
+    // the header Home Assistant just put up is taking the top one either way.
+    reportProperties({ narrow: true });
+
+    expect(readInsets()).toEqual(["", "0px", "34px", "0px"]);
   });
 
   it("ignores the reported insets when it did not ask to handle them", () => {
@@ -165,5 +210,78 @@ describe("Home Assistant safe area", () => {
     reportProperties({ safeAreaInsets: PHONE_INSETS });
 
     expect(readInsets()).toEqual(["", "", "", ""]);
+  });
+});
+
+describe("Home Assistant kiosk mode", () => {
+  let postMessage: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", createStorage());
+    postMessage = vi
+      .spyOn(window.parent, "postMessage")
+      .mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    unsubscribeFromHAProperties();
+    postMessage.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it("asks Home Assistant to give up its own chrome", () => {
+    subscribeToHAProperties({ handleSafeArea: true, kioskMode: true });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "home-assistant/subscribe-properties",
+        kioskMode: true,
+      }),
+      "*",
+    );
+  });
+
+  it("keeps handling the safe area when the preference turns kiosk mode off", () => {
+    subscribeToHAProperties({ handleSafeArea: true, kioskMode: true });
+
+    // Home Assistant only ever turns kiosk mode on from a subscription, so
+    // leaving it takes an unsubscribe - which hands the safe area back too
+    // unless the fresh subscription asks for it again.
+    saveDeviceSetting(HA_KIOSK_MODE, "false");
+
+    expect(postMessage).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        type: "home-assistant/subscribe-properties",
+        kioskMode: false,
+        handleSafeArea: true,
+      }),
+      "*",
+    );
+  });
+
+  it("drops the top inset again once the header is back", () => {
+    subscribeToHAProperties({ handleSafeArea: true, kioskMode: true });
+    reportProperties({ narrow: true, safeAreaInsets: PHONE_INSETS });
+    expect(readInsets()).toEqual(["59px", "0px", "34px", "0px"]);
+
+    saveDeviceSetting(HA_KIOSK_MODE, "false");
+    reportProperties({ narrow: true, safeAreaInsets: PHONE_INSETS });
+
+    expect(readInsets()).toEqual(["", "0px", "34px", "0px"]);
+  });
+
+  it("leaves Home Assistant alone while the preference is unchanged", () => {
+    subscribeToHAProperties({ handleSafeArea: true, kioskMode: true });
+    postMessage.mockClear();
+
+    saveDeviceSetting(HA_KIOSK_MODE, "true");
+
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it("ignores the preference outside an ingress session", () => {
+    saveDeviceSetting(HA_KIOSK_MODE, "false");
+
+    expect(postMessage).not.toHaveBeenCalled();
   });
 });

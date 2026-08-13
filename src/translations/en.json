@@ -613,6 +613,10 @@
                 "right": "Right"
             }
         },
+        "ha_kiosk_mode": {
+            "label": "Use the full screen in Home Assistant",
+            "description": "Hide the Home Assistant header and sidebar so Music Assistant gets the whole screen. The Home Assistant button in the menu brings them back."
+        },
         "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "genre_management": "Genre Management",
@@ -2280,5 +2284,6 @@
     },
     "searching": "Searching...",
     "menu": "Menu",
+    "home_assistant_menu": "Home Assistant",
     "main_navigation": "Main"
 }

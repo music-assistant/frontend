@@ -5,6 +5,7 @@
 const STORAGE_KEY_PREFIX = "frontend.settings.";
 
 export const MOBILE_SIDEBAR_SIDE = "mobile_sidebar_side";
+export const HA_KIOSK_MODE = "ha_kiosk_mode";
 
 /**
  * Read a per-device setting, or null when it is unset.

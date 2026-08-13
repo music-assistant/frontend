@@ -61,6 +61,7 @@ import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowse
 import { pruneStaleProviderFilters } from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
 import {
+  getKioskModePreference,
   haState,
   subscribeToHAProperties,
   unsubscribeFromHAProperties,
@@ -274,11 +275,15 @@ const completeInitialization = async () => {
 
   // Home Assistant pads its ingress iframe for the device safe area, leaving a
   // strip of its own background we cannot reach from in here. Take that padding
-  // over so the app runs to the edge of the screen like it does anywhere else.
+  // over so the app runs to the edge of the screen like it does anywhere else,
+  // and ask it to drop its own header and menu while we are at it.
   // Ask before anything else is awaited, so the app lays itself out once.
   // Reconnecting runs this again while the subscription is still standing.
   if (store.isIngressSession && !haState.isSubscribed) {
-    subscribeToHAProperties({ handleSafeArea: true });
+    subscribeToHAProperties({
+      handleSafeArea: true,
+      kioskMode: getKioskModePreference(),
+    });
   }
 
   const userInfo = await api.getCurrentUserInfo();

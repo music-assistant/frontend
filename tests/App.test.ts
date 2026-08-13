@@ -21,6 +21,7 @@ const {
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
   mockSubscribeToHAProperties,
+  mockGetKioskModePreference,
   mockProxyEnsureReady,
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
@@ -97,6 +98,7 @@ const {
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
     mockSubscribeToHAProperties: vi.fn(),
+    mockGetKioskModePreference: vi.fn(() => true),
     mockProxyEnsureReady: vi.fn(),
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
@@ -194,6 +196,7 @@ vi.mock("@/plugins/homeassistant", () => ({
   haState: haStateMock,
   subscribeToHAProperties: mockSubscribeToHAProperties,
   unsubscribeFromHAProperties: vi.fn(),
+  getKioskModePreference: mockGetKioskModePreference,
 }));
 
 vi.mock("@/plugins/remote", () => ({
@@ -327,6 +330,7 @@ describe("App initialization", () => {
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
     haStateMock.isSubscribed = false;
+    mockGetKioskModePreference.mockReturnValue(true);
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
@@ -679,6 +683,19 @@ describe("App initialization", () => {
 
     expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
       handleSafeArea: true,
+      kioskMode: true,
+    });
+  });
+
+  it("leaves the Home Assistant chrome up when kiosk mode is turned off", async () => {
+    storeMock.isIngressSession = true;
+    mockGetKioskModePreference.mockReturnValue(false);
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
+      handleSafeArea: true,
+      kioskMode: false,
     });
   });
 
