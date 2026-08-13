@@ -11,7 +11,13 @@
         <SelectTrigger class="visualizer-menu__select" size="sm">
           <span class="visualizer-menu__trigger-label">{{ triggerLabel }}</span>
         </SelectTrigger>
-        <SelectContent class="visualizer-menu__dropdown">
+        <!-- the hosting context menu renders at z-[999999] (above the
+             fullscreen player overlay), so this list must stack above that.
+             cap the width so long preset names wrap instead of growing the
+             panel past the viewport on small screens -->
+        <SelectContent
+          class="visualizer-menu__dropdown !z-[1000000] w-[min(92vw,26rem)]"
+        >
           <SelectItem :value="RANDOM_VALUE">
             {{ $t("visualizer.preset_random") }}
           </SelectItem>
