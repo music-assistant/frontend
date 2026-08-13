@@ -102,23 +102,19 @@ describe("PlaybackSpeedBtn", () => {
     expect(button.findComponent(PlaybackSpeedDialog).props("open")).toBe(true);
   });
 
-  // the queue plays on under an open dialog, and a track has no speed to set
-  it("closes the dialog when the queue moves to an item without a speed", async () => {
+  // the dialog closes itself on an item with no speed to set, so what matters
+  // here is that it is never taken down and put back up: it would come back
+  // open, over whatever the queue had moved on to
+  it("keeps the dialog mounted across a change of item", async () => {
     setPlaying(MediaType.AUDIOBOOK);
     const button = mountButton();
-    await button.get("button").trigger("click");
+
+    expect(button.findComponent(PlaybackSpeedDialog).exists()).toBe(true);
 
     setPlaying(MediaType.TRACK);
     await nextTick();
 
     expect(button.find("button").exists()).toBe(false);
-    expect(button.findComponent(PlaybackSpeedDialog).props("open")).toBe(false);
-
-    // and it stays shut on the next item that does have one, rather than
-    // coming back open on its own
-    setPlaying(MediaType.PODCAST_EPISODE);
-    await nextTick();
-
-    expect(button.findComponent(PlaybackSpeedDialog).props("open")).toBe(false);
+    expect(button.findComponent(PlaybackSpeedDialog).exists()).toBe(true);
   });
 });

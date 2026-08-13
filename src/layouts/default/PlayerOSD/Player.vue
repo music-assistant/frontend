@@ -341,7 +341,7 @@ watch(
    shrinks to fit a narrow bar, which is all it did before it had a track. */
 .player-center-controls {
   display: grid;
-  grid-template-columns: 1fr minmax(0, auto) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
   align-items: center;
 }
 
@@ -349,6 +349,11 @@ watch(
   display: flex;
   grid-column: 2;
   align-items: center;
+  /* the transport controls between the two side actions hold a width of their
+     own, so from 769 to 809px the row is wider than the track it sits in.
+     Centring splits that overhang between the two ends rather than letting it
+     all fall to one, which is what keeps the play button centred there too. */
+  justify-content: center;
 }
 
 /* the actions to the right claim their whole column even though they draw only

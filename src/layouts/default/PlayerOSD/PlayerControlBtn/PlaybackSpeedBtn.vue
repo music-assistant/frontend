@@ -47,7 +47,7 @@ import PlaybackSpeedDialog from "@/layouts/default/PlayerOSD/PlaybackSpeedDialog
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { Gauge } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 
 // forward fallthrough attrs (e.g. spacing classes) to the button, not the
 // renderless TooltipProvider root.
@@ -59,10 +59,4 @@ const supported = computed(() => playbackSpeedSupported(store.curQueueItem));
 const speedLabel = computed(() =>
   formatPlaybackSpeed(queueItemPlaybackSpeed(store.curQueueItem)),
 );
-
-// the queue moves on under an open dialog, and there is no speed to set on
-// whatever it moved to
-watch(supported, (isSupported) => {
-  if (!isSupported) dialogOpen.value = false;
-});
 </script>

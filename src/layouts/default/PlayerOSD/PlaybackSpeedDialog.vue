@@ -38,7 +38,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { formatPlaybackSpeed, queueItemPlaybackSpeed } from "@/helpers/elapsed";
+import {
+  formatPlaybackSpeed,
+  playbackSpeedSupported,
+  queueItemPlaybackSpeed,
+} from "@/helpers/elapsed";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
@@ -64,6 +68,9 @@ watch(
   () => store.curQueueItem,
   (queueItem) => {
     currentPlaybackSpeed.value = queueItemPlaybackSpeed(queueItem);
+    // the queue plays on while this is showing, and there is no speed to set on
+    // whatever it moved to
+    if (open.value && !playbackSpeedSupported(queueItem)) open.value = false;
   },
   { immediate: true },
 );
