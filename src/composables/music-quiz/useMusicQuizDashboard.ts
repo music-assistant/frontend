@@ -24,7 +24,7 @@ export function useMusicQuizDashboard() {
 
   let unsubscribeProviderEvent: (() => void) | undefined;
   let stateRequestId = 0;
-  let disposed = false;
+  let unmounted = false;
 
   const currentRound = computed<MusicQuizCurrentRound | null>(() => {
     const currentState = state.value;
@@ -40,10 +40,10 @@ export function useMusicQuizDashboard() {
     loading.value = true;
     try {
       const nextState = await getMusicQuizPublicState();
-      if (disposed || requestId !== stateRequestId) return;
+      if (unmounted || requestId !== stateRequestId) return;
       state.value = nextState;
     } catch (err) {
-      if (disposed || requestId !== stateRequestId) return;
+      if (unmounted || requestId !== stateRequestId) return;
       // a kiosk display has nowhere to surface an error: fall back to waiting
       console.warn("Could not load the Music Quiz public state", err);
       state.value = null;
@@ -57,7 +57,7 @@ export function useMusicQuizDashboard() {
       // On a hard refresh this can mount before the provider registry is known,
       // which would resolve to a wrong "no quiz" answer.
       await waitForApiInitialization();
-      if (disposed) return;
+      if (unmounted) return;
       await fetchState();
     })();
     unsubscribeProviderEvent = api.subscribe(
@@ -67,7 +67,7 @@ export function useMusicQuizDashboard() {
   });
 
   onBeforeUnmount(() => {
-    disposed = true;
+    unmounted = true;
     stateRequestId += 1;
     unsubscribeProviderEvent?.();
   });
