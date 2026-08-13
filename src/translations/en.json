@@ -2217,6 +2217,7 @@
     "audio_overlay_custom_sounds": "Custom sounds",
     "audio_overlay_add_custom": "Add custom sound",
     "audio_overlay_add_custom_explanation": "Add your own ambient sound by stream URL. The URL is checked before it is added.",
+    "audio_overlay_no_custom_sounds": "No custom sounds added yet.",
     "audio_overlay_custom_added": "{0} added",
     "audio_overlay_custom_add_failed": "Failed to add custom sound. Check that the URL points to a playable audio stream.",
     "play_announcement": "Play announcement",

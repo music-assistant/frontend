@@ -7,8 +7,6 @@ import { ProviderFeature, type SoundEffect } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { computed, ref } from "vue";
 
-const AMBIENT_SOUNDS_DOMAIN = "ambient_sounds";
-
 // The catalog is fetched on demand (when the overlay dialog opens) and kept
 // module-level so it is shared and survives dialog re-opens.
 const soundEffects = ref<SoundEffect[]>([]);
@@ -25,32 +23,14 @@ const overlayAvailable = computed(() =>
   ),
 );
 
-// Custom ambient sounds (user-added stream urls) can only be managed when the
-// ambient sounds provider itself is available.
-const ambientSoundsAvailable = computed(
-  () => api.getProvider(AMBIENT_SOUNDS_DOMAIN)?.available ?? false,
-);
-
 export function useAudioOverlay() {
   return {
     soundEffects,
     loading,
     overlayAvailable,
-    ambientSoundsAvailable,
-    isCustomAmbientSound,
     loadSoundEffects,
     openOverlayDialog,
   };
-}
-
-function isCustomAmbientSound(effect: SoundEffect): boolean {
-  // Custom sounds live on the ambient sounds provider with the stream url as
-  // item id, unlike the builtin presets which use plain preset ids. Match any
-  // url scheme here: the server accepts whatever ffmpeg can probe.
-  return (
-    api.getProvider(effect.provider)?.domain === AMBIENT_SOUNDS_DOMAIN &&
-    effect.item_id.includes("://")
-  );
 }
 
 async function loadSoundEffects(): Promise<void> {

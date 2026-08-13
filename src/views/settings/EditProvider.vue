@@ -216,6 +216,11 @@
           />
         </CardContent>
       </Card>
+
+      <!-- ambient sounds: manage user-added custom sounds -->
+      <AmbientSoundsCustomSounds
+        v-if="config.domain === 'ambient_sounds' && config.enabled"
+      />
     </div>
 
     <edit-config
@@ -330,6 +335,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
+import AmbientSoundsCustomSounds from "./AmbientSoundsCustomSounds.vue";
 import EditConfig from "./EditConfig.vue";
 
 // global refs
