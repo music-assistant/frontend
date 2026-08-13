@@ -146,10 +146,15 @@
       <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="cancelDiscard">
+        <v-btn data-testid="config-stay" variant="text" @click="cancelDiscard">
           {{ $t("settings.stay") }}
         </v-btn>
-        <v-btn color="warning" variant="flat" @click="confirmDiscard">
+        <v-btn
+          data-testid="config-discard"
+          color="warning"
+          variant="flat"
+          @click="confirmDiscard"
+        >
           {{ $t("settings.discard") }}
         </v-btn>
       </v-card-actions>
@@ -174,7 +179,6 @@ import {
   OutputProtocol,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
-import { goBack } from "@/helpers/navigation";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
@@ -201,6 +205,9 @@ import ProtocolConfigSection from "./ProtocolConfigSection.vue";
 const router = useRouter();
 const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
+// lets the buttons in the unsaved-changes dialog release the navigation its
+// guard is holding
+let answerUnsavedDialog: ((discard: boolean) => void) | undefined;
 
 export interface Props {
   configEntries: ConfigEntryUI[];
@@ -421,23 +428,23 @@ defineExpose({ resetToDefaults });
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;
-  allowNavigation.value = true;
-  // Navigate back after setting the flag
-  goBack(router, { name: "settings" });
+  answerUnsavedDialog?.(true);
 };
 
 const cancelDiscard = function () {
   showUnsavedDialog.value = false;
+  answerUnsavedDialog?.(false);
 };
 
 // Navigation guard for route changes
-onBeforeRouteLeave((_to, _from, next) => {
-  if (allowNavigation.value || !hasUnsavedChanges.value) {
-    next();
-  } else {
-    showUnsavedDialog.value = true;
-    next(false);
-  }
+onBeforeRouteLeave(() => {
+  if (allowNavigation.value || !hasUnsavedChanges.value) return true;
+  // hold the navigation the user asked for instead of cancelling it, so
+  // discarding resumes that very navigation rather than guessing a destination
+  showUnsavedDialog.value = true;
+  return new Promise<boolean>((resolve) => {
+    answerUnsavedDialog = resolve;
+  });
 });
 
 // Handle browser back/refresh
