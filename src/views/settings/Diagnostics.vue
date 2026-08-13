@@ -208,7 +208,9 @@ onMounted(async () => {
   // what was already set up by the time it ran.
   if (unmounted) return;
 
-  if (autoRefresh.value) {
+  // The auto-refresh watcher arms this interval too, and only the handle held
+  // here is the one the unmount hook clears.
+  if (autoRefresh.value && !refreshInterval) {
     refreshInterval = setInterval(() => {
       fetchLogs(true);
     }, 5000);

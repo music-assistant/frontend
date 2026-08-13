@@ -1,5 +1,6 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Switch } from "@/components/ui/switch";
 import type { MusicAssistantApi } from "@/plugins/api";
 import Diagnostics from "@/views/settings/Diagnostics.vue";
 
@@ -22,6 +23,9 @@ function mountView() {
       mocks: {
         $t: (key: string) => key,
       },
+      // the auto-refresh switch sits in a card's slot, so the stubs have to
+      // render theirs for it to be reachable
+      renderStubDefaultSlot: true,
     },
   });
 }
@@ -77,6 +81,34 @@ describe("Diagnostics log refresh", () => {
     expect(apiMock.sendCommand).toHaveBeenCalledTimes(1);
     // an interval survives being advanced past, so a count of zero is what
     // rules one out
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("runs a single refresh interval when auto-refresh is toggled off and on during the first log fetch", async () => {
+    let deliverLog: (text: string) => void = () => {};
+    apiMock.sendCommand.mockReturnValueOnce(
+      new Promise<string>((resolve) => {
+        deliverLog = resolve;
+      }) as never,
+    );
+    const wrapper = mountView();
+
+    // switching back on arms an interval from the watcher, which the fetch
+    // finishing then finds already in place
+    const autoRefreshSwitch = wrapper.findComponent(Switch);
+    await autoRefreshSwitch.setValue(false);
+    await autoRefreshSwitch.setValue(true);
+
+    deliverLog(LOG_TEXT);
+    await flushPromises();
+    // only the fetch the page opened with; nothing has been advanced yet
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(1);
+
+    wrapper.unmount();
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    // a second interval would outlive the page, since only one handle is closed
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
 });
