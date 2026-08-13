@@ -768,15 +768,15 @@
         },
         "visualizer_enabled": {
             "label": "MilkDrop visualizer",
-            "description": "Render a MilkDrop (Butterchurn) music visualizer behind the fullscreen player, replacing the gradient background. Reacts live to the audio playing on the active player. This is the default for all players; the toggle in a player's fullscreen menu or party screen overrides it for that player only."
+            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu."
         },
         "visualizer_blur": {
             "label": "Visualizer blur",
-            "description": "Blur radius (in pixels) applied to the visualizer for a softer, ambient background. 0 disables blur."
+            "description": "Softens the visualizer for a calmer background. 0 disables blur."
         },
         "visualizer_opacity": {
             "label": "Visualizer opacity",
-            "description": "Opacity of the visualizer layer; lower values blend the album-color gradient background through. Note: at 55% and above the view switches to an immersive dark look with light text; at 50% and below it keeps the normal theme background and text colors."
+            "description": "Lower values blend the album colors through. Above 50% the view switches to a dark look with light text."
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
@@ -2041,11 +2041,11 @@
         },
         "fixed_preset": "Preset",
         "beat_switch": "Switch preset on downbeat",
-        "beat_switch_description": "Automatically switch to another preset on a downbeat, using Music Assistant's beat analysis. Takes precedence over a fixed preset selection.",
+        "beat_switch_description": "Switch to another preset on a downbeat. Overrides a fixed preset.",
         "beat_dwell": "Minimum time between switches",
         "beat_dwell_description": "How long a preset stays on screen before a downbeat may switch it.",
         "favorites": "Favorite presets",
-        "no_favorites": "No favorites yet. Use the star next to the preset picker in the fullscreen player to favorite the preset currently showing.",
+        "no_favorites": "No favorites yet. Star the current preset in the fullscreen player.",
         "remove_favorite": "Remove favorite",
         "credits": "Credits",
         "credits_butterchurn": "Rendering powered by Butterchurn by Jordan Berg (MIT license), the WebGL implementation of MilkDrop 2.",
