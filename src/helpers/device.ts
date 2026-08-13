@@ -17,6 +17,22 @@ export const DEVICE_TYPE: DeviceType = IS_TABLET_UA
     ? "phone"
     : "desktop";
 
+/**
+ * How far in from a side of the screen it is safe to draw, in pixels.
+ *
+ * The layout viewport spans the cutout and the rounded corners, so anything
+ * measured from `window.innerWidth` has to take this off to clear them.
+ */
+export function deviceInset(side: "left" | "right") {
+  return (
+    parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        `--device-inset-${side}`,
+      ),
+    ) || 0
+  );
+}
+
 export function isTouchscreenDevice() {
   // detect if device/browser is touch enabled
   let result = false;

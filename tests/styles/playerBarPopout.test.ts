@@ -2,6 +2,9 @@
 // observable under happy-dom, which in turn ignores @layer: the comparison
 // holds because both rules are unlayered in the compiled stylesheet
 // @vitest-environment happy-dom
+import groupControlSource from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue?raw";
+import volumeControlSource from "@/layouts/default/PlayerOSD/PlayerBarVolumeControl.vue?raw";
+import playerSelectSource from "@/layouts/default/PlayerSelect.vue?raw";
 import {
   PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
@@ -92,5 +95,71 @@ describe("player bar popout inset", () => {
     expect(customProperty("--player-bar-popout-top-gap")).toBe(
       `${PLAYER_BAR_POPOUT_COLLISION_PADDING.top}px`,
     );
+  });
+});
+
+// Every term carries its own value, so one going missing or landing on the
+// wrong side reads as the wrong number instead of quietly passing.
+const GAP = "5px";
+const INSET_LEFT = "77px";
+const INSET_RIGHT = "44px";
+
+// Tailwind writes its arbitrary values without spaces around the operators and
+// resolves them at build time, which vitest does not run, so the widths are
+// lifted out of the templates and resolved here instead.
+function popoutWidths(source: string) {
+  return [
+    ...source.matchAll(
+      /(?:max-)?w-\[(calc\([^\]]*--player-bar-popout-gap[^\]]*)\]/g,
+    ),
+  ].map((match) => match[1]);
+}
+
+function resolveWidth(value: string) {
+  const styles = document.createElement("style");
+  styles.textContent = `.popout-width { width: ${value}; }`;
+  document.head.appendChild(styles);
+  const element = document.createElement("div");
+  element.className = "popout-width";
+  document.body.appendChild(element);
+  const width = getComputedStyle(element).width;
+  styles.remove();
+  element.remove();
+  return width.replace(/\s+/g, "");
+}
+
+describe.each([
+  ["player select", playerSelectSource],
+  ["group control", groupControlSource],
+  ["volume control", volumeControlSource],
+])("%s popout width", (_name, source) => {
+  beforeEach(() => {
+    document.documentElement.style.setProperty("--player-bar-popout-gap", GAP);
+    document.documentElement.style.setProperty(
+      "--device-inset-left",
+      INSET_LEFT,
+    );
+    document.documentElement.style.setProperty(
+      "--device-inset-right",
+      INSET_RIGHT,
+    );
+  });
+
+  afterEach(() => {
+    document.documentElement.removeAttribute("style");
+    document.body.innerHTML = "";
+  });
+
+  // The popouts hang off the safe end of the bar, so a width measured from the
+  // whole screen would push their far edge back under the opposite cutout.
+  it("spans the screen less both cutouts", () => {
+    const widths = popoutWidths(source);
+
+    expect(widths.length).toBeGreaterThan(0);
+    for (const width of widths) {
+      expect(resolveWidth(width)).toBe(
+        `calc(${window.innerWidth}px-2*${GAP}-${INSET_LEFT}-${INSET_RIGHT})`,
+      );
+    }
   });
 });

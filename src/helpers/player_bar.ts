@@ -1,3 +1,5 @@
+import { deviceInset } from "@/helpers/device";
+
 /**
  * Gap the popouts keep from the bar below them and from the sides of the
  * screen. Mirrors --player-bar-popout-gap.
@@ -14,9 +16,16 @@ const PLAYER_BAR_POPOUT_TOP_GAP = 24;
 /** Room the popouts leave around themselves as they grow with their contents. */
 export const PLAYER_BAR_POPOUT_COLLISION_PADDING = {
   top: PLAYER_BAR_POPOUT_TOP_GAP,
-  right: PLAYER_BAR_POPOUT_GAP,
+  // the boundary this is measured against spans the cutout, so the side gaps
+  // only stay clear of it by carrying the inset of the moment; reading them
+  // through a getter keeps this one object stable for floating-ui
+  get right() {
+    return PLAYER_BAR_POPOUT_GAP + deviceInset("right");
+  },
   bottom: PLAYER_BAR_POPOUT_GAP,
-  left: PLAYER_BAR_POPOUT_GAP,
+  get left() {
+    return PLAYER_BAR_POPOUT_GAP + deviceInset("left");
+  },
 };
 
 export const playerBarEndAnchor = {
@@ -28,8 +37,10 @@ export const playerBarEndAnchor = {
       document.getElementById("player-bar") ??
       document.getElementById("player-select-button")
     )?.getBoundingClientRect();
+    // the window reaches past the cutout, so the gap is kept from the last
+    // column of pixels that is actually safe to draw in
     return new DOMRect(
-      window.innerWidth - PLAYER_BAR_POPOUT_GAP,
+      window.innerWidth - PLAYER_BAR_POPOUT_GAP - deviceInset("right"),
       anchorRect?.top ?? window.innerHeight,
       0,
       anchorRect?.height ?? 0,
