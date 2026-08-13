@@ -2,6 +2,7 @@ import ItemsListing from "@/components/ItemsListing.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { Track } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { genre } from "../fixtures/genre";
@@ -157,6 +158,7 @@ describe("ItemsListing unmount cleanup", () => {
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
   });
 
   it("undoes everything it set up when the listing is closed", async () => {
