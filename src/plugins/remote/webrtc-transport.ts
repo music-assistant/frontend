@@ -81,6 +81,8 @@ export class WebRTCTransport extends BaseTransport {
         body: Uint8Array;
       }) => void;
       reject: (error: Error) => void;
+      // requests sent on the proxy channel die with it, unlike those on the API channel
+      onProxyChannel: boolean;
     }
   >();
   // Reassembly buffers for oversized messages the server splits into chunks, keyed by group id.
@@ -365,15 +367,16 @@ export class WebRTCTransport extends BaseTransport {
     const pending = this.pendingProxyBody;
     if (!pending) return;
     this.pendingProxyBody = null;
+    // check for a waiting caller before assembling, which for an image copies real bytes
+    const callbacks = this.httpProxyCallbacks.get(pending.id);
+    if (!callbacks) return;
+    this.httpProxyCallbacks.delete(pending.id);
     const body = new Uint8Array(pending.received);
     let offset = 0;
     for (const part of pending.parts) {
       body.set(part, offset);
       offset += part.byteLength;
     }
-    const callbacks = this.httpProxyCallbacks.get(pending.id);
-    if (!callbacks) return;
-    this.httpProxyCallbacks.delete(pending.id);
     callbacks.resolve({
       status: pending.status,
       headers: pending.headers,
@@ -409,6 +412,13 @@ export class WebRTCTransport extends BaseTransport {
         this.pendingProxyBody = null;
         if (this.httpProxyChannel === channel) {
           this.httpProxyChannel = null;
+        }
+        // nothing still in flight here can be answered now, so fail those callers at once
+        // rather than leaving each one waiting out its timeout
+        for (const [id, callbacks] of this.httpProxyCallbacks) {
+          if (!callbacks.onProxyChannel) continue;
+          this.httpProxyCallbacks.delete(id);
+          callbacks.reject(new Error("http_proxy channel closed"));
         }
       };
       this.httpProxyChannel = channel;
@@ -616,7 +626,11 @@ export class WebRTCTransport extends BaseTransport {
       body: Uint8Array;
     }>((resolve, reject) => {
       // Store callbacks
-      this.httpProxyCallbacks.set(requestId, { resolve, reject });
+      this.httpProxyCallbacks.set(requestId, {
+        resolve,
+        reject,
+        onProxyChannel: channel === this.httpProxyChannel,
+      });
 
       // Set timeout
       setTimeout(() => {

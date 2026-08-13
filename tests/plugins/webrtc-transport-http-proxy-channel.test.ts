@@ -249,7 +249,7 @@ describe("WebRTCTransport http_proxy channel", () => {
     await flush();
     const proxyChannel = channels[0];
 
-    void transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const request = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
     const [header, firstFrame] = binaryProxyResponse(
       sentRequestId(proxyChannel),
       [1, 2, 3, 4, 5, 6, 7, 8],
@@ -262,7 +262,50 @@ describe("WebRTCTransport http_proxy channel", () => {
 
     proxyChannel.close();
 
+    await expect(request).rejects.toThrow();
     expect(internals.pendingProxyBody).toBeNull();
+  });
+
+  it("fails requests still in flight when the dedicated channel closes", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    const streaming = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const alsoWaiting = transport.sendHttpProxyRequest(
+      "GET",
+      "/imageproxy?p=2",
+    );
+    // the first is mid-body, the second has not been answered at all
+    const [header, firstFrame] = binaryProxyResponse(
+      sentRequestId(proxyChannel),
+      [1, 2, 3, 4, 5, 6, 7, 8],
+      4,
+    );
+    proxyChannel.receive(header);
+    proxyChannel.receive(firstFrame);
+
+    proxyChannel.close();
+
+    // both fail now rather than sitting out the 30s request timeout
+    await expect(streaming).rejects.toThrow("http_proxy channel closed");
+    await expect(alsoWaiting).rejects.toThrow("http_proxy channel closed");
+  });
+
+  it("leaves API-channel requests alone when the dedicated channel closes", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    // this one goes out before the dedicated channel exists, so it must survive its close
+    const viaApi = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    apiChannel.receive(serverInfo(49));
+    await flush();
+
+    channels[0].close();
+
+    apiChannel.receive(proxyResponse(sentRequestId(apiChannel), [7, 7]));
+    await expect(viaApi).resolves.toMatchObject({ status: 200 });
   });
 
   it("never emits a message that arrives on the dedicated channel", async () => {
