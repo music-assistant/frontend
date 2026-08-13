@@ -2,7 +2,7 @@ import View from "@/layouts/default/View.vue";
 import { store } from "@/plugins/store";
 import { type VueWrapper, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
-import { createMemoryHistory, createRouter, type Router } from "vue-router";
+import { createMemoryHistory, createRouter } from "vue-router";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
@@ -36,11 +36,13 @@ const testRoutes = [
   },
 ];
 
-let router: Router;
 let wrapper: VueWrapper | undefined;
 
 async function mountAt(path: string) {
-  router = createRouter({ history: createMemoryHistory(), routes: testRoutes });
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: testRoutes,
+  });
   await router.push(path);
   await router.isReady();
   wrapper = mount(View, {
@@ -50,7 +52,7 @@ async function mountAt(path: string) {
       stubs: { VMain: host, SidebarProvider: host, SidebarInset: host },
     },
   });
-  return wrapper.get(".content-section");
+  return { section: wrapper.get(".content-section"), router };
 }
 
 describe("View", () => {
@@ -67,18 +69,36 @@ describe("View", () => {
   });
 
   it("marks the content section for a view that fills it", async () => {
-    expect((await mountAt("/party")).classes()).toContain("party-view-active");
+    const { section } = await mountAt("/party");
+
+    expect(section.classes()).toContain("party-view-active");
   });
 
   it("leaves the content section unmarked for a regular view", async () => {
-    expect((await mountAt("/")).classes()).not.toContain("party-view-active");
+    const { section } = await mountAt("/");
+
+    expect(section.classes()).not.toContain("party-view-active");
+  });
+
+  it("follows the route without being remounted", async () => {
+    // navigating between the app's routes patches this instance in place, so
+    // the mark has to track the route rather than settle at first render
+    const { section, router } = await mountAt("/");
+
+    await router.push("/party");
+    await nextTick();
+    expect(section.classes()).toContain("party-view-active");
+
+    await router.push("/");
+    await nextTick();
+    expect(section.classes()).not.toContain("party-view-active");
   });
 
   it.each([
     ["mobileLayout", "content-section--mobile"],
     ["frameless", "content-section--frameless"],
   ] as const)("keeps the mark when %s changes under it", async (flag, mod) => {
-    const section = await mountAt("/party");
+    const { section } = await mountAt("/party");
 
     // vue patches this class by assigning className, so the mark only survives
     // a change to its siblings by being part of the same binding
