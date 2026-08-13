@@ -89,9 +89,9 @@ html {
   --bottom-obscured-height: var(--bottom-bars-height);
   /* Gap the player bar popouts keep from the bar below them. */
   --player-bar-popout-gap: 8px;
-  /* How far in from the sides of the screen the popouts sit. Level with the
-     dock they hang above, so the two share an edge and the player card stays
-     the only thing set in from it. */
+  /* How far in from the sides of the screen the popouts sit. Taken from the
+     mobile dock, which is what they hang above there: the two share an edge and
+     the player card stays the only thing set in from it. */
   --player-bar-popout-inset-x: var(--mobile-dock-inset-x);
   /* Room a tall popout leaves at the top of the screen, so it keeps reading as a
      card floating above the player bar instead of a full-height panel. */

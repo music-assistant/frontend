@@ -3,7 +3,6 @@ import {
   useMobileSidebarSide,
   type MobileSidebarSide,
 } from "@/composables/useMobileSidebarSide";
-import { store } from "@/plugins/store";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -18,7 +17,7 @@ const VERTICAL_TOLERANCE_PX = 40;
  * the navigation sheet on the `discover` route, and navigates back on any
  * other route. When the menu opens from the right, that edge always opens
  * the sheet instead, and the left edge navigates back on every route.
- * Navigating back does nothing when there is no previous in-app route.
+ * Navigating back does nothing when there is nowhere to go back to.
  *
  * Only active while the mobile sidebar is closed. Bind the returned
  * handlers as passive touchstart/touchmove/touchend listeners.
@@ -40,7 +39,10 @@ export function useEdgeSwipeNavigation() {
 
     touchStartX.value = touch.clientX;
     touchStartY.value = touch.clientY;
-    swipeEdge.value = edgeAt(touch.clientX, mobileSidebarSide.value);
+    const edge = edgeAt(touch.clientX, mobileSidebarSide.value);
+    // a carousel reaches close enough to the edge to be dragged from inside
+    // this zone, and the listeners are passive, so the two would both run
+    swipeEdge.value = edge && !insideHorizontalScroller(event) ? edge : null;
   }
 
   function onTouchMove(event: TouchEvent) {
@@ -76,7 +78,7 @@ export function useEdgeSwipeNavigation() {
 
     if (opensMenu) {
       setOpenMobile(true);
-    } else if (store.prevRoute) {
+    } else if (router.options.history.state.back != null) {
       router.back();
     }
   }
@@ -98,4 +100,24 @@ function edgeAt(x: number, side: MobileSidebarSide): MobileSidebarSide | null {
       ? document.documentElement.clientWidth
       : 0);
   return width > 0 && x >= width - EDGE_ZONE_PX ? "right" : null;
+}
+
+/**
+ * Whether a touch landed on something that scrolls sideways, looking no
+ * further out than the element the handlers are bound to.
+ */
+function insideHorizontalScroller(event: TouchEvent) {
+  let element = event.target instanceof Element ? event.target : null;
+
+  while (element && element !== event.currentTarget) {
+    const { overflowX } = getComputedStyle(element);
+    if (
+      (overflowX === "auto" || overflowX === "scroll") &&
+      element.scrollWidth > element.clientWidth
+    ) {
+      return true;
+    }
+    element = element.parentElement;
+  }
+  return false;
 }

@@ -2,19 +2,19 @@ import { useEdgeSwipeNavigation } from "@/composables/useEdgeSwipeNavigation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  historyState,
   mobileSidebarSide,
   mockRouterBack,
   mockSetOpenMobile,
   routeState,
   sidebarState,
-  storeMock,
 } = vi.hoisted(() => ({
+  historyState: { back: null as string | null },
   mobileSidebarSide: { value: "left" as "left" | "right" },
   mockRouterBack: vi.fn(),
   mockSetOpenMobile: vi.fn(),
   routeState: { name: "discover" as string },
   sidebarState: { isMobile: { value: true }, openMobile: { value: false } },
-  storeMock: { prevRoute: undefined as string | undefined },
 }));
 
 vi.mock("@/components/ui/sidebar/utils", () => ({
@@ -29,13 +29,12 @@ vi.mock("@/composables/useMobileSidebarSide", () => ({
   useMobileSidebarSide: () => mobileSidebarSide,
 }));
 
-vi.mock("@/plugins/store", () => ({
-  store: storeMock,
-}));
-
 vi.mock("vue-router", () => ({
   useRoute: () => routeState,
-  useRouter: () => ({ back: mockRouterBack }),
+  useRouter: () => ({
+    back: mockRouterBack,
+    options: { history: { state: historyState } },
+  }),
 }));
 
 const originalInnerWidth = Object.getOwnPropertyDescriptor(
@@ -44,8 +43,26 @@ const originalInnerWidth = Object.getOwnPropertyDescriptor(
 );
 
 /** A minimal TouchEvent-shaped object, matching what the handlers read. */
-function touchEvent(x: number, y: number): TouchEvent {
-  return { touches: [{ clientX: x, clientY: y }] } as unknown as TouchEvent;
+function touchEvent(x: number, y: number, target?: Element): TouchEvent {
+  return {
+    touches: [{ clientX: x, clientY: y }],
+    target,
+    currentTarget: target?.closest("main"),
+  } as unknown as TouchEvent;
+}
+
+/** A card inside a shelf that does or does not scroll sideways, under `<main>`. */
+function cardInsideShelf(scrolls: boolean) {
+  const main = document.createElement("main");
+  const shelf = document.createElement("div");
+  shelf.style.overflowX = scrolls ? "auto" : "visible";
+  Object.defineProperty(shelf, "scrollWidth", { value: scrolls ? 900 : 375 });
+  Object.defineProperty(shelf, "clientWidth", { value: 375 });
+  const card = document.createElement("button");
+  shelf.appendChild(card);
+  main.appendChild(shelf);
+  document.body.appendChild(main);
+  return card;
 }
 
 function setViewportWidth(width: number) {
@@ -66,7 +83,8 @@ afterEach(() => {
   routeState.name = "discover";
   sidebarState.isMobile.value = true;
   sidebarState.openMobile.value = false;
-  storeMock.prevRoute = undefined;
+  historyState.back = null;
+  document.body.innerHTML = "";
   if (originalInnerWidth) {
     Object.defineProperty(window, "innerWidth", originalInnerWidth);
   }
@@ -74,7 +92,7 @@ afterEach(() => {
 
 describe("useEdgeSwipeNavigation", () => {
   it("opens the menu on a left-edge swipe on discover, with the menu on the left", () => {
-    storeMock.prevRoute = "/settings";
+    historyState.back = "/settings";
     const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
@@ -86,7 +104,7 @@ describe("useEdgeSwipeNavigation", () => {
 
   it("goes back on a left-edge swipe off discover, with the menu on the left", () => {
     routeState.name = "album";
-    storeMock.prevRoute = "/discover";
+    historyState.back = "/discover";
     const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
@@ -99,7 +117,7 @@ describe("useEdgeSwipeNavigation", () => {
   it("opens the menu on a right-edge swipe on any route, with the menu on the right", () => {
     mobileSidebarSide.value = "right";
     routeState.name = "album";
-    storeMock.prevRoute = "/discover";
+    historyState.back = "/discover";
     const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(790, 100));
@@ -111,7 +129,7 @@ describe("useEdgeSwipeNavigation", () => {
 
   it("goes back on a left-edge swipe, with the menu on the right", () => {
     mobileSidebarSide.value = "right";
-    storeMock.prevRoute = "/discover";
+    historyState.back = "/discover";
     const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
@@ -121,9 +139,23 @@ describe("useEdgeSwipeNavigation", () => {
     expect(mockSetOpenMobile).not.toHaveBeenCalled();
   });
 
-  it("does nothing on a back-eligible swipe without a previous route", () => {
+  it("does nothing on a right-edge swipe, with the menu on the left", () => {
     routeState.name = "album";
-    storeMock.prevRoute = undefined;
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(790, 100));
+    onTouchMove(touchEvent(720, 100));
+
+    expect(mockRouterBack).not.toHaveBeenCalled();
+    expect(mockSetOpenMobile).not.toHaveBeenCalled();
+  });
+
+  // the history entry is what says whether there is anywhere to go: the app is
+  // often opened straight onto a deep-linked page with nothing behind it
+  it("does nothing on a back-eligible swipe with nowhere to go back to", () => {
+    routeState.name = "album";
+    historyState.back = null;
     const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
@@ -131,6 +163,35 @@ describe("useEdgeSwipeNavigation", () => {
 
     expect(mockRouterBack).not.toHaveBeenCalled();
     expect(mockSetOpenMobile).not.toHaveBeenCalled();
+  });
+
+  // the shelves reach into the edge zone, and the listeners are passive, so a
+  // flick along one would otherwise scroll it and navigate away at once
+  it("leaves a sideways drag on a carousel to the carousel", () => {
+    routeState.name = "search";
+    historyState.back = "/discover";
+    const card = cardInsideShelf(true);
+    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100, card));
+    onTouchMove(touchEvent(80, 100, card));
+
+    expect(mockRouterBack).not.toHaveBeenCalled();
+    expect(mockSetOpenMobile).not.toHaveBeenCalled();
+  });
+
+  // the same gesture over the same markup, minus the sideways scroll, so the
+  // case above cannot pass on the plumbing alone
+  it("still goes back over a shelf that has nothing to scroll", () => {
+    routeState.name = "search";
+    historyState.back = "/discover";
+    const card = cardInsideShelf(false);
+    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100, card));
+    onTouchMove(touchEvent(80, 100, card));
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
   });
 
   it("does nothing when the swipe starts away from any edge", () => {

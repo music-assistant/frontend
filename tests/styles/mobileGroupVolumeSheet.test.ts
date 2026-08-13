@@ -152,7 +152,8 @@ describe("mobile grouped volume sheet", () => {
   it("floats the sheet clear of the navigation and the sides", () => {
     const style = getComputedStyle(sheet());
 
-    // the sides line up with the dock, the bottom only clears the navigation
+    // the sides take the popouts' own inset, the bottom only clears the
+    // navigation
     expect(style.right).toBe(INSET_X);
     expect(style.left).toBe(INSET_X);
     expect(normalize(style.bottom)).toBe(`calc(${NAV_HEIGHT}+${GAP})`);
