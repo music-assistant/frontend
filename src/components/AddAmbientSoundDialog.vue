@@ -115,8 +115,9 @@ import { store } from "@/plugins/store";
 const model = defineModel<boolean>();
 const { t } = useI18n();
 
-// AudioError in music-assistant-models: the server's audio probe of the url failed
-const AUDIO_ERROR_CODE = 7;
+// InvalidDataError in music-assistant-models: raised by the server's ffprobe
+// check when the url does not point to playable audio
+const INVALID_DATA_ERROR_CODE = 3;
 
 const loading = ref<boolean>(false);
 
@@ -163,10 +164,13 @@ const save = async function (value: { url: string; name: string }) {
     model.value = false;
   } catch (e) {
     console.error("Failed to add ambient sound:", e);
-    // only an AudioError means the url failed the audio probe; any other
-    // failure (connection loss, permission, internal error) gets the actual
-    // error instead of misleadingly blaming the url
-    if (e instanceof ApiCommandError && e.error_code === AUDIO_ERROR_CODE) {
+    // only an InvalidDataError means the url failed the audio probe; any
+    // other failure (connection loss, permission, internal error) gets the
+    // actual error instead of misleadingly blaming the url
+    if (
+      e instanceof ApiCommandError &&
+      e.error_code === INVALID_DATA_ERROR_CODE
+    ) {
       toast.error(t("audio_overlay_custom_add_failed"));
     } else {
       toast.error(String(e));
