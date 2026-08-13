@@ -136,8 +136,13 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
    *
    * @param playerId - Player that should play the announcement.
    * @param preAnnounce - Play the chime before the announcement.
+   * @param volumeLevel - Volume to announce at, or null for the player's own setting.
    */
-  async function start(playerId: string, preAnnounce: boolean): Promise<void> {
+  async function start(
+    playerId: string,
+    preAnnounce: boolean,
+    volumeLevel: number | null = null,
+  ): Promise<void> {
     if (state.value !== "idle") return;
     const current = ++attempt;
     state.value = "connecting";
@@ -180,7 +185,13 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
       connection.close();
       return;
     }
-    attachSocket(connection, playerId, preAnnounce, opened.context.sampleRate);
+    attachSocket(
+      connection,
+      playerId,
+      preAnnounce,
+      opened.context.sampleRate,
+      volumeLevel,
+    );
   }
 
   /**
@@ -262,6 +273,7 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
     playerId: string,
     preAnnounce: boolean,
     sampleRate: number,
+    volumeLevel: number | null,
   ): void {
     socket = connection;
     const handshake = () => {
@@ -278,7 +290,7 @@ export function useLiveAnnouncement(callbacks: LiveAnnouncementCallbacks) {
           sample_rate: Math.round(sampleRate),
           channels: 1,
           pre_announce: preAnnounce,
-          volume_level: null,
+          volume_level: volumeLevel,
         }),
       );
     };

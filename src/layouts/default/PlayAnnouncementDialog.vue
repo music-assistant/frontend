@@ -87,6 +87,30 @@
             :disabled="busy"
           />
         </div>
+
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-4">
+            <Label for="announcement-volume">
+              {{ $t("play_announcement_volume") }}
+            </Label>
+            <span class="text-sm text-muted-foreground tabular-nums">
+              {{
+                volumeOverride === null
+                  ? $t("play_announcement_volume_default")
+                  : `${volumeOverride}%`
+              }}
+            </span>
+          </div>
+          <Slider
+            id="announcement-volume"
+            :model-value="[volumeOverride ?? DEFAULT_VOLUME_POSITION]"
+            :min="0"
+            :max="100"
+            :step="1"
+            :disabled="busy"
+            @update:model-value="onVolumeSlide"
+          />
+        </div>
       </form>
 
       <DialogFooter>
@@ -132,6 +156,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -160,6 +185,11 @@ const sending = ref(false);
 // how long the button stays on its confirmed state before the dialog closes
 const SENT_LINGER_MS = 1200;
 const sent = ref(false);
+// where the slider sits while the player's own announcement volume still applies
+const DEFAULT_VOLUME_POSITION = 50;
+// null until the user moves the slider, so the configured volume is used unless
+// this announcement is deliberately given its own level
+const volumeOverride = ref<number | null>(null);
 let closeTimer: number | null = null;
 const mode = ref<AnnouncementMode>("type");
 
@@ -219,6 +249,7 @@ onMounted(() => {
     mode.value = "type";
     clearCloseTimer();
     sent.value = false;
+    volumeOverride.value = null;
     dialogKey.value++;
     showDialog.value = true;
     void seedPreAnnounce(evt.playerId);
@@ -230,6 +261,11 @@ onBeforeUnmount(() => {
   clearCloseTimer();
   cancelLive();
 });
+
+function onVolumeSlide(value?: number[]): void {
+  if (!value?.length) return;
+  volumeOverride.value = value[0];
+}
 
 function clearCloseTimer(): void {
   if (closeTimer === null) return;
@@ -252,7 +288,7 @@ function onSpeakKeyDown(event: KeyboardEvent): void {
 
 function startSpeaking(): void {
   if (!playerId.value) return;
-  void startLive(playerId.value, preAnnounce.value);
+  void startLive(playerId.value, preAnnounce.value, volumeOverride.value);
 }
 
 function stopSpeaking(): void {
@@ -291,6 +327,7 @@ async function submit(): Promise<void> {
     // button carries the progress instead of the dialog closing on a silent wait
     await api.playerCommandPlayAnnouncement(playerId.value, text, {
       preAnnounce: preAnnounce.value,
+      volumeLevel: volumeOverride.value ?? undefined,
     });
     sent.value = true;
     closeTimer = window.setTimeout(() => {

@@ -385,13 +385,30 @@ describe("PlayAnnouncementDialog", () => {
     await speakTab(wrapper).trigger("mousedown", { button: 0 });
     await micButton(wrapper).trigger("pointerdown");
 
-    expect(liveMock.start).toHaveBeenCalledWith("kitchen", true);
+    expect(liveMock.start).toHaveBeenCalledWith("kitchen", true, null);
 
     // the permission bubble takes focus off the button on the first press
     liveMock.state.value = "connecting";
     await micButton(wrapper).trigger("blur");
 
     expect(liveMock.stop).not.toHaveBeenCalled();
+  });
+
+  it("announces at the player's own volume unless one is picked", async () => {
+    apiMock.playerCommandPlayAnnouncement.mockResolvedValue(undefined);
+    const wrapper = mountDialog();
+
+    eventbus.emit("playAnnouncementDialog", { playerId: "kitchen" });
+    await flushPromises();
+    await wrapper.get("textarea").setValue("Dinner is ready");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(apiMock.playerCommandPlayAnnouncement).toHaveBeenCalledWith(
+      "kitchen",
+      "Dinner is ready",
+      { preAnnounce: true, volumeLevel: undefined },
+    );
   });
 
   it("does not open the microphone on a right click", async () => {
