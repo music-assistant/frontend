@@ -29,14 +29,11 @@ function mountWithContent(swipeAnywhere = true) {
   return { panel, wrapper, content };
 }
 
-/** jsdom has no PointerEvent constructor; synthesize like wrapper.trigger. */
-function firePointer(
-  el: Element,
-  type: string,
-  props: Record<string, unknown>,
-) {
-  const event = new Event(type, { bubbles: true, cancelable: true });
-  Object.assign(event, {
+/** Dispatches a bubbling pointer event defaulting to a primary touch pointer. */
+function firePointer(el: Element, type: string, props: PointerEventInit) {
+  const event = new PointerEvent(type, {
+    bubbles: true,
+    cancelable: true,
     button: 0,
     isPrimary: true,
     pointerType: "touch",
@@ -203,6 +200,54 @@ describe("PanelDragHandle", () => {
       firePointer(content, "pointerdown", { pointerId: 1, clientY: 100 });
       firePointer(content, "pointermove", { pointerId: 1, clientY: 200 });
       firePointer(content, "pointerup", { pointerId: 1, clientY: 200 });
+
+      expect(panel.style.transform).toBe("");
+      expect(wrapper.emitted("dismiss")).toBeUndefined();
+    });
+
+    it("leaves mouse drags alone", () => {
+      const { panel, wrapper, content } = mountWithContent();
+
+      // the drag handle itself still works with a mouse; only swiping from
+      // panel content is touch-only, so a mouse never drags the panel away
+      firePointer(content, "pointerdown", {
+        pointerId: 1,
+        pointerType: "mouse",
+        clientY: 100,
+      });
+      firePointer(content, "pointermove", {
+        pointerId: 1,
+        pointerType: "mouse",
+        clientY: 200,
+      });
+      firePointer(content, "pointerup", {
+        pointerId: 1,
+        pointerType: "mouse",
+        clientY: 200,
+      });
+
+      expect(panel.style.transform).toBe("");
+      expect(wrapper.emitted("dismiss")).toBeUndefined();
+    });
+
+    it("leaves the second finger of a multi-touch gesture alone", () => {
+      const { panel, wrapper, content } = mountWithContent();
+
+      firePointer(content, "pointerdown", {
+        pointerId: 2,
+        isPrimary: false,
+        clientY: 100,
+      });
+      firePointer(content, "pointermove", {
+        pointerId: 2,
+        isPrimary: false,
+        clientY: 200,
+      });
+      firePointer(content, "pointerup", {
+        pointerId: 2,
+        isPrimary: false,
+        clientY: 200,
+      });
 
       expect(panel.style.transform).toBe("");
       expect(wrapper.emitted("dismiss")).toBeUndefined();
