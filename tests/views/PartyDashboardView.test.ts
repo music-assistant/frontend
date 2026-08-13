@@ -1,18 +1,21 @@
+import { store } from "@/plugins/store";
 import PartyDashboardView from "@/views/PartyDashboardView.vue";
 import { type VueWrapper, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock } = vi.hoisted(() => ({
-  storeMock: {
-    frameless: false,
-    activePlayerId: undefined as string | undefined,
-    activePlayer: undefined,
-    activePlayerQueue: undefined,
-    curQueueItem: undefined,
-  },
-}));
-
-vi.mock("@/plugins/store", () => ({ store: storeMock }));
+// Reactive, so the view's own chrome follows the flag the way it does in the app.
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    store: reactive({
+      frameless: false,
+      activePlayerId: undefined,
+      activePlayer: undefined,
+      activePlayerQueue: undefined,
+      curQueueItem: undefined,
+    }),
+  };
+});
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -101,12 +104,15 @@ async function mountView() {
   return wrapper;
 }
 
+const ENTER_FULLSCREEN = '[aria-label="tooltip.enter_fullscreen"]';
+const EXIT_FULLSCREEN = '[aria-label="tooltip.exit_fullscreen"]';
+
 const enterFullscreen = (view: VueWrapper) =>
-  view.get('[aria-label="tooltip.enter_fullscreen"]').trigger("click");
+  view.get(ENTER_FULLSCREEN).trigger("click");
 
 describe("PartyDashboardView fullscreen", () => {
   beforeEach(() => {
-    storeMock.frameless = false;
+    store.frameless = false;
     fullscreenElement = null;
     requestFullscreen.mockClear();
     exitFullscreen.mockClear();
@@ -128,8 +134,9 @@ describe("PartyDashboardView fullscreen", () => {
 
     await enterFullscreen(view);
 
-    expect(storeMock.frameless).toBe(true);
+    expect(store.frameless).toBe(true);
     expect(requestFullscreen).toHaveBeenCalled();
+    expect(view.find(EXIT_FULLSCREEN).exists()).toBe(true);
   });
 
   it("hands the chrome back when the dashboard is left while fullscreen", async () => {
@@ -141,21 +148,38 @@ describe("PartyDashboardView fullscreen", () => {
     view.unmount();
     wrapper = undefined;
 
-    expect(storeMock.frameless).toBe(false);
+    expect(store.frameless).toBe(false);
     expect(exitFullscreen).toHaveBeenCalled();
   });
 
   it("leaves a frameless session it did not start alone", async () => {
     // a dashboard viewer login and a ?frameless deep link are both meant to
     // stay frameless for the whole session
-    storeMock.frameless = true;
+    store.frameless = true;
     const view = await mountView();
+
+    // what makes the flag enough to tell the two apart: the control that would
+    // claim ownership is not on screen while the session is already frameless
+    expect(view.find(ENTER_FULLSCREEN).exists()).toBe(false);
 
     view.unmount();
     wrapper = undefined;
 
-    expect(storeMock.frameless).toBe(true);
+    expect(store.frameless).toBe(true);
     expect(exitFullscreen).not.toHaveBeenCalled();
+  });
+
+  it("leaves fullscreen once for the minimize button", async () => {
+    const view = await mountView();
+    await enterFullscreen(view);
+
+    await view.get(EXIT_FULLSCREEN).trigger("click");
+    expect(store.frameless).toBe(false);
+
+    view.unmount();
+    wrapper = undefined;
+
+    expect(exitFullscreen).toHaveBeenCalledTimes(1);
   });
 
   it("stays out of the way once the browser has left fullscreen", async () => {
@@ -165,12 +189,27 @@ describe("PartyDashboardView fullscreen", () => {
     // Escape, which the browser reports as a fullscreen change
     fullscreenElement = null;
     document.dispatchEvent(new Event("fullscreenchange"));
-    expect(storeMock.frameless).toBe(false);
+    expect(store.frameless).toBe(false);
 
     view.unmount();
     wrapper = undefined;
 
-    expect(storeMock.frameless).toBe(false);
+    expect(store.frameless).toBe(false);
     expect(exitFullscreen).not.toHaveBeenCalled();
+  });
+
+  it("keeps a frameless session started after the browser left fullscreen", async () => {
+    const view = await mountView();
+    await enterFullscreen(view);
+
+    fullscreenElement = null;
+    document.dispatchEvent(new Event("fullscreenchange"));
+    // the router guard re-frames a dashboard viewer on its next navigation
+    store.frameless = true;
+
+    view.unmount();
+    wrapper = undefined;
+
+    expect(store.frameless).toBe(true);
   });
 });
