@@ -426,6 +426,15 @@ describe("media details back button", () => {
     expect(detailRoutes.length).toBeGreaterThanOrEqual(9);
   });
 
+  // the views that fall back somewhere fixed name it inline, so a rename in
+  // the route table would otherwise strand them silently
+  it.each(["discover", "settings", "playersettings"])(
+    "keeps %s reachable for the views that fall back to it",
+    (name) => {
+      expect(findRouteRecord(name, routes)?.name).toBe(name);
+    },
+  );
+
   it.each(detailRoutes)(
     "goes up from $name to $listing",
     ({ name, listing }) => {

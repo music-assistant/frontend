@@ -43,7 +43,10 @@
 
           <!-- Buttons -->
           <div class="actions">
-            <Button variant="default" @click="goBack(router, '/discover')">
+            <Button
+              variant="default"
+              @click="goBack(router, { name: 'discover' })"
+            >
               <ArrowLeft class="size-4" />
               {{ $t("back") }}
             </Button>
