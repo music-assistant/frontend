@@ -153,8 +153,27 @@ html {
 
 html {
   overflow: hidden;
+  /* Nothing here scrolls, so a downward drag no in-page scroller consumes
+     chains out of the Home Assistant ingress iframe and its app takes that for
+     a pull-to-refresh, reloading. The root is where the viewport reads this
+     from - on body it is ignored. The horizontal axis stays open, so the
+     browser keeps its back-navigation swipe. */
+  overscroll-behavior-y: none;
   /* iOS Safari tints the status bar from this background. Must stay set. */
   background-color: rgb(var(--v-theme-background));
+}
+
+/* The above only reaches a drag that starts on something scrollable. One that
+   starts where nothing scrolls - a panel header, the fullscreen player - has no
+   scroll to chain from, and embedded it reaches the host instead: out of the
+   Home Assistant ingress iframe and into its app, which takes it for a
+   pull-to-refresh and reloads. Refusing the pan stops that gesture ever
+   starting. Scrollers inside still pan, since touch-action is intersected only
+   up to the scroll container that would move; none is the fallback for engines
+   that do not know pinch-zoom, which trades zoom away to keep the refusal. */
+:root[data-embedded-layout] {
+  touch-action: none;
+  touch-action: pinch-zoom;
 }
 
 * {
