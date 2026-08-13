@@ -194,6 +194,22 @@ describe("WebRTCTransport http_proxy channel", () => {
     expect(body).toHaveLength(0);
   });
 
+  it("still reads a hex response on the dedicated channel", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    // a server that reports schema 49 but predates the binary framing answers like this
+    const response = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    proxyChannel.receive(proxyResponse(sentRequestId(proxyChannel), [4, 5, 6]));
+
+    const { status, body } = await response;
+    expect(status).toBe(200);
+    expect(Array.from(body)).toEqual([4, 5, 6]);
+  });
+
   it("negotiates the dedicated channel only once per connection", async () => {
     const { apiChannel, channels } = makeTransport();
 

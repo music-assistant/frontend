@@ -351,6 +351,12 @@ export class WebRTCTransport extends BaseTransport {
       return; // not JSON; nothing on this channel to dispatch
     }
     if (parsed.type !== "http-proxy-response") return;
+    // a response without a body length is the hex-in-JSON form, which a server that
+    // predates the binary framing still answers with
+    if (typeof parsed.size !== "number") {
+      this.handleHttpProxyResponse(parsed);
+      return;
+    }
     this.pendingProxyBody = {
       id: parsed.id,
       status: parsed.status,
