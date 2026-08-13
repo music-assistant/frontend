@@ -185,12 +185,21 @@ describe("isPhoneSizedScreen", () => {
     },
   );
 
-  // a tablet has the room for a desktop layout, so it is decided elsewhere
-  it("leaves a tablet to be judged on its screen", async () => {
-    expect(
-      await isPhoneSized(DESKTOP, { IS_TABLET_UA: true, IS_MOBILE_UA: true }),
-    ).toBe(false);
-  });
+  // A tablet is only taken at its word where the layout is decided; here it is
+  // measured like anything else, so a narrow one in portrait reads as
+  // phone-sized and folds its sidebar away, as it did before this predicate.
+  it.each([
+    ["a screen with the room for a desktop", DESKTOP, false],
+    ["a large tablet in portrait", { width: 834, height: 1194 }, false],
+    ["a narrow tablet in portrait", { width: 768, height: 1024 }, true],
+  ])(
+    "measures %s rather than taking the tablet at its word",
+    async (_, screen, expected) => {
+      expect(
+        await isPhoneSized(screen, { IS_TABLET_UA: true, IS_MOBILE_UA: true }),
+      ).toBe(expected);
+    },
+  );
 
   // The mobile layout gives up more room at the bottom of the screen than the
   // desktop one, so a short window only gains by it while it is phone-narrow.
