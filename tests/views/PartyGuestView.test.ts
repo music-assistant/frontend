@@ -179,6 +179,34 @@ describe("PartyGuestView startup cleanup", () => {
     expect(stopQueueEvents).toHaveBeenCalled();
   });
 
+  it("stops partway through when closed while resolving the party player", async () => {
+    // the startup pauses twice, and by this one the countdown and the back
+    // handler are already up, so only the second half must be skipped
+    let resolvePlayer: (playerId: string | null) => void = () => {};
+    vi.mocked(api.sendCommand).mockReturnValue(
+      new Promise<string | null>((resolve) => {
+        resolvePlayer = resolve;
+      }) as never,
+    );
+    const live = trackWindowListeners();
+    const view = mountViewRaw();
+    await flushPromises();
+    const [stopCountdown] = guest.startCountdown.mock.results.map(
+      (result) => result.value,
+    );
+
+    view.unmount();
+    resolvePlayer(null);
+    await flushPromises();
+    const remaining = live.stop();
+
+    // what the first half set up is torn down, and the second half never runs
+    expect(stopCountdown).toHaveBeenCalled();
+    expect(remaining).not.toContain("popstate");
+    expect(guest.subscribeToEvents).not.toHaveBeenCalled();
+    expect(events.listeners).toHaveLength(0);
+  });
+
   it("sets nothing up when the guest page is closed while still loading", async () => {
     const live = trackWindowListeners();
     const view = mountViewRaw();

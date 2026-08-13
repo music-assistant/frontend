@@ -247,7 +247,7 @@ describe("useShortcuts media item subscription", () => {
     expect(unsubscribe).toHaveBeenCalled();
   });
 
-  it("never starts listening when its component goes away while loading", async () => {
+  it("never starts listening when its component goes away during startup", async () => {
     const consumer = mount(Consumer);
 
     consumer.unmount();

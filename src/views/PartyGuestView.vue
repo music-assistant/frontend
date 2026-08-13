@@ -466,13 +466,14 @@ watch(partyConfig, (newConfig) => {
 });
 
 // --- Lifecycle ---
-// Set by the unmount hook, so the startup below can tell that the view it is
-// setting things up for is already gone.
-let unmounted = false;
 let cleanupCountdown: (() => void) | null = null;
 let cleanupQueueEvents: (() => void) | null = null;
 let cleanupProvidersSub: (() => void) | null = null;
 let cleanupQueueUpdatedSub: (() => void) | null = null;
+
+// Set by the unmount hook, so the startup below can tell that the view it is
+// setting things up for is already gone.
+let unmounted = false;
 
 const refreshPartyPlayer = async () => {
   try {

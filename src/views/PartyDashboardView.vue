@@ -376,8 +376,8 @@ const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
 const logoDarkSrc = new URL("@/assets/logo/logo-dark.svg", import.meta.url)
   .href;
 
-// Set by the unmount hook, so the async work started here can tell that the
-// view it belongs to is gone before it acts on a result.
+// Set by the unmount hook, so the async work below can tell that the view it
+// belongs to is gone before it acts on a result.
 let unmounted = false;
 
 const refreshPartyPlayer = async () => {

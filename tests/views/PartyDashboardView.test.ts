@@ -148,7 +148,6 @@ const enterFullscreen = (view: VueWrapper) =>
  * browser does.
  */
 function fakeWakeLock() {
-  const sentinels: { released: boolean }[] = [];
   let pending: ((sentinel: unknown) => void) | undefined;
   const request = vi.fn(
     () =>
@@ -162,7 +161,6 @@ function fakeWakeLock() {
   });
   return {
     request,
-    sentinels,
     settle: () => {
       const listeners: (() => void)[] = [];
       const sentinel = {
@@ -175,7 +173,6 @@ function fakeWakeLock() {
         addEventListener: (_type: string, listener: () => void) =>
           listeners.push(listener),
       };
-      sentinels.push(sentinel);
       pending?.(sentinel);
       pending = undefined;
       return sentinel;
