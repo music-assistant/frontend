@@ -1,17 +1,17 @@
 /**
  * Helpers for the tests that assert which of two competing CSS rules wins.
  *
- * happy-dom takes the last of two equally specific declarations rather than the
- * most specific one, so these tests prove an override applies by ranking the
- * selectors against each other instead of reading the winning value back.
+ * Reading the winner back off getComputedStyle does not stand in for the
+ * shipped cascade here: the raw source these tests inject carries no scope
+ * hash, and happy-dom never expands an inset shorthand, so the competing rules
+ * are weighed by ranking their selectors instead.
  */
 
 /**
- * The compound a scoped block's selectors each gain at compile time.
+ * The compound Vue's compiler adds to every selector in a scoped block.
  *
- * Vue appends a [data-v-hash] to them, which the raw source does not carry, so
- * an override lifted out of a scoped block already out-ranks a rival in an
- * unscoped one by this much before either side's own compounds are counted.
+ * The raw source these tests read carries no [data-v-hash], so a selector that
+ * ships scoped has to be credited with it by hand before the ranks compare.
  */
 export const SCOPE_COMPOUND = 1;
 
