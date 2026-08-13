@@ -275,10 +275,11 @@
       </template>
     </div>
     <div
-      class="absolute right-1 flex items-center gap-2 opacity-50 font-medium"
+      class="absolute flex items-center gap-2 opacity-50 font-medium"
       :style="{
         color: chromeTextColor,
         bottom: 'var(--party-player-bottom)',
+        right: 'var(--party-player-right)',
       }"
     >
       <span>{{ $t("providers.party.powered_by") }}</span>
@@ -1381,6 +1382,9 @@ watch(
   /* total bottom offset for overlays (here, "Powered by"): the bars pinned to
      the bottom of the screen + tailwind spacing-1 gap */
   --party-player-bottom: calc(var(--bottom-bars-height) + 4px);
+  /* the player bar runs the full width here, so there is no edge to line up
+     with and the overlay keeps its own gap from the side */
+  --party-player-right: 4px;
 }
 
 .content-section--mobile.party-view-active {
@@ -1390,9 +1394,14 @@ watch(
   --party-player-bottom: calc(
     var(--bottom-bars-height) + var(--mobile-dock-rim) + 4px
   );
+  /* takes the floating player card's inset, so the two right edges line up. The
+     device inset is left out: this positions inside the layout, which is padded
+     by it already, unlike the fixed bars that have to add it themselves */
+  --party-player-right: var(--mobile-player-inset-x);
 }
 
 .content-section--frameless.party-view-active {
   --party-player-bottom: 4px; /* no player bar; tw spacing-1 gap from screen edge */
+  --party-player-right: 4px; /* nothing to line up with either */
 }
 </style>
