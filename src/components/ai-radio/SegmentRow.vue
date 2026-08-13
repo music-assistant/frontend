@@ -31,9 +31,11 @@
           :aria-label="$t('providers.ai_radio.customize.segment_name')"
         />
 
-        <div class="flex w-full items-center gap-2 sm:w-[240px] sm:shrink-0">
+        <div
+          class="flex w-full items-center gap-1 sm:w-[240px] sm:shrink-0 sm:gap-2"
+        >
           <Select v-model="playsKind">
-            <SelectTrigger class="h-8 min-w-0 flex-1 text-xs">
+            <SelectTrigger class="h-8 min-w-0 flex-1 px-2 text-xs sm:px-3">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -51,7 +53,7 @@
           <NumberField
             v-if="needsN"
             v-model="playsN"
-            class="w-16 shrink-0"
+            class="w-12 shrink-0 sm:w-16"
             :min="1"
             :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
           >
@@ -62,7 +64,7 @@
           <NumberField
             v-if="needsPercent"
             v-model="playsPercent"
-            class="w-16 shrink-0"
+            class="w-12 shrink-0 sm:w-16"
             :min="0"
             :max="100"
             :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"

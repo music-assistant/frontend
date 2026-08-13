@@ -255,16 +255,19 @@ const voiceSelectValue = computed({
   },
 });
 
+// Canonical option values ("el_GR" -> "el-GR") so a stored language matches the
+// option it was picked from, and the server receives a BCP-47 tag.
 const languageOptions = computed(() =>
-  getLocaleOptions(i18n.global.availableLocales, i18n.global.locale.value),
+  getLocaleOptions(i18n.global.availableLocales, i18n.global.locale.value).map(
+    (option) => ({ ...option, value: canonicalizeLocale(option.value) }),
+  ),
 );
 
 const languageSelectValue = computed({
   get: () => draft.value?.language || NONE_SELECT_VALUE,
   set: (value: string) => {
     if (!draft.value) return;
-    draft.value.language =
-      value === NONE_SELECT_VALUE ? "" : canonicalizeLocale(value);
+    draft.value.language = value === NONE_SELECT_VALUE ? "" : value;
   },
 });
 

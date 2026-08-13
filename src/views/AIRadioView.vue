@@ -267,6 +267,14 @@ function openCustomizeHostFromPreset(preset: AIRadioHostPreset) {
     draft.name,
     hosts.value.map((host) => host.name),
   );
+  // compileHost namespaces segment ids with the new host id, so strip the
+  // preset's own prefix to keep them readable instead of doubling it up.
+  const presetPrefix = `${preset.host.id}_`;
+  for (const segment of draft.segments) {
+    if (segment.id.startsWith(presetPrefix)) {
+      segment.id = segment.id.slice(presetPrefix.length);
+    }
+  }
   presetDraft.value = draft;
   customizeHostId.value = "";
 }
