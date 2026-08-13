@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 // literal. They are distinct, so no assertion can pass on a coincidence.
 const NAV_HEIGHT = "111px";
 const GAP = "7px";
+const INSET_X = "9px";
 const TOP_GAP = "33px";
 
 // the equally-!important utilities the sheet and its backdrop carry, with the
@@ -133,6 +134,7 @@ describe("mobile grouped volume sheet", () => {
     for (const [token, value] of [
       ["--mobile-navigation-height", NAV_HEIGHT],
       ["--player-bar-popout-gap", GAP],
+      ["--player-bar-popout-inset-x", INSET_X],
       ["--player-bar-popout-top-gap", TOP_GAP],
     ]) {
       document.documentElement.style.setProperty(token, value);
@@ -150,8 +152,10 @@ describe("mobile grouped volume sheet", () => {
   it("floats the sheet clear of the navigation and the sides", () => {
     const style = getComputedStyle(sheet());
 
-    expect(style.right).toBe(GAP);
-    expect(style.left).toBe(GAP);
+    // the sides take the popouts' own inset, the bottom only clears the
+    // navigation
+    expect(style.right).toBe(INSET_X);
+    expect(style.left).toBe(INSET_X);
     expect(normalize(style.bottom)).toBe(`calc(${NAV_HEIGHT}+${GAP})`);
     // it spans between those edges instead of keeping a width of its own
     expect(style.width).toBe("auto");
