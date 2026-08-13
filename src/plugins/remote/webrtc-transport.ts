@@ -84,17 +84,23 @@ export class WebRTCTransport extends BaseTransport {
     }
   >();
   // Reassembly buffers for oversized messages the server splits into chunks, keyed by group id.
-  // Group ids are unique across channels, so the dispatch of the channel a group started on
-  // is kept with it.
   private chunkGroups = new Map<
     number,
     {
       count: number;
       parts: string[];
       received: number;
-      dispatch: (data: string) => void;
     }
   >();
+  // Response being reassembled on the proxy channel: its header, then raw body frames.
+  private pendingProxyBody: {
+    id: string;
+    status: number;
+    headers: Record<string, string>;
+    size: number;
+    parts: Uint8Array[];
+    received: number;
+  } | null = null;
   // ICE servers received from the signaling server (provided by MA server)
   private iceServers: IceServerConfig[] = [];
 
@@ -324,17 +330,55 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   /**
-   * Handle a message from the http_proxy channel, which only ever carries proxy responses.
+   * Handle a message from the http_proxy channel, which carries each proxy response as a
+   * JSON header followed by its body as raw binary frames.
    */
-  private dispatchHttpProxyMessage(data: string): void {
-    try {
-      const parsed = JSON.parse(data);
-      if (parsed.type === "http-proxy-response") {
-        this.handleHttpProxyResponse(parsed);
-      }
-    } catch {
-      // not JSON; nothing on this channel to dispatch
+  private handleHttpProxyMessage(data: string | ArrayBuffer): void {
+    if (typeof data !== "string") {
+      const pending = this.pendingProxyBody;
+      if (!pending) return;
+      pending.parts.push(new Uint8Array(data));
+      pending.received += data.byteLength;
+      if (pending.received >= pending.size) this.completeHttpProxyBody();
+      return;
     }
+    let parsed;
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      return; // not JSON; nothing on this channel to dispatch
+    }
+    if (parsed.type !== "http-proxy-response") return;
+    this.pendingProxyBody = {
+      id: parsed.id,
+      status: parsed.status,
+      headers: parsed.headers,
+      size: parsed.size,
+      parts: [],
+      received: 0,
+    };
+    // an empty body is sent as a header on its own
+    if (parsed.size === 0) this.completeHttpProxyBody();
+  }
+
+  private completeHttpProxyBody(): void {
+    const pending = this.pendingProxyBody;
+    if (!pending) return;
+    this.pendingProxyBody = null;
+    const body = new Uint8Array(pending.received);
+    let offset = 0;
+    for (const part of pending.parts) {
+      body.set(part, offset);
+      offset += part.byteLength;
+    }
+    const callbacks = this.httpProxyCallbacks.get(pending.id);
+    if (!callbacks) return;
+    this.httpProxyCallbacks.delete(pending.id);
+    callbacks.resolve({
+      status: pending.status,
+      headers: pending.headers,
+      body: body.subarray(0, pending.size),
+    });
   }
 
   private maybeOpenHttpProxyChannel(schemaVersion: number): void {
@@ -357,13 +401,12 @@ export class WebRTCTransport extends BaseTransport {
         channel.close();
         return;
       }
-      const dispatch = (data: string) => this.dispatchHttpProxyMessage(data);
-      this.attachMessageHandler(channel, dispatch);
+      // body frames arrive as raw binary, which must not be surfaced as Blobs
+      channel.binaryType = "arraybuffer";
+      channel.onmessage = (event) => this.handleHttpProxyMessage(event.data);
       channel.onclose = () => {
-        // a response cut off mid-chunk can never be reassembled, so drop what it left
-        for (const [id, group] of this.chunkGroups) {
-          if (group.dispatch === dispatch) this.chunkGroups.delete(id);
-        }
+        // a body cut off mid-transfer can never be completed, so drop what it left
+        this.pendingProxyBody = null;
         if (this.httpProxyChannel === channel) {
           this.httpProxyChannel = null;
         }
@@ -393,7 +436,6 @@ export class WebRTCTransport extends BaseTransport {
         count: frame.count,
         parts: Array.from<string>({ length: frame.count }),
         received: 0,
-        dispatch,
       };
       this.chunkGroups.set(frame.id, pending);
     }
@@ -405,7 +447,7 @@ export class WebRTCTransport extends BaseTransport {
 
     this.chunkGroups.delete(frame.id);
     const bytes = this.base64PartsToBytes(pending.parts);
-    pending.dispatch(new TextDecoder().decode(bytes));
+    dispatch(new TextDecoder().decode(bytes));
   }
 
   private base64PartsToBytes(parts: string[]): Uint8Array {
@@ -759,6 +801,7 @@ export class WebRTCTransport extends BaseTransport {
     }
     this.httpProxyCallbacks.clear();
     this.chunkGroups.clear();
+    this.pendingProxyBody = null;
   }
 
   /**
