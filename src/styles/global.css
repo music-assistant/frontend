@@ -167,8 +167,9 @@ html {
    - gives the rule above no chain to cut, and embedded it reaches the host
    instead, whose pull-to-refresh reloads us. Refusing the pan stops it. The
    value resets at every scroll container, which is what leaves the lists
-   scrolling and why the panels have to repeat it: Vuetify makes the fullscreen
-   player's card a scroll container, so the root's value never reaches inside. */
+   scrolling and why the panels have to repeat it: Vuetify makes both the
+   fullscreen player's card and the `.v-overlay__content` wrapper above it
+   scroll containers, so the root's value never reaches inside. */
 :root[data-embedded-layout],
 :root[data-embedded-layout] [data-player-panel] {
   touch-action: pinch-zoom;
