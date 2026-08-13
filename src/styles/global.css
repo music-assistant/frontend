@@ -163,16 +163,14 @@ html {
   background-color: rgb(var(--v-theme-background));
 }
 
-/* The above only reaches a drag that starts on something scrollable. One that
-   starts where nothing scrolls - a panel header, the fullscreen player - has no
-   scroll to chain from, and embedded it reaches the host instead: out of the
-   Home Assistant ingress iframe and into its app, which takes it for a
-   pull-to-refresh and reloads. Refusing the pan stops that gesture ever
-   starting. Scrollers inside still pan, since touch-action is intersected only
-   up to the scroll container that would move; none is the fallback for engines
-   that do not know pinch-zoom, which trades zoom away to keep the refusal. */
-:root[data-embedded-layout] {
-  touch-action: none;
+/* A drag starting where nothing scrolls - a panel header, the fullscreen player
+   - gives the rule above no chain to cut, and embedded it reaches the host
+   instead, whose pull-to-refresh reloads us. Refusing the pan stops it. The
+   value resets at every scroll container, which is what leaves the lists
+   scrolling and why the panels have to repeat it: Vuetify makes the fullscreen
+   player's card a scroll container, so the root's value never reaches inside. */
+:root[data-embedded-layout],
+:root[data-embedded-layout] [data-player-panel] {
   touch-action: pinch-zoom;
 }
 
