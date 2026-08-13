@@ -102,9 +102,15 @@
           v-if="mode === 'type'"
           type="submit"
           form="play-announcement-form"
-          :disabled="sending || !message.trim()"
+          :disabled="sending || sent || !message.trim()"
         >
-          {{ $t("play_announcement_send") }}
+          <LoaderCircle v-if="sending" class="size-4 animate-spin" />
+          <Check v-else-if="sent" class="size-4" />
+          {{
+            sending
+              ? $t("play_announcement_playing")
+              : $t("play_announcement_send")
+          }}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -112,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { Mic } from "@lucide/vue";
+import { Check, LoaderCircle, Mic } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
@@ -151,6 +157,10 @@ const message = ref("");
 // so the toggle always shows what will actually be played
 const preAnnounce = ref(true);
 const sending = ref(false);
+// how long the button stays on its confirmed state before the dialog closes
+const SENT_LINGER_MS = 1200;
+const sent = ref(false);
+let closeTimer: number | null = null;
 const mode = ref<AnnouncementMode>("type");
 
 const playerName = computed(() => api.players[playerId.value]?.name ?? "");
@@ -187,8 +197,10 @@ const speakStatus = computed(() => {
 
 watch(showDialog, (open) => {
   store.dialogActive = open;
+  if (open) return;
   // closing mid-clip ends it and hands the microphone back
-  if (!open) cancelLive();
+  clearCloseTimer();
+  cancelLive();
 });
 
 // a connection change can withdraw the microphone while the dialog is open, which
@@ -205,6 +217,8 @@ onMounted(() => {
     message.value = "";
     preAnnounce.value = true;
     mode.value = "type";
+    clearCloseTimer();
+    sent.value = false;
     dialogKey.value++;
     showDialog.value = true;
     void seedPreAnnounce(evt.playerId);
@@ -213,8 +227,15 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   eventbus.off("playAnnouncementDialog");
+  clearCloseTimer();
   cancelLive();
 });
+
+function clearCloseTimer(): void {
+  if (closeTimer === null) return;
+  clearTimeout(closeTimer);
+  closeTimer = null;
+}
 
 function onSpeakPointerDown(event: PointerEvent): void {
   // a right or middle click must not open the microphone
@@ -266,11 +287,15 @@ async function submit(): Promise<void> {
 
   sending.value = true;
   try {
+    // the command only returns once the announcement has finished playing, so the
+    // button carries the progress instead of the dialog closing on a silent wait
     await api.playerCommandPlayAnnouncement(playerId.value, text, {
       preAnnounce: preAnnounce.value,
     });
-    toast.success($t("play_announcement_sent", [playerName.value]));
-    showDialog.value = false;
+    sent.value = true;
+    closeTimer = window.setTimeout(() => {
+      showDialog.value = false;
+    }, SENT_LINGER_MS);
   } catch {
     // a failed command already surfaces the server's message globally; keep
     // the dialog open so the typed message isn't lost

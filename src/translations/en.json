@@ -2227,6 +2227,7 @@
     "play_announcement_message": "Message",
     "play_announcement_message_placeholder": "Dinner is ready!",
     "play_announcement_pre_announce": "Play a chime first",
+    "play_announcement_playing": "Playing...",
     "play_announcement_send": "Announce",
     "play_announcement_sent": "Announcement sent to {0}",
     "play_announcement_mode_type": "Type a message",

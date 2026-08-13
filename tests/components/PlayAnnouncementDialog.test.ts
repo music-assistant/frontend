@@ -179,10 +179,12 @@ describe("PlayAnnouncementDialog", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     restoreMicrophoneGlobals();
   });
 
   it("speaks the trimmed message with the chime enabled by default", async () => {
+    vi.useFakeTimers();
     apiMock.playerCommandPlayAnnouncement.mockResolvedValue(undefined);
     const wrapper = mountDialog();
 
@@ -198,7 +200,13 @@ describe("PlayAnnouncementDialog", () => {
       "Dinner is ready",
       { preAnnounce: true },
     );
-    expect(toastSuccess).toHaveBeenCalledWith("play_announcement_sent");
+    // the command only returns once the announcement finished playing, so success
+    // is confirmed on the button rather than by a toast long after the fact
+    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(storeMock.dialogActive).toBe(true);
+
+    vi.advanceTimersByTime(2000);
+    await flushPromises();
     expect(storeMock.dialogActive).toBe(false);
   });
 
