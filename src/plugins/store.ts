@@ -19,7 +19,7 @@ import { parseBool } from "@/helpers/parse";
 import api from "./api";
 import { resolvePlayerQueue } from "./api/helpers";
 
-import { getBreakpointValue } from "./breakpoint";
+import { getBreakpointValue, isPhoneSizedScreen } from "./breakpoint";
 
 interface Store {
   activePlayerId?: string;
@@ -93,15 +93,10 @@ export const store: Store = reactive({
   playMenuShown: false,
   deviceType: DEVICE_TYPE,
   mobileLayout: computed(() => {
-    const isMobileDevice = getBreakpointValue({ breakpoint: "tablet" });
-    const isNarrowScreen = getBreakpointValue({
-      breakpoint: "bp5",
-      condition: "lt",
-      offset: -31, // bp5 (800px) - 31 ≈ 769px
-    });
+    const isTablet = getBreakpointValue({ breakpoint: "tablet" });
 
     return (
-      isMobileDevice || isNarrowScreen || parseBool(store.forceMobileLayout)
+      isPhoneSizedScreen() || isTablet || parseBool(store.forceMobileLayout)
     );
   }),
   currentUser: undefined,

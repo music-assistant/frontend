@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { cn } from "@/lib/utils";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import {
-  defaultDocument,
-  useEventListener,
-  useMediaQuery,
-  useVModel,
-} from "@vueuse/core";
+import { defaultDocument, useEventListener, useVModel } from "@vueuse/core";
 import { TooltipProvider } from "reka-ui";
 import type { HTMLAttributes, Ref } from "vue";
 import { computed, ref } from "vue";
@@ -38,9 +34,11 @@ const emits = defineEmits<{
   "update:open": [open: boolean];
 }>();
 
-const isMobileScreen = useMediaQuery("(max-width: 768px)");
+// a phone on its side has the width for a sidebar and none of the height, so
+// the screen has to be phone-sized in neither direction for one to stay open.
+// A tablet keeps its sidebar, which is why this is not store.mobileLayout
 const isMobile = computed(
-  () => isMobileScreen.value || !!store.forceMobileLayout,
+  () => isPhoneSizedScreen() || !!store.forceMobileLayout,
 );
 const openMobile = ref(false);
 

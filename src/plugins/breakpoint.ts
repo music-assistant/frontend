@@ -35,11 +35,36 @@ const breakpoints: { [key in Breakpoints]: number } = {
   bp12: 415,
 };
 
-const state = reactive({ width: window.innerWidth });
+const state = reactive({
+  width: window.innerWidth,
+  height: window.innerHeight,
+});
 
 window.addEventListener("resize", () => {
   state.width = window.innerWidth;
+  state.height = window.innerHeight;
 });
+
+/** Width up to which the screen is laid out for a phone. */
+const PHONE_LAYOUT_WIDTH = 769;
+
+/**
+ * Height below which there is no room to lay out for a desktop whatever the
+ * width. A phone on its side is what this catches: wide enough to pass for a
+ * desktop, nowhere near tall enough to be one.
+ */
+const PHONE_LAYOUT_HEIGHT = 500;
+
+/**
+ * Whether the screen is phone-sized, by its own account or by either dimension.
+ *
+ * Reactive: reading this inside a computed re-runs it as the screen resizes or
+ * turns.
+ */
+export const isPhoneSizedScreen = () =>
+  IS_PHONE_UA ||
+  state.width < PHONE_LAYOUT_WIDTH ||
+  state.height < PHONE_LAYOUT_HEIGHT;
 
 type Condition = "lt" | "gt";
 type Key =

@@ -15,31 +15,54 @@ const NO_FLAGS: UserAgentFlags = {
   IS_TABLET_UA: false,
 };
 
+// tall enough that the height never decides anything on its own
+const DESKTOP_HEIGHT = 900;
+
 /**
- * Load a fresh breakpoint plugin for the given viewport width and user agent flags.
+ * Load a fresh breakpoint plugin for the given viewport and user agent flags.
  */
-async function loadBreakpoint(
+async function loadModule(
   width: number,
   flags: Partial<UserAgentFlags> = {},
+  height: number = DESKTOP_HEIGHT,
 ) {
   Object.defineProperty(window, "innerWidth", {
     value: width,
     writable: true,
     configurable: true,
   });
+  Object.defineProperty(window, "innerHeight", {
+    value: height,
+    writable: true,
+    configurable: true,
+  });
   vi.resetModules();
   vi.doMock("@/helpers/device", () => ({ ...NO_FLAGS, ...flags }));
-  return (await import("@/plugins/breakpoint")).getBreakpointValue;
+  return await import("@/plugins/breakpoint");
+}
+
+async function loadBreakpoint(
+  width: number,
+  flags: Partial<UserAgentFlags> = {},
+) {
+  return (await loadModule(width, flags)).getBreakpointValue;
 }
 
 const originalInnerWidth = Object.getOwnPropertyDescriptor(
   window,
   "innerWidth",
 );
+const originalInnerHeight = Object.getOwnPropertyDescriptor(
+  window,
+  "innerHeight",
+);
 
 afterEach(() => {
   if (originalInnerWidth) {
     Object.defineProperty(window, "innerWidth", originalInnerWidth);
+  }
+  if (originalInnerHeight) {
+    Object.defineProperty(window, "innerHeight", originalInnerHeight);
   }
   vi.doUnmock("@/helpers/device");
   vi.resetModules();
@@ -110,5 +133,51 @@ describe("getBreakpointValue", () => {
 
       expect(getBreakpointValue({ breakpoint: "tablet" })).toBe(true);
     });
+  });
+});
+
+describe("isPhoneSizedScreen", () => {
+  // the two dimensions carry values that are nowhere near each other, so a
+  // screen measured on the wrong one reads as the wrong answer
+  const DESKTOP = { width: 1280, height: 900 };
+  // a phone on its side: wide enough to pass for a desktop, far too short
+  const PHONE_LANDSCAPE = { width: 932, height: 430 };
+  const PHONE_PORTRAIT = { width: 430, height: 932 };
+
+  async function isPhoneSized(
+    { width, height }: { width: number; height: number },
+    flags: Partial<UserAgentFlags> = {},
+  ) {
+    return (await loadModule(width, flags, height)).isPhoneSizedScreen();
+  }
+
+  it("leaves a desktop alone", async () => {
+    expect(await isPhoneSized(DESKTOP)).toBe(false);
+  });
+
+  it("catches a narrow screen", async () => {
+    expect(await isPhoneSized(PHONE_PORTRAIT)).toBe(true);
+  });
+
+  // the case a width-only rule misses, and the reason the height is read at all
+  it("catches a screen too short to lay out for a desktop", async () => {
+    expect(await isPhoneSized(PHONE_LANDSCAPE)).toBe(true);
+  });
+
+  it("takes the device at its word whatever the screen measures", async () => {
+    expect(await isPhoneSized(DESKTOP, { IS_PHONE_UA: true })).toBe(true);
+  });
+
+  // a tablet has the room for a desktop layout, so it is decided elsewhere
+  it("leaves a tablet to be judged on its screen", async () => {
+    expect(await isPhoneSized(DESKTOP, { IS_TABLET_UA: true })).toBe(false);
+  });
+
+  it.each([
+    ["width", { width: 769, height: 900 }, { width: 768, height: 900 }],
+    ["height", { width: 1280, height: 500 }, { width: 1280, height: 499 }],
+  ])("takes the %s up to its limit but not past it", async (_, over, under) => {
+    expect(await isPhoneSized(over)).toBe(false);
+    expect(await isPhoneSized(under)).toBe(true);
   });
 });
