@@ -8,7 +8,7 @@ const PANEL = ":root[data-embedded-layout] [data-player-panel]";
 
 let styles: HTMLStyleElement;
 
-// an element as one of the panels renders it
+// a panel root, carrying the attribute all five of them mark themselves with
 function panel() {
   const el = document.createElement("div");
   el.setAttribute("data-player-panel", "");
@@ -47,14 +47,16 @@ describe("embedded touch-action", () => {
 
   it("keeps pinch-zoom, which is the whole reason it is not none", () => {
     // none would take zoom away with it, and manipulation still permits the pan
-    const declaring = [...(styles.sheet?.cssRules ?? [])]
-      .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
-      .filter((rule) => rule.style.getPropertyValue("touch-action") !== "");
+    // found by selector rather than by being the only one, so an unrelated
+    // touch-action landing in global.css later does not read as a failure
+    const rule = [...(styles.sheet?.cssRules ?? [])]
+      .filter((each): each is CSSStyleRule => each instanceof CSSStyleRule)
+      .filter((each) => each.style.getPropertyValue("touch-action") !== "")
+      .find((each) =>
+        each.selectorText.split(",").some((part) => part.trim() === ROOT),
+      );
 
-    expect(declaring).toHaveLength(1);
-    expect(declaring[0].style.getPropertyValue("touch-action")).toBe(
-      "pinch-zoom",
-    );
+    expect(rule?.style.getPropertyValue("touch-action")).toBe("pinch-zoom");
   });
 
   it("leaves a standalone session alone", () => {
