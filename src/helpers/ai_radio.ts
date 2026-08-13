@@ -591,8 +591,7 @@ export const getQueryValue = (value: unknown) => {
 
 /**
  * Appends " 2", " 3", ... until `name` doesn't collide with `existingNames`.
- * Comparison is case-insensitive: host ids are slugified from the name, so
- * names differing only in case would still collide once compiled.
+ * Matching ignores case: ids are slugified from the name, so case-only variants collide.
  */
 export const uniqueHostName = (
   name: string,

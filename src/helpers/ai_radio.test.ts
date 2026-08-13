@@ -58,8 +58,6 @@ describe("uniqueHostName", () => {
   });
 
   it("treats collisions case-insensitively, matching how host ids are slugified", () => {
-    // compileHost derives a host's id by slugifying (and lowercasing) its
-    // name, so "Morning Show" and "morning show" would collide anyway.
     expect(uniqueHostName("morning show", ["Morning Show"])).toBe(
       "morning show 2",
     );

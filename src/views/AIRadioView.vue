@@ -222,7 +222,6 @@ const customizeShowId = ref("");
 // null = closed; "" = creating a new host; otherwise the id being edited.
 const customizeHostId = ref<string | null>(null);
 const customizeHostOpen = computed(() => customizeHostId.value !== null);
-// Unsaved draft to seed the editor from when creating a host from a preset.
 const presetDraft = ref<HostDraft | null>(null);
 
 const isRefreshing = computed(
@@ -267,8 +266,7 @@ function openCustomizeHostFromPreset(preset: AIRadioHostPreset) {
     draft.name,
     hosts.value.map((host) => host.name),
   );
-  // compileHost namespaces segment ids with the new host id, so strip the
-  // preset's own prefix to keep them readable instead of doubling it up.
+  // compileHost namespaces ids with the new host id, so strip the preset's own prefix.
   const presetPrefix = `${preset.host.id}_`;
   for (const segment of draft.segments) {
     if (segment.id.startsWith(presetPrefix)) {
