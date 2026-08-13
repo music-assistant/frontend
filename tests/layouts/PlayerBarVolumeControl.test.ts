@@ -243,19 +243,36 @@ describe("PlayerBarVolumeControl", () => {
     expect(wrapper.get(".popover").attributes("data-open")).toBe("false");
   });
 
-  it("suppresses hover color after clicking the popover closed", async () => {
+  it("suppresses hover color after tapping the popover closed", async () => {
     const player = createPlayer();
     api.players = { [player.player_id]: player };
     const wrapper = mountControl(player);
     const trigger = wrapper.get("[data-player-volume-trigger]");
 
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
     await trigger.trigger("click");
     await trigger.trigger("click");
 
     expect(trigger.attributes("data-active")).toBe("false");
     expect(trigger.attributes("data-suppress-hover")).toBe("true");
 
-    await trigger.trigger("pointerenter");
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
+    expect(trigger.attributes("data-suppress-hover")).toBe("false");
+  });
+
+  // the mouse that clicked the popover shut is still on the button, and no
+  // second pointerenter is coming to say so
+  it("keeps the hover color when a mouse clicks the popover closed", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mountControl(player);
+    const trigger = wrapper.get("[data-player-volume-trigger]");
+
+    await trigger.trigger("pointerenter", { pointerType: "mouse" });
+    await trigger.trigger("click");
+    await trigger.trigger("click");
+
+    expect(trigger.attributes("data-active")).toBe("false");
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
   });
 
@@ -267,6 +284,7 @@ describe("PlayerBarVolumeControl", () => {
     const wrapper = mountControl(player);
     const trigger = wrapper.get("[data-player-volume-trigger]");
 
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
     await trigger.trigger("click");
     await wrapper.get(".player-volume-backdrop").trigger("click");
 

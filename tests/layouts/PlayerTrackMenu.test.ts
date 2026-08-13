@@ -99,6 +99,7 @@ describe("PlayerTrackMenu", () => {
 
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
 
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
     await wrapper.get("button.player-control-button").trigger("click");
     expect(wrapper.get(".dropdown").attributes("data-open")).toBe("true");
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
@@ -107,7 +108,21 @@ describe("PlayerTrackMenu", () => {
     expect(wrapper.get(".dropdown").attributes("data-open")).toBe("false");
     expect(trigger.attributes("data-suppress-hover")).toBe("true");
 
-    await trigger.trigger("pointerenter");
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
+    expect(trigger.attributes("data-suppress-hover")).toBe("false");
+  });
+
+  // the mouse that clicked the menu shut is still on the button, and no second
+  // pointerenter is coming to say so
+  it("keeps the hover color when a mouse clicks the menu closed", async () => {
+    const wrapper = mountMenu();
+    const trigger = wrapper.get("button.player-control-button");
+
+    await trigger.trigger("pointerenter", { pointerType: "mouse" });
+    await trigger.trigger("click");
+    await trigger.trigger("click");
+
+    expect(wrapper.get(".dropdown").attributes("data-open")).toBe("false");
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
   });
 
@@ -117,6 +132,7 @@ describe("PlayerTrackMenu", () => {
     const wrapper = mountMenu();
     const trigger = wrapper.get("button.player-control-button");
 
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
     await trigger.trigger("click");
     await wrapper.get(".dropdown-dismiss").trigger("click");
 
@@ -145,6 +161,7 @@ describe("PlayerTrackMenu", () => {
 
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
 
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
     await trigger.trigger("click", { button: 0, ctrlKey: false });
     await flushPromises();
     await trigger.trigger("click", { button: 0, ctrlKey: false });

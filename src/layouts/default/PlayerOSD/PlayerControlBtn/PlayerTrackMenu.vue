@@ -16,7 +16,7 @@
         :data-suppress-hover="suppressHover"
         :title="$t('more_options')"
         :aria-label="$t('tooltip.more_options')"
-        @pointerenter="releaseHover"
+        @pointerenter="onPointerEnter"
       >
         <template v-if="compact">
           <EllipsisVertical :stroke-width="1.5" class="size-6" />
@@ -171,7 +171,7 @@ withDefaults(
 );
 
 const menuOpen = ref(false);
-const { suppressHover, releaseHover } = usePopoutTriggerHover(
+const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
   () => menuOpen.value,
 );
 const playbackSpeedDialogOpen = ref(false);
