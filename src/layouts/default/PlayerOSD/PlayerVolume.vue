@@ -200,7 +200,7 @@ export interface Props {
   enablePopout?: boolean;
   /** Ask the parent to expand inline group controls when the slider is tapped */
   requestExpandOnGroupTap?: boolean;
-  /** Fatten the rail and swap the mute and level slots for step buttons while in use */
+  /** Fatten the rail and swap the mute and level slots for step buttons while a finger is on it */
   expandOnTouch?: boolean;
   width?: string;
   step?: number;
@@ -578,6 +578,8 @@ const showStepButtons = computed(
   () => props.expandOnTouch && !isSliderDisabled.value && isExpanded.value,
 );
 
+// Only the touch handlers reach this: a pointer hits the resting rail
+// accurately enough, so growing it under a mouse would be noise
 const expandControls = () => {
   if (!props.expandOnTouch || isSliderDisabled.value) return;
   // placed before the readout renders, so it never shows up at the last
@@ -824,7 +826,6 @@ const onPointerDown = (event: PointerEvent) => {
     return;
   }
   if (!handlesGroupTap.value || !targetsSlider) {
-    if (targetsSlider) expandControls();
     return;
   }
   pointerStartX = event.clientX;
@@ -836,7 +837,6 @@ const onPointerMove = (event: PointerEvent) => {
   if (pointerStartX === null) return;
   if (Math.abs(event.clientX - pointerStartX) > POINTER_DRAG_THRESHOLD) {
     pointerMoved = true;
-    expandControls();
   }
 };
 

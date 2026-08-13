@@ -822,6 +822,25 @@ describe("PlayerVolume touch expansion", () => {
     );
   });
 
+  it("leaves the slider at its resting size for a mouse", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    const container = wrapper.find(".player-volume-container");
+    const slider = wrapper.find('[data-slot="slider"]');
+
+    // a pointer hits the resting rail accurately enough, so neither a click nor
+    // a drag with one has any reason to grow it
+    await slider.trigger("pointerdown", { clientX: 50, pointerType: "mouse" });
+    expect(container.classes()).not.toContain("expanded");
+
+    await slider.trigger("pointermove", { clientX: 90, pointerType: "mouse" });
+    await slider.trigger("pointerup", { clientX: 90, pointerType: "mouse" });
+
+    expect(container.classes()).not.toContain("expanded");
+    expect(document.querySelector(".volume-bubble")).toBeNull();
+  });
+
   it("leaves a group slider alone until the touch becomes a drag", async () => {
     wrapper = mountExpandableGroup();
     const container = wrapper.find(".player-volume-container");
