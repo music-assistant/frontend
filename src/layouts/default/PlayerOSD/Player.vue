@@ -62,9 +62,10 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- player extended control buttons. A narrower bar has no room for
-               the sleep timer beside the four actions, so the countdown is
-               left to the player menu and the full screen player there. -->
+          <!-- player extended control buttons. Below 1100px the bar drops to
+               its compact widths and the sleep timer goes with them, leaving
+               the countdown to the full screen player and the player card's
+               menu; it has no room of its own on the narrowest bars. -->
           <PlayerExtendedControls
             :favorite="{
               isVisible: false,
@@ -449,8 +450,10 @@ watch(
 /* the sleep timer joins the actions as a fifth control, which the widths above
    do not budget for: they need a bar of about 1221px before the five of them
    fit, and until then the timer reaches over the timeline. So while one runs
-   the actions keep the sizes they take below 1100px, up to the width where the
-   row starts spacing them out and has room to spare anyway. */
+   the actions take the widths they use below 1100px, which fit from 1034px up.
+   The full widths take over again at 1250px, where they clear the timeline by
+   about 9px - the tightest the row gets, so a sixth control or a wider button
+   would have to raise this bound with it. */
 @media screen and (min-width: 1100px) and (max-width: 1249px) {
   .mediacontrols :deep(.player-bar-action-row:has(.player-bar-sleep-timer)) {
     .player-bar-menu-button {
@@ -461,8 +464,8 @@ watch(
       width: 56px !important;
     }
 
-    /* these two grow with their label from 1100px, so the floor that lets them
-       has to go as well for the width to take effect */
+    /* the floor these two carry above 1100px would outrank the width, so it
+       has to be reset for the width to take effect */
     .player-bar-group-button {
       width: 60px !important;
       min-width: 0 !important;

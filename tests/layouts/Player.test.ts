@@ -75,18 +75,18 @@ function mountPlayer(useFloatingPlayer: boolean) {
   return wrapper;
 }
 
-describe("Player floating mobile bar", () => {
-  afterEach(() => {
-    wrapper?.unmount();
-    wrapper = undefined;
-    mockStore.activePlayer = undefined;
-    mockStore.activePlayerId = undefined;
-    if (originalInnerWidth) {
-      Object.defineProperty(window, "innerWidth", originalInnerWidth);
-    }
-    window.dispatchEvent(new Event("resize"));
-  });
+afterEach(() => {
+  wrapper?.unmount();
+  wrapper = undefined;
+  mockStore.activePlayer = undefined;
+  mockStore.activePlayerId = undefined;
+  if (originalInnerWidth) {
+    Object.defineProperty(window, "innerWidth", originalInnerWidth);
+  }
+  window.dispatchEvent(new Event("resize"));
+});
 
+describe("Player floating mobile bar", () => {
   it("carries the grouping control, the volume slider and its sheet", () => {
     mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
     const player = mountPlayer(true);
@@ -124,6 +124,29 @@ describe("Player floating mobile bar", () => {
     expect(player.findComponent(PlayerVolume).exists()).toBe(true);
   });
 
+  it("closes an open volume sheet when the active player changes", async () => {
+    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
+    mockStore.activePlayerId = "p1";
+    const player = mountPlayer(true);
+
+    await player.findComponent(PlayerVolume).vm.$emit("toggle-group-expansion");
+    await nextTick();
+    expect(player.findComponent(PlayerBarMobileVolumeSheet).props("open")).toBe(
+      true,
+    );
+
+    // the sheet controls the volume of the player it was opened for, so it
+    // must not stay open over a player switch
+    mockStore.activePlayer = { player_id: "p2" } as PlayerModel;
+    mockStore.activePlayerId = "p2";
+    await nextTick();
+    expect(player.findComponent(PlayerBarMobileVolumeSheet).props("open")).toBe(
+      false,
+    );
+  });
+});
+
+describe("Player desktop bar", () => {
   it("leaves the desktop player outside the floating container", () => {
     const player = mountPlayer(false);
 
@@ -144,26 +167,5 @@ describe("Player floating mobile bar", () => {
     expect(
       player.findComponent(PlayerExtendedControls).props("sleepTimer"),
     ).toEqual({ isVisible: visible });
-  });
-
-  it("closes an open volume sheet when the active player changes", async () => {
-    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
-    mockStore.activePlayerId = "p1";
-    const player = mountPlayer(true);
-
-    await player.findComponent(PlayerVolume).vm.$emit("toggle-group-expansion");
-    await nextTick();
-    expect(player.findComponent(PlayerBarMobileVolumeSheet).props("open")).toBe(
-      true,
-    );
-
-    // the sheet controls the volume of the player it was opened for, so it
-    // must not stay open over a player switch
-    mockStore.activePlayer = { player_id: "p2" } as PlayerModel;
-    mockStore.activePlayerId = "p2";
-    await nextTick();
-    expect(player.findComponent(PlayerBarMobileVolumeSheet).props("open")).toBe(
-      false,
-    );
   });
 });
