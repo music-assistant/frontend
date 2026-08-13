@@ -3,6 +3,7 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { genre } from "../fixtures/genre";
 
 // Tracks live subscriptions the way the api does, so one that outlives the
 // listing stays listed here.
@@ -184,6 +185,36 @@ describe("ItemsListing startup cleanup", () => {
 
     expect(clearSelectionHandlers()).toBe(0);
     expect(events.listeners).toHaveLength(0);
+  });
+
+  it("stops paging through the genres when the listing is closed mid-load", async () => {
+    // a full page is what makes the loop ask for another one; taking the size
+    // from the request keeps that true whatever page size the listing asks for
+    let requestedPageSize = 0;
+    let resolveFirstPage: () => void = () => {};
+    mockGetLibraryGenres.mockImplementationOnce(({ limit } = {}) => {
+      requestedPageSize = limit ?? 0;
+      return new Promise((resolve) => {
+        resolveFirstPage = () =>
+          resolve(
+            Array.from({ length: requestedPageSize }, (_, index) =>
+              genre({ item_id: String(index), name: `Genre ${index}` }),
+            ),
+          );
+      });
+    });
+
+    const listing = mountListingRaw();
+    expect(mockGetLibraryGenres).toHaveBeenCalledTimes(1);
+    // a page the listing never asked to fill would end the paging on its own,
+    // leaving the assertion below true no matter what
+    expect(requestedPageSize).toBeGreaterThan(0);
+
+    listing.unmount();
+    resolveFirstPage();
+    await flushPromises();
+
+    expect(mockGetLibraryGenres).toHaveBeenCalledTimes(1);
   });
 
   it("leaves a second listing on the page still clearing its own selection", async () => {

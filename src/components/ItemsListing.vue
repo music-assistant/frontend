@@ -1811,6 +1811,9 @@ const loadGenreOptions = async () => {
     const mediaType = itemtypeToMediaType[props.itemtype];
 
     do {
+      // the paging can outlast the listing, so stop fetching once it is gone
+      if (unmounted) return;
+
       page = await api.getLibraryGenres({
         limit: pageSize,
         offset,
@@ -1840,8 +1843,8 @@ const clearSelection = () => {
   showCheckboxes.value = false;
 };
 
-// Set by the unmount hook, so the startup below can tell that the listing it is
-// setting things up for is already gone.
+// Set by the unmount hook, so the async startup can tell that the listing it is
+// working for is already gone.
 let unmounted = false;
 
 onBeforeUnmount(() => {
