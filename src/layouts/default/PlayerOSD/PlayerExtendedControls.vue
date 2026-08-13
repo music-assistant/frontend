@@ -1,7 +1,5 @@
 <template>
   <div class="player-bar-action-row flex min-w-0 items-center">
-    <SleepTimerBtn v-if="sleepTimer?.isVisible" />
-
     <PlayerBarVolumeControl
       v-if="volume?.isVisible && store.activePlayer"
       :player="store.activePlayer"
@@ -16,7 +14,6 @@ import { store } from "@/plugins/store";
 import PlayerBarGroupControl from "./PlayerBarGroupControl.vue";
 import PlayerBarPlayerButton from "./PlayerBarPlayerButton.vue";
 import PlayerBarVolumeControl from "./PlayerBarVolumeControl.vue";
-import SleepTimerBtn from "./PlayerControlBtn/SleepTimerBtn.vue";
 
 export interface Props {
   player?: {
@@ -25,14 +22,10 @@ export interface Props {
   volume?: {
     isVisible?: boolean;
   };
-  sleepTimer?: {
-    isVisible?: boolean;
-  };
 }
 
 withDefaults(defineProps<Props>(), {
   player: () => ({ isVisible: true }),
   volume: () => ({ isVisible: true }),
-  sleepTimer: () => ({ isVisible: true }),
 });
 </script>

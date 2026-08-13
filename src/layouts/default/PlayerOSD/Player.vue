@@ -19,29 +19,38 @@
       </div>
       <div class="mediacontrols-bottom-center">
         <div class="player-center-controls">
-          <div class="player-center-side-action">
-            <FavoriteMenuBtn class="player-control-button" />
+          <div class="player-center-transport">
+            <div class="player-center-side-action">
+              <FavoriteMenuBtn class="player-control-button" />
+            </div>
+
+            <PlayerControls
+              :style="playIconStyle"
+              :visible-components="{
+                repeat: { isVisible: getBreakpointValue('bp3') },
+                shuffle: { isVisible: getBreakpointValue('bp3') },
+                play: {
+                  isVisible: true,
+                  icon: {
+                    staticWidth: '48px',
+                    staticHeight: '48px',
+                  },
+                },
+                previous: { isVisible: getBreakpointValue('bp3') },
+                next: { isVisible: getBreakpointValue('bp3') },
+              }"
+            />
+
+            <div class="player-center-side-action">
+              <QueueBtn :size="22" class="player-control-button" />
+            </div>
           </div>
 
-          <PlayerControls
-            :style="playIconStyle"
-            :visible-components="{
-              repeat: { isVisible: getBreakpointValue('bp3') },
-              shuffle: { isVisible: getBreakpointValue('bp3') },
-              play: {
-                isVisible: true,
-                icon: {
-                  staticWidth: '48px',
-                  staticHeight: '48px',
-                },
-              },
-              previous: { isVisible: getBreakpointValue('bp3') },
-              next: { isVisible: getBreakpointValue('bp3') },
-            }"
-          />
-
-          <div class="player-center-side-action">
-            <QueueBtn :size="22" class="player-control-button" />
+          <!-- each of these shows only while it has something to say, so most
+               of the time this is empty and the row is the transport alone -->
+          <div v-if="showCenterExtras" class="player-center-extras">
+            <PlaybackSpeedBtn v-if="showPlaybackSpeed" />
+            <SleepTimerBtn />
           </div>
         </div>
         <!-- progress bar -->
@@ -49,19 +58,13 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- player extended control buttons. Below 1100px the bar drops to
-               its compact widths and the sleep timer goes with them, leaving
-               the countdown to the full screen player and the player card's
-               menu; it has no room of its own on the narrowest bars. -->
+          <!-- player extended control buttons -->
           <PlayerExtendedControls
             :player="{
               isVisible: true,
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
-            }"
-            :sleep-timer="{
-              isVisible: getBreakpointValue('bp7'),
             }"
           />
         </div>
@@ -136,7 +139,9 @@ import { computed, ref, watch } from "vue";
 import PlayerBarGroupControl from "./PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
 import FavoriteMenuBtn from "./PlayerControlBtn/FavoriteMenuBtn.vue";
+import PlaybackSpeedBtn from "./PlayerControlBtn/PlaybackSpeedBtn.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import SleepTimerBtn from "./PlayerControlBtn/SleepTimerBtn.vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
@@ -148,6 +153,13 @@ interface Props {
 }
 const props = defineProps<Props>();
 const showMobileVolumeControls = ref(false);
+
+// The controls beside the queue button reach into the room the actions to their
+// right leave free, so each waits for the width it fits in. Measured, that room
+// clears the 85px countdown on its own from 1100px, and the two of them together
+// only from 1160px - so the speed control waits for the next breakpoint up.
+const showCenterExtras = computed(() => getBreakpointValue("bp7"));
+const showPlaybackSpeed = computed(() => getBreakpointValue("bp8"));
 
 /** Opens the fullscreen player, or the player picker when there is nothing to show. */
 function openActivePlayer() {
@@ -321,10 +333,36 @@ watch(
   }
 }
 
+/* the transport takes the middle track and the extras the one after it. Neither
+   outer track asks for room of its own, so they stay equal and the play button
+   holds the centre of the bar whatever the extras beside it are showing; the
+   extras reach past the column into the room the actions leave to their left
+   instead. The middle track's own floor is waived so the transport still
+   shrinks to fit a narrow bar, which is all it did before it had a track. */
 .player-center-controls {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, auto) minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
+}
+
+.player-center-transport {
+  display: flex;
+  grid-column: 2;
+  align-items: center;
+}
+
+/* the actions to the right claim their whole column even though they draw only
+   at the far end of it, so the extras have to be lifted over that to stay
+   clickable where they reach into the room it leaves free */
+.player-center-extras {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  grid-column: 3;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  margin-inline-start: 8px;
 }
 
 .player-center-side-action {
@@ -373,14 +411,13 @@ watch(
    the player name is the first to run out. Growing only starts where the label
    needs it, so a short name leaves no hole beside the button next to it. */
 @media screen and (min-width: 1100px) {
-  /* the room is only borrowed: these let the row hand it straight back when
-     another control joins it, such as the sleep timer, and send whatever still
-     does not fit towards the middle of the bar rather than off its end.
+  /* the room is only borrowed: these let the row hand it straight back should
+     another control ever join it, and send whatever still does not fit towards
+     the middle of the bar rather than off its end.
 
      The budget, measured: the column offers 0.3 * (vw - 30) + 8 px, and the
-     three buttons rest at 64 + 72 + 96 = 232. A running sleep timer adds a
-     countdown of 82px, or 101px once it reads hh:mm:ss past the hour, which is
-     the only case that does not fit at 1100 - it needs about 1114. */
+     three buttons rest at 64 + 72 + 96 = 232, so from 1100px up the row has
+     room to spare at every width. */
   .mediacontrols-bottom-right > div {
     min-width: 0;
   }
