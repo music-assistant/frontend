@@ -232,7 +232,9 @@ describe("PlayerFullscreen lyrics clock", () => {
 });
 
 describe("PlayerFullscreen player select button", () => {
-  async function mountFullscreenDialog(): Promise<VueWrapper> {
+  async function mountFullscreenDialog(
+    extraStubs: Record<string, unknown> = {},
+  ): Promise<VueWrapper> {
     const { store } = await import("@/plugins/store");
     (store as unknown as TestStore).showFullscreenPlayer = true;
 
@@ -244,6 +246,7 @@ describe("PlayerFullscreen player select button", () => {
         stubs: {
           "v-dialog": { template: "<div><slot /></div>" },
           "v-card": { template: "<div><slot /></div>" },
+          ...extraStubs,
         },
       },
     });
@@ -294,5 +297,23 @@ describe("PlayerFullscreen player select button", () => {
         .get("#fullscreen-player-select-button")
         .attributes("aria-label"),
     ).toBe("tooltip.select_player: Kitchen");
+  });
+
+  // Rendered through the real Button so the variant classes actually go through
+  // class-variance-authority and tailwind-merge; a stub would only echo back the
+  // class prop and never show which of the two hover colours survives.
+  it("keeps the label colour on hover", async () => {
+    const fullscreen = await mountFullscreenDialog({ Button: false });
+    const classes = fullscreen
+      .get("#fullscreen-player-select-button")
+      .classes();
+
+    // the bare border width comes from the outline variant alone, so it pins
+    // both halves of the merge this test reads: cva ran, and it contributed
+    expect(classes).toContain("border");
+    expect(classes).toContain("hover:text-[var(--text-color)]");
+    // the outline variant also offers this one, and it resolves to the theme
+    // foreground rather than the white forced over a dominant visualizer
+    expect(classes).not.toContain("hover:text-accent-foreground");
   });
 });
