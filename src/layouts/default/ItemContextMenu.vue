@@ -247,6 +247,7 @@ import {
   radioSupported,
 } from "@/helpers/radio";
 import { runWithConcurrency } from "@/helpers/concurrency";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import {
   isItemInLibrary,
   itemIsAvailable,
@@ -676,7 +677,8 @@ export const getContextMenuItems = async function (
               if ("provider_mappings" in item)
                 item.provider_mappings.forEach((pm) => (pm.in_library = false));
             }
-            if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
+            if (resolvedItem.item_id == parentItem?.item_id)
+              backFromMediaDetails(router);
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },

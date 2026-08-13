@@ -1,4 +1,4 @@
-import { backFromMediaDetails, canGoBack } from "@/helpers/navigation";
+import { backFromMediaDetails, canGoBack, goBack } from "@/helpers/navigation";
 import type { Router } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
 
@@ -22,6 +22,29 @@ describe("canGoBack", () => {
 
   it("is false on a view opened directly", () => {
     expect(canGoBack(fakeRouter("album").router)).toBe(false);
+  });
+});
+
+describe("goBack", () => {
+  it("returns to the previous view when there is one", () => {
+    const { router, back, push } = fakeRouter(
+      "editplayer",
+      "/settings/players",
+    );
+
+    goBack(router, { name: "playersettings" });
+
+    expect(back).toHaveBeenCalledOnce();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("takes the fallback on a view opened directly", () => {
+    const { router, back, push } = fakeRouter("editplayer");
+
+    goBack(router, { name: "playersettings" });
+
+    expect(push).toHaveBeenCalledWith({ name: "playersettings" });
+    expect(back).not.toHaveBeenCalled();
   });
 });
 

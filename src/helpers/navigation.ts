@@ -1,4 +1,4 @@
-import type { Router } from "vue-router";
+import type { RouteLocationRaw, Router } from "vue-router";
 
 /**
  * Whether there is an earlier in-app view to return to.
@@ -12,16 +12,24 @@ export function canGoBack(router: Router): boolean {
 }
 
 /**
- * Leaves a media details view, back to where the user came from or, when the
- * details view was opened directly, up to the library listing it belongs to.
+ * Returns to the previous view, or goes to `fallback` when the current view
+ * was opened directly and a plain back would strand the user where they are.
  */
-export function backFromMediaDetails(router: Router): void {
+export function goBack(router: Router, fallback: RouteLocationRaw): void {
   if (canGoBack(router)) {
     router.back();
     return;
   }
+  router.push(fallback);
+}
+
+/**
+ * Leaves a media details view, back to where the user came from or, when the
+ * details view was opened directly, up to the library listing it belongs to.
+ */
+export function backFromMediaDetails(router: Router): void {
   const routeName = router.currentRoute.value.name?.toString() ?? "";
-  router.push({ name: LISTING_ROUTES[routeName] ?? "discover" });
+  goBack(router, { name: LISTING_ROUTES[routeName] ?? "discover" });
 }
 
 // Details route name -> the library listing it sits under. Collections are
