@@ -11,6 +11,7 @@
             'content-section',
             { 'content-section--mobile': store.mobileLayout },
             { 'content-section--frameless': store.frameless },
+            { 'party-view-active': route.meta.partyView === true },
           ]"
         >
           <router-view v-slot="{ Component }">
@@ -58,6 +59,7 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import AudioOverlayDialog from "./AudioOverlayDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
@@ -66,6 +68,8 @@ import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
 import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
 import PlayerSelect from "./PlayerSelect.vue";
+
+const route = useRoute();
 
 const showEditItemDialog = ref(false);
 const editItem = ref<Radio | Track | Playlist | undefined>(undefined);
