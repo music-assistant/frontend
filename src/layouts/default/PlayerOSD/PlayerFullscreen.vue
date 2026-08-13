@@ -452,11 +452,15 @@
             padding-top: 4px;
           "
         >
+          <!-- Without a competing hover:text- here, the outline variant's own
+               hover:text-accent-foreground survives the class merge and recolours
+               the label against the artwork, so the hover colour is pinned to
+               the --text-color the rest of the panel follows. -->
           <Button
             id="fullscreen-player-select-button"
             variant="outline"
             size="xs"
-            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
+            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 hover:text-[var(--text-color)] dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
             :aria-label="playerSelectLabel"
             :aria-expanded="store.showPlayersMenu"
             aria-haspopup="dialog"
