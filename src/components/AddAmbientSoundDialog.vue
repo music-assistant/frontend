@@ -65,26 +65,6 @@
               </Field>
             </template>
           </form.Field>
-
-          <form.Field name="image">
-            <template #default="{ field }">
-              <Field>
-                <FieldLabel :for="field.name">{{ $t("image_url") }}</FieldLabel>
-                <Input
-                  :id="field.name"
-                  :name="field.name"
-                  :model-value="field.state.value"
-                  :disabled="loading"
-                  @blur="field.handleBlur"
-                  @input="
-                    (e: Event) => {
-                      field.handleChange((e.target as HTMLInputElement).value);
-                    }
-                  "
-                />
-              </Field>
-            </template>
-          </form.Field>
         </FieldGroup>
       </form>
       <DialogFooter>
@@ -137,13 +117,14 @@ const { t } = useI18n();
 
 const loading = ref<boolean>(false);
 
-const schema = manualLinkSchema(t);
+// same url/name validation as the builtin add-url dialog, just without the
+// image field: custom ambient sound artwork is never shown anywhere
+const schema = manualLinkSchema(t).omit({ image: true });
 
 const form = useForm({
   defaultValues: {
     url: "",
     name: "",
-    image: "",
   },
   validators: {
     onChange: schema,
@@ -166,19 +147,15 @@ watch(
   (active) => {
     if (active != null) store.dialogActive = active;
     if (active === false) {
-      form.reset({ url: "", name: "", image: "" });
+      form.reset({ url: "", name: "" });
     }
   },
 );
 
-const save = async function (value: {
-  url: string;
-  name: string;
-  image: string;
-}) {
+const save = async function (value: { url: string; name: string }) {
   loading.value = true;
   try {
-    await api.addAmbientSound(value.url, value.name, value.image || undefined);
+    await api.addAmbientSound(value.url, value.name);
     toast.success(t("audio_overlay_custom_added", [value.name]));
     model.value = false;
   } catch (e) {

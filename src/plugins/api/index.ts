@@ -1509,7 +1509,6 @@ export class MusicAssistantApi {
   public async addAmbientSound(
     url: string,
     name: string,
-    image_url?: string,
   ): Promise<SoundEffect> {
     // Add a custom ambient sound (stream url) to the ambient sounds provider.
     // The server probes the url and rejects it if it is not playable audio;
@@ -1517,11 +1516,7 @@ export class MusicAssistantApi {
     // out of the global error toast.
     return this.sendCommand(
       "ambient_sounds/add_sound",
-      {
-        url,
-        name,
-        image_url,
-      },
+      { url, name },
       { suppressGlobalError: true },
     );
   }
