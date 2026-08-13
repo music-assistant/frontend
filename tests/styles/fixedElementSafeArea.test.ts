@@ -5,7 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import dialogContentSource from "@/components/ui/dialog/DialogContent.vue?raw";
 import footerSource from "@/layouts/default/Footer.vue?raw";
 import reloadPromptSource from "@/layouts/default/ReloadPrompt.vue?raw";
-import playerTrackMenuSource from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayerTrackMenu.vue?raw";
+import playbackSpeedDialogSource from "@/layouts/default/PlayerOSD/PlaybackSpeedDialog.vue?raw";
 import { cn } from "@/lib/utils";
 import utilities from "@/styles/style.css?inline";
 import homeViewSource from "@/views/HomeView.vue?raw";
@@ -54,7 +54,7 @@ function dialogContentClasses(className: string) {
 // static class list throws rather than reaching on to the next element's
 const PLAYBACK_SPEED_DIALOG = dialogContentClasses(
   templateClasses(
-    playerTrackMenuSource,
+    playbackSpeedDialogSource,
     /<DialogContent[^>]*\sclass="([^"]*)"/,
   ),
 );
@@ -148,13 +148,6 @@ describe.each([
   // even though the mobile variant has its own.
   ["settings save button", editConfigSource, "floating-save", "24px"],
   ["home screen edit button", homeViewSource, EDIT_DONE, "24px"],
-  // The dialog writes its gap as 1rem, which resolves to the root font size.
-  [
-    "playback speed dialog",
-    playerTrackMenuSource,
-    PLAYBACK_SPEED_DIALOG,
-    "16px",
-  ],
 ])("%s", (_name, source, className, gap) => {
   it("keeps its gap clear of a side cutout", () => {
     const element = render(source, className);
@@ -187,10 +180,10 @@ describe("home screen edit button", () => {
 });
 
 describe("playback speed dialog", () => {
-  // Offsetting only the near edge would push the far one off screen once the
-  // dialog is wide enough to be clamped.
+  // It is centred, so a width clamped to only the near edge would push the far
+  // one off screen once the dialog is wide enough to be clamped at all.
   it("clamps its width to both safe edges", () => {
-    const element = render(playerTrackMenuSource, PLAYBACK_SPEED_DIALOG);
+    const element = render(playbackSpeedDialogSource, PLAYBACK_SPEED_DIALOG);
 
     expectUtilitiesCompete(element, "max-width");
     // happy-dom resolves 100vw and 2rem before handing the expression back.

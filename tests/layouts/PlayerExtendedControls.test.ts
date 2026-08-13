@@ -57,16 +57,14 @@ describe("PlayerExtendedControls", () => {
     },
   );
 
-  it("marks the sleep timer so the row can budget for it", () => {
+  it("puts the sleep timer in the row as a button of its own", () => {
     mockStore.activePlayer = playerWithSleepTimer();
 
-    // the real countdown, so the class is checked where the layout reads it:
-    // on the button itself, past the fallthrough attrs it forwards
+    // the real countdown, so what the layout reads is checked past the
+    // fallthrough attrs the component forwards
     const controls = mount(PlayerExtendedControls, {
       global: {
         stubs: {
-          QueueBtn: true,
-          PlayerTrackMenu: true,
           PlayerBarVolumeControl: true,
           PlayerBarGroupControl: true,
           PlayerBarPlayerButton: true,
@@ -74,7 +72,10 @@ describe("PlayerExtendedControls", () => {
       },
     });
 
-    // the action widths key off this class to make room for the countdown
-    expect(controls.find("button.player-bar-sleep-timer").exists()).toBe(true);
+    // the gap between the actions is spaced with `button ~ button`, so the
+    // countdown only takes its share of the row while it renders as one
+    expect(controls.find(".player-bar-action-row > button").exists()).toBe(
+      true,
+    );
   });
 });

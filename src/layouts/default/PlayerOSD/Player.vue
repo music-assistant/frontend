@@ -12,28 +12,15 @@
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
           :show-only-artist="getBreakpointValue('bp7') ? false : true"
+          title-opens-details
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
         />
       </div>
       <div class="mediacontrols-bottom-center">
         <div class="player-center-controls">
-          <div v-if="showWideCenterActions" class="player-center-side-action">
-            <Button
-              v-if="favoriteItem"
-              variant="ghost"
-              size="icon-lg"
-              class="player-control-button"
-              :aria-label="
-                $t(favoriteItem.favorite ? 'favorites_remove' : 'favorites_add')
-              "
-              @click="api.toggleFavorite(favoriteItem)"
-            >
-              <Heart
-                class="size-5"
-                :fill="favoriteItem.favorite ? 'currentColor' : 'none'"
-              />
-            </Button>
+          <div class="player-center-side-action">
+            <FavoriteMenuBtn class="player-control-button" />
           </div>
 
           <PlayerControls
@@ -53,7 +40,7 @@
             }"
           />
 
-          <div v-if="showWideCenterActions" class="player-center-side-action">
+          <div class="player-center-side-action">
             <QueueBtn :size="22" class="player-control-button" />
           </div>
         </div>
@@ -67,14 +54,6 @@
                the countdown to the full screen player and the player card's
                menu; it has no room of its own on the narrowest bars. -->
           <PlayerExtendedControls
-            :favorite="{
-              isVisible: false,
-              showInMenu: true,
-            }"
-            :queue="{
-              isVisible: false,
-              showInMenu: true,
-            }"
             :player="{
               isVisible: true,
             }"
@@ -107,13 +86,6 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div class="flex items-center">
-          <PlayerTrackMenu
-            v-if="showFloatingTrackMenu"
-            compact
-            force-visible
-            :show-favorite="true"
-            :show-queue="true"
-          />
           <!-- grouping sits beside play: both act on what this bar is playing -->
           <PlayerBarGroupControl floating />
           <!-- player mobile control buttons -->
@@ -156,18 +128,14 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
 import { ImageColorPalette, paletteFromServer } from "@/helpers/utils";
-import api from "@/plugins/api";
-import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { Heart } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import PlayerBarGroupControl from "./PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
-import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
+import FavoriteMenuBtn from "./PlayerControlBtn/FavoriteMenuBtn.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
@@ -180,15 +148,6 @@ interface Props {
 }
 const props = defineProps<Props>();
 const showMobileVolumeControls = ref(false);
-const showWideCenterActions = computed(() => getBreakpointValue("bp6"));
-const favoriteItem = computed(() => {
-  const item = store.curQueueItem?.media_item;
-  return item?.media_type === MediaType.AUDIO_SOURCE ? undefined : item;
-});
-
-// the floating row already carries grouping and play; the track menu only
-// joins them where there is width to spare
-const showFloatingTrackMenu = computed(() => getBreakpointValue("bp12"));
 
 /** Opens the fullscreen player, or the player picker when there is nothing to show. */
 function openActivePlayer() {
@@ -416,7 +375,12 @@ watch(
 @media screen and (min-width: 1100px) {
   /* the room is only borrowed: these let the row hand it straight back when
      another control joins it, such as the sleep timer, and send whatever still
-     does not fit towards the middle of the bar rather than off its end */
+     does not fit towards the middle of the bar rather than off its end.
+
+     The budget, measured: the column offers 0.3 * (vw - 30) + 8 px, and the
+     three buttons rest at 64 + 72 + 96 = 232. A running sleep timer adds a
+     countdown of 82px, or 101px once it reads hh:mm:ss past the hour, which is
+     the only case that does not fit at 1100 - it needs about 1114. */
   .mediacontrols-bottom-right > div {
     min-width: 0;
   }
@@ -448,37 +412,6 @@ watch(
   }
 }
 
-/* the sleep timer joins the actions as a fifth control, which the widths above
-   do not budget for: they need a bar of about 1221px before the five of them
-   fit, and until then the timer reaches over the timeline. So while one runs
-   the actions take the widths they use below 1100px, which fit from 1034px up.
-   The full widths take over again at 1250px, where they clear the timeline by
-   about 9px - the tightest the row gets, so a sixth control or a wider button
-   would have to raise this bound with it. */
-@media screen and (min-width: 1100px) and (max-width: 1249px) {
-  .mediacontrols :deep(.player-bar-action-row:has(.player-bar-sleep-timer)) {
-    .player-bar-menu-button {
-      width: 40px !important;
-    }
-
-    .player-bar-volume-button {
-      width: 56px !important;
-    }
-
-    /* the floor these two carry above 1100px would outrank the width, so it
-       has to be reset for the width to take effect */
-    .player-bar-group-button {
-      width: 60px !important;
-      min-width: 0 !important;
-    }
-
-    .player-bar-player-button {
-      width: 68px !important;
-      min-width: 0 !important;
-    }
-  }
-}
-
 @media screen and (min-width: 769px) and (max-width: 1099px) {
   .mediacontrols .mediacontrols-bottom-center {
     width: auto;
@@ -486,11 +419,6 @@ watch(
 
   .mediacontrols-bottom-right {
     min-width: 0;
-  }
-
-  .mediacontrols :deep(.player-bar-menu-button) {
-    width: 40px !important;
-    height: 72px !important;
   }
 
   .mediacontrols :deep(.player-bar-volume-button) {
