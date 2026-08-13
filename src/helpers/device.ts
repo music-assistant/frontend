@@ -24,13 +24,15 @@ export const DEVICE_TYPE: DeviceType = IS_TABLET_UA
  * measured from `window.innerWidth` has to take this off to clear them.
  */
 export function deviceInset(side: "left" | "right") {
-  return (
-    parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue(
-        `--device-inset-${side}`,
-      ),
-    ) || 0
-  );
+  // read off a padding rather than the custom property itself: WebKit reports 0
+  // for a custom property holding env(), while a length it lays a box out with
+  // carries the inset the page is actually drawn against
+  const probe = document.createElement("div");
+  probe.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-left:var(--device-inset-${side})`;
+  document.body.appendChild(probe);
+  const inset = parseFloat(getComputedStyle(probe).paddingLeft) || 0;
+  probe.remove();
+  return inset;
 }
 
 export function isTouchscreenDevice() {
