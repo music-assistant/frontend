@@ -131,6 +131,17 @@
   color: var(--muted-foreground) !important;
 }
 
+/* the ghost variant paints a background on hover too, and its dark counterpart
+   carries the extra .dark, so clearing the pill needs the :hover here to outweigh
+   both. A showing popout keeps its pill: the button is not guessing about the
+   pointer while its own menu is up. */
+.player-control-button[data-suppress-hover="true"]:hover:not(
+    [data-active="true"],
+    [data-state="open"]
+  ) {
+  background-color: transparent !important;
+}
+
 .player-control-button:hover:not([data-suppress-hover="true"]),
 .player-control-button[data-active="true"],
 .player-control-button[data-state="open"] {
