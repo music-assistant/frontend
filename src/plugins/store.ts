@@ -11,6 +11,7 @@ import {
 import type { StoredState } from "@/components/ItemsListing.vue";
 import {
   DEVICE_TYPE,
+  IS_TABLET_UA,
   isTouchscreenDevice,
   type DeviceType,
 } from "@/helpers/device";
@@ -19,7 +20,7 @@ import { parseBool } from "@/helpers/parse";
 import api from "./api";
 import { resolvePlayerQueue } from "./api/helpers";
 
-import { getBreakpointValue, isPhoneSizedScreen } from "./breakpoint";
+import { isPhoneSizedScreen } from "./breakpoint";
 
 interface Store {
   activePlayerId?: string;
@@ -92,13 +93,14 @@ export const store: Store = reactive({
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
   deviceType: DEVICE_TYPE,
-  mobileLayout: computed(() => {
-    const isTablet = getBreakpointValue({ breakpoint: "tablet" });
-
-    return (
-      isPhoneSizedScreen() || isTablet || parseBool(store.forceMobileLayout)
-    );
-  }),
+  // a tablet has the screen for a desktop layout and is laid out for touch all
+  // the same, so it is taken at its word rather than measured
+  mobileLayout: computed(
+    () =>
+      isPhoneSizedScreen() ||
+      IS_TABLET_UA ||
+      parseBool(store.forceMobileLayout),
+  ),
   currentUser: undefined,
   serverInfo: undefined,
   isIngressSession: computed(() =>

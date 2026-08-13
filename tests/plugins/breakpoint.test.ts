@@ -37,7 +37,19 @@ async function loadModule(
     configurable: true,
   });
   vi.resetModules();
-  vi.doMock("@/helpers/device", () => ({ ...NO_FLAGS, ...flags }));
+  vi.doMock("@/helpers/device", () => {
+    const ua = { ...NO_FLAGS, ...flags };
+    // mirrors how the real module ranks the flags, so a user agent that only
+    // says "mobile" still stands for a phone here
+    return {
+      ...ua,
+      DEVICE_TYPE: ua.IS_TABLET_UA
+        ? "tablet"
+        : ua.IS_PHONE_UA || ua.IS_MOBILE_UA
+          ? "phone"
+          : "desktop",
+    };
+  });
   return await import("@/plugins/breakpoint");
 }
 
@@ -164,20 +176,54 @@ describe("isPhoneSizedScreen", () => {
     expect(await isPhoneSized(PHONE_LANDSCAPE)).toBe(true);
   });
 
-  it("takes the device at its word whatever the screen measures", async () => {
-    expect(await isPhoneSized(DESKTOP, { IS_PHONE_UA: true })).toBe(true);
-  });
+  // Android reports only "mobile" — no browser there still names the model the
+  // phone check wants — so taking the device at its word has to mean that too
+  it.each([{ IS_PHONE_UA: true }, { IS_MOBILE_UA: true }])(
+    "takes the device at its word whatever the screen measures (%o)",
+    async (flags) => {
+      expect(await isPhoneSized(DESKTOP, flags)).toBe(true);
+    },
+  );
 
   // a tablet has the room for a desktop layout, so it is decided elsewhere
   it("leaves a tablet to be judged on its screen", async () => {
-    expect(await isPhoneSized(DESKTOP, { IS_TABLET_UA: true })).toBe(false);
+    expect(
+      await isPhoneSized(DESKTOP, { IS_TABLET_UA: true, IS_MOBILE_UA: true }),
+    ).toBe(false);
+  });
+
+  // The mobile layout gives up more room at the bottom of the screen than the
+  // desktop one, so a short window only gains by it while it is phone-narrow.
+  it("leaves a window that is short but far wider than a phone alone", async () => {
+    expect(await isPhoneSized({ width: 1600, height: 430 })).toBe(false);
   });
 
   it.each([
     ["width", { width: 769, height: 900 }, { width: 768, height: 900 }],
-    ["height", { width: 1280, height: 500 }, { width: 1280, height: 499 }],
+    ["height", { width: 1000, height: 500 }, { width: 1000, height: 499 }],
+    [
+      "width a short screen may reach",
+      { width: 1100, height: 430 },
+      { width: 1099, height: 430 },
+    ],
   ])("takes the %s up to its limit but not past it", async (_, over, under) => {
     expect(await isPhoneSized(over)).toBe(false);
     expect(await isPhoneSized(under)).toBe(true);
+  });
+
+  // the resize handler is the only thing keeping the height current, and every
+  // other case here loads the module with the screen already at its size
+  it("follows the screen as it turns", async () => {
+    const { isPhoneSizedScreen } = await loadModule(1000, {}, 900);
+    expect(isPhoneSizedScreen()).toBe(false);
+
+    Object.defineProperty(window, "innerHeight", {
+      value: 430,
+      writable: true,
+      configurable: true,
+    });
+    window.dispatchEvent(new Event("resize"));
+
+    expect(isPhoneSizedScreen()).toBe(true);
   });
 });

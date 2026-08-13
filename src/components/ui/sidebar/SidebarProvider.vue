@@ -35,8 +35,8 @@ const emits = defineEmits<{
 }>();
 
 // a phone on its side has the width for a sidebar and none of the height, so
-// the screen has to be phone-sized in neither direction for one to stay open.
-// A tablet keeps its sidebar, which is why this is not store.mobileLayout
+// the sidebar goes wherever the screen is phone-sized rather than merely
+// narrow. A tablet keeps its sidebar, which is why this is not store.mobileLayout
 const isMobile = computed(
   () => isPhoneSizedScreen() || !!store.forceMobileLayout,
 );

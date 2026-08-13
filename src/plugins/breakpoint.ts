@@ -1,5 +1,10 @@
 import { App, reactive, toRefs, watch, Directive } from "vue";
-import { IS_MOBILE_UA, IS_PHONE_UA, IS_TABLET_UA } from "@/helpers/device";
+import {
+  DEVICE_TYPE,
+  IS_MOBILE_UA,
+  IS_PHONE_UA,
+  IS_TABLET_UA,
+} from "@/helpers/device";
 
 type MobileDeviceType = "mobile" | "phone" | "tablet";
 
@@ -49,22 +54,29 @@ window.addEventListener("resize", () => {
 const PHONE_LAYOUT_WIDTH = 769;
 
 /**
- * Height below which there is no room to lay out for a desktop whatever the
- * width. A phone on its side is what this catches: wide enough to pass for a
- * desktop, nowhere near tall enough to be one.
+ * The screen a phone on its side presents: too short to lay out for a desktop,
+ * and no wider than a phone ever gets (the largest reach about 960).
+ *
+ * The width is what keeps a short but wide window out of it. The mobile layout
+ * reserves more than twice the room at the bottom of the screen that the
+ * desktop one does, so applying it there would cost more height than the
+ * sidebar it saves.
  */
-const PHONE_LAYOUT_HEIGHT = 500;
+const PHONE_LANDSCAPE_HEIGHT = 500;
+const PHONE_LANDSCAPE_WIDTH = 1100;
 
 /**
- * Whether the screen is phone-sized, by its own account or by either dimension.
+ * Whether the screen is phone-sized: a phone by its own account, too narrow to
+ * lay out for a desktop, or the short wide screen a phone on its side presents.
  *
  * Reactive: reading this inside a computed re-runs it as the screen resizes or
  * turns.
  */
 export const isPhoneSizedScreen = () =>
-  IS_PHONE_UA ||
+  DEVICE_TYPE === "phone" ||
   state.width < PHONE_LAYOUT_WIDTH ||
-  state.height < PHONE_LAYOUT_HEIGHT;
+  (state.height < PHONE_LANDSCAPE_HEIGHT &&
+    state.width < PHONE_LANDSCAPE_WIDTH);
 
 type Condition = "lt" | "gt";
 type Key =
