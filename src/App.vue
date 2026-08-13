@@ -60,11 +60,10 @@ import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { pruneStaleProviderFilters } from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
-// import {
-//   subscribeToHAProperties,
-//   unsubscribeFromHAProperties,
-//   getKioskModePreference
-// } from "./plugins/homeassistant";
+import {
+  subscribeToHAProperties,
+  unsubscribeFromHAProperties,
+} from "./plugins/homeassistant";
 import type { User } from "./plugins/api/interfaces";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
@@ -287,12 +286,12 @@ const completeInitialization = async () => {
     authManager.bindPersistentToken(connectionIdentity);
   }
 
-  // Enable kiosk mode when running in Home Assistant ingress
-  // COMMENTED OUT - HA INTEGRATION DISABLED
-  // if (store.isIngressSession && serverInfo.homeassistant_addon) {
-  // const kioskPref = getKioskModePreference();
-  // subscribeToHAProperties({ kioskMode: kioskPref, router });
-  // }
+  // Home Assistant pads its ingress iframe for the device safe area, leaving a
+  // strip of its own background we cannot reach from in here. Take that padding
+  // over so the app runs to the edge of the screen like it does anywhere else.
+  if (store.isIngressSession && serverInfo.homeassistant_addon) {
+    subscribeToHAProperties({ handleSafeArea: true });
+  }
 
   // TODO: Remove this migration code in v2.9 release
   // Migrate localStorage settings to user preferences (one-time migration)
@@ -547,7 +546,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  // unsubscribeFromHAProperties();
+  unsubscribeFromHAProperties();
 });
 
 function getCurrentAuthConnectionIdentity() {
