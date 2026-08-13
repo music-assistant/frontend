@@ -185,4 +185,24 @@ describe("ItemsListing startup cleanup", () => {
     expect(clearSelectionHandlers()).toBe(0);
     expect(events.listeners).toHaveLength(0);
   });
+
+  it("leaves a second listing on the page still clearing its own selection", async () => {
+    const first = mountListingRaw();
+    const second = mountListingRaw();
+    await flushPromises();
+    expect(clearSelectionHandlers()).toBe(2);
+
+    // put the listing that stays into selection mode, so its reaction to the
+    // event below is something to see
+    const survivor = second.vm as unknown as { showCheckboxes: boolean };
+    survivor.showCheckboxes = true;
+    // a write that never landed would leave the closing assertion true anyway
+    expect(survivor.showCheckboxes).toBe(true);
+
+    first.unmount();
+    eventbus.emit("clearSelection");
+
+    expect(clearSelectionHandlers()).toBe(1);
+    expect(survivor.showCheckboxes).toBe(false);
+  });
 });

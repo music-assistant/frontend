@@ -1835,13 +1835,18 @@ const loadGenreOptions = async () => {
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
 
+const clearSelection = () => {
+  selectedItems.value = [];
+  showCheckboxes.value = false;
+};
+
 // Set by the unmount hook, so the startup below can tell that the listing it is
 // setting things up for is already gone.
 let unmounted = false;
 
 onBeforeUnmount(() => {
   unmounted = true;
-  eventbus.off("clearSelection");
+  eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
 });
 
@@ -1879,10 +1884,7 @@ onMounted(async () => {
   if (unmounted) return;
 
   // Listen for selection clearing events
-  eventbus.on("clearSelection", () => {
-    selectedItems.value = [];
-    showCheckboxes.value = false;
-  });
+  eventbus.on("clearSelection", clearSelection);
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(
