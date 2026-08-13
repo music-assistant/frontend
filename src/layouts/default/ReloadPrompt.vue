@@ -38,9 +38,9 @@ const close = async () => {
   padding: 12px;
   border: 1px solid #8885;
   border-radius: 4px;
-  /* Renders outside v-app, so this competes with the player bar directly.
-     Above the bars, below the dialogs and menus that should cover it. */
-  z-index: 2100;
+  /* Renders outside v-app, so this competes with the player bar directly. Just
+     enough to clear the bars, leaving everything above them covering it. */
+  z-index: 2002;
   text-align: left;
   box-shadow: 3px 4px 5px 0 #8885;
   background-color: white;

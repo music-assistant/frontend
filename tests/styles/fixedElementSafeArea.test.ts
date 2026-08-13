@@ -123,7 +123,7 @@ describe("update toast", () => {
   it("sits its margin clear of the bars pinned to the bottom", () => {
     const element = render(reloadPromptSource, "pwa-toast");
 
-    // Those already reserve the bottom inset, so this clears it as well.
+    // Those rest on the bottom edge, so clearing them clears its inset too.
     expect(normalize(getComputedStyle(element).bottom)).toBe(BARS_HEIGHT);
     expect(normalize(getComputedStyle(element).marginBottom)).toBe("16px");
   });
@@ -149,5 +149,8 @@ describe("update toast", () => {
     expect(Number(getComputedStyle(element).zIndex)).toBeGreaterThan(
       Number(getComputedStyle(playerBar).zIndex),
     );
+    // Anything that blocks the screen on purpose still covers it, starting
+    // with the settings loading overlays.
+    expect(Number(getComputedStyle(element).zIndex)).toBeLessThan(2100);
   });
 });
