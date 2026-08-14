@@ -849,6 +849,7 @@
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
         "show_menu": "Show\/hide menu",
+        "show_full_path": "Show the full path",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",

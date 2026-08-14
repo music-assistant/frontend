@@ -1,10 +1,17 @@
 import ToolbarHeading from "@/components/ToolbarHeading.vue";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
+
+vi.mock("vue-i18n", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
+
+const screen = vi.hoisted(() => ({ isPhone: false }));
+vi.mock("@/plugins/breakpoint", () => ({
+  isPhoneSizedScreen: () => screen.isPhone,
+}));
 
 const vuetify = createVuetify({ components, directives });
 
@@ -16,6 +23,10 @@ const testRoutes = [
 ];
 
 describe("ToolbarHeading", () => {
+  beforeEach(() => {
+    screen.isPhone = false;
+  });
+
   it("links the heading back to the section root", async () => {
     const wrapper = await mountHeading({
       title: "Settings",
@@ -59,6 +70,41 @@ describe("ToolbarHeading", () => {
     expect(crumbs[1].classes()).toContain("v-breadcrumbs-item--disabled");
   });
 
+  it("drops the middle of a long trail on a phone", async () => {
+    screen.isPhone = true;
+    const wrapper = await mountHeading({
+      title: "Browse",
+      to: { name: "section" },
+      items: deepTrail(),
+    });
+
+    expect(crumbText(wrapper)).toEqual(["one", "\u2026", "five"]);
+  });
+
+  it("reveals the whole trail once the ellipsis is tapped", async () => {
+    screen.isPhone = true;
+    const wrapper = await mountHeading({
+      title: "Browse",
+      to: { name: "section" },
+      items: deepTrail(),
+    });
+
+    await wrapper.get(".toolbar-heading-more").trigger("click");
+
+    expect(crumbText(wrapper)).toEqual(["one", "two", "three", "four", "five"]);
+  });
+
+  it("keeps the whole trail where there is room for it", async () => {
+    const wrapper = await mountHeading({
+      title: "Browse",
+      to: { name: "section" },
+      items: deepTrail(),
+    });
+
+    expect(wrapper.find(".toolbar-heading-more").exists()).toBe(false);
+    expect(crumbText(wrapper)).toEqual(["one", "two", "three", "four", "five"]);
+  });
+
   it("lets only the crumb you are on announce itself as the current page", async () => {
     // browse-style trail: every crumb shares one route and differs only by query
     const router = createRouter({
@@ -94,6 +140,21 @@ describe("ToolbarHeading", () => {
     expect(announced.map((crumb) => crumb.text())).toEqual(["Music"]);
   });
 });
+
+function deepTrail() {
+  const names = ["one", "two", "three", "four", "five"];
+  return names.map((title, index) => ({
+    title,
+    disabled: index === names.length - 1,
+    to: { name: "section" },
+  }));
+}
+
+function crumbText(wrapper: ReturnType<typeof mount>) {
+  return wrapper
+    .findAll(".v-breadcrumbs-item, .toolbar-heading-more")
+    .map((crumb) => crumb.text());
+}
 
 async function mountHeading(
   props: InstanceType<typeof ToolbarHeading>["$props"],

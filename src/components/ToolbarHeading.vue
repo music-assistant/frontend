@@ -9,15 +9,33 @@
     </component>
     <v-breadcrumbs
       v-if="items.length"
-      :items="crumbs"
+      :items="trail.crumbs"
       class="pa-0 toolbar-heading-trail"
-    />
+    >
+      <template #item="{ item, index }">
+        <button
+          v-if="index === trail.collapsedIndex"
+          class="toolbar-heading-more"
+          :title="t('tooltip.show_full_path')"
+          @click="expanded = true"
+        >
+          {{ ELLIPSIS }}
+        </button>
+        <v-breadcrumbs-item v-else v-bind="item" />
+      </template>
+    </v-breadcrumbs>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
+import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
+
+// beyond this a phone shows only where the trail starts and where you are now
+const PHONE_MAX_CRUMBS = 3;
+const ELLIPSIS = "…";
 
 // properties
 interface Props {
@@ -31,11 +49,31 @@ const props = withDefaults(defineProps<Props>(), {
   items: () => [],
 });
 
-// crumbs in a trail can share a route and differ only by query, so only an
-// exact match may announce itself as the current page
-const crumbs = computed(() =>
-  props.items.map((item) => ({ ...item, exact: true })),
+const { t } = useI18n();
+const expanded = ref(false);
+
+// moving to another page gives a trail that was never collapsed by hand
+watch(
+  () => props.items,
+  () => (expanded.value = false),
 );
+
+const trail = computed(() => {
+  // crumbs in a trail can share a route and differ only by query, so only an
+  // exact match may announce itself as the current page
+  const crumbs = props.items.map((item) => ({ ...item, exact: true }));
+  if (
+    expanded.value ||
+    !isPhoneSizedScreen() ||
+    crumbs.length <= PHONE_MAX_CRUMBS
+  ) {
+    return { crumbs, collapsedIndex: -1 };
+  }
+  return {
+    crumbs: [crumbs[0], { title: ELLIPSIS }, crumbs[crumbs.length - 1]],
+    collapsedIndex: 1,
+  };
+});
 </script>
 
 <script lang="ts">
@@ -95,5 +133,22 @@ export interface ToolbarHeadingItem {
   padding: 0 4px;
   font-size: inherit;
   opacity: 0.6;
+}
+
+/* stands in for the crumbs a phone has no room for, and reveals them on tap */
+.toolbar-heading-more {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0 2px;
+  opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+  .toolbar-heading-trail {
+    font-size: 0.65rem;
+  }
 }
 </style>
