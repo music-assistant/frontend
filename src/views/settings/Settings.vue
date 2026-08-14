@@ -956,8 +956,6 @@ const documentationUrl = computed(() => {
 /* vuetify dims the last crumb as "disabled"; it is the page you are on, so it
    is the one that stands out and the trail above it recedes */
 .settings-heading-trail :deep(.v-breadcrumbs-item--disabled) {
-  text-decoration: underline;
-  text-underline-offset: 2px;
   opacity: 1;
 }
 
