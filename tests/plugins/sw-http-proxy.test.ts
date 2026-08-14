@@ -192,6 +192,26 @@ describe("sw.js", () => {
     expect(await response.text()).toBe("No transport available");
   });
 
+  // the check that refuses another build's messages sits in front of every one
+  // of them, so it has to let this one through as well
+  it("acknowledges a stamped remote-mode message", async () => {
+    const postMessage = vi.fn();
+
+    await fakeSelf.fire("message", {
+      data: {
+        type: "set-remote-mode",
+        protocol: MESSAGE_PROTOCOL_VERSION,
+        data: { isRemote: true, proxyScope: "remote-id" },
+      },
+      source: { id: CLIENT_ID, postMessage },
+    });
+
+    expect(postMessage).toHaveBeenCalledWith({
+      type: "remote-mode-ack",
+      data: { isRemote: true },
+    });
+  });
+
   it("does not take over a tab that is running an earlier build", async () => {
     await fakeSelf.fire("install", { waitUntil: () => undefined });
 

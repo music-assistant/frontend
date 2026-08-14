@@ -129,9 +129,9 @@ async function migrateLegacyRemoteState() {
 self.addEventListener("message", async (event) => {
   const { type, protocol, data } = event.data;
 
-  // Sent by the update prompt when the user accepts a new version, and the only
-  // way this worker takes over: a tab otherwise keeps the worker it booted with,
-  // so a page and its worker are always from the same build. It comes from the
+  // Sent by the update prompt when the user accepts a new version. Without it a
+  // new worker only takes over once no tab is running the old one, so a tab is
+  // never handed a worker from a build it did not load with. It comes from the
   // prompt rather than the proxy bridge, so it carries no stamp and has to be
   // handled ahead of the check below.
   if (type === "SKIP_WAITING") {
@@ -325,6 +325,8 @@ self.addEventListener("activate", (event) => {
       await migrateLegacyRemoteState();
       // A first install has no worker to wait behind, so claiming is what lets
       // the page that registered us proxy its images without reloading first.
+      // It also drives the update: the prompt reloads the page off the
+      // controller change this fires, and never reloads on its own.
       await self.clients.claim();
     })(),
   );
