@@ -25,6 +25,18 @@ const LEGACY_REMOTE_MODE_CACHE_KEY = "ma-remote-mode-state";
 const REMOTE_MODE_CACHE_NAME = "ma-sw-client-state-v1";
 const REMOTE_MODE_CACHE_PATH = "/__ma_remote_mode__/";
 
+const PROXY_CACHE_NAME = "ma-http-proxy-v1";
+// Proxied images never expire and every server a client connects to gets its
+// own set of entries, so the cache is capped by entry count. Pruning goes
+// below the cap so a full cache does not scan itself on every write.
+const PROXY_CACHE_MAX_ENTRIES = 500;
+const PROXY_CACHE_PRUNE_TO_ENTRIES = 400;
+
+// Entry count of the proxy cache, so a write knows whether it went over the cap
+// without enumerating the cache first. Rewriting an existing entry counts twice,
+// which only prunes earlier than needed: a prune re-reads the real count.
+let proxyCacheEntryCount = null;
+
 /**
  * Read remote proxy state for a browser client.
  */
@@ -201,11 +213,7 @@ self.addEventListener("fetch", (event) => {
 
         if (remoteState.isRemote) {
           // Proxy over WebRTC when in remote mode
-          return handleHttpProxyRequest(
-            event.request,
-            event.clientId,
-            remoteState.proxyScope,
-          );
+          return handleHttpProxyRequest(event, remoteState.proxyScope);
         } else {
           // Let request through normally when NOT in remote mode
           return fetch(event.request);
@@ -222,12 +230,13 @@ self.addEventListener("fetch", (event) => {
 /**
  * Handle HTTP proxy request over WebRTC
  */
-async function handleHttpProxyRequest(request, clientId, proxyScope) {
+async function handleHttpProxyRequest(event, proxyScope) {
+  const { request, clientId } = event;
   const url = new URL(request.url);
   const cacheKey = `${request.url}${url.search ? "&" : "?"}__ma_proxy_scope=${encodeURIComponent(proxyScope || clientId)}`;
 
   // Try to get from cache first
-  const cache = await caches.open("ma-http-proxy-v1");
+  const cache = await caches.open(PROXY_CACHE_NAME);
   const cachedResponse = await cache.match(cacheKey);
 
   if (cachedResponse) {
@@ -289,9 +298,9 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
 
     // Cache successful responses (200-299)
     if (response.status >= 200 && response.status < 300) {
-      // Clone the response before caching (can only read body once)
-      const responseToCache = response.clone();
-      cache.put(cacheKey, responseToCache);
+      // Clone the response before caching (can only read body once). The write
+      // keeps the worker alive without holding up the image it just fetched.
+      event.waitUntil(cacheProxyResponse(cache, cacheKey, response.clone()));
     }
 
     return response;
@@ -299,6 +308,55 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
     console.error("[ServiceWorker] HTTP proxy error:", error);
     return new Response(error.message, { status: 500 });
   }
+}
+
+/**
+ * Store a proxied response, keeping the cache within its entry budget.
+ *
+ * Never rejects: a response that cannot be cached only costs another round trip
+ * the next time it is requested.
+ */
+async function cacheProxyResponse(cache, cacheKey, response) {
+  // A rejected put may have read the body already, so hold a spare copy for the
+  // retry below.
+  const retryCopy = response.clone();
+
+  try {
+    try {
+      await cache.put(cacheKey, response);
+    } catch (error) {
+      // Realistically a full storage quota, so make room and try once more.
+      console.warn("[ServiceWorker] Proxy cache full, making room:", error);
+      await pruneProxyCache(cache);
+      await cache.put(cacheKey, retryCopy);
+    }
+
+    proxyCacheEntryCount =
+      proxyCacheEntryCount === null
+        ? (await cache.keys()).length
+        : proxyCacheEntryCount + 1;
+
+    if (proxyCacheEntryCount > PROXY_CACHE_MAX_ENTRIES) {
+      await pruneProxyCache(cache);
+    }
+  } catch (error) {
+    console.error("[ServiceWorker] Could not cache proxied response:", error);
+  }
+}
+
+/**
+ * Drop the oldest proxy cache entries until the cache is back under its cap.
+ */
+async function pruneProxyCache(cache) {
+  const entries = await cache.keys();
+  // Cache storage hands back entries in the order they were written, so the
+  // oldest ones come first.
+  const excess = entries.slice(
+    0,
+    Math.max(entries.length - PROXY_CACHE_PRUNE_TO_ENTRIES, 0),
+  );
+  await Promise.all(excess.map((entry) => cache.delete(entry)));
+  proxyCacheEntryCount = entries.length - excess.length;
 }
 
 /**

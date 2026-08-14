@@ -12,6 +12,9 @@ const IMAGE_URL = `${ORIGIN}/imageproxy/album.jpg`;
 const REMOTE_MODE_CACHE_NAME = "ma-sw-client-state-v1";
 const REMOTE_MODE_CACHE_PATH = "/__ma_remote_mode__/";
 const PROXY_CACHE_NAME = "ma-http-proxy-v1";
+// Kept in step with sw.js: the entry cap and what a prune leaves behind.
+const PROXY_CACHE_MAX_ENTRIES = 500;
+const PROXY_CACHE_PRUNE_TO_ENTRIES = 400;
 const MESSAGE_PROTOCOL_VERSION = 1;
 
 type PostMessage = (message: {
@@ -30,6 +33,7 @@ type PostMessage = (message: {
  */
 function createFakeCaches() {
   const stores = new Map<string, Map<string, Response>>();
+  let putFailure: { error: Error; remaining: number } | null = null;
 
   function storeFor(name: string): Map<string, Response> {
     let store = stores.get(name);
@@ -53,11 +57,16 @@ function createFakeCaches() {
         match: vi.fn(async (request: string | { url: string }) =>
           store.get(keyFor(request))?.clone(),
         ),
-        put: vi.fn(
-          async (request: string | { url: string }, response: Response) => {
-            store.set(keyFor(request), response);
-          },
-        ),
+        // Deliberately not a vi.fn: a mock tracks the promise it hands back,
+        // which counts as handling a rejection, and a write the worker fails
+        // to catch would then no longer surface as an unhandled rejection.
+        put: async (request: string | { url: string }, response: Response) => {
+          if (putFailure && putFailure.remaining > 0) {
+            putFailure.remaining -= 1;
+            throw putFailure.error;
+          }
+          store.set(keyFor(request), response);
+        },
         delete: vi.fn(async (request: string | { url: string }) =>
           store.delete(keyFor(request)),
         ),
@@ -67,6 +76,13 @@ function createFakeCaches() {
       };
     }),
     delete: vi.fn(async (name: string) => stores.delete(name)),
+    /** Make the next `count` writes fail, as a full storage quota would. */
+    failPuts(count: number) {
+      putFailure = {
+        error: new DOMException("Quota exceeded", "QuotaExceededError"),
+        remaining: count,
+      };
+    },
   };
 }
 
@@ -119,11 +135,15 @@ function remoteStateKey(clientId: string): string {
 describe("sw.js", () => {
   let fakeSelf: ReturnType<typeof createFakeSelf>;
   let fakeCaches: ReturnType<typeof createFakeCaches>;
+  // Work the worker handed to event.waitUntil(), i.e. the cache writes that
+  // deliberately outlive the response.
+  let pendingWork: Array<Promise<unknown>>;
 
   beforeEach(async () => {
     vi.resetModules();
     fakeSelf = createFakeSelf();
     fakeCaches = createFakeCaches();
+    pendingWork = [];
     vi.stubGlobal("self", fakeSelf);
     vi.stubGlobal("caches", fakeCaches);
 
@@ -192,6 +212,47 @@ describe("sw.js", () => {
     expect(await response.text()).toBe("No transport available");
   });
 
+  it("still answers a request when the image cannot be cached", async () => {
+    fakeCaches.failPuts(Number.POSITIVE_INFINITY);
+
+    const response = await proxiedResponse(BYTES);
+
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
+    // A rejected write must not escape the worker either: the suite fails a
+    // test on an unhandled rejection.
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    expect(await cache.keys()).toEqual([]);
+  });
+
+  it("caches the image after making room for a failed write", async () => {
+    fakeCaches.failPuts(1);
+
+    await proxiedResponse(BYTES);
+
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    expect(await cache.keys()).toHaveLength(1);
+  });
+
+  it("drops the oldest images once the cache is full", async () => {
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    for (let index = 0; index < PROXY_CACHE_MAX_ENTRIES; index++) {
+      await cache.put(
+        `${ORIGIN}/imageproxy/old-${index}.jpg`,
+        new Response(""),
+      );
+    }
+
+    await proxiedResponse(BYTES);
+
+    const urls = (await cache.keys()).map((entry) => entry.url);
+    expect(urls).toHaveLength(PROXY_CACHE_PRUNE_TO_ENTRIES);
+    // One entry over the cap, so the oldest 101 are gone and the image that
+    // pushed it over is the newest entry.
+    const dropped = PROXY_CACHE_MAX_ENTRIES + 1 - PROXY_CACHE_PRUNE_TO_ENTRIES;
+    expect(urls[0]).toBe(`${ORIGIN}/imageproxy/old-${dropped}.jpg`);
+    expect(urls.at(-1)).toContain(IMAGE_URL);
+  });
+
   // the check that refuses another build's messages sits in front of every one
   // of them, so it has to let this one through as well
   it("acknowledges a stamped remote-mode message", async () => {
@@ -242,9 +303,21 @@ describe("sw.js", () => {
       respondWith: (promise: Promise<Response>) => {
         response = promise;
       },
+      waitUntil: (promise: Promise<unknown>) => {
+        pendingWork.push(promise);
+      },
     });
 
     return { response, postMessage };
+  }
+
+  /**
+   * Wait for the cache writes the worker kept alive past its response.
+   */
+  async function settleCacheWrites(): Promise<void> {
+    while (pendingWork.length > 0) {
+      await Promise.all(pendingWork.splice(0));
+    }
   }
 
   /**
@@ -273,6 +346,10 @@ describe("sw.js", () => {
       source: { id: CLIENT_ID },
     });
 
-    return response;
+    // The worker hands its cache write to waitUntil() just before it answers, so
+    // the response has to be awaited first for that write to exist.
+    const proxied = await response;
+    await settleCacheWrites();
+    return proxied;
   }
 });
