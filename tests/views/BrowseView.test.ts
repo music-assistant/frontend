@@ -1,14 +1,17 @@
 import ToolbarHeading from "@/components/ToolbarHeading.vue";
 import BrowseView from "@/views/BrowseView.vue";
 import { mount } from "@vue/test-utils";
+import { MediaType } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 vi.mock("vue-i18n", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
+const browsed = vi.hoisted(() => ({ items: [] as { media_type: string }[] }));
 vi.mock("@/plugins/api", () => ({
   default: {
     getProviderName: (domain: string) => `${domain} provider`,
-    browse: vi.fn(),
+    browse: async () => browsed.items,
   },
 }));
 
@@ -17,7 +20,7 @@ vi.mock("@/plugins/api", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["showSelectButton"],
+    props: ["showSelectButton", "loadItems"],
     template: '<div><slot name="title" /></div>',
   },
 }));
@@ -116,10 +119,22 @@ describe("BrowseView", () => {
     ]);
   });
 
-  it("offers the select button only inside a folder holding more than folders", () => {
+  it("offers the select button only below the browse root", () => {
     expect(selectButtonShown(mountBrowse())).toBe(false);
     expect(selectButtonShown(mountBrowse("root"))).toBe(false);
     expect(selectButtonShown(mountBrowse("filesystem://Music"))).toBe(true);
+  });
+
+  it("withdraws the select button where there are only folders to open", async () => {
+    const wrapper = mountBrowse("filesystem://Music");
+    browsed.items = [{ media_type: MediaType.FOLDER }];
+
+    await wrapper.findComponent({ name: "ItemsListing" }).props("loadItems")(
+      {},
+    );
+    await nextTick();
+
+    expect(selectButtonShown(wrapper)).toBe(false);
   });
 });
 

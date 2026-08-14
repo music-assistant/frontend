@@ -79,6 +79,9 @@ describe("ToolbarHeading", () => {
     });
 
     expect(crumbText(wrapper)).toEqual(["one", "\u2026", "five"]);
+    const more = wrapper.get(".toolbar-heading-more");
+    expect(more.attributes("aria-label")).toBe("tooltip.show_full_path");
+    expect(more.attributes("type")).toBe("button");
   });
 
   it("reveals the whole trail once the ellipsis is tapped", async () => {

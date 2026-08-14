@@ -15,7 +15,9 @@
       <template #item="{ item, index }">
         <button
           v-if="index === trail.collapsedIndex"
+          type="button"
           class="toolbar-heading-more"
+          :aria-label="t('tooltip.show_full_path')"
           :title="t('tooltip.show_full_path')"
           @click="expanded = true"
         >
