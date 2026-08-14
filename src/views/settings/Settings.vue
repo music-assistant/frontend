@@ -838,7 +838,6 @@ const breadcrumbItems = computed(() => {
           route.params.queueId) as string;
         items.push({
           // a disabled player is never registered, so it has no name to show
-          // a disabled player is never registered, so it has no name to show
           title: api.players[playerId]?.name || t("settings.player_settings"),
           disabled: name === "editplayer",
           to: { name: "editplayer", params: { playerId } },

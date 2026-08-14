@@ -37,7 +37,7 @@ import {
   SlidersHorizontal,
 } from "@lucide/vue";
 import type { Component } from "vue";
-import { computed, markRaw, onBeforeUnmount, ref } from "vue";
+import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 
 /**
@@ -60,14 +60,7 @@ interface SettingsLink {
 // global refs
 const dspEnabled = ref(false);
 
-const loadDspEnabled = async () => {
-  try {
-    dspEnabled.value = (await api.getDSPConfig(props.playerId)).enabled;
-  } catch (error) {
-    console.error("Error fetching DSP config:", error);
-  }
-};
-void loadDspEnabled();
+const sections = computed(() => getPlayerSettingsSections(props.playerId));
 
 const unsubDspUpdated = api.subscribe(
   EventType.PLAYER_DSP_CONFIG_UPDATED,
@@ -78,11 +71,22 @@ const unsubDspUpdated = api.subscribe(
 );
 onBeforeUnmount(unsubDspUpdated);
 
+// watchers
+
+// players without a DSP row have nothing to ask the server for, and a group
+// player is registered a moment after the page opens, so wait for the row
+watch(
+  () => sections.value.dsp,
+  (showsDsp) => {
+    if (showsDsp) void loadDspEnabled();
+  },
+  { immediate: true },
+);
+
 // computed properties
 const links = computed(() => {
-  const sections = getPlayerSettingsSections(props.playerId);
   const items: SettingsLink[] = [];
-  if (sections.queue) {
+  if (sections.value.queue) {
     items.push({
       key: "queue",
       // a queue is identified by the player id of the player owning it
@@ -92,7 +96,7 @@ const links = computed(() => {
       description: $t("settings.queue_settings_description"),
     });
   }
-  if (sections.dsp) {
+  if (sections.value.dsp) {
     items.push({
       key: "dsp",
       to: `/settings/editplayer/${props.playerId}/dsp`,
@@ -102,7 +106,7 @@ const links = computed(() => {
       state: dspEnabled.value ? $t("on") : $t("off"),
     });
   }
-  if (sections.options) {
+  if (sections.value.options) {
     items.push({
       key: "options",
       to: `/settings/editplayer/${props.playerId}/options`,
@@ -113,4 +117,12 @@ const links = computed(() => {
   }
   return items;
 });
+
+async function loadDspEnabled() {
+  try {
+    dspEnabled.value = (await api.getDSPConfig(props.playerId)).enabled;
+  } catch (error) {
+    console.error("Error fetching DSP config:", error);
+  }
+}
 </script>

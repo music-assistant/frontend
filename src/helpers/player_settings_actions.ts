@@ -111,10 +111,8 @@ export const getPlayerSettingsMenuItems = (
 
   menuItems.push(
     {
-      // the menu interpolates labelArgs positionally, so resolve this named one here
-      label: $t("settings.provider_settings", {
-        name: provider?.name ?? manifest?.name ?? config.provider,
-      }),
+      label: "settings.provider_settings",
+      labelArgs: { name: provider?.name ?? manifest?.name ?? config.provider },
       action: () =>
         router.push(
           `/settings/editprovider/${provider?.instance_id ?? config.provider}`,
