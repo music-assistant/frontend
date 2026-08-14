@@ -132,11 +132,9 @@ self.addEventListener("message", async (event) => {
       pendingRequests.delete(id);
 
       try {
-        // Convert hex string back to Uint8Array
-        const bodyBytes = hexToBytes(body);
-
-        // Create Response object
-        const response = new Response(bodyBytes, {
+        // The page posts the body as raw bytes and transfers its buffer to us,
+        // so it can back the response directly
+        const response = new Response(body, {
           status: status,
           headers: new Headers(headers),
         });
@@ -283,17 +281,6 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
     }
     return new Response(error.message, { status: 500 });
   }
-}
-
-/**
- * Convert hex string to Uint8Array
- */
-function hexToBytes(hex) {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-  }
-  return bytes;
 }
 
 /**
