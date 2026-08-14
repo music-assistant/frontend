@@ -14,6 +14,12 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Store for pending HTTP requests
 const pendingRequests = new Map();
 
+// Shape of the messages the page posts here (src/plugins/remote/http-proxy.ts).
+// Bump on any change: a page from another build is then refused rather than read
+// as if the shapes still matched. Only this direction is checked, because only a
+// misread response ends up in a cache.
+const MESSAGE_PROTOCOL_VERSION = 1;
+
 const LEGACY_REMOTE_MODE_CACHE_NAME = "ma-sw-state-v1";
 const LEGACY_REMOTE_MODE_CACHE_KEY = "ma-remote-mode-state";
 const REMOTE_MODE_CACHE_NAME = "ma-sw-client-state-v1";
@@ -121,7 +127,28 @@ async function migrateLegacyRemoteState() {
 
 // Listen for messages from the main thread
 self.addEventListener("message", async (event) => {
-  const { type, data } = event.data;
+  const { type, protocol, data } = event.data;
+
+  // Sent by the update prompt when the user accepts a new version, and the only
+  // way this worker takes over: a tab otherwise keeps the worker it booted with,
+  // so a page and its worker are always from the same build. It comes from the
+  // prompt rather than the proxy bridge, so it carries no stamp and has to be
+  // handled ahead of the check below.
+  if (type === "SKIP_WAITING") {
+    self.skipWaiting();
+    return;
+  }
+
+  // Message shapes only hold within a single build. Reading a page from another
+  // one as if they matched can yield a response that looks valid and gets cached,
+  // so its request is failed instead.
+  if (protocol !== MESSAGE_PROTOCOL_VERSION) {
+    rejectPendingRequest(
+      data?.id,
+      "Page and service worker are from different builds",
+    );
+    return;
+  }
 
   if (type === "http-proxy-response") {
     // Handle HTTP proxy response
@@ -133,11 +160,7 @@ self.addEventListener("message", async (event) => {
 
       try {
         // The page posts the body as raw bytes and transfers its buffer to us.
-        // A page still running the build before that handoff posts a hex string,
-        // which happens whenever this worker claims a tab that has not reloaded yet.
-        const bodyBytes = typeof body === "string" ? hexToBytes(body) : body;
-
-        const response = new Response(bodyBytes, {
+        const response = new Response(body, {
           status: status,
           headers: new Headers(headers),
         });
@@ -279,14 +302,14 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
 }
 
 /**
- * Convert hex string to Uint8Array
+ * Fail the proxy request waiting on this id, if there still is one.
  */
-function hexToBytes(hex) {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-  }
-  return bytes;
+function rejectPendingRequest(id, reason) {
+  const pendingRequest = pendingRequests.get(id);
+  if (!pendingRequest) return;
+
+  pendingRequests.delete(id);
+  pendingRequest.reject(new Error(reason));
 }
 
 /**
@@ -296,16 +319,12 @@ function generateRequestId() {
   return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
-// Skip waiting to activate the new service worker immediately
-self.addEventListener("install", (event) => {
-  console.log("[ServiceWorker] Installing...");
-  event.waitUntil(self.skipWaiting());
-});
-
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       await migrateLegacyRemoteState();
+      // A first install has no worker to wait behind, so claiming is what lets
+      // the page that registered us proxy its images without reloading first.
       await self.clients.claim();
     })(),
   );

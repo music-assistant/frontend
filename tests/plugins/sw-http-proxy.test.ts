@@ -11,6 +11,8 @@ const CLIENT_ID = "test-client-1";
 const IMAGE_URL = `${ORIGIN}/imageproxy/album.jpg`;
 const REMOTE_MODE_CACHE_NAME = "ma-sw-client-state-v1";
 const REMOTE_MODE_CACHE_PATH = "/__ma_remote_mode__/";
+const PROXY_CACHE_NAME = "ma-http-proxy-v1";
+const MESSAGE_PROTOCOL_VERSION = 1;
 
 type PostMessage = (message: {
   type: string;
@@ -114,13 +116,14 @@ function remoteStateKey(clientId: string): string {
   ).href;
 }
 
-describe("sw.js http-proxy-response handling", () => {
+describe("sw.js", () => {
   let fakeSelf: ReturnType<typeof createFakeSelf>;
+  let fakeCaches: ReturnType<typeof createFakeCaches>;
 
   beforeEach(async () => {
     vi.resetModules();
     fakeSelf = createFakeSelf();
-    const fakeCaches = createFakeCaches();
+    fakeCaches = createFakeCaches();
     vi.stubGlobal("self", fakeSelf);
     vi.stubGlobal("caches", fakeCaches);
 
@@ -151,14 +154,19 @@ describe("sw.js http-proxy-response handling", () => {
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
   });
 
-  it("still reads a hex body from a page that has not reloaded yet", async () => {
+  it("refuses a response from a page that speaks another protocol", async () => {
+    // the hex body the build before the raw-bytes handoff posts
     const hex = Array.from(BYTES)
       .map((byte) => byte.toString(16).padStart(2, "0"))
       .join("");
 
-    const response = await proxiedResponse(hex);
+    const response = await proxiedResponse(hex, 200, { stamped: false });
 
-    expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
+    expect(response.status).toBe(500);
+    // reading it as if the shapes matched yields a 200 that lands in the proxy
+    // cache, which is read back cache-first and so outlives any reload
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    expect(await cache.keys()).toEqual([]);
   });
 
   it("answers a repeat request from cache without asking the page again", async () => {
@@ -182,6 +190,18 @@ describe("sw.js http-proxy-response handling", () => {
 
     expect(response.status).toBe(503);
     expect(await response.text()).toBe("No transport available");
+  });
+
+  it("does not take over a tab that is running an earlier build", async () => {
+    await fakeSelf.fire("install", { waitUntil: () => undefined });
+
+    expect(fakeSelf.skipWaiting).not.toHaveBeenCalled();
+  });
+
+  it("takes over once the page accepts the update", async () => {
+    await fakeSelf.fire("message", { data: { type: "SKIP_WAITING" } });
+
+    expect(fakeSelf.skipWaiting).toHaveBeenCalled();
   });
 
   /**
@@ -214,6 +234,7 @@ describe("sw.js http-proxy-response handling", () => {
   async function proxiedResponse(
     body: Uint8Array | string,
     status = 200,
+    { stamped = true } = {},
   ): Promise<Response> {
     const { response, postMessage } = await fireFetch();
     await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(1));
@@ -221,6 +242,7 @@ describe("sw.js http-proxy-response handling", () => {
     await fakeSelf.fire("message", {
       data: {
         type: "http-proxy-response",
+        ...(stamped ? { protocol: MESSAGE_PROTOCOL_VERSION } : {}),
         data: {
           id: postMessage.mock.calls[0][0].data.id,
           status,

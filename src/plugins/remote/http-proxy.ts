@@ -14,6 +14,8 @@ const REMOTE_MODE_STORAGE_KEY = "ma_remote_mode";
 const CURRENT_REMOTE_ID_STORAGE_KEY = "ma_current_remote_id";
 // Storage key to track reload attempts (prevents infinite loops)
 const SW_RELOAD_ATTEMPT_KEY = "ma_sw_reload_attempt";
+// Shape of the messages exchanged with the service worker (must match public/sw.js)
+const MESSAGE_PROTOCOL_VERSION = 1;
 
 class HttpProxyBridge {
   private transport: WebRTCTransport | null = null;
@@ -252,6 +254,7 @@ class HttpProxyBridge {
       // Send the message
       navigator.serviceWorker.controller.postMessage({
         type: "set-remote-mode",
+        protocol: MESSAGE_PROTOCOL_VERSION,
         data: { isRemote, proxyScope },
       });
     });
@@ -436,6 +439,7 @@ class HttpProxyBridge {
     controller.postMessage(
       {
         type: "http-proxy-response",
+        protocol: MESSAGE_PROTOCOL_VERSION,
         data: { id, status, headers, body: bytes },
       },
       [bytes.buffer],
