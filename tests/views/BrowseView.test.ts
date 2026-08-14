@@ -15,7 +15,11 @@ vi.mock("@/plugins/api", () => ({
 // only the toolbar heading is under test, so the listing stands in as a host
 // for the title slot it normally forwards to the toolbar
 vi.mock("@/components/ItemsListing.vue", () => ({
-  default: { template: '<div><slot name="title" /></div>' },
+  default: {
+    name: "ItemsListing",
+    props: ["showSelectButton"],
+    template: '<div><slot name="title" /></div>',
+  },
 }));
 
 describe("BrowseView", () => {
@@ -68,7 +72,62 @@ describe("BrowseView", () => {
       },
     ]);
   });
+
+  it("treats the 'root' path as the browse root", () => {
+    const heading = mountBrowse("root").getComponent(ToolbarHeading);
+
+    expect(heading.props("items")).toEqual([]);
+    expect(heading.props("to")).toBeUndefined();
+  });
+
+  it("builds a trail for a path that names no provider", () => {
+    const heading = mountBrowse("foo/bar").getComponent(ToolbarHeading);
+
+    expect(heading.props("items")).toEqual([
+      {
+        title: "foo",
+        disabled: false,
+        to: { name: "browse", query: { path: "foo" } },
+      },
+      {
+        title: "bar",
+        disabled: true,
+        to: { name: "browse", query: { path: "foo/bar" } },
+      },
+    ]);
+  });
+
+  it("skips empty steps so a trailing slash adds no blank crumb", () => {
+    const heading = mountBrowse("filesystem://Music/").getComponent(
+      ToolbarHeading,
+    );
+
+    expect(heading.props("items")).toEqual([
+      {
+        title: "filesystem provider",
+        disabled: false,
+        to: { name: "browse", query: { path: "filesystem://" } },
+      },
+      {
+        title: "Music",
+        disabled: true,
+        to: { name: "browse", query: { path: "filesystem://Music" } },
+      },
+    ]);
+  });
+
+  it("offers the select button only inside a folder holding more than folders", () => {
+    expect(selectButtonShown(mountBrowse())).toBe(false);
+    expect(selectButtonShown(mountBrowse("root"))).toBe(false);
+    expect(selectButtonShown(mountBrowse("filesystem://Music"))).toBe(true);
+  });
 });
+
+function selectButtonShown(wrapper: ReturnType<typeof mountBrowse>) {
+  return wrapper
+    .findComponent({ name: "ItemsListing" })
+    .props("showSelectButton");
+}
 
 function mountBrowse(path?: string) {
   return mount(BrowseView, {

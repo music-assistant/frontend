@@ -9,13 +9,14 @@
     </component>
     <v-breadcrumbs
       v-if="items.length"
-      :items="items"
+      :items="crumbs"
       class="pa-0 toolbar-heading-trail"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 // properties
@@ -25,10 +26,16 @@ interface Props {
   to?: RouteLocationRaw;
   items?: ToolbarHeadingItem[];
 }
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   to: undefined,
   items: () => [],
 });
+
+// crumbs in a trail can share a route and differ only by query, so only an
+// exact match may announce itself as the current page
+const crumbs = computed(() =>
+  props.items.map((item) => ({ ...item, exact: true })),
+);
 </script>
 
 <script lang="ts">

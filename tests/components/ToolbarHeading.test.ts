@@ -54,8 +54,44 @@ describe("ToolbarHeading", () => {
 
     const crumbs = wrapper.findAll(".v-breadcrumbs-item");
     expect(crumbs.map((crumb) => crumb.text())).toEqual(["Players", "Kitchen"]);
+    expect(crumbs[0].get("a").attributes("href")).toBe("/section");
     expect(crumbs[0].classes()).not.toContain("v-breadcrumbs-item--disabled");
     expect(crumbs[1].classes()).toContain("v-breadcrumbs-item--disabled");
+  });
+
+  it("lets only the crumb you are on announce itself as the current page", async () => {
+    // browse-style trail: every crumb shares one route and differs only by query
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: "/browse", name: "browse", component: blank }],
+    });
+    await router.push({ name: "browse", query: { path: "fs://Music" } });
+    await router.isReady();
+
+    const wrapper = mount(ToolbarHeading, {
+      props: {
+        title: "Browse",
+        to: { name: "browse" },
+        items: [
+          {
+            title: "fs",
+            disabled: false,
+            to: { name: "browse", query: { path: "fs://" } },
+          },
+          {
+            title: "Music",
+            disabled: true,
+            to: { name: "browse", query: { path: "fs://Music" } },
+          },
+        ],
+      },
+      global: { plugins: [router, vuetify] },
+    });
+
+    const announced = wrapper
+      .findAll(".v-breadcrumbs-item a")
+      .filter((crumb) => crumb.attributes("aria-current") === "page");
+    expect(announced.map((crumb) => crumb.text())).toEqual(["Music"]);
   });
 });
 
