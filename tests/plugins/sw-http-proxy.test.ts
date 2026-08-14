@@ -12,6 +12,11 @@ const IMAGE_URL = `${ORIGIN}/imageproxy/album.jpg`;
 const REMOTE_MODE_CACHE_NAME = "ma-sw-client-state-v1";
 const REMOTE_MODE_CACHE_PATH = "/__ma_remote_mode__/";
 const PROXY_CACHE_NAME = "ma-http-proxy-v1";
+// Kept in step with sw.js: the entry cap, what a prune leaves behind, and the
+// share of it a write that ran out of storage keeps.
+const PROXY_CACHE_MAX_ENTRIES = 500;
+const PROXY_CACHE_PRUNE_TO_ENTRIES = 400;
+const PROXY_CACHE_QUOTA_KEEP = 0.8;
 const MESSAGE_PROTOCOL_VERSION = 1;
 
 type PostMessage = (message: {
@@ -30,6 +35,7 @@ type PostMessage = (message: {
  */
 function createFakeCaches() {
   const stores = new Map<string, Map<string, Response>>();
+  let putFailure: { error: Error; remaining: number } | null = null;
 
   function storeFor(name: string): Map<string, Response> {
     let store = stores.get(name);
@@ -53,11 +59,25 @@ function createFakeCaches() {
         match: vi.fn(async (request: string | { url: string }) =>
           store.get(keyFor(request))?.clone(),
         ),
-        put: vi.fn(
-          async (request: string | { url: string }, response: Response) => {
-            store.set(keyFor(request), response);
-          },
-        ),
+        // Deliberately not a vi.fn: a mock tracks the promise it hands back,
+        // which counts as handling a rejection, and a write the worker fails
+        // to catch would then no longer surface as an unhandled rejection.
+        put: async (request: string | { url: string }, response: Response) => {
+          // The real Cache reads the body before it can fail on quota, which
+          // leaves the response it was handed unusable for a second attempt.
+          const body = await response.arrayBuffer();
+          if (putFailure && putFailure.remaining > 0) {
+            putFailure.remaining -= 1;
+            throw putFailure.error;
+          }
+          store.set(
+            keyFor(request),
+            new Response(body, {
+              status: response.status,
+              headers: response.headers,
+            }),
+          );
+        },
         delete: vi.fn(async (request: string | { url: string }) =>
           store.delete(keyFor(request)),
         ),
@@ -66,7 +86,15 @@ function createFakeCaches() {
         ),
       };
     }),
+    has: vi.fn(async (name: string) => stores.has(name)),
     delete: vi.fn(async (name: string) => stores.delete(name)),
+    /** Make the next `count` writes fail, as a full storage quota would. */
+    failPuts(count: number) {
+      putFailure = {
+        error: new DOMException("Quota exceeded", "QuotaExceededError"),
+        remaining: count,
+      };
+    },
   };
 }
 
@@ -119,11 +147,15 @@ function remoteStateKey(clientId: string): string {
 describe("sw.js", () => {
   let fakeSelf: ReturnType<typeof createFakeSelf>;
   let fakeCaches: ReturnType<typeof createFakeCaches>;
+  // Work the worker handed to event.waitUntil(), i.e. the cache writes that
+  // deliberately outlive the response.
+  let pendingWork: Array<Promise<unknown>>;
 
   beforeEach(async () => {
     vi.resetModules();
     fakeSelf = createFakeSelf();
     fakeCaches = createFakeCaches();
+    pendingWork = [];
     vi.stubGlobal("self", fakeSelf);
     vi.stubGlobal("caches", fakeCaches);
 
@@ -192,6 +224,84 @@ describe("sw.js", () => {
     expect(await response.text()).toBe("No transport available");
   });
 
+  it("still answers a request when the image cannot be cached", async () => {
+    fakeCaches.failPuts(Number.POSITIVE_INFINITY);
+
+    const response = await proxiedResponse(BYTES);
+
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
+    // A rejected write must not escape the worker either: the suite fails a
+    // test on an unhandled rejection.
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    expect(await cache.keys()).toEqual([]);
+  });
+
+  it("makes room for an image the browser had no space for", async () => {
+    const stored = 100;
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    for (let index = 0; index < stored; index++) {
+      await cache.put(
+        `${ORIGIN}/imageproxy/old-${index}.jpg`,
+        new Response(""),
+      );
+    }
+    fakeCaches.failPuts(1);
+
+    await proxiedResponse(BYTES);
+
+    // Running out of storage has nothing to do with how many images are cached,
+    // so room is freed here even though the cache is far below its cap.
+    const urls = (await cache.keys()).map((entry) => entry.url);
+    expect(urls).toHaveLength(Math.floor(stored * PROXY_CACHE_QUOTA_KEEP) + 1);
+    expect(urls.at(-1)).toContain(IMAGE_URL);
+  });
+
+  it("drops the oldest images once the cache is full", async () => {
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    for (let index = 0; index < PROXY_CACHE_MAX_ENTRIES; index++) {
+      await cache.put(
+        `${ORIGIN}/imageproxy/old-${index}.jpg`,
+        new Response(""),
+      );
+    }
+
+    await proxiedResponse(BYTES);
+
+    const urls = (await cache.keys()).map((entry) => entry.url);
+    expect(urls).toHaveLength(PROXY_CACHE_PRUNE_TO_ENTRIES);
+    // One entry over the cap, so the oldest 101 are gone and the image that
+    // pushed it over is the newest entry.
+    const dropped = PROXY_CACHE_MAX_ENTRIES + 1 - PROXY_CACHE_PRUNE_TO_ENTRIES;
+    expect(urls[0]).toBe(`${ORIGIN}/imageproxy/old-${dropped}.jpg`);
+    expect(urls.at(-1)).toContain(IMAGE_URL);
+  });
+
+  it("keeps the cache capped as writes keep coming", async () => {
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    for (let index = 0; index < PROXY_CACHE_MAX_ENTRIES - 1; index++) {
+      await cache.put(
+        `${ORIGIN}/imageproxy/old-${index}.jpg`,
+        new Response(""),
+      );
+    }
+
+    // The first write reads the real entry count; the second one has to know it
+    // went over the cap from the count the worker kept.
+    await proxiedResponse(BYTES);
+    await proxiedResponse(BYTES, 200, { url: `${ORIGIN}/imageproxy/next.jpg` });
+
+    expect(await cache.keys()).toHaveLength(PROXY_CACHE_PRUNE_TO_ENTRIES);
+  });
+
+  it("still answers a request the browser stopped waiting on", async () => {
+    // Nothing can be kept alive for the cache write at that point, but the
+    // image the worker already has must not turn into a failure.
+    const response = await proxiedResponse(BYTES, 200, { extendable: false });
+
+    expect(response.status).toBe(200);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
+  });
+
   // the check that refuses another build's messages sits in front of every one
   // of them, so it has to let this one through as well
   it("acknowledges a stamped remote-mode message", async () => {
@@ -224,11 +334,33 @@ describe("sw.js", () => {
     expect(fakeSelf.skipWaiting).toHaveBeenCalled();
   });
 
+  it("trims a cache left behind by a version without a cap", async () => {
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    for (let index = 0; index < PROXY_CACHE_MAX_ENTRIES + 50; index++) {
+      await cache.put(
+        `${ORIGIN}/imageproxy/old-${index}.jpg`,
+        new Response(""),
+      );
+    }
+
+    await fakeSelf.fire("activate", {
+      waitUntil: (promise: Promise<unknown>) => {
+        pendingWork.push(promise);
+      },
+    });
+    await settlePendingWork();
+
+    expect(await cache.keys()).toHaveLength(PROXY_CACHE_PRUNE_TO_ENTRIES);
+  });
+
   /**
    * Request the proxied image. Returns the worker's response and the client
    * mock, which only receives a proxy request when the cache misses.
    */
-  async function fireFetch(): Promise<{
+  async function fireFetch({
+    url = IMAGE_URL,
+    extendable = true,
+  } = {}): Promise<{
     response: Promise<Response>;
     postMessage: ReturnType<typeof vi.fn<PostMessage>>;
   }> {
@@ -237,14 +369,30 @@ describe("sw.js", () => {
 
     let response!: Promise<Response>;
     await fakeSelf.fire("fetch", {
-      request: new Request(IMAGE_URL),
+      request: new Request(url),
       clientId: CLIENT_ID,
       respondWith: (promise: Promise<Response>) => {
         response = promise;
       },
+      waitUntil: (promise: Promise<unknown>) => {
+        // As the browser does once it stops waiting on the event.
+        if (!extendable) {
+          throw new DOMException("Event is not active", "InvalidStateError");
+        }
+        pendingWork.push(promise);
+      },
     });
 
     return { response, postMessage };
+  }
+
+  /**
+   * Wait for the work the worker handed to waitUntil().
+   */
+  async function settlePendingWork(): Promise<void> {
+    while (pendingWork.length > 0) {
+      await Promise.all(pendingWork.splice(0));
+    }
   }
 
   /**
@@ -254,9 +402,9 @@ describe("sw.js", () => {
   async function proxiedResponse(
     body: Uint8Array | string,
     status = 200,
-    { stamped = true } = {},
+    { stamped = true, url = IMAGE_URL, extendable = true } = {},
   ): Promise<Response> {
-    const { response, postMessage } = await fireFetch();
+    const { response, postMessage } = await fireFetch({ url, extendable });
     await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(1));
 
     await fakeSelf.fire("message", {
@@ -273,6 +421,10 @@ describe("sw.js", () => {
       source: { id: CLIENT_ID },
     });
 
-    return response;
+    // The worker hands its cache write to waitUntil() just before it answers, so
+    // the response has to be awaited first for that write to exist.
+    const proxied = await response;
+    await settlePendingWork();
+    return proxied;
   }
 });
