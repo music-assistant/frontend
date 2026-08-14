@@ -3,7 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const messageListeners = new Set<(event: MessageEvent) => void>();
 const controllerChangeListeners = new Set<() => void>();
 const postMessage = vi.fn(
-  (message: { type: string; data: unknown }, _transfer?: Transferable[]) => {
+  (
+    message: { type: string; protocol: number; data: unknown },
+    _transfer?: Transferable[],
+  ) => {
     if (message.type !== "set-remote-mode") return;
     const event = {
       data: {
@@ -66,6 +69,7 @@ describe("HttpProxyBridge", () => {
     await httpProxyBridge.initialize();
     expect(postMessage).toHaveBeenNthCalledWith(1, {
       type: "set-remote-mode",
+      protocol: 1,
       data: { isRemote: false, proxyScope: undefined },
     });
 
@@ -75,6 +79,7 @@ describe("HttpProxyBridge", () => {
     );
     expect(postMessage).toHaveBeenNthCalledWith(2, {
       type: "set-remote-mode",
+      protocol: 1,
       data: { isRemote: true, proxyScope: "guest-remote-id" },
     });
 
@@ -82,6 +87,7 @@ describe("HttpProxyBridge", () => {
     await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(3));
     expect(postMessage).toHaveBeenNthCalledWith(3, {
       type: "set-remote-mode",
+      protocol: 1,
       data: { isRemote: true, proxyScope: "guest-remote-id" },
     });
   });
