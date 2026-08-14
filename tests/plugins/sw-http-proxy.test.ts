@@ -185,8 +185,8 @@ describe("sw.js http-proxy-response handling", () => {
   });
 
   /**
-   * Request the proxied image, returning what the worker answers with and the
-   * mock any proxy request for it would be posted to.
+   * Request the proxied image. Returns the worker's response and the client
+   * mock, which only receives a proxy request when the cache misses.
    */
   async function fireFetch(): Promise<{
     response: Promise<Response>;
