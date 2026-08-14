@@ -17,13 +17,13 @@ const close = async () => {
     role="alert"
   >
     <div class="message">
-      <span v-if="offlineReady"> App ready to work offline </span>
-      <span v-else>
-        New content available, click on reload button to update.
-      </span>
+      <span v-if="offlineReady">{{ $t("offline_ready") }}</span>
+      <span v-else>{{ $t("update_available") }}</span>
     </div>
-    <button v-if="needRefresh" @click="updateServiceWorker()">Reload</button>
-    <button @click="close">Close</button>
+    <button v-if="needRefresh" @click="updateServiceWorker()">
+      {{ $t("reload") }}
+    </button>
+    <button @click="close">{{ $t("close") }}</button>
   </div>
 </template>
 

@@ -2286,5 +2286,8 @@
     "searching": "Searching...",
     "menu": "Menu",
     "home_assistant_menu": "Home Assistant",
-    "main_navigation": "Main"
+    "main_navigation": "Main",
+    "offline_ready": "App ready to work offline",
+    "update_available": "A new version is available. Reload to update.",
+    "reload": "Reload"
 }
