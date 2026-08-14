@@ -34,7 +34,7 @@ withDefaults(defineProps<Props>(), {
 <script lang="ts">
 export interface ToolbarHeadingItem {
   title: string;
-  // set on the page you are on, which is the crumb without a destination
+  // marks the page you are on: highlighted and not clickable, even with a route
   disabled: boolean;
   to?: RouteLocationRaw;
 }
