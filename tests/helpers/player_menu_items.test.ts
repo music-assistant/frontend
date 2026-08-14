@@ -1,14 +1,17 @@
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   getPlayerMenuItems,
   getPlayerSetupMenuItem,
 } from "@/helpers/player_menu_items";
 import {
   PLAYER_CONTROL_NONE,
+  PlayerFeature,
   PlayerType,
   type AIRadioHost,
   type AIRadioSession,
   type AIRadioStation,
   type Player,
+  type PlayerOption,
   type PlayerQueue,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,12 +19,14 @@ import { playerQueue } from "../fixtures/playerQueue";
 
 const {
   aiRadioAvailableRef,
+  announcementAvailableRef,
   emitEvent,
   hostsRef,
   isAdmin,
   loadHosts,
   loadQueueDjStatus,
   loadStatus,
+  openAnnouncementDialog,
   queueDjStatusRef,
   routerPush,
   sessionsRef,
@@ -30,12 +35,14 @@ const {
   storeMock,
 } = vi.hoisted(() => ({
   aiRadioAvailableRef: { value: false },
+  announcementAvailableRef: { value: false },
   emitEvent: vi.fn(),
   hostsRef: { value: [] as AIRadioHost[] },
   isAdmin: vi.fn(),
   loadHosts: vi.fn().mockResolvedValue(undefined),
   loadQueueDjStatus: vi.fn().mockResolvedValue(undefined),
   loadStatus: vi.fn().mockResolvedValue(undefined),
+  openAnnouncementDialog: vi.fn(),
   queueDjStatusRef: { value: {} as Record<string, string> },
   routerPush: vi.fn(),
   sessionsRef: { value: [] as AIRadioSession[] },
@@ -80,6 +87,13 @@ vi.mock("@/helpers/sleep_timer", () => ({
   sleepTimerActive: () => false,
 }));
 
+vi.mock("@/composables/useAnnouncement", () => ({
+  useAnnouncement: () => ({
+    announcementAvailable: announcementAvailableRef,
+    openAnnouncementDialog,
+  }),
+}));
+
 vi.mock("@/composables/useAudioOverlay", () => ({
   useAudioOverlay: () => ({
     openOverlayDialog: vi.fn(),
@@ -117,6 +131,7 @@ function makePlayer(overrides: Partial<Player> = {}): Player {
     player_id: "kitchen",
     type: PlayerType.PLAYER,
     power_control: PLAYER_CONTROL_NONE,
+    supported_features: [],
     source_list: [],
     sound_mode_list: [],
     options: [],
@@ -129,12 +144,20 @@ function makeQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
   return playerQueue({ queue_id: "kitchen", ...overrides });
 }
 
+function openSettingsItem(
+  menuItems: ContextMenuItem[],
+): ContextMenuItem | undefined {
+  return menuItems.find((item) => item.label === "open_settings");
+}
+
 function makeHost(overrides: Partial<AIRadioHost> = {}): AIRadioHost {
   return {
     id: "host-1",
     name: "Robo DJ",
     instructions: "",
     tts_engine: "",
+    language: "",
+    options: {},
     section_ids: [],
     section_order: [],
     merge_section_id: "",
@@ -214,6 +237,17 @@ describe("getPlayerSetupMenuItem", () => {
 });
 
 describe("getPlayerMenuItems settings shortcuts", () => {
+  // the settings sections are reached from the settings page itself now, so these
+  // menus only offer the way in
+  const MOVED_TO_SETTINGS_PAGE = [
+    "open_player_settings",
+    "open_queue_settings",
+    "open_dsp_settings",
+    "player_options.open",
+    "reconfigure_player",
+    "configure_player",
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
     isAdmin.mockReturnValue(true);
@@ -221,46 +255,156 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     storeMock.showPlayersMenu = true;
   });
 
-  it("shows both settings shortcuts in the fullscreen queue menu", () => {
+  it.each(["player", "queue"] as const)(
+    "offers one way into the settings from the %s menu",
+    (context) => {
+      // a player that used to grow a shortcut for every one of these
+      const menuItems = getPlayerMenuItems(
+        makePlayer({
+          has_setup_flow: true,
+          options: [{ key: "eq", name: "EQ" } as PlayerOption],
+        }),
+        makeQueue(),
+        { context },
+      );
+      const labels = menuItems.map((item) => item.label);
+
+      expect(labels.filter((label) => label === "open_settings")).toEqual([
+        "open_settings",
+      ]);
+      for (const moved of MOVED_TO_SETTINGS_PAGE) {
+        expect(labels).not.toContain(moved);
+      }
+    },
+  );
+
+  it("opens the player settings page from the player menu", () => {
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "queue",
-    });
-
-    expect(menuItems.map((item) => item.label)).toEqual(
-      expect.arrayContaining(["open_queue_settings", "open_player_settings"]),
-    );
-  });
-
-  it("shows queue settings in the player menu only for an active MA queue", () => {
-    const activeQueueItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "player",
     });
-    const externalSourceItems = getPlayerMenuItems(makePlayer(), undefined, {
-      context: "player",
-    });
+    const settingsItem = openSettingsItem(menuItems);
 
-    expect(activeQueueItems.map((item) => item.label)).toContain(
-      "open_queue_settings",
-    );
-    expect(externalSourceItems.map((item) => item.label)).not.toContain(
-      "open_queue_settings",
-    );
-  });
+    expect(settingsItem?.subItems).toBeUndefined();
+    settingsItem?.action?.();
 
-  it("opens the settings page for each shortcut", () => {
-    const menuItems = getPlayerMenuItems(
-      makePlayer(),
-      makeQueue({ queue_id: "source-queue" }),
-      { context: "player" },
-    );
-
-    menuItems.find((item) => item.label === "open_queue_settings")?.action?.();
-    expect(routerPush).toHaveBeenCalledWith("/settings/editqueue/source-queue");
-
-    menuItems.find((item) => item.label === "open_player_settings")?.action?.();
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
     expect(storeMock.showFullscreenPlayer).toBe(false);
     expect(storeMock.showPlayersMenu).toBe(false);
+  });
+
+  it("picks a settings page from the fullscreen player", () => {
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+    const subItems = openSettingsItem(menuItems)?.subItems ?? [];
+
+    expect(subItems.map((item) => item.label)).toEqual([
+      "settings.queue_settings",
+      "settings.player_settings",
+      "settings.category.dsp",
+    ]);
+    for (const subItem of subItems) subItem.action?.();
+
+    expect(routerPush.mock.calls.flat()).toEqual([
+      "/settings/editqueue/kitchen",
+      "/settings/editplayer/kitchen",
+      "/settings/editplayer/kitchen/dsp",
+    ]);
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+    expect(storeMock.showPlayersMenu).toBe(false);
+  });
+
+  it("leaves out the DSP settings for a group player", () => {
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ type: PlayerType.GROUP }),
+      makeQueue(),
+      { context: "queue" },
+    );
+
+    expect(
+      openSettingsItem(menuItems)?.subItems?.map((item) => item.label),
+    ).toEqual(["settings.queue_settings", "settings.player_settings"]);
+  });
+
+  it("leaves out the queue settings while playing from another source", () => {
+    const menuItems = getPlayerMenuItems(makePlayer(), undefined, {
+      context: "queue",
+    });
+
+    expect(
+      openSettingsItem(menuItems)?.subItems?.map((item) => item.label),
+    ).toEqual(["settings.player_settings", "settings.category.dsp"]);
+  });
+
+  it("keeps the settings out of a non-admin's menu", () => {
+    isAdmin.mockReturnValue(false);
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "player",
+    });
+
+    expect(menuItems.map((item) => item.label)).not.toContain("open_settings");
+  });
+});
+
+describe("getPlayerMenuItems play announcement", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    announcementAvailableRef.value = false;
+  });
+
+  it("omits the entry when no tts engine is set up", () => {
+    const menuItems = getPlayerMenuItems(makePlayer(), undefined, {
+      context: "player",
+    });
+
+    expect(menuItems.map((item) => item.label)).not.toContain(
+      "play_announcement",
+    );
+  });
+
+  it("omits the entry for a protocol player", () => {
+    announcementAvailableRef.value = true;
+
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ type: PlayerType.PROTOCOL }),
+      undefined,
+      { context: "player" },
+    );
+
+    expect(menuItems.map((item) => item.label)).not.toContain(
+      "play_announcement",
+    );
+  });
+
+  it("offers the entry for a player without native announcement support", () => {
+    // the server falls back to its own implementation, so this is not gated on
+    // PlayerFeature.PLAY_ANNOUNCEMENT
+    announcementAvailableRef.value = true;
+
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ supported_features: [] }),
+      undefined,
+      { context: "player" },
+    );
+
+    expect(menuItems.map((item) => item.label)).toContain("play_announcement");
+  });
+
+  it("opens the announcement dialog for the player from both menus", () => {
+    announcementAvailableRef.value = true;
+    const player = makePlayer();
+
+    for (const context of ["player", "queue"] as const) {
+      const menuItems = getPlayerMenuItems(player, makeQueue(), { context });
+      const announcement = menuItems.find(
+        (item) => item.label === "play_announcement",
+      );
+
+      expect(announcement).toBeDefined();
+      announcement!.action!();
+      expect(openAnnouncementDialog).toHaveBeenCalledWith("kitchen");
+    }
   });
 });
 

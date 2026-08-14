@@ -242,8 +242,6 @@
                 "remove_confirm": "Er du sikker på at du vil fjerne denne DSP-forhåndsinnstillingen?"
             }
         },
-        "dsp_enabled": "DSP er påslått",
-        "dsp_disabled": "DSP er avslått",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurere DSP for hver enkelt spiller."
         },

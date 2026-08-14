@@ -15,6 +15,7 @@ import { ApiCommandError } from "./errors";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
+  type AnnouncementTtsEngine,
   type Artist,
   type AuthToken,
   type BackgroundTask,
@@ -990,6 +991,16 @@ export class MusicAssistantApi {
     });
   }
 
+  public getRadioTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/radios/radio_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   // Audiobook related endpoints
   /**
    * Get Audiobooks listing from the server.
@@ -1890,6 +1901,43 @@ export class MusicAssistantApi {
     });
   }
 
+  public playerCommandPlayAnnouncement(
+    playerId: string,
+    message: string,
+    options?: {
+      preAnnounce?: boolean;
+      volumeLevel?: number;
+      ttsEngine?: string;
+    },
+  ): Promise<void> {
+    /*
+      Handle PLAY_ANNOUNCEMENT on given player.
+          - playerId: playerId of the player to handle the command.
+          - message: text to speak as the announcement.
+          - options.preAnnounce: play the chime before the message.
+          - options.volumeLevel: volume level to play the announcement at.
+          - options.ttsEngine: uid of the engine that speaks the message.
+      Omitted options fall back to the player's announcement settings.
+    */
+    return this.playerCommand(playerId, "play_announcement", {
+      message,
+      pre_announce: options?.preAnnounce,
+      volume_level: options?.volumeLevel,
+      tts_engine: options?.ttsEngine,
+    });
+  }
+
+  public getAnnouncementTtsEngines(): Promise<AnnouncementTtsEngine[]> {
+    /*
+      Get the TTS engines that can speak an announcement.
+      Prefetched in the background, so a failure is not worth a toast:
+      it leaves the announcement entry hidden until a later attempt.
+    */
+    return this.sendCommand("players/tts_engines", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
   public playerCommand(
     player_id: string,
     command: string,
@@ -2143,7 +2191,7 @@ export class MusicAssistantApi {
   public async getPlayerConfigValue(
     player_id: string,
     key: string,
-  ): Promise<PlayerConfig> {
+  ): Promise<ConfigValueType> {
     // Return single configentry value for a player.
     return this.sendCommand("config/players/get_value", { player_id, key });
   }
@@ -3369,20 +3417,22 @@ export class MusicAssistantApi {
   }
 
   /**
-   * Create a sendspin DataChannel through the remote access WebRTC connection.
+   * Open a DataChannel through the remote access WebRTC connection.
    * Returns null if not in remote mode or if WebRTC transport doesn't support it.
+   *
+   * @param label - Channel label the server routes on, e.g. "sendspin".
    */
-  public async createSendspinDataChannel(): Promise<RTCDataChannel | null> {
+  public async openDataChannel(label: string): Promise<RTCDataChannel | null> {
     if (!this.transport) {
       return null;
     }
 
-    // Check if transport supports creating sendspin channels
-    if (typeof this.transport.createSendspinDataChannel === "function") {
+    // Check if transport supports creating additional channels
+    if (typeof this.transport.openDataChannel === "function") {
       try {
-        return await this.transport.createSendspinDataChannel();
+        return await this.transport.openDataChannel(label);
       } catch (error) {
-        console.error("[API] Failed to create sendspin DataChannel:", error);
+        console.error(`[API] Failed to create ${label} DataChannel:`, error);
         return null;
       }
     }

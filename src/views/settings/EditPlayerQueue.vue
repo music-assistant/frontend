@@ -51,6 +51,7 @@ import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
+import { goBack } from "@/helpers/navigation";
 import { Info, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
@@ -101,10 +102,11 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .savePlayerQueueConfig(props.queueId!, values)
     .then(() => {
-      router.back();
+      goBack(router, { name: "playersettings" });
     })
     .catch((err) => {
       toast.error(err.message || err);
+      editConfig.value?.saveFailed();
     })
     .finally(() => {
       loading.value = false;

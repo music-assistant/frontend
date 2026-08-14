@@ -255,8 +255,6 @@
                 "remove_confirm": "Ви впевнені, що хочете видалити цей пресет DSP?"
             }
         },
-        "dsp_enabled": "DSP ввімкнено",
-        "dsp_disabled": "DSP вимкнено",
         "dsp_note_multi_device_group": {
             "label": "Ви можете налаштувати DSP для кожного плеєра окремо."
         },

@@ -133,7 +133,7 @@ export function useSmartPlaylistRulesForm(
     } else if (field === "last_played") {
       const row = newRule("last_played", "is");
       row.lastPlayedBeforeValue = undefined;
-      row.lastPlayedBeforeUnit = "days";
+      row.lastPlayedBeforeUnit = undefined;
       list.push(row);
     } else if (field === "favorite") {
       list.push(newRule("favorite", "is"));
@@ -209,6 +209,181 @@ export function useSmartPlaylistRulesForm(
 
   _updateTrackCount();
 
+  function buildRulesFromInitial(
+    initial: SmartPlaylistRules,
+    isSeed: boolean,
+  ): RuleRow[] {
+    const fresh: RuleRow[] = [];
+
+    if (initial.genre_ids?.length) {
+      const row = newRule("genre", "is");
+      row.values = initial.genre_ids.map((id) => ({
+        id,
+        name: initial.genre_names?.[id] ?? String(id),
+      }));
+      fresh.push(row);
+    }
+    if (initial.excluded_genre_ids?.length) {
+      const row = newRule("genre", "is_not");
+      row.values = initial.excluded_genre_ids.map((id) => ({
+        id,
+        name: initial.excluded_genre_names?.[id] ?? String(id),
+      }));
+      fresh.push(row);
+    }
+
+    if (!isSeed) {
+      if (initial.artist_ids?.length) {
+        const row = newRule("artist", "is");
+        row.values = (props.initialArtistItems ?? []).slice();
+        if (!row.values.length) {
+          row.values = initial.artist_ids.map((id) => ({
+            id,
+            name: initial.artist_names?.[id] ?? String(id),
+          }));
+        }
+        fresh.push(row);
+      }
+      if (initial.excluded_artist_ids?.length) {
+        const row = newRule("artist", "is_not");
+        row.values = (props.initialExcludedArtistItems ?? []).slice();
+        if (!row.values.length) {
+          row.values = initial.excluded_artist_ids.map((id) => ({
+            id,
+            name: initial.excluded_artist_names?.[id] ?? String(id),
+          }));
+        }
+        fresh.push(row);
+      }
+      if (initial.album_ids?.length) {
+        const row = newRule("album", "is");
+        row.values = (props.initialAlbumItems ?? []).slice();
+        if (!row.values.length) {
+          row.values = initial.album_ids.map((id) => ({
+            id,
+            name: initial.album_names?.[id] ?? String(id),
+          }));
+        }
+        fresh.push(row);
+      }
+      if (initial.excluded_album_ids?.length) {
+        const row = newRule("album", "is_not");
+        row.values = (props.initialExcludedAlbumItems ?? []).slice();
+        if (!row.values.length) {
+          row.values = initial.excluded_album_ids.map((id) => ({
+            id,
+            name: initial.excluded_album_names?.[id] ?? String(id),
+          }));
+        }
+        fresh.push(row);
+      }
+      if (initial.favorites_only) {
+        fresh.push(newRule("favorite", "is"));
+      }
+    }
+
+    if (initial.explicit === true) {
+      fresh.push(newRule("explicit", "is"));
+    } else if (initial.explicit === false) {
+      fresh.push(newRule("explicit", "is_not"));
+    } else if (initial.explicit === null) {
+      fresh.push(newRule("explicit", "allowed"));
+    }
+
+    const yearFrom =
+      typeof initial.year_from === "number" && initial.year_from > 0
+        ? initial.year_from
+        : undefined;
+    const yearTo =
+      typeof initial.year_to === "number" && initial.year_to > 0
+        ? initial.year_to
+        : undefined;
+    if (yearFrom !== undefined || yearTo !== undefined) {
+      const row = newRule("year", "is");
+      row.yearFrom = yearFrom;
+      row.yearTo = yearTo;
+      fresh.push(row);
+    }
+
+    if (initial.album_types?.length) {
+      const row = newRule("album_type", "is");
+      row.values = initial.album_types
+        .filter((at) => ALBUM_TYPE_VALUE_TO_ID[at] !== undefined)
+        .map((at) => ({
+          id: ALBUM_TYPE_VALUE_TO_ID[at],
+          name: $t(`album_type.${at}`),
+        }));
+      if (row.values.length) fresh.push(row);
+    }
+    if (initial.excluded_album_types?.length) {
+      const row = newRule("album_type", "is_not");
+      row.values = initial.excluded_album_types
+        .filter((at) => ALBUM_TYPE_VALUE_TO_ID[at] !== undefined)
+        .map((at) => ({
+          id: ALBUM_TYPE_VALUE_TO_ID[at],
+          name: $t(`album_type.${at}`),
+        }));
+      if (row.values.length) fresh.push(row);
+    }
+
+    if (initial.min_duration != null || initial.max_duration != null) {
+      const row = newRule("duration", "is");
+      row.minDuration = initial.min_duration ?? undefined;
+      row.maxDuration = initial.max_duration ?? undefined;
+      fresh.push(row);
+    }
+
+    if (
+      initial.last_played_before_value != null &&
+      initial.last_played_before_unit != null
+    ) {
+      const row = newRule("last_played", "is");
+      row.lastPlayedBeforeValue = initial.last_played_before_value;
+      const unit = initial.last_played_before_unit;
+      row.lastPlayedBeforeUnit =
+        unit === "hours" ||
+        unit === "days" ||
+        unit === "weeks" ||
+        unit === "months"
+          ? (unit as "hours" | "days" | "weeks" | "months")
+          : "days";
+      fresh.push(row);
+    }
+
+    return fresh;
+  }
+
+  async function hydrateSeedItems(
+    seedEntries: { uri: string; kind: SeedKind }[],
+    seedNames?: Record<string, string>,
+  ) {
+    seedItems.loadSeedsFromUris(seedEntries, seedNames);
+    await Promise.all(
+      seedEntries.map(async ({ uri }, idx) => {
+        try {
+          const item = await api.getItemByUri(uri);
+          const current = seedItems.seeds.value[idx];
+          if (!current || current.uri !== uri) return;
+          const next = { ...current, name: item.name };
+          if (item.media_type === MediaType.TRACK) {
+            const firstArtist = (item as { artists?: { name: string }[] })
+              .artists?.[0]?.name;
+            if (firstArtist) next.subtitle = firstArtist;
+          } else if (item.media_type === MediaType.ALBUM) {
+            const firstArtist = (item as { artists?: { name: string }[] })
+              .artists?.[0]?.name;
+            if (firstArtist) next.subtitle = firstArtist;
+          }
+          const list = seedItems.seeds.value.slice();
+          list[idx] = next;
+          seedItems.seeds.value = list;
+        } catch {
+          // unresolved seed — keep the URI as a placeholder name
+        }
+      }),
+    );
+  }
+
   watch(
     () => props.initialRules,
     async (initial) => {
@@ -236,150 +411,11 @@ export function useSmartPlaylistRulesForm(
       mode.value = isSeed ? "seed" : "library";
       logic.value = initial.logic ?? "AND";
 
-      const fresh: RuleRow[] = [];
-
-      if (initial.genre_ids?.length) {
-        const row = newRule("genre", "is");
-        row.values = initial.genre_ids.map((id) => ({
-          id,
-          name: initial.genre_names?.[id] ?? String(id),
-        }));
-        fresh.push(row);
-      }
-      if (initial.excluded_genre_ids?.length) {
-        const row = newRule("genre", "is_not");
-        row.values = initial.excluded_genre_ids.map((id) => ({
-          id,
-          name: initial.excluded_genre_names?.[id] ?? String(id),
-        }));
-        fresh.push(row);
-      }
-
-      if (!isSeed) {
-        if (initial.artist_ids?.length) {
-          const row = newRule("artist", "is");
-          row.values = (props.initialArtistItems ?? []).slice();
-          if (!row.values.length) {
-            row.values = initial.artist_ids.map((id) => ({
-              id,
-              name: initial.artist_names?.[id] ?? String(id),
-            }));
-          }
-          fresh.push(row);
-        }
-        if (initial.excluded_artist_ids?.length) {
-          const row = newRule("artist", "is_not");
-          row.values = (props.initialExcludedArtistItems ?? []).slice();
-          if (!row.values.length) {
-            row.values = initial.excluded_artist_ids.map((id) => ({
-              id,
-              name: initial.excluded_artist_names?.[id] ?? String(id),
-            }));
-          }
-          fresh.push(row);
-        }
-        if (initial.album_ids?.length) {
-          const row = newRule("album", "is");
-          row.values = (props.initialAlbumItems ?? []).slice();
-          if (!row.values.length) {
-            row.values = initial.album_ids.map((id) => ({
-              id,
-              name: initial.album_names?.[id] ?? String(id),
-            }));
-          }
-          fresh.push(row);
-        }
-        if (initial.excluded_album_ids?.length) {
-          const row = newRule("album", "is_not");
-          row.values = (props.initialExcludedAlbumItems ?? []).slice();
-          if (!row.values.length) {
-            row.values = initial.excluded_album_ids.map((id) => ({
-              id,
-              name: initial.excluded_album_names?.[id] ?? String(id),
-            }));
-          }
-          fresh.push(row);
-        }
-        if (initial.favorites_only) {
-          fresh.push(newRule("favorite", "is"));
-        }
-      }
-
-      if (initial.explicit === true) {
-        fresh.push(newRule("explicit", "is"));
-      } else if (initial.explicit === false) {
-        fresh.push(newRule("explicit", "is_not"));
-      } else if (initial.explicit === null) {
-        fresh.push(newRule("explicit", "allowed"));
-      }
-
-      const yearFrom =
-        typeof initial.year_from === "number" && initial.year_from > 0
-          ? initial.year_from
-          : undefined;
-      const yearTo =
-        typeof initial.year_to === "number" && initial.year_to > 0
-          ? initial.year_to
-          : undefined;
-      if (yearFrom !== undefined || yearTo !== undefined) {
-        const row = newRule("year", "is");
-        row.yearFrom = yearFrom;
-        row.yearTo = yearTo;
-        fresh.push(row);
-      }
-
-      if (initial.album_types?.length) {
-        const row = newRule("album_type", "is");
-        row.values = initial.album_types
-          .filter((at) => ALBUM_TYPE_VALUE_TO_ID[at] !== undefined)
-          .map((at) => ({
-            id: ALBUM_TYPE_VALUE_TO_ID[at],
-            name: $t(`album_type.${at}`),
-          }));
-        if (row.values.length) fresh.push(row);
-      }
-      if (initial.excluded_album_types?.length) {
-        const row = newRule("album_type", "is_not");
-        row.values = initial.excluded_album_types
-          .filter((at) => ALBUM_TYPE_VALUE_TO_ID[at] !== undefined)
-          .map((at) => ({
-            id: ALBUM_TYPE_VALUE_TO_ID[at],
-            name: $t(`album_type.${at}`),
-          }));
-        if (row.values.length) fresh.push(row);
-      }
-
-      rules.value = fresh;
+      rules.value = buildRulesFromInitial(initial, isSeed);
 
       seedItems.clearSeeds();
       if (isSeed) {
-        seedItems.loadSeedsFromUris(seedEntries, initial.seed_names);
-        // Hydrate display info (subtitles) where possible from the live items.
-        // The cap is 10 seeds so this is bounded.
-        await Promise.all(
-          seedEntries.map(async ({ uri }, idx) => {
-            try {
-              const item = await api.getItemByUri(uri);
-              const current = seedItems.seeds.value[idx];
-              if (!current || current.uri !== uri) return;
-              const next = { ...current, name: item.name };
-              if (item.media_type === MediaType.TRACK) {
-                const firstArtist = (item as { artists?: { name: string }[] })
-                  .artists?.[0]?.name;
-                if (firstArtist) next.subtitle = firstArtist;
-              } else if (item.media_type === MediaType.ALBUM) {
-                const firstArtist = (item as { artists?: { name: string }[] })
-                  .artists?.[0]?.name;
-                if (firstArtist) next.subtitle = firstArtist;
-              }
-              const list = seedItems.seeds.value.slice();
-              list[idx] = next;
-              seedItems.seeds.value = list;
-            } catch {
-              // unresolved seed — keep the URI as a placeholder name
-            }
-          }),
-        );
+        await hydrateSeedItems(seedEntries, initial.seed_names);
       }
 
       await nextTick();
@@ -479,11 +515,17 @@ export function useSmartPlaylistRulesForm(
       explicit,
       min_duration: durationRule()?.minDuration ?? undefined,
       max_duration: durationRule()?.maxDuration ?? undefined,
-      last_played_before_value:
-        lastPlayedRule()?.lastPlayedBeforeValue ?? undefined,
-      last_played_before_unit:
-        lastPlayedRule()?.lastPlayedBeforeUnit ?? undefined,
     };
+
+    // Enforce both-or-neither invariant for last_played fields
+    const lastPlayed = lastPlayedRule();
+    if (
+      lastPlayed?.lastPlayedBeforeValue != null &&
+      lastPlayed?.lastPlayedBeforeUnit != null
+    ) {
+      final.last_played_before_value = lastPlayed.lastPlayedBeforeValue;
+      final.last_played_before_unit = lastPlayed.lastPlayedBeforeUnit;
+    }
 
     if (isSeed) {
       const trackUris: string[] = [];

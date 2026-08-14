@@ -10,13 +10,21 @@ export interface AIRadioTtsEngine {
   name: string;
 }
 
+/** A bundled persona: a ready-made host plus the section content it references. */
+export interface AIRadioHostPreset {
+  host: AIRadioHost;
+  sections: AIRadioSection[];
+}
+
 const hosts = ref<AIRadioHost[]>([]);
 const ttsEngines = ref<AIRadioTtsEngine[]>([]);
+const presets = ref<AIRadioHostPreset[]>([]);
 // queue_id -> host_id, for queues that currently have a DJ host assigned.
 const queueDjStatus = ref<Record<string, string>>({});
 
 const loadingHosts = ref(false);
 const loadingTtsEngines = ref(false);
+const loadingPresets = ref(false);
 const loadingQueueDjStatus = ref(false);
 const savingHost = ref(false);
 // Host id currently being deleted, so only that row reflects it.
@@ -115,6 +123,19 @@ async function loadTtsEngines(): Promise<AIRadioTtsEngine[]> {
   }
 }
 
+async function loadPresets(): Promise<AIRadioHostPreset[]> {
+  loadingPresets.value = true;
+  try {
+    const result = await api.sendCommand<AIRadioHostPreset[]>(
+      "ai_radio/hosts/presets/list",
+    );
+    presets.value = result || [];
+    return presets.value;
+  } finally {
+    loadingPresets.value = false;
+  }
+}
+
 /** Assigns (or, with hostId null, clears) the DJ host for a queue; returns the updated queue_id -> host_id map. */
 async function setQueueDj(
   queueId: string,
@@ -158,10 +179,12 @@ export function useHosts() {
   return {
     hosts,
     ttsEngines,
+    presets,
     queueDjStatus,
     aiRadioAvailable,
     loadingHosts,
     loadingTtsEngines,
+    loadingPresets,
     loadingQueueDjStatus,
     savingHost,
     deletingHostId,
@@ -172,6 +195,7 @@ export function useHosts() {
     deleteHost,
     loadHostTemplate,
     loadTtsEngines,
+    loadPresets,
     setQueueDj,
     loadQueueDjStatus,
   };

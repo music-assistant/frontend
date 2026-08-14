@@ -225,7 +225,6 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   canEditPlayerGroup,
   getPlayerGroupMemberCount,
@@ -267,12 +266,10 @@ export interface Props {
   groupControlExpanded?: boolean;
   groupControlsId?: string;
   showSelectedIndicator?: boolean;
-  playerMenuItems?: ContextMenuItem[];
 }
 const props = withDefaults(defineProps<Props>(), {
   groupMemberLayout: "subtitle",
   groupControlsId: undefined,
-  playerMenuItems: () => [],
 });
 const emit = defineEmits<{
   (event: "click", player: Player): void;
@@ -413,12 +410,9 @@ function openPlayerMenu(event: Event) {
   if (!props.player.available) return;
   const position = getEventPosition(event);
   eventbus.emit("contextmenu", {
-    items: [
-      ...getPlayerMenuItems(props.player, playerQueue.value, {
-        context: "player",
-      }),
-      ...props.playerMenuItems,
-    ],
+    items: getPlayerMenuItems(props.player, playerQueue.value, {
+      context: "player",
+    }),
     posX: position.x,
     posY: position.y,
   });

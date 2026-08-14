@@ -273,8 +273,6 @@
                 "help": "将声音向左或右扬声器偏移。仅适用于立体声音频。"
             }
         },
-        "dsp_enabled": "DSP 已启用",
-        "dsp_disabled": "DSP 已禁用",
         "dsp_note_multi_device_group": {
             "label": "您可以为每个播放器单独配置 DSP。"
         },

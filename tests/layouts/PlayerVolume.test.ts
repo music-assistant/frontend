@@ -115,7 +115,7 @@ const sliderStub = {
         data-slot="slider"
         role="slider"
         @pointerdown="$emit('update:modelValue', [80])"
-      />
+      ><div data-slot="slider-track" /></div>
     `,
   },
 };
@@ -417,6 +417,38 @@ describe("PlayerVolume group popout", () => {
     return document.body.querySelector<HTMLElement>(".group-popout")!;
   }
 
+  // a diagonal swipe the browser may claim for the popout's own scrolling: far
+  // enough sideways to read as a slider drag, but not steep enough for the
+  // component's own scroll detection to catch it
+  const DIAGONAL = { from: { x: 150, y: 100 }, to: { x: 190, y: 116 } };
+  // where DIAGONAL.to lands on the mocked slider, rounded to the default step
+  const DRAGGED_VOLUME = 46;
+
+  function touchEvent(type: string, x: number, y: number, cancelable = true) {
+    const event = new Event(type, { bubbles: true, cancelable });
+    const touch = { clientX: x, clientY: y };
+    return Object.assign(event, { touches: [touch], changedTouches: [touch] });
+  }
+
+  // the first row's player, whose id mountLargeGroup derives from its name
+  function firstRow(popout: HTMLElement) {
+    const row = popout.querySelector<HTMLElement>(".group-popout-row")!;
+    const name = row.querySelector(".group-popout-label")!.textContent!.trim();
+    return {
+      container: row.querySelector<HTMLElement>(".player-volume-container")!,
+      level: () => row.querySelector(".volume-level-text")!.textContent!.trim(),
+      playerId: name.toLowerCase(),
+    };
+  }
+
+  async function swipeRow(row: HTMLElement, cancelable: boolean) {
+    const { from, to } = DIAGONAL;
+    row.dispatchEvent(touchEvent("touchstart", from.x, from.y));
+    row.dispatchEvent(touchEvent("touchmove", to.x, to.y, cancelable));
+    row.dispatchEvent(touchEvent("touchend", to.x, to.y));
+    await nextTick();
+  }
+
   it("caps the popout at the room above the slider", async () => {
     const { children, wrapper } = mountLargeGroup();
 
@@ -441,6 +473,89 @@ describe("PlayerVolume group popout", () => {
     expect(popout.style.maxHeight).toBe("692px");
     expect(popout.style.right).toBe("8px");
     expect(popout.style.width).toBe("");
+  });
+
+  // The popout is teleported out to the body, so the padding the fullscreen
+  // player keeps clear of the cutout never reaches it and it has to hold the
+  // margin off the safe edges itself. Each side carries its own inset, so a
+  // mix-up cannot pass.
+  describe("with a cutout on both sides", () => {
+    const INSET_LEFT = 77;
+    const INSET_RIGHT = 44;
+    const VIEWPORT_WIDTH = 1000;
+    const POPOUT_WIDTH = 300;
+    const MARGIN = 8;
+
+    const originalInnerWidth = Object.getOwnPropertyDescriptor(
+      window,
+      "innerWidth",
+    );
+
+    function placeSlider(left: number, width: number) {
+      vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
+        top: SLIDER_BOTTOM - 40,
+        bottom: SLIDER_BOTTOM,
+        left,
+        right: left + width,
+        width,
+        height: 40,
+      } as DOMRect);
+    }
+
+    beforeEach(() => {
+      Object.defineProperty(window, "innerWidth", {
+        value: VIEWPORT_WIDTH,
+        writable: true,
+        configurable: true,
+      });
+      document.documentElement.style.setProperty(
+        "--device-inset-left",
+        `${INSET_LEFT}px`,
+      );
+      document.documentElement.style.setProperty(
+        "--device-inset-right",
+        `${INSET_RIGHT}px`,
+      );
+    });
+
+    afterEach(() => {
+      document.documentElement.removeAttribute("style");
+      if (originalInnerWidth) {
+        Object.defineProperty(window, "innerWidth", originalInnerWidth);
+      }
+    });
+
+    it("stops the popout short of the cutout at the end of the screen", async () => {
+      // far enough over that centring it on the slider would run past the end
+      placeSlider(850, 140);
+      const { wrapper } = mountLargeGroup();
+
+      const popout = await openPopout(wrapper);
+
+      expect(popout.style.left).toBe(
+        `${VIEWPORT_WIDTH - MARGIN - INSET_RIGHT - POPOUT_WIDTH}px`,
+      );
+    });
+
+    it("stops it short of the one at the start of the screen", async () => {
+      placeSlider(20, 140);
+      const { wrapper } = mountLargeGroup();
+
+      const popout = await openPopout(wrapper);
+
+      expect(popout.style.left).toBe(`${MARGIN + INSET_LEFT}px`);
+    });
+
+    it("holds the margin off both safe edges on mobile", async () => {
+      store.mobileLayout = true;
+      placeSlider(100, 200);
+      const { wrapper } = mountLargeGroup();
+
+      const popout = await openPopout(wrapper);
+
+      expect(popout.style.left).toBe(`${MARGIN + INSET_LEFT}px`);
+      expect(popout.style.right).toBe(`${MARGIN + INSET_RIGHT}px`);
+    });
   });
 
   it("opens at the group slider so it still overlaps the tapped one", async () => {
@@ -468,6 +583,44 @@ describe("PlayerVolume group popout", () => {
     expect(event.defaultPrevented).toBe(false);
   });
 
+  it("nests the rows the way the touch-action override selects them", async () => {
+    const { wrapper } = mountLargeGroup();
+
+    const popout = await openPopout(wrapper);
+
+    // the override in the component's unscoped block names the wrapper as well,
+    // to out-rank the scoped rule; flattening a row would silently drop it
+    expect(
+      popout.querySelector(
+        ".group-popout .player-volume-wrapper .player-volume-container",
+      ),
+    ).not.toBeNull();
+  });
+
+  it("leaves a pan the browser already owns to scroll the popout", async () => {
+    const { wrapper } = mountLargeGroup();
+    const row = firstRow(await openPopout(wrapper));
+
+    await swipeRow(row.container, false);
+
+    expect(api.playerCommandVolumeSet).not.toHaveBeenCalled();
+    // the slider must not have followed the finger on its way past either
+    expect(row.level()).toBe("25");
+  });
+
+  it("still drags a popout row's volume while it can claim the gesture", async () => {
+    const { wrapper } = mountLargeGroup();
+    const row = firstRow(await openPopout(wrapper));
+
+    await swipeRow(row.container, true);
+
+    expect(api.playerCommandVolumeSet).toHaveBeenCalledWith(
+      row.playerId,
+      DRAGGED_VOLUME,
+    );
+    expect(row.level()).toBe(String(DRAGGED_VOLUME));
+  });
+
   it("still claims the wheel where it changes volume", async () => {
     const player = createPlayer();
     api.players = { [player.player_id]: player };
@@ -485,5 +638,383 @@ describe("PlayerVolume group popout", () => {
 
     expect(event.defaultPrevented).toBe(true);
     expect(api.playerCommandVolumeUp).toHaveBeenCalledWith(player.player_id);
+  });
+});
+
+describe("PlayerVolume touch expansion", () => {
+  let wrapper: ReturnType<typeof mountExpandable> | undefined;
+
+  function mountExpandable(
+    player: Player,
+    props: Record<string, unknown> = {},
+  ) {
+    return mount(PlayerVolume, {
+      props: { player, expandOnTouch: true, ...props },
+      global: {
+        stubs: sliderStub,
+        mocks: { $t: (key: string) => key },
+      },
+    });
+  }
+
+  function mountExpandableGroup() {
+    const child = createPlayer({ player_id: "child", name: "Office" });
+    const parent = createPlayer({ group_members: ["parent", "child"] });
+    api.players = { parent, child };
+    return mountExpandable(parent, {
+      preferGroupVolume: true,
+      enablePopout: false,
+      requestExpandOnGroupTap: true,
+    });
+  }
+
+  function touchStart(target: ReturnType<typeof mountExpandable>) {
+    return target
+      .find(".player-volume-container")
+      .trigger("touchstart", { touches: [{ clientX: 50, clientY: 10 }] });
+  }
+
+  function touchEnd(target: ReturnType<typeof mountExpandable>) {
+    return target
+      .find(".player-volume-container")
+      .trigger("touchend", { changedTouches: [{ clientX: 50, clientY: 10 }] });
+  }
+
+  // past the 8px the slider needs to call a touch a drag rather than a tap
+  function touchDrag(target: ReturnType<typeof mountExpandable>) {
+    return target
+      .find(".player-volume-container")
+      .trigger("touchmove", { touches: [{ clientX: 90, clientY: 10 }] });
+  }
+
+  function touchScroll(target: ReturnType<typeof mountExpandable>) {
+    return target
+      .find(".player-volume-container")
+      .trigger("touchmove", { touches: [{ clientX: 51, clientY: 60 }] });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useRealTimers();
+    api.players = {};
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+  });
+
+  it("leaves the other volume sliders without step buttons", () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mount(PlayerVolume, {
+      props: { player },
+      global: { stubs: sliderStub },
+    });
+
+    expect(wrapper.findAll(".volume-step-btn")).toHaveLength(0);
+    expect(wrapper.find(".volume-icon-btn").classes()).not.toContain(
+      "is-hidden",
+    );
+  });
+
+  it("swaps the mute button and level readout for step buttons on touch", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    const container = wrapper.find(".player-volume-container");
+
+    expect(container.classes()).toContain("expandable");
+    expect(container.classes()).not.toContain("expanded");
+    expect(wrapper.find(".volume-icon-btn").classes()).not.toContain(
+      "is-hidden",
+    );
+    expect(
+      wrapper.find(".volume-prepend .volume-step-btn").classes(),
+    ).toContain("is-hidden");
+
+    await touchStart(wrapper);
+
+    expect(container.classes()).toContain("expanded");
+    expect(wrapper.find(".volume-icon-btn").classes()).toContain("is-hidden");
+    expect(wrapper.find(".volume-level-text").classes()).toContain("is-hidden");
+    expect(
+      wrapper.find(".volume-prepend .volume-step-btn").classes(),
+    ).not.toContain("is-hidden");
+    expect(
+      wrapper.find(".volume-append .volume-step-btn").classes(),
+    ).not.toContain("is-hidden");
+  });
+
+  it("fills both slots in either state, so the track keeps its width", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+
+    // the step buttons cross-fade over the slots the mute button and the level
+    // readout already occupy: nothing enters or leaves the row, so the thumb
+    // cannot jump sideways under a finger that is mid-drag
+    const slotContents = () => [
+      wrapper!.findAll(".volume-prepend > *").length,
+      wrapper!.findAll(".volume-append > *").length,
+    ];
+    const atRest = slotContents();
+
+    await touchStart(wrapper);
+
+    expect(atRest).toEqual([2, 2]);
+    expect(slotContents()).toEqual(atRest);
+  });
+
+  it("steps the volume from the buttons without reading them as track taps", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    await touchStart(wrapper);
+
+    await wrapper.find(".volume-prepend .volume-step-btn").trigger("click");
+    expect(api.playerCommandVolumeDown).toHaveBeenCalledWith(player.player_id);
+
+    await wrapper.find(".volume-append .volume-step-btn").trigger("click");
+    expect(api.playerCommandVolumeUp).toHaveBeenCalledWith(player.player_id);
+
+    expect(api.playerCommandVolumeSet).not.toHaveBeenCalled();
+  });
+
+  it("returns to the resting slider two seconds after the last interaction", async () => {
+    vi.useFakeTimers();
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    const container = wrapper.find(".player-volume-container");
+
+    await touchStart(wrapper);
+    await touchEnd(wrapper);
+    expect(container.classes()).toContain("expanded");
+
+    await vi.advanceTimersByTimeAsync(1999);
+    await nextTick();
+    expect(container.classes()).toContain("expanded");
+
+    // a step tap buys another full window, so a second press never lands on a
+    // slider that is already collapsing
+    await wrapper.find(".volume-append .volume-step-btn").trigger("click");
+    await vi.advanceTimersByTimeAsync(1999);
+    await nextTick();
+    expect(container.classes()).toContain("expanded");
+
+    await vi.advanceTimersByTimeAsync(1);
+    await nextTick();
+    expect(container.classes()).not.toContain("expanded");
+  });
+
+  it("keeps the mute button reachable while the slider is muted", async () => {
+    const player = createPlayer({ volume_muted: true });
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    const container = wrapper.find(".player-volume-container");
+
+    await touchStart(wrapper);
+
+    expect(container.classes()).not.toContain("expanded");
+    expect(wrapper.find(".volume-icon-btn").classes()).not.toContain(
+      "is-hidden",
+    );
+  });
+
+  it("leaves the slider at its resting size for a mouse", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    const container = wrapper.find(".player-volume-container");
+    const slider = wrapper.find('[data-slot="slider"]');
+
+    // a pointer hits the resting rail accurately enough, so neither a click nor
+    // a drag with one has any reason to grow it
+    await slider.trigger("pointerdown", { clientX: 50, pointerType: "mouse" });
+    expect(container.classes()).not.toContain("expanded");
+
+    await slider.trigger("pointermove", { clientX: 90, pointerType: "mouse" });
+    await slider.trigger("pointerup", { clientX: 90, pointerType: "mouse" });
+
+    expect(container.classes()).not.toContain("expanded");
+    expect(document.querySelector(".volume-bubble")).toBeNull();
+  });
+
+  it("leaves a group slider alone until the touch becomes a drag", async () => {
+    wrapper = mountExpandableGroup();
+    const container = wrapper.find(".player-volume-container");
+
+    // a tap on a group slider opens its own volume controls, so the buttons
+    // must not swap in under the finger that is about to lift
+    await touchStart(wrapper);
+    expect(container.classes()).not.toContain("expanded");
+
+    await touchDrag(wrapper);
+    expect(container.classes()).toContain("expanded");
+  });
+
+  it("still opens the group controls from a tap that never drags", async () => {
+    wrapper = mountExpandableGroup();
+    const container = wrapper.find(".player-volume-container");
+
+    await touchStart(wrapper);
+    await touchEnd(wrapper);
+
+    expect(wrapper.emitted("toggle-group-expansion")).toHaveLength(1);
+    expect(container.classes()).not.toContain("expanded");
+  });
+
+  it("steps the group volume when the bar is showing a group", async () => {
+    wrapper = mountExpandableGroup();
+    await touchStart(wrapper);
+    await touchDrag(wrapper);
+
+    await wrapper.find(".volume-prepend .volume-step-btn").trigger("click");
+
+    expect(api.playerCommandGroupVolumeDown).toHaveBeenCalledWith("parent");
+    expect(api.playerCommandVolumeDown).not.toHaveBeenCalled();
+  });
+
+  it("drops the step buttons as soon as the touch turns into a scroll", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    const container = wrapper.find(".player-volume-container");
+
+    await touchStart(wrapper);
+    expect(container.classes()).toContain("expanded");
+
+    // the panels these rows sit in scroll, so a swipe must not leave a list of
+    // them fattened in its wake
+    await touchScroll(wrapper);
+
+    expect(container.classes()).not.toContain("expanded");
+  });
+
+  it("keeps a step tap from being read as a drag on the track", async () => {
+    const player = createPlayer({ volume_level: 20 });
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+
+    // a tap on the track, so the slider has a start position on record
+    await touchStart(wrapper);
+    await touchEnd(wrapper);
+
+    // tapping a step button far from that position must not be measured
+    // against it: the slot swallows the whole sequence, moves included
+    const plus = wrapper.find(".volume-append .volume-step-btn");
+    await plus.trigger("touchstart", {
+      touches: [{ clientX: 300, clientY: 10 }],
+    });
+    await plus.trigger("touchmove", {
+      touches: [{ clientX: 302, clientY: 11 }],
+    });
+    await plus.trigger("touchend", {
+      changedTouches: [{ clientX: 302, clientY: 11 }],
+    });
+
+    // a latched drag would block the server sync for good, because the touch
+    // that started it never reaches the handler that ends it
+    await wrapper.setProps({ player: { ...player, volume_level: 55 } });
+    await nextTick();
+
+    expect(wrapper.find(".volume-level-text").text()).toBe("55");
+  });
+
+  it("keeps a cancelled step touch from rewinding the readout", async () => {
+    const player = createPlayer({ volume_level: 20 });
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+
+    // a touch on the track puts its starting value on record, then the volume
+    // moves on from there
+    await touchStart(wrapper);
+    await touchEnd(wrapper);
+    await wrapper.setProps({ player: { ...player, volume_level: 70 } });
+    await nextTick();
+    expect(wrapper.find(".volume-level-text").text()).toBe("70");
+
+    // the system cancelling a touch that began on a step button must not rewind
+    // the readout to that recorded value
+    await wrapper
+      .find(".volume-append .volume-step-btn")
+      .trigger("touchcancel", {
+        changedTouches: [{ clientX: 300, clientY: 10 }],
+      });
+
+    expect(wrapper.find(".volume-level-text").text()).toBe("70");
+  });
+
+  it("steps the volume from a click, so a keyboard can reach the buttons", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    await touchStart(wrapper);
+
+    await wrapper.find(".volume-append .volume-step-btn").trigger("click");
+    await wrapper.find(".volume-prepend .volume-step-btn").trigger("click");
+
+    expect(api.playerCommandVolumeUp).toHaveBeenCalledWith(player.player_id);
+    expect(api.playerCommandVolumeDown).toHaveBeenCalledWith(player.player_id);
+  });
+
+  it("takes the hidden half of each slot out of the tab order", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+
+    const inert = (selector: string) =>
+      wrapper!.find(selector).attributes("inert") !== undefined;
+
+    expect(inert(".volume-prepend .volume-step-btn")).toBe(true);
+    expect(inert(".volume-icon-btn")).toBe(false);
+
+    await touchStart(wrapper);
+
+    // both halves stay mounted to hold the slot's width, so the one that is
+    // faded out has to leave the a11y tree rather than just the screen
+    expect(inert(".volume-prepend .volume-step-btn")).toBe(false);
+    expect(inert(".volume-icon-btn")).toBe(true);
+    expect(inert(".volume-level-text")).toBe(true);
+  });
+
+  it("collapses on a touch that ends after the player goes unavailable", async () => {
+    vi.useFakeTimers();
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+    const container = wrapper.find(".player-volume-container");
+
+    await touchStart(wrapper);
+    expect(container.classes()).toContain("expanded");
+
+    // it would otherwise stay latched and re-expand on its own once the player
+    // came back, with no touch behind it
+    api.players[player.player_id]!.available = false;
+    await wrapper.setProps({ player: { ...player, available: false } });
+    await touchEnd(wrapper);
+    await vi.advanceTimersByTimeAsync(2000);
+    await wrapper.setProps({ player: { ...player, available: true } });
+    await nextTick();
+
+    expect(container.classes()).not.toContain("expanded");
+  });
+
+  it("shows the volume readout over the thumb while expanded", async () => {
+    const player = createPlayer({ volume_level: 40 });
+    api.players = { [player.player_id]: player };
+    wrapper = mountExpandable(player);
+
+    expect(document.querySelector(".volume-bubble")).toBeNull();
+
+    await touchStart(wrapper);
+    await nextTick();
+
+    const bubble = document.querySelector<HTMLElement>(".volume-bubble");
+    expect(bubble?.textContent?.trim()).toBe("40");
+    // anchored to the thumb's position along the track rather than to the row
+    expect(bubble?.style.left).not.toBe("");
+    expect(bubble?.style.bottom).not.toBe("");
   });
 });

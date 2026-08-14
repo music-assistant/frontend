@@ -38,8 +38,7 @@
           :data-active="open"
           :data-suppress-hover="suppressHover"
           :aria-label="groupMembersLabel"
-          @click.capture="handleTriggerClick"
-          @pointerleave="suppressHover = false"
+          @pointerenter="onPointerEnter"
         >
           <span v-if="floating" class="inline-flex">
             <!-- matches the track menu beside it in the floating bar -->
@@ -73,8 +72,8 @@
         :class="[
           'player-bar-popout player-group-popover flex flex-col gap-0 overflow-hidden p-0',
           store.mobileLayout
-            ? 'w-[calc(100vw-2*var(--player-bar-popout-gap))]'
-            : 'w-[400px] max-w-[calc(100vw-2*var(--player-bar-popout-gap))]',
+            ? 'w-[calc(100vw-2*var(--player-bar-popout-inset-x)-var(--device-inset-left)-var(--device-inset-right))]'
+            : 'w-[400px] max-w-[calc(100vw-2*var(--player-bar-popout-inset-x)-var(--device-inset-left)-var(--device-inset-right))]',
         ]"
         @open-auto-focus="preventAutoFocus"
         @interact-outside="handleInteractOutside"
@@ -101,6 +100,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
 import {
   PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
@@ -130,7 +130,9 @@ withDefaults(
 );
 
 const open = ref(false);
-const suppressHover = ref(false);
+const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
+  () => open.value,
+);
 const filter = ref<PlayerGroupFilter>("all");
 const player = computed(() => store.activePlayer);
 const canEditGroup = computed(
@@ -211,10 +213,6 @@ watch([hasLights, hasVisualizers], () => {
 function handleOpenChange(value: boolean) {
   open.value = value;
   if (!value) filter.value = "all";
-}
-
-function handleTriggerClick() {
-  suppressHover.value = open.value;
 }
 
 function preventAutoFocus(event: Event) {

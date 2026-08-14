@@ -257,8 +257,6 @@
                 "remove_confirm": "Ar tikrai norite pašalinti šį DSP išankstinį nustatymą?"
             }
         },
-        "dsp_enabled": "DSP įjungtas",
-        "dsp_disabled": "DSP yra išjungtas",
         "dsp_note_multi_device_group": {
             "label": "DSP galite konfigūruoti kiekvienam grotuvui atskirai."
         },

@@ -7,9 +7,9 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { h, inject, provide, type InjectionKey, type SetupContext } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -164,11 +164,56 @@ function mountControl(player: Player) {
   });
 }
 
+// the popover stubs above keep the interaction tests independent of reka-ui;
+// the trigger's own attributes only show up with the real component
+function mountWithPopover(player: Player) {
+  return mount(PlayerBarVolumeControl, {
+    props: { player },
+    global: {
+      mocks: {
+        $t: (key: string) => key,
+      },
+      stubs: { PlayerVolumePanel: true, Teleport: true },
+    },
+  });
+}
+
+enableAutoUnmount(afterEach);
+
 describe("PlayerBarVolumeControl", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
     api.players = {};
+  });
+
+  it("leaves the panel state to the popover trigger", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mountWithPopover(player);
+    const trigger = wrapper.get("[data-player-volume-trigger]");
+
+    // reka-ui's PopoverTrigger supplies the disclosure state; a second,
+    // hand-written copy must not ride along and drift from it
+    expect(trigger.attributes("aria-haspopup")).toBe("dialog");
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+
+    await trigger.trigger("click");
+    expect(trigger.attributes("aria-expanded")).toBe("true");
+
+    // the volume in the accessible name is ours; reka-ui has no notion of it
+    expect(trigger.attributes("aria-label")).toBe("audio_overlay_volume: 25%");
+  });
+
+  it("does not announce the panel state itself", () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    // the stubbed trigger announces nothing, so whatever is left on the button
+    // is the component's own copy of what reka-ui already supplies
+    const trigger = mountControl(player).get("[data-player-volume-trigger]");
+
+    expect(trigger.attributes("aria-haspopup")).toBeUndefined();
+    expect(trigger.attributes("aria-expanded")).toBeUndefined();
   });
 
   it("does not open on hover", async () => {
@@ -198,20 +243,52 @@ describe("PlayerBarVolumeControl", () => {
     expect(wrapper.get(".popover").attributes("data-open")).toBe("false");
   });
 
-  it("suppresses hover color after clicking the popover closed", async () => {
+  it("suppresses hover color after tapping the popover closed", async () => {
     const player = createPlayer();
     api.players = { [player.player_id]: player };
     const wrapper = mountControl(player);
     const trigger = wrapper.get("[data-player-volume-trigger]");
 
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
     await trigger.trigger("click");
     await trigger.trigger("click");
 
     expect(trigger.attributes("data-active")).toBe("false");
     expect(trigger.attributes("data-suppress-hover")).toBe("true");
 
-    await trigger.trigger("pointerleave");
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
+  });
+
+  // the mouse that clicked the popover shut is still on the button, and no
+  // second pointerenter is coming to say so
+  it("keeps the hover color when a mouse clicks the popover closed", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mountControl(player);
+    const trigger = wrapper.get("[data-player-volume-trigger]");
+
+    await trigger.trigger("pointerenter", { pointerType: "mouse" });
+    await trigger.trigger("click");
+    await trigger.trigger("click");
+
+    expect(trigger.attributes("data-active")).toBe("false");
+    expect(trigger.attributes("data-suppress-hover")).toBe("false");
+  });
+
+  // touch leaves the button hovered from the tap that opened the popover, so
+  // dismissing it anywhere but on the button would leave it reading as active
+  it("suppresses it just the same when the popover closes on its own", async () => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mountControl(player);
+    const trigger = wrapper.get("[data-player-volume-trigger]");
+
+    await trigger.trigger("pointerenter", { pointerType: "touch" });
+    await trigger.trigger("click");
+    await wrapper.get(".player-volume-backdrop").trigger("click");
+
+    expect(trigger.attributes("data-suppress-hover")).toBe("true");
   });
 
   it("shows child controls and the group volume", () => {
@@ -238,6 +315,24 @@ describe("PlayerBarVolumeControl", () => {
     expect(
       wrapper.get("[data-player-volume-trigger]").attributes("aria-label"),
     ).toBe("audio_overlay_volume: 70%");
+  });
+
+  it("keeps the volume rows inside the list that scrolls", () => {
+    const child = createPlayer({ player_id: "child", name: "Office" });
+    const parent = createPlayer({
+      group_members: ["parent", child.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [child.player_id]: child,
+    };
+
+    const scroller = mountControl(parent).get(".player-volume-scroller");
+
+    // PlayerVolume grants the rows their vertical pan through this class;
+    // rendering them outside it would silently leave the list unscrollable
+    expect(scroller.classes()).toContain("overflow-y-auto");
+    expect(scroller.findAll(".player-volume")).toHaveLength(3);
   });
 
   it("keeps every volume label centered without clipping", () => {

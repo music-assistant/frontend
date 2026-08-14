@@ -64,7 +64,7 @@ export function useListenIn(options: UseListenInOptions) {
   let unsubscribeRecheckEvents: (() => void) | undefined;
   let autoEnableAttemptedForGeneration: number | null = null;
   let availabilityRequestId = 0;
-  let disposed = false;
+  let unmounted = false;
   let foreignPlayerRecheckTimer: ReturnType<typeof setTimeout> | null = null;
 
   const webPlayerId = computed(() => webPlayer.player_id ?? null);
@@ -94,7 +94,7 @@ export function useListenIn(options: UseListenInOptions) {
         { suppressGlobalError: true },
       );
       if (
-        disposed ||
+        unmounted ||
         requestId !== availabilityRequestId ||
         !isCurrentWebPlayer(playerId, playerGeneration)
       ) {
@@ -166,7 +166,7 @@ export function useListenIn(options: UseListenInOptions) {
     } finally {
       busy.value = false;
       if (
-        !disposed &&
+        !unmounted &&
         webPlayerId.value &&
         !isCurrentWebPlayer(playerId, playerGeneration) &&
         isLatestListenInOperation(domain, playerId, operationId)
@@ -206,7 +206,7 @@ export function useListenIn(options: UseListenInOptions) {
     } finally {
       busy.value = false;
       if (
-        !disposed &&
+        !unmounted &&
         webPlayerId.value &&
         !isCurrentWebPlayer(playerId, playerGeneration) &&
         isLatestListenInOperation(domain, playerId, operationId)
@@ -230,7 +230,7 @@ export function useListenIn(options: UseListenInOptions) {
     // server has rebuilt every player's groupable set, a beat after ours turns up. Another
     // player's update is the only signal that this happened, so coalesce a re-check while
     // we still believe we cannot listen in.
-    if (canListenIn.value || disposed) return;
+    if (canListenIn.value || unmounted) return;
     if (foreignPlayerRecheckTimer !== null) {
       clearTimeout(foreignPlayerRecheckTimer);
     }
@@ -252,7 +252,7 @@ export function useListenIn(options: UseListenInOptions) {
 
   function isCurrentWebPlayer(playerId: string, generation: number) {
     return (
-      !disposed &&
+      !unmounted &&
       webPlayerId.value === playerId &&
       webPlayerGeneration.value === generation
     );
@@ -282,7 +282,7 @@ export function useListenIn(options: UseListenInOptions) {
   });
 
   onBeforeUnmount(() => {
-    disposed = true;
+    unmounted = true;
     availabilityRequestId++;
     if (foreignPlayerRecheckTimer !== null) {
       clearTimeout(foreignPlayerRecheckTimer);

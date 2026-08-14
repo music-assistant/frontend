@@ -435,9 +435,13 @@ export function useShortcuts() {
   });
 
   let _unsubscribeUpdated: (() => void) | undefined;
+  let unmounted = false;
 
   onMounted(async () => {
     await loadShortcuts();
+    // The load can outlast the component, and the cleanup hook has already run
+    // by then with nothing to unsubscribe.
+    if (unmounted) return;
 
     _unsubscribeUpdated = api.subscribe(
       EventType.MEDIA_ITEM_UPDATED,
@@ -460,6 +464,7 @@ export function useShortcuts() {
   });
 
   onUnmounted(() => {
+    unmounted = true;
     _unsubscribeUpdated?.();
   });
 

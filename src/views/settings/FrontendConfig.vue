@@ -55,6 +55,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { companionMode } from "@/plugins/companion";
 import { eventbus } from "@/plugins/eventbus";
+import { getKioskModePreference } from "@/plugins/homeassistant";
 import { $t, i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import EditConfig from "./EditConfig.vue";
@@ -177,6 +178,20 @@ onMounted(() => {
       category: "display_settings",
       value: readDeviceSetting(MOBILE_SIDEBAR_SIDE) || "left",
     },
+    {
+      // Only Home Assistant can give up its own chrome, so this is meaningless
+      // anywhere else.
+      key: "ha_kiosk_mode",
+      type: ConfigEntryType.BOOLEAN,
+      label: "ha_kiosk_mode",
+      default_value: true,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "display_settings",
+      hidden: !store.isIngressSession,
+      value: getKioskModePreference(),
+    },
   ];
 
   // Add web player settings (if not running in companion mode)
@@ -263,6 +278,7 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
   } catch (error) {
     console.error("Failed to save settings:", error);
     loading.value = false;
+    editConfig.value?.saveFailed();
   }
 };
 

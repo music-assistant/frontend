@@ -979,7 +979,9 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem {}
+export interface Radio extends MediaItem {
+  is_dynamic: boolean;
+}
 
 export interface SoundEffect extends MediaItem {
   duration: number;
@@ -1341,6 +1343,13 @@ export interface PlayerSoundMode {
   id: string;
   name: string;
   passive: boolean;
+}
+
+// TTS engine that can speak an announcement; its name is already
+// formatted for display as "<provider> | <engine>".
+export interface AnnouncementTtsEngine {
+  uid: string;
+  name: string;
 }
 
 export interface PlayerOptionEntry {
@@ -1816,6 +1825,10 @@ export interface AIRadioHost {
   instructions: string;
   // tts_engine: "" means use the provider default engine
   tts_engine: string;
+  // language: "" means follow the server language
+  language: string;
+  // options: free-form key/value pairs passed straight through to the TTS engine
+  options: Record<string, unknown>;
   section_ids: string[];
   section_order: AIRadioSectionOrderRule[];
   merge_section_id: string;

@@ -141,8 +141,6 @@
                 "remove_confirm": "Naozaj chcete odstrániť túto predvoľbu DSP?"
             }
         },
-        "dsp_enabled": "DSP je povolené",
-        "dsp_disabled": "DSP je vypnuté",
         "dsp_note_multi_device_group": {
             "label": "DSP môžete nakonfigurovať pre každý prehrávač samostatne."
         },

@@ -142,12 +142,13 @@ onMounted(async () => {
 
 .ed-edit-done {
   position: fixed;
-  right: 24px;
-  top: 24px;
+  right: calc(24px + var(--device-inset-right));
+  top: calc(24px + var(--device-inset-top));
   /* Only has to clear the drag ghost in HomeWidgetRows, so it stays out of the
      global stacking scale and below the player bar and its backdrops. */
   z-index: 60;
-  border-radius: 999px;
+  /* Outweighs the equally-!important radius the button's own variants carry. */
+  border-radius: 999px !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 </style>

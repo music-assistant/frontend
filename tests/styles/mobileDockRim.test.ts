@@ -11,10 +11,14 @@ const RIM = "7px";
 // happy-dom drops a declaration whose substituted custom property expands to a
 // nested calc(), so the card is measured with its inset flattened to a literal
 const PLAYER_INSET = "99px";
+// the two sides carry their own values, so an assertion can only pass for the
+// side it names
+const DEVICE_INSET_LEFT = "22px";
+const DEVICE_INSET_RIGHT = "33px";
 
 let styles: HTMLStyleElement[];
 
-// Use raw selectors so the test does not depend on Vue's generated scope id.
+// both blocks are unscoped, so the selectors they declare are the shipped ones
 function extractStyle(source: string) {
   return source.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }
@@ -47,14 +51,20 @@ describe("mobile dock rim", () => {
       return element;
     });
     // the device insets are env() values happy-dom cannot substitute, which
-    // would drop every declaration that adds one; the embedded layout zeroes
-    // them through the same cascade the app uses inside Home Assistant
-    document.documentElement.setAttribute("data-embedded-layout", "");
+    // would drop every declaration that adds one; inline values beat the :root
+    // definitions and stand in for them
+    document.documentElement.style.setProperty(
+      "--device-inset-left",
+      DEVICE_INSET_LEFT,
+    );
+    document.documentElement.style.setProperty(
+      "--device-inset-right",
+      DEVICE_INSET_RIGHT,
+    );
   });
 
   afterEach(() => {
     styles.forEach((element) => element.remove());
-    document.documentElement.removeAttribute("data-embedded-layout");
     document.documentElement.removeAttribute("style");
     document.body.innerHTML = "";
   });
@@ -82,8 +92,12 @@ describe("mobile dock rim", () => {
     );
     const dock = probe("mobile-bottom-navigation");
 
-    expect(normalize(dock.left)).toBe(`calc(${DOCK_INSET}+0px)`);
-    expect(normalize(dock.right)).toBe(`calc(${DOCK_INSET}+0px)`);
+    expect(normalize(dock.left)).toBe(
+      `calc(${DOCK_INSET}+${DEVICE_INSET_LEFT})`,
+    );
+    expect(normalize(dock.right)).toBe(
+      `calc(${DOCK_INSET}+${DEVICE_INSET_RIGHT})`,
+    );
   });
 
   it("sits the player card at the card's inset, on both sides", () => {
@@ -93,9 +107,15 @@ describe("mobile dock rim", () => {
     );
     const card = probe("mediacontrols-player-float");
 
-    expect(normalize(card.marginLeft)).toBe(`calc(${PLAYER_INSET}+0px)`);
-    expect(normalize(card.marginRight)).toBe(`calc(${PLAYER_INSET}+0px)`);
+    expect(normalize(card.marginLeft)).toBe(
+      `calc(${PLAYER_INSET}+${DEVICE_INSET_LEFT})`,
+    );
+    expect(normalize(card.marginRight)).toBe(
+      `calc(${PLAYER_INSET}+${DEVICE_INSET_RIGHT})`,
+    );
     // the width gives back both margins, so the card stays centred on the dock
-    expect(normalize(card.width)).toBe(`calc(100%-2*${PLAYER_INSET}-0px-0px)`);
+    expect(normalize(card.width)).toBe(
+      `calc(100%-2*${PLAYER_INSET}-${DEVICE_INSET_RIGHT}-${DEVICE_INSET_LEFT})`,
+    );
   });
 });

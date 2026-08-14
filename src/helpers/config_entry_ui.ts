@@ -1,8 +1,6 @@
 import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 
 export const UI_ENTRY_TYPE = {
-  // the injected DSP entry carries key `dsp_settings` and this as its type
-  DSP_SETTINGS_LINK: "dsp_settings_link",
   HASS_CONTROL_PICKER: "hass_control_picker",
 } as const;
 
@@ -156,12 +154,6 @@ export const hasAdvancedEntries = (
 
 export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
   (e as InjectedConfigEntry).injected === true;
-
-export const isDspLinkEntry = (
-  e: ConfigEntryUI,
-): e is InjectedConfigEntry & {
-  type: typeof UI_ENTRY_TYPE.DSP_SETTINGS_LINK;
-} => isInjected(e) && e.type === UI_ENTRY_TYPE.DSP_SETTINGS_LINK;
 
 export const isHassControlPickerEntry = (
   e: ConfigEntryUI,

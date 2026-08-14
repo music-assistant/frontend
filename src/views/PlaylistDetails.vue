@@ -32,7 +32,7 @@
     @saved="loadItemDetails"
   />
   <!-- dynamic playlist: content is generated on the fly, so show a sample instead of a fixed tracklist -->
-  <DynamicPlaylistSample
+  <DynamicItemSample
     v-if="itemDetails && itemDetails.is_dynamic"
     :item-details="itemDetails"
     :provider="props.provider"
@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import DynamicPlaylistSample from "@/components/DynamicPlaylistSample.vue";
+import DynamicItemSample from "@/components/DynamicItemSample.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";

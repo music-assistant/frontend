@@ -1,5 +1,18 @@
 /* Various global styles used throughout the app */
 
+/* The box model the whole app is written against - every width composed with
+   padding counts the padding in. Declared here rather than left to Vuetify's
+   reset, which states the same thing but goes away with that stylesheet. */
+html {
+  box-sizing: border-box;
+}
+
+*,
+::before,
+::after {
+  box-sizing: inherit;
+}
+
 @font-face {
   font-family: "Material Icons Outlined";
   font-style: normal;
@@ -74,9 +87,12 @@
   /* How far up the screen the bottom is covered, for anything that stacks below
      what covers it and still has to stay visible. */
   --bottom-obscured-height: var(--bottom-bars-height);
-  /* Gap the player bar popouts keep from the bar below them and from the sides
-     of the screen. */
+  /* Gap the player bar popouts keep from the bar below them. */
   --player-bar-popout-gap: 8px;
+  /* How far in from the sides of the screen the popouts sit. Taken from the
+     mobile dock, which is what they hang above there: the two share an edge and
+     the player card stays the only thing set in from it. */
+  --player-bar-popout-inset-x: var(--mobile-dock-inset-x);
   /* Room a tall popout leaves at the top of the screen, so it keeps reading as a
      card floating above the player bar instead of a full-height panel. */
   --player-bar-popout-top-gap: 24px;
@@ -111,6 +127,7 @@
        1000  desktop player bar
        2000  mobile bottom navigation, and Vuetify's default overlay z-index
        2001  floating mobile player bar
+       2002  app update prompt
        2100  settings loading overlays
        9000  fullscreen player
        9001  player select backdrop, opened from the fullscreen player
@@ -121,6 +138,7 @@
      100000  sheets
      100001  menus opened from a sheet or a player bar popout
      999999  item context menu
+    1000000  popovers opened from inside the item context menu
 
    Values below this range mostly order elements inside a component's own
    stacking context.
@@ -136,8 +154,26 @@
 
 html {
   overflow: hidden;
+  /* Nothing here scrolls, so a downward drag no in-page scroller consumes
+     chains out of the Home Assistant ingress iframe and its app takes that for
+     a pull-to-refresh, reloading. The root is where the viewport reads this
+     from - on body it is ignored. The horizontal axis stays open, so the
+     browser keeps its back-navigation swipe. */
+  overscroll-behavior-y: none;
   /* iOS Safari tints the status bar from this background. Must stay set. */
   background-color: rgb(var(--v-theme-background));
+}
+
+/* A drag starting where nothing scrolls - a panel header, the fullscreen player
+   - gives the rule above no chain to cut, and embedded it reaches the host
+   instead, whose pull-to-refresh reloads us. Refusing the pan stops it. The
+   value resets at every scroll container, which is what leaves the lists
+   scrolling and why the panels have to repeat it: Vuetify makes both the
+   fullscreen player's card and the `.v-overlay__content` wrapper above it
+   scroll containers, so the root's value never reaches inside. */
+:root[data-embedded-layout],
+:root[data-embedded-layout] [data-player-panel] {
+  touch-action: pinch-zoom;
 }
 
 * {

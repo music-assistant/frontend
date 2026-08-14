@@ -1,32 +1,35 @@
 import Players from "@/views/settings/Players.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { ProviderType } from "@/plugins/api/interfaces";
+import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { ProviderType, type PlayerConfig } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerManifest } from "../fixtures/providerManifest";
 
-const { apiMock, emitEvent, routerPush } = vi.hoisted(() => ({
-  apiMock: {
-    getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
-    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
-    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
-    playerManifests: {},
-    players: {} as Record<
-      string,
-      {
-        available: boolean;
-        needs_setup: boolean;
-        output_protocols: [];
-      }
-    >,
-    providerManifests: {},
-    providers: {},
-    subscribe_multi: vi.fn(),
-  },
-  emitEvent: vi.fn(),
-  routerPush: vi.fn(),
-}));
+const { apiMock, emitEvent, getPlayerSettingsMenuItems, routerPush } =
+  vi.hoisted(() => ({
+    apiMock: {
+      getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
+      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
+      playerManifests: {},
+      players: {} as Record<
+        string,
+        {
+          available: boolean;
+          needs_setup: boolean;
+          output_protocols: [];
+        }
+      >,
+      providerManifests: {},
+      providers: {},
+      subscribe_multi: vi.fn(),
+    },
+    emitEvent: vi.fn(),
+    getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
+    routerPush: vi.fn(),
+  }));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -39,8 +42,10 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
-vi.mock("@/helpers/player_menu_items", () => ({
-  getPlayerSetupMenuItem: () => undefined,
+// the menu itself is covered where it is built; here it only has to arrive
+vi.mock("@/helpers/player_settings_actions", () => ({
+  getPlayerName: (config: PlayerConfig) => config.name ?? config.player_id,
+  getPlayerSettingsMenuItems,
 }));
 
 vi.mock("@/helpers/utils", () => ({
@@ -71,7 +76,13 @@ const playerConfig = {
 
 const ListItemStub = {
   emits: ["click", "menu"],
-  template: `<button class="player-list-item" @click="$emit('click')" />`,
+  template: `
+    <button
+      class="player-list-item"
+      @click="$emit('click')"
+      @contextmenu="$emit('menu', $event)"
+    />
+  `,
 };
 
 const SettingsPlayerCardStub = {
@@ -112,6 +123,7 @@ describe("Players", () => {
     });
     apiMock.getProviderManifest.mockReturnValue(providerManifest());
     apiMock.subscribe_multi.mockReturnValue(vi.fn());
+    getPlayerSettingsMenuItems.mockReturnValue([{ label: "settings.delete" }]);
   });
 
   it.each([
@@ -157,6 +169,31 @@ describe("Players", () => {
       expect.anything(),
     );
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
+  it("opens the shared player menu with links to the settings sections", async () => {
+    const wrapper = await mountPlayers("list");
+
+    await wrapper.get(".player-list-item").trigger("contextmenu");
+
+    expect(getPlayerSettingsMenuItems).toHaveBeenCalledWith(
+      expect.objectContaining({ player_id: "kitchen" }),
+      expect.objectContaining({ includeSections: true }),
+    );
+    expect(emitEvent).toHaveBeenCalledWith(
+      "contextmenu",
+      expect.objectContaining({ items: [{ label: "settings.delete" }] }),
+    );
+  });
+
+  it("drops a deleted player from the list", async () => {
+    const wrapper = await mountPlayers("list");
+    await wrapper.get(".player-list-item").trigger("contextmenu");
+
+    getPlayerSettingsMenuItems.mock.calls[0][1]!.onDeleted!();
+    await flushPromises();
+
+    expect(wrapper.find(".player-list-item").exists()).toBe(false);
   });
 });
 

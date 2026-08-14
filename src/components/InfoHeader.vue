@@ -354,12 +354,9 @@
             <!-- play button with contextmenu -->
             <MenuButton
               id="playbutton"
-              :width="220"
-              icon="mdi-play-circle-outline"
-              :text="truncateString($t('play'), 14)"
+              :text="playButtonText"
               :disabled="!item"
               :loading="playActionInProgress"
-              :open-menu-on-click="!store.activePlayer"
               style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
               @menu="playButtonClick(true)"
@@ -494,9 +491,9 @@
 </template>
 
 <script setup lang="ts">
+import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -512,16 +509,17 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import {
   handleMediaItemClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import {
-  getAuthorsNarratorsArray,
   getAudiobookCollectionArtists,
+  getAuthorsNarratorsArray,
   getImageThumbForItem,
-  truncateString,
+  getPlayerName,
 } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
@@ -540,12 +538,13 @@ import type {
 } from "@/plugins/api/interfaces";
 import {
   ImageType,
+  MediaCollection,
   MediaType,
   Track,
-  MediaCollection,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
@@ -553,10 +552,10 @@ import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
+import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
-import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
@@ -685,24 +684,7 @@ const artistClick = function (item: Artist | ItemMapping) {
 };
 
 const backButtonClick = function () {
-  // if we have stored routes, we can safely use history back
-  if (store.prevRoute) {
-    router.back();
-    return;
-  }
-  // back to main listing for itemtype
-  const curRoute = router.currentRoute.value.name?.toString() || "";
-  for (const itemType of ["artist", "album", "track", "playlist", "radio"]) {
-    if (curRoute.includes(itemType)) {
-      router.push({
-        name: `${itemType}s`,
-      });
-      return;
-    }
-  }
-  router.push({
-    name: "discover",
-  });
+  backFromMediaDetails(router);
 };
 
 // Resolve the queue playMedia targets directly, since activePlayerQueue is
@@ -719,12 +701,19 @@ const playActionInProgress = computed(() => {
   );
 });
 
+const playButtonText = computed(() => {
+  if (!store.activePlayer) return $t("play");
+  return getPlayerName(store.activePlayer, 20);
+});
+
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;
+  const rect = playButton.getBoundingClientRect();
+
   handlePlayBtnClick(
     compProps.item!,
-    playButton.getBoundingClientRect().left,
-    playButton.getBoundingClientRect().top + 36,
+    rect.right,
+    rect.bottom,
     undefined,
     forceMenu,
     compProps.sortBy,

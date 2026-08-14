@@ -1,5 +1,4 @@
 import PlayerCard from "@/components/PlayerCard.vue";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   IdentifierType,
   MediaType,
@@ -201,7 +200,6 @@ function mountPlayerCard(
   props: {
     groupControlExpanded?: boolean;
     groupControlsId?: string;
-    playerMenuItems?: ContextMenuItem[];
     showDisabledGroupControl?: boolean;
     showMemberControls?: boolean;
     showSelectedIndicator?: boolean;
@@ -723,25 +721,6 @@ describe("PlayerCard", () => {
     expect(count.classes()).toContain("bg-muted-foreground/90");
     expect(count.get("span").classes()).toContain("text-background");
     expect(count.classes()).not.toContain("bg-primary");
-  });
-
-  it("appends selector-specific items to the player menu", async () => {
-    vi.clearAllMocks();
-    const player = createPlayer();
-    const playerMenuItems: ContextMenuItem[] = [
-      { label: "rename" },
-      { label: "disable" },
-    ];
-    const wrapper = mountPlayerCard(player, { playerMenuItems });
-
-    await wrapper.find('[aria-label="tooltip.more_options"]').trigger("click");
-
-    expect(emitContextMenu).toHaveBeenCalledWith(
-      "contextmenu",
-      expect.objectContaining({
-        items: playerMenuItems,
-      }),
-    );
   });
 
   it("stops the native context-menu event at the card", () => {

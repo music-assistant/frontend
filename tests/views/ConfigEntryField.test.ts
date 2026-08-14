@@ -6,7 +6,6 @@ import * as directives from "vuetify/directives";
 import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 import {
   NON_INTERACTIVE_ENTRY_TYPES,
-  UI_ENTRY_TYPE,
   type ConfigEntryUI,
   type ConfigEntryUIType,
   type InjectedConfigEntry,
@@ -24,10 +23,9 @@ const vuetify = createVuetify({ components, directives });
 const IMAGE_DATA_URI =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==";
 
-// Third element: text the field only renders on the branch under test. Every branch but
-// the two link buttons is picked by entry type alone, and an entry that matches none of
-// them still renders a text input that honours the disabled state — so without this the
-// link button rows would keep passing after losing their branch.
+// Third element: text the field only renders on the branch under test. An entry that
+// matches no branch still renders a text input that honours the disabled state — so
+// without this the options button row would keep passing after losing its branch.
 const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
   ["a text input", entry({ key: "name", type: ConfigEntryType.STRING })],
   [
@@ -55,27 +53,6 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
       type: ConfigEntryType.ACTION,
       action: "authenticate",
     }),
-  ],
-  // both link buttons are injected by EditPlayer; the DSP one is recognised by the
-  // `injected` flag alongside its type, so it carries the flag here too
-  [
-    "a DSP settings button",
-    entry({
-      key: "dsp_settings",
-      type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
-      injected: true,
-      read_only: false,
-    }),
-    "open_dsp_settings",
-  ],
-  [
-    "a player options button",
-    entry({
-      key: "player_options",
-      type: ConfigEntryType.OPTIONS,
-      injected: true,
-    }),
-    "player_options.open",
   ],
   [
     "a number input without a range",

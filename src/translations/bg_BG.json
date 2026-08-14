@@ -230,8 +230,6 @@
                 "channel_count": "{0} канала"
             }
         },
-        "dsp_enabled": "DSP е активиран",
-        "dsp_disabled": "DSP е дезактивиран",
         "dsp_note_multi_device_group": {
             "label": "Можете да конфигурирате DSP за всеки плейър поотделно."
         },

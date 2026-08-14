@@ -1,7 +1,7 @@
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -100,6 +100,12 @@ vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
+// the overflow menu is handed to the app-wide context menu over the event bus,
+// which is where a test can read the entries it was built with
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: { emit: vi.fn(), on: vi.fn(), off: vi.fn() },
+}));
+
 const NOW = 1_700_000_000;
 const QUEUE_ID = "q1";
 
@@ -109,11 +115,16 @@ interface TestStore {
     active_source?: string;
     name?: string;
     group_members?: string[];
+    source_list?: unknown[];
+    sound_mode_list?: unknown[];
   };
   activePlayerQueue?: {
     queue_id: string;
     state: PlaybackState;
     active: boolean;
+  };
+  curQueueItem?: {
+    media_item?: { media_type: MediaType; metadata?: object };
   };
   showFullscreenPlayer: boolean;
   showPlayersMenu: boolean;
@@ -194,6 +205,7 @@ afterEach(async () => {
   testStore.showFullscreenPlayer = false;
   testStore.showPlayersMenu = false;
   testStore.showQueueItems = false;
+  testStore.curQueueItem = undefined;
   testApi.queues = {};
   testApi.queueElapsedTime = {};
 });
@@ -232,7 +244,9 @@ describe("PlayerFullscreen lyrics clock", () => {
 });
 
 describe("PlayerFullscreen player select button", () => {
-  async function mountFullscreenDialog(): Promise<VueWrapper> {
+  async function mountFullscreenDialog(
+    extraStubs: Record<string, unknown> = {},
+  ): Promise<VueWrapper> {
     const { store } = await import("@/plugins/store");
     (store as unknown as TestStore).showFullscreenPlayer = true;
 
@@ -244,6 +258,7 @@ describe("PlayerFullscreen player select button", () => {
         stubs: {
           "v-dialog": { template: "<div><slot /></div>" },
           "v-card": { template: "<div><slot /></div>" },
+          ...extraStubs,
         },
       },
     });
@@ -294,5 +309,81 @@ describe("PlayerFullscreen player select button", () => {
         .get("#fullscreen-player-select-button")
         .attributes("aria-label"),
     ).toBe("tooltip.select_player: Kitchen");
+  });
+
+  // Rendered through the real Button so the variant classes actually go through
+  // class-variance-authority and tailwind-merge; a stub would only echo back the
+  // class prop and never show which of the two hover colours survives.
+  it("keeps the label colour on hover", async () => {
+    const fullscreen = await mountFullscreenDialog({ Button: false });
+    const classes = fullscreen
+      .get("#fullscreen-player-select-button")
+      .classes();
+
+    // the bare border width comes from the outline variant alone, so it pins
+    // both halves of the merge this test reads: cva ran, and it contributed
+    expect(classes).toContain("border");
+    expect(classes).toContain("hover:text-[var(--text-color)]");
+    // the outline variant also offers this one, and it resolves to the theme
+    // foreground rather than the white forced over a dominant visualizer
+    expect(classes).not.toContain("hover:text-accent-foreground");
+  });
+});
+
+describe("PlayerFullscreen overflow menu", () => {
+  async function openOverflowMenu(mediaType: MediaType) {
+    const { store } = await import("@/plugins/store");
+    const { eventbus } = await import("@/plugins/eventbus");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      group_members: [],
+      source_list: [],
+      sound_mode_list: [],
+    };
+    // a track sends the view looking for lyrics on the way past
+    testStore.curQueueItem = {
+      media_item: { media_type: mediaType, metadata: {} },
+    };
+    testStore.showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+          // the overflow button rides in the toolbar's append slot
+          "v-toolbar": { template: "<div><slot name='append' /></div>" },
+        },
+      },
+    });
+    await nextTick();
+
+    const emit = vi.mocked(eventbus.emit);
+    emit.mockClear();
+    await wrapper.get('[aria-label="tooltip.more_options"]').trigger("click");
+
+    // the bus is typed per event, so the payload only takes a shape here
+    const calls = emit.mock.calls as unknown as [
+      string,
+      { items: { label: string }[] },
+    ][];
+    const call = calls.find(([event]) => event === "contextmenu");
+    if (!call) throw new Error("the overflow button opened no menu");
+    return call[1].items.map((item) => item.label);
+  }
+
+  // the playback speed is a per-item setting, so it only belongs to the
+  // spoken-word content that carries one
+  it.each([
+    { mediaType: MediaType.AUDIOBOOK, offered: true },
+    { mediaType: MediaType.PODCAST_EPISODE, offered: true },
+    { mediaType: MediaType.TRACK, offered: false },
+  ])("offers the playback speed for $mediaType: $offered", async (testCase) => {
+    const labels = await openOverflowMenu(testCase.mediaType);
+
+    expect(labels.includes("change_playback_speed")).toBe(testCase.offered);
   });
 });

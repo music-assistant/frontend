@@ -258,8 +258,6 @@
                 "remove_confirm": "Czy na pewno chcesz usunąć to ustawienie DSP?"
             }
         },
-        "dsp_enabled": "DSP jest włączony",
-        "dsp_disabled": "DSP jest wyłączony",
         "dsp_note_multi_device_group": {
             "label": "Możesz skonfigurować DSP dla każdego odtwarzacza indywidualnie."
         },

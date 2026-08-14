@@ -71,6 +71,7 @@
           v-else-if="store.activePlayer.current_media?.title"
           class="ma-line-clamp-1"
           style="min-width: 0"
+          @click.stop="onTitleClick"
         >
           <MarqueeText :sync="marqueeSync">
             {{ store.activePlayer.current_media.title }}
@@ -179,6 +180,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
 import { getSourceName } from "@/plugins/api/helpers";
@@ -200,6 +202,12 @@ interface Props {
   primaryColor?: string;
   /** Smaller artwork and a shallower row, for the floating mobile player. */
   compact?: boolean;
+  /**
+   * Send the track title to its detail page rather than to the full screen
+   * player. The floating mobile bar leaves it off: the title is most of the
+   * card there, and the card as a whole is what opens the player.
+   */
+  titleOpensDetails?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -207,6 +215,7 @@ const props = withDefaults(defineProps<Props>(), {
   showQualityDetailsBtn: true,
   primaryColor: "",
   compact: false,
+  titleOpensDetails: false,
 });
 
 // computed properties
@@ -231,6 +240,14 @@ function openPlayer() {
   } else {
     store.showFullscreenPlayer = true;
   }
+}
+
+function onTitleClick() {
+  if (props.titleOpensDetails) {
+    openCurrentTrackDetails();
+    return;
+  }
+  openPlayer();
 }
 </script>
 

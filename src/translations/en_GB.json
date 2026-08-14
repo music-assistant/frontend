@@ -255,8 +255,6 @@
                 "remove_confirm": "Are you sure you want to remove this DSP preset?"
             }
         },
-        "dsp_enabled": "DSP is enabled",
-        "dsp_disabled": "DSP is disabled",
         "dsp_note_multi_device_group": {
             "label": "You can configure the DSP for each player individually."
         },
