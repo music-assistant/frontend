@@ -356,67 +356,47 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // settings shortcuts (admin only)
+  // open the settings (both menus, admin only)
   if (authManager.isAdmin()) {
-    // open queue settings (queue menu, or player menu with an MA queue)
-    if (isQueue || playerQueue) {
+    const openSettings = (path: string) => () => {
+      store.showFullscreenPlayer = false;
+      store.showPlayersMenu = false;
+      router.push(path);
+    };
+    if (isPlayer) {
+      // the player settings page links on to the other sections from there
       menuItems.push({
-        label: "open_queue_settings",
+        label: "open_settings",
         labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(
-            `/settings/editqueue/${playerQueue?.queue_id ?? player.player_id}`,
-          );
-        },
+        action: openSettings(`/settings/editplayer/${player.player_id}`),
         icon: "mdi-cog-outline",
       });
-    }
-
-    // open player settings (both menus)
-    menuItems.push({
-      label: "open_player_settings",
-      labelArgs: [],
-      action: () => {
-        store.showFullscreenPlayer = false;
-        store.showPlayersMenu = false;
-        router.push(`/settings/editplayer/${player.player_id}`);
-      },
-      icon: "mdi-cog-outline",
-    });
-
-    // configure the player or re-run its setup flow on demand
-    if (isPlayer) {
-      const setupMenuItem = getPlayerSetupMenuItem(player);
-      if (setupMenuItem) menuItems.push(setupMenuItem);
-    }
-
-    // open dsp settings (player menu only)
-    if (isPlayer && player.type !== PlayerType.GROUP) {
-      menuItems.push({
-        label: "open_dsp_settings",
+    } else {
+      const subItems: ContextMenuItem[] = [];
+      if (playerQueue) {
+        subItems.push({
+          label: "settings.queue_settings",
+          labelArgs: [],
+          action: openSettings(`/settings/editqueue/${playerQueue.queue_id}`),
+        });
+      }
+      subItems.push({
+        label: "settings.player_settings",
         labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/dsp`);
-        },
-        icon: "mdi-equalizer",
+        action: openSettings(`/settings/editplayer/${player.player_id}`),
       });
-    }
-
-    // open player options (both menus)
-    if (player.options.length > 0) {
+      if (player.type !== PlayerType.GROUP) {
+        subItems.push({
+          label: "settings.category.dsp",
+          labelArgs: [],
+          action: openSettings(`/settings/editplayer/${player.player_id}/dsp`),
+        });
+      }
       menuItems.push({
-        label: "player_options.open",
+        label: "open_settings",
         labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/options`);
-        },
-        icon: "mdi-tune",
+        icon: "mdi-cog-outline",
+        subItems,
       });
     }
   }

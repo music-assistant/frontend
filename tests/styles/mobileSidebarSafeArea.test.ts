@@ -6,6 +6,7 @@ import sidebarSource from "@/components/ui/sidebar/Sidebar.vue?raw";
 import tokens from "@/styles/global.css?inline";
 import css from "@/styles/style.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { utilityPriority } from "./cascade";
 
 const INSET_TOP = "44px";
 const INSET_BOTTOM = "34px";
@@ -17,7 +18,7 @@ let appStyles: HTMLStyleElement;
 let tokenStyles: HTMLStyleElement;
 let sheetStyles: HTMLStyleElement;
 
-// Use raw selectors so the test does not depend on Vue's generated scope id.
+// the block is unscoped, so the selectors it declares are the shipped ones
 function extractStyle(source: string) {
   return source.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
 }
@@ -40,13 +41,6 @@ function panel(side: "left" | "right") {
   sheet.style.setProperty("--sidebar-width", MENU_WIDTH);
   document.body.appendChild(sheet);
   return getComputedStyle(sheet);
-}
-
-function utilityPriority(selector: string, property: string) {
-  return [...(appStyles.sheet?.cssRules ?? [])]
-    .filter((rule) => rule instanceof CSSStyleRule)
-    .find((rule) => rule.selectorText === selector)
-    ?.style.getPropertyPriority(property);
 }
 
 describe("mobile sidebar safe area", () => {
@@ -99,7 +93,7 @@ describe("mobile sidebar safe area", () => {
     // the padding only proves anything while the utility it has to out-rank is
     // itself !important
     expect(
-      utilityPriority(".p-0", "padding"),
+      utilityPriority(appStyles, ".p-0", "padding"),
       "the Tailwind utilities import must stay `important` and unlayered",
     ).toBe("important");
 
@@ -114,7 +108,7 @@ describe("mobile sidebar safe area", () => {
 
   it("keeps the menu its full width beside a horizontal inset", () => {
     expect(
-      utilityPriority(".w-\\(--sidebar-width\\)", "width"),
+      utilityPriority(appStyles, ".w-\\(--sidebar-width\\)", "width"),
       "the Tailwind utilities import must stay `important` and unlayered",
     ).toBe("important");
 

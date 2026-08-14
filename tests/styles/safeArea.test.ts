@@ -15,6 +15,7 @@ function applyGlobalStyles() {
 afterEach(() => {
   document.head.querySelector("[data-safe-area-test]")?.remove();
   document.documentElement.removeAttribute("data-embedded-layout");
+  document.documentElement.style.removeProperty("--device-inset-bottom");
 });
 
 describe.each([
@@ -54,5 +55,17 @@ describe("embedded safe area", () => {
     for (const property of insetProperties) {
       expect(computed.getPropertyValue(property).trim()).toBe("0px");
     }
+  });
+
+  it("takes the insets an embedding host reports over the zeroed tokens", () => {
+    applyGlobalStyles();
+    document.documentElement.setAttribute("data-embedded-layout", "");
+    document.documentElement.style.setProperty("--device-inset-bottom", "34px");
+
+    expect(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--device-inset-bottom")
+        .trim(),
+    ).toBe("34px");
   });
 });

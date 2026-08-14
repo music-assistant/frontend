@@ -537,6 +537,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .catch((err) => {
       saveErrorMessage.value = String(err);
       saveErrorOpen.value = true;
+      editConfig.value?.saveFailed();
     })
     .finally(() => {
       loading.value = false;

@@ -255,8 +255,6 @@
                 "remove_confirm": "Tem certeza de que deseja remover essa predefinição de DSP?"
             }
         },
-        "dsp_enabled": "O DSP está ativado",
-        "dsp_disabled": "O DSP está desativado",
         "dsp_note_multi_device_group": {
             "label": "Você pode configurar o DSP para cada reprodutor individualmente."
         },

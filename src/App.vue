@@ -13,6 +13,14 @@
   <!-- Main app (when authenticated and service worker ready for remote) -->
   <router-view v-else-if="showMainApp" />
 
+  <!-- Kiosk mode leaves Home Assistant no chrome of its own, and this screen
+       carries none of ours: a server that is away or restarting would strand
+       the panel on a spinner with nowhere to go. -->
+  <HomeAssistantMenuButton
+    v-if="showLogin && haState.kioskModeEnabled"
+    class="ha-escape-button"
+  />
+
   <PlayerBrowserMediaControls
     v-if="
       webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
@@ -33,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
@@ -60,11 +69,12 @@ import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { pruneStaleProviderFilters } from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
-// import {
-//   subscribeToHAProperties,
-//   unsubscribeFromHAProperties,
-//   getKioskModePreference
-// } from "./plugins/homeassistant";
+import {
+  getKioskModePreference,
+  haState,
+  subscribeToHAProperties,
+  unsubscribeFromHAProperties,
+} from "./plugins/homeassistant";
 import type { User } from "./plugins/api/interfaces";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
@@ -271,6 +281,20 @@ const completeInitialization = async () => {
     console.error("[App] No server info received");
     return;
   }
+
+  // Home Assistant pads its ingress iframe for the device safe area, leaving a
+  // strip of its own background we cannot reach from in here. Take that padding
+  // over so the app runs to the edge of the screen like it does anywhere else,
+  // and ask it to drop its own header and menu while we are at it.
+  // Ask before anything else is awaited, so the app lays itself out once.
+  // Reconnecting runs this again while the subscription is still standing.
+  if (store.isIngressSession && !haState.isSubscribed) {
+    subscribeToHAProperties({
+      handleSafeArea: true,
+      kioskMode: getKioskModePreference(),
+    });
+  }
+
   const userInfo = await api.getCurrentUserInfo();
   if (!userInfo) {
     console.error("[App] No user info received");
@@ -286,13 +310,6 @@ const completeInitialization = async () => {
   if (!isGuestAccessSession && !isDashboardViewer && connectionIdentity) {
     authManager.bindPersistentToken(connectionIdentity);
   }
-
-  // Enable kiosk mode when running in Home Assistant ingress
-  // COMMENTED OUT - HA INTEGRATION DISABLED
-  // if (store.isIngressSession && serverInfo.homeassistant_addon) {
-  // const kioskPref = getKioskModePreference();
-  // subscribeToHAProperties({ kioskMode: kioskPref, router });
-  // }
 
   // TODO: Remove this migration code in v2.9 release
   // Migrate localStorage settings to user preferences (one-time migration)
@@ -547,7 +564,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  // unsubscribeFromHAProperties();
+  unsubscribeFromHAProperties();
 });
 
 function getCurrentAuthConnectionIdentity() {
@@ -558,3 +575,14 @@ function getCurrentAuthConnectionIdentity() {
     : createLocalConnectionIdentity(api.baseUrl);
 }
 </script>
+
+<style scoped>
+/* Sits where Home Assistant's own menu button would be. Pinned to the viewport,
+   so it owns the device insets rather than inheriting a parent's padding. */
+.ha-escape-button {
+  position: fixed;
+  top: calc(var(--device-inset-top, 0px) + 0.75rem);
+  left: calc(var(--device-inset-left, 0px) + 0.75rem);
+  z-index: 1000;
+}
+</style>

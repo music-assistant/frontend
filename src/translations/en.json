@@ -72,7 +72,6 @@
     "player_select": {
         "active_player_volume_only": "Only show volume sliders for active players",
         "and_more": "...and {0} more",
-        "disable_player": "Disable player",
         "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
         "disable_player_title": "Disable {0}?",
         "display_options": "Display options",
@@ -111,6 +110,8 @@
         "configure": "Configure",
         "options": "Options",
         "delete": "Delete",
+        "delete_player_title": "Delete {0}?",
+        "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
         "disable": "Disable",
         "documentation": "Documentation",
         "known_issues": "Known issues",
@@ -397,8 +398,6 @@
                 "selected": "Preset: {0}"
             }
         },
-        "dsp_enabled": "DSP is enabled",
-        "dsp_disabled": "DSP is disabled",
         "dsp_note_multi_device_group": {
             "label": "You can configure the DSP for each player individually."
         },
@@ -613,6 +612,10 @@
                 "right": "Right"
             }
         },
+        "ha_kiosk_mode": {
+            "label": "Use the full screen in Home Assistant",
+            "description": "Hide the Home Assistant header and sidebar so Music Assistant gets the whole screen. The Home Assistant button in the menu brings them back."
+        },
         "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "genre_management": "Genre Management",
@@ -728,6 +731,9 @@
         "provider_removed": "Provider removed",
         "action_completed": "Action completed",
         "queue_settings": "Queue settings",
+        "queue_settings_description": "Playback settings for the queue this player plays from",
+        "dsp_description": "Filters and gain applied to everything this player plays",
+        "player_options_description": "Options and readings the player itself offers",
         "audio_analysis_failures": {
             "title": "Audio Analysis Failures",
             "description": "Tracks that failed analysis are skipped on future scans. Delete an entry to clear the failure and let it be analyzed again.",
@@ -764,15 +770,15 @@
         },
         "visualizer_enabled": {
             "label": "MilkDrop visualizer",
-            "description": "Render a MilkDrop (Butterchurn) music visualizer behind the fullscreen player, replacing the gradient background. Reacts live to the audio playing on the active player. This is the default for all players; the toggle in a player's fullscreen menu or party screen overrides it for that player only."
+            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu."
         },
         "visualizer_blur": {
             "label": "Visualizer blur",
-            "description": "Blur radius (in pixels) applied to the visualizer for a softer, ambient background. 0 disables blur."
+            "description": "Softens the visualizer for a calmer background. 0 disables blur."
         },
         "visualizer_opacity": {
             "label": "Visualizer opacity",
-            "description": "Opacity of the visualizer layer; lower values blend the album-color gradient background through. Note: at 55% and above the view switches to an immersive dark look with light text; at 50% and below it keeps the normal theme background and text colors."
+            "description": "Lower values blend the album colors through. Above 50% the view switches to a dark look with light text."
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
@@ -843,6 +849,7 @@
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
         "show_menu": "Show\/hide menu",
+        "show_full_path": "Show the full path",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",
@@ -873,6 +880,8 @@
         "exit_fullscreen": "Exit fullscreen",
         "decrease_offset": "Decrease offset",
         "increase_offset": "Increase offset",
+        "volume_down": "Volume down",
+        "volume_up": "Volume up",
         "toggle_queue": "Toggle queue",
         "select_player": "Select player",
         "show_dashboard": "Cast dashboard to a device",
@@ -913,6 +922,8 @@
     "recently_played": "Recently played",
     "load_more_items": "Load more items...",
     "radio": "Radio",
+    "dynamic_radio_heading": "Dynamic station",
+    "dynamic_radio_empty_desc": "This station didn't return any tracks. Try again in a moment.",
     "muted": "muted",
     "enter_name": "Enter a new (custom) name",
     "image_url": "Input the URL to an image or icon (optional)",
@@ -1397,6 +1408,7 @@
                 "prompt": "Prompt",
                 "instructions": "Host and Program Instructions",
                 "voice": "Voice",
+                "language": "Language",
                 "host": "Host"
             },
             "field_descriptions": {
@@ -1516,6 +1528,7 @@
                 "save": "Save show",
                 "advanced": "Advanced",
                 "basics_title": "Basics",
+                "personality_title": "Personality",
                 "segments_title": "Segments",
                 "segments_empty": "No segments yet — add one to get started.",
                 "add_segment": "Add segment",
@@ -1530,16 +1543,28 @@
                     "sign_off": "Sign-off"
                 },
                 "segment_name": "Segment name",
+                "tts_options_title": "Advanced TTS options",
+                "tts_options_help": "Only add keys your selected engine supports, since an unsupported key can make it reject the whole clip.",
+                "option_key": "Option key",
+                "option_key_placeholder": "e.g. voice",
+                "option_value": "Option value",
+                "option_value_placeholder": "e.g. en_US-lessac-medium",
+                "add_option": "Add option",
+                "remove_option": "Remove option",
                 "use_current_player": "Use current player",
                 "host_placeholder": "Choose a host",
                 "host_required": "Choose a host before saving",
                 "no_hosts_hint": "You need a host before you can save this show.",
                 "create_host_cta": "Create a host",
-                "prompt_placeholders_hint": "Available placeholders: {placeholders}"
+                "prompt_placeholders_label": "Placeholders — tap to copy:",
+                "prompt_placeholder_copied": "Copied {0} to clipboard",
+                "prompt_placeholder_copy_failed": "Failed to copy {0} to clipboard",
+                "prompt_placeholder_copy_aria": "Copy {0}"
             },
             "hosts": {
                 "title": "Hosts",
                 "add_host": "Add host",
+                "blank_host": "Blank host",
                 "card": {
                     "edit": "Edit"
                 },
@@ -1548,6 +1573,7 @@
                     "save": "Save host",
                     "name_label": "Host name",
                     "default_voice": "Default",
+                    "default_language": "Follow server language",
                     "validation": {
                         "name_required": "Host name is required",
                         "duplicate_name": "A host named «{0}» already exists",
@@ -2018,11 +2044,11 @@
         },
         "fixed_preset": "Preset",
         "beat_switch": "Switch preset on downbeat",
-        "beat_switch_description": "Automatically switch to another preset on a downbeat, using Music Assistant's beat analysis. Takes precedence over a fixed preset selection.",
+        "beat_switch_description": "Switch to another preset on a downbeat. Overrides a fixed preset.",
         "beat_dwell": "Minimum time between switches",
         "beat_dwell_description": "How long a preset stays on screen before a downbeat may switch it.",
         "favorites": "Favorite presets",
-        "no_favorites": "No favorites yet. Use the star next to the preset picker in the fullscreen player to favorite the preset currently showing.",
+        "no_favorites": "No favorites yet. Star the current preset in the fullscreen player.",
         "remove_favorite": "Remove favorite",
         "credits": "Credits",
         "credits_butterchurn": "Rendering powered by Butterchurn by Jordan Berg (MIT license), the WebGL implementation of MilkDrop 2.",
@@ -2032,6 +2058,7 @@
     "similar_artists": "Similar artists",
     "audio_source": "Audio source",
     "change_playback_speed": "Change playback speed",
+    "playback_speed_value": "{0}x",
     "shortcut": {
         "add_to": "Add to shortcuts",
         "remove_from": "Remove from shortcuts"
@@ -2177,6 +2204,7 @@
     "autoplay_off_title": "Autoplay is disabled",
     "autoplay_off_desc": "Your music will stop once the queue has finished. Enable Autoplay to automatically keep it going with more content based on your preferences.",
     "open_player_settings": "Open player settings",
+    "open_settings": "Settings",
     "configure_player": "Configure player",
     "reconfigure_player": "Reconfigure player",
     "sleep_timer": "Sleep timer",
@@ -2219,8 +2247,20 @@
     "play_announcement_message": "Message",
     "play_announcement_message_placeholder": "Dinner is ready!",
     "play_announcement_pre_announce": "Play a chime first",
+    "play_announcement_playing": "Playing...",
+    "play_announcement_volume": "Volume",
+    "play_announcement_volume_default": "Player default",
     "play_announcement_send": "Announce",
     "play_announcement_sent": "Announcement sent to {0}",
+    "play_announcement_mode_type": "Type a message",
+    "play_announcement_mode_speak": "Speak",
+    "play_announcement_hold_to_speak": "Hold the button and speak",
+    "play_announcement_connecting": "Connecting...",
+    "play_announcement_speaking": "Speaking",
+    "play_announcement_finishing": "Finishing...",
+    "play_announcement_mic_denied": "Music Assistant is not allowed to use the microphone.",
+    "play_announcement_mic_failed": "The microphone could not be started.",
+    "play_announcement_live_failed": "The announcement could not be played.",
     "ai_dj": "Enable AI Radio DJ",
     "ai_dj_off": "Off",
     "ai_dj_show_on_air": "On air: {0}",
@@ -2249,5 +2289,9 @@
     },
     "searching": "Searching...",
     "menu": "Menu",
-    "main_navigation": "Main"
+    "home_assistant_menu": "Home Assistant",
+    "main_navigation": "Main",
+    "offline_ready": "App ready to work offline",
+    "update_available": "A new version is available. Reload to update.",
+    "reload": "Reload"
 }

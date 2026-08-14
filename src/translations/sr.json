@@ -267,8 +267,6 @@
                 "concert_pitch_432": "А = 432 Hz"
             }
         },
-        "dsp_enabled": "„DSP“ је омогућен",
-        "dsp_disabled": "„DSP“ је онемогућен",
         "dsp_note_multi_device_group": {
             "label": "Можете конфигурисати „DSP“ за сваки плејер појединачно."
         },

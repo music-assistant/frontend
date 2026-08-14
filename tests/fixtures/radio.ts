@@ -17,6 +17,7 @@ export function radio(overrides: Partial<Radio> = {}): Radio {
     provider_mappings: [],
     metadata: {},
     favorite: false,
+    is_dynamic: false,
     ...overrides,
   });
 }

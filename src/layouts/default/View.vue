@@ -11,6 +11,7 @@
             'content-section',
             { 'content-section--mobile': store.mobileLayout },
             { 'content-section--frameless': store.frameless },
+            { 'party-view-active': route.meta.partyView === true },
           ]"
         >
           <router-view v-slot="{ Component }">
@@ -27,6 +28,7 @@
           <link-genre-dialog />
           <dialog-delete-confirmation />
           <setup-flow-dialog />
+          <player-rename-dialog />
           <item-context-menu />
           <AddManualLink
             v-model="showEditItemDialog"
@@ -47,6 +49,7 @@ import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AppSidebar from "@/components/navigation/AppSidebar.vue";
+import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
@@ -58,6 +61,7 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import AudioOverlayDialog from "./AudioOverlayDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
@@ -66,6 +70,8 @@ import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
 import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
 import PlayerSelect from "./PlayerSelect.vue";
+
+const route = useRoute();
 
 const showEditItemDialog = ref(false);
 const editItem = ref<Radio | Track | Playlist | undefined>(undefined);

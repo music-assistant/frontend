@@ -12,11 +12,14 @@ type SendCommand = (
   args?: Record<string, unknown>,
 ) => Promise<unknown>;
 
-const { sendCommand, getLibraryPlaylists, routeMock } = vi.hoisted(() => ({
-  sendCommand: vi.fn<SendCommand>(async () => []),
-  getLibraryPlaylists: vi.fn(async () => []),
-  routeMock: { query: { station_id: "show-1" } as Record<string, string> },
-}));
+const { sendCommand, getLibraryPlaylists, routeMock, routerMock } = vi.hoisted(
+  () => ({
+    sendCommand: vi.fn<SendCommand>(async () => []),
+    getLibraryPlaylists: vi.fn(async () => []),
+    routeMock: { query: { station_id: "show-1" } as Record<string, string> },
+    routerMock: { push: vi.fn(), replace: vi.fn() },
+  }),
+);
 
 vi.mock("@/plugins/api", () => {
   const mockApi = {
@@ -37,7 +40,7 @@ vi.mock("@/plugins/store", () => ({
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
   useRoute: () => routeMock,
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useRouter: () => routerMock,
   onBeforeRouteLeave: vi.fn(),
 }));
 
@@ -101,13 +104,75 @@ const getShowFetchCount = () =>
     ([command]) => command === "ai_radio/stations/get",
   ).length;
 
+const getStatusFetchCount = () =>
+  sendCommand.mock.calls.filter(([command]) => command === "ai_radio/status")
+    .length;
+
 function findButtonByText(wrapper: VueWrapper, text: string) {
   return wrapper.findAll("button").find((button) => button.text() === text);
 }
 
+/**
+ * Records document listeners while a view runs.
+ *
+ * `live()` reports the event types attached right now; `stop()` restores the
+ * originals and reports what is still attached, which is what tells a removed
+ * listener apart from one added back afterwards.
+ */
+function trackDocumentListeners() {
+  const attached = new Map<unknown, string>();
+  const { addEventListener, removeEventListener } = document;
+  document.addEventListener = ((type: string, handler: never) => {
+    attached.set(handler, type);
+    return addEventListener.call(document, type, handler);
+  }) as never;
+  document.removeEventListener = ((type: string, handler: never) => {
+    attached.delete(handler);
+    return removeEventListener.call(document, type, handler);
+  }) as never;
+  return {
+    live: () => [...attached.values()],
+    stop: () => {
+      Object.assign(document, { addEventListener, removeEventListener });
+      return [...attached.values()];
+    },
+  };
+}
+
+/**
+ * Records the status poll timers armed while a view runs.
+ *
+ * `pending()` reports the ones not cleared again, which is what a poll loop
+ * still running boils down to. Poll delays start at 5s, well clear of the
+ * short timeouts the components and the test harness arm themselves.
+ */
+function trackPollTimers() {
+  const POLL_DELAY_FLOOR_MS = 5000;
+  const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+  const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+  return {
+    pending: () => {
+      const cleared = new Set(clearTimeoutSpy.mock.calls.map(([id]) => id));
+      return setTimeoutSpy.mock.results
+        .filter(
+          (_result, index) =>
+            Number(setTimeoutSpy.mock.calls[index][1]) >= POLL_DELAY_FLOOR_MS,
+        )
+        .map((result) => result.value)
+        .filter((timer) => !cleared.has(timer));
+    },
+    stop: () => {
+      setTimeoutSpy.mockRestore();
+      clearTimeoutSpy.mockRestore();
+    },
+  };
+}
+
+// Attached so isVisible() can resolve computed style (v-show toggling).
+const mountViewRaw = () => mount(AIRadioView, { attachTo: document.body });
+
 async function mountView() {
-  // Attached so isVisible() can resolve computed style (v-show toggling).
-  const wrapper = mount(AIRadioView, { attachTo: document.body });
+  const wrapper = mountViewRaw();
   await flushPromises();
   return wrapper;
 }
@@ -120,6 +185,9 @@ afterEach(() => {
   useShows().shows.value = [];
   useShows().sessions.value = [];
   useShows().playlists.value = [];
+  // Polling state lives in the composable's module scope, so a run left behind
+  // here would decide what the next test sees.
+  useShows().stopStatusPolling();
   document.body.replaceChildren();
 });
 
@@ -201,5 +269,52 @@ describe("AIRadioView host editor / show editor interplay", () => {
       (secondOpen.find("#customize-host-name").element as HTMLInputElement)
         .value,
     ).toBe("");
+  });
+});
+
+describe("AIRadioView status polling lifecycle", () => {
+  it("polls while the page is open and stops once it is closed", async () => {
+    routeMock.query = {};
+    setupSendCommand([]);
+    const listeners = trackDocumentListeners();
+    const timers = trackPollTimers();
+
+    const view = mountViewRaw();
+    await flushPromises();
+    const listeningWhileOpen = listeners.live();
+    const pendingWhileOpen = timers.pending();
+
+    view.unmount();
+    const listeningAfterClose = listeners.stop();
+    const pendingAfterClose = timers.pending();
+    timers.stop();
+
+    expect(listeningWhileOpen).toContain("visibilitychange");
+    expect(pendingWhileOpen).toHaveLength(1);
+    expect(getStatusFetchCount()).toBeGreaterThan(0);
+    expect(listeningAfterClose).not.toContain("visibilitychange");
+    expect(pendingAfterClose).toHaveLength(0);
+  });
+
+  it("sets nothing up when the page is closed while still loading", async () => {
+    // leaving before the loads resolve runs the unmount hook first, so anything
+    // starting afterwards would poll on for the lifetime of the page
+    routeMock.query = { station_id: STATION_ID };
+    setupSendCommand([]);
+    const listeners = trackDocumentListeners();
+    const timers = trackPollTimers();
+
+    const view = mountViewRaw();
+    view.unmount();
+    await flushPromises();
+    const remaining = listeners.stop();
+    const pending = timers.pending();
+    timers.stop();
+
+    expect(remaining).not.toContain("visibilitychange");
+    expect(pending).toHaveLength(0);
+    expect(getStatusFetchCount()).toBe(0);
+    // by now the query belongs to whatever route replaced this one
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 });

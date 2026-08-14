@@ -44,7 +44,7 @@
       <Card class="rounded-[6px]">
         <CardHeader>
           <CardTitle>{{
-            $t("providers.ai_radio.customize.basics_title")
+            $t("providers.ai_radio.customize.personality_title")
           }}</CardTitle>
         </CardHeader>
         <CardContent class="grid gap-4 md:grid-cols-2">
@@ -88,6 +88,84 @@
               </SelectContent>
             </Select>
           </div>
+
+          <div class="flex flex-col gap-1.5">
+            <FieldLabel
+              html-for="customize-host-language"
+              :label="$t('providers.ai_radio.fields.language')"
+            />
+            <Select v-model="languageSelectValue">
+              <SelectTrigger id="customize-host-language" class="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem :value="NONE_SELECT_VALUE">
+                  {{ $t("providers.ai_radio.hosts.editor.default_language") }}
+                </SelectItem>
+                <SelectItem
+                  v-for="option in languageOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Accordion type="single" collapsible class="md:col-span-2">
+            <AccordionItem value="advanced" class="border-b-0 border-t">
+              <AccordionTrigger>
+                {{ $t("providers.ai_radio.customize.tts_options_title") }}
+              </AccordionTrigger>
+              <AccordionContent class="space-y-3 pt-2">
+                <p class="text-xs text-muted-foreground">
+                  {{ $t("providers.ai_radio.customize.tts_options_help") }}
+                </p>
+                <div
+                  v-for="row in optionRows"
+                  :key="row.id"
+                  class="flex flex-col gap-2 sm:flex-row sm:items-center"
+                >
+                  <Input
+                    v-model="row.key"
+                    class="h-8 min-w-0 sm:flex-1"
+                    :placeholder="
+                      $t('providers.ai_radio.customize.option_key_placeholder')
+                    "
+                    :aria-label="$t('providers.ai_radio.customize.option_key')"
+                  />
+                  <Input
+                    v-model="row.value"
+                    class="h-8 min-w-0 sm:flex-1"
+                    :placeholder="
+                      $t(
+                        'providers.ai_radio.customize.option_value_placeholder',
+                      )
+                    "
+                    :aria-label="
+                      $t('providers.ai_radio.customize.option_value')
+                    "
+                  />
+                  <Button
+                    variant="ghost-icon"
+                    size="icon-sm"
+                    class="shrink-0 self-end text-destructive hover:text-destructive sm:self-auto"
+                    :aria-label="
+                      $t('providers.ai_radio.customize.remove_option')
+                    "
+                    @click="removeOptionRow(row.id)"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button variant="outline" size="sm" @click="addOptionRow">
+                  <Plus class="h-4 w-4" />
+                  {{ $t("providers.ai_radio.customize.add_option") }}
+                </Button>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
@@ -149,6 +227,12 @@
 <script setup lang="ts">
 import FieldLabel from "@/components/ai-radio/FieldLabel.vue";
 import SegmentRow from "@/components/ai-radio/SegmentRow.vue";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -179,19 +263,23 @@ import {
   GENERIC_HOST_SEGMENTS,
   GENERIC_SEGMENT_TEMPLATES,
   NONE_SELECT_VALUE,
+  optionValueToText,
+  rowsToOptions,
   type HostDraft,
   type ShowSegment,
 } from "@/helpers/ai_radio";
 import { eventbus } from "@/plugins/eventbus";
-import { $t } from "@/plugins/i18n";
-import { ArrowLeft, Loader2, Plus } from "@lucide/vue";
-import { computed, onMounted, ref } from "vue";
+import { $t, canonicalizeLocale, getLocaleOptions, i18n } from "@/plugins/i18n";
+import { ArrowLeft, Loader2, Plus, Trash2 } from "@lucide/vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 const props = defineProps<{
   /** Existing host id to edit; omit (or empty) to create a new host. */
   hostId?: string;
+  /** Pre-filled unsaved draft to seed a new host from (e.g. a persona preset); ignored when hostId is set. */
+  presetDraft?: HostDraft;
 }>();
 
 const emit = defineEmits<{
@@ -226,6 +314,25 @@ const voiceSelectValue = computed({
   set: (value: string) => {
     if (!draft.value) return;
     draft.value.ttsEngine = value === NONE_SELECT_VALUE ? "" : value;
+  },
+});
+
+// Canonicalized so a stored "el-GR" matches the option it was picked from.
+const languageOptions = computed(() =>
+  getLocaleOptions(i18n.global.availableLocales, i18n.global.locale.value).map(
+    (option) => ({ ...option, value: canonicalizeLocale(option.value) }),
+  ),
+);
+
+const languageSelectValue = computed({
+  // Canonicalize for display only: writing back here would mark an untouched host dirty.
+  get: () =>
+    draft.value?.language
+      ? canonicalizeLocale(draft.value.language)
+      : NONE_SELECT_VALUE,
+  set: (value: string) => {
+    if (!draft.value) return;
+    draft.value.language = value === NONE_SELECT_VALUE ? "" : value;
   },
 });
 
@@ -286,9 +393,52 @@ function newHostDraft(): HostDraft {
     name: "",
     instructions: GENERIC_HOST_INSTRUCTIONS,
     ttsEngine: "",
+    language: "",
+    options: {},
     segments: deepClone(GENERIC_HOST_SEGMENTS),
   };
 }
+
+/** One key/value row in the Advanced TTS options editor. */
+interface OptionRow {
+  id: string;
+  key: string;
+  value: string;
+}
+
+const optionRows = ref<OptionRow[]>([]);
+let optionRowSeq = 0;
+
+/** Keyed independently from `key` so editing a key can't reorder or drop other rows. */
+function newOptionRowId(): string {
+  optionRowSeq += 1;
+  return `option_${optionRowSeq}`;
+}
+
+function loadOptionRows(options: Record<string, unknown>) {
+  optionRows.value = Object.entries(options).map(([key, value]) => ({
+    id: newOptionRowId(),
+    key,
+    value: optionValueToText(value),
+  }));
+}
+
+function addOptionRow() {
+  optionRows.value.push({ id: newOptionRowId(), key: "", value: "" });
+}
+
+function removeOptionRow(id: string) {
+  optionRows.value = optionRows.value.filter((row) => row.id !== id);
+}
+
+// Rows are the editable source of truth; the draft mirrors them, minus empty keys.
+watch(
+  optionRows,
+  () => {
+    if (draft.value) draft.value.options = rowsToOptions(optionRows.value);
+  },
+  { deep: true, flush: "sync" },
+);
 
 function confirmDiscard(onConfirm: () => void) {
   eventbus.emit("deleteConfirmationDialog", {
@@ -390,8 +540,11 @@ onMounted(async () => {
       const host = await getHost(props.hostId);
       draft.value = decompileHost(host, sections.value);
     } else {
-      draft.value = newHostDraft();
+      draft.value = props.presetDraft
+        ? deepClone(props.presetDraft)
+        : newHostDraft();
     }
+    loadOptionRows(draft.value.options);
     originalSnapshot = JSON.stringify(draft.value);
   } catch (error) {
     loadError.value = errorMessage(error);

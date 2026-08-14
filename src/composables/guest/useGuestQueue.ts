@@ -5,8 +5,12 @@
 
 import { ref, computed, watch, nextTick } from "vue";
 import api from "@/plugins/api";
-import type { PlayerQueue, QueueItem } from "@/plugins/api/interfaces";
-import { EventType, type EventMessage } from "@/plugins/api/interfaces";
+import {
+  type EventMessage,
+  EventType,
+  type PlayerQueue,
+  type QueueItem,
+} from "@/plugins/api/interfaces";
 import { currentQueueIndex as resolveCurrentQueueIndex } from "@/helpers/queue_position";
 
 export function useGuestQueue(options?: { onItemsChanged?: () => void }) {

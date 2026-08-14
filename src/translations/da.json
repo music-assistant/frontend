@@ -252,8 +252,6 @@
                 "remove_confirm": "Er du sikker på, at du vil fjerne denne DSP-forudindstilling?"
             }
         },
-        "dsp_enabled": "DSP er aktiveret",
-        "dsp_disabled": "DSP er deaktiveret",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurere DSP'en for hver enkelt afspiller."
         },

@@ -129,13 +129,12 @@ const activeSession = computed(() =>
 );
 
 // Wait for API init (mount can race a hard page refresh) before fetching lists/subscribing.
-let active = false;
+let unmounted = false;
 const unsubscribers: Array<() => void> = [];
 
 onMounted(async () => {
-  active = true;
   await waitForApiInitialization();
-  if (!active) return;
+  if (unmounted) return;
 
   fetchSessions();
   loadDashboards();
@@ -149,7 +148,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  active = false;
+  unmounted = true;
   unsubscribers.forEach((unsubscribe) => unsubscribe());
 });
 

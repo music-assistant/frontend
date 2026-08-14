@@ -91,6 +91,10 @@ const logContainer = ref<HTMLDivElement | null>(null);
 const maxLines = 150;
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
+// Set by the unmount hook, so the startup below can tell that the view it is
+// setting things up for is already gone.
+let unmounted = false;
+
 const displayContent = computed(() => {
   const lines = logContent.value.split("\n");
   if (lines.length > maxLines) {
@@ -200,7 +204,13 @@ watch(autoRefresh, (enabled) => {
 
 onMounted(async () => {
   await fetchLogs(false);
-  if (autoRefresh.value) {
+  // The first fetch can outlast the view, and the unmount hook only reaches
+  // what was already set up by the time it ran.
+  if (unmounted) return;
+
+  // The auto-refresh watcher arms this interval too, and only the handle held
+  // here is the one the unmount hook clears.
+  if (autoRefresh.value && !refreshInterval) {
     refreshInterval = setInterval(() => {
       fetchLogs(true);
     }, 5000);
@@ -208,6 +218,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  unmounted = true;
   if (refreshInterval) {
     clearInterval(refreshInterval);
   }

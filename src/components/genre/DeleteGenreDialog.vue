@@ -39,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import { eventbus, type DeleteGenreDialogEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -81,7 +82,7 @@ const handleConfirm = () => {
     );
     open.value = false;
     if (navigateBack.value) {
-      router.back();
+      backFromMediaDetails(router);
     }
     eventbus.emit("clearSelection");
   }

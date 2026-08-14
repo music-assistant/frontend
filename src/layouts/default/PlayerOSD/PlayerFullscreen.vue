@@ -109,7 +109,7 @@
             <v-card-title
               v-else-if="store.activePlayer?.current_media?.title"
               :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
-              @click="onTitleClick"
+              @click="openCurrentTrackDetails"
             >
               <MarqueeText :sync="playerMarqueeSync">
                 {{ store.activePlayer.current_media.title }}
@@ -367,19 +367,12 @@
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
-          <Icon
-            :disabled="!store.curQueueItem?.media_item"
-            :title="$t('tooltip.favorite')"
-            variant="button"
-            class="media-controls-item"
-            max-height="30px"
-            @click="onHeartBtnClick"
-          >
-            <Heart
+          <div class="media-controls-item favorite-btn-wrapper">
+            <FavoriteMenuBtn
+              style="max-height: 30px; min-height: 0; min-width: 0"
               :size="18"
-              :fill="currentItemFavorite ? 'currentColor' : 'none'"
             />
-          </Icon>
+          </div>
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
             :player-queue="store.activePlayerQueue"
@@ -452,11 +445,15 @@
             padding-top: 4px;
           "
         >
+          <!-- Without a competing hover:text- here, the outline variant's own
+               hover:text-accent-foreground survives the class merge and recolours
+               the label against the artwork, so the hover colour is pinned to
+               the --text-color the rest of the panel follows. -->
           <Button
             id="fullscreen-player-select-button"
             variant="outline"
             size="xs"
-            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
+            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 hover:text-[var(--text-color)] dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
             :aria-label="playerSelectLabel"
             :aria-expanded="store.showPlayersMenu"
             aria-haspopup="dialog"
@@ -471,12 +468,13 @@
           </Button>
         </div>
       </div>
+
+      <PlaybackSpeedDialog v-model:open="playbackSpeedDialogOpen" />
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import Icon from "@/components/Icon.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
@@ -489,8 +487,9 @@ import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   ImageColorPalette,
@@ -499,6 +498,8 @@ import {
   getPlayerName,
 } from "@/helpers/utils";
 import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
+import PlaybackSpeedDialog from "@/layouts/default/PlayerOSD/PlaybackSpeedDialog.vue";
+import FavoriteMenuBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/FavoriteMenuBtn.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
@@ -512,21 +513,14 @@ import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuCon
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
-import {
-  EventMessage,
-  EventType,
-  MediaItemType,
-  MediaType,
-  PlayerType,
-  Track,
-} from "@/plugins/api/interfaces";
+import { MediaType, PlayerType, Track } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { ChevronDownIcon, EllipsisVerticalIcon, Heart } from "@lucide/vue";
+import { ChevronDownIcon, EllipsisVerticalIcon } from "@lucide/vue";
 import Color from "color";
 import {
   computed,
@@ -592,19 +586,6 @@ watch(
     el.style.removeProperty("transition");
     el.style.removeProperty("will-change");
   },
-);
-
-// Track the favorite state of the current queue item independently from
-// media_item.favorite so optimistic updates survive server-side queue refreshes
-// (which replace the whole current_item object and would reset the field).
-const currentItemFavorite = ref(false);
-watch(
-  () => store.curQueueItem?.queue_item_id,
-  () => {
-    currentItemFavorite.value =
-      store.curQueueItem?.media_item?.favorite ?? false;
-  },
-  { immediate: true },
 );
 
 // Local reactive state for lyrics
@@ -923,82 +904,6 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
   }
 };
 
-const onTitleClick = async function () {
-  const currentMedia = store.activePlayer?.current_media;
-  if (!currentMedia) return;
-
-  // Try to get the track from the full media item (for library items)
-  const mediaItem = store.curQueueItem?.media_item;
-
-  if (mediaItem && mediaItem.media_type === MediaType.TRACK) {
-    // Navigate directly to track detail page
-    store.showFullscreenPlayer = false;
-    router.push({
-      name: "track",
-      params: {
-        itemId: mediaItem.item_id,
-        provider: mediaItem.provider,
-      },
-    });
-  } else {
-    // Radio or non-library item - try to find in library first
-    const searchTerm = currentMedia.artist
-      ? `${currentMedia.artist} - ${currentMedia.title}`
-      : currentMedia.title || "";
-
-    try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, provider)
-      const results = await api.getLibraryTracks(
-        undefined, // favorite
-        searchTerm, // search
-        5, // limit - get a few results to find best match
-        undefined,
-        undefined,
-        undefined,
-        undefined, // genre_ids
-      );
-
-      if (results.length > 0) {
-        // Try to find best match by comparing artist and title
-        let bestMatch = results[0];
-
-        if (currentMedia.artist && currentMedia.title) {
-          const exactMatch = results.find(
-            (track) =>
-              track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
-              track.artists.some(
-                (artist) =>
-                  artist.name.toLowerCase() ===
-                  currentMedia.artist!.toLowerCase(),
-              ),
-          );
-          if (exactMatch) {
-            bestMatch = exactMatch;
-          }
-        }
-
-        // Found in library! Navigate to it
-        store.showFullscreenPlayer = false;
-        router.push({
-          name: "track",
-          params: {
-            itemId: bestMatch.item_id,
-            provider: bestMatch.provider,
-          },
-        });
-        return;
-      }
-    } catch (error) {
-      console.error("Error searching library for track:", error);
-    }
-
-    // Not found in library - fall back to global search
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
-    store.showFullscreenPlayer = false;
-  }
-};
-
 const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.album) return;
@@ -1154,6 +1059,22 @@ const onArtistClick = async function () {
   }
 };
 
+const playbackSpeedDialogOpen = ref(false);
+
+// a route change closes the full screen player from under whatever is on top of
+// it, and vuetify then unmounts this card - the dialog has to go first, or it
+// leaves the app-wide dialog flag set and reappears on the next open
+watch(
+  () => store.showFullscreenPlayer,
+  (open) => {
+    if (!open) playbackSpeedDialogOpen.value = false;
+  },
+);
+
+const speedSupported = computed(() =>
+  playbackSpeedSupported(store.curQueueItem),
+);
+
 const openQueueMenu = function (evt: Event) {
   if (!store.activePlayer) return;
   const menuItems = getPlayerMenuItems(
@@ -1164,6 +1085,17 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value,
     },
   );
+  // playback speed only means something for spoken-word content, which is also
+  // the only content anyone plays at anything but 1x
+  if (speedSupported.value) {
+    menuItems.push({
+      label: "change_playback_speed",
+      action: () => {
+        playbackSpeedDialogOpen.value = true;
+      },
+      icon: "mdi-speedometer",
+    });
+  }
   // The waveform toggle slots in above the visualizer entries, keeping the
   // visualizer toggle + options grouped at the bottom of the menu. The on/off
   // toggle itself comes from getPlayerMenuItems (it is a player control,
@@ -1209,23 +1141,6 @@ const openQueueMenu = function (evt: Event) {
   });
 };
 
-// sync currentItemFavorite when the server confirms a favorite change
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      if (
-        "favorite" in updatedItem &&
-        store.curQueueItem?.media_item?.uri === updatedItem.uri
-      ) {
-        currentItemFavorite.value = updatedItem.favorite;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-});
-
 // Handle Escape key to close fullscreen player (since persistent disables default behavior)
 const onKeydown = (e: KeyboardEvent) => {
   if (
@@ -1243,103 +1158,6 @@ onMounted(() => {
     window.removeEventListener("keydown", onKeydown);
   });
 });
-
-const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
-  // the heart icon/button was clicked
-  if (!store.curQueueItem?.media_item) return;
-  if (!currentItemFavorite.value) {
-    currentItemFavorite.value = true; // optimistic — survives server queue refresh
-    api.toggleFavorite(store.curQueueItem.media_item);
-    return;
-  }
-  //resolve media item into a library item
-  let resolvedItem = store.curQueueItem!.media_item as MediaItemType;
-  if (
-    (resolvedItem.provider != "library" ||
-      !("provider_mappings" in resolvedItem)) &&
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(resolvedItem.media_type)
-  ) {
-    // resolve itemmapping or non-library item
-    resolvedItem =
-      (await api.getLibraryItem(
-        resolvedItem.media_type,
-        resolvedItem.item_id,
-        resolvedItem.provider,
-      )) || resolvedItem;
-  }
-
-  const menuItems: ContextMenuItem[] = [];
-
-  // remove from favorites
-  if (
-    "favorite" in resolvedItem &&
-    resolvedItem.favorite &&
-    resolvedItem.provider == "library" &&
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(resolvedItem.media_type)
-  ) {
-    menuItems.push({
-      label: "favorites_remove",
-      labelArgs: [],
-      action: () => {
-        api.removeItemFromFavorites(
-          resolvedItem.media_type,
-          resolvedItem.item_id,
-        );
-        resolvedItem.favorite = false;
-        store.curQueueItem!.media_item!.favorite = false;
-        currentItemFavorite.value = false;
-      },
-      icon: "mdi-heart",
-    });
-  }
-
-  // add to playlist
-  if (
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(resolvedItem.media_type)
-  ) {
-    menuItems.push({
-      label: "add_playlist",
-      labelArgs: [],
-      action: () => {
-        eventbus.emit("playlistdialog", {
-          items: [store.curQueueItem!.media_item as MediaItemType],
-        });
-      },
-      icon: "mdi-plus-circle-outline",
-    });
-  }
-
-  // open the contextmenu by emitting the event
-  eventbus.emit("contextmenu", {
-    items: menuItems,
-    posX: evt.clientX,
-    posY: evt.clientY,
-  });
-};
 
 const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
@@ -1398,7 +1216,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .fullscreen-player-card {
   box-sizing: border-box;
-  overflow: hidden;
+  /* y is left to Vuetify, which holds it at auto from a more specific
+     .v-dialog > .v-overlay__content > .v-card. That keeps the card scrollable
+     when the viewport is too short for .player-bottom (flex-shrink: 0) to
+     fit; clipping instead would put the play button out of reach of the wheel
+     and of any pan global.css has not refused. */
+  overflow-x: hidden;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -1708,7 +1531,8 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-.queue-btn-wrapper {
+.queue-btn-wrapper,
+.favorite-btn-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1754,7 +1578,8 @@ onBeforeUnmount(() => {
 }
 
 /* Match the marginless transport icons so the play button stays centred. */
-.media-controls > .queue-btn-wrapper {
+.media-controls > .queue-btn-wrapper,
+.media-controls > .favorite-btn-wrapper {
   margin: 0;
 }
 

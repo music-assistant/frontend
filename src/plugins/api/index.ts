@@ -991,6 +991,16 @@ export class MusicAssistantApi {
     });
   }
 
+  public getRadioTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/radios/radio_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   // Audiobook related endpoints
   /**
    * Get Audiobooks listing from the server.
@@ -3407,20 +3417,22 @@ export class MusicAssistantApi {
   }
 
   /**
-   * Create a sendspin DataChannel through the remote access WebRTC connection.
+   * Open a DataChannel through the remote access WebRTC connection.
    * Returns null if not in remote mode or if WebRTC transport doesn't support it.
+   *
+   * @param label - Channel label the server routes on, e.g. "sendspin".
    */
-  public async createSendspinDataChannel(): Promise<RTCDataChannel | null> {
+  public async openDataChannel(label: string): Promise<RTCDataChannel | null> {
     if (!this.transport) {
       return null;
     }
 
-    // Check if transport supports creating sendspin channels
-    if (typeof this.transport.createSendspinDataChannel === "function") {
+    // Check if transport supports creating additional channels
+    if (typeof this.transport.openDataChannel === "function") {
       try {
-        return await this.transport.createSendspinDataChannel();
+        return await this.transport.openDataChannel(label);
       } catch (error) {
-        console.error("[API] Failed to create sendspin DataChannel:", error);
+        console.error(`[API] Failed to create ${label} DataChannel:`, error);
         return null;
       }
     }

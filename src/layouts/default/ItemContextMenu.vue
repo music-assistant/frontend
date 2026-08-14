@@ -64,7 +64,7 @@
           >
             <MenuItemIcon :icon="menuItem.icon" />
             <span class="flex-1 truncate min-w-0">{{
-              $t(menuItem.label, menuItem.labelArgs || [])
+              menuItemLabel(menuItem)
             }}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent
@@ -83,7 +83,7 @@
             >
               <MenuItemIcon :icon="subMenuItem.icon" />
               <span class="flex-1 truncate min-w-0">{{
-                $t(subMenuItem.label, subMenuItem.labelArgs || [])
+                menuItemLabel(subMenuItem)
               }}</span>
               <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
             </DropdownMenuItem>
@@ -98,7 +98,7 @@
         >
           <MenuItemIcon :icon="menuItem.icon" />
           <span class="flex-1 truncate min-w-0">{{
-            $t(menuItem.label, menuItem.labelArgs || [])
+            menuItemLabel(menuItem)
           }}</span>
           <Check v-if="menuItem.selected" class="ml-auto size-4" />
         </DropdownMenuItem>
@@ -247,6 +247,7 @@ import {
   radioSupported,
 } from "@/helpers/radio";
 import { runWithConcurrency } from "@/helpers/concurrency";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import {
   isItemInLibrary,
   itemIsAvailable,
@@ -306,7 +307,10 @@ import type { Component } from "vue";
 
 // The item type lives in a plain .ts module (editor-friendly); re-exported
 // here for convenience since most consumers already import from this file.
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  menuItemLabel,
+  type ContextMenuItem,
+} from "@/helpers/context_menu_item";
 export type { ContextMenuItem } from "@/helpers/context_menu_item";
 
 export const showContextMenuForMediaItem = async function (
@@ -676,7 +680,12 @@ export const getContextMenuItems = async function (
               if ("provider_mappings" in item)
                 item.provider_mappings.forEach((pm) => (pm.in_library = false));
             }
-            if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
+            // library ids restart per media type, so the type has to match too
+            if (
+              resolvedItem.item_id == parentItem?.item_id &&
+              resolvedItem.media_type == parentItem.media_type
+            )
+              backFromMediaDetails(router);
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
