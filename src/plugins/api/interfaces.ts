@@ -944,6 +944,11 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number | null;
 }
 
+export interface TopItemResult {
+  item: ItemMapping;
+  play_count: number;
+}
+
 export interface Artist extends MediaItem {
   artist_type: ArtistType;
 }
@@ -1068,6 +1073,36 @@ export interface RecommendationFolder extends BrowseFolder {
   items: MediaItemTypeOrItemMapping[];
   enabled_by_default: boolean;
   type: RecommendationFolderType;
+}
+
+/** Statistics interfaces */
+export interface TopItem {
+  item_id: string;
+  provider: string;
+  media_type: MediaType;
+  play_count: number;
+  total_seconds: number;
+  first_played: string | null;
+  last_played: string | null;
+}
+
+export interface DailyStats {
+  date: string;
+  seconds_listened: number;
+  tracks_played: number;
+  unique_artists: number;
+}
+
+export interface ListeningSummary {
+  period: string;
+  period_start: string | null;
+  period_end: string | null;
+  total_listening_seconds: number;
+  total_plays: number;
+  unique_tracks: number;
+  unique_albums: number;
+  unique_artists: number;
+  top_genre: string | null;
 }
 
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {

@@ -289,6 +289,67 @@
               />
             </div>
           </section>
+
+          <!-- Statistics/Charts row -->
+          <section
+            v-else-if="row.kind === 'statistics'"
+            class="ed-section ed-statistics"
+            :class="{ 'ed-dimmed': editMode && row.hidden }"
+          >
+            <div class="ed-statistics__head">
+              <div class="ed-statistics__titles">
+                <h2 class="ed-statistics__title">
+                  {{ $t("statistics_charts") }}
+                </h2>
+                <Tabs
+                  :model-value="activeStatTab"
+                  class="ed-statistics__tabs"
+                  @update:model-value="(v) => (activeStatTab = v as MediaType)"
+                >
+                  <TabsList class="h-auto w-auto gap-4 bg-transparent p-0">
+                    <TabsTrigger
+                      v-for="tab in statisticsTabs"
+                      :key="tab.type"
+                      :value="tab.type"
+                      class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 text-[13px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
+                    >
+                      {{ tab.label }}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <div v-if="editMode" class="ed-edit-controls">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_row')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </div>
+            </div>
+            <div class="ed-statistics__scroll ma-scroll">
+              <div class="ed-statistics__track">
+                <ChartItem
+                  v-for="(statItem, idx) in statisticsItems"
+                  :key="statItem.item.uri"
+                  :item="statItem.item"
+                  :position="idx + 1"
+                  :play-count="statItem.play_count"
+                />
+              </div>
+            </div>
+          </section>
         </div>
 
         <!-- Floating ghost that follows the pointer while dragging a row -->
@@ -308,6 +369,7 @@
 </template>
 
 <script setup lang="ts">
+import ChartItem from "@/components/discover/ChartItem.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
 import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
@@ -320,6 +382,7 @@ import {
   DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
   PLAYERS_ROW_ID,
+  STATISTICS_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
   setDiscoverRowHidden,
@@ -331,12 +394,14 @@ import {
 } from "@/components/discover/utils/rowItems";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   EventType,
+  MediaType,
   PlaybackState,
   RecommendationFolderType,
   type EventMessage,
@@ -345,6 +410,7 @@ import {
   type MediaItemTypeOrItemMapping,
   type Player,
   type RecommendationFolder,
+  type TopItemResult,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -378,6 +444,20 @@ const recommendations = ref<RecommendationFolder[]>([]);
 const rowItemsMap = ref(new Map<string, MediaItemTypeOrItemMapping[]>());
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
+
+// Statistics state
+const activeStatTab = ref<MediaType>(MediaType.TRACK);
+const statisticsItems = ref<
+  { item: MediaItemTypeOrItemMapping; play_count: number }[]
+>([]);
+const statisticsLoading = ref(false);
+const statisticsInitialized = ref(false);
+
+const statisticsTabs = computed(() => [
+  { type: MediaType.TRACK, label: $t("tracks") },
+  { type: MediaType.ALBUM, label: $t("albums") },
+  { type: MediaType.ARTIST, label: $t("artists") },
+]);
 
 const tilesPerView = computed(() => {
   const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
@@ -440,6 +520,10 @@ watch(
     nextTick(alignPlayersShelf);
   },
 );
+
+watch(activeStatTab, () => {
+  loadStatistics();
+});
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 
@@ -579,7 +663,12 @@ const refreshTopPicks = async () => {
 };
 
 // --- Unified row list: visibility + ordering via the discover.rows pref ---
-type DiscoverRowKind = "players" | "top_picks" | "recommendation" | "genres";
+type DiscoverRowKind =
+  | "players"
+  | "top_picks"
+  | "recommendation"
+  | "genres"
+  | "statistics";
 
 interface DiscoverRow {
   id: string;
@@ -613,6 +702,7 @@ const availableRowIds = computed<string[]>(() => {
   for (const uri of recUris) {
     if (!ids.includes(uri)) ids.push(uri);
   }
+  if (statisticsInitialized.value) ids.push(STATISTICS_ROW_ID);
   if (genres.value.length > 0) ids.push(GENRES_ROW_ID);
   return ids;
 });
@@ -644,6 +734,13 @@ const allRows = computed<DiscoverRow[]>(() => {
         id,
         kind: "genres",
         title: $t("browse_by_genre"),
+        hidden: hidden.has(id),
+      });
+    } else if (id === STATISTICS_ROW_ID) {
+      rows.push({
+        id,
+        kind: "statistics",
+        title: $t("statistics_charts"),
         hidden: hidden.has(id),
       });
     } else {
@@ -796,6 +893,20 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
+const loadStatistics = async () => {
+  statisticsLoading.value = true;
+  try {
+    const result = await api.getTopItems(activeStatTab.value, "week", 50);
+    statisticsItems.value = result.filter((item) => item && item.item);
+  } catch (err) {
+    console.error("Failed to load statistics:", err);
+    statisticsItems.value = [];
+  } finally {
+    statisticsLoading.value = false;
+    statisticsInitialized.value = true;
+  }
+};
+
 let unmounted = false;
 let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -844,6 +955,7 @@ onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
   loadGenres();
+  loadStatistics();
   window.addEventListener("resize", updateHeroNav);
 
   await loadRecommendationRows();
@@ -1118,6 +1230,47 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+
+.ed-statistics {
+  padding: 0 28px;
+}
+
+.ed-statistics__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.ed-statistics__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ed-statistics__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: rgb(var(--v-theme-on-background));
+}
+
+.ed-statistics__tabs {
+  margin-top: 4px;
+}
+
+.ed-statistics__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ed-statistics__track {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 4px;
 }
 
 .ed-footer-space {

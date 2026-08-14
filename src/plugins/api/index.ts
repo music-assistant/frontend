@@ -69,6 +69,7 @@ import {
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
+  TopItemResult,
   UserRole,
   MediaCollection,
   ArtistType,
@@ -1509,6 +1510,44 @@ export class MusicAssistantApi {
       },
       { suppressGlobalError: true },
     );
+  }
+
+  public async getTopItems(
+    media_type: MediaType,
+    period = "week",
+    limit = 50,
+    user_id?: string,
+  ): Promise<TopItemResult[]> {
+    return this.sendCommand("statistics/top_items", {
+      media_type,
+      period,
+      limit,
+      user_id,
+    });
+  }
+
+  public async getStatisticsPlayHistory(
+    limit = 100,
+    user_id?: string,
+  ): Promise<ItemMapping[]> {
+    return this.sendCommand("statistics/play_history", {
+      limit,
+      user_id,
+    });
+  }
+
+  public async getPlayCount(
+    item_id: string,
+    provider: string,
+    media_type: MediaType,
+    user_id?: string,
+  ): Promise<number> {
+    return this.sendCommand("statistics/play_count", {
+      item_id,
+      provider,
+      media_type,
+      user_id,
+    });
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
