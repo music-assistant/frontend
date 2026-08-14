@@ -223,7 +223,6 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { goBack } from "@/helpers/navigation";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
 import {
   getPlayerName,
@@ -323,7 +322,9 @@ const openPlayerMenu = function (evt: MouseEvent) {
   if (!config.value) return;
   eventbus.emit("contextmenu", {
     items: getPlayerSettingsMenuItems(config.value, {
-      onDeleted: () => goBack(router, { name: "playersettings" }),
+      // switching tabs leaves history entries for this player, so going back
+      // would land on the page of the player that was just deleted
+      onDeleted: () => router.replace({ name: "playersettings" }),
     }),
     posX: evt.clientX,
     posY: evt.clientY,

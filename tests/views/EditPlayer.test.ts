@@ -200,6 +200,47 @@ describe("EditPlayer", () => {
     ).toBe(false);
   });
 
+  it("follows the player being disabled around the form", async () => {
+    const wrapper = await mountPlayerPage();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    expect(editConfig.props("disabled")).toBe(false);
+    apiMock.getPlayerConfig.mockResolvedValueOnce(
+      playerConfig({ enabled: false }),
+    );
+
+    playerConfigUpdated("player-1");
+    await flushPromises();
+
+    // a save that still believed the player was enabled would write that back
+    expect(editConfig.props("disabled")).toBe(true);
+  });
+
+  it("reopens the form when the player is enabled again", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
+    const wrapper = await mountPlayerPage();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    expect(editConfig.props("disabled")).toBe(true);
+    apiMock.getPlayerConfig.mockResolvedValueOnce(playerConfig());
+
+    playerConfigUpdated("player-1");
+    await flushPromises();
+
+    expect(editConfig.props("disabled")).toBe(false);
+  });
+
+  it("ignores a config change for another player", async () => {
+    const wrapper = await mountPlayerPage();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    apiMock.getPlayerConfig.mockResolvedValueOnce(
+      playerConfig({ enabled: false }),
+    );
+
+    playerConfigUpdated("player-2");
+    await flushPromises();
+
+    expect(editConfig.props("disabled")).toBe(false);
+  });
+
   it("offers the entity picker under every player control entry", async () => {
     const keys = (await mountEditPlayer()).map((entry) => entry.key);
 
@@ -343,6 +384,18 @@ function playerState({
 function providersUpdated() {
   for (const [eventType, callback] of apiMock.subscribe.mock.calls) {
     if (eventType === EventType.PROVIDERS_UPDATED) callback();
+  }
+}
+
+/**
+ * Deliver the config change the page around this form makes when the player is
+ * enabled or disabled.
+ */
+function playerConfigUpdated(playerId: string) {
+  for (const [eventType, callback] of apiMock.subscribe.mock.calls) {
+    if (eventType === EventType.PLAYER_CONFIG_UPDATED) {
+      callback({ object_id: playerId });
+    }
   }
 }
 

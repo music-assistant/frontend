@@ -368,8 +368,6 @@
                 }
             }
         },
-        "dsp_enabled": "DSP is ingeschakeld",
-        "dsp_disabled": "DSP is uitgeschakeld",
         "dsp_note_multi_device_group": {
             "label": "Je kunt de DSP voor iedere speler apart instellen."
         },
@@ -2165,7 +2163,6 @@
     "player_select": {
         "active_player_volume_only": "Volumeschuifregelaars alleen voor actieve spelers weergeven",
         "and_more": "...en {0} meer",
-        "disable_player": "Speler uitschakelen",
         "disable_player_confirmation": "Deze speler blijft verborgen totdat hij opnieuw wordt ingeschakeld in de instellingen van de speler.",
         "disable_player_title": "{0} uitschakelen?",
         "display_options": "Weergaveopties",

@@ -352,8 +352,6 @@
                 }
             }
         },
-        "dsp_enabled": "DSP включен",
-        "dsp_disabled": "DSP отключен",
         "dsp_note_multi_device_group": {
             "label": "Вы можете настроить DSP для каждого плеера индивидуально."
         },
@@ -2146,7 +2144,6 @@
     "player_select": {
         "active_player_volume_only": "Отображать ползунки громкости только для активных плееров.",
         "and_more": "...и еще {0}",
-        "disable_player": "Отключить плеер",
         "disable_player_confirmation": "Этот плеер будет скрыт до тех пор, пока его не включат снова в настройках плееров.",
         "disable_player_title": "Отключить {0}?",
         "display_options": "Параметры отображения",

@@ -368,8 +368,6 @@
                 }
             }
         },
-        "dsp_enabled": "El DSP está activado",
-        "dsp_disabled": "El DSP está desactivado",
         "dsp_note_multi_device_group": {
             "label": "Puedes configurar el DSP para cada reproductor de forma individual."
         },
@@ -2165,7 +2163,6 @@
     "player_select": {
         "active_player_volume_only": "Mostrar los controles de volumen solo para los reproductores activos",
         "and_more": "...y {0} más",
-        "disable_player": "Desactivar reproductor",
         "disable_player_confirmation": "Este reproductor permanecerá oculto hasta que se vuelva a activar en los ajustes del reproductor.",
         "disable_player_title": "¿Desactivar {0}?",
         "display_options": "Opciones de visualización",

@@ -51,6 +51,7 @@ import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
   ConfigValueType,
+  EventMessage,
   EventType,
   PlayerConfig,
   PlayerFeature,
@@ -91,6 +92,18 @@ const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
   if (props.playerId) void refreshPlayerConfig(props.playerId);
 });
 onBeforeUnmount(unsubProvidersUpdated);
+
+// enabling and disabling the player happen on the page around this form, which
+// decides whether the form may be edited and what a save writes back
+const unsubConfigUpdated = api.subscribe(
+  EventType.PLAYER_CONFIG_UPDATED,
+  (evt: EventMessage) => {
+    if (evt.object_id && evt.object_id === props.playerId) {
+      void refreshPlayerConfig(evt.object_id);
+    }
+  },
+);
+onBeforeUnmount(unsubConfigUpdated);
 
 // computed properties
 const config_entries = computed(() => {

@@ -72,7 +72,6 @@
     "player_select": {
         "active_player_volume_only": "Only show volume sliders for active players",
         "and_more": "...and {0} more",
-        "disable_player": "Disable player",
         "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
         "disable_player_title": "Disable {0}?",
         "display_options": "Display options",
@@ -399,8 +398,6 @@
                 "selected": "Preset: {0}"
             }
         },
-        "dsp_enabled": "DSP is enabled",
-        "dsp_disabled": "DSP is disabled",
         "dsp_note_multi_device_group": {
             "label": "You can configure the DSP for each player individually."
         },

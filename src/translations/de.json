@@ -368,8 +368,6 @@
                 }
             }
         },
-        "dsp_enabled": "DSP ist aktiviert.",
-        "dsp_disabled": "DSP ist deaktiviert.",
         "dsp_note_multi_device_group": {
             "label": "Der DSP kann für jedes Wiedergabegerät einzeln konfiguriert werden."
         },
@@ -2165,7 +2163,6 @@
     "player_select": {
         "active_player_volume_only": "Lautstärkeregler nur für aktive Wiedergabegeräte anzeigen",
         "and_more": "...und {0} mehr",
-        "disable_player": "Wiedergabegerät deaktivieren",
         "disable_player_confirmation": "Dieses Wiedergabegerät wird ausgeblendet, bis es in den Wiedergabegeräte-Einstellungen wieder aktiviert wird.",
         "disable_player_title": "{0} deaktivieren?",
         "display_options": "Anzeigeoptionen",

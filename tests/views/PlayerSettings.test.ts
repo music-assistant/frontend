@@ -13,7 +13,6 @@ const {
   emitEvent,
   getPlayerSettingsMenuItems,
   getPlayerSettingsSections,
-  goBack,
   routeMock,
   routerMock,
   toastMock,
@@ -31,7 +30,6 @@ const {
     emitEvent: vi.fn(),
     getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
     getPlayerSettingsSections: vi.fn<typeof readPlayerSettingsSections>(),
-    goBack: vi.fn(),
     routeMock: reactive({
       name: "editplayer" as string,
       params: { playerId: "kitchen" } as Record<string, string>,
@@ -39,6 +37,7 @@ const {
     routerMock: {
       back: vi.fn(),
       push: vi.fn(),
+      replace: vi.fn(),
     },
     toastMock: {
       error: vi.fn(),
@@ -67,10 +66,6 @@ vi.mock("@/helpers/player_settings_actions", () => ({
   getPlayerName: (config: PlayerConfig) => config.name ?? config.default_name,
   getPlayerSettingsMenuItems,
   getPlayerSettingsSections,
-}));
-
-vi.mock("@/helpers/navigation", () => ({
-  goBack,
 }));
 
 vi.mock("@/helpers/utils", () => ({
@@ -200,7 +195,12 @@ describe("PlayerSettings", () => {
 
     getPlayerSettingsMenuItems.mock.calls[0][1]!.onDeleted!();
 
-    expect(goBack).toHaveBeenCalledWith(routerMock, { name: "playersettings" });
+    // switching tabs leaves history entries for the player that was deleted,
+    // so this must not be a plain step back
+    expect(routerMock.replace).toHaveBeenCalledWith({
+      name: "playersettings",
+    });
+    expect(routerMock.back).not.toHaveBeenCalled();
   });
 
   it("renames the player from the header", async () => {
