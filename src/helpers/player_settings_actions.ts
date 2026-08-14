@@ -32,13 +32,13 @@ import { toast } from "vue-sonner";
 
 export interface PlayerSettingsMenuOptions {
   // include links to the individual settings sections; the settings page itself
-  // reaches them through its tabs and leaves these out
+  // already lists them and leaves these out
   includeSections?: boolean;
   // called once the player is gone, so its settings page can leave
   onDeleted?: () => void;
 }
 
-/** The settings sections available for a player, in tab order. */
+/** Which settings sections a player has something to show for. */
 export const getPlayerSettingsSections = (playerId: string) => {
   const player = api.players[playerId];
   return {
@@ -74,7 +74,7 @@ export const getPlayerSettingsMenuItems = (
     if (sections.queue) {
       menuItems.push({
         label: "open_queue_settings",
-        action: () => router.push(`/settings/editplayer/${playerId}/queue`),
+        action: () => router.push(`/settings/editqueue/${playerId}`),
         icon: markRaw(ListMusic),
       });
     }

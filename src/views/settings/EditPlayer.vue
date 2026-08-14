@@ -1,23 +1,219 @@
 <template>
-  <section class="p-4">
-    <div v-if="config" class="mb-4 flex flex-wrap items-center gap-3">
-      <AdvancedSettingsToggle
-        v-if="showAdvancedToggle"
-        v-model:show-advanced-settings="showAdvancedSettings"
-        test-id="player-advanced-settings"
-      />
-      <Button
-        data-testid="player-reset-defaults"
-        variant="ghost"
-        size="sm"
-        class="ml-auto"
-        :disabled="!config.enabled"
-        @click="resetToDefaults"
-      >
-        <RotateCcw class="size-4" />
-        {{ $t("settings.reset_to_defaults") }}
-      </Button>
+  <section class="edit-player">
+    <div v-if="config">
+      <!-- Header card -->
+      <Card class="mb-4 gap-0 py-0">
+        <CardHeader class="relative flex flex-col gap-5 p-6 pr-16 sm:flex-row">
+          <div class="header-icon">
+            <PlayerIcon
+              :icon="api.players[config.player_id]?.icon"
+              :size="32"
+              class="text-primary"
+            />
+          </div>
+          <div class="header-info">
+            <div class="header-title-row">
+              <h2 class="header-title">{{ getPlayerName(config) }}</h2>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                class="rename-btn"
+                :title="$t('settings.player_name')"
+                @click="renamePlayer"
+              >
+                <Pencil class="size-4" />
+                <span class="sr-only">{{ $t("settings.player_name") }}</span>
+              </Button>
+            </div>
+            <div class="header-meta">
+              <span class="meta-item">
+                <v-icon size="14" class="mr-1">mdi-identifier</v-icon>
+                {{ config.player_id }}
+              </span>
+              <span v-if="api.players[config.player_id]" class="meta-item">
+                <v-icon size="14" class="mr-1">mdi-information</v-icon>
+                {{ api.players[config.player_id].device_info.manufacturer }} /
+                {{ api.players[config.player_id].device_info.model }}
+              </span>
+              <span
+                v-if="
+                  api.players[config.player_id]?.device_info.identifiers[
+                    IdentifierType.IP_ADDRESS
+                  ]
+                "
+                class="meta-item"
+              >
+                <v-icon size="14" class="mr-1">mdi-ip-network</v-icon>
+                {{
+                  api.players[config.player_id]?.device_info.identifiers[
+                    IdentifierType.IP_ADDRESS
+                  ]
+                }}
+              </span>
+              <span
+                v-if="
+                  api.players[config.player_id]?.device_info.identifiers[
+                    IdentifierType.MAC_ADDRESS
+                  ]
+                "
+                class="meta-item"
+              >
+                <v-icon size="14" class="mr-1">mdi-network</v-icon>
+                {{
+                  api.players[config.player_id]?.device_info.identifiers[
+                    IdentifierType.MAC_ADDRESS
+                  ]
+                }}
+              </span>
+              <span v-if="api.players[config.player_id]" class="meta-item">
+                <v-icon size="14" class="mr-1">mdi-tag</v-icon>
+                {{ $t(`player_type.${api.players[config.player_id].type}`) }}
+              </span>
+            </div>
+            <div
+              v-if="api.players[config.player_id]?.output_protocols.length"
+              class="protocol-chips"
+            >
+              <v-chip
+                v-for="protocol in api.players[config.player_id]
+                  .output_protocols"
+                :key="protocol.output_protocol_id"
+                size="x-small"
+                variant="tonal"
+                class="protocol-chip"
+                :class="{
+                  'protocol-chip--clickable': api.getProviderManifest(
+                    protocol.protocol_domain,
+                  )?.documentation,
+                  'protocol-chip--unavailable': !protocol.available,
+                }"
+                @click="
+                  api.getProviderManifest(protocol.protocol_domain)
+                    ?.documentation &&
+                  openLinkInNewTab(
+                    api.getProviderManifest(protocol.protocol_domain)!
+                      .documentation!,
+                  )
+                "
+              >
+                <template #prepend>
+                  <ProviderIcon
+                    :domain="protocol.protocol_domain"
+                    :size="14"
+                    class="chip-icon"
+                  />
+                </template>
+                {{
+                  api.getProviderManifest(protocol.protocol_domain)?.name ||
+                  protocol.protocol_domain
+                }}
+                <v-icon
+                  v-if="
+                    api.getProviderManifest(protocol.protocol_domain)
+                      ?.documentation
+                  "
+                  size="12"
+                  class="ml-1"
+                  >mdi-open-in-new</v-icon
+                >
+              </v-chip>
+            </div>
+          </div>
+          <Button
+            data-testid="player-menu"
+            variant="ghost"
+            size="icon-sm"
+            class="absolute top-4 right-4"
+            :aria-label="$t('more_options')"
+            @click="openPlayerMenu"
+          >
+            <MoreVertical class="size-4" />
+          </Button>
+        </CardHeader>
+        <CardContent
+          v-if="playerSetupLabel || showAdvancedToggle"
+          class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
+        >
+          <Button
+            v-if="playerSetupLabel"
+            data-testid="player-setup"
+            @click="startPlayerSetup"
+          >
+            <RefreshCw class="size-4" />
+            {{ $t(playerSetupLabel) }}
+          </Button>
+          <AdvancedSettingsToggle
+            v-if="showAdvancedToggle"
+            v-model:show-advanced-settings="showAdvancedSettings"
+            test-id="player-advanced-settings"
+          />
+        </CardContent>
+      </Card>
     </div>
+
+    <!-- Disabled banner -->
+    <v-alert
+      v-if="config && !config.enabled"
+      type="warning"
+      variant="tonal"
+      class="mb-4"
+      closable
+    >
+      <div class="disabled-banner">
+        <span>{{ $t("settings.player_disabled") }}</span>
+        <v-btn
+          size="small"
+          color="warning"
+          variant="flat"
+          :loading="enabling"
+          @click="enablePlayer"
+        >
+          {{ $t("settings.enable_player") }}
+        </v-btn>
+      </div>
+    </v-alert>
+
+    <!-- Needs setup banner -->
+    <v-alert
+      v-if="
+        config && config.enabled && api.players[config.player_id]?.needs_setup
+      "
+      type="warning"
+      variant="tonal"
+      class="mb-4"
+    >
+      <div class="disabled-banner">
+        <span>{{ $t("settings.player_needs_setup") }}</span>
+        <v-btn
+          size="small"
+          color="warning"
+          variant="flat"
+          @click="startPlayerSetup"
+        >
+          {{ $t("settings.start_setup") }}
+        </v-btn>
+      </div>
+    </v-alert>
+
+    <!-- Not available banner -->
+    <v-alert
+      v-else-if="
+        config && config.enabled && !api.players[config.player_id]?.available
+      "
+      type="warning"
+      variant="tonal"
+      class="mb-4"
+    >
+      <div class="disabled-banner">
+        <span>{{ $t("settings.player_not_available") }}</span>
+      </div>
+    </v-alert>
+
+    <PlayerSettingsLinks
+      v-if="config"
+      :player-id="config.player_id"
+      class="mb-4"
+    />
 
     <edit-config
       v-if="config"
@@ -32,7 +228,7 @@
     />
 
     <v-overlay
-      :model-value="loading"
+      :model-value="loading || enabling"
       scrim="true"
       persistent
       style="display: flex; align-items: center; justify-content: center"
@@ -43,10 +239,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -56,6 +255,7 @@ import {
   PlayerConfig,
   PlayerFeature,
   PlayerType,
+  IdentifierType,
 } from "@/plugins/api/interfaces";
 import {
   ConfigEntryUI,
@@ -69,19 +269,29 @@ import {
 } from "@/helpers/config_entry_ui";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
+import { getPlayerSetupLabel } from "@/helpers/player_config";
+import {
+  getPlayerName,
+  getPlayerSettingsMenuItems,
+} from "@/helpers/player_settings_actions";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { openLinkInNewTab } from "@/helpers/utils";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { RotateCcw } from "@lucide/vue";
+import { MoreVertical, Pencil, RefreshCw, RotateCcw } from "@lucide/vue";
 import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import EditConfig from "./EditConfig.vue";
+import PlayerSettingsLinks from "./PlayerSettingsLinks.vue";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
 const showAdvancedSettings = ref(false);
+const enabling = ref(false);
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
+let enableRequestId = 0;
 
 // props
 const props = defineProps<{
@@ -93,8 +303,8 @@ const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
 });
 onBeforeUnmount(unsubProvidersUpdated);
 
-// enabling and disabling the player happen on the page around this form, which
-// decides whether the form may be edited and what a save writes back
+// renaming, enabling and deleting all happen through the shared menu, so pick the
+// change up from the server rather than from whoever made it
 const unsubConfigUpdated = api.subscribe(
   EventType.PLAYER_CONFIG_UPDATED,
   (evt: EventMessage) => {
@@ -106,6 +316,14 @@ const unsubConfigUpdated = api.subscribe(
 onBeforeUnmount(unsubConfigUpdated);
 
 // computed properties
+const player = computed(() =>
+  config.value ? api.players[config.value.player_id] : undefined,
+);
+
+const playerSetupLabel = computed(() =>
+  config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
+);
+
 const config_entries = computed(() => {
   if (!config.value) return [];
   const player = api.players[config.value.player_id];
@@ -201,6 +419,68 @@ const resetToDefaults = function () {
   editConfig.value?.resetToDefaults();
 };
 
+const openPlayerMenu = function (evt: MouseEvent) {
+  if (!config.value) return;
+  const menuItems = getPlayerSettingsMenuItems(config.value, {
+    // the player is gone, and with it the page showing its settings
+    onDeleted: () => router.replace({ name: "playersettings" }),
+  });
+  // resetting acts on the form rather than on the player, so it is not part of
+  // the menu the other player surfaces share
+  menuItems.push({
+    label: "settings.reset_to_defaults",
+    action: resetToDefaults,
+    icon: markRaw(RotateCcw),
+    disabled: !config.value.enabled,
+  });
+  eventbus.emit("contextmenu", {
+    items: menuItems,
+    posX: evt.clientX,
+    posY: evt.clientY,
+  });
+};
+
+const renamePlayer = function () {
+  if (!config.value) return;
+  eventbus.emit("playerRenameDialog", {
+    playerId: config.value.player_id,
+    name: config.value.name,
+    defaultName: config.value.default_name,
+  });
+};
+
+const enablePlayer = async function () {
+  if (!config.value || enabling.value) return;
+
+  const playerId = config.value.player_id;
+  const requestId = ++enableRequestId;
+  enabling.value = true;
+  try {
+    const updatedConfig = await api.savePlayerConfig(playerId, {
+      enabled: true,
+    });
+    if (!isCurrentPlayer(playerId)) return;
+
+    applyPlayerConfig(updatedConfig);
+    toast.success($t("settings.player_saved"));
+  } catch (err) {
+    if (!isCurrentPlayer(playerId)) return;
+
+    toast.error(String(err));
+    await refreshPlayerConfig(playerId);
+  } finally {
+    if (requestId === enableRequestId) enabling.value = false;
+  }
+};
+
+const startPlayerSetup = function () {
+  if (!config.value?.enabled || !playerSetupLabel.value) return;
+  eventbus.emit("setupFlowDialog", {
+    kind: "player",
+    playerId: config.value.player_id,
+  });
+};
+
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   values["enabled"] = config.value!.enabled;
   loading.value = true;
@@ -288,9 +568,134 @@ function applyPlayerConfig(updatedConfig: PlayerConfig) {
   };
 }
 
+function isCurrentPlayer(playerId: string) {
+  return props.playerId === playerId && config.value?.player_id === playerId;
+}
+
 function resetPlayerState(playerId?: string) {
   if (config.value?.player_id === playerId) return;
   config.value = undefined;
   showAdvancedSettings.value = false;
+  enabling.value = false;
+  enableRequestId++;
 }
 </script>
+
+<style scoped>
+.edit-player {
+  padding: 16px;
+}
+
+.header-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-primary), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.rename-btn {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.rename-btn:hover {
+  opacity: 1;
+}
+
+.disabled-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.813rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.protocol-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.protocol-chip {
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+
+.protocol-chip--clickable {
+  cursor: pointer;
+}
+
+.protocol-chip--clickable:hover {
+  opacity: 0.85;
+}
+
+.protocol-chip--unavailable {
+  opacity: 0.4;
+}
+
+.chip-icon {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.chip-icon :deep(div) {
+  margin-left: 0 !important;
+  margin-right: 4px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.chip-icon :deep(.svg-wrapper) {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.chip-icon :deep(.svg-wrapper svg) {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+@media (max-width: 600px) {
+  .header-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+</style>

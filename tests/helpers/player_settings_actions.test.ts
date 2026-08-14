@@ -110,11 +110,11 @@ describe("getPlayerSettingsMenuItems sections", () => {
   });
 
   it.each([
-    ["open_queue_settings", "/settings/editplayer/kitchen/queue"],
+    ["open_queue_settings", "/settings/editqueue/kitchen"],
     ["open_dsp_settings", "/settings/editplayer/kitchen/dsp"],
     ["player_options.open", "/settings/editplayer/kitchen/options"],
     ["open_player_settings", "/settings/editplayer/kitchen"],
-  ])("opens %s at its own tab", (label, path) => {
+  ])("opens %s on its own page", (label, path) => {
     const menuItems = getPlayerSettingsMenuItems(playerConfig(), {
       includeSections: true,
     });

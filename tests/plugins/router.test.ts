@@ -9,7 +9,6 @@ import {
   type NavigationGuardWithThis,
   type NavigationHookAfter,
   type RouteLocationNormalizedLoaded,
-  type RouteLocationRaw,
   type RouteRecordRaw,
   type Router,
   type RouterOptions,
@@ -97,12 +96,27 @@ const partyGuard = beforeEnterGuard("party");
 const aiRadioGuard = beforeEnterGuard("ai-radio");
 const globalGuard = globalNavigationGuard();
 
-const PLAYER_SETTINGS_PATH = "/settings/editplayer/:playerId";
-const PLAYER_SETTINGS_TABS = [
-  { name: "editplayer", path: "/settings/editplayer/player-1" },
-  { name: "editplayerqueue", path: "/settings/editplayer/player-1/queue" },
-  { name: "editplayerdsp", path: "/settings/editplayer/player-1/dsp" },
-  { name: "editplayeroptions", path: "/settings/editplayer/player-1/options" },
+const PLAYER_SETTINGS_ROUTES = [
+  {
+    name: "editplayer",
+    path: "/settings/editplayer/player-1",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editplayerdsp",
+    path: "/settings/editplayer/player-1/dsp",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editplayeroptions",
+    path: "/settings/editplayer/player-1/options",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editqueue",
+    path: "/settings/editqueue/player-1",
+    params: { queueId: "player-1" },
+  },
 ];
 
 beforeEach(() => {
@@ -285,36 +299,16 @@ describe("AI Radio guard", () => {
 });
 
 describe("player settings routes", () => {
-  it.each(PLAYER_SETTINGS_TABS)(
-    "opens the $name tab inside the player settings page",
-    ({ name, path }) => {
+  it.each(PLAYER_SETTINGS_ROUTES)(
+    "opens $name on a page of its own",
+    ({ name, path, params }) => {
       const route = resolveRoute(path);
 
+      // a redirect record would resolve without a name of its own
       expect(route.name).toBe(name);
-      expect(route.params.playerId).toBe("player-1");
-      // a tab rendered outside the page would lose its header, menu and tab strip
-      expect(
-        route.matched.some((record) => record.path === PLAYER_SETTINGS_PATH),
-      ).toBe(true);
+      expect(route.params).toMatchObject(params);
     },
   );
-
-  it("sends the old queue settings link to the queue tab", () => {
-    const legacyRoute = routeRecordByPath("editqueue/:queueId", routes);
-    if (typeof legacyRoute?.redirect !== "function") {
-      throw new Error("The old queue settings route has no redirect");
-    }
-
-    const target = resolveRoute(
-      legacyRoute.redirect(
-        resolveRoute("/settings/editqueue/kitchen"),
-        resolveRoute("/discover"),
-      ),
-    );
-
-    expect(target.name).toBe("editplayerqueue");
-    expect(target.params.playerId).toBe("kitchen");
-  });
 });
 
 describe("global navigation guard", () => {
@@ -421,17 +415,16 @@ describe("global navigation guard", () => {
     ).resolves.toBeUndefined();
   });
 
-  // every tab hangs off the player settings page, which is admin-only as a whole
-  it.each(PLAYER_SETTINGS_TABS)(
-    "redirects a non-admin away from the $name tab",
-    async ({ path }) => {
-      mocks.store.currentUser = { role: "user", username: "listener" };
+  it("lets a non-admin open the player options", async () => {
+    mocks.store.currentUser = { role: "user", username: "listener" };
 
-      await expect(
-        invokeGuard(globalGuard, resolveRoute(path)),
-      ).resolves.toEqual({ name: "discover" });
-    },
-  );
+    await expect(
+      invokeGuard(
+        globalGuard,
+        resolveRoute("/settings/editplayer/player-1/options"),
+      ),
+    ).resolves.toBeUndefined();
+  });
 
   it("reads the current user only once the server connection is ready", async () => {
     vi.useFakeTimers();
@@ -583,13 +576,11 @@ describe("chunk loading recovery", () => {
  * The path runs through the app's own route table, so the guard sees the same
  * matched records and meta it gets in the running app.
  */
-function resolveRoute(
-  location: RouteLocationRaw,
-): RouteLocationNormalizedLoaded {
+function resolveRoute(fullPath: string): RouteLocationNormalizedLoaded {
   if (!mocks.router) {
     throw new Error("The router module did not create a router");
   }
-  return mocks.router.resolve(location) as RouteLocationNormalizedLoaded;
+  return mocks.router.resolve(fullPath) as RouteLocationNormalizedLoaded;
 }
 
 /**
@@ -709,19 +700,6 @@ function mediaDetailRoutes(
     found.push(...mediaDetailRoutes(children));
   }
   return found;
-}
-
-function routeRecordByPath(
-  path: string,
-  records: RouteRecordRaw[],
-): RouteRecordRaw | undefined {
-  for (const record of records) {
-    if (record.path === path) return record;
-    const children = "children" in record ? record.children : undefined;
-    const match = children && routeRecordByPath(path, children);
-    if (match) return match;
-  }
-  return undefined;
 }
 
 function findRouteRecord(

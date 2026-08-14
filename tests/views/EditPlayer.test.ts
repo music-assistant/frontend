@@ -1,7 +1,9 @@
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   isHassControlPickerEntry,
   type ConfigEntryUI,
 } from "@/helpers/config_entry_ui";
+import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import {
   ConfigEntryType,
   EventType,
@@ -21,29 +23,37 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { providerManifest } from "../fixtures/providerManifest";
 
-const { apiMock, editConfigResetMock, routerMock, toastMock } = vi.hoisted(
-  () => ({
-    apiMock: {
-      getPlayerConfig: vi.fn<MusicAssistantApi["getPlayerConfig"]>(),
-      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
-      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
-      players: {} as Record<string, unknown>,
-      providerManifests: {} as Record<string, unknown>,
-      providers: {} as Record<string, unknown>,
-      savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
-      subscribe: vi.fn(),
-    },
-    editConfigResetMock: vi.fn(),
-    routerMock: {
-      back: vi.fn(),
-      push: vi.fn(),
-    },
-    toastMock: {
-      error: vi.fn(),
-      success: vi.fn(),
-    },
-  }),
-);
+const {
+  apiMock,
+  editConfigResetMock,
+  emitEvent,
+  getPlayerSettingsMenuItems,
+  routerMock,
+  toastMock,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getPlayerConfig: vi.fn<MusicAssistantApi["getPlayerConfig"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
+    players: {} as Record<string, unknown>,
+    providerManifests: {} as Record<string, unknown>,
+    providers: {} as Record<string, unknown>,
+    savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
+    subscribe: vi.fn(),
+  },
+  editConfigResetMock: vi.fn(),
+  emitEvent: vi.fn(),
+  getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
+  routerMock: {
+    back: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+  },
+  toastMock: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
 
 const SlotStub = {
   template: "<div><slot /></div>",
@@ -53,6 +63,9 @@ const playerDetailsStubs = {
   // rendered for real so this screen's advanced toggle stays assertable
   AdvancedSettingsToggle: false,
   Button: SlotStub,
+  Card: SlotStub,
+  CardContent: SlotStub,
+  CardHeader: SlotStub,
   EditConfig: {
     name: "EditConfig",
     props: [
@@ -66,6 +79,9 @@ const playerDetailsStubs = {
     },
     template: "<div />",
   },
+  PlayerSettingsLinks: true,
+  VAlert: SlotStub,
+  VBtn: { template: '<button class="v-btn"><slot /></button>' },
 };
 
 vi.mock("@/plugins/api", () => ({
@@ -73,8 +89,18 @@ vi.mock("@/plugins/api", () => ({
   default: apiMock,
 }));
 
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: { emit: emitEvent },
+}));
+
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
+}));
+
+// the shared menu is covered where it is built
+vi.mock("@/helpers/player_settings_actions", () => ({
+  getPlayerName: (config: PlayerConfig) => config.name ?? config.default_name,
+  getPlayerSettingsMenuItems,
 }));
 
 vi.mock("vue-sonner", () => ({
@@ -114,17 +140,27 @@ describe("EditPlayer", () => {
       "hass--1": { instance_id: "hass--1", domain: "hass", available: true },
     };
     routerMock.push.mockResolvedValue(undefined);
+    // a fresh array per call, since the page appends its own entry to it
+    getPlayerSettingsMenuItems.mockImplementation(() => [
+      { label: "settings.delete" },
+    ]);
   });
 
-  it("offers the advanced toggle and a reset beside the form", async () => {
+  it("names the player in the header", async () => {
     const wrapper = await mountPlayerPage();
 
+    expect(wrapper.get("h2").text()).toBe("Kitchen");
+  });
+
+  it("offers the setup and the advanced toggle in the header", async () => {
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.get('[data-testid="player-setup"]').text()).toContain(
+      "reconfigure_player",
+    );
     expect(
       wrapper.find('[data-testid="player-advanced-settings"]').exists(),
     ).toBe(true);
-    expect(
-      wrapper.get('[data-testid="player-reset-defaults"]').text(),
-    ).toContain("settings.reset_to_defaults");
   });
 
   it("leaves out the advanced toggle without advanced settings to reveal", async () => {
@@ -139,7 +175,7 @@ describe("EditPlayer", () => {
     ).toBe(false);
   });
 
-  it("controls advanced settings from the action row", async () => {
+  it("controls advanced settings from the header", async () => {
     const wrapper = await mountPlayerPage();
     const editConfig = wrapper.findComponent({ name: "EditConfig" });
 
@@ -151,30 +187,126 @@ describe("EditPlayer", () => {
     expect(editConfig.props("showAdvancedSettings")).toBe(true);
   });
 
-  it("resets the form to its defaults", async () => {
+  it("hides optional reconfiguration when the player has no setup flow", async () => {
+    apiMock.players = {
+      "player-1": playerState({ hasSetupFlow: false }),
+    };
+
     const wrapper = await mountPlayerPage();
 
-    await wrapper.get('[data-testid="player-reset-defaults"]').trigger("click");
-
-    expect(editConfigResetMock).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
   });
 
-  it("leaves nothing to edit while the player is disabled", async () => {
+  it("keeps required setup available without an optional setup flow", async () => {
+    apiMock.players = {
+      "player-1": playerState({ hasSetupFlow: false, needsSetup: true }),
+    };
+
+    const wrapper = await mountPlayerPage();
+    expect(wrapper.text()).toContain("settings.player_needs_setup");
+    expect(wrapper.get('[data-testid="player-setup"]').text()).toContain(
+      "configure_player",
+    );
+
+    await wrapper.get('[data-testid="player-setup"]').trigger("click");
+
+    expect(emitEvent).toHaveBeenCalledWith("setupFlowDialog", {
+      kind: "player",
+      playerId: "player-1",
+    });
+  });
+
+  it("hides setup actions while the player is disabled", async () => {
     apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
 
     const wrapper = await mountPlayerPage();
 
+    expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
+  });
+
+  it("reports a player that cannot be reached", async () => {
+    apiMock.players = { "player-1": playerState({ available: false }) };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.text()).toContain("settings.player_not_available");
+  });
+
+  it("offers to enable a disabled player", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
+    apiMock.savePlayerConfig.mockResolvedValueOnce(playerConfig());
+    const wrapper = await mountPlayerPage();
+    expect(wrapper.text()).toContain("settings.player_disabled");
+
+    await wrapper.get(".v-btn").trigger("click");
+    await flushPromises();
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("player-1", {
+      enabled: true,
+    });
+    expect(toastMock.success).toHaveBeenCalledWith("settings.player_saved");
     expect(
       wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
-    ).toBe(true);
-    expect(
-      wrapper
-        .get('[data-testid="player-reset-defaults"]')
-        .attributes("disabled"),
-    ).toBe("true");
-    expect(
-      wrapper.find('[data-testid="player-advanced-settings"]').exists(),
     ).toBe(false);
+  });
+
+  it("opens the shared player menu from the kebab", async () => {
+    const wrapper = await mountPlayerPage();
+
+    await wrapper
+      .get('[data-testid="player-menu"]')
+      .trigger("click", { clientX: 10, clientY: 20 });
+
+    expect(getPlayerSettingsMenuItems).toHaveBeenCalledWith(
+      expect.objectContaining({ player_id: "player-1" }),
+      expect.objectContaining({ onDeleted: expect.any(Function) }),
+    );
+    expect(emitEvent).toHaveBeenCalledWith("contextmenu", {
+      items: expect.arrayContaining([{ label: "settings.delete" }]),
+      posX: 10,
+      posY: 20,
+    });
+  });
+
+  it("resets the form from the same menu", async () => {
+    const wrapper = await mountPlayerPage();
+
+    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+    resetMenuItem()?.action?.();
+
+    expect(editConfigResetMock).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the reset out of reach while the player is disabled", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
+    const wrapper = await mountPlayerPage();
+
+    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+
+    expect(resetMenuItem()?.disabled).toBe(true);
+  });
+
+  it("leaves the settings page once the player is deleted", async () => {
+    const wrapper = await mountPlayerPage();
+    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+
+    getPlayerSettingsMenuItems.mock.calls[0][1]!.onDeleted!();
+
+    // a step back would land on the page of the player that was just deleted
+    expect(routerMock.replace).toHaveBeenCalledWith({ name: "playersettings" });
+    expect(routerMock.back).not.toHaveBeenCalled();
+  });
+
+  it("renames the player from the header", async () => {
+    const wrapper = await mountPlayerPage();
+
+    await wrapper.get('[title="settings.player_name"]').trigger("click");
+
+    expect(emitEvent).toHaveBeenCalledWith("playerRenameDialog", {
+      playerId: "player-1",
+      name: "Kitchen",
+      defaultName: "Chromecast",
+    });
   });
 
   it("keeps pending edits while the provider list refreshes the config", async () => {
@@ -323,8 +455,8 @@ function playerConfig({
     player_id: playerId,
     provider: "chromecast--1",
     enabled,
-    name: null,
-    default_name: null,
+    name: "Kitchen",
+    default_name: "Chromecast",
     values: {
       volume_normalization: {
         key: "volume_normalization",
@@ -355,16 +487,18 @@ function playerConfig({
 }
 
 function playerState({
+  available = true,
   hasSetupFlow = true,
   needsSetup = false,
   playerId = "player-1",
 }: {
+  available?: boolean;
   hasSetupFlow?: boolean;
   needsSetup?: boolean;
   playerId?: string;
 } = {}) {
   return {
-    available: true,
+    available,
     device_info: { manufacturer: "", model: "", identifiers: {} },
     enabled: true,
     has_setup_flow: hasSetupFlow,
@@ -379,6 +513,15 @@ function playerState({
 }
 
 /**
+ * The entry the page adds to the menu it shares with the other player surfaces.
+ */
+function resetMenuItem(): ContextMenuItem | undefined {
+  const call = emitEvent.mock.calls.find(([event]) => event === "contextmenu");
+  const items = (call?.[1] as { items: ContextMenuItem[] } | undefined)?.items;
+  return items?.find((item) => item.label === "settings.reset_to_defaults");
+}
+
+/**
  * Deliver the event the screen reloads its config on.
  */
 function providersUpdated() {
@@ -388,8 +531,8 @@ function providersUpdated() {
 }
 
 /**
- * Deliver the config change the page around this form makes when the player is
- * enabled or disabled.
+ * Deliver the config change the server sends when the player is renamed,
+ * enabled or disabled elsewhere.
  */
 function playerConfigUpdated(playerId: string) {
   for (const [eventType, callback] of apiMock.subscribe.mock.calls) {

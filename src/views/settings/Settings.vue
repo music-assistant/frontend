@@ -2,7 +2,20 @@
   <div>
     <Toolbar :icon="Settings">
       <template #title>
-        <v-breadcrumbs :items="breadcrumbItems" class="pa-0" />
+        <div class="settings-heading">
+          <component
+            :is="isOverview ? 'span' : RouterLink"
+            :to="isOverview ? undefined : { name: 'settings' }"
+            class="settings-heading-title"
+          >
+            {{ t("settings.settings") }}
+          </component>
+          <v-breadcrumbs
+            v-if="breadcrumbItems.length"
+            :items="breadcrumbItems"
+            class="pa-0 settings-heading-trail"
+          />
+        </div>
       </template>
       <template #append>
         <v-btn
@@ -302,7 +315,7 @@ import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter, type RouteLocationRaw } from "vue-router";
+import { RouterLink, useRouter, type RouteLocationRaw } from "vue-router";
 import { useDisplay } from "vuetify";
 
 // global refs
@@ -713,31 +726,17 @@ const getProviderName = (instanceId: string) => {
   return manifest?.name || instanceId;
 };
 
-// the tab a player settings route lands on; the player tab is the default and names itself
-const playerSectionTitle = (routeName: string) =>
-  match(routeName)
-    .with("editplayerqueue", () => t("settings.queue_settings"))
-    .with("editplayerdsp", () => "DSP")
-    .with("editplayeroptions", () => t("settings.category.options"))
-    .otherwise(() => undefined);
-
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
 
+  // "Settings" heads the toolbar on its own line, so the trail starts below it
   const items: Array<{
     title: string;
     disabled: boolean;
     href?: string;
     to?: RouteLocationRaw;
-  }> = [
-    {
-      title: t("settings.settings"),
-      disabled: false,
-      href: "#",
-      to: { name: "settings" },
-    },
-  ];
+  }> = [];
 
   if (!isOverview.value) {
     const currentTab = activeTab.value;
@@ -830,18 +829,25 @@ const breadcrumbItems = computed(() => {
     })
     .with(
       "editplayer",
-      "editplayerqueue",
       "editplayerdsp",
       "editplayeroptions",
+      "editqueue",
       () => {
-        const playerId = route.params.playerId as string;
+        // a queue is identified by the player id of the player owning it
+        const playerId = (route.params.playerId ||
+          route.params.queueId) as string;
         items.push({
-          // a disabled player is never registered, so it has no name to show here
+          // a disabled player is never registered, so it has no name to show
+          // a disabled player is never registered, so it has no name to show
           title: api.players[playerId]?.name || t("settings.player_settings"),
           disabled: name === "editplayer",
           to: { name: "editplayer", params: { playerId } },
         });
-        const section = playerSectionTitle(name);
+        const section = match(name)
+          .with("editplayerdsp", () => t("settings.category.dsp"))
+          .with("editplayeroptions", () => t("settings.category.options"))
+          .with("editqueue", () => t("settings.queue_settings"))
+          .otherwise(() => undefined);
         if (section) items.push({ title: section, disabled: true });
       },
     )
@@ -913,6 +919,52 @@ const documentationUrl = computed(() => {
 </script>
 
 <style scoped>
+.settings-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.settings-heading-title {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* the trail can outgrow the toolbar, so it scrolls rather than pushing the
+   actions off the end */
+.settings-heading-trail {
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 0.7rem;
+  opacity: 0.6;
+  scrollbar-width: none;
+}
+
+.settings-heading-trail::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-heading-trail :deep(.v-breadcrumbs-item) {
+  padding: 0;
+  font-size: inherit;
+  white-space: nowrap;
+}
+
+/* vuetify dims the last crumb as "disabled"; it is the page you are on, so
+   colour it instead of fading it out */
+.settings-heading-trail :deep(.v-breadcrumbs-item--disabled) {
+  color: rgb(var(--v-theme-primary));
+  opacity: 1;
+}
+
+.settings-heading-trail :deep(.v-breadcrumbs-divider) {
+  padding: 0 4px;
+  font-size: inherit;
+}
+
 .settings-overview {
   max-width: 1200px !important;
   margin: 0 auto;

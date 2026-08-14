@@ -5,7 +5,7 @@
       <!-- Settable options -->
       <div v-if="playerOptionsSettable.length > 0">
         <v-card
-          class="mx-auto mb-8"
+          class="mx-auto my-8"
           elevation="2"
           min-width="100%"
           :title="$t('player_options.settable', [playerName])"
@@ -24,7 +24,7 @@
       <!-- Read-only options -->
       <div v-if="playerOptionsReadOnly.length > 0">
         <v-card
-          class="mx-auto mb-8"
+          class="mx-auto my-8"
           elevation="2"
           min-width="100%"
           :title="$t('player_options.read_only', [playerName])"

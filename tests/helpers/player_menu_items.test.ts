@@ -1,3 +1,4 @@
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   getPlayerMenuItems,
   getPlayerSetupMenuItem,
@@ -143,6 +144,12 @@ function makeQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
   return playerQueue({ queue_id: "kitchen", ...overrides });
 }
 
+function openSettingsItem(
+  menuItems: ContextMenuItem[],
+): ContextMenuItem | undefined {
+  return menuItems.find((item) => item.label === "open_settings");
+}
+
 function makeHost(overrides: Partial<AIRadioHost> = {}): AIRadioHost {
   return {
     id: "host-1",
@@ -271,16 +278,62 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     },
   );
 
-  it("opens the settings page for the player and closes the menus", () => {
+  it("opens the player settings page from the player menu", () => {
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "player",
     });
+    const settingsItem = openSettingsItem(menuItems);
 
-    menuItems.find((item) => item.label === "open_settings")?.action?.();
+    expect(settingsItem?.subItems).toBeUndefined();
+    settingsItem?.action?.();
 
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
     expect(storeMock.showFullscreenPlayer).toBe(false);
     expect(storeMock.showPlayersMenu).toBe(false);
+  });
+
+  it("picks a settings page from the fullscreen player", () => {
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+    const subItems = openSettingsItem(menuItems)?.subItems ?? [];
+
+    expect(subItems.map((item) => item.label)).toEqual([
+      "settings.queue_settings",
+      "settings.player_settings",
+      "settings.category.dsp",
+    ]);
+    for (const subItem of subItems) subItem.action?.();
+
+    expect(routerPush.mock.calls.flat()).toEqual([
+      "/settings/editqueue/kitchen",
+      "/settings/editplayer/kitchen",
+      "/settings/editplayer/kitchen/dsp",
+    ]);
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+    expect(storeMock.showPlayersMenu).toBe(false);
+  });
+
+  it("leaves out the DSP settings for a group player", () => {
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ type: PlayerType.GROUP }),
+      makeQueue(),
+      { context: "queue" },
+    );
+
+    expect(
+      openSettingsItem(menuItems)?.subItems?.map((item) => item.label),
+    ).toEqual(["settings.queue_settings", "settings.player_settings"]);
+  });
+
+  it("leaves out the queue settings while playing from another source", () => {
+    const menuItems = getPlayerMenuItems(makePlayer(), undefined, {
+      context: "queue",
+    });
+
+    expect(
+      openSettingsItem(menuItems)?.subItems?.map((item) => item.label),
+    ).toEqual(["settings.player_settings", "settings.category.dsp"]);
   });
 
   it("keeps the settings out of a non-admin's menu", () => {

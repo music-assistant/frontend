@@ -356,18 +356,49 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // open the player settings hub (both menus, admin only)
+  // open the settings (both menus, admin only)
   if (authManager.isAdmin()) {
-    menuItems.push({
-      label: "open_settings",
-      labelArgs: [],
-      action: () => {
-        store.showFullscreenPlayer = false;
-        store.showPlayersMenu = false;
-        router.push(`/settings/editplayer/${player.player_id}`);
-      },
-      icon: "mdi-cog-outline",
-    });
+    const openSettings = (path: string) => () => {
+      store.showFullscreenPlayer = false;
+      store.showPlayersMenu = false;
+      router.push(path);
+    };
+    if (isPlayer) {
+      // the player settings page links on to the other sections from there
+      menuItems.push({
+        label: "open_settings",
+        labelArgs: [],
+        action: openSettings(`/settings/editplayer/${player.player_id}`),
+        icon: "mdi-cog-outline",
+      });
+    } else {
+      const subItems: ContextMenuItem[] = [];
+      if (playerQueue) {
+        subItems.push({
+          label: "settings.queue_settings",
+          labelArgs: [],
+          action: openSettings(`/settings/editqueue/${playerQueue.queue_id}`),
+        });
+      }
+      subItems.push({
+        label: "settings.player_settings",
+        labelArgs: [],
+        action: openSettings(`/settings/editplayer/${player.player_id}`),
+      });
+      if (player.type !== PlayerType.GROUP) {
+        subItems.push({
+          label: "settings.category.dsp",
+          labelArgs: [],
+          action: openSettings(`/settings/editplayer/${player.player_id}/dsp`),
+        });
+      }
+      menuItems.push({
+        label: "open_settings",
+        labelArgs: [],
+        icon: "mdi-cog-outline",
+        subItems,
+      });
+    }
   }
 
   // MilkDrop visualizer on/off for this player (both menus; a player control,

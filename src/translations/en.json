@@ -731,6 +731,9 @@
         "provider_removed": "Provider removed",
         "action_completed": "Action completed",
         "queue_settings": "Queue settings",
+        "queue_settings_description": "Playback settings for the queue this player plays from",
+        "dsp_description": "Filters and gain applied to everything this player plays",
+        "player_options_description": "Options and readings the player itself offers",
         "audio_analysis_failures": {
             "title": "Audio Analysis Failures",
             "description": "Tracks that failed analysis are skipped on future scans. Delete an entry to clear the failure and let it be analyzed again.",
@@ -2200,7 +2203,7 @@
     "autoplay_off_title": "Autoplay is disabled",
     "autoplay_off_desc": "Your music will stop once the queue has finished. Enable Autoplay to automatically keep it going with more content based on your preferences.",
     "open_player_settings": "Open player settings",
-    "open_settings": "Open settings",
+    "open_settings": "Settings",
     "configure_player": "Configure player",
     "reconfigure_player": "Reconfigure player",
     "sleep_timer": "Sleep timer",
