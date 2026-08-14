@@ -515,11 +515,17 @@ export function useSmartPlaylistRulesForm(
       explicit,
       min_duration: durationRule()?.minDuration ?? undefined,
       max_duration: durationRule()?.maxDuration ?? undefined,
-      last_played_before_value:
-        lastPlayedRule()?.lastPlayedBeforeValue ?? undefined,
-      last_played_before_unit:
-        lastPlayedRule()?.lastPlayedBeforeUnit ?? undefined,
     };
+
+    // Enforce both-or-neither invariant for last_played fields
+    const lastPlayed = lastPlayedRule();
+    if (
+      lastPlayed?.lastPlayedBeforeValue != null &&
+      lastPlayed?.lastPlayedBeforeUnit != null
+    ) {
+      final.last_played_before_value = lastPlayed.lastPlayedBeforeValue;
+      final.last_played_before_unit = lastPlayed.lastPlayedBeforeUnit;
+    }
 
     if (isSeed) {
       const trackUris: string[] = [];
