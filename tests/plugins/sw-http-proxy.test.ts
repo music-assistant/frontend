@@ -6,6 +6,9 @@ vi.mock("workbox-precaching", () => ({
 
 const ORIGIN = "https://ma.example";
 const CLIENT_ID = "test-client-1";
+// Shared by every request in these tests, so a repeat request hits the same
+// cache entry as the one before it.
+const IMAGE_URL = `${ORIGIN}/imageproxy/album.jpg`;
 const REMOTE_MODE_CACHE_NAME = "ma-sw-client-state-v1";
 const REMOTE_MODE_CACHE_PATH = "/__ma_remote_mode__/";
 
@@ -43,8 +46,10 @@ function createFakeCaches() {
     open: vi.fn(async (name: string) => {
       const store = storeFor(name);
       return {
+        // Every match hands out a fresh response, as the real Cache does:
+        // callers read the body, and a second match must still be readable.
         match: vi.fn(async (request: string | { url: string }) =>
-          store.get(keyFor(request)),
+          store.get(keyFor(request))?.clone(),
         ),
         put: vi.fn(
           async (request: string | { url: string }, response: Response) => {
@@ -156,6 +161,28 @@ describe("sw.js http-proxy-response handling", () => {
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
   });
 
+  it("answers a repeat request from cache without asking the page again", async () => {
+    await proxiedResponse(BYTES);
+
+    const postMessage = vi.fn<PostMessage>();
+    fakeSelf.registerClient(CLIENT_ID, postMessage);
+
+    let capturedResponse!: Promise<Response>;
+    await fakeSelf.fire("fetch", {
+      request: new Request(IMAGE_URL),
+      clientId: CLIENT_ID,
+      respondWith: (promise: Promise<Response>) => {
+        capturedResponse = promise;
+      },
+    });
+
+    const response = await capturedResponse;
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
+    // Cache-first: nothing goes back over the WebRTC channel, so a cached
+    // entry is never revalidated.
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
   it("passes the status through, so the page can report a failure", async () => {
     const response = await proxiedResponse(
       new TextEncoder().encode("No transport available"),
@@ -179,7 +206,7 @@ describe("sw.js http-proxy-response handling", () => {
 
     let capturedResponse!: Promise<Response>;
     await fakeSelf.fire("fetch", {
-      request: new Request("https://ma.example/imageproxy/album.jpg"),
+      request: new Request(IMAGE_URL),
       clientId: CLIENT_ID,
       respondWith: (promise: Promise<Response>) => {
         capturedResponse = promise;
