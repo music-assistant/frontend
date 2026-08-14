@@ -849,9 +849,7 @@ const unsubscribeProviderEvents = api.subscribe(
       "event" in evt.data &&
       evt.data.event === "recommendations_updated"
     ) {
-      if (recommendations.value.some((row) => row.provider === evt.object_id)) {
-        scheduleRecommendationRefresh();
-      }
+      scheduleRecommendationRefresh();
     }
   },
 );
