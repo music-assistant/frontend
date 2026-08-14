@@ -132,10 +132,11 @@ self.addEventListener("message", async (event) => {
       pendingRequests.delete(id);
 
       try {
-        // Convert hex string back to Uint8Array
-        const bodyBytes = hexToBytes(body);
+        // The page posts the body as raw bytes and transfers its buffer to us.
+        // A page still running the build before that handoff posts a hex string,
+        // which happens whenever this worker claims a tab that has not reloaded yet.
+        const bodyBytes = typeof body === "string" ? hexToBytes(body) : body;
 
-        // Create Response object
         const response = new Response(bodyBytes, {
           status: status,
           headers: new Headers(headers),
