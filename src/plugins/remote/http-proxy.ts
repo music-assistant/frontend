@@ -427,8 +427,8 @@ class HttpProxyBridge {
     const controller = navigator.serviceWorker?.controller;
     if (!controller) return;
     // The transport answers with a view over a buffer sized to the frames it received,
-    // which can span more than the response itself. Only a view covering its whole
-    // buffer may be transferred as-is; anything else is copied down to size first.
+    // which can hold more than the response itself. Transferring that buffer would hand
+    // the surplus over too, so only a view covering its whole buffer goes as-is.
     const bytes =
       body.byteOffset === 0 && body.byteLength === body.buffer.byteLength
         ? body

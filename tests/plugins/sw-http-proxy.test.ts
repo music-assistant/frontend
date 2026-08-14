@@ -109,13 +109,6 @@ function remoteStateKey(clientId: string): string {
   ).href;
 }
 
-// Lets the chained awaits inside sw.js settle before the test inspects side
-// effects (like the postMessage call) that happen off of the captured
-// respondWith promise rather than through it directly.
-function flush(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
-}
-
 describe("sw.js http-proxy-response handling", () => {
   let fakeSelf: ReturnType<typeof createFakeSelf>;
 
@@ -149,7 +142,6 @@ describe("sw.js http-proxy-response handling", () => {
   it("turns a raw-bytes body into a Response with those exact bytes", async () => {
     const response = await proxiedResponse(BYTES);
 
-    expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/jpeg");
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
   });
@@ -161,15 +153,27 @@ describe("sw.js http-proxy-response handling", () => {
 
     const response = await proxiedResponse(hex);
 
-    expect(response.status).toBe(200);
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
+  });
+
+  it("passes the status through, so the page can report a failure", async () => {
+    const response = await proxiedResponse(
+      new TextEncoder().encode("No transport available"),
+      503,
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.text()).toBe("No transport available");
   });
 
   /**
    * Drive a proxied image request end to end and answer it with the given body,
    * as the page would.
    */
-  async function proxiedResponse(body: Uint8Array | string): Promise<Response> {
+  async function proxiedResponse(
+    body: Uint8Array | string,
+    status = 200,
+  ): Promise<Response> {
     const postMessage = vi.fn<PostMessage>();
     fakeSelf.registerClient(CLIENT_ID, postMessage);
 
@@ -181,15 +185,14 @@ describe("sw.js http-proxy-response handling", () => {
         capturedResponse = promise;
       },
     });
-    await flush();
+    await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(1));
 
-    expect(postMessage).toHaveBeenCalledTimes(1);
     await fakeSelf.fire("message", {
       data: {
         type: "http-proxy-response",
         data: {
           id: postMessage.mock.calls[0][0].data.id,
-          status: 200,
+          status,
           headers: { "content-type": "image/jpeg" },
           body,
         },

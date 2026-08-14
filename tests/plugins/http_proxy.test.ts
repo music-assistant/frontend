@@ -106,8 +106,11 @@ describe("HttpProxyBridge", () => {
     });
     expect(message.data.body).toBeInstanceOf(Uint8Array);
     expect(Array.from(message.data.body)).toEqual([0, 1, 254, 255]);
-    // the buffer moves to the service worker rather than being copied into the message
-    expect(transfer).toEqual([message.data.body.buffer]);
+    // a body that already covers its whole buffer goes over untouched
+    expect(message.data.body).toBe(body);
+    // and that buffer moves to the service worker rather than being copied
+    expect(transfer).toHaveLength(1);
+    expect(transfer![0]).toBe(body.buffer);
   });
 
   it("transfers only the response bytes when the body is a view over a larger buffer", async () => {
@@ -127,7 +130,9 @@ describe("HttpProxyBridge", () => {
     expect(Array.from(message.data.body)).toEqual([1, 2, 3, 4]);
     // a copy sized to the response is what gets transferred; handing over
     // `frames.buffer` would give the trailing four bytes away with it
-    expect(transfer).toEqual([message.data.body.buffer]);
+    expect(transfer).toHaveLength(1);
+    expect(transfer![0]).toBe(message.data.body.buffer);
+    expect(transfer![0]).not.toBe(frames.buffer);
     expect(message.data.body.buffer.byteLength).toBe(4);
   });
 
