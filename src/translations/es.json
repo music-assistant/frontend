@@ -280,7 +280,7 @@
                 "concert_pitch_432": "La = 432 Hz",
                 "concert_pitch_432_hint": "Establece el tono de concierto para que La esté afinado a 432 Hz"
             },
-            "input_gain_help": "Establece el nivel de entrada en la cadena. Redúcelo para dejar margen a los filtros que aumentan la señal.",
+            "input_gain_help": "Establece el nivel de entrada en la cadena. Redúcelo para dejar margen a los filtros que amplifican.",
             "output_gain_help": "Ajusta el nivel de salida de la cadena, después de aplicar todos los filtros. El volumen del reproductor se aplica posteriormente.",
             "gain": {
                 "help": "Aumenta o reduce el nivel de todo lo que pasa por este punto de la cadena."
@@ -327,7 +327,7 @@
                 "channel_count": "{0} canales"
             },
             "safety_limiter": {
-                "help": "Evita los picos que, de otro modo, provocarían clipping y podrían dañar los altavoces. Colócalo al final de la cadena.",
+                "help": "Captura los picos que, de otro modo, podrían producir saturación y dañar los altavoces. Colócalo al final de la cadena.",
                 "ceiling": "Techo"
             },
             "compressor": {
@@ -741,7 +741,30 @@
         "player_saved": "Ajustes del reproductor guardados",
         "provider_settings": "Ajustes del proveedor {name}",
         "reload_provider": "Recargar proveedor",
-        "protocol_native_badge": "Nativo"
+        "protocol_native_badge": "Nativo",
+        "visualizer_description": "Calidad, ajustes predefinidos y favoritos del visualizador musical MilkDrop.",
+        "visualizer": "Visualizador",
+        "visualizer_enabled": {
+            "label": "Visualizador MilkDrop",
+            "description": "Muestra un visualizador MilkDrop detrás del reproductor a pantalla completa, que reacciona en tiempo real a la música. Cada reproductor puede sobrescribir esta opción desde su menú a pantalla completa."
+        },
+        "visualizer_blur": {
+            "label": "Desenfoque del visualizador",
+            "description": "Suaviza el visualizador para crear un fondo más relajado. 0 desactiva el desenfoque."
+        },
+        "visualizer_opacity": {
+            "label": "Opacidad del visualizador",
+            "description": "Los valores más bajos dejan que se mezclen los colores del álbum. Por encima del 50 %, la vista cambia a un aspecto oscuro con texto claro."
+        },
+        "ha_kiosk_mode": {
+            "label": "Usar toda la pantalla en Home Assistant",
+            "description": "Oculta la cabecera y la barra lateral de Home Assistant para que Music Assistant ocupe toda la pantalla. El botón de Home Assistant del menú permite volver a mostrarlas."
+        },
+        "delete_player_title": "¿Eliminar {0}?",
+        "delete_player_confirmation": "Este reproductor se eliminará de Music Assistant. Se perderán sus ajustes y solo podrá volver a añadirse configurándolo de nuevo.",
+        "queue_settings_description": "Ajustes de reproducción de la cola desde la que reproduce este reproductor",
+        "dsp_description": "Filtros y ganancia aplicados a todo lo que reproduce este reproductor",
+        "player_options_description": "Opciones y lecturas que ofrece el propio reproductor"
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -850,7 +873,9 @@
         "bpm": "Tempo (beats por minuto)",
         "musical_key": "Tonalidad",
         "show_dashboard": "Enviar el panel a un dispositivo",
-        "collapse_collections": "Contraer colecciones"
+        "collapse_collections": "Contraer colecciones",
+        "volume_down": "Bajar volumen",
+        "volume_up": "Subir volumen"
     },
     "topresult": "Resultados más importantes",
     "track": "Canción",
@@ -1649,7 +1674,10 @@
                 "character_limit": "Límite de caracteres",
                 "prompt": "Prompt",
                 "instructions": "Instrucciones para el anfitrión y el programa",
-                "shuffle_playlist_tracks": "Mezclar canciones de la lista de reproducción"
+                "shuffle_playlist_tracks": "Mezclar canciones de la lista de reproducción",
+                "voice": "Voz",
+                "host": "Host",
+                "language": "Idioma"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Tiempo total máximo de reproducción de la música de la fuente, en minutos. Las canciones se toman en el orden en que el programa las reproduce hasta alcanzar el límite. Deja el valor en 0 para no establecer ningún límite.",
@@ -1690,7 +1718,9 @@
                 "discard_changes_title": "¿Descartar cambios?",
                 "discard_changes": "Tienes cambios sin guardar que se perderán.",
                 "delete_station_title": "¿Eliminar emisora?",
-                "delete_station": "¿Eliminar esta emisora?"
+                "delete_station": "¿Eliminar esta emisora?",
+                "delete_host_title": "¿Eliminar host?",
+                "delete_host": "¿Eliminar este host?"
             },
             "toast": {
                 "playlists_truncated": "Solo se cargaron las primeras {0} listas de reproducción.",
@@ -1703,7 +1733,10 @@
                 "station_save_failed": "No se pudo guardar la emisora",
                 "station_deleted": "Emisora eliminada",
                 "station_duplicated": "Emisora duplicada",
-                "session_failed": "Error en la ejecución de Radio IA: {0}"
+                "session_failed": "Error en la ejecución de Radio IA: {0}",
+                "host_saved": "Host guardado",
+                "host_deleted": "Host eliminado",
+                "tts_engines_load_failed": "No se han podido cargar las opciones de voz"
             },
             "header": {
                 "subtitle": "Convierte una lista de reproducción en un programa de radio con una AI host."
@@ -1713,13 +1746,14 @@
                 "empty_description": "AI Radio convierte una de tus listas de reproducción en un programa de radio con una AI host. AI Radio necesita un proveedor compatible con IA (por ejemplo, Home Assistant) para generar la AI host; configura uno en Settings → Plugins.",
                 "create_cta": "Crear programa",
                 "new_show": "Nuevo programa",
-                "refresh": "Actualizar"
+                "refresh": "Actualizar",
+                "title": "Programas",
+                "add_show": "Añadir programa"
             },
             "card": {
                 "play": "Play",
                 "starting": "Iniciando...",
                 "stop": "Detener",
-                "stopping": "Deteniendo...",
                 "on_air": "En emisión",
                 "customize": "Personalizar",
                 "duplicate": "Duplicar",
@@ -1734,20 +1768,12 @@
                 "switch_show_confirm": "{0} está reproduciendo. ¿Quieres detenerlo y reproducir {1}?",
                 "switch_show_confirm_label": "Cambiar"
             },
-            "phase": {
-                "preparing": "Preparando tu programa…",
-                "fetch_source_tracks": "Obteniendo canciones…",
-                "planning_sections": "Planificando el programa…",
-                "initializing_queue": "Preparando la cola…"
-            },
             "create": {
                 "title": "Crear un programa",
-                "description": "Elige una lista de reproducción, un estilo de anfitrión y lo hablador que debe ser.",
+                "description": "Selecciona una lista de reproducción y un host para tu programa.",
                 "playlist_label": "Fuente de la lista de reproducción",
                 "playlist_placeholder": "Elige una lista de reproducción",
                 "playlist_empty": "No se han encontrado listas de reproducción",
-                "preset_label": "Estilo del anfitrión",
-                "talk_label": "Nivel de conversación",
                 "name_label": "Nombre del programa",
                 "default_name": "{0} — {1}",
                 "create": "Crear",
@@ -1755,31 +1781,10 @@
                 "creating": "Creando...",
                 "validation": {
                     "playlist_required": "Elige una fuente de la lista de reproducción",
-                    "name_required": "El nombre del programa es obligatorio"
-                }
-            },
-            "presets": {
-                "morning_show": {
-                    "name": "Programa matutino",
-                    "description": "AI host cálido y animado con pausas de clima y noticias."
+                    "name_required": "El nombre del programa es obligatorio",
+                    "host_required": "Elige un host"
                 },
-                "minimal_dj": {
-                    "name": "DJ minimalista",
-                    "description": "Transiciones tranquilas y sutiles que no llaman la atención."
-                },
-                "music_nerd": {
-                    "name": "Experto en música",
-                    "description": "Comparte datos y curiosidades de artistas entre canciones."
-                },
-                "party_host": {
-                    "name": "Anfitrión de la partida",
-                    "description": "Saludos llenos de energía para mantener la partida en marcha."
-                }
-            },
-            "talk": {
-                "rarely": "Raramente",
-                "normal": "Normal",
-                "chatty": "Conversador"
+                "playlist_search": "Buscar listas de reproducción"
             },
             "prereq": {
                 "title": "Se necesita un proveedor de IA",
@@ -1798,9 +1803,53 @@
                 "blank_segment_name": "Nuevo segmento",
                 "segment_name": "Nombre del segmento",
                 "use_current_player": "Usar reproductor actual",
-                "lossy_warning_title": "Simplificado al guardar",
-                "lossy_warning_description": "Este programa utiliza una configuración avanzada que no se puede representar completamente aquí. Guardar lo reescribirá con el formato de segmentos simplificado anterior.",
-                "prompt_placeholders_hint": "Marcadores de posición disponibles: {placeholders}"
+                "segment_templates": {
+                    "intro": "Introducción",
+                    "transition": "Transición",
+                    "weather": "El tiempo",
+                    "news": "Noticias",
+                    "artist_fact": "Dato sobre el artista",
+                    "sign_off": "Despedida"
+                },
+                "host_placeholder": "Elige un host",
+                "host_required": "Selecciona un host antes de guardar",
+                "no_hosts_hint": "Necesitas un host antes de poder guardar este programa.",
+                "create_host_cta": "Crear un host",
+                "prompt_placeholders_label": "Marcadores de posición — toca para copiar:",
+                "prompt_placeholder_copied": "Copiado {0} al portapapeles",
+                "prompt_placeholder_copy_failed": "No se ha podido copiar {0} al portapapeles",
+                "prompt_placeholder_copy_aria": "Copiar {0}",
+                "personality_title": "Personalidad",
+                "tts_options_title": "Opciones avanzadas de TTS",
+                "tts_options_help": "Añade únicamente las claves compatibles con el motor seleccionado, ya que una clave no compatible puede hacer que rechace el clip completo.",
+                "option_key": "Clave opcional",
+                "option_key_placeholder": "p. ej., voz",
+                "option_value": "Valor de la opción",
+                "option_value_placeholder": "p. ej., en_US-lessac-medium",
+                "add_option": "Añadir opción",
+                "remove_option": "Eliminar opción"
+            },
+            "hosts": {
+                "title": "Hosts",
+                "add_host": "Añadir host",
+                "card": {
+                    "edit": "Editar"
+                },
+                "editor": {
+                    "title": "Personalizar host",
+                    "save": "Guardar host",
+                    "name_label": "Nombre del host",
+                    "default_voice": "Predeterminado",
+                    "validation": {
+                        "name_required": "El nombre del host es obligatorio",
+                        "duplicate_name": "Ya existe un host llamado «{0}»",
+                        "name_check_failed": "No se ha podido verificar que el nombre sea único. No se ha guardado nada.",
+                        "segments_required": "Añade al menos un segmento",
+                        "segment_prompt_required": "Cada segmento necesita una indicación"
+                    },
+                    "default_language": "Seguir el idioma del servidor"
+                },
+                "blank_host": "Host vacío"
             }
         }
     },
@@ -2022,7 +2071,8 @@
         "unit_months": "meses",
         "last_played_ago": "hace",
         "op_greater_than": "mayor que",
-        "op_less_than": "menor que"
+        "op_less_than": "menor que",
+        "picker_search": "Buscar {label}"
     },
     "explore": "Explorar",
     "shortcuts": "Accesos directos",
@@ -2171,5 +2221,76 @@
         "show_active_players_first": "Mostrar primero los reproductores activos",
         "show_grouped_players": "Mostrar los miembros del grupo",
         "show_selected_player_first": "Mostrar primero el reproductor seleccionado"
-    }
+    },
+    "mark_played_partial_failure": "No se han podido actualizar {0} episodios.",
+    "visualizer": {
+        "title": "MilkDrop",
+        "preset_random": "Ajuste predefinido aleatorio",
+        "open_settings": "Ajustes del visualizador",
+        "toggle": "Activar o desactivar el visualizador MilkDrop",
+        "preset_random_favorites": "Aleatorio entre los favoritos",
+        "toggle_favorite": "Añadir este ajuste predefinido a favoritos",
+        "provider_missing": "El complemento del visualizador MilkDrop no está instalado o no está disponible. Añádelo en Ajustes > Proveedores para utilizar el visualizador.",
+        "section_general": "Apariencia",
+        "section_presets": "Ajustes predefinidos",
+        "quality": "Calidad de renderizado",
+        "quality_description": "Los niveles más altos generan imágenes más nítidas, pero con un mayor consumo de GPU\/CPU. Usa el nivel bajo en tablets y televisores.",
+        "quality_options": {
+            "low": "Baja (tablets \/ televisores)",
+            "medium": "Media",
+            "high": "Alta",
+            "native": "Nativa"
+        },
+        "preset_mode": "Selección del ajuste predefinido",
+        "preset_mode_description": "Cómo elige el visualizador qué ajuste predefinido de MilkDrop mostrar.",
+        "preset_mode_options": {
+            "random": "Aleatorio entre todos los ajustes predefinidos",
+            "random_favorites": "Aleatorio entre los favoritos",
+            "fixed": "Ajuste predefinido fijo"
+        },
+        "fixed_preset": "Ajustes predefinidos",
+        "beat_switch": "Cambiar el ajuste predefinido al inicio de cada compás",
+        "beat_switch_description": "Cambia a otro preajuste al inicio de cada compás. Sobrescribe el preajuste fijo.",
+        "beat_dwell": "Tiempo mínimo entre cambios",
+        "beat_dwell_description": "Cuánto tiempo permanece un preajuste en pantalla antes de que un inicio de compás pueda cambiarlo.",
+        "favorites": "Ajustes predefinidos favoritos",
+        "no_favorites": "Todavía no hay favoritos. Marca con una estrella el preajuste actual en el reproductor a pantalla completa.",
+        "remove_favorite": "Eliminar de favoritos",
+        "credits": "Créditos",
+        "credits_butterchurn": "Renderizado mediante Butterchurn, de Jordan Berg (licencia MIT), la implementación WebGL de MilkDrop 2.",
+        "credits_milkdrop": "MilkDrop fue creado originalmente por Ryan Geiss como visualizador para Winamp. Los ajustes predefinidos son obra de la comunidad de usuarios de MilkDrop y se incluyen mediante butterchurn-presets."
+    },
+    "ai_dj": "Activar el DJ de radio con IA",
+    "ai_dj_off": "Apagado",
+    "ai_dj_show_on_air": "En antena: {0}",
+    "ai_dj_show_on_air_unknown": "Hay un programa en antena",
+    "menu": "Menú",
+    "main_navigation": "Principal",
+    "play_announcement": "Reproducir anuncio",
+    "play_announcement_explanation": "Reproducir un mensaje en voz alta en {0}",
+    "play_announcement_message": "Mensaje",
+    "play_announcement_message_placeholder": "¡La cena está lista!",
+    "play_announcement_pre_announce": "Reproducir primero un tono",
+    "play_announcement_send": "Anunciar",
+    "play_announcement_sent": "Anuncio enviado a {0}",
+    "play_announcement_playing": "Reproduciendo...",
+    "play_announcement_volume": "Volumen",
+    "play_announcement_volume_default": "Reproductor predeterminado",
+    "play_announcement_mode_type": "Escribe un mensaje",
+    "play_announcement_mode_speak": "Habla",
+    "play_announcement_hold_to_speak": "Mantén pulsado el botón y habla",
+    "play_announcement_connecting": "Conectando...",
+    "play_announcement_speaking": "Hablando",
+    "play_announcement_finishing": "Finalizando...",
+    "play_announcement_mic_denied": "Music Assistant no tiene permiso para usar el micrófono.",
+    "play_announcement_mic_failed": "No se ha podido iniciar el micrófono.",
+    "play_announcement_live_failed": "No se ha podido reproducir el anuncio.",
+    "dynamic_radio_heading": "Emisora dinámica",
+    "dynamic_radio_empty_desc": "Esta emisora no ha devuelto ninguna canción. Inténtalo de nuevo dentro de un momento.",
+    "home_assistant_menu": "Home Assistant",
+    "playback_speed_value": "{0}x",
+    "offline_ready": "Aplicación lista para funcionar sin conexión",
+    "update_available": "Hay una nueva versión disponible. Recarga para actualizar.",
+    "reload": "Recargar",
+    "open_settings": "Ajustes"
 }
