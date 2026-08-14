@@ -208,8 +208,9 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
   const cachedResponse = await cache.match(cacheKey);
 
   if (cachedResponse) {
-    // Return cached response immediately (cache-first strategy)
-    // We'll still revalidate in the background for next time
+    // Cache-first, and entries are never revalidated: every proxied request
+    // costs a WebRTC round trip, and no conditional request is made anyway
+    // (only the headers below are forwarded).
     return cachedResponse;
   }
 
@@ -263,11 +264,6 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
   try {
     const response = await responsePromise;
 
-    // If 304 Not Modified, return cached response
-    if (response.status === 304 && cachedResponse) {
-      return cachedResponse;
-    }
-
     // Cache successful responses (200-299)
     if (response.status >= 200 && response.status < 300) {
       // Clone the response before caching (can only read body once)
@@ -278,10 +274,6 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
     return response;
   } catch (error) {
     console.error("[ServiceWorker] HTTP proxy error:", error);
-    // Return cached response on error if available
-    if (cachedResponse) {
-      return cachedResponse;
-    }
     return new Response(error.message, { status: 500 });
   }
 }
