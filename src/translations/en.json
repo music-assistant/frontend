@@ -72,7 +72,6 @@
     "player_select": {
         "active_player_volume_only": "Only show volume sliders for active players",
         "and_more": "...and {0} more",
-        "disable_player": "Disable player",
         "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
         "disable_player_title": "Disable {0}?",
         "display_options": "Display options",
@@ -111,6 +110,8 @@
         "configure": "Configure",
         "options": "Options",
         "delete": "Delete",
+        "delete_player_title": "Delete {0}?",
+        "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
         "disable": "Disable",
         "documentation": "Documentation",
         "known_issues": "Known issues",
@@ -397,8 +398,6 @@
                 "selected": "Preset: {0}"
             }
         },
-        "dsp_enabled": "DSP is enabled",
-        "dsp_disabled": "DSP is disabled",
         "dsp_note_multi_device_group": {
             "label": "You can configure the DSP for each player individually."
         },
@@ -732,6 +731,9 @@
         "provider_removed": "Provider removed",
         "action_completed": "Action completed",
         "queue_settings": "Queue settings",
+        "queue_settings_description": "Playback settings for the queue this player plays from",
+        "dsp_description": "Filters and gain applied to everything this player plays",
+        "player_options_description": "Options and readings the player itself offers",
         "audio_analysis_failures": {
             "title": "Audio Analysis Failures",
             "description": "Tracks that failed analysis are skipped on future scans. Delete an entry to clear the failure and let it be analyzed again.",
@@ -2201,6 +2203,7 @@
     "autoplay_off_title": "Autoplay is disabled",
     "autoplay_off_desc": "Your music will stop once the queue has finished. Enable Autoplay to automatically keep it going with more content based on your preferences.",
     "open_player_settings": "Open player settings",
+    "open_settings": "Settings",
     "configure_player": "Configure player",
     "reconfigure_player": "Reconfigure player",
     "sleep_timer": "Sleep timer",

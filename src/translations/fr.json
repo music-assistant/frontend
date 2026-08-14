@@ -264,8 +264,6 @@
                 }
             }
         },
-        "dsp_enabled": "Le DSP est activé",
-        "dsp_disabled": "Le DSP est désactivé",
         "dsp_note_multi_device_group": {
             "label": "Vous pouvez configurer le DSP pour chaque lecteur individuellement."
         },

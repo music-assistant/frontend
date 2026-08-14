@@ -1,5 +1,4 @@
 import PlayerSelect from "@/layouts/default/PlayerSelect.vue";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
@@ -17,30 +16,22 @@ import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  emitEvent,
-  getPreference,
-  isAdmin,
-  preferenceState,
-  savePlayerConfig,
-  setPreference,
-} = vi.hoisted(() => ({
-  emitEvent: vi.fn(),
-  getPreference: vi.fn(),
-  isAdmin: vi.fn(() => true),
-  preferenceState: {
-    values: {} as Record<string, unknown>,
-    reactiveValues: undefined as Record<string, unknown> | undefined,
-  },
-  savePlayerConfig: vi.fn(),
-  setPreference: vi.fn(),
-}));
+const { emitEvent, getPreference, isAdmin, preferenceState, setPreference } =
+  vi.hoisted(() => ({
+    emitEvent: vi.fn(),
+    getPreference: vi.fn(),
+    isAdmin: vi.fn(() => true),
+    preferenceState: {
+      values: {} as Record<string, unknown>,
+      reactiveValues: undefined as Record<string, unknown> | undefined,
+    },
+    setPreference: vi.fn(),
+  }));
 
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
     players: {} as Record<string, Player>,
-    savePlayerConfig,
     // the menu's ai dj entry derives availability from the provider list
     providers: {},
   });
@@ -144,7 +135,6 @@ const PlayerCardStub = {
     "groupControlExpanded",
     "groupControlsId",
     "showSelectedIndicator",
-    "playerMenuItems",
   ],
   emits: ["click", "toggle-child-volumes", "toggle-member-controls"],
   template: `
@@ -217,17 +207,6 @@ const PopoverContentStub = {
     >
       <slot />
     </div>
-  `,
-};
-const PlayerRenameDialogStub = {
-  props: ["open", "player"],
-  emits: ["update:open"],
-  template: `
-    <div
-      v-if="open"
-      class="player-rename-dialog"
-      :data-player-id="player?.player_id"
-    />
   `,
 };
 
@@ -309,7 +288,6 @@ function mountPlayerSelect() {
       },
       stubs: {
         PlayerCard: PlayerCardStub,
-        PlayerRenameDialog: PlayerRenameDialogStub,
         SearchInput: SearchInputStub,
         DropdownMenu: passthroughStub,
         DropdownMenuCheckboxItem: DropdownMenuCheckboxItemStub,
@@ -337,7 +315,6 @@ function mountPlayerSelectWithPopover() {
       },
       stubs: {
         PlayerCard: PlayerCardStub,
-        PlayerRenameDialog: PlayerRenameDialogStub,
         SearchInput: SearchInputStub,
         DropdownMenu: passthroughStub,
         DropdownMenuCheckboxItem: DropdownMenuCheckboxItemStub,
@@ -365,7 +342,6 @@ describe("PlayerSelect", () => {
       }
     }
     api.players = {};
-    savePlayerConfig.mockResolvedValue({});
     store.activePlayerId = undefined;
     store.companionPlayerId = undefined;
     store.dialogActive = false;
@@ -1067,78 +1043,5 @@ describe("PlayerSelect", () => {
     } else {
       Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
     }
-  });
-
-  it("adds rename and disable actions only to PlayerSelect menus", async () => {
-    const player = createPlayer("kitchen", "Kitchen");
-    const fallback = createPlayer("office", "Office");
-    const setupPlayer = createPlayer("attic", "Attic");
-    setupPlayer.available = false;
-    setupPlayer.needs_setup = true;
-    api.players = {
-      [player.player_id]: player,
-      [fallback.player_id]: fallback,
-      [setupPlayer.player_id]: setupPlayer,
-    };
-    store.activePlayerId = player.player_id;
-    const wrapper = mountPlayerSelect();
-    const menuItems = wrapper
-      .getComponent(PlayerCardStub)
-      .props("playerMenuItems") as ContextMenuItem[];
-
-    expect(menuItems.map((item) => item.label)).toEqual([
-      "player_select.rename_player",
-      "player_select.disable_player",
-    ]);
-
-    menuItems[0].action?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(store.showPlayersMenu).toBe(false);
-    expect(
-      wrapper.get(".player-rename-dialog").attributes("data-player-id"),
-    ).toBe(player.player_id);
-
-    store.showPlayersMenu = true;
-    await nextTick();
-    menuItems[1].action?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    const confirmation = emitEvent.mock.calls.find(
-      ([event]) => event === "deleteConfirmationDialog",
-    )?.[1];
-    expect(confirmation).toEqual(
-      expect.objectContaining({
-        confirmLabel: "settings.disable",
-      }),
-    );
-
-    await confirmation.onConfirm();
-    await flushPromises();
-    expect(savePlayerConfig).toHaveBeenCalledWith(player.player_id, {
-      enabled: false,
-    });
-    expect(player.enabled).toBe(false);
-    expect(store.activePlayerId).toBe(fallback.player_id);
-  });
-
-  it("forgets the remembered player when the last one is disabled", async () => {
-    const player = createPlayer("kitchen", "Kitchen");
-    setActivePlayerPreference(player.player_id);
-    api.players = { [player.player_id]: player };
-    const wrapper = mountPlayerSelect();
-    expect(store.activePlayerId).toBe(player.player_id);
-
-    const menuItems = wrapper
-      .getComponent(PlayerCardStub)
-      .props("playerMenuItems") as ContextMenuItem[];
-    menuItems[1].action?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    const confirmation = emitEvent.mock.calls.find(
-      ([event]) => event === "deleteConfirmationDialog",
-    )?.[1];
-    await confirmation.onConfirm();
-    await flushPromises();
-
-    expect(store.activePlayerId).toBeUndefined();
-    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
   });
 });

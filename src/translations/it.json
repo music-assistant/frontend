@@ -249,7 +249,6 @@
                 "remove_confirm": "Confermi di voler rimuovere questo preset DSP?"
             }
         },
-        "dsp_enabled": "DSP abilitato",
         "dsp_note_multi_device_group": {
             "label": "Possibilità di configurare DSP per ogni player individualmente."
         },

@@ -67,6 +67,14 @@ export type PlayAnnouncementDialogEvent = {
   playerId: string;
 };
 
+export type PlayerRenameDialogEvent = {
+  playerId: string;
+  // the custom name currently set, empty while the player uses its default name
+  name?: string | null;
+  // shown as the placeholder and restored when the custom name is cleared
+  defaultName?: string | null;
+};
+
 // Launches the setup flow dialog for one of: adding a provider (by domain),
 // reconfiguring a provider instance, or setting up a player.
 export type SetupFlowDialogEvent =
@@ -90,6 +98,7 @@ export type Events = {
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;
+  playerRenameDialog: PlayerRenameDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

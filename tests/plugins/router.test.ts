@@ -96,6 +96,29 @@ const partyGuard = beforeEnterGuard("party");
 const aiRadioGuard = beforeEnterGuard("ai-radio");
 const globalGuard = globalNavigationGuard();
 
+const PLAYER_SETTINGS_ROUTES = [
+  {
+    name: "editplayer",
+    path: "/settings/editplayer/player-1",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editplayerdsp",
+    path: "/settings/editplayer/player-1/dsp",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editplayeroptions",
+    path: "/settings/editplayer/player-1/options",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editqueue",
+    path: "/settings/editqueue/player-1",
+    params: { queueId: "player-1" },
+  },
+];
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.apiState.value = ConnectionState.INITIALIZED;
@@ -273,6 +296,19 @@ describe("AI Radio guard", () => {
       "providers.ai_radio.toast.unavailable",
     );
   });
+});
+
+describe("player settings routes", () => {
+  it.each(PLAYER_SETTINGS_ROUTES)(
+    "opens $name on a page of its own",
+    ({ name, path, params }) => {
+      const route = resolveRoute(path);
+
+      // a redirect record would resolve without a name of its own
+      expect(route.name).toBe(name);
+      expect(route.params).toMatchObject(params);
+    },
+  );
 });
 
 describe("global navigation guard", () => {
