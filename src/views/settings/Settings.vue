@@ -939,7 +939,6 @@ const documentationUrl = computed(() => {
   max-width: 100%;
   overflow-x: auto;
   font-size: 0.7rem;
-  opacity: 0.6;
   scrollbar-width: none;
 }
 
@@ -951,18 +950,21 @@ const documentationUrl = computed(() => {
   padding: 0;
   font-size: inherit;
   white-space: nowrap;
+  opacity: 0.6;
 }
 
-/* vuetify dims the last crumb as "disabled"; it is the page you are on, so
-   colour it instead of fading it out */
+/* vuetify dims the last crumb as "disabled"; it is the page you are on, so it
+   is the one that stands out and the trail above it recedes */
 .settings-heading-trail :deep(.v-breadcrumbs-item--disabled) {
-  color: rgb(var(--v-theme-primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
   opacity: 1;
 }
 
 .settings-heading-trail :deep(.v-breadcrumbs-divider) {
   padding: 0 4px;
   font-size: inherit;
+  opacity: 0.6;
 }
 
 .settings-overview {
