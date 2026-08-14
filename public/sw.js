@@ -208,9 +208,9 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
   const cachedResponse = await cache.match(cacheKey);
 
   if (cachedResponse) {
-    // Cache-first, and entries are never revalidated: the server marks these
-    // responses cacheable for a year and offers no ETag to revalidate against,
-    // and every proxied request costs a WebRTC round trip.
+    // Cache-first, and entries are never revalidated: every proxied request
+    // costs a WebRTC round trip, and no conditional request is made anyway
+    // (only the headers below are forwarded).
     return cachedResponse;
   }
 

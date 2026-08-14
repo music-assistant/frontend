@@ -164,22 +164,13 @@ describe("sw.js http-proxy-response handling", () => {
   it("answers a repeat request from cache without asking the page again", async () => {
     await proxiedResponse(BYTES);
 
-    const postMessage = vi.fn<PostMessage>();
-    fakeSelf.registerClient(CLIENT_ID, postMessage);
+    const { response, postMessage } = await fireFetch();
 
-    let capturedResponse!: Promise<Response>;
-    await fakeSelf.fire("fetch", {
-      request: new Request(IMAGE_URL),
-      clientId: CLIENT_ID,
-      respondWith: (promise: Promise<Response>) => {
-        capturedResponse = promise;
-      },
-    });
-
-    const response = await capturedResponse;
-    expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
-    // Cache-first: nothing goes back over the WebRTC channel, so a cached
-    // entry is never revalidated.
+    const cached = await response;
+    expect(new Uint8Array(await cached.arrayBuffer())).toEqual(BYTES);
+    // Cache-first: a cached entry is never revalidated, so nothing goes back
+    // over the WebRTC channel. Losing the cache hit altogether stalls the await
+    // above instead, as no page is standing by to answer the proxy request.
     expect(postMessage).not.toHaveBeenCalled();
   });
 
@@ -194,6 +185,29 @@ describe("sw.js http-proxy-response handling", () => {
   });
 
   /**
+   * Request the proxied image, returning what the worker answers with and the
+   * mock any proxy request for it would be posted to.
+   */
+  async function fireFetch(): Promise<{
+    response: Promise<Response>;
+    postMessage: ReturnType<typeof vi.fn<PostMessage>>;
+  }> {
+    const postMessage = vi.fn<PostMessage>();
+    fakeSelf.registerClient(CLIENT_ID, postMessage);
+
+    let response!: Promise<Response>;
+    await fakeSelf.fire("fetch", {
+      request: new Request(IMAGE_URL),
+      clientId: CLIENT_ID,
+      respondWith: (promise: Promise<Response>) => {
+        response = promise;
+      },
+    });
+
+    return { response, postMessage };
+  }
+
+  /**
    * Drive a proxied image request end to end and answer it with the given body,
    * as the page would.
    */
@@ -201,17 +215,7 @@ describe("sw.js http-proxy-response handling", () => {
     body: Uint8Array | string,
     status = 200,
   ): Promise<Response> {
-    const postMessage = vi.fn<PostMessage>();
-    fakeSelf.registerClient(CLIENT_ID, postMessage);
-
-    let capturedResponse!: Promise<Response>;
-    await fakeSelf.fire("fetch", {
-      request: new Request(IMAGE_URL),
-      clientId: CLIENT_ID,
-      respondWith: (promise: Promise<Response>) => {
-        capturedResponse = promise;
-      },
-    });
+    const { response, postMessage } = await fireFetch();
     await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(1));
 
     await fakeSelf.fire("message", {
@@ -227,6 +231,6 @@ describe("sw.js http-proxy-response handling", () => {
       source: { id: CLIENT_ID },
     });
 
-    return capturedResponse;
+    return response;
   }
 });
