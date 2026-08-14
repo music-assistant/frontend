@@ -928,9 +928,12 @@ const documentationUrl = computed(() => {
   line-height: 1.2;
 }
 
+/* the trail carries the detail, so the heading only has to name the section */
 .settings-heading-title {
   color: inherit;
   text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 /* the trail can outgrow the toolbar, so it scrolls rather than pushing the
