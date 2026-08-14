@@ -142,7 +142,34 @@ describe("sw.js http-proxy-response handling", () => {
     vi.unstubAllGlobals();
   });
 
+  // Includes the 0x00/0xFF boundary values a hex round-trip would be most
+  // likely to mangle.
+  const BYTES = new Uint8Array([0, 1, 2, 3, 127, 128, 254, 255]);
+
   it("turns a raw-bytes body into a Response with those exact bytes", async () => {
+    const response = await proxiedResponse(BYTES);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/jpeg");
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
+  });
+
+  it("still reads a hex body from a page that has not reloaded yet", async () => {
+    const hex = Array.from(BYTES)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    const response = await proxiedResponse(hex);
+
+    expect(response.status).toBe(200);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(BYTES);
+  });
+
+  /**
+   * Drive a proxied image request end to end and answer it with the given body,
+   * as the page would.
+   */
+  async function proxiedResponse(body: Uint8Array | string): Promise<Response> {
     const postMessage = vi.fn<PostMessage>();
     fakeSelf.registerClient(CLIENT_ID, postMessage);
 
@@ -157,27 +184,19 @@ describe("sw.js http-proxy-response handling", () => {
     await flush();
 
     expect(postMessage).toHaveBeenCalledTimes(1);
-    const requestId = postMessage.mock.calls[0][0].data.id;
-
-    // Includes the 0x00/0xFF boundary values a hex round-trip would be most
-    // likely to mangle.
-    const bytes = new Uint8Array([0, 1, 2, 3, 127, 128, 254, 255]);
     await fakeSelf.fire("message", {
       data: {
         type: "http-proxy-response",
         data: {
-          id: requestId,
+          id: postMessage.mock.calls[0][0].data.id,
           status: 200,
           headers: { "content-type": "image/jpeg" },
-          body: bytes,
+          body,
         },
       },
       source: { id: CLIENT_ID },
     });
 
-    const response = await capturedResponse;
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toBe("image/jpeg");
-    expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
-  });
+    return capturedResponse;
+  }
 });

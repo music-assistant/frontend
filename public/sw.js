@@ -132,9 +132,12 @@ self.addEventListener("message", async (event) => {
       pendingRequests.delete(id);
 
       try {
-        // The page posts the body as raw bytes and transfers its buffer to us,
-        // so it can back the response directly
-        const response = new Response(body, {
+        // The page posts the body as raw bytes and transfers its buffer to us.
+        // A page still running the build before that handoff posts a hex string,
+        // which happens whenever this worker claims a tab that has not reloaded yet.
+        const bodyBytes = typeof body === "string" ? hexToBytes(body) : body;
+
+        const response = new Response(bodyBytes, {
           status: status,
           headers: new Headers(headers),
         });
@@ -281,6 +284,17 @@ async function handleHttpProxyRequest(request, clientId, proxyScope) {
     }
     return new Response(error.message, { status: 500 });
   }
+}
+
+/**
+ * Convert hex string to Uint8Array
+ */
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+  }
+  return bytes;
 }
 
 /**
