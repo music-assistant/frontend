@@ -10,6 +10,7 @@ import {
   type AIRadioSession,
   type AIRadioStation,
   type Player,
+  type PlayerOption,
   type PlayerQueue,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -229,6 +230,17 @@ describe("getPlayerSetupMenuItem", () => {
 });
 
 describe("getPlayerMenuItems settings shortcuts", () => {
+  // the settings sections are reached from the settings page itself now, so these
+  // menus only offer the way in
+  const MOVED_TO_SETTINGS_PAGE = [
+    "open_player_settings",
+    "open_queue_settings",
+    "open_dsp_settings",
+    "player_options.open",
+    "reconfigure_player",
+    "configure_player",
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
     isAdmin.mockReturnValue(true);
@@ -236,46 +248,49 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     storeMock.showPlayersMenu = true;
   });
 
-  it("shows both settings shortcuts in the fullscreen queue menu", () => {
+  it.each(["player", "queue"] as const)(
+    "offers one way into the settings from the %s menu",
+    (context) => {
+      // a player that used to grow a shortcut for every one of these
+      const menuItems = getPlayerMenuItems(
+        makePlayer({
+          has_setup_flow: true,
+          options: [{ key: "eq", name: "EQ" } as PlayerOption],
+        }),
+        makeQueue(),
+        { context },
+      );
+      const labels = menuItems.map((item) => item.label);
+
+      expect(labels.filter((label) => label === "open_settings")).toEqual([
+        "open_settings",
+      ]);
+      for (const moved of MOVED_TO_SETTINGS_PAGE) {
+        expect(labels).not.toContain(moved);
+      }
+    },
+  );
+
+  it("opens the settings page for the player and closes the menus", () => {
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "queue",
-    });
-
-    expect(menuItems.map((item) => item.label)).toEqual(
-      expect.arrayContaining(["open_queue_settings", "open_player_settings"]),
-    );
-  });
-
-  it("shows queue settings in the player menu only for an active MA queue", () => {
-    const activeQueueItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "player",
-    });
-    const externalSourceItems = getPlayerMenuItems(makePlayer(), undefined, {
       context: "player",
     });
 
-    expect(activeQueueItems.map((item) => item.label)).toContain(
-      "open_queue_settings",
-    );
-    expect(externalSourceItems.map((item) => item.label)).not.toContain(
-      "open_queue_settings",
-    );
-  });
+    menuItems.find((item) => item.label === "open_settings")?.action?.();
 
-  it("opens the settings page for each shortcut", () => {
-    const menuItems = getPlayerMenuItems(
-      makePlayer(),
-      makeQueue({ queue_id: "source-queue" }),
-      { context: "player" },
-    );
-
-    menuItems.find((item) => item.label === "open_queue_settings")?.action?.();
-    expect(routerPush).toHaveBeenCalledWith("/settings/editqueue/source-queue");
-
-    menuItems.find((item) => item.label === "open_player_settings")?.action?.();
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
     expect(storeMock.showFullscreenPlayer).toBe(false);
     expect(storeMock.showPlayersMenu).toBe(false);
+  });
+
+  it("keeps the settings out of a non-admin's menu", () => {
+    isAdmin.mockReturnValue(false);
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "player",
+    });
+
+    expect(menuItems.map((item) => item.label)).not.toContain("open_settings");
   });
 });
 

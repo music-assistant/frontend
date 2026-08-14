@@ -1,13 +1,22 @@
 <template>
   <section class="p-4">
-    <SettingsHeaderCard
-      v-model:show-advanced-settings="showAdvancedSettings"
-      :icon="SlidersHorizontal"
-      :title="$t('settings.queue_settings')"
-      :description="queueName"
-      :show-advanced-toggle="hasAdvancedEntries(allConfigEntries)"
-      @reset-to-defaults="resetToDefaults"
-    />
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <AdvancedSettingsToggle
+        v-if="hasAdvancedEntries(allConfigEntries)"
+        v-model:show-advanced-settings="showAdvancedSettings"
+        test-id="queue-advanced-settings"
+      />
+      <Button
+        data-testid="queue-reset-defaults"
+        variant="ghost"
+        size="sm"
+        class="ml-auto"
+        @click="resetToDefaults"
+      >
+        <RotateCcw class="size-4" />
+        {{ $t("settings.reset_to_defaults") }}
+      </Button>
+    </div>
 
     <!-- Global queue settings hint -->
     <div
@@ -52,12 +61,12 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import { goBack } from "@/helpers/navigation";
-import { Info, SlidersHorizontal } from "@lucide/vue";
+import { Info, RotateCcw } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import EditConfig from "./EditConfig.vue";
-import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
 // global refs
 const router = useRouter();
@@ -76,10 +85,6 @@ const allConfigEntries = computed(() => {
   if (!config.value) return [];
   return Object.values(config.value.values);
 });
-
-const queueName = computed(
-  () => api.queues[props.queueId || ""]?.display_name || props.queueId,
-);
 
 // watchers
 watch(

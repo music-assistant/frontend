@@ -356,27 +356,10 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // settings shortcuts (admin only)
+  // open the player settings hub (both menus, admin only)
   if (authManager.isAdmin()) {
-    // open queue settings (queue menu, or player menu with an MA queue)
-    if (isQueue || playerQueue) {
-      menuItems.push({
-        label: "open_queue_settings",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(
-            `/settings/editqueue/${playerQueue?.queue_id ?? player.player_id}`,
-          );
-        },
-        icon: "mdi-cog-outline",
-      });
-    }
-
-    // open player settings (both menus)
     menuItems.push({
-      label: "open_player_settings",
+      label: "open_settings",
       labelArgs: [],
       action: () => {
         store.showFullscreenPlayer = false;
@@ -385,40 +368,6 @@ export const getPlayerMenuItems = (
       },
       icon: "mdi-cog-outline",
     });
-
-    // configure the player or re-run its setup flow on demand
-    if (isPlayer) {
-      const setupMenuItem = getPlayerSetupMenuItem(player);
-      if (setupMenuItem) menuItems.push(setupMenuItem);
-    }
-
-    // open dsp settings (player menu only)
-    if (isPlayer && player.type !== PlayerType.GROUP) {
-      menuItems.push({
-        label: "open_dsp_settings",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/dsp`);
-        },
-        icon: "mdi-equalizer",
-      });
-    }
-
-    // open player options (both menus)
-    if (player.options.length > 0) {
-      menuItems.push({
-        label: "player_options.open",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/options`);
-        },
-        icon: "mdi-tune",
-      });
-    }
   }
 
   // MilkDrop visualizer on/off for this player (both menus; a player control,

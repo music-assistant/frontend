@@ -172,7 +172,6 @@
             "
             :group-controls-id="getGroupControlsId(player.player_id)"
             :show-selected-indicator="true"
-            :player-menu-items="getPlayerManagementMenuItems(player)"
             @click="selectPlayer"
             @toggle-child-volumes="toggleChildVolumes"
             @toggle-member-controls="toggleMemberControls"
@@ -181,18 +180,11 @@
       </div>
     </PopoverContent>
   </Popover>
-
-  <PlayerRenameDialog
-    :open="renameDialogOpen"
-    :player="renamePlayer"
-    @update:open="setRenameDialogOpen"
-  />
 </template>
 
 <script setup lang="ts">
 import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
-import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -210,7 +202,6 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { useUserPreferences } from "@/composables/userPreferences";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
@@ -220,12 +211,10 @@ import {
 import { isBuiltinPlayer, isPlayerActive } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import type { Player } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { CircleOff, EllipsisVertical, Pencil } from "@lucide/vue";
+import { EllipsisVertical } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -235,7 +224,6 @@ import {
   ref,
   watch,
 } from "vue";
-import { toast } from "vue-sonner";
 
 const SEARCH_PLAYER_THRESHOLD = 10;
 // Stored instead of a built-in player id: those are unique per browser/app
@@ -252,8 +240,6 @@ const playerSearchQuery = ref("");
 const expandedVolumePlayerIds = reactive(new Set<string>());
 const expandedMemberPlayerIds = reactive(new Set<string>());
 const playerList = ref<HTMLElement>();
-const renamePlayer = ref<Player>();
-const renameDialogOpen = ref(false);
 const { getPreference, setPreference } = useUserPreferences();
 const showVolumeForActivePlayersOnly = getPreference<boolean>(
   PLAYER_SELECT_PREFERENCES.showVolumeForActivePlayersOnly,
@@ -476,75 +462,6 @@ function toggleExpandedPlayer(playerIds: Set<string>, playerId: string) {
 
 function getGroupControlsId(playerId: string) {
   return `player-select-group-${encodeURIComponent(playerId)}`;
-}
-
-function getPlayerManagementMenuItems(player: Player): ContextMenuItem[] {
-  if (!authManager.isAdmin()) return [];
-
-  return [
-    {
-      label: "player_select.rename_player",
-      action: () => {
-        closeMenuThen(() => {
-          renamePlayer.value = player;
-          renameDialogOpen.value = true;
-        });
-      },
-      icon: Pencil,
-    },
-    {
-      label: "player_select.disable_player",
-      action: () => confirmDisablePlayer(player),
-      icon: CircleOff,
-      color: "error",
-    },
-  ];
-}
-
-function confirmDisablePlayer(player: Player) {
-  closeMenuThen(() => {
-    eventbus.emit("deleteConfirmationDialog", {
-      title: $t("player_select.disable_player_title", [player.name]),
-      message: $t("player_select.disable_player_confirmation"),
-      confirmLabel: $t("settings.disable"),
-      onConfirm: () => disablePlayer(player),
-    });
-  });
-}
-
-function closeMenuThen(action: () => void) {
-  setMenuOpen(false);
-  window.setTimeout(action, 0);
-}
-
-async function disablePlayer(player: Player) {
-  const fallbackPlayer = orderedPlayers.value.find(
-    (candidate) =>
-      candidate.player_id !== player.player_id &&
-      candidate.available &&
-      !candidate.needs_setup,
-  );
-
-  try {
-    await api.savePlayerConfig(player.player_id, { enabled: false });
-    if (api.players[player.player_id]) {
-      api.players[player.player_id].enabled = false;
-    }
-    if (store.activePlayerId === player.player_id) {
-      store.activePlayerId = fallbackPlayer?.player_id;
-      if (!fallbackPlayer) {
-        await setPreference("activePlayerId", null);
-      }
-    }
-    toast.success($t("settings.player_saved"));
-  } catch (error) {
-    toast.error(String(error));
-  }
-}
-
-function setRenameDialogOpen(open: boolean) {
-  renameDialogOpen.value = open;
-  if (!open) renamePlayer.value = undefined;
 }
 
 function resetPanelState() {

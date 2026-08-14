@@ -713,6 +713,14 @@ const getProviderName = (instanceId: string) => {
   return manifest?.name || instanceId;
 };
 
+// the tab a player settings route lands on; the player tab is the default and names itself
+const playerSectionTitle = (routeName: string) =>
+  match(routeName)
+    .with("editplayerqueue", () => t("settings.queue_settings"))
+    .with("editplayerdsp", () => "DSP")
+    .with("editplayeroptions", () => t("settings.category.options"))
+    .otherwise(() => undefined);
+
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
@@ -820,18 +828,23 @@ const breadcrumbItems = computed(() => {
     .with("addgroup", () => {
       items.push({ title: t("settings.add_group_player"), disabled: true });
     })
-    .with("editplayer", () => {
-      items.push({ title: t("settings.player_settings"), disabled: true });
-    })
-    .with("editplayerdsp", () => {
-      items.push({ title: "DSP", disabled: true });
-    })
-    .with("editplayeroptions", () => {
-      items.push({ title: t("settings.category.options"), disabled: true });
-    })
-    .with("editqueue", () => {
-      items.push({ title: t("settings.queue_settings"), disabled: true });
-    })
+    .with(
+      "editplayer",
+      "editplayerqueue",
+      "editplayerdsp",
+      "editplayeroptions",
+      () => {
+        const playerId = route.params.playerId as string;
+        items.push({
+          // a disabled player is never registered, so it has no name to show here
+          title: api.players[playerId]?.name || t("settings.player_settings"),
+          disabled: name === "editplayer",
+          to: { name: "editplayer", params: { playerId } },
+        });
+        const section = playerSectionTitle(name);
+        if (section) items.push({ title: section, disabled: true });
+      },
+    )
     .with("editcore", () => {
       const domain = route.params.domain as string;
       const translated = t(`settings.core_module.${domain}.name`);

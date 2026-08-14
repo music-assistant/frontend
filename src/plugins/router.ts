@@ -576,43 +576,59 @@ export const routes: RouteRecordRaw[] = [
           },
           {
             path: "editplayer/:playerId",
-            name: "editplayer",
             component: () =>
               import(
-                /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"
+                /* webpackChunkName: "editplayer" */ "@/views/settings/PlayerSettings.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },
+            children: [
+              {
+                path: "",
+                name: "editplayer",
+                component: () =>
+                  import(
+                    /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayer.vue"
+                  ),
+                props: true,
+              },
+              {
+                path: "queue",
+                name: "editplayerqueue",
+                component: () =>
+                  import(
+                    /* webpackChunkName: "editqueue" */ "@/views/settings/EditPlayerQueue.vue"
+                  ),
+                // a queue is identified by the player id of the player owning it
+                props: (route) => ({ queueId: route.params.playerId }),
+              },
+              {
+                path: "dsp",
+                name: "editplayerdsp",
+                component: () =>
+                  import(
+                    /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
+                  ),
+                props: true,
+              },
+              {
+                path: "options",
+                name: "editplayeroptions",
+                component: () =>
+                  import(
+                    /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayerOptions.vue"
+                  ),
+                props: true,
+              },
+            ],
           },
           {
-            path: "editplayer/:playerId/options",
-            name: "editplayeroptions",
-            component: () =>
-              import(
-                /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayerOptions.vue"
-              ),
-            props: true,
-            meta: { requiresAdmin: false },
-          },
-          {
-            path: "editplayer/:playerId/dsp",
-            name: "editplayerdsp",
-            component: () =>
-              import(
-                /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
-              ),
-            props: true,
-            meta: { requiresAdmin: true },
-          },
-          {
+            // queue settings used to have their own screen; keep the deep links working
             path: "editqueue/:queueId",
-            name: "editqueue",
-            component: () =>
-              import(
-                /* webpackChunkName: "editqueue" */ "@/views/settings/EditPlayerQueue.vue"
-              ),
-            props: true,
-            meta: { requiresAdmin: true },
+            redirect: (to) => ({
+              name: "editplayerqueue",
+              params: { playerId: to.params.queueId },
+            }),
           },
           {
             path: "editcore/:domain",

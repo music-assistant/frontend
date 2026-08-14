@@ -27,7 +27,6 @@
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @open-dsp="openDspConfig"
           @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
           @set-entry-value="onEntryValueSet"
@@ -49,7 +48,6 @@
       @action="onEntryAction"
       @help="onEntryHelp"
       @toggle-password="showPasswordValues = !showPasswordValues"
-      @open-dsp="openDspConfig"
       @open-options="openPlayerOptions"
     />
 
@@ -80,7 +78,6 @@
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @open-dsp="openDspConfig"
           @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
           @set-entry-value="onEntryValueSet"
@@ -404,10 +401,6 @@ const openLink = function (url: string) {
   a.setAttribute("href", url);
   a.setAttribute("target", "_blank");
   a.click();
-};
-
-const openDspConfig = function () {
-  router.push(`${router.currentRoute.value.path}/dsp`);
 };
 
 const openPlayerOptions = function () {

@@ -50,24 +50,6 @@
       {{ displayActionLabel() }}
     </v-btn>
 
-    <!-- DSP Config Button -->
-    <div v-else-if="isDspLinkEntry(confEntry)" class="dsp-config">
-      <span class="dsp-status">
-        {{
-          confEntry.value
-            ? $t("settings.dsp_enabled")
-            : $t("settings.dsp_disabled")
-        }}
-      </span>
-      <v-btn
-        variant="outlined"
-        :disabled="isFieldDisabled"
-        @click="$emit('openDsp')"
-      >
-        {{ $t("open_dsp_settings") }}
-      </v-btn>
-    </div>
-
     <!-- Home Assistant entity picker for a single player control -->
     <HassControlPickerField
       v-else-if="isHassControlPickerEntry(confEntry)"
@@ -338,7 +320,6 @@ import RadioGroupField from "./fields/RadioGroupField.vue";
 import {
   ConfigEntryUI,
   HASS_CONTROL_KEYS,
-  isDspLinkEntry,
   isHassControlPickerEntry,
 } from "@/helpers/config_entry_ui";
 import { HASS_DOMAIN } from "@/helpers/hass_controls";
@@ -377,7 +358,6 @@ const imageSrc = computed(
 const emit = defineEmits<{
   (e: "togglePassword"): void;
   (e: "action"): void;
-  (e: "openDsp"): void;
   (e: "openOptions"): void;
   (e: "update:value", value: ConfigValueType): void;
   // set the value of another entry on the same form
@@ -530,10 +510,5 @@ const displayOptions = computed(() => {
   align-items: center;
   gap: 16px;
   padding: 8px 0;
-}
-
-.dsp-status {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
 }
 </style>
