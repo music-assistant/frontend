@@ -75,6 +75,7 @@ function createFakeCaches() {
         ),
       };
     }),
+    has: vi.fn(async (name: string) => stores.has(name)),
     delete: vi.fn(async (name: string) => stores.delete(name)),
     /** Make the next `count` writes fail, as a full storage quota would. */
     failPuts(count: number) {
@@ -285,6 +286,25 @@ describe("sw.js", () => {
     expect(fakeSelf.skipWaiting).toHaveBeenCalled();
   });
 
+  it("trims a cache left behind by a version without a cap", async () => {
+    const cache = await fakeCaches.open(PROXY_CACHE_NAME);
+    for (let index = 0; index < PROXY_CACHE_MAX_ENTRIES + 50; index++) {
+      await cache.put(
+        `${ORIGIN}/imageproxy/old-${index}.jpg`,
+        new Response(""),
+      );
+    }
+
+    await fakeSelf.fire("activate", {
+      waitUntil: (promise: Promise<unknown>) => {
+        pendingWork.push(promise);
+      },
+    });
+    await settlePendingWork();
+
+    expect(await cache.keys()).toHaveLength(PROXY_CACHE_PRUNE_TO_ENTRIES);
+  });
+
   /**
    * Request the proxied image. Returns the worker's response and the client
    * mock, which only receives a proxy request when the cache misses.
@@ -312,9 +332,9 @@ describe("sw.js", () => {
   }
 
   /**
-   * Wait for the cache writes the worker kept alive past its response.
+   * Wait for the work the worker handed to waitUntil().
    */
-  async function settleCacheWrites(): Promise<void> {
+  async function settlePendingWork(): Promise<void> {
     while (pendingWork.length > 0) {
       await Promise.all(pendingWork.splice(0));
     }
@@ -349,7 +369,7 @@ describe("sw.js", () => {
     // The worker hands its cache write to waitUntil() just before it answers, so
     // the response has to be awaited first for that write to exist.
     const proxied = await response;
-    await settleCacheWrites();
+    await settlePendingWork();
     return proxied;
   }
 });

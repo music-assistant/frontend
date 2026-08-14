@@ -331,6 +331,9 @@ async function cacheProxyResponse(cache, cacheKey, response) {
       await cache.put(cacheKey, retryCopy);
     }
 
+    // Cloning tees the body, so an unread copy holds on to the whole image.
+    if (!retryCopy.bodyUsed) await retryCopy.body?.cancel();
+
     proxyCacheEntryCount =
       proxyCacheEntryCount === null
         ? (await cache.keys()).length
@@ -386,6 +389,11 @@ self.addEventListener("activate", (event) => {
       // It also drives the update: the prompt reloads the page off the
       // controller change this fires, and never reloads on its own.
       await self.clients.claim();
+      // Brings a cache filled by a version that had no cap back within it, even
+      // for a client that never proxies another image.
+      if (await caches.has(PROXY_CACHE_NAME)) {
+        await pruneProxyCache(await caches.open(PROXY_CACHE_NAME));
+      }
     })(),
   );
 });
