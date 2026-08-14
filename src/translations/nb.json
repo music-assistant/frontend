@@ -242,8 +242,6 @@
                 "remove_confirm": "Er du sikker på at du vil fjerne denne DSP-forhåndsinnstillingen?"
             }
         },
-        "dsp_enabled": "DSP er påslått",
-        "dsp_disabled": "DSP er avslått",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurere DSP for hver enkelt spiller."
         },
@@ -408,7 +406,6 @@
         "artist": "Artist",
         "name": "Alfabetisk",
         "name_desc": "Alfabetisk (synkende)",
-        "recent": "Nylig lagt til",
         "year_desc": "Utgivelsesår (synkende)",
         "duration_desc": "Varighet (synkende)",
         "original": "Original",
@@ -420,9 +417,7 @@
         "last_played": "Sist spilt",
         "last_played_desc": "Sist spilt (synkende)",
         "play_count": "Antall avspillinger",
-        "play_count_desc": "Antall avspillinger (synkende)",
-        "artist_name": "Album artist",
-        "artist_name_desc": "Album artist (synkende)"
+        "play_count_desc": "Antall avspillinger (synkende)"
     },
     "state": {
         "idle": "inaktiv",

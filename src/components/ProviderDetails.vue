@@ -37,11 +37,7 @@
             </v-chip>
           </template>
           <template #subtitle>
-            <span
-              v-if="
-                itemDetails.media_type == MediaType.TRACK &&
-                providerMapping.audio_format
-              "
+            <span v-if="itemDetails.media_type == MediaType.TRACK"
               >{{ providerMapping.audio_format.content_type }} |
               {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{
                 providerMapping.audio_format.bit_depth
@@ -65,10 +61,7 @@
           <template #append>
             <!-- hi res icon -->
             <v-img
-              v-if="
-                providerMapping.audio_format &&
-                providerMapping.audio_format.bit_depth > 16
-              "
+              v-if="providerMapping.audio_format.bit_depth > 16"
               :src="iconHiRes"
               width="30"
               alt=""
@@ -108,6 +101,7 @@
                 provider_domain: 'library',
                 item_id: itemDetails.item_id,
                 available: true,
+                url: null,
               })
           "
         >
@@ -148,7 +142,7 @@ import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
-  type MediaItemType,
+  type MediaItem,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -158,7 +152,7 @@ import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 export interface Props {
-  itemDetails: MediaItemType;
+  itemDetails: MediaItem;
 }
 const props = defineProps<Props>();
 
@@ -192,7 +186,14 @@ const getPreviewUrl = function (provider: string, item_id: string) {
   }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
 };
 
-const getProviderUri = function (mapping: ProviderMapping) {
+// just enough of a provider mapping to identify an item: the library entry built for
+// the menu below carries only these fields, not the full server-sent mapping
+type ProviderMappingRef = Pick<
+  ProviderMapping,
+  "provider_instance" | "provider_domain" | "item_id" | "available" | "url"
+>;
+
+const getProviderUri = function (mapping: ProviderMappingRef) {
   return `${mapping.provider_instance}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
 
@@ -223,7 +224,7 @@ const toggleExpand = function () {
   expanded.value = !expanded.value;
 };
 
-const onMenu = function (evt: Event, providerMapping: ProviderMapping) {
+const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   const mouseEvt = evt as MouseEvent;
   const menuItems = [
     {

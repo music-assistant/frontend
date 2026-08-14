@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   EventMessage,
   EventType,
@@ -68,7 +68,6 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
-import { watch } from "vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 
 export interface Props {

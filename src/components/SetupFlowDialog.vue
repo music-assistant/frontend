@@ -31,12 +31,11 @@
           <h3 v-if="step.title" class="mb-2 text-base font-semibold">
             {{ step.title }}
           </h3>
-          <p
+          <MarkdownText
             v-if="step.description"
-            class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
-          >
-            {{ step.description }}
-          </p>
+            :text="step.description"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+          />
 
           <!-- base (non-field) error -->
           <Alert
@@ -56,7 +55,7 @@
               <ConfigEntryRow
                 :conf-entry="entry"
                 :show-password-values="showPasswordValues"
-                :disabled="busy || isEntryDisabled(entry)"
+                :disabled="busy || isDisabled(entry)"
                 @update:value="onValueUpdate(entry, $event)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
                 @help="onEntryHelp(entry)"
@@ -91,14 +90,13 @@
           <h3 class="mb-2 text-base font-semibold">
             {{ step.title ?? $t("settings.setup_flow.external_default_title") }}
           </h3>
-          <p
-            class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
-          >
-            {{
+          <MarkdownText
+            :text="
               step.description ??
-              $t("settings.setup_flow.external_default_text")
-            }}
-          </p>
+              $t('settings.setup_flow.external_default_text')
+            "
+            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+          />
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
@@ -158,12 +156,11 @@
               :model-value="(step.progress || 0) * 100"
               class="w-full max-w-[320px]"
             />
-            <p
+            <MarkdownText
               v-if="step.progress_text"
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.progress_text }}
-            </p>
+              :text="step.progress_text"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
             <div
               v-if="countdownText"
               class="text-muted-foreground flex items-center justify-center gap-1.5 text-xs"
@@ -187,12 +184,11 @@
             <h3 class="text-base font-semibold">
               {{ step.title ?? $t("settings.setup_flow.success_title") }}
             </h3>
-            <p
+            <MarkdownText
               v-if="step.description"
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.description }}
-            </p>
+              :text="step.description"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
           </div>
         </template>
 
@@ -221,11 +217,10 @@
                   : $t("settings.setup_flow.aborted_title"))
               }}
             </h3>
-            <p
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.reason || $t("settings.setup_flow.aborted_text") }}
-            </p>
+            <MarkdownText
+              :text="step.reason || $t('settings.setup_flow.aborted_text')"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
           </div>
         </template>
       </div>
@@ -281,9 +276,10 @@
       <DialogHeader>
         <DialogTitle>{{ helpEntry?.label }}</DialogTitle>
       </DialogHeader>
-      <p class="text-muted-foreground text-sm whitespace-pre-wrap">
-        {{ helpEntry?.description }}
-      </p>
+      <MarkdownText
+        :text="helpEntry?.description"
+        class="text-muted-foreground text-sm"
+      />
       <DialogFooter>
         <Button
           v-if="helpEntry?.help_link"
@@ -299,6 +295,7 @@
 </template>
 
 <script setup lang="ts">
+import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -312,6 +309,12 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
+import {
+  allRequiredValuesPresent,
+  isEntryDisabled,
+  NON_INTERACTIVE_ENTRY_TYPES,
+  VALUELESS_ENTRY_TYPES,
+} from "@/helpers/config_entry_ui";
 import { api, ConnectionState } from "@/plugins/api";
 import {
   type ConfigEntry,
@@ -377,14 +380,6 @@ let expiryReconciledFor: string | null = null;
 const SESSION_ENDED_STEP_ID = "__session_ended__";
 
 // terminal steps: closing them must not abort (the flow already ended server-side)
-const PRESENTATIONAL_TYPES = [
-  ConfigEntryType.DIVIDER,
-  ConfigEntryType.LABEL,
-  ConfigEntryType.ALERT,
-  ConfigEntryType.IMAGE,
-  ConfigEntryType.ACTION,
-];
-
 const isTerminal = computed(
   () =>
     step.value?.type === FlowStepType.FINISH ||
@@ -429,24 +424,17 @@ const dialogTitle = computed(() => {
 });
 
 const visibleFormEntries = computed(() =>
-  formEntries.value.filter((entry) => !entry.hidden),
+  formEntries.value.filter(
+    (entry) =>
+      !entry.hidden &&
+      // an unmet dependency can only be expressed by hiding these types
+      !(NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) && isDisabled(entry)),
+  ),
 );
 
-const canSubmit = computed(() => {
-  if (busy.value) return false;
-  for (const entry of formEntries.value) {
-    if (PRESENTATIONAL_TYPES.includes(entry.type)) continue;
-    if (isEntryDisabled(entry)) continue;
-    if (
-      entry.required &&
-      isNullOrUndefined(entry.value) &&
-      isNullOrUndefined(entry.default_value)
-    ) {
-      return false;
-    }
-  }
-  return true;
-});
+const canSubmit = computed(
+  () => !busy.value && allRequiredValuesPresent(formEntries.value),
+);
 
 const canOpenInstanceSettings = computed(
   () => launch.value?.kind === "provider" && !!step.value?.result?.instance_id,
@@ -606,7 +594,7 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
   if (preserveValues) {
     for (const entry of formEntries.value) previous[entry.key] = entry.value;
   }
-  formEntries.value = (formStep.entries || []).map((entry) => {
+  formEntries.value = formStep.entries.map((entry) => {
     const copy: ConfigEntry = { ...entry };
     if (preserveValues && entry.key in previous) {
       copy.value = previous[entry.key];
@@ -625,7 +613,7 @@ async function submit() {
   if (!step.value || !canSubmit.value) return;
   const values: Record<string, ConfigValueType> = {};
   for (const entry of formEntries.value) {
-    if (PRESENTATIONAL_TYPES.includes(entry.type)) continue;
+    if (VALUELESS_ENTRY_TYPES.includes(entry.type)) continue;
     let value = entry.value;
     if (value === undefined) value = null;
     // don't send back the obfuscated placeholder for unchanged secure strings
@@ -772,21 +760,7 @@ function onEntryHelp(entry: ConfigEntry) {
   else if (entry.help_link) openLink(entry.help_link);
 }
 
-function isEntryDisabled(entry: ConfigEntry): boolean {
-  if (isNullOrUndefined(entry.depends_on)) return false;
-  const dependency = formEntries.value.find((e) => e.key === entry.depends_on);
-  if (!dependency) return false;
-  const dependencyValue = dependency.value;
-  if (!isNullOrUndefined(entry.depends_on_value)) {
-    return dependencyValue != entry.depends_on_value;
-  }
-  if (!isNullOrUndefined(entry.depends_on_value_not)) {
-    return dependencyValue == entry.depends_on_value_not;
-  }
-  return !dependencyValue;
-}
-
-function isNullOrUndefined(value: unknown): boolean {
-  return value === null || value === undefined;
+function isDisabled(entry: ConfigEntry): boolean {
+  return isEntryDisabled(entry, formEntries.value);
 }
 </script>

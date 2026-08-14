@@ -7,4 +7,5 @@ export const DEVICE_SETTING_KEYS = new Set([
   "enable_browser_controls",
   "force_mobile_layout",
   "mobile_sidebar_side",
+  "ha_kiosk_mode",
 ]);

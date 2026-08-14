@@ -2,6 +2,9 @@ name: Auto approve Dependabot PR's
 
 on: pull_request_target
 
+# Deny by default; only the approve job needs a token, which it grants itself below.
+permissions: {}
+
 jobs:
   auto-approve:
     runs-on: ubuntu-latest

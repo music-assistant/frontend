@@ -1,8 +1,8 @@
 {
     "actions": "Acties",
-    "add_library": "Toevoegen aan bibliotheek",
+    "add_library": "Aan bibliotheek toevoegen",
     "add_playlist": "Aan afspeellijst toevoegen...",
-    "add_queue": "Voeg toe aan wachtrij",
+    "add_queue": "Aan wachtrij toevoegen",
     "add_url_item": "Voeg item toe via URL",
     "album": "Album",
     "album_tracks": "Albumnummers",
@@ -224,7 +224,8 @@
                 "edited_channel": "Plot de EQ-respons voor dit kanaal\/deze kanalen",
                 "channel": "Deze band wordt toegepast op",
                 "per_channel_preamp": "Extra voorversterking voor {channel}",
-                "disable_multichannel_controls": "Schakel Multi-Channel bediening uit"
+                "disable_multichannel_controls": "Schakel Multi-Channel bediening uit",
+                "help": "Nauwkeurige tone shaping: elke band is gericht op een bepaalde frequentie en kan deze verzwakken of versterken. Verzwakken is veiliger dan versterken, omdat versterken tot clipping kan leiden."
             },
             "tone_control": {
                 "bass_level": "Lage tonen",
@@ -240,10 +241,16 @@
             },
             "types": {
                 "parametric_eq": "Parametrische EQ",
-                "tone_control": "Toonregeling",
+                "tone_control": "Tone Control",
                 "gain": "Gain",
-                "balance": "Balans",
-                "transpose": "Transponeren"
+                "balance": "Balance",
+                "transpose": "Transpose",
+                "stereo_width": "Stereo Width",
+                "crossfeed": "Crossfeed",
+                "convolution": "Convolution",
+                "safety_limiter": "Safety Limiter",
+                "compressor": "Compressor",
+                "high_low_pass": "High\/Low-pass"
             },
             "channels": {
                 "ALL": "Alle",
@@ -273,10 +280,17 @@
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Stel de standaardtoonhoogte zo in dat A op 432 Hz is gestemd"
             },
+            "input_gain_help": "Stelt het niveau in dat de signaalketen binnenkomt. Verlaag het om headroom over te houden voor filters die het signaal versterken.",
+            "output_gain_help": "Pas het niveau aan dat de keten verlaat, nadat alle filters zijn toegepast. Het volume van de speler wordt pas daarna ingesteld.",
+            "gain": {
+                "help": "Verhoogt of verlaagt het niveau van alles wat via dit punt in de keten verloopt."
+            },
             "balance": {
                 "help": "Verschuift het geluid naar de linker- of rechterluidspreker. Alleen van toepassing op stereogeluid."
             },
             "stereo_width": {
+                "help": "Hiermee pas je de breedte van het stereobeeld aan. Links van het midden wordt het geluid smaller (in de richting van mono), rechts wordt het breder.",
+                "clip_hint": "Als je de instelling verder opent dan ‘Original’, kan dit pieken veroorzaken en tot clipping leiden. Overweeg om na dit filter een Limiter toe te passen.",
                 "scale": {
                     "mono": "Mono",
                     "original": "Origineel",
@@ -284,15 +298,76 @@
                 }
             },
             "crossfeed": {
+                "help": "Zorgt ervoor dat het luisteren via een hoofdtelefoon natuurlijker aanvoelt door het linker- en rechterkanaal subtiel te mengen, net zoals bij het luisteren via luidsprekers.",
                 "presets": {
                     "low": "Laag",
                     "medium": "Medium",
                     "high": "Hoog"
                 }
+            },
+            "convolution": {
+                "help": "Bij convolutie wordt een opgenomen impulsrespons op het geluid toegepast — dit wordt gebruikt voor ruimte- of luidsprekercorrectie en hoofdtelefoonsimulatie. De gain moet negatief of nul zijn, aangezien een impulsrespons de gehele loudness beïnvloedt.",
+                "impulse_response": "Impulsrespons",
+                "none": "Niets geselecteerd",
+                "missing": "Impulsrespons niet beschikbaar",
+                "manage_irs": "IR-bestanden beheren",
+                "library": "Impulsresponsbibliotheek",
+                "library_help": "Impulsresponses worden omgezet en opgeslagen op de server, zodat een respons die je hier uploadt voor alle spelers beschikbaar is.",
+                "empty": "Er zijn nog geen impulsresponses geüpload.",
+                "choose_file": "Kies bestand",
+                "no_file": "Geen bestand geselecteerd",
+                "name": "Naam",
+                "upload": "Uploaden",
+                "upload_failed": "Uploaden mislukt",
+                "too_large": "Dit bestand is groter dan de limiet van {0} MiB.",
+                "remove": "Impulsrespons verwijderen",
+                "remove_confirm": "\"{0}\" verwijderen? Elk convolutiefilter dat hiervan gebruikmaakt, ongeacht de speler of preset, wordt teruggezet naar geen impulsrespons.",
+                "mono": "Mono",
+                "stereo": "Stereo",
+                "channel_count": "{0} kanalen"
+            },
+            "safety_limiter": {
+                "help": "Vangt pieken op die anders zouden clippen en je luidsprekers zouden kunnen beschadigen. Plaats het als laatste in de keten.",
+                "ceiling": "Ceiling"
+            },
+            "compressor": {
+                "help": "Brengt het volume in balans door de luidste delen te temperen, zodat de stillere details goed hoorbaar blijven.",
+                "preset": "Preset",
+                "custom": "Aangepast",
+                "threshold": "Threshold",
+                "ratio": "Ratio",
+                "attack": "Attack",
+                "release": "Release",
+                "knee": "Knee",
+                "makeup": "Makeup Gain",
+                "presets": {
+                    "light": "Light",
+                    "medium": "Medium",
+                    "heavy": "Heavy",
+                    "light_desc": "Zacht egaliseren",
+                    "medium_desc": "Gebalanceerde controle",
+                    "heavy_desc": "Stevig en krachtig"
+                }
+            },
+            "high_low_pass": {
+                "help": "Verwijdert alle frequenties aan één kant van de cutoff-requentie. Wordt vaak gebruikt om diepe bas uit kleine luidsprekers te weren.",
+                "mode_label": "Modus",
+                "mode": {
+                    "high_pass": "High-pass",
+                    "low_pass": "Low-pass"
+                },
+                "mode_desc": {
+                    "high_pass": "Verwijdert de inhoud onder de cutoff",
+                    "low_pass": "Verwijdert de inhoud boven de cutoff"
+                },
+                "slope": "Slope",
+                "slope_desc": {
+                    "12": "Gentle",
+                    "24": "Medium",
+                    "48": "Steep"
+                }
             }
         },
-        "dsp_enabled": "DSP is ingeschakeld",
-        "dsp_disabled": "DSP is uitgeschakeld",
         "dsp_note_multi_device_group": {
             "label": "Je kunt de DSP voor iedere speler apart instellen."
         },
@@ -309,7 +384,7 @@
         "playerprovider": "Spelerprovider",
         "plugin": "Plugin",
         "pluginprovider": "Pluginprovider",
-        "providers_total": "Totaal {0} provider{1}",
+        "providers_total": "In totaal {count} provider | In totaal {count} providers",
         "stage": {
             "label": "Fase",
             "options": {
@@ -428,7 +503,7 @@
         "players_count": "{0} speler{1}",
         "one_player": "1 speler",
         "view_players": "Bekijk spelers",
-        "players_total": "Totaal {0} speler{1}",
+        "players_total": "In totaal {count} speler | In totaal {count} spelers",
         "api_docs": "API-documentatie",
         "no_group_providers": "Er zijn nu geen providers die het aanmaken van groepen ondersteunen",
         "provider_codeowners": "Deze provider wordt bijgedragen\/onderhouden door",
@@ -452,7 +527,6 @@
         "remote_access_qr_code": "QR-code",
         "remote_access_qr_code_description": "Scan deze QR-code met je telefoon om snel verbinding te maken met je Music Assistant server.",
         "reset_to_defaults": "Standaardwaarden herstellen",
-        "reset_to_defaults_confirm": "Weet je zeker dat je alle instellingen wilt terugzetten naar de standaardwaarden? Deze wijziging wordt direct opgeslagen.",
         "unsaved_changes": "Niet-opgeslagen wijzigingen",
         "unsaved_changes_message": "Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je wilt vertrekken zonder op te slaan?",
         "stay": "Blijven",
@@ -632,7 +706,42 @@
             "session_ended_title": "Installatiesessie beëindigd",
             "session_ended_text": "De installatiesessie is beëindigd — mogelijk is deze voltooid. Controleer je providers of spelers om dit te bevestigen."
         },
-        "options": "Opties"
+        "options": "Opties",
+        "add_group_player_desc": "Maak een permanente spelersgroep aan met {0} spelers. Wanneer je in deze spelersgroep speelt, worden de spelers die er lid van zijn automatisch gesynchroniseerd.",
+        "server_clock_offset": "Klokverschil (server ten opzichte van dit apparaat)",
+        "action_completed": "Actie voltooid",
+        "hass_controls": {
+            "add_hass_entity": "Een Home Assistant-entiteit toevoegen...",
+            "add_entity": "Entiteit toevoegen...",
+            "title": {
+                "power_controls": "Selecteer een aan\/uit-regelaar",
+                "volume_controls": "Selecteer een volumeregelaar",
+                "mute_controls": "Selecteer een dempingsregelaar"
+            },
+            "search_placeholder": "Zoeken op entiteit, apparaat of gebied...",
+            "no_results": "Geen overeenkomende entiteiten",
+            "search_failed": "Er konden geen Home Assistant-entiteiten worden gevonden. Controleer of Home Assistant is verbonden.",
+            "truncated": "Er zijn meer resultaten dan hier kunnen worden weergegeven; verfijn je zoekopdracht om het aantal resultaten te beperken.",
+            "no_device": "Geen apparaat",
+            "no_area": "Geen ruimte",
+            "none_selected": "Geen entiteiten geselecteerd",
+            "remove_entity": "Entiteit verwijderen",
+            "already_added": "Toegevoegd",
+            "role": {
+                "power": "Aan\/uit",
+                "volume": "Volume",
+                "mute": "Dempen"
+            }
+        },
+        "known_issues": "Bekende problemen",
+        "provider_status_loaded": "Aan het uitvoeren",
+        "provider_status_loading": "Laden",
+        "provider_status_disabled": "Uitgeschakeld",
+        "provider_status_unknown": "Onbekend",
+        "player_saved": "Spelerinstellingen opgeslagen",
+        "provider_settings": "{name} instellingen",
+        "reload_provider": "Provider herladen",
+        "protocol_native_badge": "Native"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -649,7 +758,6 @@
         "artist": "Artiest",
         "name": "Alfabetisch",
         "name_desc": "Alfabetisch (aflopend)",
-        "recent": "Onlangs toegevoegd",
         "year_desc": "Jaar van uitgave (aflopend)",
         "duration_desc": "Duur (aflopend)",
         "original": "Origineel",
@@ -662,9 +770,11 @@
         "last_played_desc": "Laatst afgespeeld (aflopend)",
         "play_count": "Aantal keren afgespeeld",
         "play_count_desc": "Aantal keren afgespeeld (aflopend)",
-        "artist_name": "Albumartiest",
-        "artist_name_desc": "Albumartiest (aflopend)",
-        "album_sort_name": "Album (sorteernaam)"
+        "album_sort_name": "Album (sorteernaam)",
+        "album_artist_name": "Albumartiest",
+        "album_artist_name_desc": "Albumartiest (aflopend)",
+        "track_artist_name": "Nummerartiest",
+        "track_artist_name_desc": "Nummerartiest (aflopend)"
     },
     "state": {
         "idle": "gestopt",
@@ -739,7 +849,8 @@
         "import_file": "Bestand importeren",
         "bpm": "Tempo (beats per minuut)",
         "musical_key": "Muzikale toonsoort",
-        "show_dashboard": "Cast het dashboard naar een apparaat."
+        "show_dashboard": "Cast het dashboard naar een apparaat.",
+        "collapse_collections": "Collecties inklappen"
     },
     "topresult": "Topresultaat",
     "track": "Nummer",
@@ -750,7 +861,7 @@
     "volume_normalization": "Volumenormalisatie",
     "play_now_replace": "Nu afspelen (wachtrij wissen)",
     "currently_playing": "Speelt nu af",
-    "favorites_add": "Voeg toe aan favorieten",
+    "favorites_add": "Aan favorieten toevoegen",
     "favorites_remove": "Verwijder uit favorieten",
     "confirm_library_remove": "Weet je zeker dat je dit item wilt verwijderen uit de bibliotheek? Eventuele items die afhankelijk zijn van dit item zullen ook worden verwijderd. Als dit een lokaal bestand betreft, kan het weer terugkeren in de volgende sync, tenzij je het bestand zelf ook verwijderd.",
     "check_item_on_provider": "Bekijk {0} op {1}",
@@ -853,10 +964,10 @@
             "target_lufs": "Doelniveau: {0} LUFS",
             "measured_lufs": "Gemeten loudness: {0} LUFS",
             "applied_gain_db": "Toegepaste versterking: {0} dB",
-            "playback_speed": "Afspeelsnelheid: {0}X",
+            "playback_speed": "Afspeelsnelheid: {0}x",
             "crossfade": "Crossfade: {0}",
             "overlay_active": "Audio-overlay actief",
-            "source_channel": "Bronkanaal: {0}",
+            "source_channel": "Source-kanaal: {0}",
             "source_channel_left": "Links",
             "source_channel_right": "Rechts",
             "dsp_preset": "DSP-preset: {0}",
@@ -875,8 +986,8 @@
                 "disabled": "Uitgeschakeld",
                 "dynamic": "Dynamisch",
                 "measurement_only": "Gemeten loudness",
-                "fallback_fixed_gain": "Vaste versterking (fallback)",
-                "fixed_gain": "Vaste versterking",
+                "fallback_fixed_gain": "Vaste gain (fallback)",
+                "fixed_gain": "Vaste gain",
                 "fallback_dynamic": "Dynamische fallback"
             },
             "measurement": {
@@ -920,7 +1031,8 @@
             "bit_perfect_detail": "Bit-perfect: de audiofragmenten zijn ongewijzigd ten opzichte van de bron.",
             "samples_changed_detail": "Door audioverwerking of conversie naar een ander lossless formaat, zijn de audiosamples gewijzigd. Dit is niet bit-perfect, maar zou geen hoorbaar kwaliteitsverlies moeten veroorzaken.",
             "lossy_output_detail": "De uitvoer wordt gecodeerd met een lossy codec. Dit betekent dat de codering niet bit-perfect is en de geluidskwaliteit kan afnemen.",
-            "bit_perfect_unknown_detail": "De bit-perfect status is niet beschikbaar."
+            "bit_perfect_unknown_detail": "De bit-perfect status is niet beschikbaar.",
+            "mixed_to_mono": "Naar mono gemixt"
         },
         "processing_header": "Verwerking",
         "more_info_for": "Meer informatie over {item}"
@@ -1045,7 +1157,8 @@
         "save_changes": "Wijzigingen opslaan",
         "update_password": "Wachtwoord bijwerken",
         "guest_role": "Gast",
-        "tokens_load_failed": "Het laden van toegangstokens is mislukt"
+        "tokens_load_failed": "Het laden van toegangstokens is mislukt",
+        "users_load_failed": "Het laden van gebruikers is mislukt"
     },
     "login": {
         "subtitle": "Maak verbinding met je muziekserver",
@@ -1095,11 +1208,24 @@
         "qr_invalid": "Ongeldige QR-code. Scan een Music Assistant Externe ID QR-code.",
         "qr_camera_error": "Kon camera niet benaderen. Controleer de machtigingen.",
         "error_party_auth_failed": "Kon niet meedoen aan de party",
+        "remote_only_info": "Maak op afstand verbinding met je Music Assistant-server",
+        "server_address_hint": "Voer de volledige URL van je Music Assistant-server in",
         "connecting_ingress": "Verbinden via Home Assistant...",
         "connecting_local_party": "Verbinden met de party...",
         "connecting_remote_party": "Verbinden met de party...",
         "joining_party": "Deelnemen aan de party...",
-        "reconnecting": "Opnieuw verbinden"
+        "reconnecting": "Opnieuw verbinden",
+        "reconnecting_message": "Er wordt geprobeerd opnieuw verbinding te maken met de server...",
+        "error_ingress_failed": "Kon niet inloggen via Home Assistant",
+        "error_invalid_credentials": "Het is niet gelukt om je in te loggen. Controleer je gebruikersnaam en wachtwoord.",
+        "guest_ended_party_title": "Je quizsessie is afgelopen",
+        "guest_ended_party_message": "Vraag de host om de quizlink of QR-code opnieuw te delen, zodat je weer kunt deelnemen.",
+        "guest_ended_quiz_title": "Je quizsessie is afgelopen",
+        "guest_ended_quiz_message": "Vraag de host om de quizlink of QR-code opnieuw te delen, zodat je weer kunt deelnemen.",
+        "guest_ended_dashboard_title": "Deze dashboardsessie is beëindigd.",
+        "guest_ended_dashboard_message": "Cast het dashboard opnieuw vanuit Music Assistant om verder te gaan.",
+        "continue_to_app": "Ga verder naar Music Assistant",
+        "scan_qr_hint_guest": "Richt je camera op de QR-code die de host laat zien."
     },
     "yes": "Ja",
     "no": "Nee",
@@ -1191,7 +1317,7 @@
         "next": "Hierna afspelen (wachtrij behouden)",
         "replace": "Nu afspelen (wachtrij vervangen)",
         "replace_next": "Hierna afspelen (wachtrij vervangen)",
-        "add": "Voeg toe aan wachtrij"
+        "add": "Aan de wachtrij toevoegen"
     },
     "playlist_create_media_types": "De {0} provider ondersteunt de volgende mediatypen:",
     "playlist_mix_allowed": "Deze mediatypen kunnen gecombineerd worden.",
@@ -1499,7 +1625,9 @@
             "timeline_place_in_year": "Gedurende {0}",
             "play_along": "Doe mee",
             "host_controls": "Host bedieningselementen",
-            "return_to_host_panel": "Terug naar het hostpaneel"
+            "return_to_host_panel": "Terug naar het hostpaneel",
+            "dashboard_waiting": "Wachten tot de quiz begint",
+            "name_that_track": "Raad de titel van het nummer"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -1520,13 +1648,11 @@
                 "web_search_mode": "Webzoekmodus",
                 "character_limit": "Tekenlimiet",
                 "prompt": "Opdracht",
-                "dynamic_batch_size": "Dynamische batchgrootte",
                 "instructions": "Instructies voor presentatoren en programma’s",
                 "shuffle_playlist_tracks": "Nummers In Afspeellijst Shufflen"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximale totale afspeeltijd van de bronmuziek, in minuten. Nummers worden willekeurig geselecteerd totdat de limiet is bereikt, zodat je een willekeurige selectie uit de afspeellijst krijgt in plaats van alleen het eerste deel ervan. Laat dit veld op 0 staan als je geen limiet wilt instellen.",
-                "dynamic_batch_size": "Hoeveel nummers de host tegelijkertijd voorbereidt. Grotere batches zorgen voor minder pauzes terwijl het volgende segment wordt gegenereerd, maar ook voor een langere wachttijd voordat het programma begint te spelen.",
                 "instructions": "Hierin wordt de persoonlijkheid van de presentator beschreven en aangegeven hoe de segmenten moeten worden geschreven. Dit wordt bij elk segment naar de AI gestuurd.",
                 "shuffle_playlist_tracks": "Speel de afspeellijst van de bron in willekeurige volgorde af. Schakel deze optie uit om de volgorde van de afspeellijst zelf te volgen."
             },
@@ -1569,9 +1695,7 @@
             "toast": {
                 "playlists_truncated": "Alleen de eerste {0} afspeellijsten werden geladen.",
                 "unavailable": "AI Radio is niet ingeschakeld.",
-                "playlist_starting": "De afspeellijst wordt aangemaakt — deze verschijnt binnenkort in je bibliotheek.",
                 "live_starting": "De live-uitzending is begonnen",
-                "playlist_start_failed": "Het genereren van de afspeellijst is mislukt.",
                 "live_start_failed": "Het starten van de live radio-uitzending is mislukt",
                 "session_stopped": "AI Radio-sessie gestopt",
                 "session_stop_failed": "Het is niet gelukt om de AI Radio-sessie te beëindigen",
@@ -1597,15 +1721,12 @@
                 "stop": "Stop",
                 "stopping": "Stoppen...",
                 "on_air": "Wordt nu uitgezonden",
-                "generate_playlist": "Genereer en sla op als afspeellijst",
                 "customize": "Aanpassen",
                 "duplicate": "Dupliceren",
                 "duplicate_name": "{0} (kopie)",
                 "delete": "Verwijderen",
                 "session_failed": "De laatste poging is mislukt",
-                "open_playlist": "Open de gegenereerde afspeellijst",
                 "status_failed": "Mislukt: {0}",
-                "status_playlist_ready": "Afspeellijst klaar · {0}",
                 "status_last_on_air": "Laatst uitgezonden {0}",
                 "no_player": "Selecteer eerst een speler",
                 "start_failed": "Starten van {0} mislukt",
@@ -1617,12 +1738,7 @@
                 "preparing": "Je programma voorbereiden…",
                 "fetch_source_tracks": "Nummeren worden opgehaald…",
                 "planning_sections": "Het programma plannen…",
-                "generating_llm": "De tekst van de presentator schrijven…",
-                "generating_tts": "De stem van de presentator opnemen…",
-                "publishing_playlist": "Afspeellijst publiceren…",
-                "initializing_queue": "De wachtrij wordt voorbereid…",
-                "queueing_batch": "Muziek wordt geladen…",
-                "waiting_for_playback": "Wachten op het afspelen…"
+                "initializing_queue": "De wachtrij wordt voorbereid…"
             },
             "create": {
                 "title": "Een programma maken",
@@ -1692,7 +1808,7 @@
     "background_tasks": {
         "title": "Achtergrondtaken",
         "description": "Monitor geplande taken en recente, langlopende acties.",
-        "total": "Totaal {0} achtergrondtaak\/-taken",
+        "total": "In totaal {count} achtergrondtaak | In totaal {count} achtergrondtaken",
         "clear_finished": "Wis voltooide",
         "empty_title": "Geen achtergrondtaken",
         "empty_description": "Geplande taken en langlopende acties worden hier weergegeven.",
@@ -1824,7 +1940,7 @@
     "audio_source": "Audiobron",
     "change_playback_speed": "Afspeelsnelheid wijzigen",
     "shortcut": {
-        "add_to": "Toevoegen aan snelkoppelingen",
+        "add_to": "Aan snelkoppelingen toevoegen",
         "remove_from": "Snelkoppeling verwijderen"
     },
     "smart_playlist": {
@@ -2031,5 +2147,29 @@
     },
     "reconfigure_player": "Speler opnieuw configureren",
     "configure_player": "Speler configureren",
-    "plugins": "Plugins"
+    "plugins": "Plugins",
+    "queue_ended": "Afspelen voltooid",
+    "play_from_beginning": "Vanaf het begin afspelen",
+    "audiobooks_in_collection": "Luisterboeken in deze collectie",
+    "collection_no_audiobooks": "Deze collectie bevat geen luisterboeken.",
+    "error_generic": "Er is een fout opgetreden. Probeer het nog eens.",
+    "artist_no_library_audiobooks": "Je hebt geen luisterboeken van deze auteur\/voorlezer in je bibliotheek.",
+    "artist_all_audiobooks": "Alle luisterboeken",
+    "lights": "Lichten",
+    "speakers_in_group": "Luidsprekers in de groep",
+    "visualizers": "Visualizers",
+    "volume": "Volume",
+    "grouped_volume": "Gegroepeerd volume",
+    "player_select": {
+        "active_player_volume_only": "Volumeschuifregelaars alleen voor actieve spelers weergeven",
+        "and_more": "...en {0} meer",
+        "disable_player_confirmation": "Deze speler blijft verborgen totdat hij opnieuw wordt ingeschakeld in de instellingen van de speler.",
+        "disable_player_title": "{0} uitschakelen?",
+        "display_options": "Weergaveopties",
+        "rename_player": "Speler hernoemen",
+        "rename_player_description": "Voer een nieuwe naam in voor deze speler.",
+        "show_active_players_first": "Actieve spelers eerst weergeven",
+        "show_grouped_players": "Groepsleden weergeven",
+        "show_selected_player_first": "Geselecteerde speler als eerste weergeven"
+    }
 }

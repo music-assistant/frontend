@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiCommandError } from "@/plugins/api/errors";
 
 const {
   mockGetMusicQuizInfo,
@@ -124,16 +125,10 @@ vi.mock("@/helpers/music_quiz", () => ({
   getStoredMusicQuizPlayerName: mockGetStoredPlayerName,
   clearStoredMusicQuizPlayerId: mockClearStoredPlayerId,
   getMusicQuizErrorMessage: mockGetMusicQuizErrorMessage,
-  isNoActiveGameError: (err: unknown) => {
-    const message = (
-      err instanceof Error ? err.message : typeof err === "string" ? err : ""
-    ).toLowerCase();
-    return (
-      message.includes("no active game") ||
-      message.includes("no active music quiz game") ||
-      (message.includes("no active") && message.includes("music quiz"))
-    );
-  },
+  isNoActiveGameError: (err: unknown) =>
+    err instanceof ApiCommandError && err.error_code === 1001,
+  isUnknownPlayerError: (err: unknown) =>
+    err instanceof ApiCommandError && err.error_code === 1009,
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -632,7 +627,9 @@ describe("useMusicQuizPlayer", () => {
 
   it("recovers from a stale player token by returning to the join/info state", async () => {
     storedPlayerId.value = "stale-player";
-    mockGetMusicQuizState.mockRejectedValue(new Error("player not found"));
+    mockGetMusicQuizState.mockRejectedValue(
+      new ApiCommandError("Speler niet gevonden.", 1009),
+    );
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
 
     const player = useMusicQuizPlayer({ notifyError: vi.fn() });
@@ -645,10 +642,10 @@ describe("useMusicQuizPlayer", () => {
     expect(storedPlayerId.value).toBeNull();
   });
 
-  it("recovers from a no-active-game error (string rejection) without a toast", async () => {
+  it("recovers from a no-active-game error in any locale without a toast", async () => {
     storedPlayerId.value = "some-player";
     mockGetMusicQuizState.mockRejectedValue(
-      "There is no active Music Quiz game",
+      new ApiCommandError("Er is geen actief Music Quiz spel.", 1001),
     );
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
     const notifyError = vi.fn();

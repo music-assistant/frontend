@@ -1,8 +1,14 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
+    <!-- dynamic station: content is generated on the fly, so show a sample instead of "other versions" -->
+    <DynamicItemSample
+      v-if="itemDetails && itemDetails.is_dynamic"
+      :item-details="itemDetails"
+      :provider="props.provider"
+    />
     <ItemsListing
-      v-if="itemDetails"
+      v-else-if="itemDetails"
       itemtype="radioversions"
       :parent-item="itemDetails"
       :show-provider="true"
@@ -14,7 +20,6 @@
       :sort-keys="['provider', 'sort_name']"
       :title="$t('other_versions')"
       :hide-on-empty="true"
-      :checksum="provider + itemId"
     />
     <br />
     <!-- provider mapping details -->
@@ -25,6 +30,7 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
+import DynamicItemSample from "@/components/DynamicItemSample.vue";
 import { ref, watch, onMounted, onBeforeUnmount } from "vue";
 import {
   EventType,

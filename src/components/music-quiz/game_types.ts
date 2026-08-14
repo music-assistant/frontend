@@ -50,6 +50,9 @@ export interface MusicQuizGameDefinition<
   supportsListenIn: MusicQuizStateCapability;
   usesRevealCountdown?: boolean;
   revealPhaseLabelKey: string;
+  // shown by the dashboard while answering, for games whose present adapter
+  // renders nothing then (audio-only guessing)
+  answeringPromptKey?: string;
   adapters: {
     setup: Component;
     player: Component;
@@ -74,6 +77,7 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     requiresBackendAvailability: false,
     supportsListenIn: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_enjoy_track",
+    answeringPromptKey: "providers.music_quiz.name_that_track",
     adapters: {
       setup: markRaw(GuessTheSongSetup),
       player: markRaw(GuessTheSongPlayerRound),

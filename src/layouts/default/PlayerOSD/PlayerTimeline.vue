@@ -30,7 +30,7 @@
             v-if="!hasWaveform"
             class="absolute inset-0 rounded-full"
             :style="trackBackgroundStyle"
-          />
+          ></div>
           <WaveformTrack
             v-else
             :data="waveform!"
@@ -121,7 +121,11 @@
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { MediaType, type MediaItemChapter } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  PlaybackState,
+  type MediaItemChapter,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
@@ -185,27 +189,40 @@ const wrappedCurTimeValue = computed<number[]>({
   },
 });
 
-const startTick = () => {
-  if (rafId === null) {
-    const tick = () => {
-      const now = Date.now();
-      if (now - nowTick.value >= 64) {
-        nowTick.value = now;
-      }
-      rafId = requestAnimationFrame(tick);
-    };
+const startRaf = () => {
+  if (rafId !== null) return;
+  const tick = () => {
+    const now = Date.now();
+    if (now - nowTick.value >= 64) {
+      nowTick.value = now;
+    }
     rafId = requestAnimationFrame(tick);
-  }
+  };
+  rafId = requestAnimationFrame(tick);
+};
+
+const stopRaf = () => {
+  if (rafId === null) return;
+  cancelAnimationFrame(rafId);
+  rafId = null;
+};
+
+const startTick = () => {
+  // The slider is scaled by the media duration, so without one (radio, or a
+  // player that only reports a bare elapsed_time) it stays pinned and the time
+  // label is the only thing that moves; the 1s interval alone keeps that fresh.
+  // Reading the duration here also makes it a dependency of the computed that
+  // drives the tick, so the rAF loop follows a duration arriving or going away.
+  if (store.activePlayer?.current_media?.duration) startRaf();
+  else stopRaf();
+
   if (fallbackTimer === null) {
     fallbackTimer = setInterval(() => (nowTick.value = Date.now()), 1000);
   }
 };
 
 const stopTick = () => {
-  if (rafId !== null) {
-    cancelAnimationFrame(rafId);
-    rafId = null;
-  }
+  stopRaf();
   if (fallbackTimer !== null) {
     clearInterval(fallbackTimer);
     fallbackTimer = null;
@@ -273,20 +290,14 @@ const playerTotalTimeStr = computed(() => {
 const serverTiming = computed(() => resolveActiveTiming());
 
 const serverElapsedTime = computed(() => {
-  // include nowTick.value so this computed re-evaluates periodically while mounted
-  // and updates UI for fallback player-level current_media that relies on Date.now()
+  // include nowTick.value so this computed re-evaluates periodically while
+  // mounted; the resolved position extrapolates from the current time, which is
+  // not reactive by itself
   void nowTick.value;
 
-  // Adaptive tick: only run the timer when we have a playing source that relies on time progression
-  const isPlaying = store.activePlayer?.playback_state === "playing";
-  const usingQueue = !!(
-    store.activePlayerQueue && store.activePlayerQueue.active
-  );
-  const hasCurrentMedia =
-    store.activePlayer?.current_media?.elapsed_time != null;
-
-  // Start ticking when playing and either using queue or external current_media
-  if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
+  // Adaptive tick: the resolved position only advances on its own while the
+  // source it came from is playing.
+  if (serverTiming.value?.playbackState === PlaybackState.PLAYING) startTick();
   else stopTick();
 
   return resolveActiveElapsedTime() ?? 0;
@@ -307,7 +318,7 @@ const displayedElapsedTime = computed(() => {
 
 const chapterTicks = computed(() =>
   computeChapterTicks(
-    store.curQueueItem?.media_item?.metadata?.chapters,
+    store.curQueueItem?.media_item?.metadata.chapters,
     store.activePlayer?.current_media?.duration,
   ),
 );
@@ -351,11 +362,17 @@ watch(serverTiming, (timing) => {
   }
 });
 
-watch(displayedElapsedTime, (newTime) => {
-  if (!isDragging.value) {
-    curTimeValue.value = newTime;
-  }
-});
+// immediate, so a fresh mount adopts the position that is already playing or
+// paused; a paused one never changes again to trigger the watcher
+watch(
+  displayedElapsedTime,
+  (newTime) => {
+    if (!isDragging.value) {
+      curTimeValue.value = newTime;
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   () => store.curQueueItem?.queue_item_id,

@@ -61,6 +61,7 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_failed": "Play action failed",
+    "lights": "Lights",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -68,6 +69,18 @@
         "sync_group": "Sync Group"
     },
     "players": "Players",
+    "player_select": {
+        "active_player_volume_only": "Only show volume sliders for active players",
+        "and_more": "...and {0} more",
+        "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
+        "disable_player_title": "Disable {0}?",
+        "display_options": "Display options",
+        "rename_player": "Rename player",
+        "rename_player_description": "Enter a new name for this player.",
+        "show_active_players_first": "Show active players first",
+        "show_grouped_players": "Show group members",
+        "show_selected_player_first": "Show selected player first"
+    },
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
@@ -97,8 +110,11 @@
         "configure": "Configure",
         "options": "Options",
         "delete": "Delete",
+        "delete_player_title": "Delete {0}?",
+        "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
         "disable": "Disable",
         "documentation": "Documentation",
+        "known_issues": "Known issues",
         "enable": "Enable",
         "enable_player": "Enable this player",
         "enable_provider": "Enable this provider entry",
@@ -117,6 +133,7 @@
         "player_name": "Custom player name",
         "player_not_available": "This player is not (yet) available",
         "player_provider": "Provider",
+        "player_saved": "Player settings saved",
         "player_settings": "Player settings",
         "player_type_label": "Player type",
         "playerproviders": "Player providers",
@@ -124,8 +141,10 @@
         "pluginproviders": "Plugin providers",
         "provider_disabled": "This provider entry is disabled",
         "provider_name": "Custom name for this provider entry",
+        "provider_settings": "{name} provider settings",
         "providers": "Providers",
         "reload": "Reload",
+        "reload_provider": "Reload provider",
         "save": "Save",
         "settings": "Settings",
         "setup_provider": "Setup provider: {0}",
@@ -204,8 +223,8 @@
             "disabled_message": "DSP is currently disabled. Enable it using the switch above",
             "input": "Input",
             "output": "Output",
-            "input_gain_help": "Sets the level going into the chain. Lower it to leave headroom for filters that boost.",
-            "output_gain_help": "Adjusts the level leaving the chain, after every filter has been applied. Player volume is applied later.",
+            "input_gain_help": "Sets the level going into the pipeline. Lower it to leave headroom for filters that boost.",
+            "output_gain_help": "Adjusts the level leaving the pipeline, after every filter has been applied. Player volume is applied later.",
             "filter": {
                 "add": "Add Filter",
                 "type": "Filter Type",
@@ -247,7 +266,7 @@
                 "treble_level": "Treble Level"
             },
             "gain": {
-                "help": "Raises or lowers the level of everything passing through this point in the chain."
+                "help": "Raises or lowers the level of everything passing through this point in the pipeline."
             },
             "balance": {
                 "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
@@ -260,6 +279,47 @@
                 "unit_singular": "semitone",
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Set the concert pitch so A is tuned to 432 Hz"
+            },
+            "safety_limiter": {
+                "help": "Catches peaks that would otherwise clip and may damage your speakers. Place it last in the pipeline.",
+                "ceiling": "Ceiling"
+            },
+            "compressor": {
+                "help": "Evens out the volume by turning down the loudest parts, so quieter detail stays audible.",
+                "preset": "Preset",
+                "custom": "Custom",
+                "threshold": "Threshold",
+                "ratio": "Ratio",
+                "attack": "Attack",
+                "release": "Release",
+                "knee": "Knee",
+                "makeup": "Makeup Gain",
+                "presets": {
+                    "light": "Light",
+                    "medium": "Medium",
+                    "heavy": "Heavy",
+                    "light_desc": "Gentle leveling",
+                    "medium_desc": "Balanced control",
+                    "heavy_desc": "Firm and punchy"
+                }
+            },
+            "high_low_pass": {
+                "help": "Removes everything on one side of the cutoff frequency. Often used to keep deep bass away from small speakers.",
+                "mode_label": "Mode",
+                "mode": {
+                    "high_pass": "High-pass",
+                    "low_pass": "Low-pass"
+                },
+                "mode_desc": {
+                    "high_pass": "Removes content below the cutoff",
+                    "low_pass": "Removes content above the cutoff"
+                },
+                "slope": "Slope",
+                "slope_desc": {
+                    "12": "Gentle",
+                    "24": "Medium",
+                    "48": "Steep"
+                }
             },
             "convolution": {
                 "help": "Convolution applies a recorded impulse response to the audio \u2014 used for room or speaker correction and headphone simulation. Gain should be negative or zero, as an impulse response changes overall loudness.",
@@ -311,6 +371,9 @@
                 "gain": "Gain",
                 "balance": "Balance",
                 "transpose": "Transpose",
+                "safety_limiter": "Safety Limiter",
+                "compressor": "Compressor",
+                "high_low_pass": "High/Low-pass",
                 "convolution": "Convolution",
                 "stereo_width": "Stereo Width",
                 "crossfeed": "Crossfeed"
@@ -335,13 +398,34 @@
                 "selected": "Preset: {0}"
             }
         },
-        "dsp_enabled": "DSP is enabled",
-        "dsp_disabled": "DSP is disabled",
         "dsp_note_multi_device_group": {
             "label": "You can configure the DSP for each player individually."
         },
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
+        },
+        "hass_controls": {
+            "add_hass_entity": "Add a Home Assistant entity...",
+            "add_entity": "Add entity...",
+            "title": {
+                "power_controls": "Select a power control",
+                "volume_controls": "Select a volume control",
+                "mute_controls": "Select a mute control"
+            },
+            "search_placeholder": "Search by entity, device or area...",
+            "no_results": "No matching entities",
+            "search_failed": "Could not search Home Assistant entities. Check that Home Assistant is connected.",
+            "truncated": "More entities match than can be shown here, refine your search to narrow it down.",
+            "no_device": "No device",
+            "no_area": "No area",
+            "none_selected": "No entities selected",
+            "remove_entity": "Remove entity",
+            "already_added": "Added",
+            "role": {
+                "power": "Power",
+                "volume": "Volume",
+                "mute": "Mute"
+            }
         },
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",
@@ -372,6 +456,7 @@
         "providers_description": "Manage your music sources, player providers and plugins",
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",
+        "visualizer_description": "Quality, presets and favorites for the MilkDrop music visualizer",
         "provider_type": "Type",
         "onboarding_title": "Welcome to Music Assistant!",
         "profile_description": "Manage your personal account settings and preferences",
@@ -469,6 +554,7 @@
         "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
         "frontend": "User Interface",
+        "visualizer": "Visualizer",
         "players_count": "{0} player{1}",
         "one_player": "1 player",
         "view_players": "View players",
@@ -496,7 +582,6 @@
         "remote_access_qr_code": "QR Code",
         "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
         "reset_to_defaults": "Reset to defaults",
-        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately.",
         "unsaved_changes": "Unsaved changes",
         "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
         "stay": "Stay",
@@ -526,6 +611,10 @@
                 "left": "Left",
                 "right": "Right"
             }
+        },
+        "ha_kiosk_mode": {
+            "label": "Use the full screen in Home Assistant",
+            "description": "Hide the Home Assistant header and sidebar so Music Assistant gets the whole screen. The Home Assistant button in the menu brings them back."
         },
         "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
@@ -625,9 +714,13 @@
             "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
             "open_settings": "Open Streams settings"
         },
+        "provider_status_loaded": "Running",
+        "provider_status_loading": "Loading",
+        "provider_status_disabled": "Disabled",
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
         "provider_status_error": "Setup failed",
+        "provider_status_unknown": "Unknown",
         "remove_provider": "Remove provider",
         "remove_provider_confirm": "Remove this provider? This cannot be undone.",
         "save_failed": "Couldn't save the provider settings",
@@ -636,7 +729,11 @@
         "provider_saved": "Provider settings saved",
         "provider_reloading": "Reloading provider…",
         "provider_removed": "Provider removed",
+        "action_completed": "Action completed",
         "queue_settings": "Queue settings",
+        "queue_settings_description": "Playback settings for the queue this player plays from",
+        "dsp_description": "Filters and gain applied to everything this player plays",
+        "player_options_description": "Options and readings the player itself offers",
         "audio_analysis_failures": {
             "title": "Audio Analysis Failures",
             "description": "Tracks that failed analysis are skipped on future scans. Delete an entry to clear the failure and let it be analyzed again.",
@@ -661,7 +758,8 @@
         "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
         "queue_global_settings_link": "Open global queue settings",
         "protocol_provider_unavailable": "The provider for this output protocol is currently unavailable.",
-        "protocol_multi_info": "This player supports multiple output protocols. Music Assistant links them automatically so they act as a single player — enable the ones you want to use.",
+        "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
+        "protocol_native_badge": "Native",
         "protocol_enable_label": "Enable output protocols",
         "protocol_configure_title": "Configure {name}",
         "protocol_configure_label": "Configure output protocols",
@@ -669,6 +767,18 @@
         "show_waveform": {
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
+        },
+        "visualizer_enabled": {
+            "label": "MilkDrop visualizer",
+            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu."
+        },
+        "visualizer_blur": {
+            "label": "Visualizer blur",
+            "description": "Softens the visualizer for a calmer background. 0 disables blur."
+        },
+        "visualizer_opacity": {
+            "label": "Visualizer opacity",
+            "description": "Lower values blend the album colors through. Above 50% the view switches to a dark look with light text."
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
@@ -679,6 +789,7 @@
         }
     },
     "show_info": "Show info",
+    "speakers_in_group": "Speakers in group",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
     "sort": {
@@ -693,7 +804,6 @@
         "artist": "Artist",
         "name": "Alphabetically",
         "name_desc": "Alphabetically (descending)",
-        "recent": "Recently added",
         "year_desc": "Release year (descending)",
         "duration_desc": "Duration (descending)",
         "original": "Original",
@@ -706,8 +816,10 @@
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
         "play_count_desc": "Play count (descending)",
-        "artist_name": "Album artist",
-        "artist_name_desc": "Album artist (descending)",
+        "album_artist_name": "Album artist",
+        "album_artist_name_desc": "Album artist (descending)",
+        "track_artist_name": "Track artist",
+        "track_artist_name_desc": "Track artist (descending)",
         "album_sort_name": "Album (sort name)"
     },
     "state": {
@@ -767,6 +879,8 @@
         "exit_fullscreen": "Exit fullscreen",
         "decrease_offset": "Decrease offset",
         "increase_offset": "Increase offset",
+        "volume_down": "Volume down",
+        "volume_up": "Volume up",
         "toggle_queue": "Toggle queue",
         "select_player": "Select player",
         "show_dashboard": "Cast dashboard to a device",
@@ -807,6 +921,8 @@
     "recently_played": "Recently played",
     "load_more_items": "Load more items...",
     "radio": "Radio",
+    "dynamic_radio_heading": "Dynamic station",
+    "dynamic_radio_empty_desc": "This station didn't return any tracks. Try again in a moment.",
     "muted": "muted",
     "enter_name": "Enter a new (custom) name",
     "image_url": "Input the URL to an image or icon (optional)",
@@ -854,6 +970,7 @@
     "duration_in_seconds": "{0} seconds",
     "mark_played": "Mark as played",
     "mark_unplayed": "Mark as unplayed",
+    "mark_played_partial_failure": "Could not update {0} episode(s)",
     "searchtype_all": "All",
     "global_search": "Global search",
     "podcast_episode": "Episode",
@@ -925,6 +1042,7 @@
             "source_channel": "Source channel: {0}",
             "source_channel_left": "Left",
             "source_channel_right": "Right",
+            "mixed_to_mono": "Mixed to mono",
             "dsp_preset": "DSP preset: {0}",
             "dsp_preset_label": "DSP preset",
             "dsp_title": "DSP",
@@ -1178,6 +1296,8 @@
         "click_to_change": "Click below to change output device"
     },
     "more_options": "More options",
+    "visualizers": "Visualizers",
+    "volume": "Volume",
     "edit": "Edit",
     "authors": "Authors",
     "collection": "Collection",
@@ -1206,6 +1326,7 @@
     "delete_genre": "Delete genre",
     "description": "Description",
     "genre": "Genre",
+    "grouped_volume": "Grouped volume",
     "genres": "Genres",
     "link": "Link",
     "link_alias": "Link alias",
@@ -1284,7 +1405,10 @@
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "instructions": "Host and Program Instructions"
+                "instructions": "Host and Program Instructions",
+                "voice": "Voice",
+                "language": "Language",
+                "host": "Host"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximum total playing time of the source music, in minutes. Tracks are taken in the order the show plays them until the cap is reached. Leave at 0 for no limit.",
@@ -1325,7 +1449,9 @@
                 "discard_changes_title": "Discard changes?",
                 "discard_changes": "You have unsaved changes that will be lost.",
                 "delete_station_title": "Delete station?",
-                "delete_station": "Delete this station?"
+                "delete_station": "Delete this station?",
+                "delete_host_title": "Delete host?",
+                "delete_host": "Delete this host?"
             },
             "toast": {
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
@@ -1338,12 +1464,17 @@
                 "station_save_failed": "Failed to save station",
                 "station_deleted": "Station deleted",
                 "station_duplicated": "Station duplicated",
-                "session_failed": "AI Radio run failed: {0}"
+                "session_failed": "AI Radio run failed: {0}",
+                "host_saved": "Host saved",
+                "host_deleted": "Host deleted",
+                "tts_engines_load_failed": "Failed to load voice options"
             },
             "header": {
                 "subtitle": "Turn a playlist into a radio show with an AI host."
             },
             "gallery": {
+                "title": "Shows",
+                "add_show": "Add show",
                 "empty_title": "Create your first show",
                 "empty_description": "AI Radio turns one of your playlists into a radio show with an AI host. AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host — configure one under Settings → Plugins.",
                 "create_cta": "Create show",
@@ -1354,7 +1485,6 @@
                 "play": "Play",
                 "starting": "Starting...",
                 "stop": "Stop",
-                "stopping": "Stopping...",
                 "on_air": "On air",
                 "customize": "Customize",
                 "duplicate": "Duplicate",
@@ -1369,20 +1499,13 @@
                 "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
                 "switch_show_confirm_label": "Switch"
             },
-            "phase": {
-                "preparing": "Preparing your show…",
-                "fetch_source_tracks": "Fetching tracks…",
-                "planning_sections": "Planning the show…",
-                "initializing_queue": "Preparing the queue…"
-            },
             "create": {
                 "title": "Create a show",
-                "description": "Pick a playlist, a host style, and how chatty it should be.",
+                "description": "Pick a playlist and a host for your show.",
                 "playlist_label": "Source playlist",
                 "playlist_placeholder": "Choose a playlist",
+                "playlist_search": "Search playlists",
                 "playlist_empty": "No playlists found",
-                "preset_label": "Host style",
-                "talk_label": "Talkativeness",
                 "name_label": "Show name",
                 "default_name": "{0} — {1}",
                 "create": "Create",
@@ -1390,31 +1513,9 @@
                 "creating": "Creating...",
                 "validation": {
                     "playlist_required": "Choose a source playlist",
+                    "host_required": "Choose a host",
                     "name_required": "Show name is required"
                 }
-            },
-            "presets": {
-                "morning_show": {
-                    "name": "Morning show",
-                    "description": "Warm, upbeat host with weather and news breaks."
-                },
-                "minimal_dj": {
-                    "name": "Minimal DJ",
-                    "description": "Calm, understated transitions that stay out of the way."
-                },
-                "music_nerd": {
-                    "name": "Music nerd",
-                    "description": "Shares artist facts and trivia between songs."
-                },
-                "party_host": {
-                    "name": "Party host",
-                    "description": "High-energy shout-outs to keep the party going."
-                }
-            },
-            "talk": {
-                "rarely": "Rarely",
-                "normal": "Normal",
-                "chatty": "Chatty"
             },
             "prereq": {
                 "title": "AI provider needed",
@@ -1426,16 +1527,60 @@
                 "save": "Save show",
                 "advanced": "Advanced",
                 "basics_title": "Basics",
+                "personality_title": "Personality",
                 "segments_title": "Segments",
                 "segments_empty": "No segments yet — add one to get started.",
                 "add_segment": "Add segment",
                 "blank_segment": "Blank segment",
                 "blank_segment_name": "New segment",
+                "segment_templates": {
+                    "intro": "Intro",
+                    "transition": "Transition",
+                    "weather": "Weather",
+                    "news": "News",
+                    "artist_fact": "Artist fact",
+                    "sign_off": "Sign-off"
+                },
                 "segment_name": "Segment name",
+                "tts_options_title": "Advanced TTS options",
+                "tts_options_help": "Only add keys your selected engine supports, since an unsupported key can make it reject the whole clip.",
+                "option_key": "Option key",
+                "option_key_placeholder": "e.g. voice",
+                "option_value": "Option value",
+                "option_value_placeholder": "e.g. en_US-lessac-medium",
+                "add_option": "Add option",
+                "remove_option": "Remove option",
                 "use_current_player": "Use current player",
-                "lossy_warning_title": "Simplified on save",
-                "lossy_warning_description": "This show uses an advanced configuration that can't be fully represented here. Saving will rewrite it in the simplified segment format above.",
-                "prompt_placeholders_hint": "Available placeholders: {placeholders}"
+                "host_placeholder": "Choose a host",
+                "host_required": "Choose a host before saving",
+                "no_hosts_hint": "You need a host before you can save this show.",
+                "create_host_cta": "Create a host",
+                "prompt_placeholders_label": "Placeholders — tap to copy:",
+                "prompt_placeholder_copied": "Copied {0} to clipboard",
+                "prompt_placeholder_copy_failed": "Failed to copy {0} to clipboard",
+                "prompt_placeholder_copy_aria": "Copy {0}"
+            },
+            "hosts": {
+                "title": "Hosts",
+                "add_host": "Add host",
+                "blank_host": "Blank host",
+                "card": {
+                    "edit": "Edit"
+                },
+                "editor": {
+                    "title": "Customize host",
+                    "save": "Save host",
+                    "name_label": "Host name",
+                    "default_voice": "Default",
+                    "default_language": "Follow server language",
+                    "validation": {
+                        "name_required": "Host name is required",
+                        "duplicate_name": "A host named «{0}» already exists",
+                        "name_check_failed": "Couldn't verify the name is unique. Nothing was saved",
+                        "segments_required": "Add at least one segment",
+                        "segment_prompt_required": "Every segment needs a prompt"
+                    }
+                }
             }
         },
         "party": {
@@ -1578,6 +1723,8 @@
             "leaderboard": "Leaderboard",
             "invite_players": "Invite players",
             "qr_unavailable": "Could not render QR code",
+            "dashboard_waiting": "Waiting for the quiz to start",
+            "name_that_track": "Name that track",
             "copied": "Copied",
             "copy_link": "Copy link",
             "join_link_copied": "Join link copied",
@@ -1869,10 +2016,48 @@
     "edit_track": "Edit track",
     "uri_read_only": "URI (read-only)",
     "lyrics_offset": "Lyrics offset",
+    "visualizer": {
+        "title": "MilkDrop",
+        "preset_random": "Random preset",
+        "open_settings": "Visualizer settings",
+        "toggle": "Toggle the MilkDrop visualizer",
+        "preset_random_favorites": "Random from favorites",
+        "toggle_favorite": "Favorite this preset",
+        "provider_missing": "The MilkDrop Visualizer plugin is not installed or unavailable. Add it under Settings > Providers to use the visualizer.",
+        "section_general": "Appearance",
+        "section_presets": "Presets",
+        "quality": "Render quality",
+        "quality_description": "Higher tiers render sharper visuals at more GPU/CPU cost. Use low on tablets and TVs.",
+        "quality_options": {
+            "low": "Low (tablets / TVs)",
+            "medium": "Medium",
+            "high": "High",
+            "native": "Native"
+        },
+        "preset_mode": "Preset selection",
+        "preset_mode_description": "How the visualizer chooses which MilkDrop preset to show.",
+        "preset_mode_options": {
+            "random": "Random from all presets",
+            "random_favorites": "Random from favorites",
+            "fixed": "Fixed preset"
+        },
+        "fixed_preset": "Preset",
+        "beat_switch": "Switch preset on downbeat",
+        "beat_switch_description": "Switch to another preset on a downbeat. Overrides a fixed preset.",
+        "beat_dwell": "Minimum time between switches",
+        "beat_dwell_description": "How long a preset stays on screen before a downbeat may switch it.",
+        "favorites": "Favorite presets",
+        "no_favorites": "No favorites yet. Star the current preset in the fullscreen player.",
+        "remove_favorite": "Remove favorite",
+        "credits": "Credits",
+        "credits_butterchurn": "Rendering powered by Butterchurn by Jordan Berg (MIT license), the WebGL implementation of MilkDrop 2.",
+        "credits_milkdrop": "MilkDrop was originally created by Ryan Geiss as a visualizer for Winamp. Presets are the work of the MilkDrop preset community, bundled via butterchurn-presets."
+    },
     "similar_tracks": "Similar tracks",
     "similar_artists": "Similar artists",
     "audio_source": "Audio source",
     "change_playback_speed": "Change playback speed",
+    "playback_speed_value": "{0}x",
     "shortcut": {
         "add_to": "Add to shortcuts",
         "remove_from": "Remove from shortcuts"
@@ -1918,6 +2103,7 @@
         "no_rules_desc": "Tracks are picked from your entire library at random. Add a rule to narrow the selection.",
         "no_rules_title": "All library tracks",
         "op_between": "between",
+        "picker_search": "Search {label}",
         "picker_empty_no_match": "No {label} matches your search.",
         "picker_empty_remote": "Type to search for a {label}.",
         "picker_empty_search": "Type at least 2 characters to find a {label}.",
@@ -1973,8 +2159,10 @@
     "artist_topalbums": "Top albums",
     "in_library": "In your library",
     "artist_no_library_albums": "You don't have any albums in your library for this artist.",
+    "artist_no_library_audiobooks": "You don't have any audiobooks in your library for this author/narrator.",
     "artist_no_library_tracks": "You don't have any tracks in your library for this artist.",
     "artist_all_albums": "All albums",
+    "artist_all_audiobooks": "All audiobooks",
     "artist_all_tracks": "All tracks",
     "on_provider": "On {0}",
     "open_queue_settings": "Open queue settings",
@@ -2006,8 +2194,8 @@
     "lyrics_show": "Show lyrics for this track",
     "lyrics_hide": "Hide lyrics for this track",
     "lyrics_loading": "Lyrics are being fetched...",
-    "show_audio_chain_details": "Show audio chain details",
-    "show_audio_chain_details_for_quality": "Show audio chain details ({quality})",
+    "show_audio_chain_details": "Show audio pipeline details",
+    "show_audio_chain_details_for_quality": "Show audio pipeline details ({quality})",
     "show_less": "Show less",
     "show_more": "Show more",
     "autoplay_on_title": "Autoplay is enabled",
@@ -2015,6 +2203,7 @@
     "autoplay_off_title": "Autoplay is disabled",
     "autoplay_off_desc": "Your music will stop once the queue has finished. Enable Autoplay to automatically keep it going with more content based on your preferences.",
     "open_player_settings": "Open player settings",
+    "open_settings": "Settings",
     "configure_player": "Configure player",
     "reconfigure_player": "Reconfigure player",
     "sleep_timer": "Sleep timer",
@@ -2052,6 +2241,29 @@
     "audio_overlay_select_sound": "Select a sound",
     "audio_overlay_volume": "Volume",
     "audio_overlay_no_sounds": "No overlay sounds available. Add a provider that offers sound effects.",
+    "play_announcement": "Play announcement",
+    "play_announcement_explanation": "Speak a message out loud on {0}.",
+    "play_announcement_message": "Message",
+    "play_announcement_message_placeholder": "Dinner is ready!",
+    "play_announcement_pre_announce": "Play a chime first",
+    "play_announcement_playing": "Playing...",
+    "play_announcement_volume": "Volume",
+    "play_announcement_volume_default": "Player default",
+    "play_announcement_send": "Announce",
+    "play_announcement_sent": "Announcement sent to {0}",
+    "play_announcement_mode_type": "Type a message",
+    "play_announcement_mode_speak": "Speak",
+    "play_announcement_hold_to_speak": "Hold the button and speak",
+    "play_announcement_connecting": "Connecting...",
+    "play_announcement_speaking": "Speaking",
+    "play_announcement_finishing": "Finishing...",
+    "play_announcement_mic_denied": "Music Assistant is not allowed to use the microphone.",
+    "play_announcement_mic_failed": "The microphone could not be started.",
+    "play_announcement_live_failed": "The announcement could not be played.",
+    "ai_dj": "Enable AI Radio DJ",
+    "ai_dj_off": "Off",
+    "ai_dj_show_on_air": "On air: {0}",
+    "ai_dj_show_on_air_unknown": "A show is on air",
     "menu_edit_enable": "Edit menu",
     "menu_edit_disable": "Leave edit mode",
     "menu_item_hide": "Hide menu item",
@@ -2074,5 +2286,11 @@
         "nothing_active_title": "Nothing is currently active",
         "nothing_active_description": "Ask the host to start a guest experience."
     },
-    "searching": "Searching..."
+    "searching": "Searching...",
+    "menu": "Menu",
+    "home_assistant_menu": "Home Assistant",
+    "main_navigation": "Main",
+    "offline_ready": "App ready to work offline",
+    "update_available": "A new version is available. Reload to update.",
+    "reload": "Reload"
 }

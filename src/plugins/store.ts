@@ -8,26 +8,22 @@ import {
   User,
 } from "./api/interfaces";
 
-import { StoredState } from "@/components/ItemsListing.vue";
+import type { StoredState } from "@/components/ItemsListing.vue";
+import {
+  DEVICE_TYPE,
+  IS_TABLET_UA,
+  isTouchscreenDevice,
+  type DeviceType,
+} from "@/helpers/device";
 import { isHomeAssistantIngressSession } from "@/helpers/ingress";
-import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
+import { parseBool } from "@/helpers/parse";
 import api from "./api";
+import { resolvePlayerQueue } from "./api/helpers";
 
-import MobileDetect from "mobile-detect";
-import { getBreakpointValue } from "./breakpoint";
-
-type DeviceType = "desktop" | "phone" | "tablet";
-const md = new MobileDetect(window.navigator.userAgent);
-
-const DEVICE_TYPE: DeviceType = md.tablet()
-  ? "tablet"
-  : md.phone() || md.mobile()
-    ? "phone"
-    : "desktop";
+import { isPhoneSizedScreen } from "./breakpoint";
 
 interface Store {
   activePlayerId?: string;
-  isInPWAMode: boolean;
   showPlayersMenu: boolean;
   showFullscreenPlayer: boolean;
   frameless: boolean;
@@ -42,7 +38,6 @@ interface Store {
   // media type filter for the global search; empty means all media types
   globalSearchMediaTypes: MediaType[];
   prevState?: StoredState;
-  prevRoute?: string;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
   libraryTracksCount?: number;
@@ -52,7 +47,6 @@ interface Store {
   libraryAudiobooksCount?: number;
   libraryGenresCount?: number;
   isTouchscreen: boolean;
-  playerTipShown: boolean;
   deviceType: DeviceType;
   forceMobileLayout?: boolean;
   mobileLayout: boolean;
@@ -68,7 +62,6 @@ interface Store {
 
 export const store: Store = reactive({
   activePlayerId: undefined,
-  isInPWAMode: false,
   showPlayersMenu: false,
   showFullscreenPlayer: false,
   frameless: false,
@@ -82,32 +75,15 @@ export const store: Store = reactive({
     }
     return undefined;
   }),
-  activePlayerQueue: computed(() => {
-    if (
-      store.activePlayer?.active_source &&
-      store.activePlayer.active_source in api.queues
-    ) {
-      return api.queues[store.activePlayer.active_source];
-    }
-    if (
-      store.activePlayer &&
-      !store.activePlayer.active_source &&
-      store.activePlayer.player_id in api.queues &&
-      api.queues[store.activePlayer.player_id].active
-    ) {
-      return api.queues[store.activePlayer.player_id];
-    }
-    return undefined;
-  }),
+  activePlayerQueue: computed(() => resolvePlayerQueue(store.activePlayer)),
   curQueueItem: computed(() => {
     if (store.activePlayerQueue && store.activePlayerQueue.active)
-      return store.activePlayerQueue.current_item;
+      return store.activePlayerQueue.current_item ?? undefined;
     return undefined;
   }),
   globalSearchTerm: undefined,
   globalSearchMediaTypes: [],
   prevState: undefined,
-  prevRoute: undefined,
   libraryArtistsCount: undefined,
   libraryAlbumsCount: undefined,
   libraryTracksCount: undefined,
@@ -116,20 +92,15 @@ export const store: Store = reactive({
   libraryGenresCount: undefined,
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
-  playerTipShown: false,
   deviceType: DEVICE_TYPE,
-  mobileLayout: computed(() => {
-    const isMobileDevice = getBreakpointValue({ breakpoint: "tablet" });
-    const isNarrowScreen = getBreakpointValue({
-      breakpoint: "bp5",
-      condition: "lt",
-      offset: -31, // bp5 (800px) - 31 ≈ 769px
-    });
-
-    return (
-      isMobileDevice || isNarrowScreen || parseBool(store.forceMobileLayout)
-    );
-  }),
+  // a tablet has the screen for a desktop layout and is laid out for touch all
+  // the same, so it is taken at its word rather than measured
+  mobileLayout: computed(
+    () =>
+      isPhoneSizedScreen() ||
+      IS_TABLET_UA ||
+      parseBool(store.forceMobileLayout),
+  ),
   currentUser: undefined,
   serverInfo: undefined,
   isIngressSession: computed(() =>

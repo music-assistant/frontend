@@ -1,15 +1,27 @@
-import { EventType, ProviderType } from "@/plugins/api/interfaces";
-import { shallowMount, type VueWrapper } from "@vue/test-utils";
+import {
+  EventType,
+  ProviderStatus,
+  ProviderType,
+  UserRole,
+  type ProviderConfig,
+} from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { providerConfig } from "./fixtures/providerConfig";
+import { user } from "./fixtures/user";
 
 const {
   apiMock,
   authManagerMock,
   guestType,
   i18nMock,
+  haStateMock,
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
+  mockSubscribeToHAProperties,
+  mockGetKioskModePreference,
   mockProxyEnsureReady,
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
@@ -23,23 +35,27 @@ const {
 } = vi.hoisted(() => {
   const guestType = { value: null as "party" | "music_quiz" | null };
   const apiMock = {
-    authenticateWithToken: vi.fn(),
+    authenticateWithToken: vi.fn<MusicAssistantApi["authenticateWithToken"]>(),
     baseUrl: "http://music-assistant.test",
-    fetchState: vi.fn(),
-    fetchProviders: vi.fn(),
-    getCurrentUserInfo: vi.fn(),
-    getLibraryAlbumsCount: vi.fn(),
-    getLibraryArtistsCount: vi.fn(),
-    getLibraryAudiobooksCount: vi.fn(),
-    getLibraryGenresCount: vi.fn(),
-    getLibraryPlaylistsCount: vi.fn(),
-    getLibraryPodcastsCount: vi.fn(),
-    getLibraryRadiosCount: vi.fn(),
-    getLibraryTracksCount: vi.fn(),
-    getProviderConfigs: vi.fn(),
-    initialize: vi.fn(),
+    fetchState: vi.fn<MusicAssistantApi["fetchState"]>(),
+    fetchProviders: vi.fn<MusicAssistantApi["fetchProviders"]>(),
+    getCurrentUserInfo: vi.fn<MusicAssistantApi["getCurrentUserInfo"]>(),
+    getLibraryAlbumsCount: vi.fn<MusicAssistantApi["getLibraryAlbumsCount"]>(),
+    getLibraryArtistsCount:
+      vi.fn<MusicAssistantApi["getLibraryArtistsCount"]>(),
+    getLibraryAudiobooksCount:
+      vi.fn<MusicAssistantApi["getLibraryAudiobooksCount"]>(),
+    getLibraryGenresCount: vi.fn<MusicAssistantApi["getLibraryGenresCount"]>(),
+    getLibraryPlaylistsCount:
+      vi.fn<MusicAssistantApi["getLibraryPlaylistsCount"]>(),
+    getLibraryPodcastsCount:
+      vi.fn<MusicAssistantApi["getLibraryPodcastsCount"]>(),
+    getLibraryRadiosCount: vi.fn<MusicAssistantApi["getLibraryRadiosCount"]>(),
+    getLibraryTracksCount: vi.fn<MusicAssistantApi["getLibraryTracksCount"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
+    initialize: vi.fn<MusicAssistantApi["initialize"]>(),
     isRemoteConnection: { value: false },
-    requireAuthentication: vi.fn(),
+    requireAuthentication: vi.fn<MusicAssistantApi["requireAuthentication"]>(),
     serverInfo: {
       value: {
         onboard_done: true,
@@ -47,7 +63,7 @@ const {
         status: "running",
       },
     },
-    setLocale: vi.fn(),
+    setLocale: vi.fn<MusicAssistantApi["setLocale"]>(),
     state: { value: "authenticated" },
     subscribe: vi.fn((_event: string, _callback: CallableFunction) => () => {}),
     supportsServerSideTranslations: false,
@@ -78,8 +94,11 @@ const {
         t: (key: string) => key,
       },
     },
+    haStateMock: { isSubscribed: false, kioskModeEnabled: false },
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
+    mockSubscribeToHAProperties: vi.fn(),
+    mockGetKioskModePreference: vi.fn(() => true),
     mockProxyEnsureReady: vi.fn(),
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
@@ -101,7 +120,6 @@ const {
         | undefined,
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
-      isInPWAMode: false,
       isIngressSession: false,
       isOnboarding: false,
       serverInfo: undefined as unknown,
@@ -174,6 +192,13 @@ vi.mock("@/plugins/companion", () => ({
   initializeCompanionIntegration: mockInitializeCompanionIntegration,
 }));
 
+vi.mock("@/plugins/homeassistant", () => ({
+  haState: haStateMock,
+  subscribeToHAProperties: mockSubscribeToHAProperties,
+  unsubscribeFromHAProperties: vi.fn(),
+  getKioskModePreference: mockGetKioskModePreference,
+}));
+
 vi.mock("@/plugins/remote", () => ({
   remoteConnectionManager: {
     currentRemoteId: { value: null as string | null },
@@ -211,6 +236,12 @@ vi.mock("@vueuse/core", () => ({
 vi.mock("vuetify", () => ({
   useTheme: () => ({
     change: vi.fn(),
+    themes: {
+      value: {
+        light: { colors: { background: "#f5f5f5" } },
+        dark: { colors: { background: "#181818" } },
+      },
+    },
   }),
 }));
 
@@ -271,16 +302,17 @@ describe("App initialization", () => {
       server_id: "server-id",
       status: "running",
     };
-    apiMock.getCurrentUserInfo.mockResolvedValue({
-      preferences: {},
-      role: "user",
-      user_id: "user-id",
-      username: "regular-user",
-    });
+    apiMock.getCurrentUserInfo.mockResolvedValue(
+      user({
+        role: UserRole.USER,
+        user_id: "user-id",
+        username: "regular-user",
+      }),
+    );
     apiMock.fetchState.mockResolvedValue(undefined);
     apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.initialize.mockResolvedValue(undefined);
-    apiMock.getProviderConfigs.mockResolvedValue([{ enabled: true }]);
+    apiMock.getProviderConfigs.mockResolvedValue([partyPluginConfig()]);
     for (const method of [
       apiMock.getLibraryAlbumsCount,
       apiMock.getLibraryArtistsCount,
@@ -297,6 +329,9 @@ describe("App initialization", () => {
     mockProxyEnsureReady.mockResolvedValue(undefined);
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
+    haStateMock.isSubscribed = false;
+    haStateMock.kioskModeEnabled = false;
+    mockGetKioskModePreference.mockReturnValue(true);
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
@@ -343,12 +378,13 @@ describe("App initialization", () => {
     "avoids regular-user commands for a %s guest while initializing audio",
     async (type) => {
       guestType.value = type;
-      apiMock.getCurrentUserInfo.mockResolvedValue({
-        preferences: {},
-        role: "guest",
-        user_id: "guest-id",
-        username: type === "party" ? "party_guest" : "music_quiz_guest",
-      });
+      apiMock.getCurrentUserInfo.mockResolvedValue(
+        user({
+          role: UserRole.GUEST,
+          user_id: "guest-id",
+          username: type === "party" ? "party_guest" : "music_quiz_guest",
+        }),
+      );
 
       wrapper = await mountApp();
 
@@ -393,26 +429,68 @@ describe("App initialization", () => {
       ProviderType.PLUGIN,
       "ai_radio",
     );
+    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
+      4,
+      ProviderType.PLUGIN,
+      "milkdrop_visualizer",
+    );
     expect(storeMock.enabledPlugins).toEqual(
-      new Set<string>(["party", "music_quiz", "ai_radio"]),
+      new Set<string>([
+        "party",
+        "music_quiz",
+        "ai_radio",
+        "milkdrop_visualizer",
+      ]),
     );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+    expectStartupDataRequestedBeforeReveal();
 
     await signalProvidersUpdated();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(6);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
+  });
+
+  it("waits for the startup data before revealing the main app", async () => {
+    const serverState = createDeferred<void>();
+    const pluginConfigs = createDeferred<ProviderConfig[]>();
+    apiMock.fetchState.mockReturnValue(serverState.promise);
+    apiMock.getProviderConfigs.mockReturnValue(pluginConfigs.promise);
+    wrapper = await mountAppWithoutSettling();
+
+    await flushPromises();
+    expect(apiMock.fetchState).toHaveBeenCalledOnce();
+    expectLibraryCountsNotCalled();
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+    expect(apiMock.state.value).not.toBe("initialized");
+
+    serverState.resolve();
+    await flushPromises();
+    expectLibraryCountsCalled();
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(4);
+    // The plugin lookups are still in flight: revealing the app here would
+    // render it with an unknown set of enabled plugins.
+    expect(apiMock.state.value).not.toBe("initialized");
+    expect(mockInitializeWebPlayerModeSync).not.toHaveBeenCalled();
+    expect(wrapper.find("router-view-stub").exists()).toBe(false);
+
+    pluginConfigs.resolve([partyPluginConfig()]);
+    await flushPromises();
+    expect(apiMock.state.value).toBe("initialized");
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
+    expectStartupDataRequestedBeforeReveal();
   });
 
   it.each(["party", "music_quiz"] as const)(
     "does not mount browser media controls for a %s guest fallback tab",
     async (type) => {
       guestType.value = type;
-      apiMock.getCurrentUserInfo.mockResolvedValue({
-        preferences: {},
-        role: "guest",
-        user_id: "guest-id",
-        username: type === "party" ? "party_guest" : "music_quiz_guest",
-      });
+      apiMock.getCurrentUserInfo.mockResolvedValue(
+        user({
+          role: UserRole.GUEST,
+          user_id: "guest-id",
+          username: type === "party" ? "party_guest" : "music_quiz_guest",
+        }),
+      );
       webPlayerMock.audioSource = "controls_only";
       webPlayerMock.interacted = true;
       webPlayerMock.tabMode = "controls_only";
@@ -480,14 +558,7 @@ describe("App initialization", () => {
 
   it("remembers a temporary remote connection after regular login", async () => {
     apiMock.state.value = "auth_required";
-    const { default: App } = await import("@/App.vue");
-    wrapper = shallowMount(App, {
-      global: {
-        stubs: {
-          RouterView: true,
-        },
-      },
-    });
+    wrapper = await mountAppWithoutSettling();
 
     wrapper.findComponent({ name: "Login" }).vm.$emit("authenticated", {
       token: "regular-token",
@@ -499,9 +570,8 @@ describe("App initialization", () => {
       },
     });
 
-    await vi.waitFor(() => {
-      expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
     expect(authManagerMock.setToken).toHaveBeenCalledWith(
       "regular-token",
       "local:http://music-assistant.test",
@@ -510,24 +580,16 @@ describe("App initialization", () => {
 
   it("clears proxy mode before connecting to a local server", async () => {
     apiMock.state.value = "disconnected";
-    const { default: App } = await import("@/App.vue");
-    wrapper = shallowMount(App, {
-      global: {
-        stubs: {
-          RouterView: true,
-        },
-      },
-    });
+    wrapper = await mountAppWithoutSettling();
 
     wrapper
       .findComponent({ name: "Login" })
       .vm.$emit("local-connect", "http://music-assistant.local:8095");
 
-    await vi.waitFor(() => {
-      expect(apiMock.initialize).toHaveBeenCalledWith(
-        "http://music-assistant.local:8095",
-      );
-    });
+    await flushPromises();
+    expect(apiMock.initialize).toHaveBeenCalledWith(
+      "http://music-assistant.local:8095",
+    );
     expect(mockProxyEnsureReady).toHaveBeenCalledOnce();
     expect(mockProxySetTransport).toHaveBeenCalledWith(null);
     expect(mockProxySetTransport.mock.invocationCallOrder[0]).toBeLessThan(
@@ -615,22 +677,82 @@ describe("App initialization", () => {
     expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
   });
 
+  it("takes the safe area padding over in an ingress session", async () => {
+    storeMock.isIngressSession = true;
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
+      handleSafeArea: true,
+      kioskMode: true,
+    });
+  });
+
+  it("leaves the Home Assistant chrome up when kiosk mode is turned off", async () => {
+    storeMock.isIngressSession = true;
+    mockGetKioskModePreference.mockReturnValue(false);
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
+      handleSafeArea: true,
+      kioskMode: false,
+    });
+  });
+
+  it("keeps a way back to Home Assistant while the server is away", async () => {
+    haStateMock.kioskModeEnabled = true;
+    wrapper = await mountApp();
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(false);
+
+    // This screen replaces the whole app, sidebar and all, and kiosk mode has
+    // left Home Assistant nothing on screen either: without this the panel is a
+    // spinner with nowhere to go for as long as the server stays away.
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(true);
+  });
+
+  it("leaves the escape button off while Home Assistant shows its own menu", async () => {
+    haStateMock.kioskModeEnabled = false;
+    wrapper = await mountApp();
+
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(false);
+  });
+
+  it("leaves the safe area to the host outside an ingress session", async () => {
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).not.toHaveBeenCalled();
+  });
+
+  it("keeps the safe area subscription it already has across a reconnect", async () => {
+    storeMock.isIngressSession = true;
+    haStateMock.isSubscribed = true;
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).not.toHaveBeenCalled();
+  });
+
   it("re-authenticates an ingress session through the proxy on reconnect", async () => {
     storeMock.isIngressSession = true;
     wrapper = await mountApp();
-    const ingressUser = {
-      preferences: {},
-      role: "admin",
+    const ingressUser = user({
+      role: UserRole.ADMIN,
       user_id: "ingress-user",
       username: "ingress-user",
-    };
+    });
     apiMock.getCurrentUserInfo.mockResolvedValue(ingressUser);
 
     await startReconnect();
 
-    await vi.waitFor(() => {
-      expect(authManagerMock.setCurrentUser).toHaveBeenCalledWith(ingressUser);
-    });
+    await flushPromises();
+    expect(authManagerMock.setCurrentUser).toHaveBeenCalledWith(ingressUser);
     expect(apiMock.authenticateWithToken).not.toHaveBeenCalled();
     expect(apiMock.requireAuthentication).not.toHaveBeenCalled();
   });
@@ -643,9 +765,8 @@ describe("App initialization", () => {
 
     await startReconnect();
 
-    await vi.waitFor(() => {
-      expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
     expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
   });
 
@@ -658,9 +779,8 @@ describe("App initialization", () => {
 
     await startReconnect();
 
-    await vi.waitFor(() => {
-      expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
-    });
+    await flushPromises();
+    expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
     expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
   });
 
@@ -670,9 +790,8 @@ describe("App initialization", () => {
 
     i18nMock.global.locale.value = "de";
 
-    await vi.waitFor(() => {
-      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
-    });
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
   });
 
@@ -680,7 +799,7 @@ describe("App initialization", () => {
     wrapper = await mountAuthenticatedApp();
 
     i18nMock.global.locale.value = "de";
-    await nextTick();
+    await flushPromises();
 
     expect(apiMock.setLocale).not.toHaveBeenCalled();
     expect(apiMock.fetchState).not.toHaveBeenCalled();
@@ -693,9 +812,8 @@ describe("App initialization", () => {
 
     i18nMock.global.locale.value = "de";
 
-    await vi.waitFor(() => {
-      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
-    });
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
     expect(apiMock.fetchState).not.toHaveBeenCalled();
   });
 
@@ -706,9 +824,8 @@ describe("App initialization", () => {
 
     i18nMock.global.locale.value = "de";
 
-    await vi.waitFor(() => {
-      expect(apiMock.setLocale).toHaveBeenCalledWith("de");
-    });
+    await flushPromises();
+    expect(apiMock.setLocale).toHaveBeenCalledWith("de");
     expect(apiMock.fetchState).not.toHaveBeenCalled();
   });
 });
@@ -718,10 +835,8 @@ describe("App initialization", () => {
  */
 async function reconnect() {
   await startReconnect();
-  await vi.waitFor(() => {
-    expect(apiMock.authenticateWithToken).toHaveBeenCalled();
-  });
-  await nextTick();
+  await flushPromises();
+  expect(apiMock.authenticateWithToken).toHaveBeenCalled();
 }
 
 /**
@@ -747,21 +862,39 @@ async function mountAuthenticatedApp() {
   return mounted;
 }
 
+/**
+ * Mount the app, register it for teardown, and wait for initialization to
+ * settle.
+ *
+ * Initialization runs entirely on the microtask queue, so one flush covers it;
+ * a timer anywhere in that path would need vi.waitFor instead.
+ */
 async function mountApp() {
+  const mounted = await mountAppWithoutSettling();
+  await flushPromises();
+  expect(apiMock.state.value).toBe("initialized");
+  expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+  expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
+  return mounted;
+}
+
+/**
+ * Mount the app and register it for teardown, without waiting for
+ * initialization to settle; the test drives what happens next.
+ */
+async function mountAppWithoutSettling() {
   const { default: App } = await import("@/App.vue");
-  const mounted = shallowMount(App, {
+  // Registered at mount time so afterEach unmounts the app even when a
+  // caller's assertion throws: a live instance keeps reacting to api.state
+  // and corrupts every later test.
+  wrapper = shallowMount(App, {
     global: {
       stubs: {
         RouterView: true,
       },
     },
   });
-  await vi.waitFor(() => {
-    expect(apiMock.state.value).toBe("initialized");
-    expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
-    expect(apiMock.subscribe).toHaveBeenCalledTimes(3);
-  });
-  return mounted;
+  return wrapper;
 }
 
 async function signalProvidersUpdated() {
@@ -794,6 +927,41 @@ function expectLibraryCountsCalled() {
   expect(apiMock.getLibraryTracksCount).toHaveBeenCalledOnce();
 }
 
+/**
+ * Assert that every startup request is made before the app reveals itself,
+ * which it does right after marking the connection initialized.
+ */
+function expectStartupDataRequestedBeforeReveal() {
+  expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
+  const [revealed] = mockInitializeWebPlayerModeSync.mock.invocationCallOrder;
+  for (const method of [
+    apiMock.fetchState,
+    apiMock.getLibraryAlbumsCount,
+    apiMock.getLibraryArtistsCount,
+    apiMock.getLibraryAudiobooksCount,
+    apiMock.getLibraryGenresCount,
+    apiMock.getLibraryPlaylistsCount,
+    apiMock.getLibraryPodcastsCount,
+    apiMock.getLibraryRadiosCount,
+    apiMock.getLibraryTracksCount,
+    apiMock.getProviderConfigs,
+  ]) {
+    expect(method).toHaveBeenCalled();
+    expect(Math.max(...method.mock.invocationCallOrder)).toBeLessThan(revealed);
+  }
+}
+
+/**
+ * Create a promise the test resolves itself, to hold a startup step open.
+ */
+function createDeferred<T = void>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
 function createStorage(): Storage {
   const values = new Map<string, string>();
   return {
@@ -816,4 +984,16 @@ function createStorage(): Storage {
       values.set(key, value);
     },
   };
+}
+
+/**
+ * The party plugin config, as returned for the plugin lookups App runs on init.
+ */
+function partyPluginConfig(): ProviderConfig {
+  return providerConfig({
+    type: ProviderType.PLUGIN,
+    domain: "party",
+    name: "Party",
+    status: ProviderStatus.LOADED,
+  });
 }

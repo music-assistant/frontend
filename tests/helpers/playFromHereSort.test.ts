@@ -2,11 +2,12 @@
  * Tests that "play from here" actions correctly pass the sortBy parameter
  * through handlePlayBtnClick and handleMenuBtnClick to the API / context menu.
  */
+import type { MusicAssistantApi } from "@/plugins/api";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { mockPlayMedia, mockShowContextMenu, mockShowPlayMenu } = vi.hoisted(
   () => ({
-    mockPlayMedia: vi.fn(),
+    mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
     mockShowContextMenu: vi.fn(),
     mockShowPlayMenu: vi.fn(),
   }),
@@ -67,40 +68,24 @@ vi.mock("colorthief", () => ({
   },
 }));
 
-import { handlePlayBtnClick, handleMenuBtnClick } from "@/helpers/utils";
 import {
-  MediaType,
-  type Album,
-  type Playlist,
-  type Track,
-} from "@/plugins/api/interfaces";
+  handlePlayBtnClick,
+  handleMenuBtnClick,
+} from "@/helpers/media_item_actions";
+import { album } from "../fixtures/album";
+import { playlist } from "../fixtures/playlist";
+import { track } from "../fixtures/track";
 
 const makePlaylistTrack = (id: string) =>
-  ({
-    item_id: id,
-    uri: `library://track/${id}`,
-    media_type: MediaType.TRACK,
-    name: `Track ${id}`,
-    is_playable: true,
-  }) as unknown as Track;
+  track({ item_id: id, name: `Track ${id}` });
 
 const makePlaylist = (id: string) =>
-  ({
+  playlist({
     item_id: id,
-    uri: `library://playlist/${id}`,
-    media_type: MediaType.PLAYLIST,
     name: `Playlist ${id}`,
-    is_playable: true,
-  }) as unknown as Playlist;
+  });
 
-const makeAlbum = (id: string) =>
-  ({
-    item_id: id,
-    uri: `library://album/${id}`,
-    media_type: MediaType.ALBUM,
-    name: `Album ${id}`,
-    is_playable: true,
-  }) as unknown as Album;
+const makeAlbum = (id: string) => album({ item_id: id, name: `Album ${id}` });
 
 beforeEach(() => {
   mockPlayMedia.mockReset();
@@ -111,53 +96,53 @@ beforeEach(() => {
 
 describe("handlePlayBtnClick with sortBy", () => {
   it("passes sortBy to api.playMedia for playlist play-from-here", () => {
-    const track = makePlaylistTrack("track1");
-    const playlist = makePlaylist("pl1");
+    const playedTrack = makePlaylistTrack("track1");
+    const parentPlaylist = makePlaylist("pl1");
 
-    handlePlayBtnClick(track, 0, 0, playlist, false, "name");
+    handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist, false, "name");
 
     expect(mockPlayMedia).toHaveBeenCalledWith(
-      playlist.uri,
+      parentPlaylist.uri,
       undefined,
-      track.item_id,
+      playedTrack.item_id,
       undefined,
       "name",
     );
   });
 
   it("passes undefined sortBy when not provided", () => {
-    const track = makePlaylistTrack("track1");
-    const playlist = makePlaylist("pl1");
+    const playedTrack = makePlaylistTrack("track1");
+    const parentPlaylist = makePlaylist("pl1");
 
-    handlePlayBtnClick(track, 0, 0, playlist);
+    handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
 
     expect(mockPlayMedia).toHaveBeenCalledWith(
-      playlist.uri,
+      parentPlaylist.uri,
       undefined,
-      track.item_id,
+      playedTrack.item_id,
       undefined,
       undefined,
     );
   });
 
   it("passes sortBy for album play-from-here", () => {
-    const track = makePlaylistTrack("track1");
-    const album = makeAlbum("alb1");
+    const playedTrack = makePlaylistTrack("track1");
+    const parentAlbum = makeAlbum("alb1");
 
-    handlePlayBtnClick(track, 0, 0, album, false, "name");
+    handlePlayBtnClick(playedTrack, 0, 0, parentAlbum, false, "name");
 
     expect(mockPlayMedia).toHaveBeenCalledWith(
-      album.uri,
+      parentAlbum.uri,
       undefined,
-      track.item_id,
+      playedTrack.item_id,
       undefined,
       "name",
     );
   });
 
   it("passes different sort keys correctly", () => {
-    const track = makePlaylistTrack("track1");
-    const playlist = makePlaylist("pl1");
+    const playedTrack = makePlaylistTrack("track1");
+    const parentPlaylist = makePlaylist("pl1");
 
     for (const sortKey of [
       "artist",
@@ -167,11 +152,11 @@ describe("handlePlayBtnClick with sortBy", () => {
       "position_desc",
     ]) {
       mockPlayMedia.mockClear();
-      handlePlayBtnClick(track, 0, 0, playlist, false, sortKey);
+      handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist, false, sortKey);
       expect(mockPlayMedia).toHaveBeenCalledWith(
-        playlist.uri,
+        parentPlaylist.uri,
         undefined,
-        track.item_id,
+        playedTrack.item_id,
         undefined,
         sortKey,
       );
@@ -181,14 +166,14 @@ describe("handlePlayBtnClick with sortBy", () => {
 
 describe("handleMenuBtnClick with sortBy", () => {
   it("passes sortBy to showContextMenuForMediaItem", () => {
-    const track = makePlaylistTrack("track1");
-    const playlist = makePlaylist("pl1");
+    const playedTrack = makePlaylistTrack("track1");
+    const parentPlaylist = makePlaylist("pl1");
 
-    handleMenuBtnClick(track, 100, 200, playlist, true, "duration");
+    handleMenuBtnClick(playedTrack, 100, 200, parentPlaylist, true, "duration");
 
     expect(mockShowContextMenu).toHaveBeenCalledWith(
-      [track],
-      playlist,
+      [playedTrack],
+      parentPlaylist,
       100,
       200,
       true,
@@ -198,14 +183,14 @@ describe("handleMenuBtnClick with sortBy", () => {
   });
 
   it("passes undefined sortBy when not provided", () => {
-    const track = makePlaylistTrack("track1");
-    const playlist = makePlaylist("pl1");
+    const playedTrack = makePlaylistTrack("track1");
+    const parentPlaylist = makePlaylist("pl1");
 
-    handleMenuBtnClick(track, 100, 200, playlist);
+    handleMenuBtnClick(playedTrack, 100, 200, parentPlaylist);
 
     expect(mockShowContextMenu).toHaveBeenCalledWith(
-      [track],
-      playlist,
+      [playedTrack],
+      parentPlaylist,
       100,
       200,
       true,

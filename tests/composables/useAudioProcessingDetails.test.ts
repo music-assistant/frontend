@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils";
-import { File as FileIcon } from "@lucide/vue";
+import { File as FileIcon, Merge, Split } from "@lucide/vue";
 import { defineComponent, h, nextTick, ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -8,27 +8,42 @@ import {
   useAudioProcessingDetails,
 } from "@/composables/useAudioProcessingDetails";
 import { $t, i18n } from "@/plugins/i18n";
+import type { MusicAssistantApi } from "@/plugins/api";
 import {
+  AudioChannel,
   type AudioFormat,
   type AudioProcessingChain,
   AudioQuality,
   ContentType,
   CrossfadeMode,
   DSPState,
-  MediaType,
+  type OutputProtocol,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
+import {
+  audioDSPDetails,
+  audioFidelity,
+  audioNormalizationDetails,
+  audioOutputDetails,
+  audioProcessingChain,
+  audioQueueProcessing,
+} from "../fixtures/audioProcessing";
+import { audioFormat } from "../fixtures/audioFormat";
+import { streamDetails } from "../fixtures/streamDetails";
 
-vi.mock("@/plugins/api", () => ({
-  default: {
-    getProviderName: vi.fn(),
-    getProviderManifest: vi.fn((providerId: string) => ({
-      domain: providerId,
-    })),
-    players: {},
-  },
-}));
+vi.mock("@/plugins/api", async () => {
+  const { providerManifest } = await import("../fixtures/providerManifest");
+  return {
+    default: {
+      getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(),
+      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(
+        (providerId: string) => providerManifest({ domain: providerId }),
+      ),
+      players: {},
+    },
+  };
+});
 vi.mock("@/composables/useDSPPresets", () => ({
   useDSPPresets: () => ({
     getPresetName: vi.fn(),
@@ -90,7 +105,9 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     });
     const display = buildDisplay(
       {
-        outputs: [{ player_ids: ["office"], output_format: format }],
+        outputs: [
+          audioOutputDetails({ player_ids: ["office"], output_format: format }),
+        ],
       },
       format,
     );
@@ -103,7 +120,12 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
   it("uses the native player provider for direct output", () => {
     const destination = buildDisplay({
-      outputs: [{ player_ids: ["office"], output_format: makeFormat() }],
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["office"],
+          output_format: makeFormat(),
+        }),
+      ],
     }).outputPaths[0].destination;
 
     expect(destination).toMatchObject({
@@ -118,15 +140,19 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       const protocolId = `${protocolDomain}-kitchen`;
       dependencies.players.kitchen.active_output_protocol = protocolId;
       dependencies.players.kitchen.output_protocols = [
-        {
+        makeOutputProtocol({
           output_protocol_id: protocolId,
-          is_native: false,
           protocol_domain: protocolDomain,
-        },
+        }),
       ];
 
       const destination = buildDisplay({
-        outputs: [{ player_ids: ["kitchen"], output_format: makeFormat() }],
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: makeFormat(),
+          }),
+        ],
       }).outputPaths[0].destination;
 
       expect(destination).toMatchObject({
@@ -139,10 +165,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("resolves older protocol IDs to one visible parent", () => {
     const destination = buildDisplay({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["airplay-kitchen", "kitchen"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     }).outputPaths[0].destination;
 
@@ -151,33 +177,6 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       providerIconDomain: "airplay",
     });
     expect(destination.details).toBeUndefined();
-  });
-
-  it("uses the protocol player provider when the active entry has no domain", () => {
-    dependencies.players.kitchen.active_output_protocol = "sendspin-kitchen";
-    dependencies.players.kitchen.output_protocols = [
-      {
-        output_protocol_id: "sendspin-kitchen",
-        is_native: false,
-        protocol_domain: null,
-      },
-    ];
-    dependencies.players["sendspin-kitchen"] = {
-      player_id: "sendspin-kitchen",
-      name: "Kitchen",
-      provider: "sendspin--bridge",
-      active_output_protocol: null,
-      output_protocols: [],
-    };
-
-    const destination = buildDisplay({
-      outputs: [{ player_ids: ["kitchen"], output_format: makeFormat() }],
-    }).outputPaths[0].destination;
-
-    expect(destination).toMatchObject({
-      title: "Kitchen",
-      providerIconDomain: "sendspin",
-    });
   });
 
   it("never falls back to the base provider for an unresolved active protocol", () => {
@@ -192,7 +191,12 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     };
 
     const destination = buildDisplay({
-      outputs: [{ player_ids: ["kitchen"], output_format: makeFormat() }],
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["kitchen"],
+          output_format: makeFormat(),
+        }),
+      ],
     }).outputPaths[0].destination;
 
     expect(destination).toHaveProperty("icon");
@@ -214,10 +218,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
       const destination = buildDisplay({
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: [playerId],
             output_format: makeFormat(),
-          },
+          }),
         ],
       }).outputPaths[0].destination;
 
@@ -233,10 +237,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
     const destination = buildDisplay({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["airplay-kitchen"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     }).outputPaths[0].destination;
 
@@ -250,10 +254,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     dependencies.players.office.provider = "sonos--office";
     let destination = buildDisplay({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["kitchen", "office"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     }).outputPaths[0].destination;
     expect(destination).toMatchObject({ providerIconDomain: "sonos" });
@@ -261,10 +265,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     dependencies.players.office.provider = "squeezelite--office";
     destination = buildDisplay({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["kitchen", "office"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     }).outputPaths[0].destination;
     expect(destination).toHaveProperty("icon");
@@ -274,18 +278,14 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("uses a shared active protocol icon for grouped output", () => {
     dependencies.players.office.active_output_protocol = "airplay-office";
     dependencies.players.office.output_protocols = [
-      {
-        output_protocol_id: "airplay-office",
-        is_native: false,
-        protocol_domain: "airplay",
-      },
+      makeOutputProtocol({ output_protocol_id: "airplay-office" }),
     ];
     let destination = buildDisplay({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["kitchen", "office"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     }).outputPaths[0].destination;
     expect(destination).toMatchObject({ providerIconDomain: "airplay" });
@@ -294,10 +294,10 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       "snapcast";
     destination = buildDisplay({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["kitchen", "office"],
           output_format: makeFormat(),
-        },
+        }),
       ],
     }).outputPaths[0].destination;
     expect(destination).toHaveProperty("icon");
@@ -311,20 +311,20 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     });
     const direct = buildDisplay(
       {
-        queue_processing: {
+        queue_processing: audioQueueProcessing({
           pcm_format: makeFormat({
             content_type: ContentType.PCM_S16LE,
             codec_type: ContentType.PCM_S16LE,
             sample_rate: 44100,
             bit_depth: 16,
           }),
-        },
+        }),
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["kitchen"],
             output_format: sourceFormat,
-            fidelity: { bit_perfect: true },
-          },
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
         ],
       },
       sourceFormat,
@@ -335,21 +335,23 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
     const headroom = buildDisplay(
       {
-        queue_processing: {
+        queue_processing: audioQueueProcessing({
           pcm_format: makeFormat({
             content_type: ContentType.PCM_F32LE,
             codec_type: ContentType.PCM_F32LE,
             sample_rate: 48000,
             bit_depth: 32,
           }),
-          normalization: { mode: VolumeNormalizationMode.DYNAMIC },
-        },
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.DYNAMIC,
+          }),
+        }),
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["kitchen"],
             output_format: sourceFormat,
-            fidelity: { bit_perfect: false },
-          },
+            fidelity: audioFidelity({ bit_perfect: false }),
+          }),
         ],
       },
       sourceFormat,
@@ -366,14 +368,14 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("uses codec-aware fidelity wording", () => {
     const lossy = buildDisplay({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["kitchen"],
           output_format: makeFormat({
             content_type: ContentType.M4A,
             codec_type: ContentType.AAC,
           }),
-          fidelity: { bit_perfect: false },
-        },
+          fidelity: audioFidelity({ bit_perfect: false }),
+        }),
       ],
     });
     expect(lossy.outputPaths[0].stages.at(-1)?.details).toContain(
@@ -382,11 +384,11 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
     const lossless = buildDisplay({
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["kitchen"],
           output_format: makeFormat(),
-          fidelity: { bit_perfect: false },
-        },
+          fidelity: audioFidelity({ bit_perfect: false }),
+        }),
       ],
     });
     expect(lossless.outputPaths[0].stages.at(-1)?.details).toContain(
@@ -395,17 +397,17 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   });
 
   it("resolves presets and protocol-parent destinations", () => {
-    const chain: AudioProcessingChain = {
-      input_fidelity: { quality: AudioQuality.LOSSLESS },
+    const chain: Partial<AudioProcessingChain> = {
+      input_fidelity: audioFidelity({ quality: AudioQuality.LOSSLESS }),
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["airplay-kitchen", "office"],
-          dsp: {
+          dsp: audioDSPDetails({
             state: DSPState.ENABLED,
             preset_id: "preset-1",
-          },
+          }),
           output_format: makeFormat(),
-        },
+        }),
       ],
     };
     const display = buildDisplay(chain);
@@ -419,24 +421,49 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     expect(buildDisplay(chain).outputPaths[0].stages[1].title).toBe("Cinema");
   });
 
+  it.each([
+    [AudioChannel.ALL, "Mixed to mono", Merge],
+    [AudioChannel.FL, "Source channel: Left", Split],
+    [AudioChannel.FR, "Source channel: Right", Split],
+  ])(
+    "pairs source channel %s with its own title and icon",
+    (sourceChannel, title, icon) => {
+      const display = buildDisplay({
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["office"],
+            source_channel: sourceChannel,
+            output_format: makeFormat(),
+          }),
+        ],
+      });
+
+      expect(
+        display.outputPaths[0].stages.find((stage) =>
+          stage.key.startsWith("source-channel-"),
+        ),
+      ).toMatchObject({ title, icon });
+    },
+  );
+
   it.each([CrossfadeMode.UNKNOWN, "future_crossfade" as CrossfadeMode])(
     "keeps %s crossfade in headroom reasons",
     (crossfadeMode) => {
       const display = buildDisplay({
-        queue_processing: {
+        queue_processing: audioQueueProcessing({
           pcm_format: makeFormat({
             content_type: ContentType.PCM_F32LE,
             codec_type: ContentType.PCM_F32LE,
             bit_depth: 32,
           }),
           crossfade_mode: crossfadeMode,
-        },
+        }),
         outputs: [
-          {
+          audioOutputDetails({
             player_ids: ["kitchen"],
             output_format: makeFormat(),
-            fidelity: { bit_perfect: false },
-          },
+            fidelity: audioFidelity({ bit_perfect: false }),
+          }),
         ],
       });
 
@@ -451,20 +478,20 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
   it("excludes disabled crossfade from headroom reasons", () => {
     const display = buildDisplay({
-      queue_processing: {
+      queue_processing: audioQueueProcessing({
         pcm_format: makeFormat({
           content_type: ContentType.PCM_F32LE,
           codec_type: ContentType.PCM_F32LE,
           bit_depth: 32,
         }),
         crossfade_mode: CrossfadeMode.DISABLED,
-      },
+      }),
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["kitchen"],
           output_format: makeFormat(),
-          fidelity: { bit_perfect: false },
-        },
+          fidelity: audioFidelity({ bit_perfect: false }),
+        }),
       ],
     });
 
@@ -475,34 +502,34 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   });
 
   it("formats every numeric detail with the supplied locale", () => {
-    const audioFormat = makeFormat({
+    const format = makeFormat({
       content_type: ContentType.MP3,
       codec_type: ContentType.MP3,
       sample_rate: 44100,
       bit_rate: 1234,
     });
-    const chain: AudioProcessingChain = {
-      queue_processing: {
-        normalization: {
+    const chain: Partial<AudioProcessingChain> = {
+      queue_processing: audioQueueProcessing({
+        normalization: audioNormalizationDetails({
           mode: VolumeNormalizationMode.DYNAMIC,
           measured_lufs: -12.5,
-        },
+        }),
         playback_speed: 1.25,
-      },
+      }),
       outputs: [
-        {
+        audioOutputDetails({
           player_ids: ["kitchen"],
-          dsp: {
+          dsp: audioDSPDetails({
             state: DSPState.ENABLED,
             input_gain: -1.5,
             output_gain: 2.25,
-          },
-          output_format: audioFormat,
-        },
+          }),
+          output_format: format,
+        }),
       ],
     };
 
-    const english = buildDisplay(chain, audioFormat);
+    const english = buildDisplay(chain, format);
     expect(english.inputStages[1].subtitleParts).toContain("44.1 kHz");
     expect(english.inputStages[1].subtitleParts).toContain("1,234 kbps");
     expect(english.processingStages[0].details).toContain(
@@ -513,7 +540,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     expect(english.outputPaths[0].stages[2].title).toBe("Output Gain (2.3 dB)");
 
     dependencies.locale = "de-DE";
-    const german = buildDisplay(chain, audioFormat);
+    const german = buildDisplay(chain, format);
     expect(german.inputStages[1].subtitleParts).toContain("44,1 kHz");
     expect(german.inputStages[1].subtitleParts).toContain("1.234 kbps");
     expect(german.processingStages[0].details).toContain(
@@ -525,21 +552,21 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   });
 
   it("updates number formatting when the selected locale changes", async () => {
-    const chain = ref<AudioProcessingChain>({
-      queue_processing: { playback_speed: 1.25 },
-    });
-    const streamDetails = ref<StreamDetails>({
-      provider: "test",
-      item_id: "track-1",
-      audio_format: makeFormat(),
-      media_type: MediaType.TRACK,
-    });
+    const chain = ref<AudioProcessingChain>(
+      audioProcessingChain({
+        queue_processing: audioQueueProcessing({ playback_speed: 1.25 }),
+      }),
+    );
+    const details = ref<StreamDetails>(
+      streamDetails({
+        provider: "test",
+        item_id: "track-1",
+        audio_format: makeFormat(),
+      }),
+    );
     const harness = defineComponent({
       setup() {
-        const { processingStages } = useAudioProcessingDetails(
-          chain,
-          streamDetails,
-        );
+        const { processingStages } = useAudioProcessingDetails(chain, details);
         return () =>
           h(
             "span",
@@ -564,14 +591,19 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   });
 });
 
-function buildDisplay(chain: AudioProcessingChain, audioFormat = makeFormat()) {
-  const streamDetails: StreamDetails = {
-    provider: "test--instance",
-    item_id: "track-1",
-    audio_format: audioFormat,
-    media_type: MediaType.TRACK,
-  };
-  return buildAudioProcessingDetailsDisplay(chain, streamDetails, dependencies);
+function buildDisplay(
+  chain: Partial<AudioProcessingChain> = {},
+  format = makeFormat(),
+) {
+  return buildAudioProcessingDetailsDisplay(
+    audioProcessingChain(chain),
+    streamDetails({
+      provider: "test--instance",
+      item_id: "track-1",
+      audio_format: format,
+    }),
+    dependencies,
+  );
 }
 
 function makePlayers(): AudioProcessingDetailsDependencies["players"] {
@@ -582,11 +614,7 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
       provider: "sonos--main",
       active_output_protocol: "airplay-kitchen",
       output_protocols: [
-        {
-          output_protocol_id: "airplay-kitchen",
-          is_native: false,
-          protocol_domain: "airplay",
-        },
+        makeOutputProtocol({ output_protocol_id: "airplay-kitchen" }),
       ],
     },
     office: {
@@ -599,15 +627,21 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
   };
 }
 
-function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
+function makeOutputProtocol(
+  overrides: Partial<OutputProtocol> = {},
+): OutputProtocol {
   return {
-    content_type: ContentType.FLAC,
-    codec_type: ContentType.FLAC,
-    sample_rate: 48000,
-    bit_depth: 16,
-    channels: 2,
-    output_format_str: "",
-    bit_rate: 0,
+    output_protocol_id: "airplay-kitchen",
+    name: "AirPlay",
+    is_native: false,
+    protocol_domain: "airplay",
+    priority: 1,
+    available: true,
+    derived_from: null,
     ...overrides,
   };
+}
+
+function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
+  return audioFormat({ sample_rate: 48000, bit_depth: 16, ...overrides });
 }

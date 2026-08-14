@@ -48,8 +48,8 @@ const sortKeys = [
   "last_played_desc",
   "play_count",
   "play_count_desc",
-  "artist_name",
-  "artist_name_desc",
+  "album_artist_name",
+  "album_artist_name_desc",
 ];
 
 onMounted(() => {

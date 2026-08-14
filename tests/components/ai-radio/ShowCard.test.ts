@@ -1,5 +1,6 @@
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
 import { useShows } from "@/composables/ai-radio/useShows";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { i18n } from "@/plugins/i18n";
 import type { AIRadioSession, AIRadioStation } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
@@ -9,7 +10,9 @@ vi.mock("@/plugins/api", () => ({
   default: {
     players: {},
     sendCommand: vi.fn(async () => []),
-    getLibraryPlaylists: vi.fn(async () => []),
+    getLibraryPlaylists: vi.fn<MusicAssistantApi["getLibraryPlaylists"]>(
+      async () => [],
+    ),
   },
 }));
 

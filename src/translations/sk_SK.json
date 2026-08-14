@@ -141,8 +141,6 @@
                 "remove_confirm": "Naozaj chcete odstrániť túto predvoľbu DSP?"
             }
         },
-        "dsp_enabled": "DSP je povolené",
-        "dsp_disabled": "DSP je vypnuté",
         "dsp_note_multi_device_group": {
             "label": "DSP môžete nakonfigurovať pre každý prehrávač samostatne."
         },
@@ -177,7 +175,6 @@
         "artist": "Umelec",
         "name": "Abecedne",
         "name_desc": "Abecedne (zostupne)",
-        "recent": "Nedávno pridané",
         "year_desc": "Rok vydania (zostupne)",
         "duration_desc": "Trvanie (zostupne)",
         "original": "Originál"

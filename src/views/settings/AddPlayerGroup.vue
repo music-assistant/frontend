@@ -79,7 +79,7 @@
           </v-btn>
         </v-form>
         <br />
-        <v-btn block @click="router.back()">
+        <v-btn block @click="goBack(router, { name: 'playersettings' })">
           {{ $t("close") }}
         </v-btn>
       </div>
@@ -91,7 +91,9 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { groupMemberPickerVisible, markdownToHtml } from "@/helpers/utils";
+import { goBack } from "@/helpers/navigation";
+import { groupMemberPickerVisible } from "@/helpers/players";
+import { markdownToHtml } from "@/helpers/utils";
 import { PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 
 // global refs

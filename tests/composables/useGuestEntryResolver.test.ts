@@ -5,7 +5,7 @@ import {
 } from "@/composables/guest/useGuestEntryResolver";
 import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { EventType } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, h, type DeepReadonly, type Ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -377,7 +377,8 @@ describe("guest entry transitions", () => {
       resolverState = state;
     });
 
-    await vi.waitFor(() => expect(apiMock.sendCommand).toHaveBeenCalledOnce());
+    await flushPromises();
+    expect(apiMock.sendCommand).toHaveBeenCalledOnce();
 
     signalProviderEvent({ event: "game_updated", state: {} });
     expect(apiMock.sendCommand).toHaveBeenCalledOnce();
@@ -404,7 +405,8 @@ describe("guest entry transitions", () => {
     wrapper = mountResolver((state) => {
       resolverState = state;
     });
-    await vi.waitFor(() => expect(apiMock.sendCommand).toHaveBeenCalledOnce());
+    await flushPromises();
+    expect(apiMock.sendCommand).toHaveBeenCalledOnce();
 
     signalProviderEvent({ event: "game_updated", state: {} });
     resolveFirstRequest({ game_id: "stale" });
@@ -466,9 +468,8 @@ describe("guest entry transitions", () => {
       )
       .mockResolvedValue(null);
     signalProviderEvent({ event: "game_updated", state: {} });
-    await vi.waitFor(() =>
-      expect(apiMock.sendCommand).toHaveBeenCalledTimes(2),
-    );
+    await flushPromises();
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
 
     markMusicQuizJoinedGameEnded();
     signalProviderEvent({ event: "game_removed" });
@@ -495,7 +496,8 @@ describe("guest entry transitions", () => {
     wrapper = mountResolver((state) => {
       resolverState = state;
     });
-    await vi.waitFor(() => expect(apiMock.sendCommand).toHaveBeenCalledOnce());
+    await flushPromises();
+    expect(apiMock.sendCommand).toHaveBeenCalledOnce();
     expect(resolverState.value).toBe("loading");
 
     markMusicQuizJoinedGameEnded();
@@ -552,7 +554,7 @@ describe("guest entry transitions", () => {
     expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
 
     signalProviderEvent({ event: "game_updated", state: {} }, "other-instance");
-    await Promise.resolve();
+    await flushPromises();
     expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
   });
 
@@ -567,7 +569,8 @@ describe("guest entry transitions", () => {
 
     setRoutePath("/guest");
 
-    await vi.waitFor(() => expect(getRoutePath()).toBe("/guest/quiz"));
+    await flushPromises();
+    expect(getRoutePath()).toBe("/guest/quiz");
     expect(routerReplace.mock.calls.map(([path]) => path)).toEqual([
       "/guest/quiz",
       "/guest/quiz",
@@ -575,7 +578,8 @@ describe("guest entry transitions", () => {
   });
 
   async function expectState(expected: GuestEntryState) {
-    await vi.waitFor(() => expect(resolverState.value).toBe(expected));
+    await flushPromises();
+    expect(resolverState.value).toBe(expected);
   }
 });
 

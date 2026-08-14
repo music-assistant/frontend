@@ -32,7 +32,7 @@ import {
 } from "@/composables/useHoldToOpenMenu";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import {
-  getShortcutUri,
+  findPinnedUriForItem,
   reorderShortcutStandalone,
   useShortcuts,
   type ShortcutItem,
@@ -164,7 +164,10 @@ const {
     const source = pinnedItems.value[from];
     const target = pinnedItems.value[to];
     if (!source || !target) return;
-    reorderShortcutStandalone(getShortcutUri(source), getShortcutUri(target));
+    const sourceUri = findPinnedUriForItem(source);
+    const targetUri = findPinnedUriForItem(target);
+    if (!sourceUri || !targetUri) return;
+    reorderShortcutStandalone(sourceUri, targetUri);
   },
 });
 

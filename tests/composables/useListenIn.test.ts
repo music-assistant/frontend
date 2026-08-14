@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import { EventType } from "@/plugins/api/interfaces";
 
@@ -556,6 +556,81 @@ describe("useListenIn", () => {
       expect(first.isListeningIn.value).toBe(false);
       expect(second.isListeningIn.value).toBe(true);
       expect(getCommandCallCount("party/stop_listen_in")).toBe(0);
+    });
+  });
+
+  describe("foreign player re-check", () => {
+    function getPlayerUpdatedHandler() {
+      const calls = mockSubscribeMulti.mock.calls as unknown as Array<
+        [EventType[], (event: { object_id?: string }) => void]
+      >;
+      const call = calls.find(([events]) =>
+        events.includes(EventType.PLAYER_UPDATED),
+      );
+      if (!call) throw new Error("player updated subscription missing");
+      return call[1];
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("coalesces a burst of foreign updates into one re-check", async () => {
+      vi.useFakeTimers();
+      mockSendCommand.mockResolvedValue(false);
+      create();
+      const baseline = getCommandCallCount("party/can_listen_in");
+      const handler = getPlayerUpdatedHandler();
+
+      handler({ object_id: "other-1" });
+      handler({ object_id: "other-2" });
+      handler({ object_id: "other-3" });
+
+      expect(getCommandCallCount("party/can_listen_in")).toBe(baseline);
+      await vi.advanceTimersByTimeAsync(400);
+      expect(getCommandCallCount("party/can_listen_in")).toBe(baseline + 1);
+    });
+
+    it("does not re-check on foreign updates while already available", async () => {
+      mockSendCommand.mockResolvedValue(true);
+      const { checkCanListenIn, canListenIn } = create();
+      await checkCanListenIn();
+      expect(canListenIn.value).toBe(true);
+      vi.useFakeTimers();
+      const baseline = getCommandCallCount("party/can_listen_in");
+
+      getPlayerUpdatedHandler()({ object_id: "other-1" });
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(getCommandCallCount("party/can_listen_in")).toBe(baseline);
+    });
+
+    it("drops a pending re-check once our own update arrives", async () => {
+      vi.useFakeTimers();
+      mockSendCommand.mockResolvedValue(false);
+      create();
+      const baseline = getCommandCallCount("party/can_listen_in");
+      const handler = getPlayerUpdatedHandler();
+
+      handler({ object_id: "other-1" });
+      handler({ object_id: "wp-1" });
+
+      expect(getCommandCallCount("party/can_listen_in")).toBe(baseline + 1);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(getCommandCallCount("party/can_listen_in")).toBe(baseline + 1);
+    });
+
+    it("cancels a pending re-check on unmount", async () => {
+      vi.useFakeTimers();
+      mockSendCommand.mockResolvedValue(false);
+      create();
+      const baseline = getCommandCallCount("party/can_listen_in");
+
+      getPlayerUpdatedHandler()({ object_id: "other-1" });
+      for (const unmount of unmountCallbacks) unmount();
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(getCommandCallCount("party/can_listen_in")).toBe(baseline);
     });
   });
 });

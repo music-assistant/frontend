@@ -3,12 +3,14 @@
 import { watch } from "vue";
 import api, { ConnectionState } from ".";
 import {
+  Audiobook,
   AudioSource,
   MediaItemType,
   ItemMapping,
   MediaType,
   Player,
   PlayerQueue,
+  PodcastEpisode,
 } from "./interfaces";
 
 /**
@@ -52,9 +54,22 @@ export const isQueueInfiniteStream = function (
  * flags drive which transport controls are surfaced when active.
  */
 export const isAudioSource = function (
-  item: MediaItemType | ItemMapping | undefined,
+  item: MediaItemType | ItemMapping | null | undefined,
 ): item is AudioSource {
   return item?.media_type === MediaType.AUDIO_SOURCE;
+};
+
+/**
+ * Type guard for media items that track played state (fully_played /
+ * resume_position_ms): podcast episodes and audiobooks.
+ */
+export const itemSupportsPlayLog = function (
+  item: MediaItemType | ItemMapping | undefined,
+): item is Audiobook | PodcastEpisode {
+  return (
+    item?.media_type === MediaType.PODCAST_EPISODE ||
+    item?.media_type === MediaType.AUDIOBOOK
+  );
 };
 
 /**
@@ -181,6 +196,32 @@ export const getSourceName = function (player: Player) {
   }
   return source_id;
 };
+
+/**
+ * The queue playing on the given player, or undefined when it has none.
+ *
+ * A player either plays the queue of the source it is attached to, or its own
+ * queue when it has no source; an inactive own queue does not count.
+ *
+ * A player taken over by an external source is attached to no queue at all, so
+ * callers get undefined for it rather than an inactive queue. The queue that is
+ * returned reads `active` in every settled state, and reads inactive only while a
+ * handover back to it is still propagating.
+ */
+export function resolvePlayerQueue(player?: Player): PlayerQueue | undefined {
+  if (player?.active_source && player.active_source in api.queues) {
+    return api.queues[player.active_source];
+  }
+  if (
+    player &&
+    !player.active_source &&
+    player.player_id in api.queues &&
+    api.queues[player.player_id].active
+  ) {
+    return api.queues[player.player_id];
+  }
+  return undefined;
+}
 
 export const getCollectionMediaTypeFromItemId = function (itemId: string) {
   // the item id is defined by the backend as "<MediaType>___<collection_name>"

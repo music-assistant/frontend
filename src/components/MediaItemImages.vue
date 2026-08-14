@@ -90,9 +90,8 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
-import { getMediaItemImageUrl } from "@/helpers/utils";
+import { getMediaItemImageUrl, panelViewItemResponsive } from "@/helpers/utils";
 import Toolbar from "@/components/Toolbar.vue";
-import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ImageType, type MediaItemImage } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";

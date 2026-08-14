@@ -95,8 +95,11 @@
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { PlayerOption, PlayerOptionValueType } from "@/plugins/api/interfaces";
-import { PlayerOptionType } from "@/plugins/api/interfaces";
+import {
+  PlayerOption,
+  PlayerOptionType,
+  PlayerOptionValueType,
+} from "@/plugins/api/interfaces";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
 

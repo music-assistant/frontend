@@ -21,13 +21,21 @@ vi.mock("@/plugins/api", async () => {
   };
 });
 
+import api from "@/plugins/api";
 import {
   isAudioSource,
   isQueueInfiniteStream,
+  resolvePlayerQueue,
   waitForApiInitialization,
 } from "@/plugins/api/helpers";
 import { MediaType } from "@/plugins/api/interfaces";
-import type { MediaItemType, PlayerQueue } from "@/plugins/api/interfaces";
+import type {
+  MediaItemType,
+  PlayableMediaItemType,
+  Player,
+} from "@/plugins/api/interfaces";
+import { playerQueue } from "../../fixtures/playerQueue";
+import { queueItem } from "../../fixtures/queueItem";
 
 describe("isAudioSource", () => {
   it("returns true for AUDIO_SOURCE media type", () => {
@@ -55,11 +63,13 @@ describe("isAudioSource", () => {
 
 describe("isQueueInfiniteStream", () => {
   const makeQueue = (mediaType: MediaType | undefined) =>
-    ({
+    playerQueue({
       current_item: mediaType
-        ? { media_item: { media_type: mediaType } }
-        : undefined,
-    }) as unknown as PlayerQueue;
+        ? queueItem({
+            media_item: { media_type: mediaType } as PlayableMediaItemType,
+          })
+        : null,
+    });
 
   it("returns true when the current item is a radio", () => {
     expect(isQueueInfiniteStream(makeQueue(MediaType.RADIO))).toBe(true);
@@ -82,6 +92,50 @@ describe("isQueueInfiniteStream", () => {
   it("returns false when the queue or current item is missing", () => {
     expect(isQueueInfiniteStream(undefined)).toBe(false);
     expect(isQueueInfiniteStream(makeQueue(undefined))).toBe(false);
+  });
+});
+
+describe("resolvePlayerQueue", () => {
+  const player = (fields: Partial<Player>) =>
+    ({ player_id: "p1", ...fields }) as Player;
+
+  beforeEach(() => {
+    for (const key of Object.keys(api.queues)) delete api.queues[key];
+  });
+
+  it("returns the queue of the source the player is attached to", () => {
+    api.queues["source-q"] = playerQueue({ queue_id: "source-q" });
+
+    expect(
+      resolvePlayerQueue(player({ active_source: "source-q" }))?.queue_id,
+    ).toBe("source-q");
+  });
+
+  it("returns the player's own active queue when it has no source", () => {
+    api.queues["p1"] = playerQueue({ queue_id: "p1", active: true });
+
+    expect(resolvePlayerQueue(player({}))?.queue_id).toBe("p1");
+  });
+
+  it("returns the player's own queue reached through its source while inactive", () => {
+    api.queues["p1"] = playerQueue({ queue_id: "p1", active: false });
+
+    expect(resolvePlayerQueue(player({ active_source: "p1" }))?.queue_id).toBe(
+      "p1",
+    );
+  });
+
+  it("ignores the player's own queue while it is inactive", () => {
+    api.queues["p1"] = playerQueue({ queue_id: "p1", active: false });
+
+    expect(resolvePlayerQueue(player({}))).toBeUndefined();
+  });
+
+  it("returns undefined for an unknown source and for no player", () => {
+    expect(
+      resolvePlayerQueue(player({ active_source: "gone" })),
+    ).toBeUndefined();
+    expect(resolvePlayerQueue(undefined)).toBeUndefined();
   });
 });
 

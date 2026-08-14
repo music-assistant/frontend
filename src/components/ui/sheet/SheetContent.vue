@@ -14,6 +14,8 @@ import SheetOverlay from "./SheetOverlay.vue";
 
 interface SheetContentProps extends DialogContentProps {
   class?: HTMLAttributes["class"];
+  overlayClass?: HTMLAttributes["class"];
+  showClose?: boolean;
   side?: "top" | "right" | "bottom" | "left";
 }
 
@@ -24,17 +26,25 @@ defineOptions({
 const props = withDefaults(defineProps<SheetContentProps>(), {
   side: "right",
   class: undefined,
+  overlayClass: undefined,
+  showClose: true,
 });
 const emits = defineEmits<DialogContentEmits>();
 
-const delegatedProps = reactiveOmit(props, "class", "side");
+const delegatedProps = reactiveOmit(
+  props,
+  "class",
+  "overlayClass",
+  "showClose",
+  "side",
+);
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>
   <DialogPortal>
-    <SheetOverlay />
+    <SheetOverlay :class="overlayClass" />
     <DialogContent
       data-slot="sheet-content"
       :class="
@@ -56,6 +66,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       <slot></slot>
 
       <DialogClose
+        v-if="showClose"
         class="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
       >
         <X class="size-4" />

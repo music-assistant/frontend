@@ -1,14 +1,16 @@
 import { api } from "@/plugins/api";
 import {
   Artist,
+  type Audiobook,
   BrowseFolder,
   type ConfigEntry,
   ConfigEntryType,
   ImageType,
   ItemMapping,
+  type MediaCollection,
   MediaItemImage,
+  type MediaItemPalette,
   MediaItemType,
-  MediaItemTypeOrItemMapping,
   MediaType,
   Player,
   PlayerConfig,
@@ -20,73 +22,64 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 
-import {
-  showContextMenuForMediaItem,
-  showPlayMenuForMediaItem,
-} from "@/layouts/default/ItemContextMenu.vue";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import type {
-  Audiobook,
-  MediaCollection,
-  MediaItemPalette,
-} from "@/plugins/api/interfaces";
-import router from "@/plugins/router";
-import { store } from "@/plugins/store";
-import { $t } from "@/plugins/i18n";
-import { toast } from "vue-sonner";
-import { webPlayer } from "@/plugins/web_player";
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
-export const openLinkInNewTab = function (url: string) {
-  if (!url) return url;
-  // auto-translate music-assistant.io links to beta site
-  if (
-    api &&
-    api.serverInfo &&
-    api.serverInfo.value &&
-    (api.serverInfo.value.server_version == "0.0.0" ||
-      api.serverInfo.value.server_version.includes("b"))
-  ) {
-    url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
+export const isWebUrl = (url?: string | null): url is string => {
+  if (!url) return false;
+  try {
+    return ["http:", "https:"].includes(new URL(url).protocol);
+  } catch {
+    return false;
   }
-  window.open(url, "_blank");
+};
+
+export const getExternalLinkUrl = (url?: string | null) => {
+  if (!isWebUrl(url)) return undefined;
+
+  const parsedUrl = new URL(url);
+  const serverVersion = api.serverInfo.value?.server_version;
+  if (
+    (serverVersion === "0.0.0" || serverVersion?.includes("b")) &&
+    parsedUrl.hostname === "music-assistant.io"
+  ) {
+    parsedUrl.hostname = "beta.music-assistant.io";
+    return parsedUrl.toString();
+  }
+  return url;
+};
+
+export const openLinkInNewTab = function (url: string) {
+  const target = getExternalLinkUrl(url);
+  if (target) openWebUrlOnce(target);
 };
 
 export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
-  // Open URL-type entries returned by a config invoke_action response (one-shot)
-  // via an anchor click, which browsers treat more leniently than window.open
-  // when the triggering user gesture has just expired. Only web URLs are
-  // opened, and all URL entries are dropped from the rendered form.
-  const urls: string[] = [];
+  // Open URL-type entries returned by a config invoke_action response (one-shot).
+  // Only web URLs are opened, and all URL entries are dropped from the rendered form.
   for (const entry of entries) {
     if (entry.type !== ConfigEntryType.URL) continue;
     const target = entry.value ?? entry.default_value;
-    if (typeof target !== "string") continue;
-    try {
-      if (["http:", "https:"].includes(new URL(target).protocol)) {
-        urls.push(target);
-      }
-    } catch {
-      // not a parseable url: drop silently
-    }
-  }
-  for (const url of urls) {
-    const a = document.createElement("a");
-    a.setAttribute("href", url);
-    a.setAttribute("target", "_blank");
-    a.setAttribute("rel", "noopener");
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    if (typeof target === "string") openWebUrlOnce(target);
   }
   return entries.filter((e) => e.type !== ConfigEntryType.URL);
 };
 
-export const parseBool = (val: string | boolean | undefined | null) => {
-  if (val == undefined || val == null) return false;
-  if (!val) return false;
-  if (typeof val === "boolean") return val;
-  return !!JSON.parse(String(val).toLowerCase());
+export const openActionResultUrl = (url?: string | null) => {
+  // Open the url of a config action result (one-shot).
+  if (url) openWebUrlOnce(url);
+};
+
+const openWebUrlOnce = (url: string) => {
+  // Open via an anchor click, which browsers treat more leniently than
+  // window.open when the triggering user gesture has just expired.
+  if (!isWebUrl(url)) return;
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("target", "_blank");
+  a.setAttribute("rel", "noopener");
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 };
 
 export const formatDuration = function (totalSeconds: number) {
@@ -261,7 +254,7 @@ export const getStreamingProviderMappings = function (
 ) {
   const result: ProviderMapping[] = [];
   if (!itemDetails || !("provider_mappings" in itemDetails)) return result;
-  for (const provider_mapping of itemDetails.provider_mappings || []) {
+  for (const provider_mapping of itemDetails.provider_mappings) {
     if (provider_mapping.provider_domain.startsWith("filesystem")) continue;
     if (provider_mapping.provider_domain == "plex") continue;
     if (
@@ -314,7 +307,7 @@ const normalizeImageProxySize = function (size?: number): number {
  * - Otherwise return the URL as-is
  */
 export const getMediaImageUrl = function (
-  imageUrl: string | undefined,
+  imageUrl: string | null | undefined,
 ): string {
   if (!imageUrl) return "";
 
@@ -438,9 +431,7 @@ export const getMediaItemImage = function (
 export const getMediaItemImageUrl = function (
   img: MediaItemImage,
   size?: number,
-  checksum?: string,
 ): string {
-  if (!checksum) checksum = "";
   if (!img || !img.path) return "";
   if (img.path.startsWith("data:image")) return img.path;
   if (
@@ -452,11 +443,9 @@ export const getMediaItemImageUrl = function (
     // Note that we play it safe here and always enforce the proxy if the schema is different
     const normalizedSize = normalizeImageProxySize(size);
     if (img.proxy_id && serverSupportsOpaqueImageProxy()) {
-      // canonical /imageproxy/<proxy_id>?size=&checksum= form. checksum is kept
-      // as a cache-buster query param (the server ignores unknown params).
+      // canonical /imageproxy/<proxy_id>?size= form
       const params = new URLSearchParams();
       if (normalizedSize) params.set("size", String(normalizedSize));
-      if (checksum) params.set("checksum", checksum);
       const qs = params.toString();
       return qs
         ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
@@ -464,7 +453,7 @@ export const getMediaItemImageUrl = function (
     }
     // legacy form, for servers on schema < 31 or images without a proxy_id
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
-    const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
+    const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}`;
     if (normalizedSize) return imageUrl + `&size=${normalizedSize}`;
     return imageUrl;
   }
@@ -484,9 +473,7 @@ export const getImageThumbForItem = function (
   // find image in mediaitem
   const img = getMediaItemImage(mediaItem, type);
   if (!img || !img.path) return undefined;
-  const checksum =
-    "metadata" in mediaItem ? mediaItem.metadata?.cache_checksum : "";
-  return getMediaItemImageUrl(img, size, checksum);
+  return getMediaItemImageUrl(img, size);
 };
 
 export const numberRange = function (start: number, end: number): number[] {
@@ -663,33 +650,31 @@ export const panelViewItemResponsive = function (displaySize: number) {
   }
 };
 
-export function isTouchscreenDevice() {
-  // detect if device/browser is touch enabled
-  let result = false;
-  if (window.PointerEvent && "maxTouchPoints" in navigator) {
-    if (navigator.maxTouchPoints > 0) {
-      result = true;
-    }
-  } else {
-    if (
-      window.matchMedia &&
-      window.matchMedia("(any-pointer:coarse)").matches
-    ) {
-      result = true;
-    } else if (window.TouchEvent || "ontouchstart" in window) {
-      result = true;
-    }
-  }
-  return result;
-}
+// Own instance, so the anchor rewrite below stays confined to rendered markdown
+const markdownPurifier = DOMPurify();
 
+// Send every link to a new tab (keeping the app itself loaded) and withhold the
+// opener from the target page.
+markdownPurifier.addHook("afterSanitizeAttributes", (node) => {
+  if (node.nodeName === "A" && node.hasAttribute("href")) {
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
+
+/**
+ * Render markdown as sanitized HTML, safe to pass to `v-html`.
+ *
+ * Supports the full block syntax (lists, paragraphs, ...) and turns single
+ * newlines into line breaks. Links always open in a new tab.
+ *
+ * @param text - Markdown source. May use escaped `\n` sequences as newlines.
+ */
 export const markdownToHtml = function (text: string): string {
-  text = text
-    .replaceAll(/\\n/g, "<br />")
-    .replaceAll("\n", "<br />")
-    .replaceAll(" \\", "<br />");
+  // some sources encode their line breaks literally; block syntax only parses on real ones
+  const source = text.replaceAll("\\n", "\n").replaceAll(" \\", "\n");
   // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
-  return DOMPurify.sanitize(marked(text) as string, {
+  return markdownPurifier.sanitize(marked(source, { breaks: true }) as string, {
     SANITIZE_NAMED_PROPS: true,
   });
 };
@@ -749,178 +734,6 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     host.removeChild(textArea);
   }
 }
-
-export const isBuiltinPlayer = function (player: Player): boolean {
-  return (
-    player.player_id === webPlayer.player_id ||
-    player.player_id === store.companionPlayerId ||
-    player.output_protocols?.filter(
-      (x) =>
-        x.output_protocol_id === webPlayer.player_id ||
-        x.output_protocol_id === store.companionPlayerId,
-    ).length > 0
-  );
-};
-
-export const playerVisible = function (
-  player: Player,
-  allowGroupChilds = false,
-  allowNeedsSetup = false,
-): boolean {
-  // perform some basic checks if we may use/show the player
-  if (!player.enabled) return false;
-  if (player.synced_to && !allowGroupChilds) {
-    return false;
-  }
-  if (player.active_group && !allowGroupChilds) return false;
-  // A player that needs setup is serialized as unavailable. Only surface it
-  // (dimmed, with a "Setup required" affordance) where a click launches its
-  // setup flow (opt-in via allowNeedsSetup); elsewhere a click would select or
-  // play the player, so an unusable needs_setup player must stay hidden.
-  if (!player.available && !(player.needs_setup && allowNeedsSetup)) {
-    return false;
-  }
-  if (isBuiltinPlayer(player)) {
-    return true;
-  }
-  if (player.hide_in_ui) {
-    return false;
-  }
-  if (
-    store.currentUser &&
-    store.currentUser.player_filter.length > 0 &&
-    player.player_id != webPlayer.player_id &&
-    !store.currentUser.player_filter.includes(player.player_id)
-  ) {
-    // for non-admin users, the playerfilter is applied in the backend
-    // but for admin users we need to filter here as well
-    return false;
-  }
-  return true;
-};
-
-// Keep hidden players out of group pickers unless they represent this device or
-// are player types intended to be grouped with audio players.
-export const groupMemberPickerVisible = function (player: Player): boolean {
-  return (
-    !player.hide_in_ui ||
-    isBuiltinPlayer(player) ||
-    player.type === PlayerType.LIGHT ||
-    player.type === PlayerType.VISUALIZER
-  );
-};
-
-/* Handle play button click */
-export const handlePlayBtnClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-  forceMenu?: boolean,
-  sortBy?: string,
-) {
-  // a failed play action must never be silent: without feedback the play
-  // button appears dead (e.g. while the connection is re-establishing)
-  const onPlayError = (err: Error) => {
-    console.error("Play action failed:", err);
-    toast.error($t("play_failed"));
-  };
-  // we show the play menu for the item once (if playerTip has not been dismissed)
-  if (!forceMenu && store.activePlayer?.available) {
-    if (
-      item.media_type == MediaType.TRACK &&
-      (parentItem?.media_type == MediaType.PLAYLIST ||
-        parentItem?.media_type == MediaType.ALBUM) &&
-      store.activePlayerQueue
-    ) {
-      // special case: playing a track from a playlist/album - play from here
-      api
-        .playMedia(parentItem.uri, undefined, item.item_id, undefined, sortBy)
-        .catch(onPlayError);
-      return;
-    }
-    // else: play the item directly
-    api.playMedia(item).catch(onPlayError);
-    return;
-  }
-  showPlayMenuForMediaItem(item, parentItem, posX, posY).catch(onPlayError);
-};
-
-/* Handle media item click */
-export const handleMediaItemClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-) {
-  // open menu when item is unavailable so the user has a way to remove/refresh the item
-  if (!itemIsAvailable(item)) {
-    handleMenuBtnClick(item, posX, posY, undefined, false);
-    return;
-  }
-
-  // folder items always open in browse view
-  if (item.media_type == MediaType.FOLDER) {
-    router.push({
-      name: "browse",
-      query: {
-        path: (item as BrowseFolder).path,
-      },
-    });
-    return;
-  }
-
-  // podcast episode has no details view so show play menu directly
-  // TODO: revisit this once we have a proper podcast episode details view
-  if (item.media_type == MediaType.PODCAST_EPISODE) {
-    handlePlayBtnClick(item, posX, posY, parentItem, true);
-    return;
-  }
-
-  // open menu for collection items
-  if (item.media_type == MediaType.COLLECTION) {
-    router.push({
-      name: "collection",
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
-    return;
-  }
-
-  // all other: go to details view
-  router.push({
-    name: item.media_type,
-    params: {
-      itemId: item.item_id,
-      provider: item.provider,
-    },
-  });
-};
-
-/* Handle menu button click */
-export const handleMenuBtnClick = function (
-  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-  includePlayMenuItems = true,
-  sortBy?: string,
-) {
-  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
-    ? item
-    : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    parentItem,
-    posX,
-    posY,
-    includePlayMenuItems,
-    includePlayMenuItems,
-    sortBy,
-  );
-};
 
 /**
  * Check if a player config should be hidden from settings due to being a

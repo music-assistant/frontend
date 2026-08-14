@@ -6,8 +6,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-// import { toggleHAMenu } from "@/plugins/homeassistant";
-// import { store } from "@/plugins/store";
 import { PanelLeft } from "@lucide/vue";
 import { computed, type HTMLAttributes } from "vue";
 import { useSidebar } from "./utils";
@@ -19,15 +17,6 @@ const props = defineProps<{
 const { toggleSidebar, state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
-
-// const showHaButton = computed(() => store.isIngressSession);
-
-// const handleHAMenuToggle = () => {
-//   if (isMobile.value) {
-//     setOpenMobile(false);
-//   }
-//   toggleHAMenu();
-// };
 </script>
 
 <template>
@@ -45,43 +34,6 @@ const isCollapsed = computed(() => state.value === "collapsed");
         isCollapsed ? 'flex-col' : 'flex-row',
       ]"
     >
-      <!-- HA BUTTON COMMENTED OUT -->
-      <!-- <Tooltip v-if="showHaButton">
-        <TooltipTrigger as-child>
-          <Button
-            v-if="showHaButton"
-            variant="outline"
-            :size="isCollapsed ? 'icon' : 'default'"
-            :class="[
-              isCollapsed && 'order-first',
-              !isCollapsed && 'min-w-0 flex-1',
-            ]"
-            @click="handleHAMenuToggle"
-          >
-            <template v-if="isCollapsed">
-              <img
-                src="@/assets/home-assistant-logo.svg"
-                alt="Home Assistant"
-                class="h-4 w-4 shrink-0"
-              />
-            </template>
-            <template v-else>
-              <span class="flex min-w-0 items-center gap-2">
-                <img
-                  src="@/assets/home-assistant-logo.svg"
-                  alt="Home Assistant"
-                  class="h-4 w-4 shrink-0"
-                />
-                <span class="min-w-0">HA Menu</span>
-              </span>
-              <ArrowLeftToLine class="ha-menu-arrow ml-auto size-4 shrink-0" />
-            </template>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          HA Menu
-        </TooltipContent>
-      </Tooltip> -->
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
@@ -145,10 +97,6 @@ const isCollapsed = computed(() => state.value === "collapsed");
   height: 2rem !important;
 }
 
-.ha-menu-arrow {
-  color: rgb(var(--v-theme-primary, 3, 169, 244)) !important;
-}
-
 .trigger-container.flex-col {
   flex-direction: column;
   justify-content: center;
@@ -156,12 +104,5 @@ const isCollapsed = computed(() => state.value === "collapsed");
 
 .trigger-container.flex-row {
   flex-direction: row;
-}
-
-.ha-logo-icon {
-  width: 16px;
-  height: 16px;
-  display: block;
-  margin: auto;
 }
 </style>

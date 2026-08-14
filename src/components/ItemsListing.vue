@@ -20,6 +20,25 @@
 
     <v-divider />
 
+    <div v-if="props.toolBarTabs !== undefined" class="content-tabs">
+      <Tabs
+        :model-value="activeTabId"
+        class="items-start"
+        @update:model-value="(v) => onTabChange(v as string)"
+      >
+        <TabsList class="h-auto w-auto gap-6 bg-transparent p-0">
+          <TabsTrigger
+            v-for="tab in props.toolBarTabs"
+            :key="tab.id"
+            :value="tab.id"
+            class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 text-[15px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
+          >
+            {{ tab.label }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
+
     <v-text-field
       v-if="showSearchInput"
       id="searchInput"
@@ -193,11 +212,24 @@
         </EmptyContent>
       </Empty>
 
-      <!-- box shown when item(s) selected -->
+      <!-- box shown when item(s) selected; vuetify writes the overlay z-index inline
+           (default 2000), so it has to be lowered here to stay behind the player bar
+           popouts (998) and their backdrops (997). that also puts it below the mobile
+           scrim, so it clears what covers the bottom rather than just the bars.
+           vuetify pads the snackbar by the measured bar height on its own, so that
+           is taken off, with a 16px floor in case the bar outgrows the offset -->
       <v-snackbar
         :model-value="selectedItems.length > 1"
         :timeout="-1"
-        style="margin-bottom: 120px"
+        :z-index="996"
+        style="
+          margin-bottom: max(
+            16px,
+            calc(
+              var(--bottom-obscured-height) + 16px - var(--v-layout-bottom, 0px)
+            )
+          );
+        "
       >
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
@@ -240,14 +272,12 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserPreferences } from "@/composables/userPreferences";
-import {
-  handleMenuBtnClick,
-  panelViewItemResponsive,
-  scrollElement,
-} from "@/helpers/utils";
+import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { itemIsAvailable, itemSupportsPlayLog } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -282,6 +312,14 @@ import { toast } from "vue-sonner";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
+
+type LoadPagedDataFn = (params: LoadDataParams) => Promise<MediaItemType[]>;
+
+export interface ToolBarTab {
+  id: string;
+  label: string;
+  loadPagedData?: LoadPagedDataFn;
+}
 
 export interface LoadDataParams {
   offset: number;
@@ -341,7 +379,7 @@ export interface Props {
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
-  loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  loadPagedData?: LoadPagedDataFn;
   // loadItems callback is provided for flat non-paged listings
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit?: number;
@@ -353,6 +391,7 @@ export interface Props {
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel" | "panel_compact";
+  toolBarTabs?: ToolBarTab[];
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -394,6 +433,7 @@ const props = withDefaults(defineProps<Props>(), {
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
+  toolBarTabs: undefined,
 });
 
 // global refs
@@ -402,6 +442,45 @@ const route = useRoute();
 const { t, te } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
+const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
+watch(
+  () => props.toolBarTabs,
+  (tabs) => {
+    if (!tabs || tabs.length === 0) return;
+    if (tabs.some((tab) => tab.id === activeTabId.value)) return;
+    const hadActiveTab = activeTabId.value !== "";
+    const preferred = savedPrefs.value.activeTab;
+    const target = tabs.find((tab) => tab.id === preferred) ?? tabs[0];
+
+    activeTabId.value = target.id;
+
+    if (restoredFromPrevState) {
+      if (preferred && !tabs.some((tab) => tab.id === preferred)) {
+        loadData(true);
+      }
+    } else if (hadActiveTab || target.id !== tabs[0].id) {
+      loadData(true);
+    }
+  },
+);
+let restoredFromPrevState = false;
+
+const getActiveTab = () => {
+  return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
+};
+
+const onTabChange = function (tabId: string) {
+  if (!tabId || tabId === activeTabId.value) return;
+  activeTabId.value = tabId;
+
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "activeTab",
+    tabId,
+  );
+  loadData(true);
+};
 
 // local refs
 const params = ref<LoadDataParams>({
@@ -426,6 +505,11 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+
+// used in tabbed item listings to prevent a timing-race condition, where
+// the selected tab shows items of the initial tab on entering the page
+let loadingTabId: string | undefined;
+let pendingTabLoad = false;
 
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
@@ -594,7 +678,7 @@ const toggleCollapseCollections = function () {
     "collapseCollections",
     params.value.collapseCollections,
   );
-  loadData(undefined, undefined, true);
+  loadData(true, undefined, true);
 };
 
 const toggleHideEmptyFilter = function () {
@@ -855,6 +939,9 @@ const loadNextPage = async function ({
 
 const loadAllItems = async function () {
   while (!allItemsReceived.value) {
+    // the paging can outlast the listing, so stop fetching once it is gone
+    if (unmounted) return;
+
     await loadNextPage({ done: function () {} });
   }
 };
@@ -1368,14 +1455,30 @@ const loadData = async function (
   FilterParamsChanged = false,
   offset = 0,
 ) {
+  let loadPagedData: LoadPagedDataFn | undefined = props.loadPagedData;
+  if (props.toolBarTabs !== undefined && props.toolBarTabs.length > 0) {
+    const activeTab = getActiveTab();
+    if (activeTab !== undefined && activeTab.loadPagedData !== undefined) {
+      loadPagedData = activeTab.loadPagedData;
+    }
+  }
+  const currentTabId = props.toolBarTabs?.length
+    ? getActiveTab()?.id
+    : undefined;
   if (loading.value) {
+    // Record whether the currently requested tab differs from the tab being loaded.
+    // Using assignment (not only setting to true) avoids a redundant reload if the
+    // user switches tabs and then switches back before the current load finishes.
+    pendingTabLoad = currentTabId !== loadingTabId;
+
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
     return;
   }
   loading.value = true;
+  loadingTabId = currentTabId;
 
-  if (FilterParamsChanged && props.loadPagedData != null) {
+  if (FilterParamsChanged && loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
     clear = true;
   }
@@ -1393,41 +1496,49 @@ const loadData = async function (
     newContentAvailable.value = false;
   }
 
-  params.value.offset = offset;
-  params.value.limit = props.limit;
-  params.value.refresh = refresh;
+  try {
+    params.value.offset = offset;
+    params.value.limit = props.limit;
+    params.value.refresh = refresh;
 
-  if (props.loadPagedData != null) {
-    // server side paged listing (with filter support)
-    const nextItems = await props.loadPagedData(params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
+    if (loadPagedData != null) {
+      // server side paged listing (with filter support)
+      const nextItems = await loadPagedData(params.value);
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
+      if (Math.abs(nextItems.length - props.limit) > 10) {
+        allItemsReceived.value = true;
+      }
+    } else if (props.loadItems != null) {
+      // grab items from loadItems callback
+      if (!initialDataReceived.value || refresh) {
+        // load all items from the callback
+        allItems.value = await props.loadItems(params.value);
+        initialDataReceived.value = true;
+      }
+      // filter items
+      const nextItems = getFilteredItems(allItems.value, params.value);
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
+      // mark allItemsReceived if we have all items
+      allItemsReceived.value = nextItems.length < props.limit;
     }
-    if (Math.abs(nextItems.length - props.limit) > 10) {
-      allItemsReceived.value = true;
-    }
-  } else if (props.loadItems != null) {
-    // grab items from loadItems callback
-    if (!initialDataReceived.value || refresh) {
-      // load all items from the callback
-      allItems.value = await props.loadItems(params.value);
-      initialDataReceived.value = true;
-    }
-    // filter items
-    const nextItems = getFilteredItems(allItems.value, params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
-    }
-    // mark allItemsReceived if we have all items
-    allItemsReceived.value = nextItems.length < props.limit;
+  } finally {
+    params.value.refresh = false;
+    loading.value = false;
+    tempHide.value = false;
   }
-  params.value.refresh = false;
-  loading.value = false;
-  tempHide.value = false;
+
+  if (pendingTabLoad) {
+    pendingTabLoad = false;
+    await loadData(true);
+  }
 };
 
 // Re-derive from the current props.path: browse reuses one ItemsListing
@@ -1442,6 +1553,13 @@ const savedPrefs = computed(
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
   const prefs = savedPrefs.value;
+
+  if (
+    prefs.activeTab &&
+    props.toolBarTabs?.some((tab) => tab.id === prefs.activeTab)
+  ) {
+    activeTabId.value = prefs.activeTab;
+  }
 
   // get stored/default viewMode for this itemtype
   if (props.forcedViewMode) {
@@ -1696,6 +1814,9 @@ const loadGenreOptions = async () => {
     const mediaType = itemtypeToMediaType[props.itemtype];
 
     do {
+      // the paging can outlast the listing, so stop fetching once it is gone
+      if (unmounted) return;
+
       page = await api.getLibraryGenres({
         limit: pageSize,
         offset,
@@ -1719,8 +1840,19 @@ const loadGenreOptions = async () => {
 };
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
+
+const clearSelection = () => {
+  selectedItems.value = [];
+  showCheckboxes.value = false;
+};
+
+// Set by the unmount hook, so the async startup can tell that the listing it is
+// working for is already gone.
+let unmounted = false;
+
 onBeforeUnmount(() => {
-  eventbus.off("clearSelection");
+  unmounted = true;
+  eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
 });
 
@@ -1729,6 +1861,7 @@ onMounted(async () => {
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
   if (props.restoreState && store.prevState?.path == key) {
+    restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
     allItems.value = store.prevState.allItems;
@@ -1752,12 +1885,12 @@ onMounted(async () => {
   }
 
   await loadGenreOptions();
+  // The await can outlast the listing, and the unmount hook only reaches what
+  // was already set up by the time it ran.
+  if (unmounted) return;
 
   // Listen for selection clearing events
-  eventbus.on("clearSelection", () => {
-    selectedItems.value = [];
-    showCheckboxes.value = false;
-  });
+  eventbus.on("clearSelection", clearSelection);
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(
@@ -1781,14 +1914,13 @@ onMounted(async () => {
         // update item
         const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
         if (idx >= 0) {
-          const playData = evt.data as Record<string, unknown>;
-          if ("fully_played" in pagedItems.value[idx])
-            pagedItems.value[idx].fully_played = playData[
-              "fully_played"
-            ] as boolean;
-          if ("resume_position_ms" in pagedItems.value[idx])
-            pagedItems.value[idx].resume_position_ms =
-              (playData["seconds_played"] as number) * 1000;
+          const item = pagedItems.value[idx];
+          if (itemSupportsPlayLog(item)) {
+            const playData = evt.data as Record<string, unknown>;
+            item.fully_played = playData["fully_played"] as boolean;
+            item.resume_position_ms =
+              ((playData["seconds_played"] as number) ?? 0) * 1000;
+          }
         }
       }
     },
@@ -1816,7 +1948,7 @@ export interface StoredState {
 }
 
 const getSortName = function (
-  item: MediaItemType | ItemMapping,
+  item: MediaItemType | ItemMapping | null | undefined,
   preferSortName = false,
 ) {
   if (!item) return "";
@@ -1941,13 +2073,6 @@ const getFilteredItems = function (
   if (params.sortBy == "year_desc") {
     result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
   }
-  if (params.sortBy == "recent") {
-    result.sort((a, b) => {
-      const aTimestamp = "timestamp_added" in a ? a.timestamp_added : 0;
-      const bTimestamp = "timestamp_added" in b ? b.timestamp_added : 0;
-      return bTimestamp - aTimestamp;
-    });
-  }
 
   if (params.sortBy == "duration") {
     result.sort(
@@ -1965,7 +2090,7 @@ const getFilteredItems = function (
   }
 
   if (params.favoritesOnly) {
-    result = result.filter((x) => x.favorite);
+    result = result.filter((x) => "favorite" in x && x.favorite);
   }
 
   if (params.hideFullyPlayed) {
@@ -2075,5 +2200,13 @@ defineExpose({
   max-width: 10%;
   flex-basis: 10%;
   padding: 8px;
+}
+.content-tabs {
+  padding: 10px 16px 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 </style>

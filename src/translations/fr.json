@@ -264,8 +264,6 @@
                 }
             }
         },
-        "dsp_enabled": "Le DSP est activé",
-        "dsp_disabled": "Le DSP est désactivé",
         "dsp_note_multi_device_group": {
             "label": "Vous pouvez configurer le DSP pour chaque lecteur individuellement."
         },
@@ -424,7 +422,6 @@
         "remote_access_qr_code": "Code QR",
         "remote_access_qr_code_description": "Scannez avec l'appareil photo de votre téléphone pour vous connecter instantanément.",
         "reset_to_defaults": "Réinitialisation aux valeurs par défaut",
-        "reset_to_defaults_confirm": "Êtes-vous sûr de vouloir rétablir tous les paramètres à leurs valeurs par défaut ? Les modifications seront enregistrées immédiatement.",
         "unsaved_changes": "Modifications non enregistrées",
         "unsaved_changes_message": "Vous avez des modifications non enregistrées. Êtes-vous sûr de vouloir quitter sans enregistrer ?",
         "stay": "Rester",
@@ -507,7 +504,6 @@
         "artist": "Artiste",
         "name": "Alphabétiquement",
         "name_desc": "Par ordre alphabétique (décroissant)",
-        "recent": "Récemment ajouté",
         "year_desc": "Année de sortie (décroissant)",
         "duration_desc": "Durée (décroissant)",
         "original": "Original",
@@ -520,8 +516,6 @@
         "last_played_desc": "Dernière lecture (décroissant)",
         "play_count": "Nombre de lectures",
         "play_count_desc": "Nombre de lectures (décroissant)",
-        "artist_name": "Artiste de l'album",
-        "artist_name_desc": "Artiste de l'album (décroissant)",
         "album_sort_name": "Album (nom de tri)"
     },
     "state": {

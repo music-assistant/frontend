@@ -223,7 +223,6 @@
         "artist": "아티스트",
         "name": "이름순",
         "name_desc": "이름순 (내림차순)",
-        "recent": "최근에 추가됨",
         "year_desc": "발매년도 (내림차순)",
         "duration_desc": "재생시간 (내림차순)",
         "original": "오리지널",
@@ -235,9 +234,7 @@
         "last_played": "최근 재생순",
         "last_played_desc": "최근 재생순 (내림차순)",
         "play_count": "재생 횟수",
-        "play_count_desc": "재생 횟수 (내림차순)",
-        "artist_name": "아티스트",
-        "artist_name_desc": "아티스트 (내림차순)"
+        "play_count_desc": "재생 횟수 (내림차순)"
     },
     "state": {
         "idle": "idle",

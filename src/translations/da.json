@@ -252,8 +252,6 @@
                 "remove_confirm": "Er du sikker på, at du vil fjerne denne DSP-forudindstilling?"
             }
         },
-        "dsp_enabled": "DSP er aktiveret",
-        "dsp_disabled": "DSP er deaktiveret",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurere DSP'en for hver enkelt afspiller."
         },
@@ -332,7 +330,6 @@
         "artist": "Kunstner",
         "name": "Alfabetisk",
         "name_desc": "Alfabetisk (faldende)",
-        "recent": "Nyligt tilføjet",
         "year_desc": "Udgivelsesår (faldende)",
         "duration_desc": "Varighed (faldende)",
         "original": "Original",
@@ -344,9 +341,7 @@
         "last_played": "Sidst spillet",
         "last_played_desc": "Sidst spillet (faldende)",
         "play_count": "Antal afspilninger",
-        "play_count_desc": "Antal afspilninger (faldende)",
-        "artist_name": "Albumkunstner",
-        "artist_name_desc": "Albumkunstner (faldende)"
+        "play_count_desc": "Antal afspilninger (faldende)"
     },
     "state": {
         "idle": "keder sig",
