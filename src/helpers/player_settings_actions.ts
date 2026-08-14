@@ -4,7 +4,7 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
 import { openLinkInNewTab } from "@/helpers/utils";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { setUserPreference } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import {
   PlayerConfig,
@@ -188,8 +188,8 @@ async function setPlayerEnabled(config: PlayerConfig, enabled: boolean) {
     await api.savePlayerConfig(config.player_id, { enabled });
     if (!enabled) selectFallbackPlayer(config.player_id);
     toast.success($t("settings.player_saved"));
-  } catch (error) {
-    toast.error(String(error));
+  } catch {
+    // a failed command is already reported by the api layer
   }
 }
 
@@ -198,15 +198,15 @@ async function deletePlayer(playerId: string, onDeleted?: () => void) {
     await api.removePlayer(playerId);
     selectFallbackPlayer(playerId);
     onDeleted?.();
-  } catch (error) {
-    toast.error(String(error));
+  } catch {
+    // a failed command is already reported by the api layer
   }
 }
 
 /** Hands the player bar to another player, so it does not point at one that just left. */
 function selectFallbackPlayer(playerId: string) {
   if (store.activePlayerId !== playerId) return;
-  const fallbackPlayer = Object.values(api.players).find(
+  store.activePlayerId = Object.values(api.players).find(
     (candidate) =>
       candidate.player_id !== playerId &&
       candidate.available &&
@@ -214,10 +214,8 @@ function selectFallbackPlayer(playerId: string) {
       !candidate.needs_setup &&
       !candidate.hide_in_ui &&
       !candidate.synced_to,
-  );
-  store.activePlayerId = fallbackPlayer?.player_id;
-  if (!fallbackPlayer) {
-    // leave nothing remembered, or the next visit waits for a player that is gone
-    void useUserPreferences().setPreference("activePlayerId", null);
-  }
+  )?.player_id;
+  // a remembered player that never registers again leaves the next visit
+  // waiting for it instead of picking a player that is there
+  void setUserPreference("activePlayerId", null);
 }

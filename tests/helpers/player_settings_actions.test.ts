@@ -60,9 +60,7 @@ vi.mock("@/plugins/store", () => ({
 }));
 
 vi.mock("@/composables/userPreferences", () => ({
-  useUserPreferences: () => ({
-    setPreference,
-  }),
+  setUserPreference: setPreference,
 }));
 
 // the setup entry is built and covered where the player menus live
@@ -221,7 +219,8 @@ describe("getPlayerSettingsMenuItems actions", () => {
     await confirmation().onConfirm();
 
     expect(onDeleted).not.toHaveBeenCalled();
-    expect(toastMock.error).toHaveBeenCalledWith("Error: Remove failed");
+    // the api layer reports the failure, so this must not toast a second time
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 
   it("offers no deletion for a provider that cannot remove the player", () => {
@@ -248,10 +247,13 @@ describe("getPlayerSettingsMenuItems actions", () => {
       await confirmation().onConfirm();
 
       expect(storeMock.activePlayerId).toBe("office");
+      // the remembered one is gone for good, and waiting for it to come back
+      // would leave the next visit with no player at all
+      expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
     },
   );
 
-  it("forgets the remembered player when it was the last one", async () => {
+  it("forgets the remembered player when it leaves", async () => {
     storeMock.activePlayerId = "kitchen";
 
     menuItem(
@@ -278,6 +280,7 @@ describe("getPlayerSettingsMenuItems actions", () => {
     await confirmation().onConfirm();
 
     expect(storeMock.activePlayerId).toBe("office");
+    // it was not the player that left, so nothing about the selection changes
     expect(setPreference).not.toHaveBeenCalled();
   });
 });

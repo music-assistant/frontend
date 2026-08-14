@@ -70,20 +70,6 @@
       @update:value="onUpdateValue($event)"
     />
 
-    <!-- Player Options Button -->
-    <div
-      v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
-      class="dsp-config"
-    >
-      <v-btn
-        variant="outlined"
-        :disabled="isFieldDisabled"
-        @click="$emit('openOptions')"
-      >
-        {{ $t("player_options.open") }}
-      </v-btn>
-    </div>
-
     <!-- boolean value: checkbox -->
     <v-checkbox
       v-else-if="confEntry.type == ConfigEntryType.BOOLEAN"
@@ -358,7 +344,6 @@ const imageSrc = computed(
 const emit = defineEmits<{
   (e: "togglePassword"): void;
   (e: "action"): void;
-  (e: "openOptions"): void;
   (e: "update:value", value: ConfigValueType): void;
   // set the value of another entry on the same form
   (
@@ -503,12 +488,5 @@ const displayOptions = computed(() => {
   .config-slider-block {
     flex: 1;
   }
-}
-
-.dsp-config {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 0;
 }
 </style>

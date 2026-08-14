@@ -124,6 +124,7 @@
             variant="ghost"
             size="icon-sm"
             class="absolute top-4 right-4"
+            aria-haspopup="menu"
             :aria-label="$t('more_options')"
             @click="openPlayerMenu"
           >
@@ -422,8 +423,12 @@ const resetToDefaults = function () {
 const openPlayerMenu = function (evt: MouseEvent) {
   if (!config.value) return;
   const menuItems = getPlayerSettingsMenuItems(config.value, {
-    // the player is gone, and with it the page showing its settings
-    onDeleted: () => router.replace({ name: "playersettings" }),
+    // the player is gone, and with it the page showing its settings; unsaved
+    // edits have nothing left to save to, so they must not hold the way out
+    onDeleted: () => {
+      editConfig.value?.discardChanges();
+      router.replace({ name: "playersettings" });
+    },
   });
   // resetting acts on the form rather than on the player, so it is not part of
   // the menu the other player surfaces share
@@ -433,10 +438,16 @@ const openPlayerMenu = function (evt: MouseEvent) {
     icon: markRaw(RotateCcw),
     disabled: !config.value.enabled,
   });
+  // a click from the keyboard carries no coordinates, so fall back to the
+  // button itself and the menu opens against it rather than in the corner
+  const trigger =
+    evt.clientX || evt.clientY
+      ? undefined
+      : (evt.currentTarget as HTMLElement | null)?.getBoundingClientRect();
   eventbus.emit("contextmenu", {
     items: menuItems,
-    posX: evt.clientX,
-    posY: evt.clientY,
+    posX: trigger ? trigger.left : evt.clientX,
+    posY: trigger ? trigger.bottom : evt.clientY,
   });
 };
 

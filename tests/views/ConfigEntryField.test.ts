@@ -55,15 +55,6 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
     }),
   ],
   [
-    "a player options button",
-    entry({
-      key: "player_options",
-      type: ConfigEntryType.OPTIONS,
-      injected: true,
-    }),
-    "player_options.open",
-  ],
-  [
     "a number input without a range",
     entry({ key: "port", type: ConfigEntryType.INTEGER, value: 8095 }),
   ],

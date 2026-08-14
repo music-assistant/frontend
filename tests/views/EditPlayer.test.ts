@@ -25,6 +25,7 @@ import { providerManifest } from "../fixtures/providerManifest";
 
 const {
   apiMock,
+  editConfigDiscardMock,
   editConfigResetMock,
   emitEvent,
   getPlayerSettingsMenuItems,
@@ -41,6 +42,7 @@ const {
     savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
     subscribe: vi.fn(),
   },
+  editConfigDiscardMock: vi.fn(),
   editConfigResetMock: vi.fn(),
   emitEvent: vi.fn(),
   getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
@@ -75,6 +77,7 @@ const playerDetailsStubs = {
       "showAdvancedSettings",
     ],
     methods: {
+      discardChanges: editConfigDiscardMock,
       resetToDefaults: editConfigResetMock,
     },
     template: "<div />",
@@ -295,6 +298,9 @@ describe("EditPlayer", () => {
     // a step back would land on the page of the player that was just deleted
     expect(routerMock.replace).toHaveBeenCalledWith({ name: "playersettings" });
     expect(routerMock.back).not.toHaveBeenCalled();
+    // pending edits have nothing left to save to, so they must not hold the
+    // unsaved-changes guard and strand the user on a deleted player
+    expect(editConfigDiscardMock).toHaveBeenCalled();
   });
 
   it("renames the player from the header", async () => {

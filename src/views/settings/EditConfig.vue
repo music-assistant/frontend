@@ -27,7 +27,6 @@
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
           @set-entry-value="onEntryValueSet"
         />
@@ -48,7 +47,6 @@
       @action="onEntryAction"
       @help="onEntryHelp"
       @toggle-password="showPasswordValues = !showPasswordValues"
-      @open-options="openPlayerOptions"
     />
 
     <!-- Other regular settings sections -->
@@ -78,7 +76,6 @@
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
           @set-entry-value="onEntryValueSet"
         />
@@ -403,10 +400,6 @@ const openLink = function (url: string) {
   a.click();
 };
 
-const openPlayerOptions = function () {
-  router.push(`${router.currentRoute.value.path}/options`);
-};
-
 const onEntryAction = function (entry: ConfigEntryUI) {
   action(entry.action || entry.key, !!entry.immediate_apply);
 };
@@ -431,7 +424,15 @@ const saveFailed = function () {
   allowNavigation.value = false;
 };
 
-defineExpose({ resetToDefaults, saveFailed });
+/**
+ * Stops guarding the pending edits, for when what they belong to is gone and
+ * there is nothing left to save them to.
+ */
+const discardChanges = function () {
+  allowNavigation.value = true;
+};
+
+defineExpose({ resetToDefaults, saveFailed, discardChanges });
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;

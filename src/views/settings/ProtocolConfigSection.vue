@@ -29,7 +29,6 @@
         @update:value="emit('update:value', conf_entry, $event)"
         @toggle-password="emit('toggle-password')"
         @action="emit('action', conf_entry)"
-        @open-options="emit('open-options')"
         @help="emit('help', conf_entry)"
       />
 
@@ -90,7 +89,6 @@
                 @update:value="emit('update:value', conf_entry, $event)"
                 @toggle-password="emit('toggle-password')"
                 @action="emit('action', conf_entry)"
-                @open-options="emit('open-options')"
                 @help="emit('help', conf_entry)"
               />
               <div
@@ -143,7 +141,6 @@ const emit = defineEmits<{
   (e: "action", entry: ConfigEntryUI): void;
   (e: "help", entry: ConfigEntryUI): void;
   (e: "toggle-password"): void;
-  (e: "open-options"): void;
 }>();
 
 const entriesForCategory = function (category: string) {
