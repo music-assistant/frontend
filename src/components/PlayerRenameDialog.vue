@@ -66,18 +66,21 @@ watch(open, (value) => {
   store.dialogActive = value;
 });
 
+const onRenameRequested = (evt: PlayerRenameDialogEvent) => {
+  playerId.value = evt.playerId;
+  name.value = evt.name ?? "";
+  defaultName.value = evt.defaultName;
+  saving.value = false;
+  open.value = true;
+};
+
 onMounted(() => {
-  eventbus.on("playerRenameDialog", (evt: PlayerRenameDialogEvent) => {
-    playerId.value = evt.playerId;
-    name.value = evt.name ?? "";
-    defaultName.value = evt.defaultName;
-    saving.value = false;
-    open.value = true;
-  });
+  eventbus.on("playerRenameDialog", onRenameRequested);
 });
 
 onBeforeUnmount(() => {
-  eventbus.off("playerRenameDialog");
+  // named so this drops only its own listener, not every listener for the event
+  eventbus.off("playerRenameDialog", onRenameRequested);
   if (open.value) store.dialogActive = false;
 });
 
