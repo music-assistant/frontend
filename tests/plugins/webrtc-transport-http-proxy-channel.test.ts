@@ -6,11 +6,12 @@ import { WebRTCTransport } from "../../src/plugins/remote/webrtc-transport";
 // messages back in.
 class FakeDataChannel {
   readyState: RTCDataChannelState = "connecting";
+  binaryType: BinaryType = "blob";
   sent: string[] = [];
   onopen: (() => void) | null = null;
   onclose: (() => void) | null = null;
   onerror: (() => void) | null = null;
-  onmessage: ((event: { data: string }) => void) | null = null;
+  onmessage: ((event: { data: string | ArrayBuffer }) => void) | null = null;
 
   constructor(readonly label: string) {}
 
@@ -28,7 +29,7 @@ class FakeDataChannel {
     this.onclose?.();
   }
 
-  receive(data: string): void {
+  receive(data: string | ArrayBuffer): void {
     this.onmessage?.({ data });
   }
 }
@@ -40,6 +41,7 @@ type TransportInternals = {
   dataChannel: FakeDataChannel | null;
   httpProxyChannel: FakeDataChannel | null;
   chunkGroups: Map<number, unknown>;
+  pendingProxyBody: unknown;
   setupDataChannelHandlers: () => void;
 };
 
@@ -89,6 +91,7 @@ function serverInfo(schemaVersion: number): string {
   });
 }
 
+// The hex-in-JSON response clients still get when they proxy over the API channel.
 function proxyResponse(id: string, body: number[]): string {
   return JSON.stringify({
     type: "http-proxy-response",
@@ -99,11 +102,32 @@ function proxyResponse(id: string, body: number[]): string {
   });
 }
 
+// Frame a response the way the dedicated channel carries it: a JSON header, then the
+// body as raw binary messages.
+function binaryProxyResponse(
+  id: string,
+  body: number[],
+  frameBytes = Math.max(1, body.length),
+): [string, ...ArrayBuffer[]] {
+  const header = JSON.stringify({
+    type: "http-proxy-response",
+    id,
+    status: 200,
+    headers: { "content-type": "image/png" },
+    size: body.length,
+  });
+  const frames: ArrayBuffer[] = [];
+  for (let offset = 0; offset < body.length; offset += frameBytes) {
+    frames.push(new Uint8Array(body.slice(offset, offset + frameBytes)).buffer);
+  }
+  return [header, ...frames];
+}
+
 function sentRequestId(channel: FakeDataChannel): string {
   return JSON.parse(channel.sent[0]).id;
 }
 
-// Split a message into "__chunk__" frames the way the server does.
+// Split a message into "__chunk__" frames the way the server splits an oversized one.
 function makeChunks(text: string, id: number, pieceBytes = 8): string[] {
   const bytes = new TextEncoder().encode(text);
   const count = Math.max(1, Math.ceil(bytes.length / pieceBytes));
@@ -156,12 +180,69 @@ describe("WebRTCTransport http_proxy channel", () => {
       path: "/imageproxy?p=1",
     });
 
-    proxyChannel.receive(
-      proxyResponse(sentRequestId(proxyChannel), [1, 2, 3, 4]),
-    );
+    // the channel must hand raw frames over as ArrayBuffers, not Blobs
+    expect(proxyChannel.binaryType).toBe("arraybuffer");
+
+    for (const frame of binaryProxyResponse(
+      sentRequestId(proxyChannel),
+      [1, 2, 3, 4],
+    )) {
+      proxyChannel.receive(frame);
+    }
     const { status, body } = await response;
     expect(status).toBe(200);
     expect(Array.from(body)).toEqual([1, 2, 3, 4]);
+  });
+
+  it("resolves an empty body from its header alone", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    const response = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const [header] = binaryProxyResponse(sentRequestId(proxyChannel), []);
+    proxyChannel.receive(header);
+
+    const { status, body } = await response;
+    expect(status).toBe(200);
+    expect(body).toHaveLength(0);
+  });
+
+  it("still reads a hex response on the dedicated channel", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    // a server that reports schema 49 but predates the binary framing answers like this
+    const response = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    proxyChannel.receive(proxyResponse(sentRequestId(proxyChannel), [4, 5, 6]));
+
+    const { status, body } = await response;
+    expect(status).toBe(200);
+    expect(Array.from(body)).toEqual([4, 5, 6]);
+  });
+
+  it("still reads a chunked hex response on the dedicated channel", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    // that server splits any hex response past its chunk size, so most images arrive
+    // as several frames rather than one message
+    const response = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const message = proxyResponse(sentRequestId(proxyChannel), [1, 2, 3, 4, 5]);
+    const frames = makeChunks(message, 7);
+    expect(frames.length).toBeGreaterThan(1);
+    for (const frame of frames) proxyChannel.receive(frame);
+
+    const { body } = await response;
+    expect(Array.from(body)).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("negotiates the dedicated channel only once per connection", async () => {
@@ -174,7 +255,7 @@ describe("WebRTCTransport http_proxy channel", () => {
     expect(channels).toHaveLength(1);
   });
 
-  it("reassembles a chunked response that arrives on the dedicated channel", async () => {
+  it("reassembles a body split across several binary frames", async () => {
     const { transport, apiChannel, channels } = makeTransport();
 
     apiChannel.receive(serverInfo(49));
@@ -182,11 +263,13 @@ describe("WebRTCTransport http_proxy channel", () => {
     const proxyChannel = channels[0];
 
     const response = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
-    const message = proxyResponse(
+    const frames = binaryProxyResponse(
       sentRequestId(proxyChannel),
       [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+      4,
     );
-    for (const frame of makeChunks(message, 42)) proxyChannel.receive(frame);
+    expect(frames).toHaveLength(4); // header plus 4/4/2 bytes
+    for (const frame of frames) proxyChannel.receive(frame);
 
     const { body } = await response;
     expect(Array.from(body)).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
@@ -210,6 +293,30 @@ describe("WebRTCTransport http_proxy channel", () => {
     await expect(response).resolves.toMatchObject({ status: 200 });
   });
 
+  it("drops a half-received body when the dedicated channel closes", async () => {
+    const { transport, internals, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    const request = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const [header, firstFrame] = binaryProxyResponse(
+      sentRequestId(proxyChannel),
+      [1, 2, 3, 4, 5, 6, 7, 8],
+      4,
+    );
+    // the channel drops with the body only partly delivered
+    proxyChannel.receive(header);
+    proxyChannel.receive(firstFrame);
+    expect(internals.pendingProxyBody).not.toBeNull();
+
+    proxyChannel.close();
+
+    await expect(request).rejects.toThrow();
+    expect(internals.pendingProxyBody).toBeNull();
+  });
+
   it("drops half-received chunks when the dedicated channel closes", async () => {
     const { transport, internals, apiChannel, channels } = makeTransport();
 
@@ -217,18 +324,61 @@ describe("WebRTCTransport http_proxy channel", () => {
     await flush();
     const proxyChannel = channels[0];
 
-    void transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const request = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
     const frames = makeChunks(
-      proxyResponse(sentRequestId(proxyChannel), [1, 2, 3, 4, 5, 6, 7, 8]),
-      42,
+      proxyResponse(sentRequestId(proxyChannel), [1, 2, 3, 4, 5]),
+      11,
     );
-    // the channel drops with the response only partly delivered
+    // the channel drops with the hex response only partly reassembled
     proxyChannel.receive(frames[0]);
     expect(internals.chunkGroups.size).toBe(1);
 
     proxyChannel.close();
 
+    await expect(request).rejects.toThrow();
     expect(internals.chunkGroups.size).toBe(0);
+  });
+
+  it("fails requests still in flight when the dedicated channel closes", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    apiChannel.receive(serverInfo(49));
+    await flush();
+    const proxyChannel = channels[0];
+
+    const streaming = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    const alsoWaiting = transport.sendHttpProxyRequest(
+      "GET",
+      "/imageproxy?p=2",
+    );
+    // the first is mid-body, the second has not been answered at all
+    const [header, firstFrame] = binaryProxyResponse(
+      sentRequestId(proxyChannel),
+      [1, 2, 3, 4, 5, 6, 7, 8],
+      4,
+    );
+    proxyChannel.receive(header);
+    proxyChannel.receive(firstFrame);
+
+    proxyChannel.close();
+
+    // both fail now rather than sitting out the 30s request timeout
+    await expect(streaming).rejects.toThrow("http_proxy channel closed");
+    await expect(alsoWaiting).rejects.toThrow("http_proxy channel closed");
+  });
+
+  it("leaves API-channel requests alone when the dedicated channel closes", async () => {
+    const { transport, apiChannel, channels } = makeTransport();
+
+    // this one goes out before the dedicated channel exists, so it must survive its close
+    const viaApi = transport.sendHttpProxyRequest("GET", "/imageproxy?p=1");
+    apiChannel.receive(serverInfo(49));
+    await flush();
+
+    channels[0].close();
+
+    apiChannel.receive(proxyResponse(sentRequestId(apiChannel), [7, 7]));
+    await expect(viaApi).resolves.toMatchObject({ status: 200 });
   });
 
   it("never emits a message that arrives on the dedicated channel", async () => {

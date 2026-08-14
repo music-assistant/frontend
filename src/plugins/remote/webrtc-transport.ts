@@ -81,6 +81,8 @@ export class WebRTCTransport extends BaseTransport {
         body: Uint8Array;
       }) => void;
       reject: (error: Error) => void;
+      // requests sent on the proxy channel die with it, unlike those on the API channel
+      onProxyChannel: boolean;
     }
   >();
   // Reassembly buffers for oversized messages the server splits into chunks, keyed by group id.
@@ -95,6 +97,18 @@ export class WebRTCTransport extends BaseTransport {
       dispatch: (data: string) => void;
     }
   >();
+  // Stable identity, so a closing proxy channel can find the groups it started.
+  private readonly dispatchHttpProxy = (data: string): void =>
+    this.handleHttpProxyMessage(data);
+  // Response being reassembled on the proxy channel: its header, then raw body frames.
+  private pendingProxyBody: {
+    id: string;
+    status: number;
+    headers: Record<string, string>;
+    size: number;
+    parts: Uint8Array[];
+    received: number;
+  } | null = null;
   // ICE servers received from the signaling server (provided by MA server)
   private iceServers: IceServerConfig[] = [];
 
@@ -324,17 +338,69 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   /**
-   * Handle a message from the http_proxy channel, which only ever carries proxy responses.
+   * Handle a message from the http_proxy channel, which carries each proxy response as a
+   * JSON header followed by its body as raw binary frames.
    */
-  private dispatchHttpProxyMessage(data: string): void {
-    try {
-      const parsed = JSON.parse(data);
-      if (parsed.type === "http-proxy-response") {
-        this.handleHttpProxyResponse(parsed);
-      }
-    } catch {
-      // not JSON; nothing on this channel to dispatch
+  private handleHttpProxyMessage(data: string | ArrayBuffer): void {
+    if (typeof data !== "string") {
+      const pending = this.pendingProxyBody;
+      if (!pending) return;
+      pending.parts.push(new Uint8Array(data));
+      pending.received += data.byteLength;
+      if (pending.received >= pending.size) this.completeHttpProxyBody();
+      return;
     }
+    let parsed;
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      return; // not JSON; nothing on this channel to dispatch
+    }
+    // a hex response big enough to be split arrives as chunk frames to reassemble first
+    if (parsed.type === "__chunk__") {
+      this.handleChunk(parsed, this.dispatchHttpProxy);
+      return;
+    }
+    if (parsed.type !== "http-proxy-response") return;
+    // a response without a body length is the hex-in-JSON form, which a server that
+    // predates the binary framing still answers with
+    if (typeof parsed.size !== "number") {
+      this.handleHttpProxyResponse(parsed);
+      return;
+    }
+    // no point buffering frames for a request that already gave up
+    if (!this.httpProxyCallbacks.has(parsed.id)) return;
+    this.pendingProxyBody = {
+      id: parsed.id,
+      status: parsed.status,
+      headers: parsed.headers,
+      size: parsed.size,
+      parts: [],
+      received: 0,
+    };
+    // an empty body is sent as a header on its own
+    if (parsed.size === 0) this.completeHttpProxyBody();
+  }
+
+  private completeHttpProxyBody(): void {
+    const pending = this.pendingProxyBody;
+    if (!pending) return;
+    this.pendingProxyBody = null;
+    // check for a waiting caller before assembling, which for an image copies real bytes
+    const callbacks = this.httpProxyCallbacks.get(pending.id);
+    if (!callbacks) return;
+    this.httpProxyCallbacks.delete(pending.id);
+    const body = new Uint8Array(pending.received);
+    let offset = 0;
+    for (const part of pending.parts) {
+      body.set(part, offset);
+      offset += part.byteLength;
+    }
+    callbacks.resolve({
+      status: pending.status,
+      headers: pending.headers,
+      body: body.subarray(0, pending.size),
+    });
   }
 
   private maybeOpenHttpProxyChannel(schemaVersion: number): void {
@@ -357,15 +423,26 @@ export class WebRTCTransport extends BaseTransport {
         channel.close();
         return;
       }
-      const dispatch = (data: string) => this.dispatchHttpProxyMessage(data);
-      this.attachMessageHandler(channel, dispatch);
+      // body frames arrive as raw binary, which must not be surfaced as Blobs
+      channel.binaryType = "arraybuffer";
+      channel.onmessage = (event) => this.handleHttpProxyMessage(event.data);
       channel.onclose = () => {
-        // a response cut off mid-chunk can never be reassembled, so drop what it left
+        // a response cut off mid-transfer can never be completed, so drop what it left
+        this.pendingProxyBody = null;
         for (const [id, group] of this.chunkGroups) {
-          if (group.dispatch === dispatch) this.chunkGroups.delete(id);
+          if (group.dispatch === this.dispatchHttpProxy) {
+            this.chunkGroups.delete(id);
+          }
         }
         if (this.httpProxyChannel === channel) {
           this.httpProxyChannel = null;
+        }
+        // nothing still in flight here can be answered now, so fail those callers at once
+        // rather than leaving each one waiting out its timeout
+        for (const [id, callbacks] of this.httpProxyCallbacks) {
+          if (!callbacks.onProxyChannel) continue;
+          this.httpProxyCallbacks.delete(id);
+          callbacks.reject(new Error("http_proxy channel closed"));
         }
       };
       this.httpProxyChannel = channel;
@@ -574,12 +651,20 @@ export class WebRTCTransport extends BaseTransport {
       body: Uint8Array;
     }>((resolve, reject) => {
       // Store callbacks
-      this.httpProxyCallbacks.set(requestId, { resolve, reject });
+      this.httpProxyCallbacks.set(requestId, {
+        resolve,
+        reject,
+        onProxyChannel: channel === this.httpProxyChannel,
+      });
 
       // Set timeout
       setTimeout(() => {
         if (this.httpProxyCallbacks.has(requestId)) {
           this.httpProxyCallbacks.delete(requestId);
+          // stop buffering frames nothing is waiting for any more
+          if (this.pendingProxyBody?.id === requestId) {
+            this.pendingProxyBody = null;
+          }
           reject(new Error("HTTP proxy request timeout"));
         }
       }, 30000);
@@ -759,6 +844,7 @@ export class WebRTCTransport extends BaseTransport {
     }
     this.httpProxyCallbacks.clear();
     this.chunkGroups.clear();
+    this.pendingProxyBody = null;
   }
 
   /**
