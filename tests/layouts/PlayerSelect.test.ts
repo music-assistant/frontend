@@ -52,6 +52,7 @@ vi.mock("@/plugins/store", async () => {
       activePlayerId: undefined as string | undefined,
       companionPlayerId: undefined as string | undefined,
       dialogActive: false,
+      isTouchscreen: false,
       mobileLayout: false,
       showFullscreenPlayer: false,
       showPlayersMenu: true,
@@ -197,17 +198,12 @@ const PopoverAnchorStub = {
   props: ["reference"],
   template: `<div><slot /></div>`,
 };
+// deliberately not focusable: where the panel puts its opening focus depends on
+// the markup reka renders around it, so those tests mount the real popover
 const PopoverContentStub = {
   name: "PopoverContent",
-  emits: ["interact-outside", "open-auto-focus"],
-  template: `
-    <div
-      tabindex="-1"
-      @open-auto-focus="$emit('open-auto-focus', $event)"
-    >
-      <slot />
-    </div>
-  `,
+  emits: ["interact-outside"],
+  template: `<div><slot /></div>`,
 };
 
 function createPlayer(
@@ -267,6 +263,28 @@ function createPlayer(
     synced_to: null,
     sleep_timer_expires_at: null,
   };
+}
+
+// enough players for the panel to show its search field
+function manyPlayers(): Record<string, Player> {
+  return Object.fromEntries(
+    Array.from({ length: 11 }, (_, index) => {
+      const player = createPlayer(`player-${index}`, `Player ${index}`);
+      return [player.player_id, player];
+    }),
+  );
+}
+
+// resolves with the panel once reka has mounted it and settled its focus
+function findOpenPanel() {
+  return vi.waitFor(() => {
+    const panel = document.body.querySelector(
+      '[data-testid="player-select-sheet"]',
+    );
+    expect(panel).not.toBeNull();
+    expect(panel!.contains(document.activeElement)).toBe(true);
+    return panel!;
+  });
 }
 
 function setPlayerSelectPreference(key: string, value: boolean | string) {
@@ -345,6 +363,7 @@ describe("PlayerSelect", () => {
     store.activePlayerId = undefined;
     store.companionPlayerId = undefined;
     store.dialogActive = false;
+    store.isTouchscreen = false;
     store.mobileLayout = false;
     store.showFullscreenPlayer = false;
     store.showPlayersMenu = true;
@@ -834,36 +853,35 @@ describe("PlayerSelect", () => {
     );
   });
 
-  it("focuses the sheet instead of opening the mobile keyboard", () => {
+  // reka reports the opening focus on the wrapper it positions the panel with,
+  // and that wrapper cannot hold focus, so only a real mount shows where focus
+  // ends up. A touchscreen is the gate either way: a phone held sideways gets
+  // the desktop layout and still raises a keyboard.
+  it.each([true, false])(
+    "focuses the panel instead of the search field on touch (mobile layout: %s)",
+    async (mobileLayout) => {
+      store.isTouchscreen = true;
+      store.mobileLayout = mobileLayout;
+      api.players = manyPlayers();
+      const wrapper = mountPlayerSelectWithPopover();
+
+      const panel = await findOpenPanel();
+      expect(document.activeElement).toBe(panel);
+
+      wrapper.unmount();
+    },
+  );
+
+  it("leaves the opening focus alone without a touchscreen", async () => {
     store.mobileLayout = true;
-    api.players = Object.fromEntries(
-      Array.from({ length: 11 }, (_, index) => {
-        const player = createPlayer(`player-${index}`, `Player ${index}`);
-        return [player.player_id, player];
-      }),
-    );
-    const wrapper = mountPlayerSelect();
-    const popover = wrapper.get('[data-testid="player-select-sheet"]');
-    if (!(popover.element instanceof HTMLElement)) {
-      throw new TypeError("Expected popover to render as an HTML element");
-    }
-    const focus = vi.spyOn(popover.element, "focus");
-    const event = new Event("open-auto-focus", { cancelable: true });
+    api.players = manyPlayers();
+    const wrapper = mountPlayerSelectWithPopover();
 
-    popover.element.dispatchEvent(event);
+    const panel = await findOpenPanel();
+    expect(document.activeElement).not.toBe(panel);
+    expect(panel.contains(document.activeElement)).toBe(true);
 
-    expect(event.defaultPrevented).toBe(true);
-    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
-  });
-
-  it("keeps the default focus behavior in desktop layout", () => {
-    const wrapper = mountPlayerSelect();
-    const popover = wrapper.get('[data-testid="player-select-sheet"]');
-    const event = new Event("open-auto-focus", { cancelable: true });
-
-    popover.element.dispatchEvent(event);
-
-    expect(event.defaultPrevented).toBe(false);
+    wrapper.unmount();
   });
 
   it("restores focus to the menu trigger after closing", async () => {

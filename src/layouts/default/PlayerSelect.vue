@@ -47,7 +47,7 @@
       ]"
       @keydown="handleSheetKeydown"
       @close-auto-focus="preventAutoFocus"
-      @open-auto-focus="handleSheetOpenAutoFocus"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
       @interact-outside="handleSheetInteractOutside"
     >
       <PanelDragHandle @dismiss="setMenuOpen(false)" />
@@ -202,6 +202,7 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import {
   PLAYER_BAR_POPOUT_COLLISION_PADDING,
   PLAYER_BAR_POPOUT_GAP,
@@ -374,14 +375,6 @@ function setMenuOpen(isOpen: boolean) {
 function handleSheetKeydown(event: KeyboardEvent) {
   event.stopPropagation();
   if (event.key === "Escape") setMenuOpen(false);
-}
-
-function handleSheetOpenAutoFocus(event: Event) {
-  if (!store.mobileLayout) return;
-  event.preventDefault();
-  if (event.target instanceof HTMLElement) {
-    event.target.focus({ preventScroll: true });
-  }
 }
 
 function handleSheetInteractOutside(event: Event) {
