@@ -289,6 +289,123 @@
               />
             </div>
           </section>
+
+          <!-- Statistics/Charts row -->
+          <section
+            v-else-if="row.kind === 'statistics'"
+            class="ed-section ed-statistics"
+            :class="{ 'ed-dimmed': editMode && row.hidden }"
+          >
+            <div class="ed-statistics__head">
+              <div class="ed-statistics__titles">
+                <h2 class="ed-statistics__title">
+                  {{ $t("statistics_charts") }}
+                </h2>
+                <div class="ed-statistics__controls">
+                  <Tabs
+                    :model-value="activeStatTab"
+                    class="ed-statistics__tabs"
+                    @update:model-value="
+                      (v) => (activeStatTab = v as MediaType)
+                    "
+                  >
+                    <TabsList class="h-auto w-auto gap-4 bg-transparent p-0">
+                      <TabsTrigger
+                        v-for="tab in statisticsTabs"
+                        :key="tab.type"
+                        :value="tab.type"
+                        class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 text-[13px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
+                      >
+                        {{ tab.label }}
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <select
+                    v-model="activeStatPeriod"
+                    class="ed-statistics__period-select"
+                  >
+                    <option value="today">{{ $t("period_today") }}</option>
+                    <option value="week">{{ $t("period_week") }}</option>
+                    <option value="month">{{ $t("period_month") }}</option>
+                    <option value="year">{{ $t("period_year") }}</option>
+                    <option value="all_time">
+                      {{ $t("period_all_time") }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div v-if="editMode" class="ed-edit-controls">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_row')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </div>
+            </div>
+
+            <div class="ed-statistics__scroll ma-scroll">
+              <div
+                v-if="statisticsItems.length === 0"
+                class="ed-statistics__empty"
+              >
+                {{ $t("no_statistics_data") }}
+              </div>
+              <div v-else class="ed-statistics__track">
+                <ChartItem
+                  v-for="(statItem, statIdx) in statisticsItems"
+                  :key="statItem.item.uri"
+                  :item="statItem.item"
+                  :position="statIdx + 1"
+                  :play-count="statItem.play_count"
+                />
+              </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="ed-charts__scroll ma-scroll">
+              <div class="ed-charts__grid">
+                <div class="ed-charts__item--wide">
+                  <PieChartCard
+                    :title="$t('artist_distribution')"
+                    :data="artistDistribution"
+                    :loading="chartsLoading"
+                  />
+                </div>
+                <LineChartCard
+                  :title="$t('plays_over_time')"
+                  :data="playsOverTime"
+                  :loading="chartsLoading"
+                />
+                <BarChartCard
+                  :title="$t('listening_time')"
+                  :data="listeningTime"
+                  :loading="chartsLoading"
+                />
+                <ListeningClockCard
+                  :title="$t('listening_clock')"
+                  :data="listeningActivity"
+                  :loading="chartsLoading"
+                />
+                <DecadeBarChartCard
+                  :title="$t('music_by_decade')"
+                  :data="decadeDistribution"
+                  :loading="chartsLoading"
+                />
+              </div>
+            </div>
+          </section>
         </div>
 
         <!-- Floating ghost that follows the pointer while dragging a row -->
@@ -308,6 +425,12 @@
 </template>
 
 <script setup lang="ts">
+import BarChartCard from "@/components/statistics/BarChartCard.vue";
+import DecadeBarChartCard from "@/components/statistics/DecadeBarChartCard.vue";
+import ListeningClockCard from "@/components/statistics/ListeningClockCard.vue";
+import LineChartCard from "@/components/statistics/LineChartCard.vue";
+import PieChartCard from "@/components/statistics/PieChartCard.vue";
+import ChartItem from "@/components/discover/ChartItem.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
 import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
@@ -320,6 +443,7 @@ import {
   DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
   PLAYERS_ROW_ID,
+  STATISTICS_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
   setDiscoverRowHidden,
@@ -331,12 +455,14 @@ import {
 } from "@/components/discover/utils/rowItems";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   EventType,
+  MediaType,
   PlaybackState,
   RecommendationFolderType,
   type EventMessage,
@@ -345,6 +471,7 @@ import {
   type MediaItemTypeOrItemMapping,
   type Player,
   type RecommendationFolder,
+  type TopItemResult,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -378,6 +505,33 @@ const recommendations = ref<RecommendationFolder[]>([]);
 const rowItemsMap = ref(new Map<string, MediaItemTypeOrItemMapping[]>());
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
+
+// Statistics state
+const activeStatTab = ref<MediaType>(MediaType.TRACK);
+const activeStatPeriod = ref<string>("week");
+const statisticsItems = ref<
+  { item: MediaItemTypeOrItemMapping; play_count: number }[]
+>([]);
+const statisticsLoading = ref(false);
+const statisticsInitialized = ref(false);
+
+// Statistics charts state
+const genreDistribution = ref<Array<{ name: string; value: number }>>([]);
+const artistDistribution = ref<TopItemResult[]>([]);
+const playsOverTime = ref<Array<{ timestamp: string; value: number }>>([]);
+const listeningActivity = ref<
+  Array<{ hour: number; weekday: number; value: number }>
+>([]);
+const listeningTime = ref<Array<{ name: string; minutes: number }>>([]);
+const decadeDistribution = ref<Array<{ name: string; value: number }>>([]);
+const chartsLoading = ref(false);
+
+const statisticsTabs = computed(() => [
+  { type: MediaType.TRACK, label: $t("tracks") },
+  { type: MediaType.ALBUM, label: $t("albums") },
+  { type: MediaType.ARTIST, label: $t("artists") },
+  { type: MediaType.PLAYLIST, label: $t("playlists") },
+]);
 
 const tilesPerView = computed(() => {
   const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
@@ -440,6 +594,11 @@ watch(
     nextTick(alignPlayersShelf);
   },
 );
+
+watch([activeStatTab, activeStatPeriod], () => {
+  loadStatistics();
+  loadStatisticsCharts();
+});
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 
@@ -579,7 +738,12 @@ const refreshTopPicks = async () => {
 };
 
 // --- Unified row list: visibility + ordering via the discover.rows pref ---
-type DiscoverRowKind = "players" | "top_picks" | "recommendation" | "genres";
+type DiscoverRowKind =
+  | "players"
+  | "top_picks"
+  | "recommendation"
+  | "genres"
+  | "statistics";
 
 interface DiscoverRow {
   id: string;
@@ -613,6 +777,7 @@ const availableRowIds = computed<string[]>(() => {
   for (const uri of recUris) {
     if (!ids.includes(uri)) ids.push(uri);
   }
+  if (statisticsInitialized.value) ids.push(STATISTICS_ROW_ID);
   if (genres.value.length > 0) ids.push(GENRES_ROW_ID);
   return ids;
 });
@@ -644,6 +809,13 @@ const allRows = computed<DiscoverRow[]>(() => {
         id,
         kind: "genres",
         title: $t("browse_by_genre"),
+        hidden: hidden.has(id),
+      });
+    } else if (id === STATISTICS_ROW_ID) {
+      rows.push({
+        id,
+        kind: "statistics",
+        title: $t("statistics_charts"),
         hidden: hidden.has(id),
       });
     } else {
@@ -796,6 +968,56 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
+const loadStatistics = async () => {
+  statisticsLoading.value = true;
+  try {
+    const result = await api.getTopItems(
+      activeStatTab.value,
+      activeStatPeriod.value,
+      50,
+    );
+    statisticsItems.value = result.filter((item) => item && item.item);
+  } catch (err) {
+    console.error("Failed to load statistics:", err);
+    statisticsItems.value = [];
+  } finally {
+    statisticsLoading.value = false;
+    statisticsInitialized.value = true;
+  }
+};
+
+const loadStatisticsCharts = async () => {
+  chartsLoading.value = true;
+  try {
+    const period = activeStatPeriod.value;
+    const [
+      genreData,
+      artistData,
+      playsData,
+      activityData,
+      listeningTimeData,
+      decadeData,
+    ] = await Promise.all([
+      api.getGenreDistribution(period, 10).catch(() => []),
+      api.getArtistDistribution(period, 10).catch(() => []),
+      api.getPlaysOverTime(period, "day").catch(() => []),
+      api.getListeningActivity(period).catch(() => []),
+      api.getListeningTime(period, "artist", 10).catch(() => []),
+      api.getDecadeDistribution("all_time", 10).catch(() => []),
+    ]);
+    genreDistribution.value = genreData;
+    artistDistribution.value = artistData;
+    playsOverTime.value = playsData;
+    listeningActivity.value = activityData;
+    listeningTime.value = listeningTimeData;
+    decadeDistribution.value = decadeData;
+  } catch (err) {
+    console.error("Failed to load statistics charts:", err);
+  } finally {
+    chartsLoading.value = false;
+  }
+};
+
 let unmounted = false;
 let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -844,6 +1066,8 @@ onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
   loadGenres();
+  loadStatistics();
+  loadStatisticsCharts();
   window.addEventListener("resize", updateHeroNav);
 
   await loadRecommendationRows();
@@ -1118,6 +1342,151 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+
+.ed-statistics {
+  padding: 0 28px;
+}
+
+.ed-statistics__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.ed-statistics__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ed-statistics__controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ed-statistics__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: rgb(var(--v-theme-on-background));
+}
+
+.ed-statistics__tabs {
+  margin-top: 4px;
+  flex: 1;
+}
+
+.ed-statistics__period-select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
+  font-size: 13px;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.ed-statistics__period-select:hover {
+  border-color: rgba(var(--v-theme-on-surface), 0.24);
+}
+
+.ed-statistics__period-select:focus {
+  outline: none;
+  border-color: rgb(var(--v-theme-primary));
+}
+
+.ed-statistics__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ed-statistics__track {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.ed-statistics__empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: rgb(var(--v-theme-on-background));
+  opacity: 0.5;
+  font-size: 14px;
+}
+
+.ed-statistics .ed-charts__scroll {
+  margin-top: 24px;
+}
+
+.ed-charts {
+  padding: 0 28px;
+  margin-bottom: 32px;
+}
+
+.ed-charts__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.ed-charts__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: rgb(var(--v-theme-on-background));
+}
+
+.ed-charts__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 8px;
+}
+
+.ed-charts__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(320px, 1fr));
+  gap: 16px;
+  padding: 4px;
+}
+
+.ed-charts__item--wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 1400px) {
+  .ed-charts__grid {
+    grid-template-columns: repeat(2, minmax(320px, 1fr));
+  }
+
+  .ed-charts__item--wide {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .ed-charts__grid {
+    display: flex;
+    gap: 12px;
+  }
+
+  .ed-charts__item--wide {
+    grid-column: auto;
+  }
 }
 
 .ed-footer-space {
