@@ -549,6 +549,8 @@ let lastSentValue: number | null = null;
 // Relative mode: the drag *distance* is applied to the value the drag started
 // from, at reduced speed so small adjustments are easier to land.
 const RELATIVE_DRAG_SENSITIVITY = 0.5;
+// Below this a relative-mode mouse gesture counts as a click, not a drag
+const MOUSE_DRAG_THRESHOLD_PX = 5;
 
 onUnmounted(() => {
   if (dragEndTimeout) clearTimeout(dragEndTimeout);
@@ -1059,10 +1061,15 @@ const onTouchCancel = () => {
 // the slider has pointer-events disabled, which also makes the pointer
 // handlers inert (their targetsSlider check can never match).
 
-const MOUSE_DRAG_THRESHOLD_PX = 5;
-
 const onMouseMove = (event: MouseEvent) => {
-  if (!isMouseDragging.value || isSliderDisabled.value) return;
+  if (!isMouseDragging.value) return;
+  // A mouseup swallowed by a context menu or a window switch would otherwise
+  // leave the drag latched, and with it the block on server volume updates.
+  if (event.buttons === 0) {
+    onMouseUp(event);
+    return;
+  }
+  if (isSliderDisabled.value) return;
 
   const newValue = getValueFromDelta(
     mouseStartValue.value,
@@ -1084,11 +1091,17 @@ const onMouseUp = (event: MouseEvent) => {
 
   if (Math.abs(deltaX) < MOUSE_DRAG_THRESHOLD_PX) {
     // Too little travel to be a drag, so treat it as a click and run the group
-    // action instead of changing the volume.
-    if (handlesGroupTap.value) {
+    // action instead of changing the volume. Guarded like onSliderClick: a tap
+    // on a touchscreen also arrives here as a compatibility mouse event, after
+    // touchend has already run the action.
+    if (
+      handlesGroupTap.value &&
+      !isTouching.value &&
+      Date.now() - lastPopoutToggleTime >= 500
+    ) {
       handleGroupTap();
     }
-  } else {
+  } else if (!isSliderDisabled.value) {
     const finalValue = getValueFromDelta(mouseStartValue.value, deltaX);
     displayValue.value = finalValue;
     emit("update:local-value", finalValue);
@@ -1100,7 +1113,12 @@ const onMouseUp = (event: MouseEvent) => {
 
 const onMouseDown = (event: MouseEvent) => {
   if (!isRelativeMode.value) return;
-  if (isSliderDisabled.value) return;
+  // only the primary button drags: a right click has its own context menu, and
+  // latching on it would block server updates until the mouse moved again
+  if (event.button !== 0) return;
+  // a muted slider still answers a tap by opening the group's own controls,
+  // which is how you get to a child slider to unmute it
+  if (isSliderDisabled.value && !handlesGroupTap.value) return;
   // Leave the mute button and the volume readout to their own handlers
   if (
     (event.target as HTMLElement).closest(".volume-prepend, .volume-append")
@@ -1354,9 +1372,9 @@ watch(
 
 /* --- Group volume popout styles are in the unscoped style block below --- */
 
-/* Absolute mode on touch devices: the container owns the gesture, so the
-   slider itself must not swallow pointer events. Mouse input still reaches
-   the slider, which keeps click-to-position and keyboard control working. */
+/* On touch devices the container owns the gesture, so the slider itself must
+   not swallow pointer events. Mouse input still reaches the slider, which in
+   absolute mode keeps click-to-position and keyboard control working. */
 @media (pointer: coarse) {
   .volume-slider,
   .volume-slider :deep(*) {

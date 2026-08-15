@@ -82,8 +82,8 @@ const serializeValue = (value: ConfigValueType | undefined): string =>
 const valueChanged = (key: string, value: ConfigValueType): boolean =>
   serializeValue(value) !== initialValues[key];
 
-// Per-user preferences their consumers read as computed refs, so saving one
-// takes effect immediately and the reload below would achieve nothing.
+// The volume slider reads these as computed refs, so saving one takes effect
+// immediately and the reload below would achieve nothing.
 const RELOAD_EXEMPT_PREFERENCE_KEYS = new Set([
   "volume_slider_mode",
   "volume_haptics",

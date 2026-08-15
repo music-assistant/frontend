@@ -160,8 +160,10 @@ function mountVolume(
   return { wrapper, container, player };
 }
 
-const mouseMove = (clientX: number) =>
-  document.dispatchEvent(new MouseEvent("mousemove", { clientX }));
+// buttons: 1 is what a real browser reports while the left button is held; a
+// move without it means the release was missed.
+const mouseMove = (clientX: number, buttons = 1) =>
+  document.dispatchEvent(new MouseEvent("mousemove", { clientX, buttons }));
 const mouseUp = (clientX: number) =>
   document.dispatchEvent(new MouseEvent("mouseup", { clientX }));
 
@@ -295,6 +297,94 @@ describe("PlayerVolume relative mode", () => {
 
     expect(wrapper.emitted("toggle-group-expansion")).toHaveLength(1);
     expect(api.playerCommandGroupVolume).not.toHaveBeenCalled();
+  });
+
+  it("runs the group action once for a tap that also emits mouse events", async () => {
+    const child = createPlayer({ player_id: "child", name: "Office" });
+    const parent = createPlayer({ group_members: ["parent", "child"] });
+    api.players = { parent, child };
+
+    const { container, wrapper } = mountVolume(
+      "relative",
+      {
+        preferGroupVolume: true,
+        enablePopout: false,
+        requestExpandOnGroupTap: true,
+      },
+      parent,
+    );
+
+    // a touchscreen tap: touchend runs the action, then the browser replays the
+    // gesture as compatibility mouse events
+    await container.trigger("touchstart", {
+      touches: [{ clientX: 100, clientY: 10 }],
+    });
+    await container.trigger("touchend", {
+      changedTouches: [{ clientX: 100, clientY: 10 }],
+    });
+    await container.trigger("mousedown", { clientX: 100 });
+    mouseUp(100);
+
+    expect(wrapper.emitted("toggle-group-expansion")).toHaveLength(1);
+  });
+
+  it("still opens the group controls on a muted slider", async () => {
+    const child = createPlayer({ player_id: "child", name: "Office" });
+    const parent = createPlayer({
+      group_members: ["parent", "child"],
+      group_volume_muted: true,
+    });
+    api.players = { parent, child };
+
+    const { container, wrapper } = mountVolume(
+      "relative",
+      {
+        preferGroupVolume: true,
+        enablePopout: false,
+        requestExpandOnGroupTap: true,
+      },
+      parent,
+    );
+
+    await container.trigger("mousedown", { clientX: 100 });
+    mouseUp(102);
+
+    expect(wrapper.emitted("toggle-group-expansion")).toHaveLength(1);
+    expect(api.playerCommandGroupVolume).not.toHaveBeenCalled();
+  });
+
+  it("ignores a right click", async () => {
+    const { container, wrapper } = mountVolume("relative");
+
+    await container.trigger("mousedown", { clientX: 100, button: 2 });
+    mouseMove(140);
+    mouseUp(140);
+    await wrapper.vm.$nextTick();
+
+    expect(shownVolume(wrapper)).toBe(START_VOLUME);
+    expect(api.playerCommandVolumeSet).not.toHaveBeenCalled();
+  });
+
+  it("ends the drag when the release was missed", async () => {
+    const { container, wrapper, player } = mountVolume("relative");
+
+    await container.trigger("mousedown", { clientX: 100 });
+    mouseMove(140);
+    // no mouseup: a context menu or window switch swallowed it, so the next
+    // move arrives with no button held
+    mouseMove(150, 0);
+    await wrapper.vm.$nextTick();
+
+    const settled = shownVolume(wrapper);
+    expect(api.playerCommandVolumeSet).toHaveBeenCalledWith(
+      player.player_id,
+      settled,
+    );
+
+    // the drag is over, so a later hover must not keep moving the volume
+    mouseMove(200, 0);
+    await wrapper.vm.$nextTick();
+    expect(shownVolume(wrapper)).toBe(settled);
   });
 });
 

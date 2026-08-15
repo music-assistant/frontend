@@ -618,7 +618,7 @@
             "description": "Hide the Home Assistant header and sidebar so Music Assistant gets the whole screen. The Home Assistant button in the menu brings them back."
         },
         "volume_slider_mode": {
-            "label": "Volume slider behaviour",
+            "label": "Volume slider behavior",
             "description": "Absolute: tapping or dragging the bar sets the volume to that position. Relative: dragging adjusts up or down from the current volume at half speed, which makes small changes easier to land.",
             "options": {
                 "absolute": "Absolute (jump to position)",
