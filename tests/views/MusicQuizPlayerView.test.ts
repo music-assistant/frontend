@@ -954,13 +954,16 @@ describe("MusicQuizPlayerView routing", () => {
     },
   );
 
-  it("keeps the host panel action hidden for guests", () => {
+  it.each([
+    ["waiting", false],
+    ["ended", true],
+  ])("keeps the host panel action hidden for guests when %s", (_, ended) => {
     isGuestSession.value = true;
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
       state: ref(null),
       playerId: ref(null),
-      gameRemoved: ref(true),
+      gameRemoved: ref(ended),
       busy: ref(false),
       loading: ref(false),
       currentRound: ref(null),
