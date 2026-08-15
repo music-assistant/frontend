@@ -82,6 +82,13 @@ const serializeValue = (value: ConfigValueType | undefined): string =>
 const valueChanged = (key: string, value: ConfigValueType): boolean =>
   serializeValue(value) !== initialValues[key];
 
+// The volume slider reads these as computed refs, so saving one takes effect
+// immediately and the reload below would achieve nothing.
+const RELOAD_EXEMPT_PREFERENCE_KEYS = new Set([
+  "volume_slider_mode",
+  "volume_haptics",
+]);
+
 onMounted(() => {
   // TODO: Remove localStorage fallbacks below once migration period is over
   // (theme and language moved from localStorage to user preferences)
@@ -204,6 +211,34 @@ onMounted(() => {
       hidden: !store.isIngressSession,
       value: getKioskModePreference(),
     },
+    {
+      key: "volume_slider_mode",
+      type: ConfigEntryType.STRING,
+      label: "volume_slider_mode",
+      default_value: "absolute",
+      required: false,
+      options: [
+        { title: "absolute", value: "absolute" },
+        { title: "relative", value: "relative" },
+      ],
+      multi_value: false,
+      category: "volume_control",
+      value:
+        (store.currentUser?.preferences?.volume_slider_mode as string) ||
+        "absolute",
+    },
+    {
+      key: "volume_haptics",
+      type: ConfigEntryType.BOOLEAN,
+      label: "volume_haptics",
+      default_value: true,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "volume_control",
+      value:
+        (store.currentUser?.preferences?.volume_haptics as boolean) ?? true,
+    },
   ];
 
   // Add web player settings (if not running in companion mode)
@@ -278,7 +313,12 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
       } else {
         // Save to backend via user preferences
         await setPreference(key, values[key]);
-        if (valueChanged(key, values[key])) hasPerUserChanges = true;
+        if (
+          !RELOAD_EXEMPT_PREFERENCE_KEYS.has(key) &&
+          valueChanged(key, values[key])
+        ) {
+          hasPerUserChanges = true;
+        }
       }
     }
 
