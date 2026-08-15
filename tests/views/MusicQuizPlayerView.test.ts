@@ -8,23 +8,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   apiMock,
+  isGuestSession,
   mockGameAdapterSetup,
   mockGetMusicQuizRoundScore,
   mockGetTrackLyrics,
   mockListenInSetup,
   mockPrimeAudio,
   mockResolveMusicQuizDefinition,
+  mockRouterPush,
   mockToastError,
   mockToastSuccess,
   mockUseMusicQuizPlayer,
 } = vi.hoisted(() => ({
   apiMock: { state: { value: "connected" as string } },
+  isGuestSession: { value: false },
   mockGameAdapterSetup: vi.fn(),
   mockGetMusicQuizRoundScore: vi.fn(),
   mockGetTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
   mockListenInSetup: vi.fn(),
   mockPrimeAudio: vi.fn(),
   mockResolveMusicQuizDefinition: vi.fn(),
+  mockRouterPush: vi.fn(),
   mockToastError: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockUseMusicQuizPlayer: vi.fn(),
@@ -103,9 +107,16 @@ vi.mock("@/plugins/i18n", () => ({
       (
         {
           "providers.music_quiz.game_starts_in": "Game starts in {0}",
+          "providers.music_quiz.return_to_host_panel": "Return to host panel",
         } as Record<string, string>
       )[key] ?? key;
     return message.replace("{0}", String(values[0] ?? ""));
+  },
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: {
+    isGuestAccessSession: () => isGuestSession.value,
   },
 }));
 
@@ -124,6 +135,10 @@ vi.mock("vue-sonner", () => ({
     error: mockToastError,
     success: mockToastSuccess,
   },
+}));
+
+vi.mock("vue-router", () => ({
+  useRouter: () => ({ push: mockRouterPush }),
 }));
 
 const currentRound = {
@@ -234,7 +249,9 @@ describe("MusicQuizPlayerView routing", () => {
     mockListenInSetup.mockReset();
     mockPrimeAudio.mockReset();
     mockPrimeAudio.mockReturnValue(true);
+    mockRouterPush.mockReset();
     webPlayer.player_generation = 0;
+    isGuestSession.value = false;
     mockResolveMusicQuizDefinition.mockReset();
     mockToastError.mockReset();
     mockToastSuccess.mockReset();
@@ -905,6 +922,62 @@ describe("MusicQuizPlayerView routing", () => {
       endedWrapper.get('svg[aria-hidden="true"]').attributes("aria-hidden"),
     ).toBe("true");
     endedWrapper.unmount();
+  });
+
+  it.each([
+    ["waiting", false],
+    ["ended", true],
+  ])(
+    "lets a regular user return to the host panel when %s",
+    async (_, ended) => {
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref(null),
+        state: ref(null),
+        playerId: ref(null),
+        gameRemoved: ref(ended),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: ref(null),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+      });
+
+      const wrapper = mountView();
+      const returnButton = wrapper.get('[data-testid="return-to-host-panel"]');
+      expect(returnButton.text()).toContain("Return to host panel");
+
+      await returnButton.trigger("click");
+
+      expect(mockRouterPush).toHaveBeenCalledWith({ name: "music-quiz" });
+      wrapper.unmount();
+    },
+  );
+
+  it.each([
+    ["waiting", false],
+    ["ended", true],
+  ])("keeps the host panel action hidden for guests when %s", (_, ended) => {
+    isGuestSession.value = true;
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(ended),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.find('[data-testid="return-to-host-panel"]').exists()).toBe(
+      false,
+    );
+    wrapper.unmount();
   });
 });
 

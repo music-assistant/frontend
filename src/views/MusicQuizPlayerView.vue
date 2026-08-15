@@ -1,17 +1,26 @@
 <template>
   <div class="music-quiz-player mx-auto flex w-full max-w-3xl flex-col gap-3">
-    <Card v-if="gameRemoved" role="status">
-      <CardHeader class="justify-items-center text-center">
+    <Card v-if="gameRemoved">
+      <CardHeader class="justify-items-center text-center" role="status">
         <CircleStop class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ $t("providers.music_quiz.game_ended") }}</CardTitle>
         <CardDescription>
           {{ $t("providers.music_quiz.game_ended_detail") }}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent class="flex flex-col items-center gap-4">
         <p class="text-muted-foreground text-center text-sm">
           {{ $t("providers.music_quiz.game_ended_wait") }}
         </p>
+        <Button
+          v-if="canReturnToHostPanel"
+          size="lg"
+          data-testid="return-to-host-panel"
+          @click="returnToHostPanel"
+        >
+          <ArrowLeft class="size-4" aria-hidden="true" />
+          {{ $t("providers.music_quiz.return_to_host_panel") }}
+        </Button>
       </CardContent>
     </Card>
 
@@ -99,12 +108,22 @@
       </CardContent>
     </Card>
 
-    <Card v-else role="status">
-      <CardHeader class="justify-items-center text-center">
+    <Card v-else>
+      <CardHeader class="justify-items-center text-center" role="status">
         <Clock3 class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ $t("guest.no_quiz_title") }}</CardTitle>
         <CardDescription>{{ $t("guest.no_quiz_description") }}</CardDescription>
       </CardHeader>
+      <CardContent v-if="canReturnToHostPanel" class="flex justify-center">
+        <Button
+          size="lg"
+          data-testid="return-to-host-panel"
+          @click="returnToHostPanel"
+        >
+          <ArrowLeft class="size-4" aria-hidden="true" />
+          {{ $t("providers.music_quiz.return_to_host_panel") }}
+        </Button>
+      </CardContent>
     </Card>
   </div>
 </template>
@@ -124,6 +143,7 @@ import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -146,15 +166,19 @@ import {
 } from "@/helpers/music_quiz";
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { webPlayer } from "@/plugins/web_player";
-import { CircleStop, Clock3 } from "@lucide/vue";
+import { ArrowLeft, CircleStop, Clock3 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
+const router = useRouter();
 const player = useMusicQuizPlayer({
   notifyError: (message) => toast.error(message),
 });
+const canReturnToHostPanel = !authManager.isGuestAccessSession();
 
 const {
   info,
@@ -338,6 +362,10 @@ async function handleSubmitAnswer(submission: MusicQuizAnswerSubmission) {
 
 async function handleReady() {
   await player.ready();
+}
+
+function returnToHostPanel() {
+  void router.push({ name: "music-quiz" });
 }
 </script>
 
