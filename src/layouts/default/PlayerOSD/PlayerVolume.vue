@@ -230,7 +230,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: "update:local-value", value: number): void;
   (e: "toggle-group-expansion"): void;
 }>();
 
@@ -863,7 +862,6 @@ const onTouchMove = (event: TouchEvent) => {
       // left fattened in the wake of a swipe
       collapseControls();
       displayValue.value = touchStartValue.value;
-      emit("update:local-value", touchStartValue.value);
       return;
     }
 
@@ -883,7 +881,6 @@ const onTouchMove = (event: TouchEvent) => {
     const valueChanged = newValue !== displayValue.value;
 
     displayValue.value = newValue;
-    emit("update:local-value", newValue);
 
     if (valueChanged) {
       vibrate(5);
@@ -917,7 +914,6 @@ const onTouchEnd = (event: TouchEvent) => {
         sliderUpdateDebounceTimeout = null;
       }
       displayValue.value = touchStartValue.value;
-      emit("update:local-value", touchStartValue.value);
       handleGroupTap();
     } else if (!isSliderDisabled.value) {
       // Single player: tap before/after handle for volume up/down
@@ -936,7 +932,6 @@ const onTouchEnd = (event: TouchEvent) => {
     const touch = event.changedTouches[0];
     const finalValue = getDragValue(touch.clientX);
     displayValue.value = finalValue;
-    emit("update:local-value", finalValue);
     sendVolumeFinal(finalValue);
     stopDragging();
   }
@@ -981,7 +976,6 @@ const onPointerUp = () => {
       if (isSliderDisabled.value) {
         isDragging.value = false;
         displayValue.value = pointerStartValue;
-        emit("update:local-value", pointerStartValue);
       } else {
         setVolume(displayValue.value);
         stopDragging();
@@ -1000,7 +994,6 @@ const onPointerUp = () => {
   }
   isDragging.value = false;
   displayValue.value = pointerStartValue;
-  emit("update:local-value", pointerStartValue);
   handleGroupTap();
 };
 
@@ -1018,7 +1011,6 @@ const onPointerCancel = () => {
   }
   isDragging.value = false;
   displayValue.value = pointerStartValue;
-  emit("update:local-value", pointerStartValue);
 };
 
 const resetPointerInteraction = () => {
@@ -1077,7 +1069,6 @@ const onMouseMove = (event: MouseEvent) => {
   );
 
   displayValue.value = newValue;
-  emit("update:local-value", newValue);
 };
 
 const onMouseUp = (event: MouseEvent) => {
@@ -1104,7 +1095,6 @@ const onMouseUp = (event: MouseEvent) => {
   } else if (!isSliderDisabled.value) {
     const finalValue = getValueFromDelta(mouseStartValue.value, deltaX);
     displayValue.value = finalValue;
-    emit("update:local-value", finalValue);
     setVolume(finalValue);
   }
 
@@ -1162,7 +1152,6 @@ const onSliderUpdate = (values: number[] | undefined) => {
   const newValue = values[0] ?? displayValue.value;
   startDragging();
   displayValue.value = newValue;
-  emit("update:local-value", newValue);
 
   if (pointerStartX !== null && !pointerMoved) return;
 
@@ -1207,7 +1196,6 @@ watch(
 
     if (Math.abs(displayValue.value - val) > 0.5) {
       displayValue.value = val;
-      emit("update:local-value", val);
     }
   },
   { immediate: true },
