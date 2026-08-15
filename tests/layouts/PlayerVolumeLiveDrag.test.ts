@@ -1,5 +1,5 @@
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import { api } from "@/plugins/api";
+import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   IdentifierType,
   PlaybackState,
@@ -14,11 +14,15 @@ vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
     players: {} as Record<string, Player>,
-    playerCommandGroupVolume: vi.fn(),
-    playerCommandVolumeSet: vi.fn(),
-    playerCommandVolumeUp: vi.fn(),
-    playerCommandVolumeDown: vi.fn(),
-    playerCommandMuteToggle: vi.fn(),
+    playerCommandGroupVolume:
+      vi.fn<MusicAssistantApi["playerCommandGroupVolume"]>(),
+    playerCommandVolumeSet:
+      vi.fn<MusicAssistantApi["playerCommandVolumeSet"]>(),
+    playerCommandVolumeUp: vi.fn<MusicAssistantApi["playerCommandVolumeUp"]>(),
+    playerCommandVolumeDown:
+      vi.fn<MusicAssistantApi["playerCommandVolumeDown"]>(),
+    playerCommandMuteToggle:
+      vi.fn<MusicAssistantApi["playerCommandMuteToggle"]>(),
   });
   return { api, default: api };
 });
@@ -234,13 +238,57 @@ describe("PlayerVolume live volume while dragging", () => {
     await touch.move(140);
     await container.trigger("touchcancel");
 
-    // Previously a cancel reverted to the value the drag started from. The
-    // volume has already changed audibly, so it stays where it left off.
+    // The volume has already changed audibly, so it stays where it left off
+    // rather than snapping back to the start.
     expect(shownVolume(wrapper)).toBe(70);
     expect(api.playerCommandVolumeSet).toHaveBeenLastCalledWith(
       player.player_id,
       70,
     );
+  });
+
+  it("does not let a pending send follow the cancel that settled the drag", async () => {
+    vi.useFakeTimers();
+    const { container } = mountVolume();
+    const touch = touchAt(container);
+
+    await touch.start(100);
+    await touch.move(140);
+    await touch.move(150); // schedules a trailing send
+    await container.trigger("touchcancel");
+
+    const callsAtCancel = vi.mocked(api.playerCommandVolumeSet).mock.calls
+      .length;
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(api.playerCommandVolumeSet).toHaveBeenCalledTimes(callsAtCancel);
+  });
+
+  it("sends nothing when a swipe on a muted group slider is cancelled", async () => {
+    const child = createPlayer({ player_id: "child", name: "Office" });
+    const parent = createPlayer({
+      group_members: ["parent", "child"],
+      group_volume_muted: true,
+    });
+    api.players = { parent, child };
+
+    const { container } = mountVolume(
+      {
+        preferGroupVolume: true,
+        enablePopout: false,
+        requestExpandOnGroupTap: true,
+      },
+      parent,
+    );
+    const touch = touchAt(container);
+
+    // A muted slider still tracks the swipe so it can tell a drag from a tap,
+    // but there is no value for the cancel to settle on.
+    await touch.start(100);
+    await touch.move(140);
+    await container.trigger("touchcancel");
+
+    expect(api.playerCommandGroupVolume).not.toHaveBeenCalled();
   });
 
   it("throttles to one send per 100ms while the drag continues", async () => {
@@ -276,9 +324,8 @@ describe("PlayerVolume live volume while dragging", () => {
     await touch.move(150); // schedules a trailing send
     wrapper.unmount();
 
-    const callsAtUnmount = (
-      api.playerCommandVolumeSet as unknown as { mock: { calls: unknown[] } }
-    ).mock.calls.length;
+    const callsAtUnmount = vi.mocked(api.playerCommandVolumeSet).mock.calls
+      .length;
     await vi.advanceTimersByTimeAsync(200);
 
     expect(api.playerCommandVolumeSet).toHaveBeenCalledTimes(callsAtUnmount);

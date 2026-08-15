@@ -497,17 +497,14 @@ const SLIDER_UPDATE_DEBOUNCE_MS = 100;
 const POINTER_DRAG_THRESHOLD = 4;
 
 // Live drag updates: the volume follows the finger instead of waiting for
-// release. Throttled because every send is a separate websocket command, at the
-// same cadence the mouse path already gets from its debounce.
+// release. Throttled because every send is a separate websocket command.
 const LIVE_SEND_THROTTLE_MS = 100;
 const MAX_GROUP_LIVE_SEND_THROTTLE_MS = 500;
 
-// A group volume command is set on every member in parallel, and each member's
-// resulting state change is broadcast to every connected client, so the cost of
-// one command scales with the size of the group. Widening the window in step
-// keeps that traffic near what a single player costs. The cap is a deliberate
-// trade: past five members the traffic grows again, but a window longer than
-// half a second stops feeling like a drag.
+// A group command is applied to every member in parallel and each member's state
+// change is broadcast to every connected client, so one command costs about as
+// much as the group has members. Widening the window in step keeps that near
+// what a single player costs, capped so a large group still tracks the finger.
 const liveSendThrottleMs = computed(() =>
   useGroupVolume.value
     ? Math.min(
@@ -572,9 +569,8 @@ const cancelLiveSend = () => {
   }
 };
 
-// Called while a drag is still in progress. Sends straight away when the last
-// send is old enough, otherwise schedules a trailing send that picks up whatever
-// the value has become by the time it fires.
+// Sends straight away when the last send is old enough, otherwise schedules a
+// trailing send that picks up whatever the value has become by the time it fires.
 const sendVolumeLive = (value: number) => {
   if (value === lastSentValue) return;
 
@@ -597,8 +593,8 @@ const sendVolumeLive = (value: number) => {
   }, throttleMs - elapsed);
 };
 
-// Called on release. This value is authoritative, so it cancels any pending
-// throttled send rather than racing it.
+// Settles the gesture on this value, cancelling any pending throttled send
+// rather than racing it.
 const sendVolumeFinal = (value: number) => {
   cancelLiveSend();
   if (value === lastSentValue) return;
@@ -839,6 +835,9 @@ const onTouchEnd = (event: TouchEvent) => {
   // otherwise leave the slider latched open, to expand again on its own the
   // moment it comes back
   collapseControlsSoon();
+  // ahead of the guards too: every branch below settles the volume itself, so a
+  // throttled send must never outlive the gesture that queued it
+  cancelLiveSend();
   if (isSliderDisabled.value && !handlesGroupTap.value) return;
 
   if (isScrolling.value) {
@@ -855,7 +854,6 @@ const onTouchEnd = (event: TouchEvent) => {
         clearTimeout(sliderUpdateDebounceTimeout);
         sliderUpdateDebounceTimeout = null;
       }
-      cancelLiveSend();
       displayValue.value = touchStartValue.value;
       emit("update:local-value", touchStartValue.value);
       handleGroupTap();
@@ -872,8 +870,7 @@ const onTouchEnd = (event: TouchEvent) => {
       }
     }
   } else if (!isSliderDisabled.value) {
-    // Drag end: settle on the exact final value. The drag itself has already
-    // been sending, so this is usually a no-op.
+    // Drag end: settle on the exact value the finger lifted at
     const touch = event.changedTouches[0];
     const finalValue = clamp(
       roundToStep(getPercentageFromX(touch.clientX)),
@@ -980,9 +977,11 @@ const onTouchCancel = () => {
   maxMovement.value = 0;
   isTouching.value = false;
 
-  if (wasDragging) {
-    // The drag already changed the volume audibly, so an interruption settles
-    // where it left off rather than snapping back to the start.
+  // a disabled slider tracks the drag only to tell it apart from a tap, so it
+  // has no value to settle on
+  if (wasDragging && !isSliderDisabled.value) {
+    // The drag has already changed the volume audibly, so an interruption
+    // settles where it left off rather than snapping back to the start.
     sendVolumeFinal(displayValue.value);
     stopDragging();
     return;
