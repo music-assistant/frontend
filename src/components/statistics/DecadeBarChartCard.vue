@@ -25,7 +25,7 @@ import BaseChartCard from "./BaseChartCard.vue";
 import {
   createTooltipConfig,
   createAxisConfig,
-  LASTFM_COLORS,
+  CHART_COLORS,
 } from "./chartConfig";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip);
@@ -52,7 +52,7 @@ const chartData = computed<ChartData<"bar">>(() => {
       {
         label: "Plays",
         data: props.data.map((item) => item.value),
-        backgroundColor: LASTFM_COLORS[0],
+        backgroundColor: CHART_COLORS[0],
         borderRadius: 6,
         borderSkipped: false,
       },

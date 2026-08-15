@@ -27,7 +27,7 @@ import BaseChartCard from "./BaseChartCard.vue";
 import {
   createTooltipConfig,
   createAxisConfig,
-  LASTFM_COLORS,
+  CHART_COLORS,
 } from "./chartConfig";
 
 ChartJS.register(
@@ -62,13 +62,13 @@ const chartData = computed<ChartData<"line">>(() => {
       {
         label: "Plays",
         data: props.data.map((item) => item.value),
-        borderColor: LASTFM_COLORS[0],
+        borderColor: CHART_COLORS[0],
         backgroundColor: "rgba(3, 169, 244, 0.15)",
         fill: true,
         tension: 0.4,
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: LASTFM_COLORS[0],
+        pointBackgroundColor: CHART_COLORS[0],
         pointBorderColor: "#fff",
         pointBorderWidth: 2,
         pointHoverBorderWidth: 3,

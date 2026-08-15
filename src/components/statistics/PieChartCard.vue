@@ -19,7 +19,7 @@
           <div
             class="legend-color"
             :style="{
-              backgroundColor: LASTFM_COLORS[index % LASTFM_COLORS.length],
+              backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
             }"
           ></div>
           <div class="legend-image">
@@ -61,7 +61,7 @@ import {
   type ChartOptions,
 } from "chart.js";
 import BaseChartCard from "./BaseChartCard.vue";
-import { LASTFM_COLORS, createTooltipConfig } from "./chartConfig";
+import { CHART_COLORS, createTooltipConfig } from "./chartConfig";
 import type { TopItemResult } from "@/plugins/api/interfaces";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -127,7 +127,7 @@ const chartData = computed<ChartData<"doughnut">>(() => {
     datasets: [
       {
         data: props.data.map((topItem) => topItem.play_count),
-        backgroundColor: LASTFM_COLORS.slice(0, props.data.length),
+        backgroundColor: CHART_COLORS.slice(0, props.data.length),
         borderWidth: 0,
         hoverBorderWidth: 0,
         hoverOffset: 12,

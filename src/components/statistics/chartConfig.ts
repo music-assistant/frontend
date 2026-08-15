@@ -4,8 +4,8 @@ import type { TooltipOptions } from "chart.js";
  * Gemeinsame Chart.js Konfigurationen für Music Assistant Stil
  */
 
-// Music Assistant inspirierte Farbpalette
-export const LASTFM_COLORS = [
+// Music Assistant Farbpalette für Charts
+export const CHART_COLORS = [
   "#03a9f4", // MA Primary Blue
   "#4caf50", // Green
   "#9c27b0", // Purple
