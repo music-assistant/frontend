@@ -9,7 +9,14 @@
  * showing, not every display of the user.
  */
 
-import { computed, toValue, type MaybeRefOrGetter } from "vue";
+import {
+  computed,
+  effectScope,
+  ref,
+  toValue,
+  watch,
+  type MaybeRefOrGetter,
+} from "vue";
 import {
   setUserPreference,
   useUserPreferences,
@@ -18,11 +25,47 @@ import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
+import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import {
+  reportVisualizerCapability,
   visualizerCanRender,
   visualizerProviderAvailable,
+  visualizerShownOnDashboards,
 } from "@/plugins/visualizer-relay";
+
+// The plugin's show_on_dashboards setting: the enabled-default for sessions
+// with no stored preference. A cast dashboard runs as the dashboard viewer,
+// which has no user preferences and no way to set any, so this server-side
+// setting decides for it; an explicit preference always wins.
+const dashboardDefaultEnabled = ref(false);
+let dashboardDefaultWatchStarted = false;
+
+// Watched rather than fetched once: a cast receiver boots straight into a
+// dashboard route, so the providers map is often still loading when the
+// hosting view mounts. Module-level singleton, started on first use, in a
+// detached scope so the first hosting component's unmount cannot dispose it.
+function startDashboardDefaultWatch(): void {
+  if (dashboardDefaultWatchStarted) return;
+  dashboardDefaultWatchStarted = true;
+  effectScope(true).run(() => {
+    watch(
+      () => visualizerProviderAvailable(),
+      async (available) => {
+        if (!available) return;
+        // A cast/TV display that cannot render MilkDrop never mounts the
+        // canvas (which reports the capable case), so its probe result would
+        // stay invisible; report the negative from here instead.
+        if (authManager.isDashboardViewer() && !isVisualizerSupported()) {
+          void reportVisualizerCapability("none");
+        }
+        dashboardDefaultEnabled.value = await visualizerShownOnDashboards();
+      },
+      { immediate: true },
+    );
+  });
+}
 
 /**
  * Whether the visualizer is on for this player (standalone: also usable from
@@ -35,7 +78,9 @@ export function visualizerEnabledForPlayer(playerId?: string): boolean {
     const override = prefs?.[`visualizer_enabled.${playerId}`];
     if (override !== undefined) return Boolean(override);
   }
-  return Boolean(prefs?.["visualizer_enabled"] ?? false);
+  return Boolean(
+    prefs?.["visualizer_enabled"] ?? dashboardDefaultEnabled.value,
+  );
 }
 
 export function toggleVisualizerForPlayer(playerId?: string): void {
@@ -46,6 +91,7 @@ export function toggleVisualizerForPlayer(playerId?: string): void {
 }
 
 export function useVisualizer(playerId?: MaybeRefOrGetter<string | undefined>) {
+  startDashboardDefaultWatch();
   const { getPreference } = useUserPreferences();
   const visualizerPresetPref = getPreference("visualizer_preset", "");
   const visualizerBlurPref = getPreference(

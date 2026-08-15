@@ -81,17 +81,25 @@ function resolveButterchurnModule(module: unknown): ButterchurnStatic {
   throw new Error("unexpected butterchurn module shape");
 }
 
+export interface VisualizerEngineOptions {
+  // Upper bound on render rate; rAF ticks above it are skipped. Constrained
+  // displays (cast receivers, TVs) cannot sustain 60fps MilkDrop rendering.
+  maxFps?: number;
+}
+
 /**
  * Create the engine on a canvas. Returns null when WebGL2 is unavailable.
  *
  * @param canvas - the target canvas element.
  * @param getFrame - returns the waveform frame for "now", or null when none.
  * @param quality - render quality tier; defaults to the "high" profile.
+ * @param options - extra engine options, e.g. a frame rate cap.
  */
 export async function createVisualizerEngine(
   canvas: HTMLCanvasElement,
   getFrame: () => Uint8Array | null,
   quality?: string,
+  options?: VisualizerEngineOptions,
 ): Promise<VisualizerEngine | null> {
   if (!isVisualizerSupported()) return null;
   const butterchurn = resolveButterchurnModule(await import("butterchurn"));
@@ -131,8 +139,14 @@ export async function createVisualizerEngine(
   let rafHandle: number | null = null;
   let lastFrame: Uint8Array = SILENCE;
   let lastFrameAt = 0;
+  let lastRenderAt = 0;
   let destroyed = false;
   let paused = false;
+  // Half a 60Hz tick of slack, so a cap of 30 renders every second rAF tick
+  // instead of stuttering over 3 ticks when a tick lands fractionally early.
+  const minRenderIntervalMs = options?.maxFps
+    ? 1000 / options.maxFps - 1000 / 120
+    : 0;
   // Gain envelope on the waveform: 0 while paused, 1 while playing. The loop
   // halts once a wind-down lands.
   let rampStartedAt: number | null = null;
@@ -188,6 +202,11 @@ export async function createVisualizerEngine(
     if (destroyed) return;
     rafHandle = requestAnimationFrame(renderLoop);
     if (document.visibilityState !== "visible") return;
+    if (minRenderIntervalMs > 0) {
+      const now = performance.now();
+      if (now - lastRenderAt < minRenderIntervalMs) return;
+      lastRenderAt = now;
+    }
     const gain = currentGain();
     if (paused && gain <= 0) {
       // Wound down: only halting the loop stops the time-driven motion.

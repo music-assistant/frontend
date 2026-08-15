@@ -86,6 +86,49 @@ export function visualizerCanRender(): boolean {
   return isVisualizerSupported();
 }
 
+/**
+ * Report this display's render capabilities to the server.
+ *
+ * Cast and TV receivers vary wildly in graphics support and have no reachable
+ * console; the server logs these reports so it is knowable which devices can
+ * render MilkDrop and which cannot. Sent over the main API socket, so a
+ * display that cannot render (and thus never opens a relay connection) still
+ * gets its probe result recorded.
+ */
+export async function reportVisualizerCapability(
+  renderer: "butterchurn" | "none",
+): Promise<void> {
+  try {
+    await api.sendCommand("milkdrop_visualizer/report_capability", {
+      webgl2: isVisualizerSupported(),
+      renderer,
+      user_agent: navigator.userAgent,
+    });
+  } catch (error) {
+    console.warn("[visualizer] could not report capability:", error);
+  }
+}
+
+/**
+ * Whether the plugin is configured to show the visualizer on dashboard screens.
+ *
+ * Cast dashboards run as the dashboard viewer, which has no user preferences and
+ * no way to set any, so this server-side setting decides for them (and provides
+ * the default for anyone who has not picked one).
+ */
+export async function visualizerShownOnDashboards(): Promise<boolean> {
+  if (!visualizerProviderAvailable()) return false;
+  try {
+    const config = await api.sendCommand<Record<string, boolean>>(
+      "milkdrop_visualizer/config",
+    );
+    return config?.show_on_dashboards === true;
+  } catch (error) {
+    console.warn("[visualizer] could not read the plugin config:", error);
+    return false;
+  }
+}
+
 export class VisualizerRelayClient {
   readonly scheduler = new FrameScheduler();
   private clock = new ClockSync();
