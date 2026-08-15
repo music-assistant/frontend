@@ -514,9 +514,10 @@ const liveSendThrottleMs = computed(() =>
     : LIVE_SEND_THROTTLE_MS,
 );
 let liveSendTimeout: ReturnType<typeof setTimeout> | null = null;
+// Both reset in startDragging: a fresh gesture sends at once rather than waiting
+// out the previous one's window, and an external volume change between drags can
+// never make its first send look redundant.
 let lastLiveSendTime = 0;
-// Scoped to one gesture (reset in startDragging) so an external volume change
-// between drags can never make a send look redundant.
 let lastSentValue: number | null = null;
 
 onUnmounted(() => {
@@ -538,6 +539,7 @@ const roundToStep = (value: number) =>
 const startDragging = () => {
   isDragging.value = true;
   lastSentValue = null;
+  lastLiveSendTime = 0;
   if (dragEndTimeout) {
     clearTimeout(dragEndTimeout);
     dragEndTimeout = null;
@@ -572,7 +574,12 @@ const cancelLiveSend = () => {
 // Sends straight away when the last send is old enough, otherwise schedules a
 // trailing send that picks up whatever the value has become by the time it fires.
 const sendVolumeLive = (value: number) => {
-  if (value === lastSentValue) return;
+  // Wandering back onto the value already sent leaves nothing to schedule, and
+  // any send still pending for the value in between is now moot.
+  if (value === lastSentValue) {
+    cancelLiveSend();
+    return;
+  }
 
   const throttleMs = liveSendThrottleMs.value;
   const elapsed = Date.now() - lastLiveSendTime;

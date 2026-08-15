@@ -314,6 +314,44 @@ describe("PlayerVolume live volume while dragging", () => {
     );
   });
 
+  it("sends at once on a new drag instead of waiting out the previous window", async () => {
+    vi.useFakeTimers();
+    const { container, player } = mountVolume();
+    const touch = touchAt(container);
+
+    await touch.start(100);
+    await touch.move(140);
+    await touch.end(140);
+    expect(api.playerCommandVolumeSet).toHaveBeenCalledTimes(1);
+
+    // A second drag well inside the first window still responds immediately.
+    await vi.advanceTimersByTimeAsync(20);
+    await touch.start(140);
+    await touch.move(100);
+
+    expect(api.playerCommandVolumeSet).toHaveBeenCalledTimes(2);
+    expect(api.playerCommandVolumeSet).toHaveBeenLastCalledWith(
+      player.player_id,
+      50,
+    );
+  });
+
+  it("drops a pending send when the drag returns to the value already sent", async () => {
+    vi.useFakeTimers();
+    const { container } = mountVolume();
+    const touch = touchAt(container);
+
+    await touch.start(100);
+    await touch.move(140); // leading edge sends 70
+    expect(api.playerCommandVolumeSet).toHaveBeenCalledTimes(1);
+
+    await touch.move(150); // schedules a trailing send for 76
+    await touch.move(140); // back to 70, so that trailing send is moot
+
+    await vi.advanceTimersByTimeAsync(200);
+    expect(api.playerCommandVolumeSet).toHaveBeenCalledTimes(1);
+  });
+
   it("clears a pending send when the component unmounts mid-drag", async () => {
     vi.useFakeTimers();
     const { container, wrapper } = mountVolume();
