@@ -70,6 +70,18 @@ const loading = ref(false);
 // makes an advanced entry reachable the moment one is added
 const showAdvancedSettings = ref(false);
 
+// The form hands back every entry on save, not just the edited ones, so the
+// values it submits are compared against these to tell a real change from a
+// re-save of what was already there. Held serialized: the form edits entry.value
+// in place, which an array or object snapshot would follow.
+let initialValues: Record<string, string> = {};
+
+const serializeValue = (value: ConfigValueType | undefined): string =>
+  JSON.stringify(value ?? null);
+
+const valueChanged = (key: string, value: ConfigValueType): boolean =>
+  serializeValue(value) !== initialValues[key];
+
 onMounted(() => {
   // TODO: Remove localStorage fallbacks below once migration period is over
   // (theme and language moved from localStorage to user preferences)
@@ -236,6 +248,9 @@ onMounted(() => {
     }));
   }
   config.value = configEntries;
+  initialValues = Object.fromEntries(
+    configEntries.map((entry) => [entry.key, serializeValue(entry.value)]),
+  );
 });
 
 // methods
@@ -263,7 +278,7 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
       } else {
         // Save to backend via user preferences
         await setPreference(key, values[key]);
-        hasPerUserChanges = true;
+        if (valueChanged(key, values[key])) hasPerUserChanges = true;
       }
     }
 
