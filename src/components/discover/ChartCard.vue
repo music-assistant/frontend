@@ -88,8 +88,11 @@ const isAvailable = computed(() => {
 });
 
 const providerDomain = computed(() => {
-  if ("provider_mappings" in props.item && props.item.provider_mappings?.size) {
-    return [...props.item.provider_mappings][0]?.provider_domain;
+  if (
+    "provider_mappings" in props.item &&
+    props.item.provider_mappings?.length
+  ) {
+    return props.item.provider_mappings[0]?.provider_domain;
   }
   return props.item.provider !== "library" ? props.item.provider : undefined;
 });
@@ -113,7 +116,7 @@ const subtitle = computed(() => {
 const showPlay = computed(() => {
   return (
     props.item.is_playable &&
-    getBreakpointValue("md") &&
+    getBreakpointValue("md" as "xs" | "sm" | "md" | "lg" | "xl") &&
     props.item.media_type !== MediaType.ARTIST
   );
 });

@@ -1,4 +1,4 @@
-import type { TooltipOptions } from "chart.js";
+import type { ChartTypeRegistry, TooltipOptions } from "chart.js";
 
 /**
  * Gemeinsame Chart.js Konfigurationen für Music Assistant Stil
@@ -19,7 +19,9 @@ export const CHART_COLORS = [
 ];
 
 // Gemeinsame Tooltip-Konfiguration
-export const createTooltipConfig = <T extends string = string>(
+export const createTooltipConfig = <
+  T extends keyof ChartTypeRegistry = keyof ChartTypeRegistry,
+>(
   customCallbacks?: Partial<TooltipOptions<T>["callbacks"]>,
 ): Partial<TooltipOptions<T>> => ({
   backgroundColor: "rgba(0, 0, 0, 0.9)",
@@ -28,7 +30,7 @@ export const createTooltipConfig = <T extends string = string>(
   borderWidth: 0,
   padding: 16,
   displayColors: false,
-  callbacks: customCallbacks,
+  ...(customCallbacks ? { callbacks: customCallbacks } : {}),
 });
 
 // Gemeinsame Achsen-Konfiguration

@@ -82,11 +82,11 @@ const router = useRouter();
 const theme = useTheme();
 
 const placeholderImage = computed(() =>
-  theme.current.value.dark ? imgCoverDark.href : imgCoverLight.href,
+  theme.current.value.dark ? imgCoverDark : imgCoverLight,
 );
 
 const handleChartClick = (
-  event: MouseEvent,
+  event: unknown,
   elements: Array<{ index: number }>,
 ) => {
   if (!elements.length || !props.navigateTo) return;
