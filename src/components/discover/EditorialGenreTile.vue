@@ -3,13 +3,13 @@
     <img
       class="ed-genre__bg"
       loading="lazy"
-      :src="genreBanner"
+      :src="backgroundImage"
       alt=""
       aria-hidden="true"
     />
     <div class="ed-genre__scrim"></div>
     <img
-      v-if="iconImage"
+      v-if="iconImage && !hasCustomImage"
       class="ed-genre__icon"
       loading="lazy"
       :src="iconImage"
@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
+import { getCustomImage } from "@/helpers/customImage";
 import { handleMediaItemClick } from "@/helpers/media_item_actions";
 import type { Genre } from "@/plugins/api/interfaces";
 import { computed } from "vue";
@@ -37,6 +38,12 @@ const genreBanner = new URL("@/assets/logo/banner-no-logo.png", import.meta.url)
   .href;
 
 const iconImage = computed(() => itemArtwork(props.item, 320).image);
+// a user-uploaded custom image is real cover art: use it as the tile
+// background instead of overlaying it white-tinted like the builtin icons
+const hasCustomImage = computed(() => !!getCustomImage(props.item));
+const backgroundImage = computed(() =>
+  hasCustomImage.value ? (iconImage.value ?? genreBanner) : genreBanner,
+);
 const displayName = computed(() => props.item.name);
 
 const onClick = (e: MouseEvent) =>

@@ -1,3 +1,4 @@
+import { getCustomImage } from "@/helpers/customImage";
 import { getImageThumbForItem } from "@/helpers/utils";
 import {
   ImageType,
@@ -48,7 +49,12 @@ export function itemArtwork(
     !image &&
     (item.media_type === MediaType.ARTIST ||
       item.media_type === MediaType.ALBUM);
-  const useBanner = !image || item.media_type === MediaType.GENRE;
+  // genres normally use the banner (their images are icons), unless the user
+  // uploaded a custom image, which is real cover art
+  const useBanner =
+    !image ||
+    (item.media_type === MediaType.GENRE &&
+      !("metadata" in item && getCustomImage(item)));
   const bannerGradient = `url("${bannerArtwork}") center / cover no-repeat`;
   const placeholder = "rgba(var(--v-theme-on-surface), 0.08)";
 

@@ -26,6 +26,7 @@
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
+          <genre-image-dialog />
           <dialog-delete-confirmation />
           <player-group-playback-dialog />
           <setup-flow-dialog />
@@ -47,6 +48,7 @@
 import AddManualLink from "@/components/AddManualLink.vue";
 import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
 import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
+import GenreImageDialog from "@/components/genre/GenreImageDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AppSidebar from "@/components/navigation/AppSidebar.vue";

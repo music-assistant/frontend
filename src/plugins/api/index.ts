@@ -50,6 +50,7 @@ import {
   DSPConfigPreset,
   DSPIRMetadata,
   EventType,
+  ImageType,
   ItemMapping,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -1195,6 +1196,31 @@ export class MusicAssistantApi {
     return this.sendCommand("music/genres/promote_alias", {
       genre_id,
       alias,
+    });
+  }
+
+  public setGenreImage(
+    item_id: string | number,
+    data: string,
+    file_hint?: string,
+    image_type: ImageType = ImageType.THUMB,
+  ): Promise<Genre> {
+    return this.sendCommand(
+      "music/genres/set_image",
+      { item_id, data, file_hint, image_type },
+      // the server explains why an upload is rejected (size, format);
+      // that message is surfaced inline in the dialog instead of a toast
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeGenreImage(
+    item_id: string | number,
+    image_type: ImageType = ImageType.THUMB,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/remove_image", {
+      item_id,
+      image_type,
     });
   }
 

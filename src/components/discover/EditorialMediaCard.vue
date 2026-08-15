@@ -84,6 +84,7 @@
 
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
+import { getCustomImage } from "@/helpers/customImage";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
@@ -145,7 +146,13 @@ const { t } = useI18n();
 
 const art = computed(() => itemArtwork(props.item, 320));
 
-const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
+// genres get the white-icon-over-banner treatment, unless the user uploaded
+// a custom image, which is real cover art and renders as-is
+const isGenre = computed(
+  () =>
+    props.item.media_type === MediaType.GENRE &&
+    !("metadata" in props.item && getCustomImage(props.item)),
+);
 
 const getStyle = computed(() =>
   props.item.media_type == MediaType.COLLECTION
