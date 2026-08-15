@@ -862,7 +862,7 @@
     "genre": "Genre",
     "genres": "Genres",
     "background_tasks": {
-        "total": "{count} tâches en arrière-plan | {count} tâches en arrière-plan",
+        "total": "{count} tâche en arrière-plan | {count} tâches en arrière-plan",
         "toast": {
             "cancel_requested": "Annulation demandée pour {0}.",
             "cancel_failed": "Échec de l'annulation de {0}.",
