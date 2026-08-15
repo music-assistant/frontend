@@ -339,7 +339,13 @@
               </div>
             </div>
             <div class="ed-statistics__scroll ma-scroll">
-              <div class="ed-statistics__track">
+              <div
+                v-if="statisticsItems.length === 0"
+                class="ed-statistics__empty"
+              >
+                {{ $t("no_statistics_data") }}
+              </div>
+              <div v-else class="ed-statistics__track">
                 <ChartItem
                   v-for="(statItem, idx) in statisticsItems"
                   :key="statItem.item.uri"
@@ -1271,6 +1277,14 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 8px;
   padding-bottom: 4px;
+}
+
+.ed-statistics__empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: rgb(var(--v-theme-on-background));
+  opacity: 0.5;
+  font-size: 14px;
 }
 
 .ed-footer-space {
