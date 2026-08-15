@@ -53,6 +53,7 @@ import {
   DSPConfigPreset,
   DSPIRMetadata,
   EventType,
+  ImageType,
   ItemMapping,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -107,6 +108,9 @@ const ROLES_SCHEMA_VERSION = 74;
 
 // Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
 const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
+
+// The music/genres/set_image and music/genres/remove_image commands landed in API schema 85.
+const CUSTOM_GENRE_IMAGES_SCHEMA_VERSION = 85;
 
 export interface CommandOptions {
   /**
@@ -1324,6 +1328,31 @@ export class MusicAssistantApi {
     return this.sendCommand("music/genres/promote_alias", {
       genre_id,
       alias,
+    });
+  }
+
+  public setGenreImage(
+    item_id: string | number,
+    data: string,
+    file_hint?: string,
+    image_type: ImageType = ImageType.THUMB,
+  ): Promise<Genre> {
+    return this.sendCommand(
+      "music/genres/set_image",
+      { item_id, data, file_hint, image_type },
+      // the server explains why an upload is rejected (size, format);
+      // that message is surfaced inline in the dialog instead of a toast
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeGenreImage(
+    item_id: string | number,
+    image_type: ImageType = ImageType.THUMB,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/remove_image", {
+      item_id,
+      image_type,
     });
   }
 
@@ -3156,6 +3185,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server has the custom genre image commands (schema >= 85). */
+  public get supportsCustomGenreImages(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      CUSTOM_GENRE_IMAGES_SCHEMA_VERSION
     );
   }
 
