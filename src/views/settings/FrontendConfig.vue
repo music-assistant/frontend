@@ -72,12 +72,15 @@ const showAdvancedSettings = ref(false);
 
 // The form hands back every entry on save, not just the edited ones, so the
 // values it submits are compared against these to tell a real change from a
-// re-save of what was already there.
-const initialValues = ref<Record<string, ConfigValueType | undefined>>({});
+// re-save of what was already there. Held serialized: the form edits entry.value
+// in place, which an array or object snapshot would follow.
+let initialValues: Record<string, string> = {};
+
+const serializeValue = (value: ConfigValueType | undefined): string =>
+  JSON.stringify(value ?? null);
 
 const valueChanged = (key: string, value: ConfigValueType): boolean =>
-  JSON.stringify(value ?? null) !==
-  JSON.stringify(initialValues.value[key] ?? null);
+  serializeValue(value) !== initialValues[key];
 
 onMounted(() => {
   // TODO: Remove localStorage fallbacks below once migration period is over
@@ -245,9 +248,8 @@ onMounted(() => {
     }));
   }
   config.value = configEntries;
-  // snapshot before the form can edit entry.value in place
-  initialValues.value = Object.fromEntries(
-    configEntries.map((entry) => [entry.key, entry.value]),
+  initialValues = Object.fromEntries(
+    configEntries.map((entry) => [entry.key, serializeValue(entry.value)]),
   );
 });
 
