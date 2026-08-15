@@ -496,9 +496,34 @@ let sliderUpdateDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 const SLIDER_UPDATE_DEBOUNCE_MS = 100;
 const POINTER_DRAG_THRESHOLD = 4;
 
+// Live drag updates: the volume follows the finger instead of waiting for
+// release. Throttled because every send is a separate websocket command.
+const LIVE_SEND_THROTTLE_MS = 100;
+const MAX_GROUP_LIVE_SEND_THROTTLE_MS = 500;
+
+// A group command is applied to every member in parallel and each member's state
+// change is broadcast to every connected client, so one command costs about as
+// much as the group has members. Widening the window in step keeps that near
+// what a single player costs, capped so a large group still tracks the finger.
+const liveSendThrottleMs = computed(() =>
+  useGroupVolume.value
+    ? Math.min(
+        MAX_GROUP_LIVE_SEND_THROTTLE_MS,
+        LIVE_SEND_THROTTLE_MS * Math.max(1, childPlayers.value.length),
+      )
+    : LIVE_SEND_THROTTLE_MS,
+);
+let liveSendTimeout: ReturnType<typeof setTimeout> | null = null;
+// Both reset in startDragging: a fresh gesture sends at once rather than waiting
+// out the previous one's window, and an external volume change between drags can
+// never make its first send look redundant.
+let lastLiveSendTime = 0;
+let lastSentValue: number | null = null;
+
 onUnmounted(() => {
   if (dragEndTimeout) clearTimeout(dragEndTimeout);
   if (sliderUpdateDebounceTimeout) clearTimeout(sliderUpdateDebounceTimeout);
+  if (liveSendTimeout) clearTimeout(liveSendTimeout);
   stopTrackingBubble();
   cancelCollapse();
 });
@@ -513,6 +538,8 @@ const roundToStep = (value: number) =>
 
 const startDragging = () => {
   isDragging.value = true;
+  lastSentValue = null;
+  lastLiveSendTime = 0;
   if (dragEndTimeout) {
     clearTimeout(dragEndTimeout);
     dragEndTimeout = null;
@@ -535,6 +562,52 @@ const setVolume = (value: number) => {
   } else {
     api.playerCommandVolumeSet(props.player.player_id, value);
   }
+};
+
+const cancelLiveSend = () => {
+  if (liveSendTimeout) {
+    clearTimeout(liveSendTimeout);
+    liveSendTimeout = null;
+  }
+};
+
+// Sends straight away when the last send is old enough, otherwise schedules a
+// trailing send that picks up whatever the value has become by the time it fires.
+const sendVolumeLive = (value: number) => {
+  // Wandering back onto the value already sent leaves nothing to schedule, and
+  // any send still pending for the value in between is now moot.
+  if (value === lastSentValue) {
+    cancelLiveSend();
+    return;
+  }
+
+  const throttleMs = liveSendThrottleMs.value;
+  const elapsed = Date.now() - lastLiveSendTime;
+  if (elapsed >= throttleMs) {
+    cancelLiveSend();
+    lastLiveSendTime = Date.now();
+    lastSentValue = value;
+    setVolume(value);
+    return;
+  }
+
+  cancelLiveSend();
+  liveSendTimeout = setTimeout(() => {
+    liveSendTimeout = null;
+    lastLiveSendTime = Date.now();
+    lastSentValue = displayValue.value;
+    setVolume(displayValue.value);
+  }, throttleMs - elapsed);
+};
+
+// Settles the gesture on this value, cancelling any pending throttled send
+// rather than racing it.
+const sendVolumeFinal = (value: number) => {
+  cancelLiveSend();
+  if (value === lastSentValue) return;
+  lastLiveSendTime = Date.now();
+  lastSentValue = value;
+  setVolume(value);
 };
 
 const volumeUp = () => {
@@ -759,6 +832,7 @@ const onTouchMove = (event: TouchEvent) => {
 
     if (valueChanged) {
       vibrate(5);
+      sendVolumeLive(newValue);
     }
   }
 };
@@ -768,6 +842,9 @@ const onTouchEnd = (event: TouchEvent) => {
   // otherwise leave the slider latched open, to expand again on its own the
   // moment it comes back
   collapseControlsSoon();
+  // ahead of the guards too: every branch below settles the volume itself, so a
+  // throttled send must never outlive the gesture that queued it
+  cancelLiveSend();
   if (isSliderDisabled.value && !handlesGroupTap.value) return;
 
   if (isScrolling.value) {
@@ -800,7 +877,7 @@ const onTouchEnd = (event: TouchEvent) => {
       }
     }
   } else if (!isSliderDisabled.value) {
-    // Drag end: send the final absolute value to the server
+    // Drag end: settle on the exact value the finger lifted at
     const touch = event.changedTouches[0];
     const finalValue = clamp(
       roundToStep(getPercentageFromX(touch.clientX)),
@@ -809,7 +886,7 @@ const onTouchEnd = (event: TouchEvent) => {
     );
     displayValue.value = finalValue;
     emit("update:local-value", finalValue);
-    setVolume(finalValue);
+    sendVolumeFinal(finalValue);
     stopDragging();
   }
 
@@ -900,17 +977,30 @@ const resetPointerInteraction = () => {
 
 const onTouchCancel = () => {
   collapseControlsSoon();
+  const wasDragging = isDrag.value;
   isDrag.value = false;
   isScrolling.value = false;
   touchMoveCount.value = 0;
   maxMovement.value = 0;
+  isTouching.value = false;
+
+  // a disabled slider tracks the drag only to tell it apart from a tap, so it
+  // has no value to settle on
+  if (wasDragging && !isSliderDisabled.value) {
+    // The drag has already changed the volume audibly, so an interruption
+    // settles where it left off rather than snapping back to the start.
+    sendVolumeFinal(displayValue.value);
+    stopDragging();
+    return;
+  }
+
+  cancelLiveSend();
   displayValue.value = touchStartValue.value;
   isDragging.value = false;
   if (dragEndTimeout) {
     clearTimeout(dragEndTimeout);
     dragEndTimeout = null;
   }
-  isTouching.value = false;
 };
 
 const onWheel = (event: WheelEvent) => {
