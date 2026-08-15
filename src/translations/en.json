@@ -25,6 +25,14 @@
     "artists": "Artists",
     "browse": "Browse",
     "clear_selection": "Clear selection",
+    "faceted_filter": {
+        "clear": "Clear filters",
+        "clear_all_for": "Clear all {title} filters",
+        "clear_for": "Clear {title} filters",
+        "remove_filter": "Remove {label} filter",
+        "search_for": "Search {title}",
+        "selected": "{count} selected"
+    },
     "close": "Close",
     "create_playlist": "Create new playlist on {0}",
     "dark_mode": "Dark mode",

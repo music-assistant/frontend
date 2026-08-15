@@ -23,6 +23,8 @@ const stubs = {
   Checkbox: { template: '<input type="checkbox" />' },
 };
 
+const i18nMock = { $t: (key: string) => key };
+
 const STAGE_OPTIONS = [
   { label: "Stable", value: "stable" },
   { label: "Beta", value: "beta" },
@@ -41,7 +43,7 @@ const manyOptions = (count: number) =>
 const mountFilter = (options: { label: string; value: string }[]) =>
   mount(FacetedFilter, {
     props: { title: "Providers", options, modelValue: [] },
-    global: { stubs },
+    global: { mocks: i18nMock, stubs },
   });
 
 // reka opens the popover on pointerdown + click, and settles focus on a timer
@@ -85,6 +87,7 @@ const mountAndOpen = async (options: { label: string; value: string }[]) => {
   const wrapper = mount(FacetedFilter, {
     props: { title: "Providers", options, modelValue: [] },
     attachTo: document.body,
+    global: { mocks: i18nMock },
   });
   return { wrapper, content: await openPopover(wrapper) };
 };
@@ -106,7 +109,7 @@ describe("FacetedFilter", () => {
         options: [{ label: "Albums", value: "album" }],
         modelValue: [],
       },
-      global: { stubs },
+      global: { mocks: i18nMock, stubs },
     });
 
     await wrapper.get(".faceted-filter-item").trigger("keydown.enter");
