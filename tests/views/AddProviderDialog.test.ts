@@ -72,6 +72,7 @@ async function openDialog(): Promise<VueWrapper> {
     props: { show: false },
     attachTo: document.body,
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: {
         FacetedFilter: true,
         ProviderIcon: true,

@@ -25,6 +25,7 @@
     "artists": "Artists",
     "browse": "Browse",
     "clear_selection": "Clear selection",
+    "clear": "Clear",
     "faceted_filter": {
         "clear": "Clear filters",
         "clear_all_for": "Clear all {title} filters",
@@ -114,6 +115,8 @@
         "player_model": "Model",
         "player_name": "Custom player name",
         "player_not_available": "This player is not (yet) available",
+        "player_option_error": "Error while setting player option: {key} {value}",
+        "server_logs_load_failed": "Failed to load server logs",
         "player_provider": "Provider",
         "player_settings": "Player settings",
         "player_type_label": "Player type",
@@ -796,6 +799,10 @@
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
     "sort": {
+        "ascending": "Ascending",
+        "ascending_abbreviation": "Asc",
+        "descending": "Descending",
+        "descending_abbreviation": "Desc",
         "duration": "Duration",
         "position": "Position",
         "provider": "Provider",
@@ -825,6 +832,25 @@
         "track_artist_name": "Track artist",
         "track_artist_name_desc": "Track artist (descending)"
     },
+    "pagination": {
+        "first_page": "Go to first page",
+        "previous_page": "Go to previous page",
+        "next_page": "Go to next page",
+        "last_page": "Go to last page"
+    },
+    "data_table": {
+        "view": "View",
+        "toggle_columns": "Toggle columns",
+        "hide": "Hide"
+    },
+    "sidebar": {
+        "title": "Sidebar",
+        "description": "Displays the mobile sidebar.",
+        "toggle": "Toggle Sidebar",
+        "expand": "Expand Sidebar",
+        "collapse": "Collapse Sidebar"
+    },
+    "loading_short": "Loading",
     "state": {
         "idle": "idle",
         "off": "off",
@@ -851,6 +877,7 @@
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
         "show_menu": "Show\/hide menu",
+        "show_context_menu": "Show context menu",
         "show_full_path": "Show the full path",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
@@ -874,6 +901,8 @@
         "toggle_players": "Toggle players",
         "toggle_top_picks": "Toggle top picks",
         "toggle_row": "Toggle row visibility",
+        "scroll_left": "Scroll left",
+        "scroll_right": "Scroll right",
         "toggle_power": "Toggle power",
         "open_options": "Open options",
         "more_options": "More options",

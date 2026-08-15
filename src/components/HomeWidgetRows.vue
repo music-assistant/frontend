@@ -129,7 +129,7 @@
               <button
                 v-show="heroHovering && heroCanLeft"
                 class="ed-hero-nav ed-hero-nav--left"
-                aria-label="Scroll left"
+                :aria-label="$t('tooltip.scroll_left')"
                 @click="scrollHero(-1)"
               >
                 <ChevronLeft :size="20" />
@@ -160,7 +160,7 @@
               <button
                 v-show="heroHovering && heroCanRight"
                 class="ed-hero-nav ed-hero-nav--right"
-                aria-label="Scroll right"
+                :aria-label="$t('tooltip.scroll_right')"
                 @click="scrollHero(1)"
               >
                 <ChevronRight :size="20" />

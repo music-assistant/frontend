@@ -100,6 +100,7 @@ import {
   PlayerOptionType,
   PlayerOptionValueType,
 } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
 
@@ -118,7 +119,7 @@ const uiSetPlayerOption = async (
   try {
     await api.playerCommandSetOption(props.playerId, key, value);
   } catch (error) {
-    toast.error(`Error while setting player option: ${key} ${value}`);
+    toast.error($t("settings.player_option_error", { key, value }));
   }
 };
 

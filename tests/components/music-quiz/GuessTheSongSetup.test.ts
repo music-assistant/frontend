@@ -64,6 +64,7 @@ function mountConfig(includeSimilarMusic = false, sharedConfigValid = true) {
   return mount(GuessTheSongSetup, {
     props: { busy: false, includeSimilarMusic, sharedConfigValid },
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: {
         Button: { template: "<button><slot /></button>" },
       },

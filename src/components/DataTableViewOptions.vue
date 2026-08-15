@@ -32,11 +32,13 @@ const columns = computed(() =>
     <DropdownMenuTrigger as-child>
       <Button variant="outline" size="sm" class="ml-auto hidden h-8 lg:flex">
         <Settings2 class="mr-2 size-4" />
-        View
+        {{ $t("data_table.view") }}
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-[150px]">
-      <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+      <DropdownMenuLabel>{{
+        $t("data_table.toggle_columns")
+      }}</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuCheckboxItem
         v-for="column in columns"
