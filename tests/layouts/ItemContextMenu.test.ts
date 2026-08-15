@@ -102,4 +102,33 @@ describe("ItemContextMenu", () => {
     expect(storeMock.dialogActive).toBe(false);
     wrapper.unmount();
   });
+
+  it("stays open for pointers inside a select dropdown teleported to body", async () => {
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [{ label: "visualizer_options" }],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+    expect(storeMock.dialogActive).toBe(true);
+
+    // A menu row's Select (e.g. the visualizer preset picker) teleports its
+    // list to <body>; touching it to scroll starts with a pointerdown there.
+    const selectContent = document.createElement("div");
+    selectContent.setAttribute("data-slot", "select-content");
+    const selectItem = document.createElement("div");
+    selectContent.appendChild(selectItem);
+    document.body.appendChild(selectContent);
+
+    selectItem.dispatchEvent(
+      new PointerEvent("pointerdown", { bubbles: true }),
+    );
+    await Promise.resolve();
+    expect(storeMock.dialogActive).toBe(true);
+
+    selectContent.remove();
+    wrapper.unmount();
+  });
 });
