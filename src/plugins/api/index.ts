@@ -1526,6 +1526,78 @@ export class MusicAssistantApi {
     });
   }
 
+  public async getGenreDistribution(
+    period = "week",
+    limit = 10,
+    user_id?: string,
+  ): Promise<Array<{ name: string; value: number }>> {
+    return this.sendCommand("statistics/genre_distribution", {
+      period,
+      limit,
+      user_id,
+    });
+  }
+
+  public async getArtistDistribution(
+    period = "week",
+    limit = 10,
+    user_id?: string,
+  ): Promise<TopItemResult[]> {
+    return this.sendCommand("statistics/artist_distribution", {
+      period,
+      limit,
+      user_id,
+    });
+  }
+
+  public async getPlaysOverTime(
+    period = "week",
+    granularity = "day",
+    user_id?: string,
+  ): Promise<Array<{ timestamp: string; value: number }>> {
+    return this.sendCommand("statistics/plays_over_time", {
+      period,
+      granularity,
+      user_id,
+    });
+  }
+
+  public async getListeningActivity(
+    period = "week",
+    user_id?: string,
+  ): Promise<Array<{ hour: number; weekday: number; value: number }>> {
+    return this.sendCommand("statistics/listening_activity", {
+      period,
+      user_id,
+    });
+  }
+
+  public async getListeningTime(
+    period = "week",
+    group_by = "artist",
+    limit = 10,
+    user_id?: string,
+  ): Promise<Array<{ name: string; minutes: number }>> {
+    return this.sendCommand("statistics/listening_time", {
+      period,
+      group_by,
+      limit,
+      user_id,
+    });
+  }
+
+  public async getDecadeDistribution(
+    period = "all_time",
+    limit = 10,
+    user_id?: string,
+  ): Promise<Array<{ name: string; value: number }>> {
+    return this.sendCommand("statistics/decade_distribution", {
+      period,
+      limit,
+      user_id,
+    });
+  }
+
   public async getStatisticsPlayHistory(
     limit = 100,
     user_id?: string,

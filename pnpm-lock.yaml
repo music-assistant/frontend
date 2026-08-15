@@ -62,6 +62,9 @@ importers:
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
+      chart.js:
+        specifier: ^4.5.1
+        version: 4.5.1
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -116,6 +119,9 @@ importers:
       vue-audio-better:
         specifier: 3.0.1
         version: 3.0.1
+      vue-chartjs:
+        specifier: ^5.3.4
+        version: 5.3.4(chart.js@4.5.1)(vue@3.5.41(typescript@6.0.3))
       vue-i18n:
         specifier: 11.4.8
         version: 11.4.8(vue@3.5.41(typescript@6.0.3))
@@ -1366,6 +1372,9 @@ packages:
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
+
+  '@kurkle/color@0.3.4':
+    resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
 
   '@lucide/vue@1.26.0':
     resolution: {integrity: sha512-jz00zLm8+i7VzBuQTbmjChIvIKehaIK5YbOVC+bab7qTh4JTkCd0XJQ4l5TY57gT08fMPVlvUITROB/vm/xImA==}
@@ -2654,6 +2663,10 @@ packages:
   chalk@5.6.2:
     resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+
+  chart.js@4.5.1:
+    resolution: {integrity: sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==}
+    engines: {pnpm: '>=8'}
 
   chokidar@5.0.0:
     resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
@@ -4697,6 +4710,12 @@ packages:
   vue-audio-better@3.0.1:
     resolution: {integrity: sha512-rr0cItOgMHYOLy7VvIHowWGqm+qLcCpj4BZ+4saAHQCSwGcV8TTCefLyGpdIjlJtqL8ytBjjtObft6WSkQoAKQ==}
 
+  vue-chartjs@5.3.4:
+    resolution: {integrity: sha512-x3Fqob8RQvrTdssfi9ecsCzEkFOd8JPmNwSkSQzdfKj/uBsRJs/Y88cZcZIEcPsTVfMGwMo4MOoihoDG2DoE/g==}
+    peerDependencies:
+      chart.js: ^4.1.1
+      vue: ^3.0.0-0 || ^2.7.0
+
   vue-component-type-helpers@3.3.5:
     resolution: {integrity: sha512-Fe1jyPJoUGpJOYKOri44jduR7My4yYINOMJISuMAbmrs+L5LbIDUc8NTWZYY3EJLK0yPLuCmcd5zoCsE4k2/KA==}
 
@@ -6133,6 +6152,8 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
+  '@kurkle/color@0.3.4': {}
+
   '@lucide/vue@1.26.0(vue@3.5.41(typescript@6.0.3))':
     dependencies:
       vue: 3.5.41(typescript@6.0.3)
@@ -7316,6 +7337,10 @@ snapshots:
   chai@6.2.2: {}
 
   chalk@5.6.2: {}
+
+  chart.js@4.5.1:
+    dependencies:
+      '@kurkle/color': 0.3.4
 
   chokidar@5.0.0:
     dependencies:
@@ -9460,6 +9485,11 @@ snapshots:
     dependencies:
       howler: 2.2.4
       vue: 2.7.16
+
+  vue-chartjs@5.3.4(chart.js@4.5.1)(vue@3.5.41(typescript@6.0.3)):
+    dependencies:
+      chart.js: 4.5.1
+      vue: 3.5.41(typescript@6.0.3)
 
   vue-component-type-helpers@3.3.5: {}
 

@@ -26,7 +26,10 @@
         <span v-if="artistName" class="chart-item__artist">{{
           artistName
         }}</span>
-        <span class="chart-item__plays">{{ formattedPlays }}</span>
+        <span class="chart-item__plays">
+          <Play :size="12" />
+          <span>{{ formattedPlays }}</span>
+        </span>
       </div>
     </div>
     <span class="chart-item__play" @click.stop="handlePlay">
@@ -45,7 +48,6 @@ import { computed, ref } from "vue";
 import { itemArtwork } from "@/components/discover/editorialArtwork";
 import type { MediaItemTypeOrItemMapping } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
-import { useI18n } from "vue-i18n";
 import {
   handleMediaItemClick,
   handlePlayBtnClick,
@@ -58,8 +60,6 @@ const props = defineProps<{
   position: number;
   playCount: number;
 }>();
-
-const { t } = useI18n();
 
 const art = computed(() => itemArtwork(props.item, 200));
 
@@ -82,9 +82,9 @@ const artistName = computed(() => {
 const formattedPlays = computed(() => {
   const count = props.playCount;
   if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}k ${t("plays")}`;
+    return `${(count / 1000).toFixed(1)}k`;
   }
-  return `${count} ${t("plays")}`;
+  return `${count}`;
 });
 
 const holdFired = ref(false);
@@ -236,6 +236,9 @@ function onMenu(e: MouseEvent) {
 }
 
 .chart-item__plays {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-variant-numeric: tabular-nums;
   font-size: 11px;
   padding: 2px 8px;
