@@ -280,7 +280,7 @@
         "playerprovider": "Fournisseur de lecteur",
         "plugin": "Plugin",
         "pluginprovider": "Fournisseur de plugins",
-        "providers_total": "{0} fournisseur{1} au total",
+        "providers_total": "{count} fournisseur au total | {count} fournisseurs au total",
         "stage": {
             "label": "Status",
             "options": {
@@ -399,7 +399,7 @@
         "players_count": "{0} lecteur{1}",
         "one_player": "1 lecteur",
         "view_players": "Voir les lecteurs",
-        "players_total": "{0} lecteur{1} au total",
+        "players_total": "{count} lecteur au total | {count} lecteurs au total",
         "api_docs": "Documentation de l'API",
         "no_group_providers": "Vous ne disposez actuellement d'aucun fournisseur prenant en charge la création de groupes.",
         "provider_codeowners": "Ce fournisseur est fourni\/maintenu par",
@@ -861,6 +861,7 @@
     "genre": "Genre",
     "genres": "Genres",
     "background_tasks": {
+        "total": "{count} tâche en arrière-plan | {count} tâches en arrière-plan",
         "toast": {
             "cancel_requested": "Annulation demandée pour {0}.",
             "cancel_failed": "Échec de l'annulation de {0}.",
