@@ -93,6 +93,7 @@ const props = withDefaults(
     contentClass?: string;
   }>(),
   {
+    playerId: undefined,
     variant: "ghost-icon",
     buttonSize: "icon-sm",
     iconSize: 13,
