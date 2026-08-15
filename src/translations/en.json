@@ -510,6 +510,7 @@
         "provider_credits": "Made possible by",
         "category": {
             "web_player": "Web Player",
+            "volume_control": "Volume control",
             "protocol_settings": "Output Protocol(s)",
             "options": "Player options",
             "preferences": "Preferences",
@@ -557,6 +558,23 @@
                 "right": "Right"
             }
         },
+        "ha_kiosk_mode": {
+            "label": "Use the full screen in Home Assistant",
+            "description": "Hide the Home Assistant header and sidebar so Music Assistant gets the whole screen. The Home Assistant button in the menu brings them back."
+        },
+        "volume_slider_mode": {
+            "label": "Volume slider behavior",
+            "description": "Absolute: tapping or dragging the bar sets the volume to that position. Relative: dragging adjusts up or down from the current volume at half speed, which makes small changes easier to land.",
+            "options": {
+                "absolute": "Absolute (jump to position)",
+                "relative": "Relative (drag to adjust)"
+            }
+        },
+        "volume_haptics": {
+            "label": "Volume haptic feedback",
+            "description": "Vibrate while adjusting the volume slider. Touch devices with a vibration motor only."
+        },
+        "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "genre_management": "Genre Management",
         "genre_management_description": "Manage default genres and restore genre defaults",
@@ -825,6 +843,7 @@
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
         "show_menu": "Show\/hide menu",
+        "show_full_path": "Show the full path",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",
