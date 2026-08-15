@@ -11,7 +11,7 @@
         ]"
         :disabled="!canSeek"
         :min="0"
-        :max="store.activePlayer?.current_media?.duration ?? 0"
+        :max="timelineDuration"
         :step="0.1"
         @value-commit="stopDragging"
         @pointerenter="isThumbHidden = !canSeek"
@@ -58,6 +58,7 @@
               transform: 'translate(-50%, -50%)',
             }"
             :aria-label="tick.name"
+            :disabled="!canSeek"
             @pointerdown.stop
             @click.stop="chapterClicked(tick)"
           >
@@ -89,6 +90,7 @@
             type="button"
             class="absolute bottom-full mb-1 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
             :style="{ left: `${tick.percent}%`, transform: 'translateX(-50%)' }"
+            :disabled="!canSeek"
             @pointerdown.stop
             @click="chapterClicked(tick)"
           >
@@ -129,13 +131,19 @@ import {
 import { store } from "@/plugins/store";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
+import {
+  resolveCurrentChapter,
+  computeChapterTicks,
+  type ResolvedChapter,
+} from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import {
   resolveActiveElapsedTime,
+  resolveQueueElapsedTime,
   resolveActiveTiming,
 } from "@/helpers/activeElapsedTime";
-import { computeChapterTicks } from "@/helpers/chapters";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
 import WaveformTrack from "./WaveformTrack.vue";
@@ -158,6 +166,8 @@ const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
 const { activeAudioSource } = useActiveAudioSource(
   toRef(store, "activePlayer"),
 );
+const { getPreference } = useUserPreferences();
+const showChapterProgress = getPreference("audiobook_chapter_progress", false);
 
 // local refs
 const showRemainingTime = ref(false);
@@ -165,6 +175,7 @@ const isThumbHidden = ref(true);
 const isDragging = ref(false);
 const curTimeValue = ref(0);
 const tempTime = ref(0);
+const dragChapter = ref<ResolvedChapter | null>(null);
 const pendingSeek = ref<{ position: number; origin: number } | null>(null);
 // ticking ref to force recompute of elapsed time (Date.now() is non-reactive)
 // rAF drives smooth 60fps slider movement; a 1s interval keeps text
@@ -183,6 +194,7 @@ const wrappedCurTimeValue = computed<number[]>({
     // reka emits update:modelValue on user interaction, drag or track click
     // a setter call means the user is seeking, must be marked as dragging to stop the playback
     // watcher from fighting the thumb, and stash the target for the commit seek
+    if (!isDragging.value) dragChapter.value = currentChapter.value ?? null;
     isDragging.value = true;
     curTimeValue.value = newValue[0];
     tempTime.value = newValue[0];
@@ -261,35 +273,9 @@ const canSeek = computed(() => {
   return false;
 });
 
-const playerCurTimeStr = computed(() => {
-  if (curTimeValue.value != null) {
-    if (
-      showRemainingTime.value &&
-      store.activePlayer?.current_media?.duration
-    ) {
-      const remaining =
-        store.activePlayer.current_media.duration - curTimeValue.value;
-      return `-${formatDuration(remaining)}`;
-    }
-    return formatDuration(curTimeValue.value);
-  }
-  return "0:00";
-});
-
-const playerTotalTimeStr = computed(() => {
-  const duration = store.activePlayer?.current_media?.duration;
-  // If radio/streaming with unknown duration, don't show
-  if (
-    !duration ||
-    store.activePlayer?.current_media?.media_type == MediaType.RADIO
-  )
-    return "";
-  return formatDuration(duration);
-});
-
 const serverTiming = computed(() => resolveActiveTiming());
 
-const serverElapsedTime = computed(() => {
+const absoluteElapsedTime = computed(() => {
   // include nowTick.value so this computed re-evaluates periodically while
   // mounted; the resolved position extrapolates from the current time, which is
   // not reactive by itself
@@ -303,27 +289,83 @@ const serverElapsedTime = computed(() => {
   return resolveActiveElapsedTime() ?? 0;
 });
 
-const displayedElapsedTime = computed(() => {
-  if (isDragging.value) {
-    // While dragging, mirror the live time into tempTime so the thumb tracks
-    // the pointer. Intentional side effect in a computed (oxlint's vue plugin
-    // flags it; ESLint has the rule off, so disable it for oxlint only).
-    // oxlint-disable-next-line vue/no-side-effects-in-computed-properties
-    tempTime.value = curTimeValue.value;
-    return curTimeValue.value;
+const currentChapter = computed(() => {
+  // Date.now() is non-reactive; re-evaluate chapter boundaries as playback advances.
+  void nowTick.value;
+  const media = store.activePlayer?.current_media;
+  const queueItem = store.curQueueItem;
+  if (
+    !showChapterProgress.value ||
+    media?.media_type !== MediaType.AUDIOBOOK ||
+    (media.queue_item_id !== null &&
+      media.queue_item_id !== queueItem?.queue_item_id)
+  ) {
+    return undefined;
   }
-
-  return pendingSeek.value?.position ?? serverElapsedTime.value;
+  const resolved = resolveCurrentChapter(
+    queueItem?.media_item?.metadata?.chapters,
+    pendingSeek.value?.position ??
+      resolveQueueElapsedTime() ??
+      absoluteElapsedTime.value,
+    media.duration,
+  );
+  return resolved && Number.isFinite(resolved.duration) ? resolved : undefined;
 });
 
-const chapterTicks = computed(() =>
-  computeChapterTicks(
-    store.curQueueItem?.media_item?.metadata.chapters,
-    store.activePlayer?.current_media?.duration,
-  ),
+const timelineDuration = computed(
+  () =>
+    currentChapter.value?.duration ??
+    store.activePlayer?.current_media?.duration ??
+    0,
 );
 
-const hasWaveform = computed(() => !!props.waveform?.length);
+const displayedAbsoluteTime = computed(() => {
+  if (isDragging.value) return undefined;
+  return pendingSeek.value?.position ?? absoluteElapsedTime.value;
+});
+
+const displayedTimelineTime = computed(() => {
+  if (isDragging.value) return curTimeValue.value;
+  const chapter = currentChapter.value;
+  const absoluteTime = displayedAbsoluteTime.value ?? absoluteElapsedTime.value;
+  if (!chapter) return absoluteTime;
+  return Math.max(0, Math.min(chapter.duration, absoluteTime - chapter.start));
+});
+
+const playerCurTimeStr = computed(() => {
+  if (showRemainingTime.value && timelineDuration.value) {
+    return `-${formatDuration(timelineDuration.value - displayedTimelineTime.value)}`;
+  }
+  return formatDuration(displayedTimelineTime.value);
+});
+
+const playerTotalTimeStr = computed(() => {
+  const duration = timelineDuration.value;
+  // If radio/streaming with unknown duration, don't show
+  if (
+    !duration ||
+    store.activePlayer?.current_media?.media_type == MediaType.RADIO
+  ) {
+    return "";
+  }
+  return formatDuration(duration);
+});
+
+const displayedElapsedTime = computed(() => displayedTimelineTime.value);
+
+const chapterTicks = computed(() => {
+  if (currentChapter.value) return [];
+  return computeChapterTicks(
+    store.curQueueItem?.media_item?.metadata.chapters,
+    store.activePlayer?.current_media?.duration,
+  );
+});
+
+// Waveform bins cover the full audiobook, so they no longer line up with the
+// slider when chapter-relative progress is enabled.
+const hasWaveform = computed(
+  () => !!props.waveform?.length && !currentChapter.value,
+);
 // Older Cast and Android TV runtimes need an opacity layer instead of color-mix().
 const trackBackgroundStyle = computed(() => ({
   backgroundColor: props.color,
@@ -331,9 +373,8 @@ const trackBackgroundStyle = computed(() => ({
 }));
 
 const progressPercent = computed(() => {
-  const duration = store.activePlayer?.current_media?.duration;
-  if (!duration) return 0;
-  return (curTimeValue.value / duration) * 100;
+  if (!timelineDuration.value) return 0;
+  return (curTimeValue.value / timelineDuration.value) * 100;
 });
 
 // Hover seek-preview position (waveform mode only), as 0-100 percent.
@@ -378,26 +419,30 @@ watch(
   () => store.curQueueItem?.queue_item_id,
   () => {
     clearPendingSeek();
+    dragChapter.value = null;
     hoverPercent.value = null;
   },
 );
 
 // methods
 const stopDragging = () => {
-  const seekPosition = Math.round(tempTime.value);
+  const chapter = dragChapter.value;
+  const timelinePosition = Math.round(tempTime.value);
+  const seekPosition = Math.round(
+    chapter ? chapter.start + timelinePosition : timelinePosition,
+  );
   setPendingSeek(seekPosition);
-  curTimeValue.value = seekPosition;
+  curTimeValue.value = timelinePosition;
   isDragging.value = false;
+  dragChapter.value = null;
   if (store.activePlayer) {
     api.playerCommandSeek(store.activePlayer.player_id, seekPosition);
   }
 };
 
 const chapterClicked = function (chapter: MediaItemChapter) {
-  if (!store.curQueueItem?.media_item) return;
-  api.playMedia(store.curQueueItem.media_item.uri, undefined, {
-    start_item: chapter.position.toString(),
-  });
+  if (!canSeek.value || !store.activePlayer) return;
+  api.playerCommandSeek(store.activePlayer.player_id, chapter.start);
 };
 
 const setPendingSeek = (position: number) => {

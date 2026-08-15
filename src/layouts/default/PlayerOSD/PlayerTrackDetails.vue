@@ -134,6 +134,19 @@
       >
         {{ $t("off") }}
       </div>
+      <button
+        v-else-if="currentChapter"
+        type="button"
+        class="player-track-chapter-button"
+        :style="{ color: primaryColor }"
+        @click.stop="store.showFullscreenPlayer = true"
+      >
+        <div class="ma-line-clamp-1">
+          <MarqueeText :sync="marqueeSync">
+            {{ currentChapter.chapter.name }}
+          </MarqueeText>
+        </div>
+      </button>
       <div
         v-else-if="
           store.activePlayer?.current_media?.title &&
@@ -182,15 +195,63 @@ import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { isQueueEnded } from "@/helpers/queue_position";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import { resolveCurrentChapter } from "@/helpers/chapters";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
 import { getSourceName } from "@/plugins/api/helpers";
-import { PlayerType } from "@/plugins/api/interfaces";
+import { MediaType, PlaybackState, PlayerType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { computed } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
 const marqueeSync = new MarqueeTextSync();
+const { getPreference } = useUserPreferences();
+const showChapterProgress = getPreference("audiobook_chapter_progress", false);
+
+const nowTick = ref(0);
+let chapterTimer: ReturnType<typeof setInterval> | null = null;
+const currentChapter = computed(() => {
+  void nowTick.value;
+  const media = store.activePlayer?.current_media;
+  const queueItem = store.curQueueItem;
+  if (
+    !showChapterProgress.value ||
+    media?.media_type !== MediaType.AUDIOBOOK ||
+    (media.queue_item_id !== null &&
+      media.queue_item_id !== queueItem?.queue_item_id)
+  ) {
+    return undefined;
+  }
+  return resolveCurrentChapter(
+    queueItem?.media_item?.metadata?.chapters,
+    resolveActiveElapsedTime(),
+    media.duration,
+  );
+});
+
+const chapterTimerNeeded = computed(
+  () =>
+    showChapterProgress.value &&
+    store.activePlayer?.playback_state === PlaybackState.PLAYING &&
+    !!currentChapter.value,
+);
+
+const updateChapterTimer = (needed: boolean) => {
+  if (needed && chapterTimer === null) {
+    chapterTimer = setInterval(() => {
+      nowTick.value = Date.now();
+    }, 1000);
+  } else if (!needed && chapterTimer !== null) {
+    clearInterval(chapterTimer);
+    chapterTimer = null;
+  }
+};
+
+watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
+
+onUnmounted(() => updateChapterTimer(false));
 
 const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
 
@@ -260,6 +321,17 @@ function onTitleClick() {
    height Vuetify reserves, so the bar stays shallow */
 .player-track-details.player-track-details--compact {
   min-height: 44px;
+}
+
+.player-track-chapter-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
 .player-track-content-type {

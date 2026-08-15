@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeChapterTicks } from "./chapters";
+import { computeChapterTicks, resolveCurrentChapter } from "./chapters";
 import type { MediaItemChapter } from "@/plugins/api/interfaces";
 
 const chapters: MediaItemChapter[] = [
@@ -7,6 +7,65 @@ const chapters: MediaItemChapter[] = [
   { position: 2, name: "Middle", start: 60, end: null },
   { position: 3, name: "End", start: 120, end: null },
 ];
+
+describe("resolveCurrentChapter", () => {
+  const audiobookChapters: MediaItemChapter[] = [
+    { position: 1, name: "Intro", start: 0, end: 60 },
+    { position: 2, name: "Middle", start: 60, end: 120 },
+    { position: 3, name: "End", start: 120, end: null },
+  ];
+
+  it("resolves chapter ranges as half-open intervals", () => {
+    expect(resolveCurrentChapter(audiobookChapters, 0, 180)?.chapter.name).toBe(
+      "Intro",
+    );
+    expect(
+      resolveCurrentChapter(audiobookChapters, 60, 180)?.chapter.name,
+    ).toBe("Middle");
+  });
+
+  it("uses media duration for the final open-ended chapter", () => {
+    expect(resolveCurrentChapter(audiobookChapters, 150, 180)).toMatchObject({
+      start: 120,
+      end: 180,
+      duration: 60,
+    });
+  });
+
+  it("keeps an open-ended final chapter active without media duration", () => {
+    expect(resolveCurrentChapter(audiobookChapters, 150, null)).toMatchObject({
+      start: 120,
+      end: Number.POSITIVE_INFINITY,
+    });
+  });
+
+  it("keeps the final chapter active at exact media completion", () => {
+    expect(resolveCurrentChapter(audiobookChapters, 180, 180)).toMatchObject({
+      chapter: audiobookChapters[2],
+      start: 120,
+      end: 180,
+      duration: 60,
+    });
+  });
+
+  it("returns undefined outside the chapter ranges", () => {
+    expect(resolveCurrentChapter(audiobookChapters, -1, 180)).toBeUndefined();
+    expect(
+      resolveCurrentChapter(audiobookChapters, undefined, 180),
+    ).toBeUndefined();
+  });
+
+  it("resolves chapters by start time when metadata is unsorted", () => {
+    const unsorted = [
+      audiobookChapters[2],
+      audiobookChapters[0],
+      audiobookChapters[1],
+    ];
+    expect(resolveCurrentChapter(unsorted, 75, 180)?.chapter.name).toBe(
+      "Middle",
+    );
+  });
+});
 
 describe("computeChapterTicks", () => {
   it("returns [] when duration is missing or zero", () => {
