@@ -116,7 +116,7 @@ const subtitle = computed(() => {
 const showPlay = computed(() => {
   return (
     props.item.is_playable &&
-    getBreakpointValue("md" as "xs" | "sm" | "md" | "lg" | "xl") &&
+    getBreakpointValue("bp6") &&
     props.item.media_type !== MediaType.ARTIST
   );
 });
