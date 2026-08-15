@@ -34,8 +34,12 @@ import { currentVisualizerPreset } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
 import api from "@/plugins/api";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { VisualizerRelayClient } from "@/plugins/visualizer-relay";
+import {
+  VisualizerRelayClient,
+  reportVisualizerCapability,
+} from "@/plugins/visualizer-relay";
 
 const props = withDefaults(
   defineProps<{
@@ -154,6 +158,11 @@ const initialize = async () => {
   initialized = true;
   connectRelay();
   await createEngine();
+  if (engine) {
+    // Fleet data: this display renders MilkDrop. Cast receivers and TVs have
+    // no reachable console, so this is where their support becomes visible.
+    void reportVisualizerCapability("butterchurn");
+  }
   if (!engine) {
     // WebGL2 unavailable or init failure: leave the layer transparent. Report it
     // over the relay before closing, so displays with no reachable console (cast
@@ -181,11 +190,16 @@ const createEngine = async () => {
   engine?.destroy();
   engine = null;
   let created: VisualizerEngine | null = null;
+  // A dashboard viewer is a cast receiver or TV: GPU and CPU budgets an order
+  // of magnitude below a desktop, so pin the low profile and cap the frame
+  // rate rather than trusting the (unreachable) quality preference.
+  const constrainedDisplay = authManager.isDashboardViewer();
   try {
     created = await createVisualizerEngine(
       canvasRef.value,
       () => (relay ? relay.currentFrame() : null),
-      qualityPref.value,
+      constrainedDisplay ? "low" : qualityPref.value,
+      constrainedDisplay ? { maxFps: 30 } : undefined,
     );
   } catch (error) {
     console.error("[visualizer] engine init failed:", error);
