@@ -66,7 +66,6 @@ import {
 } from "@/helpers/media_item_actions";
 import { api } from "@/plugins/api";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { eventbus } from "@/plugins/eventbus";
 import {
   MediaType,
   type ItemMapping,

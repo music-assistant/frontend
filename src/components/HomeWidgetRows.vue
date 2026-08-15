@@ -323,7 +323,6 @@
                   <select
                     v-model="activeStatPeriod"
                     class="ed-statistics__period-select"
-                    @change="loadStatistics"
                   >
                     <option value="today">{{ $t("period_today") }}</option>
                     <option value="week">{{ $t("period_week") }}</option>

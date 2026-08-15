@@ -61,11 +61,7 @@ import {
   type ChartOptions,
 } from "chart.js";
 import BaseChartCard from "./BaseChartCard.vue";
-import {
-  LASTFM_COLORS,
-  createTooltipConfig,
-  createLegendConfig,
-} from "./chartConfig";
+import { LASTFM_COLORS, createTooltipConfig } from "./chartConfig";
 import type { TopItemResult } from "@/plugins/api/interfaces";
 
 ChartJS.register(ArcElement, Tooltip, Legend);

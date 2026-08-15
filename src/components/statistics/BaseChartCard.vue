@@ -27,7 +27,7 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   loading: false,
   isEmpty: false,
-  emptyMessage: "No data available",
+  emptyMessage: "",
   clickable: false,
 });
 </script>
