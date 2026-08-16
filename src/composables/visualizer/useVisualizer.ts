@@ -7,6 +7,10 @@
  * default for players never toggled individually (also the settings-page
  * toggle). Toggling from a view therefore only affects the player that view is
  * showing, not every display of the user.
+ *
+ * A cast dashboard runs as the dashboard viewer, which has no preferences of
+ * its own: it follows the preferences of the user who cast it, fetched from
+ * the server and refreshed live as that user changes them.
  */
 
 import {
@@ -15,6 +19,7 @@ import {
   ref,
   toValue,
   watch,
+  type ComputedRef,
   type MaybeRefOrGetter,
 } from "vue";
 import {
@@ -26,7 +31,10 @@ import {
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
 import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
+import api from "@/plugins/api";
+import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import {
   reportVisualizerCapability,
@@ -67,12 +75,82 @@ function startDashboardDefaultWatch(): void {
   });
 }
 
+// The casting user's visualizer preferences, for dashboard viewer sessions.
+const viewerPreferences = ref<Record<string, unknown>>({});
+let viewerPreferencesSyncStarted = false;
+
+// The viewer identifies its session by what it is showing (route + player);
+// re-fetched on the sessions-updated event, which the server also signals
+// when the casting user changes their preferences.
+function startViewerPreferencesSync(): void {
+  if (viewerPreferencesSyncStarted) return;
+  viewerPreferencesSyncStarted = true;
+  effectScope(true).run(() => {
+    const fetchViewerPreferences = async () => {
+      const path = router.currentRoute.value.path;
+      const dashboard = path.startsWith("/now-playing")
+        ? "now_playing"
+        : path.startsWith("/music-quiz")
+          ? "music_quiz"
+          : "party";
+      const playerId = router.currentRoute.value.query.player;
+      try {
+        viewerPreferences.value =
+          (await api.sendCommand<Record<string, unknown>>(
+            "dashboard/viewer_preferences",
+            {
+              dashboard,
+              player_id: typeof playerId === "string" ? playerId : undefined,
+            },
+          )) ?? {};
+      } catch (error) {
+        console.warn("[visualizer] could not fetch viewer preferences:", error);
+      }
+    };
+    void fetchViewerPreferences();
+    api.subscribe(EventType.DASHBOARD_SESSIONS_UPDATED, () => {
+      void fetchViewerPreferences();
+    });
+  });
+}
+
+/**
+ * A visualizer preference as this session should render it: the own user's
+ * stored preference, or, for a dashboard viewer, the casting user's.
+ */
+export function visualizerPreference<T>(
+  key: string,
+  fallback: T,
+): ComputedRef<T> {
+  const { getPreference } = useUserPreferences();
+  const ownPreference = getPreference<T>(key, fallback);
+  return computed(() => {
+    if (authManager.isDashboardViewer()) {
+      startViewerPreferencesSync();
+      return (viewerPreferences.value[key] as T | undefined) ?? fallback;
+    }
+    return ownPreference.value;
+  });
+}
+
 /**
  * Whether the visualizer is on for this player (standalone: also usable from
  * plain functions like the player menu builder). Reads reactive store state,
  * so it stays reactive when called inside a computed.
  */
 export function visualizerEnabledForPlayer(playerId?: string): boolean {
+  if (authManager.isDashboardViewer()) {
+    startViewerPreferencesSync();
+    // The casting user's GLOBAL toggle describes their own screens, not the
+    // display they deliberately cast to: only their per-player override and
+    // the plugin's show_on_dashboards setting decide here.
+    if (playerId) {
+      const override =
+        viewerPreferences.value[`visualizer_enabled.${playerId}`];
+      if (override !== undefined) return Boolean(override);
+    }
+    return dashboardDefaultEnabled.value;
+  }
   const prefs = store.currentUser?.preferences;
   if (playerId) {
     const override = prefs?.[`visualizer_enabled.${playerId}`];
@@ -92,13 +170,15 @@ export function toggleVisualizerForPlayer(playerId?: string): void {
 
 export function useVisualizer(playerId?: MaybeRefOrGetter<string | undefined>) {
   startDashboardDefaultWatch();
-  const { getPreference } = useUserPreferences();
-  const visualizerPresetPref = getPreference("visualizer_preset", "");
-  const visualizerBlurPref = getPreference(
+  // A viewer session's preferences come from the server: start the fetch right
+  // away rather than on the first (lazy) preference read.
+  if (authManager.isDashboardViewer()) startViewerPreferencesSync();
+  const visualizerPresetPref = visualizerPreference("visualizer_preset", "");
+  const visualizerBlurPref = visualizerPreference(
     "visualizer_blur",
     VISUALIZER_BLUR_DEFAULT,
   );
-  const visualizerOpacityPref = getPreference(
+  const visualizerOpacityPref = visualizerPreference(
     "visualizer_opacity",
     VISUALIZER_OPACITY_DEFAULT,
   );

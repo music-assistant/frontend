@@ -40,14 +40,18 @@ import {
   type VisualizerEngine,
   isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { visualizerPreference } from "@/composables/visualizer/useVisualizer";
 import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
-import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
+import {
+  DEFAULT_QUALITY,
+  TV_START_QUALITY,
+  stepDownQuality,
+} from "@/helpers/visualizer/quality";
 import { paletteFromServer } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { MediaItemPalette, PlaybackState } from "@/plugins/api/interfaces";
@@ -103,18 +107,24 @@ const covered = computed(
 let relay: VisualizerRelayClient | null = null;
 let engine: VisualizerEngine | null = null;
 
-const { getPreference } = useUserPreferences();
-const qualityPref = getPreference<string>(
+// On a dashboard viewer these resolve to the casting user's preferences.
+const qualityPref = visualizerPreference<string>(
   "visualizer_quality",
   DEFAULT_QUALITY,
 );
-const presetModePref = getPreference<string>(
+const presetModePref = visualizerPreference<string>(
   "visualizer_preset_mode",
   "random",
 );
-const favoritesPref = getPreference<string[]>("visualizer_favorites", []);
-const beatSwitchPref = getPreference<boolean>("visualizer_beat_switch", false);
-const beatDwellPref = getPreference<number>("visualizer_beat_dwell", 30);
+const favoritesPref = visualizerPreference<string[]>(
+  "visualizer_favorites",
+  [],
+);
+const beatSwitchPref = visualizerPreference<boolean>(
+  "visualizer_beat_switch",
+  false,
+);
+const beatDwellPref = visualizerPreference<number>("visualizer_beat_dwell", 30);
 
 const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
@@ -225,6 +235,35 @@ const onDownbeat = () => {
   void applyPreset(undefined, true);
 };
 
+// Adaptive quality for TV/cast displays: start at the sharp-but-bounded tv
+// tier, step down after ~6s of sustained sub-target rendering, or right away
+// when a sample shows the tier is hopeless. Down-only per mount: no
+// oscillation, and the next cast retries from the start tier.
+const TV_TARGET_FPS = 30;
+const TV_LOW_FPS_RATIO = 0.8;
+const TV_FAST_FAIL_RATIO = 0.5;
+const TV_LOW_SAMPLES_TO_STEP = 3;
+let adaptiveQuality: string = TV_START_QUALITY;
+let consecutiveLowSamples = 0;
+
+const onTvFpsSample = (fps: number) => {
+  if (fps >= TV_TARGET_FPS * TV_LOW_FPS_RATIO) {
+    consecutiveLowSamples = 0;
+    return;
+  }
+  consecutiveLowSamples += 1;
+  const hopeless = fps < TV_TARGET_FPS * TV_FAST_FAIL_RATIO;
+  if (!hopeless && consecutiveLowSamples < TV_LOW_SAMPLES_TO_STEP) return;
+  consecutiveLowSamples = 0;
+  const nextTier = stepDownQuality(adaptiveQuality);
+  if (!nextTier) return;
+  console.info(
+    `[visualizer] ${Math.round(fps)}fps sustained at '${adaptiveQuality}', stepping down to '${nextTier}'`,
+  );
+  adaptiveQuality = nextTier;
+  void createEngine();
+};
+
 let initialized = false;
 let sizeObserver: ResizeObserver | null = null;
 
@@ -294,16 +333,20 @@ const createEngine = async () => {
   engine?.destroy();
   engine = null;
   let created: VisualizerEngine | null = null;
-  // A dashboard viewer is a cast receiver or TV: GPU and CPU budgets an order
-  // of magnitude below a desktop, so pin the low profile and cap the frame
-  // rate rather than trusting the (unreachable) quality preference.
+  // A dashboard viewer is a cast receiver or TV, so its quality adapts to
+  // measured performance instead of trusting the (unreachable) quality
+  // preference: start at native (TV viewports report few CSS pixels behind a
+  // high devicePixelRatio, so lower tiers render visibly soft on the panel)
+  // and step down when the hardware cannot sustain the capped frame rate.
   const constrainedDisplay = authManager.isDashboardViewer();
   try {
     created = await createVisualizerEngine(
       canvasRef.value,
       () => (relay ? relay.currentFrame() : null),
-      constrainedDisplay ? "low" : qualityPref.value,
-      constrainedDisplay ? { maxFps: 30 } : undefined,
+      constrainedDisplay ? adaptiveQuality : qualityPref.value,
+      constrainedDisplay
+        ? { maxFps: TV_TARGET_FPS, onFpsSample: onTvFpsSample }
+        : undefined,
     );
   } catch (error) {
     console.error("[visualizer] engine init failed:", error);

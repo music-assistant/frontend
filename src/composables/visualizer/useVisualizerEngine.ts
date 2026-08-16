@@ -85,6 +85,9 @@ export interface VisualizerEngineOptions {
   // Upper bound on render rate; rAF ticks above it are skipped. Constrained
   // displays (cast receivers, TVs) cannot sustain 60fps MilkDrop rendering.
   maxFps?: number;
+  // Called with the achieved render rate roughly every 2 seconds of visible
+  // rendering, so a host can adapt quality to what the hardware sustains.
+  onFpsSample?: (fps: number) => void;
 }
 
 /**
@@ -198,10 +201,19 @@ export async function createVisualizerEngine(
     return scaledFrame;
   };
 
+  // Achieved-fps sampling for adaptive hosts. The window resets whenever the
+  // page was hidden, so a background stretch cannot read as a slow render.
+  let fpsSampleStart = 0;
+  let fpsSampleFrames = 0;
+  const FPS_SAMPLE_WINDOW_MS = 2000;
+
   const renderLoop = () => {
     if (destroyed) return;
     rafHandle = requestAnimationFrame(renderLoop);
-    if (document.visibilityState !== "visible") return;
+    if (document.visibilityState !== "visible") {
+      fpsSampleStart = 0;
+      return;
+    }
     if (minRenderIntervalMs > 0) {
       const now = performance.now();
       if (now - lastRenderAt < minRenderIntervalMs) return;
@@ -225,6 +237,20 @@ export async function createVisualizerEngine(
       }
     }
     renderFrame(applyGain(lastFrame, gain));
+    if (options?.onFpsSample) {
+      const now = performance.now();
+      if (fpsSampleStart === 0) {
+        fpsSampleStart = now;
+        fpsSampleFrames = 0;
+      }
+      fpsSampleFrames += 1;
+      const elapsed = now - fpsSampleStart;
+      if (elapsed >= FPS_SAMPLE_WINDOW_MS) {
+        options.onFpsSample((fpsSampleFrames * 1000) / elapsed);
+        fpsSampleStart = now;
+        fpsSampleFrames = 0;
+      }
+    }
   };
 
   const resizeObserver = new ResizeObserver(() => {

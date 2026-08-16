@@ -43,6 +43,18 @@ vi.mock("@/composables/userPreferences", () => ({
   }),
 }));
 
+const apiMocks = vi.hoisted(() => ({
+  sendCommand: vi.fn(async (): Promise<Record<string, unknown>> => ({})),
+  subscribe: vi.fn((_event: string, _callback: () => void) => () => {}),
+}));
+vi.mock("@/plugins/api", () => ({ default: apiMocks }));
+
+vi.mock("@/plugins/router", () => ({
+  default: {
+    currentRoute: ref({ path: "/party", query: {} as Record<string, string> }),
+  },
+}));
+
 // The module keeps singleton watch state; a fresh import per test keeps the
 // tests order-independent.
 async function importComposable() {
@@ -142,5 +154,74 @@ describe("visualizer dashboard default", () => {
     useVisualizer();
     await flushPromises();
     expect(relayMocks.reportVisualizerCapability).not.toHaveBeenCalled();
+  });
+});
+
+describe("viewer preferences", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    storeMock.store.currentUser = { preferences: {} };
+    authMocks.authManager.isDashboardViewer.mockReturnValue(true);
+    relayMocks.visualizerShownOnDashboards.mockResolvedValue(false);
+    apiMocks.sendCommand.mockResolvedValue({});
+  });
+
+  it("renders with the casting user's preferences", async () => {
+    apiMocks.sendCommand.mockResolvedValue({
+      visualizer_preset: "martin - mandelbox explorer",
+      visualizer_opacity: 55,
+    });
+    const { useVisualizer } = await importComposable();
+    const { visualizerPresetPref, visualizerOpacityPref } = useVisualizer();
+    await flushPromises();
+
+    expect(apiMocks.sendCommand).toHaveBeenCalledWith(
+      "dashboard/viewer_preferences",
+      { dashboard: "party", player_id: undefined },
+    );
+    expect(visualizerPresetPref.value).toBe("martin - mandelbox explorer");
+    expect(visualizerOpacityPref.value).toBe(55);
+  });
+
+  it("ignores the owner's global toggle but honors their per-player override", async () => {
+    // The owner turned the visualizer off on their own screens; the display
+    // they deliberately cast to follows show_on_dashboards instead.
+    apiMocks.sendCommand.mockResolvedValue({
+      visualizer_enabled: false,
+      "visualizer_enabled.p2": false,
+    });
+    relayMocks.visualizerShownOnDashboards.mockResolvedValue(true);
+    const { useVisualizer, visualizerEnabledForPlayer } =
+      await importComposable();
+    useVisualizer();
+    await flushPromises();
+
+    expect(visualizerEnabledForPlayer("p1")).toBe(true);
+    // an explicit per-player choice for the shown player still wins
+    expect(visualizerEnabledForPlayer("p2")).toBe(false);
+  });
+
+  it("refreshes when the dashboard sessions update", async () => {
+    const { useVisualizer } = await importComposable();
+    const { visualizerPresetPref } = useVisualizer();
+    await flushPromises();
+    expect(visualizerPresetPref.value).toBe("");
+
+    // the server signals sessions-updated when the owner's preferences change
+    const sessionsUpdatedHandler = apiMocks.subscribe.mock.calls[0][1];
+    apiMocks.sendCommand.mockResolvedValue({ visualizer_preset: "new pick" });
+    sessionsUpdatedHandler();
+    await flushPromises();
+    expect(visualizerPresetPref.value).toBe("new pick");
+  });
+
+  it("falls back to the plugin default when no session owner is known", async () => {
+    apiMocks.sendCommand.mockResolvedValue({});
+    relayMocks.visualizerShownOnDashboards.mockResolvedValue(true);
+    const { useVisualizer, visualizerEnabledForPlayer } =
+      await importComposable();
+    useVisualizer();
+    await flushPromises();
+    expect(visualizerEnabledForPlayer()).toBe(true);
   });
 });
