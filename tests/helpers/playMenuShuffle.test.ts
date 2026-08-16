@@ -1,6 +1,6 @@
 /**
  * Tests for the shuffle toggle in the play menu (createShuffleToggle, exercised
- * through the exported getPlaybackContextMenuItems / showPlayMenuForMediaItem).
+ * through the exported showPlayMenuForMediaItem).
  *
  * The toggle only appears when the connected server accepts an explicit
  * shuffle argument on play_media (api.supportsPlayMediaShuffle) and there is
@@ -9,6 +9,7 @@
  */
 import type { MusicAssistantApi } from "@/plugins/api";
 import { QueueOption, type PlayerQueue } from "@/plugins/api/interfaces";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { mockApi, mockStore, mockEventbusEmit } = vi.hoisted(() => ({
@@ -59,6 +60,10 @@ vi.mock("@/helpers/players", () => ({
   playerVisible: () => true,
 }));
 
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
+
 vi.mock("@/helpers/icon", () => ({
   getLucideIcon: () => undefined,
   PLAYER_ICON_FALLBACK: "speaker",
@@ -76,16 +81,21 @@ import {
 } from "@/layouts/default/ItemContextMenu.vue";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
+import { genre } from "../fixtures/genre";
 import { playerQueue } from "../fixtures/playerQueue";
-import { playlist } from "../fixtures/playlist";
+import { podcast } from "../fixtures/podcast";
 import { track } from "../fixtures/track";
 
-const findShuffleItem = (
-  items: Array<{ label: string }>,
-): { label: string; selected?: boolean; action?: () => void } | undefined =>
-  items.find((x) => x.label === "shuffle") as
-    | { label: string; selected?: boolean; action?: () => void }
-    | undefined;
+// the items the play menu was opened with, as handed to the contextmenu event
+const emittedItems = (): ContextMenuItem[] =>
+  mockEventbusEmit.mock.calls[0][1].items;
+
+const findItem = (label: string): ContextMenuItem | undefined =>
+  emittedItems().find((x) => x.label === label);
+
+const shuffleItem = () => findItem("shuffle");
+
+const playOption = (option: QueueOption) => findItem(`queue_option.${option}`);
 
 beforeEach(() => {
   mockApi.getCoreConfigValue.mockReset();
@@ -100,83 +110,75 @@ beforeEach(() => {
 });
 
 describe("shuffle toggle presence", () => {
-  it("is present for a container (album) when schema supports it and a queue is active", async () => {
-    const theAlbum = album({ item_id: "a1" });
-    const items = await getPlaybackContextMenuItems([theAlbum]);
-    expect(findShuffleItem(items)).toBeDefined();
+  it("is present for a container (album)", async () => {
+    await showPlayMenuForMediaItem(album({ item_id: "a1" }));
+    expect(shuffleItem()).toBeDefined();
   });
 
   it("is absent when the server does not support play_media shuffle", async () => {
     mockApi.supportsPlayMediaShuffle = false;
-    const theAlbum = album({ item_id: "a1" });
-    const items = await getPlaybackContextMenuItems([theAlbum]);
-    expect(findShuffleItem(items)).toBeUndefined();
+    await showPlayMenuForMediaItem(album({ item_id: "a1" }));
+    expect(shuffleItem()).toBeUndefined();
   });
 
   it("is absent when there is no active player queue", async () => {
     mockStore.activePlayerQueue = undefined;
-    const theAlbum = album({ item_id: "a1" });
-    const items = await getPlaybackContextMenuItems([theAlbum]);
-    expect(findShuffleItem(items)).toBeUndefined();
+    await showPlayMenuForMediaItem(album({ item_id: "a1" }));
+    expect(shuffleItem()).toBeUndefined();
   });
 
-  it("is absent for a single track with no shuffleable container parent", async () => {
-    const theTrack = track({ item_id: "t1" });
-    const items = await getPlaybackContextMenuItems([theTrack]);
-    expect(findShuffleItem(items)).toBeUndefined();
+  it("is absent for a single track", async () => {
+    await showPlayMenuForMediaItem(track({ item_id: "t1" }));
+    expect(shuffleItem()).toBeUndefined();
   });
 
-  it("is present for a single track played from within a playlist parent", async () => {
-    const theTrack = track({ item_id: "t1" });
-    const parentPlaylist = playlist({ item_id: "pl1" });
-    const items = await getPlaybackContextMenuItems([theTrack], parentPlaylist);
-    expect(findShuffleItem(items)).toBeDefined();
+  it("is absent for spoken-word content that is meant to be heard in order", async () => {
+    await showPlayMenuForMediaItem(podcast({ item_id: "pc1" }));
+    expect(shuffleItem()).toBeUndefined();
   });
 
-  it("is present for a multi-item selection even of non-container types", async () => {
-    const items = await getPlaybackContextMenuItems([
+  it("is present for an artist", async () => {
+    await showPlayMenuForMediaItem(artist({ item_id: "ar1" }));
+    expect(shuffleItem()).toBeDefined();
+  });
+
+  it("is present for a genre", async () => {
+    await showPlayMenuForMediaItem(genre({ item_id: "g1", is_playable: true }));
+    expect(shuffleItem()).toBeDefined();
+  });
+
+  it("is present for a multi-item selection of non-container types", async () => {
+    await showPlayMenuForMediaItem([
       track({ item_id: "t1" }),
       track({ item_id: "t2" }),
     ]);
-    expect(findShuffleItem(items)).toBeDefined();
+    expect(shuffleItem()).toBeDefined();
   });
 
-  it("is present in showPlayMenuForMediaItem's items for an artist", async () => {
-    const theArtist = artist({ item_id: "ar1" });
-    await showPlayMenuForMediaItem(theArtist);
-    expect(mockEventbusEmit).toHaveBeenCalledWith(
-      "contextmenu",
-      expect.objectContaining({
-        items: expect.arrayContaining([
-          expect.objectContaining({ label: "shuffle" }),
-        ]),
-      }),
-    );
+  it("is not offered by the item context menu", async () => {
+    const items = await getPlaybackContextMenuItems([album({ item_id: "a1" })]);
+    expect(items.find((x) => x.label === "shuffle")).toBeUndefined();
   });
 });
 
 describe("shuffle toggle state", () => {
-  it("mirrors the active queue's shuffle_enabled as its initial selected state", async () => {
+  it("starts unselected even when the queue itself is shuffling", async () => {
     mockStore.activePlayerQueue = playerQueue({ shuffle_enabled: true });
-    const theAlbum = album({ item_id: "a1" });
-    const items = await getPlaybackContextMenuItems([theAlbum]);
-    expect(findShuffleItem(items)?.selected).toBe(true);
+    await showPlayMenuForMediaItem(album({ item_id: "a1" }));
+    expect(shuffleItem()?.selected).toBe(false);
   });
 
-  it("starts unselected when the queue is not shuffling", async () => {
-    mockStore.activePlayerQueue = playerQueue({ shuffle_enabled: false });
-    const theAlbum = album({ item_id: "a1" });
-    const items = await getPlaybackContextMenuItems([theAlbum]);
-    expect(findShuffleItem(items)?.selected).toBe(false);
+  it("keeps the menu open when it is flipped", async () => {
+    await showPlayMenuForMediaItem(album({ item_id: "a1" }));
+    expect(shuffleItem()?.close_on_click).toBe(false);
   });
 });
 
 describe("shuffle value passed to playMedia", () => {
   it("passes shuffle === undefined while the toggle has not been touched", async () => {
     const theAlbum = album({ item_id: "a1" });
-    const items = await getPlaybackContextMenuItems([theAlbum]);
-    const playNow = items.find((x) => x.label === "play_now");
-    playNow?.action?.();
+    await showPlayMenuForMediaItem(theAlbum);
+    playOption(QueueOption.PLAY)?.action?.();
 
     expect(mockApi.playMedia).toHaveBeenCalledWith(
       [theAlbum.uri],
@@ -189,14 +191,11 @@ describe("shuffle value passed to playMedia", () => {
     );
   });
 
-  it("passes the flipped boolean after the toggle's action() is called", async () => {
+  it("passes the flipped boolean after the toggle has been used", async () => {
     const theAlbum = album({ item_id: "a1" });
-    const items = await getPlaybackContextMenuItems([theAlbum]);
-    const shuffleItem = findShuffleItem(items);
-    shuffleItem?.action?.();
-
-    const playNow = items.find((x) => x.label === "play_now");
-    playNow?.action?.();
+    await showPlayMenuForMediaItem(theAlbum);
+    shuffleItem()?.action?.();
+    playOption(QueueOption.PLAY)?.action?.();
 
     expect(mockApi.playMedia).toHaveBeenCalledWith(
       [theAlbum.uri],
@@ -209,21 +208,16 @@ describe("shuffle value passed to playMedia", () => {
     );
   });
 
-  it("flips back to the original state on a second toggle", async () => {
+  it("requests playing in order when the toggle is flipped back off", async () => {
     const theAlbum = album({ item_id: "a1" });
-    const items = await getPlaybackContextMenuItems([theAlbum]);
-    const shuffleItem = findShuffleItem(items);
-    // queue starts with shuffle_enabled: false -> first flip requests true,
-    // second flip requests false again
-    shuffleItem?.action?.();
-    shuffleItem?.action?.();
-
-    const playNow = items.find((x) => x.label === "play_now");
-    playNow?.action?.();
+    await showPlayMenuForMediaItem(theAlbum);
+    shuffleItem()?.action?.();
+    shuffleItem()?.action?.();
+    playOption(QueueOption.REPLACE)?.action?.();
 
     expect(mockApi.playMedia).toHaveBeenCalledWith(
       [theAlbum.uri],
-      QueueOption.PLAY,
+      QueueOption.REPLACE,
       undefined,
       undefined,
       undefined,
@@ -232,24 +226,23 @@ describe("shuffle value passed to playMedia", () => {
     );
   });
 
-  it("passes the requested shuffle value through a play-from-here (playlist track) action", async () => {
-    const theTrack = track({ item_id: "t1" });
-    const parentPlaylist = playlist({ item_id: "pl1" });
-    const items = await getPlaybackContextMenuItems([theTrack], parentPlaylist);
-    const shuffleItem = findShuffleItem(items);
-    shuffleItem?.action?.();
+  it.each([QueueOption.NEXT, QueueOption.ADD, QueueOption.REPLACE_NEXT])(
+    "omits shuffle for %s, which only stages items for later",
+    async (option) => {
+      const theAlbum = album({ item_id: "a1" });
+      await showPlayMenuForMediaItem(theAlbum);
+      shuffleItem()?.action?.();
+      playOption(option)?.action?.();
 
-    const playFromHere = items.find((x) => x.label === "play_playlist_from");
-    playFromHere?.action?.();
-
-    expect(mockApi.playMedia).toHaveBeenCalledWith(
-      parentPlaylist.uri,
-      undefined,
-      theTrack.item_id,
-      undefined,
-      undefined,
-      undefined,
-      true,
-    );
-  });
+      expect(mockApi.playMedia).toHaveBeenCalledWith(
+        [theAlbum.uri],
+        option,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+    },
+  );
 });

@@ -34,7 +34,9 @@ const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
  *
  * posX/posY anchor the play menu, which is shown instead of playing directly
  * when there is no usable active player or when forceMenu is set. sortBy is the
- * sort order of the list the item was played from.
+ * sort order of the list the item was played from. A track within an album or
+ * playlist follows the configured play action: continue from that track, or
+ * play only the track itself.
  */
 export const handlePlayBtnClick = async function (
   item: MediaItemTypeOrItemMapping,
@@ -110,8 +112,7 @@ export const handleMediaItemClick = async function (
   // podcast episode has no details view so show play menu directly
   // TODO: revisit this once we have a proper podcast episode details view
   if (item.media_type == MediaType.PODCAST_EPISODE) {
-    handlePlayBtnClick(item, posX, posY, parentItem, true);
-    return;
+    return handlePlayBtnClick(item, posX, posY, parentItem, true);
   }
 
   // open menu for collection items
@@ -132,8 +133,7 @@ export const handleMediaItemClick = async function (
     clickActionKey &&
     (await readClickSetting(clickActionKey)) == CLICK_ACTION_PLAY
   ) {
-    handlePlayBtnClick(item, posX, posY, parentItem);
-    return;
+    return handlePlayBtnClick(item, posX, posY, parentItem);
   }
 
   // all other: go to details view

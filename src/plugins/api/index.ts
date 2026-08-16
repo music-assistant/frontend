@@ -127,7 +127,8 @@ export class MusicAssistantApi {
   public providerIcons = reactive<{ [key: string]: string | null }>({});
   private _providerIconRequests = new Map<string, Promise<string | null>>();
   // core config values by "<domain>/<key>", dropped when this client saves a core config
-  // and on disconnect. A change made from another client is picked up on reconnect.
+  // and when the full state is (re)fetched, so a change made from another client is
+  // picked up on the next (re)connect.
   private _coreConfigValues = new Map<string, Promise<ConfigValueType>>();
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
@@ -3391,6 +3392,8 @@ export class MusicAssistantApi {
 
   public async fetchState() {
     // fetch full initial state
+    // a (re)connect is the moment to pick up config changes made elsewhere
+    this._coreConfigValues.clear();
     for (const player of await this.getPlayers()) {
       this.players[player.player_id] = player;
     }

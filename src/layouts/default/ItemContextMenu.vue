@@ -428,7 +428,7 @@ export const showPlayMenuForMediaItem = async function (
           undefined,
           undefined,
           undefined,
-          shuffleToggle?.requested(),
+          shuffleToggle?.requested(option),
         );
       },
       icon: queueOptionIconMap[option],
@@ -1158,8 +1158,6 @@ export const getPlaybackContextMenuItems = async function (
 
   if (!store.activePlayer) return playMenuItems;
 
-  const shuffleToggle = createShuffleToggle(playableItems, parentItem);
-
   // Play from here...
   if (
     playableItems.length == 1 &&
@@ -1177,8 +1175,6 @@ export const getPlaybackContextMenuItems = async function (
             playableItems[0].item_id,
             undefined,
             sortBy,
-            undefined,
-            shuffleToggle?.requested(),
           );
         },
         icon: PlayCircle,
@@ -1197,8 +1193,6 @@ export const getPlaybackContextMenuItems = async function (
             firstItem.item_id,
             undefined,
             sortBy,
-            undefined,
-            shuffleToggle?.requested(),
           );
         },
         icon: PlayCircle,
@@ -1211,15 +1205,7 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_from_here",
         action: () => {
-          api.playMedia(
-            parentItem.uri,
-            undefined,
-            firstItem.item_id,
-            undefined,
-            undefined,
-            undefined,
-            shuffleToggle?.requested(),
-          );
+          api.playMedia(parentItem.uri, undefined, firstItem.item_id);
         },
         icon: PlayCircle,
         labelArgs: [],
@@ -1237,11 +1223,6 @@ export const getPlaybackContextMenuItems = async function (
         api.playMedia(
           playableItems.map((x) => x.uri),
           defaultEnqueueOption,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          shuffleToggle?.requested(),
         );
       },
       icon: PlayCircle,
@@ -1265,11 +1246,6 @@ export const getPlaybackContextMenuItems = async function (
         api.playMedia(
           items.map((x) => x.uri),
           option,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          shuffleToggle?.requested(),
         );
       },
       icon: queueOptionIconMap[option],
@@ -1284,7 +1260,6 @@ export const getPlaybackContextMenuItems = async function (
     icon: ListMusic,
     labelArgs: [],
   });
-  if (shuffleToggle) playMenuItems.push(shuffleToggle.menuItem);
   // Multi-select mark as played/unplayed for podcast episodes
   if (
     items.length > 1 &&
@@ -1370,22 +1345,26 @@ export const getPlaybackContextMenuItems = async function (
   return playMenuItems;
 };
 
-// media types whose contents have an order that is worth shuffling
+// media types whose contents have an order that is worth shuffling (spoken-word
+// content is left out: its chapters/episodes are meant to be heard in order)
 const SHUFFLEABLE_MEDIA_TYPES = [
   MediaType.ALBUM,
   MediaType.ARTIST,
-  MediaType.AUDIOBOOK,
   MediaType.COLLECTION,
   MediaType.FOLDER,
+  MediaType.GENRE,
   MediaType.PLAYLIST,
-  MediaType.PODCAST,
 ];
+
+// the options that start playing right away; the server ignores a shuffle request
+// on the ones that only stage items for later
+const SHUFFLEABLE_QUEUE_OPTIONS = [QueueOption.PLAY, QueueOption.REPLACE];
 
 interface ShuffleToggle {
   menuItem: ContextMenuItem;
   // the shuffle state to send along with a play command; undefined until the user
   // flips the toggle, leaving the choice to the server as long as it is untouched
-  requested: () => boolean | undefined;
+  requested: (option: QueueOption) => boolean | undefined;
 }
 
 /**
@@ -1396,20 +1375,18 @@ interface ShuffleToggle {
  */
 const createShuffleToggle = function (
   items: MediaItemTypeOrItemMapping[],
-  parentItem?: MediaItemType,
 ): ShuffleToggle | undefined {
   if (!api.supportsPlayMediaShuffle || !store.activePlayerQueue) return;
-  // a single item only has an order to shuffle when it is a container itself,
-  // or when it is played from within one ("play from here")
-  const shuffleable =
-    items.length > 1 ||
-    SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type) ||
-    (parentItem !== undefined &&
-      parentItem.uri != items[0].uri &&
-      SHUFFLEABLE_MEDIA_TYPES.includes(parentItem.media_type));
-  if (!shuffleable) return;
-
-  let enabled = store.activePlayerQueue.shuffle_enabled;
+  // a single item only has an order to shuffle when it is a container itself
+  if (
+    items.length == 1 &&
+    !SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type)
+  ) {
+    return;
+  }
+  // starts off because that is what the server does with newly started media; the
+  // queue's own flag says nothing about the media that is about to be played
+  let enabled = false;
   let touched = false;
   return {
     menuItem: {
@@ -1425,7 +1402,10 @@ const createShuffleToggle = function (
         touched = true;
       },
     },
-    requested: () => (touched ? enabled : undefined),
+    requested: (option: QueueOption) =>
+      touched && SHUFFLEABLE_QUEUE_OPTIONS.includes(option)
+        ? enabled
+        : undefined,
   };
 };
 </script>
