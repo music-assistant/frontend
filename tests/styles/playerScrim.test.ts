@@ -12,6 +12,7 @@ const NAVIGATION_INSET =
   "max( 12px, calc(env(safe-area-inset-bottom, 0px) * 0.65) )";
 const NAVIGATION_HEIGHT = `calc( 72px + ${NAVIGATION_INSET} )`;
 const DOCK_RIM = "4px";
+const SCRIM_FADE_PROPERTY = "--mobile-player-scrim-fade-height";
 const SCRIM_FADE = "16px";
 
 let appStyles: HTMLStyleElement;
@@ -106,6 +107,7 @@ describe("player scrim height", () => {
     expect(dockRules).not.toContain("mask-image");
     expect(scrimRule).not.toContain("backdrop-filter");
     expect(scrimRule).not.toContain("mask-image");
+    expect(fadeRule).toContain(`height: var(${SCRIM_FADE_PROPERTY})`);
     expect(fadeRule).toContain("backdrop-filter: blur(14px)");
     expect(fadeRule).toContain("mask-image: linear-gradient");
   });

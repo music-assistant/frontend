@@ -66,12 +66,14 @@ html {
   --mobile-navigation-height: calc(
     var(--mobile-navigation-item-height) + var(--mobile-navigation-inset-bottom)
   );
+  /* Height over which the dock blur fades into the page. */
+  --mobile-player-scrim-fade-height: 16px;
   /* Height from the viewport bottom through the dock and its blur fade. The card
      is measured at runtime, so this follows it rather than assuming a height the
      card is free to outgrow. */
   --mobile-player-scrim-height: calc(
     var(--mobile-navigation-height) + var(--player-bar-overlay-height, 0px) +
-      var(--mobile-dock-rim) + 16px
+      var(--mobile-dock-rim) + var(--mobile-player-scrim-fade-height)
   );
   /* Space the player bar occupies in the desktop layout, where it sits flush
      against the bottom of the screen. The mobile player bar floats and varies

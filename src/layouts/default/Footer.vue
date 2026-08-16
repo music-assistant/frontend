@@ -100,7 +100,7 @@ function clearOverlay() {
   position: absolute;
   top: 0;
   width: 100%;
-  height: 16px;
+  height: var(--mobile-player-scrim-fade-height);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   mask-image: linear-gradient(to top, #000, transparent);
