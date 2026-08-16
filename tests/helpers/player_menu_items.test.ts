@@ -28,6 +28,7 @@ const {
   loadStatus,
   openAnnouncementDialog,
   queueDjStatusRef,
+  togglePlayerPower,
   routerPush,
   sessionsRef,
   setQueueDj,
@@ -44,6 +45,7 @@ const {
   loadStatus: vi.fn().mockResolvedValue(undefined),
   openAnnouncementDialog: vi.fn(),
   queueDjStatusRef: { value: {} as Record<string, string> },
+  togglePlayerPower: vi.fn(),
   routerPush: vi.fn(),
   sessionsRef: { value: [] as AIRadioSession[] },
   setQueueDj: vi.fn(),
@@ -80,6 +82,10 @@ vi.mock("@/plugins/eventbus", () => ({
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
+}));
+
+vi.mock("@/helpers/player_group_playback", () => ({
+  togglePlayerPower,
 }));
 
 vi.mock("@/helpers/sleep_timer", () => ({
@@ -233,6 +239,22 @@ describe("getPlayerSetupMenuItem", () => {
       kind: "player",
       playerId: "kitchen",
     });
+  });
+});
+
+describe("getPlayerMenuItems power", () => {
+  it("routes power changes through the group playback guard", () => {
+    const player = makePlayer({
+      power_control: "power",
+      powered: true,
+    });
+    const powerItem = getPlayerMenuItems(player, undefined, {
+      context: "player",
+    }).find((item) => item.label === "power_off_player");
+
+    powerItem?.action?.();
+
+    expect(togglePlayerPower).toHaveBeenCalledWith(player);
   });
 });
 

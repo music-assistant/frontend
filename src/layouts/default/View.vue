@@ -27,6 +27,7 @@
           <delete-genre-dialog />
           <link-genre-dialog />
           <dialog-delete-confirmation />
+          <player-group-playback-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
           <item-context-menu />
@@ -50,6 +51,7 @@ import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
+import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {

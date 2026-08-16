@@ -11,6 +11,10 @@ import {
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { requestGroupPlaybackConfirmation } = vi.hoisted(() => ({
+  requestGroupPlaybackConfirmation: vi.fn(),
+}));
+
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
@@ -25,6 +29,10 @@ vi.mock("@/plugins/api", async () => {
 
 vi.mock("@/helpers/players", () => ({
   groupMemberPickerVisible: () => true,
+}));
+
+vi.mock("@/helpers/player_group_playback", () => ({
+  requestGroupPlaybackConfirmation,
 }));
 
 const CheckboxStub = {
@@ -130,6 +138,7 @@ describe("PlayerGroupMembers", () => {
     vi.clearAllMocks();
     vi.useRealTimers();
     api.players = {};
+    requestGroupPlaybackConfirmation.mockReturnValue(false);
   });
 
   it("uses aligned icon slots and prominent checkboxes", () => {
@@ -336,6 +345,49 @@ describe("PlayerGroupMembers", () => {
       parent.player_id,
       undefined,
       [child.player_id],
+    );
+  });
+
+  it("waits for a choice before removing the playing leader", async () => {
+    vi.useFakeTimers();
+    let keepPlaying: (() => void) | undefined;
+    requestGroupPlaybackConfirmation.mockImplementation(
+      (_player, _change, onKeepPlaying) => {
+        keepPlaying = onKeepPlaying;
+        return true;
+      },
+    );
+    const child = createPlayer({
+      player_id: "child",
+      name: "Office",
+    });
+    const parent = createPlayer({
+      playback_state: PlaybackState.PLAYING,
+      group_members: ["parent", child.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [child.player_id]: child,
+    };
+    const wrapper = mountGroupMembers(parent, [parent, child]);
+
+    await wrapper.get('[aria-label="Kitchen"]').trigger("click");
+
+    expect(requestGroupPlaybackConfirmation).toHaveBeenCalledWith(
+      parent,
+      "remove",
+      expect.any(Function),
+    );
+    expect(parent.group_members).toEqual(["parent", child.player_id]);
+    expect(api.playerCommandSetMembers).not.toHaveBeenCalled();
+
+    keepPlaying?.();
+    expect(parent.group_members).toEqual([child.player_id]);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.playerCommandSetMembers).toHaveBeenCalledWith(
+      parent.player_id,
+      undefined,
+      [parent.player_id],
     );
   });
 });

@@ -978,6 +978,13 @@
     "transfer_queue": "Transfer queue",
     "power_on_player": "Power on",
     "power_off_player": "Power off",
+    "player_group_playback": {
+        "title": "Group playback",
+        "remove_message": "Playback is active on {0}. Removing this player from the group will move the playback session to the remaining players.",
+        "power_off_message": "Playback is active on {0}. Powering it off will move the playback session to the remaining players.",
+        "keep_playing": "Keep playing",
+        "stop_and_ungroup": "Stop and ungroup"
+    },
     "powered_off_players": "Unpowered players",
     "sync_player_with": "Synchronize with another player",
     "select_repeat_mode": "Select repeat mode",
