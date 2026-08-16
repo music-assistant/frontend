@@ -308,8 +308,6 @@ import {
 } from "@lucide/vue";
 import type { Component } from "vue";
 
-import ShuffleMenuToggle from "@/layouts/default/ShuffleMenuToggle.vue";
-
 // The item type lives in a plain .ts module (editor-friendly); re-exported
 // here for convenience since most consumers already import from this file.
 import {
@@ -411,7 +409,6 @@ export const showPlayMenuForMediaItem = async function (
     "player_queues",
     enqueueConfigKey,
   )) as QueueOption;
-  const shuffleToggle = createShuffleToggle(playableItems);
   for (const option of [
     QueueOption.PLAY,
     QueueOption.NEXT,
@@ -425,11 +422,6 @@ export const showPlayMenuForMediaItem = async function (
         api.playMedia(
           playableItems.map((x) => x.uri),
           option,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          shuffleToggle?.requested(option),
         );
       },
       icon: queueOptionIconMap[option],
@@ -438,7 +430,6 @@ export const showPlayMenuForMediaItem = async function (
       selected: option === defaultEnqueueOption,
     });
   }
-  if (shuffleToggle) playMenuItems.push(shuffleToggle.menuItem);
 
   if (playMenuItems.length == 0) playMenuItems = [];
 
@@ -1344,72 +1335,5 @@ export const getPlaybackContextMenuItems = async function (
     }
   }
   return playMenuItems;
-};
-
-// media types whose contents have an order that is worth shuffling. Audiobooks and
-// podcasts are left out: their chapters/episodes are meant to be heard in order. A
-// hand-picked selection of several items is the user's own list, so it stays offered.
-const SHUFFLEABLE_MEDIA_TYPES = [
-  MediaType.ALBUM,
-  MediaType.ARTIST,
-  MediaType.COLLECTION,
-  MediaType.FOLDER,
-  MediaType.GENRE,
-  MediaType.PLAYLIST,
-];
-
-// the options that start playing right away; the server ignores a shuffle request
-// on the ones that only stage items for later
-const SHUFFLEABLE_QUEUE_OPTIONS = [QueueOption.PLAY, QueueOption.REPLACE];
-
-interface ShuffleToggle {
-  menuItem: ContextMenuItem;
-  // the shuffle state to send along with a play command; undefined until the user
-  // flips the toggle, leaving the choice to the server as long as it is untouched
-  requested: (option: QueueOption) => boolean | undefined;
-}
-
-/**
- * Build the shuffle toggle for the play menu of the given items.
- *
- * Returns undefined when there is nothing to shuffle, or when the server does not
- * accept an explicit shuffle request.
- */
-const createShuffleToggle = function (
-  items: MediaItemTypeOrItemMapping[],
-): ShuffleToggle | undefined {
-  if (!api.supportsPlayMediaShuffle || !store.activePlayerQueue) return;
-  // a single item only has an order to shuffle when it is a container itself
-  if (
-    items.length == 1 &&
-    !SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type)
-  ) {
-    return;
-  }
-  // starts off because that is what the server does with newly started media; the
-  // queue's own flag says nothing about the media that is about to be played
-  const enabled = ref(false);
-  let touched = false;
-  const toggle = (value: boolean) => {
-    enabled.value = value;
-    touched = true;
-  };
-  return {
-    menuItem: {
-      label: "shuffle",
-      labelArgs: [],
-      // rendered as its own switch row, so picking it does not close the menu:
-      // the toggle only says how the option chosen next should start playing
-      component: () =>
-        h(ShuffleMenuToggle, {
-          modelValue: enabled.value,
-          "onUpdate:modelValue": toggle,
-        }),
-    },
-    requested: (option: QueueOption) =>
-      touched && SHUFFLEABLE_QUEUE_OPTIONS.includes(option)
-        ? enabled.value
-        : undefined,
-  };
 };
 </script>
