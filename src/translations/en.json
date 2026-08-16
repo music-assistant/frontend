@@ -968,6 +968,7 @@
         "discovery": "Discovery"
     },
     "play_replace": "Play Now (clear queue)",
+    "play_shuffled": "Play shuffled",
     "played": "Played",
     "images": "Images",
     "image_type": "Type",
