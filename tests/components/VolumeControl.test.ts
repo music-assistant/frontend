@@ -26,6 +26,10 @@ vi.mock("@/helpers/players", () => ({
   groupMemberPickerVisible: () => true,
 }));
 
+vi.mock("@/helpers/player_group_playback", () => ({
+  requestGroupPlaybackConfirmation: () => false,
+}));
+
 vi.mock("@/layouts/default/PlayerOSD/PlayerVolume.vue", () => ({
   default: {
     props: ["player"],

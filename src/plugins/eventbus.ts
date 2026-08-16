@@ -50,6 +50,15 @@ export type DeleteConfirmationDialogEvent = {
   onConfirm: () => void | Promise<void>;
 };
 
+export type PlayerGroupPlaybackChange = "remove" | "power_off";
+
+export type PlayerGroupPlaybackDialogEvent = {
+  change: PlayerGroupPlaybackChange;
+  playerName: string;
+  onKeepPlaying: () => void | Promise<void>;
+  onStopAndUngroup: () => void | Promise<void>;
+};
+
 export type ImportPlaylistEvent = {
   m3uData: string;
   playlistName: string;
@@ -93,6 +102,7 @@ export type Events = {
   mergeGenreDialog: MergeGenreDialogEvent;
   deleteGenreDialog: DeleteGenreDialogEvent;
   deleteConfirmationDialog: DeleteConfirmationDialogEvent;
+  playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;

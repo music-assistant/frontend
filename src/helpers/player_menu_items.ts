@@ -27,6 +27,7 @@ import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
+import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { errorMessage } from "@/helpers/ai_radio";
 import { toast } from "vue-sonner";
 
@@ -76,7 +77,7 @@ export const getPlayerMenuItems = (
       label: player.powered ? "power_off_player" : "power_on_player",
       labelArgs: [],
       action: () => {
-        api.playerCommandPowerToggle(player.player_id);
+        return togglePlayerPower(player);
       },
       icon: "mdi-power",
     });
