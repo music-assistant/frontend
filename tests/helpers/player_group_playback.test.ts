@@ -159,6 +159,9 @@ describe("player group playback", () => {
     );
 
     child.synced_to = null;
+    callbacks[0]();
+    expect(storeMock.activePlayerId).toBe(leader.player_id);
+
     child.active_source = child.player_id;
     apiMock.queues[child.player_id] = playerQueue({
       queue_id: child.player_id,

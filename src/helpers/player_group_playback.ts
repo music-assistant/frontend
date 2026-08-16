@@ -104,11 +104,14 @@ function followPlaybackTransfer(
     }
     const newLeader = memberIds
       .map((playerId) => api.players[playerId])
-      .find(
-        (player) =>
-          player?.synced_to === null &&
-          resolvePlayerQueue(player)?.state !== PlaybackState.IDLE,
-      );
+      .find((player) => {
+        if (!player || player.synced_to !== null) return false;
+        const queue = resolvePlayerQueue(player);
+        return (
+          queue?.queue_id === player.player_id &&
+          queue.state !== PlaybackState.IDLE
+        );
+      });
     if (!newLeader) return;
 
     store.activePlayerId = newLeader.player_id;
