@@ -79,6 +79,9 @@ const DEBUG = process.env.NODE_ENV === "development";
 // Server-side string localization + the translations/set_locale command landed in API schema 32.
 const TRANSLATIONS_SCHEMA_VERSION = 32;
 
+// The shuffle argument on player_queues/play_media landed in API schema 51.
+const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
+
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
   CONNECTING = "connecting", // Establishing connection
@@ -123,6 +126,9 @@ export class MusicAssistantApi {
   );
   public providerIcons = reactive<{ [key: string]: string | null }>({});
   private _providerIconRequests = new Map<string, Promise<string | null>>();
+  // core config values by "<domain>/<key>", dropped when this client saves a core config
+  // and on disconnect. A change made from another client is picked up on reconnect.
+  private _coreConfigValues = new Map<string, Promise<ConfigValueType>>();
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
@@ -399,6 +405,7 @@ export class MusicAssistantApi {
       (key) => delete this.providerIcons[key],
     );
     this._providerIconRequests.clear();
+    this._coreConfigValues.clear();
     this.serverInfo.value = undefined;
   }
 
@@ -2053,6 +2060,9 @@ export class MusicAssistantApi {
     queue_id?: string,
     sort_by?: string,
     start_from_beginning?: boolean,
+    // play the media shuffled (or explicitly in order); only applies to the options
+    // that start playing right away. Omit to leave the choice to the server.
+    shuffle?: boolean,
   ): Promise<void> {
     if (
       !queue_id &&
@@ -2070,6 +2080,7 @@ export class MusicAssistantApi {
       start_item,
       sort_by,
       start_from_beginning,
+      shuffle,
     });
   }
 
@@ -2399,12 +2410,27 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core/get", { domain });
   }
 
-  public async getCoreConfigValue(
+  public getCoreConfigValue(
     domain: string,
     key: string,
   ): Promise<ConfigValueType> {
     // Return value for a single core controller config entry.
-    return this.sendCommand("config/core/get_value", { domain, key });
+    // Cached (see _coreConfigValues) because these steer interactions such as clicking
+    // a media item, which must not wait for a round-trip on every click.
+    const cacheKey = `${domain}/${key}`;
+    let request = this._coreConfigValues.get(cacheKey);
+    if (!request) {
+      request = this.sendCommand<ConfigValueType>("config/core/get_value", {
+        domain,
+        key,
+      }).catch((err) => {
+        // a failed read must not be remembered as the value
+        this._coreConfigValues.delete(cacheKey);
+        throw err;
+      });
+      this._coreConfigValues.set(cacheKey, request);
+    }
+    return request;
   }
 
   public async getCoreConfigEntries(domain: string): Promise<ConfigEntry[]> {
@@ -2430,10 +2456,12 @@ export class MusicAssistantApi {
     // domain: (mandatory) domain of the core controller.
     // values: the raw values for config entries that need to be stored/updated.
     // action: [optional] action key called from config entries UI.
-    return this.sendCommand("config/core/save", {
+    const config = await this.sendCommand<CoreConfig>("config/core/save", {
       domain,
       values,
     });
+    this._coreConfigValues.clear();
+    return config;
   }
 
   public reloadCoreController(domain: string): Promise<void> {
@@ -2844,6 +2872,14 @@ export class MusicAssistantApi {
     return await this.sendCommand<number>("time", undefined, {
       suppressGlobalError: true,
     });
+  }
+
+  /** Whether the connected server accepts an explicit shuffle on play_media (schema >= 51). */
+  public get supportsPlayMediaShuffle(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
+    );
   }
 
   /** Whether the connected server localizes server-provided strings (schema >= 32). */
