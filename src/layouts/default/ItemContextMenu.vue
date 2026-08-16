@@ -1345,8 +1345,9 @@ export const getPlaybackContextMenuItems = async function (
   return playMenuItems;
 };
 
-// media types whose contents have an order that is worth shuffling (spoken-word
-// content is left out: its chapters/episodes are meant to be heard in order)
+// media types whose contents have an order that is worth shuffling. Audiobooks and
+// podcasts are left out: their chapters/episodes are meant to be heard in order. A
+// hand-picked selection of several items is the user's own list, so it stays offered.
 const SHUFFLEABLE_MEDIA_TYPES = [
   MediaType.ALBUM,
   MediaType.ARTIST,
