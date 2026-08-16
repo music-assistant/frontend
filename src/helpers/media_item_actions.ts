@@ -184,7 +184,8 @@ const readClickSetting = async function (
   key: string,
 ): Promise<string | undefined> {
   try {
-    return (await api.getCoreConfigValue("player_queues", key)) as string;
+    const value = await api.getCoreConfigValue("player_queues", key);
+    return typeof value === "string" ? value : undefined;
   } catch (err) {
     console.error("[media_item_actions] failed to read setting '%s'", key, err);
     return undefined;
