@@ -91,27 +91,21 @@ function clearOverlay() {
   bottom: 0;
   width: 100%;
   height: var(--mobile-player-scrim-height);
-  /* it only exists to soften what is behind it, so it never takes a tap */
   pointer-events: none;
   z-index: 999;
+}
+
+/* Fade the dock blur out without masking the dock surface itself. */
+.player-scrim::before {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 16px;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  /* the mask is what makes the blur ramp up towards the player instead of
-     ending on a visible line */
-  mask-image: linear-gradient(
-    to top,
-    #000 0%,
-    #000 35%,
-    rgba(0, 0, 0, 0.55) 65%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to top,
-    #000 0%,
-    #000 35%,
-    rgba(0, 0, 0, 0.55) 65%,
-    transparent 100%
-  );
+  mask-image: linear-gradient(to top, #000, transparent);
+  -webkit-mask-image: linear-gradient(to top, #000, transparent);
+  content: "";
 }
 
 .v-footer {

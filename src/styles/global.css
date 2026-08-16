@@ -66,11 +66,9 @@ html {
   --mobile-navigation-height: calc(
     var(--mobile-navigation-item-height) + var(--mobile-navigation-inset-bottom)
   );
-  /* Height of the blur behind the dock. It softens what scrolls under it without
-     hiding it, and fades out towards the top, so it clears the dock's own top by
-     a further 16px for the fade to finish above it rather than across it. The
-     card is measured at runtime, so this follows it rather than assuming a height
-     the card is free to outgrow. */
+  /* Height from the viewport bottom through the dock and its blur fade. The card
+     is measured at runtime, so this follows it rather than assuming a height the
+     card is free to outgrow. */
   --mobile-player-scrim-height: calc(
     var(--mobile-navigation-height) + var(--player-bar-overlay-height, 0px) +
       var(--mobile-dock-rim) + 16px

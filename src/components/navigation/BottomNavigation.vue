@@ -114,8 +114,7 @@ function closePlayersMenu() {
 
 /* one surface for the whole dock: it reaches up behind the player, which then
    sits on it as its own card. The player's measured height is published by the
-   footer, so the two always meet. Only a tint - the blur comes from the scrim
-   behind it, which ramps up from above the player. */
+   footer, so the two always meet. */
 .mobile-bottom-navigation::before {
   position: absolute;
   z-index: -1;
@@ -129,11 +128,19 @@ function closePlayersMenu() {
   /* the top stays concentric with the player card sitting on it; the bottom is
      far rounder so it does not fight the screen's own corner curve */
   border-radius: 20px 20px 32px 32px;
-  background: color-mix(in srgb, var(--background) 70%, transparent);
+  background: var(--background);
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
   content: "";
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .mobile-bottom-navigation::before {
+    background: color-mix(in srgb, var(--background) 70%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
 }
 
 /* darker than the muted grey the player controls use elsewhere, so the labels
