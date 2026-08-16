@@ -1,8 +1,18 @@
 <script setup lang="ts">
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { useRegisterSW } from "virtual:pwa-register/vue";
+import { watch } from "vue";
 
 const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW();
+
+// A dashboard display (cast TV, kiosk) has no one to press "reload", so a
+// waiting update would leave it running the previous build forever: apply
+// updates immediately there instead of prompting.
+const isDashboardViewer = authManager.isDashboardViewer();
+watch(needRefresh, (refresh) => {
+  if (refresh && isDashboardViewer) void updateServiceWorker(true);
+});
 
 const close = async () => {
   offlineReady.value = false;
@@ -12,7 +22,7 @@ const close = async () => {
 
 <template>
   <div
-    v-if="offlineReady || needRefresh"
+    v-if="(offlineReady || needRefresh) && !isDashboardViewer"
     :class="['pwa-toast', { 'pwa-toast--frameless': store.frameless }]"
     role="alert"
   >
