@@ -5,7 +5,7 @@
         <DialogTitle>{{ $t("change_playback_speed") }}</DialogTitle>
       </DialogHeader>
       <div class="playback-speed-current">
-        {{ formatSpeed(currentPlaybackSpeed) }}
+        {{ formatPlaybackSpeed(currentPlaybackSpeed) }}
       </div>
       <Slider
         :model-value="[sliderPlaybackSpeed]"
@@ -22,7 +22,7 @@
           :variant="option === currentPlaybackSpeed ? 'default' : 'outline'"
           @click="onSelectPlaybackSpeed(option)"
         >
-          {{ formatSpeed(option) }}
+          {{ formatPlaybackSpeed(option) }}
         </Button>
       </div>
     </DialogContent>
@@ -38,7 +38,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { queueItemPlaybackSpeed } from "@/helpers/elapsed";
+import {
+  formatPlaybackSpeed,
+  playbackSpeedSupported,
+  queueItemPlaybackSpeed,
+} from "@/helpers/elapsed";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
@@ -50,9 +54,6 @@ const PLAYBACK_SPEED_SLIDER_MAX = 2;
 const open = defineModel<boolean>("open", { required: true });
 
 const currentPlaybackSpeed = ref<number>(1);
-
-const formatSpeed = (value: number) =>
-  Number.isInteger(value) ? value.toFixed(1) : value.toString();
 
 // Slider only spans 0.5–2.0; values outside (e.g. the 3.0 preset) peg the
 // thumb at the corresponding end so the slider stays in sync visually.
@@ -67,6 +68,9 @@ watch(
   () => store.curQueueItem,
   (queueItem) => {
     currentPlaybackSpeed.value = queueItemPlaybackSpeed(queueItem);
+    // the queue plays on while this is showing, and there is no speed to set on
+    // whatever it moved to
+    if (open.value && !playbackSpeedSupported(queueItem)) open.value = false;
   },
   { immediate: true },
 );

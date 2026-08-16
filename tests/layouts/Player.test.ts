@@ -1,10 +1,11 @@
 import Player from "@/layouts/default/PlayerOSD/Player.vue";
 import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "@/layouts/default/PlayerOSD/PlayerBarMobileVolumeSheet.vue";
-import PlayerExtendedControls from "@/layouts/default/PlayerOSD/PlayerExtendedControls.vue";
 import PlayerTrackDetails from "@/layouts/default/PlayerOSD/PlayerTrackDetails.vue";
 import FavoriteMenuBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/FavoriteMenuBtn.vue";
+import PlaybackSpeedBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlaybackSpeedBtn.vue";
 import QueueBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/QueueBtn.vue";
+import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import type { Player as PlayerModel } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -41,8 +42,11 @@ const mockStore = store as unknown as {
   activePlayerId?: string;
 };
 
-// bp7: the width from which the desktop action row has room for the sleep timer
+// bp7: the width from which the countdown fits beside the queue button
 const SLEEP_TIMER_BREAKPOINT = 1100;
+
+// bp8: the width from which the speed control fits beside it as well
+const PLAYBACK_SPEED_BREAKPOINT = 1300;
 
 // the width below which the floating bar takes over from the desktop one, so
 // the narrowest the desktop bar is ever laid out at
@@ -143,6 +147,8 @@ describe("Player desktop bar", () => {
     );
   });
 
+  // each of the two takes the width it needs beside the queue button, so the
+  // countdown is offered on bars the speed control has no room on
   it.each([
     { width: SLEEP_TIMER_BREAKPOINT, visible: true },
     { width: SLEEP_TIMER_BREAKPOINT - 1, visible: false },
@@ -151,9 +157,36 @@ describe("Player desktop bar", () => {
     setViewportWidth(width);
     const player = mountPlayer(false);
 
+    expect(player.findComponent(SleepTimerBtn).exists()).toBe(visible);
+  });
+
+  it.each([
+    { width: PLAYBACK_SPEED_BREAKPOINT, visible: true },
+    { width: PLAYBACK_SPEED_BREAKPOINT - 1, visible: false },
+  ])(
+    "offers the playback speed at $width px: $visible",
+    ({ width, visible }) => {
+      mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
+      setViewportWidth(width);
+      const player = mountPlayer(false);
+
+      expect(player.findComponent(PlaybackSpeedBtn).exists()).toBe(visible);
+    },
+  );
+
+  // the play button holds the centre of the bar by the extras taking a column
+  // of their own, opposite the empty one, rather than joining the transport
+  it("keeps the extras out of the transport row", () => {
+    mockStore.activePlayer = { player_id: "p1" } as PlayerModel;
+    setViewportWidth(PLAYBACK_SPEED_BREAKPOINT);
+    const player = mountPlayer(false);
+
     expect(
-      player.findComponent(PlayerExtendedControls).props("sleepTimer"),
-    ).toEqual({ isVisible: visible });
+      player.find(".player-center-transport .player-center-extras").exists(),
+    ).toBe(false);
+    expect(
+      player.find(".player-center-controls > .player-center-extras").exists(),
+    ).toBe(true);
   });
 
   // the favourite and queue buttons flank the transport controls at every width

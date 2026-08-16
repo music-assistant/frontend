@@ -47,6 +47,11 @@ import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
 import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
+  FORCE_MOBILE_LAYOUT,
+  readDeviceSetting,
+  subscribeToDeviceSetting,
+} from "@/helpers/device_settings";
+import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
@@ -428,8 +433,8 @@ onMounted(async () => {
       Array.from(i18n.global.availableLocales),
     );
   }
-  store.forceMobileLayout =
-    localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
+  applyForceMobileLayout();
+  subscribeToDeviceSetting(FORCE_MOBILE_LAYOUT, applyForceMobileLayout);
 
   setTheme();
 
@@ -566,6 +571,10 @@ onMounted(async () => {
 onUnmounted(() => {
   unsubscribeFromHAProperties();
 });
+
+function applyForceMobileLayout() {
+  store.forceMobileLayout = readDeviceSetting(FORCE_MOBILE_LAYOUT) === "true";
+}
 
 function getCurrentAuthConnectionIdentity() {
   return api.isRemoteConnection.value

@@ -70,10 +70,10 @@ import {
 
 // properties
 export interface Props {
-  displayName: string;
+  displayName?: string;
   item: MediaItemType;
-  showCheckboxes: boolean;
-  isPlaying: boolean;
+  showCheckboxes?: boolean;
+  isPlaying?: boolean;
 }
 
 // global refs

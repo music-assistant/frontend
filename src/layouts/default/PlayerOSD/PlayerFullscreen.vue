@@ -487,6 +487,7 @@ import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
+import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -1070,13 +1071,9 @@ watch(
   },
 );
 
-// only audiobooks and podcast episodes carry a per-item playback speed
-const playbackSpeedSupported = computed(() => {
-  const mediaType = store.curQueueItem?.media_item?.media_type;
-  return (
-    mediaType === MediaType.AUDIOBOOK || mediaType === MediaType.PODCAST_EPISODE
-  );
-});
+const speedSupported = computed(() =>
+  playbackSpeedSupported(store.curQueueItem),
+);
 
 const openQueueMenu = function (evt: Event) {
   if (!store.activePlayer) return;
@@ -1090,7 +1087,7 @@ const openQueueMenu = function (evt: Event) {
   );
   // playback speed only means something for spoken-word content, which is also
   // the only content anyone plays at anything but 1x
-  if (playbackSpeedSupported.value) {
+  if (speedSupported.value) {
     menuItems.push({
       label: "change_playback_speed",
       action: () => {

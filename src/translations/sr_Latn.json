@@ -368,8 +368,6 @@
                 }
             }
         },
-        "dsp_enabled": "DSP je omogućen",
-        "dsp_disabled": "DSP je onemogućen",
         "dsp_note_multi_device_group": {
             "label": "Možete konfigurisati DSP za svaki plejer pojedinačno."
         },
@@ -803,7 +801,6 @@
         "open_provider_link": "Otvorite ovu stavku na veb-sajtu servisa",
         "collapse_expand": "Skupite ili proširite ovaj prikaz",
         "back": "Nazad",
-        "show_menu": "Prikažite\/sakrijte meni",
         "search_filter_active": "Pretraga trenutno filtrira rezultate",
         "play_sample": "Pustite uzorak zvuka",
         "album_type": "Tip albuma",
@@ -2165,7 +2162,6 @@
     "player_select": {
         "active_player_volume_only": "Prikažite klizače za jačinu zvuka samo za aktivne plejere",
         "and_more": "...i još {0}",
-        "disable_player": "Onemogućite plejer",
         "disable_player_confirmation": "Ovaj plejer će biti skriven sve dok se ponovo ne omogući u podešavanjima plejera.",
         "disable_player_title": "Onemogućiti {0}?",
         "display_options": "Opcije prikaza",

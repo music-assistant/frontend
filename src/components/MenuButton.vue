@@ -2,11 +2,11 @@
   <ButtonGroup>
     <Button
       :disabled="disabled || loading"
-      class="min-w-40"
+      class="min-w-40 justify-start"
       @click="emit('click')"
     >
       <Spinner v-if="loading" class="size-5" />
-      <CirclePlay v-else class="size-5" />
+      <Play v-else fill="currentColor" class="size-5" />
       {{ text }}
     </Button>
     <ButtonGroupSeparator />
@@ -28,7 +28,7 @@ import {
   ButtonGroupSeparator,
 } from "@/components/ui/button-group";
 import { Spinner } from "@/components/ui/spinner";
-import { ChevronDown, CirclePlay } from "@lucide/vue";
+import { ChevronDown, Play } from "@lucide/vue";
 
 // properties
 export interface Props {

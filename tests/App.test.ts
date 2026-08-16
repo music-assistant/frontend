@@ -5,6 +5,7 @@ import {
   UserRole,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
+import { saveDeviceSetting } from "@/helpers/device_settings";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -405,6 +406,17 @@ describe("App initialization", () => {
       expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
     },
   );
+
+  it("follows the force mobile layout setting without a reload", async () => {
+    wrapper = await mountApp();
+    expect(storeMock.forceMobileLayout).toBe(false);
+
+    saveDeviceSetting("force_mobile_layout", "true");
+    expect(storeMock.forceMobileLayout).toBe(true);
+
+    saveDeviceSetting("force_mobile_layout", null);
+    expect(storeMock.forceMobileLayout).toBe(false);
+  });
 
   it("keeps full initialization and plugin discovery for regular users", async () => {
     wrapper = await mountApp();

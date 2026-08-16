@@ -64,7 +64,7 @@
           >
             <MenuItemIcon :icon="menuItem.icon" />
             <span class="flex-1 truncate min-w-0">{{
-              $t(menuItem.label, menuItem.labelArgs || [])
+              menuItemLabel(menuItem)
             }}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent
@@ -83,7 +83,7 @@
             >
               <MenuItemIcon :icon="subMenuItem.icon" />
               <span class="flex-1 truncate min-w-0">{{
-                $t(subMenuItem.label, subMenuItem.labelArgs || [])
+                menuItemLabel(subMenuItem)
               }}</span>
               <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
             </DropdownMenuItem>
@@ -98,7 +98,7 @@
         >
           <MenuItemIcon :icon="menuItem.icon" />
           <span class="flex-1 truncate min-w-0">{{
-            $t(menuItem.label, menuItem.labelArgs || [])
+            menuItemLabel(menuItem)
           }}</span>
           <Check v-if="menuItem.selected" class="ml-auto size-4" />
         </DropdownMenuItem>
@@ -191,10 +191,13 @@ const onOpenChange = function (value: boolean) {
 function closeOnOutsidePointer(event: PointerEvent) {
   if (!show.value) return;
   const target = event.target;
+  // Select dropdowns hosted by menu rows (e.g. the visualizer preset picker)
+  // teleport their list to <body>, outside [data-item-context-menu]; touching
+  // one to scroll it must not read as an outside press and close the menu.
   if (
     target instanceof Element &&
     target.closest(
-      "[data-item-context-menu], [data-slot='dropdown-menu-sub-content']",
+      "[data-item-context-menu], [data-slot='dropdown-menu-sub-content'], [data-slot='select-content']",
     )
   ) {
     return;
@@ -307,7 +310,10 @@ import type { Component } from "vue";
 
 // The item type lives in a plain .ts module (editor-friendly); re-exported
 // here for convenience since most consumers already import from this file.
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  menuItemLabel,
+  type ContextMenuItem,
+} from "@/helpers/context_menu_item";
 export type { ContextMenuItem } from "@/helpers/context_menu_item";
 
 export const showContextMenuForMediaItem = async function (

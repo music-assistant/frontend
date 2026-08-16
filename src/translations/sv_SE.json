@@ -368,8 +368,6 @@
                 }
             }
         },
-        "dsp_enabled": "DSP är aktiverat",
-        "dsp_disabled": "DSP är inaktiverat",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurera DSP individuellt för varje spelare."
         },
@@ -803,7 +801,6 @@
         "open_provider_link": "Öppna detta objekt på leverantörens webbplats",
         "collapse_expand": "Dölj\/expandera denna lista",
         "back": "Tillbaka",
-        "show_menu": "Visa\/dölj menyn",
         "search_filter_active": "Sökningen filtrerar för närvarande resultaten",
         "play_sample": "Spela upp exempel",
         "album_type": "Albumtyp",
@@ -2165,7 +2162,6 @@
     "player_select": {
         "active_player_volume_only": "Visa endast volymreglage för aktiva spelare",
         "and_more": "...och {0} mer",
-        "disable_player": "Inaktivera spelaren",
         "disable_player_confirmation": "Den här spelaren kommer att vara dold tills den aktiveras igen i spelarinställningarna.",
         "disable_player_title": "Inaktivera {0}?",
         "display_options": "Visningsalternativ",

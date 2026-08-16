@@ -1,5 +1,4 @@
 import PlayerSelect from "@/layouts/default/PlayerSelect.vue";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
@@ -17,30 +16,22 @@ import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  emitEvent,
-  getPreference,
-  isAdmin,
-  preferenceState,
-  savePlayerConfig,
-  setPreference,
-} = vi.hoisted(() => ({
-  emitEvent: vi.fn(),
-  getPreference: vi.fn(),
-  isAdmin: vi.fn(() => true),
-  preferenceState: {
-    values: {} as Record<string, unknown>,
-    reactiveValues: undefined as Record<string, unknown> | undefined,
-  },
-  savePlayerConfig: vi.fn(),
-  setPreference: vi.fn(),
-}));
+const { emitEvent, getPreference, isAdmin, preferenceState, setPreference } =
+  vi.hoisted(() => ({
+    emitEvent: vi.fn(),
+    getPreference: vi.fn(),
+    isAdmin: vi.fn(() => true),
+    preferenceState: {
+      values: {} as Record<string, unknown>,
+      reactiveValues: undefined as Record<string, unknown> | undefined,
+    },
+    setPreference: vi.fn(),
+  }));
 
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
     players: {} as Record<string, Player>,
-    savePlayerConfig,
     // the menu's ai dj entry derives availability from the provider list
     providers: {},
   });
@@ -61,6 +52,7 @@ vi.mock("@/plugins/store", async () => {
       activePlayerId: undefined as string | undefined,
       companionPlayerId: undefined as string | undefined,
       dialogActive: false,
+      isTouchscreen: false,
       mobileLayout: false,
       showFullscreenPlayer: false,
       showPlayersMenu: true,
@@ -144,7 +136,6 @@ const PlayerCardStub = {
     "groupControlExpanded",
     "groupControlsId",
     "showSelectedIndicator",
-    "playerMenuItems",
   ],
   emits: ["click", "toggle-child-volumes", "toggle-member-controls"],
   template: `
@@ -207,28 +198,12 @@ const PopoverAnchorStub = {
   props: ["reference"],
   template: `<div><slot /></div>`,
 };
+// deliberately not focusable: where the panel puts its opening focus depends on
+// the markup reka renders around it, so those tests mount the real popover
 const PopoverContentStub = {
   name: "PopoverContent",
-  emits: ["interact-outside", "open-auto-focus"],
-  template: `
-    <div
-      tabindex="-1"
-      @open-auto-focus="$emit('open-auto-focus', $event)"
-    >
-      <slot />
-    </div>
-  `,
-};
-const PlayerRenameDialogStub = {
-  props: ["open", "player"],
-  emits: ["update:open"],
-  template: `
-    <div
-      v-if="open"
-      class="player-rename-dialog"
-      :data-player-id="player?.player_id"
-    />
-  `,
+  emits: ["interact-outside"],
+  template: `<div><slot /></div>`,
 };
 
 function createPlayer(
@@ -290,6 +265,28 @@ function createPlayer(
   };
 }
 
+// enough players for the panel to show its search field
+function manyPlayers(): Record<string, Player> {
+  return Object.fromEntries(
+    Array.from({ length: 11 }, (_, index) => {
+      const player = createPlayer(`player-${index}`, `Player ${index}`);
+      return [player.player_id, player];
+    }),
+  );
+}
+
+// resolves with the panel once reka has mounted it and settled its focus
+function findOpenPanel() {
+  return vi.waitFor(() => {
+    const panel = document.body.querySelector(
+      '[data-testid="player-select-sheet"]',
+    );
+    expect(panel).not.toBeNull();
+    expect(panel!.contains(document.activeElement)).toBe(true);
+    return panel!;
+  });
+}
+
 function setPlayerSelectPreference(key: string, value: boolean | string) {
   if (!preferenceState.reactiveValues) {
     throw new Error("Preference mock is not initialized");
@@ -309,7 +306,6 @@ function mountPlayerSelect() {
       },
       stubs: {
         PlayerCard: PlayerCardStub,
-        PlayerRenameDialog: PlayerRenameDialogStub,
         SearchInput: SearchInputStub,
         DropdownMenu: passthroughStub,
         DropdownMenuCheckboxItem: DropdownMenuCheckboxItemStub,
@@ -337,7 +333,6 @@ function mountPlayerSelectWithPopover() {
       },
       stubs: {
         PlayerCard: PlayerCardStub,
-        PlayerRenameDialog: PlayerRenameDialogStub,
         SearchInput: SearchInputStub,
         DropdownMenu: passthroughStub,
         DropdownMenuCheckboxItem: DropdownMenuCheckboxItemStub,
@@ -365,10 +360,10 @@ describe("PlayerSelect", () => {
       }
     }
     api.players = {};
-    savePlayerConfig.mockResolvedValue({});
     store.activePlayerId = undefined;
     store.companionPlayerId = undefined;
     store.dialogActive = false;
+    store.isTouchscreen = false;
     store.mobileLayout = false;
     store.showFullscreenPlayer = false;
     store.showPlayersMenu = true;
@@ -858,36 +853,35 @@ describe("PlayerSelect", () => {
     );
   });
 
-  it("focuses the sheet instead of opening the mobile keyboard", () => {
+  // reka reports the opening focus on the wrapper it positions the panel with,
+  // and that wrapper cannot hold focus, so only a real mount shows where focus
+  // ends up. A touchscreen is the gate either way: a phone held sideways gets
+  // the desktop layout and still raises a keyboard.
+  it.each([true, false])(
+    "focuses the panel instead of the search field on touch (mobile layout: %s)",
+    async (mobileLayout) => {
+      store.isTouchscreen = true;
+      store.mobileLayout = mobileLayout;
+      api.players = manyPlayers();
+      const wrapper = mountPlayerSelectWithPopover();
+
+      const panel = await findOpenPanel();
+      expect(document.activeElement).toBe(panel);
+
+      wrapper.unmount();
+    },
+  );
+
+  it("leaves the opening focus alone without a touchscreen", async () => {
     store.mobileLayout = true;
-    api.players = Object.fromEntries(
-      Array.from({ length: 11 }, (_, index) => {
-        const player = createPlayer(`player-${index}`, `Player ${index}`);
-        return [player.player_id, player];
-      }),
-    );
-    const wrapper = mountPlayerSelect();
-    const popover = wrapper.get('[data-testid="player-select-sheet"]');
-    if (!(popover.element instanceof HTMLElement)) {
-      throw new TypeError("Expected popover to render as an HTML element");
-    }
-    const focus = vi.spyOn(popover.element, "focus");
-    const event = new Event("open-auto-focus", { cancelable: true });
+    api.players = manyPlayers();
+    const wrapper = mountPlayerSelectWithPopover();
 
-    popover.element.dispatchEvent(event);
+    const panel = await findOpenPanel();
+    expect(document.activeElement).not.toBe(panel);
+    expect(panel.contains(document.activeElement)).toBe(true);
 
-    expect(event.defaultPrevented).toBe(true);
-    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
-  });
-
-  it("keeps the default focus behavior in desktop layout", () => {
-    const wrapper = mountPlayerSelect();
-    const popover = wrapper.get('[data-testid="player-select-sheet"]');
-    const event = new Event("open-auto-focus", { cancelable: true });
-
-    popover.element.dispatchEvent(event);
-
-    expect(event.defaultPrevented).toBe(false);
+    wrapper.unmount();
   });
 
   it("restores focus to the menu trigger after closing", async () => {
@@ -1067,78 +1061,5 @@ describe("PlayerSelect", () => {
     } else {
       Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
     }
-  });
-
-  it("adds rename and disable actions only to PlayerSelect menus", async () => {
-    const player = createPlayer("kitchen", "Kitchen");
-    const fallback = createPlayer("office", "Office");
-    const setupPlayer = createPlayer("attic", "Attic");
-    setupPlayer.available = false;
-    setupPlayer.needs_setup = true;
-    api.players = {
-      [player.player_id]: player,
-      [fallback.player_id]: fallback,
-      [setupPlayer.player_id]: setupPlayer,
-    };
-    store.activePlayerId = player.player_id;
-    const wrapper = mountPlayerSelect();
-    const menuItems = wrapper
-      .getComponent(PlayerCardStub)
-      .props("playerMenuItems") as ContextMenuItem[];
-
-    expect(menuItems.map((item) => item.label)).toEqual([
-      "player_select.rename_player",
-      "player_select.disable_player",
-    ]);
-
-    menuItems[0].action?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(store.showPlayersMenu).toBe(false);
-    expect(
-      wrapper.get(".player-rename-dialog").attributes("data-player-id"),
-    ).toBe(player.player_id);
-
-    store.showPlayersMenu = true;
-    await nextTick();
-    menuItems[1].action?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    const confirmation = emitEvent.mock.calls.find(
-      ([event]) => event === "deleteConfirmationDialog",
-    )?.[1];
-    expect(confirmation).toEqual(
-      expect.objectContaining({
-        confirmLabel: "settings.disable",
-      }),
-    );
-
-    await confirmation.onConfirm();
-    await flushPromises();
-    expect(savePlayerConfig).toHaveBeenCalledWith(player.player_id, {
-      enabled: false,
-    });
-    expect(player.enabled).toBe(false);
-    expect(store.activePlayerId).toBe(fallback.player_id);
-  });
-
-  it("forgets the remembered player when the last one is disabled", async () => {
-    const player = createPlayer("kitchen", "Kitchen");
-    setActivePlayerPreference(player.player_id);
-    api.players = { [player.player_id]: player };
-    const wrapper = mountPlayerSelect();
-    expect(store.activePlayerId).toBe(player.player_id);
-
-    const menuItems = wrapper
-      .getComponent(PlayerCardStub)
-      .props("playerMenuItems") as ContextMenuItem[];
-    menuItems[1].action?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    const confirmation = emitEvent.mock.calls.find(
-      ([event]) => event === "deleteConfirmationDialog",
-    )?.[1];
-    await confirmation.onConfirm();
-    await flushPromises();
-
-    expect(store.activePlayerId).toBeUndefined();
-    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
   });
 });

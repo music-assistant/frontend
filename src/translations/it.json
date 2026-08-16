@@ -249,7 +249,6 @@
                 "remove_confirm": "Confermi di voler rimuovere questo preset DSP?"
             }
         },
-        "dsp_enabled": "DSP abilitato",
         "dsp_note_multi_device_group": {
             "label": "Possibilità di configurare DSP per ogni player individualmente."
         },
@@ -348,7 +347,6 @@
         "open_provider_link": "Apri questo articolo sul sito web del fornitore",
         "collapse_expand": "Collassa\/espandi questa lista",
         "back": "Indietro",
-        "show_menu": "Mostra\/nascondi il menù",
         "search_filter_active": "La ricerca sta attualmente filtrando i risultati",
         "play_sample": "Ascolta il campione",
         "album_type": "Tipo di album",

@@ -224,8 +224,6 @@
                 "remove_confirm": "Haluatko varmasti poistaa tämän DSP-esiasetuksen?"
             }
         },
-        "dsp_enabled": "DSP on käytössä",
-        "dsp_disabled": "DSP on poistettu käytöstä",
         "dsp_note_multi_device_group": {
             "label": "Voit määrittää DSP:n erikseen jokaiselle soittimelle."
         },
@@ -417,7 +415,6 @@
         "open_provider_link": "Avaa tämä kohde palveluntarjoajan verkkosivulla",
         "collapse_expand": "Pienennä\/laajenna tämä listaus",
         "back": "Takaisin",
-        "show_menu": "Näytä\/piilota valikko",
         "play_sample": "Toista näyte",
         "album_type": "Albumin tyyppi",
         "loading": "Palvelin käsittelee pyyntöä tai synkronoi musiikkia.",
