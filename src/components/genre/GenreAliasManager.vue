@@ -10,8 +10,8 @@
       <ListItem
         v-for="alias in aliases"
         :key="alias"
-        :link="canPromoteAlias(alias)"
-        @click="canPromoteAlias(alias) && confirmPromoteAlias(alias)"
+        :link="canPromoteAlias(alias) && !operationInProgress"
+        @click="handleAliasClick(alias)"
       >
         <template #prepend>
           <Route :size="20" />
@@ -157,6 +157,12 @@ const confirmRemoveAlias = (alias: string) => {
 const confirmPromoteAlias = (alias: string) => {
   aliasToPromote.value = alias;
   showPromoteDialog.value = true;
+};
+
+const handleAliasClick = (alias: string) => {
+  if (!operationInProgress.value && canPromoteAlias(alias)) {
+    confirmPromoteAlias(alias);
+  }
 };
 
 const toggleAliasSection = () => {
