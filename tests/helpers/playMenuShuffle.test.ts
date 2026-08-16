@@ -10,6 +10,7 @@
 import type { MusicAssistantApi } from "@/plugins/api";
 import { QueueOption, type PlayerQueue } from "@/plugins/api/interfaces";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import type { VNode } from "vue";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { mockApi, mockStore, mockEventbusEmit } = vi.hoisted(() => ({
@@ -95,6 +96,17 @@ const findItem = (label: string): ContextMenuItem | undefined =>
 
 const shuffleItem = () => findItem("shuffle");
 
+// the switch row renders itself; read and drive it the way the rendered control does
+const shuffleRowProps = (): Record<string, unknown> => {
+  const render = shuffleItem()!.component as unknown as () => VNode;
+  return (render().props ?? {}) as Record<string, unknown>;
+};
+
+const shuffleSwitchOn = (): boolean => shuffleRowProps().modelValue as boolean;
+
+const flipShuffle = (value: boolean) =>
+  (shuffleRowProps()["onUpdate:modelValue"] as (v: boolean) => void)(value);
+
 const playOption = (option: QueueOption) => findItem(`queue_option.${option}`);
 
 beforeEach(() => {
@@ -162,15 +174,22 @@ describe("shuffle toggle presence", () => {
 });
 
 describe("shuffle toggle state", () => {
-  it("starts unselected even when the queue itself is shuffling", async () => {
+  it("starts switched off even when the queue itself is shuffling", async () => {
     mockStore.activePlayerQueue = playerQueue({ shuffle_enabled: true });
     await showPlayMenuForMediaItem(album({ item_id: "a1" }));
-    expect(shuffleItem()?.selected).toBe(false);
+    expect(shuffleSwitchOn()).toBe(false);
   });
 
-  it("keeps the menu open when it is flipped", async () => {
+  it("renders as its own switch row instead of a selectable menu item", async () => {
     await showPlayMenuForMediaItem(album({ item_id: "a1" }));
-    expect(shuffleItem()?.close_on_click).toBe(false);
+    expect(shuffleItem()?.component).toBeDefined();
+    expect(shuffleItem()?.action).toBeUndefined();
+  });
+
+  it("shows the switch as on once it has been flipped", async () => {
+    await showPlayMenuForMediaItem(album({ item_id: "a1" }));
+    flipShuffle(true);
+    expect(shuffleSwitchOn()).toBe(true);
   });
 });
 
@@ -194,7 +213,7 @@ describe("shuffle value passed to playMedia", () => {
   it("passes the flipped boolean after the toggle has been used", async () => {
     const theAlbum = album({ item_id: "a1" });
     await showPlayMenuForMediaItem(theAlbum);
-    shuffleItem()?.action?.();
+    flipShuffle(true);
     playOption(QueueOption.PLAY)?.action?.();
 
     expect(mockApi.playMedia).toHaveBeenCalledWith(
@@ -211,8 +230,8 @@ describe("shuffle value passed to playMedia", () => {
   it("requests playing in order when the toggle is flipped back off", async () => {
     const theAlbum = album({ item_id: "a1" });
     await showPlayMenuForMediaItem(theAlbum);
-    shuffleItem()?.action?.();
-    shuffleItem()?.action?.();
+    flipShuffle(true);
+    flipShuffle(false);
     playOption(QueueOption.REPLACE)?.action?.();
 
     expect(mockApi.playMedia).toHaveBeenCalledWith(
@@ -231,7 +250,7 @@ describe("shuffle value passed to playMedia", () => {
     async (option) => {
       const theAlbum = album({ item_id: "a1" });
       await showPlayMenuForMediaItem(theAlbum);
-      shuffleItem()?.action?.();
+      flipShuffle(true);
       playOption(option)?.action?.();
 
       expect(mockApi.playMedia).toHaveBeenCalledWith(

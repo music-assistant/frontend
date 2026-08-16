@@ -302,12 +302,13 @@ import {
   PlusCircle,
   RefreshCw,
   RotateCcw,
-  Shuffle,
   SkipForward,
   Sparkles,
   Trash2,
 } from "@lucide/vue";
 import type { Component } from "vue";
+
+import ShuffleMenuToggle from "@/layouts/default/ShuffleMenuToggle.vue";
 
 // The item type lives in a plain .ts module (editor-friendly); re-exported
 // here for convenience since most consumers already import from this file.
@@ -1387,25 +1388,27 @@ const createShuffleToggle = function (
   }
   // starts off because that is what the server does with newly started media; the
   // queue's own flag says nothing about the media that is about to be played
-  let enabled = false;
+  const enabled = ref(false);
   let touched = false;
+  const toggle = (value: boolean) => {
+    enabled.value = value;
+    touched = true;
+  };
   return {
     menuItem: {
       label: "shuffle",
       labelArgs: [],
-      icon: Shuffle,
-      selected: enabled,
-      // the toggle only expresses how the media should start, so the menu stays
-      // open until the user picks the play option to apply it to
-      close_on_click: false,
-      action: () => {
-        enabled = !enabled;
-        touched = true;
-      },
+      // rendered as its own switch row, so picking it does not close the menu:
+      // the toggle only says how the option chosen next should start playing
+      component: () =>
+        h(ShuffleMenuToggle, {
+          modelValue: enabled.value,
+          "onUpdate:modelValue": toggle,
+        }),
     },
     requested: (option: QueueOption) =>
       touched && SHUFFLEABLE_QUEUE_OPTIONS.includes(option)
-        ? enabled
+        ? enabled.value
         : undefined,
   };
 };
