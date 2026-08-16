@@ -45,11 +45,11 @@ const isCollapsed = computed(() => state.value === "collapsed");
             @click="toggleSidebar"
           >
             <PanelLeft />
-            <span class="sr-only">Toggle Sidebar</span>
+            <span class="sr-only">{{ $t("sidebar.toggle") }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          {{ isCollapsed ? "Expand Sidebar" : "Collapse Sidebar" }}
+          {{ isCollapsed ? $t("sidebar.expand") : $t("sidebar.collapse") }}
         </TooltipContent>
       </Tooltip>
     </div>

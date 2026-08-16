@@ -78,6 +78,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { $t } from "@/plugins/i18n";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
 
@@ -134,7 +135,8 @@ const fetchLogs = async (isRefresh = false) => {
       setTimeout(() => scrollToBottom(), 100);
     }
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : "Failed to load server logs";
+    error.value =
+      e instanceof Error ? e.message : $t("settings.server_logs_load_failed");
     console.error("Error loading logs:", e);
   } finally {
     loading.value = false;

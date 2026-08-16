@@ -58,8 +58,8 @@ const mobileSheetSide = useMobileSidebarSide();
       }"
     >
       <SheetHeader class="sr-only">
-        <SheetTitle>Sidebar</SheetTitle>
-        <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+        <SheetTitle>{{ $t("sidebar.title") }}</SheetTitle>
+        <SheetDescription>{{ $t("sidebar.description") }}</SheetDescription>
       </SheetHeader>
       <div class="flex h-full w-full flex-col">
         <slot></slot>

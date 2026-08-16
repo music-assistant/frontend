@@ -37,7 +37,7 @@
       <button
         v-show="hovering && canLeft"
         class="ed-shelf__nav ed-shelf__nav--left"
-        aria-label="Scroll left"
+        :aria-label="$t('tooltip.scroll_left')"
         @click="scroll(-1)"
       >
         <ChevronLeft :size="20" />
@@ -59,7 +59,7 @@
       <button
         v-show="hovering && canRight"
         class="ed-shelf__nav ed-shelf__nav--right"
-        aria-label="Scroll right"
+        :aria-label="$t('tooltip.scroll_right')"
         @click="scroll(1)"
       >
         <ChevronRight :size="20" />

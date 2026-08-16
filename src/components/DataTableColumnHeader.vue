@@ -64,17 +64,17 @@ defineProps<{
       <DropdownMenuContent align="start">
         <DropdownMenuItem @click="column.toggleSorting(false)">
           <ArrowUp class="mr-2 size-3.5 text-muted-foreground/70" />
-          Asc
+          {{ $t("sort.ascending_abbreviation") }}
         </DropdownMenuItem>
         <DropdownMenuItem @click="column.toggleSorting(true)">
           <ArrowDown class="mr-2 size-3.5 text-muted-foreground/70" />
-          Desc
+          {{ $t("sort.descending_abbreviation") }}
         </DropdownMenuItem>
         <template v-if="column.getCanHide()">
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="column.toggleVisibility(false)">
             <EyeOff class="mr-2 size-3.5 text-muted-foreground/70" />
-            Hide
+            {{ $t("data_table.hide") }}
           </DropdownMenuItem>
         </template>
       </DropdownMenuContent>

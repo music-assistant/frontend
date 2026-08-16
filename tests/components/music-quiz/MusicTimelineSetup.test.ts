@@ -57,6 +57,19 @@ const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
   ...lists,
 });
 
+const mountTimeline = (
+  props: Partial<InstanceType<typeof MusicTimelineSetup>["$props"]> = {},
+) =>
+  mount(MusicTimelineSetup, {
+    props: { busy: false, includeSimilarMusic: false, ...props },
+    global: {
+      mocks: { $t: (key: string) => key },
+      stubs: {
+        Button: { template: "<button><slot /></button>" },
+      },
+    },
+  });
+
 describe("MusicTimelineSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -76,14 +89,7 @@ describe("MusicTimelineSetup", () => {
   });
 
   it("emits only the Music Timeline configuration fields", async () => {
-    const wrapper = mount(MusicTimelineSetup, {
-      props: { busy: false, includeSimilarMusic: false },
-      global: {
-        stubs: {
-          Button: { template: "<button><slot /></button>" },
-        },
-      },
-    });
+    const wrapper = mountTimeline();
 
     expect(wrapper.text()).not.toContain("providers.music_quiz.difficulty");
     expect(wrapper.text()).not.toContain("providers.music_quiz.answer_choices");
@@ -118,18 +124,7 @@ describe("MusicTimelineSetup", () => {
   });
 
   it("blocks create when shared setup is invalid", async () => {
-    const wrapper = mount(MusicTimelineSetup, {
-      props: {
-        busy: false,
-        includeSimilarMusic: false,
-        sharedConfigValid: false,
-      },
-      global: {
-        stubs: {
-          Button: { template: "<button><slot /></button>" },
-        },
-      },
-    });
+    const wrapper = mountTimeline({ sharedConfigValid: false });
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
@@ -150,14 +145,7 @@ describe("MusicTimelineSetup", () => {
   });
 
   it("keeps bonus modes independent without adding a name", async () => {
-    const wrapper = mount(MusicTimelineSetup, {
-      props: { busy: false, includeSimilarMusic: true },
-      global: {
-        stubs: {
-          Button: { template: "<button><slot /></button>" },
-        },
-      },
-    });
+    const wrapper = mountTimeline({ includeSimilarMusic: true });
 
     await wrapper.get("#music-timeline-artist-bonus").setValue("free_text");
     await wrapper
@@ -189,9 +177,7 @@ describe("MusicTimelineSetup", () => {
   });
 
   it("labels removable sources for keyboard and screen-reader users", async () => {
-    const wrapper = mount(MusicTimelineSetup, {
-      props: { busy: false, includeSimilarMusic: false },
-    });
+    const wrapper = mountTimeline();
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')

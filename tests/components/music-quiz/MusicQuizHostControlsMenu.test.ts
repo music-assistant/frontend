@@ -206,6 +206,7 @@ function mountMenu() {
   const passthroughStub = { template: "<div><slot /></div>" };
   return mount(MusicQuizHostControlsMenu, {
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: {
         Button: {
           props: ["disabled"],

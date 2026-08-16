@@ -584,7 +584,7 @@ const table = useVueTable({
             :disabled="!table.getCanPreviousPage()"
             @click="table.setPageIndex(0)"
           >
-            <span class="sr-only">Go to first page</span>
+            <span class="sr-only">{{ $t("pagination.first_page") }}</span>
             <ChevronsLeft />
           </Button>
           <Button
@@ -594,7 +594,7 @@ const table = useVueTable({
             :disabled="!table.getCanPreviousPage()"
             @click="table.previousPage()"
           >
-            <span class="sr-only">Go to previous page</span>
+            <span class="sr-only">{{ $t("pagination.previous_page") }}</span>
             <ChevronLeft />
           </Button>
           <Button
@@ -604,7 +604,7 @@ const table = useVueTable({
             :disabled="!table.getCanNextPage()"
             @click="table.nextPage()"
           >
-            <span class="sr-only">Go to next page</span>
+            <span class="sr-only">{{ $t("pagination.next_page") }}</span>
             <ChevronRight />
           </Button>
           <Button
@@ -614,7 +614,7 @@ const table = useVueTable({
             :disabled="!table.getCanNextPage()"
             @click="table.setPageIndex(table.getPageCount() - 1)"
           >
-            <span class="sr-only">Go to last page</span>
+            <span class="sr-only">{{ $t("pagination.last_page") }}</span>
             <ChevronsRight />
           </Button>
         </div>
