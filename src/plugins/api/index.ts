@@ -79,6 +79,9 @@ const DEBUG = process.env.NODE_ENV === "development";
 // Server-side string localization + the translations/set_locale command landed in API schema 32.
 const TRANSLATIONS_SCHEMA_VERSION = 32;
 
+// The shuffle argument on player_queues/play_media landed in API schema 51.
+const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
+
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
   CONNECTING = "connecting", // Establishing connection
@@ -2058,6 +2061,9 @@ export class MusicAssistantApi {
     queue_id?: string,
     sort_by?: string,
     start_from_beginning?: boolean,
+    // play the media shuffled (or explicitly in order); only applies to the options
+    // that start playing right away. Omit to leave the choice to the server.
+    shuffle?: boolean,
   ): Promise<void> {
     if (
       !queue_id &&
@@ -2075,6 +2081,7 @@ export class MusicAssistantApi {
       start_item,
       sort_by,
       start_from_beginning,
+      shuffle,
     });
   }
 
@@ -2866,6 +2873,14 @@ export class MusicAssistantApi {
     return await this.sendCommand<number>("time", undefined, {
       suppressGlobalError: true,
     });
+  }
+
+  /** Whether the connected server accepts an explicit shuffle on play_media (schema >= 51). */
+  public get supportsPlayMediaShuffle(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
+    );
   }
 
   /** Whether the connected server localizes server-provided strings (schema >= 32). */

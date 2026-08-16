@@ -302,6 +302,7 @@ import {
   PlusCircle,
   RefreshCw,
   RotateCcw,
+  Shuffle,
   SkipForward,
   Sparkles,
   Trash2,
@@ -428,6 +429,28 @@ export const showPlayMenuForMediaItem = async function (
       labelArgs: [],
       disabled: !store.activePlayer,
       selected: option === defaultEnqueueOption,
+    });
+  }
+  // Starting the media shuffled is its own action rather than a state indicator:
+  // the queue's shuffle flag says nothing about what the media about to be started
+  // will do, but an explicit request is always honoured.
+  if (canPlayShuffled(playableItems)) {
+    playMenuItems.push({
+      label: "play_shuffled",
+      labelArgs: [],
+      action: () => {
+        api.playMedia(
+          playableItems.map((x) => x.uri),
+          QueueOption.REPLACE,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+      },
+      icon: Shuffle,
+      disabled: !store.activePlayer,
     });
   }
 
@@ -1335,5 +1358,31 @@ export const getPlaybackContextMenuItems = async function (
     }
   }
   return playMenuItems;
+};
+
+// media types whose contents have an order that is worth shuffling. Audiobooks and
+// podcasts are left out: their chapters/episodes are meant to be heard in order.
+const SHUFFLEABLE_MEDIA_TYPES = [
+  MediaType.ALBUM,
+  MediaType.ARTIST,
+  MediaType.COLLECTION,
+  MediaType.FOLDER,
+  MediaType.GENRE,
+  MediaType.PLAYLIST,
+];
+
+/**
+ * Whether starting the given items shuffled is worth offering.
+ *
+ * A single item needs to be a container to have an order to shuffle; a hand-picked
+ * selection of several items is the user's own list, so it always qualifies.
+ */
+const canPlayShuffled = function (
+  items: MediaItemTypeOrItemMapping[],
+): boolean {
+  if (!api.supportsPlayMediaShuffle) return false;
+  return (
+    items.length > 1 || SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type)
+  );
 };
 </script>
