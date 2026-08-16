@@ -442,11 +442,7 @@ export const showPlayMenuForMediaItem = async function (
         api.playMedia(
           playableItems.map((x) => x.uri),
           QueueOption.REPLACE,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          true,
+          { shuffle: true },
         );
       },
       icon: Shuffle,
@@ -877,14 +873,9 @@ export const getContextMenuItems = async function (
           label: "play_from_beginning",
           icon: RotateCcw,
           action: () => {
-            api.playMedia(
-              item.uri,
-              QueueOption.PLAY,
-              undefined,
-              undefined,
-              undefined,
-              true,
-            );
+            api.playMedia(item.uri, QueueOption.PLAY, {
+              start_from_beginning: true,
+            });
           },
           disabled: !store.activePlayer,
         });
@@ -1184,13 +1175,10 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_playlist_from",
         action: () => {
-          api.playMedia(
-            parentItem.uri,
-            undefined,
-            playableItems[0].item_id,
-            undefined,
-            sortBy,
-          );
+          api.playMedia(parentItem.uri, undefined, {
+            start_item: playableItems[0].item_id,
+            sort_by: sortBy,
+          });
         },
         icon: PlayCircle,
         labelArgs: [],
@@ -1202,13 +1190,10 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_album_from",
         action: () => {
-          api.playMedia(
-            parentItem.uri,
-            undefined,
-            firstItem.item_id,
-            undefined,
-            sortBy,
-          );
+          api.playMedia(parentItem.uri, undefined, {
+            start_item: firstItem.item_id,
+            sort_by: sortBy,
+          });
         },
         icon: PlayCircle,
         labelArgs: [],
@@ -1220,7 +1205,9 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_from_here",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, firstItem.item_id);
+          api.playMedia(parentItem.uri, undefined, {
+            start_item: firstItem.item_id,
+          });
         },
         icon: PlayCircle,
         labelArgs: [],

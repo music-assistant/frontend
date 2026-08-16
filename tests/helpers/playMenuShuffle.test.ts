@@ -156,11 +156,7 @@ describe("play shuffled action behaviour", () => {
     expect(mockApi.playMedia).toHaveBeenCalledWith(
       [theAlbum.uri],
       QueueOption.REPLACE,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      true,
+      { shuffle: true },
     );
   });
 
@@ -173,11 +169,7 @@ describe("play shuffled action behaviour", () => {
     expect(mockApi.playMedia).toHaveBeenCalledWith(
       [first.uri, second.uri],
       QueueOption.REPLACE,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      true,
+      { shuffle: true },
     );
   });
 
