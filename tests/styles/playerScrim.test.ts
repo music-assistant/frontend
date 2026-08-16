@@ -43,8 +43,8 @@ function dockSurfaceTop() {
     .trim();
 }
 
-function styleRule(source: string, selector: string) {
-  return source.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`))?.[1];
+function styleRule(source: string, selectorPattern: string) {
+  return source.match(new RegExp(`${selectorPattern}\\s*\\{([^}]*)\\}`))?.[1];
 }
 
 describe("player scrim height", () => {
