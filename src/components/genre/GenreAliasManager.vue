@@ -7,7 +7,12 @@
     />
     <v-divider />
     <v-list v-if="aliasSectionExpanded">
-      <ListItem v-for="alias in aliases" :key="alias">
+      <ListItem
+        v-for="alias in aliases"
+        :key="alias"
+        :link="canPromoteAlias(alias) && !operationInProgress"
+        @click="handleAliasClick(alias)"
+      >
         <template #prepend>
           <Route :size="20" />
         </template>
@@ -19,7 +24,7 @@
             size="icon-sm"
             :title="$t('promote_alias')"
             :disabled="operationInProgress"
-            @click="confirmPromoteAlias(alias)"
+            @click.stop="confirmPromoteAlias(alias)"
           >
             <ArrowUpFromLine :size="20" />
           </Button>
@@ -28,7 +33,7 @@
             size="icon-sm"
             :title="$t('remove_alias')"
             :disabled="operationInProgress"
-            @click="confirmRemoveAlias(alias)"
+            @click.stop="confirmRemoveAlias(alias)"
           >
             <Trash2 :size="20" />
           </Button>
@@ -152,6 +157,12 @@ const confirmRemoveAlias = (alias: string) => {
 const confirmPromoteAlias = (alias: string) => {
   aliasToPromote.value = alias;
   showPromoteDialog.value = true;
+};
+
+const handleAliasClick = (alias: string) => {
+  if (!operationInProgress.value && canPromoteAlias(alias)) {
+    confirmPromoteAlias(alias);
+  }
 };
 
 const toggleAliasSection = () => {
