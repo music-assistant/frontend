@@ -122,6 +122,19 @@ describe("player control button state", () => {
     expect(painting.indexOf(cleared!)).toBeGreaterThan(painting.indexOf(fill!));
   });
 
+  it("keeps the label weight unchanged on hover", () => {
+    const hoverWeight = [...(styles.sheet?.cssRules ?? [])]
+      .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
+      .find(
+        (rule) =>
+          rule.style.getPropertyValue("font-weight") !== "" &&
+          rule.selectorText.includes(":hover") &&
+          rule.selectorText.includes(".player-bar-action-label"),
+      );
+
+    expect(hoverWeight).toBeUndefined();
+  });
+
   // the colour is the other half of the signal, so a label left at its resting
   // weight reads as half-lit next to the mobile navigation it mirrors
   it("weights the label of a button whose popout is showing", () => {

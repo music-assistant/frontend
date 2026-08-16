@@ -145,12 +145,8 @@
   color: var(--primary) !important;
 }
 
-/* the label takes the weight that goes with the active colour, as it does in the
-   mobile navigation. The player bar sets the resting weight from its own scoped
-   block, which the two attribute branches only out-rank with the :root here. */
-:root
-  .player-control-button:hover:not([data-suppress-hover="true"])
-  .player-bar-action-label,
+/* the label takes the weight used by active mobile navigation. The player bar
+   sets the resting weight in a scoped block, so :root lets open states win. */
 :root .player-control-button[data-active="true"] .player-bar-action-label,
 :root .player-control-button[data-state="open"] .player-bar-action-label {
   font-weight: 600;
