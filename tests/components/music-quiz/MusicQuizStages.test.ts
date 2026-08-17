@@ -93,7 +93,6 @@ const gameDefinition = {
   answerType: "multiple_choice",
   labelKey: "providers.music_quiz.game_type_guess_the_song",
   descriptionKey: "",
-  howToPlayTitleKey: "",
   howToPlayDescriptionKey: "",
   icon: { template: "<span />" },
   requiresBackendAvailability: false,

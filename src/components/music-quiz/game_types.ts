@@ -46,7 +46,6 @@ export interface MusicQuizGameDefinition<
   labelKey: string;
   descriptionKey: string;
   // player-facing explanation of the game shown on the landing screen
-  howToPlayTitleKey: string;
   howToPlayDescriptionKey: string;
   icon: Component;
   requiresBackendAvailability: boolean;
@@ -76,7 +75,6 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "multiple_choice",
     labelKey: "providers.music_quiz.game_type_guess_the_song",
     descriptionKey: "providers.music_quiz.game_type_guess_the_song_description",
-    howToPlayTitleKey: "providers.music_quiz.how_to_play_guess_the_song_title",
     howToPlayDescriptionKey:
       "providers.music_quiz.how_to_play_guess_the_song_description",
     icon: markRaw(Disc3),
@@ -97,7 +95,6 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "timeline",
     labelKey: "providers.music_quiz.game_type_music_timeline",
     descriptionKey: "providers.music_quiz.game_type_music_timeline_description",
-    howToPlayTitleKey: "providers.music_quiz.music_timeline_listen_title",
     howToPlayDescriptionKey:
       "providers.music_quiz.music_timeline_listen_description",
     icon: markRaw(ListMusic),
@@ -118,7 +115,6 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "multiple_choice",
     labelKey: "providers.music_quiz.game_type_trivia",
     descriptionKey: "providers.music_quiz.game_type_trivia_description",
-    howToPlayTitleKey: "providers.music_quiz.how_to_play_trivia_title",
     howToPlayDescriptionKey:
       "providers.music_quiz.how_to_play_trivia_description",
     icon: markRaw(Brain),

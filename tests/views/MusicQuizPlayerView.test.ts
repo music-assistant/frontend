@@ -1039,7 +1039,7 @@ describe("MusicQuizPlayerView routing", () => {
       const wrapper = mountView();
 
       expect(wrapper.text()).toContain(
-        "providers.music_quiz.how_to_play_guess_the_song_title",
+        "providers.music_quiz.game_type_guess_the_song",
       );
       expect(wrapper.findComponent(MusicQuizJoinForm).exists()).toBe(true);
       expect(
@@ -1123,7 +1123,7 @@ describe("MusicQuizPlayerView routing", () => {
       const wrapper = mountView();
 
       expect(wrapper.text()).toContain(
-        "providers.music_quiz.how_to_play_guess_the_song_title",
+        "providers.music_quiz.game_type_guess_the_song",
       );
       expect(mockGameAdapterSetup).not.toHaveBeenCalled();
       const continueButton = wrapper.get(
@@ -1201,8 +1201,7 @@ function createDefinition(
     game: {
       supportsListenIn,
       icon: { render: () => h("span", { "data-testid": "game-icon" }) },
-      howToPlayTitleKey:
-        "providers.music_quiz.how_to_play_guess_the_song_title",
+      labelKey: "providers.music_quiz.game_type_guess_the_song",
       howToPlayDescriptionKey:
         "providers.music_quiz.how_to_play_guess_the_song_description",
       adapters: {

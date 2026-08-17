@@ -49,7 +49,7 @@
           </span>
           <div>
             <h2 class="text-xl font-bold">
-              {{ $t(resolvedDefinition.game.howToPlayTitleKey) }}
+              {{ $t(resolvedDefinition.game.labelKey) }}
             </h2>
             <p class="text-muted-foreground">
               {{ $t(resolvedDefinition.game.howToPlayDescriptionKey) }}

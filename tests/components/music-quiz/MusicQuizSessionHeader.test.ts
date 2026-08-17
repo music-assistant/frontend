@@ -25,7 +25,6 @@ function game(
     answerType: "multiple_choice",
     labelKey: `game.${id}`,
     descriptionKey: "",
-    howToPlayTitleKey: "",
     howToPlayDescriptionKey: "",
     icon,
     requiresBackendAvailability: false,
