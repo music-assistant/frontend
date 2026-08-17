@@ -22,11 +22,18 @@ import { toast } from "vue-sonner";
 const CLICK_ACTION_PLAY = "play";
 const PLAY_ACTION_PLAY_TRACK = "play_track";
 
+// radio and audio source are both "live" sources and share one setting
+const CLICK_ACTION_LIVE_SOURCES = "default_click_action_live_sources";
+
 // media types for which clicking the item itself is configurable
 const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
   [MediaType.ARTIST]: "default_click_action_artist",
   [MediaType.ALBUM]: "default_click_action_album",
   [MediaType.PLAYLIST]: "default_click_action_playlist",
+  [MediaType.TRACK]: "default_click_action_track",
+  [MediaType.GENRE]: "default_click_action_genre",
+  [MediaType.RADIO]: CLICK_ACTION_LIVE_SOURCES,
+  [MediaType.AUDIO_SOURCE]: CLICK_ACTION_LIVE_SOURCES,
 };
 
 /**
@@ -130,7 +137,7 @@ export const handleMediaItemClick = async function (
     return;
   }
 
-  // artist/album/playlist: play the item straight away if configured to do so
+  // play the item straight away if its configured click-action is "play"
   const clickActionKey = CLICK_ACTION_CONFIG_KEYS[item.media_type];
   if (
     clickActionKey &&

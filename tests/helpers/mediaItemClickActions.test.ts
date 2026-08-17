@@ -72,7 +72,10 @@ import {
 } from "@/helpers/media_item_actions";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
+import { audioSource } from "../fixtures/audioSource";
+import { genre } from "../fixtures/genre";
 import { playlist } from "../fixtures/playlist";
+import { radio } from "../fixtures/radio";
 import { track } from "../fixtures/track";
 
 const playedTrack = track({ item_id: "track1", name: "Track 1" });
@@ -153,6 +156,16 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
       item: playlist({ item_id: "pl2" }),
       key: "default_click_action_playlist",
     },
+    { item: track({ item_id: "t1" }), key: "default_click_action_track" },
+    { item: genre({ item_id: "g1" }), key: "default_click_action_genre" },
+    {
+      item: radio({ item_id: "r1" }),
+      key: "default_click_action_live_sources",
+    },
+    {
+      item: audioSource({ item_id: "as1" }),
+      key: "default_click_action_live_sources",
+    },
   ])(
     "plays $item.media_type directly when its click-action setting is 'play'",
     async ({ item, key }) => {
@@ -170,6 +183,10 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
     { item: album({ item_id: "a1" }) },
     { item: artist({ item_id: "ar1" }) },
     { item: playlist({ item_id: "pl2" }) },
+    { item: track({ item_id: "t1" }) },
+    { item: genre({ item_id: "g1" }) },
+    { item: radio({ item_id: "r1" }) },
+    { item: audioSource({ item_id: "as1" }) },
   ])(
     "opens the details view for $item.media_type when the setting is 'browse'",
     async ({ item }) => {
