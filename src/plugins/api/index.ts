@@ -1512,17 +1512,21 @@ export class MusicAssistantApi {
   public async getRecommendationItems(
     provider: string,
     item_id: string,
+    providers?: string[],
   ): Promise<MediaItemTypeOrItemMapping[]> {
     // Fetches a single recommendation row's items. Per-row timeout/error
     // isolation lives server-side: an unknown id or a failing provider
     // resolves to `[]` rather than rejecting. Transport-level failures are
     // best-effort per row (the caller degrades the row), so opt out of the
     // global error toast.
+    // providers: source provider instance ids to include (only rows with
+    // supports_provider_filter accept this); omit for the unfiltered row.
     return this.sendCommand(
       "music/recommendations/items",
       {
         provider,
         item_id,
+        providers,
       },
       { suppressGlobalError: true },
     );

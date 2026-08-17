@@ -1,5 +1,6 @@
 // Per-row "hide these providers" filter, keyed by row id -- mirrors discoverRows.ts's per-row preference pattern.
 import { setUserPreference } from "@/composables/userPreferences";
+import { ProviderType, type ProviderInstance } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 
 const HIDDEN_PROVIDERS_PREFERENCE_PREFIX = "discover.hiddenProviders.";
@@ -20,4 +21,36 @@ export async function setRowHiddenProviders(
   providerIds: string[],
 ): Promise<void> {
   await setUserPreference(rowHiddenProvidersKey(rowId), providerIds);
+}
+
+/**
+ * Music providers a user may filter recommendation rows by: configured music
+ * providers, restricted to the user's own `provider_filter` when they have one
+ * (mirrors ItemsListing's provider selector).
+ */
+export function eligibleFilterProviders(
+  providers: ProviderInstance[],
+  userProviderFilter: string[],
+): ProviderInstance[] {
+  return providers.filter(
+    (provider) =>
+      provider.type === ProviderType.MUSIC &&
+      (userProviderFilter.length === 0 ||
+        userProviderFilter.includes(provider.instance_id)),
+  );
+}
+
+/**
+ * The `providers` argument to send the server for a row, given the providers
+ * eligible for filtering and the ones the user hid: `undefined` (omit the
+ * filter) when nothing is hidden, otherwise the allowed (non-hidden) ids --
+ * an empty array if every eligible provider is hidden.
+ */
+export function resolveProviderFilterParam(
+  eligibleProviderIds: string[],
+  hiddenProviderIds: string[],
+): string[] | undefined {
+  if (hiddenProviderIds.length === 0) return undefined;
+  const hidden = new Set(hiddenProviderIds);
+  return eligibleProviderIds.filter((id) => !hidden.has(id));
 }

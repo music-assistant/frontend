@@ -212,7 +212,7 @@
             :tiles-per-view="tilesPerView"
           >
             <template
-              v-if="editMode || row.id === RECENTLY_PLAYED_ROW_ID"
+              v-if="editMode || row.folder.supports_provider_filter"
               #actions
             >
               <template v-if="editMode">
@@ -235,10 +235,14 @@
                 </Button>
               </template>
               <FacetedFilter
-                v-if="row.id === RECENTLY_PLAYED_ROW_ID"
-                v-model="recentlyPlayedHiddenProviders"
+                v-if="row.folder.supports_provider_filter"
+                :model-value="getRowHiddenProviders(row.id)"
                 :title="$t('tooltip.hide_provider')"
-                :options="recentlyPlayedProviderOptions"
+                :options="providerFilterOptions"
+                @update:model-value="
+                  (providerIds) =>
+                    onRowHiddenProvidersChange(row.id, providerIds)
+                "
               >
                 <template #trigger>
                   <Button
@@ -262,7 +266,7 @@
             </template>
             <template v-else>
               <EditorialMediaCard
-                v-for="item in visibleRowItems(row)"
+                v-for="item in rowItemsMap.get(row.id) ?? []"
                 :key="item.uri"
                 :item="item"
               />
@@ -341,7 +345,6 @@ import {
   DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
   PLAYERS_ROW_ID,
-  RECENTLY_PLAYED_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
   setDiscoverRowHidden,
@@ -352,13 +355,14 @@ import {
   rowIdsNeedingItems,
 } from "@/components/discover/utils/rowItems";
 import {
+  eligibleFilterProviders,
   getRowHiddenProviders,
+  resolveProviderFilterParam,
   setRowHiddenProviders,
 } from "@/components/discover/utils/rowProviderFilter";
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
-import { useResolvedItemProviders } from "@/composables/discover/useResolvedItemProviders";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { panelViewItemResponsive } from "@/helpers/utils";
@@ -472,42 +476,29 @@ watch(
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 
-// Per-row provider hide filter, keyed by rowId but only wired to Recently Played's UI; providers resolved separately since item.provider is unreliable.
-const { resolve: resolveItemProviders, providerIdsFor } =
-  useResolvedItemProviders();
+// Provider instances a user may filter recommendation rows by -- configured
+// music providers, restricted to the user's own provider_filter when set.
+const providerFilterOptions = computed(() =>
+  eligibleFilterProviders(
+    Object.values(api.providers),
+    store.currentUser?.provider_filter ?? [],
+  )
+    .map((provider) => ({
+      value: provider.instance_id,
+      label: provider.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+);
 
-// Hidden if ANY (not ALL) of an item's providers matches -- "hide Spotify" should hide anything attributable to it.
-const visibleRowItems = (row: DiscoverRow): MediaItemTypeOrItemMapping[] => {
-  const items = rowItemsMap.value.get(row.id) ?? [];
-  const hidden = getRowHiddenProviders(row.id);
-  if (hidden.length === 0) return items;
-  const hiddenSet = new Set(hidden);
-  return items.filter((item) => {
-    const providerIds = providerIdsFor(item);
-    if (providerIds === undefined) return true;
-    return !providerIds.some((id) => hiddenSet.has(id));
-  });
+// Persists the row's hidden-provider choice and re-fetches just that row so
+// its items reflect the new filter.
+const onRowHiddenProvidersChange = (
+  rowId: string,
+  hiddenProviderIds: string[],
+): void => {
+  setRowHiddenProviders(rowId, hiddenProviderIds);
+  fetchRowItems([rowId]);
 };
-
-const recentlyPlayedProviderOptions = computed(() => {
-  const items = rowItemsMap.value.get(RECENTLY_PLAYED_ROW_ID) ?? [];
-  const seen = new Map<string, string>();
-  for (const item of items) {
-    for (const id of providerIdsFor(item) ?? []) {
-      if (!seen.has(id)) seen.set(id, api.getProviderName(id));
-    }
-  }
-  return [...seen.entries()]
-    .map(([value, label]) => ({ value, label }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
-const recentlyPlayedHiddenProviders = computed<string[]>({
-  get: () => getRowHiddenProviders(RECENTLY_PLAYED_ROW_ID),
-  set: (providerIds) => {
-    setRowHiddenProviders(RECENTLY_PLAYED_ROW_ID, providerIds);
-  },
-});
 
 // --- Top Picks (Model B): a balanced interleave of items across the rows the
 // user has enabled. Only shown, non-empty recommendation folders feed it, so
@@ -800,6 +791,10 @@ const loadRecommendationRows = async () => {
   else console.error("Failed to load recently played:", recent.reason);
 };
 
+// Guards against a slower, superseded fetch overwriting a newer one for the
+// same row (e.g. rapid provider-filter changes).
+const rowFetchGeneration = new Map<string, number>();
+
 // Fetches and stores items for the given recommendation row ids, in parallel.
 // Each row's result lands in `rowItemsMap` as soon as its own fetch resolves.
 const fetchRowItems = async (ids: string[]): Promise<void> => {
@@ -808,8 +803,16 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
     ids.map(async (id) => {
       const folder = folders.get(id);
       if (!folder) return;
+      const generation = (rowFetchGeneration.get(id) ?? 0) + 1;
+      rowFetchGeneration.set(id, generation);
+      const providers = folder.supports_provider_filter
+        ? resolveProviderFilterParam(
+            providerFilterOptions.value.map((option) => option.value),
+            getRowHiddenProviders(id),
+          )
+        : undefined;
       const items = await api
-        .getRecommendationItems(folder.provider, folder.item_id)
+        .getRecommendationItems(folder.provider, folder.item_id, providers)
         .catch((err) => {
           console.error(
             `Failed to load items for recommendation row ${id}:`,
@@ -817,9 +820,9 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
           );
           return undefined;
         });
+      if (rowFetchGeneration.get(id) !== generation) return;
       if (items !== undefined) {
         rowItemsMap.value.set(id, items);
-        if (id === RECENTLY_PLAYED_ROW_ID) resolveItemProviders(items);
       } else if (!rowItemsMap.value.has(id)) {
         // first load failed: mark the row empty so it does not spin forever;
         // on a refresh failure keep the previously shown items instead

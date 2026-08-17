@@ -164,20 +164,6 @@ export const getListItemProviderIconDomain = function (
   return getProviderIconDomain(item);
 };
 
-// Provider instance ids an item is available from -- prefers provider_mappings over item.provider, which just collapses to "library" for in-library items.
-export const getItemProviderInstanceIds = function (
-  item: MediaItemType | ItemMapping,
-): string[] {
-  if (
-    "provider_mappings" in item &&
-    Array.isArray(item.provider_mappings) &&
-    item.provider_mappings.length > 0
-  ) {
-    return item.provider_mappings.map((pm) => pm.provider_instance);
-  }
-  return [item.provider];
-};
-
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
