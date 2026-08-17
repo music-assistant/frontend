@@ -1717,7 +1717,12 @@
             "host_controls": "Host controls",
             "return_to_host_panel": "Return to host panel",
             "dashboard_waiting": "Waiting for the quiz to start",
-            "name_that_track": "Name that track"
+            "name_that_track": "Name that track",
+            "how_to_play_guess_the_song_title": "Name that song",
+            "how_to_play_guess_the_song_description": "Listen to the song that's playing and pick the correct title from the options before time runs out.",
+            "how_to_play_trivia_title": "Music trivia",
+            "how_to_play_trivia_description": "Answer trivia questions about music. Pick the answer you think is right before time runs out.",
+            "landing_continue": "Continue"
         },
         "ai_radio": {
             "title": "AI Radio",

@@ -6,6 +6,7 @@ import { nextTick, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 interface MockListenInState {
+  canListenIn: Ref<boolean>;
   isListeningIn: Ref<boolean>;
   busy: Ref<boolean>;
   shouldShowListenInToggle: Ref<boolean>;
@@ -25,6 +26,7 @@ const listenInMock = vi.hoisted(() => ({
 vi.mock("@/composables/useListenIn", async () => {
   const { ref } = await import("vue");
   const state = {
+    canListenIn: ref(true),
     isListeningIn: ref(false),
     busy: ref(false),
     shouldShowListenInToggle: ref(true),
@@ -75,6 +77,7 @@ i18n.global.locale.value = initialLocale;
 describe("ListenIn", () => {
   beforeEach(() => {
     const state = getMockState();
+    state.canListenIn.value = true;
     state.isListeningIn.value = false;
     state.busy.value = false;
     state.shouldShowListenInToggle.value = true;
@@ -320,6 +323,78 @@ describe("ListenIn", () => {
     expect(venueAction.classes()).toContain("shrink-0");
     expect(remoteAction.classes()).toContain("shrink-0");
   });
+
+  describe("requestAutoEnable", () => {
+    it("starts listening for a gesture-driven remote auto-enable", async () => {
+      const wrapper = mountRemote();
+
+      await wrapper.vm.requestAutoEnable();
+
+      expect(listenInMock.enableListenIn).toHaveBeenCalledOnce();
+    });
+
+    it("exposes the composable's busy ref", () => {
+      const wrapper = mountRemote();
+
+      expect(wrapper.vm.busy).toBe(false);
+      getMockState().busy.value = true;
+      expect(wrapper.vm.busy).toBe(true);
+    });
+
+    it("does nothing in venue mode", async () => {
+      const wrapper = mount(ListenIn, {
+        props: {
+          domain: "music_quiz",
+          mode: "venue",
+          labels: surfaces[1].labels,
+        },
+      });
+
+      await wrapper.vm.requestAutoEnable();
+
+      expect(listenInMock.enableListenIn).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when listening in is unavailable", async () => {
+      getMockState().canListenIn.value = false;
+      const wrapper = mountRemote();
+
+      await wrapper.vm.requestAutoEnable();
+
+      expect(listenInMock.enableListenIn).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when already listening in", async () => {
+      getMockState().isListeningIn.value = true;
+      const wrapper = mountRemote();
+
+      await wrapper.vm.requestAutoEnable();
+
+      expect(listenInMock.enableListenIn).not.toHaveBeenCalled();
+    });
+
+    it("does nothing while busy", async () => {
+      getMockState().busy.value = true;
+      const wrapper = mountRemote();
+
+      await wrapper.vm.requestAutoEnable();
+
+      expect(listenInMock.enableListenIn).not.toHaveBeenCalled();
+    });
+
+    it("does nothing once the guest has manually stopped listening in", async () => {
+      getMockState().isListeningIn.value = true;
+      const wrapper = mountRemote();
+
+      await wrapper.get("button").trigger("click");
+      expect(listenInMock.disableListenIn).toHaveBeenCalledOnce();
+
+      getMockState().isListeningIn.value = false;
+      await wrapper.vm.requestAutoEnable();
+
+      expect(listenInMock.enableListenIn).not.toHaveBeenCalled();
+    });
+  });
 });
 
 function labelsFrom(prefix: string): ListenInLabels {
@@ -340,4 +415,10 @@ function labelsFrom(prefix: string): ListenInLabels {
 function getMockState(): MockListenInState {
   if (!listenInMock.state) throw new Error("Listen-in mock is not initialized");
   return listenInMock.state;
+}
+
+function mountRemote() {
+  return mount(ListenIn, {
+    props: { domain: "music_quiz", mode: "remote", labels: surfaces[1].labels },
+  });
 }

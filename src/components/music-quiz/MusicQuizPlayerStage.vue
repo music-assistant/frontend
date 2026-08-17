@@ -23,8 +23,19 @@
     v-else-if="
       (state.phase === 'answering' || state.phase === 'reveal') && currentRound
     "
-    class="flex flex-col gap-3"
+    ref="answeringSectionRef"
+    class="flex flex-col gap-3 scroll-mt-3"
   >
+    <div
+      v-if="state.phase === 'answering'"
+      class="bg-background sticky top-0 z-10 flex flex-col items-center pb-2"
+    >
+      <MusicQuizCountdown
+        :size="120"
+        :fraction="remainingFraction"
+        :label="remainingLabel || '…'"
+      />
+    </div>
     <component
       :is="gameComponent"
       :state="state"
@@ -64,6 +75,7 @@
 
 <script setup lang="ts">
 import MusicQuizAutoStartStatus from "@/components/music-quiz/MusicQuizAutoStartStatus.vue";
+import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
@@ -74,11 +86,13 @@ import type {
   MusicQuizCurrentRound,
   MusicQuizSupportedPersonalizedState,
 } from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
+import { useMusicQuizRoundStartScroll } from "@/composables/music-quiz/useMusicQuizRoundStartScroll";
 import { $t } from "@/plugins/i18n";
 import { Trophy } from "@lucide/vue";
-import type { Component } from "vue";
+import { ref, type Component } from "vue";
 
-defineProps<{
+const props = defineProps<{
   state: MusicQuizSupportedPersonalizedState;
   currentRound: MusicQuizCurrentRound | null;
   busy: boolean;
@@ -91,6 +105,18 @@ const emit = defineEmits<{
   "submit-answer": [submission: MusicQuizAnswerSubmission];
   ready: [];
 }>();
+
+const answeringSectionRef = ref<HTMLElement | null>(null);
+const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
+  active: () => props.state.phase === "answering",
+  deadline: () => props.currentRound?.deadline,
+  duration: () => props.state.answer_duration,
+});
+useMusicQuizRoundStartScroll({
+  active: () => props.state.phase === "answering",
+  roundIndex: () => props.currentRound?.round_index ?? null,
+  target: answeringSectionRef,
+});
 
 function onSubmitAnswer(submission: MusicQuizAnswerSubmission) {
   emit("submit-answer", submission);
