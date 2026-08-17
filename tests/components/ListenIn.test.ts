@@ -21,6 +21,7 @@ const listenInMock = vi.hoisted(() => ({
     | undefined,
   enableListenIn: vi.fn(),
   disableListenIn: vi.fn(),
+  checkCanListenIn: vi.fn(),
 }));
 
 vi.mock("@/composables/useListenIn", async () => {
@@ -39,6 +40,7 @@ vi.mock("@/composables/useListenIn", async () => {
         ...state,
         enableListenIn: listenInMock.enableListenIn,
         disableListenIn: listenInMock.disableListenIn,
+        checkCanListenIn: listenInMock.checkCanListenIn,
       };
     },
   };
@@ -83,8 +85,10 @@ describe("ListenIn", () => {
     state.shouldShowListenInToggle.value = true;
     listenInMock.enableListenIn.mockReset();
     listenInMock.disableListenIn.mockReset();
+    listenInMock.checkCanListenIn.mockReset();
     listenInMock.enableListenIn.mockResolvedValue(true);
     listenInMock.disableListenIn.mockResolvedValue(true);
+    listenInMock.checkCanListenIn.mockResolvedValue(undefined);
     listenInMock.options = undefined;
   });
 
@@ -355,13 +359,26 @@ describe("ListenIn", () => {
       expect(listenInMock.enableListenIn).not.toHaveBeenCalled();
     });
 
-    it("does nothing when listening in is unavailable", async () => {
+    it("rechecks availability once and gives up when still unavailable", async () => {
       getMockState().canListenIn.value = false;
       const wrapper = mountRemote();
 
       await wrapper.vm.requestAutoEnable();
 
+      expect(listenInMock.checkCanListenIn).toHaveBeenCalledTimes(1);
       expect(listenInMock.enableListenIn).not.toHaveBeenCalled();
+    });
+
+    it("enables when the availability recheck succeeds", async () => {
+      getMockState().canListenIn.value = false;
+      listenInMock.checkCanListenIn.mockImplementationOnce(async () => {
+        getMockState().canListenIn.value = true;
+      });
+      const wrapper = mountRemote();
+
+      await wrapper.vm.requestAutoEnable();
+
+      expect(listenInMock.enableListenIn).toHaveBeenCalledTimes(1);
     });
 
     it("does nothing when already listening in", async () => {

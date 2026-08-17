@@ -1,4 +1,5 @@
-import { useMusicQuizRoundStartScroll } from "@/composables/music-quiz/useMusicQuizRoundStartScroll";
+import { useMusicQuizPhaseScroll } from "@/composables/music-quiz/useMusicQuizPhaseScroll";
+import type { MusicQuizPhase } from "@/composables/music-quiz/useMusicQuiz";
 import { effectScope, nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,14 +14,13 @@ beforeEach(() => {
   setReducedMotion(false);
 });
 
-describe("useMusicQuizRoundStartScroll", () => {
-  it("scrolls once when becoming active with a round index", async () => {
-    const { active, roundIndex, target, scope } = createOptions();
+describe("useMusicQuizPhaseScroll", () => {
+  it("scrolls once when a round starts answering", async () => {
+    const { phase, roundIndex, target, scope } = createOptions();
     target.value = document.createElement("section");
-    active.value = false;
 
-    createScroller({ active, roundIndex, target, scope });
-    active.value = true;
+    createScroller({ phase, roundIndex, target, scope });
+    phase.value = "answering";
     roundIndex.value = 0;
     await nextTick();
 
@@ -32,32 +32,49 @@ describe("useMusicQuizRoundStartScroll", () => {
     scope.stop();
   });
 
-  it("does not scroll again for the same round", async () => {
-    const { active, roundIndex, target, scope } = createOptions();
+  it("does not scroll again for the same round and phase", async () => {
+    const { phase, roundIndex, target, scope } = createOptions();
     target.value = document.createElement("section");
-    active.value = true;
+    phase.value = "answering";
     roundIndex.value = 2;
 
-    createScroller({ active, roundIndex, target, scope });
+    createScroller({ phase, roundIndex, target, scope });
     await nextTick();
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
 
-    active.value = false;
+    phase.value = "lobby";
     await nextTick();
-    active.value = true;
+    phase.value = "answering";
     await nextTick();
 
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     scope.stop();
   });
 
-  it("scrolls again for the next round", async () => {
-    const { active, roundIndex, target, scope } = createOptions();
+  it("scrolls again when the round reveals", async () => {
+    const { phase, roundIndex, target, scope } = createOptions();
     target.value = document.createElement("section");
-    active.value = true;
+    phase.value = "answering";
     roundIndex.value = 0;
 
-    createScroller({ active, roundIndex, target, scope });
+    createScroller({ phase, roundIndex, target, scope });
+    await nextTick();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+
+    phase.value = "reveal";
+    await nextTick();
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+    scope.stop();
+  });
+
+  it("scrolls again for the next round", async () => {
+    const { phase, roundIndex, target, scope } = createOptions();
+    target.value = document.createElement("section");
+    phase.value = "answering";
+    roundIndex.value = 0;
+
+    createScroller({ phase, roundIndex, target, scope });
     await nextTick();
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
 
@@ -68,39 +85,45 @@ describe("useMusicQuizRoundStartScroll", () => {
     scope.stop();
   });
 
-  it("does not scroll when inactive during reveal", async () => {
-    const { active, roundIndex, target, scope } = createOptions();
+  it("does not scroll during lobby or finished", async () => {
+    const { phase, roundIndex, target, scope } = createOptions();
     target.value = document.createElement("section");
-    active.value = false;
+    phase.value = "lobby";
     roundIndex.value = 0;
 
-    createScroller({ active, roundIndex, target, scope });
+    createScroller({ phase, roundIndex, target, scope });
+    await nextTick();
+    phase.value = "finished";
     await nextTick();
 
     expect(scrollIntoView).not.toHaveBeenCalled();
     scope.stop();
   });
 
-  it("does not scroll when the target is null", async () => {
-    const { active, roundIndex, target, scope } = createOptions();
-    active.value = true;
-    roundIndex.value = 0;
+  it("scrolls once the target attaches after mounting mid-round", async () => {
+    const { phase, roundIndex, target, scope } = createOptions();
+    phase.value = "answering";
+    roundIndex.value = 3;
 
-    createScroller({ active, roundIndex, target, scope });
+    createScroller({ phase, roundIndex, target, scope });
+    await nextTick();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    target.value = document.createElement("section");
     await nextTick();
 
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
     scope.stop();
   });
 
   it("skips smooth scrolling when motion is reduced", async () => {
     setReducedMotion(true);
-    const { active, roundIndex, target, scope } = createOptions();
+    const { phase, roundIndex, target, scope } = createOptions();
     target.value = document.createElement("section");
-    active.value = true;
+    phase.value = "answering";
     roundIndex.value = 0;
 
-    createScroller({ active, roundIndex, target, scope });
+    createScroller({ phase, roundIndex, target, scope });
     await nextTick();
 
     expect(scrollIntoView).toHaveBeenCalledWith({
@@ -113,7 +136,7 @@ describe("useMusicQuizRoundStartScroll", () => {
 
 function createOptions() {
   return {
-    active: ref(false),
+    phase: ref<MusicQuizPhase | null>(null),
     roundIndex: ref<number | null>(null),
     target: ref<HTMLElement | null>(null) as Ref<HTMLElement | null>,
     scope: effectScope(),
@@ -121,14 +144,14 @@ function createOptions() {
 }
 
 function createScroller({
-  active,
+  phase,
   roundIndex,
   target,
   scope,
 }: ReturnType<typeof createOptions>) {
   scope.run(() =>
-    useMusicQuizRoundStartScroll({
-      active: () => active.value,
+    useMusicQuizPhaseScroll({
+      phase: () => phase.value,
       roundIndex: () => roundIndex.value,
       target,
     }),

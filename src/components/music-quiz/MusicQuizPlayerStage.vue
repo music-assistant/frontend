@@ -87,7 +87,7 @@ import type {
   MusicQuizSupportedPersonalizedState,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
-import { useMusicQuizRoundStartScroll } from "@/composables/music-quiz/useMusicQuizRoundStartScroll";
+import { useMusicQuizPhaseScroll } from "@/composables/music-quiz/useMusicQuizPhaseScroll";
 import { $t } from "@/plugins/i18n";
 import { Trophy } from "@lucide/vue";
 import { ref, type Component } from "vue";
@@ -112,8 +112,8 @@ const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
   deadline: () => props.currentRound?.deadline,
   duration: () => props.state.answer_duration,
 });
-useMusicQuizRoundStartScroll({
-  active: () => props.state.phase === "answering",
+useMusicQuizPhaseScroll({
+  phase: () => props.state.phase,
   roundIndex: () => props.currentRound?.round_index ?? null,
   target: answeringSectionRef,
 });

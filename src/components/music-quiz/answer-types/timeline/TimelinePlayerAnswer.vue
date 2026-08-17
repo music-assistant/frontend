@@ -24,7 +24,7 @@
             v-if="state.you.answer"
             ref="postPlacementRef"
             data-testid="timeline-post-placement"
-            class="scroll-mt-3"
+            class="scroll-mt-36"
             tabindex="-1"
             aria-live="polite"
           >

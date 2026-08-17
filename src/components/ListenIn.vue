@@ -97,6 +97,7 @@ const {
   shouldShowListenInToggle,
   enableListenIn: startListenIn,
   disableListenIn: stopListenIn,
+  checkCanListenIn,
 } = useListenIn({
   domain: props.domain,
   mode: () => props.mode,
@@ -146,12 +147,14 @@ async function requestAutoEnable() {
   if (
     props.mode !== "remote" ||
     autoEnableSuppressed.value ||
-    !canListenIn.value ||
     isListeningIn.value ||
     busy.value
   ) {
     return;
   }
+  // Availability rechecks are debounced, so it may not have settled yet
+  if (!canListenIn.value) await checkCanListenIn();
+  if (!canListenIn.value) return;
   await enableListenIn();
 }
 
