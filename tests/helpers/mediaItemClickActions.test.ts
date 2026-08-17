@@ -163,11 +163,7 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
     },
     {
       item: radio({ item_id: "r1" }),
-      key: "default_click_action_live_sources",
-    },
-    {
-      item: audioSource({ item_id: "as1" }),
-      key: "default_click_action_live_sources",
+      key: "default_click_action_radio",
     },
   ])(
     "plays $item.media_type directly when its click-action setting is 'play'",
@@ -182,6 +178,32 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
     },
   );
 
+  it("plays an audio source directly without reading a click-action setting", async () => {
+    const source = audioSource({ item_id: "as1" });
+
+    await handleMediaItemClick(source, 0, 0);
+
+    expect(mockGetCoreConfigValue).not.toHaveBeenCalled();
+    expect(mockPlayMedia).toHaveBeenCalledWith(source);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+  });
+
+  it("keeps a non-playable genre on the details view even when its setting is 'play'", async () => {
+    const nonPlayableGenre = genre({ item_id: "g2" });
+    mockGetCoreConfigValue.mockResolvedValue("play");
+
+    await handleMediaItemClick(nonPlayableGenre, 0, 0);
+
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: nonPlayableGenre.media_type,
+      params: {
+        itemId: nonPlayableGenre.item_id,
+        provider: nonPlayableGenre.provider,
+      },
+    });
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+
   it.each([
     { item: album({ item_id: "a1" }) },
     { item: artist({ item_id: "ar1" }) },
@@ -189,7 +211,6 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
     { item: track({ item_id: "t1" }) },
     { item: genre({ item_id: "g1" }) },
     { item: radio({ item_id: "r1" }) },
-    { item: audioSource({ item_id: "as1" }) },
   ])(
     "opens the details view for $item.media_type when the setting is 'browse'",
     async ({ item }) => {

@@ -22,9 +22,8 @@ import { toast } from "vue-sonner";
 const CLICK_ACTION_PLAY = "play";
 const PLAY_ACTION_PLAY_TRACK = "play_track";
 
-// radio and audio source are both "live" sources and share one setting
-const CLICK_ACTION_CONFIG_KEY_LIVE_SOURCES =
-  "default_click_action_live_sources";
+// radio has meaningful browse/play behaviour; other live sources always play directly
+const CLICK_ACTION_CONFIG_KEY_RADIO = "default_click_action_radio";
 
 // media types for which clicking the item itself is configurable
 const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
@@ -33,8 +32,7 @@ const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
   [MediaType.PLAYLIST]: "default_click_action_playlist",
   [MediaType.TRACK]: "default_click_action_track",
   [MediaType.GENRE]: "default_click_action_genre",
-  [MediaType.RADIO]: CLICK_ACTION_CONFIG_KEY_LIVE_SOURCES,
-  [MediaType.AUDIO_SOURCE]: CLICK_ACTION_CONFIG_KEY_LIVE_SOURCES,
+  [MediaType.RADIO]: CLICK_ACTION_CONFIG_KEY_RADIO,
 };
 
 /**
@@ -126,6 +124,11 @@ export const handleMediaItemClick = async function (
     return handlePlayBtnClick(item, posX, posY, parentItem, true);
   }
 
+  // audio sources (e.g. Spotify Connect, AirPlay) have no browse view: always play them
+  if (item.media_type == MediaType.AUDIO_SOURCE) {
+    return handlePlayBtnClick(item, posX, posY, parentItem);
+  }
+
   // open menu for collection items
   if (item.media_type == MediaType.COLLECTION) {
     router.push({
@@ -142,6 +145,7 @@ export const handleMediaItemClick = async function (
   const clickActionKey = CLICK_ACTION_CONFIG_KEYS[item.media_type];
   if (
     clickActionKey &&
+    item.is_playable &&
     (await readClickSetting(clickActionKey)) == CLICK_ACTION_PLAY
   ) {
     return handlePlayBtnClick(item, posX, posY, parentItem);
