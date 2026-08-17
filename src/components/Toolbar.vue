@@ -38,7 +38,7 @@
         :key="menuItem.label"
         variant="text"
         style="width: 40px"
-        :title="$t(menuItem.label, menuItem.labelArgs || [])"
+        :title="menuItemLabel(menuItem)"
         :disabled="menuItem.disabled == true"
         @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
       >
@@ -95,7 +95,7 @@
                 (x) => x.hide != true && x.overflowAllowed != false,
               )"
               :key="index"
-              :title="$t(menuItem.label, menuItem.labelArgs || [])"
+              :title="menuItemLabel(menuItem)"
               :disabled="menuItem.disabled == true"
               :append-icon="
                 menuItem.subItems?.length ? 'mdi-chevron-right' : undefined
@@ -133,7 +133,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  menuItemLabel,
+  type ContextMenuItem,
+} from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -218,7 +221,6 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 <style scoped>
 .header.v-toolbar {
   height: 55px;
-  font-family: "JetBrains Mono Medium";
 }
 
 .header.v-toolbar :deep(.v-toolbar__content) {

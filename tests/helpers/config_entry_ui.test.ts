@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   allRequiredValuesPresent,
+  hasAdvancedEntries,
   isEntryDisabled,
   mergeActionEntries,
   mergeConfigEntries,
@@ -14,6 +15,7 @@ function entry(overrides: Partial<ConfigEntry> = {}): ConfigEntry {
     label: "Engine",
     default_value: null,
     required: false,
+    options: [],
     category: "generic",
     ...overrides,
   };
@@ -309,5 +311,24 @@ describe("mergeActionEntries", () => {
 
     expect(current).toEqual(currentSnapshot);
     expect(incoming).toEqual(incomingSnapshot);
+  });
+});
+
+describe("hasAdvancedEntries", () => {
+  it("finds an advanced entry", () => {
+    expect(
+      hasAdvancedEntries([entry(), entry({ key: "tweak", advanced: true })]),
+    ).toBe(true);
+  });
+
+  it("ignores an advanced entry the form never shows", () => {
+    expect(hasAdvancedEntries([entry({ advanced: true, hidden: true })])).toBe(
+      false,
+    );
+  });
+
+  it("reports nothing to reveal without advanced entries", () => {
+    expect(hasAdvancedEntries([entry()])).toBe(false);
+    expect(hasAdvancedEntries([])).toBe(false);
   });
 });

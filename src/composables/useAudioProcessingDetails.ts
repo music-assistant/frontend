@@ -17,10 +17,11 @@ import {
   audioQualityToTier,
   type QualityTier,
 } from "@/composables/useStreamQuality";
-import { dspFilterText } from "@/helpers/audioProcessing";
+import { dspFilterIcon, dspFilterText } from "@/helpers/audioProcessing";
 import api from "@/plugins/api";
 import {
   AudioChannel,
+  type AudioDSPDetails,
   type AudioFormat,
   type AudioNormalizationDetails,
   type AudioOutputDetails,
@@ -30,13 +31,13 @@ import {
   CrossfadeMode,
   DSPFilterType,
   DSPState,
+  type Player,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 
 type TranslationValue = string | number;
 type Translate = (key: string, values?: TranslationValue[]) => string;
-type AudioDSPDetails = NonNullable<AudioOutputDetails["dsp"]>;
 
 interface AudioProcessingDisplayStageBase {
   key: string;
@@ -76,17 +77,16 @@ export interface AudioProcessingDetailsDisplay {
   outputPaths: AudioProcessingOutputDisplay[];
 }
 
-export interface AudioProcessingDisplayPlayer {
-  player_id: string;
-  name: string;
-  provider: string;
-  active_output_protocol?: string | null;
-  output_protocols?: Array<{
-    output_protocol_id: string;
-    is_native: boolean;
-    protocol_domain?: string | null;
-  }>;
-}
+// the fields of Player the display builder reads, derived so they cannot drift
+// from the player model
+export type AudioProcessingDisplayPlayer = Pick<
+  Player,
+  | "player_id"
+  | "name"
+  | "provider"
+  | "active_output_protocol"
+  | "output_protocols"
+>;
 
 export interface AudioProcessingDetailsDependencies {
   translate: Translate;
@@ -186,14 +186,14 @@ export function buildAudioProcessingDetailsDisplay(
   dependencies: AudioProcessingDetailsDependencies,
 ): AudioProcessingDetailsDisplay {
   return {
-    inputQualityTier: audioQualityToTier(chain.input_fidelity?.quality),
+    inputQualityTier: audioQualityToTier(chain.input_fidelity.quality),
     inputQualityLabel: audioQualityLabel(
-      chain.input_fidelity?.quality,
+      chain.input_fidelity.quality,
       dependencies.translate,
     ),
     inputStages: buildInputStages(streamDetails, dependencies),
     processingStages: buildProcessingStages(streamDetails, chain, dependencies),
-    outputPaths: (chain.outputs ?? []).map((output, index) =>
+    outputPaths: chain.outputs.map((output, index) =>
       buildOutputDisplay(output, index, dependencies),
     ),
   };
@@ -238,10 +238,7 @@ function buildProcessingStages(
       ),
     );
   }
-  if (
-    typeof processing?.playback_speed === "number" &&
-    processing.playback_speed !== 1
-  ) {
+  if (processing && processing.playback_speed !== 1) {
     stages.push({
       key: "playback-speed",
       icon: Gauge,
@@ -250,10 +247,7 @@ function buildProcessingStages(
       ]),
     });
   }
-  if (
-    processing?.crossfade_mode &&
-    processing.crossfade_mode !== CrossfadeMode.DISABLED
-  ) {
+  if (processing && processing.crossfade_mode !== CrossfadeMode.DISABLED) {
     stages.push({
       key: "crossfade",
       icon: CrossfadeIcon,
@@ -289,59 +283,57 @@ function buildOutputDisplay(
   dependencies: AudioProcessingDetailsDependencies,
 ): AudioProcessingOutputDisplay {
   const { translate, getPresetName, getIRName } = dependencies;
-  const playerIds = output.player_ids ?? [];
+  const { dsp, player_ids: playerIds } = output;
   const stages: AudioProcessingDisplayStage[] = [];
 
-  if (output.dsp) {
-    if (shouldShowDSPState(output.dsp)) {
-      stages.push({
-        key: `dsp-state-${index}`,
-        icon: SlidersHorizontal,
-        title: dspStateLabel(output.dsp.state, translate),
-      });
-    }
-    if (output.dsp.preset_id) {
-      stages.push({
-        key: `dsp-preset-${index}`,
-        icon: SlidersHorizontal,
-        title:
-          getPresetName(output.dsp.preset_id) ??
-          translate("settings.dsp.presets.custom"),
-        subtitleParts: [
-          translate("streamdetails.audio_processing.dsp_preset_label"),
-        ],
-      });
-    }
-    if (output.dsp.input_gain) {
-      stages.push({
-        key: `dsp-input-gain-${index}`,
-        icon: SlidersHorizontal,
-        title: translate("streamdetails.input_gain", [
-          formatNumber(output.dsp.input_gain, 1, dependencies.locale),
-        ]),
-      });
-    }
-    for (const [filterIndex, filter] of (output.dsp.filters ?? []).entries()) {
-      const irName =
-        filter.type === DSPFilterType.CONVOLUTION
-          ? getIRName(filter.ir_id)
-          : undefined;
-      stages.push({
-        key: `dsp-filter-${index}-${filterIndex}`,
-        icon: SlidersHorizontal,
-        title: dspFilterText(filter),
-        subtitleParts: irName ? [irName] : undefined,
-      });
-    }
-    if (output.dsp.output_gain) {
-      stages.push({
-        key: `dsp-output-gain-${index}`,
-        icon: SlidersHorizontal,
-        title: translate("streamdetails.output_gain", [
-          formatNumber(output.dsp.output_gain, 1, dependencies.locale),
-        ]),
-      });
-    }
+  if (shouldShowDSPState(dsp)) {
+    stages.push({
+      key: `dsp-state-${index}`,
+      icon: SlidersHorizontal,
+      title: dspStateLabel(dsp.state, translate),
+    });
+  }
+  if (dsp.preset_id) {
+    stages.push({
+      key: `dsp-preset-${index}`,
+      icon: SlidersHorizontal,
+      title:
+        getPresetName(dsp.preset_id) ??
+        translate("settings.dsp.presets.custom"),
+      subtitleParts: [
+        translate("streamdetails.audio_processing.dsp_preset_label"),
+      ],
+    });
+  }
+  if (dsp.input_gain) {
+    stages.push({
+      key: `dsp-input-gain-${index}`,
+      icon: Gauge,
+      title: translate("streamdetails.input_gain", [
+        formatNumber(dsp.input_gain, 1, dependencies.locale),
+      ]),
+    });
+  }
+  for (const [filterIndex, filter] of dsp.filters.entries()) {
+    const irName =
+      filter.type === DSPFilterType.CONVOLUTION
+        ? getIRName(filter.ir_id)
+        : undefined;
+    stages.push({
+      key: `dsp-filter-${index}-${filterIndex}`,
+      icon: dspFilterIcon(filter),
+      title: dspFilterText(filter),
+      subtitleParts: irName ? [irName] : undefined,
+    });
+  }
+  if (dsp.output_gain) {
+    stages.push({
+      key: `dsp-output-gain-${index}`,
+      icon: Gauge,
+      title: translate("streamdetails.output_gain", [
+        formatNumber(dsp.output_gain, 1, dependencies.locale),
+      ]),
+    });
   }
 
   if (output.source_channel) {
@@ -363,8 +355,8 @@ function buildOutputDisplay(
   return {
     key: playerIds.join("|") || `output-${index}`,
     playerIds,
-    qualityTier: audioQualityToTier(output.fidelity?.quality),
-    qualityLabel: audioQualityLabel(output.fidelity?.quality, translate),
+    qualityTier: audioQualityToTier(output.fidelity.quality),
+    qualityLabel: audioQualityLabel(output.fidelity.quality, translate),
     stages,
     destination: destinationStage(playerIds, dependencies),
   };
@@ -445,7 +437,7 @@ function resolveDestination(
 ): DestinationResolution | undefined {
   for (const player of Object.values(dependencies.players)) {
     if (player.player_id === playerId) continue;
-    const protocol = player.output_protocols?.find(
+    const protocol = player.output_protocols.find(
       (outputProtocol) =>
         !outputProtocol.is_native &&
         outputProtocol.output_protocol_id === playerId,
@@ -453,9 +445,7 @@ function resolveDestination(
     if (!protocol) continue;
     return {
       player,
-      providerDomain:
-        protocol.protocol_domain ??
-        playerProviderDomain(dependencies.players[playerId], dependencies),
+      providerDomain: protocol.protocol_domain,
     };
   }
 
@@ -473,18 +463,12 @@ function resolveDestination(
     };
   }
 
-  const activeProtocol = player.output_protocols?.find(
+  const activeProtocol = player.output_protocols.find(
     (protocol) => protocol.output_protocol_id === activeProtocolId,
   );
   return {
     player,
-    providerDomain: activeProtocol
-      ? (activeProtocol.protocol_domain ??
-        playerProviderDomain(
-          dependencies.players[activeProtocolId],
-          dependencies,
-        ))
-      : undefined,
+    providerDomain: activeProtocol?.protocol_domain,
   };
 }
 
@@ -639,8 +623,8 @@ function processingContextStage(
 
 function allOutputsAreBitPerfect(chain: AudioProcessingChain): boolean {
   return Boolean(
-    chain.outputs?.length &&
-    chain.outputs.every((output) => output.fidelity?.bit_perfect === true),
+    chain.outputs.length &&
+    chain.outputs.every((output) => output.fidelity.bit_perfect === true),
   );
 }
 
@@ -654,7 +638,7 @@ function finalOutputStage(
   const details = format ? audioFormatDetails(format, translate, locale) : [];
   details.push(
     outputFidelityDetail(
-      output.fidelity?.bit_perfect,
+      output.fidelity.bit_perfect,
       output.output_format,
       translate,
     ),
@@ -670,7 +654,7 @@ function finalOutputStage(
       : undefined,
     atomicSubtitleParts: true,
     badge:
-      output.fidelity?.bit_perfect === true
+      output.fidelity.bit_perfect === true
         ? translate("streamdetails.audio_processing.bit_perfect_badge")
         : undefined,
     details,
@@ -694,8 +678,8 @@ function formatStage(
 }
 
 function outputFidelityDetail(
-  bitPerfect: boolean | null | undefined,
-  format: AudioFormat | null | undefined,
+  bitPerfect: boolean | null,
+  format: AudioFormat | null,
   translate: Translate,
 ): string {
   if (bitPerfect === true) {
@@ -716,7 +700,7 @@ function shouldShowDSPState(dsp: AudioDSPDetails): boolean {
 
 function hasDSPConfiguration(dsp: AudioDSPDetails): boolean {
   return Boolean(
-    dsp.preset_id || dsp.input_gain || dsp.output_gain || dsp.filters?.length,
+    dsp.preset_id || dsp.input_gain || dsp.output_gain || dsp.filters.length,
   );
 }
 
@@ -726,7 +710,7 @@ function hasActiveDSPTransform(dsp: AudioDSPDetails): boolean {
     (dsp.preset_id ||
       dsp.input_gain ||
       dsp.output_gain ||
-      dsp.filters?.some((filter) => filter.enabled !== false)),
+      dsp.filters.some((filter) => filter.enabled !== false)),
   );
 }
 
@@ -744,25 +728,18 @@ function processingHeadroomReasons(
       translate("streamdetails.audio_processing.normalization_title"),
     );
   }
-  if (
-    typeof processing?.playback_speed === "number" &&
-    processing.playback_speed !== 1
-  ) {
+  if (processing && processing.playback_speed !== 1) {
     reasons.add(
       translate("streamdetails.audio_processing.playback_speed_title"),
     );
   }
-  if (
-    processing?.crossfade_mode &&
-    processing.crossfade_mode !== CrossfadeMode.DISABLED
-  ) {
+  if (processing && processing.crossfade_mode !== CrossfadeMode.DISABLED) {
     reasons.add(translate("streamdetails.audio_processing.crossfade_title"));
   }
   if (processing?.overlay_active) {
     reasons.add(translate("streamdetails.audio_processing.overlay_title"));
   }
-  for (const output of chain.outputs ?? []) {
-    if (!output.dsp) continue;
+  for (const output of chain.outputs) {
     if (hasActiveDSPTransform(output.dsp)) {
       reasons.add(translate("streamdetails.audio_processing.dsp_title"));
     }

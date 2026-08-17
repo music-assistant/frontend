@@ -1,5 +1,5 @@
 import PlayerTimeline from "@/layouts/default/PlayerOSD/PlayerTimeline.vue";
-import apiDefault from "@/plugins/api";
+import apiDefault, { type MusicAssistantApi } from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store as storeModule } from "@/plugins/store";
 import { mount, type VueWrapper } from "@vue/test-utils";
@@ -13,8 +13,8 @@ vi.mock("@/plugins/api", async () => {
   const api = reactive({
     queues: {},
     queueElapsedTime: {},
-    playerCommandSeek: vi.fn(),
-    playMedia: vi.fn(),
+    playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
+    playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
   });
   return { api, default: api };
 });

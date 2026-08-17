@@ -248,15 +248,23 @@ function scrollEntryIntoView(entryId: string) {
   const entry = Array.from(
     containerRef.value?.querySelectorAll<HTMLElement>("[data-entry-id]") ?? [],
   ).find((element) => element.dataset.entryId === entryId);
-  if (!entry?.scrollIntoView) return;
+  // scroll only the strip: scrollIntoView also drags scrollable ancestors along
+  const scrollArea = entry?.closest<HTMLElement>("[data-timeline-scroll]");
+  if (!entry || !scrollArea?.scrollTo) return;
 
   const reduceMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
-  entry.scrollIntoView({
+  const areaRect = scrollArea.getBoundingClientRect();
+  const entryRect = entry.getBoundingClientRect();
+  const entryCenter =
+    scrollArea.scrollLeft +
+    (entryRect.left - areaRect.left) +
+    entryRect.width / 2 -
+    areaRect.width / 2;
+  scrollArea.scrollTo({
+    left: Math.max(0, entryCenter),
     behavior: reduceMotion ? "auto" : "smooth",
-    block: "nearest",
-    inline: "center",
   });
 }
 </script>

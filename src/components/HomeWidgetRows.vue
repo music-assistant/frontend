@@ -129,7 +129,7 @@
               <button
                 v-show="heroHovering && heroCanLeft"
                 class="ed-hero-nav ed-hero-nav--left"
-                aria-label="Scroll left"
+                :aria-label="$t('tooltip.scroll_left')"
                 @click="scrollHero(-1)"
               >
                 <ChevronLeft :size="20" />
@@ -160,7 +160,7 @@
               <button
                 v-show="heroHovering && heroCanRight"
                 class="ed-hero-nav ed-hero-nav--right"
-                aria-label="Scroll right"
+                :aria-label="$t('tooltip.scroll_right')"
                 @click="scrollHero(1)"
               >
                 <ChevronRight :size="20" />
@@ -863,7 +863,7 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
-let isUnmounted = false;
+let unmounted = false;
 let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
 
 const cancelScheduledRecommendationRefresh = () => {
@@ -877,13 +877,13 @@ const scheduleRecommendationRefresh = () => {
   cancelScheduledRecommendationRefresh();
   refreshRecommendationsTimer = setTimeout(async () => {
     refreshRecommendationsTimer = undefined;
-    if (isUnmounted) return;
+    if (unmounted) return;
     // Refetches the catalog and the shown rows' content so play-history rows
     // and rotated picks stay current.
     await loadRecommendationRows();
-    if (isUnmounted) return;
+    if (unmounted) return;
     await refreshShownRowItems();
-    if (isUnmounted) return;
+    if (unmounted) return;
     resolveHeroPicks();
   }, 1500);
 };
@@ -907,6 +907,20 @@ const unsubscribeRecommendations = api.subscribe(
   },
 );
 
+const unsubscribeProviderEvents = api.subscribe(
+  EventType.PROVIDER_EVENT,
+  (evt: EventMessage) => {
+    if (
+      evt.data &&
+      typeof evt.data === "object" &&
+      "event" in evt.data &&
+      evt.data.event === "recommendations_updated"
+    ) {
+      scheduleRecommendationRefresh();
+    }
+  },
+);
+
 onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
@@ -914,21 +928,22 @@ onMounted(async () => {
   window.addEventListener("resize", updateHeroNav);
 
   await loadRecommendationRows();
-  if (isUnmounted) return;
+  if (unmounted) return;
   loading.value = false;
 
   await fetchMissingRowItems();
-  if (isUnmounted) return;
+  if (unmounted) return;
   resolveHeroPicks();
   nextTick(() => {
-    if (!isUnmounted) observeHero();
+    if (!unmounted) observeHero();
   });
 });
 
 onBeforeUnmount(() => {
-  isUnmounted = true;
+  unmounted = true;
   window.removeEventListener("resize", updateHeroNav);
   unsubscribeRecommendations();
+  unsubscribeProviderEvents();
   cancelScheduledRecommendationRefresh();
   heroRo?.disconnect();
   heroRo = undefined;

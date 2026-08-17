@@ -344,14 +344,14 @@ const emptyResults = (): SearchResults => ({
 });
 
 const isEmptyResult = (result: SearchResults): boolean =>
-  !result.artists?.length &&
-  !result.albums?.length &&
-  !result.tracks?.length &&
-  !result.playlists?.length &&
-  !result.radio?.length &&
-  !result.podcasts?.length &&
-  !result.audiobooks?.length &&
-  !result.genres?.length;
+  !result.artists.length &&
+  !result.albums.length &&
+  !result.tracks.length &&
+  !result.playlists.length &&
+  !result.radio.length &&
+  !result.podcasts.length &&
+  !result.audiobooks.length &&
+  !result.genres.length;
 
 // Keeps the relative order but floats items whose name matches the query
 // exactly, so a late provider with the exact hit still lands on top.
@@ -370,10 +370,10 @@ const floatExactMatches = function <T extends { name?: string }>(
 
 const collectField = function <T extends { name?: string }>(
   results: SearchResults[],
-  pick: (result: SearchResults) => T[] | undefined,
+  pick: (result: SearchResults) => T[],
   query: string,
 ): T[] {
   const items: T[] = [];
-  for (const result of results) items.push(...(pick(result) || []));
+  for (const result of results) items.push(...pick(result));
   return floatExactMatches(items, query);
 };

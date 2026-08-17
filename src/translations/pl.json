@@ -258,8 +258,6 @@
                 "remove_confirm": "Czy na pewno chcesz usunąć to ustawienie DSP?"
             }
         },
-        "dsp_enabled": "DSP jest włączony",
-        "dsp_disabled": "DSP jest wyłączony",
         "dsp_note_multi_device_group": {
             "label": "Możesz skonfigurować DSP dla każdego odtwarzacza indywidualnie."
         },
@@ -419,7 +417,6 @@
         "remote_access_qr_code": "Kod QR",
         "remote_access_qr_code_description": "Skanuj za pomocą aparatu w telefonie, aby natychmiast nawiązać połączenie.",
         "reset_to_defaults": "Przywróć ustawienia domyślne",
-        "reset_to_defaults_confirm": "Czy na pewno chcesz zresetować wszystkie ustawienia do wartości domyślnych? Spowoduje to natychmiastowe zapisanie zmian.",
         "unsaved_changes": "Niezapisane zmiany",
         "unsaved_changes_message": "Masz niezapisane zmiany. Czy na pewno chcesz wyjść bez zapisywania?",
         "stay": "Pozostań",
@@ -578,7 +575,6 @@
         "artist": "Wykonawca",
         "name": "Alfabetycznie",
         "name_desc": "Alfabetycznie (malejąco)",
-        "recent": "Ostatnio dodane",
         "year_desc": "Rok wydania (malejąco)",
         "duration_desc": "Czas trwania (malejąco)",
         "original": "Oryginał",
@@ -591,8 +587,6 @@
         "last_played_desc": "Ostatnio odtwarzane (malejąco)",
         "play_count": "Ilość odtworzeń",
         "play_count_desc": "Ilość odtworzeń (malejąco)",
-        "artist_name": "Wykonawca albumu",
-        "artist_name_desc": "Wykonawca albumu (malejąco)",
         "album_sort_name": "Album (sortowanie nazwy)"
     },
     "state": {
@@ -620,7 +614,6 @@
         "open_provider_link": "Otwórz ten element na internetowej stronie dostawcy",
         "collapse_expand": "Zwiń\/rozwiń tę listę",
         "back": "Powrót",
-        "show_menu": "Pokaż\/Ukryj menu",
         "search_filter_active": "Wyszukiwanie obecnie filtruje wyniki",
         "play_sample": "Odtwórz próbkę",
         "album_type": "Typ albumu",

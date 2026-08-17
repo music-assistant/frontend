@@ -1,12 +1,18 @@
 import { effectScope, nextTick, reactive, type EffectScope } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
+import type { QueueItem } from "@/plugins/api/interfaces";
+import { queueItem } from "../fixtures/queueItem";
+import { radio } from "../fixtures/radio";
+import { streamDetails } from "../fixtures/streamDetails";
+import { track } from "../fixtures/track";
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
 const { mockGetWaveForm } = vi.hoisted(() => ({
-  mockGetWaveForm: vi.fn(),
+  mockGetWaveForm: vi.fn<MusicAssistantApi["getWaveForm"]>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -33,21 +39,14 @@ vi.mock("@/plugins/api/interfaces", async (importOriginal) => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeQueueItem(overrides: Record<string, unknown> = {}) {
-  return {
+function makeQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {
+  return queueItem({
     queue_item_id: "qi-1",
     duration: 240,
-    media_item: {
-      item_id: "track-1",
-      provider: "spotify",
-      media_type: "track",
-    },
-    streamdetails: {
-      item_id: "stream-1",
-      provider: "spotify",
-    },
+    media_item: track({ item_id: "track-1", provider: "spotify" }),
+    streamdetails: streamDetails({ item_id: "stream-1", provider: "spotify" }),
     ...overrides,
-  };
+  });
 }
 
 type UseActiveTrackWaveform =
@@ -114,7 +113,7 @@ describe("useActiveTrackWaveform", () => {
     const { waveformBins } = addConsumer(await importComposable());
 
     storeMock.curQueueItem = makeQueueItem({
-      media_item: { item_id: "r-1", provider: "spotify", media_type: "radio" },
+      media_item: radio({ item_id: "r-1", provider: "spotify" }),
     });
     await nextTick();
     await nextTick();
@@ -126,7 +125,7 @@ describe("useActiveTrackWaveform", () => {
   it("does not fetch when streamdetails are absent", async () => {
     const { waveformBins } = addConsumer(await importComposable());
 
-    storeMock.curQueueItem = makeQueueItem({ streamdetails: undefined });
+    storeMock.curQueueItem = makeQueueItem({ streamdetails: null });
     await nextTick();
     await nextTick();
 
@@ -174,7 +173,10 @@ describe("useActiveTrackWaveform", () => {
     // Switch to second track before first resolves.
     storeMock.curQueueItem = makeQueueItem({
       queue_item_id: "qi-2",
-      streamdetails: { item_id: "stream-2", provider: "spotify" },
+      streamdetails: streamDetails({
+        item_id: "stream-2",
+        provider: "spotify",
+      }),
     });
     await nextTick();
     await nextTick(); // second fetch resolves
@@ -229,7 +231,10 @@ describe("useActiveTrackWaveform", () => {
 
     storeMock.curQueueItem = makeQueueItem({
       queue_item_id: "qi-2",
-      streamdetails: { item_id: "stream-2", provider: "spotify" },
+      streamdetails: streamDetails({
+        item_id: "stream-2",
+        provider: "spotify",
+      }),
     });
     await nextTick();
     await nextTick();
@@ -279,7 +284,7 @@ describe("useActiveTrackWaveform", () => {
     await nextTick();
 
     storeMock.curQueueItem = makeQueueItem({
-      streamdetails: { item_id: "stream-1", provider: "qobuz" },
+      streamdetails: streamDetails({ item_id: "stream-1", provider: "qobuz" }),
     });
     await nextTick();
     await nextTick();
@@ -336,7 +341,10 @@ describe("useActiveTrackWaveform", () => {
 
     storeMock.curQueueItem = makeQueueItem({
       queue_item_id: "qi-2",
-      streamdetails: { item_id: "stream-2", provider: "spotify" },
+      streamdetails: streamDetails({
+        item_id: "stream-2",
+        provider: "spotify",
+      }),
     });
 
     const second = addConsumer(useActiveTrackWaveform);
@@ -359,7 +367,10 @@ describe("useActiveTrackWaveform", () => {
     const trackA = makeQueueItem();
     const trackB = makeQueueItem({
       queue_item_id: "qi-2",
-      streamdetails: { item_id: "stream-2", provider: "spotify" },
+      streamdetails: streamDetails({
+        item_id: "stream-2",
+        provider: "spotify",
+      }),
     });
 
     // Track A's fetch hangs, then track B plays and resolves.

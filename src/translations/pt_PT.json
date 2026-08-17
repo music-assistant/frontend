@@ -257,8 +257,6 @@
                 "remove_confirm": "Tem a certeza de que pretende remover esta predefinição DSP?"
             }
         },
-        "dsp_enabled": "O DSP está ativado",
-        "dsp_disabled": "O DSP está desativado",
         "dsp_note_multi_device_group": {
             "label": "Pode configurar o DSP para cada leitor individualmente."
         },
@@ -418,7 +416,6 @@
         "remote_access_qr_code": "Código QR",
         "remote_access_qr_code_description": "Digitalize com a câmara do seu telemóvel para estabelecer uma ligação instantânea.",
         "reset_to_defaults": "Repor as predefinições",
-        "reset_to_defaults_confirm": "Tem a certeza de que pretende repor todas as definições para os valores predefinidos? Isto guardará as alterações imediatamente.",
         "unsaved_changes": "Alterações não guardadas",
         "unsaved_changes_message": "Tem alterações não guardadas. Tem a certeza de que pretende sair sem guardar?",
         "stay": "Ficar",
@@ -553,7 +550,6 @@
         "artist": "Artista",
         "name": "Por ordem alfabética",
         "name_desc": "Por ordem alfabética (descendente)",
-        "recent": "Adicionado recentemente",
         "year_desc": "Ano de lançamento (decrescente)",
         "duration_desc": "Duração (decrescente)",
         "original": "Original",
@@ -566,8 +562,6 @@
         "last_played_desc": "Último reproduzido (decrescente)",
         "play_count": "Contagem de reprodução",
         "play_count_desc": "Contagem de reprodução (decrescente)",
-        "artist_name": "Artista do álbum",
-        "artist_name_desc": "Artista do álbum (decrescente)",
         "album_sort_name": "Álbum (nome de ordenação)"
     },
     "state": {
@@ -595,7 +589,6 @@
         "open_provider_link": "Abrir este item no sítio Web do fornecedor",
         "collapse_expand": "Colapsar\/expandir esta listagem",
         "back": "Voltar",
-        "show_menu": "Mostrar\/ocultar menu",
         "search_filter_active": "A pesquisa está de momento a filtrar os resultados",
         "play_sample": "Reproduzir amostra",
         "album_type": "Tipo de álbum",

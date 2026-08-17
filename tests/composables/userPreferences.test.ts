@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { user } from "../fixtures/user";
 
 const { mockUpdateUser, storeMock } = vi.hoisted(() => {
   return {
-    mockUpdateUser: vi.fn(),
+    mockUpdateUser: vi.fn<MusicAssistantApi["updateUser"]>(),
     storeMock: {
       currentUser: null as {
         user_id: string;
@@ -34,7 +36,7 @@ function readPrefs(path: string, itemtype: string) {
 describe("userPreferences - itemsListing", () => {
   beforeEach(() => {
     mockUpdateUser.mockReset();
-    mockUpdateUser.mockResolvedValue(undefined);
+    mockUpdateUser.mockResolvedValue(user());
     storeMock.currentUser = { user_id: "u1", preferences: {} };
   });
 

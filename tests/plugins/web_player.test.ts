@@ -105,6 +105,15 @@ function setRegularPreferences(
   );
 }
 
+// Mirrors saveDeviceSetting: the settings page writes the value and announces it.
+function saveWebPlayerEnabled(enabled: boolean): void {
+  const key = "frontend.settings.web_player_enabled";
+  window.localStorage.setItem(key, String(enabled));
+  window.dispatchEvent(
+    new StorageEvent("storage", { key, newValue: String(enabled) }),
+  );
+}
+
 describe("web player preferred mode", () => {
   beforeAll(() => {
     vi.spyOn(webPlayer, "setMode").mockImplementation(async (mode) => {
@@ -170,4 +179,16 @@ describe("web player preferred mode", () => {
       expect(await applyPreferredMode()).toBe(expectedMode);
     },
   );
+
+  it("drops the web player as soon as the setting is switched off", async () => {
+    setRegularPreferences(true, true);
+    expect(await applyPreferredMode()).toBe(
+      WebPlayerMode.SENDSPIN_WITH_CONTROLS,
+    );
+
+    // The settings page reloads right after saving, so waiting for the next
+    // navigation would leave the server holding a player nobody listens to.
+    saveWebPlayerEnabled(false);
+    await vi.waitUntil(() => webPlayer.mode === WebPlayerMode.CONTROLS_ONLY);
+  });
 });

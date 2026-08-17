@@ -224,8 +224,6 @@
                 "remove_confirm": "Haluatko varmasti poistaa tämän DSP-esiasetuksen?"
             }
         },
-        "dsp_enabled": "DSP on käytössä",
-        "dsp_disabled": "DSP on poistettu käytöstä",
         "dsp_note_multi_device_group": {
             "label": "Voit määrittää DSP:n erikseen jokaiselle soittimelle."
         },
@@ -342,7 +340,6 @@
         "remote_access_qr_code": "QR-koodi",
         "remote_access_qr_code_description": "Skannaa puhelimesi kameralla yhdistääksesi välittömästi.",
         "reset_to_defaults": "Palauta oletusasetukset",
-        "reset_to_defaults_confirm": "Oletko varma, että haluat palauttaa kaikki asetukset niiden oletusarvoille? Tämä tallentaa muutokset välittömästi.",
         "unsaved_changes": "Tallentamattomat muutokset",
         "unsaved_changes_message": "Sinulla on tallentamattomia muutoksia. Oletko varma, että haluat poistua tallentamatta?",
         "stay": "Pysy",
@@ -386,7 +383,6 @@
         "artist": "Artisti",
         "name": "Aakkosjärjestyksessä",
         "name_desc": "Aakkosjärjestyksessä (laskeva)",
-        "recent": "Äskettäin lisätyt",
         "year_desc": "Julkaisuvuosi (laskevassa järjestyksessä)",
         "duration_desc": "Kesto (laskevassa järjestyksessä)",
         "original": "Alkuperäinen",
@@ -419,7 +415,6 @@
         "open_provider_link": "Avaa tämä kohde palveluntarjoajan verkkosivulla",
         "collapse_expand": "Pienennä\/laajenna tämä listaus",
         "back": "Takaisin",
-        "show_menu": "Näytä\/piilota valikko",
         "play_sample": "Toista näyte",
         "album_type": "Albumin tyyppi",
         "loading": "Palvelin käsittelee pyyntöä tai synkronoi musiikkia.",

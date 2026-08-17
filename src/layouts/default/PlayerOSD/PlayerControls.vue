@@ -33,6 +33,7 @@
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
         :icon="visibleComponents.play.icon"
+        :size="visibleComponents.play.size"
       />
     </div>
     <!-- next button -->
@@ -86,6 +87,8 @@ export interface Props {
     play?: {
       isVisible?: boolean;
       icon?: IconProps;
+      /** glyph size in px; the button box comes from `icon` */
+      size?: number;
     };
     previous?: {
       isVisible?: boolean;

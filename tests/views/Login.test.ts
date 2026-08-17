@@ -1,16 +1,19 @@
 import Login from "@/views/Login.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { UserRole } from "@/plugins/api/interfaces";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { user } from "../fixtures/user";
 
 const mocks = vi.hoisted(() => ({
   apiState: { value: "disconnected" as string },
-  authenticateWithToken: vi.fn(),
+  authenticateWithToken: vi.fn<MusicAssistantApi["authenticateWithToken"]>(),
   clearAuth: vi.fn(),
   clearGuestSession: vi.fn(),
   connectRemote: vi.fn(),
   disconnectRemote: vi.fn(),
   endRejectedGuestSession: vi.fn(),
-  getCurrentUserInfo: vi.fn(),
+  getCurrentUserInfo: vi.fn<MusicAssistantApi["getCurrentUserInfo"]>(),
   getPersistentToken: vi.fn(),
   getToken: vi.fn(),
   getStoredRemoteId: vi.fn(),
@@ -45,7 +48,7 @@ vi.mock("@/plugins/api", async () => {
     },
     api: {
       authenticateWithToken: mocks.authenticateWithToken,
-      disconnect: vi.fn(),
+      disconnect: vi.fn<MusicAssistantApi["disconnect"]>(),
       getCurrentUserInfo: mocks.getCurrentUserInfo,
       sendCommand: mocks.sendCommand,
       serverInfo: mocks.serverInfo,
@@ -200,7 +203,11 @@ function mockHostedFrontend() {
 }
 
 function mockSuccessfulGuest(username = "party_guest") {
-  const guestUser = { user_id: "guest-id", username, role: "guest" };
+  const guestUser = user({
+    user_id: "guest-id",
+    username,
+    role: UserRole.GUEST,
+  });
   mocks.sendCommand.mockImplementation((command: string) => {
     if (command === "auth/join_code/exchange") {
       return Promise.resolve({
@@ -216,11 +223,11 @@ function mockSuccessfulGuest(username = "party_guest") {
       user:
         token === "guest-token"
           ? guestUser
-          : {
+          : user({
               user_id: "regular-id",
               username: "regular-user",
-              role: "admin",
-            },
+              role: UserRole.ADMIN,
+            }),
     }),
   );
 }
@@ -276,11 +283,13 @@ beforeEach(() => {
       ? localStorage.getItem("ma_access_token")
       : null,
   );
-  mocks.getCurrentUserInfo.mockResolvedValue({
-    user_id: "ingress-user",
-    username: "ingress-user",
-    role: "admin",
-  });
+  mocks.getCurrentUserInfo.mockResolvedValue(
+    user({
+      user_id: "ingress-user",
+      username: "ingress-user",
+      role: UserRole.ADMIN,
+    }),
+  );
   mocks.serverInfo.value = {
     homeassistant_addon: false,
     server_id: "server-id",
@@ -317,7 +326,11 @@ describe("guest join login", () => {
         [
           {
             token: "guest-token",
-            user: { user_id: "guest-id", username, role: "guest" },
+            user: user({
+              user_id: "guest-id",
+              username,
+              role: UserRole.GUEST,
+            }),
           },
         ],
       ]);
@@ -411,11 +424,11 @@ describe("guest join login", () => {
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
       token: "admin-token",
-      user: {
+      user: user({
         user_id: "regular-id",
         username: "regular-user",
-        role: "admin",
-      },
+        role: UserRole.ADMIN,
+      }),
     });
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
@@ -541,11 +554,11 @@ describe("guest join login", () => {
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
       token: "admin-token",
-      user: {
+      user: user({
         user_id: "regular-id",
         username: "regular-user",
-        role: "admin",
-      },
+        role: UserRole.ADMIN,
+      }),
     });
     expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
     expect(mocks.sendCommand).not.toHaveBeenCalledWith(
@@ -572,11 +585,11 @@ describe("guest join login", () => {
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
       token: "guest-token",
-      user: {
+      user: user({
         user_id: "guest-id",
         username: "party_guest",
-        role: "guest",
-      },
+        role: UserRole.GUEST,
+      }),
     });
     expect(mocks.authenticateWithToken).not.toHaveBeenCalledWith("admin-token");
     expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
@@ -634,11 +647,11 @@ describe("guest join login", () => {
 
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-      user: {
+      user: user({
         user_id: "ingress-user",
         username: "ingress-user",
-        role: "admin",
-      },
+        role: UserRole.ADMIN,
+      }),
     });
 
     expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
@@ -789,11 +802,11 @@ describe("ingress login", () => {
 
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
-      user: {
-        role: "admin",
+      user: user({
+        role: UserRole.ADMIN,
         user_id: "ingress-user",
         username: "ingress-user",
-      },
+      }),
     });
     expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
     expect(mocks.authenticateWithToken).not.toHaveBeenCalled();
@@ -809,11 +822,11 @@ describe("ingress login", () => {
     await flushPromises();
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
       token: "admin-token",
-      user: {
-        role: "admin",
+      user: user({
+        role: UserRole.ADMIN,
         user_id: "regular-id",
         username: "regular-user",
-      },
+      }),
     });
     expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
     expect(mocks.getCurrentUserInfo).not.toHaveBeenCalled();

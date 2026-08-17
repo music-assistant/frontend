@@ -5,6 +5,7 @@ import type {
 import { UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
 import type { HassControlEntity } from "@/helpers/hass_controls";
 import { ConfigEntryType } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import HassControlPickerField from "@/views/settings/fields/HassControlPickerField.vue";
 import HassControlsField from "@/views/settings/fields/HassControlsField.vue";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -12,12 +13,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
+import { hassProviderConfig } from "../fixtures/hassProviderConfig";
 
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
-    getProviderConfig: vi.fn(),
-    saveProviderConfig: vi.fn(),
-    savePlayerConfig: vi.fn(),
+    getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
+    savePlayerConfig: vi.fn<MusicAssistantApi["savePlayerConfig"]>(),
   },
 }));
 
@@ -50,14 +52,12 @@ const PICKED_ENTITY: HassControlEntity = {
 describe("HassControlPickerField", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMock.getProviderConfig.mockResolvedValue({
-      domain: "hass",
-      instance_id: "hass--1",
-      values: {
-        power_controls: { key: "power_controls", value: ["switch.tv"] },
-      },
-    });
-    apiMock.saveProviderConfig.mockResolvedValue({});
+    apiMock.getProviderConfig.mockResolvedValue(
+      hassProviderConfig(["switch.tv"]),
+    );
+    apiMock.saveProviderConfig.mockResolvedValue(
+      hassProviderConfig(["switch.tv"]),
+    );
   });
 
   it("registers the picked entity with the Home Assistant provider and fills in the player entry", async () => {
@@ -154,6 +154,7 @@ function pickerEntry(): HassControlPickerEntry {
     category: "player_controls",
     label: "",
     required: false,
+    options: [],
     default_value: null,
     hass_instance_id: "hass--1",
     hass_control_key: "power_controls",
@@ -174,8 +175,8 @@ function controlsEntry(
     required: false,
     default_value: [],
     value,
-    options,
-  } as ConfigEntryUI;
+    options: options ?? [],
+  };
 }
 
 function mountPickerField() {

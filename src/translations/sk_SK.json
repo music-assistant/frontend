@@ -141,8 +141,6 @@
                 "remove_confirm": "Naozaj chcete odstrániť túto predvoľbu DSP?"
             }
         },
-        "dsp_enabled": "DSP je povolené",
-        "dsp_disabled": "DSP je vypnuté",
         "dsp_note_multi_device_group": {
             "label": "DSP môžete nakonfigurovať pre každý prehrávač samostatne."
         },
@@ -159,7 +157,6 @@
         "open_provider_link": "Otvorenie tejto položky na webovej lokalite poskytovateľa",
         "collapse_expand": "Zbaliť\/rozbaliť tento záznam",
         "back": "Späť",
-        "show_menu": "Zobraziť\/skryť ponuku",
         "album_type": "Typ albumu",
         "primary_image": "Toto je primárny obrázok pre tento typ obrázka",
         "copy_uri": "Kopírovať URI do schránky",
@@ -177,7 +174,6 @@
         "artist": "Umelec",
         "name": "Abecedne",
         "name_desc": "Abecedne (zostupne)",
-        "recent": "Nedávno pridané",
         "year_desc": "Rok vydania (zostupne)",
         "duration_desc": "Trvanie (zostupne)",
         "original": "Originál"

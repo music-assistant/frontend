@@ -43,7 +43,7 @@ import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-ch
 import MultipleChoiceProgress from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceProgress.vue";
 import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import type {
-  MusicQuizMultipleChoiceHostState,
+  MusicQuizMultipleChoicePublicState,
   MusicQuizMultipleChoiceRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
@@ -53,7 +53,7 @@ import { computed } from "vue";
 const props =
   defineProps<
     MusicQuizPresentAnswerAdapterProps<
-      MusicQuizMultipleChoiceHostState,
+      MusicQuizMultipleChoicePublicState,
       MusicQuizMultipleChoiceRound
     >
   >();

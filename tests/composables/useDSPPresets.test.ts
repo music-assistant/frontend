@@ -2,12 +2,13 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DSPConfigPreset } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 
 const apiMock = vi.hoisted(() => ({
   eventCallback: undefined as
     | ((event: { data: DSPConfigPreset[] }) => void)
     | undefined,
-  getDSPPresets: vi.fn(),
+  getDSPPresets: vi.fn<MusicAssistantApi["getDSPPresets"]>(),
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),
 }));

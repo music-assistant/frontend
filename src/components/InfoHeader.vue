@@ -25,9 +25,11 @@
         :transition="false"
         eager
       />
+      <!-- The details layout below is transformed, which gives it a stacking
+           context, so the toolbar needs a rank to stay clickable above it. -->
       <Toolbar
         :icon="ArrowLeft"
-        style="position: absolute; z-index: 999999"
+        style="position: absolute; z-index: 1"
         :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :icon-action="backButtonClick"
@@ -276,10 +278,9 @@
                 icon="mdi-album"
               />
               <MarqueeText :sync="marqueeSync">
-                <a
-                  style="color: secondary"
-                  @click="albumClick((item as Track)?.album)"
-                  >{{ item.album.name }}</a
+                <a style="color: secondary" @click="albumClick(item.album)">{{
+                  item.album.name
+                }}</a
                 ><span v-if="'year' in item.album && item.album.year">
                   • {{ item.album.year }}</span
                 ></MarqueeText
@@ -353,12 +354,9 @@
             <!-- play button with contextmenu -->
             <MenuButton
               id="playbutton"
-              :width="220"
-              icon="mdi-play-circle-outline"
-              :text="truncateString($t('play'), 14)"
+              :text="playButtonText"
               :disabled="!item"
               :loading="playActionInProgress"
-              :open-menu-on-click="!store.activePlayer"
               style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
               @menu="playButtonClick(true)"
@@ -432,11 +430,9 @@
             v-if="shortDescription"
             class="body-2 justify-left description-text"
             style="padding-bottom: 10px; cursor: pointer"
-            @click="showFullInfo = !showFullInfo"
+            @click="onDescriptionClick"
           >
-            <!-- eslint-disable vue/no-v-html -->
-            <div v-html="shortDescription"></div>
-            <!-- eslint-enable vue/no-v-html -->
+            <MarkdownText :text="shortDescription" />
           </v-card-subtitle>
 
           <!-- genres/tags -->
@@ -475,13 +471,11 @@
         <DialogHeader>
           <DialogTitle>{{ headerTitle }}</DialogTitle>
         </DialogHeader>
-        <!-- eslint-disable vue/no-v-html -->
-        <div
-          class="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
+        <MarkdownText
+          :text="rawDescription"
+          class="max-w-none text-sm leading-relaxed"
           style="max-height: 60vh; overflow-y: auto"
-          v-html="fullDescription"
-        ></div>
-        <!-- eslint-enable vue/no-v-html -->
+        />
         <DialogFooter>
           <Button @click="showFullInfo = false">{{ $t("close") }}</Button>
         </DialogFooter>
@@ -497,8 +491,9 @@
 </template>
 
 <script setup lang="ts">
-import Toolbar from "@/components/Toolbar.vue";
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import MarkdownText from "@/components/MarkdownText.vue";
+import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -514,17 +509,17 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import {
   handleMediaItemClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { parseBool } from "@/helpers/parse";
 import {
-  getAuthorsNarratorsArray,
   getAudiobookCollectionArtists,
+  getAuthorsNarratorsArray,
   getImageThumbForItem,
-  markdownToHtml,
-  parseBool,
-  truncateString,
+  getPlayerName,
 } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
@@ -536,18 +531,20 @@ import type {
   Album,
   Artist,
   Audiobook,
+  BrowseFolder,
   Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
 import {
   ImageType,
+  MediaCollection,
   MediaType,
   Track,
-  MediaCollection,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
@@ -555,14 +552,15 @@ import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
+import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
-import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
-  item?: MediaItemType;
+  // browse folders are listed, never opened in a details view
+  item?: Exclude<MediaItemType, BrowseFolder>;
   sortBy?: string;
 }
 const compProps = defineProps<Props>();
@@ -686,24 +684,7 @@ const artistClick = function (item: Artist | ItemMapping) {
 };
 
 const backButtonClick = function () {
-  // if we have stored routes, we can safely use history back
-  if (store.prevRoute) {
-    router.back();
-    return;
-  }
-  // back to main listing for itemtype
-  const curRoute = router.currentRoute.value.name?.toString() || "";
-  for (const itemType of ["artist", "album", "track", "playlist", "radio"]) {
-    if (curRoute.includes(itemType)) {
-      router.push({
-        name: `${itemType}s`,
-      });
-      return;
-    }
-  }
-  router.push({
-    name: "discover",
-  });
+  backFromMediaDetails(router);
 };
 
 // Resolve the queue playMedia targets directly, since activePlayerQueue is
@@ -720,12 +701,19 @@ const playActionInProgress = computed(() => {
   );
 });
 
+const playButtonText = computed(() => {
+  if (!store.activePlayer) return $t("play");
+  return getPlayerName(store.activePlayer, 20);
+});
+
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;
+  const rect = playButton.getBoundingClientRect();
+
   handlePlayBtnClick(
     compProps.item!,
-    playButton.getBoundingClientRect().left,
-    playButton.getBoundingClientRect().top + 36,
+    rect.right,
+    rect.bottom,
     undefined,
     forceMenu,
     compProps.sortBy,
@@ -748,17 +736,19 @@ const rawDescription = computed(() => {
   return "";
 });
 
-const fullDescription = computed(() => {
-  return markdownToHtml(rawDescription.value);
-});
-
 const shortDescription = computed(() => {
   const maxChars = 800;
   if (rawDescription.value.length > maxChars) {
-    return fullDescription.value.substring(0, maxChars) + "…";
+    return rawDescription.value.substring(0, maxChars) + "…";
   }
-  return fullDescription.value;
+  return rawDescription.value;
 });
+
+const onDescriptionClick = (event: MouseEvent) => {
+  // a link in the description opens on its own; don't also expand the text
+  if ((event.target as HTMLElement).closest("a")) return;
+  showFullInfo.value = !showFullInfo.value;
+};
 
 const artistLogo = computed(() => {
   if (!compProps.item) return undefined;

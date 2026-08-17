@@ -223,7 +223,6 @@
         "artist": "아티스트",
         "name": "이름순",
         "name_desc": "이름순 (내림차순)",
-        "recent": "최근에 추가됨",
         "year_desc": "발매년도 (내림차순)",
         "duration_desc": "재생시간 (내림차순)",
         "original": "오리지널",
@@ -235,9 +234,7 @@
         "last_played": "최근 재생순",
         "last_played_desc": "최근 재생순 (내림차순)",
         "play_count": "재생 횟수",
-        "play_count_desc": "재생 횟수 (내림차순)",
-        "artist_name": "아티스트",
-        "artist_name_desc": "아티스트 (내림차순)"
+        "play_count_desc": "재생 횟수 (내림차순)"
     },
     "state": {
         "idle": "idle",
@@ -264,7 +261,6 @@
         "open_provider_link": "공급자의 웹 사이트에서 이 항목을 엽니다.",
         "collapse_expand": "이 목록 접기\/펼치기",
         "back": "뒤로",
-        "show_menu": "메뉴 표시\/숨기기",
         "search_filter_active": "현재 검색 결과를 필터링하고 있습니다.",
         "play_sample": "간편 재생",
         "album_type": "앨범 유형",

@@ -1,26 +1,136 @@
 ---
 name: PR Labels
 
+# Each PR must carry exactly one of the labels the release-notes
+# generator knows how to slot into a section. We derive that label
+# from the "Types of changes" checkbox in the PR template and apply
+# it automatically — most external contributors can't label their
+# own PRs. The job fails when more than one box is ticked, or when
+# none is and the PR doesn't already carry a single known label.
+
 # yamllint disable-line rule:truthy
 on:
-  pull_request:
+  pull_request_target:
     types:
+      - opened
+      - edited
       - synchronize
       - labeled
       - unlabeled
+      - reopened
+      - ready_for_review
     branches:
       - main
 
-# The label check reads the event payload from disk, so it needs no token at all.
-permissions: {}
+permissions:
+  pull-requests: write
+
+# Overlapping runs for the same PR each read the label set from their own
+# event payload, so a second run can miss what the first just applied and
+# leave a stale label behind. Queue them instead — no cancel-in-progress,
+# because a cancelled run leaves this required check without a result.
+concurrency:
+  group: pr-labels-${{ github.event.pull_request.number }}
 
 jobs:
+  # The job name is the context of the required status check on the
+  # protect-main ruleset, so renaming it leaves that check waiting on
+  # a report that never arrives, blocking every PR.
   pr_labels:
     name: Verify
     runs-on: ubuntu-latest
     steps:
-      - name: 🏷 Verify PR has a valid label
-        uses: ludeeus/action-require-labels@be19cd7f04c6fad46a85336f9e9cebdf961807bb # 2.0.0
+      - name: 🏷 Apply label from PR description checkbox
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
         with:
-          labels: >-
-            breaking-change, bugfix, refactor, new-feature, maintenance, ci, dependencies, documentation, new-provider, enhancement
+          script: |
+            const known = [
+              'breaking-change', 'bugfix', 'refactor',
+              'new-feature', 'enhancement', 'maintenance',
+              'ci', 'dependencies',
+            ];
+
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const issue_number = pr.number;
+            const current = (pr.labels || []).map(l => l.name);
+
+            // GitHub-typed bots (Dependabot, musicassistant-bot[bot],
+            // etc.) don't follow the PR template and apply their own
+            // labels. Bail out from inside the script rather than with
+            // a job-level `if`: this job is a required status check,
+            // and a real success is unambiguous where a skipped job
+            // would leave the merge gate depending on how GitHub
+            // reports it.
+            if (pr.user.type === 'Bot') {
+              core.info(`Skipping: PR opened by bot '${pr.user.login}'.`);
+              return;
+            }
+
+            // Take the first backticked span on a ticked checkbox
+            // bullet, e.g.  - [x] CI / workflow change — `ci`
+            // The PR template puts the canonical label name in
+            // backticks at the end of each "Types of changes" bullet.
+            // GFM accepts -, * and + as bullet markers, so all three
+            // have to match or a reformatted list stops being read.
+            const body = pr.body || '';
+            const re = /^\s*[-*+]\s*\[x\][^`\n]*`([^`\n]+)`/gim;
+            const ticked = [];
+            for (const m of body.matchAll(re)) {
+              const name = m[1].trim();
+              if (known.includes(name) && !ticked.includes(name)) {
+                ticked.push(name);
+              }
+            }
+
+            if (ticked.length > 1) {
+              core.setFailed(
+                `Multiple "Types of changes" checkboxes are ticked ` +
+                `(${ticked.join(', ')}). Tick exactly one.`
+              );
+              return;
+            }
+
+            // The description is the source of truth, so a ticked box
+            // always wins — that keeps the label in step when someone
+            // reconsiders the type after opening. Only with nothing
+            // ticked do we fall back to a label already on the PR,
+            // covering PRs opened without the template. Two or more
+            // known labels are ambiguous, so those fail rather than
+            // guess.
+            if (ticked.length === 0) {
+              const existing = current.filter(n => known.includes(n));
+              if (existing.length === 1) {
+                core.info(`Skipping: PR already labelled '${existing[0]}'.`);
+                return;
+              }
+              core.setFailed(
+                existing.length > 1
+                  ? `This PR carries more than one category label ` +
+                    `(${existing.join(', ')}), so the release notes ` +
+                    `section is ambiguous. Tick the "Types of changes" ` +
+                    `box for the one that should count.`
+                  : 'No "Types of changes" checkbox is ticked in the PR ' +
+                    'description. Edit the description and tick exactly ' +
+                    'one box so this PR can be release-noted.'
+              );
+              return;
+            }
+
+            const desired = ticked[0];
+
+            // Strip any stale labels from the known set so a
+            // contributor changing their mind in the description
+            // doesn't leave the previous label behind.
+            for (const name of current) {
+              if (known.includes(name) && name !== desired) {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number, name,
+                }).catch(() => {});
+              }
+            }
+            if (!current.includes(desired)) {
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number, labels: [desired],
+              });
+            }

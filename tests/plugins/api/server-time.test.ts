@@ -48,7 +48,7 @@ class FakeTransport extends BaseTransport {
         this.failsTimeCommand
           ? {
               message_id: msg.message_id,
-              error_code: "invalid_command",
+              error_code: 12,
               details: "Invalid command: time",
             }
           : {

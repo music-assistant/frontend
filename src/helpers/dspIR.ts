@@ -1,9 +1,9 @@
 import { $t } from "@/plugins/i18n";
 import type { DSPIRMetadata } from "@/plugins/api/interfaces";
 
-// Mirrors the server-side MAX_IR_BYTES. Checked against the raw file, before
-// base64 encoding inflates it by ~4/3.
-export const MAX_IR_BYTES = 50 * 1024 * 1024;
+// Must match MAX_IR_BYTES in the server's dsp config controller. Checked against
+// the raw file, before base64 encoding inflates it by ~4/3.
+export const MAX_IR_BYTES = 10 * 1024 * 1024;
 
 // Accepted by ffmpeg server-side; the picker hint stays broad on purpose.
 export const IR_FILE_ACCEPT = "audio/*,.wav,.flac,.aiff,.aif";
@@ -32,8 +32,10 @@ export function dspIRDetailText(ir: DSPIRMetadata): string {
   return [
     `${(ir.sample_rate / 1000).toFixed(ir.sample_rate % 1000 === 0 ? 0 : 1)} kHz`,
     channelText(ir.channels),
-    `${ir.duration.toFixed(2)} s`,
-  ].join(" · ");
+    ir.duration === null ? null : `${ir.duration.toFixed(2)} s`,
+  ]
+    .filter((part) => part !== null)
+    .join(" · ");
 }
 
 function channelText(channels: number): string {

@@ -57,7 +57,7 @@ export function useGuestEntryResolver() {
   const state = ref<GuestEntryState>("loading");
   let participantContext = getParticipantContext();
   let quizAffinity = createGuestQuizAffinity(participantContext);
-  let active = false;
+  let unmounted = false;
   let requestedVersion = 0;
   let preserveEndedState = false;
   let resolutionPromise: Promise<void> | null = null;
@@ -65,9 +65,8 @@ export function useGuestEntryResolver() {
   const unsubscribers: (() => void)[] = [];
 
   onMounted(async () => {
-    active = true;
     await waitForApiInitialization();
-    if (!active) return;
+    if (unmounted) return;
 
     unsubscribers.push(
       api.subscribe(EventType.PROVIDERS_UPDATED, requestResolution),
@@ -82,7 +81,7 @@ export function useGuestEntryResolver() {
   );
 
   onBeforeUnmount(() => {
-    active = false;
+    unmounted = true;
     requestedVersion += 1;
     unsubscribers.forEach((unsubscribe) => unsubscribe());
   });
@@ -110,14 +109,14 @@ export function useGuestEntryResolver() {
   }
 
   async function processResolutions() {
-    while (active) {
+    while (!unmounted) {
       const version = requestedVersion;
       const resolutionAffinity = getQuizAffinity();
       let nextState: GuestEntryState;
       try {
         nextState = await resolveGuestEntryState(resolutionAffinity);
       } catch {
-        if (!active) return;
+        if (unmounted) return;
         if (version !== requestedVersion) continue;
         if (resolutionAffinity !== getQuizAffinity()) {
           requestedVersion += 1;
@@ -129,7 +128,7 @@ export function useGuestEntryResolver() {
         }
         return;
       }
-      if (!active) return;
+      if (unmounted) return;
       if (version !== requestedVersion) continue;
       if (resolutionAffinity !== getQuizAffinity()) {
         requestedVersion += 1;
@@ -154,7 +153,7 @@ export function useGuestEntryResolver() {
     if (!isScopedQuizProviderEvent(event.object_id)) return;
     if (event.data.event === "game_removed") {
       queueMicrotask(() => {
-        if (!active) return;
+        if (unmounted) return;
         if (consumeMusicQuizJoinedGameEnded() && route.path === "/guest/quiz") {
           void requestEndedResolution();
           return;
@@ -169,7 +168,7 @@ export function useGuestEntryResolver() {
   // Lock onto the first Music Quiz provider instance we see events from, matching
   // the scoping convention used by useMusicQuizHost/useMusicQuizPlayer, so events
   // from an unrelated instance can't spuriously re-trigger resolution.
-  function isScopedQuizProviderEvent(objectId?: string) {
+  function isScopedQuizProviderEvent(objectId?: string | null) {
     if (!objectId) return false;
     if (!quizProviderInstanceId) {
       quizProviderInstanceId = objectId;

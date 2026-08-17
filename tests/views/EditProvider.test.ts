@@ -3,32 +3,35 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigEntryType,
   EventType,
-  ProviderStage,
   ProviderStatus,
-  ProviderType,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditProvider from "@/views/settings/EditProvider.vue";
+import { providerConfig } from "../fixtures/providerConfig";
 
 const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
   vi.hoisted(() => ({
     apiMock: {
-      getProvider: vi.fn(),
-      getProviderConfig: vi.fn(),
-      invokeProviderConfigAction: vi.fn(),
+      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+      getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
+      invokeProviderConfigAction:
+        vi.fn<MusicAssistantApi["invokeProviderConfigAction"]>(),
       providerManifests: {
         spotify: {
+          allow_disable: true,
           codeowners: [],
           credits: [],
           description: "Spotify music provider",
+          documentation: "https://example.com/spotify",
           has_setup_flow: true,
           name: "Spotify",
         },
       },
       providers: {},
-      reloadProvider: vi.fn(),
-      removeProviderConfig: vi.fn(),
-      saveProviderConfig: vi.fn(),
+      reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+      removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
+      saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
       subscribe: vi.fn(),
     },
     eventbusMock: {
@@ -46,6 +49,24 @@ const { apiMock, eventbusMock, routerMock, toastMock, unsubscribeMock } =
 
 let providersUpdated: (() => void) | undefined;
 
+const SlotStub = {
+  template: "<div><slot /></div>",
+};
+
+const providerDetailsStubs = {
+  // rendered for real so this screen's advanced toggle stays assertable
+  AdvancedSettingsToggle: false,
+  Badge: SlotStub,
+  Card: SlotStub,
+  CardContent: SlotStub,
+  CardDescription: SlotStub,
+  CardHeader: SlotStub,
+  DropdownMenu: SlotStub,
+  DropdownMenuContent: SlotStub,
+  DropdownMenuItem: SlotStub,
+  DropdownMenuTrigger: SlotStub,
+};
+
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
@@ -56,6 +77,8 @@ vi.mock("@/plugins/eventbus", () => ({
 }));
 
 vi.mock("@/helpers/utils", () => ({
+  getExternalLinkUrl: (url?: string) =>
+    url?.startsWith("http://") || url?.startsWith("https://") ? url : undefined,
   markdownToHtml: (value: string) => value,
   openActionUrlEntries: <T>(entries: T) => entries,
 }));
@@ -89,6 +112,10 @@ vi.mock("vue-router", async (importOriginal) => {
 beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
+  apiMock.providerManifests.spotify.allow_disable = true;
+  apiMock.providerManifests.spotify.documentation =
+    "https://example.com/spotify";
+  apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockImplementation(
     (event: EventType, callback: () => void) => {
@@ -101,13 +128,450 @@ beforeEach(() => {
 });
 
 describe("EditProvider", () => {
+  it("shows provider status and direct support actions", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_loaded",
+    );
+    expect(wrapper.get("h2").text()).toBe("Spotify");
+    expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
+      true,
+    );
+    expect(
+      wrapper.get('[data-testid="provider-documentation"]').attributes(),
+    ).toMatchObject({
+      href: "https://example.com/spotify",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+    expect(
+      wrapper.get('[data-testid="provider-known-issues"]').attributes(),
+    ).toMatchObject({
+      href: "https://github.com/music-assistant/support/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22spotify%22",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+  });
+
+  it("hides reconfiguration when the provider has no setup flow", async () => {
+    apiMock.providerManifests.spotify.has_setup_flow = false;
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("hides documentation links with an unsafe URL", async () => {
+    apiMock.providerManifests.spotify.documentation = "javascript:alert(1)";
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.find('[data-testid="provider-documentation"]').exists(),
+    ).toBe(false);
+  });
+
+  it("disables the provider from the header menu", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    apiMock.saveProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.DISABLED, "current value", undefined, false),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.get('[data-testid="provider-toggle-enabled"]').text(),
+    ).toContain("settings.disable");
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledWith(
+      "spotify",
+      { enabled: false },
+      "spotify--test",
+    );
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_disabled",
+    );
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(true);
+    expect(toastMock.success).toHaveBeenCalledWith("settings.provider_saved");
+  });
+
+  it("keeps the provider enabled when disabling fails", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    apiMock.saveProviderConfig.mockRejectedValue(new Error("Save failed"));
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(false);
+    expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
+    expect(toastMock.error).toHaveBeenCalledWith("Error: Save failed");
+  });
+
+  it("reconciles provider state when enabling fails after being saved", async () => {
+    apiMock.getProviderConfig
+      .mockResolvedValueOnce(
+        spotifyConfig(
+          ProviderStatus.DISABLED,
+          "current value",
+          undefined,
+          false,
+        ),
+      )
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.ERROR));
+    apiMock.saveProviderConfig.mockRejectedValue(new Error("Load failed"));
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.get('[data-testid="provider-toggle-enabled"]').text(),
+    ).toContain("settings.enable");
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(false);
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_error",
+    );
+    expect(wrapper.find('[data-testid="provider-reconfigure"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("ignores a toggle response after navigating to another provider", async () => {
+    let resolveSave: (config: ProviderConfig) => void = () => {};
+    apiMock.getProviderConfig
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.LOADED))
+      .mockResolvedValueOnce(
+        spotifyConfig(
+          ProviderStatus.LOADED,
+          "other value",
+          undefined,
+          true,
+          "spotify--other",
+        ),
+      );
+    apiMock.saveProviderConfig.mockImplementation(
+      () =>
+        new Promise<ProviderConfig>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await wrapper.setProps({ instanceId: "spotify--other" });
+    await flushPromises();
+
+    resolveSave(
+      spotifyConfig(ProviderStatus.DISABLED, "current value", undefined, false),
+    );
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(false);
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_loaded",
+    );
+  });
+
+  it("ignores a toggle error after navigating to another provider", async () => {
+    let rejectSave: (error: Error) => void = () => {};
+    apiMock.getProviderConfig
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.LOADED))
+      .mockResolvedValueOnce(
+        spotifyConfig(
+          ProviderStatus.LOADED,
+          "other value",
+          undefined,
+          true,
+          "spotify--other",
+        ),
+      );
+    apiMock.saveProviderConfig.mockImplementation(
+      () =>
+        new Promise<ProviderConfig>((_resolve, reject) => {
+          rejectSave = reject;
+        }),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await wrapper.setProps({ instanceId: "spotify--other" });
+    await flushPromises();
+
+    rejectSave(new Error("Old provider failed"));
+    await flushPromises();
+
+    expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toContain(
+      "settings.provider_status_loaded",
+    );
+  });
+
+  it("hides the enable/disable item while enabled when disabling is not supported", async () => {
+    apiMock.providerManifests.spotify.allow_disable = false;
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.find('[data-testid="provider-toggle-enabled"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.get('[data-testid="provider-reset-defaults"]').text(),
+    ).toContain("settings.reset_to_defaults");
+  });
+
+  it("resets the form to its defaults from the header menu", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    const resetToDefaults = vi.fn();
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          ...providerDetailsStubs,
+          EditConfig: {
+            name: "EditConfig",
+            methods: { resetToDefaults },
+            template: "<div />",
+          },
+        },
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="provider-reset-defaults"]')
+      .trigger("click");
+
+    expect(resetToDefaults).toHaveBeenCalled();
+  });
+
+  it.each([
+    { advanced: true, offered: true },
+    { advanced: false, offered: false },
+  ])(
+    "offers the advanced toggle for a config with advanced entries: $advanced",
+    async ({ advanced, offered }) => {
+      const config = spotifyConfig(ProviderStatus.LOADED);
+      config.values.account.advanced = advanced;
+      apiMock.getProviderConfig.mockResolvedValue(config);
+
+      const wrapper = shallowMount(EditProvider, {
+        props: {
+          instanceId: "spotify--test",
+        },
+        global: {
+          mocks: {
+            $t: (key: string) => key,
+          },
+          stubs: providerDetailsStubs,
+        },
+      });
+      await flushPromises();
+
+      expect(
+        wrapper.find('[data-testid="provider-advanced-settings"]').exists(),
+      ).toBe(offered);
+    },
+  );
+
+  it("enables a disabled provider when disabling is not supported", async () => {
+    apiMock.providerManifests.spotify.allow_disable = false;
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.DISABLED, "current value", undefined, false),
+    );
+    apiMock.saveProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="provider-menu"]').exists()).toBe(true);
+    await wrapper
+      .get('[data-testid="provider-toggle-enabled"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledWith(
+      "spotify",
+      { enabled: true },
+      "spotify--test",
+    );
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("disabled"),
+    ).toBe(false);
+  });
+
   it("refreshes provider state after a provider update", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(
-        providerConfig(ProviderStatus.AUTH_REQUIRED, "current value"),
+        spotifyConfig(ProviderStatus.AUTH_REQUIRED, "current value"),
       )
       .mockResolvedValueOnce(
-        providerConfig(ProviderStatus.LOADED, "server refresh"),
+        spotifyConfig(ProviderStatus.LOADED, "server refresh"),
       );
 
     const wrapper = shallowMount(EditProvider, {
@@ -146,10 +610,10 @@ describe("EditProvider", () => {
   it("merges fresh entry definitions while keeping a pending local edit", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(
-        providerConfig(ProviderStatus.LOADED, "current value", []),
+        spotifyConfig(ProviderStatus.LOADED, "current value", []),
       )
       .mockResolvedValueOnce(
-        providerConfig(ProviderStatus.LOADED, "server refresh", [
+        spotifyConfig(ProviderStatus.LOADED, "server refresh", [
           { title: "Home Assistant", value: "ha" },
         ]),
       );
@@ -186,7 +650,7 @@ describe("EditProvider", () => {
 
   it("keeps form values when an action returns entries without them", async () => {
     apiMock.getProviderConfig.mockResolvedValue(
-      providerConfig(ProviderStatus.LOADED, "current value"),
+      spotifyConfig(ProviderStatus.LOADED, "current value"),
     );
     // an action response carries entry definitions only, never the stored values
     apiMock.invokeProviderConfigAction.mockResolvedValue([
@@ -195,6 +659,7 @@ describe("EditProvider", () => {
         default_value: null,
         key: "account",
         label: "Account",
+        options: [],
         required: false,
         type: ConfigEntryType.STRING,
       },
@@ -226,8 +691,8 @@ describe("EditProvider", () => {
 
   it("refreshes provider status when reconfiguration ends", async () => {
     apiMock.getProviderConfig
-      .mockResolvedValueOnce(providerConfig(ProviderStatus.AUTH_REQUIRED))
-      .mockResolvedValueOnce(providerConfig(ProviderStatus.LOADED));
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.AUTH_REQUIRED))
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.LOADED));
 
     const wrapper = shallowMount(EditProvider, {
       props: {
@@ -257,7 +722,7 @@ describe("EditProvider", () => {
 
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
     apiMock.invokeProviderConfigAction.mockResolvedValueOnce([]);
 
@@ -296,7 +761,7 @@ describe("EditProvider", () => {
 
   it("does not save when an immediate-apply action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
     apiMock.invokeProviderConfigAction.mockResolvedValueOnce([]);
 
@@ -322,7 +787,7 @@ describe("EditProvider", () => {
 
   it("still replaces the form when an action returns entries (transitional path)", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
-      providerConfig(ProviderStatus.LOADED),
+      spotifyConfig(ProviderStatus.LOADED),
     );
     apiMock.invokeProviderConfigAction.mockResolvedValueOnce([
       {
@@ -330,6 +795,7 @@ describe("EditProvider", () => {
         default_value: null,
         key: "new_field",
         label: "New field",
+        options: [],
         required: false,
         type: ConfigEntryType.STRING,
         value: "server value",
@@ -364,51 +830,39 @@ describe("EditProvider", () => {
   });
 });
 
-function providerConfig(
+/**
+ * The spotify provider config these tests load, with a single `account` entry.
+ */
+function spotifyConfig(
   status: ProviderStatus,
   account: string = "current value",
   accountOptions?: { title: string; value: string }[],
+  enabled: boolean = true,
+  instanceId: string = "spotify--test",
 ): ProviderConfig {
-  return {
+  return providerConfig({
     domain: "spotify",
-    enabled: true,
-    instance_id: "spotify--test",
+    enabled,
+    instance_id: instanceId,
     last_error:
       status === ProviderStatus.AUTH_REQUIRED
         ? {
             error_code: 1,
             message: "Authentication required",
           }
-        : undefined,
-    manifest: {
-      allow_disable: true,
-      builtin: false,
-      codeowners: [],
-      credits: [],
-      description: "Spotify music provider",
-      domain: "spotify",
-      icon_images: [],
-      has_setup_flow: true,
-      multi_instance: true,
-      name: "Spotify",
-      requirements: [],
-      stage: ProviderStage.STABLE,
-      type: ProviderType.MUSIC,
-    },
-    name: "Spotify",
+        : null,
     status,
-    type: ProviderType.MUSIC,
     values: {
       account: {
         category: "generic",
         default_value: null,
         key: "account",
         label: "Account",
-        options: accountOptions,
+        options: accountOptions ?? [],
         required: false,
         type: ConfigEntryType.STRING,
         value: account,
       },
     },
-  };
+  });
 }

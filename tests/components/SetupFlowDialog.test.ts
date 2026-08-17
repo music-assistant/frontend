@@ -1,17 +1,23 @@
-import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  config,
+  flushPromises,
+  shallowMount,
+  type VueWrapper,
+} from "@vue/test-utils";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigEntryType,
   FlowStepType,
   type ConfigEntry,
   type SetupFlowStep,
 } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 
 const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
   () => ({
     apiMock: {
-      abortSetupFlow: vi.fn(),
+      abortSetupFlow: vi.fn<MusicAssistantApi["abortSetupFlow"]>(),
       players: {},
       providerManifests: {},
       providers: {
@@ -19,12 +25,12 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
           domain: "spotify",
         },
       },
-      reconfigureProvider: vi.fn(),
+      reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
       state: {
         value: "authenticated",
       },
-      submitSetupFlow: vi.fn(),
-      subscribeSetupFlow: vi.fn(),
+      submitSetupFlow: vi.fn<MusicAssistantApi["submitSetupFlow"]>(),
+      subscribeSetupFlow: vi.fn<MusicAssistantApi["subscribeSetupFlow"]>(),
     },
     eventbusMock: {
       off: vi.fn(),
@@ -88,6 +94,21 @@ vi.mock("vue-router", async (importOriginal) => {
 vi.mock("vue-sonner", () => ({
   toast: toastMock,
 }));
+
+// shallowMount would stub the step copy away; render it as plain text instead
+// so the assertions below keep seeing it
+const originalStubs = config.global.stubs;
+config.global.stubs = {
+  ...originalStubs,
+  MarkdownText: {
+    props: ["text"],
+    template: "<div>{{ text }}</div>",
+  },
+};
+
+afterAll(() => {
+  config.global.stubs = originalStubs;
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -339,9 +360,10 @@ function entry(
     default_value: null,
     label: overrides.key,
     required: false,
+    options: [],
     value: null,
     ...overrides,
-  } as ConfigEntry;
+  };
 }
 
 function progressStep(progressText: string): SetupFlowStep {

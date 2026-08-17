@@ -10,12 +10,32 @@
     no-click-animation
   >
     <v-card
+      ref="cardRef"
+      data-player-panel
       class="fullscreen-player-card"
       :style="{ background: backgroundColor }"
     >
-      <v-toolbar class="v-toolbar-default" color="transparent">
+      <VisualizerCanvas
+        v-if="store.showFullscreenPlayer && visualizerActive"
+        :preset="visualizerPresetPref"
+        :blur="visualizerBlurPref"
+        :opacity="visualizerOpacityPref"
+        :player-id="store.activePlayer?.player_id"
+      />
+      <PanelDragHandle
+        v-if="store.mobileLayout"
+        swipe-anywhere
+        @dismiss="store.showFullscreenPlayer = false"
+      />
+      <v-toolbar
+        data-panel-drag-region
+        class="v-toolbar-default"
+        color="transparent"
+      >
         <template #prepend>
+          <!-- on mobile the drag handle is the close affordance -->
           <Button
+            v-if="!store.mobileLayout"
             variant="ghost"
             size="icon-sm"
             :aria-label="$t('tooltip.close_fullscreen')"
@@ -89,7 +109,7 @@
             <v-card-title
               v-else-if="store.activePlayer?.current_media?.title"
               :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
-              @click="onTitleClick"
+              @click="openCurrentTrackDetails"
             >
               <MarqueeText :sync="playerMarqueeSync">
                 {{ store.activePlayer.current_media.title }}
@@ -347,19 +367,12 @@
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
-          <Icon
-            :disabled="!store.curQueueItem?.media_item"
-            :title="$t('tooltip.favorite')"
-            variant="button"
-            class="media-controls-item"
-            max-height="30px"
-            @click="onHeartBtnClick"
-          >
-            <Heart
+          <div class="media-controls-item favorite-btn-wrapper">
+            <FavoriteMenuBtn
+              style="max-height: 30px; min-height: 0; min-width: 0"
               :size="18"
-              :fill="currentItemFavorite ? 'currentColor' : 'none'"
             />
-          </Icon>
+          </div>
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
             :player-queue="store.activePlayerQueue"
@@ -432,16 +445,19 @@
             padding-top: 4px;
           "
         >
+          <!-- Without a competing hover:text- here, the outline variant's own
+               hover:text-accent-foreground survives the class merge and recolours
+               the label against the artwork, so the hover colour is pinned to
+               the --text-color the rest of the panel follows. -->
           <Button
+            id="fullscreen-player-select-button"
             variant="outline"
             size="xs"
-            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
-            @click="
-              () => {
-                store.showPlayersMenu = true;
-                store.showFullscreenPlayer = false;
-              }
-            "
+            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 hover:text-[var(--text-color)] dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
+            :aria-label="playerSelectLabel"
+            :aria-expanded="store.showPlayersMenu"
+            aria-haspopup="dialog"
+            @click="store.showPlayersMenu = true"
           >
             <PlayerIcon
               :icon="store.activePlayer?.icon"
@@ -452,19 +468,28 @@
           </Button>
         </div>
       </div>
+
+      <PlaybackSpeedDialog v-model:open="playbackSpeedDialogOpen" />
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import Icon from "@/components/Icon.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
+import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
+import { useUserPreferences } from "@/composables/userPreferences";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
+import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   ImageColorPalette,
@@ -473,6 +498,8 @@ import {
   getPlayerName,
 } from "@/helpers/utils";
 import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
+import PlaybackSpeedDialog from "@/layouts/default/PlayerOSD/PlaybackSpeedDialog.vue";
+import FavoriteMenuBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/FavoriteMenuBtn.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
@@ -482,40 +509,33 @@ import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFu
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
+import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
-import { useUserPreferences } from "@/composables/userPreferences";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
-import {
-  EventMessage,
-  EventType,
-  MediaItemType,
-  MediaType,
-  PlayerType,
-  Track,
-} from "@/plugins/api/interfaces";
+import { MediaType, PlayerType, Track } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { ChevronDownIcon, EllipsisVerticalIcon, Heart } from "@lucide/vue";
+import { ChevronDownIcon, EllipsisVerticalIcon } from "@lucide/vue";
 import Color from "color";
 import {
   computed,
   markRaw,
+  nextTick,
   onBeforeUnmount,
   onMounted,
   ref,
   watch,
   watchEffect,
+  type ComponentPublicInstance,
 } from "vue";
 import { useDisplay } from "vuetify";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
-import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 
 const { name, mdAndUp } = useDisplay();
 
@@ -544,17 +564,28 @@ const playBtnStyle = computed(() => {
 
 const playerMarqueeSync = new MarqueeTextSync();
 
-// Track the favorite state of the current queue item independently from
-// media_item.favorite so optimistic updates survive server-side queue refreshes
-// (which replace the whole current_item object and would reset the field).
-const currentItemFavorite = ref(false);
+// The dialog keeps its content mounted after the first open, so a drag-to-close
+// leaves PanelDragHandle's inline transform/opacity on the card; clear them
+// when the player is opened again.
+const cardRef = ref<ComponentPublicInstance | HTMLElement | null>(null);
 watch(
-  () => store.curQueueItem?.queue_item_id,
-  () => {
-    currentItemFavorite.value =
-      store.curQueueItem?.media_item?.favorite ?? false;
+  () => store.showFullscreenPlayer,
+  async (isOpen) => {
+    if (!isOpen) return;
+    await nextTick();
+    // template refs may resolve to either a component instance or a plain element
+    const raw = cardRef.value;
+    const el =
+      raw instanceof HTMLElement
+        ? raw
+        : ((raw?.$el ?? undefined) as HTMLElement | undefined);
+    if (!el?.dataset.dragDismissed) return;
+    delete el.dataset.dragDismissed;
+    el.style.removeProperty("transform");
+    el.style.removeProperty("opacity");
+    el.style.removeProperty("transition");
+    el.style.removeProperty("will-change");
   },
-  { immediate: true },
 );
 
 // Local reactive state for lyrics
@@ -679,10 +710,9 @@ const showLyricsOffset = computed(() => {
     player.active_output_protocol &&
     player.active_output_protocol !== "native"
   ) {
-    domain =
-      player.output_protocols?.find(
-        (p) => p.output_protocol_id === player.active_output_protocol,
-      )?.protocol_domain ?? undefined;
+    domain = player.output_protocols.find(
+      (p) => p.output_protocol_id === player.active_output_protocol,
+    )?.protocol_domain;
   }
   if (!domain) {
     domain = player.provider.split("--")[0];
@@ -717,8 +747,8 @@ const fetchLyrics = async () => {
   const track = mediaItem as Track;
 
   // Check if lyrics are already in metadata
-  const existingPlain = track.metadata?.lyrics?.trim() || null;
-  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+  const existingPlain = track.metadata.lyrics?.trim() || null;
+  const existingSynced = track.metadata.lrc_lyrics?.trim() || null;
 
   if (existingPlain || existingSynced) {
     currentLyrics.value = { plain: existingPlain, synced: existingSynced };
@@ -768,6 +798,12 @@ watch(
 const { waveformBins: waveformData } = useActiveTrackWaveform();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
+const {
+  visualizerPresetPref,
+  visualizerBlurPref,
+  visualizerOpacityPref,
+  visualizerActive,
+} = useVisualizer(() => store.activePlayer?.player_id);
 
 const titleFontSize = computed(() => {
   switch (name.value) {
@@ -792,6 +828,12 @@ const subTitleFontSize = computed(() => {
   // Anchor album/artist size to the track title using the EditorialMediaCard
   // tile ratio (subtitle 12px / title 14px).
   return `${(parseFloat(titleFontSize.value) * (12 / 14)).toFixed(3)}em`;
+});
+
+const playerSelectLabel = computed(() => {
+  const selectPlayer = $t("tooltip.select_player");
+  if (!store.activePlayer) return selectPlayer;
+  return `${selectPlayer}: ${getPlayerName(store.activePlayer)}`;
 });
 
 const showExpandedPlayerSelectButton = computed(() => {
@@ -862,82 +904,6 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
   }
 };
 
-const onTitleClick = async function () {
-  const currentMedia = store.activePlayer?.current_media;
-  if (!currentMedia) return;
-
-  // Try to get the track from the full media item (for library items)
-  const mediaItem = store.curQueueItem?.media_item;
-
-  if (mediaItem && mediaItem.media_type === MediaType.TRACK) {
-    // Navigate directly to track detail page
-    store.showFullscreenPlayer = false;
-    router.push({
-      name: "track",
-      params: {
-        itemId: mediaItem.item_id,
-        provider: mediaItem.provider,
-      },
-    });
-  } else {
-    // Radio or non-library item - try to find in library first
-    const searchTerm = currentMedia.artist
-      ? `${currentMedia.artist} - ${currentMedia.title}`
-      : currentMedia.title || "";
-
-    try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, provider)
-      const results = await api.getLibraryTracks(
-        undefined, // favorite
-        searchTerm, // search
-        5, // limit - get a few results to find best match
-        undefined,
-        undefined,
-        undefined,
-        undefined, // genre_ids
-      );
-
-      if (results.length > 0) {
-        // Try to find best match by comparing artist and title
-        let bestMatch = results[0];
-
-        if (currentMedia.artist && currentMedia.title) {
-          const exactMatch = results.find(
-            (track) =>
-              track.name.toLowerCase() === currentMedia.title!.toLowerCase() &&
-              track.artists?.some(
-                (artist) =>
-                  artist.name.toLowerCase() ===
-                  currentMedia.artist!.toLowerCase(),
-              ),
-          );
-          if (exactMatch) {
-            bestMatch = exactMatch;
-          }
-        }
-
-        // Found in library! Navigate to it
-        store.showFullscreenPlayer = false;
-        router.push({
-          name: "track",
-          params: {
-            itemId: bestMatch.item_id,
-            provider: bestMatch.provider,
-          },
-        });
-        return;
-      }
-    } catch (error) {
-      console.error("Error searching library for track:", error);
-    }
-
-    // Not found in library - fall back to global search
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
-    store.showFullscreenPlayer = false;
-  }
-};
-
 const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
   if (!currentMedia?.album) return;
@@ -981,7 +947,7 @@ const onAlbumClick = async function () {
         // If we have artist info, try to find album by same artist
         if (currentMedia.artist) {
           const matchWithArtist = results.find((album) =>
-            album.artists?.some(
+            album.artists.some(
               (artist) =>
                 artist.name.toLowerCase() ===
                   currentMedia.artist!.toLowerCase() ||
@@ -1093,6 +1059,22 @@ const onArtistClick = async function () {
   }
 };
 
+const playbackSpeedDialogOpen = ref(false);
+
+// a route change closes the full screen player from under whatever is on top of
+// it, and vuetify then unmounts this card - the dialog has to go first, or it
+// leaves the app-wide dialog flag set and reappears on the next open
+watch(
+  () => store.showFullscreenPlayer,
+  (open) => {
+    if (!open) playbackSpeedDialogOpen.value = false;
+  },
+);
+
+const speedSupported = computed(() =>
+  playbackSpeedSupported(store.curQueueItem),
+);
+
 const openQueueMenu = function (evt: Event) {
   if (!store.activePlayer) return;
   const menuItems = getPlayerMenuItems(
@@ -1103,7 +1085,22 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value,
     },
   );
-  menuItems.push({
+  // playback speed only means something for spoken-word content, which is also
+  // the only content anyone plays at anything but 1x
+  if (speedSupported.value) {
+    menuItems.push({
+      label: "change_playback_speed",
+      action: () => {
+        playbackSpeedDialogOpen.value = true;
+      },
+      icon: "mdi-speedometer",
+    });
+  }
+  // The waveform toggle slots in above the visualizer entries, keeping the
+  // visualizer toggle + options grouped at the bottom of the menu. The on/off
+  // toggle itself comes from getPlayerMenuItems (it is a player control,
+  // listed last there).
+  const waveformItem = {
     label: "settings.show_waveform.label",
     action: () => {
       void setPreference("show_waveform", !showWaveformPref.value);
@@ -1111,7 +1108,22 @@ const openQueueMenu = function (evt: Event) {
     icon: "mdi-waveform",
     selected: showWaveformPref.value,
     close_on_click: false,
-  });
+  };
+  const visualizerToggleIndex = menuItems.findIndex(
+    (item) => item.label === "settings.visualizer_enabled.label",
+  );
+  if (visualizerToggleIndex === -1) {
+    menuItems.push(waveformItem);
+  } else {
+    menuItems.splice(visualizerToggleIndex, 0, waveformItem);
+    // Always append the options control directly under the toggle (the menu
+    // item list is a snapshot); it renders nothing while the visualizer is
+    // disabled, so it appears and disappears live as the toggle is flipped.
+    menuItems.push({
+      label: "visualizer_options",
+      component: markRaw(VisualizerMenuControl),
+    });
+  }
   // While lyrics are open, surface the sync-offset stepper at the top of the
   // overflow menu (only for players that benefit from a latency offset).
   if (showLyrics.value && showLyricsOffset.value) {
@@ -1128,23 +1140,6 @@ const openQueueMenu = function (evt: Event) {
     posY: (evt as PointerEvent).clientY,
   });
 };
-
-// sync currentItemFavorite when the server confirms a favorite change
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_UPDATED,
-    (evt: EventMessage) => {
-      const updatedItem = evt.data as MediaItemType;
-      if (
-        "favorite" in updatedItem &&
-        store.curQueueItem?.media_item?.uri === updatedItem.uri
-      ) {
-        currentItemFavorite.value = updatedItem.favorite;
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
-});
 
 // Handle Escape key to close fullscreen player (since persistent disables default behavior)
 const onKeydown = (e: KeyboardEvent) => {
@@ -1164,107 +1159,31 @@ onMounted(() => {
   });
 });
 
-const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
-  // the heart icon/button was clicked
-  if (!store.curQueueItem?.media_item) return;
-  if (!currentItemFavorite.value) {
-    currentItemFavorite.value = true; // optimistic — survives server queue refresh
-    api.toggleFavorite(store.curQueueItem.media_item);
-    return;
-  }
-  //resolve media item into a library item
-  let resolvedItem = store.curQueueItem!.media_item as MediaItemType;
-  if (
-    (resolvedItem.provider != "library" ||
-      !("provider_mappings" in resolvedItem)) &&
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(resolvedItem.media_type)
-  ) {
-    // resolve itemmapping or non-library item
-    resolvedItem =
-      (await api.getLibraryItem(
-        resolvedItem.media_type,
-        resolvedItem.item_id,
-        resolvedItem.provider,
-      )) || resolvedItem;
-  }
-
-  const menuItems: ContextMenuItem[] = [];
-
-  // remove from favorites
-  if (
-    "favorite" in resolvedItem &&
-    resolvedItem.favorite &&
-    resolvedItem.provider == "library" &&
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(resolvedItem.media_type)
-  ) {
-    menuItems.push({
-      label: "favorites_remove",
-      labelArgs: [],
-      action: () => {
-        api.removeItemFromFavorites(
-          resolvedItem.media_type,
-          resolvedItem.item_id,
-        );
-        resolvedItem.favorite = false;
-        store.curQueueItem!.media_item!.favorite = false;
-        currentItemFavorite.value = false;
-      },
-      icon: "mdi-heart",
-    });
-  }
-
-  // add to playlist
-  if (
-    [
-      MediaType.ALBUM,
-      MediaType.ARTIST,
-      MediaType.AUDIOBOOK,
-      MediaType.PLAYLIST,
-      MediaType.PODCAST,
-      MediaType.RADIO,
-      MediaType.TRACK,
-    ].includes(resolvedItem.media_type)
-  ) {
-    menuItems.push({
-      label: "add_playlist",
-      labelArgs: [],
-      action: () => {
-        eventbus.emit("playlistdialog", {
-          items: [store.curQueueItem!.media_item as MediaItemType],
-        });
-      },
-      icon: "mdi-plus-circle-outline",
-    });
-  }
-
-  // open the contextmenu by emitting the event
-  eventbus.emit("contextmenu", {
-    items: menuItems,
-    posX: evt.clientX,
-    posY: evt.clientY,
-  });
-};
-
 const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
 
 watchEffect(() => {
+  // With a dominant visualizer the view is effectively dark content: force
+  // light text and a dark palette-gradient base. At low opacity (<=50%) the
+  // visualizer is only a faint overlay, so keep the completely normal
+  // theme/palette treatment instead of forcing the dark look. This component is
+  // permanently mounted via the OSD footer, so gate on the fullscreen player
+  // actually being open, or --text-color would stay forced app-wide.
+  if (
+    store.showFullscreenPlayer &&
+    visualizerActive.value &&
+    visualizerOpacityPref.value > 50
+  ) {
+    document.documentElement.style.setProperty("--text-color", "#ffffff");
+    document.documentElement.style.setProperty(
+      "--text-color-inverse",
+      "#000000",
+    );
+    sliderColor.value = "#ffffff";
+    const darkBase = Color(compProps.colorPalette.darkColor || "#000");
+    backgroundColor.value = `linear-gradient(to bottom, ${darkBase.lighten(0.25).hex()}, ${darkBase.darken(0.25).hex()})`;
+    return;
+  }
   const isDarkTheme = vuetify.theme.current.value.dark;
   const bgHex = isDarkTheme
     ? compProps.colorPalette.darkColor || "#000"
@@ -1284,15 +1203,42 @@ watchEffect(() => {
   const topColor = bgColor.lighten(0.25);
   const bottomColor = bgColor.darken(0.25);
   backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
+  setStatusBarColorOverride(
+    store.showFullscreenPlayer ? topColor.hex() : undefined,
+  );
+});
+
+onBeforeUnmount(() => {
+  setStatusBarColorOverride(undefined);
 });
 </script>
 
 <style scoped>
 .fullscreen-player-card {
-  overflow: hidden;
+  box-sizing: border-box;
+  /* y is left to Vuetify, which holds it at auto from a more specific
+     .v-dialog > .v-overlay__content > .v-card. That keeps the card scrollable
+     when the viewport is too short for .player-bottom (flex-shrink: 0) to
+     fit; clipping instead would put the play button out of reach of the wheel
+     and of any pan global.css has not refused. */
+  overflow-x: hidden;
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: var(--device-inset-top) var(--device-inset-right) 0
+    var(--device-inset-left);
+  /* Containing block for the visualizer layer (z-index 0); everything else
+     is lifted above it so the canvas renders strictly behind the content. */
+  position: relative;
+}
+
+.fullscreen-player-card > :not(.visualizer-layer) {
+  position: relative;
+  z-index: 1;
+}
+
+.fullscreen-player-card :deep(.panel-drag-handle > div) {
+  background: color-mix(in srgb, var(--text-color) 40%, transparent);
 }
 
 .main {
@@ -1329,6 +1275,7 @@ watchEffect(() => {
   /* Keep the list clear of the progress bar / controls below. */
   margin-bottom: 24px;
   scroll-behavior: auto;
+  overscroll-behavior-y: contain;
 }
 
 /* Virtual list: a spacer sized to the whole queue, with only the visible rows
@@ -1549,7 +1496,7 @@ watchEffect(() => {
 .player-bottom {
   flex-shrink: 0;
   position: unset !important;
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), min(3%, 3vh));
+  padding-bottom: max(var(--device-inset-bottom), min(3%, 3vh));
   width: 100%;
 }
 
@@ -1584,7 +1531,8 @@ watchEffect(() => {
   height: 100%;
 }
 
-.queue-btn-wrapper {
+.queue-btn-wrapper,
+.favorite-btn-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1630,7 +1578,8 @@ watchEffect(() => {
 }
 
 /* Match the marginless transport icons so the play button stays centred. */
-.media-controls > .queue-btn-wrapper {
+.media-controls > .queue-btn-wrapper,
+.media-controls > .favorite-btn-wrapper {
   margin: 0;
 }
 

@@ -50,24 +50,6 @@
       {{ displayActionLabel() }}
     </v-btn>
 
-    <!-- DSP Config Button -->
-    <div v-else-if="isDspLinkEntry(confEntry)" class="dsp-config">
-      <span class="dsp-status">
-        {{
-          confEntry.value
-            ? $t("settings.dsp_enabled")
-            : $t("settings.dsp_disabled")
-        }}
-      </span>
-      <v-btn
-        variant="outlined"
-        :disabled="isFieldDisabled"
-        @click="$emit('openDsp')"
-      >
-        {{ $t("open_dsp_settings") }}
-      </v-btn>
-    </div>
-
     <!-- Home Assistant entity picker for a single player control -->
     <HassControlPickerField
       v-else-if="isHassControlPickerEntry(confEntry)"
@@ -87,20 +69,6 @@
       :disabled="isFieldDisabled"
       @update:value="onUpdateValue($event)"
     />
-
-    <!-- Player Options Button -->
-    <div
-      v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
-      class="dsp-config"
-    >
-      <v-btn
-        variant="outlined"
-        :disabled="isFieldDisabled"
-        @click="$emit('openOptions')"
-      >
-        {{ $t("player_options.open") }}
-      </v-btn>
-    </div>
 
     <!-- boolean value: checkbox -->
     <v-checkbox
@@ -193,9 +161,23 @@
       @click:clear="onClear"
     />
 
+    <!-- value with all options expanded: radio group -->
+    <RadioGroupField
+      v-else-if="
+        confEntry.options.length > 0 &&
+        confEntry.expanded_options &&
+        !confEntry.multi_value
+      "
+      :label="displayLabel()"
+      :options="displayOptions"
+      :value="confEntry.value"
+      :disabled="isFieldDisabled"
+      @update:value="onUpdateValue($event)"
+    />
+
     <!-- value with dropdown -->
     <v-select
-      v-else-if="confEntry.options && confEntry.options.length > 0"
+      v-else-if="confEntry.options.length > 0"
       :model-value="confEntry.value"
       :menu-props="{ zIndex: 10000 }"
       :chips="confEntry.multi_value"
@@ -320,10 +302,10 @@ import AlertField from "./fields/AlertField.vue";
 import HassControlPickerField from "./fields/HassControlPickerField.vue";
 import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
+import RadioGroupField from "./fields/RadioGroupField.vue";
 import {
   ConfigEntryUI,
   HASS_CONTROL_KEYS,
-  isDspLinkEntry,
   isHassControlPickerEntry,
 } from "@/helpers/config_entry_ui";
 import { HASS_DOMAIN } from "@/helpers/hass_controls";
@@ -362,8 +344,6 @@ const imageSrc = computed(
 const emit = defineEmits<{
   (e: "togglePassword"): void;
   (e: "action"): void;
-  (e: "openDsp"): void;
-  (e: "openOptions"): void;
   (e: "update:value", value: ConfigValueType): void;
   // set the value of another entry on the same form
   (
@@ -402,7 +382,6 @@ const onClear = () => {
 };
 
 const displayOptions = computed(() => {
-  if (!props.confEntry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of props.confEntry.options) {
     // option titles are resolved server-side for the connection locale; use them directly
@@ -509,17 +488,5 @@ const displayOptions = computed(() => {
   .config-slider-block {
     flex: 1;
   }
-}
-
-.dsp-config {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 0;
-}
-
-.dsp-status {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
 }
 </style>

@@ -31,12 +31,11 @@
           <h3 v-if="step.title" class="mb-2 text-base font-semibold">
             {{ step.title }}
           </h3>
-          <p
+          <MarkdownText
             v-if="step.description"
-            class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
-          >
-            {{ step.description }}
-          </p>
+            :text="step.description"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+          />
 
           <!-- base (non-field) error -->
           <Alert
@@ -91,14 +90,13 @@
           <h3 class="mb-2 text-base font-semibold">
             {{ step.title ?? $t("settings.setup_flow.external_default_title") }}
           </h3>
-          <p
-            class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
-          >
-            {{
+          <MarkdownText
+            :text="
               step.description ??
-              $t("settings.setup_flow.external_default_text")
-            }}
-          </p>
+              $t('settings.setup_flow.external_default_text')
+            "
+            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+          />
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
@@ -158,12 +156,11 @@
               :model-value="(step.progress || 0) * 100"
               class="w-full max-w-[320px]"
             />
-            <p
+            <MarkdownText
               v-if="step.progress_text"
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.progress_text }}
-            </p>
+              :text="step.progress_text"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
             <div
               v-if="countdownText"
               class="text-muted-foreground flex items-center justify-center gap-1.5 text-xs"
@@ -187,12 +184,11 @@
             <h3 class="text-base font-semibold">
               {{ step.title ?? $t("settings.setup_flow.success_title") }}
             </h3>
-            <p
+            <MarkdownText
               v-if="step.description"
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.description }}
-            </p>
+              :text="step.description"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
           </div>
         </template>
 
@@ -221,11 +217,10 @@
                   : $t("settings.setup_flow.aborted_title"))
               }}
             </h3>
-            <p
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.reason || $t("settings.setup_flow.aborted_text") }}
-            </p>
+            <MarkdownText
+              :text="step.reason || $t('settings.setup_flow.aborted_text')"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
           </div>
         </template>
       </div>
@@ -281,9 +276,10 @@
       <DialogHeader>
         <DialogTitle>{{ helpEntry?.label }}</DialogTitle>
       </DialogHeader>
-      <p class="text-muted-foreground text-sm whitespace-pre-wrap">
-        {{ helpEntry?.description }}
-      </p>
+      <MarkdownText
+        :text="helpEntry?.description"
+        class="text-muted-foreground text-sm"
+      />
       <DialogFooter>
         <Button
           v-if="helpEntry?.help_link"
@@ -299,6 +295,7 @@
 </template>
 
 <script setup lang="ts">
+import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -597,7 +594,7 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
   if (preserveValues) {
     for (const entry of formEntries.value) previous[entry.key] = entry.value;
   }
-  formEntries.value = (formStep.entries || []).map((entry) => {
+  formEntries.value = formStep.entries.map((entry) => {
     const copy: ConfigEntry = { ...entry };
     if (preserveValues && entry.key in previous) {
       copy.value = previous[entry.key];

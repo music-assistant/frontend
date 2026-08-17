@@ -24,7 +24,10 @@ import {
   getStoredMusicQuizPlayerName,
   getStoredMusicQuizPlayerId,
   getMusicQuizErrorMessage,
+  hasSeenMusicQuizLanding,
   isNoActiveGameError,
+  isUnknownPlayerError,
+  storeMusicQuizLandingSeen,
   storeMusicQuizPlayerId,
   storeMusicQuizPlayerName,
   type MusicQuizParticipantStorageContext,
@@ -37,7 +40,7 @@ import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
 import { store } from "@/plugins/store";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 export interface UseMusicQuizPlayerOptions {
   notifyError: (message: string) => void;
@@ -61,6 +64,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   const gameRemoved = ref(false);
   const busy = ref(false);
   const loading = ref(false);
+  const landingSeen = ref(false);
   const providerInstanceId = ref<string | null>(null);
   const playerHeartbeat = createMusicQuizPlayerHeartbeat({
     sendHeartbeat: heartbeatMusicQuiz,
@@ -77,7 +81,17 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   let gameGeneration = 0;
   let autoJoinAttemptedGeneration: number | null = null;
   const activeJoinRequests = new Map<number, number>();
-  let disposed = false;
+  let unmounted = false;
+
+  watch(
+    playerId,
+    (currentPlayerId) => {
+      landingSeen.value =
+        currentPlayerId != null &&
+        hasSeenMusicQuizLanding(participantStorageContext, currentPlayerId);
+    },
+    { immediate: true },
+  );
 
   const currentRound = computed<MusicQuizCurrentRound | null>(() => {
     const currentState = state.value;
@@ -105,13 +119,13 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     try {
       loading.value = true;
       const nextInfo = await getMusicQuizInfo();
-      if (disposed || loadingRequestId !== requestId) return;
+      if (unmounted || loadingRequestId !== requestId) return;
       info.value = nextInfo;
       if (nextInfo) joinedGame = false;
       gameRemoved.value = !nextInfo && joinedGame;
       if (nextInfo) await attemptAutoJoin();
     } catch (err) {
-      if (disposed || loadingRequestId !== requestId) return;
+      if (unmounted || loadingRequestId !== requestId) return;
       notifyError(
         getMusicQuizErrorMessage(
           err,
@@ -214,6 +228,13 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     gameRemoved.value = false;
   }
 
+  function markLandingSeen() {
+    const currentPlayerId = playerId.value;
+    if (!currentPlayerId) return;
+    storeMusicQuizLandingSeen(participantStorageContext, currentPlayerId);
+    landingSeen.value = true;
+  }
+
   onMounted(() => {
     void (async () => {
       // Wait until server state (e.g. the provider registry) is available;
@@ -221,7 +242,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       // connection finishes initializing, and probing quiz state too early
       // would briefly resolve to a wrong "no quiz" answer.
       await waitForApiInitialization();
-      if (disposed) return;
+      if (unmounted) return;
       await fetchState();
     })();
     unsubscribeProviderEvent = api.subscribe(
@@ -231,7 +252,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   });
 
   onBeforeUnmount(() => {
-    disposed = true;
+    unmounted = true;
     gameGeneration += 1;
     loadingRequestId += 1;
     requestedPlayerStateId = null;
@@ -247,6 +268,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     gameRemoved,
     busy,
     loading,
+    landingSeen,
     currentRound,
     yourName,
     players,
@@ -256,6 +278,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     submitAnswer,
     ready,
     leave,
+    markLandingSeen,
   };
 
   function fetchPlayerState(currentPlayerId: string) {
@@ -298,12 +321,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         ) {
           continue;
         }
-        if (
-          isNoActiveGameError(err) ||
-          getMusicQuizErrorMessage(err)
-            .toLowerCase()
-            .includes("player not found")
-        ) {
+        if (isNoActiveGameError(err) || isUnknownPlayerError(err)) {
           await resetToJoinInfo();
         } else {
           notifyError(
@@ -397,7 +415,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     currentPlayerId: string,
     active: boolean,
   ) {
-    if (disposed || playerId.value !== currentPlayerId) return;
+    if (unmounted || playerId.value !== currentPlayerId) return;
     if (!active) {
       await resetToJoinInfo();
     } else if (reconnectPlayerId === currentPlayerId) {
@@ -407,7 +425,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   function handleHeartbeatError(currentPlayerId: string, err: unknown) {
-    if (disposed || playerId.value !== currentPlayerId) return;
+    if (unmounted || playerId.value !== currentPlayerId) return;
     notifyError(
       getMusicQuizErrorMessage(
         err,
@@ -449,7 +467,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     busy.value = true;
     try {
       const result = await joinMusicQuiz(name);
-      if (disposed || requestGeneration !== gameGeneration) return false;
+      if (unmounted || requestGeneration !== gameGeneration) return false;
       storeMusicQuizPlayerId(result.player_id, participantStorageContext);
       joinedGame = true;
       applyPlayerState(result.state);
@@ -458,7 +476,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       return true;
     } catch (err) {
       if (
-        !disposed &&
+        !unmounted &&
         notifyJoinError &&
         requestGeneration === gameGeneration
       ) {
@@ -501,7 +519,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     const requestGeneration = gameGeneration;
     if (
       !name ||
-      disposed ||
+      unmounted ||
       busy.value ||
       playerId.value ||
       autoJoinAttemptedGeneration === requestGeneration

@@ -255,8 +255,6 @@
                 "remove_confirm": "Tem certeza de que deseja remover essa predefinição de DSP?"
             }
         },
-        "dsp_enabled": "O DSP está ativado",
-        "dsp_disabled": "O DSP está desativado",
         "dsp_note_multi_device_group": {
             "label": "Você pode configurar o DSP para cada reprodutor individualmente."
         },
@@ -343,7 +341,6 @@
         "artist": "Artista",
         "name": "Alfabeticamente",
         "name_desc": "Alfabeticamente (decrescente)",
-        "recent": "Adicionado recentemente",
         "year_desc": "Ano de lançamento (decrescente)",
         "duration_desc": "Duração (decrescente)",
         "original": "Original",
@@ -355,9 +352,7 @@
         "last_played": "Último reproduzido",
         "last_played_desc": "Último reproduzido (decrescente)",
         "play_count": "Contagem de reprodução",
-        "play_count_desc": "Contagem de reprodução (decrescente)",
-        "artist_name": "Artista",
-        "artist_name_desc": "Artista (decrescente)"
+        "play_count_desc": "Contagem de reprodução (decrescente)"
     },
     "state": {
         "idle": "ocioso",
@@ -384,7 +379,6 @@
         "open_provider_link": "Abrir esse item no site do provedor",
         "collapse_expand": "Recolher\/expandir essa listagem",
         "back": "Voltar",
-        "show_menu": "Mostrar\/ocultar menu",
         "search_filter_active": "A pesquisa está filtrando os resultados",
         "play_sample": "Reproduzir amostra",
         "album_type": "Tipo de álbum",

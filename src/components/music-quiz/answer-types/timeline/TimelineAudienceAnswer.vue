@@ -2,11 +2,19 @@
   <div
     data-testid="timeline-audience-answer"
     class="flex flex-col gap-4"
-    :class="{ 'lg:h-full lg:min-h-0 lg:overflow-hidden': present }"
+    :class="{
+      'lg:h-full lg:min-h-0 lg:overflow-hidden': present,
+      // dashboard answering: progress fills the left half, countdown sits right
+      'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] lg:grid-rows-[minmax(0,1fr)]':
+        present && dashboard && state.phase === 'answering',
+    }"
   >
     <div
       v-if="state.phase === 'answering'"
       class="flex flex-col items-center gap-2"
+      :class="{
+        'lg:order-2 lg:justify-center': present && dashboard,
+      }"
     >
       <MusicQuizCountdown
         :size="present ? 150 : 112"
@@ -25,11 +33,20 @@
       class="grid gap-4"
       :class="{
         'lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_22rem] lg:overflow-hidden':
-          present && state.phase === 'answering',
-        'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(7rem,2fr)_minmax(9rem,3fr)] lg:overflow-hidden':
-          present && state.phase === 'reveal' && revealedResults.length,
+          present && state.phase === 'answering' && !dashboard,
+        // the dashboard has no side leaderboard while answering; progress gets the full row
         'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden':
-          present && state.phase === 'reveal' && !revealedResults.length,
+          present &&
+          ((state.phase === 'answering' && dashboard) ||
+            (state.phase === 'reveal' &&
+              (dashboard || !revealedResults.length))),
+        'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(7rem,2fr)_minmax(9rem,3fr)] lg:overflow-hidden':
+          present &&
+          state.phase === 'reveal' &&
+          !dashboard &&
+          revealedResults.length > 0,
+        'lg:order-1 lg:h-full':
+          present && dashboard && state.phase === 'answering',
         'lg:grid-cols-2': !present,
       }"
     >
@@ -40,7 +57,7 @@
       />
 
       <Card
-        v-if="state.phase === 'reveal' && revealedResults.length"
+        v-if="state.phase === 'reveal' && revealedResults.length && !dashboard"
         data-testid="timeline-round-results"
         role="region"
         :aria-label="$t('providers.music_quiz.timeline_round_results')"
@@ -106,13 +123,13 @@
       </Card>
 
       <div
-        v-if="present"
+        v-if="present && (!dashboard || state.phase === 'reveal')"
         data-testid="timeline-leaderboard-region"
         class="lg:min-h-0 lg:overflow-hidden"
       >
         <slot name="leaderboard"></slot>
       </div>
-      <slot v-else name="leaderboard"></slot>
+      <slot v-else-if="!present" name="leaderboard"></slot>
     </div>
   </div>
 </template>
@@ -123,7 +140,7 @@ import TimelineProgress from "@/components/music-quiz/answer-types/timeline/Time
 import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
-  MusicQuizTimelineHostState,
+  MusicQuizTimelinePublicState,
   MusicQuizTimelineRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
@@ -134,14 +151,16 @@ import { computed, type VNode } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    state: MusicQuizTimelineHostState;
+    state: MusicQuizTimelinePublicState;
     currentRound: MusicQuizTimelineRound;
     present?: boolean;
     showTimeline?: boolean;
+    dashboard?: boolean;
   }>(),
   {
     present: false,
     showTimeline: true,
+    dashboard: false,
   },
 );
 defineSlots<{ leaderboard: () => VNode[] }>();

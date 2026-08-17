@@ -1,6 +1,6 @@
 <template>
   <section class="edit-provider">
-    <div v-if="config && api.providerManifests[config.domain]">
+    <div v-if="config && providerManifest">
       <!-- Disabled banner -->
       <v-alert
         v-if="!config.enabled"
@@ -15,7 +15,8 @@
             size="small"
             color="warning"
             variant="flat"
-            @click="config.enabled = true"
+            :loading="toggleLoading"
+            @click="toggleEnabled"
           >
             {{ $t("settings.enable_provider") }}
           </v-btn>
@@ -80,7 +81,7 @@
                 @click="onReload"
               >
                 <RefreshCw class="size-4" />
-                {{ $t("settings.reload") }}
+                {{ $t("settings.reload_provider") }}
               </Button>
             </template>
           </div>
@@ -88,61 +89,144 @@
       </div>
 
       <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
-        <div class="header-content">
-          <div class="header-icon">
-            <provider-icon :domain="config.domain" :size="48" />
-          </div>
-          <div class="header-info">
-            <div class="header-title-row">
-              <h2 class="header-title">
-                {{
-                  config.name ||
-                  api.providers[config.instance_id]?.name ||
-                  api.providerManifests[config.domain].name
-                }}
+      <Card class="mb-4 gap-0 py-0">
+        <CardHeader class="relative flex flex-col gap-4 p-6 pr-16 sm:flex-row">
+          <ProviderIcon :domain="config.domain" :size="48" class="shrink-0" />
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-xl leading-tight font-semibold">
+                {{ providerName }}
               </h2>
-              <v-btn
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                density="compact"
-                class="rename-btn"
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :title="$t('settings.provider_name')"
                 @click="showRenameDialog = true"
-              />
+              >
+                <Pencil class="size-4" />
+                <span class="sr-only">{{ $t("settings.provider_name") }}</span>
+              </Button>
+              <Badge
+                data-testid="provider-status"
+                variant="outline"
+                :class="providerStatusClass"
+              >
+                <span
+                  class="size-1.5 rounded-full bg-current"
+                  aria-hidden="true"
+                ></span>
+                {{ providerStatusLabel }}
+              </Badge>
             </div>
-            <p class="header-description">
-              {{ api.providerManifests[config.domain].description }}
-            </p>
+            <CardDescription class="mt-2 max-w-3xl leading-relaxed">
+              {{ providerManifest.description }}
+            </CardDescription>
             <div
-              v-if="api.providerManifests[config.domain].codeowners.length"
-              class="header-authors"
+              v-if="providerManifest.codeowners.length"
+              class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
               v-html="
-                markdownToHtml(
-                  getAuthorsMarkdown(
-                    api.providerManifests[config.domain].codeowners,
-                  ),
-                )
+                markdownToHtml(getAuthorsMarkdown(providerManifest.codeowners))
               "
             ></div>
             <div
-              v-if="api.providerManifests[config.domain].credits.length"
-              class="header-authors"
+              v-if="providerManifest.credits.length"
+              class="mt-1 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
               v-html="
-                markdownToHtml(
-                  getCreditsMarkdown(
-                    api.providerManifests[config.domain].credits,
-                  ),
-                )
+                markdownToHtml(getCreditsMarkdown(providerManifest.credits))
               "
             ></div>
           </div>
-        </div>
-      </v-card>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                data-testid="provider-menu"
+                variant="ghost"
+                size="icon-sm"
+                class="absolute top-4 right-4"
+                :aria-label="$t('more_options')"
+              >
+                <MoreVertical class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                data-testid="provider-reset-defaults"
+                :disabled="!config.enabled"
+                @click="resetToDefaults"
+              >
+                <RotateCcw class="size-4" />
+                {{ $t("settings.reset_to_defaults") }}
+              </DropdownMenuItem>
+              <template v-if="canToggleEnabled">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  data-testid="provider-toggle-enabled"
+                  :disabled="toggleLoading"
+                  @click="toggleEnabled"
+                >
+                  <Power class="size-4" />
+                  {{
+                    config.enabled
+                      ? $t("settings.disable")
+                      : $t("settings.enable")
+                  }}
+                </DropdownMenuItem>
+              </template>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+        <CardContent
+          class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
+        >
+          <Button
+            v-if="canReconfigure"
+            data-testid="provider-reconfigure"
+            @click="onReconfigure"
+          >
+            <RefreshCw class="size-4" />
+            {{ $t("settings.reconfigure") }}
+          </Button>
+          <Button
+            v-if="documentationUrl"
+            as="a"
+            data-testid="provider-documentation"
+            variant="outline"
+            :href="documentationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <BookOpen class="size-4" />
+            {{ $t("settings.documentation") }}
+          </Button>
+          <Button
+            as="a"
+            data-testid="provider-known-issues"
+            variant="outline"
+            :href="knownIssuesUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <CircleAlert class="size-4" />
+            {{ $t("settings.known_issues") }}
+          </Button>
+          <AdvancedSettingsToggle
+            v-if="config.enabled && hasAdvancedEntries(allConfigEntries)"
+            v-model:show-advanced-settings="showAdvancedSettings"
+            test-id="provider-advanced-settings"
+          />
+        </CardContent>
+      </Card>
+
+      <!-- ambient sounds: manage user-added custom sounds -->
+      <AmbientSoundsCustomSounds
+        v-if="config.domain === 'ambient_sounds' && config.enabled"
+      />
     </div>
 
     <edit-config
       v-if="config"
+      ref="editConfig"
+      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="!config.enabled"
       :provider-domain="config.domain"
@@ -181,7 +265,7 @@
       </v-card>
     </v-dialog>
     <v-overlay
-      v-model="loading"
+      :model-value="loading || toggleLoading"
       scrim="true"
       persistent
       style="display: flex; align-items: center; justify-content: center"
@@ -201,11 +285,32 @@
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useConfigAction } from "@/composables/useConfigAction";
-import { mergeConfigEntries } from "@/helpers/config_entry_ui";
-import { canReconfigureProvider } from "@/helpers/provider_config";
-import { markdownToHtml } from "@/helpers/utils";
+import {
+  hasAdvancedEntries,
+  mergeConfigEntries,
+} from "@/helpers/config_entry_ui";
+import {
+  canReconfigureProvider,
+  getProviderStatusTranslationKey,
+  getProviderSupportIssuesUrl,
+} from "@/helpers/provider_config";
+import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -214,18 +319,33 @@ import {
   ProviderStatus,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { RefreshCw, Trash2, TriangleAlert } from "@lucide/vue";
+import {
+  BookOpen,
+  CircleAlert,
+  MoreVertical,
+  Pencil,
+  Power,
+  RefreshCw,
+  RotateCcw,
+  Trash2,
+  TriangleAlert,
+} from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
+import AmbientSoundsCustomSounds from "./AmbientSoundsCustomSounds.vue";
 import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();
 const { t } = useI18n();
 const config = ref<ProviderConfig>();
+const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
+const showAdvancedSettings = ref(false);
+const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
@@ -233,6 +353,7 @@ const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
+let toggleRequestId = 0;
 let unsubProvidersUpdated: (() => void) | undefined;
 
 // props
@@ -246,14 +367,47 @@ const allConfigEntries = computed(() => {
   return Object.values(config.value.values);
 });
 
-// auth_required/error providers can relaunch their setup (reconfigure) flow
+const providerManifest = computed(() => {
+  if (!config.value) return undefined;
+  return api.providerManifests[config.value.domain];
+});
+
+const providerName = computed(
+  () =>
+    config.value?.name ||
+    api.providers[config.value?.instance_id ?? ""]?.name ||
+    providerManifest.value?.name,
+);
+
 const canReconfigure = computed(() =>
   canReconfigureProvider(
     config.value?.status,
-    api.providerManifests[config.value?.domain ?? ""]?.has_setup_flow,
+    providerManifest.value?.has_setup_flow,
     config.value?.enabled,
   ),
 );
+
+const canToggleEnabled = computed(
+  () =>
+    !!config.value &&
+    (!config.value.enabled || providerManifest.value?.allow_disable === true),
+);
+
+const providerStatusLabel = computed(() =>
+  t(getProviderStatusTranslationKey(config.value?.status)),
+);
+
+const providerStatusClass = computed(() =>
+  getProviderStatusBadgeClass(config.value?.status),
+);
+
+const knownIssuesUrl = computed(() =>
+  getProviderSupportIssuesUrl(config.value?.domain ?? ""),
+);
+
+const documentationUrl = computed(() => {
+  return getExternalLinkUrl(providerManifest.value?.documentation);
+});
 
 // watchers
 watch(
@@ -288,6 +442,10 @@ const backToProviders = function () {
   });
 };
 
+const resetToDefaults = function () {
+  editConfig.value?.resetToDefaults();
+};
+
 const onReload = function () {
   if (!config.value) return;
   api
@@ -295,6 +453,41 @@ const onReload = function () {
     .then(() => toast.success(t("settings.provider_reloading")))
     .catch((err) => toast.error(String(err)));
   backToProviders();
+};
+
+const toggleEnabled = async function () {
+  if (
+    !config.value ||
+    (config.value.enabled && !providerManifest.value?.allow_disable)
+  ) {
+    return;
+  }
+
+  const instanceId = config.value.instance_id;
+  const requestId = ++toggleRequestId;
+  toggleLoading.value = true;
+  try {
+    const updatedConfig = await api.saveProviderConfig(
+      config.value.domain,
+      { enabled: !config.value.enabled },
+      instanceId,
+    );
+    if (!isCurrentProvider(instanceId)) return;
+
+    config.value.enabled = updatedConfig.enabled;
+    config.value.status = updatedConfig.status;
+    config.value.last_error = updatedConfig.last_error;
+    toast.success(t("settings.provider_saved"));
+  } catch (err) {
+    if (!isCurrentProvider(instanceId)) return;
+
+    toast.error(String(err));
+    await refreshProviderConfig(instanceId);
+  } finally {
+    if (requestId === toggleRequestId) {
+      toggleLoading.value = false;
+    }
+  }
 };
 
 const onReconfigure = function () {
@@ -350,6 +543,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .catch((err) => {
       saveErrorMessage.value = String(err);
       saveErrorOpen.value = true;
+      editConfig.value?.saveFailed();
     })
     .finally(() => {
       loading.value = false;
@@ -449,6 +643,7 @@ async function refreshProviderConfig(instanceId: string) {
       props.instanceId === instanceId &&
       config.value?.instance_id === instanceId
     ) {
+      config.value.enabled = updatedConfig.enabled;
       config.value.status = updatedConfig.status;
       config.value.last_error = updatedConfig.last_error;
       config.value.values = mergeConfigEntries(
@@ -462,6 +657,28 @@ async function refreshProviderConfig(instanceId: string) {
     }
   }
 }
+
+function getProviderStatusBadgeClass(status?: ProviderStatus | null) {
+  switch (status) {
+    case ProviderStatus.LOADED:
+      return "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
+    case ProviderStatus.LOADING:
+      return "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400";
+    case ProviderStatus.AUTH_REQUIRED:
+    case ProviderStatus.INCOMPATIBLE:
+      return "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-400";
+    case ProviderStatus.ERROR:
+      return "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400";
+    default:
+      return "border-muted-foreground/30 bg-muted text-muted-foreground";
+  }
+}
+
+function isCurrentProvider(instanceId: string) {
+  return (
+    props.instanceId === instanceId && config.value?.instance_id === instanceId
+  );
+}
 </script>
 
 <style scoped>
@@ -469,81 +686,10 @@ async function refreshProviderConfig(instanceId: string) {
   padding: 16px;
 }
 
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.rename-btn {
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.rename-btn:hover {
-  opacity: 1;
-}
-
 .disabled-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-}
-
-.header-authors {
-  font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-
-.header-authors :deep(a) {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-}
-
-.header-authors :deep(a:hover) {
-  text-decoration: underline;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 </style>

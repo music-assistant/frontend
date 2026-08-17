@@ -191,6 +191,7 @@
         :subtitle="$t('in_library')"
         :empty-message="$t('artist_no_library_audiobooks')"
         :allow-collapse="true"
+        :show-collapse-collections="true"
       />
       <!-- all audiobooks (full per-provider listing) -->
       <ItemsListing
@@ -470,7 +471,7 @@ const aggregatedProviderIdsForFeature = (feature: ProviderFeature) =>
   computed(() => {
     if (!itemDetails.value) return [];
     const ids = new Set<string>();
-    for (const mapping of itemDetails.value.provider_mappings || []) {
+    for (const mapping of itemDetails.value.provider_mappings) {
       if (!providerAllowed(mapping.provider_instance)) continue;
       if (
         api.providers[mapping.provider_instance]?.supported_features.includes(
@@ -573,6 +574,8 @@ const loadArtistAudiobooks = async function (params: LoadDataParams) {
     itemDetails.value.item_id,
     itemDetails.value.provider,
     itemDetails.value.artist_type,
+    undefined,
+    params.collapseCollections,
   );
 };
 

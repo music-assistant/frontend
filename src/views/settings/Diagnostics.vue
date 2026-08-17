@@ -78,6 +78,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { $t } from "@/plugins/i18n";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
 
@@ -90,6 +91,10 @@ const downloadingDiagnostics = ref(false);
 const logContainer = ref<HTMLDivElement | null>(null);
 const maxLines = 150;
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+// Set by the unmount hook, so the startup below can tell that the view it is
+// setting things up for is already gone.
+let unmounted = false;
 
 const displayContent = computed(() => {
   const lines = logContent.value.split("\n");
@@ -130,7 +135,8 @@ const fetchLogs = async (isRefresh = false) => {
       setTimeout(() => scrollToBottom(), 100);
     }
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : "Failed to load server logs";
+    error.value =
+      e instanceof Error ? e.message : $t("settings.server_logs_load_failed");
     console.error("Error loading logs:", e);
   } finally {
     loading.value = false;
@@ -200,7 +206,13 @@ watch(autoRefresh, (enabled) => {
 
 onMounted(async () => {
   await fetchLogs(false);
-  if (autoRefresh.value) {
+  // The first fetch can outlast the view, and the unmount hook only reaches
+  // what was already set up by the time it ran.
+  if (unmounted) return;
+
+  // The auto-refresh watcher arms this interval too, and only the handle held
+  // here is the one the unmount hook clears.
+  if (autoRefresh.value && !refreshInterval) {
     refreshInterval = setInterval(() => {
       fetchLogs(true);
     }, 5000);
@@ -208,6 +220,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  unmounted = true;
   if (refreshInterval) {
     clearInterval(refreshInterval);
   }

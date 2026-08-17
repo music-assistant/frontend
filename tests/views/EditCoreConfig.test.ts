@@ -1,17 +1,14 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  ConfigEntryType,
-  ProviderStage,
-  ProviderType,
-  type CoreConfig,
-} from "@/plugins/api/interfaces";
+import { ConfigEntryType, type CoreConfig } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
-    getCoreConfig: vi.fn(),
-    invokeCoreConfigAction: vi.fn(),
+    getCoreConfig: vi.fn<MusicAssistantApi["getCoreConfig"]>(),
+    invokeCoreConfigAction:
+      vi.fn<MusicAssistantApi["invokeCoreConfigAction"]>(),
     providerManifests: {
       cache: {
         codeowners: [],
@@ -21,7 +18,7 @@ const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
         name: "Cache",
       },
     },
-    saveCoreConfig: vi.fn(),
+    saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
   },
   routerMock: {
     push: vi.fn(),
@@ -107,10 +104,70 @@ describe("EditCoreConfig", () => {
     expect(entriesAfter[0].value).toBe("typed but not saved");
     expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
     expect(toastMock.success).toHaveBeenCalledWith("settings.action_completed");
-    expect(
-      wrapper.findComponent({ name: "v-overlay" }).props("modelValue"),
-    ).toBe(false);
+    expect(wrapper.find('[data-testid="loading-overlay"]').exists()).toBe(
+      false,
+    );
   });
+
+  it("resets the form to its defaults from the header menu", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
+    const resetToDefaults = vi.fn();
+
+    const wrapper = shallowMount(EditCoreConfig, {
+      props: {
+        domain: "cache",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          EditConfig: {
+            name: "EditConfig",
+            methods: { resetToDefaults },
+            template: "<div />",
+          },
+        },
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .findComponent({ name: "SettingsHeaderCard" })
+      .vm.$emit("resetToDefaults");
+
+    expect(resetToDefaults).toHaveBeenCalled();
+  });
+
+  it.each([
+    { advanced: true, offered: true },
+    { advanced: false, offered: false },
+  ])(
+    "offers the advanced toggle for a config with advanced entries: $advanced",
+    async ({ advanced, offered }) => {
+      const config = coreConfig();
+      config.values.clear_on_start.advanced = advanced;
+      apiMock.getCoreConfig.mockResolvedValueOnce(config);
+
+      const wrapper = shallowMount(EditCoreConfig, {
+        props: {
+          domain: "cache",
+        },
+        global: {
+          mocks: {
+            $t: (key: string) => key,
+          },
+        },
+      });
+      await flushPromises();
+
+      expect(
+        wrapper
+          .findComponent({ name: "SettingsHeaderCard" })
+          .props("showAdvancedToggle"),
+      ).toBe(offered);
+    },
+  );
 
   it("takes the value an action did provide", async () => {
     apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
@@ -120,6 +177,7 @@ describe("EditCoreConfig", () => {
         default_value: null,
         key: "new_field",
         label: "New field",
+        options: [],
         required: false,
         type: ConfigEntryType.STRING,
         value: "server value",
@@ -162,6 +220,7 @@ describe("EditCoreConfig", () => {
         default_value: false,
         key: "clear_on_start",
         label: "Clear cache on start",
+        options: [],
         required: false,
         type: ConfigEntryType.BOOLEAN,
       },
@@ -200,6 +259,7 @@ describe("EditCoreConfig", () => {
         default_value: false,
         key: "clear_on_start",
         label: "Clear cache on start",
+        options: [],
         required: false,
         type: ConfigEntryType.BOOLEAN,
         value: null,
@@ -236,27 +296,14 @@ describe("EditCoreConfig", () => {
 function coreConfig(): CoreConfig {
   return {
     domain: "cache",
-    manifest: {
-      allow_disable: false,
-      builtin: true,
-      codeowners: [],
-      credits: [],
-      description: "Cache controller",
-      domain: "cache",
-      icon_images: [],
-      has_setup_flow: false,
-      multi_instance: false,
-      name: "Cache",
-      requirements: [],
-      stage: ProviderStage.STABLE,
-      type: ProviderType.MUSIC,
-    },
+    last_error: null,
     values: {
       clear_on_start: {
         category: "generic",
         default_value: false,
         key: "clear_on_start",
         label: "Clear cache on start",
+        options: [],
         required: false,
         type: ConfigEntryType.BOOLEAN,
         value: "current value",

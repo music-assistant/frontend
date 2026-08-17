@@ -60,6 +60,9 @@ vi.mock("vue-sonner", () => ({
 }));
 
 const JOIN_LINK = "https://example.com/party?join=abc";
+
+const mountPartyQr = () =>
+  mount(PartyQR, { global: { mocks: { $t: (key: string) => key } } });
 const originalShare = Object.getOwnPropertyDescriptor(navigator, "share");
 const originalCanShare = Object.getOwnPropertyDescriptor(navigator, "canShare");
 
@@ -100,7 +103,7 @@ describe("PartyQR", () => {
   });
 
   it("shares a branded invitation when native file sharing is supported", async () => {
-    const wrapper = mount(PartyQR);
+    const wrapper = mountPartyQr();
     await flushPromises();
 
     expect(mocks.createInvitationFile).toHaveBeenCalledWith({
@@ -128,7 +131,7 @@ describe("PartyQR", () => {
   it("falls back to generic wording when the party has no config", async () => {
     mocks.partyConfig.value = null;
 
-    const wrapper = mount(PartyQR);
+    const wrapper = mountPartyQr();
     await flushPromises();
 
     expect(wrapper.text()).toContain("Scan to join");
@@ -142,7 +145,7 @@ describe("PartyQR", () => {
   });
 
   it("keeps copy link available alongside native sharing", async () => {
-    const wrapper = mount(PartyQR);
+    const wrapper = mountPartyQr();
     await flushPromises();
 
     await wrapper.get('[data-testid="invitation-share-menu"]').trigger("click");
@@ -161,7 +164,7 @@ describe("PartyQR", () => {
   });
 
   it("keeps the QR code itself as a copy shortcut", async () => {
-    const wrapper = mount(PartyQR);
+    const wrapper = mountPartyQr();
     await flushPromises();
 
     await wrapper.get(".qr-link").trigger("click");
@@ -173,7 +176,7 @@ describe("PartyQR", () => {
 
   it("shares the title, description, and link when files are unsupported", async () => {
     mocks.canShare.mockReturnValue(false);
-    const wrapper = mount(PartyQR);
+    const wrapper = mountPartyQr();
     await flushPromises();
 
     expect(mocks.createInvitationFile).not.toHaveBeenCalled();
@@ -193,7 +196,7 @@ describe("PartyQR", () => {
   it("uses copy as the primary action when native sharing is unavailable", async () => {
     setNavigatorProperty("share", undefined);
     setNavigatorProperty("canShare", undefined);
-    const wrapper = mount(PartyQR);
+    const wrapper = mountPartyQr();
     await flushPromises();
 
     const action = wrapper.get('[data-testid="invitation-share-primary"]');
@@ -216,7 +219,7 @@ describe("PartyQR", () => {
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
-    const wrapper = mount(PartyQR);
+    const wrapper = mountPartyQr();
     await flushPromises();
 
     await wrapper
@@ -235,7 +238,7 @@ describe("PartyQR", () => {
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
-    const wrapper = mount(PartyQR);
+    const wrapper = mountPartyQr();
     await flushPromises();
 
     await wrapper

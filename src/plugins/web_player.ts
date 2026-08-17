@@ -1,4 +1,9 @@
+import { loadSendspinClientIdentity } from "@sendspin/sendspin-js";
 import { reactive, ref, watch } from "vue";
+import {
+  readDeviceSetting,
+  subscribeToDeviceSetting,
+} from "@/helpers/device_settings";
 import { resetMediaSession } from "@/helpers/mediaSession";
 import authManager from "./auth";
 import api from "./api";
@@ -160,6 +165,10 @@ async function isAnotherTabActive(): Promise<boolean> {
   });
 }
 
+// Per-device settings that feed resolvePreferredMode().
+const WEB_PLAYER_ENABLED = "web_player_enabled";
+const BROWSER_CONTROLS_ENABLED = "enable_browser_controls";
+
 let highestPriority: string | undefined;
 let modeSyncInitialized = false;
 let modeSyncInitializationPromise: Promise<void> | null = null;
@@ -193,12 +202,9 @@ function resolvePreferredMode(): WebPlayerMode {
     return WebPlayerMode.SENDSPIN_ONLY;
   }
 
-  const webPlayerEnabledPref =
-    window.localStorage.getItem("frontend.settings.web_player_enabled") ||
-    "true";
+  const webPlayerEnabledPref = readDeviceSetting(WEB_PLAYER_ENABLED) || "true";
   const browserControlsEnabledPref =
-    window.localStorage.getItem("frontend.settings.enable_browser_controls") ||
-    "true";
+    readDeviceSetting(BROWSER_CONTROLS_ENABLED) || "true";
 
   if (
     webPlayerEnabledPref !== "false" &&
@@ -260,6 +266,15 @@ export async function initializeWebPlayerModeSync(): Promise<void> {
     watch(partyListenInEnabled, () => {
       void queueModeApplication();
     });
+
+    // The settings page writes these straight to localStorage. Follow them here
+    // so switching the web player off tears it down right away, in every tab of
+    // this browser, instead of at the next navigation.
+    for (const setting of [WEB_PLAYER_ENABLED, BROWSER_CONTROLS_ENABLED]) {
+      subscribeToDeviceSetting(setting, () => {
+        void queueModeApplication();
+      });
+    }
 
     modeSyncInitialized = true;
     modeSyncInitializationPromise = null;
@@ -350,16 +365,10 @@ export const webPlayer = reactive({
         mode === WebPlayerMode.SENDSPIN_WITH_CONTROLS
           ? WebPlayerMode.CONTROLS_ONLY
           : WebPlayerMode.DISABLED;
-      const saved_player_id = window.localStorage.getItem(
-        "sendspin_webplayer_id",
-      );
-
-      // Use saved player_id or generate a new one if none exists
-      let player_id = saved_player_id;
-      if (!player_id) {
-        player_id = `ma_${Math.random().toString(36).substring(2, 12)}`;
-        window.localStorage.setItem("sendspin_webplayer_id", player_id);
-      }
+      // The sendspin client id is its Noise public key, so the SDK owns it. Mirror
+      // it into localStorage for the tabs and the proxy handshake that read it.
+      const player_id = loadSendspinClientIdentity().clientId;
+      window.localStorage.setItem("sendspin_webplayer_id", player_id);
       this.player_id = player_id;
       this.lastUpdate = Date.now();
 
