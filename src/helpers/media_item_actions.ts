@@ -27,6 +27,9 @@ const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
   [MediaType.ARTIST]: "default_click_action_artist",
   [MediaType.ALBUM]: "default_click_action_album",
   [MediaType.PLAYLIST]: "default_click_action_playlist",
+  [MediaType.TRACK]: "default_click_action_track",
+  [MediaType.GENRE]: "default_click_action_genre",
+  [MediaType.RADIO]: "default_click_action_radio",
 };
 
 /**
@@ -118,6 +121,11 @@ export const handleMediaItemClick = async function (
     return handlePlayBtnClick(item, posX, posY, parentItem, true);
   }
 
+  // audio sources (e.g. Spotify Connect, AirPlay) have no browse view: always play them
+  if (item.media_type == MediaType.AUDIO_SOURCE) {
+    return handlePlayBtnClick(item, posX, posY, parentItem);
+  }
+
   // open menu for collection items
   if (item.media_type == MediaType.COLLECTION) {
     router.push({
@@ -130,10 +138,11 @@ export const handleMediaItemClick = async function (
     return;
   }
 
-  // artist/album/playlist: play the item straight away if configured to do so
+  // play the item straight away if its configured click-action is "play"
   const clickActionKey = CLICK_ACTION_CONFIG_KEYS[item.media_type];
   if (
     clickActionKey &&
+    item.is_playable &&
     (await readClickSetting(clickActionKey)) == CLICK_ACTION_PLAY
   ) {
     return handlePlayBtnClick(item, posX, posY, parentItem);
