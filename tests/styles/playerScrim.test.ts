@@ -2,6 +2,7 @@
 // observable under happy-dom
 // @vitest-environment happy-dom
 import navigationSource from "@/components/navigation/BottomNavigation.vue?raw";
+import footerSource from "@/layouts/default/Footer.vue?raw";
 import css from "@/styles/global.css?inline";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -82,5 +83,20 @@ describe("player scrim height", () => {
     ).toBe(
       `calc( -1 * (var(${OVERLAY_HEIGHT}, 0px) + var(--mobile-dock-rim)) )`,
     );
+  });
+
+  it("uses one masked blur layer behind the dock", () => {
+    const dockRule =
+      navigationSource.match(
+        /\.mobile-bottom-navigation::before\s*\{([^}]*)\}/,
+      )?.[1] ?? "";
+    const scrimRule =
+      footerSource.match(/\.player-scrim\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(scrimRule).toMatch(/(?:^|\s)backdrop-filter:\s*blur\(14px\)/);
+    expect(scrimRule).toContain("-webkit-backdrop-filter: blur(14px)");
+    expect(scrimRule).toMatch(/(?:^|\s)mask-image:\s*linear-gradient/);
+    expect(dockRule).not.toContain("backdrop-filter");
+    expect(footerSource).not.toMatch(/\.player-scrim::before\s*\{/);
   });
 });
