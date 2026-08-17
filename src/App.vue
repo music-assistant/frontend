@@ -80,6 +80,7 @@ import {
   subscribeToHAProperties,
   unsubscribeFromHAProperties,
 } from "./plugins/homeassistant";
+import { getPageTitle } from "@/helpers/pageTitle";
 import type { User } from "./plugins/api/interfaces";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
@@ -97,6 +98,17 @@ const route = useRoute();
 const { applyThemePreference: setTheme } = useThemePreference();
 const mediaSessionDisabled = computed(() =>
   isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
+);
+
+watch(
+  [
+    () => store.activePlayer?.current_media?.title,
+    () => store.activePlayer?.current_media?.artist,
+  ],
+  ([title, artist]) => {
+    document.title = getPageTitle(title ?? undefined, artist ?? undefined);
+  },
+  { immediate: true },
 );
 
 watch(
