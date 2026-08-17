@@ -69,7 +69,10 @@ export const handlePlayBtnClick = async function (
       );
       if (playAction != PLAY_ACTION_PLAY_TRACK) {
         api
-          .playMedia(parentItem.uri, undefined, item.item_id, undefined, sortBy)
+          .playMedia(parentItem.uri, undefined, {
+            start_item: item.item_id,
+            sort_by: sortBy,
+          })
           .catch(onPlayError);
         return;
       }

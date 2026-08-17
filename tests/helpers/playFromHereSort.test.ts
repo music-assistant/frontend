@@ -108,13 +108,10 @@ describe("handlePlayBtnClick with sortBy", () => {
 
     await handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist, false, "name");
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentPlaylist.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      "name",
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: "name",
+    });
   });
 
   it("passes undefined sortBy when not provided", async () => {
@@ -123,13 +120,10 @@ describe("handlePlayBtnClick with sortBy", () => {
 
     await handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentPlaylist.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      undefined,
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: undefined,
+    });
   });
 
   it("passes sortBy for album play-from-here", async () => {
@@ -138,13 +132,10 @@ describe("handlePlayBtnClick with sortBy", () => {
 
     await handlePlayBtnClick(playedTrack, 0, 0, parentAlbum, false, "name");
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentAlbum.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      "name",
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentAlbum.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: "name",
+    });
   });
 
   it("passes different sort keys correctly", async () => {
@@ -170,9 +161,10 @@ describe("handlePlayBtnClick with sortBy", () => {
       expect(mockPlayMedia).toHaveBeenCalledWith(
         parentPlaylist.uri,
         undefined,
-        playedTrack.item_id,
-        undefined,
-        sortKey,
+        {
+          start_item: playedTrack.item_id,
+          sort_by: sortKey,
+        },
       );
     }
   });

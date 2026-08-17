@@ -82,6 +82,15 @@ const TRANSLATIONS_SCHEMA_VERSION = 32;
 // The shuffle argument on player_queues/play_media landed in API schema 51.
 const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 
+export interface PlayMediaOptions {
+  start_item?: PlayableMediaItemType | string;
+  queue_id?: string;
+  sort_by?: string;
+  start_from_beginning?: boolean;
+  /** Set playback order for immediate-play options; omit to let the server decide. */
+  shuffle?: boolean;
+}
+
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
   CONNECTING = "connecting", // Establishing connection
@@ -2057,14 +2066,9 @@ export class MusicAssistantApi {
       | string
       | string[],
     option?: QueueOption,
-    start_item?: PlayableMediaItemType | string,
-    queue_id?: string,
-    sort_by?: string,
-    start_from_beginning?: boolean,
-    // play the media shuffled (or explicitly in order); only applies to the options
-    // that start playing right away. Omit to leave the choice to the server.
-    shuffle?: boolean,
+    options: PlayMediaOptions = {},
   ): Promise<void> {
+    let queue_id = options.queue_id;
     if (
       !queue_id &&
       store.activePlayer?.active_source &&
@@ -2078,10 +2082,10 @@ export class MusicAssistantApi {
       queue_id,
       media,
       option,
-      start_item,
-      sort_by,
-      start_from_beginning,
-      shuffle,
+      start_item: options.start_item,
+      sort_by: options.sort_by,
+      start_from_beginning: options.start_from_beginning,
+      shuffle: options.shuffle,
     });
   }
 

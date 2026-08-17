@@ -116,13 +116,10 @@ describe("handlePlayBtnClick honours default_play_action_*_track", () => {
 
     await handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist, false, "name");
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentPlaylist.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      "name",
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: "name",
+    });
   });
 
   it("plays the album from the track when the setting is any other/unexpected value", async () => {
@@ -130,13 +127,10 @@ describe("handlePlayBtnClick honours default_play_action_*_track", () => {
 
     await handlePlayBtnClick(playedTrack, 0, 0, parentAlbum);
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentAlbum.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      undefined,
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentAlbum.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: undefined,
+    });
   });
 
   it("falls back to play-from-here when the config read rejects", async () => {
@@ -144,13 +138,10 @@ describe("handlePlayBtnClick honours default_play_action_*_track", () => {
 
     await handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
 
-    expect(mockPlayMedia).toHaveBeenCalledWith(
-      parentPlaylist.uri,
-      undefined,
-      playedTrack.item_id,
-      undefined,
-      undefined,
-    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: undefined,
+    });
   });
 });
 
