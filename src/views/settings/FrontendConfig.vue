@@ -187,7 +187,7 @@ onMounted(() => {
       key: "audiobook_chapter_progress",
       type: ConfigEntryType.BOOLEAN,
       label: "audiobook_chapter_progress",
-      default_value: false,
+      default_value: true,
       required: false,
       options: [],
       multi_value: false,
