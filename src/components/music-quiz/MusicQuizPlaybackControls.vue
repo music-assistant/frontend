@@ -122,7 +122,7 @@
 
       <Field v-if="modelValue.mode === 'venue'">
         <FieldLabel for="music-quiz-venue-player">
-          {{ $t("providers.music_quiz.speaker") }}
+          {{ $t("providers.music_quiz.player") }}
         </FieldLabel>
         <NativeSelect
           id="music-quiz-venue-player"
@@ -132,7 +132,7 @@
           :aria-invalid="!disabled && venueAvailable && !venueSelectionValid"
         >
           <option value="" disabled>
-            {{ $t("providers.music_quiz.choose_speaker") }}
+            {{ $t("providers.music_quiz.choose_player") }}
           </option>
           <option
             v-for="player in options.venue_players"
@@ -208,7 +208,7 @@ const venuePlayerId = computed({
 });
 const venueUnavailableReason = computed(() =>
   props.options?.venue_players.length === 0
-    ? $t("providers.music_quiz.no_available_speakers")
+    ? $t("providers.music_quiz.no_available_players")
     : $t("providers.music_quiz.playback_venue_unavailable"),
 );
 
