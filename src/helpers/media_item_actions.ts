@@ -22,9 +22,6 @@ import { toast } from "vue-sonner";
 const CLICK_ACTION_PLAY = "play";
 const PLAY_ACTION_PLAY_TRACK = "play_track";
 
-// radio has meaningful browse/play behaviour; other live sources always play directly
-const CLICK_ACTION_CONFIG_KEY_RADIO = "default_click_action_radio";
-
 // media types for which clicking the item itself is configurable
 const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
   [MediaType.ARTIST]: "default_click_action_artist",
@@ -32,7 +29,7 @@ const CLICK_ACTION_CONFIG_KEYS: Partial<Record<MediaType, string>> = {
   [MediaType.PLAYLIST]: "default_click_action_playlist",
   [MediaType.TRACK]: "default_click_action_track",
   [MediaType.GENRE]: "default_click_action_genre",
-  [MediaType.RADIO]: CLICK_ACTION_CONFIG_KEY_RADIO,
+  [MediaType.RADIO]: "default_click_action_radio",
 };
 
 /**

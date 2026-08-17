@@ -209,7 +209,7 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
     { item: artist({ item_id: "ar1" }) },
     { item: playlist({ item_id: "pl2" }) },
     { item: track({ item_id: "t1" }) },
-    { item: genre({ item_id: "g1" }) },
+    { item: genre({ item_id: "g1", is_playable: true }) },
     { item: radio({ item_id: "r1" }) },
   ])(
     "opens the details view for $item.media_type when the setting is 'browse'",
