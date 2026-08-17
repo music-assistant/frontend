@@ -2261,7 +2261,10 @@
         "disconnect": "Disconnect {0}",
         "loading": "Loading devices...",
         "no_devices": "No cast devices found",
-        "started": "Casting to \"{0}\""
+        "started": "Casting to \"{0}\"",
+        "get_url": "Get Dashboard URL",
+        "uri_copied": "Dashboard URL copied to clipboard",
+        "uri_copy_failed": "Failed to copy Dashboard URL to clipboard"
     },
     "reconfigure_player": "Reconfigure player",
     "configure_player": "Configure player",
