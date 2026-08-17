@@ -157,7 +157,10 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
       key: "default_click_action_playlist",
     },
     { item: track({ item_id: "t1" }), key: "default_click_action_track" },
-    { item: genre({ item_id: "g1" }), key: "default_click_action_genre" },
+    {
+      item: genre({ item_id: "g1", is_playable: true }),
+      key: "default_click_action_genre",
+    },
     {
       item: radio({ item_id: "r1" }),
       key: "default_click_action_live_sources",
