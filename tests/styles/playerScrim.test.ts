@@ -86,17 +86,20 @@ describe("player scrim height", () => {
   });
 
   it("uses one masked blur layer behind the dock", () => {
-    const dockRule =
-      navigationSource.match(
-        /\.mobile-bottom-navigation::before\s*\{([^}]*)\}/,
-      )?.[1] ?? "";
+    const dockRules = [
+      ...navigationSource.matchAll(
+        /\.mobile-bottom-navigation::before\s*\{([^}]*)\}/g,
+      ),
+    ]
+      .map((match) => match[1])
+      .join("\n");
     const scrimRule =
       footerSource.match(/\.player-scrim\s*\{([^}]*)\}/)?.[1] ?? "";
 
     expect(scrimRule).toMatch(/(?:^|\s)backdrop-filter:\s*blur\(14px\)/);
     expect(scrimRule).toContain("-webkit-backdrop-filter: blur(14px)");
     expect(scrimRule).toMatch(/(?:^|\s)mask-image:\s*linear-gradient/);
-    expect(dockRule).not.toContain("backdrop-filter");
+    expect(dockRules).not.toContain("backdrop-filter");
     expect(footerSource).not.toMatch(/\.player-scrim::before\s*\{/);
   });
 });
