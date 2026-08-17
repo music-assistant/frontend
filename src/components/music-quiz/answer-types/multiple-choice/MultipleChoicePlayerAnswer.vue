@@ -1,15 +1,8 @@
 <template>
   <template v-if="state.phase === 'answering'">
-    <div class="flex flex-col items-center gap-2">
-      <MusicQuizCountdown
-        :size="132"
-        :fraction="remainingFraction"
-        :label="remainingLabel || '…'"
-      />
-      <p class="text-lg font-bold">
-        {{ $t("providers.music_quiz.choose_answer") }}
-      </p>
-    </div>
+    <p class="text-center text-lg font-bold">
+      {{ $t("providers.music_quiz.choose_answer") }}
+    </p>
     <MultipleChoiceGrid
       :suggestions="currentRound.suggestions"
       :disabled="busy || !!state.you.answer"
@@ -61,12 +54,10 @@ import type {
 } from "@/components/music-quiz/adapter_contracts";
 import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceGrid.vue";
 import MultipleChoiceProgress from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceProgress.vue";
-import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import type {
   MusicQuizMultipleChoicePersonalizedState,
   MusicQuizMultipleChoiceRound,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX } from "@lucide/vue";
@@ -88,11 +79,6 @@ const roundPlayerStatuses = computed(() =>
 const answeredCount = computed(
   () => roundPlayerStatuses.value.filter((player) => player.answered).length,
 );
-const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
-  active: () => props.state.phase === "answering",
-  deadline: () => props.currentRound.deadline,
-  duration: () => props.state.answer_duration,
-});
 
 function submit(suggestionId: string) {
   emit("submit", {
