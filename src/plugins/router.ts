@@ -440,6 +440,14 @@ export const routes: RouteRecordRaw[] = [
           ),
       },
       {
+        path: "/library-automations",
+        name: "library-automations",
+        component: () =>
+          import(
+            /* webpackChunkName: "library-automations" */ "@/views/LibraryAutomationsView.vue"
+          ),
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>

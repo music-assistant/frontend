@@ -17,6 +17,7 @@ import {
   Search,
   Settings,
   Sparkles,
+  Workflow,
 } from "@lucide/vue";
 import { Component } from "vue";
 
@@ -193,6 +194,15 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     isLibraryNode: false,
     group: "plugins",
     available: () => store.enabledPlugins.has("ai_radio"),
+  },
+  {
+    id: "library_automations",
+    label: "providers.library_automations.title",
+    icon: Workflow,
+    path: "/library-automations",
+    isLibraryNode: false,
+    group: "plugins",
+    available: () => store.enabledPlugins.has("library_automations"),
   },
   {
     id: "milkdrop_visualizer",
