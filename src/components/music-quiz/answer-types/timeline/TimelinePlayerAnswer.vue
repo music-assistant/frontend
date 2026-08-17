@@ -1,20 +1,13 @@
 <template>
   <template v-if="state.phase === 'answering'">
     <template v-if="canAnswerRound">
-      <div class="flex flex-col items-center gap-2">
-        <MusicQuizCountdown
-          :size="120"
-          :fraction="remainingFraction"
-          :label="remainingLabel || '…'"
-        />
-        <p class="text-center text-lg font-bold">
-          {{
-            placementLocked
-              ? $t("providers.music_quiz.timeline_placement_locked")
-              : $t("providers.music_quiz.timeline_choose_position")
-          }}
-        </p>
-      </div>
+      <p class="text-center text-lg font-bold">
+        {{
+          placementLocked
+            ? $t("providers.music_quiz.timeline_placement_locked")
+            : $t("providers.music_quiz.timeline_choose_position")
+        }}
+      </p>
 
       <TimelineDisplay
         :entries="currentRound.timeline"
@@ -31,7 +24,7 @@
             v-if="state.you.answer"
             ref="postPlacementRef"
             data-testid="timeline-post-placement"
-            class="scroll-mt-3"
+            class="scroll-mt-36"
             tabindex="-1"
             aria-live="polite"
           >
@@ -189,7 +182,6 @@ import type {
   MusicQuizPlayerAnswerAdapterEmits,
   MusicQuizPlayerAnswerAdapterProps,
 } from "@/components/music-quiz/adapter_contracts";
-import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -199,7 +191,6 @@ import type {
   MusicQuizTimelineRound,
   MusicQuizTimelineBonusType,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX, Send, SkipForward } from "@lucide/vue";
@@ -259,11 +250,6 @@ const canAnswerRound = computed(
 const roundPlayerStatuses = computed(() =>
   getMusicQuizRoundPlayers(props.state.players, props.currentRound.round_index),
 );
-const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
-  active: () => props.state.phase === "answering",
-  deadline: () => props.currentRound.deadline,
-  duration: () => props.state.answer_duration,
-});
 const { postPlacementRef } = useTimelinePostPlacementFocus(
   () => activeBonus.value?.bonus_type,
   () => props.busy,

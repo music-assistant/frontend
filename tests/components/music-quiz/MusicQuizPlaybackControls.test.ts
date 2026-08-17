@@ -20,11 +20,11 @@ const PLAYBACK_OPTIONS = {
 } satisfies MusicQuizPlaybackOptions;
 
 describe("MusicQuizPlaybackControls", () => {
-  it("provides responsive, labelled radio and speaker controls", () => {
+  it("provides responsive, labelled radio and player controls", () => {
     const wrapper = mountControls();
     const fieldSet = wrapper.get('[data-slot="field-set"]');
     const radioGroup = wrapper.get('[data-slot="radio-group"]');
-    const speaker = wrapper.get("#music-quiz-venue-player");
+    const player = wrapper.get("#music-quiz-venue-player");
 
     expect(fieldSet.classes()).toEqual(
       expect.arrayContaining(["m-0", "min-w-0", "border-0", "p-0"]),
@@ -39,14 +39,14 @@ describe("MusicQuizPlaybackControls", () => {
       wrapper.get('label[for="music-quiz-playback-remote"]').text(),
     ).toContain("providers.music_quiz.playback_remote");
     expect(wrapper.get('label[for="music-quiz-venue-player"]').text()).toBe(
-      "providers.music_quiz.speaker",
+      "providers.music_quiz.player",
     );
-    expect(speaker.classes()).toContain("w-full");
+    expect(player.classes()).toContain("w-full");
     expect(wrapper.findAll('[role="radio"]')).toHaveLength(2);
     wrapper.unmount();
   });
 
-  it("keeps one keyboard focus target and retains the Venue speaker", async () => {
+  it("keeps one keyboard focus target and retains the Venue player", async () => {
     const wrapper = mountControls();
     const radioGroup = wrapper.get<HTMLElement>('[role="radiogroup"]');
     const venue = wrapper.get<HTMLElement>("#music-quiz-playback-venue");

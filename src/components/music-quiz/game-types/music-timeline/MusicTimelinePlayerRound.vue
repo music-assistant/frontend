@@ -1,5 +1,7 @@
 <template>
+  <!-- The landing screen explains the game; players see this card only on reveal -->
   <MusicTimelineRound
+    v-if="state.phase === 'reveal'"
     :phase="state.phase"
     :round="currentRound"
     :is-final-round="isFinalRound"

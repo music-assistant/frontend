@@ -721,6 +721,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   textArea.style.height = "1px";
   textArea.style.opacity = "0";
   textArea.style.pointerEvents = "none";
+  textArea.style.setProperty("-webkit-user-select", "text");
+  textArea.style.userSelect = "text";
   host.appendChild(textArea);
   try {
     textArea.focus();

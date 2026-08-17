@@ -1,4 +1,5 @@
 import {
+  copyToClipboard,
   formatAliasName,
   formatDuration,
   formatRelativeTime,
@@ -38,6 +39,59 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+describe("copyToClipboard", () => {
+  it("keeps the fallback textarea selectable", async () => {
+    const secureContextDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "isSecureContext",
+    );
+    const execCommandDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      "execCommand",
+    );
+
+    Object.defineProperty(window, "isSecureContext", {
+      configurable: true,
+      value: false,
+    });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: vi.fn(() => true),
+    });
+    const appendChild = vi.spyOn(document.body, "appendChild");
+
+    try {
+      await expect(copyToClipboard("provider://artist/id")).resolves.toBe(true);
+
+      const appendedNode = appendChild.mock.calls[0][0];
+      expect(appendedNode).toBeInstanceOf(HTMLTextAreaElement);
+      if (!(appendedNode instanceof HTMLTextAreaElement)) {
+        throw new TypeError("Expected clipboard textarea");
+      }
+      expect(appendedNode.style.getPropertyValue("-webkit-user-select")).toBe(
+        "text",
+      );
+      expect(appendedNode.style.userSelect).toBe("text");
+      expect(appendedNode.isConnected).toBe(false);
+    } finally {
+      if (secureContextDescriptor) {
+        Object.defineProperty(
+          window,
+          "isSecureContext",
+          secureContextDescriptor,
+        );
+      } else {
+        Reflect.deleteProperty(window, "isSecureContext");
+      }
+      if (execCommandDescriptor) {
+        Object.defineProperty(document, "execCommand", execCommandDescriptor);
+      } else {
+        Reflect.deleteProperty(document, "execCommand");
+      }
+    }
+  });
 });
 
 describe("getExternalLinkUrl", () => {

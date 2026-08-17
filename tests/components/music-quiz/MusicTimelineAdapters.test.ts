@@ -235,6 +235,20 @@ describe("Music Timeline game adapters", () => {
     expect(countdown.text()).toContain("0s");
   });
 
+  it("renders nothing for players while answering", () => {
+    const wrapper = mount(MusicTimelinePlayerRound, {
+      props: {
+        state: { ...playerState, phase: "answering" },
+        currentRound: answeringRound,
+        busy: false,
+      },
+    });
+
+    expect(wrapper.find('[data-testid="music-timeline-round"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("keeps intermediate Ready after song details", async () => {
     const wrapper = mount(MusicTimelinePlayerRound, {
       props: {
