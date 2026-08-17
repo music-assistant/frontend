@@ -352,8 +352,6 @@
                 }
             }
         },
-        "dsp_enabled": "DSP включен",
-        "dsp_disabled": "DSP отключен",
         "dsp_note_multi_device_group": {
             "label": "Вы можете настроить DSP для каждого плеера индивидуально."
         },
@@ -787,7 +785,6 @@
         "open_provider_link": "Открыть этот элемент на сайте провайдера",
         "collapse_expand": "Свернуть\/развернуть этот список",
         "back": "Назад",
-        "show_menu": "Показать\/скрыть меню",
         "search_filter_active": "Поиск сейчас фильтрует результаты",
         "play_sample": "Воспроизвести образец",
         "album_type": "Тип альбома",
@@ -1580,16 +1577,12 @@
             "playback_help": "Выберите, где игроки будут слышать музыку.",
             "playback_mode": "Режим воспроизведения",
             "playback_venue": "На месте",
-            "playback_venue_help": "Играть на одной колонке",
             "playback_remote": "Удаленно",
             "playback_remote_help": "Игроки слушают на своих устройствах.",
             "playback_summary_venue": "На месте · {0}",
             "playback_summary_remote": "Удаленно · Игроки слушают на своих устройствах",
             "playback_venue_unavailable": "Режим «На месте» недоступен.",
             "playback_remote_unavailable": "Удаленный режим недоступен.",
-            "speaker": "Колонка",
-            "choose_speaker": "Выберите колонку",
-            "no_available_speakers": "Доступные колонки не найдены. Используйте режим дистанционного управления или проверьте настройки игрока.",
             "no_playback_modes": "Режимы воспроизведения отсутствуют. Проверьте настройки музыкальной викторины.",
             "loading_playback_options": "Загрузка параметров воспроизведения...",
             "error_load_playback_options": "Не удалось загрузить параметры воспроизведения.",
@@ -2142,11 +2135,9 @@
     "artist_no_library_audiobooks": "В вашей библиотеке нет аудиокниг этого автора\/рассказчика.",
     "artist_all_audiobooks": "Все аудиокниги",
     "lights": "Свет",
-    "speakers_in_group": "Колонки в группе",
     "player_select": {
         "active_player_volume_only": "Отображать ползунки громкости только для активных плееров.",
         "and_more": "...и еще {0}",
-        "disable_player": "Отключить плеер",
         "disable_player_confirmation": "Этот плеер будет скрыт до тех пор, пока его не включат снова в настройках плееров.",
         "disable_player_title": "Отключить {0}?",
         "display_options": "Параметры отображения",

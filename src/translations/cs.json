@@ -256,8 +256,6 @@
                 "remove_confirm": "Opravdu chcete tuto předvolbu DSP odebrat?"
             }
         },
-        "dsp_enabled": "DSP je zapnuto",
-        "dsp_disabled": "DSP je vypnuto",
         "dsp_note_multi_device_group": {
             "label": "DSP můžete nakonfigurovat pro každý přehrávač zvlášť."
         },
@@ -531,7 +529,6 @@
         "open_provider_link": "Otevřít tuto položku na webu poskytovatele",
         "collapse_expand": "Sbalit\/rozbalit tento výpis",
         "back": "Zpět",
-        "show_menu": "Zobrazit\/skrýt menu",
         "search_filter_active": "Vyhledávání právě filtruje výsledky",
         "play_sample": "Přehrát ukázku",
         "album_type": "Typ alba",

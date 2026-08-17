@@ -252,7 +252,6 @@
         "open_provider_link": "פתח פריט זה באתר האינטרנט של הספק",
         "collapse_expand": "כווץ\/הרחב רישום זה",
         "back": "חזור",
-        "show_menu": "הצג\/הסתר תפריט",
         "copy_uri": "העתקת URI ללוח",
         "select_all": "בחר את כל הפריטים",
         "in_provider_library": "פריט זה נמצא בספריית הספק",
@@ -286,8 +285,6 @@
     "dsp_active": "פעיל",
     "currently_playing_players": "מנגן כעת",
     "select_source": "בחר מקור",
-    "streamdetails": {
-    },
     "play_replace_next": "נגן כעת (נקה רשימה)",
     "music_assistant_source": "תור Music Assistant",
     "music_assistant_library": "ספריית Music Assistant",

@@ -14,8 +14,6 @@
       @toggle-password="emit('toggle-password')"
       @update:value="emit('update:value', $event)"
       @action="emit('action')"
-      @open-dsp="emit('open-dsp')"
-      @open-options="emit('open-options')"
       @set-entry-value="
         (key: string, value: ConfigValueType, label?: string) =>
           emit('set-entry-value', key, value, label)
@@ -67,8 +65,6 @@ const emit = defineEmits<{
   (e: "update:value", value: ConfigValueType): void;
   (e: "toggle-password"): void;
   (e: "action"): void;
-  (e: "open-dsp"): void;
-  (e: "open-options"): void;
   (e: "help"): void;
   (
     e: "set-entry-value",

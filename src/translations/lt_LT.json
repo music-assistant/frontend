@@ -257,8 +257,6 @@
                 "remove_confirm": "Ar tikrai norite pašalinti šį DSP išankstinį nustatymą?"
             }
         },
-        "dsp_enabled": "DSP įjungtas",
-        "dsp_disabled": "DSP yra išjungtas",
         "dsp_note_multi_device_group": {
             "label": "DSP galite konfigūruoti kiekvienam grotuvui atskirai."
         },
@@ -571,7 +569,6 @@
         "open_provider_link": "Atidarykite šį elementą teikėjo svetainėje",
         "collapse_expand": "Sutraukti \/ išskleisti šį sąrašą",
         "back": "Atgal",
-        "show_menu": "Rodyti \/ slėpti meniu",
         "search_filter_active": "Šiuo metu paieška filtruoja rezultatus",
         "play_sample": "Leisti pavyzdį",
         "album_type": "Albumo tipas",

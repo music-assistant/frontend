@@ -252,8 +252,6 @@
                 "remove_confirm": "Er du sikker på, at du vil fjerne denne DSP-forudindstilling?"
             }
         },
-        "dsp_enabled": "DSP er aktiveret",
-        "dsp_disabled": "DSP er deaktiveret",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurere DSP'en for hver enkelt afspiller."
         },
@@ -370,7 +368,6 @@
         "open_provider_link": "Åbn dette element på udbyderens hjemmeside",
         "collapse_expand": "Skjul\/udvid listen",
         "back": "Tilbage",
-        "show_menu": "Vis\/skjul menu",
         "search_filter_active": "Søgningen filtrerer i øjeblikket resultater",
         "play_sample": "Afspil prøve",
         "album_type": "Album type",

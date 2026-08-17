@@ -15,6 +15,7 @@
           id="rename-player-name"
           v-model="name"
           :disabled="saving"
+          :placeholder="defaultName ?? undefined"
           autocomplete="off"
           autofocus
         />
@@ -28,11 +29,7 @@
         >
           {{ $t("cancel") }}
         </Button>
-        <Button
-          type="submit"
-          form="rename-player-form"
-          :disabled="saving || !name.trim()"
-        >
+        <Button type="submit" form="rename-player-form" :disabled="saving">
           {{ $t("settings.save") }}
         </Button>
       </DialogFooter>
@@ -52,47 +49,51 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/plugins/api";
-import type { Player } from "@/plugins/api/interfaces";
+import { eventbus, type PlayerRenameDialogEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { onBeforeUnmount, ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
-const props = defineProps<{
-  open: boolean;
-  player?: Player;
-}>();
-const emit = defineEmits<{
-  "update:open": [value: boolean];
-}>();
 const { t } = useI18n();
-const name = ref("");
+const open = ref(false);
 const saving = ref(false);
+const name = ref("");
+const playerId = ref("");
+const defaultName = ref<string | null>();
 
-watch(
-  () => props.open,
-  (open) => {
-    store.dialogActive = open;
-    if (open) name.value = props.player?.name ?? "";
-  },
-  { immediate: true },
-);
+watch(open, (value) => {
+  store.dialogActive = value;
+});
+
+const onRenameRequested = (evt: PlayerRenameDialogEvent) => {
+  playerId.value = evt.playerId;
+  name.value = evt.name ?? "";
+  defaultName.value = evt.defaultName;
+  saving.value = false;
+  open.value = true;
+};
+
+onMounted(() => {
+  eventbus.on("playerRenameDialog", onRenameRequested);
+});
 
 onBeforeUnmount(() => {
-  if (props.open) store.dialogActive = false;
+  // named so this drops only its own listener, not every listener for the event
+  eventbus.off("playerRenameDialog", onRenameRequested);
+  if (open.value) store.dialogActive = false;
 });
 
 async function save() {
-  const player = props.player;
-  const nextName = name.value.trim();
-  if (!player || !nextName || saving.value) return;
+  if (saving.value) return;
+  // clearing the name hands the player back to the name its provider reports
+  const nextName = name.value.trim() || null;
 
   saving.value = true;
   try {
-    await api.savePlayerConfig(player.player_id, { name: nextName });
-    if (api.players[player.player_id]) {
-      api.players[player.player_id].name = nextName;
-    }
+    await api.savePlayerConfig(playerId.value, { name: nextName });
+    const player = api.players[playerId.value];
+    if (player) player.name = nextName ?? defaultName.value ?? player.name;
     toast.success(t("settings.player_saved"));
     close();
   } catch (error) {
@@ -102,11 +103,11 @@ async function save() {
   }
 }
 
-function setOpen(open: boolean) {
-  if (!open && !saving.value) close();
+function setOpen(value: boolean) {
+  if (!value && !saving.value) close();
 }
 
 function close() {
-  emit("update:open", false);
+  open.value = false;
 }
 </script>

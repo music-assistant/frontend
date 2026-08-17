@@ -1,36 +1,74 @@
 <template>
   <div class="music-quiz-player mx-auto flex w-full max-w-3xl flex-col gap-3">
-    <Card v-if="gameRemoved" role="status">
-      <CardHeader class="justify-items-center text-center">
+    <Card v-if="gameRemoved">
+      <CardHeader class="justify-items-center text-center" role="status">
         <CircleStop class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ $t("providers.music_quiz.game_ended") }}</CardTitle>
         <CardDescription>
           {{ $t("providers.music_quiz.game_ended_detail") }}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent class="flex flex-col items-center gap-4">
         <p class="text-muted-foreground text-center text-sm">
           {{ $t("providers.music_quiz.game_ended_wait") }}
         </p>
+        <Button
+          v-if="canReturnToHostPanel"
+          size="lg"
+          data-testid="return-to-host-panel"
+          @click="returnToHostPanel"
+        >
+          <ArrowLeft class="size-4" aria-hidden="true" />
+          {{ $t("providers.music_quiz.return_to_host_panel") }}
+        </Button>
       </CardContent>
     </Card>
 
     <MusicQuizUnsupportedGame v-else-if="unsupportedGame" />
 
-    <template
-      v-else-if="activeInfo && !playerId && !loading && resolvedDefinition"
-    >
+    <template v-else-if="showLanding && resolvedDefinition">
       <MusicQuizSessionHeader
         :game="resolvedDefinition.game"
-        :name="activeInfo.name"
-        :phase-label="infoPhaseText"
-        :round-label="
-          $t('providers.music_quiz.rounds_count', [activeInfo.round_count])
-        "
-        :mode="activeInfo.mode"
+        :name="landingQuiz?.name"
+        :phase-label="landingPhaseLabel"
+        :round-label="landingRoundLabel"
+        :mode="mode"
         :listen-in-enabled="listenInEnabled"
       />
+
       <Card>
+        <CardContent class="flex flex-col items-center gap-2 text-center">
+          <span
+            class="bg-primary/10 text-primary grid size-16 place-items-center rounded-full"
+          >
+            <component
+              :is="resolvedDefinition.game.icon"
+              class="size-8"
+              aria-hidden="true"
+            />
+          </span>
+          <div>
+            <h2 class="text-xl font-bold">
+              {{ $t(resolvedDefinition.game.labelKey) }}
+            </h2>
+            <p class="text-muted-foreground">
+              {{ $t(resolvedDefinition.game.howToPlayDescriptionKey) }}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <ListenIn
+        v-if="listenInEnabled"
+        ref="listenInRef"
+        domain="music_quiz"
+        :mode="mode"
+        :labels="listenInLabels"
+        :recheck-events="listenInRecheckEvents"
+        :get-error-message="getMusicQuizErrorMessage"
+      />
+
+      <Card v-if="!playerId && activeInfo">
         <CardContent>
           <MusicQuizAutoStartStatus
             :state="activeInfo"
@@ -38,12 +76,22 @@
           />
           <MusicQuizJoinForm
             :session-name="activeInfo?.name || $t('providers.music_quiz.title')"
-            :busy="busy"
+            :busy="busy || listenInBusy"
             :initial-name="rememberedName"
             @join="handleJoin"
           />
         </CardContent>
       </Card>
+      <Button
+        v-else
+        size="lg"
+        class="w-full"
+        data-testid="music-quiz-landing-continue"
+        :disabled="listenInBusy"
+        @click="handleContinue"
+      >
+        {{ $t("providers.music_quiz.landing_continue") }}
+      </Button>
     </template>
 
     <template v-else-if="activeState && resolvedDefinition">
@@ -63,19 +111,6 @@
         :rank="playerRank"
         :score="activeState.you.score"
         :score-delta="playerRoundScoreLabel"
-      />
-
-      <ListenIn
-        v-if="listenInEnabled"
-        domain="music_quiz"
-        :mode="mode"
-        :labels="listenInLabels"
-        :recheck-events="listenInRecheckEvents"
-        :get-error-message="getMusicQuizErrorMessage"
-        :auto-enable="
-          mode === 'remote' &&
-          listenInPrimedGeneration === webPlayer.player_generation
-        "
       />
 
       <MusicQuizPlayerStage
@@ -99,12 +134,22 @@
       </CardContent>
     </Card>
 
-    <Card v-else role="status">
-      <CardHeader class="justify-items-center text-center">
+    <Card v-else>
+      <CardHeader class="justify-items-center text-center" role="status">
         <Clock3 class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ $t("guest.no_quiz_title") }}</CardTitle>
         <CardDescription>{{ $t("guest.no_quiz_description") }}</CardDescription>
       </CardHeader>
+      <CardContent v-if="canReturnToHostPanel" class="flex justify-center">
+        <Button
+          size="lg"
+          data-testid="return-to-host-panel"
+          @click="returnToHostPanel"
+        >
+          <ArrowLeft class="size-4" aria-hidden="true" />
+          {{ $t("providers.music_quiz.return_to_host_panel") }}
+        </Button>
+      </CardContent>
     </Card>
   </div>
 </template>
@@ -124,6 +169,7 @@ import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -146,15 +192,19 @@ import {
 } from "@/helpers/music_quiz";
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { webPlayer } from "@/plugins/web_player";
-import { CircleStop, Clock3 } from "@lucide/vue";
+import { ArrowLeft, CircleStop, Clock3 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
+const router = useRouter();
 const player = useMusicQuizPlayer({
   notifyError: (message) => toast.error(message),
 });
+const canReturnToHostPanel = !authManager.isGuestAccessSession();
 
 const {
   info,
@@ -164,8 +214,11 @@ const {
   gameRemoved,
   busy,
   loading,
+  landingSeen,
   currentRound,
 } = player;
+
+const listenInRef = ref<InstanceType<typeof ListenIn> | null>(null);
 
 const resolvedDefinition = computed(() => {
   const activeGame = state.value ?? info.value;
@@ -203,8 +256,16 @@ const unsupportedGame = computed(() => {
   return !!activeGame && !resolvedDefinition.value;
 });
 
+const showLanding = computed(
+  () =>
+    !!resolvedDefinition.value &&
+    ((!!activeInfo.value && !playerId.value && !loading.value) ||
+      (!!playerId.value && !!activeState.value && !landingSeen.value)),
+);
+const landingQuiz = computed(() => activeState.value ?? activeInfo.value);
+const listenInBusy = computed(() => listenInRef.value?.busy ?? false);
+
 const { celebrate } = useMusicQuizCelebration();
-const listenInPrimedGeneration = ref<number | null>(null);
 
 const mode = computed(() => {
   if (activeState.value) return activeState.value.mode;
@@ -284,6 +345,17 @@ const infoPhaseText = computed(() => {
     : "";
 });
 
+const landingPhaseLabel = computed(() =>
+  activeState.value ? phaseText.value : infoPhaseText.value,
+);
+const landingRoundLabel = computed(() => {
+  if (activeState.value) return roundProgress.value;
+  const currentInfo = activeInfo.value;
+  return currentInfo
+    ? $t("providers.music_quiz.rounds_count", [currentInfo.round_count])
+    : "";
+});
+
 const isConnectionDegraded = computed(
   () =>
     api.state.value === ConnectionState.RECONNECTING ||
@@ -324,12 +396,18 @@ watch(
 );
 
 async function handleJoin(name: string) {
-  if (listenInEnabled.value) {
-    listenInPrimedGeneration.value = webPlayer.primeAudio()
-      ? webPlayer.player_generation
-      : null;
-  }
+  if (listenInEnabled.value) webPlayer.primeAudio();
   await player.join(name);
+  // A join failure leaves no player_id, and the landing stays up to retry.
+  if (!playerId.value) return;
+  await listenInRef.value?.requestAutoEnable();
+  player.markLandingSeen();
+}
+
+async function handleContinue() {
+  webPlayer.primeAudio();
+  await listenInRef.value?.requestAutoEnable();
+  player.markLandingSeen();
 }
 
 async function handleSubmitAnswer(submission: MusicQuizAnswerSubmission) {
@@ -338,6 +416,10 @@ async function handleSubmitAnswer(submission: MusicQuizAnswerSubmission) {
 
 async function handleReady() {
   await player.ready();
+}
+
+function returnToHostPanel() {
+  void router.push({ name: "music-quiz" });
 }
 </script>
 

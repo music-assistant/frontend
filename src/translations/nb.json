@@ -242,8 +242,6 @@
                 "remove_confirm": "Er du sikker på at du vil fjerne denne DSP-forhåndsinnstillingen?"
             }
         },
-        "dsp_enabled": "DSP er påslått",
-        "dsp_disabled": "DSP er avslått",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurere DSP for hver enkelt spiller."
         },
@@ -446,7 +444,6 @@
         "open_provider_link": "Åpne dette elementet på leverandørens nettsted",
         "collapse_expand": "Skjul\/vis denne oppføringen",
         "back": "Tilbake",
-        "show_menu": "Vis\/skjul meny",
         "search_filter_active": "Søket filtrerer for øyeblikket resultater",
         "play_sample": "Spill av eksempel",
         "album_type": "Albumtype",

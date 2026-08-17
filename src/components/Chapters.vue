@@ -69,6 +69,8 @@ const toolbarMenuItems = computed(() => {
 
 const chapterClicked = function (chapter: MediaItemChapter) {
   if (!props.itemDetails || !itemIsAvailable(props.itemDetails)) return;
-  api.playMedia(props.itemDetails.uri, undefined, chapter.position.toString());
+  api.playMedia(props.itemDetails.uri, undefined, {
+    start_item: chapter.position.toString(),
+  });
 };
 </script>

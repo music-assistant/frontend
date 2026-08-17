@@ -56,7 +56,9 @@
           />
         </div>
 
-        <div class="flex items-center justify-between gap-6">
+        <div
+          class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        >
           <div class="min-w-0">
             <div class="font-medium">{{ $t("visualizer.quality") }}</div>
             <div class="text-sm text-muted-foreground">
@@ -69,7 +71,7 @@
               (v: unknown) => setPref('visualizer_quality', String(v))
             "
           >
-            <SelectTrigger class="w-56 shrink-0">
+            <SelectTrigger class="w-full shrink-0 sm:w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -84,7 +86,9 @@
           </Select>
         </div>
 
-        <div class="flex items-center justify-between gap-6">
+        <div
+          class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        >
           <div class="min-w-0">
             <div class="font-medium">
               {{ $t("settings.visualizer_opacity.label") }}
@@ -93,7 +97,7 @@
               {{ $t("settings.visualizer_opacity.description") }}
             </div>
           </div>
-          <div class="flex w-64 shrink-0 items-center gap-3">
+          <div class="flex w-full shrink-0 items-center gap-3 sm:w-64">
             <Slider
               :model-value="[opacityDraft]"
               :min="10"
@@ -112,7 +116,9 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between gap-6">
+        <div
+          class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        >
           <div class="min-w-0">
             <div class="font-medium">
               {{ $t("settings.visualizer_blur.label") }}
@@ -121,7 +127,7 @@
               {{ $t("settings.visualizer_blur.description") }}
             </div>
           </div>
-          <div class="flex w-64 shrink-0 items-center gap-3">
+          <div class="flex w-full shrink-0 items-center gap-3 sm:w-64">
             <Slider
               :model-value="[blurDraft]"
               :min="0"
@@ -150,7 +156,9 @@
         </div>
       </CardHeader>
       <CardContent class="space-y-5">
-        <div class="flex items-center justify-between gap-6">
+        <div
+          class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        >
           <div class="min-w-0">
             <div class="font-medium">{{ $t("visualizer.preset_mode") }}</div>
             <div class="text-sm text-muted-foreground">
@@ -163,7 +171,7 @@
               (v: unknown) => setPref('visualizer_preset_mode', String(v))
             "
           >
-            <SelectTrigger class="w-56 shrink-0">
+            <SelectTrigger class="w-full shrink-0 sm:w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -180,7 +188,7 @@
 
         <div
           v-if="presetModePref === 'fixed'"
-          class="flex items-center justify-between gap-6"
+          class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
         >
           <div class="min-w-0 font-medium">
             {{ $t("visualizer.fixed_preset") }}
@@ -191,7 +199,7 @@
               (v: unknown) => setPref('visualizer_preset', String(v))
             "
           >
-            <SelectTrigger class="w-72 shrink-0">
+            <SelectTrigger class="w-full shrink-0 sm:w-72">
               <SelectValue :placeholder="$t('visualizer.preset_random')" />
             </SelectTrigger>
             <SelectContent>
@@ -219,7 +227,7 @@
 
         <div
           v-if="beatSwitchPref"
-          class="flex items-center justify-between gap-6"
+          class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
         >
           <div class="min-w-0">
             <div class="font-medium">{{ $t("visualizer.beat_dwell") }}</div>
@@ -227,7 +235,7 @@
               {{ $t("visualizer.beat_dwell_description") }}
             </div>
           </div>
-          <div class="flex w-64 shrink-0 items-center gap-3">
+          <div class="flex w-full shrink-0 items-center gap-3 sm:w-64">
             <Slider
               :model-value="[beatDwellDraft]"
               :min="5"

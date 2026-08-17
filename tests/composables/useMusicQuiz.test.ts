@@ -128,7 +128,7 @@ describe("useMusicQuiz commands", () => {
     });
   });
 
-  it("sends an explicit Venue speaker in the create payload", async () => {
+  it("sends an explicit Venue player in the create payload", async () => {
     await createMusicQuiz({
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",
@@ -157,7 +157,7 @@ describe("useMusicQuiz commands", () => {
     });
   });
 
-  it("sends Remote playback with a null Venue speaker", async () => {
+  it("sends Remote playback with a null Venue player", async () => {
     await createMusicQuiz({
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",

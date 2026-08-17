@@ -55,6 +55,7 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
+import { requestGroupPlaybackConfirmation } from "@/helpers/player_group_playback";
 import { groupMemberPickerVisible } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import {
@@ -210,6 +211,20 @@ function sortPlayers(players: Player[]) {
 }
 
 function updateGroupMember(playerId: string, selected: boolean) {
+  if (
+    !selected &&
+    playerId === props.player.player_id &&
+    requestGroupPlaybackConfirmation(props.player, "remove", () =>
+      applyGroupMemberUpdate(playerId, false),
+    )
+  ) {
+    flushPendingMemberUpdate();
+    return;
+  }
+  applyGroupMemberUpdate(playerId, selected);
+}
+
+function applyGroupMemberUpdate(playerId: string, selected: boolean) {
   const parentPlayerId = props.player.player_id;
 
   if (selected) {

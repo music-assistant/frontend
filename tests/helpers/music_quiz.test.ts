@@ -2,8 +2,10 @@ import {
   clearStoredMusicQuizPlayerId,
   getStoredMusicQuizPlayerId,
   getStoredMusicQuizPlayerName,
+  hasSeenMusicQuizLanding,
   isNoActiveGameError,
   isUnknownPlayerError,
+  storeMusicQuizLandingSeen,
   storeMusicQuizPlayerId,
   storeMusicQuizPlayerName,
 } from "@/helpers/music_quiz";
@@ -149,6 +151,50 @@ describe("Music Quiz guest name storage", () => {
     connectionIdentity: "local:http://music-assistant:8095",
     participantIdentity: "regular-user",
   } as const;
+});
+
+describe("Music Quiz landing seen storage", () => {
+  const PARTICIPANT_CONTEXT = {
+    connectionIdentity: "local:http://music-assistant:8095",
+    participantIdentity: "regular-user",
+  } as const;
+  const PLAYER_ID = "private-player-id";
+
+  beforeEach(() => vi.stubGlobal("sessionStorage", createStorage()));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("stores and reads back that the landing screen was seen", () => {
+    storeMusicQuizLandingSeen(PARTICIPANT_CONTEXT, PLAYER_ID);
+
+    expect(hasSeenMusicQuizLanding(PARTICIPANT_CONTEXT, PLAYER_ID)).toBe(true);
+  });
+
+  it("returns false and clears the flag on a storage context mismatch", () => {
+    storeMusicQuizLandingSeen(PARTICIPANT_CONTEXT, PLAYER_ID);
+    const otherServerContext = {
+      ...PARTICIPANT_CONTEXT,
+      connectionIdentity: "local:http://other-server:8095" as const,
+    };
+
+    expect(hasSeenMusicQuizLanding(otherServerContext, PLAYER_ID)).toBe(false);
+    expect(sessionStorage.getItem("music_quiz_landing_seen")).toBeNull();
+  });
+
+  it("returns false on a player_id mismatch", () => {
+    storeMusicQuizLandingSeen(PARTICIPANT_CONTEXT, PLAYER_ID);
+
+    expect(
+      hasSeenMusicQuizLanding(PARTICIPANT_CONTEXT, "other-player-id"),
+    ).toBe(false);
+  });
+
+  it("returns false on malformed stored JSON", () => {
+    sessionStorage.setItem("music_quiz_landing_seen", "{not-json");
+
+    expect(hasSeenMusicQuizLanding(PARTICIPANT_CONTEXT, PLAYER_ID)).toBe(false);
+    expect(sessionStorage.getItem("music_quiz_landing_seen")).toBeNull();
+  });
 });
 
 function createStorage(): Storage {

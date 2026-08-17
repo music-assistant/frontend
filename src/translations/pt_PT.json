@@ -257,8 +257,6 @@
                 "remove_confirm": "Tem a certeza de que pretende remover esta predefinição DSP?"
             }
         },
-        "dsp_enabled": "O DSP está ativado",
-        "dsp_disabled": "O DSP está desativado",
         "dsp_note_multi_device_group": {
             "label": "Pode configurar o DSP para cada leitor individualmente."
         },
@@ -591,7 +589,6 @@
         "open_provider_link": "Abrir este item no sítio Web do fornecedor",
         "collapse_expand": "Colapsar\/expandir esta listagem",
         "back": "Voltar",
-        "show_menu": "Mostrar\/ocultar menu",
         "search_filter_active": "A pesquisa está de momento a filtrar os resultados",
         "play_sample": "Reproduzir amostra",
         "album_type": "Tipo de álbum",

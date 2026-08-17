@@ -256,8 +256,6 @@
                 "remove_confirm": "Vai tiešām vēlies noņemt šo DSP profilu?"
             }
         },
-        "dsp_enabled": "DSP ir iespējots",
-        "dsp_disabled": "DSP ir atspējots",
         "dsp_note_multi_device_group": {
             "label": "Tu vari konfigurēt DSP katram atskaņotājam atsevišķi."
         },
@@ -531,7 +529,6 @@
         "open_provider_link": "Atvērt šo vienumu sniedzēja tīmekļa vietnē",
         "collapse_expand": "Sakļaut\/izvērst šo ierakstu",
         "back": "Atpakaļ",
-        "show_menu": "Rādīt\/slēpt izvēlni",
         "search_filter_active": "Meklēšana pašlaik filtrē rezultātus",
         "play_sample": "Atskaņot paraugu",
         "album_type": "Albuma veids",

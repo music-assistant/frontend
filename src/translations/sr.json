@@ -267,8 +267,6 @@
                 "concert_pitch_432": "А = 432 Hz"
             }
         },
-        "dsp_enabled": "„DSP“ је омогућен",
-        "dsp_disabled": "„DSP“ је онемогућен",
         "dsp_note_multi_device_group": {
             "label": "Можете конфигурисати „DSP“ за сваки плејер појединачно."
         },
@@ -655,7 +653,6 @@
         "open_provider_link": "Отворите ову ставку на веб локацији провајдера",
         "collapse_expand": "Скупи\/прошири ову листу",
         "back": "Назад",
-        "show_menu": "Прикажи\/сакриј мени",
         "search_filter_active": "Претрага тренутно филтрира резултате",
         "play_sample": "Пусти узорак",
         "album_type": "Тип албума",
@@ -1368,16 +1365,12 @@
             "playback_help": "Изаберите где играчи чују музику.",
             "playback_mode": "Режим репродукције",
             "playback_venue": "Локација",
-            "playback_venue_help": "Пуштајте музику на једном звучнику.",
             "playback_remote": "Удаљени",
             "playback_remote_help": "Играчи слушају на сопственом уређају.",
             "playback_summary_venue": "Локација ·{0}",
             "playback_summary_remote": "Удаљено – Играчи слушају сами за себе",
             "playback_venue_unavailable": "Режим локације је недоступан.",
             "playback_remote_unavailable": "Удаљени режим је недоступан.",
-            "speaker": "Звучник",
-            "choose_speaker": "Изаберите звучник",
-            "no_available_speakers": "Додајте препоручене песме мимо изабраних извора ради веће разноврсности.",
             "no_playback_modes": "Нема доступних режима репродукције. Проверите подешавања музичког квиза.",
             "loading_playback_options": "Учитавање опција репродукције...",
             "error_load_playback_options": "Није успело учитавање опција репродукције",
