@@ -775,7 +775,7 @@
         "visualizer": "Visualizer",
         "visualizer_enabled": {
             "label": "MilkDrop visualizer",
-            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu."
+            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu. The waveform is tapped from the Sendspin stream, so it is only offered for players with a Sendspin output."
         },
         "visualizer_blur": {
             "label": "Visualizer blur",
@@ -2290,7 +2290,10 @@
         "disconnect": "Disconnect {0}",
         "loading": "Loading devices...",
         "no_devices": "No cast devices found",
-        "started": "Casting to \"{0}\""
+        "started": "Casting to \"{0}\"",
+        "get_url": "Get Dashboard URL",
+        "uri_copied": "Dashboard URL copied to clipboard",
+        "uri_copy_failed": "Failed to copy Dashboard URL to clipboard"
     },
     "reconfigure_player": "Reconfigure player",
     "configure_player": "Configure player",
