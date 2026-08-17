@@ -775,7 +775,7 @@
         "visualizer": "Visualizer",
         "visualizer_enabled": {
             "label": "MilkDrop visualizer",
-            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu."
+            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu. The waveform is tapped from the Sendspin stream, so it is only offered for players with a Sendspin output."
         },
         "visualizer_blur": {
             "label": "Visualizer blur",
@@ -968,6 +968,7 @@
         "discovery": "Discovery"
     },
     "play_replace": "Play Now (clear queue)",
+    "play_shuffled": "Play shuffled",
     "played": "Played",
     "images": "Images",
     "image_type": "Type",
@@ -1683,16 +1684,16 @@
             "playback_help": "Choose where players hear the music.",
             "playback_mode": "Playback mode",
             "playback_venue": "Venue",
-            "playback_venue_help": "Play music on one speaker.",
+            "playback_venue_help": "Play music on one player.",
             "playback_remote": "Remote",
             "playback_remote_help": "Players listen on their own device.",
             "playback_summary_venue": "Venue · {0}",
             "playback_summary_remote": "Remote · Players listen on their own device",
             "playback_venue_unavailable": "Venue mode is unavailable.",
             "playback_remote_unavailable": "Remote mode is unavailable.",
-            "speaker": "Speaker",
-            "choose_speaker": "Choose a speaker",
-            "no_available_speakers": "No available speakers found. Use Remote mode or check player settings.",
+            "player": "Player",
+            "choose_player": "Choose a player",
+            "no_available_players": "No available players found. Use Remote mode or check player settings.",
             "no_playback_modes": "No playback modes are available. Check your Music Quiz settings.",
             "loading_playback_options": "Loading playback options...",
             "error_load_playback_options": "Couldn't load playback options",
@@ -1716,7 +1717,10 @@
             "host_controls": "Host controls",
             "return_to_host_panel": "Return to host panel",
             "dashboard_waiting": "Waiting for the quiz to start",
-            "name_that_track": "Name that track"
+            "name_that_track": "Name that track",
+            "how_to_play_guess_the_song_description": "Listen to the song that's playing and pick the correct title from the options before time runs out.",
+            "how_to_play_trivia_description": "Answer trivia questions about music. Pick the answer you think is right before time runs out.",
+            "landing_continue": "Continue"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -2273,7 +2277,7 @@
     "artist_no_library_audiobooks": "You don't have any audiobooks in your library for this author\/narrator.",
     "artist_all_audiobooks": "All audiobooks",
     "lights": "Lights",
-    "speakers_in_group": "Speakers in group",
+    "players_in_group": "Players in group",
     "visualizers": "Visualizers",
     "volume": "Volume",
     "grouped_volume": "Grouped volume",

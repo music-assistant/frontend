@@ -12,14 +12,9 @@ describe("playMedia start_from_beginning passthrough", () => {
       .spyOn(api, "sendCommand")
       .mockResolvedValue(undefined as never);
 
-    api.playMedia(
-      "library://podcast_episode/1",
-      QueueOption.PLAY,
-      undefined,
-      undefined,
-      undefined,
-      true,
-    );
+    api.playMedia("library://podcast_episode/1", QueueOption.PLAY, {
+      start_from_beginning: true,
+    });
 
     expect(spy).toHaveBeenCalledWith(
       "player_queues/play_media",

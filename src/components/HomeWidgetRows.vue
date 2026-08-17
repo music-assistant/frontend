@@ -840,6 +840,20 @@ const unsubscribeRecommendations = api.subscribe(
   },
 );
 
+const unsubscribeProviderEvents = api.subscribe(
+  EventType.PROVIDER_EVENT,
+  (evt: EventMessage) => {
+    if (
+      evt.data &&
+      typeof evt.data === "object" &&
+      "event" in evt.data &&
+      evt.data.event === "recommendations_updated"
+    ) {
+      scheduleRecommendationRefresh();
+    }
+  },
+);
+
 onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
@@ -862,6 +876,7 @@ onBeforeUnmount(() => {
   unmounted = true;
   window.removeEventListener("resize", updateHeroNav);
   unsubscribeRecommendations();
+  unsubscribeProviderEvents();
   cancelScheduledRecommendationRefresh();
   heroRo?.disconnect();
   heroRo = undefined;

@@ -254,7 +254,7 @@ describe("PlayerGroupMembers", () => {
 
     const wrapper = mountGroupMembers(parent, [parent, child], {
       filter: "lights",
-      groupHeading: "Speakers in group",
+      groupHeading: "Players in group",
     });
 
     expect(

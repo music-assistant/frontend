@@ -302,6 +302,7 @@ import {
   PlusCircle,
   RefreshCw,
   RotateCcw,
+  Shuffle,
   SkipForward,
   Sparkles,
   Trash2,
@@ -428,6 +429,24 @@ export const showPlayMenuForMediaItem = async function (
       labelArgs: [],
       disabled: !store.activePlayer,
       selected: option === defaultEnqueueOption,
+    });
+  }
+  // Starting the media shuffled is its own action rather than a state indicator:
+  // the queue's shuffle flag says nothing about what the media about to be started
+  // will do, but an explicit request is always honoured.
+  if (canPlayShuffled(playableItems)) {
+    playMenuItems.push({
+      label: "play_shuffled",
+      labelArgs: [],
+      action: () => {
+        api.playMedia(
+          playableItems.map((x) => x.uri),
+          QueueOption.REPLACE,
+          { shuffle: true },
+        );
+      },
+      icon: Shuffle,
+      disabled: !store.activePlayer,
     });
   }
 
@@ -854,14 +873,9 @@ export const getContextMenuItems = async function (
           label: "play_from_beginning",
           icon: RotateCcw,
           action: () => {
-            api.playMedia(
-              item.uri,
-              QueueOption.PLAY,
-              undefined,
-              undefined,
-              undefined,
-              true,
-            );
+            api.playMedia(item.uri, QueueOption.PLAY, {
+              start_from_beginning: true,
+            });
           },
           disabled: !store.activePlayer,
         });
@@ -1161,13 +1175,10 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_playlist_from",
         action: () => {
-          api.playMedia(
-            parentItem.uri,
-            undefined,
-            playableItems[0].item_id,
-            undefined,
-            sortBy,
-          );
+          api.playMedia(parentItem.uri, undefined, {
+            start_item: playableItems[0].item_id,
+            sort_by: sortBy,
+          });
         },
         icon: PlayCircle,
         labelArgs: [],
@@ -1179,13 +1190,10 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_album_from",
         action: () => {
-          api.playMedia(
-            parentItem.uri,
-            undefined,
-            firstItem.item_id,
-            undefined,
-            sortBy,
-          );
+          api.playMedia(parentItem.uri, undefined, {
+            start_item: firstItem.item_id,
+            sort_by: sortBy,
+          });
         },
         icon: PlayCircle,
         labelArgs: [],
@@ -1197,7 +1205,9 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_from_here",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, firstItem.item_id);
+          api.playMedia(parentItem.uri, undefined, {
+            start_item: firstItem.item_id,
+          });
         },
         icon: PlayCircle,
         labelArgs: [],
@@ -1335,5 +1345,31 @@ export const getPlaybackContextMenuItems = async function (
     }
   }
   return playMenuItems;
+};
+
+// media types whose contents have an order that is worth shuffling. Audiobooks and
+// podcasts are left out: their chapters/episodes are meant to be heard in order.
+const SHUFFLEABLE_MEDIA_TYPES = [
+  MediaType.ALBUM,
+  MediaType.ARTIST,
+  MediaType.COLLECTION,
+  MediaType.FOLDER,
+  MediaType.GENRE,
+  MediaType.PLAYLIST,
+];
+
+/**
+ * Whether starting the given items shuffled is worth offering.
+ *
+ * A single item needs to be a container to have an order to shuffle; a hand-picked
+ * selection of several items is the user's own list, so it always qualifies.
+ */
+const canPlayShuffled = function (
+  items: MediaItemTypeOrItemMapping[],
+): boolean {
+  if (!api.supportsPlayMediaShuffle) return false;
+  return (
+    items.length > 1 || SHUFFLEABLE_MEDIA_TYPES.includes(items[0].media_type)
+  );
 };
 </script>
