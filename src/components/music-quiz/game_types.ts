@@ -45,6 +45,8 @@ export interface MusicQuizGameDefinition<
   answerType: MusicQuizGameAnswerTypeMap[TGame];
   labelKey: string;
   descriptionKey: string;
+  // player-facing explanation of the game shown on the landing screen
+  howToPlayDescriptionKey: string;
   icon: Component;
   requiresBackendAvailability: boolean;
   supportsListenIn: MusicQuizStateCapability;
@@ -73,6 +75,8 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "multiple_choice",
     labelKey: "providers.music_quiz.game_type_guess_the_song",
     descriptionKey: "providers.music_quiz.game_type_guess_the_song_description",
+    howToPlayDescriptionKey:
+      "providers.music_quiz.how_to_play_guess_the_song_description",
     icon: markRaw(Disc3),
     requiresBackendAvailability: false,
     supportsListenIn: true,
@@ -91,6 +95,8 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "timeline",
     labelKey: "providers.music_quiz.game_type_music_timeline",
     descriptionKey: "providers.music_quiz.game_type_music_timeline_description",
+    howToPlayDescriptionKey:
+      "providers.music_quiz.music_timeline_listen_description",
     icon: markRaw(ListMusic),
     requiresBackendAvailability: false,
     supportsListenIn: true,
@@ -109,6 +115,8 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "multiple_choice",
     labelKey: "providers.music_quiz.game_type_trivia",
     descriptionKey: "providers.music_quiz.game_type_trivia_description",
+    howToPlayDescriptionKey:
+      "providers.music_quiz.how_to_play_trivia_description",
     icon: markRaw(Brain),
     requiresBackendAvailability: true,
     supportsListenIn: (state) =>

@@ -45,7 +45,8 @@ const props = withDefaults(
     blur?: number;
     // visualizer opacity 0-100; below 100 the background gradient blends through
     opacity?: number;
-    // MA player id whose group to visualize; empty = server picks the playing one
+    // MA player id whose group to visualize. Empty means the hosting view has
+    // not resolved its player yet: no relay connection is made until it does.
     playerId?: string;
     // Suspend while another view covers this one (e.g. the fullscreen player
     // opened on top of a dashboard), so only one engine renders at a time.
@@ -137,6 +138,15 @@ let sizeObserver: ResizeObserver | null = null;
 
 const connectRelay = () => {
   relay?.close();
+  relay = null;
+  // Without a player the server would pick one itself (whichever Sendspin
+  // player happens to be playing), so a canvas mounted before its view has
+  // resolved the player would briefly visualize a different one. The watcher
+  // below connects as soon as the id arrives.
+  if (!props.playerId) {
+    streaming.value = false;
+    return;
+  }
   relay = new VisualizerRelayClient(
     {
       onState: (state) => {
@@ -144,7 +154,7 @@ const connectRelay = () => {
       },
       onDownbeat,
     },
-    props.playerId || undefined,
+    props.playerId,
   );
   relay.connect();
 };
@@ -272,8 +282,9 @@ watch(covered, (isCovered) => {
   }
 });
 
-// Follow the viewed player: reconnect the relay when it changes (the engine
-// keeps rendering; it pulls from whichever relay instance is current).
+// Follow the viewed player: (re)connect the relay when it changes, including
+// the first time the hosting view resolves it. The engine keeps rendering; it
+// pulls from whichever relay instance is current.
 watch(
   () => props.playerId,
   () => {

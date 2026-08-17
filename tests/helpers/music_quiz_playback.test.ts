@@ -33,14 +33,14 @@ describe("reconcileMusicQuizPlaybackSelection", () => {
     );
   });
 
-  it("retains an available venue speaker", () => {
+  it("retains an available venue player", () => {
     expect(reconcile({ mode: "venue", venuePlayerId: "kitchen" })).toEqual({
       mode: "venue",
       venuePlayerId: "kitchen",
     });
   });
 
-  it("falls back from a stale venue speaker while remote is selected", () => {
+  it("falls back from a stale venue player while remote is selected", () => {
     expect(reconcile({ mode: "remote", venuePlayerId: "bedroom" })).toEqual({
       mode: "remote",
       venuePlayerId: "living-room",
@@ -59,7 +59,7 @@ describe("reconcileMusicQuizPlaybackSelection", () => {
     });
   });
 
-  it("falls back from Venue when no speakers remain", () => {
+  it("falls back from Venue when no players remain", () => {
     expect(
       reconcile(
         { mode: "venue", venuePlayerId: "kitchen" },

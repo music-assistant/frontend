@@ -395,11 +395,9 @@ const stopDragging = () => {
 
 const chapterClicked = function (chapter: MediaItemChapter) {
   if (!store.curQueueItem?.media_item) return;
-  api.playMedia(
-    store.curQueueItem.media_item.uri,
-    undefined,
-    chapter.position.toString(),
-  );
+  api.playMedia(store.curQueueItem.media_item.uri, undefined, {
+    start_item: chapter.position.toString(),
+  });
 };
 
 const setPendingSeek = (position: number) => {
