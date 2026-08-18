@@ -33,7 +33,6 @@
         :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :icon-action="backButtonClick"
-        show-search
       >
         <template v-if="$slots['toolbar-append']" #append>
           <slot name="toolbar-append"></slot>

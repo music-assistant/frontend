@@ -32,13 +32,10 @@ vi.mock("@/components/ui/sidebar", () => {
     SidebarFooter: slotHost,
     SidebarHeader: slotHost,
     SidebarMenu: slotHost,
-    SidebarMenuButton: slotHost,
-    SidebarMenuItem: slotHost,
     SidebarTrigger: slotHost,
     useSidebar: () => ({
       toggleSidebar: vi.fn(),
       setOpen: vi.fn(),
-      setOpenMobile: vi.fn(),
       state: { value: "expanded" },
       isMobile: { value: false },
     }),

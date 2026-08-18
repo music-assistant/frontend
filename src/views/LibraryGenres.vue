@@ -4,7 +4,6 @@
     :icon="GenreIcon"
     :menu-items="menuItems"
     :enforce-overflow-menu="true"
-    show-search
   />
   <ItemsListing
     v-for="section in sections"

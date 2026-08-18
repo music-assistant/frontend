@@ -11,7 +11,6 @@
       :menu-items="menuItems"
       :enforce-overflow-menu="true"
       :menu-active="hasActiveFilters"
-      :show-search="showGlobalSearch"
       @title-clicked="toggleExpand"
     >
       <template #title>
@@ -351,9 +350,6 @@ export interface Props {
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
   showSearchButton?: boolean;
-  // centered command-palette trigger in the toolbar; only the page-level
-  // library listings enable this, embedded listings stay clean
-  showGlobalSearch?: boolean;
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
@@ -409,7 +405,6 @@ const props = withDefaults(defineProps<Props>(), {
   hideOnEmpty: false,
   emptyMessage: undefined,
   showSearchButton: undefined,
-  showGlobalSearch: false,
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,

@@ -1,7 +1,6 @@
 <template>
   <ItemsListing
     ref="itemsListing"
-    show-global-search
     itemtype="tracks"
     path="librarytracks"
     :show-provider="false"

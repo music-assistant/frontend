@@ -5,7 +5,6 @@
       :icon="Compass"
       color="background"
       :title="$t('discover')"
-      show-search
     >
       <template #append>
         <Button

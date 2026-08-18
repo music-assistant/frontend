@@ -1,6 +1,5 @@
 <template>
   <ItemsListing
-    show-global-search
     itemtype="podcasts"
     path="librarypodcasts"
     :show-duration="false"

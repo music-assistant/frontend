@@ -8,15 +8,13 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { eventbus } from "@/plugins/eventbus";
 import { haState } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
-import { Check, Search } from "@lucide/vue";
+import { Check } from "@lucide/vue";
 import { computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -86,14 +84,8 @@ const sections = computed(() => {
   return resolved;
 });
 
-const { toggleSidebar, setOpen, setOpenMobile, state, isMobile } = useSidebar();
+const { toggleSidebar, setOpen, state, isMobile } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
-
-// mobile drawer only: desktop opens the palette from the header search
-const onSearchClick = function () {
-  setOpenMobile(false);
-  router.push({ name: "search" });
-};
 
 // Editing needs the full (labeled) menu, so pop the sidebar open when edit
 // mode is entered from anywhere (profile menu, settings page shortcut), and
@@ -141,14 +133,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-        <!-- mobile: the header search overlay is desktop-only, so the drawer
-             keeps its own entry to the search page -->
-        <SidebarMenuItem v-if="isMobile">
-          <SidebarMenuButton :tooltip="t('search')" @click="onSearchClick">
-            <Search />
-            <span>{{ t("search") }}</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
