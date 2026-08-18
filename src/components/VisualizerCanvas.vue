@@ -34,7 +34,11 @@ import {
   isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { currentVisualizerPreset } from "@/composables/visualizer/state";
+import {
+  currentVisualizerPreset,
+  VISUALIZER_BLUR_DEFAULT,
+  VISUALIZER_OPACITY_DEFAULT,
+} from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
 import api from "@/plugins/api";
@@ -66,8 +70,8 @@ const props = withDefaults(
   }>(),
   {
     preset: "",
-    blur: 0,
-    opacity: 100,
+    blur: VISUALIZER_BLUR_DEFAULT,
+    opacity: VISUALIZER_OPACITY_DEFAULT,
     playerId: "",
     coveredWhenFullscreen: false,
   },
