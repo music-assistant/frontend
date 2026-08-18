@@ -306,7 +306,7 @@ describe("App initialization", () => {
       server_id: "server-id",
       status: "running",
     };
-    apiMock.authenticateWithToken.mockResolvedValue({ user: null });
+    apiMock.authenticateWithToken.mockResolvedValue({ user: user() });
     apiMock.setLocale.mockResolvedValue(undefined);
     apiMock.subscribe.mockReturnValue(() => {});
     apiMock.getCurrentUserInfo.mockResolvedValue(
