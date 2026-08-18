@@ -1,8 +1,11 @@
 <template>
   <div class="media-search">
     <Popover :open="panelOpen">
-      <PopoverAnchor ref="anchorRef">
-        <SearchInput
+      <PopoverAnchor
+        ref="anchorRef"
+        @pointerdown="dismissed = false"
+        @focusin="dismissed = false"
+      >
           :id="inputId"
           v-model="query"
           clearable
