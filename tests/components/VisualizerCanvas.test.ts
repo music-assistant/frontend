@@ -37,17 +37,20 @@ vi.mock("@/plugins/visualizer-relay", () => ({
 }));
 
 const setPaused = vi.hoisted(() => vi.fn());
-vi.mock("@/composables/visualizer/useVisualizerEngine", () => ({
-  isVisualizerSupported: () => true,
-  DECAY_MS: 1500,
-  ATTACK_MS: 1000,
-  createVisualizerEngine: vi.fn(async () => ({
-    loadPresetByName: vi.fn(async () => {}),
-    loadRandomPreset: vi.fn(async () => "preset"),
-    setPaused,
-    destroy: vi.fn(),
-  })),
-}));
+// The real module keeps the timing constants; only the engine itself is faked.
+vi.mock(
+  "@/composables/visualizer/useVisualizerEngine",
+  async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    isVisualizerSupported: () => true,
+    createVisualizerEngine: vi.fn(async () => ({
+      loadPresetByName: vi.fn(async () => {}),
+      loadRandomPreset: vi.fn(async () => "preset"),
+      setPaused,
+      destroy: vi.fn(),
+    })),
+  }),
+);
 
 vi.mock("@/composables/userPreferences", () => ({
   useUserPreferences: () => ({

@@ -107,9 +107,17 @@ const scrimStyle = computed(() => ({
   opacity: String(props.opacity / 100),
 }));
 
+// An unresolved player keeps rendering: with no id there is no relay
+// connection either, so there is nothing to wind down.
+const playbackPaused = computed(() => {
+  const player = props.playerId ? api.players?.[props.playerId] : undefined;
+  return !!player && player.playback_state !== PlaybackState.PLAYING;
+});
+
 // Fading the layer as a whole multiplies with the opacity preference rather
-// than fighting it, and takes the scrim with it.
-const faded = ref(false);
+// than fighting it, and takes the scrim with it. Seeded from the gate, so a
+// canvas mounted onto a paused player starts hidden instead of fading out.
+const faded = ref(playbackPaused.value);
 
 const layerStyle = computed(() => ({
   // Both ends written out: removing the property leaves nothing to transition
@@ -120,13 +128,6 @@ const layerStyle = computed(() => ({
     ? `opacity ${DECAY_MS}ms ease-out`
     : `opacity ${ATTACK_MS}ms ease-in`,
 }));
-
-// An unresolved player keeps rendering: with no id there is no relay
-// connection either, so there is nothing to wind down.
-const playbackPaused = computed(() => {
-  const player = props.playerId ? api.players?.[props.playerId] : undefined;
-  return !!player && player.playback_state !== PlaybackState.PLAYING;
-});
 
 let lastPresetSwitchAt = 0;
 
@@ -159,6 +160,8 @@ const applyPreset = async (blendSec?: number, forceRandom = false) => {
 // by the configured minimum dwell time.
 const onDownbeat = () => {
   if (!beatSwitchPref.value) return;
+  // Beat schedules are pushed a track ahead and are not cancelled on pause.
+  if (playbackPaused.value) return;
   if (performance.now() - lastPresetSwitchAt < beatDwellPref.value * 1000)
     return;
   // Rotation always draws from the random pool: with a fixed preset chosen,
