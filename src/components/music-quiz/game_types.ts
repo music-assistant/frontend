@@ -25,7 +25,7 @@ import type {
   MusicQuizSupportedPublicState,
   MusicQuizType,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { Brain, Disc3, ListMusic } from "@lucide/vue";
+import { CalendarClock, Disc3, WandSparkles } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
@@ -97,7 +97,7 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     descriptionKey: "providers.music_quiz.game_type_music_timeline_description",
     howToPlayDescriptionKey:
       "providers.music_quiz.music_timeline_listen_description",
-    icon: markRaw(ListMusic),
+    icon: markRaw(CalendarClock),
     requiresBackendAvailability: false,
     supportsListenIn: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_enjoy_track",
@@ -117,7 +117,7 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     descriptionKey: "providers.music_quiz.game_type_trivia_description",
     howToPlayDescriptionKey:
       "providers.music_quiz.how_to_play_trivia_description",
-    icon: markRaw(Brain),
+    icon: markRaw(WandSparkles),
     requiresBackendAvailability: true,
     supportsListenIn: (state) =>
       state.quiz_type === "trivia" && state.play_reveal_audio === true,

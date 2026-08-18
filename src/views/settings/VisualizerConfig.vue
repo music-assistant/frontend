@@ -104,10 +104,15 @@
               :max="100"
               :step="5"
               @update:model-value="
-                (v: number[] | undefined) => (opacityDraft = v?.[0] ?? 100)
+                (v: number[] | undefined) =>
+                  (opacityDraft = v?.[0] ?? VISUALIZER_OPACITY_DEFAULT)
               "
               @value-commit="
-                (v: number[]) => setPref('visualizer_opacity', v[0] ?? 100)
+                (v: number[]) =>
+                  setPref(
+                    'visualizer_opacity',
+                    v[0] ?? VISUALIZER_OPACITY_DEFAULT,
+                  )
               "
             />
             <span class="w-12 text-right text-sm tabular-nums"
@@ -134,10 +139,12 @@
               :max="30"
               :step="1"
               @update:model-value="
-                (v: number[] | undefined) => (blurDraft = v?.[0] ?? 0)
+                (v: number[] | undefined) =>
+                  (blurDraft = v?.[0] ?? VISUALIZER_BLUR_DEFAULT)
               "
               @value-commit="
-                (v: number[]) => setPref('visualizer_blur', v[0] ?? 0)
+                (v: number[]) =>
+                  setPref('visualizer_blur', v[0] ?? VISUALIZER_BLUR_DEFAULT)
               "
             />
             <span class="w-12 text-right text-sm tabular-nums"
@@ -151,7 +158,7 @@
     <Card>
       <CardHeader>
         <div class="flex items-center gap-2">
-          <Sparkles class="size-4 text-primary" />
+          <SwatchBook class="size-4 text-primary" />
           <CardTitle>{{ $t("visualizer.section_presets") }}</CardTitle>
         </div>
       </CardHeader>
@@ -317,8 +324,8 @@ import {
   Droplet,
   Heart,
   SlidersHorizontal,
-  Sparkles,
   Star,
+  SwatchBook,
   X,
 } from "@lucide/vue";
 import {
@@ -338,6 +345,10 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  VISUALIZER_BLUR_DEFAULT,
+  VISUALIZER_OPACITY_DEFAULT,
+} from "@/composables/visualizer/state";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import {
   DEFAULT_QUALITY,
@@ -355,8 +366,11 @@ const qualityPref = getPreference<string>(
   "visualizer_quality",
   DEFAULT_QUALITY,
 );
-const opacityPref = getPreference("visualizer_opacity", 100);
-const blurPref = getPreference("visualizer_blur", 0);
+const opacityPref = getPreference(
+  "visualizer_opacity",
+  VISUALIZER_OPACITY_DEFAULT,
+);
+const blurPref = getPreference("visualizer_blur", VISUALIZER_BLUR_DEFAULT);
 const presetModePref = getPreference<string>(
   "visualizer_preset_mode",
   "random",

@@ -1413,6 +1413,7 @@
             "playback_help": "选择玩家听到音乐的位置。",
             "playback_mode": "播放模式",
             "playback_venue": "场地",
+            "playback_venue_help": "在单个扬声器上播放音乐。",
             "playback_remote": "远程",
             "playback_remote_help": "玩家使用自己的设备收听。",
             "playback_summary_venue": "场地 · {0}",
@@ -1443,9 +1444,6 @@
             "return_to_host_panel": "返回主机面板"
         },
         "ai_radio": {
-            "customize": {
-                "prompt_placeholders_hint": "可用占位符： {placeholders}"
-            },
             "fields": {
                 "shuffle_playlist_tracks": "随机播放列表曲目"
             },

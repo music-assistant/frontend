@@ -5,8 +5,13 @@
  */
 import {
   playerSupportsVisualizer,
+  useVisualizer,
   visualizerEnabledForPlayer,
 } from "@/composables/visualizer/useVisualizer";
+import {
+  VISUALIZER_BLUR_DEFAULT,
+  VISUALIZER_OPACITY_DEFAULT,
+} from "@/composables/visualizer/state";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const apiMock = vi.hoisted(() => ({
@@ -23,7 +28,11 @@ vi.mock("@/plugins/store", () => storeMock);
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: vi.fn(),
-  useUserPreferences: () => ({ getPreference: () => ({ value: undefined }) }),
+  useUserPreferences: () => ({
+    getPreference: (_key: string, defaultValue: unknown) => ({
+      value: defaultValue,
+    }),
+  }),
 }));
 
 vi.mock("@/plugins/visualizer-relay", () => ({
@@ -93,5 +102,28 @@ describe("visualizerEnabledForPlayer", () => {
     storeMock.store.currentUser.preferences["visualizer_enabled.capable"] =
       false;
     expect(visualizerEnabledForPlayer("capable")).toBe(false);
+  });
+});
+
+describe("blur and opacity defaults", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.players = { capable: player(["sendspin"]) };
+  });
+
+  // The same two numbers used to sit hardcoded in four places; these assertions
+  // are what stops them drifting apart again.
+  it("falls back to the shared constants when nothing is stored", () => {
+    const { visualizerBlurPref, visualizerOpacityPref } =
+      useVisualizer("capable");
+    expect(visualizerBlurPref.value).toBe(VISUALIZER_BLUR_DEFAULT);
+    expect(visualizerOpacityPref.value).toBe(VISUALIZER_OPACITY_DEFAULT);
+  });
+
+  it("starts unblurred at 40%, on a step the slider can land on", () => {
+    expect(VISUALIZER_BLUR_DEFAULT).toBe(0);
+    expect(VISUALIZER_OPACITY_DEFAULT).toBe(40);
+    // the opacity slider runs 10..100 in steps of 5
+    expect(VISUALIZER_OPACITY_DEFAULT % 5).toBe(0);
   });
 });
