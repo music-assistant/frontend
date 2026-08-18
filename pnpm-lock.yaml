@@ -39,8 +39,8 @@ importers:
         specifier: 1.33.0
         version: 1.33.0
       '@tanstack/vue-form':
-        specifier: ^1.33.0
-        version: 1.33.0(vue@3.5.41(typescript@6.0.3))
+        specifier: ^1.33.5
+        version: 1.33.5(vue@3.5.41(typescript@6.0.3))
       '@tanstack/vue-table':
         specifier: ^8.21.3
         version: 8.21.3(vue@3.5.41(typescript@6.0.3))
@@ -2016,12 +2016,18 @@ packages:
   '@tanstack/form-core@1.33.0':
     resolution: {integrity: sha512-AV4Pw9Dk4orFsuPBcDssfWMJFs+yMYBae7zZ4oTqrCf4ftNGQKxvrQRZeqKHG6A4TkiLeSvf2kzIjcVkrW7E6w==}
 
+  '@tanstack/form-core@1.33.5':
+    resolution: {integrity: sha512-3dfx9MBP0aq5sXKteikG629X9oviptrQj0IFRk9YGcb+lB7Kv5x8S17oOSk1wUWgjQZ4xVJEMbKwOAODymocgA==}
+
   '@tanstack/pacer-lite@0.1.1':
     resolution: {integrity: sha512-y/xtNPNt/YeyoVxE/JCx+T7yjEzpezmbb+toK8DDD1P4m7Kzs5YR956+7OKexG3f8aXgC3rLZl7b1V+yNUSy5w==}
     engines: {node: '>=18'}
 
   '@tanstack/store@0.11.0':
     resolution: {integrity: sha512-WlzzCt3xi0G6pCAJu1U+2jiECwabETDpQDi3hfkFZvJii9AuZqEKbOiVarX1/bWhTNjU486yQtJCCasi/0q+Cw==}
+
+  '@tanstack/store@0.11.1':
+    resolution: {integrity: sha512-mzTOBhypOuDJAy/D8n2MfUZ1HFkXnmSETviRyhqEC8LUE7/IZQExOTxMANj3KjTofYTkFNpBY67qaVrT41YccA==}
 
   '@tanstack/table-core@8.21.3':
     resolution: {integrity: sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg==}
@@ -2030,13 +2036,13 @@ packages:
   '@tanstack/virtual-core@3.17.2':
     resolution: {integrity: sha512-w43MvWvmShpb6kIC9MOoLyUkLmRTLPjt61bHWs+X29hACSpX+n8DvgZ3qM7cUfflKlRRcHR9KVJE6TmcqnQvcA==}
 
-  '@tanstack/vue-form@1.33.0':
-    resolution: {integrity: sha512-ZdVDo4W2ohL27bCjsuNy/eQ8PHm9mOzCFNfI7d6GfhS5KHqehZ8TiR/y1eRJR/c1y3nucgSi6RfY6iLHBMVhAQ==}
+  '@tanstack/vue-form@1.33.5':
+    resolution: {integrity: sha512-IvNlJ1LGFqt2pkwwCM+ltMWeBpF/qUeP9vlQwknMJphrIjJtZfmVr+VaN4BsOEbZQVK2vDkglqT+u64LTTjyoA==}
     peerDependencies:
       vue: ^3.4.0
 
-  '@tanstack/vue-store@0.11.0':
-    resolution: {integrity: sha512-w1lE4D7oo6nIUhTQvL/RoTgcvoYJw+KvttWPNJd/Xu+MvNxMnjxFF/LgFp9vwmbNbiGhGCg3ZoPJptwjrfwNYw==}
+  '@tanstack/vue-store@0.11.1':
+    resolution: {integrity: sha512-0YmYwbiCQKhzfFTLpHybjoAVUh3GkQVYGguvGTzk/0wx0oWuni60huvRs1RqqRLJH6nig3PTYuLuQQ+X5s05gA==}
     peerDependencies:
       '@vue/composition-api': ^1.2.1
       vue: ^2.5.0 || ^3.0.0
@@ -6526,25 +6532,33 @@ snapshots:
       '@tanstack/pacer-lite': 0.1.1
       '@tanstack/store': 0.11.0
 
+  '@tanstack/form-core@1.33.5':
+    dependencies:
+      '@tanstack/devtools-event-client': 0.4.4
+      '@tanstack/pacer-lite': 0.1.1
+      '@tanstack/store': 0.11.1
+
   '@tanstack/pacer-lite@0.1.1': {}
 
   '@tanstack/store@0.11.0': {}
+
+  '@tanstack/store@0.11.1': {}
 
   '@tanstack/table-core@8.21.3': {}
 
   '@tanstack/virtual-core@3.17.2': {}
 
-  '@tanstack/vue-form@1.33.0(vue@3.5.41(typescript@6.0.3))':
+  '@tanstack/vue-form@1.33.5(vue@3.5.41(typescript@6.0.3))':
     dependencies:
-      '@tanstack/form-core': 1.33.0
-      '@tanstack/vue-store': 0.11.0(vue@3.5.41(typescript@6.0.3))
+      '@tanstack/form-core': 1.33.5
+      '@tanstack/vue-store': 0.11.1(vue@3.5.41(typescript@6.0.3))
       vue: 3.5.41(typescript@6.0.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
 
-  '@tanstack/vue-store@0.11.0(vue@3.5.41(typescript@6.0.3))':
+  '@tanstack/vue-store@0.11.1(vue@3.5.41(typescript@6.0.3))':
     dependencies:
-      '@tanstack/store': 0.11.0
+      '@tanstack/store': 0.11.1
       vue: 3.5.41(typescript@6.0.3)
       vue-demi: 0.14.10(vue@3.5.41(typescript@6.0.3))
 
