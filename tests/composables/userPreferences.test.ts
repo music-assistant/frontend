@@ -162,4 +162,17 @@ describe("pruneStaleProviderFilters", () => {
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
   });
+
+  it("deletes a discover row filter key once every hidden id is pruned", async () => {
+    storeMock.currentUser = {
+      user_id: "u1",
+      preferences: {
+        "discover.hiddenProviders.recently_played": ["removed1"],
+      },
+    };
+
+    await pruneStaleProviderFilters();
+
+    expect(storeMock.currentUser.preferences).toEqual({});
+  });
 });

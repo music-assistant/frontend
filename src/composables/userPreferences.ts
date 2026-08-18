@@ -180,7 +180,11 @@ export async function pruneStaleProviderFilters(): Promise<void> {
       const pruned = (value as string[]).filter((id) => configuredIds.has(id));
       if (pruned.length === value.length) continue;
       changed = true;
-      updatedPrefs[key] = pruned;
+      if (pruned.length === 0) {
+        delete updatedPrefs[key];
+      } else {
+        updatedPrefs[key] = pruned;
+      }
     }
   }
 
