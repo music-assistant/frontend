@@ -53,6 +53,12 @@ describe("resolveProviderFilterParam", () => {
     expect(resolveProviderFilterParam(eligible, [])).toBeUndefined();
   });
 
+  it("omits the filter when only stale providers are hidden", () => {
+    expect(
+      resolveProviderFilterParam(eligible, ["removed-provider--abc"]),
+    ).toBeUndefined();
+  });
+
   it("returns the allowed (non-hidden) ids when some providers are hidden", () => {
     expect(
       resolveProviderFilterParam(eligible, ["audiobookshelf--ghi"]),

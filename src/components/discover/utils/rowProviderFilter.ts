@@ -48,15 +48,16 @@ export function eligibleFilterProviders(
 /**
  * The `providers` argument to send the server for a row, given the providers
  * eligible for filtering and the ones the user hid: `undefined` (omit the
- * filter) when nothing is hidden, otherwise the allowed (non-hidden) ids --
- * an empty array if every eligible provider is hidden.
+ * filter) when no eligible provider is hidden, otherwise the allowed
+ * (non-hidden) ids -- an empty array if every eligible provider is hidden.
  */
 export function resolveProviderFilterParam(
   eligibleProviderIds: string[],
   hiddenProviderIds: string[],
 ): string[] | undefined {
-  if (hiddenProviderIds.length === 0) return undefined;
-  const hidden = new Set(hiddenProviderIds);
+  const eligible = new Set(eligibleProviderIds);
+  const hidden = new Set(hiddenProviderIds.filter((id) => eligible.has(id)));
+  if (hidden.size === 0) return undefined;
   return eligibleProviderIds.filter((id) => !hidden.has(id));
 }
 

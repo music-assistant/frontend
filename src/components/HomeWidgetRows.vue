@@ -499,6 +499,12 @@ const providerFilterOptions = computed(() =>
     .sort((a, b) => a.label.localeCompare(b.label)),
 );
 
+const providerFilterParamForRow = (rowId: string): string[] | undefined =>
+  resolveProviderFilterParam(
+    providerFilterOptions.value.map((option) => option.value),
+    getRowHiddenProviders(rowId),
+  );
+
 // Persists the row's hidden-provider choice and re-fetches just that row so
 // its items reflect the new filter. Clears the row's cached items first: the
 // preference (read by rowHasActiveFilter) updates synchronously, but the
@@ -513,12 +519,12 @@ const onRowHiddenProvidersChange = (
   fetchRowItems([rowId]);
 };
 
-// Whether a row currently has provider(s) hidden -- used to keep the row (and
-// its filter control) visible even if that filter empties its results.
+// Whether a row currently has eligible provider(s) hidden -- used to keep the
+// row (and its filter control) visible even if that filter empties its results.
 const rowHasActiveFilter = (row: DiscoverRow): boolean =>
   row.folder !== undefined &&
   rowSupportsProviderFilter(row.folder) &&
-  getRowHiddenProviders(row.id).length > 0;
+  providerFilterParamForRow(row.id) !== undefined;
 
 // --- Top Picks (Model B): a balanced interleave of items across the rows the
 // user has enabled. Only shown, non-empty recommendation folders feed it, so
@@ -827,10 +833,7 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
       const generation = (rowFetchGeneration.get(id) ?? 0) + 1;
       rowFetchGeneration.set(id, generation);
       const providers = rowSupportsProviderFilter(folder)
-        ? resolveProviderFilterParam(
-            providerFilterOptions.value.map((option) => option.value),
-            getRowHiddenProviders(id),
-          )
+        ? providerFilterParamForRow(id)
         : undefined;
       const items = await api
         .getRecommendationItems(folder.provider, folder.item_id, providers)
