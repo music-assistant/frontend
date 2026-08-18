@@ -174,7 +174,7 @@ export async function pruneStaleProviderFilters(): Promise<void> {
       }
       updatedPrefs[key] = next;
     } else if (key.startsWith("discover.hiddenProviders.")) {
-      // matches rowHiddenProvidersKey's prefix in discover/utils/rowProviderFilter.ts
+      // matches rowHiddenProvidersKey's prefix in components/discover/utils/rowProviderFilter.ts
       const value = prefs[key];
       if (!Array.isArray(value)) continue;
       const pruned = (value as string[]).filter((id) => configuredIds.has(id));

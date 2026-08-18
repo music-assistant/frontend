@@ -485,8 +485,8 @@ watch(
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 
-// Provider instances a user may filter recommendation rows by -- configured
-// music providers, restricted to the user's own provider_filter when set.
+// Provider instances a user may filter recommendation rows by -- currently
+// loaded music providers, restricted to the user's own provider_filter when set.
 const providerFilterOptions = computed(() =>
   eligibleFilterProviders(
     Object.values(api.providers),
