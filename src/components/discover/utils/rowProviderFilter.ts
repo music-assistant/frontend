@@ -1,6 +1,11 @@
 // Per-row "hide these providers" filter, keyed by row id -- mirrors discoverRows.ts's per-row preference pattern.
 import { setUserPreference } from "@/composables/userPreferences";
-import { ProviderType, type ProviderInstance } from "@/plugins/api/interfaces";
+import {
+  ProviderType,
+  RecommendationFolderType,
+  type ProviderInstance,
+  type RecommendationFolder,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 
 const HIDDEN_PROVIDERS_PREFERENCE_PREFIX = "discover.hiddenProviders.";
@@ -53,4 +58,18 @@ export function resolveProviderFilterParam(
   if (hiddenProviderIds.length === 0) return undefined;
   const hidden = new Set(hiddenProviderIds);
   return eligibleProviderIds.filter((id) => !hidden.has(id));
+}
+
+/**
+ * Whether a row's provider filter should be offered: the server marks the
+ * folder as supporting it, and the row renders through the shelf rather than
+ * the timeline layout, which has no filter control.
+ */
+export function rowSupportsProviderFilter(
+  folder: RecommendationFolder,
+): boolean {
+  return (
+    folder.supports_provider_filter &&
+    folder.type !== RecommendationFolderType.TIMELINE
+  );
 }

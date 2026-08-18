@@ -212,7 +212,7 @@
             :tiles-per-view="tilesPerView"
           >
             <template
-              v-if="editMode || row.folder.supports_provider_filter"
+              v-if="editMode || rowSupportsProviderFilter(row.folder)"
               #actions
             >
               <template v-if="editMode">
@@ -235,7 +235,7 @@
                 </Button>
               </template>
               <FacetedFilter
-                v-if="row.folder.supports_provider_filter"
+                v-if="rowSupportsProviderFilter(row.folder)"
                 :model-value="getRowHiddenProviders(row.id)"
                 :title="$t('tooltip.hide_provider')"
                 :options="providerFilterOptions"
@@ -263,6 +263,14 @@
                 v-for="n in skeletonTileCount"
                 :key="`skeleton-${n}`"
               />
+            </template>
+            <template
+              v-else-if="
+                (rowItemsMap.get(row.id)?.length ?? 0) === 0 &&
+                rowHasActiveFilter(row)
+              "
+            >
+              <p class="ed-shelf__empty">{{ $t("no_content_filter") }}</p>
             </template>
             <template v-else>
               <EditorialMediaCard
@@ -358,6 +366,7 @@ import {
   eligibleFilterProviders,
   getRowHiddenProviders,
   resolveProviderFilterParam,
+  rowSupportsProviderFilter,
   setRowHiddenProviders,
 } from "@/components/discover/utils/rowProviderFilter";
 import FacetedFilter from "@/components/FacetedFilter.vue";
@@ -491,14 +500,25 @@ const providerFilterOptions = computed(() =>
 );
 
 // Persists the row's hidden-provider choice and re-fetches just that row so
-// its items reflect the new filter.
+// its items reflect the new filter. Clears the row's cached items first: the
+// preference (read by rowHasActiveFilter) updates synchronously, but the
+// refetch is async, so leaving the stale, now-mismatched items in place could
+// drop the row (and its filter control) from view for that gap.
 const onRowHiddenProvidersChange = (
   rowId: string,
   hiddenProviderIds: string[],
 ): void => {
   setRowHiddenProviders(rowId, hiddenProviderIds);
+  rowItemsMap.value.delete(rowId);
   fetchRowItems([rowId]);
 };
+
+// Whether a row currently has provider(s) hidden -- used to keep the row (and
+// its filter control) visible even if that filter empties its results.
+const rowHasActiveFilter = (row: DiscoverRow): boolean =>
+  row.folder !== undefined &&
+  rowSupportsProviderFilter(row.folder) &&
+  getRowHiddenProviders(row.id).length > 0;
 
 // --- Top Picks (Model B): a balanced interleave of items across the rows the
 // user has enabled. Only shown, non-empty recommendation folders feed it, so
@@ -725,6 +745,7 @@ const displayedRows = computed(() =>
           row,
           rowItemsMap.value.get(row.id),
           props.editMode,
+          rowHasActiveFilter(row),
         )
       : props.editMode || !row.hidden,
   ),
@@ -805,7 +826,7 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
       if (!folder) return;
       const generation = (rowFetchGeneration.get(id) ?? 0) + 1;
       rowFetchGeneration.set(id, generation);
-      const providers = folder.supports_provider_filter
+      const providers = rowSupportsProviderFilter(folder)
         ? resolveProviderFilterParam(
             providerFilterOptions.value.map((option) => option.value),
             getRowHiddenProviders(id),
@@ -1083,6 +1104,12 @@ onBeforeUnmount(() => {
 
 .ed-dimmed {
   opacity: 0.4;
+}
+.ed-shelf__empty {
+  min-width: 100%;
+  padding: 8px 4px;
+  font-size: 0.875rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .ed-hero-row__head {
   display: flex;
