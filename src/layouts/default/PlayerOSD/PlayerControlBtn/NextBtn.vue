@@ -4,7 +4,11 @@
     v-bind="{ ...icon, ...$attrs }"
     :disabled="!player || !canNext || isLoading"
     variant="button"
-    @click="api.playerCommandNext(player!.player_id)"
+    @click="
+      nextChapter
+        ? api.playerCommandSeek(player!.player_id, nextChapter.start)
+        : api.playerCommandNext(player!.player_id)
+    "
   >
     <SkipForward :size="size" />
   </Icon>
@@ -15,6 +19,7 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
+import { useChapterNavigation } from "@/composables/useChapterNavigation";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
 import { SkipForward } from "@lucide/vue";
@@ -35,6 +40,7 @@ const compProps = withDefaults(defineProps<Props>(), {
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
 const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
+const { nextChapter } = useChapterNavigation();
 
 const queueHasNext = computed(() => {
   if (!compProps.playerQueue?.active) return false;
@@ -53,6 +59,7 @@ const playerHasNext = computed(() => {
 });
 
 const canNext = computed(() => {
+  if (nextChapter.value) return true;
   // AudioSource queue items carry their own capability flags
   if (activeAudioSource.value) {
     return activeAudioSource.value.can_next_previous;

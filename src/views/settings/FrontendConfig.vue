@@ -184,6 +184,19 @@ onMounted(() => {
       value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
     },
     {
+      key: "audiobook_chapter_progress",
+      type: ConfigEntryType.BOOLEAN,
+      label: "audiobook_chapter_progress",
+      default_value: true,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "audiobooks",
+      value:
+        (store.currentUser?.preferences
+          ?.audiobook_chapter_progress as boolean) ?? true,
+    },
+    {
       key: "mobile_sidebar_side",
       type: ConfigEntryType.STRING,
       label: "mobile_sidebar_side",

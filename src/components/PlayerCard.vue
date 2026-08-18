@@ -179,7 +179,11 @@
           :aria-expanded="groupControlsExpanded"
           @click.stop="toggleMemberControls"
         >
-          <PlayerGroupIcon :count="groupMemberCount" class="size-5" />
+          <PlayerGroupIcon
+            :count="groupMemberCount"
+            outset-count
+            class="size-5"
+          />
         </Button>
 
         <Button

@@ -1,11 +1,15 @@
 import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { MediaType, type SearchResults } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { genre } from "../../fixtures/genre";
 import { playlist } from "../../fixtures/playlist";
+import {
+  searchResultButton,
+  searchResultButtons,
+} from "../../fixtures/mediaSearchResults";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn<MusicAssistantApi["search"]>(),
@@ -86,8 +90,13 @@ const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
   ...lists,
 });
 
+// the search results are portalled out of the wrapper, so tear them down even
+// when an assertion fails
+enableAutoUnmount(afterEach);
+
 describe("GuessTheSongSetup", () => {
   beforeEach(() => {
+    document.body.innerHTML = "";
     vi.useFakeTimers();
     mockSearch.mockReset();
     mockGetLibraryGenres.mockReset();
@@ -135,7 +144,7 @@ describe("GuessTheSongSetup", () => {
       }),
     );
     await flushPromises();
-    expect(wrapper.text()).toContain("Newest result");
+    expect(document.body.textContent).toContain("Newest result");
 
     oldSearch.resolve(
       searchResults({
@@ -145,8 +154,8 @@ describe("GuessTheSongSetup", () => {
     );
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Newest result");
-    expect(wrapper.text()).not.toContain("Older result");
+    expect(document.body.textContent).toContain("Newest result");
+    expect(document.body.textContent).not.toContain("Older result");
   });
 
   it("emits a name-free discriminated create request", async () => {
@@ -165,10 +174,8 @@ describe("GuessTheSongSetup", () => {
       .setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
     await wrapper
       .findAll("button")
       .find((button) => button.text().includes("create"))
@@ -202,10 +209,8 @@ describe("GuessTheSongSetup", () => {
       .setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
     const createButton = wrapper
       .findAll("button")
       .find((button) => button.text().includes("create"));
@@ -229,17 +234,16 @@ describe("GuessTheSongSetup", () => {
       .setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
     await flushPromises();
 
     // still selected (removable) but no longer offered as a search result
-    const resultButtons = wrapper
-      .findAll(".media-search-result")
-      .filter((button) => button.text().includes("Test playlist"));
-    expect(resultButtons).toHaveLength(0);
+    expect(
+      searchResultButtons().filter((button) =>
+        button.textContent?.includes("Test playlist"),
+      ),
+    ).toHaveLength(0);
     expect(wrapper.text()).toContain("Test playlist");
   });
 
@@ -259,18 +263,14 @@ describe("GuessTheSongSetup", () => {
     await searchInput.setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
     // picking a result clears the search, so search again for the next pick
     await searchInput.setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Rock"))
-      ?.trigger("click");
+    searchResultButton("Rock").click();
+    await flushPromises();
     await wrapper
       .findAll("button")
       .find((button) => button.text().includes("create"))
@@ -298,10 +298,8 @@ describe("GuessTheSongSetup", () => {
       .setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
     await flushPromises();
 
     // remove via the selected-source chip (not the search-result entry)

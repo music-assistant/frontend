@@ -13,6 +13,7 @@ const {
   mockWaitForApiInitialization,
   isDashboardViewerMock,
   toastMock,
+  copyToClipboardMock,
 } = vi.hoisted(() => ({
   apiMock: {
     sendCommand: vi.fn(),
@@ -21,6 +22,7 @@ const {
   mockWaitForApiInitialization: vi.fn(),
   isDashboardViewerMock: vi.fn(() => false),
   toastMock: { success: vi.fn(), error: vi.fn() },
+  copyToClipboardMock: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -44,6 +46,10 @@ vi.mock("vue-sonner", () => ({
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string, values: unknown[] = []) =>
     values.length ? `${key}:${values.join(",")}` : key,
+}));
+
+vi.mock("@/helpers/utils", () => ({
+  copyToClipboard: copyToClipboardMock,
 }));
 
 // Default dashboard so most tests get a visible button without extra setup; empty/hidden-state tests override this.
@@ -113,6 +119,7 @@ function mountButton(
           template:
             '<i data-testid="cast-dashboard-device-icon" :data-icon="providerDomainHint" />',
         },
+        "v-icon": { template: "<i />" },
       },
     },
   });
@@ -130,6 +137,8 @@ describe("ShowDashboardButton", () => {
     isDashboardViewerMock.mockReturnValue(false);
     toastMock.success.mockReset();
     toastMock.error.mockReset();
+    copyToClipboardMock.mockReset();
+    copyToClipboardMock.mockResolvedValue(true);
   });
 
   it("renders nothing when no dashboards are registered", async () => {
@@ -649,6 +658,150 @@ describe("ShowDashboardButton", () => {
       "dashboard/show",
       expect.anything(),
     );
+  });
+
+  it("displays a get-url menu item in the dropdown", async () => {
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    expect(
+      wrapper.find('[data-testid="cast-dashboard-get-url"]').exists(),
+    ).toBe(true);
+  });
+
+  it("retrieves and copies the dashboard URL to clipboard", async () => {
+    mockCommands({
+      "dashboard/get_url": () => "https://example.com/dashboard?token=abc123",
+    });
+
+    const wrapper = mountButton({
+      dashboard: "party",
+    });
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/get_url", {
+      dashboard: "party",
+      player_id: null,
+    });
+    expect(copyToClipboardMock).toHaveBeenCalledWith(
+      "https://example.com/dashboard?token=abc123",
+    );
+    expect(toastMock.success).toHaveBeenCalledWith("dashboard.uri_copied");
+  });
+
+  it("passes player_id to get_url command for now_playing dashboard", async () => {
+    mockCommands({
+      "dashboard/get_url": () => "https://example.com/dashboard?token=xyz",
+    });
+
+    const wrapper = mountButton({
+      dashboard: "now_playing",
+      playerId: "player-1",
+    });
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("dashboard/get_url", {
+      dashboard: "now_playing",
+      player_id: "player-1",
+    });
+  });
+
+  it("shows error toast when get_url returns empty string", async () => {
+    mockCommands({
+      "dashboard/get_url": () => "",
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(copyToClipboardMock).not.toHaveBeenCalled();
+  });
+
+  it("shows error toast when get_url returns null", async () => {
+    mockCommands({
+      "dashboard/get_url": () => null,
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(copyToClipboardMock).not.toHaveBeenCalled();
+  });
+
+  it("shows error toast when get_url api call fails", async () => {
+    mockCommands({
+      "dashboard/get_url": () => {
+        throw new Error("Failed to generate URL");
+      },
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(copyToClipboardMock).not.toHaveBeenCalled();
+  });
+
+  it("shows error toast when copyToClipboard fails", async () => {
+    copyToClipboardMock.mockResolvedValue(false);
+    mockCommands({
+      "dashboard/get_url": () => "https://example.com/dashboard",
+    });
+
+    const wrapper = mountButton();
+    await flushAsync();
+    await wrapper.get("button").trigger("click");
+    await flushAsync();
+
+    await wrapper
+      .get('[data-testid="cast-dashboard-get-url"]')
+      .trigger("click");
+    await flushAsync();
+
+    expect(copyToClipboardMock).toHaveBeenCalledWith(
+      "https://example.com/dashboard",
+    );
+    expect(toastMock.error).toHaveBeenCalledWith("dashboard.uri_copy_failed");
+    expect(toastMock.success).not.toHaveBeenCalled();
   });
 });
 

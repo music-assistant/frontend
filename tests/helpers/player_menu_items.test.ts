@@ -1,4 +1,5 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import api from "@/plugins/api";
 import {
   getPlayerMenuItems,
   getPlayerSetupMenuItem,
@@ -59,6 +60,9 @@ const {
 vi.mock("@/plugins/api", () => ({
   default: {
     players: {},
+    providers: {
+      milkdrop_visualizer: { domain: "milkdrop_visualizer", available: true },
+    },
   },
 }));
 
@@ -681,5 +685,41 @@ describe("getPlayerMenuItems ai dj", () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(menuItems.map((item) => item.label)).toContain("ai_dj");
+  });
+});
+
+describe("visualizer menu entry", () => {
+  const VISUALIZER_LABEL = "settings.visualizer_enabled.label";
+
+  function playerWithProtocols(...domains: string[]): Player {
+    return makePlayer({
+      output_protocols: domains.map((domain) => ({
+        protocol_domain: domain,
+      })),
+    } as Partial<Player>);
+  }
+
+  it("is offered for a player that has a Sendspin output", () => {
+    const player = playerWithProtocols("sonos", "sendspin");
+    api.players = { kitchen: player } as unknown as typeof api.players;
+
+    const menuItems = getPlayerMenuItems(player, undefined, {
+      context: "queue",
+    });
+
+    expect(menuItems.map((item) => item.label)).toContain(VISUALIZER_LABEL);
+  });
+
+  it("is hidden for a player that can never be visualized", () => {
+    // the waveform is tapped from the player's Sendspin stream, so a player
+    // without that output has nothing to show
+    const player = playerWithProtocols("sonos");
+    api.players = { kitchen: player } as unknown as typeof api.players;
+
+    const menuItems = getPlayerMenuItems(player, undefined, {
+      context: "queue",
+    });
+
+    expect(menuItems.map((item) => item.label)).not.toContain(VISUALIZER_LABEL);
   });
 });

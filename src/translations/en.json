@@ -526,7 +526,8 @@
             "options": "Player options",
             "preferences": "Preferences",
             "display_settings": "Display",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "audiobooks": "Audiobooks"
         },
         "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
         "onboarding_music_title": "Music",
@@ -707,6 +708,10 @@
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
         },
+        "audiobook_chapter_progress": {
+            "label": "Show audiobook chapter progress",
+            "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."
+        },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
         "diagnostics_description": "View server logs and download a diagnostics report for troubleshooting",
@@ -775,7 +780,7 @@
         "visualizer": "Visualizer",
         "visualizer_enabled": {
             "label": "MilkDrop visualizer",
-            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu."
+            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu. The waveform is tapped from the Sendspin stream, so it is only offered for players with a Sendspin output."
         },
         "visualizer_blur": {
             "label": "Visualizer blur",
@@ -887,6 +892,7 @@
         "copy_uri": "Copy URI to clipboard",
         "select_all": "Select all items",
         "filter_provider": "Filter by music provider",
+        "hide_provider": "Hide music provider",
         "in_provider_library": "This item is in the provider's library",
         "hide_empty_genres": "Hide empty genres",
         "show_empty_genres": "Show empty genres",
@@ -2231,6 +2237,35 @@
     "audio_overlay_select_sound": "Select a sound",
     "audio_overlay_volume": "Volume",
     "audio_overlay_no_sounds": "No overlay sounds available. Add a provider that offers sound effects.",
+    "audio_overlay_custom_sounds": "Custom sounds",
+    "audio_overlay_add_custom": "Add custom sound",
+    "audio_overlay_add_custom_explanation": "Add your own ambient sound by stream URL.",
+    "audio_overlay_no_custom_sounds": "No custom sounds added yet.",
+    "audio_overlay_custom_added": "{0} added",
+    "audio_overlay_custom_add_failed": "Failed to add custom sound. Check that the URL points to a playable audio stream.",
+    "play_announcement": "Play announcement",
+    "play_announcement_explanation": "Speak a message out loud on {0}.",
+    "play_announcement_message": "Message",
+    "play_announcement_message_placeholder": "Dinner is ready!",
+    "play_announcement_pre_announce": "Play a chime first",
+    "play_announcement_playing": "Playing...",
+    "play_announcement_volume": "Volume",
+    "play_announcement_volume_default": "Player default",
+    "play_announcement_send": "Announce",
+    "play_announcement_sent": "Announcement sent to {0}",
+    "play_announcement_mode_type": "Type a message",
+    "play_announcement_mode_speak": "Speak",
+    "play_announcement_hold_to_speak": "Hold the button and speak",
+    "play_announcement_connecting": "Connecting...",
+    "play_announcement_speaking": "Speaking",
+    "play_announcement_finishing": "Finishing...",
+    "play_announcement_mic_denied": "Music Assistant is not allowed to use the microphone.",
+    "play_announcement_mic_failed": "The microphone could not be started.",
+    "play_announcement_live_failed": "The announcement could not be played.",
+    "ai_dj": "Enable AI Radio DJ",
+    "ai_dj_off": "Off",
+    "ai_dj_show_on_air": "On air: {0}",
+    "ai_dj_show_on_air_unknown": "A show is on air",
     "menu_edit_enable": "Edit menu",
     "menu_edit_disable": "Leave edit mode",
     "menu_item_hide": "Hide menu item",
@@ -2261,7 +2296,10 @@
         "disconnect": "Disconnect {0}",
         "loading": "Loading devices...",
         "no_devices": "No cast devices found",
-        "started": "Casting to \"{0}\""
+        "started": "Casting to \"{0}\"",
+        "get_url": "Get Dashboard URL",
+        "uri_copied": "Dashboard URL copied to clipboard",
+        "uri_copy_failed": "Failed to copy Dashboard URL to clipboard"
     },
     "reconfigure_player": "Reconfigure player",
     "configure_player": "Configure player",

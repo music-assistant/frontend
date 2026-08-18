@@ -1068,6 +1068,7 @@ export interface RecommendationFolder extends BrowseFolder {
   items: MediaItemTypeOrItemMapping[];
   enabled_by_default: boolean;
   type: RecommendationFolderType;
+  supports_provider_filter: boolean;
 }
 
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {

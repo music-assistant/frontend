@@ -5,9 +5,7 @@
         {{ $t("providers.music_quiz.answers") }}
       </CardTitle>
       <CardAction>
-        <Badge variant="secondary"
-          >{{ answeredCount }} / {{ statuses.length }}</Badge
-        >
+        <Badge>{{ answeredCount }} / {{ statuses.length }}</Badge>
       </CardAction>
     </CardHeader>
     <CardContent
