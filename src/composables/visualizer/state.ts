@@ -1,5 +1,5 @@
 /**
- * Tiny shared state between the visualizer canvas and its controls.
+ * Tiny shared state and defaults for the visualizer.
  * The canvas picks presets internally (random modes), so controls that act
  * on "the preset currently showing" read it from here.
  */
@@ -8,7 +8,8 @@ import { ref } from "vue";
 
 export const currentVisualizerPreset = ref<string | null>(null);
 
-// Defaults for the blur/opacity preferences, shared by the settings page, the
-// fullscreen menu control and the canvas so they cannot drift apart.
+// Defaults for the blur/opacity preferences. Every reader goes through these
+// (settings page, fullscreen menu, useVisualizer, and the canvas prop
+// fallbacks) so the four cannot drift apart.
 export const VISUALIZER_BLUR_DEFAULT = 0;
 export const VISUALIZER_OPACITY_DEFAULT = 40;
