@@ -37,7 +37,8 @@ vi.mock("@/plugins/store", async () => {
 });
 
 vi.mock("@/composables/useServerTime", () => ({
-  serverNow: () => NOW,
+  // Date.now() is intentional here: the highlight test advances fake wall time.
+  serverNow: () => Date.now() / 1000,
 }));
 
 // The queue list and the waveform are unrelated to the lyrics clock and pull in
@@ -45,11 +46,24 @@ vi.mock("@/composables/useServerTime", () => ({
 vi.mock("@/layouts/default/PlayerOSD/useFullscreenQueue", async () => {
   const { computed, ref: vueRef } =
     await vi.importActual<typeof import("vue")>("vue");
+  const { store } = await import("@/plugins/store");
   return {
     useFullscreenQueue: () => ({
       queueScrollRef: vueRef(null),
-      virtualRows: computed(() => []),
-      totalItems: computed(() => 0),
+      virtualRows: computed(() => {
+        const item = store.curQueueItem;
+        if (!item) return [];
+        return [
+          {
+            index: 0,
+            vItem: { start: 0 },
+            state: "playing",
+            item,
+            divider: null,
+          },
+        ];
+      }),
+      totalItems: computed(() => (store.curQueueItem ? 1 : 0)),
       upNextCount: computed(() => 0),
       queueEnded: computed(() => false),
       totalSize: computed(() => 0),
@@ -67,7 +81,7 @@ vi.mock("@/layouts/default/PlayerOSD/useFullscreenQueue", async () => {
       isDragging: vueRef(false),
       draggedItem: vueRef(undefined),
       ghostY: vueRef(0),
-      rowOffset: computed(() => 0),
+      rowOffset: () => 0,
     }),
   };
 });
@@ -109,6 +123,13 @@ vi.mock("@/plugins/eventbus", () => ({
 const NOW = 1_700_000_000;
 const QUEUE_ID = "q1";
 
+interface Chapter {
+  position: number;
+  name: string;
+  start: number;
+  end: number | null;
+}
+
 interface TestStore {
   activePlayer?: {
     player_id: string;
@@ -117,6 +138,11 @@ interface TestStore {
     group_members?: string[];
     source_list?: unknown[];
     sound_mode_list?: unknown[];
+    playback_state?: PlaybackState;
+    current_media?: {
+      media_type?: MediaType;
+      queue_item_id?: string | null;
+    };
   };
   activePlayerQueue?: {
     queue_id: string;
@@ -124,7 +150,11 @@ interface TestStore {
     active: boolean;
   };
   curQueueItem?: {
-    media_item?: { media_type: MediaType; metadata?: object };
+    queue_item_id?: string;
+    media_item?: {
+      media_type: MediaType;
+      metadata?: { chapters?: Chapter[] };
+    };
   };
   showFullscreenPlayer: boolean;
   showPlayersMenu: boolean;
@@ -164,7 +194,28 @@ async function seedPlayingQueue(): Promise<void> {
     elapsed_time: 10,
     elapsed_time_last_updated: NOW,
   };
-  testStore.activePlayer = { player_id: "p1", active_source: QUEUE_ID };
+  testStore.activePlayer = {
+    player_id: "p1",
+    active_source: QUEUE_ID,
+    group_members: [],
+    playback_state: PlaybackState.PLAYING,
+    current_media: {
+      media_type: MediaType.AUDIOBOOK,
+      queue_item_id: "item-1",
+    },
+  };
+  testStore.curQueueItem = {
+    queue_item_id: "item-1",
+    media_item: {
+      media_type: MediaType.AUDIOBOOK,
+      metadata: {
+        chapters: [
+          { position: 1, name: "First", start: 0, end: 60 },
+          { position: 2, name: "Second", start: 60, end: 120 },
+        ],
+      },
+    },
+  };
   testStore.activePlayerQueue = {
     queue_id: QUEUE_ID,
     state: PlaybackState.PLAYING,
@@ -208,6 +259,55 @@ afterEach(async () => {
   testStore.curQueueItem = undefined;
   testApi.queues = {};
   testApi.queueElapsedTime = {};
+});
+
+describe("PlayerFullscreen chapter highlight", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW * 1000);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function mountChapterQueue(): Promise<VueWrapper> {
+    await seedPlayingQueue();
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.showFullscreenPlayer = true;
+    testStore.showQueueItems = true;
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    await nextTick();
+    return wrapper;
+  }
+
+  it("highlights the active chapter and moves at the next boundary", async () => {
+    const fullscreen = await mountChapterQueue();
+    const chapters = fullscreen.findAll(".queue-chapter");
+    expect(chapters).toHaveLength(2);
+    expect(chapters[0].classes()).toContain("queue-chapter--active");
+    expect(chapters[0].attributes("aria-current")).toBe("true");
+    expect(chapters[1].attributes("aria-current")).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(51_000);
+    await nextTick();
+    expect(fullscreen.findAll(".queue-chapter")[1].classes()).toContain(
+      "queue-chapter--active",
+    );
+    expect(
+      fullscreen.findAll(".queue-chapter")[0].attributes("aria-current"),
+    ).toBeUndefined();
+  });
 });
 
 describe("PlayerFullscreen lyrics clock", () => {

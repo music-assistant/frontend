@@ -299,6 +299,15 @@
                     :key="chapter.position"
                     type="button"
                     class="queue-chapter"
+                    :class="{
+                      'queue-chapter--active': isActiveChapter(
+                        row.item,
+                        chapter,
+                      ),
+                    }"
+                    :aria-current="
+                      isActiveChapter(row.item, chapter) ? 'true' : undefined
+                    "
                     @click.stop="chapterClicked(row.item.media_item, chapter)"
                   >
                     <span class="queue-chapter__name">{{ chapter.name }}</span>
@@ -511,9 +520,17 @@ import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
-import { MediaType, PlayerType, Track } from "@/plugins/api/interfaces";
+import {
+  MediaItemChapter,
+  MediaType,
+  PlaybackState,
+  PlayerType,
+  QueueItem,
+  Track,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -547,6 +564,68 @@ const MIN_HEIGHT_SHOW_PLAYER_SELECT_BUTTON = 480;
 const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
+const chapterTick = ref(0);
+let chapterTimer: ReturnType<typeof setInterval> | null = null;
+
+const currentChapterQueueItem = computed(() => {
+  const item = store.curQueueItem;
+  const media = store.activePlayer?.current_media;
+  if (
+    !item?.media_item?.metadata?.chapters?.length ||
+    media?.media_type !== MediaType.AUDIOBOOK ||
+    (media.queue_item_id !== null && media.queue_item_id !== item.queue_item_id)
+  ) {
+    return undefined;
+  }
+  return item;
+});
+
+const activeChapter = computed(() => {
+  void chapterTick.value;
+  const item = currentChapterQueueItem.value;
+  const elapsed = resolveActiveElapsedTime();
+  const chapters = item?.media_item?.metadata?.chapters;
+  if (elapsed == null || !chapters?.length) return undefined;
+
+  const sortedChapters = [...chapters].sort((a, b) => a.start - b.start);
+  let current: MediaItemChapter | undefined;
+  for (const chapter of sortedChapters) {
+    if (chapter.start > elapsed) break;
+    current = chapter;
+  }
+  return current;
+});
+
+const isActiveChapter = (item: QueueItem, chapter: MediaItemChapter) =>
+  item.queue_item_id === currentChapterQueueItem.value?.queue_item_id &&
+  chapter.position === activeChapter.value?.position;
+
+const chapterTimerNeeded = computed(
+  () =>
+    store.showFullscreenPlayer &&
+    store.showQueueItems &&
+    store.activePlayer?.playback_state === PlaybackState.PLAYING &&
+    !!currentChapterQueueItem.value,
+);
+
+watch(
+  chapterTimerNeeded,
+  (needed) => {
+    if (needed && chapterTimer === null) {
+      chapterTimer = setInterval(() => {
+        chapterTick.value = Date.now();
+      }, 1000);
+    } else if (!needed && chapterTimer !== null) {
+      clearInterval(chapterTimer);
+      chapterTimer = null;
+    }
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  if (chapterTimer !== null) clearInterval(chapterTimer);
+});
 
 interface Props {
   colorPalette: ImageColorPalette;
@@ -1416,6 +1495,17 @@ onBeforeUnmount(() => {
     var(--text-color, currentColor) 8%,
     transparent
   );
+}
+
+.queue-chapter--active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--primary);
+  font-weight: 600;
+}
+
+.queue-chapter--active:hover {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .queue-chapter__name {
