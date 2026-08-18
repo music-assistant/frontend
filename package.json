@@ -86,7 +86,7 @@
         "nanoid": "5.1.16",
         "oxlint": "^1.73.0",
         "prettier": "3.8.3",
-        "replace-in-file": "8.4.0",
+        "replace-in-file": "9.0.0",
         "sass": "1.102.0",
         "typescript": "6.0.3",
         "typescript-eslint": "^8.64.0",
