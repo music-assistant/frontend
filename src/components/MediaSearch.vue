@@ -1,16 +1,15 @@
 <template>
   <div class="media-search">
     <Popover :open="panelOpen">
-      <PopoverAnchor
-        ref="anchorRef"
-        @pointerdown="dismissed = false"
-        @focusin="dismissed = false"
-      >
+      <PopoverAnchor ref="anchorRef">
+        <SearchInput
           :id="inputId"
           v-model="query"
           clearable
           :placeholder="placeholder || $t('type_to_search')"
           :aria-label="$t('search')"
+          @focus="dismissed = false"
+          @pointerdown="dismissed = false"
         >
           <template v-if="showMediaTypeFilter" #append>
             <FacetedFilter
@@ -164,6 +163,9 @@ const selectedMediaTypes = ref<MediaType[]>(
 );
 const selectedProviders = ref<string[]>([]);
 const anchorRef = ref<ComponentPublicInstance | null>(null);
+// Escape / an outside click hides the panel without clearing the query, so the
+// query alone cannot decide whether it is open. Refocusing or clicking the field
+// brings it back, as does editing the query (see the watcher below).
 const dismissed = ref(false);
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;

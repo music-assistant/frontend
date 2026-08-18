@@ -292,6 +292,33 @@ describe("MediaSearch", () => {
     vi.useRealTimers();
   });
 
+  it("reopens a dismissed panel when the field is focused again", async () => {
+    mockSearch.mockResolvedValue(
+      searchResults({
+        playlists: [playlistFixture({ uri: "playlist:1", name: "Some list" })],
+      }),
+    );
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+    const input = wrapper.find("input");
+
+    await input.setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+    expect(resultsPanel()).not.toBeNull();
+
+    // Escape hides the panel without clearing the query, so nothing about the
+    // query can bring it back
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await flushPromises();
+    expect(resultsPanel()).toBeNull();
+
+    await input.trigger("focus");
+    await flushPromises();
+
+    expect(resultsPanel()).not.toBeNull();
+    vi.useRealTimers();
+  });
+
   it.each([
     { room: "too little", boxBottom: 560, viewport: 600, side: "top" },
     { room: "enough", boxBottom: 120, viewport: 900, side: "bottom" },
