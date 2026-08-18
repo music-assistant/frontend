@@ -69,7 +69,7 @@
         "@types/canvas-confetti": "^1.9.0",
         "@types/color": "4.2.1",
         "@types/node": "26.1.1",
-        "@vitejs/plugin-vue": "6.0.7",
+        "@vitejs/plugin-vue": "6.0.8",
         "@vitest/coverage-v8": "^4.1.10",
         "@vitest/ui": "4.1.10",
         "@vue/eslint-config-typescript": "14.9.0",
