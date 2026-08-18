@@ -194,7 +194,7 @@ onMounted(() => {
       category: "audiobooks",
       value:
         (store.currentUser?.preferences
-          ?.audiobook_chapter_progress as boolean) ?? false,
+          ?.audiobook_chapter_progress as boolean) ?? true,
     },
     {
       key: "mobile_sidebar_side",

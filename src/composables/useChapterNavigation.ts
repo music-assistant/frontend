@@ -18,10 +18,7 @@ export type ChapterNavigationDirection = "previous" | "next";
  */
 export function useChapterNavigation() {
   const { getPreference } = useUserPreferences();
-  const showChapterProgress = getPreference(
-    "audiobook_chapter_progress",
-    false,
-  );
+  const showChapterProgress = getPreference("audiobook_chapter_progress", true);
   const nowTick = ref(0);
   let chapterTimer: ReturnType<typeof setInterval> | null = null;
 

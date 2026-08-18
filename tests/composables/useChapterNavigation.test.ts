@@ -108,8 +108,9 @@ afterEach(() => {
 });
 
 describe("useChapterNavigation", () => {
-  it("targets adjacent chapters in both directions", async () => {
+  it("targets adjacent chapters by default", async () => {
     seedPlayingChapterMedia(30);
+    store.currentUser = undefined;
     const wrapper = mount(Consumer);
     await nextTick();
 

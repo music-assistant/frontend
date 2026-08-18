@@ -264,6 +264,9 @@ describe("PlayerTimeline", () => {
   });
 
   it("seeks to a chapter start without reloading the media", async () => {
+    store.currentUser = {
+      preferences: { audiobook_chapter_progress: false },
+    };
     store.curQueueItem = {
       queue_item_id: "qi-1",
       media_item: {

@@ -167,7 +167,7 @@ const { activeAudioSource } = useActiveAudioSource(
   toRef(store, "activePlayer"),
 );
 const { getPreference } = useUserPreferences();
-const showChapterProgress = getPreference("audiobook_chapter_progress", false);
+const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 
 // local refs
 const showRemainingTime = ref(false);
