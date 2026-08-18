@@ -78,9 +78,7 @@ describe("MusicQuizPlaybackControls", () => {
     expect(
       wrapper.get("#music-quiz-playback-venue").attributes("aria-checked"),
     ).toBe("true");
-    expect(
-      wrapper.get<HTMLSelectElement>("#music-quiz-venue-player").element.value,
-    ).toBe("living-room");
+    expect(wrapper.get("#music-quiz-venue-player").text()).toBe("Living Room");
     wrapper.unmount();
   });
 });
