@@ -12,7 +12,7 @@
             <Badge v-if="rank" class="shrink-0">#{{ rank }}</Badge>
           </div>
         </div>
-        <span class="flex shrink-0 items-baseline gap-1 tabular-nums">
+        <span class="flex shrink-0 items-center gap-1 tabular-nums">
           <span class="text-xl leading-none font-bold">{{ score }}</span>
           <span
             v-if="scoreDelta"

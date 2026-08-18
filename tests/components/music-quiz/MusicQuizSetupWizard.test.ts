@@ -191,6 +191,18 @@ describe("MusicQuizSetupWizard", () => {
     wrapper.unmount();
   });
 
+  it("keeps the preparing overlay from covering the dialog's close button", () => {
+    const wrapper = mountWizard({}, true);
+
+    // The overlay is z-10 and the dialog's own header is sr-only, so without a
+    // stacking context here that z-index resolves against the dialog and paints
+    // over its close button.
+    expect(
+      wrapper.get('[data-testid="music-quiz-setup-header"]').element
+        .parentElement?.className,
+    ).toContain("isolate");
+  });
+
   it("uses mutually exclusive display classes for wizard visibility", async () => {
     const wrapper = mountWizard();
     const configureStep = wrapper.get(

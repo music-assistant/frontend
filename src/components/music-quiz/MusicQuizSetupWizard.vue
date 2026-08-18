@@ -1,5 +1,8 @@
 <template>
-  <div class="relative flex flex-col gap-5" :class="{ 'min-h-64': busy }">
+  <div
+    class="relative isolate flex flex-col gap-5"
+    :class="{ 'min-h-64': busy }"
+  >
     <MusicQuizPreparingState
       v-if="busy"
       autofocus
