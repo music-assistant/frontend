@@ -7,3 +7,8 @@
 import { ref } from "vue";
 
 export const currentVisualizerPreset = ref<string | null>(null);
+
+// Defaults for the blur/opacity preferences, shared by the settings page, the
+// fullscreen menu control and the canvas so they cannot drift apart.
+export const VISUALIZER_BLUR_DEFAULT = 0;
+export const VISUALIZER_OPACITY_DEFAULT = 40;
