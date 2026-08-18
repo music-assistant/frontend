@@ -5,10 +5,12 @@
   fed by MA core's visualizer relay. A subtle scrim keeps overlaid text
   legible; the blur option previews the "ambient background" treatment.
   Renders nothing (transparent) while unsupported or disconnected, so the
-  regular gradient background underneath stays visible.
+  regular gradient background underneath stays visible. Pausing or stopping
+  the player winds it down (waveform to silence, layer faded out) and
+  suspends the render loop.
 -->
 <template>
-  <div class="visualizer-layer" aria-hidden="true">
+  <div class="visualizer-layer" aria-hidden="true" :style="layerStyle">
     <canvas
       ref="canvasRef"
       class="visualizer-layer__canvas"
@@ -25,7 +27,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
+  ATTACK_MS,
   createVisualizerEngine,
+  DECAY_MS,
   type VisualizerEngine,
   isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
@@ -34,8 +38,16 @@ import { currentVisualizerPreset } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
 import api from "@/plugins/api";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { VisualizerRelayClient } from "@/plugins/visualizer-relay";
+
+// Settle time before winding down: track changes and buffer stalls drop a
+// player out of "playing" for a moment, and halting on those reads as a stutter.
+const PAUSE_SETTLE_MS = 1000;
+// What the layer fades to while paused; raise it to leave the settled preset
+// faintly visible.
+const PAUSED_OPACITY = 0;
 
 const props = withDefaults(
   defineProps<{
@@ -94,6 +106,27 @@ const canvasStyle = computed(() => ({
 const scrimStyle = computed(() => ({
   opacity: String(props.opacity / 100),
 }));
+
+// Fading the layer as a whole multiplies with the opacity preference rather
+// than fighting it, and takes the scrim with it.
+const faded = ref(false);
+
+const layerStyle = computed(() => ({
+  // Both ends written out: removing the property leaves nothing to transition
+  // from and the layer snaps back.
+  opacity: faded.value ? String(PAUSED_OPACITY) : "1",
+  // Eased to match the waveform envelope at each end.
+  transition: faded.value
+    ? `opacity ${DECAY_MS}ms ease-out`
+    : `opacity ${ATTACK_MS}ms ease-in`,
+}));
+
+// An unresolved player keeps rendering: with no id there is no relay
+// connection either, so there is nothing to wind down.
+const playbackPaused = computed(() => {
+  const player = props.playerId ? api.players?.[props.playerId] : undefined;
+  return !!player && player.playback_state !== PlaybackState.PLAYING;
+});
 
 let lastPresetSwitchAt = 0;
 
@@ -182,6 +215,7 @@ const initialize = async () => {
 };
 
 let engineRequestId = 0;
+let pauseTimer: number | null = null;
 
 const createEngine = async () => {
   if (!canvasRef.value) return;
@@ -205,8 +239,33 @@ const createEngine = async () => {
     return;
   }
   engine = created;
-  if (engine) await applyPreset(0);
+  if (engine) {
+    // Started up paused: nothing on screen to wind down.
+    if (playbackPaused.value && pauseTimer === null) {
+      engine.setPaused(true, false);
+      faded.value = true;
+    }
+    await applyPreset(0);
+  }
 };
+
+watch(playbackPaused, (isPaused) => {
+  if (pauseTimer !== null) {
+    clearTimeout(pauseTimer);
+    pauseTimer = null;
+  }
+  if (isPaused) {
+    pauseTimer = window.setTimeout(() => {
+      pauseTimer = null;
+      // Ramp and fade run together; the loop halts as the fade lands.
+      engine?.setPaused(true);
+      faded.value = true;
+    }, PAUSE_SETTLE_MS);
+  } else {
+    engine?.setPaused(false);
+    faded.value = false;
+  }
+});
 
 // Start once the canvas has real layout size, deferring via a ResizeObserver
 // when it hasn't yet. A canvas hidden behind a dialog transition (or briefly
@@ -295,6 +354,10 @@ watch(
 onBeforeUnmount(() => {
   sizeObserver?.disconnect();
   sizeObserver = null;
+  if (pauseTimer !== null) {
+    clearTimeout(pauseTimer);
+    pauseTimer = null;
+  }
   engine?.destroy();
   engine = null;
   relay?.close();
