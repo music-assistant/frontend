@@ -2250,7 +2250,7 @@
         "show_grouped_players": "Prikažite članove grupe",
         "show_selected_player_first": "Prikažite prvo izabrani plejer"
     },
-    "mark_played_partial_failure": "Ažuriranje epizoda nije uspelo ({{0}})",
+    "mark_played_partial_failure": "Ažuriranje epizoda nije uspelo ({0})",
     "visualizer": {
         "title": "MilkDrop",
         "preset_random": "Slučajni stil",
