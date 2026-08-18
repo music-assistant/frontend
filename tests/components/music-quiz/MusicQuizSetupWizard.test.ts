@@ -496,7 +496,7 @@ describe("MusicQuizSetupWizard", () => {
     ).toBeDefined();
     expect(
       wrapper.get('[data-testid="music-quiz-venue-unavailable"]').text(),
-    ).toBe("providers.music_quiz.no_available_speakers");
+    ).toBe("providers.music_quiz.no_available_players");
     expect(
       wrapper
         .get('[data-testid="create-guess_the_song"]')
@@ -528,7 +528,7 @@ describe("MusicQuizSetupWizard", () => {
     ).toBe("false");
   });
 
-  it("requires a concrete eligible speaker for Venue", async () => {
+  it("requires a concrete eligible player for Venue", async () => {
     const options = {
       ...PLAYBACK_OPTIONS,
       default_venue_player_id: null,

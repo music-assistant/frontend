@@ -43,7 +43,10 @@
 
           <!-- Buttons -->
           <div class="actions">
-            <Button variant="default" @click="router.back()">
+            <Button
+              variant="default"
+              @click="goBack(router, { name: 'discover' })"
+            >
               <ArrowLeft class="size-4" />
               {{ $t("back") }}
             </Button>
@@ -60,6 +63,7 @@
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
+import { goBack } from "@/helpers/navigation";
 import { ArrowLeft, Compass } from "@lucide/vue";
 import { useRouter } from "vue-router";
 

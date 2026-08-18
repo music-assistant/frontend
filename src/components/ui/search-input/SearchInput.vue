@@ -6,6 +6,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Search as SearchIcon, X } from "@lucide/vue";
+import { $t } from "@/plugins/i18n";
 import { cn } from "@/lib/utils";
 import { computed, ref, useAttrs } from "vue";
 
@@ -55,7 +56,7 @@ defineExpose({
       v-if="props.clearable"
       v-show="props.modelValue"
       type="button"
-      aria-label="Clear"
+      :aria-label="$t('clear')"
       @click="
         emit('update:modelValue', '');
         emit('clear');

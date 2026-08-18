@@ -1,16 +1,28 @@
 import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 
-export const CONFIG_KEY_UI = {
-  DSP_SETTINGS_LINK: "dsp_settings_link",
-} as const;
-
-export type UiOnlyKey = (typeof CONFIG_KEY_UI)[keyof typeof CONFIG_KEY_UI];
-export type ConfigKeyUI = string | UiOnlyKey;
-
 export const UI_ENTRY_TYPE = {
-  // entry type equals key for dsp_settings_link
-  DSP_SETTINGS_LINK: CONFIG_KEY_UI.DSP_SETTINGS_LINK,
+  HASS_CONTROL_PICKER: "hass_control_picker",
 } as const;
+
+/**
+ * The Home Assistant provider config key listing the entities offered for each of the
+ * player control entries.
+ */
+export const HASS_CONTROL_KEY_BY_PLAYER_KEY = {
+  power_control: "power_controls",
+  volume_control: "volume_controls",
+  mute_control: "mute_controls",
+} as const;
+
+export type HassControlPlayerKey = keyof typeof HASS_CONTROL_KEY_BY_PLAYER_KEY;
+export type HassControlKey =
+  (typeof HASS_CONTROL_KEY_BY_PLAYER_KEY)[HassControlPlayerKey];
+
+// the Home Assistant provider config entries that hold a list of control entities; only
+// those of that provider get the entity picker, whoever else uses the same key names
+export const HASS_CONTROL_KEYS: ReadonlySet<string> = new Set(
+  Object.values(HASS_CONTROL_KEY_BY_PLAYER_KEY),
+);
 
 export type UiOnlyEntryType =
   (typeof UI_ENTRY_TYPE)[keyof typeof UI_ENTRY_TYPE];
@@ -26,6 +38,20 @@ export type ServerConfigEntryUI = ConfigEntry & {
   injected?: false;
 };
 export type ConfigEntryUI = ServerConfigEntryUI | InjectedConfigEntry;
+
+/**
+ * The affordance that adds a Home Assistant entity as the control of a single player
+ * control entry, injected beside the entry it fills in.
+ */
+export type HassControlPickerEntry = InjectedConfigEntry & {
+  type: typeof UI_ENTRY_TYPE.HASS_CONTROL_PICKER;
+  // the Home Assistant provider instance the picked entity is registered with
+  hass_instance_id: string;
+  // the provider config list the picked entity is added to
+  hass_control_key: HassControlKey;
+  // the player config entry the picked entity is set on
+  target_key: HassControlPlayerKey;
+};
 
 /**
  * Entry types whose ConfigEntryField branch takes no `disabled` binding.
@@ -116,14 +142,23 @@ export const allRequiredValuesPresent = (
       !isNullOrUndefined(entry.default_value),
   );
 
+/**
+ * Whether `entries` holds anything the advanced settings toggle would reveal.
+ *
+ * A config without advanced entries has no use for the toggle, so the settings
+ * screens leave it out entirely.
+ */
+export const hasAdvancedEntries = (
+  entries: readonly Pick<ConfigEntry, "advanced" | "hidden">[],
+): boolean => entries.some((entry) => entry.advanced && !entry.hidden);
+
 export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
   (e as InjectedConfigEntry).injected === true;
 
-export const isDspLinkEntry = (
+export const isHassControlPickerEntry = (
   e: ConfigEntryUI,
-): e is InjectedConfigEntry & {
-  type: typeof UI_ENTRY_TYPE.DSP_SETTINGS_LINK;
-} => isInjected(e) && e.type === UI_ENTRY_TYPE.DSP_SETTINGS_LINK;
+): e is HassControlPickerEntry =>
+  isInjected(e) && e.type === UI_ENTRY_TYPE.HASS_CONTROL_PICKER;
 
 /**
  * Merges a freshly fetched set of config entries into the entries currently

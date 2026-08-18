@@ -32,29 +32,35 @@ describe("rowIdsNeedingItems", () => {
 describe("isRecommendationRowVisible", () => {
   it("shows a hidden row in edit mode regardless of its items", () => {
     const row = { id: "b", hidden: true };
-    expect(isRecommendationRowVisible(row, undefined, true)).toBe(true);
-    expect(isRecommendationRowVisible(row, [], true)).toBe(true);
-    expect(isRecommendationRowVisible(row, [1], true)).toBe(true);
+    expect(isRecommendationRowVisible(row, undefined, true, false)).toBe(true);
+    expect(isRecommendationRowVisible(row, [], true, false)).toBe(true);
+    expect(isRecommendationRowVisible(row, [1], true, false)).toBe(true);
   });
 
-  it("never shows a hidden row in normal mode", () => {
+  it("never shows a hidden row in normal mode, even with an active filter", () => {
     const row = { id: "b", hidden: true };
-    expect(isRecommendationRowVisible(row, [1, 2], false)).toBe(false);
+    expect(isRecommendationRowVisible(row, [1, 2], false, false)).toBe(false);
+    expect(isRecommendationRowVisible(row, [], false, true)).toBe(false);
   });
 
   it("shows a shown row while its items are still loading", () => {
     const row = { id: "a", hidden: false };
-    expect(isRecommendationRowVisible(row, undefined, false)).toBe(true);
+    expect(isRecommendationRowVisible(row, undefined, false, false)).toBe(true);
   });
 
   it("hides a shown row once its items resolve to empty, in normal mode only", () => {
     const row = { id: "a", hidden: false };
-    expect(isRecommendationRowVisible(row, [], false)).toBe(false);
-    expect(isRecommendationRowVisible(row, [], true)).toBe(true);
+    expect(isRecommendationRowVisible(row, [], false, false)).toBe(false);
+    expect(isRecommendationRowVisible(row, [], true, false)).toBe(true);
   });
 
   it("shows a shown row once its items resolve to non-empty", () => {
     const row = { id: "a", hidden: false };
-    expect(isRecommendationRowVisible(row, [1], false)).toBe(true);
+    expect(isRecommendationRowVisible(row, [1], false, false)).toBe(true);
+  });
+
+  it("keeps a shown row with an active filter visible even if it resolves to no items", () => {
+    const row = { id: "a", hidden: false };
+    expect(isRecommendationRowVisible(row, [], false, true)).toBe(true);
   });
 });

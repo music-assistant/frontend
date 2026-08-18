@@ -1,13 +1,15 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ProviderStatus, ProviderType } from "@/plugins/api/interfaces";
+import { ProviderStatus } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
+import { providerConfig } from "../fixtures/providerConfig";
 
 const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
   apiMock: {
-    getProvider: vi.fn(),
-    getProviderConfigs: vi.fn(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
     providerManifests: {
       spotify: {
         allow_disable: true,
@@ -20,10 +22,10 @@ const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
       },
     },
     providers: {},
-    removeProviderConfig: vi.fn(),
-    saveProviderConfig: vi.fn(),
-    sendCommand: vi.fn(),
-    startSync: vi.fn(),
+    reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+    removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
+    startSync: vi.fn<MusicAssistantApi["startSync"]>(),
     subscribe: vi.fn(),
   },
   eventbusMock: {
@@ -105,6 +107,7 @@ const ButtonStub = {
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getProvider.mockReturnValue(undefined);
+  apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
 });
 
@@ -196,6 +199,22 @@ describe("Providers", () => {
     );
   });
 
+  it("reloads a provider through the shared API action", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
+
+    const contextMenuCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "contextmenu",
+    );
+    const reloadItem = contextMenuCall?.[1].items.find(
+      (item: { label: string }) => item.label === "settings.reload_provider",
+    );
+    reloadItem.action();
+
+    expect(apiMock.reloadProvider).toHaveBeenCalledWith("spotify--test");
+  });
+
   it("omits reconfigure from the menu when no setup flow exists", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED, false);
 
@@ -248,7 +267,7 @@ async function mountProviders(
 ) {
   apiMock.providerManifests.spotify.has_setup_flow = hasSetupFlow;
   apiMock.getProviderConfigs.mockResolvedValue([
-    {
+    providerConfig({
       domain: "spotify",
       enabled,
       instance_id: "spotify--test",
@@ -258,8 +277,7 @@ async function mountProviders(
       },
       name: "Spotify",
       status,
-      type: ProviderType.MUSIC,
-    },
+    }),
   ]);
 
   const wrapper = shallowMount(Providers, {

@@ -4,10 +4,12 @@ import type {
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { MediaType } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
+import type { MediaItemType } from "@/plugins/api/interfaces";
 import { shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { track } from "../../fixtures/track";
 
 const {
   mockCopyToClipboard,
@@ -17,8 +19,8 @@ const {
   mockUseGuessTheSongPlaybackPosition,
 } = vi.hoisted(() => ({
   mockCopyToClipboard: vi.fn(),
-  mockGetItemByUri: vi.fn(),
-  mockGetTrackLyrics: vi.fn(),
+  mockGetItemByUri: vi.fn<MusicAssistantApi["getItemByUri"]>(),
+  mockGetTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
   mockToastError: vi.fn(),
   mockUseGuessTheSongPlaybackPosition: vi.fn(),
 }));
@@ -87,7 +89,7 @@ describe("GuessTheSongPlayerRound", () => {
   });
 
   it("passes loaded lyrics and playback position to the reveal", async () => {
-    mockGetItemByUri.mockResolvedValue({ media_type: MediaType.TRACK });
+    mockGetItemByUri.mockResolvedValue(track());
     mockGetTrackLyrics.mockResolvedValue(["Plain lyrics", "Synced lyrics"]);
     const wrapper = mountRound(createState("reveal"));
 
@@ -103,7 +105,7 @@ describe("GuessTheSongPlayerRound", () => {
   });
 
   it("prefers audio_started_at as the playback anchor when present", () => {
-    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    mockGetItemByUri.mockReturnValue(new Promise<MediaItemType>(() => {}));
     const wrapper = mountRound(createState("reveal"), {
       ...currentRound,
       audio_started_at: 55,
@@ -115,7 +117,7 @@ describe("GuessTheSongPlayerRound", () => {
   });
 
   it("falls back to started_at when the round omits audio_started_at", () => {
-    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    mockGetItemByUri.mockReturnValue(new Promise<MediaItemType>(() => {}));
     const wrapper = mountRound(createState("reveal"));
 
     const options = mockUseGuessTheSongPlaybackPosition.mock.calls.at(-1)?.[0];
@@ -124,7 +126,7 @@ describe("GuessTheSongPlayerRound", () => {
   });
 
   it("falls back to started_at when audio_started_at is null", () => {
-    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    mockGetItemByUri.mockReturnValue(new Promise<MediaItemType>(() => {}));
     const wrapper = mountRound(createState("reveal"), {
       ...currentRound,
       audio_started_at: null,
@@ -136,7 +138,7 @@ describe("GuessTheSongPlayerRound", () => {
   });
 
   it("keeps the loading state until the lyrics request completes", () => {
-    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    mockGetItemByUri.mockReturnValue(new Promise<MediaItemType>(() => {}));
     const wrapper = mountRound(createState("reveal"));
 
     expect(
@@ -146,7 +148,7 @@ describe("GuessTheSongPlayerRound", () => {
   });
 
   it("keeps copy failures inside the game adapter", async () => {
-    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    mockGetItemByUri.mockReturnValue(new Promise<MediaItemType>(() => {}));
     mockCopyToClipboard.mockResolvedValue(false);
     const wrapper = mountRound(createState("reveal"));
 
@@ -161,7 +163,7 @@ describe("GuessTheSongPlayerRound", () => {
   });
 
   it("forwards the shared ready action", () => {
-    mockGetItemByUri.mockReturnValue(new Promise(() => {}));
+    mockGetItemByUri.mockReturnValue(new Promise<MediaItemType>(() => {}));
     const wrapper = mountRound(createState("reveal"));
 
     wrapper.getComponent(GuessTheSongReveal).vm.$emit("ready");
@@ -172,7 +174,7 @@ describe("GuessTheSongPlayerRound", () => {
 
   it("ignores lyrics returned for an older round", async () => {
     const firstLyrics = deferred<[string | null, string | null]>();
-    mockGetItemByUri.mockResolvedValue({ media_type: MediaType.TRACK });
+    mockGetItemByUri.mockResolvedValue(track());
     mockGetTrackLyrics
       .mockReturnValueOnce(firstLyrics.promise)
       .mockResolvedValueOnce(["Second lyrics", null]);

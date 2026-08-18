@@ -118,3 +118,97 @@
   --sidebar-border: rgba(255, 255, 255, 0.2);
   --sidebar-ring: #03a9f4;
 }
+
+.player-control-button {
+  color: var(--muted-foreground) !important;
+}
+
+/* the ghost variant's own hover colour outranks the resting colour above, so a
+   suppressed button needs this to settle back. Weight and order both matter:
+   the open states below match this specificity and must win, and the floating
+   player's overrides are heavier still. */
+.player-control-button[data-suppress-hover="true"] {
+  color: var(--muted-foreground) !important;
+}
+
+/* the ghost variant paints a hover background as well as a colour, behind the
+   @media (hover: hover) Tailwind gates its hover: utilities with. These buttons
+   carry their state in the colour and the weight alone, so the pill goes in
+   every state; :root lifts this over the dark utility's extra .dark. */
+:root .player-control-button:hover {
+  background-color: transparent !important;
+}
+
+.player-control-button:hover:not([data-suppress-hover="true"]),
+.player-control-button[data-active="true"],
+.player-control-button[data-state="open"] {
+  color: var(--primary) !important;
+}
+
+/* the label takes the weight used by active mobile navigation. The player bar
+   sets the resting weight in a scoped block, so :root lets open states win. */
+:root .player-control-button[data-active="true"] .player-bar-action-label,
+:root .player-control-button[data-state="open"] .player-bar-action-label {
+  font-weight: 600;
+}
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* the popouts grow with their content, up to the room the popper measured
+   between the player bar and the top of the screen */
+.player-bar-popout {
+  max-height: var(
+    --reka-popover-content-available-height,
+    calc(
+      100dvh - var(--player-bar-popout-top-gap) - var(--player-bar-popout-gap)
+    )
+  );
+}
+
+/* the popouts extend behind the mobile dock, so their content is inset to stay
+   scrollable past it; the dock rises from the navigation the popouts hang
+   above, so insetting by what it covers leaves them the popout gap. The marker
+   keeps desktop popouts untouched and lifts this above the equally-!important
+   p-0 utility they carry */
+:root[data-player-bar-overlay] .player-bar-popout {
+  padding-bottom: calc(
+    var(--player-bar-overlay-height) + var(--mobile-dock-rim)
+  ) !important;
+}
+
+.player-bar-popout[data-state="open"] {
+  animation: player-bar-popout-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+}
+
+.player-bar-popout[data-state="closed"] {
+  animation: player-bar-popout-out 160ms ease-in both !important;
+}
+
+.player-bar-popout[data-drag-dismissed="true"][data-state="closed"] {
+  animation: none !important;
+}
+
+@keyframes player-bar-popout-in {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes player-bar-popout-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(32px) scale(0.985);
+  }
+}

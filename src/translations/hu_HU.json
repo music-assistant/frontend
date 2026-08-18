@@ -257,8 +257,6 @@
                 "remove_confirm": "Biztosan el szeretné távolítani ezt a DSP előbeállítást?"
             }
         },
-        "dsp_enabled": "DSP engedélyezve",
-        "dsp_disabled": "DSP letiltva",
         "dsp_note_multi_device_group": {
             "label": "A DSP-t minden egyes lejátszóra külön-külön konfigurálhatja."
         },
@@ -418,7 +416,6 @@
         "remote_access_qr_code": "QR kód",
         "remote_access_qr_code_description": "Olvassa be telefonja kamerájával az azonnali csatlakozáshoz.",
         "reset_to_defaults": "Alapértékek visszaállítása",
-        "reset_to_defaults_confirm": "Biztosan vissza szeretné állítani az összes beállítást az alapértékekre? Ez azonnal menteni fogja a változtatásokat.",
         "unsaved_changes": "Nem mentett változtatások",
         "unsaved_changes_message": "Mentetlen módosításai vannak. Biztosan el szeretne menni mentés nélkül?",
         "stay": "Maradás",
@@ -576,7 +573,6 @@
         "artist": "Előadó",
         "name": "ABC sorrendben",
         "name_desc": "ABC sorrendben (csökkenő)",
-        "recent": "Nemrég hozzáadott",
         "year_desc": "Megjelenés éve (csökkenő)",
         "duration_desc": "Időtartam (csökkenő)",
         "original": "Eredeti",
@@ -589,8 +585,6 @@
         "last_played_desc": "Utoljára lejátszott (csökkenő)",
         "play_count": "Lejátszások száma",
         "play_count_desc": "Lejátszások száma (csökkenő)",
-        "artist_name": "Album előadója",
-        "artist_name_desc": "Album előadója (csökkenő)",
         "album_sort_name": "Album (rendezési név)"
     },
     "state": {
@@ -618,7 +612,6 @@
         "open_provider_link": "Elem megnyitása a szolgáltató webhelyén",
         "collapse_expand": "Lista összecsukása\/kibontása",
         "back": "Vissza",
-        "show_menu": "Menü megjelenítése\/elrejtése",
         "search_filter_active": "A keresés jelenleg szűri az eredményeket",
         "play_sample": "Minta lejátszása",
         "album_type": "Album típusa",

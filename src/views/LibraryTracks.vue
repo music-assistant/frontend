@@ -60,6 +60,8 @@ const sortKeys = [
   "name_desc",
   "sort_name",
   "sort_name_desc",
+  "track_artist_name",
+  "track_artist_name_desc",
   "duration",
   "duration_desc",
   "timestamp_added",

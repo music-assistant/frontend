@@ -1,5 +1,6 @@
 import MusicQuizPlayerView from "@/views/MusicQuizPlayerView.vue";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { h, nextTick, ref } from "vue";
@@ -7,39 +8,54 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   apiMock,
+  isGuestSession,
   mockGameAdapterSetup,
   mockGetMusicQuizRoundScore,
   mockGetTrackLyrics,
   mockListenInSetup,
   mockPrimeAudio,
+  mockRequestAutoEnable,
   mockResolveMusicQuizDefinition,
+  mockRouterPush,
   mockToastError,
   mockToastSuccess,
   mockUseMusicQuizPlayer,
 } = vi.hoisted(() => ({
   apiMock: { state: { value: "connected" as string } },
+  isGuestSession: { value: false },
   mockGameAdapterSetup: vi.fn(),
   mockGetMusicQuizRoundScore: vi.fn(),
-  mockGetTrackLyrics: vi.fn(),
+  mockGetTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
   mockListenInSetup: vi.fn(),
   mockPrimeAudio: vi.fn(),
+  mockRequestAutoEnable: vi.fn(),
   mockResolveMusicQuizDefinition: vi.fn(),
+  mockRouterPush: vi.fn(),
   mockToastError: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockUseMusicQuizPlayer: vi.fn(),
 }));
 
+// Exposed by the last mounted ListenIn stub, mirroring its `busy` ref so tests
+// can drive the Join/Continue disabled state from outside the component.
+let listenInBusyRef: { value: boolean } | undefined;
+
 vi.mock("@/components/ListenIn.vue", async () => {
-  const { h } = await import("vue");
+  const { h, ref } = await import("vue");
   return {
     default: {
       name: "ListenIn",
       props: {
-        autoEnable: Boolean,
         mode: String,
       },
-      setup(props: { autoEnable?: boolean; mode?: string }) {
+      setup(
+        props: { mode?: string },
+        { expose }: { expose: (exposed: object) => void },
+      ) {
         mockListenInSetup(props);
+        const busy = ref(false);
+        listenInBusyRef = busy;
+        expose({ busy, requestAutoEnable: mockRequestAutoEnable });
         return () => h("div", { "data-testid": "listen-in" });
       },
     },
@@ -102,9 +118,16 @@ vi.mock("@/plugins/i18n", () => ({
       (
         {
           "providers.music_quiz.game_starts_in": "Game starts in {0}",
+          "providers.music_quiz.return_to_host_panel": "Return to host panel",
         } as Record<string, string>
       )[key] ?? key;
     return message.replace("{0}", String(values[0] ?? ""));
+  },
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: {
+    isGuestAccessSession: () => isGuestSession.value,
   },
 }));
 
@@ -123,6 +146,10 @@ vi.mock("vue-sonner", () => ({
     error: mockToastError,
     success: mockToastSuccess,
   },
+}));
+
+vi.mock("vue-router", () => ({
+  useRouter: () => ({ push: mockRouterPush }),
 }));
 
 const currentRound = {
@@ -233,7 +260,12 @@ describe("MusicQuizPlayerView routing", () => {
     mockListenInSetup.mockReset();
     mockPrimeAudio.mockReset();
     mockPrimeAudio.mockReturnValue(true);
+    mockRequestAutoEnable.mockReset();
+    mockRequestAutoEnable.mockResolvedValue(undefined);
+    listenInBusyRef = undefined;
+    mockRouterPush.mockReset();
     webPlayer.player_generation = 0;
+    isGuestSession.value = false;
     mockResolveMusicQuizDefinition.mockReset();
     mockToastError.mockReset();
     mockToastSuccess.mockReset();
@@ -242,6 +274,9 @@ describe("MusicQuizPlayerView routing", () => {
       info: ref(null),
       state: ref(playerState),
       playerId: ref("player-id"),
+      // Already past the landing, matching a returning player who saw it
+      // earlier this session, unless a test says otherwise.
+      landingSeen: ref(true),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
@@ -249,6 +284,7 @@ describe("MusicQuizPlayerView routing", () => {
       join: vi.fn(),
       submitAnswer: vi.fn(),
       ready: vi.fn(),
+      markLandingSeen: vi.fn(),
     });
   });
 
@@ -265,6 +301,7 @@ describe("MusicQuizPlayerView routing", () => {
         info: ref(null),
         state: ref(state),
         playerId: ref("player-id"),
+        landingSeen: ref(true),
         gameRemoved: ref(false),
         busy: ref(false),
         loading: ref(false),
@@ -272,6 +309,7 @@ describe("MusicQuizPlayerView routing", () => {
         join: vi.fn(),
         submitAnswer: vi.fn(),
         ready: vi.fn(),
+        markLandingSeen: vi.fn(),
       });
 
       const wrapper = mountView();
@@ -285,7 +323,7 @@ describe("MusicQuizPlayerView routing", () => {
     },
   );
 
-  it("initializes ListenIn for reveal-audio Trivia during answering", () => {
+  it("never renders ListenIn in the joined game view, even for reveal-audio Trivia", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(
       createDefinition(triviaListenInCapability),
     );
@@ -293,6 +331,7 @@ describe("MusicQuizPlayerView routing", () => {
       info: ref(null),
       state: ref({ ...triviaState, play_reveal_audio: true }),
       playerId: ref("player-id"),
+      landingSeen: ref(true),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
@@ -300,19 +339,22 @@ describe("MusicQuizPlayerView routing", () => {
       join: vi.fn(),
       submitAnswer: vi.fn(),
       ready: vi.fn(),
+      markLandingSeen: vi.fn(),
     });
 
     const wrapper = mountView();
 
+    // ListenIn now only ever appears on the pre-game landing; the mode badge
+    // still comes from the session header, unrelated to ListenIn itself.
     expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
-    expect(mockListenInSetup).toHaveBeenCalledOnce();
-    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    expect(mockListenInSetup).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
     expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
     expect(mockGetTrackLyrics).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 
-  it("allows reveal-audio Trivia ListenIn to be armed in the lobby", () => {
+  it("shows reveal-audio Trivia ListenIn on the rejoin landing while still in the lobby", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(
       createDefinition(triviaListenInCapability),
     );
@@ -325,6 +367,7 @@ describe("MusicQuizPlayerView routing", () => {
         current_round: null,
       }),
       playerId: ref("player-id"),
+      landingSeen: ref(false),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
@@ -332,6 +375,7 @@ describe("MusicQuizPlayerView routing", () => {
       join: vi.fn(),
       submitAnswer: vi.fn(),
       ready: vi.fn(),
+      markLandingSeen: vi.fn(),
     });
 
     const wrapper = mountView();
@@ -342,13 +386,37 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it("keeps ListenIn enabled for Guess the Song", () => {
+  it("shows ListenIn on the rejoin landing for Guess the Song", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(playerState),
+      playerId: ref("player-id"),
+      landingSeen: ref(false),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(currentRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+      markLandingSeen: vi.fn(),
+    });
 
     const wrapper = mountView();
 
     expect(mockListenInSetup).toHaveBeenCalledOnce();
     expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("never renders ListenIn in the joined game view for Guess the Song", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+
+    const wrapper = mountView();
+
+    expect(mockListenInSetup).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
     wrapper.unmount();
   });
 
@@ -368,32 +436,6 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it("requires a Join-primed session before Remote auto-listen", () => {
-    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
-    mockUseMusicQuizPlayer.mockReturnValue({
-      info: ref(null),
-      state: ref({ ...playerState, mode: "remote" }),
-      playerId: ref("player-id"),
-      gameRemoved: ref(false),
-      busy: ref(false),
-      loading: ref(false),
-      currentRound: ref(currentRound),
-      join: vi.fn(),
-      submitAnswer: vi.fn(),
-      ready: vi.fn(),
-    });
-
-    const wrapper = mountView();
-
-    expect(mockListenInSetup).toHaveBeenCalledWith(
-      expect.objectContaining({
-        autoEnable: false,
-        mode: "remote",
-      }),
-    );
-    wrapper.unmount();
-  });
-
   it("hides round progress for a joined player in the lobby", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
@@ -404,6 +446,7 @@ describe("MusicQuizPlayerView routing", () => {
         current_round: null,
       }),
       playerId: ref("player-id"),
+      landingSeen: ref(true),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
@@ -411,6 +454,7 @@ describe("MusicQuizPlayerView routing", () => {
       join: vi.fn(),
       submitAnswer: vi.fn(),
       ready: vi.fn(),
+      markLandingSeen: vi.fn(),
     });
 
     const wrapper = mountView();
@@ -462,6 +506,7 @@ describe("MusicQuizPlayerView routing", () => {
         info: ref(null),
         state,
         playerId: ref("player-id"),
+        landingSeen: ref(true),
         gameRemoved: ref(false),
         busy: ref(false),
         loading: ref(false),
@@ -469,6 +514,7 @@ describe("MusicQuizPlayerView routing", () => {
         join: vi.fn(),
         submitAnswer: vi.fn(),
         ready: vi.fn(),
+        markLandingSeen: vi.fn(),
       });
       const wrapper = mountView();
 
@@ -503,12 +549,13 @@ describe("MusicQuizPlayerView routing", () => {
     },
   );
 
-  it("enables Music Timeline ListenIn without fetching lyrics", () => {
+  it("enables Music Timeline ListenIn on the rejoin landing without fetching lyrics", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
       state: ref(musicTimelineState),
       playerId: ref("player-id"),
+      landingSeen: ref(false),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
@@ -516,6 +563,7 @@ describe("MusicQuizPlayerView routing", () => {
       join: vi.fn(),
       submitAnswer: vi.fn(),
       ready: vi.fn(),
+      markLandingSeen: vi.fn(),
     });
 
     const wrapper = mountView();
@@ -559,7 +607,7 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it("shows the mode label before joining reveal-audio Trivia", () => {
+  it("shows the mode label and ListenIn on the landing before joining reveal-audio Trivia", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(
       createDefinition(triviaListenInCapability),
     );
@@ -589,7 +637,9 @@ describe("MusicQuizPlayerView routing", () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
-    expect(mockListenInSetup).not.toHaveBeenCalled();
+    // The landing now offers ListenIn before joining too, not just once in.
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
     wrapper.unmount();
   });
 
@@ -625,7 +675,7 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it("unlocks guest audio from the Join gesture", async () => {
+  it("primes audio, arms auto-listen, and dismisses the landing after a Remote join", async () => {
     const info = ref({
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",
@@ -638,6 +688,8 @@ describe("MusicQuizPlayerView routing", () => {
     const state = ref<typeof playerState | null>(null);
     const playerId = ref<string | null>(null);
     const activeRound = ref<typeof currentRound | null>(null);
+    const landingSeen = ref(false);
+    const markLandingSeen = vi.fn();
     const join = vi.fn(async () => {
       state.value = { ...playerState, mode: "remote" };
       playerId.value = "player-id";
@@ -649,6 +701,7 @@ describe("MusicQuizPlayerView routing", () => {
       state,
       playerId,
       rememberedName: ref(""),
+      landingSeen,
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
@@ -656,6 +709,7 @@ describe("MusicQuizPlayerView routing", () => {
       join,
       submitAnswer: vi.fn(),
       ready: vi.fn(),
+      markLandingSeen,
     });
     const wrapper = mountView();
 
@@ -665,20 +719,58 @@ describe("MusicQuizPlayerView routing", () => {
     expect(mockPrimeAudio).toHaveBeenCalledOnce();
     expect(join).toHaveBeenCalledWith("Guest");
     expect(mockListenInSetup).toHaveBeenCalledWith(
-      expect.objectContaining({
-        autoEnable: true,
-        mode: "remote",
-      }),
+      expect.objectContaining({ mode: "remote" }),
     );
-
-    webPlayer.player_generation++;
-    await nextTick();
-    expect(
-      wrapper.findComponent({ name: "ListenIn" }).props("autoEnable"),
-    ).toBe(false);
+    expect(mockRequestAutoEnable).toHaveBeenCalledOnce();
+    expect(markLandingSeen).toHaveBeenCalledOnce();
   });
 
-  it("keeps venue listen-in opt-in when joining", async () => {
+  it("does not arm auto-listen or dismiss the landing when a Remote join fails", async () => {
+    const info = ref({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Quiz",
+      player_count: 0,
+      round_count: 5,
+      mode: "remote",
+    });
+    const markLandingSeen = vi.fn();
+    const join = vi.fn(async () => {
+      // The composable leaves playerId null on a failed join.
+    });
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info,
+      state: ref(null),
+      playerId: ref<string | null>(null),
+      rememberedName: ref(""),
+      landingSeen: ref(false),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join,
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+      markLandingSeen,
+    });
+    const wrapper = mountView();
+
+    wrapper.getComponent(MusicQuizJoinForm).vm.$emit("join", "Guest");
+    await flushPromises();
+
+    // Priming still happens on the click gesture itself, before the join
+    // outcome is known.
+    expect(mockPrimeAudio).toHaveBeenCalledOnce();
+    expect(join).toHaveBeenCalledWith("Guest");
+    expect(mockRequestAutoEnable).not.toHaveBeenCalled();
+    expect(markLandingSeen).not.toHaveBeenCalled();
+    // The landing (join form) stays up for a retry.
+    expect(wrapper.findComponent(MusicQuizJoinForm).exists()).toBe(true);
+  });
+
+  it("primes audio and arms auto-listen for a Venue join too, without gating on mode", async () => {
     const info = ref({
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",
@@ -691,6 +783,7 @@ describe("MusicQuizPlayerView routing", () => {
     const state = ref<typeof playerState | null>(null);
     const playerId = ref<string | null>(null);
     const activeRound = ref<typeof currentRound | null>(null);
+    const markLandingSeen = vi.fn();
     const join = vi.fn(async () => {
       state.value = { ...playerState, mode: "venue" };
       playerId.value = "player-id";
@@ -702,6 +795,7 @@ describe("MusicQuizPlayerView routing", () => {
       state,
       playerId,
       rememberedName: ref(""),
+      landingSeen: ref(false),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
@@ -709,6 +803,7 @@ describe("MusicQuizPlayerView routing", () => {
       join,
       submitAnswer: vi.fn(),
       ready: vi.fn(),
+      markLandingSeen,
     });
     const wrapper = mountView();
 
@@ -717,57 +812,10 @@ describe("MusicQuizPlayerView routing", () => {
 
     expect(mockPrimeAudio).toHaveBeenCalledOnce();
     expect(mockListenInSetup).toHaveBeenCalledWith(
-      expect.objectContaining({
-        autoEnable: false,
-        mode: "venue",
-      }),
+      expect.objectContaining({ mode: "venue" }),
     );
-  });
-
-  it("keeps Tap available when Join cannot prime audio yet", async () => {
-    mockPrimeAudio.mockReturnValue(false);
-    const info = ref({
-      quiz_type: "guess_the_song",
-      answer_type: "multiple_choice",
-      phase: "lobby",
-      name: "Quiz",
-      player_count: 0,
-      round_count: 5,
-      mode: "remote",
-    });
-    const state = ref<typeof playerState | null>(null);
-    const playerId = ref<string | null>(null);
-    const activeRound = ref<typeof currentRound | null>(null);
-    const join = vi.fn(async () => {
-      state.value = { ...playerState, mode: "remote" };
-      playerId.value = "player-id";
-      activeRound.value = currentRound;
-    });
-    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
-    mockUseMusicQuizPlayer.mockReturnValue({
-      info,
-      state,
-      playerId,
-      rememberedName: ref(""),
-      gameRemoved: ref(false),
-      busy: ref(false),
-      loading: ref(false),
-      currentRound: activeRound,
-      join,
-      submitAnswer: vi.fn(),
-      ready: vi.fn(),
-    });
-    const wrapper = mountView();
-
-    wrapper.getComponent(MusicQuizJoinForm).vm.$emit("join", "Guest");
-    await flushPromises();
-
-    expect(mockListenInSetup).toHaveBeenCalledWith(
-      expect.objectContaining({
-        autoEnable: false,
-        mode: "remote",
-      }),
-    );
+    expect(mockRequestAutoEnable).toHaveBeenCalledOnce();
+    expect(markLandingSeen).toHaveBeenCalledOnce();
   });
 
   it("shows unjoined guests the server replay countdown", () => {
@@ -905,6 +953,222 @@ describe("MusicQuizPlayerView routing", () => {
     ).toBe("true");
     endedWrapper.unmount();
   });
+
+  it.each([
+    ["waiting", false],
+    ["ended", true],
+  ])(
+    "lets a regular user return to the host panel when %s",
+    async (_, ended) => {
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref(null),
+        state: ref(null),
+        playerId: ref(null),
+        gameRemoved: ref(ended),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: ref(null),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+      });
+
+      const wrapper = mountView();
+      const returnButton = wrapper.get('[data-testid="return-to-host-panel"]');
+      expect(returnButton.text()).toContain("Return to host panel");
+
+      await returnButton.trigger("click");
+
+      expect(mockRouterPush).toHaveBeenCalledWith({ name: "music-quiz" });
+      wrapper.unmount();
+    },
+  );
+
+  it.each([
+    ["waiting", false],
+    ["ended", true],
+  ])("keeps the host panel action hidden for guests when %s", (_, ended) => {
+    isGuestSession.value = true;
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(ended),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.find('[data-testid="return-to-host-panel"]').exists()).toBe(
+      false,
+    );
+    wrapper.unmount();
+  });
+
+  describe("landing screen", () => {
+    it("shows the how-to-play explanation and join form for a new player", () => {
+      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref({
+          quiz_type: "guess_the_song",
+          answer_type: "multiple_choice",
+          phase: "lobby",
+          name: "Quiz",
+          player_count: 0,
+          round_count: 5,
+          mode: "venue",
+        }),
+        state: ref(null),
+        playerId: ref(null),
+        rememberedName: ref(""),
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: ref(null),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+        markLandingSeen: vi.fn(),
+      });
+
+      const wrapper = mountView();
+
+      expect(wrapper.text()).toContain(
+        "providers.music_quiz.game_type_guess_the_song",
+      );
+      expect(wrapper.findComponent(MusicQuizJoinForm).exists()).toBe(true);
+      expect(
+        wrapper.find('[data-testid="music-quiz-landing-continue"]').exists(),
+      ).toBe(false);
+      expect(mockGameAdapterSetup).not.toHaveBeenCalled();
+      wrapper.unmount();
+    });
+
+    it("shows the game view once joined, with the landing gone", async () => {
+      const info = ref({
+        quiz_type: "guess_the_song",
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Quiz",
+        player_count: 0,
+        round_count: 5,
+        mode: "venue",
+      });
+      const state = ref<typeof playerState | null>(null);
+      const playerId = ref<string | null>(null);
+      const activeRound = ref<typeof currentRound | null>(null);
+      const landingSeen = ref(false);
+      const join = vi.fn(async () => {
+        state.value = playerState;
+        playerId.value = "player-id";
+        activeRound.value = currentRound;
+      });
+      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info,
+        state,
+        playerId,
+        rememberedName: ref(""),
+        landingSeen,
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: activeRound,
+        join,
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+        // markLandingSeen mirrors the composable closely enough to drive the
+        // template: it flips the same landingSeen ref the view reads from.
+        markLandingSeen: vi.fn(() => {
+          landingSeen.value = true;
+        }),
+      });
+
+      const wrapper = mountView();
+      wrapper.getComponent(MusicQuizJoinForm).vm.$emit("join", "Guest");
+      await flushPromises();
+
+      expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
+      expect(wrapper.findComponent(MusicQuizJoinForm).exists()).toBe(false);
+      expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
+      wrapper.unmount();
+    });
+
+    it("shows a Continue button for an auto-rejoined player who has not seen the landing", async () => {
+      const landingSeen = ref(false);
+      const markLandingSeen = vi.fn(() => {
+        landingSeen.value = true;
+      });
+      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref(null),
+        state: ref(playerState),
+        playerId: ref("player-id"),
+        landingSeen,
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: ref(currentRound),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+        markLandingSeen,
+      });
+
+      const wrapper = mountView();
+
+      expect(wrapper.text()).toContain(
+        "providers.music_quiz.game_type_guess_the_song",
+      );
+      expect(mockGameAdapterSetup).not.toHaveBeenCalled();
+      const continueButton = wrapper.get(
+        '[data-testid="music-quiz-landing-continue"]',
+      );
+
+      await continueButton.trigger("click");
+      await flushPromises();
+
+      expect(mockPrimeAudio).toHaveBeenCalledOnce();
+      expect(mockRequestAutoEnable).toHaveBeenCalledOnce();
+      expect(markLandingSeen).toHaveBeenCalledOnce();
+      expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
+      expect(
+        wrapper.find('[data-testid="music-quiz-landing-continue"]').exists(),
+      ).toBe(false);
+      wrapper.unmount();
+    });
+
+    it("skips straight to the game view once the landing was already seen", () => {
+      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref(null),
+        state: ref(playerState),
+        playerId: ref("player-id"),
+        landingSeen: ref(true),
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: ref(currentRound),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+        markLandingSeen: vi.fn(),
+      });
+
+      const wrapper = mountView();
+
+      expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
+      expect(
+        wrapper.find('[data-testid="music-quiz-landing-continue"]').exists(),
+      ).toBe(false);
+      wrapper.unmount();
+    });
+  });
 });
 
 function createDefinition(
@@ -936,6 +1200,10 @@ function createDefinition(
   return {
     game: {
       supportsListenIn,
+      icon: { render: () => h("span", { "data-testid": "game-icon" }) },
+      labelKey: "providers.music_quiz.game_type_guess_the_song",
+      howToPlayDescriptionKey:
+        "providers.music_quiz.how_to_play_guess_the_song_description",
       adapters: {
         player: gameAdapter,
       },

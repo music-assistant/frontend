@@ -4,10 +4,18 @@ import type {
   MusicQuizSupportedPublicState,
 } from "@/composables/music-quiz/useMusicQuiz";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
+
+/** Error codes of the Music Quiz provider, as sent by the server. */
+export enum MusicQuizErrorCode {
+  NO_GAME = 1001,
+  UNKNOWN_PLAYER = 1009,
+}
 
 const MUSIC_QUIZ_PLAYER_ID_KEY = "music_quiz_player_id";
 const MUSIC_QUIZ_PLAYER_NAME_KEY = "music_quiz_player_name";
+const MUSIC_QUIZ_LANDING_SEEN_KEY = "music_quiz_landing_seen";
 const MUSIC_QUIZ_STORAGE_VERSION = 1;
 
 export interface MusicQuizParticipantStorageContext {
@@ -23,6 +31,11 @@ interface StoredMusicQuizPlayerId extends MusicQuizParticipantStorageContext {
 interface StoredMusicQuizPlayerName extends MusicQuizParticipantStorageContext {
   version: typeof MUSIC_QUIZ_STORAGE_VERSION;
   playerName: string;
+}
+
+interface StoredMusicQuizLandingSeen extends MusicQuizParticipantStorageContext {
+  version: typeof MUSIC_QUIZ_STORAGE_VERSION;
+  playerId: string;
 }
 
 /**
@@ -112,6 +125,51 @@ export function getStoredMusicQuizPlayerName(
   sessionStorage.removeItem(MUSIC_QUIZ_PLAYER_NAME_KEY);
   localStorage.removeItem(MUSIC_QUIZ_PLAYER_NAME_KEY);
   return "";
+}
+
+/**
+ * Record that the player has seen the landing screen for this quiz session.
+ */
+export function storeMusicQuizLandingSeen(
+  context: MusicQuizParticipantStorageContext | undefined,
+  playerId: string,
+): void {
+  if (!context) {
+    sessionStorage.removeItem(MUSIC_QUIZ_LANDING_SEEN_KEY);
+    return;
+  }
+  const value: StoredMusicQuizLandingSeen = {
+    version: MUSIC_QUIZ_STORAGE_VERSION,
+    ...context,
+    playerId,
+  };
+  sessionStorage.setItem(MUSIC_QUIZ_LANDING_SEEN_KEY, JSON.stringify(value));
+}
+
+/**
+ * Whether the player has already seen the landing screen for this quiz session.
+ */
+export function hasSeenMusicQuizLanding(
+  context: MusicQuizParticipantStorageContext | undefined,
+  playerId: string,
+): boolean {
+  if (!context) {
+    sessionStorage.removeItem(MUSIC_QUIZ_LANDING_SEEN_KEY);
+    return false;
+  }
+  const storedValue = readStoredValue(
+    MUSIC_QUIZ_LANDING_SEEN_KEY,
+    isStoredMusicQuizLandingSeen,
+  );
+  if (
+    storedValue &&
+    isMatchingStorageContext(storedValue, context) &&
+    storedValue.playerId === playerId
+  ) {
+    return true;
+  }
+  sessionStorage.removeItem(MUSIC_QUIZ_LANDING_SEEN_KEY);
+  return false;
 }
 
 export type RankedMusicQuizPlayer = MusicQuizPlayer & { rank: number };
@@ -206,35 +264,21 @@ export function getMusicQuizErrorMessage(err: unknown, fallback = "") {
   return fallback;
 }
 
-// Detects the backend "no active Music Quiz game" error across its possible
-// shapes (plain string / Error / structured payload), since WS command
-// failures can arrive as strings rather than Error instances.
+/** Whether the command failed because there is no active Music Quiz game. */
 export function isNoActiveGameError(err: unknown): boolean {
-  const message = getMusicQuizErrorMessage(err).toLowerCase();
-  if (
-    message.includes("no active game") ||
-    message.includes("no active music quiz game") ||
-    (message.includes("no active") && message.includes("music quiz"))
-  ) {
-    return true;
-  }
-  if (err && typeof err === "object") {
-    const errorCode =
-      "error_code" in err && typeof err.error_code === "string"
-        ? err.error_code.toLowerCase()
-        : "";
-    const errorType =
-      "type" in err && typeof err.type === "string"
-        ? err.type.toLowerCase()
-        : "";
-    return (
-      errorCode === "musicquiznogameerror" ||
-      errorCode === "music_quiz_no_game" ||
-      errorType === "musicquiznogameerror" ||
-      errorType === "music_quiz_no_game"
-    );
-  }
-  return false;
+  return hasMusicQuizErrorCode(err, MusicQuizErrorCode.NO_GAME);
+}
+
+/** Whether the command failed because the game does not know this player. */
+export function isUnknownPlayerError(err: unknown): boolean {
+  return hasMusicQuizErrorCode(err, MusicQuizErrorCode.UNKNOWN_PLAYER);
+}
+
+function hasMusicQuizErrorCode(
+  err: unknown,
+  code: MusicQuizErrorCode,
+): boolean {
+  return err instanceof ApiCommandError && err.error_code === code;
 }
 
 function clearStoredMusicQuizPlayerName(): void {
@@ -271,6 +315,17 @@ function isStoredMusicQuizPlayerName(
     "playerName" in value &&
     typeof value.playerName === "string" &&
     value.playerName.length > 0
+  );
+}
+
+function isStoredMusicQuizLandingSeen(
+  value: unknown,
+): value is StoredMusicQuizLandingSeen {
+  return (
+    isStoredMusicQuizParticipantValue(value) &&
+    "playerId" in value &&
+    typeof value.playerId === "string" &&
+    value.playerId.length > 0
   );
 }
 

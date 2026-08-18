@@ -1,13 +1,31 @@
 import { $t } from "@/plugins/i18n";
-import { toRaw } from "vue";
+import { toRaw, type Component } from "vue";
+import {
+  ArrowDownToLine,
+  ArrowLeftRight,
+  ArrowUpDown,
+  AudioWaveform,
+  Blend,
+  ChevronsDownUp,
+  Expand,
+  Gauge,
+  SlidersHorizontal,
+  TrendingDown,
+  TrendingUp,
+  Waves,
+} from "@lucide/vue";
 import {
   DSPFilterType,
+  HighLowPassMode,
   type BalanceFilter,
+  type CompressorFilter,
   type ConvolutionFilter,
   type CrossfeedFilter,
   type DSPConfig,
   type DSPFilter,
   type GainFilter,
+  type HighLowPassFilter,
+  type SafetyLimiterFilter,
   type ParametricEQBand,
   type ParametricEQFilter,
   type StereoWidthFilter,
@@ -32,8 +50,43 @@ export function areDSPConfigsEqual(left: DSPConfig, right: DSPConfig): boolean {
   );
 }
 
+// Display label for a filter type. A high/low-pass edits as itself, so it
+// reads its stored mode ("High-pass" / "Low-pass") rather than the generic
+// type name used in the add-filter menu.
+export function dspFilterTypeLabel(filter: DSPFilter): string {
+  if (filter.type === DSPFilterType.HIGH_LOW_PASS) {
+    return $t(`settings.dsp.high_low_pass.mode.${filter.mode}`);
+  }
+  return $t(`settings.dsp.types.${filter.type}`);
+}
+
+// Icon for a filter type. A high/low-pass has no entry of its own: it is one
+// type with two directions, so its icon comes from the mode below.
+const filterIcons: Partial<Record<DSPFilterType, Component>> = {
+  [DSPFilterType.PARAMETRIC_EQ]: SlidersHorizontal,
+  [DSPFilterType.TONE_CONTROL]: AudioWaveform,
+  [DSPFilterType.GAIN]: Gauge,
+  [DSPFilterType.BALANCE]: ArrowLeftRight,
+  [DSPFilterType.TRANSPOSE]: ArrowUpDown,
+  [DSPFilterType.STEREO_WIDTH]: Expand,
+  [DSPFilterType.CROSSFEED]: Blend,
+  [DSPFilterType.SAFETY_LIMITER]: ArrowDownToLine,
+  [DSPFilterType.COMPRESSOR]: ChevronsDownUp,
+  [DSPFilterType.CONVOLUTION]: Waves,
+};
+
+export function dspFilterIcon(filter: DSPFilter): Component {
+  // The response curve either rises or falls; an unknown mode falls through to
+  // the neutral icon.
+  if (filter.type === DSPFilterType.HIGH_LOW_PASS) {
+    if (filter.mode === HighLowPassMode.LOW_PASS) return TrendingDown;
+    if (filter.mode === HighLowPassMode.HIGH_PASS) return TrendingUp;
+  }
+  return filterIcons[filter.type] ?? SlidersHorizontal;
+}
+
 export function dspFilterText(filter: DSPFilter): string {
-  let text = $t(`settings.dsp.types.${filter.type}`);
+  let text = dspFilterTypeLabel(filter);
   if (filter.type !== DSPFilterType.PARAMETRIC_EQ) return text;
 
   const enabledBandsCount = filter.bands.filter((band) => band.enabled).length;
@@ -82,6 +135,24 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
     right.type === DSPFilterType.TRANSPOSE
   ) {
     return areTransposeFiltersEqual(left, right);
+  }
+  if (
+    left.type === DSPFilterType.SAFETY_LIMITER &&
+    right.type === DSPFilterType.SAFETY_LIMITER
+  ) {
+    return areSafetyLimiterFiltersEqual(left, right);
+  }
+  if (
+    left.type === DSPFilterType.COMPRESSOR &&
+    right.type === DSPFilterType.COMPRESSOR
+  ) {
+    return areCompressorFiltersEqual(left, right);
+  }
+  if (
+    left.type === DSPFilterType.HIGH_LOW_PASS &&
+    right.type === DSPFilterType.HIGH_LOW_PASS
+  ) {
+    return areHighLowPassFiltersEqual(left, right);
   }
   if (
     left.type === DSPFilterType.CONVOLUTION &&
@@ -152,6 +223,38 @@ function areTransposeFiltersEqual(
   right: TransposeFilter,
 ): boolean {
   return left.semitones === right.semitones;
+}
+
+function areSafetyLimiterFiltersEqual(
+  left: SafetyLimiterFilter,
+  right: SafetyLimiterFilter,
+): boolean {
+  return left.ceiling === right.ceiling;
+}
+
+function areCompressorFiltersEqual(
+  left: CompressorFilter,
+  right: CompressorFilter,
+): boolean {
+  return (
+    left.threshold === right.threshold &&
+    left.ratio === right.ratio &&
+    left.attack === right.attack &&
+    left.release === right.release &&
+    left.knee === right.knee &&
+    left.makeup === right.makeup
+  );
+}
+
+function areHighLowPassFiltersEqual(
+  left: HighLowPassFilter,
+  right: HighLowPassFilter,
+): boolean {
+  return (
+    left.mode === right.mode &&
+    left.frequency === right.frequency &&
+    left.slope === right.slope
+  );
 }
 
 function areStereoWidthFiltersEqual(

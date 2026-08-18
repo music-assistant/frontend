@@ -257,8 +257,6 @@
                 "remove_confirm": "Ar tikrai norite pašalinti šį DSP išankstinį nustatymą?"
             }
         },
-        "dsp_enabled": "DSP įjungtas",
-        "dsp_disabled": "DSP yra išjungtas",
         "dsp_note_multi_device_group": {
             "label": "DSP galite konfigūruoti kiekvienam grotuvui atskirai."
         },
@@ -415,7 +413,6 @@
         "remote_access_qr_code": "QR kodas",
         "remote_access_qr_code_description": "Nuskaitykite telefono kamera, kad galėtumėte akimirksniu prisijungti.",
         "reset_to_defaults": "Atkurti numatytuosius nustatymus",
-        "reset_to_defaults_confirm": "Ar tikrai norite atkurti visų nustatymų numatytąsias reikšmes? Tai iš karto išsaugos pakeitimus.",
         "unsaved_changes": "Neišsaugoti pakeitimai",
         "unsaved_changes_message": "Yra neišsaugotų pakeitimų. Ar tikrai norite išeiti neišsaugoję?",
         "stay": "Likti",
@@ -533,7 +530,6 @@
         "artist": "Dainininkas",
         "name": "Abėcėlės tvarka",
         "name_desc": "Abėcėlės tvarka (mažėjimo tvarka)",
-        "recent": "Neseniai pridėta",
         "year_desc": "Išleidimo metai (mažėjimo tvarka)",
         "duration_desc": "Trukmė (mažėjimo tvarka)",
         "original": "Originalus",
@@ -546,8 +542,6 @@
         "last_played_desc": "Paskutinį kartą leista (mažėjimo tvarka)",
         "play_count": "Leidimų skaičius",
         "play_count_desc": "Peržiūrų skaičius (mažėjimo tvarka)",
-        "artist_name": "Albumo atlikėjas",
-        "artist_name_desc": "Albumo atlikėjas (mažėjimo tvarka)",
         "album_sort_name": "Albumas (rūšiavimo pavadinimas)"
     },
     "state": {
@@ -575,7 +569,6 @@
         "open_provider_link": "Atidarykite šį elementą teikėjo svetainėje",
         "collapse_expand": "Sutraukti \/ išskleisti šį sąrašą",
         "back": "Atgal",
-        "show_menu": "Rodyti \/ slėpti meniu",
         "search_filter_active": "Šiuo metu paieška filtruoja rezultatus",
         "play_sample": "Leisti pavyzdį",
         "album_type": "Albumo tipas",

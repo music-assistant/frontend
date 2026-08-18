@@ -27,10 +27,15 @@
         </span>
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" class="w-[360px] p-2">
+    <PopoverContent
+      align="start"
+      class="w-[360px] p-2"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+    >
       <Input
         v-model="search"
         :placeholder="$t('search')"
+        :aria-label="$t('providers.ai_radio.create.playlist_search')"
         class="mb-2 h-8 text-sm"
         @keydown.stop
       />
@@ -73,9 +78,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useShows } from "@/composables/ai-radio/useShows";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { $t } from "@/plugins/i18n";
 import { Loader2, Music } from "@lucide/vue";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 /** A user-picked source playlist, kept as plain ids so it round-trips through route query and drafts. */
 export interface PlaylistSelection {
@@ -118,6 +124,12 @@ function onPick(playlist: (typeof playlists.value)[number]) {
   });
   popoverOpen.value = false;
 }
+
+// Closing only unmounts the popover content, so the term has to be dropped by
+// hand - on open, to keep the restored full list out of the closing animation.
+watch(popoverOpen, (isOpen) => {
+  if (isOpen) search.value = "";
+});
 
 onMounted(() => {
   if (playlists.value.length === 0 && !loadingPlaylists.value) {

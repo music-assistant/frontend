@@ -15,6 +15,7 @@ export interface ItemsListingPreferences {
   expand?: boolean;
   search?: string;
   collapseCollections?: boolean;
+  activeTab?: string;
 }
 
 /**
@@ -132,8 +133,9 @@ export function useUserPreferences() {
 }
 
 /**
- * Drop ids from every itemsListing.*.providerFilter for providers that no
- * longer have a config. Writes once if anything changed.
+ * Drop ids from every itemsListing.*.providerFilter and
+ * discover.hiddenProviders.* for providers that no longer have a config.
+ * Writes once if anything changed.
  *
  * Keyed off configs rather than loaded instances (api.providers): a disabled,
  * failing, or still-starting provider keeps its config and so keeps its filter.
@@ -158,19 +160,32 @@ export async function pruneStaleProviderFilters(): Promise<void> {
   let changed = false;
 
   for (const key of Object.keys(prefs)) {
-    if (!key.startsWith("itemsListing.")) continue;
-    const value = prefs[key] as ItemsListingPreferences | undefined;
-    if (!value || !Array.isArray(value.providerFilter)) continue;
-    const pruned = value.providerFilter.filter((id) => configuredIds.has(id));
-    if (pruned.length === value.providerFilter.length) continue;
-    changed = true;
-    const next: ItemsListingPreferences = { ...value };
-    if (pruned.length === 0) {
-      delete next.providerFilter;
-    } else {
-      next.providerFilter = pruned;
+    if (key.startsWith("itemsListing.")) {
+      const value = prefs[key] as ItemsListingPreferences | undefined;
+      if (!value || !Array.isArray(value.providerFilter)) continue;
+      const pruned = value.providerFilter.filter((id) => configuredIds.has(id));
+      if (pruned.length === value.providerFilter.length) continue;
+      changed = true;
+      const next: ItemsListingPreferences = { ...value };
+      if (pruned.length === 0) {
+        delete next.providerFilter;
+      } else {
+        next.providerFilter = pruned;
+      }
+      updatedPrefs[key] = next;
+    } else if (key.startsWith("discover.hiddenProviders.")) {
+      // matches rowHiddenProvidersKey's prefix in components/discover/utils/rowProviderFilter.ts
+      const value = prefs[key];
+      if (!Array.isArray(value)) continue;
+      const pruned = (value as string[]).filter((id) => configuredIds.has(id));
+      if (pruned.length === value.length) continue;
+      changed = true;
+      if (pruned.length === 0) {
+        delete updatedPrefs[key];
+      } else {
+        updatedPrefs[key] = pruned;
+      }
     }
-    updatedPrefs[key] = next;
   }
 
   if (!changed) return;

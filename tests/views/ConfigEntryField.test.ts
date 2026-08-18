@@ -3,14 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
-import {
-  ConfigEntryType,
-  type ConfigEntry,
-  type ConfigValueType,
-} from "@/plugins/api/interfaces";
+import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
 import {
   NON_INTERACTIVE_ENTRY_TYPES,
   type ConfigEntryUI,
+  type ConfigEntryUIType,
+  type InjectedConfigEntry,
 } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
 
@@ -25,7 +23,10 @@ const vuetify = createVuetify({ components, directives });
 const IMAGE_DATA_URI =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==";
 
-const INTERACTIVE_ENTRIES: [string, ConfigEntry][] = [
+// Third element: text the field only renders on the branch under test. An entry that
+// matches no branch still renders a text input that honours the disabled state — so
+// without this the options button row would keep passing after losing its branch.
+const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
   ["a text input", entry({ key: "name", type: ConfigEntryType.STRING })],
   [
     "a password input",
@@ -88,10 +89,16 @@ describe("ConfigEntryField", () => {
     },
   );
 
-  it.each(INTERACTIVE_ENTRIES)("disables %s", (_label, confEntry) => {
-    expect(controlStates(mountField(confEntry))).toEqual([false]);
-    expect(controlStates(mountField(confEntry, true))).toEqual([true]);
-  });
+  it.each(INTERACTIVE_ENTRIES)(
+    "disables %s",
+    (_label, confEntry, branchText) => {
+      const wrapper = mountField(confEntry);
+
+      if (branchText) expect(wrapper.text()).toContain(branchText);
+      expect(controlStates(wrapper)).toEqual([false]);
+      expect(controlStates(mountField(confEntry, true))).toEqual([true]);
+    },
+  );
 
   // these types take no disabled binding; a form hides them while their dependency is unmet
   it.each(NON_INTERACTIVE_ENTRY_TYPES)(
@@ -101,7 +108,7 @@ describe("ConfigEntryField", () => {
       const wrapper = mountField(
         entry({
           key: "status",
-          type: type as ConfigEntryType,
+          type,
           label: "Nothing to configure",
           value: IMAGE_DATA_URI,
         }),
@@ -112,6 +119,76 @@ describe("ConfigEntryField", () => {
       expect(controlStates(wrapper)).toEqual([]);
     },
   );
+
+  it("offers the entity picker for a Home Assistant control list", () => {
+    const wrapper = mountField(hassControlsEntry(), false, "hass");
+
+    expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
+      true,
+    );
+    expect(wrapper.find(".v-select").exists()).toBe(false);
+  });
+
+  it("leaves the same key on another provider as a plain dropdown", () => {
+    const wrapper = mountField(hassControlsEntry(), false, "snapcast");
+
+    expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
+      false,
+    );
+    expect(wrapper.find(".v-select").exists()).toBe(true);
+  });
+
+  it("shows a value the options do not list yet", () => {
+    const wrapper = mountField(
+      entry({
+        key: "power_control",
+        type: ConfigEntryType.STRING,
+        options: [{ title: "None", value: "none" }],
+        value: "switch.registered_moments_ago",
+      }),
+    );
+
+    expect(wrapper.get(".v-select").text()).toContain(
+      "switch.registered_moments_ago",
+    );
+  });
+
+  it("expands the options of an expanded_options entry, descriptions and all", () => {
+    const wrapper = mountField(expandedOptionsEntry());
+
+    expect(wrapper.find(".v-select").exists()).toBe(false);
+    expect(radioItems(wrapper)).toHaveLength(2);
+    // the whole point of the branch: no option (or its description) is hidden behind a click
+    expect(wrapper.text()).toContain("FLAC");
+    expect(wrapper.text()).toContain("Lossless, at a higher bitrate.");
+    expect(wrapper.text()).toContain("Not supported by this player.");
+  });
+
+  it("emits the value of the option behind the picked radio", async () => {
+    const wrapper = mountField(expandedOptionsEntry());
+
+    await radioItems(wrapper)[0].trigger("click");
+
+    expect(wrapper.emitted("update:value")).toEqual([["flac"]]);
+  });
+
+  it("keeps a multi_value entry on the dropdown", () => {
+    const wrapper = mountField({
+      ...expandedOptionsEntry(),
+      multi_value: true,
+      value: [],
+    });
+
+    expect(wrapper.find(".v-select").exists()).toBe(true);
+    expect(radioItems(wrapper)).toHaveLength(0);
+  });
+
+  it("disables every radio with the form", () => {
+    expect(controlStates(mountField(expandedOptionsEntry(), true))).toEqual([
+      true,
+      true,
+    ]);
+  });
 
   it("disables a read_only entry while the form itself is enabled", () => {
     const confEntry = entry({
@@ -139,25 +216,67 @@ describe("ConfigEntryField", () => {
 });
 
 function entry(
-  overrides: Partial<ConfigEntry> & { key: string; type: ConfigEntryType },
-): ConfigEntry {
-  return {
+  overrides: Partial<InjectedConfigEntry> & {
+    key: string;
+    type: ConfigEntryUIType;
+  },
+): ConfigEntryUI {
+  // typed without key/type so the defaults stay checked against the server
+  // model, while the cast only covers the UI-only entry types
+  const base: Omit<ConfigEntry, "key" | "type"> = {
     category: "generic",
     default_value: null,
     label: overrides.key,
     required: false,
-    value: null as ConfigValueType,
-    ...overrides,
-  } as ConfigEntry;
+    options: [],
+    value: null,
+  };
+  return { ...base, ...overrides } as ConfigEntryUI;
 }
 
-function rangedEntry(type: ConfigEntryType): ConfigEntry {
+function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
   return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
 }
 
-function mountField(confEntry: ConfigEntryUI, disabled = false) {
+function expandedOptionsEntry(): ConfigEntryUI {
+  return entry({
+    key: "output_codec",
+    type: ConfigEntryType.STRING,
+    required: true,
+    expanded_options: true,
+    options: [
+      {
+        title: "FLAC",
+        value: "flac",
+        description: "Lossless, at a higher bitrate.",
+      },
+      {
+        title: "MP3",
+        value: "mp3",
+        disabled: true,
+        disabled_reason: "Not supported by this player.",
+      },
+    ],
+  });
+}
+
+function hassControlsEntry(): ConfigEntryUI {
+  return entry({
+    key: "power_controls",
+    type: ConfigEntryType.STRING,
+    multi_value: true,
+    options: [{ title: "Living room TV", value: "switch.tv" }],
+    value: ["switch.tv"],
+  });
+}
+
+function mountField(
+  confEntry: ConfigEntryUI,
+  disabled = false,
+  providerDomain?: string,
+) {
   return mount(ConfigEntryField, {
-    props: { confEntry, showPasswordValues: false, disabled },
+    props: { confEntry, showPasswordValues: false, disabled, providerDomain },
     global: { plugins: [vuetify] },
   });
 }
@@ -190,6 +309,10 @@ function sliderRowStates(wrapper: VueWrapper): Record<string, boolean> {
     slider: isDisabled(wrapper.get(".config-slider input")),
     ...Object.fromEntries(numberFieldParts),
   };
+}
+
+function radioItems(wrapper: VueWrapper): DOMWrapper<Element>[] {
+  return wrapper.findAll('[data-slot="radio-group-item"]');
 }
 
 function isDisabled(el: Pick<DOMWrapper<Element>, "attributes">): boolean {

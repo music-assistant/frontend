@@ -104,7 +104,11 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { parseLrcLine } from "@/helpers/lrcParser";
-import { MediaItemType, StreamDetails, Track } from "@/plugins/api/interfaces";
+import {
+  PlayableMediaItemType,
+  StreamDetails,
+  Track,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import Color from "color";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
@@ -117,9 +121,9 @@ interface DisplayLine {
 }
 
 interface Props {
-  mediaItem?: MediaItemType;
+  mediaItem?: PlayableMediaItemType | null;
   position?: number;
-  streamDetails?: StreamDetails;
+  streamDetails?: StreamDetails | null;
   textColor?: string;
   lyrics?: string | null;
   lrcLyrics?: string | null;
@@ -194,7 +198,7 @@ const artistName = computed(() => {
     props.mediaItem.media_type === "track"
   ) {
     const track = props.mediaItem as Track;
-    if (track.artists?.length) {
+    if (track.artists.length) {
       return track.artists.map((a) => a.name).join(", ");
     }
   }

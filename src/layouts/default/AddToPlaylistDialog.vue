@@ -15,7 +15,7 @@
       </SheetDescription>
 
       <ScrollArea class="h-full max-h-full overflow-hidden flex-1">
-        <div class="pt-2 pb-8">
+        <div class="playlist-list pt-2">
           <button
             v-for="playlist of playlists"
             :key="playlist.item_id"
@@ -134,17 +134,22 @@ const fetchPlaylists = async function () {
     undefined,
     undefined,
   );
-  let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
+  const selected = selectedItems.value.length
+    ? selectedItems.value[0]
+    : undefined;
 
-  if (!refItem) return;
-  if (!("provider_mappings" in refItem)) {
-    // resolve itemmapping
-    refItem = await api.getItem(
-      refItem.media_type,
-      refItem.item_id,
-      refItem.provider,
-    );
-  }
+  if (!selected) return;
+  // an itemmapping carries no provider mappings, resolve it to the full item
+  const refItem =
+    "provider_mappings" in selected
+      ? selected
+      : await api.getItem(
+          selected.media_type,
+          selected.item_id,
+          selected.provider,
+        );
+  // a browse folder has no provider mappings and can not be added to a playlist
+  if (!("provider_mappings" in refItem)) return;
 
   for (const playlist of playlistResults) {
     // skip unavailable playlists
@@ -299,3 +304,9 @@ const close = function () {
   show.value = false;
 };
 </script>
+
+<style scoped>
+.playlist-list {
+  padding-bottom: calc(2rem + var(--device-inset-bottom));
+}
+</style>

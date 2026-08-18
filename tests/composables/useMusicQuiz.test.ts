@@ -18,6 +18,7 @@ import {
   getAvailableMusicQuizTypes,
   getMusicQuizInfo,
   getMusicQuizPlaybackOptions,
+  getMusicQuizPublicState,
   heartbeatMusicQuiz,
   isMusicQuizProviderEvent,
   isSupportedMusicQuiz,
@@ -80,6 +81,26 @@ describe("useMusicQuiz commands", () => {
     });
   });
 
+  describe("getMusicQuizPublicState", () => {
+    it("resolves null without a server round-trip when the provider is absent", async () => {
+      await expect(getMusicQuizPublicState()).resolves.toBeNull();
+      expect(mockSendCommand).not.toHaveBeenCalled();
+    });
+
+    it("fetches the guest-safe state as a best-effort command", async () => {
+      mockProviders.music_quiz = { domain: "music_quiz" };
+      const state = { phase: "lobby", join_url: "http://ma/join" };
+      mockSendCommand.mockResolvedValue(state);
+
+      await expect(getMusicQuizPublicState()).resolves.toBe(state);
+      expect(mockSendCommand).toHaveBeenCalledWith(
+        "music_quiz/public_state",
+        undefined,
+        { suppressGlobalError: true },
+      );
+    });
+  });
+
   it("sends difficulty in the create payload", async () => {
     await createMusicQuiz({
       quiz_type: "guess_the_song",
@@ -107,7 +128,7 @@ describe("useMusicQuiz commands", () => {
     });
   });
 
-  it("sends an explicit Venue speaker in the create payload", async () => {
+  it("sends an explicit Venue player in the create payload", async () => {
     await createMusicQuiz({
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",
@@ -136,7 +157,7 @@ describe("useMusicQuiz commands", () => {
     });
   });
 
-  it("sends Remote playback with a null Venue speaker", async () => {
+  it("sends Remote playback with a null Venue player", async () => {
     await createMusicQuiz({
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",

@@ -471,6 +471,10 @@ let cleanupQueueEvents: (() => void) | null = null;
 let cleanupProvidersSub: (() => void) | null = null;
 let cleanupQueueUpdatedSub: (() => void) | null = null;
 
+// Set by the unmount hook, so the startup below can tell that the view it is
+// setting things up for is already gone.
+let unmounted = false;
+
 const refreshPartyPlayer = async () => {
   try {
     const partyPlayerId = await api.sendCommand<string | null>("party/player");
@@ -489,6 +493,9 @@ const fetchAndApplyConfig = async () => {
 
 onMounted(async () => {
   await fetchAndApplyConfig();
+  // Each await can outlast the view, and the unmount hook only reaches what
+  // was already set up by the time it ran.
+  if (unmounted) return;
 
   history.pushState(null, "", location.href);
   window.addEventListener("popstate", handleBack);
@@ -496,6 +503,7 @@ onMounted(async () => {
   cleanupCountdown = rateLimit.startCountdown();
 
   await refreshPartyPlayer();
+  if (unmounted) return;
 
   fetchQueueItems();
   cleanupQueueEvents = queue.subscribeToEvents();
@@ -527,6 +535,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  unmounted = true;
   window.removeEventListener("popstate", handleBack);
   cleanupQueueEvents?.();
   cleanupCountdown?.();
@@ -541,7 +550,7 @@ onBeforeUnmount(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
+  padding-bottom: 1.5rem;
   height: 100%;
   max-height: 100%;
   overflow: hidden;
@@ -635,7 +644,7 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .guest-view {
     padding: 0.75rem;
-    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
+    padding-bottom: 0.75rem;
   }
 
   .section-header {

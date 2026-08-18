@@ -23,16 +23,19 @@
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
           :disabled="isRowDisabled(conf_entry)"
+          :provider-domain="providerDomain"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @open-dsp="openDspConfig"
-          @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
+          @set-entry-value="onEntryValueSet"
         />
       </div>
     </div>
 
+    <!-- No provider-domain: that is only set for a provider config, which carries no protocol
+         categories. No set-entry-value handler: its only emitter is the Home Assistant entity
+         picker, which sits with the player controls on the parent player. -->
     <ProtocolConfigSection
       :entries="entries || []"
       :protocol-panels="protocolPanels"
@@ -44,8 +47,6 @@
       @action="onEntryAction"
       @help="onEntryHelp"
       @toggle-password="showPasswordValues = !showPasswordValues"
-      @open-dsp="openDspConfig"
-      @open-options="openPlayerOptions"
     />
 
     <!-- Other regular settings sections -->
@@ -71,43 +72,37 @@
           :conf-entry="conf_entry"
           :show-password-values="showPasswordValues"
           :disabled="isRowDisabled(conf_entry)"
+          :provider-domain="providerDomain"
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @open-dsp="openDspConfig"
-          @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
+          @set-entry-value="onEntryValueSet"
         />
       </div>
     </div>
 
-    <div v-if="!disabled" class="config-actions">
-      <!-- Show advanced settings toggle -->
-      <div class="advanced-toggle-wrapper">
-        <v-switch
-          v-model="showAdvancedSettings"
-          color="primary"
-          hide-details
-          density="comfortable"
-          :label="$t('settings.show_advanced_settings')"
-          class="advanced-settings-switch"
-        />
-      </div>
-      <v-btn
-        block
-        color="primary"
-        size="large"
+    <div
+      v-if="!disabled"
+      :class="[
+        'floating-save',
+        {
+          'floating-save--mobile': store.mobileLayout,
+          'floating-save--frameless': store.frameless,
+        },
+      ]"
+    >
+      <Button
+        data-testid="config-save"
+        type="button"
+        size="lg"
+        class="shadow-lg"
         :disabled="!requiredValuesPresent || !hasUnsavedChanges"
         @click="submit"
       >
+        <Save class="size-4" />
         {{ $t("settings.save") }}
-      </v-btn>
-      <v-btn block variant="outlined" size="large" @click="handleClose">
-        {{ $t("close") }}
-      </v-btn>
-      <v-btn block variant="text" size="large" @click="resetToDefaults">
-        {{ $t("settings.reset_to_defaults") }}
-      </v-btn>
+      </Button>
     </div>
   </v-form>
   <v-dialog
@@ -121,11 +116,9 @@
           {{ showHelpInfo?.label || "" }}
         </h2>
       </v-card-text>
-      <!-- eslint-disable vue/no-v-html -->
-      <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-      <v-card-text v-html="markdownToHtml(showHelpInfo?.description || '')" />
-      <!-- eslint-enable vue/no-v-html -->
-      <!-- eslint-enable vue/no-v-text-v-html-on-component -->
+      <v-card-text>
+        <MarkdownText :text="showHelpInfo?.description" />
+      </v-card-text>
       <v-card-actions>
         <v-btn
           v-if="showHelpInfo?.help_link"
@@ -141,16 +134,27 @@
     </v-card>
   </v-dialog>
   <!-- Unsaved changes confirmation dialog -->
-  <v-dialog v-model="showUnsavedDialog" max-width="400" persistent>
+  <!-- any way out of this dialog has to answer the navigation it is holding -->
+  <v-dialog
+    :model-value="showUnsavedDialog"
+    max-width="400"
+    persistent
+    @update:model-value="cancelDiscard"
+  >
     <v-card>
       <v-card-title>{{ $t("settings.unsaved_changes") }}</v-card-title>
       <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="cancelDiscard">
+        <v-btn data-testid="config-stay" variant="text" @click="cancelDiscard">
           {{ $t("settings.stay") }}
         </v-btn>
-        <v-btn color="warning" variant="flat" @click="confirmDiscard">
+        <v-btn
+          data-testid="config-discard"
+          color="warning"
+          variant="flat"
+          @click="confirmDiscard"
+        >
           {{ $t("settings.discard") }}
         </v-btn>
       </v-card-actions>
@@ -167,7 +171,8 @@ import {
   NON_INTERACTIVE_ENTRY_TYPES,
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
-import { markdownToHtml } from "@/helpers/utils";
+import MarkdownText from "@/components/MarkdownText.vue";
+import { Button } from "@/components/ui/button";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -175,6 +180,7 @@ import {
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import {
   Airplay,
   Cast,
@@ -185,6 +191,7 @@ import {
   PlayCircle,
   RadioTower,
   RefreshCw,
+  Save,
   Settings2,
   SlidersHorizontal,
   Speaker,
@@ -198,6 +205,9 @@ import ProtocolConfigSection from "./ProtocolConfigSection.vue";
 const router = useRouter();
 const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
+// answers the navigation the guard is holding; set only while one waits on the
+// unsaved-changes dialog
+let heldNavigation: ((discard: boolean) => void) | undefined;
 
 export interface Props {
   configEntries: ConfigEntryUI[];
@@ -205,6 +215,9 @@ export interface Props {
   // Output protocols of the player being configured; drives derived-transport labelling
   // in the protocol section. Omitted for provider/core configs.
   outputProtocols?: OutputProtocol[];
+  // Domain of the provider being configured; lets a field recognise the entries of the
+  // provider it belongs to. Omitted for player/core configs.
+  providerDomain?: string;
 }
 
 const emit = defineEmits<{
@@ -223,13 +236,15 @@ const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const showPasswordValues = ref(false);
-const showAdvancedSettings = ref(false);
 const showHelpInfo = ref<ConfigEntryUI>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
 
 // props
 const props = defineProps<Props>();
+const showAdvancedSettings = defineModel<boolean>("showAdvancedSettings", {
+  default: false,
+});
 
 // computed props
 const panels = computed(() => {
@@ -360,20 +375,29 @@ const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
         : value;
   }
 };
+// a field can fill in another entry of the same form, e.g. the Home Assistant entity
+// picker setting the player control it sits under
+const onEntryValueSet = function (
+  key: string,
+  value: ConfigValueType,
+  label?: string,
+) {
+  const entry = entries.value?.find((e) => e.key === key);
+  if (!entry) return;
+  // the server does not know of the value yet, so carry the name the field gave us or
+  // the field would read back the bare id until the config is fetched again
+  if (label && !entry.options.some((option) => option.value === value)) {
+    entry.options = [...entry.options, { title: label, value }];
+  }
+  onValueUpdate(entry, value);
+};
+
 const openLink = function (url: string) {
   // window.open(url, "_blank");
   const a = document.createElement("a");
   a.setAttribute("href", url);
   a.setAttribute("target", "_blank");
   a.click();
-};
-
-const openDspConfig = function () {
-  router.push(`${router.currentRoute.value.path}/dsp`);
-};
-
-const openPlayerOptions = function () {
-  router.push(`${router.currentRoute.value.path}/options`);
 };
 
 const onEntryAction = function (entry: ConfigEntryUI) {
@@ -392,33 +416,49 @@ const resetToDefaults = function () {
   }
 };
 
-const handleClose = function () {
-  if (hasUnsavedChanges.value) {
-    showUnsavedDialog.value = true;
-  } else {
-    router.back();
-  }
+/**
+ * Reports a save that did not land, so the values stay guarded and leaving the
+ * screen asks about them again.
+ */
+const saveFailed = function () {
+  allowNavigation.value = false;
 };
+
+/**
+ * Stops guarding the pending edits, for when what they belong to is gone and
+ * there is nothing left to save them to.
+ */
+const discardChanges = function () {
+  allowNavigation.value = true;
+};
+
+defineExpose({ resetToDefaults, saveFailed, discardChanges });
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;
+  // a redirect has the router run the leave guards of the resumed navigation a
+  // second time, and it must not ask again
   allowNavigation.value = true;
-  // Navigate back after setting the flag
-  router.back();
+  releaseNavigation(true);
 };
 
 const cancelDiscard = function () {
   showUnsavedDialog.value = false;
+  releaseNavigation(false);
 };
 
 // Navigation guard for route changes
-onBeforeRouteLeave((_to, _from, next) => {
-  if (allowNavigation.value || !hasUnsavedChanges.value) {
-    next();
-  } else {
-    showUnsavedDialog.value = true;
-    next(false);
-  }
+onBeforeRouteLeave(() => {
+  if (allowNavigation.value || !hasUnsavedChanges.value) return true;
+  // one is already waiting for an answer: turn this one away rather than hold
+  // both, or the history ends up out of step with the page on screen
+  if (heldNavigation) return false;
+  // holding it, rather than cancelling it, is what lets discarding carry on to
+  // the very page the user asked for
+  showUnsavedDialog.value = true;
+  return new Promise<boolean>((resolve) => {
+    heldNavigation = resolve;
+  });
 });
 
 // Handle browser back/refresh
@@ -435,6 +475,11 @@ onBeforeUnmount(() => {
 
 // Add listener when component mounts
 window.addEventListener("beforeunload", handleBeforeUnload);
+
+const releaseNavigation = function (discard: boolean) {
+  heldNavigation?.(discard);
+  heldNavigation = undefined;
+};
 
 const isDisabled = function (entry: ConfigEntryUI) {
   return isEntryDisabled(entry, entries.value || []);
@@ -583,35 +628,24 @@ const getCategoryIcon = function (category: string): Component {
   padding: 14px 16px;
 }
 
-/* Action buttons */
-.config-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 16px;
+.floating-save {
+  position: fixed;
+  /* A landscape phone is wide enough to count as the desktop layout, so this
+     rule is what keeps the button clear of a side cutout. */
+  right: calc(24px + var(--device-inset-right));
+  bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
+  z-index: 20;
 }
 
-.config-actions .v-btn--disabled {
-  background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
-  color: rgba(var(--v-theme-on-surface), 0.38) !important;
+.floating-save--mobile {
+  /* Takes the floating player card's inset, so the two right edges line up. */
+  right: calc(var(--mobile-player-inset-x) + var(--device-inset-right));
+  bottom: calc(var(--bottom-bars-height) + 16px);
+  /* Above the player scrim, below the mobile bars. */
+  z-index: 1000;
 }
 
-/* Advanced settings toggle */
-.advanced-toggle-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0 16px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.advanced-settings-switch {
-  opacity: 0.85;
-  transition: opacity 0.2s ease;
-}
-
-.advanced-settings-switch:hover {
-  opacity: 1;
+.floating-save--frameless {
+  bottom: 16px;
 }
 </style>

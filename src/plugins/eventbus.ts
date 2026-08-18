@@ -50,6 +50,15 @@ export type DeleteConfirmationDialogEvent = {
   onConfirm: () => void | Promise<void>;
 };
 
+export type PlayerGroupPlaybackChange = "remove" | "power_off";
+
+export type PlayerGroupPlaybackDialogEvent = {
+  change: PlayerGroupPlaybackChange;
+  playerName: string;
+  onKeepPlaying: () => void | Promise<void>;
+  onStopAndUngroup: () => void | Promise<void>;
+};
+
 export type ImportPlaylistEvent = {
   m3uData: string;
   playlistName: string;
@@ -61,6 +70,18 @@ export type CreateSmartPlaylistEvent = {
 
 export type AudioOverlayDialogEvent = {
   queueId: string;
+};
+
+export type PlayAnnouncementDialogEvent = {
+  playerId: string;
+};
+
+export type PlayerRenameDialogEvent = {
+  playerId: string;
+  // the custom name currently set, empty while the player uses its default name
+  name?: string | null;
+  // shown as the placeholder and restored when the custom name is cleared
+  defaultName?: string | null;
 };
 
 // Launches the setup flow dialog for one of: adding a provider (by domain),
@@ -81,10 +102,13 @@ export type Events = {
   mergeGenreDialog: MergeGenreDialogEvent;
   deleteGenreDialog: DeleteGenreDialogEvent;
   deleteConfirmationDialog: DeleteConfirmationDialogEvent;
+  playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
+  playAnnouncementDialog: PlayAnnouncementDialogEvent;
+  playerRenameDialog: PlayerRenameDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-[6px] border bg-card/40 transition-colors hover:bg-card">
-    <div class="flex items-center gap-2 px-3 py-2">
-      <div class="flex flex-col">
+    <div class="flex items-start gap-2 px-3 py-2 sm:items-center">
+      <div class="flex shrink-0 flex-col">
         <Button
           variant="ghost-icon"
           size="icon-xs"
@@ -22,52 +22,58 @@
         </Button>
       </div>
 
-      <Input
-        v-model="name"
-        class="h-8 min-w-0 flex-1"
-        :aria-label="$t('providers.ai_radio.customize.segment_name')"
-      />
+      <div
+        class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center"
+      >
+        <Input
+          v-model="name"
+          class="h-8 min-w-0 flex-1"
+          :aria-label="$t('providers.ai_radio.customize.segment_name')"
+        />
 
-      <div class="flex w-[240px] shrink-0 items-center gap-2">
-        <Select v-model="playsKind">
-          <SelectTrigger class="h-8 min-w-0 flex-1 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem
-              v-for="option in playsKindOptions"
-              :key="option.kind"
-              :value="option.kind"
-              class="text-xs"
-            >
-              {{ option.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div
+          class="flex w-full items-center gap-1 sm:w-[240px] sm:shrink-0 sm:gap-2"
+        >
+          <Select v-model="playsKind">
+            <SelectTrigger class="h-8 min-w-0 flex-1 px-2 text-xs sm:px-3">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="option in playsKindOptions"
+                :key="option.kind"
+                :value="option.kind"
+                class="text-xs"
+              >
+                {{ option.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
-        <NumberField
-          v-if="needsN"
-          v-model="playsN"
-          class="w-16 shrink-0"
-          :min="1"
-          :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
-        >
-          <NumberFieldContent>
-            <NumberFieldInput class="h-8 text-xs" />
-          </NumberFieldContent>
-        </NumberField>
-        <NumberField
-          v-if="needsPercent"
-          v-model="playsPercent"
-          class="w-16 shrink-0"
-          :min="0"
-          :max="100"
-          :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
-        >
-          <NumberFieldContent>
-            <NumberFieldInput class="h-8 text-xs" />
-          </NumberFieldContent>
-        </NumberField>
+          <NumberField
+            v-if="needsN"
+            v-model="playsN"
+            class="w-12 shrink-0 sm:w-16"
+            :min="1"
+            :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
+          >
+            <NumberFieldContent>
+              <NumberFieldInput class="h-8 text-xs" />
+            </NumberFieldContent>
+          </NumberField>
+          <NumberField
+            v-if="needsPercent"
+            v-model="playsPercent"
+            class="w-12 shrink-0 sm:w-16"
+            :min="0"
+            :max="100"
+            :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
+          >
+            <NumberFieldContent>
+              <NumberFieldInput class="h-8 text-xs" />
+            </NumberFieldContent>
+          </NumberField>
+        </div>
       </div>
 
       <Button
@@ -90,12 +96,28 @@
         <Label>{{ $t("providers.ai_radio.fields.prompt") }}</Label>
         <Textarea v-model="prompt" rows="4" class="text-sm" />
         <p class="text-xs text-muted-foreground">
-          {{
-            $t("providers.ai_radio.customize.prompt_placeholders_hint", {
-              placeholders: PROMPT_PLACEHOLDERS.join(", "),
-            })
-          }}
+          {{ $t("providers.ai_radio.customize.prompt_placeholders_label") }}
         </p>
+        <div class="flex flex-wrap gap-1.5 pb-2">
+          <Badge
+            v-for="token in PROMPT_PLACEHOLDERS"
+            :key="token"
+            as="button"
+            type="button"
+            variant="outline"
+            class="cursor-pointer font-mono hover:bg-accent hover:text-accent-foreground"
+            :aria-label="
+              $t('providers.ai_radio.customize.prompt_placeholder_copy_aria', [
+                token,
+              ])
+            "
+            @click="copyPlaceholder(token)"
+          >
+            {{ token }}
+            <Check v-if="copiedToken === token" />
+            <Copy v-else />
+          </Badge>
+        </div>
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
@@ -150,6 +172,7 @@
 </template>
 
 <script setup lang="ts">
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -173,10 +196,12 @@ import {
   type PlaysRule,
   type ShowSegment,
 } from "@/helpers/ai_radio";
+import { copyToClipboard } from "@/helpers/utils";
 import type { AIRadioWebSearchMode } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ChevronDown, ChevronUp, Trash2 } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { Check, ChevronDown, ChevronUp, Copy, Trash2 } from "@lucide/vue";
+import { computed, onUnmounted, ref } from "vue";
+import { toast } from "vue-sonner";
 
 // listed literally so translators never handle raw <placeholder> markup
 const PROMPT_PLACEHOLDERS = [
@@ -200,6 +225,32 @@ const emit = defineEmits<{
 }>();
 
 const expanded = ref(false);
+
+const COPIED_FEEDBACK_MS = 1500;
+const copiedToken = ref<string | null>(null);
+let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+
+async function copyPlaceholder(token: string) {
+  const success = await copyToClipboard(token);
+  if (!success) {
+    toast.error(
+      $t("providers.ai_radio.customize.prompt_placeholder_copy_failed", [
+        token,
+      ]),
+    );
+    return;
+  }
+  toast.success(
+    $t("providers.ai_radio.customize.prompt_placeholder_copied", [token]),
+  );
+  clearTimeout(copiedTimer);
+  copiedToken.value = token;
+  copiedTimer = setTimeout(() => {
+    copiedToken.value = null;
+  }, COPIED_FEEDBACK_MS);
+}
+
+onUnmounted(() => clearTimeout(copiedTimer));
 
 const DEFAULT_EVERY_N_SONGS = 3;
 const DEFAULT_EVERY_N_MIN = 60;

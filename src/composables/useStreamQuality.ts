@@ -79,7 +79,7 @@ export function useStreamQuality(
 ) {
   const knownOutputQualityTiers = computed(() =>
     (toValue(audioProcessing)?.outputs ?? [])
-      .map((output) => audioQualityToTier(output.fidelity?.quality))
+      .map((output) => audioQualityToTier(output.fidelity.quality))
       .filter((tier) => tier !== QualityTier.UNKNOWN),
   );
   const minOutputQualityTier = computed(() =>
