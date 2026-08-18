@@ -59,12 +59,14 @@
             {{ row.name }}
           </span>
           <span
-            class="flex min-w-0 max-w-[45%] items-baseline gap-1 tabular-nums"
+            class="flex min-w-0 max-w-[45%] items-center gap-1 tabular-nums"
           >
-            <strong class="min-w-0 flex-1 truncate">{{ row.score }}</strong>
+            <strong class="min-w-0 flex-1 truncate leading-none">
+              {{ row.score }}
+            </strong>
             <span
               v-if="row.roundScoreLabel"
-              class="text-primary quiz-score-pop min-w-0 flex-1 truncate text-xs font-semibold"
+              class="text-primary quiz-score-pop min-w-0 flex-1 truncate text-xs leading-none font-semibold"
             >
               {{ row.roundScoreLabel }}
             </span>

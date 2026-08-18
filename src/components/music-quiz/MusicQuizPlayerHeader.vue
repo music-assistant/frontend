@@ -9,16 +9,15 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <h1 class="truncate text-lg font-bold">{{ playerName }}</h1>
-            <Badge v-if="rank" variant="secondary" class="shrink-0">
-              #{{ rank }}
-            </Badge>
+            <Badge v-if="rank" class="shrink-0">#{{ rank }}</Badge>
           </div>
         </div>
-        <span
-          class="flex shrink-0 items-baseline gap-1 text-xl font-bold tabular-nums"
-        >
-          {{ score }}
-          <span v-if="scoreDelta" class="text-primary text-sm">
+        <span class="flex shrink-0 items-baseline gap-1 tabular-nums">
+          <span class="text-xl leading-none font-bold">{{ score }}</span>
+          <span
+            v-if="scoreDelta"
+            class="text-primary text-sm leading-none font-semibold"
+          >
             {{ scoreDelta }}
           </span>
         </span>

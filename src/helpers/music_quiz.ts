@@ -1,5 +1,5 @@
 import type {
-  MusicQuizPhase,
+  MusicQuizDifficulty,
   MusicQuizPlayer,
   MusicQuizSupportedPublicState,
 } from "@/composables/music-quiz/useMusicQuiz";
@@ -249,6 +249,17 @@ export function getMusicQuizRoundScoreLabel(
 ) {
   const points = getMusicQuizRoundScore(state, playerName);
   return points === undefined ? "" : `(+${points})`;
+}
+
+export function getMusicQuizDifficultyOptions(): {
+  value: MusicQuizDifficulty;
+  label: string;
+}[] {
+  return [
+    { value: "easy", label: $t("providers.music_quiz.difficulty_easy") },
+    { value: "normal", label: $t("providers.music_quiz.difficulty_normal") },
+    { value: "hard", label: $t("providers.music_quiz.difficulty_hard") },
+  ];
 }
 
 export function getMusicQuizErrorMessage(err: unknown, fallback = "") {

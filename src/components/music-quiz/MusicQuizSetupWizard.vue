@@ -7,45 +7,51 @@
     />
 
     <div
-      class="flex-col gap-2"
-      :class="busy ? 'hidden' : 'flex'"
-      data-testid="music-quiz-setup-progress"
+      class="flex min-w-0 items-center gap-2 pr-8"
+      :class="{ hidden: busy }"
+      data-testid="music-quiz-setup-header"
     >
-      <div class="flex items-center justify-between gap-3">
-        <Button
-          v-if="step > 1"
-          variant="ghost"
-          size="sm"
-          :disabled="busy"
-          @click="back"
-        >
-          <ArrowLeft class="size-4" />
-          {{ $t("back") }}
-        </Button>
-        <span v-else></span>
-        <span class="text-muted-foreground text-sm font-medium">
-          {{ $t("providers.music_quiz.setup_step", [step, TOTAL_STEPS]) }}
-        </span>
-      </div>
-      <Progress :model-value="(step / TOTAL_STEPS) * 100" />
+      <Button
+        v-if="step === 2"
+        variant="ghost"
+        size="icon"
+        class="-ml-2 shrink-0"
+        :aria-label="$t('back')"
+        :title="$t('back')"
+        :disabled="busy"
+        @click="back"
+      >
+        <ArrowLeft class="size-4" />
+      </Button>
+      <component
+        :is="selectedType.icon"
+        v-if="step === 2 && selectedType"
+        class="text-primary size-5 shrink-0"
+        aria-hidden="true"
+      />
+      <h2
+        ref="stepHeading"
+        class="truncate text-lg font-semibold"
+        tabindex="-1"
+        data-testid="music-quiz-setup-heading"
+      >
+        {{ headingText }}
+      </h2>
     </div>
 
-    <section v-if="!busy && step === 1" class="flex flex-col gap-3">
-      <h2 ref="chooseHeading" class="text-lg font-semibold" tabindex="-1">
-        {{ $t("providers.music_quiz.choose_game_type") }}
-      </h2>
-      <div class="grid gap-3 sm:grid-cols-2">
+    <section v-if="!busy && step === 1" class="flex flex-col gap-3 mt-2">
+      <div class="grid auto-rows-fr gap-3 sm:grid-cols-2">
         <button
           v-for="type in availableGameTypes"
           :key="type.id"
           type="button"
-          class="hover:border-primary focus-visible:ring-ring flex items-start gap-3 rounded-xl border bg-card p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          class="hover:border-primary focus-visible:ring-ring bg-card flex items-center gap-3 rounded-xl border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
           @click="selectType(type)"
         >
           <span
-            class="bg-primary/10 text-primary grid size-10 shrink-0 place-items-center rounded-lg"
+            class="bg-primary/10 text-primary grid size-12 shrink-0 place-items-center rounded-md"
           >
-            <component :is="type.icon" class="size-5" />
+            <component :is="type.icon" class="size-6" />
           </span>
           <span class="flex min-w-0 flex-col gap-1">
             <span class="flex items-center gap-2 font-semibold">
@@ -64,16 +70,6 @@
       :class="!busy && step === 2 ? 'flex' : 'hidden'"
       data-testid="music-quiz-configure-step"
     >
-      <div class="flex items-center gap-2">
-        <component
-          :is="selectedType.icon"
-          v-if="selectedType"
-          class="text-primary size-5"
-        />
-        <h2 ref="configureHeading" class="text-lg font-semibold" tabindex="-1">
-          {{ $t("providers.music_quiz.configure_game") }}
-        </h2>
-      </div>
       <MusicQuizPlaybackControls
         v-if="playbackOptionsLoading || playbackOptions || playbackOptionsError"
         v-model="playbackSelection"
@@ -130,7 +126,6 @@ import MusicQuizPlaybackControls from "@/components/music-quiz/MusicQuizPlayback
 import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import type {
   MusicQuizCreateRequest,
@@ -146,7 +141,6 @@ import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, defineComponent, nextTick, ref, watch } from "vue";
 
-const TOTAL_STEPS = 2;
 const MusicQuizSetupPlaceholder = defineComponent({
   inheritAttrs: false,
   setup: () => () => null,
@@ -191,8 +185,14 @@ const availableGameTypes = computed(() =>
 const step = ref<1 | 2>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
 const includeSimilarMusic = ref(false);
-const chooseHeading = ref<HTMLHeadingElement | null>(null);
-const configureHeading = ref<HTMLHeadingElement | null>(null);
+const stepHeading = ref<HTMLHeadingElement | null>(null);
+const headingText = computed(() =>
+  step.value === 1
+    ? $t("providers.music_quiz.choose_game_type")
+    : selectedType.value
+      ? $t(selectedType.value.labelKey)
+      : $t("providers.music_quiz.configure_game"),
+);
 const sharedConfigValid = computed(() => {
   if (props.playbackOptionsLoading) return false;
   if (props.playbackOptions) {
@@ -225,13 +225,13 @@ async function selectType(type: MusicQuizGameDefinition) {
   await nextTick();
   step.value = 2;
   await nextTick();
-  configureHeading.value?.focus({ preventScroll: true });
+  stepHeading.value?.focus({ preventScroll: true });
 }
 
 async function back() {
   step.value = 1;
   await nextTick();
-  chooseHeading.value?.focus({ preventScroll: true });
+  stepHeading.value?.focus({ preventScroll: true });
 }
 
 function onConfigCreate(request: MusicQuizCreateRequest) {

@@ -1,38 +1,74 @@
 <template>
   <div class="media-search">
-    <SearchInput
-      :id="inputId"
-      v-model="query"
-      clearable
-      :placeholder="placeholder || $t('type_to_search')"
-      :aria-label="$t('search')"
-    >
-      <!-- media type filter inlined in the search box -->
-      <template v-if="showMediaTypeFilter" #append>
-        <FacetedFilter
-          v-model="selectedMediaTypes"
-          :title="$t('media_type')"
-          :options="mediaTypeOptions"
+    <Popover :open="panelOpen">
+      <PopoverAnchor ref="anchorRef">
+        <SearchInput
+          :id="inputId"
+          v-model="query"
+          clearable
+          :placeholder="placeholder || $t('type_to_search')"
+          :aria-label="$t('search')"
         >
-          <template #trigger>
-            <InputGroupButton
-              type="button"
-              class="media-search-type-trigger"
+          <template v-if="showMediaTypeFilter" #append>
+            <FacetedFilter
+              v-model="selectedMediaTypes"
               :title="$t('media_type')"
-              :aria-label="$t('media_type')"
+              :options="mediaTypeOptions"
             >
-              <ListFilter class="size-4" />
-              <span
-                v-if="selectedMediaTypes.length"
-                class="media-search-type-count"
-              >
-                {{ selectedMediaTypes.length }}
-              </span>
-            </InputGroupButton>
+              <template #trigger>
+                <InputGroupButton
+                  type="button"
+                  class="media-search-type-trigger"
+                  :title="$t('media_type')"
+                  :aria-label="$t('media_type')"
+                >
+                  <ListFilter class="size-4" />
+                  <span
+                    v-if="selectedMediaTypes.length"
+                    class="media-search-type-count"
+                  >
+                    {{ selectedMediaTypes.length }}
+                  </span>
+                </InputGroupButton>
+              </template>
+            </FacetedFilter>
           </template>
-        </FacetedFilter>
-      </template>
-    </SearchInput>
+        </SearchInput>
+      </PopoverAnchor>
+
+      <PopoverContent
+        class="media-search-results max-h-[min(18rem,var(--reka-popover-content-available-height))] w-(--reka-popover-trigger-width) overflow-y-auto p-1"
+        align="start"
+        :side="panelSide"
+        :side-offset="PANEL_OFFSET"
+        :avoid-collisions="false"
+        @open-auto-focus.prevent
+        @close-auto-focus.prevent
+        @focus-outside.prevent
+        @escape-key-down="dismissed = true"
+        @pointer-down-outside="onPointerDownOutside"
+      >
+        <button
+          v-for="item in flatResults"
+          :key="item.uri"
+          type="button"
+          class="media-search-result"
+          @click="onResultClick(item)"
+        >
+          <MediaItemThumb :item="item" :size="44" />
+          <span class="media-search-result-text">
+            <strong class="truncate">{{ item.name }}</strong>
+            <small class="truncate">{{ itemSubtitle(item) }}</small>
+          </span>
+        </button>
+        <p v-if="loading" class="media-search-note">
+          {{ $t("searching") }}
+        </p>
+        <p v-else-if="flatResults.length === 0" class="media-search-note">
+          {{ $t("no_content") }}
+        </p>
+      </PopoverContent>
+    </Popover>
 
     <div
       v-if="showProviderFilter && providerTargets.length"
@@ -44,29 +80,6 @@
         :options="providerOptions"
       />
     </div>
-
-    <!-- results panel: filled progressively while targets respond -->
-    <div v-if="panelVisible" class="media-search-results">
-      <button
-        v-for="item in flatResults"
-        :key="item.uri"
-        type="button"
-        class="media-search-result"
-        @click="onResultClick(item)"
-      >
-        <MediaItemThumb :item="item" :size="44" />
-        <span class="media-search-result-text">
-          <strong class="truncate">{{ item.name }}</strong>
-          <small class="truncate">{{ itemSubtitle(item) }}</small>
-        </span>
-      </button>
-      <p v-if="loading" class="media-search-note">
-        {{ $t("searching") }}
-      </p>
-      <p v-else-if="flatResults.length === 0" class="media-search-note">
-        {{ $t("no_content") }}
-      </p>
-    </div>
   </div>
 </template>
 
@@ -74,6 +87,11 @@
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { InputGroupButton } from "@/components/ui/input-group";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { SearchInput } from "@/components/ui/search-input";
 import {
   LIBRARY_SEARCH_TARGET,
@@ -87,7 +105,17 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ListFilter } from "@lucide/vue";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { unrefElement, useElementBounding, useWindowSize } from "@vueuse/core";
+import {
+  computed,
+  onBeforeUnmount,
+  ref,
+  watch,
+  type ComponentPublicInstance,
+} from "vue";
+
+const PANEL_OFFSET = 4;
+const PANEL_MAX_HEIGHT = 288;
 
 export interface Props {
   // media types this search can return (also the media type filter options)
@@ -132,6 +160,9 @@ const selectedMediaTypes = ref<MediaType[]>(
   ),
 );
 const selectedProviders = ref<string[]>([]);
+const anchorRef = ref<ComponentPublicInstance | null>(null);
+const dismissed = ref(false);
+
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
 const { loading, providerTargets, search, filteredItems } =
@@ -164,6 +195,25 @@ const providerOptions = computed(() => [
 const panelVisible = computed(
   () => query.value.trim().length >= props.minLength,
 );
+const panelOpen = computed(() => panelVisible.value && !dismissed.value);
+
+const { top: anchorTop, bottom: anchorBottom } = useElementBounding(anchorRef);
+const { height: viewportHeight } = useWindowSize();
+const panelSide = computed<"top" | "bottom">(() => {
+  const below = viewportHeight.value - anchorBottom.value - PANEL_OFFSET;
+  const above = anchorTop.value - PANEL_OFFSET;
+  return below < PANEL_MAX_HEIGHT && above > below ? "top" : "bottom";
+});
+
+function onPointerDownOutside(event: CustomEvent<{ originalEvent: Event }>) {
+  const target = event.detail.originalEvent.target;
+  const anchor = unrefElement(anchorRef);
+  if (target instanceof Node && anchor?.contains(target)) {
+    event.preventDefault();
+    return;
+  }
+  dismissed.value = true;
+}
 
 // The results show no provider information, so the same item returned by
 // multiple providers reads as a plain duplicate: collapse by name (and
@@ -217,6 +267,7 @@ const onResultClick = function (item: MediaItemTypeOrItemMapping) {
 };
 
 watch(query, () => {
+  dismissed.value = false;
   clearTimeout(debounceTimer);
   const trimmed = query.value.trim();
   if (trimmed.length < props.minLength) {
@@ -261,13 +312,7 @@ onBeforeUnmount(() => {
 }
 
 .media-search-results {
-  max-height: 288px;
-  overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  padding: 4px;
-  background: rgb(var(--v-theme-background));
 }
 
 .media-search-result {

@@ -1,8 +1,9 @@
 import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
 import type { MusicQuizPlaybackOptions } from "@/composables/music-quiz/useMusicQuiz";
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
-import { describe, expect, it, vi } from "vitest";
+import { pickSelectOption } from "../../fixtures/rekaSelect";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
@@ -144,7 +145,15 @@ const GAME_CASES = [
   },
 ] as const;
 
+// the venue player listbox is portalled out of the wrapper, so tear it down even
+// when an assertion fails
+enableAutoUnmount(afterEach);
+
 describe("MusicQuizSetupWizard", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
   it("shows Trivia only when the backend reports it available", async () => {
     const wrapper = mountWizard();
 
@@ -165,52 +174,43 @@ describe("MusicQuizSetupWizard", () => {
     await gameTypeButton.trigger("click");
     await nextTick();
 
-    const configureHeading = wrapper
-      .findAll("h2")
-      .find((heading) =>
-        heading.text().includes("providers.music_quiz.configure_game"),
-      );
-    expect(configureHeading?.attributes("tabindex")).toBe("-1");
-    expect(document.activeElement).toBe(configureHeading?.element);
+    const heading = wrapper.get('[data-testid="music-quiz-setup-heading"]');
+    expect(heading.text()).toBe("game_type");
+    expect(heading.attributes("tabindex")).toBe("-1");
+    expect(document.activeElement).toBe(heading.element);
 
-    const backButton = wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("back"));
-    backButton?.element.focus();
-    await backButton?.trigger("click");
+    const backButton = wrapper.get<HTMLButtonElement>(
+      'button[aria-label="back"]',
+    );
+    backButton.element.focus();
+    await backButton.trigger("click");
     await nextTick();
 
-    const chooseHeading = wrapper
-      .findAll("h2")
-      .find((heading) =>
-        heading.text().includes("providers.music_quiz.choose_game_type"),
-      );
-    expect(chooseHeading?.attributes("tabindex")).toBe("-1");
-    expect(document.activeElement).toBe(chooseHeading?.element);
+    expect(heading.text()).toBe("providers.music_quiz.choose_game_type");
+    expect(document.activeElement).toBe(heading.element);
     wrapper.unmount();
   });
 
   it("uses mutually exclusive display classes for wizard visibility", async () => {
     const wrapper = mountWizard();
-    const progress = wrapper.get('[data-testid="music-quiz-setup-progress"]');
     const configureStep = wrapper.get(
       '[data-testid="music-quiz-configure-step"]',
     );
+    const chooseStep = () => wrapper.find("section:not([data-testid])");
 
-    expect(progress.classes()).toContain("flex");
-    expect(progress.classes()).not.toContain("hidden");
+    expect(chooseStep().exists()).toBe(true);
     expect(configureStep.classes()).toContain("hidden");
     expect(configureStep.classes()).not.toContain("flex");
 
     await selectGame(wrapper, "game_type");
 
+    expect(chooseStep().exists()).toBe(false);
     expect(configureStep.classes()).toContain("flex");
     expect(configureStep.classes()).not.toContain("hidden");
 
     await wrapper.setProps({ busy: true });
 
-    expect(progress.classes()).toContain("hidden");
-    expect(progress.classes()).not.toContain("flex");
+    expect(chooseStep().exists()).toBe(false);
     expect(configureStep.classes()).toContain("hidden");
     expect(configureStep.classes()).not.toContain("flex");
   });
@@ -250,10 +250,9 @@ describe("MusicQuizSetupWizard", () => {
       expect(
         wrapper.get("#music-quiz-playback-venue").attributes("aria-checked"),
       ).toBe("true");
-      expect(
-        wrapper.get<HTMLSelectElement>("#music-quiz-venue-player").element
-          .value,
-      ).toBe("living-room");
+      expect(wrapper.get("#music-quiz-venue-player").text()).toBe(
+        "Living Room",
+      );
       expect(wrapper.text()).not.toContain("Automatic");
 
       await wrapper
@@ -301,7 +300,7 @@ describe("MusicQuizSetupWizard", () => {
       .get('[data-testid="quiz-include-similar-music"]')
       .trigger("click");
     await wrapper.get('[data-testid="change-guess_the_song"]').trigger("click");
-    await wrapper.get("#music-quiz-venue-player").setValue("kitchen");
+    await pickSelectOption(wrapper, "#music-quiz-venue-player", "Kitchen");
 
     await goBack(wrapper);
     expect(
@@ -316,9 +315,7 @@ describe("MusicQuizSetupWizard", () => {
         .get('[data-testid="quiz-include-similar-music"]')
         .attributes("aria-checked"),
     ).toBe("true");
-    expect(
-      wrapper.get<HTMLSelectElement>("#music-quiz-venue-player").element.value,
-    ).toBe("kitchen");
+    expect(wrapper.get("#music-quiz-venue-player").text()).toBe("Kitchen");
     expect(wrapper.get('[data-testid="setting-trivia"]').text()).toBe("2");
 
     await goBack(wrapper);
@@ -327,15 +324,13 @@ describe("MusicQuizSetupWizard", () => {
     expect(wrapper.get('[data-testid="setting-guess_the_song"]').text()).toBe(
       "1",
     );
-    expect(
-      wrapper.get<HTMLSelectElement>("#music-quiz-venue-player").element.value,
-    ).toBe("kitchen");
+    expect(wrapper.get("#music-quiz-venue-player").text()).toBe("Kitchen");
   });
 
   it("resets from newly supplied server defaults in a fresh setup", async () => {
     const wrapper = mountWizard({ playbackOptions: PLAYBACK_OPTIONS });
     await selectGame(wrapper, "game_type");
-    await wrapper.get("#music-quiz-venue-player").setValue("kitchen");
+    await pickSelectOption(wrapper, "#music-quiz-venue-player", "Kitchen");
     wrapper.unmount();
 
     const freshOptions = {
@@ -359,10 +354,7 @@ describe("MusicQuizSetupWizard", () => {
     ).toBe("false");
 
     await freshWrapper.get("#music-quiz-playback-venue").trigger("click");
-    expect(
-      freshWrapper.get<HTMLSelectElement>("#music-quiz-venue-player").element
-        .value,
-    ).toBe("kitchen");
+    expect(freshWrapper.get("#music-quiz-venue-player").text()).toBe("Kitchen");
   });
 
   it("does not emit when refreshed options keep the selection unchanged", async () => {
@@ -539,7 +531,7 @@ describe("MusicQuizSetupWizard", () => {
     const createButton = wrapper.get('[data-testid="create-guess_the_song"]');
     expect(createButton.attributes("disabled")).toBeDefined();
 
-    await wrapper.get("#music-quiz-venue-player").setValue("living-room");
+    await pickSelectOption(wrapper, "#music-quiz-venue-player", "Living Room");
     expect(createButton.attributes("disabled")).toBeUndefined();
   });
 });
@@ -580,9 +572,6 @@ async function selectGame(
 }
 
 async function goBack(wrapper: ReturnType<typeof mountWizard>) {
-  await wrapper
-    .findAll("button")
-    .find((button) => button.text().includes("back"))
-    ?.trigger("click");
+  await wrapper.get('button[aria-label="back"]').trigger("click");
   await nextTick();
 }

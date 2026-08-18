@@ -10,9 +10,9 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { track } from "../fixtures/track";
 import { playlist } from "../fixtures/playlist";
 import { genre } from "../fixtures/genre";
@@ -67,7 +67,45 @@ async function flushPromises() {
 function mountSearch(
   props: Partial<InstanceType<typeof MediaSearch>["$props"]>,
 ) {
-  return mount(MediaSearch, { props });
+  return mount(MediaSearch, { props, attachTo: document.body });
+}
+
+// the results float in a popover portalled out of the wrapper, so they are only
+// reachable through the document
+function resultRows() {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(".media-search-result"),
+  );
+}
+
+function resultsPanel() {
+  return document.querySelector<HTMLElement>(".media-search-results");
+}
+
+/**
+ * Pins the search box `bottom` pixels from the top of a `viewport`-tall window,
+ * so a case can say how much room the panel has underneath it.
+ */
+function placeSearchBox(bottom: number, viewport: number) {
+  vi.stubGlobal("innerHeight", viewport);
+  const original = Element.prototype.getBoundingClientRect;
+  vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
+    function (this: Element) {
+      if (!this.matches('[data-slot="popover-anchor"]'))
+        return original.call(this);
+      return {
+        top: bottom - 36,
+        bottom,
+        left: 0,
+        right: 320,
+        width: 320,
+        height: 36,
+        x: 0,
+        y: bottom - 36,
+        toJSON: () => ({}),
+      } as DOMRect;
+    },
+  );
 }
 
 // api.search always returns every result list, so fill the ones a case does not
@@ -84,9 +122,16 @@ const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
   ...lists,
 });
 
+// an open results popover keeps document-level listeners and portalled nodes,
+// so tear it down even when an assertion fails
+enableAutoUnmount(afterEach);
+
 describe("MediaSearch", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    document.body.innerHTML = "";
     mockSearch.mockReset();
     mockGetLibraryGenres.mockReset();
     mockGetLibraryGenres.mockResolvedValue([]);
@@ -140,9 +185,7 @@ describe("MediaSearch", () => {
     await flushPromises();
 
     expect(
-      wrapper
-        .findAll(".media-search-result")
-        .map((result) => result.find("strong").text()),
+      resultRows().map((result) => result.querySelector("strong")?.textContent),
     ).toEqual([
       "Some track",
       "Some playlist",
@@ -170,7 +213,8 @@ describe("MediaSearch", () => {
     await wrapper.find("input").setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper.find(".media-search-result").trigger("click");
+    resultRows()[0]!.click();
+    await flushPromises();
 
     expect(wrapper.emitted("select")?.[0]?.[0]).toMatchObject({
       uri: "playlist:1",
@@ -198,7 +242,7 @@ describe("MediaSearch", () => {
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
 
-    expect(wrapper.find(".media-search-result").exists()).toBe(false);
+    expect(resultRows()).toHaveLength(0);
     vi.useRealTimers();
   });
 
@@ -237,12 +281,43 @@ describe("MediaSearch", () => {
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
 
-    const rows = wrapper.findAll(".media-search-result");
+    const rows = resultRows();
     // the duplicate track collapses, same-named playlists never do
-    expect(rows.filter((row) => row.text().includes("Song"))).toHaveLength(1);
-    expect(rows.filter((row) => row.text().includes("Party"))).toHaveLength(2);
+    expect(
+      rows.filter((row) => row.textContent?.includes("Song")),
+    ).toHaveLength(1);
+    expect(
+      rows.filter((row) => row.textContent?.includes("Party")),
+    ).toHaveLength(2);
     vi.useRealTimers();
   });
+
+  it.each([
+    { room: "too little", boxBottom: 560, viewport: 600, side: "top" },
+    { room: "enough", boxBottom: 120, viewport: 900, side: "bottom" },
+  ])(
+    "opens the results $side of the search box when there is $room room below",
+    async ({ boxBottom, viewport, side }) => {
+      placeSearchBox(boxBottom, viewport);
+      mockSearch.mockResolvedValue(
+        searchResults({
+          playlists: [
+            playlistFixture({ uri: "playlist:1", name: "Some list" }),
+          ],
+        }),
+      );
+      const wrapper = mountSearch({
+        allowedMediaTypes: [MediaType.PLAYLIST],
+      });
+
+      await wrapper.find("input").setValue("test");
+      await vi.advanceTimersByTimeAsync(300);
+      await flushPromises();
+
+      expect(resultsPanel()?.getAttribute("data-side")).toBe(side);
+      vi.useRealTimers();
+    },
+  );
 
   it("collapses duplicates of a track that lists no artists", async () => {
     mockSearch.mockResolvedValue(
@@ -267,10 +342,9 @@ describe("MediaSearch", () => {
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
 
-    const rows = wrapper.findAll(".media-search-result");
-    expect(rows.filter((row) => row.text().includes("Untitled"))).toHaveLength(
-      1,
-    );
+    expect(
+      resultRows().filter((row) => row.textContent?.includes("Untitled")),
+    ).toHaveLength(1);
 
     vi.useRealTimers();
   });
