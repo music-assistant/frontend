@@ -526,7 +526,8 @@
             "options": "Player options",
             "preferences": "Preferences",
             "display_settings": "Display",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "audiobooks": "Audiobooks"
         },
         "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
         "onboarding_music_title": "Music",
@@ -706,6 +707,10 @@
         "show_waveform": {
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
+        },
+        "audiobook_chapter_progress": {
+            "label": "Show audiobook chapter progress",
+            "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",

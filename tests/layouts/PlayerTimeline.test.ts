@@ -1,6 +1,6 @@
 import PlayerTimeline from "@/layouts/default/PlayerOSD/PlayerTimeline.vue";
 import apiDefault, { type MusicAssistantApi } from "@/plugins/api";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { store as storeModule } from "@/plugins/store";
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,6 +25,7 @@ vi.mock("@/plugins/store", async () => {
     store: reactive({
       activePlayer: undefined,
       curQueueItem: undefined,
+      currentUser: undefined,
     }),
   };
 });
@@ -32,7 +33,7 @@ vi.mock("@/plugins/store", async () => {
 // The timeline only consults the sources to decide whether seeking is allowed,
 // which is unrelated to the tick.
 vi.mock("@/composables/activeSource", () => ({
-  useActiveSource: () => ({ activeSource: { value: undefined } }),
+  useActiveSource: () => ({ activeSource: { value: { can_seek: true } } }),
 }));
 
 vi.mock("@/composables/activeAudioSource", () => ({
@@ -49,17 +50,42 @@ interface TestStore {
     player_id: string;
     active_source?: string;
     playback_state?: PlaybackState;
-    current_media?: TestTiming & { duration?: number };
+    current_media?: TestTiming & {
+      duration?: number;
+      media_type?: MediaType;
+      queue_item_id?: string | null;
+    };
   };
-  curQueueItem?: { queue_item_id?: string };
+  curQueueItem?: {
+    queue_item_id?: string;
+    media_item?: {
+      media_type?: MediaType;
+      metadata?: {
+        chapters?: {
+          position: number;
+          name: string;
+          start: number;
+          end: number | null;
+        }[];
+      };
+    };
+  };
+  currentUser?: { preferences?: Record<string, unknown> };
 }
 
 const api = apiDefault as unknown as {
   queues: Record<
     string,
-    { queue_id: string; state?: PlaybackState; active?: boolean }
+    {
+      queue_id: string;
+      state?: PlaybackState;
+      active?: boolean;
+      current_item?: { extra_attributes?: { playback_speed?: number } };
+    }
   >;
   queueElapsedTime: Record<string, TestTiming>;
+  playerCommandSeek: ReturnType<typeof vi.fn>;
+  playMedia: ReturnType<typeof vi.fn>;
 };
 const store = storeModule as unknown as TestStore;
 
@@ -96,6 +122,7 @@ beforeEach(() => {
   api.queueElapsedTime = {};
   store.activePlayer = undefined;
   store.curQueueItem = undefined;
+  store.currentUser = undefined;
 });
 
 afterEach(() => {
@@ -144,6 +171,176 @@ describe("PlayerTimeline", () => {
 
     mountTimeline();
     expect(await elapsedLabelAfter(4)).toBe("00:14");
+  });
+
+  it("switches chapters from the local clock without a queue-time event", async () => {
+    api.queues["q1"] = {
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: true,
+      current_item: {},
+    };
+    api.queueElapsedTime["q1"] = {
+      elapsed_time: 59,
+      elapsed_time_last_updated: NOW,
+    };
+    store.currentUser = {
+      preferences: { audiobook_chapter_progress: true },
+    };
+    store.curQueueItem = {
+      queue_item_id: "qi-1",
+      media_item: {
+        media_type: MediaType.AUDIOBOOK,
+        metadata: {
+          chapters: [
+            { position: 1, name: "First", start: 0, end: 60 },
+            { position: 2, name: "Second", start: 60, end: 120 },
+          ],
+        },
+      },
+    };
+    store.activePlayer = {
+      player_id: "p1",
+      active_source: "q1",
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        duration: 120,
+        media_type: MediaType.AUDIOBOOK,
+        queue_item_id: "qi-1",
+      },
+    };
+
+    mountTimeline();
+    expect(elapsedLabel()).toBe("00:59");
+
+    expect(await elapsedLabelAfter(2)).toBe("00:01");
+  });
+
+  it("seeks from a chapter-relative position to the absolute media position", async () => {
+    api.queues["q1"] = {
+      queue_id: "q1",
+      state: PlaybackState.PAUSED,
+      active: true,
+      current_item: {},
+    };
+    api.queueElapsedTime["q1"] = {
+      elapsed_time: 75,
+      elapsed_time_last_updated: NOW,
+    };
+    store.currentUser = {
+      preferences: { audiobook_chapter_progress: true },
+    };
+    store.curQueueItem = {
+      queue_item_id: "qi-1",
+      media_item: {
+        media_type: MediaType.AUDIOBOOK,
+        metadata: {
+          chapters: [
+            { position: 1, name: "First", start: 0, end: 60 },
+            { position: 2, name: "Second", start: 60, end: 120 },
+          ],
+        },
+      },
+    };
+    store.activePlayer = {
+      player_id: "p1",
+      active_source: "q1",
+      playback_state: PlaybackState.PAUSED,
+      current_media: {
+        duration: 120,
+        media_type: MediaType.AUDIOBOOK,
+        queue_item_id: "qi-1",
+      },
+    };
+
+    mountTimeline({
+      SliderRoot: {
+        template:
+          "<div><button class=\"test-slider\" @click=\"$emit('update:modelValue', [10]); $emit('value-commit')\"></button><slot /></div>",
+      },
+    });
+    await wrapper!.get(".test-slider").trigger("click");
+    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 70);
+  });
+
+  it("seeks to a chapter start without reloading the media", async () => {
+    store.currentUser = {
+      preferences: { audiobook_chapter_progress: false },
+    };
+    store.curQueueItem = {
+      queue_item_id: "qi-1",
+      media_item: {
+        media_type: MediaType.AUDIOBOOK,
+        metadata: {
+          chapters: [
+            { position: 1, name: "First", start: 0, end: 60 },
+            { position: 2, name: "Second", start: 60, end: 120 },
+          ],
+        },
+      },
+    };
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PAUSED,
+      current_media: {
+        duration: 120,
+        media_type: MediaType.AUDIOBOOK,
+        queue_item_id: "qi-1",
+      },
+    };
+    api.playerCommandSeek.mockClear();
+    api.playMedia.mockClear();
+
+    mountTimeline({
+      SliderRoot: { template: "<div><slot /></div>" },
+      SliderTrack: { template: "<div><slot /></div>" },
+    });
+    await wrapper!.find('button[aria-label="Second"]').trigger("click");
+
+    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 60);
+    expect(api.playMedia).not.toHaveBeenCalled();
+  });
+
+  it("keeps the final chapter-relative position at exact media completion", async () => {
+    api.queues["q1"] = {
+      queue_id: "q1",
+      state: PlaybackState.PAUSED,
+      active: true,
+      current_item: {},
+    };
+    api.queueElapsedTime["q1"] = {
+      elapsed_time: 120,
+      elapsed_time_last_updated: NOW,
+    };
+    store.currentUser = {
+      preferences: { audiobook_chapter_progress: true },
+    };
+    store.curQueueItem = {
+      queue_item_id: "qi-1",
+      media_item: {
+        media_type: MediaType.AUDIOBOOK,
+        metadata: {
+          chapters: [
+            { position: 1, name: "First", start: 0, end: 60 },
+            { position: 2, name: "Second", start: 60, end: 120 },
+          ],
+        },
+      },
+    };
+    store.activePlayer = {
+      player_id: "p1",
+      active_source: "q1",
+      playback_state: PlaybackState.PAUSED,
+      current_media: {
+        duration: 120,
+        media_type: MediaType.AUDIOBOOK,
+        queue_item_id: "qi-1",
+      },
+    };
+
+    mountTimeline();
+    expect(elapsedLabel()).toBe("01:00");
+    expect(wrapper!.find(".time-text-right").text()).toBe("01:00");
   });
 
   it("animates a current_media position for an external source", async () => {
@@ -316,7 +513,7 @@ describe("PlayerTimeline", () => {
   });
 });
 
-function mountTimeline() {
+function mountTimeline(extraStubs: Record<string, unknown> = {}) {
   wrapper = mount(PlayerTimeline, {
     props: { showLabels: true },
     global: {
@@ -327,6 +524,7 @@ function mountTimeline() {
         SliderTrack: true,
         SliderRange: true,
         SliderThumb: true,
+        ...extraStubs,
       },
     },
   });
