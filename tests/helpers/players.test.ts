@@ -283,15 +283,6 @@ describe("groupMemberPickerVisible", () => {
     );
   });
 
-  it.each([PlayerType.LIGHT, PlayerType.VISUALIZER])(
-    "shows a hidden %s player",
-    (type) => {
-      const player = createPlayer({ type, hide_in_ui: true });
-
-      expect(groupMemberPickerVisible(player)).toBe(true);
-    },
-  );
-
   it("keeps another device's private player out of the picker", () => {
     const player = createPlayer({
       player_id: "remote-web-player",

@@ -77,11 +77,23 @@ export const playerVisible = function (
  * Check if the player may be offered as a group member.
  *
  * Hiding a player only removes it from the main listings, so it stays pickable
- * here. Players private to another device are the exception: they only show up
- * once their owner unhides them.
+ * here. Private players are the exception, because they belong to someone
+ * else's device or to the server itself: those only show up once unhidden.
  */
 export const groupMemberPickerVisible = function (player: Player): boolean {
-  return !player.hide_in_ui || !player.private || isBuiltinPlayer(player);
+  return isBuiltinPlayer(player) || !(player.hide_in_ui && player.private);
+};
+
+/**
+ * Check if the player renders a now-playing view instead of audio.
+ *
+ * Screens and visualizers share a section in the group pickers, so the UI
+ * treats them as one category.
+ */
+export const isVisualizerPlayer = function (player: Player): boolean {
+  return (
+    player.type === PlayerType.VISUALIZER || player.type === PlayerType.DISPLAY
+  );
 };
 
 export const canEditPlayerGroup = function (player: Player): boolean {
