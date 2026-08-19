@@ -166,22 +166,32 @@ const openLinkInNewTab = function (url: string) {
 
 const demoPlayer = reactive<{ [item_id: string]: HTMLAudioElement }>({});
 
-const playBtnClick = async function (providerMapping: ProviderMapping) {
+const playBtnClick = function (providerMapping: ProviderMapping) {
   const key = `${providerMapping.provider_instance}.${providerMapping.item_id}`;
   const existing = demoPlayer[key];
   if (existing) {
     existing.load();
     delete demoPlayer[key];
-  } else {
-    const audio = new Audio(
-      await api.getTrackPreviewUrl(
-        providerMapping.provider_instance,
-        providerMapping.item_id,
-      ),
-    );
-    demoPlayer[key] = audio;
-    audio.play();
+    return;
   }
+  // claim the slot before awaiting the url, so a second click while the request is
+  // in flight cannot start a second clip that the first would then orphan
+  const audio = new Audio();
+  demoPlayer[key] = audio;
+  api
+    .getTrackPreviewUrl(
+      providerMapping.provider_instance,
+      providerMapping.item_id,
+    )
+    .then((url) => {
+      // the stop path clears the slot; do not start playing a clip nobody wants
+      if (demoPlayer[key] !== audio) return;
+      audio.src = url;
+      return audio.play();
+    })
+    .catch(() => {
+      if (demoPlayer[key] === audio) delete demoPlayer[key];
+    });
 };
 
 // just enough of a provider mapping to identify an item: the library entry built for
