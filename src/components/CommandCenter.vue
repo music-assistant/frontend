@@ -1,16 +1,8 @@
 <template>
-  <CommandDialog
+  <CommandCenterShell
     v-model:open="isOpen"
     :title="$t('search')"
     :description="$t('type_to_search')"
-    :show-close-button="false"
-    :focus-input-on-open="true"
-    :content-class="[
-      'command-center-content',
-      mobileLayout
-        ? 'command-center-content--mobile top-0 left-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 sm:max-w-none'
-        : 'top-[10%] flex translate-y-0 flex-col gap-0 sm:max-w-2xl',
-    ]"
   >
     <div
       data-slot="command-input-wrapper"
@@ -36,15 +28,6 @@
         @click="clearQuery"
       >
         <X class="size-4" />
-      </button>
-      <button
-        v-if="mobileLayout"
-        type="button"
-        class="command-center-close"
-        :aria-label="$t('close')"
-        @click="close"
-      >
-        <X class="size-5" />
       </button>
     </div>
 
@@ -236,15 +219,15 @@
         <Kbd>{{ commandCenterHotkeyLabel }}</Kbd>
       </span>
     </div>
-  </CommandDialog>
+  </CommandCenterShell>
 </template>
 
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import CommandCenterShell from "@/components/CommandCenterShell.vue";
 import {
-  CommandDialog,
   CommandGroup,
   CommandItem,
   CommandList,
@@ -713,14 +696,5 @@ watch(
   .command-center-play {
     opacity: 1;
   }
-}
-</style>
-
-<style>
-.command-center-content--mobile {
-  padding-top: var(--device-inset-top);
-  padding-right: var(--device-inset-right);
-  padding-bottom: var(--device-inset-bottom);
-  padding-left: var(--device-inset-left);
 }
 </style>
