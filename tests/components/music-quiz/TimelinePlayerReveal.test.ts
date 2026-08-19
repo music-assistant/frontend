@@ -22,7 +22,7 @@ vi.mock("@/helpers/utils", () => ({
 }));
 
 describe("Timeline player reveal", () => {
-  it("shows placement and bonus results independently", () => {
+  it("renders no result banners since results live in the player header", () => {
     const revealedEntry = {
       ...anchor,
       entry_id: "current",
@@ -73,33 +73,18 @@ describe("Timeline player reveal", () => {
       },
     });
 
-    expect(wrapper.text()).toContain(
-      "providers.music_quiz.timeline_incorrect_placement",
+    expect(
+      wrapper.find('[data-testid="timeline-placement-result"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find('[data-testid="timeline-artist-result"]').exists(),
+    ).toBe(false);
+    expect(wrapper.find('[data-testid="timeline-title-result"]').exists()).toBe(
+      false,
     );
-    expect(wrapper.text()).toContain("+0");
-    expect(wrapper.text()).toContain("+250");
-    expect(
-      wrapper
-        .get('[data-testid="timeline-placement-result"]')
-        .classes()
-        .includes("text-destructive"),
-    ).toBe(true);
-    expect(
-      wrapper
-        .get('[data-testid="timeline-artist-result"]')
-        .classes()
-        .includes("text-green-700"),
-    ).toBe(true);
-    expect(
-      wrapper
-        .get('[data-testid="timeline-title-result"]')
-        .classes()
-        .includes("text-destructive"),
-    ).toBe(true);
-    expect(wrapper.findAll(".sr-only").map((result) => result.text())).toEqual([
-      "providers.music_quiz.correct",
-      "providers.music_quiz.incorrect",
-    ]);
+    expect(wrapper.text()).not.toContain(
+      "providers.music_quiz.no_answer_submitted",
+    );
   });
 
   it("does not mark a late joiner as missing an answer", () => {

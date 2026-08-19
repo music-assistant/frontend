@@ -87,25 +87,12 @@
         <Clock3 class="size-4" aria-hidden="true" />
         {{ autoAdvanceText }}
       </div>
-
-      <Button
-        v-if="showReadyButton && phase === 'reveal'"
-        class="w-full max-w-sm self-center"
-        size="lg"
-        :disabled="busy || isReady"
-        data-testid="music-timeline-ready"
-        @click="emit('ready')"
-      >
-        <Check class="size-4" />
-        {{ readyLabel }}
-      </Button>
     </CardContent>
   </Card>
 </template>
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type {
   MusicQuizTimelineRound,
@@ -114,7 +101,7 @@ import type {
 import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
-import { AudioLines, Check, Clock3, Music2 } from "@lucide/vue";
+import { AudioLines, Clock3, Music2 } from "@lucide/vue";
 import { computed } from "vue";
 
 const props = withDefaults(
@@ -122,21 +109,12 @@ const props = withDefaults(
     phase: MusicQuizPhase;
     round: MusicQuizTimelineRound;
     isFinalRound: boolean;
-    busy?: boolean;
-    isReady?: boolean;
-    readyLabel?: string;
-    showReadyButton?: boolean;
     compact?: boolean;
   }>(),
   {
-    busy: false,
-    isReady: false,
-    readyLabel: "",
-    showReadyButton: false,
     compact: false,
   },
 );
-const emit = defineEmits<{ ready: [] }>();
 
 const revealedEntry = computed(() => props.round.revealed_entry);
 const imageUrl = computed(() =>

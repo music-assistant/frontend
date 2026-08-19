@@ -22,6 +22,32 @@
           </span>
         </span>
       </div>
+
+      <div
+        v-if="roundResults?.length"
+        class="flex flex-wrap items-center justify-center gap-2"
+      >
+        <span
+          v-for="result in roundResults"
+          :key="result.key"
+          data-testid="player-round-result"
+          class="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-semibold"
+          :class="
+            result.correct
+              ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+              : 'bg-red-500/10 text-destructive'
+          "
+        >
+          <CircleCheck
+            v-if="result.correct"
+            class="size-4"
+            aria-hidden="true"
+          />
+          <CircleX v-else class="size-4" aria-hidden="true" />
+          {{ result.label }}
+          <span>+{{ result.points }}</span>
+        </span>
+      </div>
     </CardContent>
   </Card>
 </template>
@@ -30,11 +56,20 @@
 import MusicQuizAvatar from "@/components/music-quiz/MusicQuizAvatar.vue";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { CircleCheck, CircleX } from "@lucide/vue";
+
+export interface MusicQuizRoundResult {
+  key: string;
+  label: string;
+  correct: boolean;
+  points: number;
+}
 
 defineProps<{
   playerName: string;
   rank: number | null;
   score: number;
   scoreDelta: string;
+  roundResults?: MusicQuizRoundResult[];
 }>();
 </script>

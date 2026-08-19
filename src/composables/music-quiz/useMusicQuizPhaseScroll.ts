@@ -13,9 +13,8 @@ const SCROLL_PHASES: ReadonlySet<MusicQuizPhase> = new Set([
 ]);
 
 /**
- * Scrolls the round section into view once when a round starts answering and
- * once when it reveals, so the sticky countdown (and later the result with
- * the Ready button) lands at the top of the scroll container.
+ * Scrolls the target into view once when a round starts answering, and
+ * scrolls the whole container to the top once when the round reveals.
  */
 export function useMusicQuizPhaseScroll(options: MusicQuizPhaseScrollOptions) {
   let lastScrolledKey: string | null = null;
@@ -26,16 +25,39 @@ export function useMusicQuizPhaseScroll(options: MusicQuizPhaseScrollOptions) {
       if (!phase || !SCROLL_PHASES.has(phase) || roundIndex === null) return;
       const key = `${roundIndex}:${phase}`;
       if (key === lastScrolledKey) return;
-      if (!target || typeof target.scrollIntoView !== "function") return;
+      if (!target) return;
+      const behavior = scrollBehavior();
+      if (phase === "reveal") {
+        const scrollParent = findScrollParent(target);
+        if (!scrollParent || typeof scrollParent.scrollTo !== "function") {
+          return;
+        }
+        lastScrolledKey = key;
+        scrollParent.scrollTo({ top: 0, behavior });
+        return;
+      }
+      if (typeof target.scrollIntoView !== "function") return;
       lastScrolledKey = key;
-      const reducedMotion =
-        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ??
-        false;
-      target.scrollIntoView({
-        block: "start",
-        behavior: reducedMotion ? "auto" : "smooth",
-      });
+      target.scrollIntoView({ block: "start", behavior });
     },
     { immediate: true, flush: "post" },
   );
+}
+
+function scrollBehavior(): ScrollBehavior {
+  const reducedMotion =
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  return reducedMotion ? "auto" : "smooth";
+}
+
+/** Finds the target's scrollable ancestor, falling back to the document. */
+function findScrollParent(target: HTMLElement) {
+  let el: HTMLElement | null = target.parentElement;
+  while (el) {
+    if (["auto", "scroll"].includes(getComputedStyle(el).overflowY)) {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return document.scrollingElement;
 }

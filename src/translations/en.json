@@ -1637,6 +1637,8 @@
             "timeline_correct_placement": "Correct placement",
             "timeline_incorrect_placement": "Incorrect placement",
             "timeline_round_results": "Round results",
+            "timeline_result_placement": "Placement",
+            "round_result_answer": "Answer",
             "add_music_sources": "Add music sources",
             "genre": "Genre",
             "album": "Album",

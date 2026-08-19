@@ -249,6 +249,26 @@ describe("Music Timeline game adapters", () => {
     );
   });
 
+  it("pins the Ready button to the bottom of the stage during reveal", async () => {
+    const wrapper = mount(MusicTimelinePlayerRound, {
+      props: {
+        state: playerState,
+        currentRound: revealRound,
+        busy: false,
+      },
+    });
+    const readyButton = wrapper.get('[data-testid="music-timeline-ready"]');
+    const footer = readyButton.element.parentElement;
+
+    expect(footer?.classList.contains("sticky")).toBe(true);
+    expect(footer?.classList.contains("bottom-0")).toBe(true);
+    expect(footer?.classList.contains("order-last")).toBe(true);
+
+    await readyButton.trigger("click");
+
+    expect(wrapper.emitted("ready")).toEqual([[]]);
+  });
+
   it("keeps intermediate Ready after song details", async () => {
     const wrapper = mount(MusicTimelinePlayerRound, {
       props: {
