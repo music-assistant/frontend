@@ -1,6 +1,9 @@
+import type { MediaType } from "@/plugins/api/interfaces";
 import { ref } from "vue";
 
 const isOpen = ref(false);
+const initialQuery = ref("");
+const initialMediaTypes = ref<MediaType[]>([]);
 
 export const isMacPlatform =
   typeof navigator !== "undefined" &&
@@ -8,17 +11,31 @@ export const isMacPlatform =
 
 export const commandCenterHotkeyLabel = isMacPlatform ? "⌘K" : "Ctrl K";
 
+export interface CommandCenterOpenOptions {
+  query?: string;
+  mediaTypes?: MediaType[];
+}
+
+const open = function (options?: CommandCenterOpenOptions) {
+  initialQuery.value = options?.query?.trim() || "";
+  initialMediaTypes.value = options?.mediaTypes ? [...options.mediaTypes] : [];
+  isOpen.value = true;
+};
+
+const close = function () {
+  isOpen.value = false;
+};
+
 export function useCommandCenter() {
   return {
     isOpen,
-    open: () => {
-      isOpen.value = true;
-    },
-    close: () => {
-      isOpen.value = false;
-    },
-    toggle: () => {
-      isOpen.value = !isOpen.value;
+    initialQuery,
+    initialMediaTypes,
+    open,
+    close,
+    toggle: (options?: CommandCenterOpenOptions) => {
+      if (isOpen.value) close();
+      else open(options);
     },
   };
 }

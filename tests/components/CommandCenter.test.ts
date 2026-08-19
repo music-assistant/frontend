@@ -20,8 +20,7 @@ const state = vi.hoisted(() => ({
     isTouchscreen: false,
     dialogActive: false,
     activePlayerId: undefined as string | undefined,
-    globalSearchTerm: undefined as string | undefined,
-    globalSearchMediaTypes: [] as string[],
+    mobileLayout: false,
   },
 }));
 
@@ -187,6 +186,13 @@ async function typeQuery(
   await flushPromises();
 }
 
+/** Rows rendered for the track results, ignoring the "show more" row. */
+function trackRowCount(wrapper: ReturnType<typeof mountPalette>) {
+  return wrapper
+    .findAll('[data-testid="palette-item"]')
+    .filter((item) => item.text().startsWith("Track ")).length;
+}
+
 function itemByText(wrapper: ReturnType<typeof mountPalette>, text: string) {
   const item = wrapper
     .findAll('[data-testid="palette-item"]')
@@ -203,7 +209,7 @@ beforeEach(() => {
   state.loading.value = false;
   state.storeMock.dialogActive = false;
   state.storeMock.activePlayerId = undefined;
-  state.storeMock.globalSearchTerm = undefined;
+  state.storeMock.mobileLayout = false;
   vi.clearAllMocks();
 });
 
@@ -273,6 +279,65 @@ describe("CommandCenter", () => {
       "bohemian",
     ]);
     expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("caps a section at five rows and reveals five more per click", async () => {
+    state.resultsByType[MediaType.TRACK] = Array.from({ length: 12 }, (_, i) =>
+      makeTrack(`t${i}`, `Track ${i}`),
+    );
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "track");
+    expect(trackRowCount(wrapper)).toBe(5);
+
+    await wrapper.get("button.command-center-more").trigger("click");
+    await flushPromises();
+    expect(trackRowCount(wrapper)).toBe(10);
+
+    // the last two rows leave nothing held back, so the row goes away
+    await wrapper.get("button.command-center-more").trigger("click");
+    await flushPromises();
+    expect(trackRowCount(wrapper)).toBe(12);
+    expect(wrapper.text()).not.toContain("show_more");
+
+    wrapper.unmount();
+  });
+
+  it("drops the reveal back to five rows on the next query", async () => {
+    state.resultsByType[MediaType.TRACK] = Array.from({ length: 12 }, (_, i) =>
+      makeTrack(`t${i}`, `Track ${i}`),
+    );
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "track");
+    await wrapper.get("button.command-center-more").trigger("click");
+    await flushPromises();
+    expect(trackRowCount(wrapper)).toBe(10);
+
+    await typeQuery(wrapper, "tracks");
+    expect(trackRowCount(wrapper)).toBe(5);
+
+    wrapper.unmount();
+  });
+
+  it("gives a single media type one long list instead of a show more row", async () => {
+    state.resultsByType[MediaType.TRACK] = Array.from({ length: 30 }, (_, i) =>
+      makeTrack(`t${i}`, `Track ${i}`),
+    );
+    const wrapper = mountPalette();
+    useCommandCenter().open({ mediaTypes: [MediaType.TRACK] });
+    await flushPromises();
+
+    await typeQuery(wrapper, "track");
+    // a page of rows, and scrolling to the end reveals the rest
+    expect(trackRowCount(wrapper)).toBe(20);
+    expect(wrapper.text()).not.toContain("show_more");
 
     wrapper.unmount();
   });
@@ -382,19 +447,17 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
-  it("shows a spinner instead of flashing 'see all results' while searching", async () => {
+  it("spins while searching and keeps the results up on the next keystroke", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();
     await flushPromises();
 
     // keystroke landed but the debounced search hasn't fired yet and no
-    // results are in: spinner only, no premature "see all results"
+    // results are in: spinner only
     await wrapper.get('[data-testid="palette-input"]').setValue("bo");
     expect(wrapper.find('[data-testid="palette-spinner"]').exists()).toBe(true);
-    expect(wrapper.text()).not.toContain("see_all_results");
 
-    // results land; the next keystroke keeps them visible (no spinner) and
-    // the see-all handoff is offered
+    // results land; the next keystroke keeps them visible (no spinner)
     state.resultsByType[MediaType.TRACK] = [
       makeTrack("t1", "Bohemian Rhapsody"),
     ];
@@ -404,7 +467,6 @@ describe("CommandCenter", () => {
     expect(wrapper.find('[data-testid="palette-spinner"]').exists()).toBe(
       false,
     );
-    expect(wrapper.text()).toContain("see_all_results");
     expect(wrapper.text()).toContain("Bohemian Rhapsody");
 
     vi.advanceTimersByTime(300);
@@ -421,7 +483,6 @@ describe("CommandCenter", () => {
 
     await wrapper.get('[data-testid="palette-input"]').setValue("z");
     expect(wrapper.text()).toContain("command_center_keep_typing");
-    expect(wrapper.text()).not.toContain("see_all_results");
 
     wrapper.unmount();
   });
@@ -439,16 +500,41 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
-  it("hands the query over to the full search page", async () => {
+  it("starts on the term and media type it was opened with", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
     const wrapper = mountPalette();
-    useCommandCenter().open();
+    useCommandCenter().open({
+      query: "bohemian",
+      mediaTypes: [MediaType.TRACK],
+    });
     await flushPromises();
 
-    await typeQuery(wrapper, "bohemian");
-    await itemByText(wrapper, "see_all_results").trigger("click");
+    expect(
+      wrapper.get('[data-testid="palette-input"]').attributes("value"),
+    ).toBe("bohemian");
 
-    expect(state.storeMock.globalSearchTerm).toBe("bohemian");
-    expect(state.routerPush).toHaveBeenCalledWith({ name: "search" });
+    vi.advanceTimersByTime(300);
+    await flushPromises();
+    expect(state.searchSpy).toHaveBeenLastCalledWith("bohemian");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("clears the handed-over term when it is reopened bare", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open({ query: "bohemian" });
+    await flushPromises();
+    useCommandCenter().close();
+    await flushPromises();
+
+    useCommandCenter().open();
+    await flushPromises();
+    expect(
+      wrapper.get('[data-testid="palette-input"]').attributes("value"),
+    ).toBe("");
 
     wrapper.unmount();
   });

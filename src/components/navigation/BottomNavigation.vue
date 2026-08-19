@@ -38,8 +38,8 @@
     <Button
       variant="ghost"
       class="player-control-button mobile-navigation-item mobile-navigation-item--bare px-1"
-      :data-active="isActive('search')"
-      :aria-current="isActive('search') ? 'page' : undefined"
+      :data-active="commandCenterOpen"
+      :aria-expanded="commandCenterOpen"
       :aria-label="$t('search')"
       @click="handleSearchClick"
     >
@@ -47,7 +47,7 @@
         <Search
           class="size-8"
           :stroke-width="
-            isActive('search') && !store.showPlayersMenu ? 2.2 : 1.6
+            commandCenterOpen && !store.showPlayersMenu ? 2.2 : 1.6
           "
         />
       </span>
@@ -57,6 +57,7 @@
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
+import { useCommandCenter } from "@/composables/useCommandCenter";
 import PlayerBarPlayerButton from "@/layouts/default/PlayerOSD/PlayerBarPlayerButton.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -65,6 +66,8 @@ import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
+const { isOpen: commandCenterOpen, toggle: toggleCommandCenter } =
+  useCommandCenter();
 
 const isActive = (name: string) => route.name === name;
 
@@ -80,17 +83,7 @@ const handleDiscoverClick = () => {
 
 const handleSearchClick = () => {
   closePlayersMenu();
-
-  if (isActive("search")) {
-    const wrapper = document.getElementById("searchInput");
-    if (wrapper) {
-      const input = wrapper.querySelector("input") || wrapper;
-      (input as HTMLInputElement).focus();
-      (input as HTMLInputElement).select();
-    }
-  } else {
-    router.push({ name: "search" });
-  }
+  toggleCommandCenter();
 };
 
 function closePlayersMenu() {

@@ -45,7 +45,7 @@
       v-model="params.search"
       clearable
       prepend-inner-icon="mdi-magnify"
-      :label="$t('search')"
+      :label="searchLabel"
       hide-details
       variant="filled"
       style="width: auto; margin-top: 10px"
@@ -273,6 +273,8 @@ import {
   EmptyMedia,
 } from "@/components/ui/empty";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCommandCenter } from "@/composables/useCommandCenter";
+import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
@@ -440,6 +442,7 @@ const props = withDefaults(defineProps<Props>(), {
 const router = useRouter();
 const route = useRoute();
 const { t, te } = useI18n();
+const { open: openCommandCenter } = useCommandCenter();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
 const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
@@ -494,6 +497,13 @@ const params = ref<LoadDataParams>({
 const viewMode = ref("list");
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
+const listingMediaType = computed(() => MEDIA_TYPE_BY_ITEMTYPE[props.itemtype]);
+const searchLabel = computed(() => {
+  const mediaType = listingMediaType.value;
+  if (!mediaType) return t("search");
+  const labelKey = MEDIA_TYPE_LABEL_KEYS[mediaType] ?? `${mediaType}s`;
+  return t("search_in", [t(labelKey)]);
+});
 const pagedItems = ref<MediaItemType[]>([]);
 const allItems = ref<MediaItemType[]>([]);
 const loading = ref(false);
@@ -514,6 +524,33 @@ let pendingTabLoad = false;
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
 const SEARCH_ITEM_THRESHOLD = 25;
+
+const MEDIA_TYPE_BY_ITEMTYPE: Record<string, MediaType> = {
+  artists: MediaType.ARTIST,
+  similarartists: MediaType.ARTIST,
+  albums: MediaType.ALBUM,
+  albumversions: MediaType.ALBUM,
+  artistalbums: MediaType.ALBUM,
+  trackalbums: MediaType.ALBUM,
+  tracks: MediaType.TRACK,
+  albumtracks: MediaType.TRACK,
+  artisttracks: MediaType.TRACK,
+  playlisttracks: MediaType.TRACK,
+  similartracks: MediaType.TRACK,
+  trackversions: MediaType.TRACK,
+  playlists: MediaType.PLAYLIST,
+  audiobooks: MediaType.AUDIOBOOK,
+  artistaudiobooks: MediaType.AUDIOBOOK,
+  podcasts: MediaType.PODCAST,
+  podcastepisodes: MediaType.PODCAST_EPISODE,
+  radios: MediaType.RADIO,
+  radioversions: MediaType.RADIO,
+  genres: MediaType.GENRE,
+};
+
+const MEDIA_TYPE_LABEL_KEYS: Partial<Record<MediaType, string>> = {
+  [MediaType.PODCAST_EPISODE]: "podcast_episodes",
+};
 
 interface DiscHeader {
   isDiscHeader: true;
@@ -901,20 +938,14 @@ const providerFilterSubItems = () =>
   }));
 
 const redirectSearch = function () {
-  store.globalSearchTerm = params.value.search;
-  const mediaTypeByItemtype: Record<string, MediaType> = {
-    artists: MediaType.ARTIST,
-    albums: MediaType.ALBUM,
-    tracks: MediaType.TRACK,
-    playlists: MediaType.PLAYLIST,
-    audiobooks: MediaType.AUDIOBOOK,
-    podcasts: MediaType.PODCAST,
-    radios: MediaType.RADIO,
-    genres: MediaType.GENRE,
-  };
-  const mediaType = mediaTypeByItemtype[props.itemtype];
-  store.globalSearchMediaTypes = mediaType ? [mediaType] : [];
-  router.push({ name: "search" });
+  const mediaType = listingMediaType.value;
+  openCommandCenter({
+    query: params.value.search,
+    mediaTypes:
+      mediaType && SEARCHABLE_MEDIA_TYPES.includes(mediaType)
+        ? [mediaType]
+        : [],
+  });
 };
 
 const loadNextPage = async function ({

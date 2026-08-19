@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { cn } from "@/lib/utils";
+import { reactiveOmit } from "@vueuse/core";
 import type { DialogRootEmits, DialogRootProps } from "reka-ui";
 import { useForwardPropsEmits } from "reka-ui";
-import { reactiveOmit } from "@vueuse/core";
 import type { HTMLAttributes } from "vue";
 import Command from "./Command.vue";
 
@@ -21,6 +21,7 @@ const props = withDefaults(
       description?: string;
       contentClass?: HTMLAttributes["class"];
       showCloseButton?: boolean;
+      focusInputOnOpen?: boolean;
     }
   >(),
   {
@@ -28,6 +29,7 @@ const props = withDefaults(
     description: "Search for a command to run...",
     contentClass: undefined,
     showCloseButton: true,
+    focusInputOnOpen: false,
   },
 );
 const emits = defineEmits<DialogRootEmits>();
@@ -38,6 +40,7 @@ const delegatedProps = reactiveOmit(
   "description",
   "contentClass",
   "showCloseButton",
+  "focusInputOnOpen",
 );
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
@@ -47,7 +50,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <DialogContent
       :class="cn('overflow-hidden p-0', props.contentClass)"
       :show-close-button="showCloseButton"
-      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+      @open-auto-focus="
+        focusInputOnOpen ? undefined : preventOnScreenKeyboardOnOpen($event)
+      "
     >
       <DialogHeader class="sr-only">
         <DialogTitle>{{ title }}</DialogTitle>

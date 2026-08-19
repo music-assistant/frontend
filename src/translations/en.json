@@ -939,6 +939,7 @@
     "track": "Track",
     "track_number": "Disc {0} Track {1}",
     "tracks": "Tracks",
+    "search_in": "Search in {0}...",
     "try_global_search": "Try global search",
     "type_to_search": "Type here to search...",
     "volume_normalization": "Volume normalization",
@@ -2396,7 +2397,6 @@
     "open_settings": "Settings",
     "pages": "Pages",
     "recent_searches": "Recent searches",
-    "see_all_results": "See all results for \"{0}\"",
     "command_center_navigate": "navigate",
     "command_center_open": "open",
     "command_center_keep_typing": "Keep typing to search..."

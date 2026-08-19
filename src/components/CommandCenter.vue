@@ -4,7 +4,13 @@
     :title="$t('search')"
     :description="$t('type_to_search')"
     :show-close-button="false"
-    content-class="top-[10%] translate-y-0 sm:max-w-2xl"
+    :focus-input-on-open="true"
+    :content-class="[
+      'command-center-content',
+      mobileLayout
+        ? 'command-center-content--mobile top-0 left-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 sm:max-w-none'
+        : 'top-[10%] flex translate-y-0 flex-col gap-0 sm:max-w-2xl',
+    ]"
   >
     <div
       data-slot="command-input-wrapper"
@@ -15,11 +21,20 @@
         ref="filterRef"
         v-model="query"
         data-slot="command-input"
-        :auto-focus="!store.isTouchscreen"
+        auto-focus
         :placeholder="$t('type_to_search')"
         class="placeholder:text-muted-foreground flex h-12 w-full rounded-md bg-transparent py-3 text-base outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
       <Spinner v-if="loading && queryActive" class="size-4 shrink-0" />
+      <button
+        v-if="mobileLayout"
+        type="button"
+        class="command-center-close"
+        :aria-label="$t('close')"
+        @click="close"
+      >
+        <X class="size-5" />
+      </button>
     </div>
 
     <div
@@ -49,7 +64,14 @@
       </button>
     </div>
 
-    <CommandList ref="listRef" class="h-[min(480px,60vh)] max-h-none">
+    <CommandList
+      ref="listRef"
+      :class="
+        mobileLayout
+          ? 'min-h-0 max-h-none flex-1'
+          : 'h-[min(480px,60vh)] max-h-none'
+      "
+    >
       <CommandGroup
         v-if="recentResults.length"
         :heading="$t('recent_searches')"
@@ -111,20 +133,28 @@
             />
           </div>
         </CommandItem>
+
+        <button
+          v-if="section.hasMore && !singleType"
+          type="button"
+          tabindex="-1"
+          class="command-center-more"
+          @mousedown.prevent
+          @click="revealMore(section.mediaType)"
+        >
+          {{ $t("show_more") }}
+        </button>
       </CommandGroup>
 
-      <CommandGroup v-if="queryActive && (hasMediaResults || !isSearching)">
-        <CommandItem
-          value="see-all-results"
-          class="py-2"
-          @select="goToSearchPage"
-        >
-          <Search class="size-4" />
-          <span class="truncate">
-            {{ $t("see_all_results", [query.trim()]) }}
-          </span>
-        </CommandItem>
-      </CommandGroup>
+      <div
+        v-if="
+          singleType && hasMediaResults && (sectionsHaveMore || isSearching)
+        "
+        ref="revealSentinel"
+        class="flex items-center justify-center py-6"
+      >
+        <Spinner class="text-muted-foreground size-5" />
+      </div>
 
       <CommandGroup v-if="pageResults.length" :heading="$t('pages')">
         <CommandItem
@@ -165,6 +195,7 @@
     </CommandList>
 
     <div
+      v-if="!mobileLayout"
       class="text-muted-foreground flex shrink-0 items-center gap-4 border-t px-4 py-2.5 text-xs"
     >
       <span class="flex items-center gap-1.5">
@@ -219,7 +250,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Check, History, Play, Search } from "@lucide/vue";
+import { Check, History, Play, Search, X } from "@lucide/vue";
+import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -228,25 +260,33 @@ import { getMenuItems, type MenuItem } from "./navigation/utils/getMenuItems";
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_MS = 250;
 const RESULTS_PER_TYPE = 5;
-const RESULTS_SINGLE_TYPE = 15;
+const RESULTS_SINGLE_PAGE = 20;
+const FETCH_PER_TYPE = 15;
+const FETCH_SINGLE_TYPE = 50;
 const MAX_RECENT_SEARCHES = 5;
 const RECENT_SEARCHES_PREF_KEY = "search.recent";
 
 const router = useRouter();
-const { isOpen, open, close } = useCommandCenter();
+const { isOpen, initialQuery, initialMediaTypes, open, close } =
+  useCommandCenter();
 const { getPreference, setPreference } = useUserPreferences();
+
+const mobileLayout = computed(() => store.mobileLayout);
 
 const query = ref("");
 const selectedMediaTypes = ref<MediaType[]>([]);
 const filterRef = ref<InstanceType<typeof ListboxFilter>>();
 const listRef = ref<InstanceType<typeof CommandList>>();
+const revealSentinel = ref<HTMLElement>();
 const debouncePending = ref(false);
+const revealedPerType = ref<Partial<Record<MediaType, number>>>({});
+const revealedSingle = ref(RESULTS_SINGLE_PAGE);
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
 const { loading, search, filteredItems } = useProgressiveSearch({
   mediaTypes: selectedMediaTypes,
-  limits: { single: RESULTS_SINGLE_TYPE, multi: RESULTS_PER_TYPE },
+  limits: { single: FETCH_SINGLE_TYPE, multi: FETCH_PER_TYPE },
 });
 
 const queryActive = computed(
@@ -255,6 +295,12 @@ const queryActive = computed(
 
 const isSearching = computed(
   () => queryActive.value && (debouncePending.value || loading.value),
+);
+
+const singleType = computed(() =>
+  selectedMediaTypes.value.length === 1
+    ? selectedMediaTypes.value[0]
+    : undefined,
 );
 
 const toggleMediaType = function (mediaType: MediaType) {
@@ -272,21 +318,17 @@ const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
 const mediaSections = computed(() => {
   if (!queryActive.value) return [];
 
-  const mediaTypes = selectedMediaTypes.value.length
-    ? selectedMediaTypes.value
-    : SEARCHABLE_MEDIA_TYPES;
-  const perTypeLimit =
-    selectedMediaTypes.value.length === 1
-      ? RESULTS_SINGLE_TYPE
-      : RESULTS_PER_TYPE;
-  const seen = new Set<string>();
+  const single = singleType.value;
+  const mediaTypes = single ? [single] : SEARCHABLE_MEDIA_TYPES;
   const sections: {
     mediaType: MediaType;
     title: string;
     items: MediaItemTypeOrItemMapping[];
+    hasMore: boolean;
   }[] = [];
 
   for (const mediaType of mediaTypes) {
+    const seen = new Set<string>();
     const items: MediaItemTypeOrItemMapping[] = [];
     for (const item of filteredItems(mediaType)) {
       const key = dedupeKey(item);
@@ -295,14 +337,42 @@ const mediaSections = computed(() => {
         seen.add(key);
       }
       items.push(item);
-      if (items.length >= perTypeLimit) break;
     }
-    if (items.length) {
-      sections.push({ mediaType, title: $t(mediaType + "s"), items });
-    }
+    if (!items.length) continue;
+    const revealed = single
+      ? revealedSingle.value
+      : (revealedPerType.value[mediaType] ?? RESULTS_PER_TYPE);
+    sections.push({
+      mediaType,
+      title: $t(mediaType + "s"),
+      items: items.slice(0, revealed),
+      hasMore: items.length > revealed,
+    });
   }
   return sections;
 });
+
+const sectionsHaveMore = computed(() =>
+  mediaSections.value.some((section) => section.hasMore),
+);
+
+const revealMore = function (mediaType: MediaType) {
+  revealedPerType.value = {
+    ...revealedPerType.value,
+    [mediaType]:
+      (revealedPerType.value[mediaType] ?? RESULTS_PER_TYPE) + RESULTS_PER_TYPE,
+  };
+};
+
+useIntersectionObserver(
+  revealSentinel,
+  ([entry]) => {
+    if (!entry?.isIntersecting) return;
+    if (!sectionsHaveMore.value) return;
+    revealedSingle.value += RESULTS_SINGLE_PAGE;
+  },
+  { root: computed(() => listRef.value?.$el as HTMLElement | undefined) },
+);
 
 const hasMediaResults = computed(() =>
   mediaSections.value.some((section) => section.items.length),
@@ -362,19 +432,11 @@ const recordRecentSearch = function () {
   setPreference(RECENT_SEARCHES_PREF_KEY, next);
 };
 
-const goToSearchPage = function () {
-  recordRecentSearch();
-  store.globalSearchTerm = query.value.trim();
-  store.globalSearchMediaTypes = [...selectedMediaTypes.value];
-  close();
-  router.push({ name: "search" });
-};
-
 const pageResults = computed(() => {
   if (selectedMediaTypes.value.length) return [];
 
   const pages = getMenuItems()
-    .filter((item) => !item.hidden && !item.disabled)
+    .filter((item) => !item.hidden && !item.disabled && !item.action)
     .map((item) => ({ ...item, title: $t(item.label) }));
   const term = query.value.trim().toLowerCase();
 
@@ -455,13 +517,24 @@ onUnmounted(() => {
 
 watch(isOpen, (opened) => {
   store.dialogActive = opened;
-  if (!opened) {
-    clearTimeout(debounceTimer);
-    query.value = "";
-    selectedMediaTypes.value = [];
-    search("");
+  if (opened) {
+    selectedMediaTypes.value = [...initialMediaTypes.value];
+    query.value = initialQuery.value;
+    return;
   }
+  clearTimeout(debounceTimer);
+  query.value = "";
+  selectedMediaTypes.value = [];
+  search("");
 });
+
+watch(
+  () => `${query.value}|${selectedMediaTypes.value.join(",")}`,
+  () => {
+    revealedPerType.value = {};
+    revealedSingle.value = RESULTS_SINGLE_PAGE;
+  },
+);
 
 watch(query, () => {
   clearTimeout(debounceTimer);
@@ -496,6 +569,36 @@ watch(
 </script>
 
 <style scoped>
+.command-center-close {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.command-center-more {
+  display: block;
+  width: fit-content;
+  margin: 4px auto 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.command-center-more:hover {
+  color: var(--foreground);
+}
+
 .command-center-chip {
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -542,5 +645,14 @@ watch(
   .command-center-play {
     opacity: 1;
   }
+}
+</style>
+
+<style>
+.command-center-content--mobile {
+  padding-top: var(--device-inset-top);
+  padding-right: var(--device-inset-right);
+  padding-bottom: var(--device-inset-bottom);
+  padding-left: var(--device-inset-left);
 }
 </style>
