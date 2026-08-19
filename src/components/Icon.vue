@@ -84,7 +84,7 @@ const handleClick = (event: MouseEvent) => {
     return;
   }
 
-  emit("click", event as unknown as MouseEvent);
+  emit("click", event);
 };
 
 const handleKeyboardClick = (event: KeyboardEvent) => {
@@ -95,7 +95,7 @@ const handleKeyboardClick = (event: KeyboardEvent) => {
     return;
   }
 
-  emit("click", event as unknown as MouseEvent);
+  emit("click", event);
 };
 
 onMounted(() => {
@@ -130,13 +130,13 @@ onBeforeUnmount(() => {
 }
 
 .icon-container--button:hover,
-.icon-container--button:focus {
+.icon-container--button:focus-visible {
   opacity: 1;
 }
 
-.icon-container--button:focus {
-  outline: none;
-  color: #00ff00;
+.icon-container--button:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
 }
 
 .icon-container--button:active {

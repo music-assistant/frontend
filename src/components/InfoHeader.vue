@@ -755,7 +755,7 @@ const artistLogo = computed(() => {
 
 const isAdmin = computed(() => authManager.isAdmin());
 const favoriteButtonLabel = computed(() =>
-  compProps.item?.favorite ? t("favorites_remove") : t("favorites_add"),
+  compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
 );
 
 const mergeGenre = () => {
@@ -829,10 +829,10 @@ const collectionNarrators = computed(() => {
   color: currentColor;
   cursor: pointer;
   display: inline-flex;
-  height: 32px;
+  height: 24px;
   justify-content: center;
   padding: 0;
-  width: 32px;
+  width: 24px;
 }
 
 .favorite-icon-button:focus-visible {

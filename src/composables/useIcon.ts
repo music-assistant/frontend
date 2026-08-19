@@ -41,7 +41,7 @@ export interface IconProps {
 }
 
 export interface IconEmits {
-  (e: "click", event: MouseEvent): void;
+  (e: "click", event: MouseEvent | KeyboardEvent): void;
 }
 
 export const useIcon = (props: IconProps) => {

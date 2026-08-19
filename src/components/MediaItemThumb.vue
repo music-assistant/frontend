@@ -5,7 +5,7 @@
     :width="size || '100%'"
     aspect-ratio="1"
     :src="imgData"
-    :alt="alt || (item?.name ?? '')"
+    :alt="alt ?? item?.name ?? ''"
     :class="{ rounded: rounded }"
     :style="imageStyle"
     contain
@@ -48,7 +48,7 @@ const props = withDefaults(defineProps<Props>(), {
   rounded: true,
   thumbnail: true,
   scale: 1,
-  alt: "",
+  alt: undefined,
 });
 
 const theme = useTheme();

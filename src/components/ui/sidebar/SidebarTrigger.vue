@@ -57,7 +57,6 @@ const sidebarToggleLabel = computed(() =>
             @click="toggleSidebar"
           >
             <PanelLeft />
-            <span class="sr-only">{{ sidebarToggleLabel }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" align="center" :hidden="!isCollapsed">

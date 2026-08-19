@@ -18,9 +18,6 @@
     "
     :title="repeatTitle"
     :aria-label="repeatButtonLabel"
-    :aria-pressed="
-      playerQueue?.repeat_mode == RepeatMode.OFF ? 'false' : 'true'
-    "
     :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="api.queueCommandRepeat(playerQueue?.queue_id || '', nextRepeatMode)"

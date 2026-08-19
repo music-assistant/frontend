@@ -38,7 +38,6 @@
         :title="menuItemLabel(menuItem)"
         :aria-label="menuItemLabel(menuItem)"
         :aria-haspopup="menuItem.subItems?.length ? 'menu' : undefined"
-        :aria-pressed="menuItem.active == null ? undefined : menuItem.active"
         :disabled="menuItem.disabled == true"
         @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
       >
@@ -241,9 +240,11 @@ const onMenuItemClick = (
 
 const toolbarIconLabel = computed(() => {
   if (props.iconLabel) return props.iconLabel;
+  // an actionable icon is a back button; name it after its action, never
+  // after the page title
+  if (props.iconAction) return t("back");
   if (props.title) return props.title;
   if (props.isDiscoverPage) return t("discover");
-  if (props.iconAction) return t("back");
   return undefined;
 });
 
