@@ -1160,7 +1160,9 @@ const menuItems = computed(() => {
       });
     }
     items.push({
-      label: "tooltip.select_items",
+      label: showCheckboxes.value
+        ? "tooltip.exit_select_items"
+        : "tooltip.select_items",
       icon: showCheckboxes.value
         ? "mdi-checkbox-multiple-outline"
         : "mdi-checkbox-multiple-blank-outline",
