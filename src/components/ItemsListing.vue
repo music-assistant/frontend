@@ -57,7 +57,7 @@
       ref="searchInputRef"
       v-model="params.search"
       clearable
-      class="listing-search listing-search--row"
+      class="listing-search listing-search--row mx-2.5 mt-2.5 w-auto"
       :placeholder="searchLabel"
       :aria-label="searchLabel"
       @focus="searchHasFocus = true"
@@ -2179,10 +2179,6 @@ defineExpose({
   width: 100%;
   font-size: 0.9375rem;
   font-weight: 400;
-}
-
-.listing-search--row {
-  margin-top: 10px;
 }
 
 .disc-header {
