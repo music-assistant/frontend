@@ -99,6 +99,7 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.clearAllMocks();
+  mobileSidebarSide.value = "left";
   routeState.name = "discover";
   sidebarState.isMobile.value = true;
   sidebarState.openMobile.value = false;

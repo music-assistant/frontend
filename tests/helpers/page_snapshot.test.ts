@@ -11,6 +11,7 @@ function pageWithScroller() {
   const page = document.createElement("div");
   const scroller = document.createElement("div");
   scroller.id = "scroller";
+  scroller.className = "scroller";
   scroller.textContent = "the view being left";
   page.appendChild(scroller);
   frame.appendChild(page);
@@ -59,8 +60,16 @@ describe("capturePageSnapshot", () => {
   it("keeps the page where it was scrolled to", () => {
     const snapshot = capturePageSnapshot(pageWithScroller());
 
-    const clonedScroller = snapshot.el.querySelector("#scroller");
-    expect((clonedScroller as HTMLElement).scrollTop).toBe(640);
+    const clonedScroller = snapshot.el.querySelector<HTMLElement>(".scroller");
+    expect(clonedScroller?.scrollTop).toBe(640);
+  });
+
+  it("strips the ids it would otherwise duplicate", () => {
+    const snapshot = capturePageSnapshot(pageWithScroller());
+
+    expect(snapshot.el.hasAttribute("id")).toBe(false);
+    expect(snapshot.el.querySelectorAll("[id]")).toHaveLength(0);
+    expect(snapshot.el.querySelector(".scroller")).not.toBeNull();
   });
 
   it("moves, animates and cleans up after itself", () => {
