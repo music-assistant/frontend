@@ -539,9 +539,11 @@ export class MusicAssistantApi {
   public getTrackPreviewUrl(
     provider_instance_id_or_domain: string,
     item_id: string,
-  ): string {
-    const encItemId = encodeURIComponent(encodeURIComponent(item_id));
-    return `${this.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
+  ): Promise<string> {
+    return this.sendCommand("music/tracks/preview", {
+      provider_instance_id_or_domain,
+      item_id,
+    });
   }
 
   public getLibraryArtistsCount(

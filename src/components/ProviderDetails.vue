@@ -166,7 +166,7 @@ const openLinkInNewTab = function (url: string) {
 
 const demoPlayer = reactive<{ [item_id: string]: HTMLAudioElement }>({});
 
-const playBtnClick = function (providerMapping: ProviderMapping) {
+const playBtnClick = async function (providerMapping: ProviderMapping) {
   const key = `${providerMapping.provider_instance}.${providerMapping.item_id}`;
   const existing = demoPlayer[key];
   if (existing) {
@@ -174,16 +174,14 @@ const playBtnClick = function (providerMapping: ProviderMapping) {
     delete demoPlayer[key];
   } else {
     const audio = new Audio(
-      getPreviewUrl(providerMapping.provider_instance, providerMapping.item_id),
+      await api.getTrackPreviewUrl(
+        providerMapping.provider_instance,
+        providerMapping.item_id,
+      ),
     );
     demoPlayer[key] = audio;
     audio.play();
   }
-};
-const getPreviewUrl = function (provider: string, item_id: string) {
-  return `${
-    api.baseUrl
-  }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
 };
 
 // just enough of a provider mapping to identify an item: the library entry built for
