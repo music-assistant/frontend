@@ -24,7 +24,7 @@
             v-if="imageUrl"
             :src="imageUrl"
             :alt="round.answer_label"
-            class="bg-muted mx-auto aspect-square w-full max-w-72 rounded-lg object-cover"
+            class="bg-muted mx-auto aspect-square w-full max-w-[min(15rem,26dvh)] rounded-lg object-cover"
           />
           <div class="flex items-center justify-center gap-2">
             <h2 class="min-w-0 text-lg font-bold break-words">

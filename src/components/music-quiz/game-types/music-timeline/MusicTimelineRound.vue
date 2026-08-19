@@ -44,12 +44,20 @@
           :src="imageUrl"
           :alt="`${revealedEntry.title} - ${revealedEntry.artist}`"
           class="bg-muted mx-auto aspect-square w-full object-cover"
-          :class="compact ? 'max-w-32 rounded-lg' : 'max-w-56 rounded-xl'"
+          :class="
+            compact
+              ? 'max-w-32 rounded-lg'
+              : 'max-w-[min(11rem,22dvh)] rounded-xl'
+          "
         />
         <div
           v-else
           class="bg-muted text-muted-foreground mx-auto grid aspect-square w-full place-items-center"
-          :class="compact ? 'max-w-32 rounded-lg' : 'max-w-56 rounded-xl'"
+          :class="
+            compact
+              ? 'max-w-32 rounded-lg'
+              : 'max-w-[min(11rem,22dvh)] rounded-xl'
+          "
           aria-hidden="true"
         >
           <Music2 :class="compact ? 'size-8' : 'size-12'" />
