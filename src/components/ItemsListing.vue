@@ -16,6 +16,19 @@
       <template #title>
         <slot name="title">{{ title }}</slot>
       </template>
+
+      <template v-if="showSearchInput && !store.mobileLayout" #center>
+        <SearchInput
+          ref="searchInputRef"
+          v-model="params.search"
+          clearable
+          class="listing-search listing-search--inline"
+          :placeholder="searchLabel"
+          :aria-label="searchLabel"
+          @focus="searchHasFocus = true"
+          @blur="searchHasFocus = false"
+        />
+      </template>
     </Toolbar>
 
     <v-divider />
@@ -39,19 +52,16 @@
       </Tabs>
     </div>
 
-    <v-text-field
-      v-if="showSearchInput"
-      id="searchInput"
+    <SearchInput
+      v-if="showSearchInput && store.mobileLayout"
+      ref="searchInputRef"
       v-model="params.search"
       clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="searchLabel"
-      hide-details
-      variant="filled"
-      style="width: auto; margin-top: 10px"
+      class="listing-search listing-search--row"
+      :placeholder="searchLabel"
+      :aria-label="searchLabel"
       @focus="searchHasFocus = true"
       @blur="searchHasFocus = false"
-      @click:clear="onClear"
     />
 
     <Container
@@ -272,6 +282,7 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty";
+import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
@@ -497,6 +508,7 @@ const params = ref<LoadDataParams>({
 const viewMode = ref("list");
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
+const searchInputRef = ref<InstanceType<typeof SearchInput>>();
 const listingMediaType = computed(() => MEDIA_TYPE_BY_ITEMTYPE[props.itemtype]);
 const searchLabel = computed(() => {
   const mediaType = listingMediaType.value;
@@ -615,7 +627,7 @@ const closeSearch = function () {
 };
 const focusSearch = function () {
   nextTick(() => {
-    document.getElementById("searchInput")?.focus();
+    searchInputRef.value?.focus();
   });
 };
 const toggleSearch = function () {
@@ -855,12 +867,6 @@ const toggleCheckboxes = function () {
 
 const onRefreshClicked = function () {
   loadData(true, true);
-};
-
-const onClear = function () {
-  params.value.search = "";
-  showSearch.value = false;
-  loadData(undefined, undefined, true);
 };
 
 const changeSort = function (sort_key?: string) {
@@ -2167,6 +2173,16 @@ defineExpose({
 </script>
 
 <style scoped>
+.listing-search--inline {
+  width: 100%;
+  font-size: 0.9375rem;
+  font-weight: 400;
+}
+
+.listing-search--row {
+  margin-top: 10px;
+}
+
 .disc-header {
   display: flex;
   align-items: flex-end;
