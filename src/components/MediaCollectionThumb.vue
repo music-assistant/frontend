@@ -15,7 +15,7 @@
       <MediaItemThumb
         :item="mediaItem"
         size="100%"
-        :scale="collectionThumbScale"
+        :scale="thumbScale"
         rounded
       />
     </div>
@@ -59,7 +59,7 @@ const visibleItems = computed(() => {
   return items.slice(0, 3);
 });
 
-const collectionThumbScale = computed(() => {
+const thumbScale = computed(() => {
   // Do not scale a single image.
   const count = visibleItems.value.length;
   return props.thumbScale * (count === 1 ? 1 : 0.8);
