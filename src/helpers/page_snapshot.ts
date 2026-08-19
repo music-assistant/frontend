@@ -18,6 +18,10 @@ export function capturePageSnapshot(source: HTMLElement): PageSnapshot {
   const rect = source.getBoundingClientRect();
   const el = source.cloneNode(true) as HTMLElement;
 
+  // Avoid duplicate IDs in the document while the snapshot is mounted.
+  el.removeAttribute("id");
+  el.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
+
   el.setAttribute("aria-hidden", "true");
   el.setAttribute("inert", "");
   Object.assign(el.style, {
