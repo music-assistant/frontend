@@ -27,6 +27,17 @@
       />
       <Spinner v-if="loading && queryActive" class="size-4 shrink-0" />
       <button
+        v-if="query"
+        type="button"
+        tabindex="-1"
+        class="command-center-clear"
+        :aria-label="$t('clear')"
+        @mousedown.prevent
+        @click="clearQuery"
+      >
+        <X class="size-4" />
+      </button>
+      <button
         v-if="mobileLayout"
         type="button"
         class="command-center-close"
@@ -44,9 +55,9 @@
         type="button"
         tabindex="-1"
         class="command-center-chip"
-        :data-active="!selectedMediaTypes.length"
+        :data-active="!selectedMediaTypes.length && !pagesOnly"
         @mousedown.prevent
-        @click="selectedMediaTypes = []"
+        @click="selectAllScope"
       >
         {{ $t("searchtype_all") }}
       </button>
@@ -61,6 +72,16 @@
         @click="toggleMediaType(mediaType)"
       >
         {{ $t(mediaType + "s") }}
+      </button>
+      <button
+        type="button"
+        tabindex="-1"
+        class="command-center-chip"
+        :data-active="pagesOnly"
+        @mousedown.prevent
+        @click="togglePagesOnly"
+      >
+        {{ $t("pages") }}
       </button>
     </div>
 
@@ -275,6 +296,7 @@ const mobileLayout = computed(() => store.mobileLayout);
 
 const query = ref("");
 const selectedMediaTypes = ref<MediaType[]>([]);
+const pagesOnly = ref(false);
 const filterRef = ref<InstanceType<typeof ListboxFilter>>();
 const listRef = ref<InstanceType<typeof CommandList>>();
 const revealSentinel = ref<HTMLElement>();
@@ -304,8 +326,29 @@ const singleType = computed(() =>
 );
 
 const toggleMediaType = function (mediaType: MediaType) {
+  pagesOnly.value = false;
   selectedMediaTypes.value =
     selectedMediaTypes.value[0] === mediaType ? [] : [mediaType];
+};
+
+const selectAllScope = function () {
+  pagesOnly.value = false;
+  selectedMediaTypes.value = [];
+};
+
+const togglePagesOnly = function () {
+  pagesOnly.value = !pagesOnly.value;
+  if (pagesOnly.value) selectedMediaTypes.value = [];
+};
+
+const clearQuery = function () {
+  query.value = "";
+  focusInput();
+};
+
+const focusInput = function () {
+  const inputEl = filterRef.value?.$el as HTMLElement | undefined;
+  inputEl?.focus();
 };
 
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
@@ -316,7 +359,7 @@ const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
 };
 
 const mediaSections = computed(() => {
-  if (!queryActive.value) return [];
+  if (pagesOnly.value || !queryActive.value) return [];
 
   const single = singleType.value;
   const mediaTypes = single ? [single] : SEARCHABLE_MEDIA_TYPES;
@@ -433,7 +476,7 @@ const recordRecentSearch = function () {
 };
 
 const pageResults = computed(() => {
-  if (selectedMediaTypes.value.length) return [];
+  if (!pagesOnly.value && selectedMediaTypes.value.length) return [];
 
   const pages = getMenuItems()
     .filter((item) => !item.hidden && !item.disabled && !item.action)
@@ -453,7 +496,7 @@ const goToPage = function (page: MenuItem) {
 const orderedPlayers = useOrderedPlayers();
 
 const playerResults = computed(() => {
-  if (selectedMediaTypes.value.length) return [];
+  if (pagesOnly.value || selectedMediaTypes.value.length) return [];
   const term = query.value.trim().toLowerCase();
   if (!term) return [];
   return orderedPlayers.value
@@ -468,6 +511,10 @@ const selectPlayer = function (player: Player) {
 
 const statusNote = computed(() => {
   const term = query.value.trim();
+
+  if (pagesOnly.value) {
+    return pageResults.value.length ? "" : $t("no_content");
+  }
   if (!term) return "";
   if (queryActive.value) {
     if (hasMediaResults.value || isSearching.value) return "";
@@ -518,6 +565,7 @@ onUnmounted(() => {
 watch(isOpen, (opened) => {
   store.dialogActive = opened;
   if (opened) {
+    pagesOnly.value = false;
     selectedMediaTypes.value = [...initialMediaTypes.value];
     query.value = initialQuery.value;
     return;
@@ -525,21 +573,24 @@ watch(isOpen, (opened) => {
   clearTimeout(debounceTimer);
   query.value = "";
   selectedMediaTypes.value = [];
+  pagesOnly.value = false;
   search("");
 });
 
 watch(
-  () => `${query.value}|${selectedMediaTypes.value.join(",")}`,
+  () =>
+    `${query.value}|${selectedMediaTypes.value.join(",")}|${pagesOnly.value}`,
   () => {
     revealedPerType.value = {};
     revealedSingle.value = RESULTS_SINGLE_PAGE;
   },
 );
 
-watch(query, () => {
+watch([query, pagesOnly], () => {
   clearTimeout(debounceTimer);
   const trimmed = query.value.trim();
-  if (trimmed.length < MIN_QUERY_LENGTH) {
+
+  if (pagesOnly.value || trimmed.length < MIN_QUERY_LENGTH) {
     debouncePending.value = false;
     search("");
     return;
@@ -569,6 +620,23 @@ watch(
 </script>
 
 <style scoped>
+.command-center-clear {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.command-center-clear:hover {
+  color: var(--foreground);
+}
+
 .command-center-close {
   display: inline-flex;
   flex-shrink: 0;

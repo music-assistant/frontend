@@ -6,7 +6,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import {
+  focusCommandInputOnOpen,
+  preventOnScreenKeyboardOnOpen,
+} from "@/helpers/dialog_focus";
 import { cn } from "@/lib/utils";
 import { reactiveOmit } from "@vueuse/core";
 import type { DialogRootEmits, DialogRootProps } from "reka-ui";
@@ -43,6 +46,11 @@ const delegatedProps = reactiveOmit(
   "focusInputOnOpen",
 );
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
+
+function handleOpenAutoFocus(event: Event) {
+  if (props.focusInputOnOpen) focusCommandInputOnOpen(event);
+  else preventOnScreenKeyboardOnOpen(event);
+}
 </script>
 
 <template>
@@ -50,9 +58,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <DialogContent
       :class="cn('overflow-hidden p-0', props.contentClass)"
       :show-close-button="showCloseButton"
-      @open-auto-focus="
-        focusInputOnOpen ? undefined : preventOnScreenKeyboardOnOpen($event)
-      "
+      @open-auto-focus="handleOpenAutoFocus"
     >
       <DialogHeader class="sr-only">
         <DialogTitle>{{ title }}</DialogTitle>

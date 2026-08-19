@@ -186,6 +186,18 @@ async function typeQuery(
   await flushPromises();
 }
 
+/** The chip that narrows the palette to the app's own pages. */
+function pagesChip(wrapper: ReturnType<typeof mountPalette>) {
+  return wrapper
+    .findAll("button.command-center-chip")
+    .find((chip) => chip.text() === "pages")!;
+}
+
+/** Headings of the result groups currently rendered. */
+function groupHeadings(wrapper: ReturnType<typeof mountPalette>) {
+  return wrapper.findAll("section h3").map((heading) => heading.text());
+}
+
 /** Rows rendered for the track results, ignoring the "show more" row. */
 function trackRowCount(wrapper: ReturnType<typeof mountPalette>) {
   return wrapper
@@ -418,9 +430,9 @@ describe("CommandCenter", () => {
     await artistChip!.trigger("click");
 
     // only the chosen type remains; pages/players are media-irrelevant now
+    expect(groupHeadings(wrapper)).toEqual(["artists"]);
     expect(wrapper.text()).toContain("Queen");
     expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
-    expect(wrapper.text()).not.toContain("pages");
 
     // clicking the active chip again restores the full view
     await artistChip!.trigger("click");
@@ -535,6 +547,83 @@ describe("CommandCenter", () => {
     expect(
       wrapper.get('[data-testid="palette-input"]').attributes("value"),
     ).toBe("");
+
+    wrapper.unmount();
+  });
+
+  it("clears the query from the field's own button", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // nothing to clear until there is something in the field
+    expect(wrapper.find("button.command-center-clear").exists()).toBe(false);
+
+    await typeQuery(wrapper, "bohemian");
+    await wrapper.get("button.command-center-clear").trigger("click");
+
+    expect(
+      wrapper.get('[data-testid="palette-input"]').attributes("value"),
+    ).toBe("");
+    expect(wrapper.find("button.command-center-clear").exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  // a query buries the pages under seven media sections, so the chip is the
+  // way back to just them
+  it("scopes to the app's own pages from the pages chip", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "disco");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    await pagesChip(wrapper).trigger("click");
+
+    expect(groupHeadings(wrapper)).toEqual(["pages"]);
+    expect(wrapper.text()).toContain("discover");
+    expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
+
+    // and back out again
+    await pagesChip(wrapper).trigger("click");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("asks no provider for a search while scoped to pages", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await pagesChip(wrapper).trigger("click");
+    await typeQuery(wrapper, "settings");
+
+    // pages are matched against the menu, so nothing goes out over the wire
+    expect(state.searchSpy).not.toHaveBeenCalledWith("settings");
+    expect(wrapper.text()).toContain("settings.settings");
+
+    wrapper.unmount();
+  });
+
+  it("drops the pages scope when a media type is chosen", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await pagesChip(wrapper).trigger("click");
+    const artistChip = wrapper
+      .findAll("button.command-center-chip")
+      .find((chip) => chip.text() === "artists");
+    await artistChip!.trigger("click");
+
+    expect(pagesChip(wrapper).attributes("data-active")).toBe("false");
+    expect(artistChip!.attributes("data-active")).toBe("true");
 
     wrapper.unmount();
   });
