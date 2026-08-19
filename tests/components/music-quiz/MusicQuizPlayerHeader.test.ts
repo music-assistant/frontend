@@ -1,6 +1,10 @@
 import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
 
 describe("MusicQuizPlayerHeader", () => {
   it("renders no result pills when roundResults is empty or absent", () => {
@@ -46,5 +50,26 @@ describe("MusicQuizPlayerHeader", () => {
     expect(pills[1].classes()).toEqual(
       expect.arrayContaining(["bg-red-500/10", "text-destructive"]),
     );
+  });
+
+  it("announces results with a status role and per-pill outcome text", () => {
+    const wrapper = mount(MusicQuizPlayerHeader, {
+      props: {
+        playerName: "Player",
+        rank: 1,
+        score: 10,
+        scoreDelta: "(+10)",
+        roundResults: [
+          { key: "placement", label: "Placement", correct: true, points: 10 },
+          { key: "artist", label: "Artist bonus", correct: false, points: 0 },
+        ],
+      },
+    });
+
+    expect(wrapper.find('[role="status"]').exists()).toBe(true);
+    expect(wrapper.findAll(".sr-only").map((el) => el.text())).toEqual([
+      "providers.music_quiz.correct",
+      "providers.music_quiz.incorrect",
+    ]);
   });
 });

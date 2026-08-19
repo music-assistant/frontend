@@ -506,6 +506,50 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
+  it("passes a single answer result to the player header during a multiple-choice reveal", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...playerState,
+        phase: "reveal",
+        you: {
+          ...playerState.you,
+          answer: {
+            suggestion_id: "one",
+            answered_at: 1,
+            correct: false,
+            points: 0,
+          },
+        },
+      }),
+      playerId: ref("player-id"),
+      landingSeen: ref(true),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(currentRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+      markLandingSeen: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper.findComponent(MusicQuizPlayerHeader).props("roundResults"),
+    ).toEqual([
+      {
+        key: "answer",
+        label: "providers.music_quiz.round_result_answer",
+        correct: false,
+        points: 0,
+      },
+    ]);
+    wrapper.unmount();
+  });
+
   it("passes the placement and bonus results to the player header during timeline reveal", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({

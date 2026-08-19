@@ -26,6 +26,7 @@
       <div
         v-if="roundResults?.length"
         class="flex flex-wrap items-center justify-center gap-2"
+        role="status"
       >
         <span
           v-for="result in roundResults"
@@ -44,6 +45,15 @@
             aria-hidden="true"
           />
           <CircleX v-else class="size-4" aria-hidden="true" />
+          <span class="sr-only">
+            {{
+              $t(
+                result.correct
+                  ? "providers.music_quiz.correct"
+                  : "providers.music_quiz.incorrect",
+              )
+            }}
+          </span>
           {{ result.label }}
           <span>+{{ result.points }}</span>
         </span>
@@ -56,6 +66,7 @@
 import MusicQuizAvatar from "@/components/music-quiz/MusicQuizAvatar.vue";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX } from "@lucide/vue";
 
 export interface MusicQuizRoundResult {

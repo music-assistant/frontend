@@ -9,7 +9,7 @@
   <!-- order-last + sticky only work as a direct child of the stage's flex section -->
   <div
     v-if="state.phase === 'reveal'"
-    class="bg-background sticky bottom-0 order-last z-10 flex justify-center pt-2 pb-1"
+    class="bg-background sticky bottom-[var(--device-inset-bottom,0px)] order-last z-10 flex justify-center pt-2 pb-1"
   >
     <Button
       class="w-full max-w-sm"

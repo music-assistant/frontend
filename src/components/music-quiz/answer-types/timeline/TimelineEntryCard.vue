@@ -40,7 +40,15 @@
       </span>
     </div>
 
-    <div class="flex items-center gap-1.5 self-center">
+    <!-- Compact strips (TV view) are 13rem wide; stacking keeps room for the title -->
+    <div
+      class="self-center"
+      :class="
+        compact
+          ? 'flex flex-col items-end gap-0.5'
+          : 'flex items-center gap-1.5'
+      "
+    >
       <Badge
         v-if="entry.is_anchor"
         variant="secondary"

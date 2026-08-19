@@ -261,7 +261,9 @@ describe("Music Timeline game adapters", () => {
     const footer = readyButton.element.parentElement;
 
     expect(footer?.classList.contains("sticky")).toBe(true);
-    expect(footer?.classList.contains("bottom-0")).toBe(true);
+    expect(
+      footer?.classList.contains("bottom-[var(--device-inset-bottom,0px)]"),
+    ).toBe(true);
     expect(footer?.classList.contains("order-last")).toBe(true);
 
     await readyButton.trigger("click");
