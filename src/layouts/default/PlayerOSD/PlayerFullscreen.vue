@@ -571,15 +571,7 @@ const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
 
-const { nowPlayingSource } = useNowPlayingSource();
-
-// a live source with no real album lands its own name in the album slot; the
-// source badge already states it, so the line is left blank there
-const albumSubtitle = computed(() => {
-  const album = store.activePlayer?.current_media?.album;
-  if (!album || album === nowPlayingSource.value?.name) return "";
-  return album;
-});
+const { albumSubtitle } = useNowPlayingSource();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
@@ -1001,16 +993,10 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
 
 const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
-  if (!currentMedia?.album) return;
+  if (!currentMedia || !albumSubtitle.value) return;
 
   // Try to get the album from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
-
-  // Check if "album" is actually the radio station name - if so, do nothing
-  if (mediaItem && currentMedia.album === mediaItem.name) {
-    // Album field contains the station name, not a real album - ignore click
-    return;
-  }
 
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
     // Navigate directly to album detail page
@@ -1028,7 +1014,7 @@ const onAlbumClick = async function () {
       // Call with positional parameters: (favorite, search, limit, offset, order_by, album_types, provider)
       const results = await api.getLibraryAlbums(
         undefined, // favorite
-        currentMedia.album, // search
+        albumSubtitle.value, // search
         5, // limit - get a few results to find best match
         undefined,
         undefined,

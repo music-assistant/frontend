@@ -57,7 +57,15 @@ export function useNowPlayingSource() {
     return undefined;
   });
 
-  return { nowPlayingSource };
+  // a live source with no real album lands its own name in the album slot, so
+  // the album line is blanked wherever the badge already states it
+  const albumSubtitle = computed(() => {
+    const album = store.activePlayer?.current_media?.album;
+    if (!album || album === nowPlayingSource.value?.name) return "";
+    return album;
+  });
+
+  return { nowPlayingSource, albumSubtitle };
 }
 
 // the provider behind the source rather than the library: a station saved to

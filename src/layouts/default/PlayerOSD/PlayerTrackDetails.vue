@@ -243,15 +243,7 @@ onUnmounted(() => updateChapterTimer(false));
 
 const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
 
-const { nowPlayingSource } = useNowPlayingSource();
-
-// a live source with no real album lands its own name in the album slot; the
-// source badge already states it, so it is dropped from the metadata line
-const albumSubtitle = computed(() => {
-  const album = store.activePlayer?.current_media?.album;
-  if (!album || album === nowPlayingSource.value?.name) return "";
-  return album;
-});
+const { albumSubtitle } = useNowPlayingSource();
 
 // properties
 interface Props {

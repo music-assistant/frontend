@@ -11,6 +11,8 @@
     as="span"
     variant="outline"
     class="now-playing-source bg-background/40 border-transparent text-inherit shadow-none backdrop-blur-md"
+    role="img"
+    :aria-label="$t('tooltip.playing_from', [nowPlayingSource.name])"
     :title="$t('tooltip.playing_from', [nowPlayingSource.name])"
   >
     <ProviderIcon
