@@ -64,7 +64,7 @@ export const isAudioSource = function (
  * resume_position_ms): podcast episodes and audiobooks.
  */
 export const itemSupportsPlayLog = function (
-  item: MediaItemType | ItemMapping | undefined,
+  item: MediaItemType | ItemMapping | null | undefined,
 ): item is Audiobook | PodcastEpisode {
   return (
     item?.media_type === MediaType.PODCAST_EPISODE ||

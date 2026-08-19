@@ -87,6 +87,7 @@ const valueChanged = (key: string, value: ConfigValueType): boolean =>
 const RELOAD_EXEMPT_PREFERENCE_KEYS = new Set([
   "volume_slider_mode",
   "volume_haptics",
+  "audiobook_skip_seconds",
 ]);
 
 onMounted(() => {
@@ -195,6 +196,24 @@ onMounted(() => {
       value:
         (store.currentUser?.preferences
           ?.audiobook_chapter_progress as boolean) ?? true,
+    },
+    {
+      key: "audiobook_skip_seconds",
+      type: ConfigEntryType.INTEGER,
+      label: "audiobook_skip_seconds",
+      default_value: 30,
+      required: false,
+      options: [
+        { title: "10", value: 10 },
+        { title: "15", value: 15 },
+        { title: "30", value: 30 },
+        { title: "60", value: 60 },
+      ],
+      multi_value: false,
+      category: "audiobooks",
+      value:
+        (store.currentUser?.preferences?.audiobook_skip_seconds as number) ??
+        30,
     },
     {
       key: "mobile_sidebar_side",

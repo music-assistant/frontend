@@ -1,5 +1,7 @@
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import PlayerFullscreen from "@/layouts/default/PlayerOSD/PlayerFullscreen.vue";
+import SkipBackBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBackBtn.vue";
+import SkipForwardBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipForwardBtn.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
@@ -319,6 +321,37 @@ describe("PlayerFullscreen chapter queue", () => {
     expect(
       fullscreen.findAll(".queue-chapter")[0].attributes("aria-current"),
     ).toBeUndefined();
+  });
+
+  it("shows skip controls for long-form media", async () => {
+    const fullscreen = await mountChapterQueue();
+
+    expect(fullscreen.findAllComponents(SkipBackBtn)).toHaveLength(1);
+    expect(fullscreen.findAllComponents(SkipForwardBtn)).toHaveLength(1);
+  });
+
+  it("hides skip controls for regular tracks", async () => {
+    await seedPlayingQueue();
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer!.current_media!.media_type = MediaType.TRACK;
+    testStore.curQueueItem!.media_item!.media_type = MediaType.TRACK;
+    testStore.showFullscreenPlayer = true;
+    testStore.showQueueItems = true;
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+        },
+      },
+    });
+    await nextTick();
+
+    expect(wrapper.findAllComponents(SkipBackBtn)).toHaveLength(0);
+    expect(wrapper.findAllComponents(SkipForwardBtn)).toHaveLength(0);
   });
 
   it("seeks to a chapter start without reloading the media", async () => {

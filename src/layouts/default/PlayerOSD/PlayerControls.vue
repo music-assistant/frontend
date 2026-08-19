@@ -23,6 +23,15 @@
         :icon="visibleComponents.previous.icon"
       />
     </div>
+    <!-- skip back button for audiobooks and podcast episodes -->
+    <div v-if="showSkipControls" class="player-controls-elements">
+      <SkipBackBtn
+        :player-queue="store.activePlayerQueue"
+        :skip-amount="skipAmount"
+        class="media-controls-item"
+        :size="20"
+      />
+    </div>
     <!-- play/pause button -->
     <div
       v-if="visibleComponents && visibleComponents.play?.isVisible"
@@ -34,6 +43,15 @@
         class="media-controls-item"
         :icon="visibleComponents.play.icon"
         :size="visibleComponents.play.size"
+      />
+    </div>
+    <!-- skip forward button for audiobooks and podcast episodes -->
+    <div v-if="showSkipControls" class="player-controls-elements">
+      <SkipForwardBtn
+        :player-queue="store.activePlayerQueue"
+        :skip-amount="skipAmount"
+        class="media-controls-item"
+        :size="20"
       />
     </div>
     <!-- next button -->
@@ -66,8 +84,13 @@
 
 <script setup lang="ts">
 import { IconProps } from "@/components/Icon.vue";
-import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
+import SkipBackBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBackBtn.vue";
+import SkipForwardBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipForwardBtn.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
+import { itemSupportsPlayLog } from "@/plugins/api/helpers";
 import { store } from "@/plugins/store";
+import { computed } from "vue";
+import RepeatBtn from "./PlayerControlBtn/RepeatBtn.vue";
 import NextBtn from "./PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "./PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "./PlayerControlBtn/PreviousBtn.vue";
@@ -110,6 +133,12 @@ withDefaults(defineProps<Props>(), {
     next: { isVisible: true },
   }),
 });
+
+const { getPreference } = useUserPreferences();
+const skipAmount = getPreference("audiobook_skip_seconds", 30);
+const showSkipControls = computed(() =>
+  itemSupportsPlayLog(store.curQueueItem?.media_item),
+);
 </script>
 
 <style>
