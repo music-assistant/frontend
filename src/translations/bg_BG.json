@@ -203,7 +203,8 @@
             },
             "types": {
                 "gain": "Усилване",
-                "balance": "Баланс"
+                "balance": "Баланс",
+                "compressor": "Компресор"
             },
             "presets": {
                 "custom": "Персонализиран"
@@ -228,6 +229,9 @@
                 "mono": "Моно",
                 "stereo": "Стерео",
                 "channel_count": "{0} канала"
+            },
+            "high_low_pass": {
+                "mode_label": "Режим"
             }
         },
         "dsp_note_multi_device_group": {
@@ -459,7 +463,18 @@
             "external_default_title": "Продължете във вашия браузър"
         },
         "options": "Опции",
-        "server_clock_offset": "Разлика във времето (между сървъра и това устройство)"
+        "server_clock_offset": "Разлика във времето (между сървъра и това устройство)",
+        "hass_controls": {
+            "add_entity": "Добавяне на обект...",
+            "search_placeholder": "Търсене по обект, устройство или област...",
+            "no_results": "Няма съответстващи обекти",
+            "no_device": "Няма устройство",
+            "no_area": "Няма област"
+        },
+        "known_issues": "Известни проблеми",
+        "provider_status_disabled": "Деактивиран",
+        "provider_status_unknown": "Неизвестен",
+        "delete_player_title": "Да се изтрие ли {0}?"
     },
     "show_info": "Показване на информация",
     "show_select_boxes": "Показване на полета за избор",
@@ -521,7 +536,10 @@
         "user_options": "Потребителски опции",
         "help": "Помощ",
         "import_file": "Импортиране на файл",
-        "musical_key": "Музикален ключ"
+        "musical_key": "Музикален ключ",
+        "show_full_path": "Показване на пълния път",
+        "show_menu": "Показване\/скриване на менюто",
+        "show_context_menu": "Показване на контекстното меню"
     },
     "topresult": "Най-добър резултат",
     "track": "Песен",
@@ -1013,15 +1031,15 @@
             "game_starts_in": "Играта започва след {0}",
             "playback": "Възпроизвеждане",
             "playback_mode": "Режим на възпроизвеждане",
-            "speaker": "Говорител",
-            "choose_speaker": "Изберете говорител",
             "loading_playback_options": "Зареждане на опциите за възпроизвеждане...",
             "error_load_playback_options": "Не можаха да се заредят опциите за възпроизвеждане",
             "preparing_game_help": "Зареждане на избраната от вас музика и създаване на рундовете. Това може да отнеме известно време.",
             "settings": "Настройки на музикалната викторина",
             "timeline_place_before_year": "Преди {0}",
             "timeline_place_after_year": "След {0}",
-            "timeline_place_between_years": "Между {0} и {1}"
+            "timeline_place_between_years": "Между {0} и {1}",
+            "player": "Плейър",
+            "choose_player": "Изберете плейър"
         },
         "ai_radio": {
             "actions": {
@@ -1045,13 +1063,14 @@
                 "discard_changes_title": "Да се отхвърлят ли промените?",
                 "discard_changes": "Имате незапазени промени, които ще бъдат загубени.",
                 "delete_station_title": "Изтриване на станцията?",
-                "delete_station": "Да се изтрие ли тази станция?"
+                "delete_station": "Да се изтрие ли тази станция?",
+                "delete_host_title": "Изтриване на хоста?",
+                "delete_host": "Да се изтрие ли този хост?"
             },
             "gallery": {
                 "empty_title": "Създайте първото си шоу"
             },
             "card": {
-                "stopping": "Спиране...",
                 "on_air": "В ефир",
                 "duplicate_name": "{0} (копие)",
                 "delete": "Изтриване",
@@ -1065,12 +1084,8 @@
                 "create_and_play": "Създаване & възпроизвеждане",
                 "creating": "Създаване...",
                 "validation": {
-                    "name_required": "Името на шоуто е задължително"
-                }
-            },
-            "presets": {
-                "morning_show": {
-                    "name": "Сутрешно шоу"
+                    "name_required": "Името на шоуто е задължително",
+                    "host_required": "Изберете хост"
                 }
             },
             "prereq": {
@@ -1083,7 +1098,36 @@
                 "add_segment": "Добавяне на сегмент",
                 "blank_segment": "Празен сегмент",
                 "blank_segment_name": "Нов сегмент",
-                "segment_name": "Име на сегмента"
+                "segment_name": "Име на сегмента",
+                "segment_templates": {
+                    "weather": "Времето",
+                    "news": "Новини"
+                },
+                "host_placeholder": "Изберете хост",
+                "create_host_cta": "Създаване на хост"
+            },
+            "fields": {
+                "voice": "Глас",
+                "host": "Хост",
+                "language": "Език"
+            },
+            "toast": {
+                "host_saved": "Хостът е запазен",
+                "host_deleted": "Хостът е изтрит"
+            },
+            "hosts": {
+                "add_host": "Добавяне на хост",
+                "card": {
+                    "edit": "Редактиране"
+                },
+                "editor": {
+                    "save": "Запазване на хоста",
+                    "name_label": "Име на хоста",
+                    "default_voice": "По подразбиране",
+                    "validation": {
+                        "name_required": "Името на хоста е задължително"
+                    }
+                }
             }
         }
     },
@@ -1337,5 +1381,31 @@
     "plugins": "Добавки",
     "queue_ended": "Възпроизвеждането приключи",
     "audiobooks_in_collection": "Аудиокниги в тази колекция",
-    "error_generic": "Нещо се обърка. Моля, опитайте отново."
+    "error_generic": "Нещо се обърка. Моля, опитайте отново.",
+    "artist_all_audiobooks": "Всички аудиокниги",
+    "lights": "Светлини",
+    "player_select": {
+        "and_more": "...и още {0}"
+    },
+    "ai_dj_off": "Изкл.",
+    "ai_dj_show_on_air": "В ефир: {0}",
+    "menu": "Меню",
+    "play_announcement_message": "Съобщение",
+    "home_assistant_menu": "Home Assistant",
+    "playback_speed_value": "{0}x",
+    "offline_ready": "Приложението е готово за работа офлайн",
+    "update_available": "Налична е нова версия. Презаредете, за да актуализирате.",
+    "reload": "Презареждане",
+    "open_settings": "Настройки",
+    "faceted_filter": {
+        "clear": "Изчистване на филтрите",
+        "selected": "Избрани са {count}"
+    },
+    "sidebar": {
+        "title": "Странична лента",
+        "toggle": "Превключване на страничната лента",
+        "expand": "Разгъване на страничната лента",
+        "collapse": "Свиване на страничната лента"
+    },
+    "loading_short": "Зареждане"
 }

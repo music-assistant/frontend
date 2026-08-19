@@ -1420,9 +1420,6 @@
             "playback_summary_remote": "远程 · 玩家使用自己的设备收听",
             "playback_venue_unavailable": "场地模式不可用。",
             "playback_remote_unavailable": "远程模式不可用。",
-            "speaker": "扬声器",
-            "choose_speaker": "选择一个扬声器",
-            "no_available_speakers": "未找到可用扬声器。请使用远程模式或检查播放器设置。",
             "no_playback_modes": "没有可用的播放模式。请检查您的音乐问答设置。",
             "loading_playback_options": "正在加载播放选项...",
             "error_load_playback_options": "无法加载播放选项",
@@ -1447,9 +1444,6 @@
             "return_to_host_panel": "返回主机面板"
         },
         "ai_radio": {
-            "customize": {
-                "prompt_placeholders_hint": "可用占位符： {placeholders}"
-            },
             "fields": {
                 "shuffle_playlist_tracks": "随机播放列表曲目"
             },

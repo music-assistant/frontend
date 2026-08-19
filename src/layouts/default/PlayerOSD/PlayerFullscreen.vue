@@ -150,6 +150,16 @@
               </MarqueeText>
             </v-card-subtitle>
 
+            <!-- subtitle: current chapter, followed by the author line -->
+            <v-card-subtitle
+              v-if="currentChapter"
+              :style="`font-size: ${subTitleFontSize};`"
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ currentChapter.chapter.name }}
+              </MarqueeText>
+            </v-card-subtitle>
+
             <!-- subtitle: artist; placeholder when empty, as above -->
             <v-card-subtitle
               v-if="
@@ -299,6 +309,15 @@
                     :key="chapter.position"
                     type="button"
                     class="queue-chapter"
+                    :class="{
+                      'queue-chapter--active': isActiveChapter(
+                        row.item,
+                        chapter,
+                      ),
+                    }"
+                    :aria-current="
+                      isActiveChapter(row.item, chapter) ? 'true' : undefined
+                    "
                     @click.stop="chapterClicked(row.item.media_item, chapter)"
                   >
                     <span class="queue-chapter__name">{{ chapter.name }}</span>
@@ -511,9 +530,18 @@ import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import { resolveCurrentChapter } from "@/helpers/chapters";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
-import { MediaType, PlayerType, Track } from "@/plugins/api/interfaces";
+import {
+  MediaItemChapter,
+  MediaType,
+  PlaybackState,
+  PlayerType,
+  QueueItem,
+  Track,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -528,6 +556,7 @@ import {
   nextTick,
   onBeforeUnmount,
   onMounted,
+  onUnmounted,
   ref,
   watch,
   watchEffect,
@@ -547,6 +576,71 @@ const MIN_HEIGHT_SHOW_PLAYER_SELECT_BUTTON = 480;
 const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
+const { getPreference, setPreference } = useUserPreferences();
+const showWaveformPref = getPreference("show_waveform", true);
+const showChapterProgress = getPreference("audiobook_chapter_progress", true);
+const nowTick = ref(0);
+let chapterTimer: ReturnType<typeof setInterval> | null = null;
+const chapterQueueItem = computed(() => {
+  const queueItem = store.curQueueItem;
+  const media = store.activePlayer?.current_media;
+  if (
+    !queueItem?.media_item?.metadata?.chapters?.length ||
+    !media ||
+    (media.queue_item_id !== null &&
+      media.queue_item_id !== queueItem.queue_item_id)
+  ) {
+    return undefined;
+  }
+  return queueItem;
+});
+
+const currentChapter = computed(() => {
+  void nowTick.value;
+  const media = store.activePlayer?.current_media;
+  const queueItem = chapterQueueItem.value;
+  if (
+    !showChapterProgress.value ||
+    media?.media_type !== MediaType.AUDIOBOOK ||
+    !queueItem
+  ) {
+    return undefined;
+  }
+  return resolveCurrentChapter(
+    queueItem.media_item?.metadata?.chapters,
+    resolveActiveElapsedTime(),
+    media.duration,
+  );
+});
+
+const activeChapter = computed(() => currentChapter.value?.chapter);
+
+const isActiveChapter = (item: QueueItem, chapter: MediaItemChapter) =>
+  item.queue_item_id === chapterQueueItem.value?.queue_item_id &&
+  chapter.position === activeChapter.value?.position;
+
+const updateChapterTimer = (needed: boolean) => {
+  if (needed && chapterTimer === null) {
+    chapterTimer = setInterval(() => {
+      nowTick.value = Date.now();
+    }, 1000);
+  } else if (!needed && chapterTimer !== null) {
+    clearInterval(chapterTimer);
+    chapterTimer = null;
+  }
+};
+
+const chapterTimerNeeded = computed(
+  () =>
+    store.showFullscreenPlayer &&
+    store.showQueueItems &&
+    store.activePlayer?.playback_state === PlaybackState.PLAYING &&
+    !!chapterQueueItem.value &&
+    showChapterProgress.value,
+);
+
+watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
+onUnmounted(() => updateChapterTimer(false));
 
 interface Props {
   colorPalette: ImageColorPalette;
@@ -673,8 +767,8 @@ const showRightColumn = computed(
   () => store.showQueueItems || showLyrics.value,
 );
 
-// The unified queue list (virtualized rows, paging, now-playing focus, per-item
-// menu and chapters) lives in its own composable to keep this component lean.
+// The unified queue list (virtualized rows, paging, now-playing focus and
+// per-item menu) lives in its own composable to keep this component lean.
 const {
   queueScrollRef,
   virtualRows,
@@ -796,8 +890,6 @@ watch(
 
 // Waveform for the current track — loaded centrally by useActiveTrackWaveform.
 const { waveformBins: waveformData } = useActiveTrackWaveform();
-const { getPreference, setPreference } = useUserPreferences();
-const showWaveformPref = getPreference("show_waveform", true);
 const {
   visualizerPresetPref,
   visualizerBlurPref,
@@ -1416,6 +1508,17 @@ onBeforeUnmount(() => {
     var(--text-color, currentColor) 8%,
     transparent
   );
+}
+
+.queue-chapter--active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--primary);
+  font-weight: 600;
+}
+
+.queue-chapter--active:hover {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .queue-chapter__name {

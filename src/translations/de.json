@@ -514,7 +514,8 @@
             "options": "Optionen für Wiedergabegerät",
             "preferences": "Präferenzen",
             "display_settings": "Anzeige",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "volume_control": "Lautstärkeregler"
         },
         "onboarding_subtitle": "Verbinde zunächst deine Musikquellen und Audiogeräte.",
         "onboarding_music_title": "Musik",
@@ -746,20 +747,39 @@
         "visualizer": "Visualizer",
         "visualizer_enabled": {
             "label": "MilkDrop-Visualizer",
-            "description": "Hinter dem Vollbild-Player wird ein „MilkDrop (Butterchurn)“-Musikvisualizer angezeigt, der den Hintergrund mit Farbverlauf ersetzt. Er reagiert in Echtzeit auf die am aktiven Wiedergabegerät abgespielte Musik. Dies ist die Standardeinstellung für alle Wiedergabegeräte; die Umschaltoption im Vollbild-Menü oder auf dem Party-Bildschirm eines Wiedergabegeräts überschreibt diese Einstellung nur für dieses Wiedergabegerät."
+            "description": "Im Hintergrund des Vollbildplayers wird ein MilkDrop-Visualisierer angezeigt, der live auf die Musik reagiert. Jedes Wiedergabegerät kann dies über sein Vollbildmenü deaktivieren. Die Wellenform wird aus dem Sendspin-Stream abgerufen und steht daher nur Wiedergabegeräten mit Sendspin-Ausgang zur Verfügung."
         },
         "visualizer_blur": {
             "label": "Visualizer-Unschärfe",
-            "description": "Weichzeichnungsradius (in Pixeln), der auf den Visualizer angewendet wird, um einen weicheren, stimmungsvollen Hintergrund zu erzielen. Bei 0 wird die Weichzeichnung deaktiviert."
+            "description": "Verfeinert die Visualisierung für einen ruhigeren Hintergrund. Der Wert 0 deaktiviert die Unschärfe."
         },
         "visualizer_opacity": {
             "label": "Deckkraft des Visualizers",
-            "description": "Deckkraft der Visualizer-Ebene; bei niedrigeren Werten scheint der Hintergrund mit dem Farbverlauf des Albums durch. Hinweis: Ab 55 % wechselt die Ansicht zu einem immersiven dunklen Design mit hellem Text; bei 50 % und darunter bleiben die Hintergrund- und Textfarben des normalen Designs erhalten."
+            "description": "Bei niedrigeren Werten werden die Albumfarben durchscheinend dargestellt. Ab 50 % wechselt die Ansicht zu einem dunklen Erscheinungsbild mit hellem Text."
         },
         "ha_kiosk_mode": {
             "label": "Vollbildmodus in Home Assistant nutzen",
             "description": "Blende die Kopfzeile und die Seitenleiste von Home Assistant aus, damit Music Assistant den gesamten Bildschirm einnimmt. Über die Home-Assistant-Schaltfläche im Menü kannst du diese wieder einblenden."
-        }
+        },
+        "delete_player_title": "{0} löschen?",
+        "delete_player_confirmation": "Dieses Wiedergabegerät wird aus Music Assistant entfernt. Seine Einstellungen gehen dabei verloren, und es kann nur durch eine erneute Einrichtung wiederhergestellt werden.",
+        "queue_settings_description": "Wiedergabeeinstellungen für die Warteschlange, aus der dieses Wiedergabegerät abspielt",
+        "dsp_description": "Filter und Verstärkung werden auf alles angewendet, was dieses Wiedergabegerät abspielt.",
+        "player_options_description": "Optionen und Lesarten, die das Wiedergabegerät selbst bietet",
+        "volume_slider_mode": {
+            "label": "Verhalten des Lautstärkereglers",
+            "description": "Absolut: Durch Tippen oder Ziehen des Reglers wird die Lautstärke auf die entsprechende Position eingestellt. Relativ: Durch Ziehen wird die Lautstärke mit halber Geschwindigkeit vom aktuellen Wert nach oben oder unten angepasst, wodurch kleine Änderungen leichter möglich sind.",
+            "options": {
+                "absolute": "Absolut (Sprung zur Position)",
+                "relative": "Relativ (zum Anpassen ziehen)"
+            }
+        },
+        "volume_haptics": {
+            "label": "Haptisches Feedback zur Lautstärke",
+            "description": "Vibration beim Verstellen des Lautstärkereglers. Nur für Touch-Geräte mit Vibrationsmotor."
+        },
+        "player_option_error": "Fehler beim Festlegen der Wiedergabegeräte-Optionen: {key} {value}",
+        "server_logs_load_failed": "Serverprotokolle konnten nicht geladen werden"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -792,7 +812,11 @@
         "album_artist_name": "Albuminterpret",
         "album_artist_name_desc": "Albuminterpret (absteigend)",
         "track_artist_name": "Interpret des Titels",
-        "track_artist_name_desc": "Interpret des Titels (absteigend)"
+        "track_artist_name_desc": "Interpret des Titels (absteigend)",
+        "ascending": "Ansteigend",
+        "ascending_abbreviation": "Anst.",
+        "descending": "Absteigend",
+        "descending_abbreviation": "Abst."
     },
     "state": {
         "idle": "Inaktiv",
@@ -869,7 +893,12 @@
         "show_dashboard": "Dashboard auf ein Gerät übertragen",
         "collapse_collections": "Sammlungen ausblenden",
         "volume_down": "Lautstärke verringern",
-        "volume_up": "Lautstärke erhöhen"
+        "volume_up": "Lautstärke erhöhen",
+        "show_full_path": "Den vollständigen Pfad anzeigen",
+        "show_menu": "Menü ein-\/ausblenden",
+        "show_context_menu": "Kontextmenü anzeigen",
+        "scroll_left": "Nach links scrollen",
+        "scroll_right": "Nach rechts scrollen"
     },
     "topresult": "Top-Ergebnis",
     "track": "Titel",
@@ -1702,16 +1731,13 @@
             "playback_help": "Wähle aus, wo die Spieler die Musik hören sollen.",
             "playback_mode": "Wiedergabemodus",
             "playback_venue": "Veranstaltungsort",
-            "playback_venue_help": "Spiele Musik über ein Ausgabegerät ab.",
+            "playback_venue_help": "Musik auf einem Wiedergabegerät abspielen.",
             "playback_remote": "Remote",
             "playback_remote_help": "Die Spieler hören auf ihrem eigenen Gerät.",
             "playback_summary_venue": "Veranstaltungsort · {0}",
             "playback_summary_remote": "Fernzugriff · Spieler hören auf ihrem eigenen Gerät",
             "playback_venue_unavailable": "Der Veranstaltungsmodus ist nicht verfügbar.",
             "playback_remote_unavailable": "Der Fernsteuerungsmodus ist nicht verfügbar.",
-            "speaker": "Ausgabegerät",
-            "choose_speaker": "Wähle ein Ausgabegerät aus",
-            "no_available_speakers": "Es wurden keine verfügbaren Ausgabegeräte gefunden. Verwende den Fernbedienungsmodus oder überprüfe die Wiedergabegeräte-Einstellungen.",
             "no_playback_modes": "Es sind keine Wiedergabemodi verfügbar. Überprüfe deine Einstellungen für das Musikquiz.",
             "loading_playback_options": "Wiedergabeoptionen werden geladen...",
             "error_load_playback_options": "Wiedergabeoptionen konnten nicht geladen werden",
@@ -1735,7 +1761,13 @@
             "host_controls": "Host-Steuerung",
             "return_to_host_panel": "Zurück zum Host-Panel",
             "dashboard_waiting": "Warten auf den Beginn des Quiz",
-            "name_that_track": "Wie heißt der Titel?"
+            "name_that_track": "Wie heißt der Titel?",
+            "player": "Wiedergabegerät",
+            "choose_player": "Wähle ein Wiedergabegerät aus",
+            "no_available_players": "Es wurden keine verfügbaren Wiedergabegeräte gefunden. Verwende den Remote-Modus oder überprüfe die Wiedergabegeräte-Einstellungen.",
+            "how_to_play_guess_the_song_description": "Höre dir das aktuell gespielte Lied an und wähle den richtigen Titel aus den vorgegebenen Optionen aus, bevor die Zeit abläuft.",
+            "how_to_play_trivia_description": "Beantworte Quizfragen zum Thema Musik. Wähle die Antwort, die du für richtig hältst, bevor die Zeit abläuft.",
+            "landing_continue": "Fortsetzen"
         },
         "ai_radio": {
             "title": "AI-Radio",
@@ -2276,7 +2308,10 @@
         "disconnect": "Trennen {0}",
         "loading": "Geräte werden geladen...",
         "no_devices": "Keine Cast-Geräte gefunden",
-        "started": "Casting für „{0}“"
+        "started": "Casting für „{0}“",
+        "get_url": "Dashboard-URL abrufen",
+        "uri_copied": "Dashboard-URL in die Zwischenablage kopiert",
+        "uri_copy_failed": "Fehler beim Kopieren der Dashboard-URL in die Zwischenablage"
     },
     "reconfigure_player": "Wiedergabegerät neu konfigurieren",
     "configure_player": "Wiedergabegerät konfigurieren",
@@ -2289,7 +2324,6 @@
     "artist_no_library_audiobooks": "In deiner Bibliothek befinden sich keine Hörbücher dieses Autors bzw. Sprechers.",
     "artist_all_audiobooks": "Alle Hörbücher",
     "lights": "Lichter",
-    "speakers_in_group": "Lautsprecher in der Gruppe",
     "visualizers": "Visualizers",
     "volume": "Lautstärke",
     "grouped_volume": "Lautstärke der Gruppe",
@@ -2333,11 +2367,11 @@
         },
         "fixed_preset": "Voreinstellung",
         "beat_switch": "Voreinstellung auf Downbeat umschalten",
-        "beat_switch_description": "Automatischer Wechsel zu einem anderen Preset bei einem Downbeat mithilfe der Beat-Analyse von Muci Assistant. Hat Vorrang vor einer festen Preset-Auswahl.",
+        "beat_switch_description": "Wechselt bei einem Downbeat zu einer anderen Voreinstellung. Überschreibt eine festgelegte Voreinstellung.",
         "beat_dwell": "Mindestzeit zwischen den Schaltvorgängen",
         "beat_dwell_description": "Wie lange ein Preset auf dem Bildschirm angezeigt wird, bevor es durch einen Downbeat ersetzt werden kann.",
         "favorites": "Lieblingsvoreinstellungen",
-        "no_favorites": "Noch keine Favoriten. Klicke auf den Stern neben der Voreinstellungsauswahl im Vollbild-Player, um die aktuell angezeigte Voreinstellung als Favorit zu speichern.",
+        "no_favorites": "Noch keine Favoriten. Markiere die aktuelle Voreinstellung im Vollbildplayer mit einem Stern.",
         "remove_favorite": "Favoriten entfernen",
         "credits": "Credits",
         "credits_butterchurn": "Die Darstellung erfolgt mithilfe von „Butterchurn“ von Jordan Berg (MIT-Lizenz), der WebGL-Implementierung von MilkDrop 2.",
@@ -2371,5 +2405,52 @@
     "dynamic_radio_heading": "Dynamische Station",
     "dynamic_radio_empty_desc": "Dieser Sender hat keine Titel zurückgegeben. Versuche es in einem Moment erneut.",
     "home_assistant_menu": "Home Assistant",
-    "playback_speed_value": "{0}x"
+    "playback_speed_value": "{0}x",
+    "offline_ready": "App ist für den Offline-Betrieb bereit",
+    "update_available": "Eine neue Version ist verfügbar. Aktualisiere die Seite.",
+    "reload": "Aktualisieren",
+    "open_settings": "Einstellungen",
+    "faceted_filter": {
+        "clear": "Filter löschen",
+        "clear_all_for": "Alle {title} FIlter löschen",
+        "clear_for": "{title} Filter löschen",
+        "remove_filter": "{label} Filter entfernen",
+        "search_for": "Suche {title}",
+        "selected": "{count} ausgewählt"
+    },
+    "clear": "Leeren",
+    "pagination": {
+        "first_page": "Zur ersten Seite",
+        "previous_page": "Zur vorherigen Seite",
+        "next_page": "Zur nächsten Seite",
+        "last_page": "Zur letzten Seite"
+    },
+    "data_table": {
+        "view": "Anzeigen",
+        "toggle_columns": "Spalten ein-\/ausblenden",
+        "hide": "Ausblenden"
+    },
+    "sidebar": {
+        "title": "Seitenleiste",
+        "description": "Zeigt die mobile Seitenleiste an.",
+        "toggle": "Seitenleiste ein-\/ausblenden",
+        "expand": "Seitenleiste erweitern",
+        "collapse": "Seitenleiste ausblenden"
+    },
+    "loading_short": "Wird geladen",
+    "player_group_playback": {
+        "title": "Gruppenwiedergabe",
+        "remove_message": "Die Wiedergabe ist aktiv. {0} Wenn dieses Wiedergabegerät aus der Gruppe entfernt wird, wird die Wiedergabesitzung auf die verbleibenden Wiedergabegeräte verschoben.",
+        "power_off_message": "Die Wiedergabe ist aktiv. {0} Durch Ausschalten des Geräts wird die Wiedergabesitzung auf die verbleibenden Wiedergabegeräte übertragen.",
+        "keep_playing": "Weiter abspielen",
+        "stop_and_ungroup": "Stoppen und Gruppierung aufheben."
+    },
+    "play_shuffled": "Gemischt abspielen",
+    "players_in_group": "Wiedergabegeräte in Gruppe",
+    "audio_overlay_custom_sounds": "Benutzerdefinierte Sounds",
+    "audio_overlay_add_custom": "Benutzerdefinierten Sound hinzufügen",
+    "audio_overlay_add_custom_explanation": "Füge deine eigenen Umgebungsgeräusche per Stream-URL hinzu.",
+    "audio_overlay_no_custom_sounds": "Es wurden noch keine benutzerdefinierten Sounds hinzugefügt.",
+    "audio_overlay_custom_added": "{0} hinzugefügt",
+    "audio_overlay_custom_add_failed": "Das Hinzufügen eines benutzerdefinierten Sounds ist fehlgeschlagen. Überprüfe, ob die URL auf einen abspielbaren Audiostream verweist."
 }

@@ -1,12 +1,13 @@
 <!--
   Inline visualizer options for the fullscreen player's overflow menu:
-  preset picker (full butterchurn library, "random" default) and blur slider.
+  preset picker (full butterchurn library, "random" default), blur and
+  opacity sliders.
   Rendered as a non-selectable menu row; changes persist as user preferences.
 -->
 <template>
   <div v-if="enabledPref" class="visualizer-menu" @pointerdown.stop @click.stop>
     <div class="visualizer-menu__row">
-      <Sparkles :size="20" class="visualizer-menu__icon" />
+      <SwatchBook :size="20" class="visualizer-menu__icon" />
       <Select :model-value="selectValue" @update:model-value="onPresetChange">
         <SelectTrigger class="visualizer-menu__select" size="sm">
           <span class="visualizer-menu__trigger-label">{{ triggerLabel }}</span>
@@ -60,7 +61,7 @@
       <span class="visualizer-menu__value">{{ blurDraft }}px</span>
     </div>
     <div class="visualizer-menu__row">
-      <Blend :size="20" class="visualizer-menu__icon" />
+      <Contrast :size="20" class="visualizer-menu__icon" />
       <Slider
         :model-value="[opacityDraft]"
         :min="10"
@@ -82,11 +83,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import {
-  Blend,
+  Contrast,
   Focus,
   Settings as SettingsIcon,
-  Sparkles,
   Star,
+  SwatchBook,
 } from "@lucide/vue";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
@@ -97,7 +98,11 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { currentVisualizerPreset } from "@/composables/visualizer/state";
+import {
+  currentVisualizerPreset,
+  VISUALIZER_BLUR_DEFAULT,
+  VISUALIZER_OPACITY_DEFAULT,
+} from "@/composables/visualizer/state";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import { $t } from "@/plugins/i18n";
@@ -114,8 +119,11 @@ const { visualizerEnabledPref: enabledPref } = useVisualizer(
   () => store.activePlayer?.player_id,
 );
 const presetPref = getPreference("visualizer_preset", "");
-const blurPref = getPreference("visualizer_blur", 0);
-const opacityPref = getPreference("visualizer_opacity", 100);
+const blurPref = getPreference("visualizer_blur", VISUALIZER_BLUR_DEFAULT);
+const opacityPref = getPreference(
+  "visualizer_opacity",
+  VISUALIZER_OPACITY_DEFAULT,
+);
 const favoritesPref = getPreference<string[]>("visualizer_favorites", []);
 const presetModePref = getPreference<string>(
   "visualizer_preset_mode",
@@ -216,20 +224,23 @@ watch(opacityPref, (value) => (opacityDraft.value = value));
 
 const onBlurChange = (value: number[] | undefined) => {
   if (!value) return;
-  blurDraft.value = value[0] ?? 0;
+  blurDraft.value = value[0] ?? VISUALIZER_BLUR_DEFAULT;
 };
 
 const onBlurCommit = (value: number[]) => {
-  void setPreference("visualizer_blur", value[0] ?? 0);
+  void setPreference("visualizer_blur", value[0] ?? VISUALIZER_BLUR_DEFAULT);
 };
 
 const onOpacityChange = (value: number[] | undefined) => {
   if (!value) return;
-  opacityDraft.value = value[0] ?? 100;
+  opacityDraft.value = value[0] ?? VISUALIZER_OPACITY_DEFAULT;
 };
 
 const onOpacityCommit = (value: number[]) => {
-  void setPreference("visualizer_opacity", value[0] ?? 100);
+  void setPreference(
+    "visualizer_opacity",
+    value[0] ?? VISUALIZER_OPACITY_DEFAULT,
+  );
 };
 
 const openSettings = () => {

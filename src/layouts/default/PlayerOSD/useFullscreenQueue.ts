@@ -16,7 +16,6 @@ import {
   MediaItemType,
   PlaybackState,
   QueueItem,
-  QueueOption,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -286,8 +285,10 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     });
   };
 
-  const chapterClicked = (item: MediaItemType, chapter: MediaItemChapter) => {
-    api.playMedia(item.uri, QueueOption.PLAY, chapter.position.toString());
+  const chapterClicked = (_item: MediaItemType, chapter: MediaItemChapter) => {
+    const player = store.activePlayer;
+    if (!player) return;
+    api.playerCommandSeek(player.player_id, chapter.start);
   };
 
   // ---- drag-to-reorder (up-next items only) --------------------------------

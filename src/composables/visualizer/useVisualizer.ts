@@ -7,6 +7,9 @@
  * default for players never toggled individually (also the settings-page
  * toggle). Toggling from a view therefore only affects the player that view is
  * showing, not every display of the user.
+ *
+ * The waveform is tapped from the player's Sendspin stream, so the visualizer
+ * only exists for players that have a Sendspin output at all.
  */
 
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
@@ -14,11 +17,35 @@ import {
   setUserPreference,
   useUserPreferences,
 } from "@/composables/userPreferences";
+import {
+  VISUALIZER_BLUR_DEFAULT,
+  VISUALIZER_OPACITY_DEFAULT,
+} from "@/composables/visualizer/state";
+import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   visualizerCanRender,
   visualizerProviderAvailable,
 } from "@/plugins/visualizer-relay";
+
+const SENDSPIN_DOMAIN = "sendspin";
+
+/**
+ * Whether this player's audio can be visualized at all.
+ *
+ * The waveform comes from a tap on the player's Sendspin stream, so a player
+ * without a Sendspin output can never show one, however it is playing now.
+ */
+export function playerSupportsVisualizer(playerId?: string): boolean {
+  if (!playerId) return false;
+  // may run before the players map has loaded (e.g. a display booting)
+  const player = api.players?.[playerId];
+  return Boolean(
+    player?.output_protocols?.some(
+      (protocol) => protocol.protocol_domain === SENDSPIN_DOMAIN,
+    ),
+  );
+}
 
 /**
  * Whether the visualizer is on for this player (standalone: also usable from
@@ -26,6 +53,10 @@ import {
  * so it stays reactive when called inside a computed.
  */
 export function visualizerEnabledForPlayer(playerId?: string): boolean {
+  // A stored preference can outlive the player's ability to honour it (a
+  // protocol link that disappeared, or a preference from before this gate),
+  // and acting on it would only retry the relay forever.
+  if (playerId && !playerSupportsVisualizer(playerId)) return false;
   const prefs = store.currentUser?.preferences;
   if (playerId) {
     const override = prefs?.[`visualizer_enabled.${playerId}`];
@@ -44,8 +75,14 @@ export function toggleVisualizerForPlayer(playerId?: string): void {
 export function useVisualizer(playerId?: MaybeRefOrGetter<string | undefined>) {
   const { getPreference } = useUserPreferences();
   const visualizerPresetPref = getPreference("visualizer_preset", "");
-  const visualizerBlurPref = getPreference("visualizer_blur", 0);
-  const visualizerOpacityPref = getPreference("visualizer_opacity", 100);
+  const visualizerBlurPref = getPreference(
+    "visualizer_blur",
+    VISUALIZER_BLUR_DEFAULT,
+  );
+  const visualizerOpacityPref = getPreference(
+    "visualizer_opacity",
+    VISUALIZER_OPACITY_DEFAULT,
+  );
 
   const visualizerEnabledPref = computed(() =>
     visualizerEnabledForPlayer(toValue(playerId)),

@@ -514,7 +514,8 @@
             "options": "Opciones del reproductor",
             "preferences": "Preferencias",
             "display_settings": "Pantalla",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "volume_control": "Control de volumen"
         },
         "onboarding_subtitle": "Empecemos conectando tus fuentes de música y dispositivos de audio.",
         "onboarding_music_title": "Música",
@@ -746,7 +747,7 @@
         "visualizer": "Visualizador",
         "visualizer_enabled": {
             "label": "Visualizador MilkDrop",
-            "description": "Muestra un visualizador MilkDrop detrás del reproductor a pantalla completa, que reacciona en tiempo real a la música. Cada reproductor puede sobrescribir esta opción desde su menú a pantalla completa."
+            "description": "Muestra un visualizador MilkDrop detrás del reproductor a pantalla completa, que reacciona en directo a la música. Cada reproductor puede anular esta opción desde su menú de pantalla completa. La forma de onda se obtiene de la transmisión de Sendspin, por lo que solo está disponible para reproductores con salida Sendspin."
         },
         "visualizer_blur": {
             "label": "Desenfoque del visualizador",
@@ -764,7 +765,21 @@
         "delete_player_confirmation": "Este reproductor se eliminará de Music Assistant. Se perderán sus ajustes y solo podrá volver a añadirse configurándolo de nuevo.",
         "queue_settings_description": "Ajustes de reproducción de la cola desde la que reproduce este reproductor",
         "dsp_description": "Filtros y ganancia aplicados a todo lo que reproduce este reproductor",
-        "player_options_description": "Opciones y lecturas que ofrece el propio reproductor"
+        "player_options_description": "Opciones y lecturas que ofrece el propio reproductor",
+        "volume_slider_mode": {
+            "label": "Comportamiento del control deslizante de volumen",
+            "description": "Absoluto: tocar o arrastrar la barra establece el volumen en esa posición. Relativo: arrastrar ajusta el volumen hacia arriba o hacia abajo desde el nivel actual a la mitad de velocidad, lo que facilita realizar pequeños ajustes.",
+            "options": {
+                "absolute": "Absoluto (saltar a la posición)",
+                "relative": "Relativo (arrastrar para ajustar)"
+            }
+        },
+        "volume_haptics": {
+            "label": "Respuesta háptica del volumen",
+            "description": "Vibrar al ajustar el control deslizante de volumen. Solo en dispositivos táctiles con motor de vibración."
+        },
+        "player_option_error": "Error al establecer la opción del reproductor: {key} {value}",
+        "server_logs_load_failed": "No se han podido cargar los registros del servidor"
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -797,7 +812,11 @@
         "album_artist_name": "Artista del álbum",
         "album_artist_name_desc": "Artista del álbum (descendente)",
         "track_artist_name": "Artista de la canción",
-        "track_artist_name_desc": "Artista de la canción (descendente)"
+        "track_artist_name_desc": "Artista de la canción (descendente)",
+        "ascending": "Ascendente",
+        "ascending_abbreviation": "Asc",
+        "descending": "Descendente",
+        "descending_abbreviation": "Desc"
     },
     "state": {
         "idle": "inactivo",
@@ -874,7 +893,12 @@
         "show_dashboard": "Enviar el panel a un dispositivo",
         "collapse_collections": "Contraer colecciones",
         "volume_down": "Bajar volumen",
-        "volume_up": "Subir volumen"
+        "volume_up": "Subir volumen",
+        "show_full_path": "Mostrar la ruta completa",
+        "show_menu": "Mostrar\/ocultar menú",
+        "show_context_menu": "Mostrar menú contextual",
+        "scroll_left": "Desplazar hacia la izquierda",
+        "scroll_right": "Desplazar hacia la derecha"
     },
     "topresult": "Resultados más importantes",
     "track": "Canción",
@@ -1625,9 +1649,6 @@
             "playback_summary_remote": "Remoto · Cada reproductor usa su propio dispositivo",
             "playback_venue_unavailable": "El modo local no está disponible",
             "playback_remote_unavailable": "El modo remoto no está disponible.",
-            "speaker": "Altavoz",
-            "choose_speaker": "Elige un altavoz",
-            "no_available_speakers": "No se encontraron altavoces disponibles. Usa el modo remoto o revisa la configuración del reproductor.",
             "no_playback_modes": "No hay modos de reproducción disponibles. Comprueba la configuración del Music Quiz.",
             "loading_playback_options": "Cargando las opciones de reproducción...",
             "error_load_playback_options": "No se pudieron cargar las opciones de reproducción.",
@@ -1651,7 +1672,13 @@
             "host_controls": "Controles del anfitrión",
             "return_to_host_panel": "Volver al panel del anfitrión",
             "dashboard_waiting": "Esperando a que comience el quiz",
-            "name_that_track": "Nombre de la canción"
+            "name_that_track": "Nombre de la canción",
+            "player": "Jugadores",
+            "choose_player": "Elige un reproductor",
+            "no_available_players": "No se han encontrado reproductor disponibles. Usa el modo remoto o comprueba la configuración de los reproductores.",
+            "how_to_play_guess_the_song_description": "Escucha la canción que se está reproduciendo y elige el título correcto entre las opciones antes de que se acabe el tiempo.",
+            "how_to_play_trivia_description": "Responde preguntas de trivial sobre música. Elige la respuesta que creas correcta antes de que se acabe el tiempo.",
+            "landing_continue": "Continuar"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -2192,7 +2219,10 @@
         "disconnect": "Desconectar {0}.",
         "loading": "Cargando dispositivos...",
         "no_devices": "No se han encontrado dispositivos Cast.",
-        "started": "Transmitiendo a {0}."
+        "started": "Transmitiendo a {0}.",
+        "get_url": "Obtener URL del panel",
+        "uri_copied": "URL del panel copiada al portapapeles",
+        "uri_copy_failed": "No se ha podido copiar la URL del panel al portapapeles"
     },
     "reconfigure_player": "Reconfigurar reproductor",
     "configure_player": "Configurar reproductor",
@@ -2205,7 +2235,6 @@
     "artist_no_library_audiobooks": "No tienes audiolibros de este autor\/narrador en tu biblioteca.",
     "artist_all_audiobooks": "Todos los audiolibros",
     "lights": "Luces",
-    "speakers_in_group": "Altavoces del grupo",
     "visualizers": "Visualizadores",
     "volume": "Volumen",
     "grouped_volume": "Volumen agrupado",
@@ -2291,5 +2320,48 @@
     "offline_ready": "Aplicación lista para funcionar sin conexión",
     "update_available": "Hay una nueva versión disponible. Recarga para actualizar.",
     "reload": "Recargar",
-    "open_settings": "Ajustes"
+    "open_settings": "Ajustes",
+    "faceted_filter": {
+        "clear": "Borrar filtros",
+        "clear_all_for": "Borrar todos los filtros de {title}",
+        "clear_for": "Borrar los filtros de {title}",
+        "remove_filter": "Quitar el filtro {label}",
+        "search_for": "Buscar {title}",
+        "selected": "{count} seleccionados"
+    },
+    "clear": "Borrar",
+    "pagination": {
+        "first_page": "Ir a la primera página",
+        "previous_page": "Ir a la página anterior",
+        "next_page": "Ir a la página siguiente",
+        "last_page": "Ir a la última página"
+    },
+    "data_table": {
+        "view": "Ver",
+        "toggle_columns": "Mostrar\/ocultar columnas",
+        "hide": "Ocultar"
+    },
+    "sidebar": {
+        "title": "Barra lateral",
+        "description": "Muestra la barra lateral para dispositivos móviles.",
+        "toggle": "Mostrar\/ocultar barra lateral",
+        "expand": "Expandir barra lateral",
+        "collapse": "Contraer barra lateral"
+    },
+    "loading_short": "Cargando",
+    "player_group_playback": {
+        "title": "Agrupar reproducción",
+        "remove_message": "La reproducción está activa en {0}. Quitar este reproductor del grupo moverá la sesión de reproducción a los reproductores restantes.",
+        "power_off_message": "La reproducción está activa en {0}. Apagarlo moverá la sesión de reproducción a los reproductores restantes.",
+        "keep_playing": "Seguir reproduciendo",
+        "stop_and_ungroup": "Detener y desagrupar"
+    },
+    "play_shuffled": "Reproducir en orden aleatorio",
+    "players_in_group": "Reproductores del grupo",
+    "audio_overlay_custom_sounds": "Sonidos personalizados",
+    "audio_overlay_add_custom": "Añadir sonido personalizado",
+    "audio_overlay_add_custom_explanation": "Añade tu propio sonido ambiental mediante la URL de una transmisión.",
+    "audio_overlay_no_custom_sounds": "Todavía no se han añadido sonidos personalizados.",
+    "audio_overlay_custom_added": "{0} añadido",
+    "audio_overlay_custom_add_failed": "No se ha podido añadir el sonido personalizado. Comprueba que la URL apunta a una transmisión de audio reproducible."
 }

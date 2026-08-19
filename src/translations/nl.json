@@ -220,11 +220,11 @@
                 "preamp": "Preamp",
                 "add_band_channel": "Band toevoegen (alleen {channel})",
                 "band_channel": "Band {index} (alleen {channel})",
-                "show_multichannel_controls": "Multi-Kanaalbediening weergeven",
+                "show_multichannel_controls": "Schakel multichannel bediening in",
                 "edited_channel": "Plot de EQ-respons voor dit kanaal\/deze kanalen",
                 "channel": "Deze band wordt toegepast op",
                 "per_channel_preamp": "Extra voorversterking voor {channel}",
-                "disable_multichannel_controls": "Schakel Multi-Channel bediening uit",
+                "disable_multichannel_controls": "Schakel multichannel bediening uit",
                 "help": "Nauwkeurige tone shaping: elke band is gericht op een bepaalde frequentie en kan deze verzwakken of versterken. Verzwakken is veiliger dan versterken, omdat versterken tot clipping kan leiden."
             },
             "tone_control": {
@@ -388,12 +388,12 @@
         "stage": {
             "label": "Fase",
             "options": {
-                "stable": "Stabiel",
-                "beta": "Bèta",
-                "alpha": "Alfa",
-                "experimental": "Experimenteel",
-                "unmaintained": "Niet onderhouden",
-                "deprecated": "Verouderd"
+                "stable": "Stable",
+                "beta": "Beta",
+                "alpha": "Alpha",
+                "experimental": "Experimental",
+                "unmaintained": "Unmaintained",
+                "deprecated": "Deprecated"
             }
         },
         "force_mobile_layout": {
@@ -514,7 +514,8 @@
             "options": "Speleropties",
             "preferences": "Voorkeuren",
             "display_settings": "Weergave",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "volume_control": "Volumeregeling"
         },
         "onboarding_subtitle": "Laten we beginnen met het aansluiten van je muziekbronnen en audioapparaten.",
         "onboarding_music_title": "Muziek",
@@ -560,9 +561,9 @@
         "add_group_player_desc_sync": "Maak een permanente SyncGroep met spelers die compatibel zijn met synchronisatie. Als je op deze Spelersgroep speelt, worden de aangesloten spelers automatisch gesynchroniseerd.",
         "genre_management": "Genrebeheer",
         "genre_management_description": "Standaardgenres beheren en standaardgenres herstellen",
-        "restore_missing_defaults": "Herstel ontbrekende standaardwaarden",
+        "restore_missing_defaults": "Ontbrekende standaardwaarden herstellen",
         "restore_missing_defaults_description": "Voegt ontbrekende standaardgenres toe zonder je bestaande genres of aangepaste toewijzingen te beïnvloeden.",
-        "full_restore_genres": "Volledig herstel (alles terugzetten)",
+        "full_restore_genres": "Volledig herstellen (alles terugzetten)",
         "full_restore_genres_description": "Verwijdert alle genres en aliassen, maakt de standaardwaarden opnieuw aan en zal alle bestaande media-items een nieuwe koppeling geven. Gebruik dit voorzichtig!",
         "confirm_restore_defaults": "Ontbrekende standaardgenres herstellen? Hiermee worden alle ontbrekende standaardgenres toegevoegd zonder je bestaande genres te verwijderen of te wijzigen.",
         "confirm_full_restore": "Hiermee worden ALLE bestaande genres en aliassen VERWIJDERD, alleen de standaard genres en aliassen worden opnieuw gemaakt, alle bestaande media-items zullen worden toegewezen aan de nieuwe genres. Alle aangepaste genres, alias-toewijzingen en media-associaties gaan verloren.",
@@ -764,7 +765,21 @@
         "delete_player_confirmation": "Deze speler wordt uit Music Assistant verwijderd. De instellingen gaan verloren en het apparaat kan alleen weer worden toegevoegd door het opnieuw in te stellen.",
         "queue_settings_description": "Afspeelinstellingen voor de wachtrij waaruit deze speler afspeelt",
         "dsp_description": "Filters en versterking die worden toegepast op alles wat deze speler afspeelt",
-        "player_options_description": "Opties en weergaven die de speler zelf aanbiedt"
+        "player_options_description": "Opties en weergaven die de speler zelf aanbiedt",
+        "volume_slider_mode": {
+            "label": "Gedrag van de volumeschuifregelaar",
+            "description": "Absoluut: als je op de balk tikt of deze versleept, wordt het volume op die positie ingesteld. Relatief: door te verslepen wordt het volume vanaf het huidige niveau met halve snelheid omhoog of omlaag aangepast, waardoor het makkelijker is om kleine aanpassingen precies goed te krijgen.",
+            "options": {
+                "absolute": "Absoluut (naar positie springen)",
+                "relative": "Relatief (versleep om aan te passen)"
+            }
+        },
+        "volume_haptics": {
+            "label": "Haptische feedback voor volume",
+            "description": "Trillen tijdens het aanpassen van de volumeschuifregelaar. Alleen voor apparaten met een trilmotor."
+        },
+        "player_option_error": "Fout bij het instellen van speleroptie: {key} {value}",
+        "server_logs_load_failed": "Het laden van de serverlogboeken is mislukt"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -797,7 +812,11 @@
         "album_artist_name": "Albumartiest",
         "album_artist_name_desc": "Albumartiest (aflopend)",
         "track_artist_name": "Nummerartiest",
-        "track_artist_name_desc": "Nummerartiest (aflopend)"
+        "track_artist_name_desc": "Nummerartiest (aflopend)",
+        "ascending": "Oplopend",
+        "ascending_abbreviation": "Opl.",
+        "descending": "Aflopend",
+        "descending_abbreviation": "Afl."
     },
     "state": {
         "idle": "gestopt",
@@ -875,7 +894,11 @@
         "collapse_collections": "Collecties inklappen",
         "volume_down": "Volume omlaag",
         "volume_up": "Volume omhoog",
-        "show_full_path": "Toon het volledige pad"
+        "show_full_path": "Toon het volledige pad",
+        "show_menu": "Toon of verberg menu",
+        "show_context_menu": "Laat contextmenu zien",
+        "scroll_left": "Scrol naar links",
+        "scroll_right": "Scrol naar rechts"
     },
     "topresult": "Topresultaat",
     "track": "Nummer",
@@ -949,10 +972,10 @@
     "podcast_episodes": "Afleveringen",
     "play_from_here": "Speel vanaf hier",
     "dsp_active": "Actief",
-    "currently_playing_players": "Nu aan het spelen",
+    "currently_playing_players": "Nu aan het afspelen",
     "all_players": "Alle spelers",
     "all_groups": "Alle groepen",
-    "no_player_playing": "Er zijn nu geen spelers aan het spelen",
+    "no_player_playing": "Er zijn nu geen spelers aan het afspeeln",
     "stop_playback": "Afspelen stoppen",
     "streamdetails": {
         "input_header": "Invoer",
@@ -992,7 +1015,7 @@
             "playback_speed": "Afspeelsnelheid: {0}x",
             "crossfade": "Crossfade: {0}",
             "overlay_active": "Audio-overlay actief",
-            "source_channel": "Source-kanaal: {0}",
+            "source_channel": "Bronkanaal: {0}",
             "source_channel_left": "Links",
             "source_channel_right": "Rechts",
             "dsp_preset": "DSP-preset: {0}",
@@ -1446,8 +1469,8 @@
             "phase_enjoy_track": "Geniet van het nummer!",
             "phase_finished": "Quiz afgelopen",
             "join_url_label": "Deelname-URL",
-            "players": "Spelers",
-            "players_count": "{0} speler(s)",
+            "players": "Deelnemers",
+            "players_count": "{0} deelnemer(s)",
             "rounds_count": "{0} ronde(s)",
             "round_label": "Ronde",
             "round": "Ronde",
@@ -1488,7 +1511,7 @@
             "player_name": "Je naam",
             "answers": "Antwoorden",
             "leaderboard": "Klassement",
-            "invite_players": "Spelers uitnodigen",
+            "invite_players": "Deelnemers uitnodigen",
             "qr_unavailable": "De QR-code kon niet worden weergegeven",
             "copied": "Gekopieerd",
             "copy_link": "Link kopiëren",
@@ -1502,8 +1525,8 @@
             "no_winner": "Geen winnaar deze keer",
             "winner_single": "{0} wint met {1} punten",
             "winner_multiple": "{0} gedeelde overwinning met {1} punten",
-            "enter_present_mode": "Presenteer modus",
-            "exit_present_mode": "Presenteermodus sluiten",
+            "enter_present_mode": "Presentatiemodus",
+            "exit_present_mode": "Presentatiemodus sluiten",
             "mode_venue": "Op locatie-modus",
             "mode_remote": "Op afstand-modus",
             "listen_in": "Luister mee",
@@ -1587,7 +1610,7 @@
             "game_ended_wait": "Vraag de spelleider om een ​​nieuw spel te starten wanneer iedereen er klaar voor is.",
             "ready_for_final_results": "Klaar voor de eindresultaten",
             "waiting_for_final_results": "Wachten op de definitieve resultaten...",
-            "next_round_in": "Volgende ronde in {0}",
+            "next_round_in": "Volgende ronde over {0}",
             "final_results_in": "Eindresultaten in {0}",
             "timeline_skip_remaining_bonuses": "De resterende bonussen overslaan",
             "play_again": "Speel opnieuw",
@@ -1619,16 +1642,13 @@
             "playback_help": "Kies waar de deelnemers de muziek horen.",
             "playback_mode": "Afspeelmodus",
             "playback_venue": "Locatie",
-            "playback_venue_help": "Speel muziek af via een luidspreker.",
+            "playback_venue_help": "Speel muziek af via een speler.",
             "playback_remote": "Op afstand",
             "playback_remote_help": "Deelnemers luisteren via hun eigen apparaat.",
             "playback_summary_venue": "Locatie · {0}",
             "playback_summary_remote": "Op afstand · Deelnemers luisteren via hun eigen apparaat",
             "playback_venue_unavailable": "De Op locatie-modus is niet beschikbaar.",
             "playback_remote_unavailable": "De Op afstand-modus is niet beschikbaar.",
-            "speaker": "Luidspreker",
-            "choose_speaker": "Kies een luidspreker",
-            "no_available_speakers": "Er zijn geen beschikbare luidsprekers gevonden. Gebruik de Op afstand-modus of controleer de instellingen van de speler.",
             "no_playback_modes": "Er zijn geen afspeelmodi beschikbaar. Controleer je instellingen voor de Muziekquiz.",
             "loading_playback_options": "Afspeelopties laden...",
             "error_load_playback_options": "De afspeelopties konden niet worden geladen",
@@ -1652,7 +1672,13 @@
             "host_controls": "Host bedieningselementen",
             "return_to_host_panel": "Terug naar het hostpaneel",
             "dashboard_waiting": "Wachten tot de quiz begint",
-            "name_that_track": "Raad de titel van het nummer"
+            "name_that_track": "Raad de titel van het nummer",
+            "player": "Deelnemer",
+            "choose_player": "Kies een speler",
+            "no_available_players": "Er zijn geen beschikbare spelers gevonden. Gebruik de Op afstand-modus of controleer de instellingen van de spelers.",
+            "how_to_play_guess_the_song_description": "Luister naar het nummer dat wordt afgespeeld en kies de juiste titel uit de opties voordat de tijd om is.",
+            "how_to_play_trivia_description": "Beantwoord triviavragen over muziek. Kies het antwoord dat volgens jou juist is voordat de tijd om is.",
+            "landing_continue": "Doorgaan"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -1674,7 +1700,7 @@
                 "character_limit": "Tekenlimiet",
                 "prompt": "Opdracht",
                 "instructions": "Instructies voor presentatoren en programma’s",
-                "shuffle_playlist_tracks": "Nummers In Afspeellijst Shufflen",
+                "shuffle_playlist_tracks": "Nummers In afspeellijst shufflen",
                 "voice": "Stem",
                 "host": "Presentator",
                 "language": "Taal"
@@ -1701,7 +1727,7 @@
             "validation": {
                 "invalid_import_file": "Het bestand is geen geldige AI Radio-export.",
                 "station_name_required": "De stationsnaam is verplicht",
-                "station_source_playlist_required": "Een Station Source-afspeellijst is vereist",
+                "station_source_playlist_required": "Een Station bronafspeellijst is vereist",
                 "select_section": "Selecteer ten minste één sectie",
                 "section_order_required": "Een sectievolgorde vereist ten minste één regel",
                 "rule_requires_flow": "Regel {0} vereist minstens één flow-item",
@@ -2124,7 +2150,7 @@
     "show_less": "Minder weergeven",
     "show_more": "Meer weergeven",
     "autoplay_on_title": "Autoplay is ingeschakeld",
-    "autoplay_on_desc": "Nadat je selectie is afgespeeld, zorgt Autoplay ervoor dat de muziek blijft spelen door automatisch meer inhoud toe te voegen op basis van je voorkeuren.",
+    "autoplay_on_desc": "Nadat je selectie is afgespeeld, zorgt Autoplay ervoor dat de muziek blijft afspelen door automatisch meer inhoud toe te voegen op basis van je voorkeuren.",
     "autoplay_off_title": "Autoplay is uitgeschakeld",
     "autoplay_off_desc": "Je muziek stopt zodra de wachtrij is afgelopen. Schakel Autoplay in om de muziek automatisch verder te laten spelen met meer content op basis van je voorkeuren.",
     "open_player_settings": "Spelerinstellingen openen",
@@ -2139,7 +2165,7 @@
         "60": "1 uur",
         "120": "2 uur"
     },
-    "shuffle_smart_active": "Slimme Shuffle is ingeschakeld. Klik hier om het uit te schakelen.",
+    "shuffle_smart_active": "Slimme shuffle is ingeschakeld. Klik hier om het uit te schakelen.",
     "goto_album_radio": "Ga naar Albumradio",
     "goto_artist_radio": "Ga naar Artiestenradio",
     "goto_genre_radio": "Ga naar Genreradio",
@@ -2149,7 +2175,7 @@
     "autoplay_dynamic_title": "Autoplay is actief",
     "autoplay_dynamic_lead": "Je wachtrij wordt dynamisch aangevuld op basis van je selectie:",
     "autoplay_dynamic_desc": "Je wachtrij wordt dynamisch aangevuld op basis van je selectie.",
-    "autoplay_on_desc_sources": "Je wachtrij speelt {0}. Zodra de wachtrij afloopt, zorgt Autoplay ervoor dat de muziek blijft spelen door op basis van je voorkeuren nieuwe nummers toe te voegen.",
+    "autoplay_on_desc_sources": "Je wachtrij speelt {0}. Zodra de wachtrij afloopt, zorgt Autoplay ervoor dat de muziek blijft afspelen door op basis van je voorkeuren nieuwe nummers toe te voegen.",
     "autoplay_off_desc_sources": "Je wachtrij speelt {0} en stopt zodra het nummer is afgelopen. Schakel Autoplay in om de muziek automatisch door te laten spelen met meer nummers.",
     "shuffle_dynamic_active": "Slimme shuffle is ingeschakeld omdat de wachtrij in de dynamische modus wordt afgespeeld.",
     "repeat_dynamic_unavailable": "De herhalingsfunctie is niet beschikbaar terwijl de wachtrij in de dynamische modus wordt afgespeeld.",
@@ -2193,7 +2219,10 @@
         "disconnect": "Verbinding verbreken voor {0}",
         "loading": "Apparaten laden...",
         "no_devices": "Geen Cast-apparaten gevonden",
-        "started": "Casten naar \"{0}\""
+        "started": "Casten naar \"{0}\"",
+        "get_url": "Dashboard-URL ophalen",
+        "uri_copied": "De Dashboard-URL is naar het klembord gekopieerd",
+        "uri_copy_failed": "Het kopiëren van de Dashboard-URL naar het klembord is mislukt"
     },
     "reconfigure_player": "Speler opnieuw configureren",
     "configure_player": "Speler configureren",
@@ -2206,15 +2235,14 @@
     "artist_no_library_audiobooks": "Je hebt geen luisterboeken van deze auteur\/voorlezer in je bibliotheek.",
     "artist_all_audiobooks": "Alle luisterboeken",
     "lights": "Lichten",
-    "speakers_in_group": "Luidsprekers in de groep",
     "visualizers": "Visualizers",
     "volume": "Volume",
     "grouped_volume": "Gegroepeerd volume",
     "player_select": {
         "active_player_volume_only": "Volumeschuifregelaars alleen voor actieve spelers weergeven",
         "and_more": "...en {0} meer",
-        "disable_player_confirmation": "Deze speler blijft verborgen totdat hij opnieuw wordt ingeschakeld in de instellingen van de speler.",
-        "disable_player_title": "Zeker dat je {0} wilt deactiveren?",
+        "disable_player_confirmation": "Deze speler blijft verborgen totdat hij weer wordt geactiveerd in de instellingen van de speler.",
+        "disable_player_title": "Wil je {0} deactiveren?",
         "display_options": "Weergaveopties",
         "rename_player": "Speler hernoemen",
         "rename_player_description": "Voer een nieuwe naam in voor deze speler.",
@@ -2292,5 +2320,42 @@
     "offline_ready": "App klaar voor offline gebruik",
     "update_available": "Er is een nieuwe versie beschikbaar. Vernieuw de pagina om te updaten.",
     "reload": "Herladen",
-    "open_settings": "Instellingen"
+    "open_settings": "Instellingen",
+    "faceted_filter": {
+        "clear": "Filters wissen",
+        "clear_all_for": "Wis alle {title} filters",
+        "clear_for": "Wis {title} filters",
+        "remove_filter": "Verwijder {label} filter",
+        "search_for": "Zoek naar {title}",
+        "selected": "{count} geselecteerd"
+    },
+    "clear": "Wissen",
+    "pagination": {
+        "first_page": "Ga naar eerste pagina",
+        "previous_page": "Ga naar vorige pagina",
+        "next_page": "Ga naar volgende pagina",
+        "last_page": "Ga naar laatste pagina"
+    },
+    "data_table": {
+        "view": "Weergave",
+        "toggle_columns": "Kolommen schakelen",
+        "hide": "Verbergen"
+    },
+    "sidebar": {
+        "title": "Zijbalk",
+        "description": "Laat de mobiele zijbalk zien.",
+        "toggle": "Zijbalk schakelen",
+        "expand": "Zijbalk uitklappen",
+        "collapse": "Zijbalk inklappen"
+    },
+    "loading_short": "Laden",
+    "player_group_playback": {
+        "title": "Groepsweergave",
+        "remove_message": "Er wordt op {0} afgespeeld. Als je deze speler uit de groep verwijdert, wordt de afspeelsessie overgezet naar de overige spelers.",
+        "power_off_message": "Er wordt op {0} afgespeeld. Als je het apparaat uitzet, wordt de afspeelsessie overgezet naar de overige spelers.",
+        "keep_playing": "Blijf afspelen",
+        "stop_and_ungroup": "Stoppen en groep opheffen"
+    },
+    "play_shuffled": "Geshuffeld afspelen",
+    "players_in_group": "Spelers in de groep"
 }

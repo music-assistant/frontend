@@ -514,7 +514,8 @@
             "options": "Spelaralternativ",
             "preferences": "Inställningar",
             "display_settings": "Visa",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "volume_control": "Volymkontroll"
         },
         "onboarding_subtitle": "Nu kommer vi igång genom att ansluta dina musikkällor och ljudenheter.",
         "onboarding_music_title": "Musik",
@@ -741,7 +742,44 @@
         "player_saved": "Spelarinställningar sparade",
         "provider_settings": "{name} leverantörsinställningar",
         "reload_provider": "Ladda om leverantören",
-        "protocol_native_badge": "Infödd"
+        "protocol_native_badge": "Infödd",
+        "visualizer_description": "Kvalitet, förinställningar och favoriter för MilkDrop musikvisualiseraren",
+        "visualizer": "Visualiserare",
+        "visualizer_enabled": {
+            "label": "MilkDrop visualiserare",
+            "description": "Visa en MilkDrop-visualisering bakom helskärmsspelaren, som reagerar live på musiken. Varje spelare kan åsidosätta detta från sin helskärmsmeny."
+        },
+        "visualizer_blur": {
+            "label": "Visualiserar suddighet",
+            "description": "Mjukar upp visualiseringen för en lugnare bakgrund. 0 inaktiverar oskärpa."
+        },
+        "visualizer_opacity": {
+            "label": "Visualiserar genomskinlighet",
+            "description": "Lägre värden blandar albumets färger. Över 50 % växlar vyn till ett mörkt utseende med ljus text."
+        },
+        "ha_kiosk_mode": {
+            "label": "Använd helskärmen i Home Assistant",
+            "description": "Dölj sidhuvudet och sidofältet i Home Assistant så att Musikassistenten får hela skärmen. Home Assistant-knappen i menyn visar dem igen."
+        },
+        "delete_player_title": "Ta bort {0} ?",
+        "delete_player_confirmation": "Den här spelaren kommer att tas bort från Music Assistant. Dess inställningar går förlorade och den kan bara återställas genom att konfigurera den igen.",
+        "queue_settings_description": "Uppspelningsinställningar för kön som den här spelaren spelar från",
+        "dsp_description": "Filter och förstärkning tillämpas på allt som spelaren spelar upp",
+        "player_options_description": "Alternativ och avläsningar som spelaren själv erbjuder",
+        "volume_slider_mode": {
+            "label": "Volymreglagens beteende",
+            "description": "Absolut: genom att trycka eller dra i reglaget ställer du in volymen på det läget. Relativt: genom att dra justeras volymen upp eller ner från den aktuella volymen vid halv hastighet, vilket gör små ändringar lättare att landa.",
+            "options": {
+                "absolute": "Absolut (hoppa till position)",
+                "relative": "Relativ (dra för att justera)"
+            }
+        },
+        "volume_haptics": {
+            "label": "Vibrationsåterkoppling för volym",
+            "description": "Vibrera medan du justerar volymreglaget. Rör endast enheter med vibrationsmotor."
+        },
+        "player_option_error": "Fel vid inställning av spelaralternativ: {key} {value}",
+        "server_logs_load_failed": "Misslyckades med att läsa in serverloggar"
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -774,7 +812,11 @@
         "album_artist_name": "Albumartist",
         "album_artist_name_desc": "Albumartist (fallande)",
         "track_artist_name": "Låt artist",
-        "track_artist_name_desc": "Låt artist (fallande)"
+        "track_artist_name_desc": "Låt artist (fallande)",
+        "ascending": "Stigande",
+        "ascending_abbreviation": "Stigande",
+        "descending": "Fallande",
+        "descending_abbreviation": "Fallande"
     },
     "state": {
         "idle": "vilande",
@@ -849,7 +891,14 @@
         "bpm": "Tempo (slag per minut)",
         "musical_key": "Musikalisk tonart",
         "show_dashboard": "Strömma instrumentpanelen till en enhet",
-        "collapse_collections": "Komprimera samlingar"
+        "collapse_collections": "Komprimera samlingar",
+        "volume_down": "Minska volymen",
+        "volume_up": "Höj volymen",
+        "show_full_path": "Visa hela sökvägen",
+        "show_menu": "Visa\/dölj meny",
+        "show_context_menu": "Visa kontextmenyn",
+        "scroll_left": "Scrolla åt vänster",
+        "scroll_right": "Scrolla åt höger"
     },
     "topresult": "Toppresultat",
     "track": "Spår",
@@ -1593,16 +1642,13 @@
             "playback_help": "Välj var spelarna hör musiken.",
             "playback_mode": "Uppspelningsläge",
             "playback_venue": "Mötesplats",
-            "playback_venue_help": "Spela musik på en högtalare.",
+            "playback_venue_help": "Spela musik på en spelare.",
             "playback_remote": "Avlägsen",
             "playback_remote_help": "Spelare lyssnar på sina egna enheter.",
             "playback_summary_venue": "Mötesplats · {0}",
             "playback_summary_remote": "Fjärrstyrt · Spelare lyssnar på sin egen enhet",
             "playback_venue_unavailable": "Mötesplatsläget är inte tillgängligt.",
             "playback_remote_unavailable": "Fjärrläget är inte tillgängligt.",
-            "speaker": "Högtalare",
-            "choose_speaker": "Välj en högtalare",
-            "no_available_speakers": "Inga tillgängliga högtalare hittades. Använd fjärrläge eller kontrollera spelarinställningarna.",
             "no_playback_modes": "Inga uppspelningslägen är tillgängliga. Kontrollera dina inställningar för Musikquiz.",
             "loading_playback_options": "Laddar uppspelningsalternativ...",
             "error_load_playback_options": "Det gick inte att läsa in uppspelningsalternativen",
@@ -1626,7 +1672,13 @@
             "host_controls": "Värdkontroller",
             "return_to_host_panel": "Återgå till värdpanelen",
             "dashboard_waiting": "Väntar på att quizet ska börja",
-            "name_that_track": "Namnge det spåret"
+            "name_that_track": "Namnge det spåret",
+            "player": "Spelare",
+            "choose_player": "Välj en spelare",
+            "no_available_players": "Inga tillgängliga spelare hittades. Använd fjärrläge eller kontrollera spelarinställningarna.",
+            "how_to_play_guess_the_song_description": "Lyssna på låten som spelas och välj rätt titel från alternativen innan tiden rinner ut.",
+            "how_to_play_trivia_description": "Svara på frågesporter om musik. Välj det svar du tror är rätt innan tiden rinner ut.",
+            "landing_continue": "Fortsätt"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -1648,7 +1700,10 @@
                 "character_limit": "Teckengräns",
                 "prompt": "Punktlig",
                 "instructions": "Instruktioner för värd och program",
-                "shuffle_playlist_tracks": "Blanda spår i spellistan"
+                "shuffle_playlist_tracks": "Blanda spår i spellistan",
+                "voice": "Röst",
+                "host": "Värd",
+                "language": "Språk"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximal total speltid för källmusiken, i minuter. Spår spelas i den ordning programmet spelar dem tills gränsen nås. Låt värdet vara 0 om du vill ha obegränsad tid.",
@@ -1689,7 +1744,9 @@
                 "discard_changes_title": "Vill du ignorera ändringarna?",
                 "discard_changes": "Du har osparade ändringar som kommer att gå förlorade.",
                 "delete_station_title": "Ta bort stationen?",
-                "delete_station": "Ta bort den här stationen?"
+                "delete_station": "Ta bort den här stationen?",
+                "delete_host_title": "Ta bort värd?",
+                "delete_host": "Ta bort den här värden?"
             },
             "toast": {
                 "playlists_truncated": "Endast den första {0} spellistor laddades.",
@@ -1702,7 +1759,10 @@
                 "station_save_failed": "Misslyckades med att spara stationen",
                 "station_deleted": "Stationen raderad",
                 "station_duplicated": "Stationen duplicerad",
-                "session_failed": "AI radiokörningen misslyckades: {0}"
+                "session_failed": "AI radiokörningen misslyckades: {0}",
+                "host_saved": "Värd sparad",
+                "host_deleted": "Värd borttagen",
+                "tts_engines_load_failed": "Det gick inte att läsa in röstalternativen"
             },
             "header": {
                 "subtitle": "Förvandla en spellista till ett radioprogram med en AI värd."
@@ -1712,13 +1772,14 @@
                 "empty_description": "AI Radio förvandlar en av dina spellistor till ett radioprogram med en AI värd. AI Radio behöver en AI kompatibel leverantör (t.ex. Home Assistant) för att generera värden – konfigurera en under Inställningar → Plugins.",
                 "create_cta": "Skapa show",
                 "new_show": "Ny show",
-                "refresh": "Uppdatera"
+                "refresh": "Uppdatera",
+                "title": "Föreställningar",
+                "add_show": "Lägg till Föreställning"
             },
             "card": {
                 "play": "Spela",
                 "starting": "Startar...",
                 "stop": "Stopp",
-                "stopping": "Stoppar...",
                 "on_air": "I sändning",
                 "customize": "Anpassa",
                 "duplicate": "Duplicera",
@@ -1733,20 +1794,12 @@
                 "switch_show_confirm": "«{0}» är i sändning. Stoppa den och spela «{1}»?",
                 "switch_show_confirm_label": "Växla"
             },
-            "phase": {
-                "preparing": "Förbereder din show…",
-                "fetch_source_tracks": "Hämtar spår…",
-                "planning_sections": "Planering av showen…",
-                "initializing_queue": "Förbereder kön…"
-            },
             "create": {
                 "title": "Skapa en show",
-                "description": "Välj en spellista, en programledares stil och hur pratsam den ska vara.",
+                "description": "Välj en spellista och en programledare för ditt program.",
                 "playlist_label": "Källspellista",
                 "playlist_placeholder": "Välj en spellista",
                 "playlist_empty": "Inga spellistor hittades",
-                "preset_label": "Värdstil",
-                "talk_label": "Pratsamhet",
                 "name_label": "Visa namn",
                 "default_name": "{0} — {1}",
                 "create": "Skapa",
@@ -1754,31 +1807,10 @@
                 "creating": "Skapar…...",
                 "validation": {
                     "playlist_required": "Välj en källspellista",
-                    "name_required": "Visa namn krävs"
-                }
-            },
-            "presets": {
-                "morning_show": {
-                    "name": "Morgonshow",
-                    "description": "Varm, positiv värd med väder och nyheter."
+                    "name_required": "Visa namn krävs",
+                    "host_required": "Välj en värd"
                 },
-                "minimal_dj": {
-                    "name": "Minimalistisk DJ",
-                    "description": "Lugna, diskreta övergångar som håller sig ur vägen."
-                },
-                "music_nerd": {
-                    "name": "Musiknörd",
-                    "description": "Delar fakta och kuriosa om artister mellan låtarna."
-                },
-                "party_host": {
-                    "name": "Festvärd",
-                    "description": "Energiska skrika ut för att hålla festen igång."
-                }
-            },
-            "talk": {
-                "rarely": "Sällan",
-                "normal": "Normal",
-                "chatty": "Pratsam"
+                "playlist_search": "Sök i spellistor"
             },
             "prereq": {
                 "title": "AI leverantör behövs",
@@ -1797,9 +1829,53 @@
                 "blank_segment_name": "Nytt segment",
                 "segment_name": "Segmentnamn",
                 "use_current_player": "Använd aktuell spelare",
-                "lossy_warning_title": "Förenklad vid sparande",
-                "lossy_warning_description": "Den här serien använder en avancerad konfiguration som inte kan representeras helt här. Om du sparar den skrivs den om i det förenklade segmentformatet ovan.",
-                "prompt_placeholders_hint": "Tillgängliga platshållare: {placeholders}"
+                "segment_templates": {
+                    "intro": "Introduktion",
+                    "transition": "Övergång",
+                    "weather": "Väder",
+                    "news": "Nyheter",
+                    "artist_fact": "Konstnärsfakta",
+                    "sign_off": "Logga ut"
+                },
+                "host_placeholder": "Välj en värd",
+                "host_required": "Välj en värd innan du sparar",
+                "no_hosts_hint": "Du behöver en programledare innan du kan spara den här serien.",
+                "create_host_cta": "Skapa en värd",
+                "prompt_placeholders_label": "Platshållare — tryck för att kopiera:",
+                "prompt_placeholder_copied": "Kopierad {0} till urklipp",
+                "prompt_placeholder_copy_failed": "Misslyckades med att kopiera {0} till urklipp",
+                "prompt_placeholder_copy_aria": "Kopiera {0}",
+                "personality_title": "Personlighet",
+                "tts_options_title": "Avancerade TTS-alternativ",
+                "tts_options_help": "Lägg bara till nycklar som din valda motor stöder, eftersom en nyckel som inte stöds kan göra att hela klippet avvisas.",
+                "option_key": "Alternativtangent",
+                "option_key_placeholder": "t.ex. röst",
+                "option_value": "Alternativ värde",
+                "option_value_placeholder": "t.ex. sv_US-lessac-medium",
+                "add_option": "Lägg till alternativ",
+                "remove_option": "Ta bort alternativet"
+            },
+            "hosts": {
+                "title": "Värdar",
+                "add_host": "Lägg till värd",
+                "card": {
+                    "edit": "Redigera"
+                },
+                "editor": {
+                    "title": "Anpassa värd",
+                    "save": "Spara värd",
+                    "name_label": "Värdnamn",
+                    "default_voice": "Standard",
+                    "validation": {
+                        "name_required": "Värdnamn krävs",
+                        "duplicate_name": "En värd vid namn «{0}» finns redan",
+                        "name_check_failed": "Kunde inte verifiera att namnet är unikt. Ingenting sparades.",
+                        "segments_required": "Lägg till minst ett segment",
+                        "segment_prompt_required": "Varje segment behöver en prompt"
+                    },
+                    "default_language": "Följ serverspråket"
+                },
+                "blank_host": "Tom värd"
             }
         }
     },
@@ -2021,7 +2097,8 @@
         "unit_months": "månader",
         "last_played_ago": "sedan",
         "op_greater_than": "större än",
-        "op_less_than": "mindre än"
+        "op_less_than": "mindre än",
+        "picker_search": "Sök {label}"
     },
     "explore": "Utforska",
     "shortcuts": "Genvägar",
@@ -2155,7 +2232,6 @@
     "artist_no_library_audiobooks": "Du har inga ljudböcker i ditt bibliotek för den här författaren\/berättaren.",
     "artist_all_audiobooks": "Alla ljudböcker",
     "lights": "Ljus",
-    "speakers_in_group": "Högtalare i grupp",
     "visualizers": "Visualiserar",
     "volume": "Volym",
     "grouped_volume": "Grupperad volym",
@@ -2170,5 +2246,113 @@
         "show_active_players_first": "Visa aktiva spelare först",
         "show_grouped_players": "Visa gruppmedlemmar",
         "show_selected_player_first": "Visa vald spelare först"
-    }
+    },
+    "mark_played_partial_failure": "Kunde inte uppdatera {0} avsnitt (en)",
+    "visualizer": {
+        "title": "MilkDrop",
+        "preset_random": "Slumpmässig förinställning",
+        "open_settings": "Visualiserar inställningar",
+        "toggle": "Aktivera MilkDrop visualiseringen",
+        "preset_random_favorites": "Slumpmässigt från favoriter",
+        "toggle_favorite": "Favorisera den här förinställningen",
+        "provider_missing": "MilkDrop Visualisera-plugin är inte installerat eller inte tillgängligt. Lägg till det under Inställningar > Leverantörer för att använda visualiseraren.",
+        "section_general": "Utseende",
+        "section_presets": "Förinställningar",
+        "quality": "Renderingskvalitet",
+        "quality_description": "Högre nivåer ger skarpare bilder till högre GPU\/CPU-kostnad. Använd surfplattor och TV apparater med låg förbrukning.",
+        "quality_options": {
+            "low": "Låg (surfplattor\/TV apparater)",
+            "medium": "Medium",
+            "high": "Hög",
+            "native": "Infödd"
+        },
+        "preset_mode": "Förinställt val",
+        "preset_mode_description": "Hur visualiseraren väljer vilken MilkDrop förinställning som ska visas.",
+        "preset_mode_options": {
+            "random": "Slumpmässig från alla förinställningar",
+            "random_favorites": "Slumpmässigt från favoriter",
+            "fixed": "Fast förinställning"
+        },
+        "fixed_preset": "Förinställt",
+        "beat_switch": "Växla förinställning på downbeat",
+        "beat_switch_description": "Växla till en annan förinställning vid en nedåtgående taktslag. Åsidosätter en fast förinställning.",
+        "beat_dwell": "Minsta tid mellan växlingar",
+        "beat_dwell_description": "Hur länge en förinställning visas på skärmen innan en downbeat kan ändra den.",
+        "favorites": "Favoritförinställningar",
+        "no_favorites": "Inga favoriter ännu. Stjärnmärk den aktuella förinställningen i helskärmsspelaren.",
+        "remove_favorite": "Ta bort favorit",
+        "credits": "Krediter",
+        "credits_butterchurn": "Rendering med hjälp av Butterchurn av Jordan Berg (MIT licens), WebGL implementeringen av MilkDrop 2.",
+        "credits_milkdrop": "MilkDrop skapades ursprungligen av Ryan Geiss som en visualiserare för Winamp. Förinställningar är ett verk av MilkDrop-förinställningarna, samlade via butterchurn-presets."
+    },
+    "ai_dj": "Aktivera AI Radio DJ",
+    "ai_dj_off": "Av",
+    "ai_dj_show_on_air": "I sändning: {0}",
+    "ai_dj_show_on_air_unknown": "En show sänds",
+    "menu": "Meny",
+    "main_navigation": "Huvudsaklig",
+    "play_announcement": "Spela upp meddelande",
+    "play_announcement_explanation": "Säg ett meddelande högt på {0}.",
+    "play_announcement_message": "Meddelande",
+    "play_announcement_message_placeholder": "Middagen är klar!",
+    "play_announcement_pre_announce": "Spela en klocksignal först",
+    "play_announcement_send": "Meddela",
+    "play_announcement_sent": "Meddelande skickat till {0}",
+    "play_announcement_playing": "Spelar...",
+    "play_announcement_volume": "Volym",
+    "play_announcement_volume_default": "Spelarens standardvärde",
+    "play_announcement_mode_type": "Skriv ett meddelande",
+    "play_announcement_mode_speak": "Tala",
+    "play_announcement_hold_to_speak": "Håll inne knappen och tala",
+    "play_announcement_connecting": "Ansluter...",
+    "play_announcement_speaking": "Talar",
+    "play_announcement_finishing": "Slutför...",
+    "play_announcement_mic_denied": "Music Assistant får inte använda mikrofonen.",
+    "play_announcement_mic_failed": "Mikrofonen kunde inte startas.",
+    "play_announcement_live_failed": "Meddelandet kunde inte spelas upp.",
+    "dynamic_radio_heading": "Dynamisk station",
+    "dynamic_radio_empty_desc": "Den här stationen returnerade inga spår. Försök igen om en stund.",
+    "home_assistant_menu": "Home Assistant",
+    "playback_speed_value": "{0}x",
+    "offline_ready": "Appen är redo att fungera offline",
+    "update_available": "En ny version är tillgänglig. Ladda om för att uppdatera.",
+    "reload": "Ladda om",
+    "open_settings": "Inställningar",
+    "faceted_filter": {
+        "clear": "Rensa filter",
+        "clear_all_for": "Rensa alla {title} filter",
+        "clear_for": "Rensa {title} filter",
+        "remove_filter": "Ta bort {label} filter",
+        "search_for": "Sök {title}",
+        "selected": "{count} vald"
+    },
+    "clear": "Rensa",
+    "pagination": {
+        "first_page": "Gå till första sidan",
+        "previous_page": "Gå till föregående sida",
+        "next_page": "Gå till nästa sida",
+        "last_page": "Gå till sista sidan"
+    },
+    "data_table": {
+        "view": "Granska",
+        "toggle_columns": "Växla kolumner",
+        "hide": "Dölj"
+    },
+    "sidebar": {
+        "title": "Sidofält",
+        "description": "Visar mobilens sidofält.",
+        "toggle": "Växla sidofältet",
+        "expand": "Expandera sidofältet",
+        "collapse": "Minimera sidofältet"
+    },
+    "loading_short": "Laddar",
+    "player_group_playback": {
+        "title": "Gruppuppspelning",
+        "remove_message": "Uppspelning är aktiv på {0}. Om du tar bort den här spelaren från gruppen flyttas uppspelningssessionen till de återstående spelarna.",
+        "power_off_message": "Uppspelning är aktiv på {0}. Om du stänger av den flyttas uppspelningssessionen till de återstående spelarna.",
+        "keep_playing": "Fortsätt spela",
+        "stop_and_ungroup": "Stoppa och av gruppera"
+    },
+    "play_shuffled": "Spela blandat",
+    "players_in_group": "Spelare i gruppen"
 }

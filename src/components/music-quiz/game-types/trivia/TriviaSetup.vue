@@ -59,36 +59,40 @@
         <FieldLabel for="trivia-difficulty">
           {{ $t("providers.music_quiz.difficulty") }}
         </FieldLabel>
-        <NativeSelect
-          id="trivia-difficulty"
-          v-model="difficulty"
-          class="w-full"
-        >
-          <option value="easy">
-            {{ $t("providers.music_quiz.difficulty_easy") }}
-          </option>
-          <option value="normal">
-            {{ $t("providers.music_quiz.difficulty_normal") }}
-          </option>
-          <option value="hard">
-            {{ $t("providers.music_quiz.difficulty_hard") }}
-          </option>
-        </NativeSelect>
+        <Select v-model="difficulty">
+          <SelectTrigger id="trivia-difficulty" class="w-full">
+            <SelectValue>{{ difficultyLabel }}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="option in difficultyOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </Field>
 
       <Field class="sm:col-span-2">
         <FieldLabel for="trivia-language">
           {{ $t("providers.music_quiz.question_language") }}
         </FieldLabel>
-        <NativeSelect id="trivia-language" v-model="language" class="w-full">
-          <option
-            v-for="option in languageOptions"
-            :key="option.value"
-            :value="option.value"
-          >
-            {{ option.label }}
-          </option>
-        </NativeSelect>
+        <Select v-model="language">
+          <SelectTrigger id="trivia-language" class="w-full">
+            <SelectValue>{{ languageLabel }}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="option in languageOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </Field>
 
       <Field
@@ -123,7 +127,7 @@
       :disabled="busy || !canCreate || !sharedConfigValid"
       @click="create"
     >
-      <Brain class="size-4" />
+      <Plus class="size-4" />
       {{ $t("create") }}
     </Button>
   </div>
@@ -138,7 +142,13 @@ import type {
 } from "@/components/music-quiz/adapter_contracts";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   NumberField,
   NumberFieldContent,
@@ -151,8 +161,9 @@ import type {
   MusicQuizDifficulty,
   MusicQuizTriviaConfig,
 } from "@/composables/music-quiz/useMusicQuiz";
+import { getMusicQuizDifficultyOptions } from "@/helpers/music_quiz";
 import { $t, canonicalizeLocale, getLocaleOptions, i18n } from "@/plugins/i18n";
-import { Brain } from "@lucide/vue";
+import { Plus } from "@lucide/vue";
 import { computed, ref } from "vue";
 
 const MIN_ROUNDS = 1;
@@ -178,6 +189,17 @@ const sourceUris = ref<string[]>([]);
 const canCreate = computed(() => sourceUris.value.length > 0);
 const languageOptions = computed(() =>
   getLocaleOptions(i18n.global.availableLocales, i18n.global.locale.value),
+);
+const difficultyOptions = computed(() => getMusicQuizDifficultyOptions());
+const difficultyLabel = computed(
+  () =>
+    difficultyOptions.value.find((option) => option.value === difficulty.value)
+      ?.label ?? "",
+);
+const languageLabel = computed(
+  () =>
+    languageOptions.value.find((option) => option.value === language.value)
+      ?.label ?? "",
 );
 
 function create() {
