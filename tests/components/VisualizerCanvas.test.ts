@@ -251,8 +251,7 @@ describe("VisualizerCanvas color tint", () => {
     onState?.("streaming");
   }
 
-  // Simulates the relay's onColor callback. Loosely typed on purpose: the
-  // payload comes off the wire, and malformed entries are part of the tests.
+  // Loosely typed on purpose: malformed payloads are part of the tests.
   function emitColor(palette: Record<string, unknown>) {
     const onColor = relayConstructor.mock.calls.at(-1)?.[0]?.onColor as
       | ((palette: unknown) => void)
@@ -341,9 +340,8 @@ describe("VisualizerCanvas color tint", () => {
   });
 
   it("fades tint and canvas as one isolated stack, per the opacity setting", async () => {
-    // The tint must blend against the canvas at full opacity and fade with
-    // it afterwards; a tint outside the opacity-carrying stack would mostly
-    // composite its own raw color over the gradient background.
+    // A tint outside the opacity-carrying stack would composite its own
+    // raw color over the gradient background instead of blending.
     const wrapper = mount(VisualizerCanvas, {
       props: { playerId: "kitchen", opacity: 40 },
     });
@@ -408,8 +406,7 @@ describe("VisualizerCanvas color tint", () => {
   });
 
   it("lets only the canvas that asserted the flag clear it", async () => {
-    // During the fullscreen open/close handoff two canvases briefly overlap;
-    // the one tearing down must not clear a tint it never painted.
+    // Two canvases overlap during a fullscreen handoff.
     const tinting = mountCanvas("kitchen");
     await flushPromises();
     emitStreaming();

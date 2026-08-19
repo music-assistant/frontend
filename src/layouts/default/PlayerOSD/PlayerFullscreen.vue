@@ -1243,13 +1243,13 @@ const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
 
 watchEffect(() => {
-  // A live color tint plus the visualizer's own scrim already keeps it
-  // legible, so leave text/controls on the normal theme/palette treatment.
-  // Without a tint (disabled server-side, or no color for this track yet)
-  // the visualizer is just unpredictable color, so at high opacity fall back
-  // to forcing light text over a dark palette-gradient base. This component
-  // is permanently mounted via the OSD footer, so gate on the fullscreen
-  // player actually being open, or --text-color would stay forced app-wide.
+  // With a dominant visualizer the view is effectively dark content: force
+  // light text and a dark palette-gradient base. At low opacity (<=50%) the
+  // visualizer is only a faint overlay, so keep the completely normal
+  // theme/palette treatment instead of forcing the dark look. This component is
+  // permanently mounted via the OSD footer, so gate on the fullscreen player
+  // actually being open, or --text-color would stay forced app-wide.
+  // A live tint plus the scrim is already legible, so it keeps that treatment.
   if (
     store.showFullscreenPlayer &&
     visualizerActive.value &&

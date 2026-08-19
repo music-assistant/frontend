@@ -168,10 +168,7 @@ export class VisualizerRelayClient {
       this.clearBeatTimers();
       this.clock.clear();
       this.scheduler.clear();
-      // The merged palette restarts empty for the next connection, but no
-      // onColor is fired: the canvas deliberately keeps painting its last
-      // tint across a reconnect (continuity over a network blip) and resets
-      // it itself when the player changes.
+      // No onColor: the canvas keeps its tint across a reconnect on purpose.
       this.colorPalette = {};
       if (this.closed) return;
       if (event.code === AUTH_FAILED_CODE) {
@@ -201,8 +198,7 @@ export class VisualizerRelayClient {
       if (message.type === "auth_ok") {
         if (this.ws) this.startTimeSync(this.ws);
       } else if (message.type === "color" && message.payload) {
-        // Partial update: merge only the known fields, so a future server-side
-        // field cannot silently leak into the palette object.
+        // Merge known fields only; the payload is unvalidated wire data.
         const payload = message.payload as ColorPalette;
         const merged: ColorPalette = { ...this.colorPalette };
         for (const field of COLOR_PALETTE_FIELDS) {

@@ -32,9 +32,7 @@
 </template>
 
 <script lang="ts">
-// Which canvas instance last asserted visualizerTintActive. Module-scoped
-// (shared across instances) so an unmounting canvas can tell whether the
-// flag is its own to clear.
+// Which canvas instance last asserted visualizerTintActive.
 let tintFlagWriter: symbol | null = null;
 </script>
 
@@ -123,10 +121,8 @@ const canvasStyle = computed(() => ({
   transform: props.blur > 0 ? "scale(1.12)" : undefined,
 }));
 
-// The opacity preference fades the canvas+tint stack as one unit, not the
-// canvas alone: the tint must blend against a fully opaque canvas (pure hue
-// shift) before any fading, or its raw color would dominate the composite
-// and paint over the gradient background the preference blends through.
+// Fades canvas and tint as one unit: the tint has to blend against an
+// opaque canvas, or it composites its own raw color over the background.
 const stackStyle = computed(() => ({
   opacity: props.opacity < 100 ? String(props.opacity / 100) : undefined,
 }));
@@ -144,20 +140,16 @@ const playbackPaused = computed(() => {
   return !!player && player.playback_state !== PlaybackState.PLAYING;
 });
 
-// Pushed over the relay alongside the waveform. The theme-side pick mirrors
-// the OSD's paletteFromServer treatment (dark theme: on_light, light theme:
-// on_dark), so the tint matches the album color the rest of the view shows.
-// primary (dominant by pixel count) is often the cover's dark backdrop, and
-// a near-black tint only desaturates the blend instead of coloring it.
 const colorPalette = ref<ColorPalette>({});
 
-// Palette entries come straight off the wire: only a 3-tuple of numbers may
-// become CSS; anything malformed falls through to the next candidate.
+// Palette entries come off the wire; only a numeric 3-tuple may become CSS.
 const isRgbTuple = (value: unknown): value is [number, number, number] =>
   Array.isArray(value) &&
   value.length === 3 &&
   value.every((channel) => Number.isFinite(channel));
 
+// Ordering mirrors the OSD's paletteFromServer pick; primary ranks last as
+// it is often a near-black backdrop that desaturates rather than tints.
 const tintColor = computed(() => {
   const palette = colorPalette.value;
   const isDark = vuetify.theme.current.value.dark;
@@ -175,11 +167,8 @@ const tintStyle = computed(() => ({
   backgroundColor: tintColor.value ?? "transparent",
 }));
 
-// Other views (e.g. the fullscreen OSD) read this to know whether a tint is
-// actually painting the canvas right now, rather than guessing from opacity.
-// Writes go through an ownership check: during the fullscreen open/close
-// handoff two canvases briefly overlap, and the one tearing down must not
-// clear a tint the other has already asserted.
+// Read by other views (e.g. the fullscreen OSD). Ownership-checked: the
+// canvases overlapping in a fullscreen handoff must not clear each other.
 const tintFlagOwner = Symbol("visualizer-tint");
 watch(
   () => streaming.value && !!tintColor.value,
@@ -471,9 +460,7 @@ onBeforeUnmount(() => {
 .visualizer-layer__stack {
   position: absolute;
   inset: 0;
-  /* Contain the tint's blend to the canvas alone. Without isolation (and with
-     the opacity moved here off the canvas) the opaque tint would blend against
-     a half-faded backdrop and mostly composite its own raw color. */
+  /* Isolate so the tint blends against the canvas alone, not the backdrop. */
   isolation: isolate;
 }
 
