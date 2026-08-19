@@ -10,9 +10,6 @@
     "
     :title="repeatTitle"
     :aria-label="repeatButtonLabel"
-    :aria-pressed="
-      playerQueue?.repeat_mode == RepeatMode.OFF ? 'false' : 'true'
-    "
     :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="cycleRepeatMode"
@@ -35,7 +32,6 @@ import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { computed, toRef } from "vue";
 import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
-import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -50,12 +46,6 @@ export interface Props {
 const compProps = withDefaults(defineProps<Props>(), {
   icon: undefined,
   size: 20,
-});
-const { t } = useI18n();
-
-const repeatButtonLabel = computed(() => {
-  const repeatMode = compProps.playerQueue?.repeat_mode ?? RepeatMode.OFF;
-  return `${t("select_repeat_mode")}: ${t(`repeat_mode.${repeatMode}`)}`;
 });
 
 const { externalSource } = useExternalSource(
@@ -90,6 +80,11 @@ const repeatMode = computed<RepeatMode>(() => {
   }
   return compProps.playerQueue?.repeat_mode ?? RepeatMode.OFF;
 });
+
+// Accessible name carries the mode in effect, since the icon alone is silent.
+const repeatButtonLabel = computed(
+  () => `${$t("select_repeat_mode")}: ${$t(`repeat_mode.${repeatMode.value}`)}`,
+);
 
 // The next repeat mode when the button is pressed: cycle OFF -> ALL -> ONE.
 // (The button is disabled for radio/dynamic queues, so those don't apply here.)

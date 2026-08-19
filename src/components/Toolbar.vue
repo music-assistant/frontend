@@ -38,7 +38,6 @@
         :title="menuItemLabel(menuItem)"
         :aria-label="menuItemLabel(menuItem)"
         :aria-haspopup="menuItem.subItems?.length ? 'menu' : undefined"
-        :aria-pressed="menuItem.active == null ? undefined : menuItem.active"
         :disabled="menuItem.disabled == true"
         @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
       >
@@ -122,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
 import MenuItemIcon from "@/components/MenuItemIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -144,7 +144,6 @@ import { getBreakpointValue } from "../plugins/breakpoint";
 
 import type { Component } from "vue";
 import { computed, ref } from "vue";
-import { useI18n } from "vue-i18n";
 
 interface Props {
   color?: string;
@@ -175,7 +174,6 @@ const ACTIVE_DOT_CLASS =
   "bg-primary absolute -top-0.5 -right-0.5 size-1.5 rounded-full";
 
 const overflowMenuOpen = ref(false);
-const { t } = useI18n();
 
 const directItems = computed(
   () =>
@@ -241,9 +239,11 @@ const onMenuItemClick = (
 
 const toolbarIconLabel = computed(() => {
   if (props.iconLabel) return props.iconLabel;
+  // an actionable icon is a back button; name it after its action, never
+  // after the page title
+  if (props.iconAction) return $t("back");
   if (props.title) return props.title;
-  if (props.isDiscoverPage) return t("discover");
-  if (props.iconAction) return t("back");
+  if (props.isDiscoverPage) return $t("discover");
   return undefined;
 });
 

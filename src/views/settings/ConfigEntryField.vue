@@ -422,7 +422,6 @@ const displayOptions = computed(() => {
   }
   return options;
 });
-
 </script>
 
 <style scoped>
@@ -459,14 +458,6 @@ const displayOptions = computed(() => {
   margin-bottom: 20px;
   width: 100%;
   height: 50px;
-}
-
-.multi-value-selection-summary {
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .config-slider-wrapper {

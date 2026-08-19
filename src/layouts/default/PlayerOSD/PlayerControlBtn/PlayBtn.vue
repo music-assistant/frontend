@@ -33,6 +33,7 @@
 </template>
 
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
@@ -46,7 +47,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { Pause, Play, Square } from "@lucide/vue";
 import { computed, toRef } from "vue";
-import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -65,7 +65,6 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 24,
   playOffset: 1,
 });
-const { t } = useI18n();
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
 const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
@@ -111,8 +110,8 @@ const isPlaying = computed(() => {
 });
 
 const playButtonLabel = computed(() => {
-  if (isPlaying.value && showStop.value) return t("stop_playback");
-  return isPlaying.value ? t("pause") : t("play");
+  if (isPlaying.value && showStop.value) return $t("stop_playback");
+  return isPlaying.value ? $t("pause") : $t("play");
 });
 
 const isLoading = computed(() => {

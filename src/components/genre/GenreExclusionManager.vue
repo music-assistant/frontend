@@ -12,12 +12,7 @@
           v-for="genre in exclusions"
           :key="genre.item_id"
           show-menu-btn
-          :menu-button-label="`${t('more_options')}: ${getGenreDisplayName(
-            genre.name,
-            genre.translation_key,
-            t,
-            te,
-          )}`"
+          :menu-button-label="`${$t('more_options')}: ${genre.name}`"
           @menu.stop="(evt) => onMenu(evt, genre)"
         >
           <template #prepend>

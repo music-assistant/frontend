@@ -4,7 +4,7 @@
     size="icon-lg"
     :aria-label="$t('tooltip.toggle_queue')"
     v-bind="$attrs"
-    :title="$t('queue')"
+    :title="$t('tooltip.toggle_queue')"
     :aria-expanded="active ? 'true' : 'false'"
     :disabled="disabled"
     :class="{ 'text-primary': active }"

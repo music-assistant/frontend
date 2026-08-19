@@ -1,19 +1,18 @@
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { type MediaItem } from "@/plugins/api/interfaces";
 import { Heart } from "@lucide/vue";
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 
 interface Props {
   item: MediaItem;
 }
 
 const props = defineProps<Props>();
-const { t } = useI18n();
 
 const favoriteButtonLabel = computed(() =>
-  props.item?.favorite ? t("favorites_remove") : t("favorites_add"),
+  props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
 );
 
 const toggle = (e: Event) => {
