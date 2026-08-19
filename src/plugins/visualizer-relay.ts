@@ -27,13 +27,15 @@ const AUTH_FAILED_CODE = 4001;
 export type RelayState = "connecting" | "streaming" | "waiting" | "closed";
 
 // color@v1 fields (see aiosendspin.models.color.SessionUpdateColor).
-export type ColorPaletteField =
-  | "background_dark"
-  | "background_light"
-  | "primary"
-  | "accent"
-  | "on_dark"
-  | "on_light";
+const COLOR_PALETTE_FIELDS = [
+  "background_dark",
+  "background_light",
+  "primary",
+  "accent",
+  "on_dark",
+  "on_light",
+] as const;
+export type ColorPaletteField = (typeof COLOR_PALETTE_FIELDS)[number];
 export type ColorPalette = Partial<
   Record<ColorPaletteField, [number, number, number] | null>
 >;
@@ -166,6 +168,10 @@ export class VisualizerRelayClient {
       this.clearBeatTimers();
       this.clock.clear();
       this.scheduler.clear();
+      // The merged palette restarts empty for the next connection, but no
+      // onColor is fired: the canvas deliberately keeps painting its last
+      // tint across a reconnect (continuity over a network blip) and resets
+      // it itself when the player changes.
       this.colorPalette = {};
       if (this.closed) return;
       if (event.code === AUTH_FAILED_CODE) {
@@ -195,11 +201,15 @@ export class VisualizerRelayClient {
       if (message.type === "auth_ok") {
         if (this.ws) this.startTimeSync(this.ws);
       } else if (message.type === "color" && message.payload) {
-        this.colorPalette = {
-          ...this.colorPalette,
-          ...(message.payload as ColorPalette),
-        };
-        this.callbacks.onColor?.(this.colorPalette);
+        // Partial update: merge only the known fields, so a future server-side
+        // field cannot silently leak into the palette object.
+        const payload = message.payload as ColorPalette;
+        const merged: ColorPalette = { ...this.colorPalette };
+        for (const field of COLOR_PALETTE_FIELDS) {
+          if (field in payload) merged[field] = payload[field];
+        }
+        this.colorPalette = merged;
+        this.callbacks.onColor?.(merged);
       } else if (message.type === "server/time" && message.payload) {
         const p = message.payload as Record<string, number>;
         // A missing/non-numeric field would produce a NaN sample, which

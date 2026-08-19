@@ -11,16 +11,18 @@
 -->
 <template>
   <div class="visualizer-layer" aria-hidden="true" :style="layerStyle">
-    <canvas
-      ref="canvasRef"
-      class="visualizer-layer__canvas"
-      :style="canvasStyle"
-    ></canvas>
-    <div
-      v-if="streaming"
-      class="visualizer-layer__tint"
-      :style="tintStyle"
-    ></div>
+    <div class="visualizer-layer__stack" :style="stackStyle">
+      <canvas
+        ref="canvasRef"
+        class="visualizer-layer__canvas"
+        :style="canvasStyle"
+      ></canvas>
+      <div
+        v-if="streaming"
+        class="visualizer-layer__tint"
+        :style="tintStyle"
+      ></div>
+    </div>
     <div
       v-if="streaming"
       class="visualizer-layer__scrim"
@@ -28,6 +30,13 @@
     ></div>
   </div>
 </template>
+
+<script lang="ts">
+// Which canvas instance last asserted visualizerTintActive. Module-scoped
+// (shared across instances) so an unmounting canvas can tell whether the
+// flag is its own to clear.
+let tintFlagWriter: symbol | null = null;
+</script>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
@@ -112,6 +121,13 @@ const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
   // Oversize slightly when blurred so the edge vignette stays off-screen.
   transform: props.blur > 0 ? "scale(1.12)" : undefined,
+}));
+
+// The opacity preference fades the canvas+tint stack as one unit, not the
+// canvas alone: the tint must blend against a fully opaque canvas (pure hue
+// shift) before any fading, or its raw color would dominate the composite
+// and paint over the gradient background the preference blends through.
+const stackStyle = computed(() => ({
   opacity: props.opacity < 100 ? String(props.opacity / 100) : undefined,
 }));
 
@@ -134,14 +150,23 @@ const playbackPaused = computed(() => {
 // primary (dominant by pixel count) is often the cover's dark backdrop, and
 // a near-black tint only desaturates the blend instead of coloring it.
 const colorPalette = ref<ColorPalette>({});
+
+// Palette entries come straight off the wire: only a 3-tuple of numbers may
+// become CSS; anything malformed falls through to the next candidate.
+const isRgbTuple = (value: unknown): value is [number, number, number] =>
+  Array.isArray(value) &&
+  value.length === 3 &&
+  value.every((channel) => Number.isFinite(channel));
+
 const tintColor = computed(() => {
   const palette = colorPalette.value;
   const isDark = vuetify.theme.current.value.dark;
-  const rgb =
-    (isDark ? palette.on_light : palette.on_dark) ??
-    (isDark ? palette.on_dark : palette.on_light) ??
-    palette.primary ??
-    palette.accent;
+  const rgb = [
+    isDark ? palette.on_light : palette.on_dark,
+    isDark ? palette.on_dark : palette.on_light,
+    palette.primary,
+    palette.accent,
+  ].find(isRgbTuple);
   return rgb ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})` : null;
 });
 
@@ -152,10 +177,20 @@ const tintStyle = computed(() => ({
 
 // Other views (e.g. the fullscreen OSD) read this to know whether a tint is
 // actually painting the canvas right now, rather than guessing from opacity.
+// Writes go through an ownership check: during the fullscreen open/close
+// handoff two canvases briefly overlap, and the one tearing down must not
+// clear a tint the other has already asserted.
+const tintFlagOwner = Symbol("visualizer-tint");
 watch(
   () => streaming.value && !!tintColor.value,
   (active) => {
-    visualizerTintActive.value = active;
+    if (active) {
+      tintFlagWriter = tintFlagOwner;
+      visualizerTintActive.value = true;
+    } else if (tintFlagWriter === null || tintFlagWriter === tintFlagOwner) {
+      tintFlagWriter = null;
+      visualizerTintActive.value = false;
+    }
   },
   { immediate: true },
 );
@@ -417,7 +452,10 @@ onBeforeUnmount(() => {
   relay?.close();
   relay = null;
   currentVisualizerPreset.value = null;
-  visualizerTintActive.value = false;
+  if (tintFlagWriter === tintFlagOwner) {
+    tintFlagWriter = null;
+    visualizerTintActive.value = false;
+  }
 });
 </script>
 
@@ -428,6 +466,15 @@ onBeforeUnmount(() => {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+}
+
+.visualizer-layer__stack {
+  position: absolute;
+  inset: 0;
+  /* Contain the tint's blend to the canvas alone. Without isolation (and with
+     the opacity moved here off the canvas) the opaque tint would blend against
+     a half-faded backdrop and mostly composite its own raw color. */
+  isolation: isolate;
 }
 
 .visualizer-layer__canvas {

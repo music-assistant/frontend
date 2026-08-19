@@ -251,8 +251,9 @@ describe("VisualizerCanvas color tint", () => {
     onState?.("streaming");
   }
 
-  // Simulates the relay's onColor callback.
-  function emitColor(palette: Record<string, [number, number, number] | null>) {
+  // Simulates the relay's onColor callback. Loosely typed on purpose: the
+  // payload comes off the wire, and malformed entries are part of the tests.
+  function emitColor(palette: Record<string, unknown>) {
     const onColor = relayConstructor.mock.calls.at(-1)?.[0]?.onColor as
       | ((palette: unknown) => void)
       | undefined;
@@ -322,6 +323,45 @@ describe("VisualizerCanvas color tint", () => {
     wrapper.unmount();
   });
 
+  it("skips malformed palette entries instead of emitting broken CSS", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    emitStreaming();
+    emitColor({
+      on_dark: [100, 180],
+      on_light: "red",
+      primary: [10, 20, 30],
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("rgb(10, 20, 30)");
+    wrapper.unmount();
+  });
+
+  it("fades tint and canvas as one isolated stack, per the opacity setting", async () => {
+    // The tint must blend against the canvas at full opacity and fade with
+    // it afterwards; a tint outside the opacity-carrying stack would mostly
+    // composite its own raw color over the gradient background.
+    const wrapper = mount(VisualizerCanvas, {
+      props: { playerId: "kitchen", opacity: 40 },
+    });
+    await flushPromises();
+    emitStreaming();
+    emitColor({ primary: [10, 20, 30] });
+    await flushPromises();
+
+    const stack = wrapper.get(".visualizer-layer__stack");
+    expect(stack.attributes("style")).toContain("opacity: 0.4");
+    expect(stack.find(".visualizer-layer__tint").exists()).toBe(true);
+    expect(stack.find(".visualizer-layer__canvas").exists()).toBe(true);
+    expect(
+      wrapper.get(".visualizer-layer__canvas").attributes("style") ?? "",
+    ).not.toContain("opacity");
+    wrapper.unmount();
+  });
+
   it("stays transparent when the relay has sent no color", async () => {
     const wrapper = mountCanvas("kitchen");
     await flushPromises();
@@ -364,6 +404,27 @@ describe("VisualizerCanvas color tint", () => {
     expect(visualizerTintActive.value).toBe(true);
 
     wrapper.unmount();
+    expect(visualizerTintActive.value).toBe(false);
+  });
+
+  it("lets only the canvas that asserted the flag clear it", async () => {
+    // During the fullscreen open/close handoff two canvases briefly overlap;
+    // the one tearing down must not clear a tint it never painted.
+    const tinting = mountCanvas("kitchen");
+    await flushPromises();
+    emitStreaming();
+    emitColor({ primary: [10, 20, 30] });
+    await flushPromises();
+    expect(visualizerTintActive.value).toBe(true);
+
+    const bystander = mountCanvas("living_room");
+    await flushPromises();
+    expect(visualizerTintActive.value).toBe(true);
+
+    bystander.unmount();
+    expect(visualizerTintActive.value).toBe(true);
+
+    tinting.unmount();
     expect(visualizerTintActive.value).toBe(false);
   });
 });
