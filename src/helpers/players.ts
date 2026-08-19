@@ -73,14 +73,26 @@ export const playerVisible = function (
   return true;
 };
 
-// Keep hidden players out of group pickers unless they represent this device or
-// are player types intended to be grouped with audio players.
+/**
+ * Check if the player may be offered as a group member.
+ *
+ * Hiding a player only removes it from the main listings, so it stays pickable
+ * here. Private players are the exception, because they belong to someone
+ * else's device or to the server itself: those only show up once unhidden.
+ */
 export const groupMemberPickerVisible = function (player: Player): boolean {
+  return isBuiltinPlayer(player) || !(player.hide_in_ui && player.private);
+};
+
+/**
+ * Check if the player renders a now-playing view instead of audio.
+ *
+ * Screens and visualizers share a section in the group pickers, so the UI
+ * treats them as one category.
+ */
+export const isVisualizerPlayer = function (player: Player): boolean {
   return (
-    !player.hide_in_ui ||
-    isBuiltinPlayer(player) ||
-    player.type === PlayerType.LIGHT ||
-    player.type === PlayerType.VISUALIZER
+    player.type === PlayerType.VISUALIZER || player.type === PlayerType.DISPLAY
   );
 };
 
