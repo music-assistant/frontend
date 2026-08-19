@@ -866,7 +866,6 @@
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
-        "collapse_collections": "Collapse collections",
         "exit_select_items": "Exit multi-select",
         "explicit": "Explicit",
         "filter_library": "Toggle in-library\/favorite filter",
