@@ -54,6 +54,8 @@ const SlotStub = {
 };
 
 const providerDetailsStubs = {
+  // rendered for real so this screen's advanced toggle stays assertable
+  AdvancedSettingsToggle: false,
   Badge: SlotStub,
   Card: SlotStub,
   CardContent: SlotStub,
@@ -436,7 +438,7 @@ describe("EditProvider", () => {
     );
   });
 
-  it("hides the header menu while enabled when disabling is not supported", async () => {
+  it("hides the enable/disable item while enabled when disabling is not supported", async () => {
     apiMock.providerManifests.spotify.allow_disable = false;
     apiMock.getProviderConfig.mockResolvedValue(
       spotifyConfig(ProviderStatus.LOADED),
@@ -455,8 +457,75 @@ describe("EditProvider", () => {
     });
     await flushPromises();
 
-    expect(wrapper.find('[data-testid="provider-menu"]').exists()).toBe(false);
+    expect(
+      wrapper.find('[data-testid="provider-toggle-enabled"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.get('[data-testid="provider-reset-defaults"]').text(),
+    ).toContain("settings.reset_to_defaults");
   });
+
+  it("resets the form to its defaults from the header menu", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    const resetToDefaults = vi.fn();
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          ...providerDetailsStubs,
+          EditConfig: {
+            name: "EditConfig",
+            methods: { resetToDefaults },
+            template: "<div />",
+          },
+        },
+      },
+    });
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="provider-reset-defaults"]')
+      .trigger("click");
+
+    expect(resetToDefaults).toHaveBeenCalled();
+  });
+
+  it.each([
+    { advanced: true, offered: true },
+    { advanced: false, offered: false },
+  ])(
+    "offers the advanced toggle for a config with advanced entries: $advanced",
+    async ({ advanced, offered }) => {
+      const config = spotifyConfig(ProviderStatus.LOADED);
+      config.values.account.advanced = advanced;
+      apiMock.getProviderConfig.mockResolvedValue(config);
+
+      const wrapper = shallowMount(EditProvider, {
+        props: {
+          instanceId: "spotify--test",
+        },
+        global: {
+          mocks: {
+            $t: (key: string) => key,
+          },
+          stubs: providerDetailsStubs,
+        },
+      });
+      await flushPromises();
+
+      expect(
+        wrapper.find('[data-testid="provider-advanced-settings"]').exists(),
+      ).toBe(offered);
+    },
+  );
 
   it("enables a disabled provider when disabling is not supported", async () => {
     apiMock.providerManifests.spotify.allow_disable = false;

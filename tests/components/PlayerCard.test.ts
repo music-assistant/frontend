@@ -1,5 +1,4 @@
 import PlayerCard from "@/components/PlayerCard.vue";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   IdentifierType,
   MediaType,
@@ -176,6 +175,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
@@ -201,7 +201,6 @@ function mountPlayerCard(
   props: {
     groupControlExpanded?: boolean;
     groupControlsId?: string;
-    playerMenuItems?: ContextMenuItem[];
     showDisabledGroupControl?: boolean;
     showMemberControls?: boolean;
     showSelectedIndicator?: boolean;
@@ -718,28 +717,11 @@ describe("PlayerCard", () => {
       "tooltip.more_options",
     ]);
     expect(groupControl.attributes("disabled")).toBeDefined();
-    expect(count.classes()).toContain("border-foreground/30");
-    expect(count.classes()).toContain("text-muted-foreground");
+    // the badge takes the speaker's own colour rather than an accent, so a
+    // disabled slot stays as quiet as the icon it sits on
+    expect(count.classes()).toContain("bg-muted-foreground/90");
+    expect(count.get("span").classes()).toContain("text-background");
     expect(count.classes()).not.toContain("bg-primary");
-  });
-
-  it("appends selector-specific items to the player menu", async () => {
-    vi.clearAllMocks();
-    const player = createPlayer();
-    const playerMenuItems: ContextMenuItem[] = [
-      { label: "rename" },
-      { label: "disable" },
-    ];
-    const wrapper = mountPlayerCard(player, { playerMenuItems });
-
-    await wrapper.find('[aria-label="tooltip.more_options"]').trigger("click");
-
-    expect(emitContextMenu).toHaveBeenCalledWith(
-      "contextmenu",
-      expect.objectContaining({
-        items: playerMenuItems,
-      }),
-    );
   });
 
   it("stops the native context-menu event at the card", () => {

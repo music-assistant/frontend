@@ -13,19 +13,13 @@
           </div>
           <div class="header-info">
             <div class="header-title-row">
-              <h2 class="header-title">
-                {{
-                  config.name ||
-                  api.players[config.player_id]?.name ||
-                  config.default_name
-                }}
-              </h2>
+              <h2 class="header-title">{{ getPlayerName(config) }}</h2>
               <Button
                 variant="ghost"
                 size="icon-sm"
                 class="rename-btn"
                 :title="$t('settings.player_name')"
-                @click="showRenameDialog = true"
+                @click="renamePlayer"
               >
                 <Pencil class="size-4" />
                 <span class="sr-only">{{ $t("settings.player_name") }}</span>
@@ -125,58 +119,20 @@
               </v-chip>
             </div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button
-                data-testid="player-menu"
-                variant="ghost"
-                size="icon-sm"
-                class="absolute top-4 right-4"
-                :aria-label="$t('more_options')"
-              >
-                <MoreVertical class="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                v-if="owningProvider"
-                data-testid="player-provider-settings"
-                @click="openProviderSettings"
-              >
-                <Settings class="size-4" />
-                {{
-                  $t("settings.provider_settings", {
-                    name: owningProvider.name,
-                  })
-                }}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator v-if="owningProvider" />
-              <DropdownMenuItem
-                data-testid="player-reset-defaults"
-                :disabled="!config.enabled"
-                @click="resetToDefaults"
-              >
-                <RotateCcw class="size-4" />
-                {{ $t("settings.reset_to_defaults") }}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                data-testid="player-toggle-enabled"
-                :disabled="toggleLoading"
-                @click="toggleEnabled"
-              >
-                <Power class="size-4" />
-                {{
-                  config.enabled
-                    ? $t("settings.disable")
-                    : $t("settings.enable")
-                }}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            data-testid="player-menu"
+            variant="ghost"
+            size="icon-sm"
+            class="absolute top-4 right-4"
+            aria-haspopup="menu"
+            :aria-label="$t('more_options')"
+            @click="openPlayerMenu"
+          >
+            <MoreVertical class="size-4" />
+          </Button>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel || config.enabled"
+          v-if="playerSetupLabel || showAdvancedToggle"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
@@ -187,19 +143,11 @@
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>
-          <div
-            v-if="config.enabled"
-            class="flex w-full items-center gap-2 sm:ml-auto sm:w-auto"
-          >
-            <Switch
-              id="player-advanced-settings"
-              v-model="showAdvancedSettings"
-              data-testid="player-advanced-settings"
-            />
-            <Label for="player-advanced-settings" class="cursor-pointer">
-              {{ $t("settings.show_advanced_settings") }}
-            </Label>
-          </div>
+          <AdvancedSettingsToggle
+            v-if="showAdvancedToggle"
+            v-model:show-advanced-settings="showAdvancedSettings"
+            test-id="player-advanced-settings"
+          />
         </CardContent>
       </Card>
     </div>
@@ -218,8 +166,8 @@
           size="small"
           color="warning"
           variant="flat"
-          :loading="toggleLoading"
-          @click="toggleEnabled"
+          :loading="enabling"
+          @click="enablePlayer"
         >
           {{ $t("settings.enable_player") }}
         </v-btn>
@@ -262,11 +210,16 @@
       </div>
     </v-alert>
 
+    <PlayerSettingsLinks
+      v-if="config"
+      :player-id="config.player_id"
+      class="mb-4"
+    />
+
     <edit-config
       v-if="config"
       ref="editConfig"
       v-model:show-advanced-settings="showAdvancedSettings"
-      action-layout="floating-save"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
@@ -275,38 +228,8 @@
       @immediate-apply="onImmediateApply"
     />
 
-    <!-- Rename dialog -->
-    <v-dialog v-model="showRenameDialog" max-width="400">
-      <v-card>
-        <v-card-title>{{ $t("settings.player_name") }}</v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="editName"
-            :placeholder="
-              api.players[config?.player_id!]?.name ||
-              config?.default_name ||
-              undefined
-            "
-            variant="outlined"
-            density="comfortable"
-            autofocus
-            clearable
-            @keyup.enter="saveRename"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showRenameDialog = false">
-            {{ $t("close") }}
-          </v-btn>
-          <v-btn color="primary" variant="flat" @click="saveRename">
-            {{ $t("settings.save") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
     <v-overlay
-      :model-value="loading || toggleLoading"
+      :model-value="loading || enabling"
       scrim="true"
       persistent
       style="display: flex; align-items: center; justify-content: center"
@@ -317,118 +240,86 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
   ConfigValueType,
-  DSPConfig,
+  EventMessage,
   EventType,
   PlayerConfig,
   PlayerFeature,
   PlayerType,
   IdentifierType,
 } from "@/plugins/api/interfaces";
-import EditConfig from "./EditConfig.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import PlayerIcon from "@/components/PlayerIcon.vue";
-import { watch } from "vue";
-
 import {
   ConfigEntryUI,
   HASS_CONTROL_KEY_BY_PLAYER_KEY,
   HassControlPickerEntry,
   HassControlPlayerKey,
   UI_ENTRY_TYPE,
+  hasAdvancedEntries,
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
+import { goBack } from "@/helpers/navigation";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
+import {
+  getPlayerName,
+  getPlayerSettingsMenuItems,
+} from "@/helpers/player_settings_actions";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import {
-  MoreVertical,
-  Pencil,
-  Power,
-  RefreshCw,
-  RotateCcw,
-  Settings,
-} from "@lucide/vue";
+import { MoreVertical, Pencil, RefreshCw, RotateCcw } from "@lucide/vue";
+import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
+import EditConfig from "./EditConfig.vue";
+import PlayerSettingsLinks from "./PlayerSettingsLinks.vue";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
 const showAdvancedSettings = ref(false);
-const toggleLoading = ref(false);
-const showRenameDialog = ref(false);
-const editName = ref<string | null>(null);
+const enabling = ref(false);
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
-let toggleRequestId = 0;
+let enableRequestId = 0;
 
 // props
 const props = defineProps<{
   playerId?: string;
 }>();
 
-const dspEnabled = ref(false);
-
-const loadDSPEnabled = async () => {
-  if (props.playerId) {
-    try {
-      dspEnabled.value = (await api.getDSPConfig(props.playerId)).enabled;
-    } catch (error) {
-      console.error("Error fetching DSP config:", error);
-    }
-  }
-};
-loadDSPEnabled();
-
-const unsub = api.subscribe(
-  EventType.PLAYER_DSP_CONFIG_UPDATED,
-  (evt: { data: DSPConfig }) => {
-    dspEnabled.value = evt.data.enabled;
-  },
-);
-onBeforeUnmount(unsub);
-
 const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
   if (props.playerId) void refreshPlayerConfig(props.playerId);
 });
 onBeforeUnmount(unsubProvidersUpdated);
 
+// renaming, enabling and deleting all happen through the shared menu, so pick the
+// change up from the server rather than from whoever made it
+const unsubConfigUpdated = api.subscribe(
+  EventType.PLAYER_CONFIG_UPDATED,
+  (evt: EventMessage) => {
+    if (evt.object_id && evt.object_id === props.playerId) {
+      void refreshPlayerConfig(evt.object_id);
+    }
+  },
+);
+onBeforeUnmount(unsubConfigUpdated);
+
 // computed properties
 const player = computed(() =>
   config.value ? api.players[config.value.player_id] : undefined,
 );
-
-const owningProvider = computed(() => {
-  if (!config.value) return undefined;
-  const providerId = config.value.provider;
-  const provider = api.getProvider(providerId);
-  return {
-    instanceId: provider?.instance_id ?? providerId,
-    name:
-      provider?.name ?? api.getProviderManifest(providerId)?.name ?? providerId,
-  };
-});
 
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
@@ -470,20 +361,7 @@ const config_entries = computed(() => {
     entries.push(pickerEntry);
   }
 
-  // inject a link to the DSP config if the player is not a group
-  if (player.type !== PlayerType.GROUP) {
-    entries.push({
-      injected: true,
-      key: "dsp_settings",
-      type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
-      category: "dsp",
-      label: "",
-      required: false,
-      options: [],
-      read_only: false,
-      default_value: dspEnabled.value,
-    });
-  } else if (
+  if (
     player.type === PlayerType.GROUP &&
     player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
   ) {
@@ -497,10 +375,7 @@ const config_entries = computed(() => {
       category: "dsp",
       injected: true,
     });
-  } else if (
-    player.type === PlayerType.GROUP &&
-    !player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
-  ) {
+  } else if (player.type === PlayerType.GROUP) {
     entries.push({
       key: "dsp_note_multi_device_group_unsupported",
       type: ConfigEntryType.LABEL,
@@ -509,19 +384,6 @@ const config_entries = computed(() => {
       required: false,
       options: [],
       category: "dsp",
-      injected: true,
-    });
-  }
-  // add player options should they exist
-  if (player && player.options.length > 0) {
-    entries.push({
-      key: "player_options",
-      type: ConfigEntryType.OPTIONS,
-      label: "",
-      default_value: "",
-      required: false,
-      options: [],
-      category: "options",
       injected: true,
     });
   }
@@ -538,6 +400,10 @@ const config_entries = computed(() => {
   return entries;
 });
 
+const showAdvancedToggle = computed(
+  () => !!config.value?.enabled && hasAdvancedEntries(config_entries.value),
+);
+
 // watchers
 
 watch(
@@ -549,58 +415,60 @@ watch(
   { immediate: true },
 );
 
-watch(showRenameDialog, (val) => {
-  if (val && config.value) {
-    editName.value = config.value.name || null;
-  }
-});
-
 // methods
-const saveRename = function () {
-  if (config.value) {
-    config.value.name = editName.value || null;
-  }
-  loading.value = true;
-  api
-    .savePlayerConfig(props.playerId!, { name: config.value!.name || null })
-    .finally(() => {
-      loading.value = false;
-      showRenameDialog.value = false;
-    });
-  showRenameDialog.value = false;
-};
-
-const openProviderSettings = async function () {
-  const instanceId = owningProvider.value?.instanceId;
-  const playerId = config.value?.player_id;
-  if (!instanceId || !playerId) return;
-
-  try {
-    const failure = await router.push({
-      name: "editprovider",
-      params: { instanceId },
-    });
-    if (failure && isCurrentPlayer(playerId)) {
-      toast.error(String(failure));
-    }
-  } catch (err) {
-    if (isCurrentPlayer(playerId)) toast.error(String(err));
-  }
-};
-
 const resetToDefaults = function () {
   editConfig.value?.resetToDefaults();
 };
 
-const toggleEnabled = async function () {
-  if (!config.value || toggleLoading.value) return;
+const openPlayerMenu = function (evt: MouseEvent) {
+  if (!config.value) return;
+  const menuItems = getPlayerSettingsMenuItems(config.value, {
+    // the player is gone, and with it the page showing its settings; unsaved
+    // edits have nothing left to save to, so they must not hold the way out
+    onDeleted: () => {
+      editConfig.value?.discardChanges();
+      router.replace({ name: "playersettings" });
+    },
+  });
+  // resetting acts on the form rather than on the player, so it is not part of
+  // the menu the other player surfaces share
+  menuItems.push({
+    label: "settings.reset_to_defaults",
+    action: resetToDefaults,
+    icon: markRaw(RotateCcw),
+    disabled: !config.value.enabled,
+  });
+  // a click from the keyboard carries no coordinates, so fall back to the
+  // button itself and the menu opens against it rather than in the corner
+  const trigger =
+    evt.clientX || evt.clientY
+      ? undefined
+      : (evt.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+  eventbus.emit("contextmenu", {
+    items: menuItems,
+    posX: trigger ? trigger.left : evt.clientX,
+    posY: trigger ? trigger.bottom : evt.clientY,
+  });
+};
+
+const renamePlayer = function () {
+  if (!config.value) return;
+  eventbus.emit("playerRenameDialog", {
+    playerId: config.value.player_id,
+    name: config.value.name,
+    defaultName: config.value.default_name,
+  });
+};
+
+const enablePlayer = async function () {
+  if (!config.value || enabling.value) return;
 
   const playerId = config.value.player_id;
-  const requestId = ++toggleRequestId;
-  toggleLoading.value = true;
+  const requestId = ++enableRequestId;
+  enabling.value = true;
   try {
     const updatedConfig = await api.savePlayerConfig(playerId, {
-      enabled: !config.value.enabled,
+      enabled: true,
     });
     if (!isCurrentPlayer(playerId)) return;
 
@@ -612,7 +480,7 @@ const toggleEnabled = async function () {
     toast.error(String(err));
     await refreshPlayerConfig(playerId);
   } finally {
-    if (requestId === toggleRequestId) toggleLoading.value = false;
+    if (requestId === enableRequestId) enabling.value = false;
   }
 };
 
@@ -629,10 +497,11 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   loading.value = true;
   try {
     await api.savePlayerConfig(props.playerId!, values);
-    router.back();
+    goBack(router, { name: "playersettings" });
   } catch {
     // Error toast is already shown by the API layer (handleResultMessage).
     // We just prevent navigation so the user can correct values.
+    editConfig.value?.saveFailed();
   } finally {
     loading.value = false;
   }
@@ -718,8 +587,8 @@ function resetPlayerState(playerId?: string) {
   if (config.value?.player_id === playerId) return;
   config.value = undefined;
   showAdvancedSettings.value = false;
-  toggleLoading.value = false;
-  toggleRequestId++;
+  enabling.value = false;
+  enableRequestId++;
 }
 </script>
 

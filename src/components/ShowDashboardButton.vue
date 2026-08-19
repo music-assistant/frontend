@@ -53,6 +53,14 @@
           <span>{{ $t("dashboard.disconnect", [activeSession.name]) }}</span>
         </DropdownMenuItem>
       </template>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        data-testid="cast-dashboard-get-url"
+        @click="copyDashboardUrlToClipboard"
+      >
+        <v-icon icon="mdi-link" size="16" />
+        <span>{{ $t("dashboard.get_url") }}</span>
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
@@ -81,6 +89,7 @@ import { $t } from "@/plugins/i18n";
 import { Check, TvMinimal, Unplug } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
+import { copyToClipboard } from "@/helpers/utils";
 
 const props = withDefaults(
   defineProps<{
@@ -93,6 +102,7 @@ const props = withDefaults(
     contentClass?: string;
   }>(),
   {
+    playerId: undefined,
     variant: "ghost-icon",
     buttonSize: "icon-sm",
     iconSize: 13,
@@ -129,13 +139,12 @@ const activeSession = computed(() =>
 );
 
 // Wait for API init (mount can race a hard page refresh) before fetching lists/subscribing.
-let active = false;
+let unmounted = false;
 const unsubscribers: Array<() => void> = [];
 
 onMounted(async () => {
-  active = true;
   await waitForApiInitialization();
-  if (!active) return;
+  if (unmounted) return;
 
   fetchSessions();
   loadDashboards();
@@ -149,7 +158,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  active = false;
+  unmounted = true;
   unsubscribers.forEach((unsubscribe) => unsubscribe());
 });
 
@@ -225,6 +234,19 @@ async function disconnect() {
   }
 }
 
+async function getDashboardUrl(): Promise<string> {
+  try {
+    const url = await api.sendCommand<string>("dashboard/get_url", {
+      dashboard: props.dashboard,
+      player_id: props.playerId ?? null,
+    });
+    return url ?? "";
+  } catch (error) {
+    console.error("Failed to get dashboard URL:", error);
+    return "";
+  }
+}
+
 function compareDashboards(left: DashboardDevice, right: DashboardDevice) {
   const leftProvider = left.provider_domain_hint ?? "";
   const rightProvider = right.provider_domain_hint ?? "";
@@ -243,4 +265,19 @@ function isActiveDevice(device: DashboardDevice): boolean {
   const session = activeSession.value;
   return !!session && session.dashboard_id === device.dashboard_id;
 }
+
+const copyDashboardUrlToClipboard = async function () {
+  const url = await getDashboardUrl();
+  if (!url) {
+    toast.error($t("dashboard.uri_copy_failed"));
+    return;
+  }
+
+  const success = await copyToClipboard(url);
+  if (success) {
+    toast.success($t("dashboard.uri_copied"));
+  } else {
+    toast.error($t("dashboard.uri_copy_failed"));
+  }
+};
 </script>

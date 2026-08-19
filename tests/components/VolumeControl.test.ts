@@ -22,8 +22,13 @@ vi.mock("@/plugins/api", async () => {
   return { api, default: api };
 });
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   groupMemberPickerVisible: () => true,
+}));
+
+vi.mock("@/helpers/player_group_playback", () => ({
+  requestGroupPlaybackConfirmation: () => false,
 }));
 
 vi.mock("@/layouts/default/PlayerOSD/PlayerVolume.vue", () => ({
@@ -87,6 +92,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: 25,
     group_volume_muted: false,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",

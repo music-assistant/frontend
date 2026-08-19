@@ -8,9 +8,7 @@
         <Badge variant="outline">
           {{ $t("providers.music_quiz.timeline_placed_count", [placedCount]) }}
         </Badge>
-        <Badge variant="secondary">
-          {{ completedCount }} / {{ statuses.length }}
-        </Badge>
+        <Badge>{{ completedCount }} / {{ statuses.length }}</Badge>
       </CardAction>
     </CardHeader>
     <CardContent

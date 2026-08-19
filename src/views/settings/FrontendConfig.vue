@@ -1,25 +1,21 @@
 <template>
   <div class="p-4">
     <!-- Header card -->
-    <Card class="mb-4">
-      <CardHeader class="flex flex-row items-center gap-4 pb-4">
-        <div
-          class="flex size-14 shrink-0 items-center justify-center rounded-xl bg-orange-500/10"
-        >
-          <Palette class="size-8 text-orange-500" />
-        </div>
-        <div class="flex flex-col gap-1">
-          <CardTitle>{{ $t("settings.frontend") }}</CardTitle>
-          <CardDescription>{{
-            $t("settings.frontend_description")
-          }}</CardDescription>
-        </div>
-      </CardHeader>
-    </Card>
+    <SettingsHeaderCard
+      v-model:show-advanced-settings="showAdvancedSettings"
+      :icon="Palette"
+      icon-class="text-orange-500"
+      :title="$t('settings.frontend')"
+      :description="$t('settings.frontend_description')"
+      :show-advanced-toggle="hasAdvancedEntries(config)"
+      @reset-to-defaults="resetToDefaults"
+    />
 
     <!-- Config entries -->
     <EditConfig
       v-if="config.length > 0"
+      ref="editConfig"
+      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="config"
       :disabled="false"
       @submit="onSubmit"
@@ -27,10 +23,11 @@
       @immediate-apply="onImmediateApply"
     />
 
-    <!-- Loading overlay -->
+    <!-- Loading overlay; z-index clears the player bar (2001) floating above it -->
     <div
       v-if="loading"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
+      data-testid="loading-overlay"
+      class="fixed inset-0 z-[2100] flex items-center justify-center bg-background/80"
     >
       <Spinner class="size-16" />
     </div>
@@ -42,15 +39,15 @@ import { Palette } from "@lucide/vue";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { DEVICE_SETTING_KEYS } from "@/constants";
+import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
+import {
+  MOBILE_SIDEBAR_SIDE,
+  readDeviceSetting,
+  saveDeviceSetting,
+} from "@/helpers/device_settings";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -58,14 +55,39 @@ import {
 } from "@/plugins/api/interfaces";
 import { companionMode } from "@/plugins/companion";
 import { eventbus } from "@/plugins/eventbus";
+import { getKioskModePreference } from "@/plugins/homeassistant";
 import { $t, i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import EditConfig from "./EditConfig.vue";
+import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
 // global refs
 const router = useRouter();
 const config = ref<ConfigEntry[]>([]);
+const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
+// no entry below is advanced today, so the toggle stays hidden; the wiring is what
+// makes an advanced entry reachable the moment one is added
+const showAdvancedSettings = ref(false);
+
+// The form hands back every entry on save, not just the edited ones, so the
+// values it submits are compared against these to tell a real change from a
+// re-save of what was already there. Held serialized: the form edits entry.value
+// in place, which an array or object snapshot would follow.
+let initialValues: Record<string, string> = {};
+
+const serializeValue = (value: ConfigValueType | undefined): string =>
+  JSON.stringify(value ?? null);
+
+const valueChanged = (key: string, value: ConfigValueType): boolean =>
+  serializeValue(value) !== initialValues[key];
+
+// The volume slider reads these as computed refs, so saving one takes effect
+// immediately and the reload below would achieve nothing.
+const RELOAD_EXEMPT_PREFERENCE_KEYS = new Set([
+  "volume_slider_mode",
+  "volume_haptics",
+]);
 
 onMounted(() => {
   // TODO: Remove localStorage fallbacks below once migration period is over
@@ -162,6 +184,19 @@ onMounted(() => {
       value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
     },
     {
+      key: "audiobook_chapter_progress",
+      type: ConfigEntryType.BOOLEAN,
+      label: "audiobook_chapter_progress",
+      default_value: true,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "audiobooks",
+      value:
+        (store.currentUser?.preferences
+          ?.audiobook_chapter_progress as boolean) ?? true,
+    },
+    {
       key: "mobile_sidebar_side",
       type: ConfigEntryType.STRING,
       label: "mobile_sidebar_side",
@@ -173,8 +208,49 @@ onMounted(() => {
       ],
       multi_value: false,
       category: "display_settings",
+      value: readDeviceSetting(MOBILE_SIDEBAR_SIDE) || "left",
+    },
+    {
+      // Only Home Assistant can give up its own chrome, so this is meaningless
+      // anywhere else.
+      key: "ha_kiosk_mode",
+      type: ConfigEntryType.BOOLEAN,
+      label: "ha_kiosk_mode",
+      default_value: true,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "display_settings",
+      hidden: !store.isIngressSession,
+      value: getKioskModePreference(),
+    },
+    {
+      key: "volume_slider_mode",
+      type: ConfigEntryType.STRING,
+      label: "volume_slider_mode",
+      default_value: "absolute",
+      required: false,
+      options: [
+        { title: "absolute", value: "absolute" },
+        { title: "relative", value: "relative" },
+      ],
+      multi_value: false,
+      category: "volume_control",
       value:
-        localStorage.getItem("frontend.settings.mobile_sidebar_side") || "left",
+        (store.currentUser?.preferences?.volume_slider_mode as string) ||
+        "absolute",
+    },
+    {
+      key: "volume_haptics",
+      type: ConfigEntryType.BOOLEAN,
+      label: "volume_haptics",
+      default_value: true,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "volume_control",
+      value:
+        (store.currentUser?.preferences?.volume_haptics as boolean) ?? true,
     },
   ];
 
@@ -220,9 +296,16 @@ onMounted(() => {
     }));
   }
   config.value = configEntries;
+  initialValues = Object.fromEntries(
+    configEntries.map((entry) => [entry.key, serializeValue(entry.value)]),
+  );
 });
 
 // methods
+const resetToDefaults = function () {
+  editConfig.value?.resetToDefaults();
+};
+
 const saveValues = async function (values: Record<string, ConfigValueType>) {
   const { setPreference } = useUserPreferences();
   loading.value = true;
@@ -238,17 +321,17 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
 
       if (DEVICE_SETTING_KEYS.has(key)) {
         // Save to localStorage (per-device settings)
-        const storageKey = `frontend.settings.${key}`;
         const value = values[key];
-        if (value != null) {
-          localStorage.setItem(storageKey, value.toString());
-        } else {
-          localStorage.removeItem(storageKey);
-        }
+        saveDeviceSetting(key, value != null ? value.toString() : null);
       } else {
         // Save to backend via user preferences
         await setPreference(key, values[key]);
-        hasPerUserChanges = true;
+        if (
+          !RELOAD_EXEMPT_PREFERENCE_KEYS.has(key) &&
+          valueChanged(key, values[key])
+        ) {
+          hasPerUserChanges = true;
+        }
       }
     }
 
@@ -263,6 +346,7 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
   } catch (error) {
     console.error("Failed to save settings:", error);
     loading.value = false;
+    editConfig.value?.saveFailed();
   }
 };
 
@@ -284,7 +368,7 @@ const onAction = async function (
 
 const onImmediateApply = function (values: Record<string, ConfigValueType>) {
   for (const key in values) {
-    localStorage.setItem(`frontend.settings.${key}`, String(values[key]));
+    saveDeviceSetting(key, String(values[key]));
   }
 };
 </script>

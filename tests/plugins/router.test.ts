@@ -1,17 +1,22 @@
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import { ConnectionState } from "@/plugins/api";
 import { routes } from "@/plugins/router";
-import type {
-  NavigationGuardNext,
-  NavigationGuardWithThis,
-  RouteLocationNormalizedLoaded,
-  RouteRecordRaw,
-  Router,
-  RouterOptions,
+import {
+  NavigationFailureType,
+  type NavigationFailure,
+  type NavigationGuardNext,
+  type NavigationGuardWithThis,
+  type NavigationHookAfter,
+  type RouteLocationNormalizedLoaded,
+  type RouteRecordRaw,
+  type Router,
+  type RouterOptions,
 } from "vue-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  afterEachHooks: [] as NavigationHookAfter[],
   apiState: { value: "initialized" },
   globalGuards: [] as NavigationGuardWithThis<undefined>[],
   isDashboardViewer: vi.fn(() => false),
@@ -76,6 +81,11 @@ vi.mock("vue-router", async () => {
         mocks.globalGuards.push(guard);
         return addGuard(guard);
       };
+      const addAfterEachHook = router.afterEach.bind(router);
+      router.afterEach = (hook) => {
+        mocks.afterEachHooks.push(hook);
+        return addAfterEachHook(hook);
+      };
       mocks.router = router;
       return router;
     },
@@ -85,6 +95,29 @@ vi.mock("vue-router", async () => {
 const partyGuard = beforeEnterGuard("party");
 const aiRadioGuard = beforeEnterGuard("ai-radio");
 const globalGuard = globalNavigationGuard();
+
+const PLAYER_SETTINGS_ROUTES = [
+  {
+    name: "editplayer",
+    path: "/settings/editplayer/player-1",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editplayerdsp",
+    path: "/settings/editplayer/player-1/dsp",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editplayeroptions",
+    path: "/settings/editplayer/player-1/options",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editqueue",
+    path: "/settings/editqueue/player-1",
+    params: { queueId: "player-1" },
+  },
+];
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -150,6 +183,18 @@ describe("music quiz dashboard route", () => {
     expect(resolveRoute("/music-quiz/dashboard").name).toBe(
       "music-quiz-dashboard",
     );
+  });
+});
+
+describe("party dashboard route", () => {
+  // the layout reads this to hand the dashboard its container whole, so the
+  // flag has to reach it through the route the layout is mounted by
+  it("asks the layout for a container it can fill", () => {
+    const dashboardRoute = routes
+      .find((route) => route.path === "/party")
+      ?.children?.find((route) => route.name === "party");
+
+    expect(dashboardRoute?.meta?.partyView).toBe(true);
   });
 });
 
@@ -251,6 +296,19 @@ describe("AI Radio guard", () => {
       "providers.ai_radio.toast.unavailable",
     );
   });
+});
+
+describe("player settings routes", () => {
+  it.each(PLAYER_SETTINGS_ROUTES)(
+    "opens $name on a page of its own",
+    ({ name, path, params }) => {
+      const route = resolveRoute(path);
+
+      // a redirect record would resolve without a name of its own
+      expect(route.name).toBe(name);
+      expect(route.params).toMatchObject(params);
+    },
+  );
 });
 
 describe("global navigation guard", () => {
@@ -401,6 +459,117 @@ describe("global navigation guard", () => {
   });
 });
 
+describe("media details back button", () => {
+  // A details view opened directly has no history to return to, so the back
+  // button goes up to the listing above it instead. Both ends come out of the
+  // route table here, so a details route added without a target fails rather
+  // than quietly landing on discover.
+  const detailRoutes = mediaDetailRoutes(routes);
+
+  it("finds the media details routes to check", () => {
+    // guards the discovery below against silently matching nothing
+    expect(detailRoutes.length).toBeGreaterThanOrEqual(9);
+  });
+
+  // the views that fall back somewhere fixed name it inline, so a rename in
+  // the route table would otherwise strand them silently
+  it.each(["discover", "settings", "playersettings"])(
+    "keeps %s reachable for the views that fall back to it",
+    (name) => {
+      expect(findRouteRecord(name, routes)?.name).toBe(name);
+    },
+  );
+
+  it.each(detailRoutes)(
+    "goes up from $name to $listing",
+    ({ name, listing }) => {
+      const push = vi.fn<(to: { name: string }) => void>();
+
+      backFromMediaDetails({
+        back: vi.fn(),
+        push,
+        currentRoute: { value: { name } },
+        options: { history: { state: { back: null } } },
+      } as unknown as Router);
+
+      expect(push).toHaveBeenCalledWith({ name: listing });
+    },
+  );
+});
+
+describe("chunk loading recovery", () => {
+  let location = locationStub();
+
+  beforeEach(() => {
+    location = locationStub();
+    vi.stubGlobal("location", location);
+    // both branches of the recovery log
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(console.warn).mockRestore();
+    vi.mocked(console.error).mockRestore();
+  });
+
+  // Moving the hash is a same-document navigation, so the reload is what
+  // refetches the app, and it has to come second to keep the intended route.
+  it("reloads onto the intended route when its chunk is gone", async () => {
+    await failNavigationWithChunkError("/artists");
+
+    expect(location.hash).toBe("#/artists");
+    expect(location.steps).toEqual(["hash", "reload"]);
+  });
+
+  // how a cached index.html hits this: the app opens straight onto the route
+  // whose chunk the update replaced
+  it("reloads when the app opened on the failing route", async () => {
+    location.hash = "#/artists";
+    location.steps.length = 0;
+
+    await failNavigationWithChunkError("/artists");
+
+    expect(location.hash).toBe("#/artists");
+    expect(location.steps).toEqual(["hash", "reload"]);
+  });
+
+  it("stops reloading while the chunk keeps failing", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.steps.length = 0;
+
+    await failNavigationWithChunkError("/albums");
+    await failNavigationWithChunkError("/tracks");
+
+    expect(location.steps).toEqual([]);
+  });
+
+  it("recovers again after a later update", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.steps.length = 0;
+    runAfterEachHooks();
+
+    await failNavigationWithChunkError("/albums");
+
+    expect(location.hash).toBe("#/albums");
+    expect(location.steps).toEqual(["hash", "reload"]);
+  });
+
+  it("keeps blocking reloads while no navigation completed", async () => {
+    await failNavigationWithChunkError("/artists");
+    location.steps.length = 0;
+    // only the presence of a failure matters to the hook
+    runAfterEachHooks({
+      type: NavigationFailureType.aborted,
+    } as unknown as NavigationFailure);
+
+    await failNavigationWithChunkError("/albums");
+
+    expect(location.steps).toEqual([]);
+  });
+});
+
 /**
  * Build a navigation target for a guard.
  *
@@ -427,6 +596,62 @@ function invokeGuard(
 }
 
 /**
+ * Stand in for window.location, recording the order of what is done to it.
+ */
+function locationStub() {
+  const steps: string[] = [];
+  let hash = "#/discover";
+  return {
+    steps,
+    get hash() {
+      return hash;
+    },
+    set hash(value: string) {
+      // a real Location normalises the assignment the same way
+      hash = value.startsWith("#") ? value : `#${value}`;
+      steps.push("hash");
+    },
+    // navigating by URL only moves the fragment, so a recovery doing that names
+    // itself here instead of failing on an empty step list
+    set href(value: string) {
+      steps.push("href");
+    },
+    reload: () => {
+      steps.push("reload");
+    },
+  };
+}
+
+/**
+ * Navigate to a route whose chunk is no longer on the server.
+ */
+async function failNavigationWithChunkError(fullPath: string) {
+  if (!mocks.router) {
+    throw new Error("The router module did not create a router");
+  }
+  const removeGuard = mocks.router.beforeEach(() => {
+    throw new Error(
+      "Failed to fetch dynamically imported module: /assets/index-Bq1xY2z3.js",
+    );
+  });
+  await mocks.router.push(fullPath).catch(() => {});
+  removeGuard();
+  // the mock records every guard, so drop this one from that list as well
+  mocks.globalGuards.pop();
+}
+
+/**
+ * Run the router's afterEach hooks the way a finished navigation does.
+ */
+function runAfterEachHooks(failure?: NavigationFailure) {
+  const to = resolveRoute("/artists");
+  const from = resolveRoute("/discover");
+  for (const hook of mocks.afterEachHooks) {
+    hook.call(undefined, to, from, failure);
+  }
+}
+
+/**
  * Wrap a guard result so a test can tell whether the guard is still waiting.
  */
 function trackGuard<T>(result: Promise<T>) {
@@ -446,6 +671,35 @@ function beforeEnterGuard(name: string): NavigationGuardWithThis<undefined> {
     throw new Error(`Route "${name}" has no single beforeEnter guard`);
   }
   return guard;
+}
+
+/**
+ * Every media details route paired with the listing it sits under.
+ *
+ * A details route is a provider-scoped child of a library section, and that
+ * section's index route is the listing above it.
+ */
+function mediaDetailRoutes(
+  records: RouteRecordRaw[],
+): { name: string; listing: string }[] {
+  const found: { name: string; listing: string }[] = [];
+  for (const record of records) {
+    const children = "children" in record ? record.children : undefined;
+    if (!children) continue;
+
+    const listing = children.find((child) => child.path === "")?.name;
+    if (typeof listing === "string") {
+      for (const child of children) {
+        if (
+          child.path.startsWith(":provider/") &&
+          typeof child.name === "string"
+        )
+          found.push({ name: child.name, listing });
+      }
+    }
+    found.push(...mediaDetailRoutes(children));
+  }
+  return found;
 }
 
 function findRouteRecord(

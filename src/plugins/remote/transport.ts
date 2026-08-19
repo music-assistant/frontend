@@ -45,10 +45,12 @@ export interface ITransport {
   ): void;
 
   /**
-   * Create a new DataChannel for sendspin (WebRTC transports only).
+   * Open an additional DataChannel alongside the API one (WebRTC transports only).
    * Returns null for non-WebRTC transports.
+   *
+   * @param label - Channel label the server routes on, e.g. "sendspin".
    */
-  createSendspinDataChannel?(): Promise<RTCDataChannel | null>;
+  openDataChannel?(label: string): Promise<RTCDataChannel | null>;
 }
 
 /**

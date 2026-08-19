@@ -273,8 +273,6 @@
                 "help": "将声音向左或右扬声器偏移。仅适用于立体声音频。"
             }
         },
-        "dsp_enabled": "DSP 已启用",
-        "dsp_disabled": "DSP 已禁用",
         "dsp_note_multi_device_group": {
             "label": "您可以为每个播放器单独配置 DSP。"
         },
@@ -434,7 +432,6 @@
         "remote_access_qr_code": "二维码",
         "remote_access_qr_code_description": "使用手机摄像头扫描即可立即连接。",
         "reset_to_defaults": "重置为默认值",
-        "reset_to_defaults_confirm": "您确定要将所有设置重置为默认值吗？此操作将立即保存更改。",
         "unsaved_changes": "未保存的更改",
         "unsaved_changes_message": "您有未保存的更改。您确定要不保存就离开吗？",
         "stay": "停留",
@@ -648,7 +645,6 @@
         "open_provider_link": "在提供程序的网站上打开此项目",
         "collapse_expand": "折叠\/展开此列表",
         "back": "返回",
-        "show_menu": "显示\/隐藏菜单",
         "search_filter_active": "筛选搜索的结果",
         "play_sample": "播放示例",
         "album_type": "唱片集类型",
@@ -1424,9 +1420,6 @@
             "playback_summary_remote": "远程 · 玩家使用自己的设备收听",
             "playback_venue_unavailable": "场地模式不可用。",
             "playback_remote_unavailable": "远程模式不可用。",
-            "speaker": "扬声器",
-            "choose_speaker": "选择一个扬声器",
-            "no_available_speakers": "未找到可用扬声器。请使用远程模式或检查播放器设置。",
             "no_playback_modes": "没有可用的播放模式。请检查您的音乐问答设置。",
             "loading_playback_options": "正在加载播放选项...",
             "error_load_playback_options": "无法加载播放选项",
@@ -1451,9 +1444,6 @@
             "return_to_host_panel": "返回主机面板"
         },
         "ai_radio": {
-            "customize": {
-                "prompt_placeholders_hint": "可用占位符： {placeholders}"
-            },
             "fields": {
                 "shuffle_playlist_tracks": "随机播放列表曲目"
             },

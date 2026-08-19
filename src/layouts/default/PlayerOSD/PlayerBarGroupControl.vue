@@ -30,32 +30,36 @@
           data-player-group-trigger
           variant="ghost"
           :class="[
-            navigation
-              ? 'player-control-button mobile-navigation-item min-w-0 flex-1 rounded-none px-1'
-              : 'player-control-button player-bar-action player-bar-group-button h-20 w-[72px] rounded-none px-1',
+            'player-control-button rounded-none px-1',
+            floating
+              ? 'size-11 rounded-full me-3'
+              : 'player-bar-action player-bar-group-button h-20 w-[72px]',
           ]"
           :data-active="open"
           :data-suppress-hover="suppressHover"
-          :aria-label="$t('tooltip.group_members')"
-          :aria-pressed="open"
-          @click.capture="handleTriggerClick"
-          @pointerleave="suppressHover = false"
+          :aria-label="groupMembersLabel"
+          @pointerenter="onPointerEnter"
         >
-          <span
-            :class="
-              navigation ? 'mobile-navigation-icon' : 'player-bar-action-icon'
-            "
-          >
-            <GroupedPlayers :stroke-width="1.4" class="size-7" />
+          <span v-if="floating" class="inline-flex">
+            <!-- matches the track menu beside it in the floating bar -->
+            <PlayerGroupIcon
+              :count="memberCount"
+              :stroke-width="1.5"
+              class="size-8"
+            />
           </span>
-          <span
-            :class="
-              navigation ? 'mobile-navigation-label' : 'player-bar-action-label'
-            "
-          >
-            {{ memberCount }}
-            {{ memberCount === 1 ? $t("player_type.player") : $t("players") }}
-          </span>
+          <template v-else>
+            <span class="player-bar-action-icon">
+              <PlayerGroupIcon
+                :count="memberCount"
+                :stroke-width="1.4"
+                class="size-7"
+              />
+            </span>
+            <span class="player-bar-action-label">
+              {{ memberCountLabel }}
+            </span>
+          </template>
         </Button>
       </PopoverTrigger>
 
@@ -63,17 +67,13 @@
         data-player-panel
         side="top"
         align="end"
-        :side-offset="
-          store.mobileLayout
-            ? MOBILE_PLAYER_BAR_POPOUT_GAP
-            : DESKTOP_PLAYER_BAR_POPOUT_GAP
-        "
-        :collision-padding="8"
+        :side-offset="PLAYER_BAR_POPOUT_GAP"
+        :collision-padding="PLAYER_BAR_POPOUT_COLLISION_PADDING"
         :class="[
           'player-bar-popout player-group-popover flex flex-col gap-0 overflow-hidden p-0',
           store.mobileLayout
-            ? 'max-h-[75dvh] w-[calc(100vw-1rem)]'
-            : 'max-h-[min(70dvh,600px)] w-[400px] max-w-[calc(100vw-1rem)]',
+            ? 'w-[calc(100vw-2*var(--player-bar-popout-inset-x)-var(--device-inset-left)-var(--device-inset-right))]'
+            : 'w-[400px] max-w-[calc(100vw-2*var(--player-bar-popout-inset-x)-var(--device-inset-left)-var(--device-inset-right))]',
         ]"
         @open-auto-focus="preventAutoFocus"
         @interact-outside="handleInteractOutside"
@@ -92,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { GroupedPlayers } from "@/components/ma-icons";
+import PlayerGroupIcon from "@/components/PlayerGroupIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -100,9 +100,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
 import {
-  DESKTOP_PLAYER_BAR_POPOUT_GAP,
-  MOBILE_PLAYER_BAR_POPOUT_GAP,
+  PLAYER_BAR_POPOUT_COLLISION_PADDING,
+  PLAYER_BAR_POPOUT_GAP,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
@@ -110,24 +111,29 @@ import {
   canEditPlayerGroup,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
+  isVisualizerPlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 import PlayerGroupPanel from "./PlayerGroupPanel.vue";
 
 withDefaults(
   defineProps<{
-    navigation?: boolean;
+    /** compact round trigger for the floating mobile player */
+    floating?: boolean;
   }>(),
   {
-    navigation: false,
+    floating: false,
   },
 );
 
 const open = ref(false);
-const suppressHover = ref(false);
+const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
+  () => open.value,
+);
 const filter = ref<PlayerGroupFilter>("all");
 const player = computed(() => store.activePlayer);
 const canEditGroup = computed(
@@ -135,6 +141,17 @@ const canEditGroup = computed(
 );
 const memberCount = computed(() =>
   player.value ? getPlayerGroupMemberCount(player.value) : 0,
+);
+const memberCountLabel = computed(
+  () =>
+    `${memberCount.value} ${
+      memberCount.value === 1 ? $t("player_type.player") : $t("players")
+    }`,
+);
+// the spoken label has to contain the button's visible text, so it leads with
+// the purpose and keeps the member count; reka-ui names the panel after it too
+const groupMembersLabel = computed(
+  () => `${$t("tooltip.group_members")}: ${memberCountLabel.value}`,
 );
 const groupMembers = computed(() => {
   if (!player.value) return [];
@@ -175,9 +192,7 @@ const hasLights = computed(() =>
   ),
 );
 const hasVisualizers = computed(() =>
-  groupCandidates.value.some(
-    (candidate) => candidate.type === PlayerType.VISUALIZER,
-  ),
+  groupCandidates.value.some((candidate) => isVisualizerPlayer(candidate)),
 );
 
 watch(
@@ -197,10 +212,6 @@ watch([hasLights, hasVisualizers], () => {
 function handleOpenChange(value: boolean) {
   open.value = value;
   if (!value) filter.value = "all";
-}
-
-function handleTriggerClick() {
-  suppressHover.value = open.value;
 }
 
 function preventAutoFocus(event: Event) {
@@ -224,14 +235,16 @@ function handleInteractOutside(event: Event) {
 
 <style>
 .player-group-backdrop-desktop {
-  bottom: 104px !important;
+  bottom: var(--bottom-bars-height) !important;
 }
 
 .player-group-backdrop-mobile {
   bottom: var(--mobile-navigation-height) !important;
 }
 
-.player-group-popover {
+/* the paired class outweighs the equally-!important z-index utility the popover
+   component carries */
+.player-bar-popout.player-group-popover {
   z-index: 998 !important;
 }
 </style>

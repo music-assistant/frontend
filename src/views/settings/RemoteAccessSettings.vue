@@ -362,6 +362,10 @@ const switching = ref(false);
 const remoteAccessInfo = ref<RemoteAccessInfo | null>(null);
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 
+// Set by the unmount hook, so the startup below can tell that the view it is
+// setting things up for is already gone.
+let unmounted = false;
+
 // Split remote ID into 4 parts: 8-5-5-8 characters
 const remoteIdLengths = [8, 5, 5, 8];
 const remoteIdParts = computed(() => {
@@ -377,12 +381,17 @@ const remoteIdParts = computed(() => {
 
 onMounted(async () => {
   await loadRemoteAccessInfo();
+  // The first load can outlast the view, and the unmount hook only reaches
+  // what was already set up by the time it ran.
+  if (unmounted) return;
+
   pollInterval = setInterval(async () => {
     await loadRemoteAccessInfo(true);
   }, 5000);
 });
 
 onUnmounted(() => {
+  unmounted = true;
   if (pollInterval) {
     clearInterval(pollInterval);
     pollInterval = null;

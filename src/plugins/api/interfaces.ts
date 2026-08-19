@@ -693,6 +693,10 @@ export interface ConfigEntry {
   help_link?: string | null;
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
+  // expanded_options [optional]: render the options inline - all of them, with their
+  // descriptions, visible at once (e.g. as a radio group) - instead of behind a dropdown.
+  // Ignored when the entry has no options or is multi_value.
+  expanded_options?: boolean;
   // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
   // as unmet. While unmet, input types and ACTION stay visible but render disabled;
   // DIVIDER/LABEL/ALERT/IMAGE have nothing to disable, so they are hidden instead.
@@ -975,7 +979,9 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem {}
+export interface Radio extends MediaItem {
+  is_dynamic: boolean;
+}
 
 export interface SoundEffect extends MediaItem {
   duration: number;
@@ -1062,6 +1068,7 @@ export interface RecommendationFolder extends BrowseFolder {
   items: MediaItemTypeOrItemMapping[];
   enabled_by_default: boolean;
   type: RecommendationFolderType;
+  supports_provider_filter: boolean;
 }
 
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {
@@ -1339,6 +1346,13 @@ export interface PlayerSoundMode {
   passive: boolean;
 }
 
+// TTS engine that can speak an announcement; its name is already
+// formatted for display as "<provider> | <engine>".
+export interface AnnouncementTtsEngine {
+  uid: string;
+  name: string;
+}
+
 export interface PlayerOptionEntry {
   key: string;
   name: string;
@@ -1402,6 +1416,10 @@ export interface Player {
   group_volume: number | null;
   group_volume_muted: boolean | null;
   hide_in_ui: boolean;
+  // private: the player belongs to a single device (a web/app client) or is an
+  // internal anchor; together with hide_in_ui it keeps the player out of the
+  // pickers on every other device
+  private: boolean;
   icon: string;
   power_control: string;
   volume_control: string;
@@ -1806,10 +1824,19 @@ export interface AIRadioSectionOrderRule {
   flow: AIRadioFlowItem[];
 }
 
-export interface AIRadioStationGeneral {
+export interface AIRadioHost {
+  id: string;
+  name: string;
   instructions: string;
-  weather_provider: string;
-  weather_timeout_seconds: number;
+  // tts_engine: "" means use the provider default engine
+  tts_engine: string;
+  // language: "" means follow the server language
+  language: string;
+  // options: free-form key/value pairs passed straight through to the TTS engine
+  options: Record<string, unknown>;
+  section_ids: string[];
+  section_order: AIRadioSectionOrderRule[];
+  merge_section_id: string;
 }
 
 export interface AIRadioStation {
@@ -1820,16 +1847,13 @@ export interface AIRadioStation {
   default_player_id?: string;
   max_duration_minutes?: number;
   shuffle_source_tracks?: boolean;
-  merge_section_id?: string;
-  general?: AIRadioStationGeneral;
-  section_ids?: string[];
-  sections?: AIRadioSection[];
-  section_order?: AIRadioSectionOrderRule[];
+  host_id: string;
 }
 
 export interface AIRadioSession {
   session_id: string;
   station_id: string;
+  queue_id: string | null;
   status: "running" | "completed" | "failed" | "stopped";
   created_at: string;
   started_at: string | null;

@@ -264,8 +264,6 @@
                 }
             }
         },
-        "dsp_enabled": "Le DSP est activé",
-        "dsp_disabled": "Le DSP est désactivé",
         "dsp_note_multi_device_group": {
             "label": "Vous pouvez configurer le DSP pour chaque lecteur individuellement."
         },
@@ -282,7 +280,7 @@
         "playerprovider": "Fournisseur de lecteur",
         "plugin": "Plugin",
         "pluginprovider": "Fournisseur de plugins",
-        "providers_total": "{0} fournisseur{1} au total",
+        "providers_total": "{count} fournisseur au total | {count} fournisseurs au total",
         "stage": {
             "label": "Status",
             "options": {
@@ -401,7 +399,7 @@
         "players_count": "{0} lecteur{1}",
         "one_player": "1 lecteur",
         "view_players": "Voir les lecteurs",
-        "players_total": "{0} lecteur{1} au total",
+        "players_total": "{count} lecteur au total | {count} lecteurs au total",
         "api_docs": "Documentation de l'API",
         "no_group_providers": "Vous ne disposez actuellement d'aucun fournisseur prenant en charge la création de groupes.",
         "provider_codeowners": "Ce fournisseur est fourni\/maintenu par",
@@ -424,7 +422,6 @@
         "remote_access_qr_code": "Code QR",
         "remote_access_qr_code_description": "Scannez avec l'appareil photo de votre téléphone pour vous connecter instantanément.",
         "reset_to_defaults": "Réinitialisation aux valeurs par défaut",
-        "reset_to_defaults_confirm": "Êtes-vous sûr de vouloir rétablir tous les paramètres à leurs valeurs par défaut ? Les modifications seront enregistrées immédiatement.",
         "unsaved_changes": "Modifications non enregistrées",
         "unsaved_changes_message": "Vous avez des modifications non enregistrées. Êtes-vous sûr de vouloir quitter sans enregistrer ?",
         "stay": "Rester",
@@ -546,7 +543,6 @@
         "open_provider_link": "Ouvrir cet élément sur le site web du fournisseur",
         "collapse_expand": "Réduire\/développer cette liste",
         "back": "Précédent",
-        "show_menu": "Afficher\/masquer le menu",
         "search_filter_active": "Les résultats de la recherche sont filtrés",
         "play_sample": "Jouer un extrait",
         "album_type": "Type d'album",
@@ -865,6 +861,7 @@
     "genre": "Genre",
     "genres": "Genres",
     "background_tasks": {
+        "total": "{count} tâches en arrière-plan | {count} tâches en arrière-plan",
         "toast": {
             "cancel_requested": "Annulation demandée pour {0}.",
             "cancel_failed": "Échec de l'annulation de {0}.",

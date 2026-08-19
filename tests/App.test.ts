@@ -5,6 +5,7 @@ import {
   UserRole,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
+import { saveDeviceSetting } from "@/helpers/device_settings";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -17,8 +18,11 @@ const {
   authManagerMock,
   guestType,
   i18nMock,
+  haStateMock,
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
+  mockSubscribeToHAProperties,
+  mockGetKioskModePreference,
   mockProxyEnsureReady,
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
@@ -91,8 +95,11 @@ const {
         t: (key: string) => key,
       },
     },
+    haStateMock: { isSubscribed: false, kioskModeEnabled: false },
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
+    mockSubscribeToHAProperties: vi.fn(),
+    mockGetKioskModePreference: vi.fn(() => true),
     mockProxyEnsureReady: vi.fn(),
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
@@ -114,7 +121,6 @@ const {
         | undefined,
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
-      isInPWAMode: false,
       isIngressSession: false,
       isOnboarding: false,
       serverInfo: undefined as unknown,
@@ -185,6 +191,13 @@ vi.mock("@/plugins/web_player", () => ({
 
 vi.mock("@/plugins/companion", () => ({
   initializeCompanionIntegration: mockInitializeCompanionIntegration,
+}));
+
+vi.mock("@/plugins/homeassistant", () => ({
+  haState: haStateMock,
+  subscribeToHAProperties: mockSubscribeToHAProperties,
+  unsubscribeFromHAProperties: vi.fn(),
+  getKioskModePreference: mockGetKioskModePreference,
 }));
 
 vi.mock("@/plugins/remote", () => ({
@@ -317,6 +330,9 @@ describe("App initialization", () => {
     mockProxyEnsureReady.mockResolvedValue(undefined);
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
+    haStateMock.isSubscribed = false;
+    haStateMock.kioskModeEnabled = false;
+    mockGetKioskModePreference.mockReturnValue(true);
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
@@ -391,6 +407,17 @@ describe("App initialization", () => {
     },
   );
 
+  it("follows the force mobile layout setting without a reload", async () => {
+    wrapper = await mountApp();
+    expect(storeMock.forceMobileLayout).toBe(false);
+
+    saveDeviceSetting("force_mobile_layout", "true");
+    expect(storeMock.forceMobileLayout).toBe(true);
+
+    saveDeviceSetting("force_mobile_layout", null);
+    expect(storeMock.forceMobileLayout).toBe(false);
+  });
+
   it("keeps full initialization and plugin discovery for regular users", async () => {
     wrapper = await mountApp();
 
@@ -414,14 +441,24 @@ describe("App initialization", () => {
       ProviderType.PLUGIN,
       "ai_radio",
     );
+    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
+      4,
+      ProviderType.PLUGIN,
+      "milkdrop_visualizer",
+    );
     expect(storeMock.enabledPlugins).toEqual(
-      new Set<string>(["party", "music_quiz", "ai_radio"]),
+      new Set<string>([
+        "party",
+        "music_quiz",
+        "ai_radio",
+        "milkdrop_visualizer",
+      ]),
     );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
     expectStartupDataRequestedBeforeReveal();
 
     await signalProvidersUpdated();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(6);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
   });
 
@@ -441,7 +478,7 @@ describe("App initialization", () => {
     serverState.resolve();
     await flushPromises();
     expectLibraryCountsCalled();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(3);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(4);
     // The plugin lookups are still in flight: revealing the app here would
     // render it with an unknown set of enabled plugins.
     expect(apiMock.state.value).not.toBe("initialized");
@@ -650,6 +687,68 @@ describe("App initialization", () => {
     expect(sessionStorage.getItem("ma_guest_session_ended")).toBeNull();
     expect(authManagerMock.clearGuestSession).not.toHaveBeenCalled();
     expect(apiMock.requireAuthentication).toHaveBeenCalledOnce();
+  });
+
+  it("takes the safe area padding over in an ingress session", async () => {
+    storeMock.isIngressSession = true;
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
+      handleSafeArea: true,
+      kioskMode: true,
+    });
+  });
+
+  it("leaves the Home Assistant chrome up when kiosk mode is turned off", async () => {
+    storeMock.isIngressSession = true;
+    mockGetKioskModePreference.mockReturnValue(false);
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).toHaveBeenCalledWith({
+      handleSafeArea: true,
+      kioskMode: false,
+    });
+  });
+
+  it("keeps a way back to Home Assistant while the server is away", async () => {
+    haStateMock.kioskModeEnabled = true;
+    wrapper = await mountApp();
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(false);
+
+    // This screen replaces the whole app, sidebar and all, and kiosk mode has
+    // left Home Assistant nothing on screen either: without this the panel is a
+    // spinner with nowhere to go for as long as the server stays away.
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(true);
+  });
+
+  it("leaves the escape button off while Home Assistant shows its own menu", async () => {
+    haStateMock.kioskModeEnabled = false;
+    wrapper = await mountApp();
+
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(false);
+  });
+
+  it("leaves the safe area to the host outside an ingress session", async () => {
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).not.toHaveBeenCalled();
+  });
+
+  it("keeps the safe area subscription it already has across a reconnect", async () => {
+    storeMock.isIngressSession = true;
+    haStateMock.isSubscribed = true;
+
+    wrapper = await mountApp();
+
+    expect(mockSubscribeToHAProperties).not.toHaveBeenCalled();
   });
 
   it("re-authenticates an ingress session through the proxy on reconnect", async () => {

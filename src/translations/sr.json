@@ -267,8 +267,6 @@
                 "concert_pitch_432": "А = 432 Hz"
             }
         },
-        "dsp_enabled": "„DSP“ је омогућен",
-        "dsp_disabled": "„DSP“ је онемогућен",
         "dsp_note_multi_device_group": {
             "label": "Можете конфигурисати „DSP“ за сваки плејер појединачно."
         },
@@ -428,7 +426,6 @@
         "remote_access_qr_code": "„QR“ код",
         "remote_access_qr_code_description": "Скенирајте камером свог телефона да се одмах повежете.",
         "reset_to_defaults": "Ресетуј на подразумевано",
-        "reset_to_defaults_confirm": "Да ли сте сигурни да желите да ресетујете сва подешавања на њихове подразумеване вредности? Ово ће одмах сачувати измене.",
         "unsaved_changes": "Несачуване измене",
         "unsaved_changes_message": "Имате несачуване измене. Да ли сте сигурни да желите да напустите без чувања?",
         "stay": "Остани",
@@ -656,7 +653,6 @@
         "open_provider_link": "Отворите ову ставку на веб локацији провајдера",
         "collapse_expand": "Скупи\/прошири ову листу",
         "back": "Назад",
-        "show_menu": "Прикажи\/сакриј мени",
         "search_filter_active": "Претрага тренутно филтрира резултате",
         "play_sample": "Пусти узорак",
         "album_type": "Тип албума",
@@ -1376,9 +1372,6 @@
             "playback_summary_remote": "Удаљено – Играчи слушају сами за себе",
             "playback_venue_unavailable": "Режим локације је недоступан.",
             "playback_remote_unavailable": "Удаљени режим је недоступан.",
-            "speaker": "Звучник",
-            "choose_speaker": "Изаберите звучник",
-            "no_available_speakers": "Додајте препоручене песме мимо изабраних извора ради веће разноврсности.",
             "no_playback_modes": "Нема доступних режима репродукције. Проверите подешавања музичког квиза.",
             "loading_playback_options": "Учитавање опција репродукције...",
             "error_load_playback_options": "Није успело учитавање опција репродукције",
@@ -1430,15 +1423,11 @@
             "card": {
                 "play": "Пусти",
                 "stop": "Заустави",
-                "stopping": "Заустављање...",
                 "customize": "Прилагоди",
                 "duplicate": "Дуплирај",
                 "delete": "Обриши",
                 "status_failed": "Неуспешно {0}",
                 "start_failed": "Покретање није успело: {0}"
-            },
-            "phase": {
-                "fetch_source_tracks": "Преузимање нумера…"
             },
             "create": {
                 "playlist_label": "Изворна плејлиста",
@@ -1450,11 +1439,6 @@
                 "creating": "Креирање…",
                 "validation": {
                     "playlist_required": "Изаберите изворну плејлисту"
-                }
-            },
-            "presets": {
-                "minimal_dj": {
-                    "name": "Минималистички ди-џеј"
                 }
             },
             "customize": {

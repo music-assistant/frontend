@@ -57,7 +57,7 @@
       :player="player"
       :members="members"
       :filter="filter"
-      :group-heading="$t('speakers_in_group')"
+      :group-heading="$t('players_in_group')"
       :show-separator="false"
     />
   </div>

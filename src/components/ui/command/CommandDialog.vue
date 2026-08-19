@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import type { DialogRootEmits, DialogRootProps } from "reka-ui";
 import { useForwardPropsEmits } from "reka-ui";
 import Command from "./Command.vue";
@@ -29,7 +30,10 @@ const forwarded = useForwardPropsEmits(props, emits);
 
 <template>
   <Dialog v-slot="slotProps" v-bind="forwarded">
-    <DialogContent class="overflow-hidden p-0">
+    <DialogContent
+      class="overflow-hidden p-0"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
+    >
       <DialogHeader class="sr-only">
         <DialogTitle>{{ title }}</DialogTitle>
         <DialogDescription>{{ description }}</DialogDescription>

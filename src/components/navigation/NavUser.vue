@@ -128,9 +128,3 @@ const handleLogout = () => {
     </SidebarMenuItem>
   </SidebarMenu>
 </template>
-
-<style scoped>
-.ha-menu-arrow {
-  color: rgb(var(--v-theme-primary, 3, 169, 244)) !important;
-}
-</style>

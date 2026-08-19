@@ -27,8 +27,6 @@
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @open-dsp="openDspConfig"
-          @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
           @set-entry-value="onEntryValueSet"
         />
@@ -49,8 +47,6 @@
       @action="onEntryAction"
       @help="onEntryHelp"
       @toggle-password="showPasswordValues = !showPasswordValues"
-      @open-dsp="openDspConfig"
-      @open-options="openPlayerOptions"
     />
 
     <!-- Other regular settings sections -->
@@ -80,8 +76,6 @@
           @update:value="onValueUpdate(conf_entry, $event)"
           @toggle-password="showPasswordValues = !showPasswordValues"
           @action="onEntryAction(conf_entry)"
-          @open-dsp="openDspConfig"
-          @open-options="openPlayerOptions"
           @help="onEntryHelp(conf_entry)"
           @set-entry-value="onEntryValueSet"
         />
@@ -89,8 +83,14 @@
     </div>
 
     <div
-      v-if="!disabled && actionLayout === 'floating-save'"
-      class="floating-save"
+      v-if="!disabled"
+      :class="[
+        'floating-save',
+        {
+          'floating-save--mobile': store.mobileLayout,
+          'floating-save--frameless': store.frameless,
+        },
+      ]"
     >
       <Button
         data-testid="config-save"
@@ -103,34 +103,6 @@
         <Save class="size-4" />
         {{ $t("settings.save") }}
       </Button>
-    </div>
-    <div v-else-if="!disabled" class="config-actions">
-      <!-- Show advanced settings toggle -->
-      <div class="advanced-toggle-wrapper">
-        <v-switch
-          v-model="showAdvancedSettings"
-          color="primary"
-          hide-details
-          density="comfortable"
-          :label="$t('settings.show_advanced_settings')"
-          class="advanced-settings-switch"
-        />
-      </div>
-      <v-btn
-        block
-        color="primary"
-        size="large"
-        :disabled="!requiredValuesPresent || !hasUnsavedChanges"
-        @click="submit"
-      >
-        {{ $t("settings.save") }}
-      </v-btn>
-      <v-btn block variant="outlined" size="large" @click="handleClose">
-        {{ $t("close") }}
-      </v-btn>
-      <v-btn block variant="text" size="large" @click="resetToDefaults">
-        {{ $t("settings.reset_to_defaults") }}
-      </v-btn>
     </div>
   </v-form>
   <v-dialog
@@ -162,16 +134,27 @@
     </v-card>
   </v-dialog>
   <!-- Unsaved changes confirmation dialog -->
-  <v-dialog v-model="showUnsavedDialog" max-width="400" persistent>
+  <!-- any way out of this dialog has to answer the navigation it is holding -->
+  <v-dialog
+    :model-value="showUnsavedDialog"
+    max-width="400"
+    persistent
+    @update:model-value="cancelDiscard"
+  >
     <v-card>
       <v-card-title>{{ $t("settings.unsaved_changes") }}</v-card-title>
       <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="cancelDiscard">
+        <v-btn data-testid="config-stay" variant="text" @click="cancelDiscard">
           {{ $t("settings.stay") }}
         </v-btn>
-        <v-btn color="warning" variant="flat" @click="confirmDiscard">
+        <v-btn
+          data-testid="config-discard"
+          color="warning"
+          variant="flat"
+          @click="confirmDiscard"
+        >
           {{ $t("settings.discard") }}
         </v-btn>
       </v-card-actions>
@@ -197,6 +180,7 @@ import {
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import {
   Airplay,
   Cast,
@@ -221,9 +205,11 @@ import ProtocolConfigSection from "./ProtocolConfigSection.vue";
 const router = useRouter();
 const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
+// answers the navigation the guard is holding; set only while one waits on the
+// unsaved-changes dialog
+let heldNavigation: ((discard: boolean) => void) | undefined;
 
 export interface Props {
-  actionLayout?: "default" | "floating-save";
   configEntries: ConfigEntryUI[];
   disabled: boolean;
   // Output protocols of the player being configured; drives derived-transport labelling
@@ -414,14 +400,6 @@ const openLink = function (url: string) {
   a.click();
 };
 
-const openDspConfig = function () {
-  router.push(`${router.currentRoute.value.path}/dsp`);
-};
-
-const openPlayerOptions = function () {
-  router.push(`${router.currentRoute.value.path}/options`);
-};
-
 const onEntryAction = function (entry: ConfigEntryUI) {
   action(entry.action || entry.key, !!entry.immediate_apply);
 };
@@ -438,35 +416,49 @@ const resetToDefaults = function () {
   }
 };
 
-defineExpose({ resetToDefaults });
-
-const handleClose = function () {
-  if (hasUnsavedChanges.value) {
-    showUnsavedDialog.value = true;
-  } else {
-    router.back();
-  }
+/**
+ * Reports a save that did not land, so the values stay guarded and leaving the
+ * screen asks about them again.
+ */
+const saveFailed = function () {
+  allowNavigation.value = false;
 };
+
+/**
+ * Stops guarding the pending edits, for when what they belong to is gone and
+ * there is nothing left to save them to.
+ */
+const discardChanges = function () {
+  allowNavigation.value = true;
+};
+
+defineExpose({ resetToDefaults, saveFailed, discardChanges });
 
 const confirmDiscard = function () {
   showUnsavedDialog.value = false;
+  // a redirect has the router run the leave guards of the resumed navigation a
+  // second time, and it must not ask again
   allowNavigation.value = true;
-  // Navigate back after setting the flag
-  router.back();
+  releaseNavigation(true);
 };
 
 const cancelDiscard = function () {
   showUnsavedDialog.value = false;
+  releaseNavigation(false);
 };
 
 // Navigation guard for route changes
-onBeforeRouteLeave((_to, _from, next) => {
-  if (allowNavigation.value || !hasUnsavedChanges.value) {
-    next();
-  } else {
-    showUnsavedDialog.value = true;
-    next(false);
-  }
+onBeforeRouteLeave(() => {
+  if (allowNavigation.value || !hasUnsavedChanges.value) return true;
+  // one is already waiting for an answer: turn this one away rather than hold
+  // both, or the history ends up out of step with the page on screen
+  if (heldNavigation) return false;
+  // holding it, rather than cancelling it, is what lets discarding carry on to
+  // the very page the user asked for
+  showUnsavedDialog.value = true;
+  return new Promise<boolean>((resolve) => {
+    heldNavigation = resolve;
+  });
 });
 
 // Handle browser back/refresh
@@ -483,6 +475,11 @@ onBeforeUnmount(() => {
 
 // Add listener when component mounts
 window.addEventListener("beforeunload", handleBeforeUnload);
+
+const releaseNavigation = function (discard: boolean) {
+  heldNavigation?.(discard);
+  heldNavigation = undefined;
+};
 
 const isDisabled = function (entry: ConfigEntryUI) {
   return isEntryDisabled(entry, entries.value || []);
@@ -631,51 +628,24 @@ const getCategoryIcon = function (category: string): Component {
   padding: 14px 16px;
 }
 
-/* Action buttons */
-.config-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 16px;
-}
-
-.config-actions .v-btn--disabled {
-  background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
-  color: rgba(var(--v-theme-on-surface), 0.38) !important;
-}
-
 .floating-save {
   position: fixed;
-  right: 24px;
-  bottom: calc(var(--v-layout-bottom, 104px) + 16px);
+  /* A landscape phone is wide enough to count as the desktop layout, so this
+     rule is what keeps the button clear of a side cutout. */
+  right: calc(24px + var(--device-inset-right));
+  bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
   z-index: 20;
 }
 
-:global(.content-section--mobile) .floating-save {
-  right: 16px;
-  bottom: calc(var(--mobile-navigation-height) + 108px);
+.floating-save--mobile {
+  /* Takes the floating player card's inset, so the two right edges line up. */
+  right: calc(var(--mobile-player-inset-x) + var(--device-inset-right));
+  bottom: calc(var(--bottom-bars-height) + 16px);
+  /* Above the player scrim, below the mobile bars. */
+  z-index: 1000;
 }
 
-:global(.content-section--frameless) .floating-save {
+.floating-save--frameless {
   bottom: 16px;
-}
-
-/* Advanced settings toggle */
-.advanced-toggle-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0 16px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.advanced-settings-switch {
-  opacity: 0.85;
-  transition: opacity 0.2s ease;
-}
-
-.advanced-settings-switch:hover {
-  opacity: 1;
 }
 </style>

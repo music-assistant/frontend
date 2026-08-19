@@ -76,9 +76,13 @@
         </DropdownMenu>
       </div>
     </header>
-    <main class="min-h-0 flex-1 overflow-y-auto">
+    <main class="guest-layout-content min-h-0 flex-1 overflow-y-auto">
       <router-view />
     </main>
+    <!-- accepting an update is what hands a tab over to a new service worker, so
+         a guest session needs the prompt as much as the app does. It renders
+         fixed to the viewport, which the layout above it does not box in. -->
+    <ReloadPrompt />
   </div>
 </template>
 
@@ -108,6 +112,7 @@ import {
   THEME_PREFERENCES,
   useThemePreference,
 } from "@/composables/useThemePreference";
+import ReloadPrompt from "@/layouts/default/ReloadPrompt.vue";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -161,9 +166,15 @@ function returnToHostPanel(): void {
 
 <style scoped>
 .guest-layout-header {
-  height: calc(3rem + env(safe-area-inset-top, 0px));
-  padding: env(safe-area-inset-top, 0px)
-    calc(0.5rem + env(safe-area-inset-right, 0px)) 0
-    calc(0.5rem + env(safe-area-inset-left, 0px));
+  height: calc(3rem + var(--device-inset-top));
+  padding: var(--device-inset-top) calc(0.5rem + var(--device-inset-right)) 0
+    calc(0.5rem + var(--device-inset-left));
+}
+
+.guest-layout-content {
+  box-sizing: border-box;
+  padding-right: var(--device-inset-right);
+  padding-bottom: var(--device-inset-bottom);
+  padding-left: var(--device-inset-left);
 }
 </style>

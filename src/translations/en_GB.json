@@ -255,8 +255,6 @@
                 "remove_confirm": "Are you sure you want to remove this DSP preset?"
             }
         },
-        "dsp_enabled": "DSP is enabled",
-        "dsp_disabled": "DSP is disabled",
         "dsp_note_multi_device_group": {
             "label": "You can configure the DSP for each player individually."
         },
@@ -273,7 +271,7 @@
         "playerprovider": "Player provider",
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
-        "providers_total": "{0} total provider{1}",
+        "providers_total": "{count} total provider | {count} total providers",
         "stage": {
             "label": "Stage",
             "options": {
@@ -392,7 +390,7 @@
         "players_count": "{0} player{1}",
         "one_player": "1 player",
         "view_players": "View players",
-        "players_total": "{0} total player{1}",
+        "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
         "provider_codeowners": "This provider is contributed\/maintained by",
@@ -411,7 +409,6 @@
         "remote_access_qr_code": "QR Code",
         "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
         "reset_to_defaults": "Reset to defaults",
-        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately.",
         "unsaved_changes": "Unsaved changes",
         "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
         "stay": "Stay",
@@ -475,7 +472,6 @@
         "open_provider_link": "Open this item on the provider's website",
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
-        "show_menu": "Show\/hide menu",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",
@@ -762,6 +758,9 @@
     },
     "more_options": "More options",
     "edit": "Edit",
+    "background_tasks": {
+        "total": "{count} total background task | {count} total background tasks"
+    },
     "smart_playlist": {
         "favorites_yes": "Yes",
         "field_favorite": "Favourite"

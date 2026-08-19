@@ -3,8 +3,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import SheetDescription from "@/components/ui/sheet/SheetDescription.vue";
 import SheetHeader from "@/components/ui/sheet/SheetHeader.vue";
 import SheetTitle from "@/components/ui/sheet/SheetTitle.vue";
+import { useMobileSidebarSide } from "@/composables/useMobileSidebarSide";
 import { cn } from "@/lib/utils";
-import { computed } from "vue";
 import type { SidebarProps } from ".";
 import { SIDEBAR_WIDTH_MOBILE, useSidebar } from "./utils";
 
@@ -20,12 +20,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 
 const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
 
-const mobileSheetSide = computed<"left" | "right">(() => {
-  if (typeof localStorage === "undefined") return "left";
-  const stored = localStorage.getItem("frontend.settings.mobile_sidebar_side");
-
-  return stored === "right" ? "right" : "left";
-});
+const mobileSheetSide = useMobileSidebarSide();
 </script>
 
 <template>
@@ -54,15 +49,17 @@ const mobileSheetSide = computed<"left" | "right">(() => {
       data-slot="sidebar"
       data-mobile="true"
       :side="mobileSheetSide"
-      class="sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-      overlay-class="sidebar-mobile-overlay"
+      :class="[
+        'sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden',
+        `sidebar-mobile-sheet--${mobileSheetSide}`,
+      ]"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
       }"
     >
       <SheetHeader class="sr-only">
-        <SheetTitle>Sidebar</SheetTitle>
-        <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+        <SheetTitle>{{ $t("sidebar.title") }}</SheetTitle>
+        <SheetDescription>{{ $t("sidebar.description") }}</SheetDescription>
       </SheetHeader>
       <div class="flex h-full w-full flex-col">
         <slot></slot>
@@ -119,14 +116,27 @@ const mobileSheetSide = computed<"left" | "right">(() => {
 </template>
 
 <style>
-.sidebar-mobile-sheet {
-  top: 0 !important;
-  bottom: 0 !important;
-  height: 100dvh !important;
+/* :root lifts these above the equally-!important size, padding and radius
+   utilities the sheet carries */
+:root .sidebar-mobile-sheet {
+  /* The panel keeps the edge-to-edge span its own utilities give it, so its
+     surface fills the strips the phone reserves for the status bar and the home
+     indicator, and pads its contents back out of them. */
   border-radius: 0 !important;
+  /* The widths below count that padding in. */
+  box-sizing: border-box;
+  padding-top: var(--device-inset-top) !important;
+  padding-bottom: var(--device-inset-bottom) !important;
 }
 
-.sidebar-mobile-overlay {
-  bottom: 0 !important;
+/* Widened by the inset they pad away, so the menu keeps its full width. */
+:root .sidebar-mobile-sheet--left {
+  width: calc(var(--sidebar-width) + var(--device-inset-left)) !important;
+  padding-left: var(--device-inset-left) !important;
+}
+
+:root .sidebar-mobile-sheet--right {
+  width: calc(var(--sidebar-width) + var(--device-inset-right)) !important;
+  padding-right: var(--device-inset-right) !important;
 }
 </style>

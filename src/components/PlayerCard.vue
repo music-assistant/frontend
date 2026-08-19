@@ -173,22 +173,17 @@
           data-player-group-control
           variant="ghost"
           size="icon-sm"
-          class="relative"
           :disabled="!player.available || !canEditGroupMembers"
           :aria-label="`${$t('tooltip.group_members')}: ${groupMemberCount}`"
           :aria-controls="groupControlsExpanded ? groupControlsId : undefined"
           :aria-expanded="groupControlsExpanded"
           @click.stop="toggleMemberControls"
         >
-          <Speaker class="size-5" />
-          <Badge
-            data-player-group-count
-            as="span"
-            variant="outline"
-            class="border-foreground/30 bg-background text-muted-foreground absolute -top-1 -right-1 h-4 min-w-4 rounded-full px-1 text-[10px] font-normal shadow-none"
-          >
-            {{ groupMemberCount }}
-          </Badge>
+          <PlayerGroupIcon
+            :count="groupMemberCount"
+            outset-count
+            class="size-5"
+          />
         </Button>
 
         <Button
@@ -221,6 +216,7 @@
 <script setup lang="ts">
 import PlayerCardTitle from "@/components/PlayerCardTitle.vue";
 import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
+import PlayerGroupIcon from "@/components/PlayerGroupIcon.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { Badge } from "@/components/ui/badge";
@@ -233,7 +229,6 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   canEditPlayerGroup,
   getPlayerGroupMemberCount,
@@ -256,7 +251,6 @@ import {
   Pause,
   Play,
   Power,
-  Speaker,
   TriangleAlert,
 } from "@lucide/vue";
 import { computed, ref, toRef, watch } from "vue";
@@ -276,12 +270,10 @@ export interface Props {
   groupControlExpanded?: boolean;
   groupControlsId?: string;
   showSelectedIndicator?: boolean;
-  playerMenuItems?: ContextMenuItem[];
 }
 const props = withDefaults(defineProps<Props>(), {
   groupMemberLayout: "subtitle",
   groupControlsId: undefined,
-  playerMenuItems: () => [],
 });
 const emit = defineEmits<{
   (event: "click", player: Player): void;
@@ -422,12 +414,9 @@ function openPlayerMenu(event: Event) {
   if (!props.player.available) return;
   const position = getEventPosition(event);
   eventbus.emit("contextmenu", {
-    items: [
-      ...getPlayerMenuItems(props.player, playerQueue.value, {
-        context: "player",
-      }),
-      ...props.playerMenuItems,
-    ],
+    items: getPlayerMenuItems(props.player, playerQueue.value, {
+      context: "player",
+    }),
     posX: position.x,
     posY: position.y,
   });

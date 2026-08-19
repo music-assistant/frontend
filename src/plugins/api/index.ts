@@ -15,6 +15,7 @@ import { ApiCommandError } from "./errors";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import {
   type Album,
+  type AnnouncementTtsEngine,
   type Artist,
   type AuthToken,
   type BackgroundTask,
@@ -78,6 +79,18 @@ const DEBUG = process.env.NODE_ENV === "development";
 // Server-side string localization + the translations/set_locale command landed in API schema 32.
 const TRANSLATIONS_SCHEMA_VERSION = 32;
 
+// The shuffle argument on player_queues/play_media landed in API schema 51.
+const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
+
+export interface PlayMediaOptions {
+  start_item?: PlayableMediaItemType | string;
+  queue_id?: string;
+  sort_by?: string;
+  start_from_beginning?: boolean;
+  /** Set playback order for immediate-play options; omit to let the server decide. */
+  shuffle?: boolean;
+}
+
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
   CONNECTING = "connecting", // Establishing connection
@@ -122,6 +135,10 @@ export class MusicAssistantApi {
   );
   public providerIcons = reactive<{ [key: string]: string | null }>({});
   private _providerIconRequests = new Map<string, Promise<string | null>>();
+  // core config values by "<domain>/<key>", dropped when this client saves a core config
+  // and when the full state is (re)fetched, so a change made from another client is
+  // picked up on the next (re)connect.
+  private _coreConfigValues = new Map<string, Promise<ConfigValueType>>();
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
@@ -398,6 +415,7 @@ export class MusicAssistantApi {
       (key) => delete this.providerIcons[key],
     );
     this._providerIconRequests.clear();
+    this._coreConfigValues.clear();
     this.serverInfo.value = undefined;
   }
 
@@ -521,9 +539,11 @@ export class MusicAssistantApi {
   public getTrackPreviewUrl(
     provider_instance_id_or_domain: string,
     item_id: string,
-  ): string {
-    const encItemId = encodeURIComponent(encodeURIComponent(item_id));
-    return `${this.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
+  ): Promise<string> {
+    return this.sendCommand("music/tracks/preview", {
+      provider_instance_id_or_domain,
+      item_id,
+    });
   }
 
   public getLibraryArtistsCount(
@@ -985,6 +1005,16 @@ export class MusicAssistantApi {
     provider_instance_id_or_domain: string,
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/radio_versions", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getRadioTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/radios/radio_tracks", {
       item_id,
       provider_instance_id_or_domain,
     });
@@ -1484,17 +1514,21 @@ export class MusicAssistantApi {
   public async getRecommendationItems(
     provider: string,
     item_id: string,
+    providers?: string[],
   ): Promise<MediaItemTypeOrItemMapping[]> {
     // Fetches a single recommendation row's items. Per-row timeout/error
     // isolation lives server-side: an unknown id or a failing provider
     // resolves to `[]` rather than rejecting. Transport-level failures are
     // best-effort per row (the caller degrades the row), so opt out of the
     // global error toast.
+    // providers: source provider instance ids to include (only rows with
+    // supports_provider_filter accept this); omit for the unfiltered row.
     return this.sendCommand(
       "music/recommendations/items",
       {
         provider,
         item_id,
+        providers,
       },
       { suppressGlobalError: true },
     );
@@ -1503,6 +1537,26 @@ export class MusicAssistantApi {
   public async getSoundEffects(): Promise<SoundEffect[]> {
     // Fetch all sound effect items from providers that offer them.
     return this.sendCommand("music/sound_effects");
+  }
+
+  public async addAmbientSound(
+    url: string,
+    name: string,
+  ): Promise<SoundEffect> {
+    // Add a custom ambient sound (stream url) to the ambient sounds provider.
+    // The server probes the url and rejects it if it is not playable audio;
+    // that is an expected failure the calling dialog handles itself, so opt
+    // out of the global error toast.
+    return this.sendCommand(
+      "ambient_sounds/add_sound",
+      { url, name },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public async removeAmbientSound(url: string): Promise<void> {
+    // Remove a previously added custom ambient sound by its stream url.
+    return this.sendCommand("ambient_sounds/remove_sound", { url });
   }
 
   public markItemPlayed(
@@ -1890,6 +1944,43 @@ export class MusicAssistantApi {
     });
   }
 
+  public playerCommandPlayAnnouncement(
+    playerId: string,
+    message: string,
+    options?: {
+      preAnnounce?: boolean;
+      volumeLevel?: number;
+      ttsEngine?: string;
+    },
+  ): Promise<void> {
+    /*
+      Handle PLAY_ANNOUNCEMENT on given player.
+          - playerId: playerId of the player to handle the command.
+          - message: text to speak as the announcement.
+          - options.preAnnounce: play the chime before the message.
+          - options.volumeLevel: volume level to play the announcement at.
+          - options.ttsEngine: uid of the engine that speaks the message.
+      Omitted options fall back to the player's announcement settings.
+    */
+    return this.playerCommand(playerId, "play_announcement", {
+      message,
+      pre_announce: options?.preAnnounce,
+      volume_level: options?.volumeLevel,
+      tts_engine: options?.ttsEngine,
+    });
+  }
+
+  public getAnnouncementTtsEngines(): Promise<AnnouncementTtsEngine[]> {
+    /*
+      Get the TTS engines that can speak an announcement.
+      Prefetched in the background, so a failure is not worth a toast:
+      it leaves the announcement entry hidden until a later attempt.
+    */
+    return this.sendCommand("players/tts_engines", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
   public playerCommand(
     player_id: string,
     command: string,
@@ -2001,11 +2092,9 @@ export class MusicAssistantApi {
       | string
       | string[],
     option?: QueueOption,
-    start_item?: PlayableMediaItemType | string,
-    queue_id?: string,
-    sort_by?: string,
-    start_from_beginning?: boolean,
+    options: PlayMediaOptions = {},
   ): Promise<void> {
+    let queue_id = options.queue_id;
     if (
       !queue_id &&
       store.activePlayer?.active_source &&
@@ -2019,9 +2108,10 @@ export class MusicAssistantApi {
       queue_id,
       media,
       option,
-      start_item,
-      sort_by,
-      start_from_beginning,
+      start_item: options.start_item,
+      sort_by: options.sort_by,
+      start_from_beginning: options.start_from_beginning,
+      shuffle: options.shuffle,
     });
   }
 
@@ -2143,7 +2233,7 @@ export class MusicAssistantApi {
   public async getPlayerConfigValue(
     player_id: string,
     key: string,
-  ): Promise<PlayerConfig> {
+  ): Promise<ConfigValueType> {
     // Return single configentry value for a player.
     return this.sendCommand("config/players/get_value", { player_id, key });
   }
@@ -2351,12 +2441,27 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core/get", { domain });
   }
 
-  public async getCoreConfigValue(
+  public getCoreConfigValue(
     domain: string,
     key: string,
   ): Promise<ConfigValueType> {
     // Return value for a single core controller config entry.
-    return this.sendCommand("config/core/get_value", { domain, key });
+    // Cached (see _coreConfigValues) because these steer interactions such as clicking
+    // a media item, which must not wait for a round-trip on every click.
+    const cacheKey = `${domain}/${key}`;
+    let request = this._coreConfigValues.get(cacheKey);
+    if (!request) {
+      request = this.sendCommand<ConfigValueType>("config/core/get_value", {
+        domain,
+        key,
+      }).catch((err) => {
+        // a failed read must not be remembered as the value
+        this._coreConfigValues.delete(cacheKey);
+        throw err;
+      });
+      this._coreConfigValues.set(cacheKey, request);
+    }
+    return request;
   }
 
   public async getCoreConfigEntries(domain: string): Promise<ConfigEntry[]> {
@@ -2382,10 +2487,12 @@ export class MusicAssistantApi {
     // domain: (mandatory) domain of the core controller.
     // values: the raw values for config entries that need to be stored/updated.
     // action: [optional] action key called from config entries UI.
-    return this.sendCommand("config/core/save", {
+    const config = await this.sendCommand<CoreConfig>("config/core/save", {
       domain,
       values,
     });
+    this._coreConfigValues.clear();
+    return config;
   }
 
   public reloadCoreController(domain: string): Promise<void> {
@@ -2796,6 +2903,14 @@ export class MusicAssistantApi {
     return await this.sendCommand<number>("time", undefined, {
       suppressGlobalError: true,
     });
+  }
+
+  /** Whether the connected server accepts an explicit shuffle on play_media (schema >= 51). */
+  public get supportsPlayMediaShuffle(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
+    );
   }
 
   /** Whether the connected server localizes server-provided strings (schema >= 32). */
@@ -3307,6 +3422,8 @@ export class MusicAssistantApi {
 
   public async fetchState() {
     // fetch full initial state
+    // a (re)connect is the moment to pick up config changes made elsewhere
+    this._coreConfigValues.clear();
     for (const player of await this.getPlayers()) {
       this.players[player.player_id] = player;
     }
@@ -3369,20 +3486,22 @@ export class MusicAssistantApi {
   }
 
   /**
-   * Create a sendspin DataChannel through the remote access WebRTC connection.
+   * Open a DataChannel through the remote access WebRTC connection.
    * Returns null if not in remote mode or if WebRTC transport doesn't support it.
+   *
+   * @param label - Channel label the server routes on, e.g. "sendspin".
    */
-  public async createSendspinDataChannel(): Promise<RTCDataChannel | null> {
+  public async openDataChannel(label: string): Promise<RTCDataChannel | null> {
     if (!this.transport) {
       return null;
     }
 
-    // Check if transport supports creating sendspin channels
-    if (typeof this.transport.createSendspinDataChannel === "function") {
+    // Check if transport supports creating additional channels
+    if (typeof this.transport.openDataChannel === "function") {
       try {
-        return await this.transport.createSendspinDataChannel();
+        return await this.transport.openDataChannel(label);
       } catch (error) {
-        console.error("[API] Failed to create sendspin DataChannel:", error);
+        console.error(`[API] Failed to create ${label} DataChannel:`, error);
         return null;
       }
     }

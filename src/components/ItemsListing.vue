@@ -212,11 +212,24 @@
         </EmptyContent>
       </Empty>
 
-      <!-- box shown when item(s) selected -->
+      <!-- box shown when item(s) selected; vuetify writes the overlay z-index inline
+           (default 2000), so it has to be lowered here to stay behind the player bar
+           popouts (998) and their backdrops (997). that also puts it below the mobile
+           scrim, so it clears what covers the bottom rather than just the bars.
+           vuetify pads the snackbar by the measured bar height on its own, so that
+           is taken off, with a 16px floor in case the bar outgrows the offset -->
       <v-snackbar
         :model-value="selectedItems.length > 1"
         :timeout="-1"
-        style="margin-bottom: calc(120px + var(--device-inset-bottom))"
+        :z-index="996"
+        style="
+          margin-bottom: max(
+            16px,
+            calc(
+              var(--bottom-obscured-height) + 16px - var(--v-layout-bottom, 0px)
+            )
+          );
+        "
       >
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
@@ -926,6 +939,9 @@ const loadNextPage = async function ({
 
 const loadAllItems = async function () {
   while (!allItemsReceived.value) {
+    // the paging can outlast the listing, so stop fetching once it is gone
+    if (unmounted) return;
+
     await loadNextPage({ done: function () {} });
   }
 };
@@ -1800,6 +1816,9 @@ const loadGenreOptions = async () => {
     const mediaType = itemtypeToMediaType[props.itemtype];
 
     do {
+      // the paging can outlast the listing, so stop fetching once it is gone
+      if (unmounted) return;
+
       page = await api.getLibraryGenres({
         limit: pageSize,
         offset,
@@ -1823,8 +1842,19 @@ const loadGenreOptions = async () => {
 };
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
+
+const clearSelection = () => {
+  selectedItems.value = [];
+  showCheckboxes.value = false;
+};
+
+// Set by the unmount hook, so the async startup can tell that the listing it is
+// working for is already gone.
+let unmounted = false;
+
 onBeforeUnmount(() => {
-  eventbus.off("clearSelection");
+  unmounted = true;
+  eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
 });
 
@@ -1857,12 +1887,12 @@ onMounted(async () => {
   }
 
   await loadGenreOptions();
+  // The await can outlast the listing, and the unmount hook only reaches what
+  // was already set up by the time it ran.
+  if (unmounted) return;
 
   // Listen for selection clearing events
-  eventbus.on("clearSelection", () => {
-    selectedItems.value = [];
-    showCheckboxes.value = false;
-  });
+  eventbus.on("clearSelection", clearSelection);
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(

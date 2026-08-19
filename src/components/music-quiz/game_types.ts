@@ -25,7 +25,7 @@ import type {
   MusicQuizSupportedPublicState,
   MusicQuizType,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { Brain, Disc3, ListMusic } from "@lucide/vue";
+import { CalendarClock, Disc3, WandSparkles } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
@@ -45,6 +45,8 @@ export interface MusicQuizGameDefinition<
   answerType: MusicQuizGameAnswerTypeMap[TGame];
   labelKey: string;
   descriptionKey: string;
+  // player-facing explanation of the game shown on the landing screen
+  howToPlayDescriptionKey: string;
   icon: Component;
   requiresBackendAvailability: boolean;
   supportsListenIn: MusicQuizStateCapability;
@@ -73,6 +75,8 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "multiple_choice",
     labelKey: "providers.music_quiz.game_type_guess_the_song",
     descriptionKey: "providers.music_quiz.game_type_guess_the_song_description",
+    howToPlayDescriptionKey:
+      "providers.music_quiz.how_to_play_guess_the_song_description",
     icon: markRaw(Disc3),
     requiresBackendAvailability: false,
     supportsListenIn: true,
@@ -91,7 +95,9 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "timeline",
     labelKey: "providers.music_quiz.game_type_music_timeline",
     descriptionKey: "providers.music_quiz.game_type_music_timeline_description",
-    icon: markRaw(ListMusic),
+    howToPlayDescriptionKey:
+      "providers.music_quiz.music_timeline_listen_description",
+    icon: markRaw(CalendarClock),
     requiresBackendAvailability: false,
     supportsListenIn: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_enjoy_track",
@@ -109,7 +115,9 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "multiple_choice",
     labelKey: "providers.music_quiz.game_type_trivia",
     descriptionKey: "providers.music_quiz.game_type_trivia_description",
-    icon: markRaw(Brain),
+    howToPlayDescriptionKey:
+      "providers.music_quiz.how_to_play_trivia_description",
+    icon: markRaw(WandSparkles),
     requiresBackendAvailability: true,
     supportsListenIn: (state) =>
       state.quiz_type === "trivia" && state.play_reveal_audio === true,

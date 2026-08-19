@@ -1,12 +1,15 @@
 import { api } from "@/plugins/api";
 import {
   Artist,
+  type Audiobook,
   BrowseFolder,
   type ConfigEntry,
   ConfigEntryType,
   ImageType,
   ItemMapping,
+  type MediaCollection,
   MediaItemImage,
+  type MediaItemPalette,
   MediaItemType,
   MediaType,
   Player,
@@ -19,11 +22,6 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 
-import type {
-  Audiobook,
-  MediaCollection,
-  MediaItemPalette,
-} from "@/plugins/api/interfaces";
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
 export const isWebUrl = (url?: string | null): url is string => {
@@ -723,6 +721,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   textArea.style.height = "1px";
   textArea.style.opacity = "0";
   textArea.style.pointerEvents = "none";
+  textArea.style.setProperty("-webkit-user-select", "text");
+  textArea.style.userSelect = "text";
   host.appendChild(textArea);
   try {
     textArea.focus();

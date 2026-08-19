@@ -11,6 +11,10 @@ import {
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { requestGroupPlaybackConfirmation } = vi.hoisted(() => ({
+  requestGroupPlaybackConfirmation: vi.fn(),
+}));
+
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
@@ -23,8 +27,13 @@ vi.mock("@/plugins/api", async () => {
   return { api, default: api };
 });
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   groupMemberPickerVisible: () => true,
+}));
+
+vi.mock("@/helpers/player_group_playback", () => ({
+  requestGroupPlaybackConfirmation,
 }));
 
 const CheckboxStub = {
@@ -74,6 +83,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
@@ -130,6 +140,7 @@ describe("PlayerGroupMembers", () => {
     vi.clearAllMocks();
     vi.useRealTimers();
     api.players = {};
+    requestGroupPlaybackConfirmation.mockReturnValue(false);
   });
 
   it("uses aligned icon slots and prominent checkboxes", () => {
@@ -200,6 +211,27 @@ describe("PlayerGroupMembers", () => {
     ).toEqual(["players", "lights", "visualizers"]);
   });
 
+  it("lists a screen alongside the visualizers", () => {
+    const screen = createPlayer({
+      player_id: "screen",
+      name: "Kitchen screen",
+      type: PlayerType.DISPLAY,
+    });
+    const parent = createPlayer({ can_group_with: [screen.player_id] });
+    api.players = {
+      [parent.player_id]: parent,
+      [screen.player_id]: screen,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".player-group-section > p")
+        .map((section) => section.text()),
+    ).toEqual(["visualizers"]);
+  });
+
   it("separates current members from available players", () => {
     const child = createPlayer({
       player_id: "child",
@@ -245,7 +277,7 @@ describe("PlayerGroupMembers", () => {
 
     const wrapper = mountGroupMembers(parent, [parent, child], {
       filter: "lights",
-      groupHeading: "Speakers in group",
+      groupHeading: "Players in group",
     });
 
     expect(
@@ -336,6 +368,49 @@ describe("PlayerGroupMembers", () => {
       parent.player_id,
       undefined,
       [child.player_id],
+    );
+  });
+
+  it("waits for a choice before removing the playing leader", async () => {
+    vi.useFakeTimers();
+    let keepPlaying: (() => void) | undefined;
+    requestGroupPlaybackConfirmation.mockImplementation(
+      (_player, _change, onKeepPlaying) => {
+        keepPlaying = onKeepPlaying;
+        return true;
+      },
+    );
+    const child = createPlayer({
+      player_id: "child",
+      name: "Office",
+    });
+    const parent = createPlayer({
+      playback_state: PlaybackState.PLAYING,
+      group_members: ["parent", child.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [child.player_id]: child,
+    };
+    const wrapper = mountGroupMembers(parent, [parent, child]);
+
+    await wrapper.get('[aria-label="Kitchen"]').trigger("click");
+
+    expect(requestGroupPlaybackConfirmation).toHaveBeenCalledWith(
+      parent,
+      "remove",
+      expect.any(Function),
+    );
+    expect(parent.group_members).toEqual(["parent", child.player_id]);
+    expect(api.playerCommandSetMembers).not.toHaveBeenCalled();
+
+    keepPlaying?.();
+    expect(parent.group_members).toEqual([child.player_id]);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.playerCommandSetMembers).toHaveBeenCalledWith(
+      parent.player_id,
+      undefined,
+      [parent.player_id],
     );
   });
 });

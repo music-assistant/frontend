@@ -2,7 +2,11 @@
   <div>
     <Toolbar :icon="Settings">
       <template #title>
-        <v-breadcrumbs :items="breadcrumbItems" class="pa-0" />
+        <ToolbarHeading
+          :title="t('settings.settings')"
+          :to="isOverview ? undefined : { name: 'settings' }"
+          :items="breadcrumbItems"
+        />
       </template>
       <template #append>
         <v-btn
@@ -285,6 +289,9 @@ import Container from "@/components/Container.vue";
 import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import ToolbarHeading, {
+  type ToolbarHeadingItem,
+} from "@/components/ToolbarHeading.vue";
 import {
   Card,
   CardDescription,
@@ -302,7 +309,7 @@ import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter, type RouteLocationRaw } from "vue-router";
+import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 
 // global refs
@@ -717,19 +724,8 @@ const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
 
-  const items: Array<{
-    title: string;
-    disabled: boolean;
-    href?: string;
-    to?: RouteLocationRaw;
-  }> = [
-    {
-      title: t("settings.settings"),
-      disabled: false,
-      href: "#",
-      to: { name: "settings" },
-    },
-  ];
+  // "Settings" heads the toolbar on its own line, so the trail starts below it
+  const items: ToolbarHeadingItem[] = [];
 
   if (!isOverview.value) {
     const currentTab = activeTab.value;
@@ -820,18 +816,29 @@ const breadcrumbItems = computed(() => {
     .with("addgroup", () => {
       items.push({ title: t("settings.add_group_player"), disabled: true });
     })
-    .with("editplayer", () => {
-      items.push({ title: t("settings.player_settings"), disabled: true });
-    })
-    .with("editplayerdsp", () => {
-      items.push({ title: "DSP", disabled: true });
-    })
-    .with("editplayeroptions", () => {
-      items.push({ title: t("settings.category.options"), disabled: true });
-    })
-    .with("editqueue", () => {
-      items.push({ title: t("settings.queue_settings"), disabled: true });
-    })
+    .with(
+      "editplayer",
+      "editplayerdsp",
+      "editplayeroptions",
+      "editqueue",
+      () => {
+        // a queue is identified by the player id of the player owning it
+        const playerId = (route.params.playerId ||
+          route.params.queueId) as string;
+        items.push({
+          // a disabled player is never registered, so it has no name to show
+          title: api.players[playerId]?.name || t("settings.player_settings"),
+          disabled: name === "editplayer",
+          to: { name: "editplayer", params: { playerId } },
+        });
+        const section = match(name)
+          .with("editplayerdsp", () => t("settings.category.dsp"))
+          .with("editplayeroptions", () => t("settings.category.options"))
+          .with("editqueue", () => t("settings.queue_settings"))
+          .otherwise(() => undefined);
+        if (section) items.push({ title: section, disabled: true });
+      },
+    )
     .with("editcore", () => {
       const domain = route.params.domain as string;
       const translated = t(`settings.core_module.${domain}.name`);

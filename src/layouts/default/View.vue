@@ -11,6 +11,7 @@
             'content-section',
             { 'content-section--mobile': store.mobileLayout },
             { 'content-section--frameless': store.frameless },
+            { 'party-view-active': route.meta.partyView === true },
           ]"
         >
           <router-view v-slot="{ Component }">
@@ -21,11 +22,14 @@
           <create-playlist-dialog />
           <create-smart-playlist-dialog />
           <import-playlist-dialog />
+          <play-announcement-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
           <dialog-delete-confirmation />
+          <player-group-playback-dialog />
           <setup-flow-dialog />
+          <player-rename-dialog />
           <item-context-menu />
           <AddManualLink
             v-model="showEditItemDialog"
@@ -46,6 +50,8 @@ import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AppSidebar from "@/components/navigation/AppSidebar.vue";
+import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
+import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
@@ -57,13 +63,17 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import AudioOverlayDialog from "./AudioOverlayDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
 import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
+import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
 import PlayerSelect from "./PlayerSelect.vue";
+
+const route = useRoute();
 
 const showEditItemDialog = ref(false);
 const editItem = ref<Radio | Track | Playlist | undefined>(undefined);
@@ -83,13 +93,15 @@ onMounted(() => {
 
 <style scoped>
 .main-layout {
+  box-sizing: border-box;
   display: flex;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
   /* Reset Vuetify's automatic padding that accounts for drawers */
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding-top: var(--device-inset-top) !important;
+  padding-right: var(--device-inset-right) !important;
+  padding-left: var(--device-inset-left) !important;
 }
 
 .content-section {
@@ -97,7 +109,7 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  padding-bottom: 110px;
+  padding-bottom: calc(110px + var(--device-inset-bottom));
 }
 
 .content-section--mobile {

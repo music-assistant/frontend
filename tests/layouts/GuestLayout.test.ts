@@ -1,4 +1,5 @@
 import GuestLayout from "@/layouts/GuestLayout.vue";
+import ReloadPrompt from "@/layouts/default/ReloadPrompt.vue";
 import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -149,5 +150,11 @@ describe("GuestLayout", () => {
     await wrapper.get('[data-testid="guest-host-controls"]').trigger("click");
 
     expect(mocks.routerPush).toHaveBeenCalledWith({ name: "music-quiz" });
+  });
+
+  // accepting the prompt is what hands a tab over to a new service worker, so
+  // without it a guest session is stuck on the build it loaded with
+  it("offers the update prompt", () => {
+    expect(mountLayout().findComponent(ReloadPrompt).exists()).toBe(true);
   });
 });

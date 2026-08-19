@@ -256,8 +256,6 @@
                 "remove_confirm": "Vai tiešām vēlies noņemt šo DSP profilu?"
             }
         },
-        "dsp_enabled": "DSP ir iespējots",
-        "dsp_disabled": "DSP ir atspējots",
         "dsp_note_multi_device_group": {
             "label": "Tu vari konfigurēt DSP katram atskaņotājam atsevišķi."
         },
@@ -414,7 +412,6 @@
         "remote_access_qr_code": "QR Kods",
         "remote_access_qr_code_description": "Noskanē ar tālruņa kameru, lai izveidotu tūlītēju savienojumu.",
         "reset_to_defaults": "Atiestatīt uz noklusējuma",
-        "reset_to_defaults_confirm": "Vai tiešām vēlies atiestatīt visu iestatījumu vērtības uz noklusējuma? Tas nekavējoties saglabās izmaiņas.",
         "unsaved_changes": "Nesaglabātas Izmaiņas",
         "unsaved_changes_message": "Tev ir nesaglabātas izmaiņas. Vai tiešām vēlies iziet tās nesaglabājot?",
         "stay": "Palikt",
@@ -532,7 +529,6 @@
         "open_provider_link": "Atvērt šo vienumu sniedzēja tīmekļa vietnē",
         "collapse_expand": "Sakļaut\/izvērst šo ierakstu",
         "back": "Atpakaļ",
-        "show_menu": "Rādīt\/slēpt izvēlni",
         "search_filter_active": "Meklēšana pašlaik filtrē rezultātus",
         "play_sample": "Atskaņot paraugu",
         "album_type": "Albuma veids",

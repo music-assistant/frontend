@@ -4,18 +4,33 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import {
   Player,
+  PlayerFeature,
   PlayerQueue,
   PlayerType,
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
+import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
+import {
+  playerSupportsVisualizer,
+  toggleVisualizerForPlayer,
+  visualizerEnabledForPlayer,
+} from "@/composables/visualizer/useVisualizer";
+import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
+import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
+import { markRaw } from "vue";
+import { useHosts } from "@/composables/ai-radio/useHosts";
+import { useShows } from "@/composables/ai-radio/useShows";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
+import { togglePlayerPower } from "@/helpers/player_group_playback";
+import { errorMessage } from "@/helpers/ai_radio";
+import { toast } from "vue-sonner";
 
 export const getPlayerSetupMenuItem = (
   player: Pick<Player, "player_id" | "needs_setup" | "has_setup_flow">,
@@ -63,7 +78,7 @@ export const getPlayerMenuItems = (
       label: player.powered ? "power_off_player" : "power_on_player",
       labelArgs: [],
       action: () => {
-        api.playerCommandPowerToggle(player.player_id);
+        return togglePlayerPower(player);
       },
       icon: "mdi-power",
     });
@@ -160,6 +175,22 @@ export const getPlayerMenuItems = (
     });
   }
 
+  // play announcement (both menus; the server announces on any player, natively or
+  // through its own fallback, so this only needs a TTS engine to speak the message)
+  if (player.type !== PlayerType.PROTOCOL) {
+    const { announcementAvailable, openAnnouncementDialog } = useAnnouncement();
+    if (announcementAvailable.value) {
+      menuItems.push({
+        label: "play_announcement",
+        labelArgs: [],
+        action: () => {
+          openAnnouncementDialog(player.player_id);
+        },
+        icon: markRaw(Megaphone),
+      });
+    }
+  }
+
   // transfer queue (both menus; only when the queue is the active source)
   if (playerQueue?.active && playerQueue.items > 0) {
     menuItems.push({
@@ -242,6 +273,64 @@ export const getPlayerMenuItems = (
     });
   }
 
+  // Queue-only AI DJ entry, built from useHosts'/useShows' prefetched caches.
+  // A queue runs exactly one host at a time, so while a show is on air its
+  // host is that host: render it as a single disabled row rather than the
+  // hosts submenu, which would otherwise show the (now irrelevant) sticky
+  // queue-DJ assignment.
+  const {
+    hosts,
+    queueDjStatus,
+    aiRadioAvailable,
+    loadHosts,
+    loadQueueDjStatus,
+  } = useHosts();
+  const { sessions, shows, loadStatus } = useShows();
+  if (isQueue && playerQueue && aiRadioAvailable.value) {
+    const queueId = playerQueue.queue_id;
+    const runningSession = sessions.value.find(
+      (session) => session.status === "running" && session.queue_id === queueId,
+    );
+    if (runningSession) {
+      const show = shows.value.find((s) => s.id === runningSession.station_id);
+      const host = show
+        ? hosts.value.find((h) => h.id === show.host_id)
+        : undefined;
+      menuItems.push({
+        label: host ? "ai_dj_show_on_air" : "ai_dj_show_on_air_unknown",
+        labelArgs: host ? [host.name] : [],
+        icon: markRaw(Sparkles),
+        disabled: true,
+      });
+    } else {
+      const activeHostId = queueDjStatus.value[queueId];
+      menuItems.push({
+        label: "ai_dj",
+        labelArgs: [],
+        icon: markRaw(Sparkles),
+        subItems: [
+          ...hosts.value.map((host) => ({
+            label: host.name,
+            labelArgs: [],
+            selected: activeHostId === host.id,
+            action: () => assignQueueDj(queueId, host.id),
+          })),
+          {
+            label: "ai_dj_off",
+            labelArgs: [],
+            selected: !activeHostId,
+            action: () => assignQueueDj(queueId, null),
+          },
+        ],
+      });
+    }
+    // Best-effort staleness refresh; the menu above is already built from
+    // the prefetched caches, so a failure here has nothing to surface.
+    void loadHosts().catch(() => undefined);
+    void loadQueueDjStatus().catch(() => undefined);
+    void loadStatus().catch(() => undefined);
+  }
+
   // select sound mode (player menu only; only when more than one is selectable)
   const selectableSoundModes = player.sound_mode_list.filter(
     (s) => !s.passive || s.id == player.active_sound_mode,
@@ -269,70 +358,80 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // settings shortcuts (admin only)
+  // open the settings (both menus, admin only)
   if (authManager.isAdmin()) {
-    // open queue settings (queue menu, or player menu with an MA queue)
-    if (isQueue || playerQueue) {
+    const openSettings = (path: string) => () => {
+      store.showFullscreenPlayer = false;
+      store.showPlayersMenu = false;
+      router.push(path);
+    };
+    if (isPlayer) {
+      // the player settings page links on to the other sections from there
       menuItems.push({
-        label: "open_queue_settings",
+        label: "open_settings",
         labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(
-            `/settings/editqueue/${playerQueue?.queue_id ?? player.player_id}`,
-          );
-        },
+        action: openSettings(`/settings/editplayer/${player.player_id}`),
         icon: "mdi-cog-outline",
       });
-    }
-
-    // open player settings (both menus)
-    menuItems.push({
-      label: "open_player_settings",
-      labelArgs: [],
-      action: () => {
-        store.showFullscreenPlayer = false;
-        store.showPlayersMenu = false;
-        router.push(`/settings/editplayer/${player.player_id}`);
-      },
-      icon: "mdi-cog-outline",
-    });
-
-    // configure the player or re-run its setup flow on demand
-    if (isPlayer) {
-      const setupMenuItem = getPlayerSetupMenuItem(player);
-      if (setupMenuItem) menuItems.push(setupMenuItem);
-    }
-
-    // open dsp settings (player menu only)
-    if (isPlayer && player.type !== PlayerType.GROUP) {
-      menuItems.push({
-        label: "open_dsp_settings",
+    } else {
+      const subItems: ContextMenuItem[] = [];
+      if (playerQueue) {
+        subItems.push({
+          label: "settings.queue_settings",
+          labelArgs: [],
+          action: openSettings(`/settings/editqueue/${playerQueue.queue_id}`),
+        });
+      }
+      subItems.push({
+        label: "settings.player_settings",
         labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/dsp`);
-        },
-        icon: "mdi-equalizer",
+        action: openSettings(`/settings/editplayer/${player.player_id}`),
       });
-    }
-
-    // open player options (both menus)
-    if (player.options.length > 0) {
+      if (player.type !== PlayerType.GROUP) {
+        subItems.push({
+          label: "settings.category.dsp",
+          labelArgs: [],
+          action: openSettings(`/settings/editplayer/${player.player_id}/dsp`),
+        });
+      }
       menuItems.push({
-        label: "player_options.open",
+        label: "open_settings",
         labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/options`);
-        },
-        icon: "mdi-tune",
+        icon: "mdi-cog-outline",
+        subItems,
       });
     }
   }
 
+  // MilkDrop visualizer on/off for this player (both menus; a player control,
+  // stored as a per-player user preference). Kept at the bottom, with the
+  // other display/appearance entries rather than the playback controls.
+  // Only offered for players that can be visualized at all: the waveform is
+  // tapped from the player's Sendspin stream.
+  if (
+    visualizerProviderAvailable() &&
+    playerSupportsVisualizer(player.player_id)
+  ) {
+    menuItems.push({
+      label: "settings.visualizer_enabled.label",
+      action: () => toggleVisualizerForPlayer(player.player_id),
+      icon: markRaw(Droplet),
+      selected: visualizerEnabledForPlayer(player.player_id),
+      close_on_click: false,
+    });
+  }
+
   return menuItems;
 };
+
+/** Assigns (or clears) a queue's AI DJ host, reporting a failed command to the user. */
+async function assignQueueDj(
+  queueId: string,
+  hostId: string | null,
+): Promise<void> {
+  try {
+    await useHosts().setQueueDj(queueId, hostId);
+  } catch (error) {
+    toast.error(errorMessage(error));
+  }
+}

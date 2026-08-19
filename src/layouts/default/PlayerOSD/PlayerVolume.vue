@@ -2,6 +2,18 @@
   <div ref="wrapperRef" class="player-volume-wrapper">
     <!-- Sonos-style group volume popout (teleported to body to escape overflow clipping) -->
     <Teleport to="body">
+      <!-- Volume readout, teleported for the same reason: the bars this slider
+           sits in clip their own overflow -->
+      <Transition name="volume-bubble">
+        <div
+          v-if="showStepButtons"
+          class="volume-bubble"
+          :style="bubbleStyle"
+          aria-hidden="true"
+        >
+          {{ Math.round(displayValue) }}
+        </div>
+      </Transition>
       <!-- Invisible backdrop: catches all clicks/taps outside the popout and stops propagation -->
       <Transition name="popout-backdrop">
         <div
@@ -62,32 +74,59 @@
     <!-- Main volume slider -->
     <div
       ref="sliderContainerRef"
+      data-no-panel-drag
       class="player-volume-container"
       :class="{
         disabled: isDisabled,
         muted: isMuted,
         'not-powered': player.powered == false,
+        expandable: expandOnTouch,
+        expanded: showStepButtons,
+        'relative-mode': isRelativeMode,
       }"
       :style="{ width: width }"
       @click="onSliderClick"
+      @mousedown="onMouseDown"
       @pointerdown.capture="onPointerDown"
       @pointermove.capture="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerCancel"
-      @wheel.prevent="onWheel"
+      @wheel="onWheel"
       @touchstart="onTouchStart"
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
       @touchcancel="onTouchCancel"
     >
-      <!-- Mute button with dynamic volume icon -->
-      <div class="volume-prepend" @touchstart.stop @touchend.stop>
+      <!-- Mute button with dynamic volume icon. The slot swallows the whole
+           touch sequence, moves included: a touch that starts on a button is
+           never the slider being dragged, and letting the moves through would
+           measure them against whatever the last touch on the track started at. -->
+      <div
+        class="volume-prepend"
+        @touchstart.stop
+        @touchmove.stop
+        @touchend.stop
+        @touchcancel.stop
+      >
         <button
-          class="volume-icon-btn"
+          class="volume-icon-btn volume-slot-item"
+          :class="{ 'is-hidden': showStepButtons }"
+          :inert="showStepButtons"
           :disabled="muteDisabled"
           @click.stop="onMuteToggle"
         >
           <component :is="volumeIconComponent" :size="iconSize" />
+        </button>
+        <button
+          v-if="expandOnTouch"
+          type="button"
+          class="volume-step-btn volume-slot-item"
+          :class="{ 'is-hidden': !showStepButtons }"
+          :inert="!showStepButtons"
+          :aria-label="$t('tooltip.volume_down')"
+          @click.stop="onStepDown"
+        >
+          <Minus :size="iconSize" />
         </button>
       </div>
 
@@ -104,14 +143,32 @@
 
       <!-- Volume level display -->
       <div
-        v-if="showVolumeLevel"
+        v-if="showVolumeLevel || expandOnTouch"
         class="volume-append"
         @touchstart.stop
+        @touchmove.stop
         @touchend.stop
+        @touchcancel.stop
       >
-        <span class="volume-level-text">
+        <span
+          v-if="showVolumeLevel"
+          class="volume-level-text volume-slot-item"
+          :class="{ 'is-hidden': showStepButtons }"
+          :inert="showStepButtons"
+        >
           {{ Math.round(displayValue) }}
         </span>
+        <button
+          v-if="expandOnTouch"
+          type="button"
+          class="volume-step-btn volume-slot-item"
+          :class="{ 'is-hidden': !showStepButtons }"
+          :inert="!showStepButtons"
+          :aria-label="$t('tooltip.volume_up')"
+          @click.stop="onStepUp"
+        >
+          <Plus :size="iconSize" />
+        </button>
       </div>
     </div>
   </div>
@@ -119,6 +176,8 @@
 
 <script setup lang="ts">
 import { Slider } from "@/components/ui/slider";
+import { useUserPreferences } from "@/composables/userPreferences";
+import { deviceInset } from "@/helpers/device";
 import { getVolumeIconComponent, truncateString } from "@/helpers/utils";
 import { cn } from "@/lib/utils";
 import { api } from "@/plugins/api";
@@ -129,7 +188,8 @@ import {
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { computed, onUnmounted, ref, watch } from "vue";
+import { Minus, Plus } from "@lucide/vue";
+import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 
 export interface Props {
   /** The player to control — component handles all volume logic internally */
@@ -145,6 +205,8 @@ export interface Props {
   enablePopout?: boolean;
   /** Ask the parent to expand inline group controls when the slider is tapped */
   requestExpandOnGroupTap?: boolean;
+  /** Fatten the rail and swap the mute and level slots for step buttons while a finger is on it */
+  expandOnTouch?: boolean;
   width?: string;
   step?: number;
   allowWheel?: boolean;
@@ -159,6 +221,7 @@ const props = withDefaults(defineProps<Props>(), {
   preferGroupVolume: false,
   enablePopout: true,
   requestExpandOnGroupTap: false,
+  expandOnTouch: false,
   width: "100%",
   step: 2,
   allowWheel: false,
@@ -167,9 +230,22 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: "update:local-value", value: number): void;
   (e: "toggle-group-expansion"): void;
 }>();
+
+// --- User preferences (Settings -> Frontend -> Volume control) ---
+
+const { getPreference } = useUserPreferences();
+
+// "absolute": the drag/tap position sets the volume. "relative": the drag
+// distance adjusts the volume from the value the drag started at.
+const volumeSliderMode = getPreference<string>(
+  "volume_slider_mode",
+  "absolute",
+);
+const isRelativeMode = computed(() => volumeSliderMode.value === "relative");
+
+const hapticsEnabled = getPreference<boolean>("volume_haptics", true);
 
 // --- Player-aware computed properties ---
 
@@ -284,31 +360,40 @@ const updatePopoutPosition = () => {
   const rect = wrapperRef.value.getBoundingClientRect();
   // Align popout bottom with wrapper bottom so the group volume slider overlaps the main one
   const bottom = `${window.innerHeight - rect.bottom}px`;
+  // It grows upwards from there, so a large group is capped at the room above
+  const maxHeight = `${rect.bottom - POPOUT_MARGIN}px`;
+  // The popout is teleported out to the body, so the padding its container
+  // keeps clear of the cutout never reaches it and it holds the margin off the
+  // safe edges itself
+  const insetLeft = deviceInset("left");
+  const insetRight = deviceInset("right");
 
   if (store.mobileLayout) {
     // Full width with padding on mobile
     popoutStyle.value = {
       position: "fixed",
       bottom,
-      left: `${POPOUT_MARGIN}px`,
-      right: `${POPOUT_MARGIN}px`,
+      maxHeight,
+      left: `${POPOUT_MARGIN + insetLeft}px`,
+      right: `${POPOUT_MARGIN + insetRight}px`,
     };
   } else {
     // Desktop: use wrapper width but at least POPOUT_MIN_WIDTH, centered
-    // on the wrapper, clamped to viewport edges
+    // on the wrapper, clamped to the safe edges
     const popoutWidth = Math.max(rect.width, POPOUT_MIN_WIDTH);
     const wrapperCenter = rect.left + rect.width / 2;
     let left = wrapperCenter - popoutWidth / 2;
 
-    // Clamp to viewport edges
-    if (left < POPOUT_MARGIN) left = POPOUT_MARGIN;
-    if (left + popoutWidth > window.innerWidth - POPOUT_MARGIN) {
-      left = window.innerWidth - POPOUT_MARGIN - popoutWidth;
+    // Clamp to the safe edges
+    if (left < POPOUT_MARGIN + insetLeft) left = POPOUT_MARGIN + insetLeft;
+    if (left + popoutWidth > window.innerWidth - POPOUT_MARGIN - insetRight) {
+      left = window.innerWidth - POPOUT_MARGIN - insetRight - popoutWidth;
     }
 
     popoutStyle.value = {
       position: "fixed",
       bottom,
+      maxHeight,
       left: `${left}px`,
       width: `${popoutWidth}px`,
     };
@@ -318,12 +403,22 @@ const updatePopoutPosition = () => {
 const toggleGroupPopout = () => {
   if (!showGroupPopout.value) {
     updatePopoutPosition();
+    // The group slider is the last row, so a capped list has to open scrolled
+    // to the bottom to keep it over the slider that was tapped
+    nextTick(() => {
+      if (popoutRef.value) {
+        popoutRef.value.scrollTop = popoutRef.value.scrollHeight;
+      }
+    });
   }
   showGroupPopout.value = !showGroupPopout.value;
   lastPopoutToggleTime = Date.now();
 };
 
 const handleGroupTap = () => {
+  // the group controls carry their own volume rows, so the bar's own step
+  // buttons must not linger behind them
+  collapseControls();
   if (hasGroupPopout.value) {
     toggleGroupPopout();
   } else {
@@ -399,6 +494,11 @@ const displayValue = ref(currentVolume.value);
 const touchStartX = ref(0);
 const touchStartY = ref(0);
 const touchStartValue = ref(0);
+const touchStartThumbCenter = ref<number | null>(null);
+// The position at which the gesture crossed the 8px mark and became a drag.
+// Relative adjustments are measured from here, so the travel spent recognising
+// the drag is not itself a volume change.
+const touchDragAnchorX = ref(0);
 const isScrolling = ref(false);
 const isDrag = ref(false);
 const touchMoveCount = ref(0);
@@ -412,13 +512,53 @@ let pointerStartX: number | null = null;
 let pointerStartValue = 0;
 let pointerMoved = false;
 
+// Mouse drag tracking (relative mode only)
+const isMouseDragging = ref(false);
+const mouseStartX = ref(0);
+const mouseStartValue = ref(0);
+
 let sliderUpdateDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 const SLIDER_UPDATE_DEBOUNCE_MS = 100;
 const POINTER_DRAG_THRESHOLD = 4;
 
+// Live drag updates: the volume follows the finger instead of waiting for
+// release. Throttled because every send is a separate websocket command.
+const LIVE_SEND_THROTTLE_MS = 100;
+const MAX_GROUP_LIVE_SEND_THROTTLE_MS = 500;
+
+// A group command is applied to every member in parallel and each member's state
+// change is broadcast to every connected client, so one command costs about as
+// much as the group has members. Widening the window in step keeps that near
+// what a single player costs, capped so a large group still tracks the finger.
+const liveSendThrottleMs = computed(() =>
+  useGroupVolume.value
+    ? Math.min(
+        MAX_GROUP_LIVE_SEND_THROTTLE_MS,
+        LIVE_SEND_THROTTLE_MS * Math.max(1, childPlayers.value.length),
+      )
+    : LIVE_SEND_THROTTLE_MS,
+);
+let liveSendTimeout: ReturnType<typeof setTimeout> | null = null;
+// Both reset in startDragging: a fresh gesture sends at once rather than waiting
+// out the previous one's window, and an external volume change between drags can
+// never make its first send look redundant.
+let lastLiveSendTime = 0;
+let lastSentValue: number | null = null;
+
+// Relative mode: the drag *distance* is applied to the value the drag started
+// from, at reduced speed so small adjustments are easier to land.
+const RELATIVE_DRAG_SENSITIVITY = 0.5;
+// Below this a relative-mode mouse gesture counts as a click, not a drag
+const MOUSE_DRAG_THRESHOLD_PX = 5;
+
 onUnmounted(() => {
   if (dragEndTimeout) clearTimeout(dragEndTimeout);
   if (sliderUpdateDebounceTimeout) clearTimeout(sliderUpdateDebounceTimeout);
+  if (liveSendTimeout) clearTimeout(liveSendTimeout);
+  document.removeEventListener("mousemove", onMouseMove);
+  document.removeEventListener("mouseup", onMouseUp);
+  stopTrackingBubble();
+  cancelCollapse();
 });
 
 const clamp = (value: number, min: number, max: number) =>
@@ -431,6 +571,8 @@ const roundToStep = (value: number) =>
 
 const startDragging = () => {
   isDragging.value = true;
+  lastSentValue = null;
+  lastLiveSendTime = 0;
   if (dragEndTimeout) {
     clearTimeout(dragEndTimeout);
     dragEndTimeout = null;
@@ -453,6 +595,52 @@ const setVolume = (value: number) => {
   } else {
     api.playerCommandVolumeSet(props.player.player_id, value);
   }
+};
+
+const cancelLiveSend = () => {
+  if (liveSendTimeout) {
+    clearTimeout(liveSendTimeout);
+    liveSendTimeout = null;
+  }
+};
+
+// Sends straight away when the last send is old enough, otherwise schedules a
+// trailing send that picks up whatever the value has become by the time it fires.
+const sendVolumeLive = (value: number) => {
+  // Wandering back onto the value already sent leaves nothing to schedule, and
+  // any send still pending for the value in between is now moot.
+  if (value === lastSentValue) {
+    cancelLiveSend();
+    return;
+  }
+
+  const throttleMs = liveSendThrottleMs.value;
+  const elapsed = Date.now() - lastLiveSendTime;
+  if (elapsed >= throttleMs) {
+    cancelLiveSend();
+    lastLiveSendTime = Date.now();
+    lastSentValue = value;
+    setVolume(value);
+    return;
+  }
+
+  cancelLiveSend();
+  liveSendTimeout = setTimeout(() => {
+    liveSendTimeout = null;
+    lastLiveSendTime = Date.now();
+    lastSentValue = displayValue.value;
+    setVolume(displayValue.value);
+  }, throttleMs - elapsed);
+};
+
+// Settles the gesture on this value, cancelling any pending throttled send
+// rather than racing it.
+const sendVolumeFinal = (value: number) => {
+  cancelLiveSend();
+  if (value === lastSentValue) return;
+  lastLiveSendTime = Date.now();
+  lastSentValue = value;
+  setVolume(value);
 };
 
 const volumeUp = () => {
@@ -483,14 +671,113 @@ const onMuteToggle = () => {
   }
 };
 
+// --- Touch expansion ---
+
+const isExpanded = ref(false);
+const bubbleStyle = ref<Record<string, string>>({});
+let collapseTimeout: ReturnType<typeof setTimeout> | null = null;
+let bubbleFrame: number | null = null;
+const COLLAPSE_DELAY_MS = 2000;
+const BUBBLE_GAP = 10;
+
+// The step buttons take over the mute and level slots, so a slider that cannot
+// be dragged keeps the mute button the user needs to get out of that state
+const showStepButtons = computed(
+  () => props.expandOnTouch && !isSliderDisabled.value && isExpanded.value,
+);
+
+// Only the touch handlers reach this: a pointer hits the resting rail
+// accurately enough, so growing it under a mouse would be noise
+const expandControls = () => {
+  if (!props.expandOnTouch || isSliderDisabled.value) return;
+  // placed before the readout renders, so it never shows up at the last
+  // position it was dismissed from
+  updateBubblePosition();
+  isExpanded.value = true;
+  cancelCollapse();
+};
+
+const collapseControlsSoon = () => {
+  if (!isExpanded.value) return;
+  cancelCollapse();
+  collapseTimeout = setTimeout(() => {
+    isExpanded.value = false;
+    collapseTimeout = null;
+  }, COLLAPSE_DELAY_MS);
+};
+
+const collapseControls = () => {
+  cancelCollapse();
+  isExpanded.value = false;
+};
+
+const onStepDown = () => {
+  expandControls();
+  volumeDown();
+  collapseControlsSoon();
+};
+
+const onStepUp = () => {
+  expandControls();
+  volumeUp();
+  collapseControlsSoon();
+};
+
+const cancelCollapse = () => {
+  if (collapseTimeout) {
+    clearTimeout(collapseTimeout);
+    collapseTimeout = null;
+  }
+};
+
+// The readout rides the thumb, which sits at the value's fraction of the track
+// because the slider aligns its thumb by overflow rather than inset. It is
+// fixed to the viewport to clear the bars' own clipping, so it is re-measured
+// rather than assumed: the rail thickens under it, and the panel it sits in can
+// still be sliding open or scrolling.
+const updateBubblePosition = () => {
+  const track = sliderContainerRef.value?.querySelector(
+    '[data-slot="slider-track"]',
+  );
+  if (!track) return;
+  const rect = track.getBoundingClientRect();
+  const left = `${rect.left + (clamp(displayValue.value, 0, 100) / 100) * rect.width}px`;
+  const bottom = `${window.innerHeight - rect.top + BUBBLE_GAP}px`;
+  // settling on a position ends the re-renders until something moves again
+  if (bubbleStyle.value.left === left && bubbleStyle.value.bottom === bottom) {
+    return;
+  }
+  bubbleStyle.value = { left, bottom };
+};
+
+const trackBubble = () => {
+  updateBubblePosition();
+  bubbleFrame = requestAnimationFrame(trackBubble);
+};
+
+const stopTrackingBubble = () => {
+  if (bubbleFrame === null) return;
+  cancelAnimationFrame(bubbleFrame);
+  bubbleFrame = null;
+};
+
 // --- Helpers ---
 
 const vibrate = (duration: number = 10) => {
+  if (!hapticsEnabled.value) return;
   if (store.isTouchscreen && "vibrate" in navigator && navigator.vibrate) {
     navigator.vibrate(duration);
   }
 };
 
+const getThumbCenter = (): number | null => {
+  const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
+  if (!thumb) return null;
+  const rect = thumb.getBoundingClientRect();
+  return rect.left + rect.width / 2;
+};
+
+// Absolute mode: the pointer position maps directly onto the 0-100 range.
 const getPercentageFromX = (clientX: number): number => {
   if (!sliderContainerRef.value) return displayValue.value;
 
@@ -501,6 +788,23 @@ const getPercentageFromX = (clientX: number): number => {
   return clamp(roundToStep(percentage), 0, 100);
 };
 
+// Relative mode: deltaX is the travel since the gesture was recognised as a
+// drag, applied to the value it started from at reduced sensitivity.
+const getValueFromDelta = (startValue: number, deltaX: number): number => {
+  if (!sliderContainerRef.value) return displayValue.value;
+
+  const rect = sliderContainerRef.value.getBoundingClientRect();
+  const deltaPercent = (deltaX / rect.width) * 100 * RELATIVE_DRAG_SENSITIVITY;
+
+  return clamp(roundToStep(startValue + deltaPercent), 0, 100);
+};
+
+// Resolves a touch drag position through whichever mode is active.
+const getDragValue = (clientX: number): number =>
+  isRelativeMode.value
+    ? getValueFromDelta(touchStartValue.value, clientX - touchDragAnchorX.value)
+    : getPercentageFromX(clientX);
+
 // --- Touch handlers ---
 
 const onTouchStart = (event: TouchEvent) => {
@@ -510,12 +814,19 @@ const onTouchStart = (event: TouchEvent) => {
   const touch = event.touches[0];
   touchStartX.value = touch.clientX;
   touchStartY.value = touch.clientY;
+  touchDragAnchorX.value = touch.clientX;
   touchStartValue.value = displayValue.value;
   isScrolling.value = false;
   isDrag.value = false;
   touchMoveCount.value = 0;
   maxMovement.value = 0;
+  // read before expanding: the rail's ends draw in as it grows, so measuring at
+  // touchend would compare the tap against a thumb that has since moved
+  touchStartThumbCenter.value = getThumbCenter();
 
+  // a group slider answers a tap by opening its own volume controls, so it waits
+  // for a drag rather than swapping its buttons out from under the tap
+  if (!handlesGroupTap.value) expandControls();
   vibrate();
 };
 
@@ -543,15 +854,21 @@ const onTouchMove = (event: TouchEvent) => {
   }
 
   if (!isDrag.value && !isScrolling.value) {
-    if (absDeltaY > 10 && absDeltaY > absDeltaX * 2) {
+    // A non-cancelable move means the browser already owns the gesture (panning
+    // the group popout), so a drag from here would fight a scroll it cannot stop
+    if (!event.cancelable || (absDeltaY > 10 && absDeltaY > absDeltaX * 2)) {
       isScrolling.value = true;
+      // the panels these sliders sit in scroll, so a list of them must not be
+      // left fattened in the wake of a swipe
+      collapseControls();
       displayValue.value = touchStartValue.value;
-      emit("update:local-value", touchStartValue.value);
       return;
     }
 
     if (absDeltaX > 8) {
       isDrag.value = true;
+      touchDragAnchorX.value = touch.clientX;
+      expandControls();
       startDragging();
       event.preventDefault();
     }
@@ -560,19 +877,26 @@ const onTouchMove = (event: TouchEvent) => {
   if (isDrag.value) {
     event.preventDefault();
 
-    const newValue = getPercentageFromX(touch.clientX);
+    const newValue = getDragValue(touch.clientX);
     const valueChanged = newValue !== displayValue.value;
 
     displayValue.value = newValue;
-    emit("update:local-value", newValue);
 
     if (valueChanged) {
       vibrate(5);
+      sendVolumeLive(newValue);
     }
   }
 };
 
 const onTouchEnd = (event: TouchEvent) => {
+  // ahead of the guard: a player that goes unavailable mid-touch would
+  // otherwise leave the slider latched open, to expand again on its own the
+  // moment it comes back
+  collapseControlsSoon();
+  // ahead of the guards too: every branch below settles the volume itself, so a
+  // throttled send must never outlive the gesture that queued it
+  cancelLiveSend();
   if (isSliderDisabled.value && !handlesGroupTap.value) return;
 
   if (isScrolling.value) {
@@ -590,15 +914,12 @@ const onTouchEnd = (event: TouchEvent) => {
         sliderUpdateDebounceTimeout = null;
       }
       displayValue.value = touchStartValue.value;
-      emit("update:local-value", touchStartValue.value);
       handleGroupTap();
     } else if (!isSliderDisabled.value) {
       // Single player: tap before/after handle for volume up/down
       const touch = event.changedTouches[0];
-      const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
-      if (thumb) {
-        const thumbRect = thumb.getBoundingClientRect();
-        const thumbCenter = thumbRect.left + thumbRect.width / 2;
+      const thumbCenter = touchStartThumbCenter.value ?? getThumbCenter();
+      if (thumbCenter !== null) {
         if (touch.clientX > thumbCenter) {
           volumeUp();
         } else {
@@ -607,16 +928,11 @@ const onTouchEnd = (event: TouchEvent) => {
       }
     }
   } else if (!isSliderDisabled.value) {
-    // Drag end: send the final absolute value to the server
+    // Drag end: settle on the exact value the gesture ended at
     const touch = event.changedTouches[0];
-    const finalValue = clamp(
-      roundToStep(getPercentageFromX(touch.clientX)),
-      0,
-      100,
-    );
+    const finalValue = getDragValue(touch.clientX);
     displayValue.value = finalValue;
-    emit("update:local-value", finalValue);
-    setVolume(finalValue);
+    sendVolumeFinal(finalValue);
     stopDragging();
   }
 
@@ -650,6 +966,7 @@ const onPointerMove = (event: PointerEvent) => {
 };
 
 const onPointerUp = () => {
+  collapseControlsSoon();
   if (pointerStartX === null) return;
   const shouldExpand = !pointerMoved;
   resetPointerInteraction();
@@ -659,7 +976,6 @@ const onPointerUp = () => {
       if (isSliderDisabled.value) {
         isDragging.value = false;
         displayValue.value = pointerStartValue;
-        emit("update:local-value", pointerStartValue);
       } else {
         setVolume(displayValue.value);
         stopDragging();
@@ -678,11 +994,11 @@ const onPointerUp = () => {
   }
   isDragging.value = false;
   displayValue.value = pointerStartValue;
-  emit("update:local-value", pointerStartValue);
   handleGroupTap();
 };
 
 const onPointerCancel = () => {
+  collapseControlsSoon();
   if (pointerStartX === null) return;
   resetPointerInteraction();
   if (sliderUpdateDebounceTimeout) {
@@ -695,7 +1011,6 @@ const onPointerCancel = () => {
   }
   isDragging.value = false;
   displayValue.value = pointerStartValue;
-  emit("update:local-value", pointerStartValue);
 };
 
 const resetPointerInteraction = () => {
@@ -704,21 +1019,119 @@ const resetPointerInteraction = () => {
 };
 
 const onTouchCancel = () => {
+  collapseControlsSoon();
+  const wasDragging = isDrag.value;
   isDrag.value = false;
   isScrolling.value = false;
   touchMoveCount.value = 0;
   maxMovement.value = 0;
+  isTouching.value = false;
+
+  // a disabled slider tracks the drag only to tell it apart from a tap, so it
+  // has no value to settle on
+  if (wasDragging && !isSliderDisabled.value) {
+    // The drag has already changed the volume audibly, so an interruption
+    // settles where it left off rather than snapping back to the start.
+    sendVolumeFinal(displayValue.value);
+    stopDragging();
+    return;
+  }
+
+  cancelLiveSend();
   displayValue.value = touchStartValue.value;
   isDragging.value = false;
   if (dragEndTimeout) {
     clearTimeout(dragEndTimeout);
     dragEndTimeout = null;
   }
-  isTouching.value = false;
+};
+
+// --- Mouse drag handlers (relative mode only) ---
+//
+// In absolute mode the Slider owns mouse input and onPointerDown/onSliderClick
+// own the group tap, so every handler here bails out early. In relative mode
+// the slider has pointer-events disabled, which also makes the pointer
+// handlers inert (their targetsSlider check can never match).
+
+const onMouseMove = (event: MouseEvent) => {
+  if (!isMouseDragging.value) return;
+  // A mouseup swallowed by a context menu or a window switch would otherwise
+  // leave the drag latched, and with it the block on server volume updates.
+  if (event.buttons === 0) {
+    onMouseUp(event);
+    return;
+  }
+  if (isSliderDisabled.value) return;
+
+  const newValue = getValueFromDelta(
+    mouseStartValue.value,
+    event.clientX - mouseStartX.value,
+  );
+
+  displayValue.value = newValue;
+};
+
+const onMouseUp = (event: MouseEvent) => {
+  document.removeEventListener("mousemove", onMouseMove);
+  document.removeEventListener("mouseup", onMouseUp);
+
+  if (!isMouseDragging.value) return;
+  isMouseDragging.value = false;
+
+  const deltaX = event.clientX - mouseStartX.value;
+
+  if (Math.abs(deltaX) < MOUSE_DRAG_THRESHOLD_PX) {
+    // Too little travel to be a drag, so treat it as a click and run the group
+    // action instead of changing the volume. Guarded like onSliderClick: a tap
+    // on a touchscreen also arrives here as a compatibility mouse event, after
+    // touchend has already run the action.
+    if (
+      handlesGroupTap.value &&
+      !isTouching.value &&
+      Date.now() - lastPopoutToggleTime >= 500
+    ) {
+      handleGroupTap();
+    }
+  } else if (!isSliderDisabled.value) {
+    const finalValue = getValueFromDelta(mouseStartValue.value, deltaX);
+    displayValue.value = finalValue;
+    setVolume(finalValue);
+  }
+
+  stopDragging();
+};
+
+const onMouseDown = (event: MouseEvent) => {
+  if (!isRelativeMode.value) return;
+  // only the primary button drags: a right click has its own context menu, and
+  // latching on it would block server updates until the mouse moved again
+  if (event.button !== 0) return;
+  // a muted slider still answers a tap by opening the group's own controls,
+  // which is how you get to a child slider to unmute it
+  if (isSliderDisabled.value && !handlesGroupTap.value) return;
+  // Leave the mute button and the volume readout to their own handlers
+  if (
+    (event.target as HTMLElement).closest(".volume-prepend, .volume-append")
+  ) {
+    return;
+  }
+
+  isMouseDragging.value = true;
+  mouseStartX.value = event.clientX;
+  mouseStartValue.value = displayValue.value;
+  startDragging();
+  // Suppress text selection while dragging
+  event.preventDefault();
+
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", onMouseUp);
 };
 
 const onWheel = (event: WheelEvent) => {
+  // Only claim the wheel when it changes volume, so sliders inside a scrollable
+  // container (the group popout) still scroll it
   if (!props.allowWheel || isSliderDisabled.value) return;
+  event.preventDefault();
 
   if (event.deltaY < 0) {
     volumeUp();
@@ -739,7 +1152,6 @@ const onSliderUpdate = (values: number[] | undefined) => {
   const newValue = values[0] ?? displayValue.value;
   startDragging();
   displayValue.value = newValue;
-  emit("update:local-value", newValue);
 
   if (pointerStartX !== null && !pointerMoved) return;
 
@@ -757,10 +1169,24 @@ const onSliderUpdate = (values: number[] | undefined) => {
 
 // Desktop clicks use the same group action as touch taps.
 const onSliderClick = () => {
+  // In relative mode the mouseup handler owns this, so don't run it twice
+  if (isRelativeMode.value) return;
   if (!handlesGroupTap.value || isTouching.value || isDragging.value) return;
   if (Date.now() - lastPopoutToggleTime < 500) return;
   handleGroupTap();
 };
+
+// a swapped-in player starts from the resting slider rather than inheriting
+// the step buttons the previous one was left with
+watch(() => props.player.player_id, collapseControls);
+
+watch(showStepButtons, (shown) => {
+  if (shown) {
+    if (bubbleFrame === null) trackBubble();
+  } else {
+    stopTrackingBubble();
+  }
+});
 
 // Sync server volume to display when not actively dragging
 watch(
@@ -770,7 +1196,6 @@ watch(
 
     if (Math.abs(displayValue.value - val) > 0.5) {
       displayValue.value = val;
-      emit("update:local-value", val);
     }
   },
   { immediate: true },
@@ -858,18 +1283,134 @@ watch(
   margin-left: 8px;
 }
 
+/* --- Touch expansion --- */
+
+/* The step buttons are absolute so they cross-fade over the mute button and the
+   level readout without ever taking width from the track: the slider keeps the
+   same geometry expanded or not, so the thumb never jumps under the finger. */
+.player-volume-container.expandable .volume-prepend,
+.player-volume-container.expandable .volume-append {
+  position: relative;
+  align-self: stretch;
+  transition: width 0.15s ease;
+}
+
+/* both slots widen by the same amount, so the track loses length evenly at each
+   end and its midpoint - and with it the thumb - barely moves */
+.player-volume-container.expanded .volume-prepend,
+.player-volume-container.expanded .volume-append {
+  width: 38px;
+}
+
+.volume-slot-item {
+  transition: opacity 0.15s ease;
+}
+
+.volume-slot-item.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.volume-step-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* they also reach outwards, into the margin the row already keeps clear, which
+   buys the tap target width the track does not have to give up */
+.volume-prepend .volume-step-btn {
+  inset: 0 0 0 -8px;
+}
+
+.volume-append .volume-step-btn {
+  inset: 0 -8px 0 0;
+}
+
+.volume-step-btn:active {
+  opacity: 0.5;
+}
+
+/* the rail fattens in place: it stays well inside the row's height, so the bar
+   around it keeps the height it rests at */
+.player-volume-container.expandable :deep([data-slot="slider-track"]),
+.player-volume-container.expandable :deep([data-slot="slider-track"])::before,
+.player-volume-container.expandable :deep([data-slot="slider-thumb"])::before {
+  transition:
+    height 0.15s ease,
+    width 0.15s ease;
+}
+
+.player-volume-container.expanded :deep([data-slot="slider-track"]),
+.player-volume-container.expanded :deep([data-slot="slider-track"])::before {
+  height: 12px !important;
+}
+
+.player-volume-container.expanded :deep([data-slot="slider-thumb"])::before {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 /* --- Group volume popout styles are in the unscoped style block below --- */
 
+/* On touch devices the container owns the gesture, so the slider itself must
+   not swallow pointer events. Mouse input still reaches the slider, which in
+   absolute mode keeps click-to-position and keyboard control working. */
 @media (pointer: coarse) {
   .volume-slider,
   .volume-slider :deep(*) {
     pointer-events: none;
   }
 }
+
+/* Relative mode: the container owns pointer interaction on every device. */
+.player-volume-container.relative-mode {
+  cursor: ew-resize;
+}
+
+.player-volume-container.relative-mode .volume-slider,
+.player-volume-container.relative-mode .volume-slider :deep(*) {
+  pointer-events: none;
+}
 </style>
 
-<!-- Unscoped styles for the teleported popout -->
+<!-- Unscoped styles for the teleported popout and volume readout -->
 <style>
+/* left is the thumb's centre, so the readout is shifted back over it */
+.volume-bubble {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 10001;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-border-color), 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  /* it tracks the thumb the finger is already on, so it must never take a touch */
+  pointer-events: none;
+}
+
+.volume-bubble-enter-active,
+.volume-bubble-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.volume-bubble-enter-from,
+.volume-bubble-leave-to {
+  opacity: 0;
+}
+
 .group-popout-backdrop {
   position: fixed;
   top: 0;
@@ -888,7 +1429,20 @@ watch(
   box-shadow:
     0 -4px 16px rgba(0, 0, 0, 0.15),
     0 -1px 4px rgba(0, 0, 0, 0.08);
+  /* Max-height is set inline: the room above the slider, less POPOUT_MARGIN */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 10001;
+}
+
+/* touch-action is intersected from the touched row up to the scroll container,
+   so the rows have to allow the vertical pan themselves; horizontal drags still
+   reach onTouchMove, which claims them. A scrolling list outside this component
+   opts in with .player-volume-scroller. The wrapper is named as well, to
+   out-rank the scoped rule whichever of the two blocks loads last. */
+.group-popout .player-volume-wrapper .player-volume-container,
+.player-volume-scroller .player-volume-wrapper .player-volume-container {
+  touch-action: pan-y;
 }
 
 .group-popout-row {
