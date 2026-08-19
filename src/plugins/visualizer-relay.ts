@@ -26,9 +26,23 @@ const AUTH_FAILED_CODE = 4001;
 
 export type RelayState = "connecting" | "streaming" | "waiting" | "closed";
 
+// color@v1 fields (see aiosendspin.models.color.SessionUpdateColor).
+export type ColorPaletteField =
+  | "background_dark"
+  | "background_light"
+  | "primary"
+  | "accent"
+  | "on_dark"
+  | "on_light";
+export type ColorPalette = Partial<
+  Record<ColorPaletteField, [number, number, number] | null>
+>;
+
 export interface VisualizerRelayCallbacks {
   onState?: (state: RelayState) => void;
   onDownbeat?: (timestampUs: number) => void;
+  // Fired with the full merged palette, not just what changed.
+  onColor?: (palette: ColorPalette) => void;
 }
 
 function relayUrl(playerQuery?: string): string {
@@ -74,6 +88,7 @@ export class VisualizerRelayClient {
   private beatTimers = new Set<number>();
   private pendingBeats: number[] = [];
   private state: RelayState = "connecting";
+  private colorPalette: ColorPalette = {};
 
   constructor(
     private readonly callbacks: VisualizerRelayCallbacks = {},
@@ -151,6 +166,7 @@ export class VisualizerRelayClient {
       this.clearBeatTimers();
       this.clock.clear();
       this.scheduler.clear();
+      this.colorPalette = {};
       if (this.closed) return;
       if (event.code === AUTH_FAILED_CODE) {
         console.warn("[visualizer] relay authentication rejected");
@@ -168,7 +184,7 @@ export class VisualizerRelayClient {
       let message: {
         type?: string;
         message?: string;
-        payload?: Record<string, number>;
+        payload?: Record<string, unknown>;
       };
       try {
         message = JSON.parse(event.data);
@@ -178,8 +194,14 @@ export class VisualizerRelayClient {
       }
       if (message.type === "auth_ok") {
         if (this.ws) this.startTimeSync(this.ws);
+      } else if (message.type === "color" && message.payload) {
+        this.colorPalette = {
+          ...this.colorPalette,
+          ...(message.payload as ColorPalette),
+        };
+        this.callbacks.onColor?.(this.colorPalette);
       } else if (message.type === "server/time" && message.payload) {
-        const p = message.payload;
+        const p = message.payload as Record<string, number>;
         // A missing/non-numeric field would produce a NaN sample, which
         // ClockSync's lowest-delay compare can keep as "best" for the whole
         // sliding window — stalling sync for minutes.
@@ -210,6 +232,7 @@ export class VisualizerRelayClient {
         message.type === "stream/clear" ||
         message.type === "stream/end"
       ) {
+        // Color is not reset here: stream/clear also fires on a plain seek.
         this.scheduler.clear();
         this.clearBeatTimers();
       } else if (message.type === "error") {

@@ -5,6 +5,7 @@
  * for as long as the id takes to arrive.
  */
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
+import { visualizerTintActive } from "@/composables/visualizer/state";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -71,6 +72,19 @@ vi.mock("@/plugins/api", async () => {
 
 vi.mock("@/plugins/store", () => ({
   store: { showFullscreenPlayer: false },
+}));
+
+const themeIsDark = vi.hoisted(() => ({ value: false }));
+vi.mock("@/plugins/vuetify", () => ({
+  default: {
+    theme: {
+      current: {
+        get value() {
+          return { dark: themeIsDark.value };
+        },
+      },
+    },
+  },
 }));
 
 function mountCanvas(playerId: string) {
@@ -219,5 +233,137 @@ describe("VisualizerCanvas playback gating", () => {
     // No wind-down to run: there is nothing on screen yet.
     expect(setPaused).toHaveBeenCalledWith(true, false);
     wrapper.unmount();
+  });
+});
+
+describe("VisualizerCanvas color tint", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (api.players as Record<string, { playback_state: PlaybackState }>).kitchen =
+      { playback_state: PlaybackState.PLAYING };
+  });
+
+  // Tint/scrim only show once streaming, like the relay's real onState.
+  function emitStreaming() {
+    const onState = relayConstructor.mock.calls.at(-1)?.[0]?.onState as
+      | ((state: string) => void)
+      | undefined;
+    onState?.("streaming");
+  }
+
+  // Simulates the relay's onColor callback.
+  function emitColor(palette: Record<string, [number, number, number] | null>) {
+    const onColor = relayConstructor.mock.calls.at(-1)?.[0]?.onColor as
+      | ((palette: unknown) => void)
+      | undefined;
+    onColor?.(palette);
+  }
+
+  it("tints with on_dark in the light theme, like the OSD gradient", async () => {
+    themeIsDark.value = false;
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    emitStreaming();
+    emitColor({
+      on_dark: [100, 180, 255],
+      on_light: [10, 40, 90],
+      primary: [10, 20, 30],
+      accent: null,
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("rgb(100, 180, 255)");
+    wrapper.unmount();
+  });
+
+  it("tints with on_light in the dark theme, like the OSD gradient", async () => {
+    themeIsDark.value = true;
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    emitStreaming();
+    emitColor({
+      on_dark: [100, 180, 255],
+      on_light: [10, 40, 90],
+      primary: [10, 20, 30],
+      accent: null,
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("rgb(10, 40, 90)");
+    themeIsDark.value = false;
+    wrapper.unmount();
+  });
+
+  it("falls back across the palette when the themed pick is missing", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    emitStreaming();
+    emitColor({ on_dark: null, on_light: [10, 40, 90] });
+    await flushPromises();
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("rgb(10, 40, 90)");
+
+    emitColor({ on_light: null, primary: [10, 20, 30] });
+    await flushPromises();
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("rgb(10, 20, 30)");
+
+    emitColor({ primary: null, accent: [1, 2, 3] });
+    await flushPromises();
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("rgb(1, 2, 3)");
+    wrapper.unmount();
+  });
+
+  it("stays transparent when the relay has sent no color", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    emitStreaming();
+    await flushPromises();
+
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("transparent");
+    wrapper.unmount();
+  });
+
+  it("resets the tint when the player changes, before the new relay speaks", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    emitStreaming();
+    emitColor({ primary: [10, 20, 30], accent: null });
+    await flushPromises();
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("rgb(10, 20, 30)");
+
+    await wrapper.setProps({ playerId: "living_room" });
+    await flushPromises();
+
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("transparent");
+    wrapper.unmount();
+  });
+
+  it("marks the shared tint-active flag only while a tint is actually painting", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+    expect(visualizerTintActive.value).toBe(false);
+
+    emitStreaming();
+    emitColor({ primary: [10, 20, 30], accent: null });
+    await flushPromises();
+    expect(visualizerTintActive.value).toBe(true);
+
+    wrapper.unmount();
+    expect(visualizerTintActive.value).toBe(false);
   });
 });

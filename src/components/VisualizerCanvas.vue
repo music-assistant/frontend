@@ -2,12 +2,12 @@
   MilkDrop (butterchurn) visualizer layer.
 
   Renders behind the view content (absolute, z-index 0, no pointer events),
-  fed by MA core's visualizer relay. A subtle scrim keeps overlaid text
-  legible; the blur option previews the "ambient background" treatment.
-  Renders nothing (transparent) while unsupported or disconnected, so the
-  regular gradient background underneath stays visible. Pausing or stopping
-  the player winds it down (waveform to silence, layer faded out) and
-  suspends the render loop.
+  fed by MA core's visualizer relay. A tint layer recolors toward the track's
+  artwork color; a subtle scrim keeps overlaid text legible; the blur option
+  previews the "ambient background" treatment. Renders nothing (transparent)
+  while unsupported or disconnected, so the regular gradient background
+  underneath stays visible. Pausing or stopping the player winds it down
+  (waveform to silence, layer faded out) and suspends the render loop.
 -->
 <template>
   <div class="visualizer-layer" aria-hidden="true" :style="layerStyle">
@@ -16,6 +16,11 @@
       class="visualizer-layer__canvas"
       :style="canvasStyle"
     ></canvas>
+    <div
+      v-if="streaming"
+      class="visualizer-layer__tint"
+      :style="tintStyle"
+    ></div>
     <div
       v-if="streaming"
       class="visualizer-layer__scrim"
@@ -38,13 +43,18 @@ import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  visualizerTintActive,
 } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { VisualizerRelayClient } from "@/plugins/visualizer-relay";
+import {
+  type ColorPalette,
+  VisualizerRelayClient,
+} from "@/plugins/visualizer-relay";
+import vuetify from "@/plugins/vuetify";
 
 // Settle time before winding down: track changes and buffer stalls drop a
 // player out of "playing" for a moment, and halting on those reads as a stutter.
@@ -118,6 +128,38 @@ const playbackPaused = computed(() => {
   return !!player && player.playback_state !== PlaybackState.PLAYING;
 });
 
+// Pushed over the relay alongside the waveform. The theme-side pick mirrors
+// the OSD's paletteFromServer treatment (dark theme: on_light, light theme:
+// on_dark), so the tint matches the album color the rest of the view shows.
+// primary (dominant by pixel count) is often the cover's dark backdrop, and
+// a near-black tint only desaturates the blend instead of coloring it.
+const colorPalette = ref<ColorPalette>({});
+const tintColor = computed(() => {
+  const palette = colorPalette.value;
+  const isDark = vuetify.theme.current.value.dark;
+  const rgb =
+    (isDark ? palette.on_light : palette.on_dark) ??
+    (isDark ? palette.on_dark : palette.on_light) ??
+    palette.primary ??
+    palette.accent;
+  return rgb ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})` : null;
+});
+
+// mix-blend-mode: color keeps the preset's own luminance, just shifts hue.
+const tintStyle = computed(() => ({
+  backgroundColor: tintColor.value ?? "transparent",
+}));
+
+// Other views (e.g. the fullscreen OSD) read this to know whether a tint is
+// actually painting the canvas right now, rather than guessing from opacity.
+watch(
+  () => streaming.value && !!tintColor.value,
+  (active) => {
+    visualizerTintActive.value = active;
+  },
+  { immediate: true },
+);
+
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
 // canvas mounted onto a paused player starts hidden instead of fading out.
@@ -179,6 +221,8 @@ let sizeObserver: ResizeObserver | null = null;
 const connectRelay = () => {
   relay?.close();
   relay = null;
+  // Don't carry the old player's tint over until the new relay speaks.
+  colorPalette.value = {};
   // Without a player the server would pick one itself (whichever Sendspin
   // player happens to be playing), so a canvas mounted before its view has
   // resolved the player would briefly visualize a different one. The watcher
@@ -193,6 +237,9 @@ const connectRelay = () => {
         streaming.value = state === "streaming";
       },
       onDownbeat,
+      onColor: (palette) => {
+        colorPalette.value = palette;
+      },
     },
     props.playerId,
   );
@@ -370,6 +417,7 @@ onBeforeUnmount(() => {
   relay?.close();
   relay = null;
   currentVisualizerPreset.value = null;
+  visualizerTintActive.value = false;
 });
 </script>
 
@@ -386,6 +434,13 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.visualizer-layer__tint {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: color;
+  transition: background-color 1.5s ease;
 }
 
 .visualizer-layer__scrim {

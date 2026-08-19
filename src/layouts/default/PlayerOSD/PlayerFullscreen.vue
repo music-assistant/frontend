@@ -497,6 +497,7 @@ import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { visualizerTintActive } from "@/composables/visualizer/state";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -1242,15 +1243,17 @@ const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
 
 watchEffect(() => {
-  // With a dominant visualizer the view is effectively dark content: force
-  // light text and a dark palette-gradient base. At low opacity (<=50%) the
-  // visualizer is only a faint overlay, so keep the completely normal
-  // theme/palette treatment instead of forcing the dark look. This component is
-  // permanently mounted via the OSD footer, so gate on the fullscreen player
-  // actually being open, or --text-color would stay forced app-wide.
+  // A live color tint plus the visualizer's own scrim already keeps it
+  // legible, so leave text/controls on the normal theme/palette treatment.
+  // Without a tint (disabled server-side, or no color for this track yet)
+  // the visualizer is just unpredictable color, so at high opacity fall back
+  // to forcing light text over a dark palette-gradient base. This component
+  // is permanently mounted via the OSD footer, so gate on the fullscreen
+  // player actually being open, or --text-color would stay forced app-wide.
   if (
     store.showFullscreenPlayer &&
     visualizerActive.value &&
+    !visualizerTintActive.value &&
     visualizerOpacityPref.value > 50
   ) {
     document.documentElement.style.setProperty("--text-color", "#ffffff");
