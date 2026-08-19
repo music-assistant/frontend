@@ -1417,7 +1417,8 @@ export interface Player {
   group_volume_muted: boolean | null;
   hide_in_ui: boolean;
   // private: the player belongs to a single device (a web/app client) or is an
-  // internal anchor, so it must not be offered as a playback or grouping target
+  // internal anchor; together with hide_in_ui it keeps the player out of the
+  // pickers on every other device
   private: boolean;
   icon: string;
   power_control: string;
