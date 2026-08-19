@@ -45,8 +45,6 @@ vi.mock("@/plugins/store", async () => {
     store: reactive({
       dialogActive: false,
       showPlayersMenu: false,
-      globalSearchTerm: "",
-      globalSearchMediaTypes: [],
       activePlayer: undefined,
       activePlayerQueue: undefined,
       curQueueItem: undefined,
