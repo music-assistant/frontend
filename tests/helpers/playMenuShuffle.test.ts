@@ -68,6 +68,7 @@ vi.mock("@/helpers/icon", () => ({
 }));
 
 vi.mock("@/plugins/api/helpers", () => ({
+  isAudioSource: vi.fn(() => false),
   isItemInLibrary: vi.fn(() => true),
   itemIsAvailable: vi.fn(() => true),
   itemSupportsPlayLog: vi.fn(() => false),
