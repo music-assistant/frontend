@@ -5,6 +5,8 @@ import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
+import { radio } from "../fixtures/radio";
+import { streamDetails } from "../fixtures/streamDetails";
 
 // Only the fields the lyrics clock and its gate read are mocked; the elapsed
 // time resolver reaches the queue through the player's active_source, so both
@@ -149,6 +151,9 @@ interface TestStore {
     playback_state?: PlaybackState;
     current_media?: {
       media_type?: MediaType;
+      title?: string | null;
+      artist?: string | null;
+      album?: string | null;
       duration?: number | null;
       elapsed_time?: number | null;
       elapsed_time_last_updated?: number | null;
@@ -512,5 +517,118 @@ describe("PlayerFullscreen overflow menu", () => {
     const labels = await openOverflowMenu(testCase.mediaType);
 
     expect(labels.includes("change_playback_speed")).toBe(testCase.offered);
+  });
+});
+
+describe("PlayerFullscreen source badge", () => {
+  beforeEach(async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = undefined;
+    testStore.activePlayerQueue = undefined;
+    testStore.curQueueItem = undefined;
+    // the queue panel replaces the details column below bp7, which is where
+    // the badge and the album line live
+    testStore.showQueueItems = false;
+  });
+
+  async function mountDetails(): Promise<VueWrapper> {
+    const { store } = await import("@/plugins/store");
+    (store as unknown as TestStore).showFullscreenPlayer = true;
+
+    wrapper = shallowMount(PlayerFullscreen, {
+      props: { colorPalette: EMPTY_COLOR_PALETTE },
+      global: {
+        mocks: { $vuetify: { display: { height: 900, mdAndUp: true } } },
+        stubs: {
+          "v-dialog": { template: "<div><slot /></div>" },
+          "v-card": { template: "<div><slot /></div>" },
+          // the title and album lines are the assertion targets, and a
+          // default stub renders no slot content
+          "v-card-title": { template: "<div class='title'><slot /></div>" },
+          "v-card-subtitle": { template: "<div class='sub'><slot /></div>" },
+          MarqueeText: { template: "<span><slot /></span>" },
+        },
+      },
+    });
+    await nextTick();
+    return wrapper;
+  }
+
+  function albumLine(fullscreen: VueWrapper) {
+    return fullscreen.findAll(".sub")[0];
+  }
+
+  it("names the station instead of repeating it as the album", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+      current_media: {
+        media_type: MediaType.RADIO,
+        title: "Live track",
+        artist: "Artist",
+        // the server puts the station name here when there is no real album
+        album: "Radio 538",
+      },
+    };
+    testStore.curQueueItem = {
+      queue_item_id: "qi-1",
+      media_item: radio({ name: "Radio 538" }),
+      streamdetails: streamDetails({
+        stream_metadata: {
+          title: "Live track",
+          artist: null,
+          album: null,
+          image_url: null,
+          duration: null,
+          uri: null,
+        },
+      }),
+    } as never;
+
+    const fullscreen = await mountDetails();
+
+    expect(
+      fullscreen.findComponent({ name: "NowPlayingSourceBadge" }).exists(),
+    ).toBe(true);
+    // blanked, but still rendered so the artwork above keeps its height
+    expect(albumLine(fullscreen).exists()).toBe(true);
+    expect(albumLine(fullscreen).text()).not.toContain("Radio 538");
+  });
+
+  it("leaves a real album on its line", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+      current_media: { title: "Song", artist: "Artist", album: "Album" },
+    };
+
+    const fullscreen = await mountDetails();
+
+    expect(albumLine(fullscreen).text()).toContain("Album");
+  });
+
+  // this replaced the "External source active: {0}" caption, so the title has
+  // to fall through to something rather than render blank
+  it("falls back to the player name when an external source sends no metadata", async () => {
+    const { store } = await import("@/plugins/store");
+    const testStore = store as unknown as TestStore;
+    testStore.activePlayer = {
+      player_id: "p1",
+      name: "Kitchen",
+      group_members: [],
+      active_source: "line-in",
+      source_list: [{ id: "line-in", name: "Line In" }],
+    };
+
+    const fullscreen = await mountDetails();
+
+    expect(fullscreen.get(".title").text()).toBe("Kitchen");
   });
 });

@@ -98,6 +98,9 @@
             </div>
           </div>
           <div class="main-media-details-track-info">
+            <!-- the source the audio comes from, when the title below is the
+                 track that source is streaming rather than the source itself -->
+            <NowPlayingSourceBadge class="main-media-details-source" />
             <!-- player name as title if its powered off-->
             <v-card-title
               v-if="store.activePlayer?.powered == false"
@@ -141,12 +144,12 @@
             <v-card-subtitle
               v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
               :style="`font-size: ${subTitleFontSize};${
-                store.activePlayer.current_media.album ? 'cursor:pointer;' : ''
+                albumSubtitle ? 'cursor:pointer;' : ''
               }`"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.album || " " }}
+                {{ albumSubtitle || " " }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -176,21 +179,9 @@
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: queue empty or other source active -->
-            <!-- 3rd party source active -->
-            <v-card-subtitle
-              v-if="
-                !store.activePlayerQueue && store.activePlayer?.active_source
-              "
-              class="caption"
-            >
-              {{
-                $t("external_source_active", [
-                  getSourceName(store.activePlayer),
-                ])
-              }}
-            </v-card-subtitle>
-            <v-card-subtitle v-else-if="queueEnded" class="caption">
+            <!-- subtitle: queue ended or empty; an active third party source
+                 is named by the badge above instead -->
+            <v-card-subtitle v-if="queueEnded" class="caption">
               {{ $t("queue_ended") }}
             </v-card-subtitle>
             <v-card-subtitle
@@ -525,16 +516,17 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { resolveCurrentChapter } from "@/helpers/chapters";
 import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
 import {
   MediaItemChapter,
   MediaType,
@@ -578,6 +570,8 @@ const MIN_HEIGHT_SHOW_PLAYER_SELECT_BUTTON = 480;
 const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
+
+const { albumSubtitle } = useNowPlayingSource();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
@@ -999,16 +993,10 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
 
 const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
-  if (!currentMedia?.album) return;
+  if (!currentMedia || !albumSubtitle.value) return;
 
   // Try to get the album from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
-
-  // Check if "album" is actually the radio station name - if so, do nothing
-  if (mediaItem && currentMedia.album === mediaItem.name) {
-    // Album field contains the station name, not a real album - ignore click
-    return;
-  }
 
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
     // Navigate directly to album detail page
@@ -1026,7 +1014,7 @@ const onAlbumClick = async function () {
       // Call with positional parameters: (favorite, search, limit, offset, order_by, album_types, provider)
       const results = await api.getLibraryAlbums(
         undefined, // favorite
-        currentMedia.album, // search
+        albumSubtitle.value, // search
         5, // limit - get a few results to find best match
         undefined,
         undefined,
@@ -1593,6 +1581,12 @@ onBeforeUnmount(() => {
 
 .main-media-details-track-info > * {
   max-width: 100%;
+}
+
+/* the badge introduces the title under it, so it pairs with the title rather
+   than sitting halfway up the block's own top padding */
+.main-media-details-source {
+  margin-bottom: 8px;
 }
 
 .player-bottom {

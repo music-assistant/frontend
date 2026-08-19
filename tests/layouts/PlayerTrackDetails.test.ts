@@ -4,6 +4,8 @@ import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { store } from "@/plugins/store";
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import { mount, type VueWrapper } from "@vue/test-utils";
+import { radio } from "../fixtures/radio";
+import { streamDetails } from "../fixtures/streamDetails";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import { createVuetify } from "vuetify";
@@ -30,6 +32,8 @@ vi.mock("@/plugins/api", () => {
     players: {},
     queues: {},
     queueElapsedTime: {},
+    providers: {},
+    providerManifests: {},
   };
   return { api, default: api };
 });
@@ -109,6 +113,9 @@ describe("PlayerTrackDetails chapters", () => {
     store.activePlayerQueue = undefined;
     store.curQueueItem = undefined;
     store.currentUser = undefined;
+    (
+      store.activePlayer as unknown as { active_source?: string }
+    ).active_source = undefined;
   });
 
   it("updates the chapter subtitle when the preference is enabled after mount", async () => {
@@ -278,5 +285,67 @@ describe("PlayerTrackDetails title", () => {
 
     expect(openCurrentTrackDetails).not.toHaveBeenCalled();
     expect(store.showFullscreenPlayer).toBe(true);
+  });
+});
+
+describe("PlayerTrackDetails source badge", () => {
+  beforeEach(() => {
+    (
+      store.activePlayer as unknown as { active_source?: string }
+    ).active_source = undefined;
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.activePlayerQueue = undefined;
+    store.curQueueItem = undefined;
+    (
+      store.activePlayer as unknown as { current_media: unknown }
+    ).current_media = {
+      title: "Song title",
+      artist: "Artist",
+      album: "Album",
+    };
+  });
+
+  // the server puts the station name in the album slot when the station has no
+  // real album, so the badge would otherwise repeat what is already on the line
+  it("names the station and drops it from the metadata line", () => {
+    store.activePlayerQueue = { queue_id: "q1", active: true } as never;
+    store.curQueueItem = {
+      media_item: radio({ name: "Radio 538" }),
+      streamdetails: streamDetails({
+        stream_metadata: {
+          title: "Live track",
+          artist: null,
+          album: null,
+          image_url: null,
+          duration: null,
+          uri: null,
+        },
+      }),
+    } as never;
+    (
+      store.activePlayer as unknown as { current_media: unknown }
+    ).current_media = {
+      title: "Live track",
+      artist: "Artist",
+      album: "Radio 538",
+    };
+
+    const details = mountDetails(false);
+
+    expect(details.get(".player-track-source").text()).toBe("Radio 538");
+    expect(details.get(".player-track-subtitle-text").text()).toBe("Artist");
+  });
+
+  it("leaves an ordinary album on the metadata line", () => {
+    const details = mountDetails(false);
+
+    expect(details.find(".player-track-source").exists()).toBe(false);
+    expect(details.get(".player-track-subtitle-text").text()).toContain(
+      "Album",
+    );
   });
 });

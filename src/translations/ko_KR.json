@@ -29,7 +29,6 @@
     "delete_db": "데이터베이스에서 항목 삭제",
     "details": "세부 정보",
     "enter_url": "데이터베이스에 수동으로 추가하려는 URL을 입력하세요.",
-    "external_source_active": "외부 소스 활성화: {0}",
     "goto_album": "앨범 {0} 으로 이동",
     "goto_artist": "아티스트 {0} 로 이동",
     "items_selected": "선택한 항목 {0}개",

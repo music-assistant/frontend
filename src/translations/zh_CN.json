@@ -31,7 +31,6 @@
     "delete_db": "从数据库中删除项目",
     "details": "详细信息",
     "enter_url": "输入要手动添加到数据库的 URL",
-    "external_source_active": "激活外部源:{0}",
     "goto_album": "跳转到唱片集{0}",
     "goto_artist": "转到歌手{0}",
     "items_selected": "已选择{0}项",
