@@ -210,7 +210,11 @@ export const GENERIC_HOST_SEGMENTS: ShowSegment[] =
 export const MERGE_SECTION_PROMPT =
   "Merge the drafts below into one coherent radio break. Preserve factual content, remove duplication, and make the final segment sound like one host speaking naturally.\n<section_drafts>";
 
-const GUARD_PLACEHOLDER_TOKENS = ["<weather_hourly>", "<timestamp>"] as const;
+const GUARD_PLACEHOLDER_TOKENS = [
+  "<weather_hourly>",
+  "<timestamp>",
+  "<weather_daily>",
+] as const;
 
 const detectRequiredPlaceholders = (prompt: string): string[] => {
   return GUARD_PLACEHOLDER_TOKENS.filter((token) => prompt.includes(token));
