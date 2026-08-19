@@ -31,7 +31,6 @@
     "delete_db": "Smazat položku z databáze",
     "details": "Podrobnosti",
     "enter_url": "Zadejte adresu URL, kterou chcete ručně přidat do databáze.",
-    "external_source_active": "Aktivní externí zdroj: {0}",
     "goto_album": "Přejít na album {0}",
     "goto_artist": "Přejít na umělce {0}",
     "items_selected": "Počet vybraných položek: {0}",
