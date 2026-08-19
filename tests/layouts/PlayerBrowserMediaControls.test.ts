@@ -9,22 +9,31 @@ interface MockPlayer {
   player_id?: string;
   active_source?: string;
   playback_state?: PlaybackState;
+  current_media?: { media_type?: string };
+}
+
+interface MockQueueItem {
+  media_item?: { media_type?: string };
 }
 
 interface MockQueue {
   queue_id: string;
   state?: PlaybackState;
   active?: boolean;
-  current_item?: { extra_attributes?: { playback_speed?: number } };
+  current_item?: MockQueueItem & {
+    extra_attributes?: { playback_speed?: number };
+  };
 }
 
 const {
   apiMock,
   storeMock,
   mockPlayerCommandSeek,
+  mockQueueCommandSkip,
   mockUseMediaBrowserMetaData,
 } = vi.hoisted(() => {
   const mockPlayerCommandSeek = vi.fn<MusicAssistantApi["playerCommandSeek"]>();
+  const mockQueueCommandSkip = vi.fn<MusicAssistantApi["queueCommandSkip"]>();
   return {
     apiMock: {
       players: {} as Record<string, MockPlayer>,
@@ -39,11 +48,15 @@ const {
       playerCommandPrevious:
         vi.fn<MusicAssistantApi["playerCommandPrevious"]>(),
       playerCommandSeek: mockPlayerCommandSeek,
+      queueCommandSkip: mockQueueCommandSkip,
     },
     storeMock: {
       activePlayer: undefined as MockPlayer | undefined,
+      activePlayerQueue: undefined as MockQueue | undefined,
+      curQueueItem: undefined as MockQueueItem | undefined,
     },
     mockPlayerCommandSeek,
+    mockQueueCommandSkip,
     mockUseMediaBrowserMetaData: vi.fn(),
   };
 });
@@ -97,7 +110,10 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     // same player up in api.players.
     apiMock.players = { "player-1": { player_id: "player-1" } };
     storeMock.activePlayer = apiMock.players["player-1"];
+    storeMock.activePlayerQueue = undefined;
+    storeMock.curQueueItem = undefined;
     mockPlayerCommandSeek.mockClear();
+    mockQueueCommandSkip.mockClear();
     mockUseMediaBrowserMetaData.mockClear();
   });
 
@@ -116,6 +132,42 @@ describe("PlayerBrowserMediaControls seek handling", () => {
     // Displayed position is 30 + 3s * 2x = 36, so a +10s skip lands on 46; the
     // raw stored position would give 40.
     expect(mockPlayerCommandSeek).toHaveBeenCalledWith("player-1", 46);
+    wrapper.unmount();
+  });
+
+  it("uses the configured queue skip for long-form media", () => {
+    seedPlayingQueue({
+      elapsed_time: 30,
+      secondsAgo: 3,
+      playback_speed: 2,
+      mediaType: "audiobook",
+    });
+
+    const wrapper = mount(PlayerBrowserMediaControls);
+    invokeAction("seekforward");
+    invokeAction("seekbackward");
+
+    expect(mockQueueCommandSkip).toHaveBeenNthCalledWith(1, "queue", 30);
+    expect(mockQueueCommandSkip).toHaveBeenNthCalledWith(2, "queue", -30);
+    expect(mockPlayerCommandSeek).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("does nothing for long-form media without an active queue", () => {
+    seedPlayingQueue({
+      elapsed_time: 30,
+      secondsAgo: 3,
+      playback_speed: 2,
+      mediaType: "audiobook",
+    });
+    storeMock.activePlayerQueue = undefined;
+
+    const wrapper = mount(PlayerBrowserMediaControls);
+    invokeAction("seekforward");
+    invokeAction("seekbackward");
+
+    expect(mockQueueCommandSkip).not.toHaveBeenCalled();
+    expect(mockPlayerCommandSeek).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 
@@ -168,20 +220,29 @@ function seedPlayingQueue(timing: {
   elapsed_time: number;
   secondsAgo: number;
   playback_speed: number;
+  mediaType?: "audiobook" | "track";
 }): void {
   apiMock.players["player-1"] = {
     player_id: "player-1",
     active_source: "queue",
   };
   storeMock.activePlayer = apiMock.players["player-1"];
+  storeMock.activePlayer.current_media = {
+    media_type: timing.mediaType ?? "track",
+  };
+  storeMock.curQueueItem = {
+    media_item: { media_type: timing.mediaType ?? "track" },
+  };
   apiMock.queues.queue = {
     queue_id: "queue",
     state: PlaybackState.PLAYING,
     active: true,
     current_item: {
+      media_item: { media_type: timing.mediaType ?? "track" },
       extra_attributes: { playback_speed: timing.playback_speed },
     },
-  };
+  } as MockQueue;
+  storeMock.activePlayerQueue = apiMock.queues.queue;
   apiMock.queueElapsedTime.queue = {
     elapsed_time: timing.elapsed_time,
     elapsed_time_last_updated: ANCHOR - timing.secondsAgo,

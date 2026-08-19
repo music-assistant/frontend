@@ -405,6 +405,14 @@
             max-height="45px"
             :size="28"
           />
+          <SkipBackBtn
+            v-if="showSkipControls"
+            :player-queue="store.activePlayerQueue"
+            :skip-amount="skipAmount"
+            class="media-controls-item"
+            max-height="45px"
+            :size="28"
+          />
           <div class="play-btn-wrapper" :style="playBtnStyle">
             <PlayBtn
               :player="store.activePlayer"
@@ -416,6 +424,14 @@
               :play-offset="2"
             />
           </div>
+          <SkipForwardBtn
+            v-if="showSkipControls"
+            :player-queue="store.activePlayerQueue"
+            :skip-amount="skipAmount"
+            class="media-controls-item"
+            max-height="45px"
+            :size="28"
+          />
           <NextBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
@@ -505,6 +521,8 @@ import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
+import SkipBackBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBackBtn.vue";
+import SkipForwardBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipForwardBtn.vue";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -533,7 +551,7 @@ import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQue
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { resolveCurrentChapter } from "@/helpers/chapters";
 import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
+import { getSourceName, itemSupportsPlayLog } from "@/plugins/api/helpers";
 import {
   MediaItemChapter,
   MediaType,
@@ -577,6 +595,10 @@ const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
 const { getPreference, setPreference } = useUserPreferences();
+const skipAmount = getPreference("audiobook_skip_seconds", 30);
+const showSkipControls = computed(() =>
+  itemSupportsPlayLog(store.curQueueItem?.media_item),
+);
 const showWaveformPref = getPreference("show_waveform", true);
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 const nowTick = ref(0);

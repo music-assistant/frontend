@@ -14,10 +14,12 @@
 import audio from "@/assets/almost_silent.mp3";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
+import { useUserPreferences } from "@/composables/userPreferences";
 import api from "@/plugins/api";
+import { itemSupportsPlayLog } from "@/plugins/api/helpers";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 const audioRef = ref<HTMLAudioElement>();
 
@@ -101,6 +103,12 @@ const lastSeekPosTimeout = function () {
 
 useMediaBrowserMetaData();
 
+const { getPreference } = useUserPreferences();
+const skipAmount = getPreference("audiobook_skip_seconds", 30);
+const isLongForm = computed(() =>
+  itemSupportsPlayLog(store.curQueueItem?.media_item),
+);
+
 const seekHandler = function (
   evt: MediaSessionActionDetails,
   player_id: string,
@@ -109,6 +117,16 @@ const seekHandler = function (
   if (evt.action === "seekto" && evt.seekTime != null) {
     to = evt.seekTime;
   } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
+    if (isLongForm.value) {
+      const queueId = store.activePlayerQueue?.queue_id;
+      if (!queueId) return;
+      const seconds = evt.seekOffset || skipAmount.value;
+      api.queueCommandSkip(
+        queueId,
+        evt.action === "seekbackward" ? -seconds : seconds,
+      );
+      return;
+    }
     const offset = evt.seekOffset || 10;
     const elapsed_time = lastSeekPos ?? resolveActiveElapsedTime(player_id);
     if (elapsed_time == null) return;
