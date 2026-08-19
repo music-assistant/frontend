@@ -10,9 +10,13 @@
     <CardHeader :class="compact ? 'px-3' : 'px-4'">
       <CardTitle :class="compact ? 'text-sm' : 'text-base'">
         {{ title ?? $t("providers.music_quiz.leaderboard") }}
+        <span class="text-muted-foreground font-normal">
+          ({{ rows.length }})
+        </span>
       </CardTitle>
     </CardHeader>
     <CardContent
+      v-if="rows.length"
       :class="[
         compact
           ? scrollable
@@ -58,13 +62,11 @@
           >
             {{ row.name }}
           </span>
-          <span
-            class="flex min-w-0 max-w-[45%] items-baseline gap-1 tabular-nums"
-          >
-            <strong class="min-w-0 flex-1 truncate">{{ row.score }}</strong>
+          <span class="flex shrink-0 items-center gap-1 tabular-nums">
+            <strong class="leading-none">{{ row.score }}</strong>
             <span
               v-if="row.roundScoreLabel"
-              class="text-primary quiz-score-pop min-w-0 flex-1 truncate text-xs font-semibold"
+              class="text-primary quiz-score-pop text-xs leading-none font-semibold"
             >
               {{ row.roundScoreLabel }}
             </span>

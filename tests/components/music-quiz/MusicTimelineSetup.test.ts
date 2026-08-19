@@ -1,10 +1,12 @@
 import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { SearchResults } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
+import { pickSelectOption } from "../../fixtures/rekaSelect";
+import { searchResultButton } from "../../fixtures/mediaSearchResults";
 
 const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn<MusicAssistantApi["search"]>(),
@@ -70,9 +72,14 @@ const mountTimeline = (
     },
   });
 
+// the search results and the select listboxes are portalled out of the wrapper,
+// so tear them down even when an assertion fails
+enableAutoUnmount(afterEach);
+
 describe("MusicTimelineSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    document.body.innerHTML = "";
     mockSearch.mockReset();
     mockGetLibraryGenres.mockReset();
     mockGetLibraryGenres.mockResolvedValue([]);
@@ -100,10 +107,8 @@ describe("MusicTimelineSetup", () => {
       .setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
     await wrapper
       .findAll("button")
       .find((button) => button.text().includes("create"))
@@ -131,10 +136,8 @@ describe("MusicTimelineSetup", () => {
       .setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
     const createButton = wrapper
       .findAll("button")
       .find((button) => button.text().includes("create"));
@@ -147,19 +150,23 @@ describe("MusicTimelineSetup", () => {
   it("keeps bonus modes independent without adding a name", async () => {
     const wrapper = mountTimeline({ includeSimilarMusic: true });
 
-    await wrapper.get("#music-timeline-artist-bonus").setValue("free_text");
-    await wrapper
-      .get("#music-timeline-title-bonus")
-      .setValue("multiple_choice");
+    await pickSelectOption(
+      wrapper,
+      "#music-timeline-artist-bonus",
+      "providers.music_quiz.timeline_bonus_free_text",
+    );
+    await pickSelectOption(
+      wrapper,
+      "#music-timeline-title-bonus",
+      "providers.music_quiz.timeline_bonus_multiple_choice",
+    );
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
       .setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
     await wrapper
       .findAll("button")
       .find((button) => button.text().includes("create"))
@@ -184,10 +191,8 @@ describe("MusicTimelineSetup", () => {
       .setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Test playlist"))
-      ?.trigger("click");
+    searchResultButton("Test playlist").click();
+    await flushPromises();
 
     expect(
       wrapper

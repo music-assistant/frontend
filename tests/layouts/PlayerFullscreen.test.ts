@@ -18,6 +18,8 @@ vi.mock("@/plugins/api", async () => {
     providers: {},
     subscribe: vi.fn(() => vi.fn()),
     getTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
+    playerCommandSeek: vi.fn<MusicAssistantApi["playerCommandSeek"]>(),
+    playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
   });
   return { api, default: api };
 });
@@ -47,6 +49,7 @@ vi.mock("@/layouts/default/PlayerOSD/useFullscreenQueue", async () => {
   const { computed, ref: vueRef } =
     await vi.importActual<typeof import("vue")>("vue");
   const { store } = await import("@/plugins/store");
+  const api = (await import("@/plugins/api")).default;
   return {
     useFullscreenQueue: () => ({
       queueScrollRef: vueRef(null),
@@ -75,7 +78,12 @@ vi.mock("@/layouts/default/PlayerOSD/useFullscreenQueue", async () => {
       queueTitleFontSize: computed(() => "1em"),
       queueSubtitleFontSize: computed(() => "1em"),
       openQueueItemMenu: vi.fn(),
-      chapterClicked: vi.fn(),
+      chapterClicked: vi.fn((_item: unknown, chapter: { start: number }) => {
+        const player = (store as unknown as TestStore).activePlayer;
+        if (player) {
+          api.playerCommandSeek(player.player_id, chapter.start);
+        }
+      }),
       startItemDrag: vi.fn(),
       draggingIndex: vueRef(undefined),
       isDragging: vueRef(false),
@@ -141,6 +149,9 @@ interface TestStore {
     playback_state?: PlaybackState;
     current_media?: {
       media_type?: MediaType;
+      duration?: number | null;
+      elapsed_time?: number | null;
+      elapsed_time_last_updated?: number | null;
       queue_item_id?: string | null;
     };
   };
@@ -151,6 +162,7 @@ interface TestStore {
   };
   curQueueItem?: {
     queue_item_id?: string;
+    name?: string;
     media_item?: {
       media_type: MediaType;
       metadata?: { chapters?: Chapter[] };
@@ -261,7 +273,7 @@ afterEach(async () => {
   testApi.queueElapsedTime = {};
 });
 
-describe("PlayerFullscreen chapter highlight", () => {
+describe("PlayerFullscreen chapter queue", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW * 1000);
@@ -307,6 +319,21 @@ describe("PlayerFullscreen chapter highlight", () => {
     expect(
       fullscreen.findAll(".queue-chapter")[0].attributes("aria-current"),
     ).toBeUndefined();
+  });
+
+  it("seeks to a chapter start without reloading the media", async () => {
+    const fullscreen = await mountChapterQueue();
+    const api = (await import("@/plugins/api")).default as unknown as {
+      playerCommandSeek: ReturnType<typeof vi.fn>;
+      playMedia: ReturnType<typeof vi.fn>;
+    };
+    api.playerCommandSeek.mockClear();
+    api.playMedia.mockClear();
+
+    await fullscreen.findAll(".queue-chapter")[1].trigger("click");
+
+    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 60);
+    expect(api.playMedia).not.toHaveBeenCalled();
   });
 });
 
