@@ -741,7 +741,6 @@
             "session_ended_text": "The setup session ended — it may have completed. Check your providers or players to confirm."
         },
         "options": "Options",
-        "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "server_clock_offset": "Clock offset (server vs this device)",
         "action_completed": "Action completed",
         "hass_controls": {
@@ -789,10 +788,6 @@
         "visualizer_opacity": {
             "label": "Visualizer opacity",
             "description": "Lower values blend the album colors through. Above 50% the view switches to a dark look with light text."
-        },
-        "ha_kiosk_mode": {
-            "label": "Use the full screen in Home Assistant",
-            "description": "Hide the Home Assistant header and sidebar so Music Assistant gets the whole screen. The Home Assistant button in the menu brings them back."
         },
         "delete_player_title": "Delete {0}?",
         "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
@@ -937,8 +932,7 @@
         "show_dashboard": "Cast dashboard to a device",
         "collapse_collections": "Collapse collections",
         "volume_down": "Volume down",
-        "volume_up": "Volume up",
-        "show_full_path": "Show the full path"
+        "volume_up": "Volume up"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -2366,31 +2360,8 @@
         "credits_butterchurn": "Rendering powered by Butterchurn by Jordan Berg (MIT license), the WebGL implementation of MilkDrop 2.",
         "credits_milkdrop": "MilkDrop was originally created by Ryan Geiss as a visualizer for Winamp. Presets are the work of the MilkDrop preset community, bundled via butterchurn-presets."
     },
-    "ai_dj": "Enable AI Radio DJ",
-    "ai_dj_off": "Off",
-    "ai_dj_show_on_air": "On air: {0}",
-    "ai_dj_show_on_air_unknown": "A show is on air",
     "menu": "Menu",
     "main_navigation": "Main",
-    "play_announcement": "Play announcement",
-    "play_announcement_explanation": "Speak a message out loud on {0}.",
-    "play_announcement_message": "Message",
-    "play_announcement_message_placeholder": "Dinner is ready!",
-    "play_announcement_pre_announce": "Play a chime first",
-    "play_announcement_send": "Announce",
-    "play_announcement_sent": "Announcement sent to {0}",
-    "play_announcement_playing": "Playing...",
-    "play_announcement_volume": "Volume",
-    "play_announcement_volume_default": "Player default",
-    "play_announcement_mode_type": "Type a message",
-    "play_announcement_mode_speak": "Speak",
-    "play_announcement_hold_to_speak": "Hold the button and speak",
-    "play_announcement_connecting": "Connecting...",
-    "play_announcement_speaking": "Speaking",
-    "play_announcement_finishing": "Finishing...",
-    "play_announcement_mic_denied": "Music Assistant is not allowed to use the microphone.",
-    "play_announcement_mic_failed": "The microphone could not be started.",
-    "play_announcement_live_failed": "The announcement could not be played.",
     "dynamic_radio_heading": "Dynamic station",
     "dynamic_radio_empty_desc": "This station didn't return any tracks. Try again in a moment.",
     "home_assistant_menu": "Home Assistant",
