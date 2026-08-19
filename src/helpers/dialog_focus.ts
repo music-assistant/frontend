@@ -1,6 +1,7 @@
 import { store } from "@/plugins/store";
 
 const LAYER_SELECTOR = "[data-dismissable-layer]";
+const COMMAND_INPUT_SELECTOR = '[data-slot="command-input"]';
 
 /**
  * Handler for a reka-ui `@open-auto-focus` event that keeps a dialog or a
@@ -24,4 +25,12 @@ export function preventOnScreenKeyboardOnOpen(event: Event) {
   if (!layer) return;
   event.preventDefault();
   layer.focus({ preventScroll: true });
+}
+
+export function focusCommandInputOnOpen(event: Event) {
+  if (!(event.target instanceof HTMLElement)) return;
+  const input = event.target.querySelector<HTMLElement>(COMMAND_INPUT_SELECTOR);
+  if (!input) return;
+  event.preventDefault();
+  input.focus();
 }

@@ -26,6 +26,12 @@
       </div>
     </template>
 
+    <!-- centred on the toolbar itself rather than on the room left between
+         the title and the buttons, so it does not drift with either -->
+    <div v-if="$slots.center" class="toolbar-center">
+      <slot name="center"></slot>
+    </div>
+
     <template v-if="$slots.append || menuItems?.length" #append>
       <slot name="append"></slot>
       <v-btn
@@ -229,6 +235,19 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   padding-top: 0;
   padding-bottom: 0;
   align-items: center;
+  /* anchors the centred slot */
+  position: relative;
+}
+
+.toolbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  /* stays clear of the title on one side and the buttons on the other */
+  max-width: min(420px, calc(100% - 260px));
 }
 
 .header.v-toolbar :deep(.v-toolbar-title) {

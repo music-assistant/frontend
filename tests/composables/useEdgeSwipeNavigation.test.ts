@@ -168,7 +168,7 @@ describe("useEdgeSwipeNavigation", () => {
   // the shelves reach into the edge zone, and the listeners are passive, so a
   // flick along one would otherwise scroll it and navigate away at once
   it("leaves a sideways drag on a carousel to the carousel", () => {
-    routeState.name = "search";
+    routeState.name = "album";
     historyState.back = "/discover";
     const card = cardInsideShelf(true);
     const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
@@ -183,7 +183,7 @@ describe("useEdgeSwipeNavigation", () => {
   // the same gesture over the same markup, minus the sideways scroll, so the
   // case above cannot pass on the plumbing alone
   it("still goes back over a shelf that has nothing to scroll", () => {
-    routeState.name = "search";
+    routeState.name = "album";
     historyState.back = "/discover";
     const card = cardInsideShelf(false);
     const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
