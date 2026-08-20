@@ -21,7 +21,7 @@
         action: () => {
           showAddEditDialog = true;
         },
-        icon: 'mdi-playlist-plus',
+        icon: ListPlus,
       },
     ]"
     :icon="Music2"
@@ -43,7 +43,7 @@ import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Music2 } from "@lucide/vue";
+import { ListPlus, Music2 } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({

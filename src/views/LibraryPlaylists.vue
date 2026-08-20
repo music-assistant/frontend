@@ -37,7 +37,7 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ListMusic } from "@lucide/vue";
+import { Import, ListMusic, ListPlus, WandSparkles } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -116,7 +116,7 @@ onMounted(() => {
       action: () => {
         newPlaylist(prov.instance_id);
       },
-      icon: "mdi-playlist-plus",
+      icon: ListPlus,
       overflowAllowed: true,
     });
   }
@@ -131,14 +131,14 @@ onMounted(() => {
       action: () => {
         eventbus.emit("createSmartPlaylist", {});
       },
-      icon: "mdi-playlist-star",
+      icon: WandSparkles,
       overflowAllowed: true,
     });
   }
   if (playListCreateItems.length) {
     extraMenuItems.value.push({
       label: "create_playlist_on",
-      icon: "mdi-playlist-plus",
+      icon: ListPlus,
       subItems: playListCreateItems,
       overflowAllowed: true,
     });
@@ -149,7 +149,7 @@ onMounted(() => {
     action: () => {
       triggerFileImport();
     },
-    icon: "mdi-file-import",
+    icon: Import,
     overflowAllowed: true,
   });
   // signal if/when items get added/updated/removed within this library
