@@ -260,6 +260,61 @@ describe("PlayerGroupMembers", () => {
     ).toEqual(["Kitchen screen"]);
   });
 
+  it("keeps a capture-only device out of the picker", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    // a line-in device reports an unknown type and renders nothing, but its
+    // provider still advertises it as groupable
+    const captureDevice = createPlayer({
+      player_id: "line-in",
+      name: "Line-in",
+      type: PlayerType.UNKNOWN,
+      supported_features: [],
+    });
+    const parent = createPlayer({
+      can_group_with: [speaker.player_id, captureDevice.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [captureDevice.player_id]: captureDevice,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Office"]);
+  });
+
+  it("keeps an already grouped capture-only device removable", () => {
+    const captureDevice = createPlayer({
+      player_id: "line-in",
+      name: "Line-in",
+      type: PlayerType.UNKNOWN,
+      supported_features: [],
+    });
+    const parent = createPlayer({
+      group_members: ["parent", captureDevice.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [captureDevice.player_id]: captureDevice,
+    };
+
+    const wrapper = mountGroupMembers(parent, [parent, captureDevice]);
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen", "Line-in"]);
+  });
+
   it("separates current members from available players", () => {
     const child = createPlayer({
       player_id: "child",
