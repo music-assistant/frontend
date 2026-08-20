@@ -67,6 +67,9 @@ describe("GuessTheSongPlayerRound", () => {
     const wrapper = mountRound(createState("answering"));
 
     expect(wrapper.findComponent(GuessTheSongReveal).exists()).toBe(false);
+    expect(wrapper.find('[data-testid="guess-the-song-ready"]').exists()).toBe(
+      false,
+    );
     wrapper.unmount();
   });
 
@@ -146,6 +149,7 @@ describe("GuessTheSongPlayerRound", () => {
     expect(readyButton.text()).toContain(
       "providers.music_quiz.waiting_for_next",
     );
+    expect(readyButton.attributes()).toHaveProperty("disabled");
     wrapper.unmount();
   });
 });

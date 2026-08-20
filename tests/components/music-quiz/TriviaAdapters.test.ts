@@ -279,6 +279,29 @@ describe("Trivia adapters", () => {
     expect(revealWrapper.text()).not.toContain("providers.music_quiz.correct");
   });
 
+  it("pins the Ready button to the bottom of the stage during reveal", () => {
+    const wrapper = mount(TriviaPlayerRound, {
+      props: {
+        state: {
+          ...playerState,
+          phase: "reveal",
+          current_round: revealRound,
+        } satisfies MusicQuizTriviaPersonalizedState,
+        currentRound: revealRound,
+        busy: false,
+      },
+    });
+    const readyButton = wrapper.get('[data-testid="trivia-ready"]');
+    const footer = readyButton.element.parentElement;
+
+    expect(footer?.classList.contains("sticky")).toBe(true);
+    expect(
+      footer?.classList.contains("bottom-[var(--device-inset-bottom,0px)]"),
+    ).toBe(true);
+    expect(footer?.classList.contains("order-last")).toBe(true);
+    wrapper.unmount();
+  });
+
   it.each([
     {
       name: "intermediate Ready",

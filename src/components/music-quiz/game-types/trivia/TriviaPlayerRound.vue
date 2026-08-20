@@ -1,15 +1,13 @@
 <template>
   <TriviaQuestion :round="currentRound" />
-  <Button
+  <MusicQuizReadyBar
     v-if="state.phase === 'reveal'"
-    size="lg"
     :disabled="readyDisabled"
     data-testid="trivia-ready"
-    @click="markReady"
+    @ready="markReady"
   >
-    <Check class="size-4" />
     {{ readyLabel }}
-  </Button>
+  </MusicQuizReadyBar>
 </template>
 
 <script setup lang="ts">
@@ -17,15 +15,14 @@ import type {
   MusicQuizPlayerGameAdapterEmits,
   MusicQuizPlayerGameAdapterProps,
 } from "@/components/music-quiz/adapter_contracts";
+import MusicQuizReadyBar from "@/components/music-quiz/MusicQuizReadyBar.vue";
 import TriviaQuestion from "@/components/music-quiz/game-types/trivia/TriviaQuestion.vue";
-import { Button } from "@/components/ui/button";
 import type {
   MusicQuizTriviaPersonalizedState,
   MusicQuizTriviaRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
 import { $t } from "@/plugins/i18n";
-import { Check } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const props =
