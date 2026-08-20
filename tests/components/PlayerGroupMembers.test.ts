@@ -27,7 +27,8 @@ vi.mock("@/plugins/api", async () => {
   return { api, default: api };
 });
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   groupMemberPickerVisible: () => true,
 }));
 
@@ -82,6 +83,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
@@ -207,6 +209,27 @@ describe("PlayerGroupMembers", () => {
         .findAll(".player-group-section > p")
         .map((section) => section.text()),
     ).toEqual(["players", "lights", "visualizers"]);
+  });
+
+  it("lists a screen alongside the visualizers", () => {
+    const screen = createPlayer({
+      player_id: "screen",
+      name: "Kitchen screen",
+      type: PlayerType.DISPLAY,
+    });
+    const parent = createPlayer({ can_group_with: [screen.player_id] });
+    api.players = {
+      [parent.player_id]: parent,
+      [screen.player_id]: screen,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".player-group-section > p")
+        .map((section) => section.text()),
+    ).toEqual(["visualizers"]);
   });
 
   it("separates current members from available players", () => {

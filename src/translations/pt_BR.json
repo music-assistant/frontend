@@ -31,7 +31,6 @@
     "delete_db": "Excluir item do banco de dados",
     "details": "Detalhes",
     "enter_url": "Insira o URL que você deseja adicionar manualmente ao banco de dados",
-    "external_source_active": "Fonte externa ativada: {0}",
     "goto_album": "Ir para o álbum {0}",
     "goto_artist": "Ir para o artista {0}",
     "items_selected": "{0} item(ns) selecionado(s)",

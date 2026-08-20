@@ -31,7 +31,6 @@
     "delete_db": "Usuń element z bazy",
     "details": "Szczegóły",
     "enter_url": "Wprowadź adres URL, który chcesz ręcznie dodać do bazy",
-    "external_source_active": "Zewnętrzne źródło aktywne: {0}",
     "goto_album": "Przejdź do albumu {0}",
     "goto_artist": "Przejdź do wykonawcy {0}",
     "items_selected": "{0} wybranych pozycji",

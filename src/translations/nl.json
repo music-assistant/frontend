@@ -31,7 +31,6 @@
     "delete_db": "Item verwijderen uit database",
     "details": "Details",
     "enter_url": "Voer de URL in die je handmatig aan de database wilt toevoegen",
-    "external_source_active": "Externe bron actief: {0}",
     "goto_album": "Ga naar album {0}",
     "goto_artist": "Ga naar artiest {0}",
     "items_selected": "{0} item(s) geselecteerd",

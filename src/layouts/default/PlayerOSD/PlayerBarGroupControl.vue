@@ -111,6 +111,7 @@ import {
   canEditPlayerGroup,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
+  isVisualizerPlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
@@ -191,9 +192,7 @@ const hasLights = computed(() =>
   ),
 );
 const hasVisualizers = computed(() =>
-  groupCandidates.value.some(
-    (candidate) => candidate.type === PlayerType.VISUALIZER,
-  ),
+  groupCandidates.value.some((candidate) => isVisualizerPlayer(candidate)),
 );
 
 watch(

@@ -56,7 +56,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { requestGroupPlaybackConfirmation } from "@/helpers/player_group_playback";
-import { groupMemberPickerVisible } from "@/helpers/players";
+import {
+  groupMemberPickerVisible,
+  isVisualizerPlayer,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
 import {
   type Player,
@@ -127,8 +130,7 @@ const candidateSections = computed(() => {
       translateLabel: true,
       players: availableCandidates.filter(
         (player) =>
-          player.type !== PlayerType.LIGHT &&
-          player.type !== PlayerType.VISUALIZER,
+          player.type !== PlayerType.LIGHT && !isVisualizerPlayer(player),
       ),
     },
     {
@@ -143,8 +145,8 @@ const candidateSections = computed(() => {
       type: "visualizers",
       label: "visualizers",
       translateLabel: true,
-      players: availableCandidates.filter(
-        (player) => player.type === PlayerType.VISUALIZER,
+      players: availableCandidates.filter((player) =>
+        isVisualizerPlayer(player),
       ),
     },
   ];
@@ -195,11 +197,9 @@ function matchesFilter(player: Player) {
   if (props.filter === "all") return true;
   if (props.filter === "lights") return player.type === PlayerType.LIGHT;
   if (props.filter === "visualizers") {
-    return player.type === PlayerType.VISUALIZER;
+    return isVisualizerPlayer(player);
   }
-  return (
-    player.type !== PlayerType.LIGHT && player.type !== PlayerType.VISUALIZER
-  );
+  return player.type !== PlayerType.LIGHT && !isVisualizerPlayer(player);
 }
 
 function sortPlayers(players: Player[]) {

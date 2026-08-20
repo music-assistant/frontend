@@ -286,6 +286,13 @@ vi.mock("@/views/Login.vue", () => ({
   },
 }));
 
+// Every test here resets the module registry and re-imports App.vue, so each
+// one pays for evaluating the whole app graph before it asserts anything. That
+// cost scales with how busy the machine is, and on a loaded CI worker it alone
+// can outlast the 5s default - at which point the mount finishes during the
+// next test and inflates its call counts.
+vi.setConfig({ testTimeout: 20_000 });
+
 let wrapper: VueWrapper | undefined;
 
 describe("App initialization", () => {

@@ -172,18 +172,26 @@ const playBtnClick = function (providerMapping: ProviderMapping) {
   if (existing) {
     existing.load();
     delete demoPlayer[key];
-  } else {
-    const audio = new Audio(
-      getPreviewUrl(providerMapping.provider_instance, providerMapping.item_id),
-    );
-    demoPlayer[key] = audio;
-    audio.play();
+    return;
   }
-};
-const getPreviewUrl = function (provider: string, item_id: string) {
-  return `${
-    api.baseUrl
-  }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
+  // claim the slot before awaiting the url, so a second click while the request is
+  // in flight cannot start a second clip that the first would then orphan
+  const audio = new Audio();
+  demoPlayer[key] = audio;
+  api
+    .getTrackPreviewUrl(
+      providerMapping.provider_instance,
+      providerMapping.item_id,
+    )
+    .then((url) => {
+      // the stop path clears the slot; do not start playing a clip nobody wants
+      if (demoPlayer[key] !== audio) return;
+      audio.src = url;
+      return audio.play();
+    })
+    .catch(() => {
+      if (demoPlayer[key] === audio) delete demoPlayer[key];
+    });
 };
 
 // just enough of a provider mapping to identify an item: the library entry built for

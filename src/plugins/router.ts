@@ -1,15 +1,15 @@
-import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
+import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { $t } from "@/plugins/i18n";
 import { watch } from "vue";
-import { toast } from "vue-sonner";
 import {
   createRouter,
   createWebHashHistory,
   type RouteLocationNormalized,
   type RouteRecordRaw,
 } from "vue-router";
+import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
 import { authManager } from "./auth";
 import { notifyHARouteChange } from "./homeassistant";
@@ -144,6 +144,10 @@ export const routes: RouteRecordRaw[] = [
         redirect: "/discover",
       },
       {
+        path: "/search",
+        redirect: "/discover",
+      },
+      {
         path: "/discover",
         name: "discover",
         component: () =>
@@ -212,13 +216,6 @@ export const routes: RouteRecordRaw[] = [
             return { name: "discover" };
           }
         },
-      },
-      {
-        path: "/search",
-        name: "search",
-        component: () =>
-          import(/* webpackChunkName: "search" */ "@/views/Search.vue"),
-        props: true,
       },
       {
         path: "/browse",
