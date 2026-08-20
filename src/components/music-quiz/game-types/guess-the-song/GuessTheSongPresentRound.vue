@@ -2,19 +2,8 @@
   <GuessTheSongReveal
     v-if="state.phase === 'reveal'"
     :round="currentRound"
-    :busy="true"
-    :is-ready="true"
-    :ready-label="$t('providers.music_quiz.ready')"
     :image-url="currentRoundImageUrl"
-    :show-lyrics="false"
-    :has-lyrics="false"
-    :lyrics="''"
-    :lrc-lyrics="''"
-    :lyrics-position="0"
-    lyrics-text-color="var(--foreground)"
-    :show-ready-button="false"
     :show-copy-button="false"
-    @ready="noop"
     @copy-title="noop"
   />
 </template>
@@ -27,7 +16,6 @@ import type {
   MusicQuizGuessTheSongRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { getMediaImageUrl } from "@/helpers/utils";
-import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
 const props =
