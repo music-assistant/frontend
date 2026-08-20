@@ -5,8 +5,8 @@
     class="bg-card grid items-center border transition-colors motion-reduce:transition-none"
     :class="[
       compact
-        ? 'h-full grid-cols-[3rem_minmax(0,1fr)] gap-2 rounded-lg p-2 shadow-none'
-        : 'grid-cols-[4.25rem_minmax(0,1fr)] gap-3 rounded-xl p-3 shadow-sm sm:grid-cols-[5rem_minmax(0,1fr)]',
+        ? 'h-full grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-2 rounded-lg p-2 shadow-none'
+        : 'grid-cols-[3.5rem_minmax(0,1fr)_auto] gap-3 rounded-xl p-3 shadow-sm',
       highlighted
         ? 'border-primary bg-primary/5 ring-primary/20 ring-2'
         : 'border-border',
@@ -29,27 +29,6 @@
     </div>
 
     <div class="flex min-w-0 flex-col" :class="compact ? 'gap-0.5' : 'gap-1'">
-      <div class="flex flex-wrap items-center gap-2">
-        <strong
-          class="text-primary leading-none tabular-nums"
-          :class="compact ? 'text-base' : 'text-xl'"
-        >
-          {{ entry.release_year }}
-        </strong>
-        <Badge
-          v-if="entry.is_anchor"
-          variant="secondary"
-          :class="{ 'px-1.5 py-0 text-[0.625rem]': compact }"
-        >
-          {{ $t("providers.music_quiz.timeline_anchor") }}
-        </Badge>
-        <Badge
-          v-if="highlighted"
-          :class="{ 'px-1.5 py-0 text-[0.625rem]': compact }"
-        >
-          {{ $t("providers.music_quiz.timeline_revealed") }}
-        </Badge>
-      </div>
       <span class="truncate font-semibold" :class="{ 'text-sm': compact }">
         {{ entry.title }}
       </span>
@@ -59,6 +38,36 @@
       >
         {{ entry.artist }}
       </span>
+    </div>
+
+    <!-- Compact strips (TV view) are 13rem wide; stacking keeps room for the title -->
+    <div
+      class="self-center"
+      :class="
+        compact
+          ? 'flex flex-col items-end gap-0.5'
+          : 'flex items-center gap-1.5'
+      "
+    >
+      <Badge
+        v-if="entry.is_anchor"
+        variant="secondary"
+        :class="{ 'px-1.5 py-0 text-[0.625rem]': compact }"
+      >
+        {{ $t("providers.music_quiz.timeline_anchor") }}
+      </Badge>
+      <Badge
+        v-if="highlighted"
+        :class="{ 'px-1.5 py-0 text-[0.625rem]': compact }"
+      >
+        {{ $t("providers.music_quiz.timeline_revealed") }}
+      </Badge>
+      <strong
+        class="text-primary font-bold tabular-nums"
+        :class="compact ? 'text-base' : 'text-lg'"
+      >
+        {{ entry.release_year }}
+      </strong>
     </div>
   </article>
 </template>
