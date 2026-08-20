@@ -78,6 +78,7 @@ import RemoveAliasDialog from "@/components/genre/RemoveAliasDialog.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
+import { mappedAliases } from "@/helpers/genre";
 import { formatAliasName } from "@/helpers/utils";
 import { Genre } from "@/plugins/api/interfaces";
 import {
@@ -115,12 +116,9 @@ const canPromoteAlias = (alias: string): boolean => {
   return !props.existingGenreNames.has(alias.toLowerCase());
 };
 
-const aliases = computed(() => {
-  const genreName = props.genre.name?.toLowerCase();
-  return (props.genre.genre_aliases || [])
-    .filter((alias) => alias.toLowerCase() !== genreName)
-    .sort((a, b) => a.localeCompare(b));
-});
+const aliases = computed(() =>
+  mappedAliases(props.genre).sort((a, b) => a.localeCompare(b)),
+);
 
 const mappedAliasesTitle = computed(
   () => `${t("mapped_aliases")} (${aliases.value.length})`,
