@@ -51,6 +51,16 @@ describe("capturePagePreview", () => {
     expect(preview.el.style.backgroundColor).toBe("rgb(18, 18, 18)");
   });
 
+  // an opaque three-component color has no alpha channel to misread as zero
+  it("keeps a pure black background", () => {
+    const page = pageWithScroller();
+    page.parentElement!.style.backgroundColor = "rgb(0, 0, 0)";
+
+    expect(capturePagePreview(page).el.style.backgroundColor).toBe(
+      "rgb(0, 0, 0)",
+    );
+  });
+
   it("falls back to the theme background when nothing paints one", () => {
     const bare = document.createElement("div");
     document.body.appendChild(bare);

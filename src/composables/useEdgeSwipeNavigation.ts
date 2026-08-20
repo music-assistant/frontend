@@ -87,11 +87,14 @@ export function useEdgeSwipeNavigation() {
   });
 
   const swipeStyle = computed<StyleValue | undefined>(() => {
+    // styled for the whole back drag, even at offset zero, so the page always
+    // stacks above the preview mounted behind it; menu drags stay untouched
+    const backDragging = dragging.value && swipeAction.value === "back";
     if (
       !pageOffset.value &&
       !settling.value &&
       !parked.value &&
-      !dragging.value
+      !backDragging
     ) {
       return undefined;
     }
@@ -307,7 +310,8 @@ export function useEdgeSwipeNavigation() {
       requestAnimationFrame(() => covering?.remove());
     };
     unregisterLanding = router.afterEach(() => void nextTick(land));
-    // an aborted navigation must not leave the screen parked on nothing
+    // a navigation that errors out never reaches afterEach and must not
+    // leave the screen parked on nothing
     landingTimer = setTimeout(land, NAVIGATION_TIMEOUT_MS);
   }
 

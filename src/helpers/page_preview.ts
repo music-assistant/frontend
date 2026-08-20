@@ -138,6 +138,10 @@ function inheritedBackground(source: Element): string {
 /** Whether a computed color paints nothing at all. */
 function isTransparent(color: string): boolean {
   if (color === "transparent") return true;
-  const alpha = color.match(/^rgba?\([^)]*[,/]\s*([\d.]+)\s*\)$/)?.[1];
-  return alpha !== undefined && Number(alpha) === 0;
+  const parts = color
+    .match(/^rgba?\((.+)\)$/)?.[1]
+    .split(/[\s,/]+/)
+    .filter(Boolean);
+  // only a four-component color carries an alpha channel
+  return parts?.length === 4 && Number(parts[3]) === 0;
 }

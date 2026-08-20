@@ -1,4 +1,5 @@
 import { useEdgeSwipeNavigation } from "@/composables/useEdgeSwipeNavigation";
+import { clearPagePreviews } from "@/helpers/page_preview";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
@@ -124,6 +125,7 @@ afterEach(() => {
   sidebarState.openMobile.value = false;
   historyState.back = null;
   document.body.innerHTML = "";
+  clearPagePreviews();
   if (originalInnerWidth) {
     Object.defineProperty(window, "innerWidth", originalInnerWidth);
   }
@@ -375,7 +377,8 @@ describe("useEdgeSwipeNavigation", () => {
 
     expect(mockRouterBack).not.toHaveBeenCalled();
 
-    endSwipe(onTouchEnd);
+    onTouchEnd(touchEvent(150, 100)); // the tracked finger lifts
+    vi.advanceTimersByTime(SETTLE_MS);
 
     expect(mockRouterBack).toHaveBeenCalledTimes(1);
   });
@@ -417,8 +420,8 @@ describe("useEdgeSwipeNavigation", () => {
     expect(mockRouterBack).toHaveBeenCalledTimes(1);
   });
 
-  // a back navigation swallowed by a router guard never reaches afterEach;
-  // the fallback timer is what un-parks the screen
+  // a back navigation that errors out never reaches afterEach; the fallback
+  // timer is what un-parks the screen
   it("recovers when the navigation never lands", () => {
     routeState.name = "album";
     historyState.back = "/discover";
@@ -538,6 +541,9 @@ describe("useEdgeSwipeNavigation", () => {
     const { onTouchStart, onTouchMove, swipeStyle } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(40, 100)); // locked in, short of the threshold
+    expect(swipeStyle.value).toBeUndefined();
+
     onTouchMove(touchEvent(80, 100));
 
     expect(mockSetOpenMobile).toHaveBeenCalledWith(true);
