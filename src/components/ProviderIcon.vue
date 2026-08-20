@@ -1,7 +1,5 @@
 <template>
-  <div
-    :style="`width:${size}px;margin-left:10px;margin-right:10px;content-align:center`"
-  >
+  <div class="provider-icon-wrapper" :style="{ width: `${size}px` }">
     <!-- the library is not a real provider, so render its membership badge directly -->
     <div
       v-if="domain === 'library'"
@@ -85,6 +83,12 @@ watchEffect(async () => {
 </script>
 
 <style>
+/* default gutters; unscoped so a call site's own rule outweighs them */
+.provider-icon-wrapper {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
 .provider-img {
   width: 100%;
   height: 100%;
