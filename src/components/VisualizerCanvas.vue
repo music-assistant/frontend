@@ -32,8 +32,10 @@
 </template>
 
 <script lang="ts">
-// Which canvas instance last asserted visualizerTintActive.
-let tintFlagWriter: symbol | null = null;
+// Every canvas currently painting a tint. The flag stays true while any of
+// them is: the fullscreen canvas mounts and unmounts over a dashboard one that
+// goes on painting throughout, and either order has to leave it correct.
+const tintFlagOwners = new Set<symbol>();
 </script>
 
 <script setup lang="ts">
@@ -54,11 +56,13 @@ import {
 } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
+import { paletteFromServer } from "@/helpers/utils";
 import api from "@/plugins/api";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { MediaItemPalette, PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
   type ColorPalette,
+  type ColorPaletteField,
   VisualizerRelayClient,
 } from "@/plugins/visualizer-relay";
 import vuetify from "@/plugins/vuetify";
@@ -148,18 +152,27 @@ const isRgbTuple = (value: unknown): value is [number, number, number] =>
   value.length === 3 &&
   value.every((channel) => Number.isFinite(channel));
 
-// Ordering mirrors the OSD's paletteFromServer pick; primary ranks last as
-// it is often a near-black backdrop that desaturates rather than tints.
+// Hand the wire palette to the same helper the OSD uses, so the two can only
+// ever pick the same color. It converts without validating, hence the guard.
+const serverPalette = computed<MediaItemPalette>(() => {
+  const wire = colorPalette.value;
+  const clean = (field: ColorPaletteField) =>
+    isRgbTuple(wire[field]) ? wire[field] : null;
+  return {
+    background_dark: clean("background_dark"),
+    background_light: clean("background_light"),
+    primary: clean("primary"),
+    accent: clean("accent"),
+    on_dark: clean("on_dark"),
+    on_light: clean("on_light"),
+  };
+});
+
+// The theme pick mirrors Player.vue's artwork tint; a missing variant means no
+// tint rather than a stand-in color the rest of the app would never show.
 const tintColor = computed(() => {
-  const palette = colorPalette.value;
-  const isDark = vuetify.theme.current.value.dark;
-  const rgb = [
-    isDark ? palette.on_light : palette.on_dark,
-    isDark ? palette.on_dark : palette.on_light,
-    palette.primary,
-    palette.accent,
-  ].find(isRgbTuple);
-  return rgb ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})` : null;
+  const { lightColor, darkColor } = paletteFromServer(serverPalette.value);
+  return (vuetify.theme.current.value.dark ? darkColor : lightColor) || null;
 });
 
 // mix-blend-mode: color keeps the preset's own luminance, just shifts hue.
@@ -167,22 +180,16 @@ const tintStyle = computed(() => ({
   backgroundColor: tintColor.value ?? "transparent",
 }));
 
-// Read by other views (e.g. the fullscreen OSD). Ownership-checked: the
-// canvases overlapping in a fullscreen handoff must not clear each other.
+// Read by other views (e.g. the fullscreen OSD).
 const tintFlagOwner = Symbol("visualizer-tint");
-watch(
-  () => streaming.value && !!tintColor.value,
-  (active) => {
-    if (active) {
-      tintFlagWriter = tintFlagOwner;
-      visualizerTintActive.value = true;
-    } else if (tintFlagWriter === null || tintFlagWriter === tintFlagOwner) {
-      tintFlagWriter = null;
-      visualizerTintActive.value = false;
-    }
-  },
-  { immediate: true },
-);
+const setTintFlag = (active: boolean) => {
+  if (active) tintFlagOwners.add(tintFlagOwner);
+  else tintFlagOwners.delete(tintFlagOwner);
+  visualizerTintActive.value = tintFlagOwners.size > 0;
+};
+watch(() => streaming.value && !!tintColor.value, setTintFlag, {
+  immediate: true,
+});
 
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
@@ -441,10 +448,7 @@ onBeforeUnmount(() => {
   relay?.close();
   relay = null;
   currentVisualizerPreset.value = null;
-  if (tintFlagWriter === tintFlagOwner) {
-    tintFlagWriter = null;
-    visualizerTintActive.value = false;
-  }
+  setTintFlag(false);
 });
 </script>
 

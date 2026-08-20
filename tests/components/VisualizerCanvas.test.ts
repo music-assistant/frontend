@@ -274,7 +274,7 @@ describe("VisualizerCanvas color tint", () => {
 
     expect(
       wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("rgb(100, 180, 255)");
+    ).toContain("#64b4ff");
     wrapper.unmount();
   });
 
@@ -293,32 +293,23 @@ describe("VisualizerCanvas color tint", () => {
 
     expect(
       wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("rgb(10, 40, 90)");
+    ).toContain("#0a285a");
     themeIsDark.value = false;
     wrapper.unmount();
   });
 
-  it("falls back across the palette when the themed pick is missing", async () => {
+  it("leaves the tint off when the themed pick is missing", async () => {
+    // the OSD falls back to a flat grey rather than another palette entry, so
+    // the honest equivalent here is no tint at all
     const wrapper = mountCanvas("kitchen");
     await flushPromises();
     emitStreaming();
-    emitColor({ on_dark: null, on_light: [10, 40, 90] });
+    emitColor({ on_dark: null, on_light: [10, 40, 90], primary: [1, 2, 3] });
     await flushPromises();
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("rgb(10, 40, 90)");
 
-    emitColor({ on_light: null, primary: [10, 20, 30] });
-    await flushPromises();
     expect(
       wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("rgb(10, 20, 30)");
-
-    emitColor({ primary: null, accent: [1, 2, 3] });
-    await flushPromises();
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("rgb(1, 2, 3)");
+    ).toContain("transparent");
     wrapper.unmount();
   });
 
@@ -335,7 +326,7 @@ describe("VisualizerCanvas color tint", () => {
 
     expect(
       wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("rgb(10, 20, 30)");
+    ).toContain("transparent");
     wrapper.unmount();
   });
 
@@ -347,7 +338,7 @@ describe("VisualizerCanvas color tint", () => {
     });
     await flushPromises();
     emitStreaming();
-    emitColor({ primary: [10, 20, 30] });
+    emitColor({ on_dark: [10, 20, 30] });
     await flushPromises();
 
     const stack = wrapper.get(".visualizer-layer__stack");
@@ -376,11 +367,11 @@ describe("VisualizerCanvas color tint", () => {
     const wrapper = mountCanvas("kitchen");
     await flushPromises();
     emitStreaming();
-    emitColor({ primary: [10, 20, 30], accent: null });
+    emitColor({ on_dark: [10, 20, 30], accent: null });
     await flushPromises();
     expect(
       wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("rgb(10, 20, 30)");
+    ).toContain("#0a141e");
 
     await wrapper.setProps({ playerId: "living_room" });
     await flushPromises();
@@ -397,11 +388,34 @@ describe("VisualizerCanvas color tint", () => {
     expect(visualizerTintActive.value).toBe(false);
 
     emitStreaming();
-    emitColor({ primary: [10, 20, 30], accent: null });
+    emitColor({ on_dark: [10, 20, 30], accent: null });
     await flushPromises();
     expect(visualizerTintActive.value).toBe(true);
 
     wrapper.unmount();
+    expect(visualizerTintActive.value).toBe(false);
+  });
+
+  it("keeps the flag while another canvas is still tinting", async () => {
+    // The fullscreen canvas mounts over a dashboard one, tints second and
+    // unmounts first; the dashboard is still painting and must stay flagged.
+    const dashboard = mountCanvas("kitchen");
+    await flushPromises();
+    emitStreaming();
+    emitColor({ on_dark: [10, 20, 30] });
+    await flushPromises();
+    expect(visualizerTintActive.value).toBe(true);
+
+    const fullscreen = mountCanvas("living_room");
+    await flushPromises();
+    emitStreaming();
+    emitColor({ on_dark: [40, 50, 60] });
+    await flushPromises();
+
+    fullscreen.unmount();
+    expect(visualizerTintActive.value).toBe(true);
+
+    dashboard.unmount();
     expect(visualizerTintActive.value).toBe(false);
   });
 
@@ -410,7 +424,7 @@ describe("VisualizerCanvas color tint", () => {
     const tinting = mountCanvas("kitchen");
     await flushPromises();
     emitStreaming();
-    emitColor({ primary: [10, 20, 30] });
+    emitColor({ on_dark: [10, 20, 30] });
     await flushPromises();
     expect(visualizerTintActive.value).toBe(true);
 

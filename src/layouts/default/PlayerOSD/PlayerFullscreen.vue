@@ -1249,11 +1249,14 @@ watchEffect(() => {
   // theme/palette treatment instead of forcing the dark look. This component is
   // permanently mounted via the OSD footer, so gate on the fullscreen player
   // actually being open, or --text-color would stay forced app-wide.
-  // A live tint plus the scrim is already legible, so it keeps that treatment.
+  // A live tint plus the scrim is already legible in the dark theme, so that
+  // keeps the normal treatment. The light theme cannot: mix-blend-mode: color
+  // preserves the canvas luminance and the scrim only darkens, so dark text
+  // over a dark preset has no contrast floor and the forced look has to stay.
   if (
     store.showFullscreenPlayer &&
     visualizerActive.value &&
-    !visualizerTintActive.value &&
+    !(visualizerTintActive.value && vuetify.theme.current.value.dark) &&
     visualizerOpacityPref.value > 50
   ) {
     document.documentElement.style.setProperty("--text-color", "#ffffff");

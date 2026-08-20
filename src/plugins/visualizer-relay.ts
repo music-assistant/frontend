@@ -197,8 +197,14 @@ export class VisualizerRelayClient {
       }
       if (message.type === "auth_ok") {
         if (this.ws) this.startTimeSync(this.ws);
-      } else if (message.type === "color" && message.payload) {
-        // Merge known fields only; the payload is unvalidated wire data.
+      } else if (
+        message.type === "color" &&
+        typeof message.payload === "object" &&
+        message.payload !== null &&
+        !Array.isArray(message.payload)
+      ) {
+        // Merge known fields only; the payload is unvalidated wire data, so it
+        // has to be an object before `in` may be used on it at all.
         const payload = message.payload as ColorPalette;
         const merged: ColorPalette = { ...this.colorPalette };
         for (const field of COLOR_PALETTE_FIELDS) {
