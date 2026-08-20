@@ -56,7 +56,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { requestGroupPlaybackConfirmation } from "@/helpers/player_group_playback";
-import { groupMemberPickerVisible, isScreenPlayer } from "@/helpers/players";
+import {
+  canBeGroupMember,
+  groupMemberPickerVisible,
+  isScreenPlayer,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
 import {
   type Player,
@@ -100,6 +104,7 @@ const candidates = computed(() => {
       !canGroupWithPlayer(player) ||
       !player.available ||
       !groupMemberPickerVisible(player) ||
+      !canBeGroupMember(player) ||
       player.type === PlayerType.GROUP ||
       (player.active_group && player.active_group !== props.player.player_id)
     ) {

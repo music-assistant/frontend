@@ -108,6 +108,7 @@ import {
 } from "@/helpers/player_bar";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
 import {
+  canBeGroupMember,
   canEditPlayerGroup,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
@@ -176,6 +177,7 @@ const groupCandidates = computed(() => {
     (candidate) =>
       candidate.available &&
       groupMemberPickerVisible(candidate) &&
+      canBeGroupMember(candidate) &&
       candidate.type !== PlayerType.GROUP &&
       (!candidate.active_group ||
         candidate.active_group === player.value?.player_id) &&
