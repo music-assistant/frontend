@@ -1,10 +1,7 @@
 /**
- * Tests for the visualizer's per-player gating: the waveform is tapped from the
- * player's Sendspin stream, so players without a Sendspin output are never
- * offered a visualizer.
+ * Tests for the visualizer's per-player preferences and their defaults.
  */
 import {
-  playerSupportsVisualizer,
   useVisualizer,
   visualizerEnabledForPlayer,
 } from "@/composables/visualizer/useVisualizer";
@@ -53,50 +50,16 @@ function player(
   };
 }
 
-describe("playerSupportsVisualizer", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    apiMock.players = {
-      capable: player(["sonos", "sendspin"]),
-      native_only: player(["sonos"]),
-    };
-  });
-
-  it("accepts a player with a Sendspin output, whatever it plays over now", () => {
-    expect(playerSupportsVisualizer("capable")).toBe(true);
-  });
-
-  it("rejects one without, an unknown id, and no id at all", () => {
-    expect(playerSupportsVisualizer("native_only")).toBe(false);
-    expect(playerSupportsVisualizer("nope")).toBe(false);
-    expect(playerSupportsVisualizer(undefined)).toBe(false);
-  });
-
-  it("survives being called before the players map has loaded", () => {
-    apiMock.players = undefined as unknown as Record<string, unknown>;
-    expect(playerSupportsVisualizer("capable")).toBe(false);
-  });
-});
-
 describe("visualizerEnabledForPlayer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.players = {
-      capable: player(["sendspin"]),
-      native_only: player(["sonos"]),
+      capable: player(["sonos"]),
     };
     storeMock.store.currentUser = { preferences: {} };
   });
 
-  it("stays off for an incapable player even with a stored preference", () => {
-    // acting on such a preference would only retry the relay forever
-    storeMock.store.currentUser.preferences["visualizer_enabled"] = true;
-    storeMock.store.currentUser.preferences["visualizer_enabled.native_only"] =
-      true;
-    expect(visualizerEnabledForPlayer("native_only")).toBe(false);
-  });
-
-  it("honours the preference for a capable player", () => {
+  it("honours the preference, with the per-player one winning", () => {
     storeMock.store.currentUser.preferences["visualizer_enabled"] = true;
     expect(visualizerEnabledForPlayer("capable")).toBe(true);
     storeMock.store.currentUser.preferences["visualizer_enabled.capable"] =
@@ -108,7 +71,7 @@ describe("visualizerEnabledForPlayer", () => {
 describe("blur and opacity defaults", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMock.players = { capable: player(["sendspin"]) };
+    apiMock.players = { capable: player(["sonos"]) };
   });
 
   // The same two numbers used to sit hardcoded in four places; these assertions

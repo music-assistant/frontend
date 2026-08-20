@@ -699,20 +699,7 @@ describe("visualizer menu entry", () => {
     } as Partial<Player>);
   }
 
-  it("is offered for a player that has a Sendspin output", () => {
-    const player = playerWithProtocols("sonos", "sendspin");
-    api.players = { kitchen: player } as unknown as typeof api.players;
-
-    const menuItems = getPlayerMenuItems(player, undefined, {
-      context: "queue",
-    });
-
-    expect(menuItems.map((item) => item.label)).toContain(VISUALIZER_LABEL);
-  });
-
-  it("is hidden for a player that can never be visualized", () => {
-    // the waveform is tapped from the player's Sendspin stream, so a player
-    // without that output has nothing to show
+  it("is offered whatever the player plays over", () => {
     const player = playerWithProtocols("sonos");
     api.players = { kitchen: player } as unknown as typeof api.players;
 
@@ -720,6 +707,6 @@ describe("visualizer menu entry", () => {
       context: "queue",
     });
 
-    expect(menuItems.map((item) => item.label)).not.toContain(VISUALIZER_LABEL);
+    expect(menuItems.map((item) => item.label)).toContain(VISUALIZER_LABEL);
   });
 });

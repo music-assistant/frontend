@@ -14,7 +14,6 @@ import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import {
-  playerSupportsVisualizer,
   toggleVisualizerForPlayer,
   visualizerEnabledForPlayer,
 } from "@/composables/visualizer/useVisualizer";
@@ -406,12 +405,7 @@ export const getPlayerMenuItems = (
   // MilkDrop visualizer on/off for this player (both menus; a player control,
   // stored as a per-player user preference). Kept at the bottom, with the
   // other display/appearance entries rather than the playback controls.
-  // Only offered for players that can be visualized at all: the waveform is
-  // tapped from the player's Sendspin stream.
-  if (
-    visualizerProviderAvailable() &&
-    playerSupportsVisualizer(player.player_id)
-  ) {
+  if (visualizerProviderAvailable()) {
     menuItems.push({
       label: "settings.visualizer_enabled.label",
       action: () => toggleVisualizerForPlayer(player.player_id),
