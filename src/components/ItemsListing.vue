@@ -17,17 +17,21 @@
         <slot name="title">{{ title }}</slot>
       </template>
 
-      <template v-if="showSearchInput && !store.mobileLayout" #center>
-        <SearchInput
-          ref="searchInputRef"
-          v-model="params.search"
-          clearable
-          class="listing-search listing-search--inline"
-          :placeholder="searchLabel"
-          :aria-label="searchLabel"
-          @focus="searchHasFocus = true"
-          @blur="searchHasFocus = false"
-        />
+      <template v-if="!store.mobileLayout" #append>
+        <Transition name="listing-search">
+          <div v-if="showSearchInput" class="listing-search-slot">
+            <SearchInput
+              ref="searchInputRef"
+              v-model="params.search"
+              clearable
+              class="listing-search listing-search--inline w-(--listing-search-width) shrink-0"
+              :placeholder="searchLabel"
+              :aria-label="searchLabel"
+              @focus="searchHasFocus = true"
+              @blur="searchHasFocus = false"
+            />
+          </div>
+        </Transition>
       </template>
     </Toolbar>
 
@@ -52,17 +56,31 @@
       </Tabs>
     </div>
 
-    <SearchInput
+    <div
       v-if="showSearchInput && store.mobileLayout"
-      ref="searchInputRef"
-      v-model="params.search"
-      clearable
-      class="listing-search listing-search--row mx-2.5 mt-2.5 w-auto"
-      :placeholder="searchLabel"
-      :aria-label="searchLabel"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-    />
+      class="mx-2.5 mt-2.5 flex items-center gap-1"
+    >
+      <SearchInput
+        ref="searchInputRef"
+        v-model="params.search"
+        clearable
+        class="listing-search listing-search--row min-w-0 flex-1"
+        :placeholder="searchLabel"
+        :aria-label="searchLabel"
+        @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-10 shrink-0"
+        :aria-label="$t('close')"
+        :title="$t('close')"
+        @click="closeSearch"
+      >
+        <X class="size-[22px]" />
+      </Button>
+    </div>
 
     <Container
       v-if="expanded"
@@ -309,7 +327,30 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "@lucide/vue";
+import {
+  ArrowUpDown,
+  CheckCheck,
+  ChevronDown,
+  ChevronUp,
+  Disc3,
+  Eye,
+  EyeClosed,
+  EyeOff,
+  Files,
+  FilterX,
+  Heart,
+  Layers,
+  LayoutGrid,
+  LayoutList,
+  LibraryBig,
+  ListChecks,
+  ListMusic,
+  MicVocal,
+  Package,
+  RefreshCw,
+  Search,
+  X,
+} from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -1046,6 +1087,10 @@ const showSearchInput = computed(() => {
   return searchAvailable.value && showSearch.value && expanded.value;
 });
 
+const searchButtonCloses = computed(
+  () => showSearchInput.value && !store.mobileLayout,
+);
+
 const isLibraryItem = computed(() => {
   const libraryItemTypes = [
     "artists",
@@ -1193,7 +1238,7 @@ const menuItems = computed(() => {
     return [
       {
         label: "tooltip.collapse_expand",
-        icon: "mdi-chevron-down",
+        icon: ChevronDown,
         action: toggleExpand,
         overflowAllowed: false,
       },
@@ -1207,7 +1252,7 @@ const menuItems = computed(() => {
     if (showCheckboxes.value) {
       items.push({
         label: "tooltip.select_all",
-        icon: "mdi-select-all",
+        icon: CheckCheck,
         action: selectAll,
         overflowAllowed: true,
       });
@@ -1216,9 +1261,7 @@ const menuItems = computed(() => {
       label: showCheckboxes.value
         ? "tooltip.exit_select_items"
         : "tooltip.select_items",
-      icon: showCheckboxes.value
-        ? "mdi-checkbox-multiple-outline"
-        : "mdi-checkbox-multiple-blank-outline",
+      icon: ListChecks,
       action: toggleCheckboxes,
       active: showCheckboxes.value,
       overflowAllowed: true,
@@ -1228,7 +1271,7 @@ const menuItems = computed(() => {
   if (props.showLibraryOnlyFilter === true) {
     items.push({
       label: "tooltip.filter_library",
-      icon: "mdi-bookshelf",
+      icon: LibraryBig,
       action: toggleLibraryOnlyFilter,
       active: params.value.libraryOnly,
       overflowAllowed: true,
@@ -1265,7 +1308,7 @@ const menuItems = computed(() => {
   if (props.showFavoritesOnlyFilter === true) {
     items.push({
       label: "tooltip.filter_favorites",
-      icon: params.value.favoritesOnly ? "mdi-heart" : "mdi-heart-outline",
+      icon: Heart,
       action: toggleFavoriteFilter,
       active: params.value.favoritesOnly,
       overflowAllowed: true,
@@ -1276,9 +1319,7 @@ const menuItems = computed(() => {
   if (props.showHideFullyPlayedFilter === true) {
     items.push({
       label: "tooltip.filter_hide_fully_played",
-      icon: params.value.hideFullyPlayed
-        ? "mdi-eye-off"
-        : "mdi-eye-off-outline",
+      icon: EyeOff,
       action: toggleHideFullyPlayedFilter,
       active: params.value.hideFullyPlayed,
       overflowAllowed: true,
@@ -1289,9 +1330,7 @@ const menuItems = computed(() => {
   if (props.showAlbumArtistsOnlyFilter === true) {
     items.push({
       label: "tooltip.album_artist_filter",
-      icon: params.value.albumArtistsFilter
-        ? "mdi-account-music"
-        : "mdi-account-music-outline",
+      icon: MicVocal,
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
       overflowAllowed: true,
@@ -1302,9 +1341,7 @@ const menuItems = computed(() => {
   if (props.showCollapseCollections === true) {
     items.push({
       label: "tooltip.collapse_collections",
-      icon: params.value.collapseCollections
-        ? "mdi-note-multiple"
-        : "mdi-note-multiple-outline",
+      icon: Files,
       action: toggleCollapseCollections,
       active: params.value.collapseCollections,
       overflowAllowed: true,
@@ -1332,7 +1369,7 @@ const menuItems = computed(() => {
   if (props.showAlbumTypeFilter) {
     items.push({
       label: "tooltip.album_type",
-      icon: "mdi-album",
+      icon: Disc3,
       disabled: loading.value,
       active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
@@ -1363,7 +1400,7 @@ const menuItems = computed(() => {
   if (providerFilterAvailable.value && !props.requireProviderSelection) {
     items.push({
       label: "tooltip.filter_provider",
-      icon: "mdi-package-variant",
+      icon: Package,
       disabled: loading.value,
       active: !!params.value.provider && params.value.provider.length > 0,
       closeOnContentClick: props.singleProviderFilter,
@@ -1381,7 +1418,7 @@ const menuItems = computed(() => {
       label: newContentAvailable.value
         ? "tooltip.refresh_new_content"
         : "tooltip.refresh",
-      icon: "mdi-refresh",
+      icon: RefreshCw,
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
@@ -1393,7 +1430,7 @@ const menuItems = computed(() => {
   if (props.sortKeys?.length) {
     items.push({
       label: "tooltip.sort_options",
-      icon: "mdi-sort",
+      icon: ArrowUpDown,
       disabled: props.sortKeys.length <= 1 || loading.value,
       overflowAllowed: true,
       subItems: props.sortKeys.map((sortKey) => {
@@ -1411,12 +1448,14 @@ const menuItems = computed(() => {
   // toggle search (auto-hidden for small listings)
   if (searchAvailable.value) {
     items.push({
-      label: isSearchActive.value
-        ? "tooltip.search_filter_active"
-        : "tooltip.search",
-      icon: "mdi-magnify",
+      label: searchButtonCloses.value
+        ? "close"
+        : isSearchActive.value
+          ? "tooltip.search_filter_active"
+          : "tooltip.search",
+      icon: searchButtonCloses.value ? X : Search,
       action: toggleSearch,
-      active: isSearchActive.value,
+      active: isSearchActive.value && !searchButtonCloses.value,
       disabled: loading.value,
       overflowAllowed: false,
     });
@@ -1428,7 +1467,7 @@ const menuItems = computed(() => {
   if (providerFilterAvailable.value && props.requireProviderSelection) {
     items.push({
       label: "tooltip.select_provider",
-      icon: "mdi-package-variant",
+      icon: Package,
       disabled: loading.value,
       // single selection: close on pick so only one stays checked.
       closeOnContentClick: true,
@@ -1441,12 +1480,12 @@ const menuItems = computed(() => {
   if (!props.forcedViewMode)
     items.push({
       label: "tooltip.toggle_view_mode",
-      icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
+      icon: viewMode.value == "list" ? LayoutList : LayoutGrid,
       overflowAllowed: true,
       subItems: [
         {
           label: "view.list",
-          icon: "mdi-view-list",
+          icon: LayoutList,
           selected: viewMode.value == "list",
           action: () => {
             selectViewMode("list");
@@ -1454,7 +1493,7 @@ const menuItems = computed(() => {
         },
         {
           label: "view.panel",
-          icon: "mdi-grid",
+          icon: LayoutGrid,
           selected: viewMode.value == "panel",
           action: () => {
             selectViewMode("panel");
@@ -1462,7 +1501,7 @@ const menuItems = computed(() => {
         },
         {
           label: "view.panel_compact",
-          icon: "mdi-grid",
+          icon: LayoutGrid,
           selected: viewMode.value == "panel_compact",
           action: () => {
             selectViewMode("panel_compact");
@@ -1479,7 +1518,7 @@ const menuItems = computed(() => {
   if (props.allowCollapse === true) {
     items.push({
       label: "tooltip.collapse_expand",
-      icon: "mdi-chevron-up",
+      icon: ChevronUp,
       action: toggleExpand,
       overflowAllowed: false,
     });
@@ -2175,10 +2214,33 @@ defineExpose({
 </script>
 
 <style scoped>
+.listing-search-slot {
+  --listing-search-width: clamp(0px, calc(100vw - 560px), 280px);
+  display: flex;
+  width: var(--listing-search-width);
+}
+
+.listing-search-enter-active,
+.listing-search-leave-active {
+  overflow: hidden;
+  transition: width 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.listing-search-enter-from,
+.listing-search-leave-to {
+  width: 0;
+}
+
 .listing-search--inline {
-  width: 100%;
   font-size: 0.9375rem;
   font-weight: 400;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listing-search-enter-active,
+  .listing-search-leave-active {
+    transition: none;
+  }
 }
 
 .disc-header {
