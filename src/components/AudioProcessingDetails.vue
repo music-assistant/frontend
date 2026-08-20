@@ -274,8 +274,9 @@ const {
   align-items: center;
   justify-content: center;
   flex: 0 0 18px;
+  /* the provider icon sets its own width inline, so it has to be overridden */
   width: 18px !important;
-  height: 18px !important;
+  height: 18px;
   margin: 0;
   overflow: hidden;
 }

@@ -74,49 +74,13 @@
               v-if="api.players[config.player_id]?.output_protocols.length"
               class="protocol-chips"
             >
-              <v-chip
+              <ProtocolChip
                 v-for="protocol in api.players[config.player_id]
                   .output_protocols"
                 :key="protocol.output_protocol_id"
-                size="x-small"
-                variant="tonal"
-                class="protocol-chip"
-                :class="{
-                  'protocol-chip--clickable': api.getProviderManifest(
-                    protocol.protocol_domain,
-                  )?.documentation,
-                  'protocol-chip--unavailable': !protocol.available,
-                }"
-                @click="
-                  api.getProviderManifest(protocol.protocol_domain)
-                    ?.documentation &&
-                  openLinkInNewTab(
-                    api.getProviderManifest(protocol.protocol_domain)!
-                      .documentation!,
-                  )
-                "
-              >
-                <template #prepend>
-                  <ProviderIcon
-                    :domain="protocol.protocol_domain"
-                    :size="14"
-                    class="chip-icon"
-                  />
-                </template>
-                {{
-                  api.getProviderManifest(protocol.protocol_domain)?.name ||
-                  protocol.protocol_domain
-                }}
-                <v-icon
-                  v-if="
-                    api.getProviderManifest(protocol.protocol_domain)
-                      ?.documentation
-                  "
-                  size="12"
-                  class="ml-1"
-                  >mdi-open-in-new</v-icon
-                >
-              </v-chip>
+                :protocol="protocol"
+                link-to-docs
+              />
             </div>
           </div>
           <Button
@@ -243,7 +207,7 @@
 import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -276,7 +240,6 @@ import {
   getPlayerSettingsMenuItems,
 } from "@/helpers/player_settings_actions";
 import { useConfigAction } from "@/composables/useConfigAction";
-import { openLinkInNewTab } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { MoreVertical, Pencil, RefreshCw, RotateCcw } from "@lucide/vue";
@@ -661,46 +624,6 @@ function resetPlayerState(playerId?: string) {
   gap: 4px;
   flex-wrap: wrap;
   margin-top: 8px;
-}
-
-.protocol-chip {
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-
-.protocol-chip--clickable {
-  cursor: pointer;
-}
-
-.protocol-chip--clickable:hover {
-  opacity: 0.85;
-}
-
-.protocol-chip--unavailable {
-  opacity: 0.4;
-}
-
-.chip-icon {
-  margin: 0;
-  width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
 }
 
 @media (max-width: 600px) {
