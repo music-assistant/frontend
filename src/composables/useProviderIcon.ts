@@ -1,12 +1,6 @@
 import { api } from "@/plugins/api";
 import { ProviderIconVariant } from "@/plugins/api/interfaces";
-import {
-  computed,
-  type MaybeRefOrGetter,
-  ref,
-  toValue,
-  watchEffect,
-} from "vue";
+import { computed, type MaybeRefOrGetter, toValue, watchEffect } from "vue";
 import { useTheme } from "vuetify";
 
 interface ProviderIconOptions {
@@ -66,16 +60,24 @@ export function useProviderIcon(
       !theme.current.value.dark,
   );
 
-  const iconDataUri = ref<string | null>(null);
-  watchEffect(async () => {
-    const dom = providerDomain.value;
-    const iconVariant = variant.value;
-    if (!dom || !iconVariant) {
-      iconDataUri.value = null;
-      return;
+  const iconKey = computed(() =>
+    providerDomain.value && variant.value
+      ? `${providerDomain.value}:${variant.value}`
+      : undefined,
+  );
+
+  // the request only fills the shared cache; reading the icon back out of it
+  // keeps it tied to the provider on screen now, so a request that resolves
+  // after the domain has moved on cannot leave the wrong icon behind
+  watchEffect(() => {
+    if (providerDomain.value && variant.value) {
+      void api.getProviderIcon(providerDomain.value, variant.value);
     }
-    iconDataUri.value = await api.getProviderIcon(dom, iconVariant);
   });
+
+  const iconDataUri = computed(() =>
+    iconKey.value ? (api.providerIcons[iconKey.value] ?? null) : null,
+  );
 
   return { iconDataUri, applyInvert, providerName };
 }
