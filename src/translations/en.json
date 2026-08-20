@@ -420,7 +420,6 @@
         "users_description": "Manage user accounts, roles, and permissions",
         "system_description": "Configure Music Assistant server settings and core modules",
         "system": "System",
-        "view_documentation": "View documentation",
         "about": "About",
         "about_description": "Version information, credits and more",
         "auto_refresh_log": "Auto-refresh",
