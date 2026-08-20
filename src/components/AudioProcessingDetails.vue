@@ -276,7 +276,7 @@ const {
   flex: 0 0 18px;
   width: 18px !important;
   height: 18px !important;
-  margin: 0 !important;
+  margin: 0;
   overflow: hidden;
 }
 

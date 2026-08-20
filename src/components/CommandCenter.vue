@@ -23,11 +23,10 @@
         type="button"
         tabindex="-1"
         class="command-center-clear"
-        :aria-label="$t('clear')"
         @mousedown.prevent
         @click="clearQuery"
       >
-        <X class="size-4" />
+        {{ $t("clear") }}
       </button>
     </div>
 
@@ -223,10 +222,10 @@
 </template>
 
 <script setup lang="ts">
+import CommandCenterShell from "@/components/CommandCenterShell.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import CommandCenterShell from "@/components/CommandCenterShell.vue";
 import {
   CommandGroup,
   CommandItem,
@@ -254,7 +253,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Check, History, Play, Search, X } from "@lucide/vue";
+import { Check, History, Play, Search } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
@@ -608,11 +607,14 @@ watch(
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 24px;
   height: 24px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--muted);
   color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
 }
 

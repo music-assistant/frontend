@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
 import { $t } from "@/plugins/i18n";
-import { Search as SearchIcon, X } from "@lucide/vue";
+import { Search as SearchIcon } from "@lucide/vue";
 import { computed, ref, useAttrs } from "vue";
 
 defineOptions({ inheritAttrs: false });
@@ -57,14 +57,13 @@ defineExpose({
       type="button"
       variant="ghost-icon"
       class="text-muted-foreground hover:text-foreground"
-      :aria-label="$t('clear')"
       @click="
         emit('update:modelValue', '');
         emit('clear');
         inputRef?.focus();
       "
     >
-      <X class="size-4" />
+      {{ $t("clear") }}
     </InputGroupButton>
     <!-- trailing controls rendered inside the input, e.g. an inline filter -->
     <slot name="append"></slot>

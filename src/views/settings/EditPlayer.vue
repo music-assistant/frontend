@@ -682,7 +682,7 @@ function resetPlayerState(playerId?: string) {
 }
 
 .chip-icon {
-  margin: 0 !important;
+  margin: 0;
   width: auto !important;
 }
 
