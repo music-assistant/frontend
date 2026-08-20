@@ -232,6 +232,34 @@ describe("PlayerGroupMembers", () => {
     ).toEqual(["screens"]);
   });
 
+  it("keeps only screens when filtering on screens", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    const screen = createPlayer({
+      player_id: "screen",
+      name: "Kitchen screen",
+      type: PlayerType.DISPLAY,
+    });
+    const parent = createPlayer({
+      can_group_with: [speaker.player_id, screen.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [screen.player_id]: screen,
+    };
+
+    const wrapper = mountGroupMembers(parent, [], { filter: "screens" });
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen screen"]);
+  });
+
   it("separates current members from available players", () => {
     const child = createPlayer({
       player_id: "child",
