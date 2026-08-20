@@ -83,7 +83,7 @@
           :player="player"
           :members="groupMembers"
           :has-lights="hasLights"
-          :has-visualizers="hasVisualizers"
+          :has-screens="hasScreens"
           @dismiss="handleOpenChange(false)"
         />
       </PopoverContent>
@@ -111,7 +111,7 @@ import {
   canEditPlayerGroup,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
-  isVisualizerPlayer,
+  isScreenPlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
@@ -191,8 +191,8 @@ const hasLights = computed(() =>
     (candidate) => candidate.type === PlayerType.LIGHT,
   ),
 );
-const hasVisualizers = computed(() =>
-  groupCandidates.value.some((candidate) => isVisualizerPlayer(candidate)),
+const hasScreens = computed(() =>
+  groupCandidates.value.some((candidate) => isScreenPlayer(candidate)),
 );
 
 watch(
@@ -200,10 +200,10 @@ watch(
   () => handleOpenChange(false),
 );
 
-watch([hasLights, hasVisualizers], () => {
+watch([hasLights, hasScreens], () => {
   if (
     (filter.value === "lights" && !hasLights.value) ||
-    (filter.value === "visualizers" && !hasVisualizers.value)
+    (filter.value === "screens" && !hasScreens.value)
   ) {
     filter.value = "all";
   }
