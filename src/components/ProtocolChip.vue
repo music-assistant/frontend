@@ -7,7 +7,7 @@
       'protocol-chip--clickable': documentation,
       'protocol-chip--unavailable': !protocol.available,
     }"
-    v-on="documentation ? { click: openDocumentation } : {}"
+    v-on="clickHandler"
   >
     <template #prepend>
       <ProviderIcon
@@ -26,7 +26,7 @@ import { computed } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { OutputProtocol } from "@/plugins/api/interfaces";
+import type { OutputProtocol } from "@/plugins/api/interfaces";
 
 export interface Props {
   protocol: OutputProtocol;
@@ -43,11 +43,12 @@ const documentation = computed(() =>
   props.linkToDocs ? manifest.value?.documentation : undefined,
 );
 
-// bound conditionally: vuetify renders a chip with a click listener as
-// interactive, so an unclickable chip must not have one at all
-function openDocumentation() {
-  if (documentation.value) openLinkInNewTab(documentation.value);
-}
+// vuetify renders any chip that has a click listener as interactive (focusable,
+// with a hover overlay), so a chip with nothing to open gets no listener at all
+const clickHandler = computed(() => {
+  const url = documentation.value;
+  return url ? { click: () => openLinkInNewTab(url) } : {};
+});
 </script>
 
 <style scoped>
@@ -61,7 +62,8 @@ function openDocumentation() {
   cursor: pointer;
 }
 
-.protocol-chip--clickable:hover {
+/* the dimming below is less specific, so it has to be excluded explicitly */
+.protocol-chip--clickable:not(.protocol-chip--unavailable):hover {
   opacity: 0.85;
 }
 

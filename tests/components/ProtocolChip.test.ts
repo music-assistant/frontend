@@ -6,6 +6,7 @@ import * as directives from "vuetify/directives";
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { OutputProtocol } from "@/plugins/api/interfaces";
+import { outputProtocol } from "../fixtures/outputProtocol";
 import { providerManifest } from "../fixtures/providerManifest";
 
 const apiMock = vi.hoisted(() => ({
@@ -22,21 +23,6 @@ vi.mock("@/helpers/utils", () => ({ openLinkInNewTab }));
 const vuetify = createVuetify({ components, directives });
 
 enableAutoUnmount(afterEach);
-
-function outputProtocol(
-  overrides: Partial<OutputProtocol> = {},
-): OutputProtocol {
-  return {
-    output_protocol_id: "native",
-    name: "Native",
-    is_native: true,
-    protocol_domain: "airplay",
-    priority: 0,
-    available: true,
-    derived_from: null,
-    ...overrides,
-  };
-}
 
 function mountChip(props: { protocol: OutputProtocol; linkToDocs?: boolean }) {
   return mount(ProtocolChip, {
@@ -98,6 +84,10 @@ describe("ProtocolChip", () => {
 
     const wrapper = mountChip({ protocol: outputProtocol(), linkToDocs: true });
     expect(wrapper.classes()).toContain("protocol-chip--clickable");
+    expect(wrapper.find(".mdi-open-in-new").exists()).toBe(true);
+    // vuetify only renders the chip as interactive once it has a click listener
+    expect(wrapper.classes()).toContain("v-chip--link");
+    expect(wrapper.attributes("tabindex")).toBe("0");
 
     await wrapper.trigger("click");
 
@@ -113,6 +103,10 @@ describe("ProtocolChip", () => {
 
     const wrapper = mountChip({ protocol: outputProtocol() });
     expect(wrapper.classes()).not.toContain("protocol-chip--clickable");
+    expect(wrapper.find(".mdi-open-in-new").exists()).toBe(false);
+    // without a click listener vuetify leaves the chip non-interactive
+    expect(wrapper.classes()).not.toContain("v-chip--link");
+    expect(wrapper.attributes("tabindex")).toBeUndefined();
 
     await wrapper.trigger("click");
 
@@ -126,6 +120,10 @@ describe("ProtocolChip", () => {
 
     const wrapper = mountChip({ protocol: outputProtocol(), linkToDocs: true });
     expect(wrapper.classes()).not.toContain("protocol-chip--clickable");
+    expect(wrapper.find(".mdi-open-in-new").exists()).toBe(false);
+    // without a click listener vuetify leaves the chip non-interactive
+    expect(wrapper.classes()).not.toContain("v-chip--link");
+    expect(wrapper.attributes("tabindex")).toBeUndefined();
 
     await wrapper.trigger("click");
 
