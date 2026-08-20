@@ -1,8 +1,8 @@
 import type { OutputProtocol } from "@/plugins/api/interfaces";
 
 /**
- * One of the ways a player can be played to, for tests that only care about a
- * few of its fields but should still model a payload the server can send.
+ * An output protocol for a player, for tests that only care about a few of its
+ * fields but should still model a payload the server can send.
  */
 export function outputProtocol(
   overrides: Partial<OutputProtocol> = {},

@@ -48,12 +48,13 @@ describe("ProtocolChip", () => {
 
   it("renders the provider name and icon for the protocol", () => {
     apiMock.getProviderManifest.mockReturnValue(
-      providerManifest({ domain: "airplay", name: "AirPlay" }),
+      providerManifest({ domain: "airplay", name: "AirPlay provider" }),
     );
 
     const wrapper = mountChip({ protocol: outputProtocol() });
 
-    expect(wrapper.text()).toContain("AirPlay");
+    // the fixture's own name differs, so this pins the manifest as the source
+    expect(wrapper.text()).toContain("AirPlay provider");
     expect(
       wrapper.get('[data-testid="provider-icon"]').attributes("data-domain"),
     ).toBe("airplay");

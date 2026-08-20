@@ -7,7 +7,7 @@
       'protocol-chip--clickable': documentation,
       'protocol-chip--unavailable': !protocol.available,
     }"
-    v-on="clickHandler"
+    v-on="clickListener"
   >
     <template #prepend>
       <ProviderIcon
@@ -45,7 +45,7 @@ const documentation = computed(() =>
 
 // vuetify renders any chip that has a click listener as interactive (focusable,
 // with a hover overlay), so a chip with nothing to open gets no listener at all
-const clickHandler = computed(() => {
+const clickListener = computed(() => {
   const url = documentation.value;
   return url ? { click: () => openLinkInNewTab(url) } : {};
 });
