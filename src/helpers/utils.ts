@@ -680,20 +680,17 @@ export const markdownToHtml = function (text: string): string {
 };
 
 /**
- * Copy text to clipboard with proper error handling.
+ * Copy text to the clipboard.
  *
- * Handles scenarios where navigator.clipboard is unavailable (non-HTTPS contexts,
- * unsupported browsers, or permission issues) by falling back to a temporary
- * textarea element.
- *
- * :param text: The text to copy to the clipboard.
- * :return: Promise that resolves to true if successful, false otherwise.
+ * :param text: The text to copy.
+ * :return: Promise that resolves to true only when the text actually reached
+ *   the clipboard.
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
 
-  // Modern Clipboard API: only available in secure contexts (HTTPS / localhost).
-  if (window.isSecureContext && navigator.clipboard?.writeText) {
+  // Only exposed in secure contexts (https / localhost).
+  if (navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);
       return true;
@@ -705,37 +702,66 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     }
   }
 
-  // Fallback for non-secure contexts. Append inside the active dialog (if any)
-  // so a focus trap (e.g. Reka UI Dialog) does not steal focus and clear the
-  // textarea's selection before execCommand("copy") runs.
+  return legacyCopy(text);
+}
+
+/**
+ * Copy text by selecting it and running the copy command, for contexts without
+ * the Clipboard API.
+ *
+ * :param text: The text to copy.
+ * :return: True when the text reached the clipboard.
+ */
+const legacyCopy = function (text: string): boolean {
+  // Reka UI menus and dialogs trap focus and pull it back into themselves, which
+  // clears a selection made anywhere else, so keep the node inside the trap.
   const host =
-    document.activeElement?.closest<HTMLElement>("[role=dialog]") ??
-    document.body;
-  const textArea = document.createElement("textarea");
-  textArea.value = text;
-  textArea.setAttribute("readonly", "");
-  textArea.style.position = "fixed";
-  textArea.style.top = "0";
-  textArea.style.left = "0";
-  textArea.style.width = "1px";
-  textArea.style.height = "1px";
-  textArea.style.opacity = "0";
-  textArea.style.pointerEvents = "none";
-  textArea.style.setProperty("-webkit-user-select", "text");
-  textArea.style.userSelect = "text";
-  host.appendChild(textArea);
+    document.activeElement?.closest<HTMLElement>(
+      "[role=dialog], [role=menu]",
+    ) ?? document.body;
+
+  const node = document.createElement("span");
+  node.textContent = text;
+  node.setAttribute("aria-hidden", "true");
+  // Browsers refuse to copy from a node they treat as not rendered, so clip it
+  // out of sight instead of hiding it.
+  node.style.all = "unset";
+  node.style.position = "fixed";
+  node.style.top = "0";
+  node.style.clip = "rect(0, 0, 0, 0)";
+  node.style.whiteSpace = "pre";
+  // global.css disables selection on every element
+  node.style.setProperty("-webkit-user-select", "text");
+  node.style.userSelect = "text";
+
+  let copied = false;
+  const onCopy = function (event: ClipboardEvent) {
+    event.preventDefault();
+    event.clipboardData?.setData("text/plain", text);
+    copied = true;
+  };
+  node.addEventListener("copy", onCopy);
+
+  const selection = window.getSelection();
+  host.appendChild(node);
   try {
-    textArea.focus();
-    textArea.select();
-    textArea.setSelectionRange(0, text.length);
-    return document.execCommand("copy");
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    // The command reports success even when nothing was written, so the handler
+    // above is what tells us whether the text really got there.
+    document.execCommand("copy");
   } catch (error) {
     console.error("Failed to copy to clipboard:", error);
-    return false;
   } finally {
-    host.removeChild(textArea);
+    selection?.removeAllRanges();
+    node.removeEventListener("copy", onCopy);
+    host.removeChild(node);
   }
-}
+
+  return copied;
+};
 
 /**
  * Check if a player config should be hidden from settings due to being a
