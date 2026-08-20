@@ -691,16 +691,8 @@ describe("getPlayerMenuItems ai dj", () => {
 describe("visualizer menu entry", () => {
   const VISUALIZER_LABEL = "settings.visualizer_enabled.label";
 
-  function playerWithProtocols(...domains: string[]): Player {
-    return makePlayer({
-      output_protocols: domains.map((domain) => ({
-        protocol_domain: domain,
-      })),
-    } as Partial<Player>);
-  }
-
   it("is offered whatever the player plays over", () => {
-    const player = playerWithProtocols("sonos");
+    const player = makePlayer();
     api.players = { kitchen: player } as unknown as typeof api.players;
 
     const menuItems = getPlayerMenuItems(player, undefined, {
