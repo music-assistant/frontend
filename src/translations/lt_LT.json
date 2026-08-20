@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Grupė",
         "player": "Grotuvas",
-        "stereo_pair": "Stereo pora",
-        "sync_group": "Sinchronizavimo grupė"
+        "stereo_pair": "Stereo pora"
     },
     "players": "Grotuvai",
     "playlist": "Grojaraštis",

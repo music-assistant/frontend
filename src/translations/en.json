@@ -65,7 +65,10 @@
         "group": "Group",
         "player": "Player",
         "stereo_pair": "Stereo Pair",
-        "sync_group": "Sync Group"
+        "display": "Screen",
+        "visualizer": "Visualizer",
+        "light": "Light",
+        "unknown": "Unknown"
     },
     "players": "Players",
     "playlist": "Playlist",
