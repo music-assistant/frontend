@@ -73,7 +73,9 @@ describe("copyToClipboard", () => {
     );
   };
 
-  /** The node the helper selects from, while it is still mounted. */
+  /**
+   * The node the helper selects from, while it is still mounted.
+   */
   const clipboardNode = () =>
     document.querySelector<HTMLElement>("span[aria-hidden='true']");
 
@@ -99,6 +101,16 @@ describe("copyToClipboard", () => {
 
     await expect(copyToClipboard("provider://artist/id")).resolves.toBe(false);
     expect(clipboardNode()).toBeNull();
+  });
+
+  it("reports failure when the copy event carries no clipboard", async () => {
+    stubBrowser(() => {
+      clipboardNode()?.dispatchEvent(
+        new Event("copy", { bubbles: true, cancelable: true }),
+      );
+    });
+
+    await expect(copyToClipboard("provider://artist/id")).resolves.toBe(false);
   });
 
   it("keeps the node inside a menu that traps focus", async () => {

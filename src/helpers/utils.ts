@@ -689,7 +689,8 @@ export const markdownToHtml = function (text: string): string {
 export async function copyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
 
-  // Only exposed in secure contexts (https / localhost).
+  // Only exposed in secure contexts (https / localhost); the catch also
+  // covers a permission the browser refuses.
   if (navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);
@@ -736,8 +737,11 @@ const legacyCopy = function (text: string): boolean {
 
   let copied = false;
   const onCopy = function (event: ClipboardEvent) {
+    // without a clipboard to write to, leave the copy to the browser and let
+    // the caller report a failure rather than an unverifiable success
+    if (!event.clipboardData) return;
     event.preventDefault();
-    event.clipboardData?.setData("text/plain", text);
+    event.clipboardData.setData("text/plain", text);
     copied = true;
   };
   node.addEventListener("copy", onCopy);
@@ -757,7 +761,7 @@ const legacyCopy = function (text: string): boolean {
   } finally {
     selection?.removeAllRanges();
     node.removeEventListener("copy", onCopy);
-    host.removeChild(node);
+    node.remove();
   }
 
   return copied;
