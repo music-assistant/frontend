@@ -1564,7 +1564,6 @@
             "current_music": "Current music",
             "copy_music_name": "Copy song title",
             "copy_music_name_failed": "Couldn't copy song title",
-            "loading_lyrics": "Loading lyrics...",
             "no_winner": "No winner this time",
             "winner_single": "{0} wins with {1} points",
             "winner_multiple": "{0} tie for the win with {1} points",
