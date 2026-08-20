@@ -87,10 +87,10 @@ export const groupMemberPickerVisible = function (player: Player): boolean {
 /**
  * Check if the player renders a now-playing view instead of audio.
  *
- * Screens and visualizers share a section in the group pickers, so the UI
- * treats them as one category.
+ * Visualizers and metadata-only displays are both screens to the user, so the
+ * group pickers offer them as one category.
  */
-export const isVisualizerPlayer = function (player: Player): boolean {
+export const isScreenPlayer = function (player: Player): boolean {
   return (
     player.type === PlayerType.VISUALIZER || player.type === PlayerType.DISPLAY
   );

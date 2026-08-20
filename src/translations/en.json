@@ -2309,7 +2309,6 @@
     "artist_all_audiobooks": "All audiobooks",
     "lights": "Lights",
     "players_in_group": "Players in group",
-    "visualizers": "Visualizers",
     "volume": "Volume",
     "grouped_volume": "Grouped volume",
     "player_select": {
@@ -2376,5 +2375,6 @@
     "recent_searches": "Recent searches",
     "command_center_navigate": "navigate",
     "command_center_open": "open",
-    "command_center_keep_typing": "Keep typing to search..."
+    "command_center_keep_typing": "Keep typing to search...",
+    "screens": "Screens"
 }

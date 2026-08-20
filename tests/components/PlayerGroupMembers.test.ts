@@ -173,7 +173,7 @@ describe("PlayerGroupMembers", () => {
     );
   });
 
-  it("separates players, lights, and visualizers", () => {
+  it("separates players, lights, and screens", () => {
     const speaker = createPlayer({
       player_id: "speaker",
       name: "Office",
@@ -208,10 +208,10 @@ describe("PlayerGroupMembers", () => {
       wrapper
         .findAll(".player-group-section > p")
         .map((section) => section.text()),
-    ).toEqual(["players", "lights", "visualizers"]);
+    ).toEqual(["players", "lights", "screens"]);
   });
 
-  it("lists a screen alongside the visualizers", () => {
+  it("lists a display player under screens", () => {
     const screen = createPlayer({
       player_id: "screen",
       name: "Kitchen screen",
@@ -229,7 +229,7 @@ describe("PlayerGroupMembers", () => {
       wrapper
         .findAll(".player-group-section > p")
         .map((section) => section.text()),
-    ).toEqual(["visualizers"]);
+    ).toEqual(["screens"]);
   });
 
   it("separates current members from available players", () => {
