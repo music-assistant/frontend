@@ -71,6 +71,7 @@
             align="start"
             :align-offset="-5"
             :side-offset="6"
+            class="max-h-[70vh] overflow-y-auto"
           >
             <DropdownMenuItem
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
@@ -241,7 +242,9 @@ import {
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
+import { runWithConcurrency } from "@/helpers/concurrency";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
 import {
   gotoRadio,
@@ -249,8 +252,6 @@ import {
   radioRelevant,
   radioSupported,
 } from "@/helpers/radio";
-import { runWithConcurrency } from "@/helpers/concurrency";
-import { backFromMediaDetails } from "@/helpers/navigation";
 import {
   isAudioSource,
   isItemInLibrary,
