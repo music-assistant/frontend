@@ -65,7 +65,7 @@ const activeGenreRows = computed<GenreRow[]>(() =>
     genre,
     displayName: genre.name,
     thumbSrc: getImageThumbForItem(genre, ImageType.THUMB, 40) ?? undefined,
-    aliasCount: mappedAliases(genre).length,
+    aliasCount: genre.genre_alias_count ?? mappedAliases(genre).length,
     trackCount:
       allMediaCounts.value === null
         ? null
