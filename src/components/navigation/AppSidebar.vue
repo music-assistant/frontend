@@ -131,9 +131,19 @@ onUnmounted(() => {
     <SidebarHeader>
       <SidebarMenu>
         <div class="sidebar-header-row">
+          <!-- collapsed, the 30px logo centres on a margin anchored off the
+               rail's final width (less the header's 1rem side padding), so it
+               holds still while the width animates -->
           <div
             class="sidebar-header"
-            :style="{ marginLeft: collapsed ? '2px' : '7px' }"
+            :style="
+              collapsed
+                ? {
+                    marginLeft:
+                      'calc((var(--sidebar-width-icon) - 1rem - 30px) / 2)',
+                  }
+                : { marginLeft: '7px' }
+            "
             @click="router.push('/')"
           >
             <img
@@ -263,6 +273,15 @@ onUnmounted(() => {
   min-height: 1.75rem !important;
   padding-top: 0.125rem !important;
   padding-bottom: 0.125rem !important;
+}
+
+/* collapsed to the icon rail, the buttons (2rem wide) centre on a margin
+   anchored off the rail's final width — which --sidebar-width-icon always
+   holds, the scrollbar gutter's widening included — rather than the animating
+   one, so they hold still through the collapse animation */
+[data-collapsible="icon"] :deep([data-sidebar="menu-button"]) {
+  margin-left: calc((var(--sidebar-width-icon) - 2rem) / 2) !important;
+  margin-right: 0 !important;
 }
 
 :deep([data-sidebar="menu-button"] > svg) {

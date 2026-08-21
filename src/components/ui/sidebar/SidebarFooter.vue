@@ -22,7 +22,9 @@ const isCollapsed = computed(() => state.value === "collapsed");
         isMobile
           ? 'p-2'
           : isCollapsed
-            ? 'pl-[1px] pt-2 pb-26'
+            ? // no side padding: collapsed rail items centre themselves, and
+              // any asymmetry here would push them off the rail axis
+              'pt-2 pb-26'
             : 'px-3 pt-2 pb-26',
         props.class,
       )
