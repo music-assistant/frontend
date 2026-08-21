@@ -7,8 +7,14 @@ const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
-const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef, swipeStyle } =
-  useEdgeSwipeNavigation();
+const {
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+  onTouchCancel,
+  surfaceRef,
+  swipeStyle,
+} = useEdgeSwipeNavigation();
 </script>
 
 <template>
@@ -24,11 +30,11 @@ const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef, swipeStyle } =
     @touchstart.passive="onTouchStart"
     @touchmove.passive="onTouchMove"
     @touchend.passive="onTouchEnd"
-    @touchcancel.passive="onTouchEnd"
+    @touchcancel.passive="onTouchCancel"
   >
     <div
       ref="surfaceRef"
-      class="flex min-h-0 flex-1 flex-col"
+      class="bg-background flex min-h-0 flex-1 flex-col"
       :style="swipeStyle"
     >
       <slot></slot>
