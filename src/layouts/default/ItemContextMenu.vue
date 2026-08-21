@@ -51,7 +51,32 @@
       <template v-for="menuItem of visibleItems" :key="menuItem.label">
         <!-- custom inline control (e.g. a stepper); renders its own row and
              manages its own interaction without closing the menu -->
-        <component :is="menuItem.component" v-if="menuItem.component" />
+        <component
+          :is="menuItem.component"
+          v-if="menuItem.component"
+          v-bind="menuItem.componentProps"
+        />
+        <!-- item whose submenu popout is a custom control -->
+        <DropdownMenuSub v-else-if="menuItem.subComponent">
+          <DropdownMenuSubTrigger class="gap-3">
+            <MenuItemIcon :icon="menuItem.icon" />
+            <span class="flex-1 truncate min-w-0">{{
+              menuItemLabel(menuItem)
+            }}</span>
+          </DropdownMenuSubTrigger>
+          <!-- fixed width so popout content truncates on phones -->
+          <DropdownMenuSubContent
+            align="start"
+            :align-offset="-5"
+            :side-offset="6"
+            class="max-h-[70vh] overflow-y-auto w-[min(92vw,350px)]"
+          >
+            <component
+              :is="menuItem.subComponent"
+              v-bind="menuItem.componentProps"
+            />
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <!-- item with submenu -->
         <DropdownMenuSub
           v-else-if="menuItem.subItems && menuItem.subItems.length"

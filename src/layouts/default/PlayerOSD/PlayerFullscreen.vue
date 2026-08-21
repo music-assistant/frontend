@@ -521,7 +521,6 @@ import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFu
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
-import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
@@ -1175,10 +1174,8 @@ const openQueueMenu = function (evt: Event) {
       icon: "mdi-speedometer",
     });
   }
-  // The waveform toggle slots in above the visualizer entries, keeping the
-  // visualizer toggle + options grouped at the bottom of the menu. The on/off
-  // toggle itself comes from getPlayerMenuItems (it is a player control,
-  // listed last there).
+  // The waveform toggle slots in above the visualizer popout entry (which
+  // comes from getPlayerMenuItems), keeping the display entries grouped.
   const waveformItem = {
     label: "settings.show_waveform.label",
     action: () => {
@@ -1188,20 +1185,13 @@ const openQueueMenu = function (evt: Event) {
     selected: showWaveformPref.value,
     close_on_click: false,
   };
-  const visualizerToggleIndex = menuItems.findIndex(
+  const visualizerEntryIndex = menuItems.findIndex(
     (item) => item.label === "settings.visualizer_enabled.label",
   );
-  if (visualizerToggleIndex === -1) {
+  if (visualizerEntryIndex === -1) {
     menuItems.push(waveformItem);
   } else {
-    menuItems.splice(visualizerToggleIndex, 0, waveformItem);
-    // Always append the options control directly under the toggle (the menu
-    // item list is a snapshot); it renders nothing while the visualizer is
-    // disabled, so it appears and disappears live as the toggle is flipped.
-    menuItems.push({
-      label: "visualizer_options",
-      component: markRaw(VisualizerMenuControl),
-    });
+    menuItems.splice(visualizerEntryIndex, 0, waveformItem);
   }
   // While lyrics are open, surface the sync-offset stepper at the top of the
   // overflow menu (only for players that benefit from a latency offset).

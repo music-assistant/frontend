@@ -701,4 +701,19 @@ describe("visualizer menu entry", () => {
 
     expect(menuItems.map((item) => item.label)).toContain(VISUALIZER_LABEL);
   });
+
+  it("is a popout with all settings, targeting this player", () => {
+    const player = makePlayer();
+    api.players = { kitchen: player } as unknown as typeof api.players;
+
+    const menuItems = getPlayerMenuItems(player, undefined, {
+      context: "queue",
+    });
+
+    const entry = menuItems.find((item) => item.label === VISUALIZER_LABEL);
+    expect(entry?.subComponent).toBeTruthy();
+    expect(entry?.componentProps).toEqual({ playerId: player.player_id });
+    // no toggle leaf: the on/off switch lives inside the popout
+    expect(entry?.action).toBeUndefined();
+  });
 });

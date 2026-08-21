@@ -1,42 +1,65 @@
 <!--
-  Inline visualizer options for the fullscreen player's overflow menu:
-  preset picker (full butterchurn library, "random" default), blur and
-  opacity sliders.
-  Rendered as a non-selectable menu row; changes persist as user preferences.
+  Visualizer popout for the player overflow menus: per-player on/off switch,
+  preset picker, blur and opacity sliders; persisted as user preferences.
 -->
 <template>
-  <div v-if="enabledPref" class="visualizer-menu" @pointerdown.stop @click.stop>
+  <div class="visualizer-menu" @pointerdown.stop @click.stop>
+    <div class="visualizer-menu__row">
+      <Droplet :size="20" class="visualizer-menu__icon" />
+      <span class="visualizer-menu__label">{{ $t("visualizer.enabled") }}</span>
+      <Switch
+        :model-value="enabledPref"
+        @update:model-value="toggleVisualizer"
+      />
+    </div>
     <div class="visualizer-menu__row">
       <SwatchBook :size="20" class="visualizer-menu__icon" />
-      <Select :model-value="selectValue" @update:model-value="onPresetChange">
-        <SelectTrigger class="visualizer-menu__select" size="sm">
-          <span class="visualizer-menu__trigger-label">{{ triggerLabel }}</span>
-        </SelectTrigger>
-        <!-- the hosting context menu renders at z-[999999] (above the
-             fullscreen player overlay), so this list must stack above that.
-             cap the width so long preset names wrap instead of growing the
-             panel past the viewport on small screens -->
-        <SelectContent
-          class="visualizer-menu__dropdown !z-[1000000] w-[min(92vw,26rem)]"
+      <!-- not a Select: its teleported list loses the focus fight with the modal menu -->
+      <DropdownMenuSub>
+        <!-- preset packs only load while enabled, so the list would be empty -->
+        <DropdownMenuSubTrigger
+          class="visualizer-menu__preset-trigger"
+          :disabled="!enabledPref"
         >
-          <SelectItem :value="RANDOM_VALUE">
-            {{ $t("visualizer.preset_random") }}
-          </SelectItem>
-          <SelectItem
+          <span class="visualizer-menu__trigger-label">{{ triggerLabel }}</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent
+          align="start"
+          :align-offset="-5"
+          :side-offset="6"
+          class="max-h-[70vh] overflow-y-auto w-[min(92vw,350px)]"
+        >
+          <DropdownMenuItem @select.prevent="onPresetChange(RANDOM_VALUE)">
+            <span class="flex-1 truncate min-w-0">
+              {{ $t("visualizer.preset_random") }}
+            </span>
+            <Check v-if="selectValue === RANDOM_VALUE" class="ml-auto size-4" />
+          </DropdownMenuItem>
+          <DropdownMenuItem
             v-if="favoritesPref.length > 0"
-            :value="RANDOM_FAVORITES_VALUE"
+            @select.prevent="onPresetChange(RANDOM_FAVORITES_VALUE)"
           >
-            {{ $t("visualizer.preset_random_favorites") }}
-          </SelectItem>
-          <SelectItem
+            <span class="flex-1 truncate min-w-0">
+              {{ $t("visualizer.preset_random_favorites") }}
+            </span>
+            <Check
+              v-if="selectValue === RANDOM_FAVORITES_VALUE"
+              class="ml-auto size-4"
+            />
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
             v-for="name in sortedPresetNames"
             :key="name"
-            :value="name"
+            @select.prevent="onPresetChange(name)"
           >
-            {{ favoritesPref.includes(name) ? `★ ${name}` : name }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
+            <span class="flex-1 truncate min-w-0">
+              {{ favoritesPref.includes(name) ? `★ ${name}` : name }}
+            </span>
+            <Check v-if="selectValue === name" class="ml-auto size-4" />
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
       <button
         type="button"
         class="visualizer-menu__star"
@@ -73,30 +96,21 @@
       />
       <span class="visualizer-menu__value">{{ opacityDraft }}%</span>
     </div>
-    <DropdownMenuItem class="px-0" @select="openSettings">
-      <SettingsIcon class="visualizer-menu__icon size-5" />
-      <span>{{ $t("visualizer.open_settings") }}</span>
-    </DropdownMenuItem>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { Check, Contrast, Droplet, Focus, Star, SwatchBook } from "@lucide/vue";
 import {
-  Contrast,
-  Focus,
-  Settings as SettingsIcon,
-  Star,
-  SwatchBook,
-} from "@lucide/vue";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   currentVisualizerPreset,
@@ -106,17 +120,20 @@ import {
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import { $t } from "@/plugins/i18n";
-import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
 // Sentinels because SelectItem values must be non-empty.
 const RANDOM_VALUE = "__random__";
 const RANDOM_FAVORITES_VALUE = "__random_favorites__";
 
+const props = defineProps<{
+  // player whose on/off switch this controls; defaults to the active player
+  playerId?: string;
+}>();
+
 const { getPreference, setPreference } = useUserPreferences();
-// Per-player on/off state, matching the toggle above this control in the menu.
-const { visualizerEnabledPref: enabledPref } = useVisualizer(
-  () => store.activePlayer?.player_id,
+const { visualizerEnabledPref: enabledPref, toggleVisualizer } = useVisualizer(
+  () => props.playerId || store.activePlayer?.player_id,
 );
 const presetPref = getPreference("visualizer_preset", "");
 const blurPref = getPreference("visualizer_blur", VISUALIZER_BLUR_DEFAULT);
@@ -242,11 +259,6 @@ const onOpacityCommit = (value: number[]) => {
     value[0] ?? VISUALIZER_OPACITY_DEFAULT,
   );
 };
-
-const openSettings = () => {
-  store.showFullscreenPlayer = false;
-  void router.push({ name: "visualizer" });
-};
 </script>
 
 <style scoped>
@@ -269,6 +281,10 @@ const openSettings = () => {
   flex: 0 0 auto;
 }
 
+.visualizer-menu__label {
+  flex: 1 1 auto;
+}
+
 .visualizer-menu__star {
   display: inline-flex;
   align-items: center;
@@ -289,15 +305,22 @@ const openSettings = () => {
   color: #f5c518;
 }
 
-.visualizer-menu__select {
+.visualizer-menu__preset-trigger {
   flex: 1 1 auto;
   min-width: 0;
+  border: 1px solid var(--border);
+}
+
+.visualizer-menu__preset-trigger[data-disabled] {
+  opacity: 0.5;
 }
 
 .visualizer-menu__trigger-label {
+  flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: left;
 }
 
 .visualizer-menu__slider {
