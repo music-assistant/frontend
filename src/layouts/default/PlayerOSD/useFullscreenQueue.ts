@@ -7,9 +7,9 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getQueueItemMenuItems } from "@/helpers/queue_item_menu_items";
 import { currentQueueIndex, isQueueEnded } from "@/helpers/queue_position";
-import { isAudioSource } from "@/plugins/api/helpers";
 import { useQueueDragReorder } from "@/layouts/default/PlayerOSD/useQueueDragReorder";
 import api from "@/plugins/api";
+import { isAudioSource } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,

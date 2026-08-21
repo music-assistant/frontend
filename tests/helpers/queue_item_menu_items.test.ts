@@ -3,6 +3,7 @@ import type { PlayerQueue } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
 import { queueItem } from "../fixtures/queueItem";
+import { track } from "../fixtures/track";
 
 const { storeMock } = vi.hoisted(() => ({
   storeMock: {
@@ -13,6 +14,7 @@ const { storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({
   default: {
+    providers: {},
     queueCommandPlayIndex: vi.fn(),
     queueCommandMoveNext: vi.fn(),
     queueCommandMoveItemEnd: vi.fn(),
@@ -58,5 +60,16 @@ describe("getQueueItemMenuItems", () => {
     });
     const items = getQueueItemMenuItems(queueItem(), 3);
     expect(labels(items)).toEqual(["play_now"]);
+  });
+
+  it("keeps play now and show info on a session-owned queue's track items", () => {
+    storeMock.activePlayerQueue = playerQueue({
+      items: 5,
+      current_index: 0,
+      index_in_buffer: 1,
+      queue_owner: "spotify_connect--abc://audio_source/main",
+    });
+    const items = getQueueItemMenuItems(queueItem({ media_item: track() }), 3);
+    expect(labels(items)).toEqual(["play_now", "show_info"]);
   });
 });
