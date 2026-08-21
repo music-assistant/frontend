@@ -21,6 +21,7 @@
         :blur="visualizerBlurPref"
         :opacity="visualizerOpacityPref"
         :player-id="store.activePlayer?.player_id"
+        :force-dark-palette="visualizerOpacityPref > 50"
       />
       <PanelDragHandle
         v-if="store.mobileLayout"
