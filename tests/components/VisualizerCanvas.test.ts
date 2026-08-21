@@ -5,7 +5,6 @@
  * for as long as the id takes to arrive.
  */
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
-import { visualizerTintActive } from "@/composables/visualizer/state";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -380,62 +379,5 @@ describe("VisualizerCanvas color tint", () => {
       wrapper.get(".visualizer-layer__tint").attributes("style"),
     ).toContain("transparent");
     wrapper.unmount();
-  });
-
-  it("marks the shared tint-active flag only while a tint is actually painting", async () => {
-    const wrapper = mountCanvas("kitchen");
-    await flushPromises();
-    expect(visualizerTintActive.value).toBe(false);
-
-    emitStreaming();
-    emitColor({ on_dark: [10, 20, 30], accent: null });
-    await flushPromises();
-    expect(visualizerTintActive.value).toBe(true);
-
-    wrapper.unmount();
-    expect(visualizerTintActive.value).toBe(false);
-  });
-
-  it("keeps the flag while another canvas is still tinting", async () => {
-    // The fullscreen canvas mounts over a dashboard one, tints second and
-    // unmounts first; the dashboard is still painting and must stay flagged.
-    const dashboard = mountCanvas("kitchen");
-    await flushPromises();
-    emitStreaming();
-    emitColor({ on_dark: [10, 20, 30] });
-    await flushPromises();
-    expect(visualizerTintActive.value).toBe(true);
-
-    const fullscreen = mountCanvas("living_room");
-    await flushPromises();
-    emitStreaming();
-    emitColor({ on_dark: [40, 50, 60] });
-    await flushPromises();
-
-    fullscreen.unmount();
-    expect(visualizerTintActive.value).toBe(true);
-
-    dashboard.unmount();
-    expect(visualizerTintActive.value).toBe(false);
-  });
-
-  it("lets only the canvas that asserted the flag clear it", async () => {
-    // Two canvases overlap during a fullscreen handoff.
-    const tinting = mountCanvas("kitchen");
-    await flushPromises();
-    emitStreaming();
-    emitColor({ on_dark: [10, 20, 30] });
-    await flushPromises();
-    expect(visualizerTintActive.value).toBe(true);
-
-    const bystander = mountCanvas("living_room");
-    await flushPromises();
-    expect(visualizerTintActive.value).toBe(true);
-
-    bystander.unmount();
-    expect(visualizerTintActive.value).toBe(true);
-
-    tinting.unmount();
-    expect(visualizerTintActive.value).toBe(false);
   });
 });

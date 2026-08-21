@@ -8,11 +8,6 @@ import { ref } from "vue";
 
 export const currentVisualizerPreset = ref<string | null>(null);
 
-// Whether the canvas is painting a color tint right now. Views outside it
-// (the fullscreen OSD's text-color logic) read this instead of guessing
-// from the opacity level.
-export const visualizerTintActive = ref(false);
-
 // Defaults for the blur/opacity preferences. Every reader goes through these
 // (settings page, fullscreen menu, useVisualizer, and the canvas prop
 // fallbacks) so the four cannot drift apart.

@@ -31,13 +31,6 @@
   </div>
 </template>
 
-<script lang="ts">
-// Every canvas currently painting a tint. The flag stays true while any of
-// them is: the fullscreen canvas mounts and unmounts over a dashboard one that
-// goes on painting throughout, and either order has to leave it correct.
-const tintFlagOwners = new Set<symbol>();
-</script>
-
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
@@ -52,7 +45,6 @@ import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
-  visualizerTintActive,
 } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
@@ -179,17 +171,6 @@ const tintColor = computed(() => {
 const tintStyle = computed(() => ({
   backgroundColor: tintColor.value ?? "transparent",
 }));
-
-// Read by other views (e.g. the fullscreen OSD).
-const tintFlagOwner = Symbol("visualizer-tint");
-const setTintFlag = (active: boolean) => {
-  if (active) tintFlagOwners.add(tintFlagOwner);
-  else tintFlagOwners.delete(tintFlagOwner);
-  visualizerTintActive.value = tintFlagOwners.size > 0;
-};
-watch(() => streaming.value && !!tintColor.value, setTintFlag, {
-  immediate: true,
-});
 
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
@@ -448,7 +429,6 @@ onBeforeUnmount(() => {
   relay?.close();
   relay = null;
   currentVisualizerPreset.value = null;
-  setTintFlag(false);
 });
 </script>
 

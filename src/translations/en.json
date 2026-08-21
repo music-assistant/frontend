@@ -788,7 +788,7 @@
         },
         "visualizer_opacity": {
             "label": "Visualizer opacity",
-            "description": "Lower values blend the album colors through. Above 50% with no color tint active, the view switches to a dark look with light text."
+            "description": "Lower values blend the album colors through. Above 50% the view switches to a dark look with light text."
         },
         "delete_player_title": "Delete {0}?",
         "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
