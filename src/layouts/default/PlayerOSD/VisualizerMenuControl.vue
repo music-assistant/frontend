@@ -13,64 +13,6 @@
       />
     </div>
     <div class="visualizer-menu__row">
-      <SwatchBook :size="20" class="visualizer-menu__icon" />
-      <!-- not a Select: its teleported list loses the focus fight with the modal menu -->
-      <DropdownMenuSub>
-        <!-- preset packs only load while enabled, so the list would be empty -->
-        <DropdownMenuSubTrigger
-          class="visualizer-menu__preset-trigger"
-          :disabled="!enabledPref"
-        >
-          <span class="visualizer-menu__trigger-label">{{ triggerLabel }}</span>
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent
-          align="start"
-          :align-offset="-5"
-          :side-offset="6"
-          class="max-h-[70vh] overflow-y-auto w-[min(92vw,350px)]"
-        >
-          <DropdownMenuItem @select.prevent="onPresetChange(RANDOM_VALUE)">
-            <span class="flex-1 truncate min-w-0">
-              {{ $t("visualizer.preset_random") }}
-            </span>
-            <Check v-if="selectValue === RANDOM_VALUE" class="ml-auto size-4" />
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            v-if="favoritesPref.length > 0"
-            @select.prevent="onPresetChange(RANDOM_FAVORITES_VALUE)"
-          >
-            <span class="flex-1 truncate min-w-0">
-              {{ $t("visualizer.preset_random_favorites") }}
-            </span>
-            <Check
-              v-if="selectValue === RANDOM_FAVORITES_VALUE"
-              class="ml-auto size-4"
-            />
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            v-for="name in sortedPresetNames"
-            :key="name"
-            @select.prevent="onPresetChange(name)"
-          >
-            <span class="flex-1 truncate min-w-0">
-              {{ favoritesPref.includes(name) ? `★ ${name}` : name }}
-            </span>
-            <Check v-if="selectValue === name" class="ml-auto size-4" />
-          </DropdownMenuItem>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
-      <button
-        type="button"
-        class="visualizer-menu__star"
-        :class="{ 'visualizer-menu__star--active': showingIsFavorite }"
-        :aria-label="$t('visualizer.toggle_favorite')"
-        @click.stop="toggleFavorite"
-      >
-        <Star :size="18" :fill="showingIsFavorite ? 'currentColor' : 'none'" />
-      </button>
-    </div>
-    <div class="visualizer-menu__row">
       <Focus :size="20" class="visualizer-menu__icon" />
       <Slider
         :model-value="[blurDraft]"
@@ -96,18 +38,87 @@
       />
       <span class="visualizer-menu__value">{{ opacityDraft }}%</span>
     </div>
+    <!-- preset packs only load while enabled, so the list would be empty -->
+    <template v-if="enabledPref">
+      <DropdownMenuSeparator />
+      <!-- header folds the list; the star acts on the showing preset without
+           toggling the fold -->
+      <div
+        class="visualizer-menu__row visualizer-menu__preset-header"
+        role="button"
+        :aria-expanded="presetsExpanded"
+        @click="presetsExpanded = !presetsExpanded"
+      >
+        <SwatchBook :size="20" class="visualizer-menu__icon" />
+        <span class="visualizer-menu__preset-label">{{ showingLabel }}</span>
+        <button
+          type="button"
+          class="visualizer-menu__star"
+          :class="{ 'visualizer-menu__star--active': showingIsFavorite }"
+          :aria-label="$t('visualizer.toggle_favorite')"
+          @click.stop="toggleFavorite"
+        >
+          <Star
+            :size="18"
+            :fill="showingIsFavorite ? 'currentColor' : 'none'"
+          />
+        </button>
+        <ChevronDown
+          :size="18"
+          class="visualizer-menu__chevron"
+          :class="{ 'visualizer-menu__chevron--open': presetsExpanded }"
+        />
+      </div>
+      <template v-if="presetsExpanded">
+        <!-- inline list (like the AI DJ submenu); scrolls with the popout -->
+        <DropdownMenuItem @select.prevent="onPresetChange(RANDOM_VALUE)">
+          <span class="flex-1 truncate min-w-0">
+            {{ $t("visualizer.preset_random") }}
+          </span>
+          <Check v-if="selectValue === RANDOM_VALUE" class="ml-auto size-4" />
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          v-if="favoritesPref.length > 0"
+          @select.prevent="onPresetChange(RANDOM_FAVORITES_VALUE)"
+        >
+          <span class="flex-1 truncate min-w-0">
+            {{ $t("visualizer.preset_random_favorites") }}
+          </span>
+          <Check
+            v-if="selectValue === RANDOM_FAVORITES_VALUE"
+            class="ml-auto size-4"
+          />
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          v-for="name in sortedPresetNames"
+          :key="name"
+          @select.prevent="onPresetChange(name)"
+        >
+          <span class="flex-1 truncate min-w-0">
+            {{ favoritesPref.includes(name) ? `★ ${name}` : name }}
+          </span>
+          <Check v-if="selectValue === name" class="ml-auto size-4" />
+        </DropdownMenuItem>
+      </template>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { Check, Contrast, Droplet, Focus, Star, SwatchBook } from "@lucide/vue";
+import {
+  Check,
+  ChevronDown,
+  Contrast,
+  Droplet,
+  Focus,
+  Star,
+  SwatchBook,
+} from "@lucide/vue";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -148,6 +159,9 @@ const presetModePref = getPreference<string>(
 );
 
 const presetNames = ref<string[]>([]);
+
+// Folded by default so the popout stays compact; per menu open, not persisted.
+const presetsExpanded = ref(false);
 
 // Favourites float to the top of the picker.
 const sortedPresetNames = computed(() => {
@@ -202,10 +216,10 @@ const selectValue = computed(() => {
   return RANDOM_VALUE;
 });
 
-// The trigger shows what is actually on screen right now, marked with ⟳ when
+// The label row shows what is actually on screen right now, marked with ⟳ when
 // that is not the user's own pick. Beat switching overrides fixed mode too, so
 // even a fixed selection can be showing something else.
-const triggerLabel = computed(() => {
+const showingLabel = computed(() => {
   const showing = currentVisualizerPreset.value;
   if (presetModePref.value === "fixed" && presetPref.value) {
     return showing && showing !== presetPref.value
@@ -305,18 +319,27 @@ const onOpacityCommit = (value: number[]) => {
   color: #f5c518;
 }
 
-.visualizer-menu__preset-trigger {
+.visualizer-menu__preset-header {
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.visualizer-menu__preset-header:hover {
+  background: var(--accent);
+}
+
+.visualizer-menu__chevron {
+  flex: 0 0 auto;
+  transition: transform 0.15s ease;
+}
+
+.visualizer-menu__chevron--open {
+  transform: rotate(180deg);
+}
+
+.visualizer-menu__preset-label {
   flex: 1 1 auto;
   min-width: 0;
-  border: 1px solid var(--border);
-}
-
-.visualizer-menu__preset-trigger[data-disabled] {
-  opacity: 0.5;
-}
-
-.visualizer-menu__trigger-label {
-  flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
