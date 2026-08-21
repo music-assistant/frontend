@@ -795,6 +795,8 @@ const getAllFilteredProviders = function () {
   }
 }
 
+/* the list item's own 32px prepend spacer separates the icon from the title,
+   so only the trailing gutter is dropped; the leading one is the row's inset */
 .provider-icon {
   margin-right: 0;
 }

@@ -34,11 +34,12 @@
                 {{ playlist.owner }}
               </div>
             </div>
+            <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
             <provider-icon
               v-if="playlist.provider_mappings"
               :domain="playlist.provider_mappings[0].provider_domain"
               :size="20"
-              class="shrink-0"
+              class="mx-0 shrink-0"
             />
           </button>
 
@@ -53,9 +54,11 @@
             @click="newPlaylist(providerId)"
           >
             <div class="shrink-0">
+              <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
               <provider-icon
                 :domain="api.providers[providerId].domain"
                 :size="50"
+                class="mx-0"
               />
             </div>
             <div class="min-w-0 flex-1">
@@ -66,10 +69,11 @@
                 {{ $t("create_playlist_on", [api.providers[providerId].name]) }}
               </div>
             </div>
+            <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
             <provider-icon
               :domain="api.providers[providerId].domain"
               :size="20"
-              class="shrink-0"
+              class="mx-0 shrink-0"
             />
           </button>
         </div>

@@ -11,7 +11,13 @@
         class="flex-row items-center gap-3 border-b px-5 py-4 pr-12 text-left"
       >
         <span class="flex shrink-0 items-center justify-center">
-          <ProviderIcon v-if="iconDomain" :domain="iconDomain" :size="32" />
+          <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
+          <ProviderIcon
+            v-if="iconDomain"
+            :domain="iconDomain"
+            :size="32"
+            class="mx-0"
+          />
           <Settings2 v-else :size="28" />
         </span>
         <DialogTitle class="min-w-0 flex-1 truncate">

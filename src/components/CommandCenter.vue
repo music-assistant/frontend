@@ -130,9 +130,11 @@
             >
               <Play :size="14" fill="currentColor" :stroke-width="0" />
             </button>
+            <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
             <ProviderIcon
               :domain="getListItemProviderIconDomain(item)"
               :size="18"
+              class="mx-0"
             />
           </div>
         </CommandItem>

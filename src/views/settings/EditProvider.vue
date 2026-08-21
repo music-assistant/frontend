@@ -91,7 +91,12 @@
       <!-- Header card -->
       <Card class="mb-4 gap-0 py-0">
         <CardHeader class="relative flex flex-col gap-4 p-6 pr-16 sm:flex-row">
-          <ProviderIcon :domain="config.domain" :size="48" class="shrink-0" />
+          <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
+          <ProviderIcon
+            :domain="config.domain"
+            :size="48"
+            class="mx-0 shrink-0"
+          />
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
               <h2 class="text-xl leading-tight font-semibold">

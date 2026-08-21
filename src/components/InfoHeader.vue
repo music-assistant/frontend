@@ -384,7 +384,12 @@
               />
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
-              <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
+              <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
+              <provider-icon
+                :domain="getProviderIconDomain(item)"
+                :size="25"
+                class="mx-0"
+              />
               <!-- audio analysis details (full track details only) -->
               <AudioAnalysisMetadata
                 v-if="item.media_type == MediaType.TRACK"
