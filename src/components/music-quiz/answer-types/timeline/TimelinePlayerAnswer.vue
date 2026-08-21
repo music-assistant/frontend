@@ -114,61 +114,18 @@
       :highlighted-entry-id="currentRound.revealed_entry?.entry_id"
     />
 
-    <div v-if="state.you.answer" class="flex flex-col gap-2" role="status">
-      <div
-        data-testid="timeline-placement-result"
-        class="flex items-center justify-center gap-2 rounded-lg p-3 font-semibold"
-        :class="
-          state.you.answer.correct
-            ? 'bg-green-500/15 text-green-700 dark:text-green-400'
-            : 'bg-red-500/10 text-destructive'
-        "
-      >
-        <CircleCheck
-          v-if="state.you.answer.correct"
-          class="size-5"
-          aria-hidden="true"
-        />
-        <CircleX v-else class="size-5" aria-hidden="true" />
-        {{
-          state.you.answer.correct
-            ? $t("providers.music_quiz.timeline_correct_placement")
-            : $t("providers.music_quiz.timeline_incorrect_placement")
-        }}
-        <span>+{{ state.you.answer.points ?? 0 }}</span>
-      </div>
-      <div
-        v-for="result in state.you.answer.bonus_results"
-        :key="result.bonus_type"
-        :data-testid="`timeline-${result.bonus_type}-result`"
-        class="flex items-center justify-center gap-2 rounded-lg p-2 text-sm font-medium"
-        :class="
-          result.correct
-            ? 'bg-green-500/15 text-green-700 dark:text-green-400'
-            : 'bg-red-500/10 text-destructive'
-        "
-      >
-        <CircleCheck v-if="result.correct" class="size-4" aria-hidden="true" />
-        <CircleX v-else class="size-4" aria-hidden="true" />
-        <span class="sr-only">
-          {{
-            result.correct
-              ? $t("providers.music_quiz.correct")
-              : $t("providers.music_quiz.incorrect")
-          }}
-        </span>
-        {{ bonusTypeLabel(result.bonus_type) }}
-        <span>+{{ result.points }}</span>
-      </div>
-    </div>
     <p
-      v-else-if="!canAnswerRound"
+      v-if="!state.you.answer && !canAnswerRound"
       class="text-muted-foreground text-center"
       role="status"
     >
       {{ $t("providers.music_quiz.waiting_for_next") }}
     </p>
-    <p v-else class="text-destructive text-center font-semibold" role="status">
+    <p
+      v-else-if="!state.you.answer"
+      class="text-destructive text-center font-semibold"
+      role="status"
+    >
       {{ $t("providers.music_quiz.no_answer_submitted") }}
     </p>
   </template>
@@ -193,7 +150,7 @@ import type {
 } from "@/composables/music-quiz/useMusicQuiz";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
-import { CircleCheck, CircleX, Send, SkipForward } from "@lucide/vue";
+import { Send, SkipForward } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const MAX_BONUS_TEXT_LENGTH = 200;

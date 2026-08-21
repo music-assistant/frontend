@@ -34,11 +34,9 @@ const { nowPlayingSource } = useNowPlayingSource();
 </script>
 
 <style scoped>
-/* ProviderIcon writes its 10px side margins into a style attribute, so only an
-   !important rule can cancel them and let the badge's own gap apply */
+/* drop ProviderIcon's default gutters so the badge's own gap applies */
 .now-playing-source__icon {
-  margin-left: -10px !important;
-  margin-right: -10px !important;
+  margin: 0;
   flex-shrink: 0;
 }
 </style>

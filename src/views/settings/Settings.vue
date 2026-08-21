@@ -44,13 +44,6 @@
           :title="t('tooltip.toggle_view_mode')"
           @click="toggleSystemViewMode()"
         />
-        <v-btn
-          v-if="documentationUrl"
-          icon="mdi-help-circle"
-          variant="text"
-          :title="t('settings.view_documentation')"
-          @click="openLinkInNewTab(documentationUrl)"
-        />
       </template>
     </Toolbar>
 
@@ -299,7 +292,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
 import { ProviderType } from "@/plugins/api/interfaces";
@@ -880,29 +872,6 @@ const breadcrumbItems = computed(() => {
     });
 
   return items;
-});
-
-const documentationUrl = computed(() => {
-  const route = router.currentRoute.value;
-  const name = route.name?.toString() || "";
-
-  // Show documentation link for editcore and editprovider routes
-  if (name === "editcore") {
-    const domain = route.params.domain as string;
-    if (domain && api.providerManifests[domain]) {
-      return api.providerManifests[domain].documentation || null;
-    }
-  } else if (name === "editprovider") {
-    const instanceId = route.params.instanceId as string;
-    if (instanceId) {
-      const provider = api.getProvider(instanceId);
-      if (provider && api.providerManifests[provider.domain]) {
-        return api.providerManifests[provider.domain].documentation || null;
-      }
-    }
-  }
-
-  return null;
 });
 </script>
 

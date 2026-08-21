@@ -65,7 +65,10 @@
         "group": "Group",
         "player": "Player",
         "stereo_pair": "Stereo Pair",
-        "sync_group": "Sync Group"
+        "display": "Screen",
+        "visualizer": "Visualizer",
+        "light": "Light",
+        "unknown": "Unknown"
     },
     "players": "Players",
     "playlist": "Playlist",
@@ -420,7 +423,6 @@
         "users_description": "Manage user accounts, roles, and permissions",
         "system_description": "Configure Music Assistant server settings and core modules",
         "system": "System",
-        "view_documentation": "View documentation",
         "about": "About",
         "about_description": "Version information, credits and more",
         "auto_refresh_log": "Auto-refresh",
@@ -1654,7 +1656,6 @@
             "current_music": "Current music",
             "copy_music_name": "Copy song title",
             "copy_music_name_failed": "Couldn't copy song title",
-            "loading_lyrics": "Loading lyrics...",
             "no_winner": "No winner this time",
             "winner_single": "{0} wins with {1} points",
             "winner_multiple": "{0} tie for the win with {1} points",
@@ -1726,6 +1727,8 @@
             "timeline_correct_placement": "Correct placement",
             "timeline_incorrect_placement": "Incorrect placement",
             "timeline_round_results": "Round results",
+            "timeline_result_placement": "Placement",
+            "round_result_answer": "Answer",
             "add_music_sources": "Add music sources",
             "genre": "Genre",
             "album": "Album",
@@ -2398,7 +2401,6 @@
     "artist_all_audiobooks": "All audiobooks",
     "lights": "Lights",
     "players_in_group": "Players in group",
-    "visualizers": "Visualizers",
     "volume": "Volume",
     "grouped_volume": "Grouped volume",
     "player_select": {
@@ -2465,5 +2467,6 @@
     "recent_searches": "Recent searches",
     "command_center_navigate": "navigate",
     "command_center_open": "open",
-    "command_center_keep_typing": "Keep typing to search..."
+    "command_center_keep_typing": "Keep typing to search...",
+    "screens": "Screens"
 }

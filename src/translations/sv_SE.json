@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Grupp",
         "player": "Spelare",
-        "stereo_pair": "Stereo par",
-        "sync_group": "Synkronisera grupp"
+        "stereo_pair": "Stereo par"
     },
     "players": "Spelare",
     "playlist": "Spellista",
@@ -2231,7 +2230,6 @@
     "artist_no_library_audiobooks": "Du har inga ljudböcker i ditt bibliotek för den här författaren\/berättaren.",
     "artist_all_audiobooks": "Alla ljudböcker",
     "lights": "Ljus",
-    "visualizers": "Visualiserar",
     "volume": "Volym",
     "grouped_volume": "Grupperad volym",
     "player_select": {

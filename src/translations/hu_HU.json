@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Csoport",
         "player": "Lejátszó",
-        "stereo_pair": "Sztereó pár",
-        "sync_group": "Szinkronizált csoport"
+        "stereo_pair": "Sztereó pár"
     },
     "players": "Lejátszók",
     "playlist": "Lejátszási lista",

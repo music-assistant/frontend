@@ -57,8 +57,9 @@ import { Separator } from "@/components/ui/separator";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { requestGroupPlaybackConfirmation } from "@/helpers/player_group_playback";
 import {
+  canBeGroupMember,
   groupMemberPickerVisible,
-  isVisualizerPlayer,
+  isScreenPlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import {
@@ -103,6 +104,7 @@ const candidates = computed(() => {
       !canGroupWithPlayer(player) ||
       !player.available ||
       !groupMemberPickerVisible(player) ||
+      !canBeGroupMember(player) ||
       player.type === PlayerType.GROUP ||
       (player.active_group && player.active_group !== props.player.player_id)
     ) {
@@ -129,8 +131,7 @@ const candidateSections = computed(() => {
       label: "players",
       translateLabel: true,
       players: availableCandidates.filter(
-        (player) =>
-          player.type !== PlayerType.LIGHT && !isVisualizerPlayer(player),
+        (player) => player.type !== PlayerType.LIGHT && !isScreenPlayer(player),
       ),
     },
     {
@@ -142,12 +143,10 @@ const candidateSections = computed(() => {
       ),
     },
     {
-      type: "visualizers",
-      label: "visualizers",
+      type: "screens",
+      label: "screens",
       translateLabel: true,
-      players: availableCandidates.filter((player) =>
-        isVisualizerPlayer(player),
-      ),
+      players: availableCandidates.filter((player) => isScreenPlayer(player)),
     },
   ];
   if (groupedPlayers.length > 0) {
@@ -196,10 +195,8 @@ function canGroupWithPlayer(player: Player) {
 function matchesFilter(player: Player) {
   if (props.filter === "all") return true;
   if (props.filter === "lights") return player.type === PlayerType.LIGHT;
-  if (props.filter === "visualizers") {
-    return isVisualizerPlayer(player);
-  }
-  return player.type !== PlayerType.LIGHT && !isVisualizerPlayer(player);
+  if (props.filter === "screens") return isScreenPlayer(player);
+  return player.type !== PlayerType.LIGHT && !isScreenPlayer(player);
 }
 
 function sortPlayers(players: Player[]) {
