@@ -40,6 +40,12 @@ export type ColorPalette = Partial<
   Record<ColorPaletteField, [number, number, number] | null>
 >;
 
+// Palette entries come off the wire; only a numeric 3-tuple may pass as one.
+const isRgbTuple = (value: unknown): value is [number, number, number] =>
+  Array.isArray(value) &&
+  value.length === 3 &&
+  value.every((channel) => Number.isFinite(channel));
+
 export interface VisualizerRelayCallbacks {
   onState?: (state: RelayState) => void;
   onDownbeat?: (timestampUs: number) => void;
@@ -205,11 +211,14 @@ export class VisualizerRelayClient {
         !Array.isArray(message.payload)
       ) {
         // Merge known fields only; the payload is unvalidated wire data, so it
-        // has to be an object before `in` may be used on it at all.
-        const payload = message.payload as ColorPalette;
+        // has to be an object before `in` may be used on it at all, and a
+        // malformed value becomes null so onColor honours the palette type.
+        const payload = message.payload as Record<string, unknown>;
         const merged: ColorPalette = { ...this.colorPalette };
         for (const field of COLOR_PALETTE_FIELDS) {
-          if (field in payload) merged[field] = payload[field];
+          if (!(field in payload)) continue;
+          const value = payload[field];
+          merged[field] = isRgbTuple(value) ? value : null;
         }
         this.colorPalette = merged;
         this.callbacks.onColor?.(merged);

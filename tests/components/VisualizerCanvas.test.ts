@@ -250,7 +250,6 @@ describe("VisualizerCanvas color tint", () => {
     onState?.("streaming");
   }
 
-  // Loosely typed on purpose: malformed payloads are part of the tests.
   function emitColor(palette: Record<string, unknown>) {
     const onColor = relayConstructor.mock.calls.at(-1)?.[0]?.onColor as
       | ((palette: unknown) => void)
@@ -304,23 +303,6 @@ describe("VisualizerCanvas color tint", () => {
     await flushPromises();
     emitStreaming();
     emitColor({ on_dark: null, on_light: [10, 40, 90], primary: [1, 2, 3] });
-    await flushPromises();
-
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("transparent");
-    wrapper.unmount();
-  });
-
-  it("skips malformed palette entries instead of emitting broken CSS", async () => {
-    const wrapper = mountCanvas("kitchen");
-    await flushPromises();
-    emitStreaming();
-    emitColor({
-      on_dark: [100, 180],
-      on_light: "red",
-      primary: [10, 20, 30],
-    });
     await flushPromises();
 
     expect(

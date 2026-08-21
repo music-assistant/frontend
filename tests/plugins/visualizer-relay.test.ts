@@ -84,6 +84,26 @@ describe("VisualizerRelayClient color handling", () => {
     });
   });
 
+  it("nulls malformed palette values instead of forwarding them", () => {
+    // onColor's type promises numeric 3-tuples or null; wire data that is
+    // neither must not leak through to consumers trusting that contract.
+    const onColor = vi.fn();
+    let receive: (message: object) => void;
+    ({ client, receive } = connectClient(onColor));
+
+    receive({ type: "color", payload: { on_dark: [1, 2, 3] } });
+    receive({
+      type: "color",
+      payload: { on_dark: [100, 180], on_light: "red", primary: [10, 20, 30] },
+    });
+
+    expect(onColor).toHaveBeenLastCalledWith({
+      on_dark: null,
+      on_light: null,
+      primary: [10, 20, 30],
+    });
+  });
+
   it("drops the palette when stream/start no longer advertises color", () => {
     const onColor = vi.fn();
     let receive: (message: object) => void;

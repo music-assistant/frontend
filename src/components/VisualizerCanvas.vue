@@ -54,7 +54,6 @@ import { MediaItemPalette, PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
   type ColorPalette,
-  type ColorPaletteField,
   VisualizerRelayClient,
 } from "@/plugins/visualizer-relay";
 import vuetify from "@/plugins/vuetify";
@@ -138,25 +137,17 @@ const playbackPaused = computed(() => {
 
 const colorPalette = ref<ColorPalette>({});
 
-// Palette entries come off the wire; only a numeric 3-tuple may become CSS.
-const isRgbTuple = (value: unknown): value is [number, number, number] =>
-  Array.isArray(value) &&
-  value.length === 3 &&
-  value.every((channel) => Number.isFinite(channel));
-
-// Hand the wire palette to the same helper the OSD uses, so the two can only
-// ever pick the same color. It converts without validating, hence the guard.
+// Hand the relay's palette (validated there, absent fields as null) to the
+// same helper the OSD uses, so the two can only ever pick the same color.
 const serverPalette = computed<MediaItemPalette>(() => {
   const wire = colorPalette.value;
-  const clean = (field: ColorPaletteField) =>
-    isRgbTuple(wire[field]) ? wire[field] : null;
   return {
-    background_dark: clean("background_dark"),
-    background_light: clean("background_light"),
-    primary: clean("primary"),
-    accent: clean("accent"),
-    on_dark: clean("on_dark"),
-    on_light: clean("on_light"),
+    background_dark: wire.background_dark ?? null,
+    background_light: wire.background_light ?? null,
+    primary: wire.primary ?? null,
+    accent: wire.accent ?? null,
+    on_dark: wire.on_dark ?? null,
+    on_light: wire.on_light ?? null,
   };
 });
 
