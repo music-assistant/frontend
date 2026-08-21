@@ -7,6 +7,7 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getQueueItemMenuItems } from "@/helpers/queue_item_menu_items";
 import { currentQueueIndex, isQueueEnded } from "@/helpers/queue_position";
+import { isAudioSource } from "@/plugins/api/helpers";
 import { useQueueDragReorder } from "@/layouts/default/PlayerOSD/useQueueDragReorder";
 import api from "@/plugins/api";
 import {
@@ -96,6 +97,21 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
 
   // Whether the queue played through to its end and can be started over.
   const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
+
+  // Whether an external session (e.g. Spotify Connect) owns the queue's
+  // ordering: the list is a mirror the user can't edit, so reorder/move/delete
+  // affordances are withheld.
+  const queueSessionOwned = computed(
+    () => !!store.activePlayerQueue?.queue_owner,
+  );
+
+  // Display name of the owning session, for the "queue managed by" hint. The
+  // owning AudioSource is the queue's current item, so its name is read there.
+  const queueOwnerName = computed(() => {
+    if (!queueSessionOwned.value) return "";
+    const mediaItem = store.activePlayerQueue?.current_item?.media_item;
+    return isAudioSource(mediaItem) ? mediaItem.name : "";
+  });
 
   // Whether the player is actually rendering audio (drives the equalizer icon).
   const playerActive = computed(
@@ -407,6 +423,8 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     totalItems,
     upNextCount,
     queueEnded,
+    queueSessionOwned,
+    queueOwnerName,
     totalSize,
     measureRow,
     playerActive,

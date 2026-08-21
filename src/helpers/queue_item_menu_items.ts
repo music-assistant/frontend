@@ -22,6 +22,9 @@ export const getQueueItemMenuItems = (
   if (!queue) return [];
   const queueId = queue.queue_id;
   const locked = index <= (queue.index_in_buffer ?? 0);
+  // a session-owned queue mirrors an external session's queue (queue_owner set),
+  // so the move/remove actions are not offered at all
+  const sessionOwned = !!queue.queue_owner;
 
   const menuItems: ContextMenuItem[] = [
     {
@@ -32,14 +35,17 @@ export const getQueueItemMenuItems = (
       disabled:
         index === queue.current_index || index === queue.index_in_buffer,
     },
-    {
+  ];
+
+  if (!sessionOwned) {
+    menuItems.push({
       label: "play_next",
       labelArgs: [],
       action: () => api.queueCommandMoveNext(queueId, item.queue_item_id),
       icon: "mdi-skip-next-circle-outline",
       disabled: locked,
-    },
-  ];
+    });
+  }
 
   // go to this item's radio (a dynamic playlist generated from it as the seed)
   const mediaItem = item.media_item;
@@ -54,22 +60,24 @@ export const getQueueItemMenuItems = (
   }
 
   // quick reorder / remove (drag the handle for fine-grained moves)
-  menuItems.push(
-    {
-      label: "queue_move_end",
-      labelArgs: [],
-      action: () => api.queueCommandMoveItemEnd(queueId, item.queue_item_id),
-      icon: "mdi-arrow-collapse-down",
-      disabled: locked,
-    },
-    {
-      label: "queue_delete",
-      labelArgs: [],
-      action: () => api.queueCommandDelete(queueId, item.queue_item_id),
-      icon: "mdi-delete",
-      disabled: locked,
-    },
-  );
+  if (!sessionOwned) {
+    menuItems.push(
+      {
+        label: "queue_move_end",
+        labelArgs: [],
+        action: () => api.queueCommandMoveItemEnd(queueId, item.queue_item_id),
+        icon: "mdi-arrow-collapse-down",
+        disabled: locked,
+      },
+      {
+        label: "queue_delete",
+        labelArgs: [],
+        action: () => api.queueCommandDelete(queueId, item.queue_item_id),
+        icon: "mdi-delete",
+        disabled: locked,
+      },
+    );
+  }
 
   // tracks can be opened in their detail page (closes the fullscreen player)
   if (mediaItem?.media_type === MediaType.TRACK) {
