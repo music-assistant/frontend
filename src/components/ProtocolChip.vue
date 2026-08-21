@@ -2,13 +2,13 @@
   <Badge
     v-bind="linkAttrs"
     variant="secondary"
-    class="protocol-chip h-5 bg-muted px-1.5 text-[10px] tracking-[0.3px] uppercase no-underline"
+    class="protocol-chip h-5 bg-muted px-1.5 text-[10px] tracking-[0.3px] uppercase no-underline [a&]:hover:bg-muted"
     :class="{ 'opacity-40': !protocol.available }"
   >
     <ProviderIcon
       :domain="protocol.protocol_domain"
       :size="14"
-      class="protocol-chip__icon"
+      class="protocol-chip__icon [&:empty]:w-0"
     />
     {{ label }}
     <ExternalLink v-if="documentationUrl" aria-hidden="true" />
@@ -62,7 +62,6 @@ const linkAttrs = computed(() => {
     target: "_blank",
     rel: "noopener noreferrer",
     "aria-label": description,
-    title: description,
   };
 });
 </script>

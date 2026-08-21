@@ -102,6 +102,11 @@ describe("ProtocolChip", () => {
     expect(wrapper.attributes("target")).toBe("_blank");
     expect(wrapper.attributes("rel")).toBe("noopener noreferrer");
     expect(wrapper.find(".lucide-external-link").exists()).toBe(true);
+    // preflight is not imported, so the anchor would render underlined
+    expect(wrapper.classes()).toContain("no-underline");
+    // the variant's own hover would pull the fill back to --secondary
+    expect(wrapper.classes()).toContain("[a&]:hover:bg-muted");
+    expect(wrapper.classes()).not.toContain("[a&]:hover:bg-secondary/90");
   });
 
   it("names the link by its purpose rather than the bare provider name", () => {
@@ -117,9 +122,6 @@ describe("ProtocolChip", () => {
     // the visible text is only the provider name, so the accessible name has to
     // say where the link goes - and still contain that visible text
     expect(wrapper.attributes("aria-label")).toBe(
-      "tooltip.open_documentation:AirPlay provider",
-    );
-    expect(wrapper.attributes("title")).toBe(
       "tooltip.open_documentation:AirPlay provider",
     );
   });
@@ -140,6 +142,22 @@ describe("ProtocolChip", () => {
     );
   });
 
+  it("still links to the documentation while dimmed as unavailable", () => {
+    apiMock.getProviderManifest.mockReturnValue(
+      providerManifest({ documentation: "https://example.org/airplay" }),
+    );
+
+    const wrapper = mountChip({
+      protocol: outputProtocol({ available: false }),
+      linkToDocs: true,
+    });
+
+    // the scoped hover rule is deliberately plain so this !important dimming
+    // survives a hover instead of being brightened back to 0.85
+    expect(wrapper.element.tagName).toBe("A");
+    expect(wrapper.classes()).toContain("opacity-40");
+  });
+
   it("stays inert when the call site does not link to the documentation", () => {
     apiMock.getProviderManifest.mockReturnValue(
       providerManifest({ documentation: "https://example.org/airplay" }),
@@ -153,7 +171,6 @@ describe("ProtocolChip", () => {
     expect(wrapper.attributes("tabindex")).toBeUndefined();
     expect(wrapper.find(".lucide-external-link").exists()).toBe(false);
     expect(wrapper.attributes("aria-label")).toBeUndefined();
-    expect(wrapper.attributes("title")).toBeUndefined();
     expect(getExternalLinkUrl).not.toHaveBeenCalled();
   });
 
