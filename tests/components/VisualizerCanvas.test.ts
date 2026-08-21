@@ -296,6 +296,27 @@ describe("VisualizerCanvas color tint", () => {
     wrapper.unmount();
   });
 
+  it("tints with on_light when the host forces the dark treatment", async () => {
+    // the fullscreen player above 50% opacity builds its gradient from
+    // on_light regardless of theme; the tint must not pick the other side
+    themeIsDark.value = false;
+    const wrapper = mount(VisualizerCanvas, {
+      props: { playerId: "kitchen", forceDarkPalette: true },
+    });
+    await flushPromises();
+    emitStreaming();
+    emitColor({
+      on_dark: [100, 180, 255],
+      on_light: [10, 40, 90],
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.get(".visualizer-layer__tint").attributes("style"),
+    ).toContain("#0a285a");
+    wrapper.unmount();
+  });
+
   it("leaves the tint off when the themed pick is missing", async () => {
     // the OSD falls back to a flat grey rather than another palette entry, so
     // the honest equivalent here is no tint at all

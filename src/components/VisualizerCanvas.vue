@@ -79,6 +79,9 @@ const props = withDefaults(
     // Suspend while another view covers this one (e.g. the fullscreen player
     // opened on top of a dashboard), so only one engine renders at a time.
     coveredWhenFullscreen?: boolean;
+    // Which palette side to tint with; the host view knows whether it forces
+    // a dark treatment regardless of theme.
+    forceDarkPalette?: boolean;
   }>(),
   {
     preset: "",
@@ -86,6 +89,7 @@ const props = withDefaults(
     opacity: VISUALIZER_OPACITY_DEFAULT,
     playerId: "",
     coveredWhenFullscreen: false,
+    forceDarkPalette: false,
   },
 );
 
@@ -155,7 +159,8 @@ const serverPalette = computed<MediaItemPalette>(() => {
 // tint rather than a stand-in color the rest of the app would never show.
 const tintColor = computed(() => {
   const { lightColor, darkColor } = paletteFromServer(serverPalette.value);
-  return (vuetify.theme.current.value.dark ? darkColor : lightColor) || null;
+  const useDark = props.forceDarkPalette || vuetify.theme.current.value.dark;
+  return (useDark ? darkColor : lightColor) || null;
 });
 
 // mix-blend-mode: color keeps the preset's own luminance, just shifts hue.
