@@ -21,6 +21,10 @@ export interface ContextMenuItem {
   // are ignored except for the list key). Used for inline controls like the
   // lyrics-offset stepper.
   component?: Component;
+  // Submenu popout rendered as this component instead of a subItems list.
+  subComponent?: Component;
+  // Props passed through to `component` or `subComponent`.
+  componentProps?: Record<string, unknown>;
 }
 
 /** The label to show for a menu item, with its arguments filled in. */

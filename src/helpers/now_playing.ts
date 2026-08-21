@@ -1,16 +1,19 @@
 // shared navigation for the item the active player is playing, so the player
 // bar and the full screen player land in the same place
+import { useCommandCenter } from "@/composables/useCommandCenter";
 import api from "@/plugins/api";
 import { MediaType } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
+const { open: openCommandCenter } = useCommandCenter();
+
 /**
  * Opens the detail page of the track that is playing.
  *
  * A track the library does not hold - a radio stream, or a provider item played
- * straight through - is looked up by name first, and falls back to the search
- * page when the library has nothing matching it.
+ * straight through - is looked up by name first, and falls back to the command
+ * center when the library has nothing matching it.
  */
 export const openCurrentTrackDetails = async function () {
   const currentMedia = store.activePlayer?.current_media;
@@ -83,8 +86,7 @@ export const openCurrentTrackDetails = async function () {
     console.error("Error searching library for track:", error);
   }
 
-  // Not found in library - fall back to global search
-  store.globalSearchTerm = searchTerm;
+  // Not found in library - hand the term to the command center
   store.showFullscreenPlayer = false;
-  router.push({ name: "search" });
+  openCommandCenter({ query: searchTerm });
 };

@@ -29,7 +29,6 @@
     "delete_db": "Suprimeix l'element de la base de dades",
     "details": "Detalls",
     "enter_url": "Introduïu l'URL que voleu afegir manualment a la base de dades",
-    "external_source_active": "Font externa activa: {0}",
     "goto_album": "Vés a l'àlbum {0}",
     "goto_artist": "Vés a l'artista {0}",
     "items_selected": "{0} element(s) seleccionat(s)",
@@ -54,8 +53,7 @@
     "player_type": {
         "group": "Grup",
         "player": "Reproductor",
-        "stereo_pair": "Conjunt d'altaveus estèreo",
-        "sync_group": "Grup de sincronització"
+        "stereo_pair": "Conjunt d'altaveus estèreo"
     },
     "players": "Reproductors",
     "playlist": "Llista de reproducció",

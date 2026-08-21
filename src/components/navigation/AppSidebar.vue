@@ -11,6 +11,10 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  commandCenterHotkeyLabel,
+  useCommandCenter,
+} from "@/composables/useCommandCenter";
 import { eventbus } from "@/plugins/eventbus";
 import { haState } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
@@ -28,6 +32,8 @@ import {
 
 const router = useRouter();
 const { t } = useI18n();
+const { toggleSidebar, setOpen, state, isMobile } = useSidebar();
+const { open: openCommandCenter } = useCommandCenter();
 
 const editMode = computed(() => store.navMenuEditMode);
 
@@ -43,6 +49,14 @@ const navItems = computed(() =>
       disabled: editMode.value ? undefined : item.disabled,
       hidden: item.hidden,
       group: item.group,
+      action:
+        item.action === "command-center"
+          ? () => openCommandCenter()
+          : undefined,
+      shortcut:
+        item.action === "command-center" && !isMobile.value
+          ? commandCenterHotkeyLabel
+          : undefined,
     })),
 );
 
@@ -84,7 +98,6 @@ const sections = computed(() => {
   return resolved;
 });
 
-const { toggleSidebar, setOpen, state, isMobile } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
 
 // Editing needs the full (labeled) menu, so pop the sidebar open when edit

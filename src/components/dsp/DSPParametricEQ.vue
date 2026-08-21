@@ -782,7 +782,12 @@ const createBiquadFilter = (
       break;
   }
   filter.frequency.value = band.frequency;
-  filter.Q.value = band.q;
+  // Web Audio interprets Q in dB for highpass/lowpass, but MA stores linear Q
+  if (filter.type === "highpass" || filter.type === "lowpass") {
+    filter.Q.value = 20 * Math.log10(band.q);
+  } else {
+    filter.Q.value = band.q;
+  }
   filter.gain.value = band.gain;
   return filter;
 };

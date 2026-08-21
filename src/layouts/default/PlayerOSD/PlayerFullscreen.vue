@@ -21,6 +21,7 @@
         :blur="visualizerBlurPref"
         :opacity="visualizerOpacityPref"
         :player-id="store.activePlayer?.player_id"
+        :force-dark-palette="visualizerOpacityPref > 50"
       />
       <PanelDragHandle
         v-if="store.mobileLayout"
@@ -98,6 +99,9 @@
             </div>
           </div>
           <div class="main-media-details-track-info">
+            <!-- the source the audio comes from, when the title below is the
+                 track that source is streaming rather than the source itself -->
+            <NowPlayingSourceBadge class="main-media-details-source" />
             <!-- player name as title if its powered off-->
             <v-card-title
               v-if="store.activePlayer?.powered == false"
@@ -141,12 +145,12 @@
             <v-card-subtitle
               v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
               :style="`font-size: ${subTitleFontSize};${
-                store.activePlayer.current_media.album ? 'cursor:pointer;' : ''
+                albumSubtitle ? 'cursor:pointer;' : ''
               }`"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.album || " " }}
+                {{ albumSubtitle || " " }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -176,21 +180,9 @@
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: queue empty or other source active -->
-            <!-- 3rd party source active -->
-            <v-card-subtitle
-              v-if="
-                !store.activePlayerQueue && store.activePlayer?.active_source
-              "
-              class="caption"
-            >
-              {{
-                $t("external_source_active", [
-                  getSourceName(store.activePlayer),
-                ])
-              }}
-            </v-card-subtitle>
-            <v-card-subtitle v-else-if="queueEnded" class="caption">
+            <!-- subtitle: queue ended or empty; an active third party source
+                 is named by the badge above instead -->
+            <v-card-subtitle v-if="queueEnded" class="caption">
               {{ $t("queue_ended") }}
             </v-card-subtitle>
             <v-card-subtitle
@@ -503,6 +495,7 @@ import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { useCommandCenter } from "@/composables/useCommandCenter";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
@@ -524,16 +517,16 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
-import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { resolveCurrentChapter } from "@/helpers/chapters";
 import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
 import {
   MediaItemChapter,
   MediaType,
@@ -567,6 +560,7 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { name, mdAndUp } = useDisplay();
+const { open: openCommandCenter } = useCommandCenter();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
 // The player select button is important enough to keep pinned at the bottom in
@@ -576,6 +570,8 @@ const MIN_HEIGHT_SHOW_PLAYER_SELECT_BUTTON = 480;
 const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
+
+const { albumSubtitle } = useNowPlayingSource();
 const { getPreference, setPreference } = useUserPreferences();
 const showWaveformPref = getPreference("show_waveform", true);
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
@@ -989,25 +985,18 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
       },
     });
   } else {
-    // No valid URI - open global search
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
+    // No valid URI - hand the term to the command center
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: searchTerm });
   }
 };
 
 const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
-  if (!currentMedia?.album) return;
+  if (!currentMedia || !albumSubtitle.value) return;
 
   // Try to get the album from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
-
-  // Check if "album" is actually the radio station name - if so, do nothing
-  if (mediaItem && currentMedia.album === mediaItem.name) {
-    // Album field contains the station name, not a real album - ignore click
-    return;
-  }
 
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
     // Navigate directly to album detail page
@@ -1025,7 +1014,7 @@ const onAlbumClick = async function () {
       // Call with positional parameters: (favorite, search, limit, offset, order_by, album_types, provider)
       const results = await api.getLibraryAlbums(
         undefined, // favorite
-        currentMedia.album, // search
+        albumSubtitle.value, // search
         5, // limit - get a few results to find best match
         undefined,
         undefined,
@@ -1071,13 +1060,12 @@ const onAlbumClick = async function () {
       console.error("Error searching library for album:", error);
     }
 
-    // Not found in library - fall back to global search
+    // Not found in library - fall back to the command center
     const searchTerm = currentMedia.artist
       ? `${currentMedia.artist} - ${currentMedia.album}`
       : currentMedia.album || "";
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: searchTerm });
   }
 };
 
@@ -1144,10 +1132,9 @@ const onArtistClick = async function () {
       console.error("Error searching library for artist:", error);
     }
 
-    // Not found in library - fall back to global search
-    store.globalSearchTerm = currentMedia.artist;
-    router.push({ name: "search" });
+    // Not found in library - fall back to the command center
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: currentMedia.artist });
   }
 };
 
@@ -1188,10 +1175,8 @@ const openQueueMenu = function (evt: Event) {
       icon: "mdi-speedometer",
     });
   }
-  // The waveform toggle slots in above the visualizer entries, keeping the
-  // visualizer toggle + options grouped at the bottom of the menu. The on/off
-  // toggle itself comes from getPlayerMenuItems (it is a player control,
-  // listed last there).
+  // The waveform toggle slots in above the visualizer popout entry (which
+  // comes from getPlayerMenuItems), keeping the display entries grouped.
   const waveformItem = {
     label: "settings.show_waveform.label",
     action: () => {
@@ -1201,20 +1186,13 @@ const openQueueMenu = function (evt: Event) {
     selected: showWaveformPref.value,
     close_on_click: false,
   };
-  const visualizerToggleIndex = menuItems.findIndex(
+  const visualizerEntryIndex = menuItems.findIndex(
     (item) => item.label === "settings.visualizer_enabled.label",
   );
-  if (visualizerToggleIndex === -1) {
+  if (visualizerEntryIndex === -1) {
     menuItems.push(waveformItem);
   } else {
-    menuItems.splice(visualizerToggleIndex, 0, waveformItem);
-    // Always append the options control directly under the toggle (the menu
-    // item list is a snapshot); it renders nothing while the visualizer is
-    // disabled, so it appears and disappears live as the toggle is flipped.
-    menuItems.push({
-      label: "visualizer_options",
-      component: markRaw(VisualizerMenuControl),
-    });
+    menuItems.splice(visualizerEntryIndex, 0, waveformItem);
   }
   // While lyrics are open, surface the sync-offset stepper at the top of the
   // overflow menu (only for players that benefit from a latency offset).
@@ -1594,6 +1572,12 @@ onBeforeUnmount(() => {
 
 .main-media-details-track-info > * {
   max-width: 100%;
+}
+
+/* the badge introduces the title under it, so it pairs with the title rather
+   than sitting halfway up the block's own top padding */
+.main-media-details-source {
+  margin-bottom: 8px;
 }
 
 .player-bottom {

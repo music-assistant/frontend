@@ -1,11 +1,10 @@
-import { h } from "vue";
 import type { Component } from "vue";
+import { h } from "vue";
 import { makeFillIcon } from "./_make-icon";
 
-/** WiiM streamer silhouette (fill-based, 24×24). */
 export const Wiim: Component = makeFillIcon(
   "wiim",
-  "0 0 24 24",
+  "2 2 20 20",
   h("path", {
     "fill-rule": "evenodd",
     "clip-rule": "evenodd",

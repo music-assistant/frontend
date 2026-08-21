@@ -1,5 +1,6 @@
 import MusicQuizPlayerView from "@/views/MusicQuizPlayerView.vue";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
+import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -480,75 +481,6 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it.each([
-    ["correct", true],
-    ["incorrect", false],
-  ] as const)(
-    "shows a toast for %s answers when the result is revealed",
-    async (_result, correct) => {
-      const points = correct ? 7 : 0;
-      mockGetMusicQuizRoundScore.mockReturnValue(points);
-      const state = ref({
-        ...playerState,
-        phase: "answering" as "answering" | "reveal",
-        you: {
-          ...playerState.you,
-          answer: {
-            suggestion_id: "one",
-            answered_at: 1,
-            correct: undefined as boolean | undefined,
-            points: undefined as number | undefined,
-          },
-        },
-      });
-      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
-      mockUseMusicQuizPlayer.mockReturnValue({
-        info: ref(null),
-        state,
-        playerId: ref("player-id"),
-        landingSeen: ref(true),
-        gameRemoved: ref(false),
-        busy: ref(false),
-        loading: ref(false),
-        currentRound: ref(currentRound),
-        join: vi.fn(),
-        submitAnswer: vi.fn(),
-        ready: vi.fn(),
-        markLandingSeen: vi.fn(),
-      });
-      const wrapper = mountView();
-
-      state.value = {
-        ...state.value,
-        phase: "reveal",
-        you: {
-          ...state.value.you,
-          answer: {
-            ...state.value.you.answer,
-            correct,
-            points,
-          },
-        },
-      };
-      await nextTick();
-
-      const expectedToast = correct ? mockToastSuccess : mockToastError;
-      expect(expectedToast).toHaveBeenCalledOnce();
-      expect(expectedToast).toHaveBeenCalledWith(
-        `${
-          correct
-            ? "providers.music_quiz.correct"
-            : "providers.music_quiz.incorrect"
-        } +${points}`,
-      );
-
-      state.value = { ...state.value };
-      await nextTick();
-      expect(expectedToast).toHaveBeenCalledOnce();
-      wrapper.unmount();
-    },
-  );
-
   it("enables Music Timeline ListenIn on the rejoin landing without fetching lyrics", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
@@ -571,6 +503,106 @@ describe("MusicQuizPlayerView routing", () => {
     expect(mockListenInSetup).toHaveBeenCalledOnce();
     expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
     expect(mockGetTrackLyrics).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("passes a single answer result to the player header during a multiple-choice reveal", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...playerState,
+        phase: "reveal",
+        you: {
+          ...playerState.you,
+          answer: {
+            suggestion_id: "one",
+            answered_at: 1,
+            correct: false,
+            points: 0,
+          },
+        },
+      }),
+      playerId: ref("player-id"),
+      landingSeen: ref(true),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(currentRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+      markLandingSeen: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper.findComponent(MusicQuizPlayerHeader).props("roundResults"),
+    ).toEqual([
+      {
+        key: "answer",
+        label: "providers.music_quiz.round_result_answer",
+        correct: false,
+        points: 0,
+      },
+    ]);
+    wrapper.unmount();
+  });
+
+  it("passes the placement and bonus results to the player header during timeline reveal", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...musicTimelineState,
+        phase: "reveal",
+        you: {
+          ...musicTimelineState.you,
+          answer: {
+            previous_entry_id: null,
+            next_entry_id: "anchor",
+            answered_at: 1,
+            bonuses: [],
+            finished: true,
+            correct: true,
+            points: 10,
+            bonus_results: [
+              { bonus_type: "artist", correct: false, points: 0 },
+            ],
+          },
+        },
+      }),
+      playerId: ref("player-id"),
+      landingSeen: ref(true),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(musicTimelineRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+      markLandingSeen: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper.findComponent(MusicQuizPlayerHeader).props("roundResults"),
+    ).toEqual([
+      {
+        key: "placement",
+        label: "providers.music_quiz.timeline_result_placement",
+        correct: true,
+        points: 10,
+      },
+      {
+        key: "artist",
+        label: "providers.music_quiz.timeline_artist_bonus",
+        correct: false,
+        points: 0,
+      },
+    ]);
     wrapper.unmount();
   });
 

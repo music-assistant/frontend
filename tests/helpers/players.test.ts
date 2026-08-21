@@ -1,4 +1,5 @@
 import {
+  canBeGroupMember,
   canEditPlayerGroup,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
@@ -302,6 +303,36 @@ describe("groupMemberPickerVisible", () => {
     webPlayer.player_id = "local-web-player";
 
     expect(groupMemberPickerVisible(player)).toBe(true);
+  });
+});
+
+describe("canBeGroupMember", () => {
+  it("offers a regular player", () => {
+    expect(canBeGroupMember(createPlayer())).toBe(true);
+  });
+
+  it("offers a light, which joins a group without playing audio", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.LIGHT }))).toBe(
+      true,
+    );
+  });
+
+  it("offers a visualizer, which joins a group without playing audio", () => {
+    expect(
+      canBeGroupMember(createPlayer({ type: PlayerType.VISUALIZER })),
+    ).toBe(true);
+  });
+
+  it("offers a metadata display, which joins a group without playing audio", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.DISPLAY }))).toBe(
+      true,
+    );
+  });
+
+  it("keeps a capture-only device out of the picker", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.UNKNOWN }))).toBe(
+      false,
+    );
   });
 });
 

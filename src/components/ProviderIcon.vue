@@ -1,7 +1,5 @@
 <template>
-  <div
-    :style="`width:${size}px;margin-left:10px;margin-right:10px;content-align:center`"
-  >
+  <div class="provider-icon-wrapper" :style="{ width: `${size}px` }">
     <!-- the library is not a real provider, so render its membership badge directly -->
     <div
       v-if="domain === 'library'"
@@ -30,7 +28,6 @@ import { useProviderIcon } from "@/composables/useProviderIcon";
 export interface Props {
   domain: string;
   size: number;
-  dark?: boolean;
   monochrome?: boolean;
 }
 const props = defineProps<Props>();
