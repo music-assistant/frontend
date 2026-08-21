@@ -14,9 +14,10 @@ import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
+import { visualizerEnabledForPlayer } from "@/composables/visualizer/useVisualizer";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
-import { markRaw } from "vue";
+import { h, markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
 import { authManager } from "@/plugins/auth";
@@ -354,11 +355,19 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // MilkDrop visualizer popout (both menus), kept just above the settings entry
+  // MilkDrop visualizer popout (both menus), kept just above the settings
+  // entry; the droplet fills while enabled for this player (live, since the
+  // enabled preference is reactive store state)
   if (visualizerProviderAvailable()) {
     menuItems.push({
       label: "settings.visualizer_enabled.label",
-      icon: markRaw(Droplet),
+      icon: markRaw(() =>
+        h(Droplet, {
+          fill: visualizerEnabledForPlayer(player.player_id)
+            ? "currentColor"
+            : "none",
+        }),
+      ),
       subComponent: markRaw(VisualizerMenuControl),
       componentProps: { playerId: player.player_id },
     });

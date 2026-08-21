@@ -5,7 +5,11 @@
 <template>
   <div ref="menuEl" class="visualizer-menu" @pointerdown.stop @click.stop>
     <div class="visualizer-menu__row">
-      <Droplet :size="20" class="visualizer-menu__icon" />
+      <Droplet
+        :size="20"
+        class="visualizer-menu__icon"
+        :fill="enabledPref ? 'currentColor' : 'none'"
+      />
       <span class="visualizer-menu__label">{{ $t("visualizer.enabled") }}</span>
       <Switch
         :model-value="enabledPref"
