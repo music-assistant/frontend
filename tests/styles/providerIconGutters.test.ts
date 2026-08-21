@@ -62,8 +62,9 @@ describe("provider icon gutters", () => {
   it("takes the provider card spacing from its thumbnail class", () => {
     expect(providersSource).toContain('class="listitem-media-thumb"');
 
-    const icon = getComputedStyle(providerIcon("listitem-media-thumb"));
-    expect(icon.marginLeft).toBe("");
-    expect(icon.marginRight).toBe("10px");
+    const icon = providerIcon("listitem-media-thumb");
+    expect(selectorsSetting(styles[2], icon, "margin-left")).toHaveLength(0);
+    expect(selectorsSetting(styles[2], icon, "margin-right")).toHaveLength(1);
+    expect(getComputedStyle(icon).marginRight).toBe("10px");
   });
 });
