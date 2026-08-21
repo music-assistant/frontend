@@ -16,6 +16,10 @@ vi.mock("@/plugins/api", () => ({
   api: apiMock,
 }));
 vi.mock("@/helpers/utils", () => ({ getExternalLinkUrl }));
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, named?: Record<string, unknown>) =>
+    named ? `${key}:${Object.values(named).join(",")}` : key,
+}));
 
 enableAutoUnmount(afterEach);
 
@@ -100,6 +104,26 @@ describe("ProtocolChip", () => {
     expect(wrapper.find(".lucide-external-link").exists()).toBe(true);
   });
 
+  it("names the link by its purpose rather than the bare provider name", () => {
+    apiMock.getProviderManifest.mockReturnValue(
+      providerManifest({
+        name: "AirPlay provider",
+        documentation: "https://example.org/airplay",
+      }),
+    );
+
+    const wrapper = mountChip({ protocol: outputProtocol(), linkToDocs: true });
+
+    // the visible text is only the provider name, so the accessible name has to
+    // say where the link goes - and still contain that visible text
+    expect(wrapper.attributes("aria-label")).toBe(
+      "tooltip.open_documentation:AirPlay provider",
+    );
+    expect(wrapper.attributes("title")).toBe(
+      "tooltip.open_documentation:AirPlay provider",
+    );
+  });
+
   it("routes the documentation url through the external link helper", () => {
     apiMock.getProviderManifest.mockReturnValue(
       providerManifest({ documentation: "https://music-assistant.io/docs" }),
@@ -128,6 +152,8 @@ describe("ProtocolChip", () => {
     expect(wrapper.attributes("href")).toBeUndefined();
     expect(wrapper.attributes("tabindex")).toBeUndefined();
     expect(wrapper.find(".lucide-external-link").exists()).toBe(false);
+    expect(wrapper.attributes("aria-label")).toBeUndefined();
+    expect(wrapper.attributes("title")).toBeUndefined();
     expect(getExternalLinkUrl).not.toHaveBeenCalled();
   });
 

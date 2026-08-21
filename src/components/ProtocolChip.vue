@@ -10,7 +10,7 @@
       :size="14"
       class="protocol-chip__icon"
     />
-    {{ manifest?.name || protocol.protocol_domain }}
+    {{ label }}
     <ExternalLink v-if="documentationUrl" aria-hidden="true" />
   </Badge>
 </template>
@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { OutputProtocol } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { ExternalLink } from "@lucide/vue";
 
 export interface Props {
@@ -41,18 +42,29 @@ const documentationUrl = computed(() =>
     : undefined,
 );
 
+const label = computed(
+  () => manifest.value?.name || props.protocol.protocol_domain,
+);
+
 // only chips that have somewhere to go become an anchor; the rest stay a plain
 // span, so the call sites that just label a protocol are not focusable links
-const linkAttrs = computed(() =>
-  documentationUrl.value
-    ? {
-        as: "a",
-        href: documentationUrl.value,
-        target: "_blank",
-        rel: "noopener noreferrer",
-      }
-    : { as: "span" },
-);
+const linkAttrs = computed(() => {
+  const url = documentationUrl.value;
+  if (!url) return { as: "span" };
+
+  // the chip only reads as the provider name, so spell out where the link goes
+  const description = $t("tooltip.open_documentation", {
+    provider: label.value,
+  });
+  return {
+    as: "a",
+    href: url,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    "aria-label": description,
+    title: description,
+  };
+});
 </script>
 
 <style scoped>
