@@ -273,7 +273,7 @@
                   :state="row.state"
                   :is-playing="playerActive"
                   :dragging="draggingIndex === row.index"
-                  :read-only="queueSessionOwned"
+                  :read-only="queueExternallyManaged"
                   :marquee-sync="
                     row.state === 'playing'
                       ? playerMarqueeSync
@@ -777,7 +777,7 @@ const {
   totalItems,
   upNextCount,
   queueEnded,
-  queueSessionOwned,
+  queueExternallyManaged,
   queueOwnerName,
   totalSize,
   measureRow,

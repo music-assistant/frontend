@@ -51,7 +51,7 @@ describe("getQueueItemMenuItems", () => {
     ]);
   });
 
-  it("withholds the move/remove actions on a session-owned queue", () => {
+  it("withholds the move/remove actions on an externally managed queue", () => {
     storeMock.activePlayerQueue = playerQueue({
       items: 5,
       current_index: 0,
@@ -62,7 +62,7 @@ describe("getQueueItemMenuItems", () => {
     expect(labels(items)).toEqual(["play_now"]);
   });
 
-  it("keeps play now and show info on a session-owned queue's track items", () => {
+  it("keeps play now and show info on an externally managed queue's track items", () => {
     storeMock.activePlayerQueue = playerQueue({
       items: 5,
       current_index: 0,

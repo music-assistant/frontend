@@ -22,9 +22,9 @@ export const getQueueItemMenuItems = (
   if (!queue) return [];
   const queueId = queue.queue_id;
   const locked = index <= (queue.index_in_buffer ?? 0);
-  // a session-owned queue mirrors an external session's queue (queue_owner set),
-  // so the move/remove actions are not offered at all
-  const sessionOwned = !!queue.queue_owner;
+  // an externally managed queue mirrors an external session's queue
+  // (queue_owner set), so the move/remove actions are not offered at all
+  const externallyManaged = !!queue.queue_owner;
 
   const menuItems: ContextMenuItem[] = [
     {
@@ -37,7 +37,7 @@ export const getQueueItemMenuItems = (
     },
   ];
 
-  if (!sessionOwned) {
+  if (!externallyManaged) {
     menuItems.push({
       label: "play_next",
       labelArgs: [],
@@ -60,7 +60,7 @@ export const getQueueItemMenuItems = (
   }
 
   // quick reorder / remove (drag the handle for fine-grained moves)
-  if (!sessionOwned) {
+  if (!externallyManaged) {
     menuItems.push(
       {
         label: "queue_move_end",

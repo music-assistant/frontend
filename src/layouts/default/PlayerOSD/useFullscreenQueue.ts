@@ -101,14 +101,14 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   // Whether an external session (e.g. Spotify Connect) owns the queue's
   // ordering: the list is a mirror the user can't edit, so reorder/move/delete
   // affordances are withheld.
-  const queueSessionOwned = computed(
+  const queueExternallyManaged = computed(
     () => !!store.activePlayerQueue?.queue_owner,
   );
 
   // Display name of the owning session, for the "queue managed by" hint. The
   // owning AudioSource is the queue's current item, so its name is read there.
   const queueOwnerName = computed(() => {
-    if (!queueSessionOwned.value) return "";
+    if (!queueExternallyManaged.value) return "";
     const mediaItem = store.activePlayerQueue?.current_item?.media_item;
     return isAudioSource(mediaItem) ? mediaItem.name : "";
   });
@@ -423,7 +423,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     totalItems,
     upNextCount,
     queueEnded,
-    queueSessionOwned,
+    queueExternallyManaged,
     queueOwnerName,
     totalSize,
     measureRow,
