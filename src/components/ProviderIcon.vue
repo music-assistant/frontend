@@ -31,7 +31,6 @@ import { ProviderIconVariant } from "@/plugins/api/interfaces";
 export interface Props {
   domain: string;
   size: number;
-  dark?: boolean;
   monochrome?: boolean;
 }
 const props = defineProps<Props>();

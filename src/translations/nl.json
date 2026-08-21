@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Groep",
         "player": "Speler",
-        "stereo_pair": "Stereopaar",
-        "sync_group": "Synchronisatiegroep"
+        "stereo_pair": "Stereopaar"
     },
     "players": "Spelers",
     "playlist": "Afspeellijst",
@@ -2234,7 +2233,6 @@
     "artist_no_library_audiobooks": "Je hebt geen luisterboeken van deze auteur\/voorlezer in je bibliotheek.",
     "artist_all_audiobooks": "Alle luisterboeken",
     "lights": "Lichten",
-    "visualizers": "Visualizers",
     "volume": "Volume",
     "grouped_volume": "Gegroepeerd volume",
     "player_select": {

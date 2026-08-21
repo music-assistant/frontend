@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Grupa",
         "player": "Atskaņotājs",
-        "stereo_pair": "Stereo Pāris",
-        "sync_group": "Sinhronizācijas Grupa"
+        "stereo_pair": "Stereo Pāris"
     },
     "players": "Atskaņotāji",
     "playlist": "Mūzikas saraksts",
