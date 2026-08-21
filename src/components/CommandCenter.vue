@@ -7,6 +7,7 @@
     <div
       data-slot="command-input-wrapper"
       class="flex h-14 shrink-0 items-center gap-3 border-b px-4"
+      @keydown.enter.capture="dismissKeyboardOnTouch"
     >
       <Search class="size-5 shrink-0 opacity-50" />
       <ListboxFilter
@@ -14,6 +15,7 @@
         v-model="query"
         data-slot="command-input"
         auto-focus
+        enterkeyhint="done"
         :placeholder="$t('type_to_search')"
         class="placeholder:text-muted-foreground flex h-12 w-full rounded-md bg-transparent py-3 text-base outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
@@ -333,6 +335,19 @@ const focusInput = function () {
   inputEl?.focus();
 };
 
+// on the mobile sheet on a touch screen the on-screen keyboard drives the
+// interaction, and the return key's job is to put it away — the results are
+// already live — while reka would click the highlighted row, so the enter is
+// settled here on the wrapper before it can reach the input
+const dismissKeyboardOnTouch = function (event: KeyboardEvent) {
+  // the enter that commits an IME conversion belongs to the composition, not
+  // to us; keyCode 229 covers webkit reporting that keydown as not composing
+  if (event.isComposing || event.keyCode === 229) return;
+  if (!store.isTouchscreen || !store.mobileLayout) return;
+  event.stopPropagation();
+  (filterRef.value?.$el as HTMLElement | undefined)?.blur();
+};
+
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
   if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
   const artist =
@@ -584,10 +599,15 @@ watch([query, pagesOnly], () => {
   }, DEBOUNCE_MS);
 });
 
+// highlight the first row as results land so a desktop enter opens the top
+// hit; on the mobile sheet on a touch screen the on-screen keyboard drives
+// the interaction — there is no enter contract there and the phantom
+// highlight would read as a selection nobody made
 watch(
   () =>
     mediaSections.value.map((section) => section.items[0]?.uri ?? "").join("|"),
   async () => {
+    if (store.isTouchscreen && store.mobileLayout) return;
     if (!isOpen.value || !queryActive.value) return;
     await nextTick();
     const listEl = listRef.value?.$el as HTMLElement | undefined;
