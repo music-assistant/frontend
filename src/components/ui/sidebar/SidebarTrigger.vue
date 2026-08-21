@@ -72,7 +72,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
   width: 100%;
 }
 
-.navuser-trigger :deep([data-sidebar="menu-button"]) {
+.trigger-container .navuser-trigger :deep([data-sidebar="menu-button"]) {
   margin-left: 0 !important;
   padding-right: 0;
 }

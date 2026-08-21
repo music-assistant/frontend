@@ -177,6 +177,20 @@ describe("collapsed sidebar alignment", () => {
     expect(padding.paddingLeft).not.toBe("");
     expect(padding.paddingLeft).toBe(padding.paddingRight);
     expect(anchor.body).toContain(`- ${padding.paddingLeft})`);
+
+    // the rail's button anchor reaches this button too, at the same
+    // importance, so the flush margin has to out-rank it in every sheet order
+    // for the avatar to be the only anchored piece
+    const flush = cssRule(
+      triggerSource,
+      '\n.trigger-container .navuser-trigger [data-sidebar="menu-button"]',
+    );
+    const buttonAnchor = cssRule(
+      appSource,
+      '[data-collapsible="icon"] [data-sidebar="menu-button"]',
+    );
+    expect(flush.body).toContain("margin-left: 0 !important");
+    expect(rank(flush.selector)).toBeGreaterThan(rank(buttonAnchor.selector));
   });
 
   it("drops the name and chevron from the collapsing row", () => {
