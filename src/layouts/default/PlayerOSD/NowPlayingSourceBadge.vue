@@ -34,9 +34,7 @@ const { nowPlayingSource } = useNowPlayingSource();
 </script>
 
 <style scoped>
-/* drop ProviderIcon's default gutters so the badge's own gap applies */
 .now-playing-source__icon {
-  margin: 0;
   flex-shrink: 0;
 }
 </style>

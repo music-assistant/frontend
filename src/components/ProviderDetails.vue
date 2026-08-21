@@ -22,6 +22,7 @@
             <ProviderIcon
               :domain="providerMapping.provider_domain"
               :size="30"
+              class="mx-[10px]"
             />
           </template>
           <template #title>
@@ -106,7 +107,7 @@
           "
         >
           <template #prepend>
-            <ProviderIcon domain="library" :size="30" />
+            <ProviderIcon domain="library" :size="30" class="mx-[10px]" />
           </template>
           <template #title>{{ $t("music_assistant_library") }}</template>
           <template #subtitle>
