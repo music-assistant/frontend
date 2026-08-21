@@ -45,8 +45,7 @@ vi.mock("@/plugins/store", async () => {
     store: reactive({
       dialogActive: false,
       showPlayersMenu: false,
-      globalSearchTerm: "",
-      globalSearchMediaTypes: [],
+      mobileLayout: false,
       activePlayer: undefined,
       activePlayerQueue: undefined,
       curQueueItem: undefined,
@@ -81,6 +80,10 @@ vi.mock("vue-i18n", () => ({
   useI18n: () => ({ t: (key: string) => key, te: () => false }),
 }));
 
+// the search field reaches for the app-wide translator, which would otherwise
+// build a real i18n instance off the mocked vue-i18n
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
 vi.mock("vue-router", () => ({
   useRoute: () => ({ query: {} }),
   useRouter: () => ({ push: vi.fn() }),
@@ -92,7 +95,16 @@ const stubComponent = vi.hoisted(() => (name: string) => ({
   default: { name, template: "<div />" },
 }));
 
-vi.mock("@/components/Toolbar.vue", () => stubComponent("Toolbar"));
+vi.mock("@/components/Toolbar.vue", () => ({
+  default: {
+    name: "Toolbar",
+    props: ["menuItems"],
+    // the append slot is where the desktop search field goes, beside the
+    // button that opens it
+    template:
+      '<div class="toolbar-stub"><slot name="title" /><slot name="append" /></div>',
+  },
+}));
 vi.mock("@/components/Container.vue", () => stubComponent("Container"));
 vi.mock("@/components/icons/GenreIcon.vue", () => stubComponent("GenreIcon"));
 vi.mock("@/components/skeletons/ListViewSkeleton.vue", () =>
@@ -132,7 +144,7 @@ function mountListingRaw(
         $vuetify: { display: { width: 1280 } },
       },
       stubs: {
-        Button: true,
+        // the search field's clear control is a Button, so it has to be real
         Empty: true,
         EmptyContent: true,
         EmptyDescription: true,
@@ -142,7 +154,6 @@ function mountListingRaw(
         TabsList: true,
         TabsTrigger: true,
         "v-divider": true,
-        "v-text-field": true,
       },
     },
   });
@@ -288,5 +299,180 @@ describe("ItemsListing unmount cleanup", () => {
 
     expect(clearSelectionHandlers()).toBe(1);
     expect(survivor.showCheckboxes).toBe(false);
+  });
+});
+
+describe("ItemsListing per-page search", () => {
+  beforeEach(() => {
+    eventbus.all.clear();
+    events.listeners.length = 0;
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
+    mockSubscribeMulti.mockReset();
+    mockSubscribeMulti.mockImplementation(events.subscribeMulti);
+    store.prevState = undefined;
+    store.mobileLayout = false;
+  });
+
+  // the one button, which is a magnifier until the field is open and a close
+  // cross after that
+  const SEARCH_BUTTON_LABELS = [
+    "tooltip.search",
+    "tooltip.search_filter_active",
+    "close",
+  ];
+
+  /** Clicks the magnifier in the toolbar, which is what opens the field. */
+  async function toggleSearch(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as { label?: string; action?: () => void }[];
+    const search = items.find(
+      (item) => item.label && SEARCH_BUTTON_LABELS.includes(item.label),
+    );
+    expect(search, "the toolbar offers a search toggle").toBeDefined();
+    search!.action?.();
+    await flushPromises();
+  }
+
+  function searchField(listing: ReturnType<typeof mountListingRaw>) {
+    return listing.find(".search-field");
+  }
+
+  function searchButton(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as { label?: string }[];
+    return items.find(
+      (item) => item.label && SEARCH_BUTTON_LABELS.includes(item.label),
+    );
+  }
+
+  it("opens the field from the toolbar and closes it again", async () => {
+    const listing = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+    expect(searchField(listing).exists()).toBe(false);
+
+    await toggleSearch(listing);
+    expect(searchField(listing).exists()).toBe(true);
+
+    await toggleSearch(listing);
+    expect(searchField(listing).exists()).toBe(false);
+  });
+
+  // the field opens into the slot the magnifier holds, so that button has to
+  // become the way back out rather than staying a toggle nothing points at
+  it("turns the toolbar magnifier into the close control while open", async () => {
+    const listing = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+
+    expect(searchButton(listing)?.label).toBe("tooltip.search");
+
+    await toggleSearch(listing);
+    expect(searchButton(listing)?.label).toBe("close");
+
+    await toggleSearch(listing);
+    expect(searchButton(listing)?.label).toBe("tooltip.search");
+
+    listing.unmount();
+  });
+
+  // on mobile the field is a row of its own with its own close button, so the
+  // toolbar one stays a plain toggle
+  it("leaves the mobile toolbar button a magnifier", async () => {
+    store.mobileLayout = true;
+    const mobile = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+    await toggleSearch(mobile);
+
+    expect(searchButton(mobile)?.label).toBe("tooltip.search");
+    expect(mobile.find(".listing-search--row").exists()).toBe(true);
+
+    mobile.unmount();
+  });
+
+  it("only offers the clear button once there is a term", async () => {
+    const listing = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+    await toggleSearch(listing);
+
+    expect(listing.find('.search-field button[type="button"]').exists()).toBe(
+      false,
+    );
+
+    await listing.get(".search-field input").setValue("hello");
+    expect(listing.find('.search-field button[type="button"]').exists()).toBe(
+      true,
+    );
+
+    listing.unmount();
+  });
+
+  it("names the listing it searches in its placeholder", async () => {
+    const listing = mountListingRaw({
+      itemtype: "artists",
+      showSearchButton: true,
+    });
+    await flushPromises();
+    await toggleSearch(listing);
+
+    expect(listing.get(".search-field input").attributes("placeholder")).toBe(
+      "search_in",
+    );
+  });
+
+  // a desktop toolbar has room for the field, a phone toolbar does not
+  it("puts the field in the toolbar on desktop and on its own row on mobile", async () => {
+    const listing = mountListingRaw({
+      showSearchButton: true,
+      title: "Tracks",
+    });
+    await flushPromises();
+    await toggleSearch(listing);
+
+    expect(listing.find(".toolbar-stub .search-field").exists()).toBe(true);
+    expect(listing.find(".listing-search--row").exists()).toBe(false);
+    // and it sits beside the title rather than in place of it
+    expect(listing.find(".toolbar-stub").text()).toContain("Tracks");
+
+    listing.unmount();
+    store.mobileLayout = true;
+    const mobile = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+    await toggleSearch(mobile);
+
+    expect(mobile.find(".toolbar-stub .search-field").exists()).toBe(false);
+    expect(mobile.find(".listing-search--row").exists()).toBe(true);
+  });
+
+  // the X used to close the field along with the term, which took the search
+  // away from under someone who only wanted to retype
+  it("clears the term from the X without closing the field", async () => {
+    const listing = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+    await toggleSearch(listing);
+    await listing.get(".search-field input").setValue("hello");
+
+    await listing.get('.search-field button[type="button"]').trigger("click");
+    await flushPromises();
+
+    expect(searchField(listing).exists()).toBe(true);
+    expect(
+      (listing.get(".search-field input").element as HTMLInputElement).value,
+    ).toBe("");
+  });
+
+  it("drops the term when the field is closed", async () => {
+    const listing = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+    await toggleSearch(listing);
+
+    await listing.get(".search-field input").setValue("hello");
+    await toggleSearch(listing);
+    await toggleSearch(listing);
+
+    expect(
+      (listing.get(".search-field input").element as HTMLInputElement).value,
+    ).toBe("");
   });
 });

@@ -1,3 +1,6 @@
+// Imported once, outside any test: evaluating the app graph is the expensive
+// part, and the import phase is not on a test's clock.
+import App from "@/App.vue";
 import {
   EventType,
   ProviderStatus,
@@ -319,6 +322,7 @@ describe("App initialization", () => {
     apiMock.fetchState.mockResolvedValue(undefined);
     apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.initialize.mockResolvedValue(undefined);
+    apiMock.setLocale.mockResolvedValue(undefined);
     apiMock.getProviderConfigs.mockResolvedValue([partyPluginConfig()]);
     for (const method of [
       apiMock.getLibraryAlbumsCount,
@@ -378,6 +382,10 @@ describe("App initialization", () => {
       configurable: true,
       value: vi.fn().mockReturnValue({
         addEventListener: vi.fn(),
+        // The theme composable keeps its "auto" listener in module state for
+        // the whole file, so a later mount on a fixed theme unregisters it
+        // against the MediaQueryList an earlier test handed out.
+        removeEventListener: vi.fn(),
         matches: false,
       }),
     });
@@ -485,7 +493,7 @@ describe("App initialization", () => {
     const pluginConfigs = createDeferred<ProviderConfig[]>();
     apiMock.fetchState.mockReturnValue(serverState.promise);
     apiMock.getProviderConfigs.mockReturnValue(pluginConfigs.promise);
-    wrapper = await mountAppWithoutSettling();
+    wrapper = mountAppWithoutSettling();
 
     await flushPromises();
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
@@ -514,6 +522,9 @@ describe("App initialization", () => {
     "does not mount browser media controls for a %s guest fallback tab",
     async (type) => {
       guestType.value = type;
+      // Hand the tab a media session, so being a guest is the only thing left
+      // that can withhold the controls.
+      stubMediaSession();
       apiMock.getCurrentUserInfo.mockResolvedValue(
         user({
           role: UserRole.GUEST,
@@ -534,10 +545,7 @@ describe("App initialization", () => {
   );
 
   it("keeps browser media controls for regular fallback tabs", async () => {
-    Object.defineProperty(navigator, "mediaSession", {
-      configurable: true,
-      value: {},
-    });
+    stubMediaSession();
     webPlayerMock.audioSource = "controls_only";
     webPlayerMock.interacted = true;
     webPlayerMock.tabMode = "controls_only";
@@ -550,16 +558,7 @@ describe("App initialization", () => {
   });
 
   it("clears browser media controls on participant routes for regular users", async () => {
-    const mediaSession = {
-      metadata: {} as MediaMetadata | null,
-      playbackState: "playing" as MediaSessionPlaybackState,
-      setActionHandler: vi.fn(),
-      setPositionState: vi.fn(),
-    };
-    Object.defineProperty(navigator, "mediaSession", {
-      configurable: true,
-      value: mediaSession,
-    });
+    const mediaSession = stubMediaSession();
     webPlayerMock.audioSource = "controls_only";
     webPlayerMock.interacted = true;
     webPlayerMock.tabMode = "controls_only";
@@ -588,7 +587,7 @@ describe("App initialization", () => {
 
   it("remembers a temporary remote connection after regular login", async () => {
     apiMock.state.value = "auth_required";
-    wrapper = await mountAppWithoutSettling();
+    wrapper = mountAppWithoutSettling();
 
     wrapper.findComponent({ name: "Login" }).vm.$emit("authenticated", {
       token: "regular-token",
@@ -610,7 +609,7 @@ describe("App initialization", () => {
 
   it("clears proxy mode before connecting to a local server", async () => {
     apiMock.state.value = "disconnected";
-    wrapper = await mountAppWithoutSettling();
+    wrapper = mountAppWithoutSettling();
 
     wrapper
       .findComponent({ name: "Login" })
@@ -900,7 +899,7 @@ async function mountAuthenticatedApp() {
  * a timer anywhere in that path would need vi.waitFor instead.
  */
 async function mountApp() {
-  const mounted = await mountAppWithoutSettling();
+  const mounted = mountAppWithoutSettling();
   await flushPromises();
   expect(apiMock.state.value).toBe("initialized");
   expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
@@ -912,8 +911,7 @@ async function mountApp() {
  * Mount the app and register it for teardown, without waiting for
  * initialization to settle; the test drives what happens next.
  */
-async function mountAppWithoutSettling() {
-  const { default: App } = await import("@/App.vue");
+function mountAppWithoutSettling() {
   // Registered at mount time so afterEach unmounts the app even when a
   // caller's assertion throws: a live instance keeps reacting to api.state
   // and corrupts every later test.
@@ -990,6 +988,23 @@ function createDeferred<T = void>() {
     resolve = resolvePromise;
   });
   return { promise, resolve };
+}
+
+/**
+ * Give the tab a media session, as a browser that supports one would.
+ */
+function stubMediaSession() {
+  const session = {
+    metadata: {} as MediaMetadata | null,
+    playbackState: "playing" as MediaSessionPlaybackState,
+    setActionHandler: vi.fn(),
+    setPositionState: vi.fn(),
+  };
+  Object.defineProperty(navigator, "mediaSession", {
+    configurable: true,
+    value: session,
+  });
+  return session;
 }
 
 function createStorage(): Storage {

@@ -263,14 +263,14 @@ a {
 }
 
 .ma-line-clamp-2 {
-  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  line-height: 1.5em;
-  height: 3em;
+  white-space: pre-line;
   word-wrap: break-word;
   box-sizing: border-box;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
 }
 
 .small-icon {

@@ -43,8 +43,8 @@
           <DropdownMenuRadioItem v-if="hasLights" value="lights">
             {{ $t("lights") }}
           </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem v-if="hasVisualizers" value="visualizers">
-            {{ $t("visualizers") }}
+          <DropdownMenuRadioItem v-if="hasScreens" value="screens">
+            {{ $t("screens") }}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
@@ -89,7 +89,7 @@ defineProps<{
   members: Player[];
   filter: PlayerGroupFilter;
   hasLights: boolean;
-  hasVisualizers: boolean;
+  hasScreens: boolean;
 }>();
 
 const emit = defineEmits<{

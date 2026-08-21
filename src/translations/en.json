@@ -40,7 +40,6 @@
     "delete_db": "Delete item from database",
     "details": "Details",
     "enter_url": "Enter the URL you want to manually add to the database",
-    "external_source_active": "External source active: {0}",
     "goto_album": "View album {0}",
     "goto_artist": "View artist {0}",
     "items_selected": "{0} item(s) selected",
@@ -66,7 +65,10 @@
         "group": "Group",
         "player": "Player",
         "stereo_pair": "Stereo Pair",
-        "sync_group": "Sync Group"
+        "display": "Screen",
+        "visualizer": "Visualizer",
+        "light": "Light",
+        "unknown": "Unknown"
     },
     "players": "Players",
     "playlist": "Playlist",
@@ -421,7 +423,6 @@
         "users_description": "Manage user accounts, roles, and permissions",
         "system_description": "Configure Music Assistant server settings and core modules",
         "system": "System",
-        "view_documentation": "View documentation",
         "about": "About",
         "about_description": "Version information, credits and more",
         "auto_refresh_log": "Auto-refresh",
@@ -526,7 +527,8 @@
             "options": "Player options",
             "preferences": "Preferences",
             "display_settings": "Display",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "audiobooks": "Audiobooks"
         },
         "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
         "onboarding_music_title": "Music",
@@ -707,6 +709,10 @@
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
         },
+        "audiobook_chapter_progress": {
+            "label": "Show audiobook chapter progress",
+            "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."
+        },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
         "diagnostics_description": "View server logs and download a diagnostics report for troubleshooting",
@@ -736,7 +742,6 @@
             "session_ended_text": "The setup session ended — it may have completed. Check your providers or players to confirm."
         },
         "options": "Options",
-        "add_group_player_desc": "Create a permanent player group with {0} players. When you play to this Player Group, the member players will be automatically synchronized.",
         "server_clock_offset": "Clock offset (server vs this device)",
         "action_completed": "Action completed",
         "hass_controls": {
@@ -784,10 +789,6 @@
         "visualizer_opacity": {
             "label": "Visualizer opacity",
             "description": "Lower values blend the album colors through. Above 50% the view switches to a dark look with light text."
-        },
-        "ha_kiosk_mode": {
-            "label": "Use the full screen in Home Assistant",
-            "description": "Hide the Home Assistant header and sidebar so Music Assistant gets the whole screen. The Home Assistant button in the menu brings them back."
         },
         "delete_player_title": "Delete {0}?",
         "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
@@ -861,6 +862,7 @@
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
+        "exit_select_items": "Exit multi-select",
         "explicit": "Explicit",
         "filter_library": "Toggle in-library\/favorite filter",
         "library": "Toggle in-library\/favorite",
@@ -874,6 +876,7 @@
         "filter_favorites": "Only show favorites",
         "favorite": "Mark\/unmark as a favorite",
         "open_provider_link": "Open this item on the provider's website",
+        "open_documentation": "Open the {provider} documentation",
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
         "show_menu": "Show\/hide menu",
@@ -933,12 +936,13 @@
         "collapse_collections": "Collapse collections",
         "volume_down": "Volume down",
         "volume_up": "Volume up",
-        "show_full_path": "Show the full path"
+        "playing_from": "Playing from {0}"
     },
     "topresult": "Top result",
     "track": "Track",
     "track_number": "Disc {0} Track {1}",
     "tracks": "Tracks",
+    "search_in": "Search in {0}...",
     "try_global_search": "Try global search",
     "type_to_search": "Type here to search...",
     "volume_normalization": "Volume normalization",
@@ -1564,7 +1568,6 @@
             "current_music": "Current music",
             "copy_music_name": "Copy song title",
             "copy_music_name_failed": "Couldn't copy song title",
-            "loading_lyrics": "Loading lyrics...",
             "no_winner": "No winner this time",
             "winner_single": "{0} wins with {1} points",
             "winner_multiple": "{0} tie for the win with {1} points",
@@ -1636,6 +1639,8 @@
             "timeline_correct_placement": "Correct placement",
             "timeline_incorrect_placement": "Incorrect placement",
             "timeline_round_results": "Round results",
+            "timeline_result_placement": "Placement",
+            "round_result_answer": "Answer",
             "add_music_sources": "Add music sources",
             "genre": "Genre",
             "album": "Album",
@@ -2308,7 +2313,6 @@
     "artist_all_audiobooks": "All audiobooks",
     "lights": "Lights",
     "players_in_group": "Players in group",
-    "visualizers": "Visualizers",
     "volume": "Volume",
     "grouped_volume": "Grouped volume",
     "player_select": {
@@ -2361,31 +2365,8 @@
         "credits_butterchurn": "Rendering powered by Butterchurn by Jordan Berg (MIT license), the WebGL implementation of MilkDrop 2.",
         "credits_milkdrop": "MilkDrop was originally created by Ryan Geiss as a visualizer for Winamp. Presets are the work of the MilkDrop preset community, bundled via butterchurn-presets."
     },
-    "ai_dj": "Enable AI Radio DJ",
-    "ai_dj_off": "Off",
-    "ai_dj_show_on_air": "On air: {0}",
-    "ai_dj_show_on_air_unknown": "A show is on air",
     "menu": "Menu",
     "main_navigation": "Main",
-    "play_announcement": "Play announcement",
-    "play_announcement_explanation": "Speak a message out loud on {0}.",
-    "play_announcement_message": "Message",
-    "play_announcement_message_placeholder": "Dinner is ready!",
-    "play_announcement_pre_announce": "Play a chime first",
-    "play_announcement_send": "Announce",
-    "play_announcement_sent": "Announcement sent to {0}",
-    "play_announcement_playing": "Playing...",
-    "play_announcement_volume": "Volume",
-    "play_announcement_volume_default": "Player default",
-    "play_announcement_mode_type": "Type a message",
-    "play_announcement_mode_speak": "Speak",
-    "play_announcement_hold_to_speak": "Hold the button and speak",
-    "play_announcement_connecting": "Connecting...",
-    "play_announcement_speaking": "Speaking",
-    "play_announcement_finishing": "Finishing...",
-    "play_announcement_mic_denied": "Music Assistant is not allowed to use the microphone.",
-    "play_announcement_mic_failed": "The microphone could not be started.",
-    "play_announcement_live_failed": "The announcement could not be played.",
     "dynamic_radio_heading": "Dynamic station",
     "dynamic_radio_empty_desc": "This station didn't return any tracks. Try again in a moment.",
     "home_assistant_menu": "Home Assistant",
@@ -2393,5 +2374,11 @@
     "offline_ready": "App ready to work offline",
     "update_available": "A new version is available. Reload to update.",
     "reload": "Reload",
-    "open_settings": "Settings"
+    "open_settings": "Settings",
+    "pages": "Pages",
+    "recent_searches": "Recent searches",
+    "command_center_navigate": "navigate",
+    "command_center_open": "open",
+    "command_center_keep_typing": "Keep typing to search...",
+    "screens": "Screens"
 }

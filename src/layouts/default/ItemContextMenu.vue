@@ -71,6 +71,7 @@
             align="start"
             :align-offset="-5"
             :side-offset="6"
+            class="max-h-[70vh] overflow-y-auto"
           >
             <DropdownMenuItem
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
@@ -241,7 +242,9 @@ import {
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
+import { runWithConcurrency } from "@/helpers/concurrency";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
 import {
   gotoRadio,
@@ -249,9 +252,8 @@ import {
   radioRelevant,
   radioSupported,
 } from "@/helpers/radio";
-import { runWithConcurrency } from "@/helpers/concurrency";
-import { backFromMediaDetails } from "@/helpers/navigation";
 import {
+  isAudioSource,
   isItemInLibrary,
   itemIsAvailable,
   itemSupportsPlayLog,
@@ -402,34 +404,15 @@ export const showPlayMenuForMediaItem = async function (
   const firstItem = playableItems[0];
 
   let playMenuItems: ContextMenuItem[] = [];
-  const LiveSourceTypes = [MediaType.RADIO, MediaType.AUDIO_SOURCE];
-  const enqueueConfigKey = LiveSourceTypes.includes(firstItem.media_type)
-    ? "default_enqueue_option_live_sources"
-    : `default_enqueue_option_${firstItem.media_type}`;
-  const defaultEnqueueOption = (await api.getCoreConfigValue(
-    "player_queues",
-    enqueueConfigKey,
-  )) as QueueOption;
-  for (const option of [
-    QueueOption.PLAY,
-    QueueOption.NEXT,
-    QueueOption.ADD,
-    QueueOption.REPLACE,
-    QueueOption.REPLACE_NEXT,
-  ]) {
-    playMenuItems.push({
-      label: $t(`queue_option.${option}`),
-      action: () => {
-        api.playMedia(
-          playableItems.map((x) => x.uri),
-          option,
-        );
-      },
-      icon: queueOptionIconMap[option],
-      labelArgs: [],
-      disabled: !store.activePlayer,
-      selected: option === defaultEnqueueOption,
-    });
+  const defaultEnqueueOption = await getDefaultEnqueueOption(firstItem);
+  if (isAudioSource(firstItem)) {
+    playMenuItems.push(
+      startAudioSourceMenuItem(playableItems, defaultEnqueueOption),
+    );
+  } else {
+    playMenuItems.push(
+      ...buildEnqueueMenuItems(playableItems, defaultEnqueueOption),
+    );
   }
   // Starting the media shuffled is its own action rather than a state indicator:
   // the queue's shuffle flag says nothing about what the media about to be started
@@ -1137,7 +1120,8 @@ export const getContextMenuItems = async function (
 
 /**
   Generates playback-related context menu items based on the given media items and their parent.
-  This includes options like "Play now", "Enqueue", "Play radio", and "Play from here" (for playlists/albums).
+  This includes "Play now", the "Enqueue options" submenu and "Play from here" (for playlists/albums).
+  An AudioSource only gets "Play now": it cannot be queued for later.
 */
 export const getPlaybackContextMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
@@ -1153,16 +1137,16 @@ export const getPlaybackContextMenuItems = async function (
   if (playableItems.length == 0) return playMenuItems;
   const firstItem = playableItems[0];
 
-  const LiveSourceTypes = [MediaType.RADIO, MediaType.AUDIO_SOURCE];
-  const enqueueConfigKey = LiveSourceTypes.includes(firstItem.media_type)
-    ? "default_enqueue_option_live_sources"
-    : `default_enqueue_option_${firstItem.media_type}`;
-  const defaultEnqueueOption = (await api.getCoreConfigValue(
-    "player_queues",
-    enqueueConfigKey,
-  )) as QueueOption;
+  const defaultEnqueueOption = await getDefaultEnqueueOption(firstItem);
 
   if (!store.activePlayer) return playMenuItems;
+
+  if (isAudioSource(firstItem)) {
+    playMenuItems.push(
+      startAudioSourceMenuItem(playableItems, defaultEnqueueOption),
+    );
+    return playMenuItems;
+  }
 
   // Play from here...
   if (
@@ -1234,31 +1218,9 @@ export const getPlaybackContextMenuItems = async function (
   }
 
   // "Enqueue..." submenu with all enqueue options
-  const enqueueSubItems: ContextMenuItem[] = [];
-  for (const option of [
-    QueueOption.PLAY,
-    QueueOption.NEXT,
-    QueueOption.ADD,
-    QueueOption.REPLACE,
-    QueueOption.REPLACE_NEXT,
-  ]) {
-    enqueueSubItems.push({
-      label: $t(`queue_option.${option}`),
-      action: () => {
-        api.playMedia(
-          items.map((x) => x.uri),
-          option,
-        );
-      },
-      icon: queueOptionIconMap[option],
-      labelArgs: [],
-      disabled: !store.activePlayer,
-      selected: option === defaultEnqueueOption,
-    });
-  }
   playMenuItems.push({
     label: "enqueue",
-    subItems: enqueueSubItems,
+    subItems: buildEnqueueMenuItems(items, defaultEnqueueOption),
     icon: ListMusic,
     labelArgs: [],
   });
@@ -1345,6 +1307,83 @@ export const getPlaybackContextMenuItems = async function (
     }
   }
   return playMenuItems;
+};
+
+// Radio and AudioSource are both live, infinite streams and share a single enqueue
+// default on the server; every other media type has its own config key.
+const LIVE_SOURCE_MEDIA_TYPES = [MediaType.RADIO, MediaType.AUDIO_SOURCE];
+
+/**
+ * The configured default enqueue option for the given item's media type.
+ *
+ * Only "play" and "replace" are configurable, so the result always starts
+ * playback right away.
+ */
+const getDefaultEnqueueOption = async function (
+  item: MediaItemTypeOrItemMapping,
+): Promise<QueueOption> {
+  const configKey = LIVE_SOURCE_MEDIA_TYPES.includes(item.media_type)
+    ? "default_enqueue_option_live_sources"
+    : `default_enqueue_option_${item.media_type}`;
+  return (await api.getCoreConfigValue(
+    "player_queues",
+    configKey,
+  )) as QueueOption;
+};
+
+/**
+ * Menu entries for every way the given items can be started or queued, with the
+ * configured default marked as selected.
+ */
+const buildEnqueueMenuItems = function (
+  items: MediaItemTypeOrItemMapping[],
+  defaultEnqueueOption: QueueOption,
+): ContextMenuItem[] {
+  return [
+    QueueOption.PLAY,
+    QueueOption.NEXT,
+    QueueOption.ADD,
+    QueueOption.REPLACE,
+    QueueOption.REPLACE_NEXT,
+  ].map((option) => ({
+    label: $t(`queue_option.${option}`),
+    action: () => {
+      api.playMedia(
+        items.map((x) => x.uri),
+        option,
+      );
+    },
+    icon: queueOptionIconMap[option],
+    labelArgs: [],
+    disabled: !store.activePlayer,
+    selected: option === defaultEnqueueOption,
+  }));
+};
+
+/**
+ * The single "Play now" entry offered for an AudioSource.
+ *
+ * An AudioSource hands the player over to a live external source (Spotify Connect,
+ * an AirPlay receiver, ...) that never ends, so anything placed behind it in the
+ * queue would never be reached: starting it is the only meaningful action. The
+ * configured default decides whether the existing queue is kept or replaced.
+ */
+const startAudioSourceMenuItem = function (
+  items: MediaItemTypeOrItemMapping[],
+  defaultEnqueueOption: QueueOption,
+): ContextMenuItem {
+  return {
+    label: "play_now",
+    action: () => {
+      api.playMedia(
+        items.map((x) => x.uri),
+        defaultEnqueueOption,
+      );
+    },
+    icon: PlayCircle,
+    labelArgs: [],
+    disabled: !store.activePlayer,
+  };
 };
 
 // media types whose contents have an order that is worth shuffling. Audiobooks and

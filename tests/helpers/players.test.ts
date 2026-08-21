@@ -1,4 +1,5 @@
 import {
+  canBeGroupMember,
   canEditPlayerGroup,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
@@ -62,6 +63,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
@@ -254,43 +256,83 @@ describe("playerVisible", () => {
 });
 
 describe("groupMemberPickerVisible", () => {
-  it("shows the hidden web player owned by this browser", () => {
+  it("shows the private web player owned by this browser", () => {
     const player = createPlayer({
       player_id: "local-web-player",
       hide_in_ui: true,
+      private: true,
     });
     webPlayer.player_id = player.player_id;
 
     expect(groupMemberPickerVisible(player)).toBe(true);
   });
 
-  it("shows the hidden companion player owned by this app", () => {
+  it("shows the private companion player owned by this app", () => {
     const player = createPlayer({
       player_id: "local-companion-player",
       hide_in_ui: true,
+      private: true,
     });
     store.companionPlayerId = player.player_id;
 
     expect(groupMemberPickerVisible(player)).toBe(true);
   });
 
-  it.each([PlayerType.LIGHT, PlayerType.VISUALIZER])(
-    "shows a hidden %s player",
-    (type) => {
-      const player = createPlayer({ type, hide_in_ui: true });
+  it("shows a hidden player, so it can still be grouped", () => {
+    expect(groupMemberPickerVisible(createPlayer({ hide_in_ui: true }))).toBe(
+      true,
+    );
+  });
 
-      expect(groupMemberPickerVisible(player)).toBe(true);
-    },
-  );
-
-  it("keeps unrelated hidden players out of the picker", () => {
+  it("keeps another device's private player out of the picker", () => {
     const player = createPlayer({
       player_id: "remote-web-player",
       hide_in_ui: true,
+      private: true,
     });
     webPlayer.player_id = "local-web-player";
 
     expect(groupMemberPickerVisible(player)).toBe(false);
+  });
+
+  it("shows a private player once its owner unhides it", () => {
+    const player = createPlayer({
+      player_id: "remote-web-player",
+      private: true,
+    });
+    webPlayer.player_id = "local-web-player";
+
+    expect(groupMemberPickerVisible(player)).toBe(true);
+  });
+});
+
+describe("canBeGroupMember", () => {
+  it("offers a regular player", () => {
+    expect(canBeGroupMember(createPlayer())).toBe(true);
+  });
+
+  it("offers a light, which joins a group without playing audio", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.LIGHT }))).toBe(
+      true,
+    );
+  });
+
+  it("offers a visualizer, which joins a group without playing audio", () => {
+    expect(
+      canBeGroupMember(createPlayer({ type: PlayerType.VISUALIZER })),
+    ).toBe(true);
+  });
+
+  it("offers a metadata display, which joins a group without playing audio", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.DISPLAY }))).toBe(
+      true,
+    );
+  });
+
+  it("keeps a capture-only device out of the picker", () => {
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.UNKNOWN }))).toBe(
+      false,
+    );
   });
 });
 

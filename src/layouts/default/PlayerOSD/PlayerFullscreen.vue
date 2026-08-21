@@ -98,6 +98,9 @@
             </div>
           </div>
           <div class="main-media-details-track-info">
+            <!-- the source the audio comes from, when the title below is the
+                 track that source is streaming rather than the source itself -->
+            <NowPlayingSourceBadge class="main-media-details-source" />
             <!-- player name as title if its powered off-->
             <v-card-title
               v-if="store.activePlayer?.powered == false"
@@ -141,12 +144,22 @@
             <v-card-subtitle
               v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
               :style="`font-size: ${subTitleFontSize};${
-                store.activePlayer.current_media.album ? 'cursor:pointer;' : ''
+                albumSubtitle ? 'cursor:pointer;' : ''
               }`"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.album || " " }}
+                {{ albumSubtitle || " " }}
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- subtitle: current chapter, followed by the author line -->
+            <v-card-subtitle
+              v-if="currentChapter"
+              :style="`font-size: ${subTitleFontSize};`"
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                {{ currentChapter.chapter.name }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -166,21 +179,9 @@
               </MarqueeText>
             </v-card-subtitle>
 
-            <!-- subtitle: queue empty or other source active -->
-            <!-- 3rd party source active -->
-            <v-card-subtitle
-              v-if="
-                !store.activePlayerQueue && store.activePlayer?.active_source
-              "
-              class="caption"
-            >
-              {{
-                $t("external_source_active", [
-                  getSourceName(store.activePlayer),
-                ])
-              }}
-            </v-card-subtitle>
-            <v-card-subtitle v-else-if="queueEnded" class="caption">
+            <!-- subtitle: queue ended or empty; an active third party source
+                 is named by the badge above instead -->
+            <v-card-subtitle v-if="queueEnded" class="caption">
               {{ $t("queue_ended") }}
             </v-card-subtitle>
             <v-card-subtitle
@@ -493,6 +494,7 @@ import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { useCommandCenter } from "@/composables/useCommandCenter";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
@@ -514,15 +516,17 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import { resolveCurrentChapter } from "@/helpers/chapters";
 import api from "@/plugins/api";
-import { getSourceName } from "@/plugins/api/helpers";
 import {
   MediaItemChapter,
   MediaType,
@@ -545,6 +549,7 @@ import {
   nextTick,
   onBeforeUnmount,
   onMounted,
+  onUnmounted,
   ref,
   watch,
   watchEffect,
@@ -555,6 +560,7 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { name, mdAndUp } = useDisplay();
+const { open: openCommandCenter } = useCommandCenter();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
 // The player select button is important enough to keep pinned at the bottom in
@@ -564,68 +570,73 @@ const MIN_HEIGHT_SHOW_PLAYER_SELECT_BUTTON = 480;
 const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
-const chapterTick = ref(0);
-let chapterTimer: ReturnType<typeof setInterval> | null = null;
 
-const currentChapterQueueItem = computed(() => {
-  const item = store.curQueueItem;
+const { albumSubtitle } = useNowPlayingSource();
+const { getPreference, setPreference } = useUserPreferences();
+const showWaveformPref = getPreference("show_waveform", true);
+const showChapterProgress = getPreference("audiobook_chapter_progress", true);
+const nowTick = ref(0);
+let chapterTimer: ReturnType<typeof setInterval> | null = null;
+const chapterQueueItem = computed(() => {
+  const queueItem = store.curQueueItem;
   const media = store.activePlayer?.current_media;
   if (
-    !item?.media_item?.metadata?.chapters?.length ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
-    (media.queue_item_id !== null && media.queue_item_id !== item.queue_item_id)
+    !queueItem?.media_item?.metadata?.chapters?.length ||
+    !media ||
+    (media.queue_item_id !== null &&
+      media.queue_item_id !== queueItem.queue_item_id)
   ) {
     return undefined;
   }
-  return item;
+  return queueItem;
 });
 
-const activeChapter = computed(() => {
-  void chapterTick.value;
-  const item = currentChapterQueueItem.value;
-  const elapsed = resolveActiveElapsedTime();
-  const chapters = item?.media_item?.metadata?.chapters;
-  if (elapsed == null || !chapters?.length) return undefined;
-
-  const sortedChapters = [...chapters].sort((a, b) => a.start - b.start);
-  let current: MediaItemChapter | undefined;
-  for (const chapter of sortedChapters) {
-    if (chapter.start > elapsed) break;
-    current = chapter;
+const currentChapter = computed(() => {
+  void nowTick.value;
+  const media = store.activePlayer?.current_media;
+  const queueItem = chapterQueueItem.value;
+  if (
+    !showChapterProgress.value ||
+    media?.media_type !== MediaType.AUDIOBOOK ||
+    !queueItem
+  ) {
+    return undefined;
   }
-  return current;
+  return resolveCurrentChapter(
+    queueItem.media_item?.metadata?.chapters,
+    resolveActiveElapsedTime(),
+    media.duration,
+  );
 });
+
+const activeChapter = computed(() => currentChapter.value?.chapter);
 
 const isActiveChapter = (item: QueueItem, chapter: MediaItemChapter) =>
-  item.queue_item_id === currentChapterQueueItem.value?.queue_item_id &&
+  item.queue_item_id === chapterQueueItem.value?.queue_item_id &&
   chapter.position === activeChapter.value?.position;
+
+const updateChapterTimer = (needed: boolean) => {
+  if (needed && chapterTimer === null) {
+    chapterTimer = setInterval(() => {
+      nowTick.value = Date.now();
+    }, 1000);
+  } else if (!needed && chapterTimer !== null) {
+    clearInterval(chapterTimer);
+    chapterTimer = null;
+  }
+};
 
 const chapterTimerNeeded = computed(
   () =>
     store.showFullscreenPlayer &&
     store.showQueueItems &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
-    !!currentChapterQueueItem.value,
+    !!chapterQueueItem.value &&
+    showChapterProgress.value,
 );
 
-watch(
-  chapterTimerNeeded,
-  (needed) => {
-    if (needed && chapterTimer === null) {
-      chapterTimer = setInterval(() => {
-        chapterTick.value = Date.now();
-      }, 1000);
-    } else if (!needed && chapterTimer !== null) {
-      clearInterval(chapterTimer);
-      chapterTimer = null;
-    }
-  },
-  { immediate: true },
-);
-
-onBeforeUnmount(() => {
-  if (chapterTimer !== null) clearInterval(chapterTimer);
-});
+watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
+onUnmounted(() => updateChapterTimer(false));
 
 interface Props {
   colorPalette: ImageColorPalette;
@@ -752,8 +763,8 @@ const showRightColumn = computed(
   () => store.showQueueItems || showLyrics.value,
 );
 
-// The unified queue list (virtualized rows, paging, now-playing focus, per-item
-// menu and chapters) lives in its own composable to keep this component lean.
+// The unified queue list (virtualized rows, paging, now-playing focus and
+// per-item menu) lives in its own composable to keep this component lean.
 const {
   queueScrollRef,
   virtualRows,
@@ -875,8 +886,6 @@ watch(
 
 // Waveform for the current track — loaded centrally by useActiveTrackWaveform.
 const { waveformBins: waveformData } = useActiveTrackWaveform();
-const { getPreference, setPreference } = useUserPreferences();
-const showWaveformPref = getPreference("show_waveform", true);
 const {
   visualizerPresetPref,
   visualizerBlurPref,
@@ -976,25 +985,18 @@ const navigateOrSearch = function (searchTerm: string, uri?: string) {
       },
     });
   } else {
-    // No valid URI - open global search
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
+    // No valid URI - hand the term to the command center
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: searchTerm });
   }
 };
 
 const onAlbumClick = async function () {
   const currentMedia = store.activePlayer?.current_media;
-  if (!currentMedia?.album) return;
+  if (!currentMedia || !albumSubtitle.value) return;
 
   // Try to get the album from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
-
-  // Check if "album" is actually the radio station name - if so, do nothing
-  if (mediaItem && currentMedia.album === mediaItem.name) {
-    // Album field contains the station name, not a real album - ignore click
-    return;
-  }
 
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
     // Navigate directly to album detail page
@@ -1012,7 +1014,7 @@ const onAlbumClick = async function () {
       // Call with positional parameters: (favorite, search, limit, offset, order_by, album_types, provider)
       const results = await api.getLibraryAlbums(
         undefined, // favorite
-        currentMedia.album, // search
+        albumSubtitle.value, // search
         5, // limit - get a few results to find best match
         undefined,
         undefined,
@@ -1058,13 +1060,12 @@ const onAlbumClick = async function () {
       console.error("Error searching library for album:", error);
     }
 
-    // Not found in library - fall back to global search
+    // Not found in library - fall back to the command center
     const searchTerm = currentMedia.artist
       ? `${currentMedia.artist} - ${currentMedia.album}`
       : currentMedia.album || "";
-    store.globalSearchTerm = searchTerm;
-    router.push({ name: "search" });
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: searchTerm });
   }
 };
 
@@ -1131,10 +1132,9 @@ const onArtistClick = async function () {
       console.error("Error searching library for artist:", error);
     }
 
-    // Not found in library - fall back to global search
-    store.globalSearchTerm = currentMedia.artist;
-    router.push({ name: "search" });
+    // Not found in library - fall back to the command center
     store.showFullscreenPlayer = false;
+    openCommandCenter({ query: currentMedia.artist });
   }
 };
 
@@ -1581,6 +1581,12 @@ onBeforeUnmount(() => {
 
 .main-media-details-track-info > * {
   max-width: 100%;
+}
+
+/* the badge introduces the title under it, so it pairs with the title rather
+   than sitting halfway up the block's own top padding */
+.main-media-details-source {
+  margin-bottom: 8px;
 }
 
 .player-bottom {

@@ -2,10 +2,10 @@
  * Client for the MilkDrop Visualizer plugin's relay endpoint.
  *
  * The relay (provided by the `milkdrop_visualizer` server plugin) taps the
- * playing Sendspin group in-process on the server and streams timestamped
- * waveform (and beat) frames over a plain WebSocket. This client keeps a
- * clock sync against the server, buffers frames in a FrameScheduler, and
- * exposes a pull API for the render loop.
+ * audio the server already decodes for the player's playback and streams
+ * timestamped waveform (and beat) frames over a plain WebSocket. This client
+ * keeps a clock sync against the server, buffers frames in a FrameScheduler,
+ * and exposes a pull API for the render loop.
  */
 
 import { parseVisualizerBinary } from "@/helpers/visualizer/binaryFrames";

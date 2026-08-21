@@ -276,8 +276,7 @@ describe("Trivia adapters", () => {
       },
     });
 
-    expect(revealWrapper.text()).toContain("providers.music_quiz.correct");
-    expect(revealWrapper.text()).toContain("+10");
+    expect(revealWrapper.text()).not.toContain("providers.music_quiz.correct");
   });
 
   it.each([

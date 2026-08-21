@@ -319,7 +319,6 @@ const onMenu = (e: MouseEvent) => {
   top: 6px;
   left: 6px;
   z-index: 2;
-  margin: 0 !important;
 }
 .ed-card__img {
   width: 100%;

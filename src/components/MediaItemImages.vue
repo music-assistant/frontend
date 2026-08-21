@@ -89,6 +89,7 @@
 </template>
 
 <script setup lang="ts">
+import { ChevronDown, ChevronUp } from "@lucide/vue";
 import Container from "@/components/Container.vue";
 import { getMediaItemImageUrl, panelViewItemResponsive } from "@/helpers/utils";
 import Toolbar from "@/components/Toolbar.vue";
@@ -157,7 +158,7 @@ const toolbarMenuItems = computed(() => {
     // toggle expand
     {
       label: "tooltip.collapse_expand",
-      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
+      icon: expanded.value ? ChevronUp : ChevronDown,
       action: toggleExpand,
       overflowAllowed: false,
     },
