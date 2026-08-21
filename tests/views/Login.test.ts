@@ -899,12 +899,24 @@ describe("credentials field input behavior", () => {
     await wrapper.find("button").trigger("click");
     await flushPromises();
 
-    const usernameInput = wrapper.findAll("input")[0];
-    const passwordInput = wrapper.find('input[type="password"]');
+    const usernameInput = wrapper.find(
+      'input[placeholder="Enter your username"]',
+    );
+    const passwordInput = wrapper.find(
+      'input[placeholder="Enter your password"]',
+    );
 
-    expect(usernameInput.attributes("autocomplete")).toBe("username");
-    expect(usernameInput.attributes("autocapitalize")).toBe("none");
-    expect(passwordInput.attributes("autocomplete")).toBe("current-password");
-    expect(passwordInput.attributes("autocapitalize")).toBe("none");
+    expect(usernameInput.attributes()).toMatchObject({
+      autocomplete: "username",
+      autocapitalize: "none",
+      autocorrect: "off",
+      spellcheck: "false",
+    });
+    expect(passwordInput.attributes()).toMatchObject({
+      autocomplete: "current-password",
+      autocapitalize: "none",
+      autocorrect: "off",
+      spellcheck: "false",
+    });
   });
 });
