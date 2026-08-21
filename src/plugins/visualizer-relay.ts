@@ -26,9 +26,31 @@ const AUTH_FAILED_CODE = 4001;
 
 export type RelayState = "connecting" | "streaming" | "waiting" | "closed";
 
+// color@v1 fields (see aiosendspin.models.color.SessionUpdateColor).
+const COLOR_PALETTE_FIELDS = [
+  "background_dark",
+  "background_light",
+  "primary",
+  "accent",
+  "on_dark",
+  "on_light",
+] as const;
+export type ColorPaletteField = (typeof COLOR_PALETTE_FIELDS)[number];
+export type ColorPalette = Partial<
+  Record<ColorPaletteField, [number, number, number] | null>
+>;
+
+// Palette entries come off the wire; only a numeric 3-tuple may pass as one.
+const isRgbTuple = (value: unknown): value is [number, number, number] =>
+  Array.isArray(value) &&
+  value.length === 3 &&
+  value.every((channel) => Number.isFinite(channel));
+
 export interface VisualizerRelayCallbacks {
   onState?: (state: RelayState) => void;
   onDownbeat?: (timestampUs: number) => void;
+  // Fired with the full merged palette, not just what changed.
+  onColor?: (palette: ColorPalette) => void;
 }
 
 function relayUrl(playerQuery?: string): string {
@@ -74,6 +96,7 @@ export class VisualizerRelayClient {
   private beatTimers = new Set<number>();
   private pendingBeats: number[] = [];
   private state: RelayState = "connecting";
+  private colorPalette: ColorPalette = {};
 
   constructor(
     private readonly callbacks: VisualizerRelayCallbacks = {},
@@ -151,6 +174,9 @@ export class VisualizerRelayClient {
       this.clearBeatTimers();
       this.clock.clear();
       this.scheduler.clear();
+      // No onColor: the canvas keeps its tint across a reconnect on purpose;
+      // stream/start clears it when the server no longer serves color.
+      this.colorPalette = {};
       if (this.closed) return;
       if (event.code === AUTH_FAILED_CODE) {
         console.warn("[visualizer] relay authentication rejected");
@@ -168,7 +194,7 @@ export class VisualizerRelayClient {
       let message: {
         type?: string;
         message?: string;
-        payload?: Record<string, number>;
+        payload?: Record<string, unknown>;
       };
       try {
         message = JSON.parse(event.data);
@@ -178,8 +204,26 @@ export class VisualizerRelayClient {
       }
       if (message.type === "auth_ok") {
         if (this.ws) this.startTimeSync(this.ws);
+      } else if (
+        message.type === "color" &&
+        typeof message.payload === "object" &&
+        message.payload !== null &&
+        !Array.isArray(message.payload)
+      ) {
+        // Merge known fields only; the payload is unvalidated wire data, so it
+        // has to be an object before `in` may be used on it at all, and a
+        // malformed value becomes null so onColor honours the palette type.
+        const payload = message.payload as Record<string, unknown>;
+        const merged: ColorPalette = { ...this.colorPalette };
+        for (const field of COLOR_PALETTE_FIELDS) {
+          if (!(field in payload)) continue;
+          const value = payload[field];
+          merged[field] = isRgbTuple(value) ? value : null;
+        }
+        this.colorPalette = merged;
+        this.callbacks.onColor?.(merged);
       } else if (message.type === "server/time" && message.payload) {
-        const p = message.payload;
+        const p = message.payload as Record<string, number>;
         // A missing/non-numeric field would produce a NaN sample, which
         // ClockSync's lowest-delay compare can keep as "best" for the whole
         // sliding window — stalling sync for minutes.
@@ -205,11 +249,22 @@ export class VisualizerRelayClient {
           for (const ts of pending) this.scheduleDownbeat(ts);
         }
       } else if (message.type === "stream/start") {
+        // The server advertises the message types it will serve. Without
+        // "color" (color_tint disabled) no color message will ever replace a
+        // tint kept across a reconnect, so it has to be dropped here.
+        const types = (
+          message.payload as { visualizer?: { types?: unknown } } | undefined
+        )?.visualizer?.types;
+        if (Array.isArray(types) && !types.includes("color")) {
+          this.colorPalette = {};
+          this.callbacks.onColor?.({});
+        }
         this.setState("streaming");
       } else if (
         message.type === "stream/clear" ||
         message.type === "stream/end"
       ) {
+        // Color is not reset here: stream/clear also fires on a plain seek.
         this.scheduler.clear();
         this.clearBeatTimers();
       } else if (message.type === "error") {
