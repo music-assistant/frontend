@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Wiedergabegerät",
-        "stereo_pair": "Stereo-Paar",
-        "sync_group": "Sync-Gruppe"
+        "stereo_pair": "Stereo-Paar"
     },
     "players": "Wiedergabegeräte",
     "playlist": "Wiedergabeliste",

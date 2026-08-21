@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Grupa",
         "player": "Odtwarzacz",
-        "stereo_pair": "Para Stereo",
-        "sync_group": "Grupa synchronizacji"
+        "stereo_pair": "Para Stereo"
     },
     "players": "Odtwarzacze",
     "playlist": "Lista odtwarzania",

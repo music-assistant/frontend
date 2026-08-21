@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Spiller",
-        "stereo_pair": "Stereopar",
-        "sync_group": "Synkroniser gruppe"
+        "stereo_pair": "Stereopar"
     },
     "players": "Spillere",
     "playlist": "Spilleliste",

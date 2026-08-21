@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Groep",
         "player": "Speler",
-        "stereo_pair": "Stereopaar",
-        "sync_group": "Synchronisatiegroep"
+        "stereo_pair": "Stereopaar"
     },
     "players": "Spelers",
     "playlist": "Afspeellijst",

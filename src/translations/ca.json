@@ -53,8 +53,7 @@
     "player_type": {
         "group": "Grup",
         "player": "Reproductor",
-        "stereo_pair": "Conjunt d'altaveus estèreo",
-        "sync_group": "Grup de sincronització"
+        "stereo_pair": "Conjunt d'altaveus estèreo"
     },
     "players": "Reproductors",
     "playlist": "Llista de reproducció",
