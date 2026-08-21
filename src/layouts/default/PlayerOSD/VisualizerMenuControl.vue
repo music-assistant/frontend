@@ -3,7 +3,7 @@
   preset picker, blur and opacity sliders; persisted as user preferences.
 -->
 <template>
-  <div class="visualizer-menu" @pointerdown.stop @click.stop>
+  <div ref="menuEl" class="visualizer-menu" @pointerdown.stop @click.stop>
     <div class="visualizer-menu__row">
       <Droplet :size="20" class="visualizer-menu__icon" />
       <span class="visualizer-menu__label">{{ $t("visualizer.enabled") }}</span>
@@ -47,7 +47,7 @@
         class="visualizer-menu__row visualizer-menu__preset-header"
         role="button"
         :aria-expanded="presetsExpanded"
-        @click="presetsExpanded = !presetsExpanded"
+        @click="toggleExpanded"
       >
         <SwatchBook :size="20" class="visualizer-menu__icon" />
         <span class="visualizer-menu__preset-label">{{ showingLabel }}</span>
@@ -69,8 +69,17 @@
           :class="{ 'visualizer-menu__chevron--open': presetsExpanded }"
         />
       </div>
-      <template v-if="presetsExpanded">
-        <!-- inline list (like the AI DJ submenu); scrolls with the popout -->
+      <!-- inline list (like the AI DJ submenu); the only scrolling part, the
+           rows above stay as a static header -->
+      <div
+        v-if="presetsExpanded"
+        class="visualizer-menu__list"
+        :style="
+          listMaxHeight !== null
+            ? { maxHeight: `${listMaxHeight}px` }
+            : undefined
+        "
+      >
         <DropdownMenuItem @select.prevent="onPresetChange(RANDOM_VALUE)">
           <span class="flex-1 truncate min-w-0">
             {{ $t("visualizer.preset_random") }}
@@ -100,7 +109,7 @@
           </span>
           <Check v-if="selectValue === name" class="ml-auto size-4" />
         </DropdownMenuItem>
-      </template>
+      </div>
     </template>
   </div>
 </template>
@@ -162,6 +171,25 @@ const presetNames = ref<string[]>([]);
 
 // Folded by default so the popout stays compact; per menu open, not persisted.
 const presetsExpanded = ref(false);
+const menuEl = ref<HTMLElement | null>(null);
+const listMaxHeight = ref<number | null>(null);
+
+// Cap the list to the free space below the popout, measured when expanding.
+// The popper's available-height allows for relocating the popout, so growing
+// to it makes the whole popout visibly jump (mainly on phones); growing only
+// into the space that is really free below never triggers a reposition. The
+// small floor keeps the fold usable when the popout sits near the bottom, at
+// the cost of a shift of at most that amount in that rare case.
+const toggleExpanded = () => {
+  if (!presetsExpanded.value && menuEl.value) {
+    const panel =
+      menuEl.value.closest("[data-slot='dropdown-menu-sub-content']") ??
+      menuEl.value;
+    const free = window.innerHeight - panel.getBoundingClientRect().bottom - 8;
+    listMaxHeight.value = Math.max(96, free);
+  }
+  presetsExpanded.value = !presetsExpanded.value;
+};
 
 // Favourites float to the top of the picker.
 const sortedPresetNames = computed(() => {
@@ -283,6 +311,13 @@ const onOpacityCommit = (value: number[]) => {
   padding: 6px 8px;
   font-size: 0.875rem;
   min-width: 260px;
+  min-height: 0;
+}
+
+.visualizer-menu__list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 .visualizer-menu__row {

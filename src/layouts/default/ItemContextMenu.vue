@@ -64,12 +64,15 @@
               menuItemLabel(menuItem)
             }}</span>
           </DropdownMenuSubTrigger>
-          <!-- fixed width so popout content truncates on phones -->
+          <!-- fixed width so popout content truncates on phones; flex column
+               so the component can keep a static header and scroll the rest.
+               capped at the popper's available height (not a viewport fraction)
+               so growing content scrolls instead of shifting the popout up -->
           <DropdownMenuSubContent
             align="start"
             :align-offset="-5"
             :side-offset="6"
-            class="max-h-[70vh] overflow-y-auto w-[min(92vw,350px)]"
+            class="max-h-[min(70vh,var(--reka-dropdown-menu-content-available-height))] w-[min(92vw,350px)] flex flex-col"
           >
             <component
               :is="menuItem.subComponent"
