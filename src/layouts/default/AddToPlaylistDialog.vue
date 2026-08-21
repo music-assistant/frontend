@@ -54,7 +54,6 @@
             @click="newPlaylist(providerId)"
           >
             <div class="shrink-0">
-              <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
               <provider-icon
                 :domain="api.providers[providerId].domain"
                 :size="50"
@@ -69,7 +68,6 @@
                 {{ $t("create_playlist_on", [api.providers[providerId].name]) }}
               </div>
             </div>
-            <!-- mx-0: the row gap sets the spacing, not ProviderIcon's gutters -->
             <provider-icon
               :domain="api.providers[providerId].domain"
               :size="20"
