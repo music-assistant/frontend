@@ -13,11 +13,8 @@ import {
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
-import {
-  toggleVisualizerForPlayer,
-  visualizerEnabledForPlayer,
-} from "@/composables/visualizer/useVisualizer";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
+import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
 import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
 import { markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
@@ -357,6 +354,16 @@ export const getPlayerMenuItems = (
     });
   }
 
+  // MilkDrop visualizer popout (both menus), kept just above the settings entry
+  if (visualizerProviderAvailable()) {
+    menuItems.push({
+      label: "settings.visualizer_enabled.label",
+      icon: markRaw(Droplet),
+      subComponent: markRaw(VisualizerMenuControl),
+      componentProps: { playerId: player.player_id },
+    });
+  }
+
   // open the settings (both menus, admin only)
   if (authManager.isAdmin()) {
     const openSettings = (path: string) => () => {
@@ -400,19 +407,6 @@ export const getPlayerMenuItems = (
         subItems,
       });
     }
-  }
-
-  // MilkDrop visualizer on/off for this player (both menus; a player control,
-  // stored as a per-player user preference). Kept at the bottom, with the
-  // other display/appearance entries rather than the playback controls.
-  if (visualizerProviderAvailable()) {
-    menuItems.push({
-      label: "settings.visualizer_enabled.label",
-      action: () => toggleVisualizerForPlayer(player.player_id),
-      icon: markRaw(Droplet),
-      selected: visualizerEnabledForPlayer(player.player_id),
-      close_on_click: false,
-    });
   }
 
   return menuItems;

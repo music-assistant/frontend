@@ -2330,8 +2330,8 @@
     "mark_played_partial_failure": "Could not update {0} episode(s)",
     "visualizer": {
         "title": "MilkDrop",
+        "enabled": "Enabled",
         "preset_random": "Random preset",
-        "open_settings": "Visualizer settings",
         "toggle": "Toggle the MilkDrop visualizer",
         "preset_random_favorites": "Random from favorites",
         "toggle_favorite": "Favorite this preset",
