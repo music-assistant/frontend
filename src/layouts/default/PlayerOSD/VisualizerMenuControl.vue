@@ -176,7 +176,7 @@ const sortedPresetNames = computed(() => {
 });
 
 // The star acts on whatever preset is currently showing (random modes pick
-// presets the dropdown does not reflect).
+// presets the list does not reflect).
 const showingPreset = computed(
   () => currentVisualizerPreset.value || presetPref.value || null,
 );
@@ -206,7 +206,7 @@ watch(
   { immediate: true },
 );
 
-// The dropdown reflects and controls the full selection: concrete preset
+// The list reflects and controls the full selection: concrete preset
 // switches to fixed mode; the Random entries switch the mode back.
 const selectValue = computed(() => {
   if (presetModePref.value === "fixed" && presetPref.value)
