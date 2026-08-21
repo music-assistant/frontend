@@ -54,8 +54,7 @@
     "player_type": {
         "group": "Ryhmä",
         "player": "Soitin",
-        "stereo_pair": "Stereopari",
-        "sync_group": "Synkronoi ryhmä"
+        "stereo_pair": "Stereopari"
     },
     "players": "Soittimet",
     "playlist": "Soittolista",

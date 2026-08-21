@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Группа",
         "player": "Плеер",
-        "stereo_pair": "Стереопара",
-        "sync_group": "Синхронизированная группа"
+        "stereo_pair": "Стереопара"
     },
     "players": "Плееры",
     "playlist": "Плейлист",

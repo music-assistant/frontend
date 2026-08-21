@@ -85,6 +85,17 @@ export const groupMemberPickerVisible = function (player: Player): boolean {
 };
 
 /**
+ * Check if the player can take part in grouping.
+ *
+ * Capture-only devices report an unknown type: they exist so the device still
+ * has a settings page, but they render nothing, so they are never offered as
+ * a group member.
+ */
+export const canBeGroupMember = function (player: Player): boolean {
+  return player.type !== PlayerType.UNKNOWN;
+};
+
+/**
  * Check if the player renders a now-playing view instead of audio.
  *
  * Visualizers and metadata-only displays are both screens to the user, so the

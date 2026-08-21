@@ -90,26 +90,11 @@
                 }}
               </span>
               <span class="protocol-chips">
-                <v-chip
+                <ProtocolChip
                   v-for="protocol in getOutputProtocols(item.player_id)"
                   :key="protocol.output_protocol_id"
-                  size="x-small"
-                  variant="tonal"
-                  class="protocol-chip"
-                  :class="{ 'protocol-chip--unavailable': !protocol.available }"
-                >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="protocol.protocol_domain"
-                      :size="14"
-                      class="chip-icon"
-                    />
-                  </template>
-                  {{
-                    api.getProviderManifest(protocol.protocol_domain)?.name ||
-                    protocol.protocol_domain
-                  }}
-                </v-chip>
+                  :protocol="protocol"
+                />
               </span>
             </div>
           </template>
@@ -187,7 +172,7 @@
 import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
@@ -490,38 +475,6 @@ watch(
   display: inline-flex;
   gap: 4px;
   flex-wrap: wrap;
-}
-
-.protocol-chip {
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-
-.protocol-chip--unavailable {
-  opacity: 0.4;
-}
-
-.chip-icon {
-  margin: 0;
-  width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
 }
 
 @media (max-width: 960px) {

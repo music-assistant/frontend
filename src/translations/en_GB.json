@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Group",
         "player": "Player",
-        "stereo_pair": "Stereo Pair",
-        "sync_group": "Sync Group"
+        "stereo_pair": "Stereo Pair"
     },
     "players": "Players",
     "playlist": "Playlist",

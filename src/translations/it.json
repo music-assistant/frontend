@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Gruppo",
         "player": "Lettore",
-        "stereo_pair": "Coppia stereo",
-        "sync_group": "Gruppo di sincronizzazione"
+        "stereo_pair": "Coppia stereo"
     },
     "players": "Lettori",
     "playlist": "Playlist",
