@@ -277,7 +277,6 @@ const {
   /* pin the size whatever width the provider icon sets on itself inline */
   width: 18px !important;
   height: 18px;
-  margin: 0;
   overflow: hidden;
 }
 

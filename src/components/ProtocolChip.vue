@@ -72,7 +72,6 @@ const clickListener = computed(() => {
 }
 
 .chip-icon {
-  margin: 0;
   width: auto !important;
 }
 

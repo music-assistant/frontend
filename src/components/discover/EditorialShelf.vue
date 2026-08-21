@@ -264,8 +264,6 @@ onBeforeUnmount(() => {
 }
 .ed-shelf__provider {
   flex-shrink: 0;
-  /* drop ProviderIcon's default gutters so the aside gap sets the spacing */
-  margin: 0;
 }
 .ed-shelf__actions {
   display: flex;

@@ -82,12 +82,6 @@ watchEffect(async () => {
 </script>
 
 <style>
-/* default gutters; unscoped so a call site's own rule outweighs them */
-.provider-icon-wrapper {
-  margin-left: 10px;
-  margin-right: 10px;
-}
-
 .provider-img {
   width: 100%;
   height: 100%;
