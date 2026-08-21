@@ -122,7 +122,7 @@ import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
-// Sentinels because SelectItem values must be non-empty.
+// Sentinels so the random modes can't collide with real preset names.
 const RANDOM_VALUE = "__random__";
 const RANDOM_FAVORITES_VALUE = "__random_favorites__";
 

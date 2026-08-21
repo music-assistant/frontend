@@ -217,9 +217,9 @@ const onOpenChange = function (value: boolean) {
 function closeOnOutsidePointer(event: PointerEvent) {
   if (!show.value) return;
   const target = event.target;
-  // Select dropdowns hosted by menu rows (e.g. the visualizer preset picker)
-  // teleport their list to <body>, outside [data-item-context-menu]; touching
-  // one to scroll it must not read as an outside press and close the menu.
+  // Submenu popouts (and any Select a menu row may host) render outside
+  // [data-item-context-menu]; touching one to scroll it must not read as an
+  // outside press and close the menu.
   if (
     target instanceof Element &&
     target.closest(
