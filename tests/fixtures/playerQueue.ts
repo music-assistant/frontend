@@ -34,6 +34,7 @@ export function playerQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
     next_item: null,
     sources: [],
     is_dynamic: false,
+    queue_owner: null,
     ...overrides,
   };
 }

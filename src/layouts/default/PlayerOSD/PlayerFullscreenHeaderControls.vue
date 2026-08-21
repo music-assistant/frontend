@@ -261,10 +261,12 @@ const smartFadesActive = computed(
 );
 
 // Crossfade only applies to an active queue that is playing regular tracks.
-// Hide the control entirely for external sources, audiosources and radio streams.
+// Hide the control entirely for external sources, audiosources and radio
+// streams, and while an external session owns the queue (it crossfades natively).
 const showCrossfade = computed(() => {
   const q = queue.value;
   if (!q || !q.active) return false;
+  if (q.queue_owner) return false;
   if (isQueueInfiniteStream(q)) return false;
   return "crossfade_enabled" in q;
 });
