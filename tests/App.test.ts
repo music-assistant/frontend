@@ -69,7 +69,7 @@ const {
     },
     setLocale: vi.fn<MusicAssistantApi["setLocale"]>(),
     state: { value: "authenticated" },
-    subscribe: vi.fn((_event: string, _callback: CallableFunction) => () => {}),
+    subscribe: vi.fn(),
     supportsServerSideTranslations: false,
   };
   const authManagerMock = {
@@ -77,11 +77,11 @@ const {
     clearGuestSession: vi.fn(),
     endRejectedGuestSession: vi.fn(),
     getToken: vi.fn(),
-    guestSessionKind: vi.fn(() => guestType.value),
-    isDashboardViewer: vi.fn(() => false),
-    isGuestAccessSession: vi.fn(() => guestType.value !== null),
-    isMusicQuizGuest: vi.fn(() => guestType.value === "music_quiz"),
-    isPartyGuest: vi.fn(() => guestType.value === "party"),
+    guestSessionKind: vi.fn(),
+    isDashboardViewer: vi.fn(),
+    isGuestAccessSession: vi.fn(),
+    isMusicQuizGuest: vi.fn(),
+    isPartyGuest: vi.fn(),
     returnToFullApp: vi.fn(),
     setBaseUrl: vi.fn(),
     setCurrentUser: vi.fn(),
@@ -293,7 +293,11 @@ let wrapper: VueWrapper | undefined;
 
 describe("App initialization", () => {
   beforeEach(() => {
+    // Resets implementations as well as call history: a return value or
+    // rejection one test installs must not leak into the next. The defaults
+    // below are the only source of mock behavior, so test order can't matter.
     vi.resetAllMocks();
+    vi.resetModules();
     guestType.value = null;
     i18nMock.global.locale.value = "en";
     apiMock.state.value = "authenticated";
@@ -305,6 +309,9 @@ describe("App initialization", () => {
       server_id: "server-id",
       status: "running",
     };
+    apiMock.authenticateWithToken.mockResolvedValue({ user: user() });
+    apiMock.setLocale.mockResolvedValue(undefined);
+    apiMock.subscribe.mockReturnValue(() => {});
     apiMock.getCurrentUserInfo.mockResolvedValue(
       user({
         role: UserRole.USER,
@@ -347,6 +354,18 @@ describe("App initialization", () => {
     if (routeState.current) routeState.current.meta = {};
     vi.stubGlobal("localStorage", createStorage());
     vi.stubGlobal("sessionStorage", createStorage());
+    authManagerMock.getToken.mockReturnValue(null);
+    authManagerMock.guestSessionKind.mockImplementation(() => guestType.value);
+    authManagerMock.isDashboardViewer.mockReturnValue(false);
+    authManagerMock.isGuestAccessSession.mockImplementation(
+      () => guestType.value !== null,
+    );
+    authManagerMock.isMusicQuizGuest.mockImplementation(
+      () => guestType.value === "music_quiz",
+    );
+    authManagerMock.isPartyGuest.mockImplementation(
+      () => guestType.value === "party",
+    );
     authManagerMock.endRejectedGuestSession.mockImplementation(() => {
       const kind = authManagerMock.guestSessionKind();
       if (!kind) return { outcome: "no-guest-session" };
