@@ -53,8 +53,7 @@
     "player_type": {
         "group": "Skupina",
         "player": "Predvajalnik",
-        "stereo_pair": "Stereo par",
-        "sync_group": "Sinhronizirajte skupino"
+        "stereo_pair": "Stereo par"
     },
     "players": "Predvajalniki",
     "playlist": "Seznam predvajanja",

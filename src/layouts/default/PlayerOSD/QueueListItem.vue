@@ -99,11 +99,12 @@
            grip (only up-next rows are reorderable). -->
       <div class="qitem__actions">
         <!-- drag handle to reorder. Active on up-next items; disabled/grayed on
-             every other row (now playing, buffered, played can't be reordered). -->
+             every other row (now playing, buffered, played can't be reordered)
+             and everywhere while the queue is read-only. -->
         <button
           type="button"
           class="qitem__grip"
-          :disabled="state !== 'upcoming'"
+          :disabled="readOnly || state !== 'upcoming'"
           :aria-label="$t('queue_reorder')"
           @pointerdown.stop.prevent="emit('dragstart', $event)"
           @click.stop
@@ -170,6 +171,9 @@ interface Props {
   dragging?: boolean;
   // Whether this is the floating "ghost" clone that follows the pointer.
   ghost?: boolean;
+  // Whether the queue is read-only (an external session owns its ordering),
+  // disabling the drag handle on every row.
+  readOnly?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -179,6 +183,7 @@ const props = withDefaults(defineProps<Props>(), {
   boostBadgeColor: "#ff5722",
   dragging: false,
   ghost: false,
+  readOnly: false,
 });
 
 const emit = defineEmits<{

@@ -63,15 +63,10 @@ const asSheet = computed(() => store.mobileLayout);
   ) !important;
   left: var(--player-bar-popout-inset-x) !important;
   width: auto !important;
-
   height: calc(
     100dvh - var(--mobile-navigation-height) - var(--player-bar-popout-gap) -
       var(--player-bar-popout-top-gap)
-  );
-  max-height: calc(
-    100dvh - var(--mobile-navigation-height) - var(--player-bar-popout-gap) -
-      var(--player-bar-popout-top-gap)
-  );
+  ) !important;
 }
 
 :root .command-center-sheet-overlay {

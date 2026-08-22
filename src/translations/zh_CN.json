@@ -55,8 +55,7 @@
     "player_type": {
         "group": "组",
         "player": "播放器",
-        "stereo_pair": "立体声配对",
-        "sync_group": "同步组"
+        "stereo_pair": "立体声配对"
     },
     "players": "播放器",
     "playlist": "播放列表",

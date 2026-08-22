@@ -1,21 +1,23 @@
 import { useEdgeSwipeNavigation } from "@/composables/useEdgeSwipeNavigation";
+import { clearPagePreviews } from "@/helpers/page_preview";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 const {
+  afterEachHooks,
   historyState,
   mobileSidebarSide,
   mockRouterBack,
-  mockRouterForward,
   mockSetOpenMobile,
   routeState,
   sidebarState,
 } = vi.hoisted(() => ({
+  afterEachHooks: [] as ((to: unknown, from: unknown) => void)[],
   historyState: { back: null as string | null },
   mobileSidebarSide: { value: "left" as "left" | "right" },
   mockRouterBack: vi.fn(),
-  mockRouterForward: vi.fn(),
   mockSetOpenMobile: vi.fn(),
-  routeState: { name: "discover" as string },
+  routeState: { name: "discover" as string, fullPath: "/current" },
   sidebarState: { isMobile: { value: true }, openMobile: { value: false } },
 }));
 
@@ -35,7 +37,13 @@ vi.mock("vue-router", () => ({
   useRoute: () => routeState,
   useRouter: () => ({
     back: mockRouterBack,
-    forward: mockRouterForward,
+    afterEach: (hook: (to: unknown, from: unknown) => void) => {
+      afterEachHooks.push(hook);
+      return () => {
+        const at = afterEachHooks.indexOf(hook);
+        if (at !== -1) afterEachHooks.splice(at, 1);
+      };
+    },
     options: { history: { state: historyState } },
   }),
 }));
@@ -47,8 +55,10 @@ const originalInnerWidth = Object.getOwnPropertyDescriptor(
 
 /** A minimal TouchEvent-shaped object, matching what the handlers read. */
 function touchEvent(x: number, y: number, target?: Element): TouchEvent {
+  const touch = { clientX: x, clientY: y, identifier: 1 };
   return {
-    touches: [{ clientX: x, clientY: y }],
+    touches: [touch],
+    changedTouches: [touch],
     target,
     currentTarget: target?.closest("main"),
   } as unknown as TouchEvent;
@@ -81,13 +91,21 @@ function setViewportWidth(width: number) {
   });
 }
 
-// how long the page takes to slide out before the view behind it renders
+// how long the page takes to slide out of (or back into) place
 const SETTLE_MS = 220;
 
-/** Lifts the finger and lets the page finish sliding out of the way. */
+/** Lifts the finger and lets the page finish sliding to its resting place. */
 function endSwipe(onTouchEnd: () => void) {
   onTouchEnd();
   vi.advanceTimersByTime(SETTLE_MS);
+}
+
+/** Tells the composable the back navigation it asked for has finished. */
+async function landNavigation() {
+  for (const hook of afterEachHooks) {
+    hook({ fullPath: "/discover" }, { fullPath: "/album" });
+  }
+  await nextTick();
 }
 
 beforeEach(() => {
@@ -99,12 +117,15 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
+  afterEachHooks.length = 0;
   mobileSidebarSide.value = "left";
   routeState.name = "discover";
   sidebarState.isMobile.value = true;
   sidebarState.openMobile.value = false;
   historyState.back = null;
   document.body.innerHTML = "";
+  clearPagePreviews();
   if (originalInnerWidth) {
     Object.defineProperty(window, "innerWidth", originalInnerWidth);
   }
@@ -164,10 +185,11 @@ describe("useEdgeSwipeNavigation", () => {
   it("does nothing on a right-edge swipe, with the menu on the left", () => {
     routeState.name = "album";
     historyState.back = "/discover";
-    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(790, 100));
     onTouchMove(touchEvent(720, 100));
+    endSwipe(onTouchEnd);
 
     expect(mockRouterBack).not.toHaveBeenCalled();
     expect(mockSetOpenMobile).not.toHaveBeenCalled();
@@ -178,10 +200,11 @@ describe("useEdgeSwipeNavigation", () => {
   it("does nothing on a back-eligible swipe with nowhere to go back to", () => {
     routeState.name = "album";
     historyState.back = null;
-    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
     onTouchMove(touchEvent(80, 100));
+    endSwipe(onTouchEnd);
 
     expect(mockRouterBack).not.toHaveBeenCalled();
     expect(mockSetOpenMobile).not.toHaveBeenCalled();
@@ -193,10 +216,11 @@ describe("useEdgeSwipeNavigation", () => {
     routeState.name = "album";
     historyState.back = "/discover";
     const card = cardInsideShelf(true, 240);
-    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100, card));
     onTouchMove(touchEvent(80, 100, card));
+    endSwipe(onTouchEnd);
 
     expect(mockRouterBack).not.toHaveBeenCalled();
     expect(mockSetOpenMobile).not.toHaveBeenCalled();
@@ -247,47 +271,45 @@ describe("useEdgeSwipeNavigation", () => {
     expect(mockRouterBack).toHaveBeenCalledTimes(1);
   });
 
-  // swiping used to drag the page off a blank background and only show where
-  // you were going once it was over: the router now moves at the start of the
-  // gesture so the view behind is real, on screen, and following the finger
-  it("reveals the view behind as soon as the swipe commits", () => {
+  // history only moves once the finger lifts past the threshold; the page then
+  // stays parked off screen so it cannot flash back over the incoming view
+  // before the router has rendered it
+  it("drags the page with the finger and lets go once the navigation lands", async () => {
     routeState.name = "album";
     historyState.back = "/discover";
-    const { onTouchStart, onTouchMove, swipeStyle } = useEdgeSwipeNavigation();
+    const { onTouchStart, onTouchMove, onTouchEnd, swipeStyle } =
+      useEdgeSwipeNavigation();
 
     expect(swipeStyle.value).toBeUndefined();
 
     onTouchStart(touchEvent(10, 100));
     onTouchMove(touchEvent(55, 100));
 
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
-    // 45px into an 800px screen, so the incoming view still has a quarter of
-    // the remaining 755px to close before it sits square
+    // 45px in: the live page follows the finger, nothing navigated yet
+    expect(mockRouterBack).not.toHaveBeenCalled();
     expect(swipeStyle.value).toMatchObject({
-      transform: "translate3d(-188.75px, 0, 0)",
+      transform: "translate3d(45px, 0, 0)",
       transition: "none",
     });
-  });
 
-  it("lets go of the page again once it is back in place", () => {
-    routeState.name = "album";
-    historyState.back = "/discover";
-    const { onTouchStart, onTouchMove, onTouchEnd, swipeStyle } =
-      useEdgeSwipeNavigation();
-
-    onTouchStart(touchEvent(10, 100));
-    onTouchMove(touchEvent(80, 100));
+    onTouchMove(touchEvent(150, 100)); // past the threshold
     endSwipe(onTouchEnd);
 
-    // the page is put straight back in the task the previous view renders in,
-    // so it is never painted off to the side under the incoming page
+    // parked at the far edge of the 800px screen until the router lands
     expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(swipeStyle.value).toMatchObject({
+      transform: "translate3d(800px, 0, 0)",
+      transition: "none",
+    });
+
+    await landNavigation();
+
     expect(swipeStyle.value).toBeUndefined();
   });
 
-  // the reveal costs a navigation up front, so calling the gesture off has to
-  // put that back rather than leaving the user a page further along
-  it("undoes the navigation when the swipe falls short", () => {
+  // letting go short of the threshold slides the page back where it was and
+  // leaves history untouched
+  it("navigates nowhere when the swipe falls short", () => {
     routeState.name = "album";
     historyState.back = "/discover";
     const { onTouchStart, onTouchMove, onTouchEnd, swipeStyle } =
@@ -295,29 +317,223 @@ describe("useEdgeSwipeNavigation", () => {
 
     onTouchStart(touchEvent(10, 100));
     onTouchMove(touchEvent(50, 100)); // 40px, under the 60px threshold
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
-
     endSwipe(onTouchEnd);
 
-    expect(mockRouterForward).toHaveBeenCalledTimes(1);
+    expect(mockRouterBack).not.toHaveBeenCalled();
     expect(swipeStyle.value).toBeUndefined();
   });
 
-  // a drag that turns into a scroll has committed just the same, so it owes
-  // the same undo
-  it("undoes the navigation when the drag turns vertical", () => {
+  // a touchcancel means the system claimed the touch — when that was the OS
+  // back gesture the OS navigates by itself, so navigating here too would go
+  // back twice
+  it("navigates nowhere when the system claims the touch", () => {
     routeState.name = "album";
     historyState.back = "/discover";
-    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+    const { onTouchStart, onTouchMove, onTouchCancel, swipeStyle } =
+      useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
-    onTouchMove(touchEvent(80, 100));
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
-
-    onTouchMove(touchEvent(90, 200)); // drifted well past the tolerance
+    onTouchMove(touchEvent(200, 100)); // well past the threshold
+    onTouchCancel();
     vi.advanceTimersByTime(SETTLE_MS);
 
-    expect(mockRouterForward).toHaveBeenCalledTimes(1);
+    expect(mockRouterBack).not.toHaveBeenCalled();
+    expect(swipeStyle.value).toBeUndefined();
+  });
+
+  // a stray thumb or palm landing mid-drag must not re-litigate a gesture
+  // already under way
+  it("ignores a second finger landing mid-drag", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(80, 100)); // locks in horizontal
+    onTouchStart({
+      touches: [
+        { clientX: 80, clientY: 100, identifier: 1 },
+        { clientX: 400, clientY: 300, identifier: 2 },
+      ],
+      changedTouches: [{ clientX: 400, clientY: 300, identifier: 2 }],
+    } as unknown as TouchEvent);
+    onTouchMove(touchEvent(150, 100)); // the drag carries on
+    endSwipe(onTouchEnd);
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the drag when a second finger lifts first", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+    onTouchEnd({
+      touches: [{ clientX: 150, clientY: 100, identifier: 1 }],
+      changedTouches: [{ clientX: 400, clientY: 300, identifier: 2 }],
+    } as unknown as TouchEvent);
+
+    expect(mockRouterBack).not.toHaveBeenCalled();
+
+    onTouchEnd(touchEvent(150, 100)); // the tracked finger lifts
+    vi.advanceTimersByTime(SETTLE_MS);
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+  });
+
+  // pages re-render on server pushes, so the element under the finger can be
+  // replaced mid-drag; the touch stream then stops bubbling and only the
+  // listeners held on the node itself still hear it
+  it("finishes the swipe when the touched element leaves the DOM mid-drag", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const card = cardInsideShelf(false);
+    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100, card));
+    onTouchMove(touchEvent(80, 100, card));
+    card.remove();
+
+    card.dispatchEvent(new Event("touchend"));
+    vi.advanceTimersByTime(SETTLE_MS);
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+  });
+
+  // history must move exactly once per swipe: a new gesture started while the
+  // last one is still settling or parked cannot navigate again
+  it("navigates once even when a new swipe starts before the landing", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+    endSwipe(onTouchEnd); // committed, parked awaiting the landing
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+    endSwipe(onTouchEnd);
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+  });
+
+  // a back navigation that errors out never reaches afterEach; the fallback
+  // timer is what un-parks the screen
+  it("recovers when the navigation never lands", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, swipeStyle } =
+      useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+    endSwipe(onTouchEnd);
+    expect(swipeStyle.value).toBeDefined();
+
+    vi.advanceTimersByTime(1000);
+
+    expect(swipeStyle.value).toBeUndefined();
+  });
+
+  // the preview keeps covering the incoming page's first frame and leaves the
+  // DOM right after
+  it("removes the mounted preview once the navigation lands", async () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef } =
+      useEdgeSwipeNavigation();
+    const main = document.createElement("main");
+    const surface = document.createElement("div");
+    main.appendChild(surface);
+    document.body.appendChild(main);
+    surfaceRef.value = surface;
+
+    // the page behind was photographed when it was navigated away from
+    for (const hook of afterEachHooks) {
+      hook({ fullPath: "/album" }, { fullPath: "/discover" });
+    }
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+    expect(main.querySelectorAll("[inert]").length).toBe(1);
+    endSwipe(onTouchEnd);
+
+    await landNavigation();
+    vi.advanceTimersByTime(20); // the removal is deferred one frame
+
+    expect(main.querySelectorAll("[inert]").length).toBe(0);
+  });
+
+  // with reduced motion the page must still park before the router moves,
+  // just without the slide
+  it("parks the page without animation under reduced motion", async () => {
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, swipeStyle } =
+      useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+    onTouchEnd();
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(swipeStyle.value).toMatchObject({
+      transform: "translate3d(800px, 0, 0)",
+    });
+
+    await landNavigation();
+
+    expect(swipeStyle.value).toBeUndefined();
+  });
+
+  // a swipe called off leaves history untouched, so its preview is still a
+  // faithful still of the page behind and serves the swipe tried next
+  it("keeps the preview for a retried swipe after a cancel", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef } =
+      useEdgeSwipeNavigation();
+    const main = document.createElement("main");
+    const surface = document.createElement("div");
+    main.appendChild(surface);
+    document.body.appendChild(main);
+    surfaceRef.value = surface;
+
+    // the page behind was photographed when it was navigated away from
+    for (const hook of afterEachHooks) {
+      hook({ fullPath: "/album" }, { fullPath: "/discover" });
+    }
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(50, 100)); // 40px, under the 60px threshold
+    expect(main.querySelectorAll("[inert]").length).toBe(1);
+
+    endSwipe(onTouchEnd);
+    expect(main.querySelectorAll("[inert]").length).toBe(0);
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(50, 100));
+
+    expect(main.querySelectorAll("[inert]").length).toBe(1);
+  });
+
+  // a thumb naturally arcs upward as it crosses the screen; once the drag has
+  // locked horizontal that drift must not call the gesture off
+  it("keeps the swipe through vertical drift after the horizontal lock", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(80, 100)); // locks in horizontal
+    onTouchMove(touchEvent(120, 220)); // arcs far past vertical, still ours
+    endSwipe(onTouchEnd);
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
   });
 
   // the sheet animates itself in, so that half of the gesture is untouched
@@ -325,6 +541,9 @@ describe("useEdgeSwipeNavigation", () => {
     const { onTouchStart, onTouchMove, swipeStyle } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(40, 100)); // locked in, short of the threshold
+    expect(swipeStyle.value).toBeUndefined();
+
     onTouchMove(touchEvent(80, 100));
 
     expect(mockSetOpenMobile).toHaveBeenCalledWith(true);
@@ -332,10 +551,11 @@ describe("useEdgeSwipeNavigation", () => {
   });
 
   it("does nothing when the swipe starts away from any edge", () => {
-    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(400, 100));
     onTouchMove(touchEvent(470, 100));
+    endSwipe(onTouchEnd);
 
     expect(mockRouterBack).not.toHaveBeenCalled();
     expect(mockSetOpenMobile).not.toHaveBeenCalled();
@@ -353,25 +573,31 @@ describe("useEdgeSwipeNavigation", () => {
     expect(mockSetOpenMobile).toHaveBeenCalledWith(true);
   });
 
-  // a diagonal drag stays under the vertical tolerance while still being a
-  // scroll: whichever axis leads is the one that gets the gesture
+  // a diagonal drag can still be a scroll: whichever axis leads when the
+  // direction locks is the one that gets the gesture
   it("leaves a drag that leans vertical to the page", () => {
-    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
     onTouchMove(touchEvent(35, 135)); // 25 across, 35 down: vertical leads
     onTouchMove(touchEvent(80, 135)); // would otherwise clear the threshold
+    endSwipe(onTouchEnd);
 
     expect(mockRouterBack).not.toHaveBeenCalled();
     expect(mockSetOpenMobile).not.toHaveBeenCalled();
   });
 
-  it("does nothing once vertical drift exceeds the tolerance", () => {
-    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+  it("leaves a drag that goes straight down to the page", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
 
     onTouchStart(touchEvent(10, 100));
-    onTouchMove(touchEvent(20, 160)); // 60px vertical drift cancels tracking
+    onTouchMove(touchEvent(20, 160)); // 60px down locks the drag vertical
     onTouchMove(touchEvent(80, 160)); // would otherwise clear the threshold
+    endSwipe(onTouchEnd);
 
     expect(mockRouterBack).not.toHaveBeenCalled();
     expect(mockSetOpenMobile).not.toHaveBeenCalled();

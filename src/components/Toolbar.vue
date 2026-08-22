@@ -26,132 +26,174 @@
       </div>
     </template>
 
-    <!-- centred on the toolbar itself rather than on the room left between
-         the title and the buttons, so it does not drift with either -->
-    <div v-if="$slots.center" class="toolbar-center">
-      <slot name="center"></slot>
-    </div>
-
     <template v-if="$slots.append || menuItems?.length" #append>
       <slot name="append"></slot>
-      <v-btn
-        v-for="menuItem of menuItems?.filter(
-          (x) =>
-            !x.hide &&
-            (x.overflowAllowed === false ||
-              (!enforceOverflowMenu && getBreakpointValue('bp8'))),
-        )"
+      <Button
+        v-for="menuItem of directItems"
         :key="menuItem.label"
-        variant="text"
-        style="width: 40px"
+        variant="ghost"
+        size="icon-lg"
         :title="menuItemLabel(menuItem)"
         :disabled="menuItem.disabled == true"
         @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
       >
-        <v-badge :model-value="menuItem.active == true" color="primary" dot>
-          <v-icon
-            v-if="typeof menuItem.icon === 'string'"
-            :icon="menuItem.icon"
-            :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-            size="22px"
-          />
-          <component
-            :is="menuItem.icon"
-            v-else-if="menuItem.icon"
-            class="w-[22px] h-[22px]"
-            :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-          />
-        </v-badge>
-      </v-btn>
+        <span class="relative inline-flex">
+          <MenuItemIcon :icon="menuItem.icon" :size="22" />
+          <span v-if="menuItem.active" :class="ACTIVE_DOT_CLASS"></span>
+        </span>
+      </Button>
 
       <!-- overflow menu with (remaining) items if on mobile -->
-      <div
-        v-if="
-          (!getBreakpointValue('bp8') || enforceOverflowMenu) &&
-          menuItems?.filter(
-            (x) => x.hide != true && x.overflowAllowed !== false,
-          ).length
-        "
-      >
-        <v-menu
-          v-model="overflowMenuOpen"
-          location="bottom end"
-          scrim
-          :close-on-content-click="false"
-        >
-          <template #activator="{ props }">
-            <v-btn
-              variant="plain"
-              style="width: 15px; margin-left: -10px"
-              v-bind="props"
-            >
-              <v-badge :model-value="menuActive == true" color="primary" dot>
-                <v-icon
-                  icon="mdi-dots-vertical"
-                  :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                  size="22"
-                  style="margin-right: -5px; width: 15px"
-                />
-              </v-badge>
-            </v-btn>
-          </template>
-          <v-list density="compact" slim tile>
-            <v-list-item
-              v-for="(menuItem, index) in menuItems?.filter(
-                (x) => x.hide != true && x.overflowAllowed != false,
-              )"
-              :key="index"
-              :title="menuItemLabel(menuItem)"
-              :disabled="menuItem.disabled == true"
-              :append-icon="
-                menuItem.subItems?.length ? 'mdi-chevron-right' : undefined
-              "
-              @click.prevent.stop="
-                (e: MouseEvent | KeyboardEvent) => onMenuItemClick(e, menuItem)
-              "
-            >
-              <template v-if="menuItem.icon" #prepend>
-                <v-badge
-                  :model-value="menuItem.active == true"
-                  color="primary"
-                  dot
+      <DropdownMenu v-if="overflowItems.length" v-model:open="overflowMenuOpen">
+        <DropdownMenuTrigger as-child>
+          <Button variant="ghost" size="icon-lg" :title="$t('menu')">
+            <span class="relative inline-flex">
+              <EllipsisVertical class="size-[22px]" />
+              <span v-if="menuActive" :class="ACTIVE_DOT_CLASS"></span>
+            </span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="min-w-56">
+          <template v-for="(menuItem, index) in overflowItems" :key="index">
+            <DropdownMenuSub v-if="menuItem.subItems?.length">
+              <DropdownMenuSubTrigger
+                class="gap-3"
+                :disabled="menuItem.disabled == true"
+              >
+                <span class="relative inline-flex">
+                  <MenuItemIcon :icon="menuItem.icon" />
+                  <span v-if="menuItem.active" :class="ACTIVE_DOT_CLASS"></span>
+                </span>
+                <span class="min-w-0 flex-1 truncate">{{
+                  menuItemLabel(menuItem)
+                }}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent
+                align="start"
+                :align-offset="-5"
+                :side-offset="6"
+                class="max-h-[70vh] overflow-y-auto"
+              >
+                <DropdownMenuItem
+                  v-for="subItem of menuItem.subItems.filter((x) => !x.hide)"
+                  :key="subItem.label"
+                  :disabled="subItem.disabled === true"
+                  class="gap-3"
+                  @select="(e: Event) => onSubItemSelect(e, menuItem, subItem)"
                 >
-                  <v-icon
-                    v-if="typeof menuItem.icon === 'string'"
-                    :icon="menuItem.icon"
-                    :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                    size="22px"
-                  />
-                  <component
-                    :is="menuItem.icon"
-                    v-else
-                    class="w-[22px] h-[22px]"
-                    :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                  />
-                </v-badge>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </div>
+                  <MenuItemIcon :icon="subItem.icon" />
+                  <span class="min-w-0 flex-1 truncate">{{
+                    menuItemLabel(subItem)
+                  }}</span>
+                  <Check v-if="subItem.selected" class="ml-auto size-4" />
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuItem
+              v-else
+              :disabled="menuItem.disabled == true"
+              class="gap-3"
+              @select="(e: Event) => e.preventDefault()"
+              @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
+            >
+              <span class="relative inline-flex">
+                <MenuItemIcon :icon="menuItem.icon" />
+                <span v-if="menuItem.active" :class="ACTIVE_DOT_CLASS"></span>
+              </span>
+              <span class="min-w-0 flex-1 truncate">{{
+                menuItemLabel(menuItem)
+              }}</span>
+            </DropdownMenuItem>
+          </template>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </template>
   </v-toolbar>
 </template>
 
 <script setup lang="ts">
+import MenuItemIcon from "@/components/MenuItemIcon.vue";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   menuItemLabel,
   type ContextMenuItem,
 } from "@/helpers/context_menu_item";
-import { api } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { Check, EllipsisVertical } from "@lucide/vue";
 import { getBreakpointValue } from "../plugins/breakpoint";
 
 import type { Component } from "vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
+
+interface Props {
+  color?: string;
+  icon?: string | Component;
+  title?: string;
+  subtitle?: string;
+  menuItems?: ToolBarMenuItem[];
+  enforceOverflowMenu?: boolean;
+  menuActive?: boolean;
+  isDiscoverPage?: boolean;
+  iconAction?: () => void;
+}
+const props = withDefaults(defineProps<Props>(), {
+  color: "transparent",
+  icon: undefined,
+  title: undefined,
+  subtitle: undefined,
+  count: undefined,
+  menuItems: undefined,
+  enforceOverflowMenu: false,
+  menuActive: false,
+  iconAction: undefined,
+});
+
+const ACTIVE_DOT_CLASS =
+  "bg-primary absolute -top-0.5 -right-0.5 size-1.5 rounded-full";
 
 const overflowMenuOpen = ref(false);
+
+const directItems = computed(
+  () =>
+    props.menuItems?.filter(
+      (x) =>
+        !x.hide &&
+        (x.overflowAllowed === false ||
+          (!props.enforceOverflowMenu && getBreakpointValue("bp8"))),
+    ) ?? [],
+);
+
+const overflowItems = computed(() =>
+  !getBreakpointValue("bp8") || props.enforceOverflowMenu
+    ? (props.menuItems?.filter(
+        (x) => x.hide != true && x.overflowAllowed !== false,
+      ) ?? [])
+    : [],
+);
+
+const onSubItemSelect = (
+  event: Event,
+  parent: ToolBarMenuItem,
+  subItem: ContextMenuItem,
+) => {
+  if (
+    parent.closeOnContentClick === false ||
+    subItem.close_on_click === false
+  ) {
+    event.preventDefault();
+  }
+  subItem.action?.();
+};
 
 const onMenuItemClick = (
   event: MouseEvent | KeyboardEvent,
@@ -183,31 +225,6 @@ const onMenuItemClick = (
   }
 };
 
-// properties
-interface Props {
-  color?: string;
-  icon?: string | Component;
-  title?: string;
-  subtitle?: string;
-  menuItems?: ToolBarMenuItem[];
-  enforceOverflowMenu?: boolean;
-  // shows an "active" dot on the overflow (3-dots) button, e.g. when filters apply
-  menuActive?: boolean;
-  isDiscoverPage?: boolean;
-  iconAction?: () => void;
-}
-withDefaults(defineProps<Props>(), {
-  color: "transparent",
-  icon: undefined,
-  title: undefined,
-  subtitle: undefined,
-  count: undefined,
-  menuItems: undefined,
-  enforceOverflowMenu: false,
-  menuActive: false,
-  iconAction: undefined,
-});
-
 // emitters
 const emit = defineEmits<{
   (e: "iconClicked"): void;
@@ -237,17 +254,6 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   align-items: center;
   /* anchors the centred slot */
   position: relative;
-}
-
-.toolbar-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  width: 100%;
-  justify-content: center;
-  /* stays clear of the title on one side and the buttons on the other */
-  max-width: min(420px, calc(100% - 260px));
 }
 
 .header.v-toolbar :deep(.v-toolbar-title) {

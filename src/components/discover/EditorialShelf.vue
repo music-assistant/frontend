@@ -264,10 +264,6 @@ onBeforeUnmount(() => {
 }
 .ed-shelf__provider {
   flex-shrink: 0;
-  /* ProviderIcon ships with its own horizontal margins; cancel them so it
-     lines up with the shelf gutter and the aside gap is consistent. */
-  margin-left: -10px;
-  margin-right: -10px;
 }
 .ed-shelf__actions {
   display: flex;

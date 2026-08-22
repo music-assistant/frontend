@@ -17,7 +17,6 @@ import {
   ContentType,
   CrossfadeMode,
   DSPState,
-  type OutputProtocol,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -30,6 +29,7 @@ import {
   audioQueueProcessing,
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { outputProtocol } from "../fixtures/outputProtocol";
 import { streamDetails } from "../fixtures/streamDetails";
 
 vi.mock("@/plugins/api", async () => {
@@ -140,7 +140,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       const protocolId = `${protocolDomain}-kitchen`;
       dependencies.players.kitchen.active_output_protocol = protocolId;
       dependencies.players.kitchen.output_protocols = [
-        makeOutputProtocol({
+        outputProtocol({
           output_protocol_id: protocolId,
           protocol_domain: protocolDomain,
         }),
@@ -278,7 +278,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
   it("uses a shared active protocol icon for grouped output", () => {
     dependencies.players.office.active_output_protocol = "airplay-office";
     dependencies.players.office.output_protocols = [
-      makeOutputProtocol({ output_protocol_id: "airplay-office" }),
+      outputProtocol({ output_protocol_id: "airplay-office" }),
     ];
     let destination = buildDisplay({
       outputs: [
@@ -614,7 +614,7 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
       provider: "sonos--main",
       active_output_protocol: "airplay-kitchen",
       output_protocols: [
-        makeOutputProtocol({ output_protocol_id: "airplay-kitchen" }),
+        outputProtocol({ output_protocol_id: "airplay-kitchen" }),
       ],
     },
     office: {
@@ -624,21 +624,6 @@ function makePlayers(): AudioProcessingDetailsDependencies["players"] {
       active_output_protocol: null,
       output_protocols: [],
     },
-  };
-}
-
-function makeOutputProtocol(
-  overrides: Partial<OutputProtocol> = {},
-): OutputProtocol {
-  return {
-    output_protocol_id: "airplay-kitchen",
-    name: "AirPlay",
-    is_native: false,
-    protocol_domain: "airplay",
-    priority: 1,
-    available: true,
-    derived_from: null,
-    ...overrides,
   };
 }
 

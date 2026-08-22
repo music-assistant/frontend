@@ -216,7 +216,6 @@ async function mountPlayers(viewMode: "list" | "card") {
         ListItem: ListItemStub,
         PlayerFilters: true,
         PlayerIcon: true,
-        ProviderIcon: true,
         RouterLink: true,
         SettingsPlayerCard: SettingsPlayerCardStub,
         VCol: passthroughStub,

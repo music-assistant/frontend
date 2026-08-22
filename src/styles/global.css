@@ -138,7 +138,6 @@ html {
      100000  sheets
      100001  menus opened from a sheet or a player bar popout
      999999  item context menu
-    1000000  popovers opened from inside the item context menu
 
    Values below this range mostly order elements inside a component's own
    stacking context.

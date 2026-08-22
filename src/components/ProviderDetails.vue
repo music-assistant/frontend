@@ -22,6 +22,7 @@
             <ProviderIcon
               :domain="providerMapping.provider_domain"
               :size="30"
+              class="mx-[10px]"
             />
           </template>
           <template #title>
@@ -106,7 +107,7 @@
           "
         >
           <template #prepend>
-            <ProviderIcon domain="library" :size="30" />
+            <ProviderIcon domain="library" :size="30" class="mx-[10px]" />
           </template>
           <template #title>{{ $t("music_assistant_library") }}</template>
           <template #subtitle>
@@ -131,6 +132,7 @@
 </template>
 
 <script setup lang="ts">
+import { ChevronDown, ChevronUp, DatabaseSearch } from "@lucide/vue";
 import Container from "@/components/Container.vue";
 import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
 import ListItem from "@/components/ListItem.vue";
@@ -303,7 +305,7 @@ const toolbarMenuItems = computed(() => {
     // search all providers option (only for library items when streaming providers are available)
     {
       label: "search_all_providers",
-      icon: "mdi-database-search",
+      icon: DatabaseSearch,
       action: searchAllProviders,
       overflowAllowed: false,
       disabled: mappingSearchInProgress.value,
@@ -315,7 +317,7 @@ const toolbarMenuItems = computed(() => {
     // toggle expand
     {
       label: "tooltip.collapse_expand",
-      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
+      icon: expanded.value ? ChevronUp : ChevronDown,
       action: toggleExpand,
       overflowAllowed: false,
     },

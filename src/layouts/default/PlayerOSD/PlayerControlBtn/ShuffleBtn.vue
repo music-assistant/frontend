@@ -58,8 +58,13 @@ const isLoading = computed(() => {
   );
 });
 
-const isInfiniteStream = computed(() =>
-  isQueueInfiniteStream(compProps.playerQueue),
+// An external session that owns the queue (queue_owner) handles shuffle
+// natively — the server forwards the command — so it is exempt from the
+// infinite-stream disable (the current item is that session's AudioSource).
+const isInfiniteStream = computed(
+  () =>
+    isQueueInfiniteStream(compProps.playerQueue) &&
+    !compProps.playerQueue?.queue_owner,
 );
 
 // In dynamic mode the queue manages its own ordering (smart shuffle is implied),

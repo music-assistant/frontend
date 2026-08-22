@@ -51,7 +51,35 @@
       <template v-for="menuItem of visibleItems" :key="menuItem.label">
         <!-- custom inline control (e.g. a stepper); renders its own row and
              manages its own interaction without closing the menu -->
-        <component :is="menuItem.component" v-if="menuItem.component" />
+        <component
+          :is="menuItem.component"
+          v-if="menuItem.component"
+          v-bind="menuItem.componentProps"
+        />
+        <!-- item whose submenu popout is a custom control -->
+        <DropdownMenuSub v-else-if="menuItem.subComponent">
+          <DropdownMenuSubTrigger class="gap-3">
+            <MenuItemIcon :icon="menuItem.icon" />
+            <span class="flex-1 truncate min-w-0">{{
+              menuItemLabel(menuItem)
+            }}</span>
+          </DropdownMenuSubTrigger>
+          <!-- fixed width so popout content truncates on phones; flex column
+               so the component can keep a static header and scroll the rest.
+               capped at the popper's available height (not a viewport fraction)
+               so growing content scrolls instead of shifting the popout up -->
+          <DropdownMenuSubContent
+            align="start"
+            :align-offset="-5"
+            :side-offset="6"
+            class="max-h-[min(70vh,var(--reka-dropdown-menu-content-available-height))] w-[min(92vw,350px)] flex flex-col"
+          >
+            <component
+              :is="menuItem.subComponent"
+              v-bind="menuItem.componentProps"
+            />
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <!-- item with submenu -->
         <DropdownMenuSub
           v-else-if="menuItem.subItems && menuItem.subItems.length"
@@ -71,6 +99,7 @@
             align="start"
             :align-offset="-5"
             :side-offset="6"
+            class="max-h-[70vh] overflow-y-auto"
           >
             <DropdownMenuItem
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
@@ -191,9 +220,9 @@ const onOpenChange = function (value: boolean) {
 function closeOnOutsidePointer(event: PointerEvent) {
   if (!show.value) return;
   const target = event.target;
-  // Select dropdowns hosted by menu rows (e.g. the visualizer preset picker)
-  // teleport their list to <body>, outside [data-item-context-menu]; touching
-  // one to scroll it must not read as an outside press and close the menu.
+  // Submenu popouts (and any Select a menu row may host) render outside
+  // [data-item-context-menu]; touching one to scroll it must not read as an
+  // outside press and close the menu.
   if (
     target instanceof Element &&
     target.closest(
@@ -241,7 +270,9 @@ import {
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
+import { runWithConcurrency } from "@/helpers/concurrency";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
+import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
 import {
   gotoRadio,
@@ -249,8 +280,6 @@ import {
   radioRelevant,
   radioSupported,
 } from "@/helpers/radio";
-import { runWithConcurrency } from "@/helpers/concurrency";
-import { backFromMediaDetails } from "@/helpers/navigation";
 import {
   isAudioSource,
   isItemInLibrary,

@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Група",
         "player": "Програвач",
-        "stereo_pair": "Стерео пара",
-        "sync_group": "Синхронізувати групу"
+        "stereo_pair": "Стерео пара"
     },
     "players": "Програвачі",
     "playlist": "Список відтворення",
