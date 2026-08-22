@@ -1767,6 +1767,44 @@ export interface SmartPlaylistTrackStats {
   duration_seconds: number;
 }
 
+// Library Automations interfaces
+
+export interface LibraryAutomationTrigger {
+  type: string;
+  media_types: string[];
+  params: Record<string, unknown>;
+}
+
+export interface LibraryAutomationCondition {
+  field: string;
+  operator: "eq" | "contains" | "in";
+  value: unknown;
+}
+
+export interface LibraryAutomationAction {
+  type: string;
+  params: Record<string, unknown>;
+}
+
+export interface LibraryAutomationRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  trigger: LibraryAutomationTrigger;
+  conditions: LibraryAutomationCondition[];
+  condition_logic: "AND" | "OR";
+  action: LibraryAutomationAction;
+  created_at: number;
+}
+
+// Shared shape for both trigger and action type metadata returned by
+// library_automations/list_trigger_types and library_automations/list_action_types.
+export interface LibraryAutomationTypeInfo {
+  id: string;
+  label: string;
+  description: string;
+}
+
 // AI Radio interfaces
 
 export type AIRadioSectionType = "ai_text" | "ai_meta";

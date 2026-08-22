@@ -1495,6 +1495,95 @@
             "share_named_title": "Join {0}",
             "share_title": "Join the Music Assistant party"
         },
+        "library_automations": {
+            "title": "Library Automations",
+            "subtitle": "Automatically react to library events, like adding an unfavorited track to a playlist.",
+            "add_rule": "New rule",
+            "empty_title": "No automation rules yet",
+            "empty_description": "Create a rule to react automatically to library events, like moving a track to a playlist when you unfavorite it.",
+            "create_cta": "Create your first rule",
+            "card": {
+                "edit": "Edit",
+                "delete": "Delete"
+            },
+            "confirm": {
+                "delete_title": "Delete rule?",
+                "delete_message": "This automation rule will be permanently deleted.",
+                "delete_confirm": "Delete"
+            },
+            "toast": {
+                "rule_saved": "Rule saved",
+                "rule_deleted": "Rule deleted",
+                "rule_enabled": "Rule enabled",
+                "rule_disabled": "Rule disabled"
+            },
+            "form": {
+                "create_title": "New automation rule",
+                "edit_title": "Edit automation rule",
+                "name_label": "Name",
+                "name_placeholder": "e.g. Move unfavorited tracks",
+                "trigger_label": "When",
+                "trigger_placeholder": "Select a trigger",
+                "media_types_label": "Applies to",
+                "media_type_track": "Tracks",
+                "media_type_album": "Albums",
+                "media_type_artist": "Artists",
+                "action_label": "Then",
+                "action_placeholder": "Select an action",
+                "playlist_name_label": "Playlist name",
+                "playlist_name_placeholder": "e.g. Sorted Out",
+                "conditions_label": "Only if (optional)",
+                "conditions_add": "Add condition",
+                "condition_logic_and": "All conditions must match",
+                "condition_logic_or": "Any condition may match",
+                "condition_field_name": "Name",
+                "condition_field_genre": "Genre",
+                "condition_field_provider": "Provider",
+                "condition_field_explicit": "Explicit",
+                "condition_operator_eq": "is",
+                "condition_operator_contains": "contains",
+                "condition_operator_in": "is one of",
+                "condition_field_in_playlist": "Playlist",
+                "condition_field_hint_name": "The title/name of the triggering track, album or artist itself (e.g. not the album name for a track).",
+                "condition_field_hint_genre": "A genre as stored in the library (matches if any of the item's genres contains this text).",
+                "condition_provider_placeholder": "Select a provider",
+                "condition_playlists_label": "Select playlist(s)",
+                "condition_playlists_empty": "No playlists in your library yet",
+                "condition_value_placeholder": "Value",
+                "cancel": "Cancel",
+                "save": "Save",
+                "create": "Create rule",
+                "saving": "Saving..."
+            },
+            "trigger": {
+                "media_item_unfavorited": {
+                    "title": "Item unfavorited",
+                    "description": "Fires the moment a track, album or artist is removed from favorites."
+                },
+                "media_item_favorited": {
+                    "title": "Item favorited",
+                    "description": "Fires the moment a track, album or artist is marked as favorite."
+                },
+                "media_item_added_to_library": {
+                    "title": "Item added to library",
+                    "description": "Fires when a track, album or artist is newly added to the library."
+                }
+            },
+            "action": {
+                "add_to_playlist": {
+                    "title": "Add to playlist",
+                    "description": "Add the triggering track (or all tracks of a triggering album/artist) to a playlist, creating it automatically if it doesn't exist yet."
+                },
+                "remove_from_playlist": {
+                    "title": "Remove from playlist",
+                    "description": "Remove the triggering track(s) from a playlist, if present."
+                },
+                "remove_from_library": {
+                    "title": "Remove from library",
+                    "description": "Remove the triggering item from the library entirely."
+                }
+            }
+        },
         "music_quiz": {
             "title": "Music Quiz",
             "create_intro": "Create a new quiz game to test your music knowledge!",
