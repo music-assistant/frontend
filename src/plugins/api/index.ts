@@ -1820,6 +1820,22 @@ export class MusicAssistantApi {
   public playerCommandSeek(playerId: string, position: number) {
     this.playerCommand(playerId, "seek", { position });
   }
+  public playerCommandShuffle(
+    playerId: string,
+    shuffle_enabled: boolean,
+  ): Promise<void> {
+    // Configure shuffle on whatever the player is playing: a live external
+    // source orders its own session, an MA queue orders its own items.
+    return this.playerCommand(playerId, "shuffle", { shuffle_enabled });
+  }
+  public playerCommandRepeat(
+    playerId: string,
+    repeat_mode: RepeatMode,
+  ): Promise<void> {
+    // Configure repeat on whatever the player is playing: a live external
+    // source repeats within its own session, an MA queue repeats its own items.
+    return this.playerCommand(playerId, "repeat", { repeat_mode });
+  }
 
   public playerCommandPower(playerId: string, powered: boolean): Promise<void> {
     return this.playerCommand(playerId, "power", { powered });

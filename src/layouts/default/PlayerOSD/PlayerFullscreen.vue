@@ -386,6 +386,7 @@
           </div>
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
+            :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
@@ -417,6 +418,7 @@
           />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
+            :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="35px"

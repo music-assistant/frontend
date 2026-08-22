@@ -17,6 +17,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
+import { playerSource } from "../fixtures/playerSource";
 
 const {
   aiRadioAvailableRef,
@@ -627,22 +628,15 @@ describe("getPlayerMenuItems ai dj", () => {
     hostsRef.value = [makeHost()];
     const player = makePlayer({
       source_list: [
-        {
+        playerSource({
           id: "kitchen",
           name: "Kitchen",
           passive: false,
           can_play_pause: true,
           can_seek: true,
           can_next_previous: true,
-        },
-        {
-          id: "line_in",
-          name: "Line-in",
-          passive: false,
-          can_play_pause: false,
-          can_seek: false,
-          can_next_previous: false,
-        },
+        }),
+        playerSource({ id: "line_in", name: "Line-in", passive: false }),
       ],
       active_source: "kitchen",
     });

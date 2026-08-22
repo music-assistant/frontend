@@ -7,6 +7,7 @@ import type {
   StreamMetadata,
 } from "@/plugins/api/interfaces";
 import { audioSource } from "../fixtures/audioSource";
+import { playerSource } from "../fixtures/playerSource";
 import { providerMapping } from "../fixtures/providerMapping";
 import { queueItem } from "../fixtures/queueItem";
 import { radio } from "../fixtures/radio";
@@ -131,16 +132,7 @@ describe("useNowPlayingSource", () => {
   it("names an external source that took the player over", () => {
     storeMock.activePlayer = player({
       active_source: "line-in",
-      source_list: [
-        {
-          id: "line-in",
-          name: "Line In",
-          passive: true,
-          can_play_pause: false,
-          can_seek: false,
-          can_next_previous: false,
-        },
-      ],
+      source_list: [playerSource({ id: "line-in", name: "Line In" })],
     });
 
     const { nowPlayingSource } = useNowPlayingSource();
