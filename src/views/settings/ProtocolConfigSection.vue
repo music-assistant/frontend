@@ -59,7 +59,6 @@
                   v-if="getProtocolDomain(panel)"
                   :domain="getProtocolDomain(panel)!"
                   :size="22"
-                  class="!ml-0"
                 />
                 <span>{{ getProtocolConfigureTitle(panel) }}</span>
                 <Badge

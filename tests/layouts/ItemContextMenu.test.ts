@@ -1,7 +1,7 @@
 import ItemContextMenu from "@/layouts/default/ItemContextMenu.vue";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { mount } from "@vue/test-utils";
-import { nextTick } from "vue";
+import { markRaw, nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { eventHandlers, storeMock } = vi.hoisted(() => ({
@@ -129,6 +129,32 @@ describe("ItemContextMenu", () => {
     expect(storeMock.dialogActive).toBe(true);
 
     selectContent.remove();
+    wrapper.unmount();
+  });
+
+  it("renders a subComponent item as a popout with its props", async () => {
+    const popout = markRaw({
+      props: ["playerId"],
+      template: "<div data-test-popout>{{ playerId }}</div>",
+    });
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [
+        {
+          label: "settings.visualizer_enabled.label",
+          subComponent: popout,
+          componentProps: { playerId: "kitchen" },
+        },
+      ],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+
+    // menuItemLabel resolves the label through the real i18n catalog
+    expect(wrapper.text()).toContain("MilkDrop visualizer");
+    expect(wrapper.get("[data-test-popout]").text()).toBe("kitchen");
     wrapper.unmount();
   });
 });

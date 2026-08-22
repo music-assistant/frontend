@@ -31,7 +31,6 @@
     "delete_db": "Obrišite stavku iz baze podataka",
     "details": "Detalji",
     "enter_url": "Unesite URL koji želite ručno da dodate u bazu podataka",
-    "external_source_active": "Eksterna integracija je aktivna: {0}",
     "goto_album": "Prikažite album {0}",
     "goto_artist": "Prikažite izvođača {0}",
     "items_selected": "Izabranih stavki: {0}",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "Grupa",
         "player": "Plejer",
-        "stereo_pair": "Stereo par",
-        "sync_group": "Sinhronizuj grupu"
+        "stereo_pair": "Stereo par"
     },
     "players": "Plejeri",
     "playlist": "Plejlista",
@@ -2235,7 +2233,6 @@
     "artist_no_library_audiobooks": "Nemate nijednu audio-knjigu u svojoj biblioteci za ovog autora\/naratora.",
     "artist_all_audiobooks": "Sve audio-knjige",
     "lights": "Svetla",
-    "visualizers": "Vizuelizatori",
     "volume": "Jačina zvuka",
     "grouped_volume": "Grupna jačina zvuka",
     "player_select": {

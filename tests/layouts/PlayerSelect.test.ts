@@ -246,6 +246,7 @@ function createPlayer(
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",

@@ -85,6 +85,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: START_VOLUME,
     group_volume_muted: false,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",

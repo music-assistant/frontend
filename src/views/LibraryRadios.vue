@@ -19,7 +19,7 @@
         action: () => {
           showAddEditDialog = true;
         },
-        icon: 'mdi-playlist-plus',
+        icon: ListPlus,
       },
     ]"
     :icon="Radio"
@@ -41,7 +41,7 @@ import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Radio } from "@lucide/vue";
+import { ListPlus, Radio } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({

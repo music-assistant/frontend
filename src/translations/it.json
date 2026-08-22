@@ -31,7 +31,6 @@
     "delete_db": "Elimina elemento dal database",
     "details": "Dettagli",
     "enter_url": "Immettere l'URL che si desidera aggiungere manualmente al database",
-    "external_source_active": "Sorgente esterna attiva: {0}",
     "goto_album": "Vai all'album {0}",
     "goto_artist": "Vai all'artista {0}",
     "items_selected": "{0} elemento\/i selezionato\/i",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "Gruppo",
         "player": "Lettore",
-        "stereo_pair": "Coppia stereo",
-        "sync_group": "Gruppo di sincronizzazione"
+        "stereo_pair": "Coppia stereo"
     },
     "players": "Lettori",
     "playlist": "Playlist",

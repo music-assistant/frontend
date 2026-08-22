@@ -171,6 +171,9 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
   const startItemDrag = (evt: PointerEvent, index: number) => {
     // Primary mouse button / touch / pen only.
     if (evt.pointerType === "mouse" && evt.button !== 0) return;
+    // An externally managed queue mirrors an external session's queue that
+    // MA cannot reorder.
+    if (store.activePlayerQueue?.queue_owner) return;
     const item = itemAt(index);
     if (!item || index < firstReorderableIndex()) return;
 

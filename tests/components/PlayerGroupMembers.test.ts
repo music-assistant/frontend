@@ -27,7 +27,8 @@ vi.mock("@/plugins/api", async () => {
   return { api, default: api };
 });
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   groupMemberPickerVisible: () => true,
 }));
 
@@ -82,6 +83,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: null,
     group_volume_muted: null,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
@@ -171,7 +173,7 @@ describe("PlayerGroupMembers", () => {
     );
   });
 
-  it("separates players, lights, and visualizers", () => {
+  it("separates players, lights, and screens", () => {
     const speaker = createPlayer({
       player_id: "speaker",
       name: "Office",
@@ -206,7 +208,111 @@ describe("PlayerGroupMembers", () => {
       wrapper
         .findAll(".player-group-section > p")
         .map((section) => section.text()),
-    ).toEqual(["players", "lights", "visualizers"]);
+    ).toEqual(["players", "lights", "screens"]);
+  });
+
+  it("lists a display player under screens", () => {
+    const screen = createPlayer({
+      player_id: "screen",
+      name: "Kitchen screen",
+      type: PlayerType.DISPLAY,
+    });
+    const parent = createPlayer({ can_group_with: [screen.player_id] });
+    api.players = {
+      [parent.player_id]: parent,
+      [screen.player_id]: screen,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".player-group-section > p")
+        .map((section) => section.text()),
+    ).toEqual(["screens"]);
+  });
+
+  it("keeps only screens when filtering on screens", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    const screen = createPlayer({
+      player_id: "screen",
+      name: "Kitchen screen",
+      type: PlayerType.DISPLAY,
+    });
+    const parent = createPlayer({
+      can_group_with: [speaker.player_id, screen.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [screen.player_id]: screen,
+    };
+
+    const wrapper = mountGroupMembers(parent, [], { filter: "screens" });
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen screen"]);
+  });
+
+  it("keeps a capture-only device out of the picker", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    // a line-in device reports an unknown type and renders nothing, but its
+    // provider still advertises it as groupable
+    const captureDevice = createPlayer({
+      player_id: "line-in",
+      name: "Line-in",
+      type: PlayerType.UNKNOWN,
+      supported_features: [],
+    });
+    const parent = createPlayer({
+      can_group_with: [speaker.player_id, captureDevice.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [captureDevice.player_id]: captureDevice,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Office"]);
+  });
+
+  it("keeps an already grouped capture-only device removable", () => {
+    const captureDevice = createPlayer({
+      player_id: "line-in",
+      name: "Line-in",
+      type: PlayerType.UNKNOWN,
+      supported_features: [],
+    });
+    const parent = createPlayer({
+      group_members: ["parent", captureDevice.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [captureDevice.player_id]: captureDevice,
+    };
+
+    const wrapper = mountGroupMembers(parent, [parent, captureDevice]);
+
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen", "Line-in"]);
   });
 
   it("separates current members from available players", () => {

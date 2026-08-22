@@ -1,4 +1,5 @@
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
+import { useCommandCenter } from "@/composables/useCommandCenter";
 import { enableAutoUnmount, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -47,6 +48,8 @@ function mountNavigation() {
 afterEach(() => {
   routeState.name = "discover";
   store.showPlayersMenu = false;
+  // the command center is app-wide singleton state
+  useCommandCenter().close();
   vi.clearAllMocks();
 });
 
@@ -89,16 +92,37 @@ describe("BottomNavigation", () => {
   });
 
   it("names the current page for assistive tech, not just by tint", () => {
-    routeState.name = "search";
     const wrapper = mountNavigation();
     const current = wrapper
       .findAll("button")
       .filter((button) => button.attributes("aria-current") === "page")
       .map((button) => button.attributes("aria-label"));
 
+    expect(current).toEqual(["discover"]);
+  });
+
+  it("opens the command center from search rather than a page", async () => {
+    const wrapper = mountNavigation();
+    const search = () => itemNamed(wrapper, "search");
     // search carries no visible label, so the tint alone would leave its state
     // invisible to a screen reader
-    expect(current).toEqual(["search"]);
+    expect(search().attributes("aria-expanded")).toBe("false");
+
+    await search().trigger("click");
+
+    expect(useCommandCenter().isOpen.value).toBe(true);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(search().attributes("aria-expanded")).toBe("true");
+    expect(search().attributes("data-active")).toBe("true");
+  });
+
+  it("closes the command center on a second tap", async () => {
+    const wrapper = mountNavigation();
+
+    await itemNamed(wrapper, "search").trigger("click");
+    await itemNamed(wrapper, "search").trigger("click");
+
+    expect(useCommandCenter().isOpen.value).toBe(false);
   });
 
   it("hands the active state to an open player picker", async () => {

@@ -58,19 +58,17 @@
         >
           <label
             for="music-quiz-playback-venue"
-            class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-lg border p-3 transition-colors"
+            class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-lg border p-3 transition-colors select-none"
             :class="modeCardClasses('venue', venueAvailable)"
           >
             <RadioGroupItem
               id="music-quiz-playback-venue"
               value="venue"
-              class="rounded-[4px] data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary dark:data-[state=unchecked]:bg-transparent"
+              :class="RADIO_CLASS"
               :disabled="disabled || !venueAvailable"
               aria-describedby="music-quiz-playback-venue-description"
             >
-              <Check
-                class="absolute top-1/2 left-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2"
-              />
+              <span :class="RADIO_DOT_CLASS"></span>
             </RadioGroupItem>
             <span class="min-w-0 font-medium">
               {{ $t("providers.music_quiz.playback_venue") }}
@@ -92,19 +90,17 @@
 
           <label
             for="music-quiz-playback-remote"
-            class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-lg border p-3 transition-colors"
+            class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-lg border p-3 transition-colors select-none"
             :class="modeCardClasses('remote', options.remote_available)"
           >
             <RadioGroupItem
               id="music-quiz-playback-remote"
               value="remote"
-              class="rounded-[4px] data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary dark:data-[state=unchecked]:bg-transparent"
+              :class="RADIO_CLASS"
               :disabled="disabled || !options.remote_available"
               aria-describedby="music-quiz-playback-remote-description"
             >
-              <Check
-                class="absolute top-1/2 left-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2"
-              />
+              <span :class="RADIO_DOT_CLASS"></span>
             </RadioGroupItem>
             <span class="min-w-0 font-medium">
               {{ $t("providers.music_quiz.playback_remote") }}
@@ -188,9 +184,14 @@ import type {
 } from "@/composables/music-quiz/useMusicQuiz";
 import type { MusicQuizPlaybackSelection } from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
-import { Check, LoaderCircle, RefreshCw, TriangleAlert } from "@lucide/vue";
+import { LoaderCircle, RefreshCw, TriangleAlert } from "@lucide/vue";
 import type { AcceptableValue } from "reka-ui";
 import { computed } from "vue";
+
+const RADIO_CLASS =
+  "grid size-5 place-items-center border-2 shadow-none data-[state=checked]:border-primary dark:data-[state=checked]:bg-transparent";
+const RADIO_DOT_CLASS =
+  "bg-primary animate-in zoom-in-50 size-2.5 rounded-full duration-150";
 
 const props = defineProps<{
   modelValue: MusicQuizPlaybackSelection;
@@ -253,6 +254,6 @@ function modeCardClasses(mode: MusicQuizMode, available: boolean) {
   if (!available) return "cursor-not-allowed bg-muted/30 opacity-70";
   return props.modelValue.mode === mode
     ? "border-primary bg-primary/5 cursor-pointer"
-    : "hover:border-primary/50 cursor-pointer";
+    : "hover:border-primary/50 hover:bg-accent/30 cursor-pointer";
 }
 </script>

@@ -11,6 +11,10 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  commandCenterHotkeyLabel,
+  useCommandCenter,
+} from "@/composables/useCommandCenter";
 import { eventbus } from "@/plugins/eventbus";
 import { haState } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
@@ -28,6 +32,8 @@ import {
 
 const router = useRouter();
 const { t } = useI18n();
+const { toggleSidebar, setOpen, state, isMobile } = useSidebar();
+const { open: openCommandCenter } = useCommandCenter();
 
 const editMode = computed(() => store.navMenuEditMode);
 
@@ -43,6 +49,14 @@ const navItems = computed(() =>
       disabled: editMode.value ? undefined : item.disabled,
       hidden: item.hidden,
       group: item.group,
+      action:
+        item.action === "command-center"
+          ? () => openCommandCenter()
+          : undefined,
+      shortcut:
+        item.action === "command-center" && !isMobile.value
+          ? commandCenterHotkeyLabel
+          : undefined,
     })),
 );
 
@@ -84,7 +98,6 @@ const sections = computed(() => {
   return resolved;
 });
 
-const { toggleSidebar, setOpen, state, isMobile } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
 
 // Editing needs the full (labeled) menu, so pop the sidebar open when edit
@@ -118,9 +131,19 @@ onUnmounted(() => {
     <SidebarHeader>
       <SidebarMenu>
         <div class="sidebar-header-row">
+          <!-- collapsed, the 30px logo centres on a margin anchored off the
+               rail's final width (less the header's 1rem side padding), so it
+               holds still while the width animates -->
           <div
             class="sidebar-header"
-            :style="{ marginLeft: collapsed ? '2px' : '7px' }"
+            :style="
+              collapsed
+                ? {
+                    marginLeft:
+                      'calc((var(--sidebar-width-icon) - 1rem - 30px) / 2)',
+                  }
+                : { marginLeft: '7px' }
+            "
             @click="router.push('/')"
           >
             <img
@@ -250,6 +273,15 @@ onUnmounted(() => {
   min-height: 1.75rem !important;
   padding-top: 0.125rem !important;
   padding-bottom: 0.125rem !important;
+}
+
+/* collapsed to the icon rail, the buttons (2rem wide) centre on a margin
+   anchored off the rail's final width — which --sidebar-width-icon always
+   holds, the scrollbar gutter's widening included — rather than the animating
+   one, so they hold still through the collapse animation */
+[data-collapsible="icon"] :deep([data-sidebar="menu-button"]) {
+  margin-left: calc((var(--sidebar-width-icon) - 2rem) / 2) !important;
+  margin-right: 0 !important;
 }
 
 :deep([data-sidebar="menu-button"] > svg) {

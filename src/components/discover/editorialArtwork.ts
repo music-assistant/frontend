@@ -19,6 +19,9 @@ export const bannerArtwork = new URL(
 
 export const bannerBackground = `url("${bannerArtwork}") center / cover no-repeat`;
 
+/** Flat tile background for art that should not sit on the banner. */
+export const placeholderBackground = "rgba(var(--v-theme-on-surface), 0.08)";
+
 /** Up-to-two-letter initials from a name (first letters of the first two
  * words, or the first two characters of a single word). */
 export function itemInitials(name: string): string {
@@ -49,12 +52,10 @@ export function itemArtwork(
     (item.media_type === MediaType.ARTIST ||
       item.media_type === MediaType.ALBUM);
   const useBanner = !image || item.media_type === MediaType.GENRE;
-  const bannerGradient = `url("${bannerArtwork}") center / cover no-repeat`;
-  const placeholder = "rgba(var(--v-theme-on-surface), 0.08)";
 
   return {
     image,
-    gradient: useBanner ? bannerGradient : placeholder,
+    gradient: useBanner ? bannerBackground : placeholderBackground,
     initials: showInitials ? itemInitials(item.name) : undefined,
   };
 }

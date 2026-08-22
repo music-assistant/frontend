@@ -68,6 +68,9 @@
                     hide-details="auto"
                     :error-messages="connectionError"
                     :disabled="isConnecting"
+                    autocapitalize="none"
+                    autocorrect="off"
+                    spellcheck="false"
                     @keyup.enter="connectToLocal"
                   />
                   <p class="text-caption text-medium-emphasis mt-2">
@@ -112,6 +115,9 @@
                       bg-color="surface-light"
                       class="remote-id-input"
                       :class="`remote-id-input-${index}`"
+                      autocapitalize="characters"
+                      autocorrect="off"
+                      spellcheck="false"
                       @input="handleRemoteIdInput(index, $event)"
                       @keydown="handleRemoteIdKeydown(index, $event)"
                       @paste="handleRemoteIdPaste(index, $event)"
@@ -187,6 +193,10 @@
                     hide-details="auto"
                     :disabled="isAuthenticating"
                     autofocus
+                    autocomplete="username"
+                    autocapitalize="none"
+                    autocorrect="off"
+                    spellcheck="false"
                   />
                 </div>
 
@@ -209,6 +219,10 @@
                     "
                     :error-messages="loginError"
                     :disabled="isAuthenticating"
+                    autocomplete="current-password"
+                    autocapitalize="none"
+                    autocorrect="off"
+                    spellcheck="false"
                     @click:append-inner="showPassword = !showPassword"
                     @keyup.enter="login"
                   />
