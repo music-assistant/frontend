@@ -628,7 +628,7 @@
         },
         "audio_analysis_description": "Verfolge die Abdeckung der Audioanalyse bei deinen Anbietern.",
         "audio_analysis_concurrency": {
-            "title": "Hintergrundanalyse der Gleichzeitigkeit",
+            "title": "Gleichzeitige Hintergrundanalysen",
             "description": "Steuere, wie viele Titel während des nächtlichen Hintergrundscans gleichzeitig analysiert werden. Diese Einstellung befindet sich in der Streams-Kernkonfiguration.",
             "open_settings": "Streams-Einstellungen öffnen"
         },
