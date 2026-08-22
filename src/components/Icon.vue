@@ -3,7 +3,15 @@
     ref="iconContainer"
     :class="containerClasses"
     :style="containerStyle"
+    :role="isButtonVariant ? 'button' : undefined"
+    :tabindex="isButtonVariant && !disabled ? 0 : undefined"
+    :title="title"
+    :aria-label="accessibleLabel"
+    :aria-disabled="isButtonVariant ? disabled : undefined"
+    :aria-pressed="ariaPressed"
     @click="handleClick"
+    @keydown.enter.prevent="handleKeyboardClick"
+    @keydown.space.prevent="handleKeyboardClick"
   >
     <v-badge :model-value="badge === true" color="error" dot>
       <v-icon ref="iconElement" v-bind="iconProps" :class="iconClasses">
@@ -26,7 +34,7 @@ import {
   type IconEmits,
   type IconProps,
 } from "@/composables/useIcon";
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { VIcon } from "vuetify/components";
 
 const props = withDefaults(defineProps<IconProps>(), defaultIconProps);
@@ -63,7 +71,24 @@ const adjustIconSize = async () => {
   }
 };
 
+const isButtonVariant = computed(() => props.variant === "button");
+const accessibleLabel = computed(
+  () => props.ariaLabel || props["aria-label"] || props.title,
+);
+const ariaPressed = computed(() => props["aria-pressed"]);
+
 const handleClick = (event: MouseEvent) => {
+  if (props.disabled) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+
+  emit("click", event);
+};
+
+const handleKeyboardClick = (event: KeyboardEvent) => {
+  if (!isButtonVariant.value) return;
   if (props.disabled) {
     event.preventDefault();
     event.stopPropagation();
@@ -105,13 +130,13 @@ onBeforeUnmount(() => {
 }
 
 .icon-container--button:hover,
-.icon-container--button:focus {
+.icon-container--button:focus-visible {
   opacity: 1;
 }
 
-.icon-container--button:focus {
-  outline: none;
-  color: #00ff00;
+.icon-container--button:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
 }
 
 .icon-container--button:active {
