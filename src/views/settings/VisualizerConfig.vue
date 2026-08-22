@@ -205,12 +205,18 @@
             @update:model-value="
               (v: unknown) => setPref('visualizer_preset', String(v))
             "
+            @update:open="(open: boolean) => !open && clearPreview()"
           >
             <SelectTrigger class="w-full shrink-0 sm:w-72">
               <SelectValue :placeholder="$t('visualizer.preset_random')" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="name in presetNames" :key="name" :value="name">
+            <SelectContent @pointerleave="clearPreview">
+              <SelectItem
+                v-for="name in presetNames"
+                :key="name"
+                :value="name"
+                @pointerenter="(e: PointerEvent) => onPresetHover(name, e)"
+              >
                 {{ name }}
               </SelectItem>
             </SelectContent>
@@ -315,6 +321,8 @@
         <p>{{ $t("visualizer.credits_milkdrop") }}</p>
       </CardContent>
     </Card>
+
+    <PresetHoverPreview :preset="previewPreset" :anchor="previewAnchor" />
   </div>
 </template>
 
@@ -344,7 +352,9 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import PresetHoverPreview from "@/components/PresetHoverPreview.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { usePresetHoverPreview } from "@/composables/visualizer/usePresetHoverPreview";
 import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
@@ -402,6 +412,9 @@ onMounted(async () => {
 const setPref = (key: string, value: unknown) => {
   void setPreference(key, value);
 };
+
+const { previewPreset, previewAnchor, onPresetHover, clearPreview } =
+  usePresetHoverPreview('[data-slot="select-content"]');
 
 const removeFavorite = (name: string) => {
   setPref(

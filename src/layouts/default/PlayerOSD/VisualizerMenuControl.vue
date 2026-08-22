@@ -83,8 +83,12 @@
             ? { maxHeight: `${listMaxHeight}px` }
             : undefined
         "
+        @pointerleave="clearPreview"
       >
-        <DropdownMenuItem @select.prevent="onPresetChange(RANDOM_VALUE)">
+        <DropdownMenuItem
+          @select.prevent="onPresetChange(RANDOM_VALUE)"
+          @pointerenter="clearPreview"
+        >
           <span class="flex-1 truncate min-w-0">
             {{ $t("visualizer.preset_random") }}
           </span>
@@ -93,6 +97,7 @@
         <DropdownMenuItem
           v-if="favoritesPref.length > 0"
           @select.prevent="onPresetChange(RANDOM_FAVORITES_VALUE)"
+          @pointerenter="clearPreview"
         >
           <span class="flex-1 truncate min-w-0">
             {{ $t("visualizer.preset_random_favorites") }}
@@ -107,6 +112,7 @@
           v-for="name in sortedPresetNames"
           :key="name"
           @select.prevent="onPresetChange(name)"
+          @pointerenter="(e: PointerEvent) => onPresetHover(name, e)"
         >
           <span class="flex-1 truncate min-w-0">
             {{ favoritesPref.includes(name) ? `★ ${name}` : name }}
@@ -115,6 +121,7 @@
         </DropdownMenuItem>
       </div>
     </template>
+    <PresetHoverPreview :preset="previewPreset" :anchor="previewAnchor" live />
   </div>
 </template>
 
@@ -129,6 +136,7 @@ import {
   Star,
   SwatchBook,
 } from "@lucide/vue";
+import PresetHoverPreview from "@/components/PresetHoverPreview.vue";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -141,6 +149,7 @@ import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
+import { usePresetHoverPreview } from "@/composables/visualizer/usePresetHoverPreview";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import { $t } from "@/plugins/i18n";
@@ -184,6 +193,9 @@ const listMaxHeight = ref<number | null>(null);
 // into the space that is really free below never triggers a reposition. The
 // small floor keeps the fold usable when the popout sits near the bottom, at
 // the cost of a shift of at most that amount in that rare case.
+const { previewPreset, previewAnchor, onPresetHover, clearPreview } =
+  usePresetHoverPreview("[data-slot='dropdown-menu-sub-content']");
+
 const toggleExpanded = () => {
   if (!presetsExpanded.value && menuEl.value) {
     const panel =
@@ -193,6 +205,8 @@ const toggleExpanded = () => {
     listMaxHeight.value = Math.max(96, free);
   }
   presetsExpanded.value = !presetsExpanded.value;
+  // Folding removes the list; no pointerleave fires for it.
+  if (!presetsExpanded.value) clearPreview();
 };
 
 // Favourites float to the top of the picker.

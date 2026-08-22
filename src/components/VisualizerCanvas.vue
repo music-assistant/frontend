@@ -42,7 +42,10 @@ import {
 } from "@/composables/visualizer/useVisualizerEngine";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
+  clearLiveFrameSource,
   currentVisualizerPreset,
+  currentVisualizerTint,
+  setLiveFrameSource,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
@@ -100,6 +103,10 @@ const covered = computed(
 );
 let relay: VisualizerRelayClient | null = null;
 let engine: VisualizerEngine | null = null;
+
+// Shared with the preset hover preview via the state module; stable identity
+// so registration follows this canvas's relay across reconnects.
+const liveFrames = () => (relay ? relay.currentFrame() : null);
 
 const { getPreference } = useUserPreferences();
 const qualityPref = getPreference<string>(
@@ -167,6 +174,16 @@ const tintColor = computed(() => {
 const tintStyle = computed(() => ({
   backgroundColor: tintColor.value ?? "transparent",
 }));
+
+// Publish the tint for the hover preview. Not while covered: the fullscreen
+// canvas on top owns the shared state then, like currentVisualizerPreset.
+watch(
+  tintColor,
+  (value) => {
+    if (!covered.value) currentVisualizerTint.value = value;
+  },
+  { immediate: true },
+);
 
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
@@ -237,6 +254,7 @@ const connectRelay = () => {
   // below connects as soon as the id arrives.
   if (!props.playerId) {
     streaming.value = false;
+    clearLiveFrameSource(liveFrames);
     return;
   }
   relay = new VisualizerRelayClient(
@@ -252,6 +270,7 @@ const connectRelay = () => {
     props.playerId,
   );
   relay.connect();
+  setLiveFrameSource(liveFrames);
 };
 
 const initialize = async () => {
@@ -270,6 +289,7 @@ const initialize = async () => {
     relay?.reportError(reason);
     relay?.close();
     relay = null;
+    clearLiveFrameSource(liveFrames);
     // Allow the mount/uncover/resize paths to retry from scratch (relay
     // included); a later engine-only recreation would render against no relay.
     initialized = false;
@@ -290,7 +310,7 @@ const createEngine = async () => {
   try {
     created = await createVisualizerEngine(
       canvasRef.value,
-      () => (relay ? relay.currentFrame() : null),
+      liveFrames,
       qualityPref.value,
     );
   } catch (error) {
@@ -391,10 +411,12 @@ watch(covered, (isCovered) => {
     engine = null;
     relay?.close();
     relay = null;
+    clearLiveFrameSource(liveFrames);
     // Drop the shared preset name so the menu doesn't show (or let the star
     // act on) a preset that is no longer rendering. A re-mounting canvas resets
     // it asynchronously in applyPreset, always after this synchronous teardown.
     currentVisualizerPreset.value = null;
+    currentVisualizerTint.value = null;
   } else if (!initialized) {
     initializeWhenSized();
   } else {
@@ -424,7 +446,9 @@ onBeforeUnmount(() => {
   engine = null;
   relay?.close();
   relay = null;
+  clearLiveFrameSource(liveFrames);
   currentVisualizerPreset.value = null;
+  currentVisualizerTint.value = null;
 });
 </script>
 
