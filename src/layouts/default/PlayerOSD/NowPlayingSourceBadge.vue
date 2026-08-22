@@ -10,7 +10,12 @@
     v-if="nowPlayingSource"
     as="span"
     variant="outline"
-    class="now-playing-source bg-background/40 border-transparent text-inherit shadow-none backdrop-blur-md"
+    class="now-playing-source border-transparent text-inherit shadow-none"
+    :class="
+      plain
+        ? 'border-0 bg-transparent px-0'
+        : 'bg-background/40 backdrop-blur-md'
+    "
     role="img"
     :aria-label="$t('tooltip.playing_from', [nowPlayingSource.name])"
     :title="$t('tooltip.playing_from', [nowPlayingSource.name])"
@@ -21,7 +26,9 @@
       :domain="nowPlayingSource.iconDomain"
       :size="14"
     />
-    <span class="truncate">{{ nowPlayingSource.name }}</span>
+    <span v-if="!iconOnly || !nowPlayingSource.iconDomain" class="truncate">
+      {{ nowPlayingSource.name }}
+    </span>
   </Badge>
 </template>
 
@@ -29,6 +36,21 @@
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Badge } from "@/components/ui/badge";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
+
+interface Props {
+  /**
+   * Let the icon name the source on its own; the name stays available in the
+   * label and tooltip. Sources without an icon keep showing their name.
+   */
+  iconOnly?: boolean;
+  /**
+   * Drop the pill background and padding so the badge lines up with the text
+   * around it, for surfaces with a background of their own.
+   */
+  plain?: boolean;
+}
+
+defineProps<Props>();
 
 const { nowPlayingSource } = useNowPlayingSource();
 </script>

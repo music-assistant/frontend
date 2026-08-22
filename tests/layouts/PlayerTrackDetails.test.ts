@@ -86,7 +86,10 @@ function mountDetails(compact: boolean, titleOpensDetails = false) {
     },
     global: {
       plugins: [vuetify],
-      mocks: { $t: (key: string) => key },
+      mocks: {
+        $t: (key: string, args?: string[]) =>
+          args?.length ? `${key}:${args[0]}` : key,
+      },
       stubs: {
         MarqueeText: { template: "<span><slot /></span>" },
       },
@@ -309,9 +312,7 @@ describe("PlayerTrackDetails source badge", () => {
     };
   });
 
-  // the server puts the station name in the album slot when the station has no
-  // real album, so the badge would otherwise repeat what is already on the line
-  it("names the station and drops it from the metadata line", () => {
+  function playRadioStation() {
     store.activePlayerQueue = { queue_id: "q1", active: true } as never;
     store.curQueueItem = {
       media_item: radio({ name: "Radio 538" }),
@@ -333,11 +334,46 @@ describe("PlayerTrackDetails source badge", () => {
       artist: "Artist",
       album: "Radio 538",
     };
+  }
+
+  // the server puts the station name in the album slot when the station has no
+  // real album, so the badge would otherwise repeat what is already on the line
+  it("names the station and drops it from the metadata line", () => {
+    playRadioStation();
 
     const details = mountDetails(false);
 
     expect(details.get(".player-track-source").text()).toBe("Radio 538");
     expect(details.get(".player-track-subtitle-text").text()).toBe("Artist");
+  });
+
+  // the full bar has the height for a third line, so the badge does not fight
+  // the metadata for the width of the subtitle line
+  it("gives the badge its own line under the metadata on the full bar", () => {
+    playRadioStation();
+
+    const details = mountDetails(false);
+
+    expect(
+      details.find(".player-track-subtitle-line .player-track-source").exists(),
+    ).toBe(false);
+    expect(
+      details.find(".player-track-subtitle > .player-track-source").exists(),
+    ).toBe(true);
+  });
+
+  // the compact bar keeps its two shallow lines, so the badge shrinks to its
+  // icon beside the metadata and hands the name to the tooltip
+  it("shrinks the badge to its icon on the compact bar", () => {
+    playRadioStation();
+
+    const details = mountDetails(true);
+
+    const badge = details.get(
+      ".player-track-subtitle-line .player-track-source",
+    );
+    expect(badge.text()).toBe("");
+    expect(badge.attributes("title")).toContain("Radio 538");
   });
 
   it("leaves an ordinary album on the metadata line", () => {

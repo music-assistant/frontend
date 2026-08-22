@@ -1581,18 +1581,19 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   align-items: center;
   text-align: center;
-  padding: min(5%, 5vh) 0 10px;
+  --track-info-padding-top: min(5%, 5vh);
+  padding: var(--track-info-padding-top) 0 10px;
   overflow: hidden;
+}
+
+/* the badge already fills part of the gap below the artwork and hugs the
+   title, so the block trades half its top padding for it */
+.main-media-details-track-info:has(.main-media-details-source) {
+  --track-info-padding-top: min(2.5%, 2.5vh);
 }
 
 .main-media-details-track-info > * {
   max-width: 100%;
-}
-
-/* the badge introduces the title under it, so it pairs with the title rather
-   than sitting halfway up the block's own top padding */
-.main-media-details-source {
-  margin-bottom: 8px;
 }
 
 .player-bottom {
