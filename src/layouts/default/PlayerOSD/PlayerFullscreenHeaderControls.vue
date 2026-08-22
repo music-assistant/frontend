@@ -7,22 +7,74 @@
     <QualityDetailsBtn v-if="store.curQueueItem?.streamdetails" pill />
 
     <!-- lyrics: available -> clickable toggle (fully primary while the panel is open) -->
-    <TooltipProvider v-if="lyricsState === 'available'" :delay-duration="200">
+    <!-- Transcript: split button — left toggles the panel, right toggles auto-scroll -->
+    <template v-if="lyricsState === 'available' && showsTranscript">
+      <ButtonGroup>
+        <TooltipProvider :delay-duration="200">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost-outline"
+                :size="showLabel ? 'xs' : 'icon-xs'"
+                :class="[pillClass, lyricsActive ? activePillClass : '']"
+                :aria-label="panelLabel"
+                @click="emit('toggle-lyrics')"
+              >
+                <Captions :size="16" />
+                <span v-if="showLabel">{{ panelLabel }}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+              {{ panelToggleTooltip }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <ButtonGroupSeparator />
+        <TooltipProvider :delay-duration="200">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost-outline"
+                :size="showLabel ? 'xs' : 'icon-xs'"
+                :class="[
+                  pillClass,
+                  props.transcriptSyncEnabled ? activePillClass : '',
+                ]"
+                :aria-label="transcriptSyncToggleLabel"
+                @click="emit('toggle-transcript-sync')"
+              >
+                <Unlink2 v-if="!props.transcriptSyncEnabled" :size="14" />
+                <Link2 v-else :size="14" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+              {{ transcriptSyncToggleLabel }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </ButtonGroup>
+    </template>
+
+    <!-- Regular lyrics: single button toggle -->
+    <TooltipProvider
+      v-else-if="lyricsState === 'available'"
+      :delay-duration="200"
+    >
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
             variant="ghost-outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
             :class="[pillClass, lyricsActive ? activePillClass : '']"
-            :aria-label="$t('lyrics')"
+            :aria-label="panelLabel"
             @click="emit('toggle-lyrics')"
           >
             <MicVocal :size="16" :class="{ 'mic-singing': lyricsActive }" />
-            <span v-if="showLabel">{{ $t("lyrics") }}</span>
+            <span v-if="showLabel">{{ panelLabel }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
-          {{ lyricsActive ? $t("lyrics_hide") : $t("lyrics_show") }}
+          {{ panelToggleTooltip }}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -35,13 +87,19 @@
             variant="ghost-outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
             :class="['text-muted-foreground cursor-default', pillClass]"
-            :aria-label="$t('lyrics')"
+            :aria-label="panelLabel"
           >
-            <MicVocal
+            <Captions
+              v-if="showsTranscript"
               :size="16"
               :class="lyricsState === 'loading' ? 'animate-pulse' : ''"
             />
-            <span v-if="showLabel">{{ $t("lyrics") }}</span>
+            <MicVocal
+              v-else
+              :size="16"
+              :class="lyricsState === 'loading' ? 'animate-pulse' : ''"
+            />
+            <span v-if="showLabel">{{ panelLabel }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
@@ -190,6 +248,10 @@ import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
 import { Button } from "@/components/ui/button";
 import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/components/ui/button-group";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -201,25 +263,56 @@ import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
+import { MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { AudioLines, MicVocal } from "@lucide/vue";
+import { AudioLines, Captions, Link2, MicVocal, Unlink2 } from "@lucide/vue";
 import { computed } from "vue";
 
 const props = defineProps<{
   lyricsState?: string;
   lyricsActive?: boolean;
+  transcriptSyncEnabled?: boolean;
 }>();
 const emit = defineEmits<{
   (e: "toggle-lyrics"): void;
+  (e: "toggle-transcript-sync"): void;
 }>();
 
 // Explanation shown in the tooltip when lyrics can't be opened (yet).
-const lyricsTooltip = computed(() =>
-  props.lyricsState === "loading"
-    ? $t("lyrics_loading")
-    : $t("lyrics_unavailable_song"),
+// the same panel shows lyrics for a track and a transcript for a podcast episode
+const showsTranscript = computed(
+  () =>
+    store.curQueueItem?.media_item?.media_type === MediaType.PODCAST_EPISODE,
 );
+
+const panelLabel = computed(() =>
+  showsTranscript.value ? $t("transcript") : $t("lyrics"),
+);
+
+const panelToggleTooltip = computed(() => {
+  if (showsTranscript.value) {
+    return props.lyricsActive ? $t("transcript_hide") : $t("transcript_show");
+  }
+  return props.lyricsActive ? $t("lyrics_hide") : $t("lyrics_show");
+});
+
+const transcriptSyncToggleLabel = computed(() =>
+  props.transcriptSyncEnabled
+    ? $t("transcript_sync_disable")
+    : $t("transcript_sync_enable"),
+);
+
+const lyricsTooltip = computed(() => {
+  if (props.lyricsState === "loading") {
+    return showsTranscript.value
+      ? $t("transcript_loading")
+      : $t("lyrics_loading");
+  }
+  return showsTranscript.value
+    ? $t("transcript_unavailable")
+    : $t("lyrics_unavailable_song");
+});
 
 // Shared dynamic/autoplay state (also used by the queue mode banner).
 const {

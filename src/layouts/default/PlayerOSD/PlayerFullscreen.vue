@@ -49,7 +49,9 @@
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
             :lyrics-active="showLyrics"
+            :transcript-sync-enabled="transcriptSyncEnabled"
             @toggle-lyrics="toggleLyrics"
+            @toggle-transcript-sync="toggleTranscriptSync"
           />
 
           <Button
@@ -211,6 +213,7 @@
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
               :offset="lyricsOffset"
+              :sync-disabled="isEpisode && !transcriptSyncEnabled"
             />
           </div>
           <!-- Unified queue list: played → now playing → up next (virtualized) -->
@@ -540,6 +543,7 @@ import {
   PlayerType,
   QueueItem,
   Track,
+  TranscriptCue,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
@@ -684,6 +688,16 @@ watch(
   },
 );
 
+// A podcast episode shows a transcript in the same panel the lyrics use.
+const isEpisode = computed(
+  () =>
+    store.curQueueItem?.media_item?.media_type === MediaType.PODCAST_EPISODE,
+);
+const isTrack = computed(
+  () => store.curQueueItem?.media_item?.media_type === MediaType.TRACK,
+);
+const hasReadableText = computed(() => isTrack.value || isEpisode.value);
+
 // Local reactive state for lyrics
 const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
   plain: null,
@@ -708,9 +722,9 @@ const lyricsState = computed<
   "available" | "loading" | "unavailable-song" | "none"
 >(() => {
   if (!store.curQueueItem) return "none";
-  // Lyrics only make sense for tracks; hide the button entirely otherwise.
-  if (store.curQueueItem.media_item?.media_type !== MediaType.TRACK)
-    return "none";
+  // only tracks have lyrics and only podcast episodes have a transcript, so the
+  // button is hidden for anything else
+  if (!hasReadableText.value) return "none";
   if (lyricsLoading.value) return "loading";
   if (hasLyrics.value) return "available";
   return "unavailable-song";
@@ -719,6 +733,26 @@ const lyricsState = computed<
 // Lyrics are reached through a dedicated button in the header and shown in
 // their own panel, independent of the queue list (which has its own toggle).
 const showLyrics = ref(false);
+
+// Whether the transcript auto-scrolls with playback. Only relevant for episodes;
+// the user can disconnect it when ad insertions drift the position out of sync.
+// When re-linking, the elapsed time that passed while unlinked (the ad) is
+// subtracted from the offset so the transcript stays aligned.
+const transcriptSyncEnabled = ref(true);
+let unlinkedAtPosition: number | null = null;
+
+const toggleTranscriptSync = () => {
+  if (transcriptSyncEnabled.value) {
+    // Unlinking: remember where playback was
+    unlinkedAtPosition = lyricsElapsedTime.value ?? null;
+  } else if (unlinkedAtPosition !== null) {
+    // Re-linking: the difference is the ad duration — shift the offset back
+    const adDuration = (lyricsElapsedTime.value ?? 0) - unlinkedAtPosition;
+    adjustLyricsOffset(-adDuration);
+    unlinkedAtPosition = null;
+  }
+  transcriptSyncEnabled.value = !transcriptSyncEnabled.value;
+};
 
 const toggleLyrics = () => {
   showLyrics.value = !showLyrics.value;
@@ -797,30 +831,28 @@ const {
   rowOffset,
 } = useFullscreenQueue(showLyrics);
 
-// Protocols with accurate playback time reporting don't need a latency offset.
-const ACCURATE_TIME_PROTOCOLS = ["airplay"];
-
-const showLyricsOffset = computed(() => {
-  const player = store.activePlayer;
-  if (!player) return false;
-  let domain: string | undefined;
-  if (
-    player.active_output_protocol &&
-    player.active_output_protocol !== "native"
-  ) {
-    domain = player.output_protocols.find(
-      (p) => p.output_protocol_id === player.active_output_protocol,
-    )?.protocol_domain;
-  }
-  if (!domain) {
-    domain = player.provider.split("--")[0];
-  }
-  return !ACCURATE_TIME_PROTOCOLS.includes(domain);
-});
-
 // Shared lyrics sync offset; adjusted from the overflow menu while lyrics are
 // open (see openQueueMenu) and fed to the lyrics viewer.
-const { offset: lyricsOffset } = useLyricsOffset();
+const {
+  offset: lyricsOffset,
+  adjust: adjustLyricsOffset,
+  reset: resetLyricsOffset,
+} = useLyricsOffset();
+
+// Render timed transcript lines the same way synced lyrics arrive. Minutes are not
+// capped at two digits, so episodes longer than 99 minutes still line up.
+const cuesToLrc = (cues: TranscriptCue[]) =>
+  cues
+    .map((cue) => {
+      const minutes = Math.floor(cue.start / 60);
+      const seconds = Math.floor(cue.start % 60);
+      const hundredths = Math.floor((cue.start % 1) * 100);
+      const mm = String(minutes).padStart(2, "0");
+      const ss = String(seconds).padStart(2, "0");
+      const hh = String(hundredths).padStart(2, "0");
+      return `[${mm}:${ss}.${hh}]${cue.text}`;
+    })
+    .join("\n");
 
 // Fetch lyrics for the current track (only when fullscreen player is open)
 let lyricsLoadGeneration = 0;
@@ -830,15 +862,33 @@ const fetchLyrics = async () => {
   currentLyrics.value = { plain: null, synced: null };
 
   const mediaItem = store.curQueueItem?.media_item;
-  const isTrack = mediaItem?.media_type === MediaType.TRACK;
 
-  // Show the loading state right away for tracks so the header button doesn't
-  // flash "unavailable" before we've looked the lyrics up.
-  lyricsLoading.value = isTrack === true && store.showFullscreenPlayer;
+  // Show the loading state right away so the header button doesn't flash
+  // "unavailable" before we've looked anything up.
+  lyricsLoading.value = hasReadableText.value && store.showFullscreenPlayer;
 
-  // Only fetch lyrics when fullscreen player is open and the item is a track.
-  if (!store.showFullscreenPlayer || !isTrack) {
+  if (!store.showFullscreenPlayer || !mediaItem || !hasReadableText.value) {
     lyricsLoading.value = false;
+    return;
+  }
+
+  if (isEpisode.value) {
+    try {
+      const [text, cues] = await api.getPodcastEpisodeTranscript(
+        mediaItem.item_id,
+        mediaItem.provider,
+      );
+      if (generation !== lyricsLoadGeneration) return;
+      currentLyrics.value = {
+        plain: text,
+        synced: cues?.length ? cuesToLrc(cues) : null,
+      };
+    } catch (error) {
+      if (generation !== lyricsLoadGeneration) return;
+      console.error("Failed to fetch podcast transcript:", error);
+    } finally {
+      if (generation === lyricsLoadGeneration) lyricsLoading.value = false;
+    }
     return;
   }
 
@@ -878,9 +928,16 @@ const fetchLyrics = async () => {
 };
 
 // Watch for track changes and handle lyrics
-watch(() => store.curQueueItem?.media_item?.item_id, fetchLyrics, {
-  immediate: true,
-});
+watch(
+  () => store.curQueueItem?.media_item?.item_id,
+  () => {
+    resetLyricsOffset();
+    transcriptSyncEnabled.value = true;
+    unlinkedAtPosition = null;
+    fetchLyrics();
+  },
+  { immediate: true },
+);
 
 // Also fetch lyrics when fullscreen player is opened
 watch(
@@ -1202,9 +1259,9 @@ const openQueueMenu = function (evt: Event) {
   } else {
     menuItems.splice(visualizerEntryIndex, 0, waveformItem);
   }
-  // While lyrics are open, surface the sync-offset stepper at the top of the
-  // overflow menu (only for players that benefit from a latency offset).
-  if (showLyrics.value && showLyricsOffset.value) {
+  // While lyrics/transcript are open, surface the sync-offset stepper at the
+  // top of the overflow menu.
+  if (showLyrics.value) {
     menuItems.unshift({
       label: "lyrics_offset",
       // markRaw: the menu items land in a reactive array; a bare component
