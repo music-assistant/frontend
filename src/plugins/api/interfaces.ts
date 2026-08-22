@@ -889,6 +889,14 @@ export interface MediaItemCollection {
   sequence: number | string | null;
 }
 
+// one timed line of a transcript, as spoken
+export interface TranscriptCue {
+  start: number;
+  end?: number | null;
+  text: string;
+  speaker?: string | null;
+}
+
 export interface MediaItemMetadata {
   description?: string | null;
   // ISO 639-1 language code of `description`
@@ -902,6 +910,10 @@ export interface MediaItemMetadata {
   copyright?: string | null;
   lyrics?: string | null;
   lrc_lyrics?: string | null;
+  transcript?: string | null;
+  transcript_cues?: TranscriptCue[] | null;
+  // whether a transcript can be fetched, null when the provider cannot tell
+  has_transcript?: boolean | null;
   label?: string | null;
   links?: MediaItemLink[] | null;
   performers?: string[] | null;
