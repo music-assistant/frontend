@@ -4,6 +4,7 @@ import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { store } from "@/plugins/store";
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import { mount, type VueWrapper } from "@vue/test-utils";
+import { providerMapping } from "../fixtures/providerMapping";
 import { radio } from "../fixtures/radio";
 import { streamDetails } from "../fixtures/streamDetails";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -315,7 +316,10 @@ describe("PlayerTrackDetails source badge", () => {
   function playRadioStation() {
     store.activePlayerQueue = { queue_id: "q1", active: true } as never;
     store.curQueueItem = {
-      media_item: radio({ name: "Radio 538" }),
+      media_item: radio({
+        name: "Radio 538",
+        provider_mappings: [providerMapping({ provider_domain: "tunein" })],
+      }),
       streamdetails: streamDetails({
         stream_metadata: {
           title: "Live track",

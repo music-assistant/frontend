@@ -343,6 +343,12 @@ function onTitleClick() {
   max-width: 100%;
 }
 
+/* on the line itself (compact bar) an icon-less source shows its name, which
+   must leave the metadata beside it half the width */
+.player-track-subtitle-line .player-track-source {
+  max-width: 50%;
+}
+
 .player-track-subtitle-text {
   min-width: 0;
 }

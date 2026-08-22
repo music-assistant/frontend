@@ -44,8 +44,9 @@ interface Props {
    */
   iconOnly?: boolean;
   /**
-   * Drop the pill background and padding so the badge lines up with the text
-   * around it, for surfaces with a background of their own.
+   * Drop the pill background, border and horizontal padding so the badge
+   * lines up with the text around it, for surfaces with a background of
+   * their own.
    */
   plain?: boolean;
 }
