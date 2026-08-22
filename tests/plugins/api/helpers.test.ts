@@ -23,6 +23,7 @@ vi.mock("@/plugins/api", async () => {
 
 import api from "@/plugins/api";
 import {
+  getProviderRootDomain,
   isAudioSource,
   isQueueInfiniteStream,
   resolvePlayerQueue,
@@ -163,5 +164,44 @@ describe("waitForApiInitialization", () => {
     mocks.apiState.value = "initialized";
     await pending;
     expect(resolved).toBe(true);
+  });
+});
+
+describe("getProviderRootDomain", () => {
+  const folder = (item_id: string, path: string) =>
+    ({
+      media_type: MediaType.FOLDER,
+      item_id,
+      path,
+      provider: "spotify",
+    }) as unknown as MediaItemType;
+
+  it("returns the provider domain for a browse root entry", () => {
+    expect(getProviderRootDomain(folder("root", "spotify--abc://"))).toBe(
+      "spotify",
+    );
+  });
+
+  it("ignores the back entry that shares the provider path", () => {
+    expect(getProviderRootDomain(folder("back", "spotify--abc://"))).toBe(
+      undefined,
+    );
+  });
+
+  it("ignores the back entry that leads out of a provider", () => {
+    expect(getProviderRootDomain(folder("root", "root"))).toBe(undefined);
+  });
+
+  it("ignores folders inside a provider", () => {
+    expect(getProviderRootDomain(folder("root", "spotify--abc://Rock"))).toBe(
+      undefined,
+    );
+  });
+
+  it("ignores media items and missing items", () => {
+    expect(
+      getProviderRootDomain({ media_type: MediaType.TRACK } as MediaItemType),
+    ).toBe(undefined);
+    expect(getProviderRootDomain(undefined)).toBe(undefined);
   });
 });

@@ -146,8 +146,6 @@ watch(
 
 .provider-icon {
   flex-shrink: 0;
-  /* drop ProviderIcon's default gutters so the row gap sets the spacing */
-  margin: 0;
 }
 
 .provider-content {

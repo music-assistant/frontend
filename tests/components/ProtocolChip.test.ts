@@ -1,8 +1,5 @@
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createVuetify } from "vuetify";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { OutputProtocol } from "@/plugins/api/interfaces";
@@ -12,15 +9,17 @@ import { providerManifest } from "../fixtures/providerManifest";
 const apiMock = vi.hoisted(() => ({
   getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
 }));
-const openLinkInNewTab = vi.hoisted(() => vi.fn());
+const getExternalLinkUrl = vi.hoisted(() => vi.fn());
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
   api: apiMock,
 }));
-vi.mock("@/helpers/utils", () => ({ openLinkInNewTab }));
-
-const vuetify = createVuetify({ components, directives });
+vi.mock("@/helpers/utils", () => ({ getExternalLinkUrl }));
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, named?: Record<string, unknown>) =>
+    named ? `${key}:${Object.values(named).join(",")}` : key,
+}));
 
 enableAutoUnmount(afterEach);
 
@@ -28,7 +27,6 @@ function mountChip(props: { protocol: OutputProtocol; linkToDocs?: boolean }) {
   return mount(ProtocolChip, {
     props,
     global: {
-      plugins: [vuetify],
       stubs: {
         ProviderIcon: {
           props: ["domain"],
@@ -43,7 +41,8 @@ function mountChip(props: { protocol: OutputProtocol; linkToDocs?: boolean }) {
 describe("ProtocolChip", () => {
   beforeEach(() => {
     apiMock.getProviderManifest.mockReset();
-    openLinkInNewTab.mockReset();
+    // the helper rewrites docs urls for beta servers, so pass them through
+    getExternalLinkUrl.mockReset().mockImplementation((url?: string) => url);
   });
 
   it("renders the provider name and icon for the protocol", () => {
@@ -75,59 +74,128 @@ describe("ProtocolChip", () => {
       protocol: outputProtocol({ available: false }),
     });
 
-    expect(wrapper.classes()).toContain("protocol-chip--unavailable");
+    expect(wrapper.classes()).toContain("opacity-40");
   });
 
-  it("opens the provider documentation on click when linking is enabled", async () => {
+  it("fills with a background vuetify's theme stylesheet does not claim", () => {
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+
+    const wrapper = mountChip({ protocol: outputProtocol() });
+
+    // vuetify defines its own .bg-secondary at runtime and wins the !important
+    // tie, so shipping the variant's fill would turn the chip teal
+    expect(wrapper.classes()).toContain("bg-muted");
+    expect(wrapper.classes()).not.toContain("bg-secondary");
+  });
+
+  it("links to the provider documentation when linking is enabled", () => {
     apiMock.getProviderManifest.mockReturnValue(
       providerManifest({ documentation: "https://example.org/airplay" }),
     );
 
     const wrapper = mountChip({ protocol: outputProtocol(), linkToDocs: true });
-    expect(wrapper.classes()).toContain("protocol-chip--clickable");
-    expect(wrapper.find(".mdi-open-in-new").exists()).toBe(true);
-    // vuetify only renders the chip as interactive once it has a click listener
-    expect(wrapper.classes()).toContain("v-chip--link");
-    expect(wrapper.attributes("tabindex")).toBe("0");
 
-    await wrapper.trigger("click");
+    // a real anchor, so the chip is announced as a link and honours
+    // middle-click / cmd-click / "open in new tab"
+    expect(wrapper.element.tagName).toBe("A");
+    expect(wrapper.attributes("href")).toBe("https://example.org/airplay");
+    expect(wrapper.attributes("target")).toBe("_blank");
+    expect(wrapper.attributes("rel")).toBe("noopener noreferrer");
+    expect(wrapper.find(".lucide-external-link").exists()).toBe(true);
+    // preflight is not imported, so the anchor would render underlined
+    expect(wrapper.classes()).toContain("no-underline");
+    // the variant's own hover would pull the fill back to --secondary
+    expect(wrapper.classes()).toContain("[a&]:hover:bg-muted");
+    expect(wrapper.classes()).not.toContain("[a&]:hover:bg-secondary/90");
+  });
 
-    expect(openLinkInNewTab).toHaveBeenCalledWith(
-      "https://example.org/airplay",
+  it("names the link by its purpose rather than the bare provider name", () => {
+    apiMock.getProviderManifest.mockReturnValue(
+      providerManifest({
+        name: "AirPlay provider",
+        documentation: "https://example.org/airplay",
+      }),
+    );
+
+    const wrapper = mountChip({ protocol: outputProtocol(), linkToDocs: true });
+
+    // the visible text is only the provider name, so the accessible name has to
+    // say where the link goes - and still contain that visible text
+    expect(wrapper.attributes("aria-label")).toBe(
+      "tooltip.open_documentation:AirPlay provider",
     );
   });
 
-  it("stays inert when the call site does not link to the documentation", async () => {
+  it("routes the documentation url through the external link helper", () => {
+    apiMock.getProviderManifest.mockReturnValue(
+      providerManifest({ documentation: "https://music-assistant.io/docs" }),
+    );
+    getExternalLinkUrl.mockReturnValue("https://beta.music-assistant.io/docs");
+
+    const wrapper = mountChip({ protocol: outputProtocol(), linkToDocs: true });
+
+    expect(getExternalLinkUrl).toHaveBeenCalledWith(
+      "https://music-assistant.io/docs",
+    );
+    expect(wrapper.attributes("href")).toBe(
+      "https://beta.music-assistant.io/docs",
+    );
+  });
+
+  it("still links to the documentation while dimmed as unavailable", () => {
+    apiMock.getProviderManifest.mockReturnValue(
+      providerManifest({ documentation: "https://example.org/airplay" }),
+    );
+
+    const wrapper = mountChip({
+      protocol: outputProtocol({ available: false }),
+      linkToDocs: true,
+    });
+
+    // the scoped hover rule is deliberately plain so this !important dimming
+    // survives a hover instead of being brightened back to 0.85
+    expect(wrapper.element.tagName).toBe("A");
+    expect(wrapper.classes()).toContain("opacity-40");
+  });
+
+  it("stays inert when the call site does not link to the documentation", () => {
     apiMock.getProviderManifest.mockReturnValue(
       providerManifest({ documentation: "https://example.org/airplay" }),
     );
 
     const wrapper = mountChip({ protocol: outputProtocol() });
-    expect(wrapper.classes()).not.toContain("protocol-chip--clickable");
-    expect(wrapper.find(".mdi-open-in-new").exists()).toBe(false);
-    // without a click listener vuetify leaves the chip non-interactive
-    expect(wrapper.classes()).not.toContain("v-chip--link");
+
+    // a plain span, so the two list call sites keep a non-focusable label
+    expect(wrapper.element.tagName).toBe("SPAN");
+    expect(wrapper.attributes("href")).toBeUndefined();
     expect(wrapper.attributes("tabindex")).toBeUndefined();
-
-    await wrapper.trigger("click");
-
-    expect(openLinkInNewTab).not.toHaveBeenCalled();
+    expect(wrapper.find(".lucide-external-link").exists()).toBe(false);
+    expect(wrapper.attributes("aria-label")).toBeUndefined();
+    expect(getExternalLinkUrl).not.toHaveBeenCalled();
   });
 
-  it("stays inert when the provider has no documentation", async () => {
+  it("stays inert when the provider has no documentation", () => {
     apiMock.getProviderManifest.mockReturnValue(
       providerManifest({ documentation: null }),
     );
 
     const wrapper = mountChip({ protocol: outputProtocol(), linkToDocs: true });
-    expect(wrapper.classes()).not.toContain("protocol-chip--clickable");
-    expect(wrapper.find(".mdi-open-in-new").exists()).toBe(false);
-    // without a click listener vuetify leaves the chip non-interactive
-    expect(wrapper.classes()).not.toContain("v-chip--link");
+
+    expect(wrapper.element.tagName).toBe("SPAN");
+    expect(wrapper.attributes("href")).toBeUndefined();
     expect(wrapper.attributes("tabindex")).toBeUndefined();
+    expect(wrapper.find(".lucide-external-link").exists()).toBe(false);
+  });
 
-    await wrapper.trigger("click");
+  it("stays inert when the documentation url is not a web url", () => {
+    apiMock.getProviderManifest.mockReturnValue(
+      providerManifest({ documentation: "javascript:alert(1)" }),
+    );
+    getExternalLinkUrl.mockReturnValue(undefined);
 
-    expect(openLinkInNewTab).not.toHaveBeenCalled();
+    const wrapper = mountChip({ protocol: outputProtocol(), linkToDocs: true });
+
+    expect(wrapper.element.tagName).toBe("SPAN");
+    expect(wrapper.attributes("href")).toBeUndefined();
   });
 });

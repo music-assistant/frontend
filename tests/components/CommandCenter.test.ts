@@ -138,7 +138,9 @@ function makeTrack(id: string, name: string) {
   };
 }
 
-const CommandDialogStub = {
+// the shell picks a sheet or a dialog by layout; the palette under test only
+// hands it the open flag and a slot, so one stub covers both
+const CommandCenterShellStub = {
   props: ["open"],
   emits: ["update:open"],
   template: '<div v-if="open" data-testid="command-center"><slot /></div>',
@@ -160,7 +162,7 @@ function mountPalette() {
   return mount(CommandCenter, {
     global: {
       stubs: {
-        CommandDialog: CommandDialogStub,
+        CommandCenterShell: CommandCenterShellStub,
         CommandList: { template: "<div><slot /></div>" },
         CommandGroup: {
           props: ["heading"],
@@ -222,6 +224,7 @@ beforeEach(() => {
   state.storeMock.dialogActive = false;
   state.storeMock.activePlayerId = undefined;
   state.storeMock.mobileLayout = false;
+  state.storeMock.isTouchscreen = false;
   vi.clearAllMocks();
 });
 
@@ -660,6 +663,145 @@ describe("CommandCenter", () => {
     await itemByText(wrapper, "Kitchen").trigger("click");
     expect(state.storeMock.activePlayerId).toBe("p1");
     expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("puts the on-screen keyboard away on enter instead of picking a result", async () => {
+    state.storeMock.isTouchscreen = true;
+    state.storeMock.mobileLayout = true;
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "bohemian");
+
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    const blurSpy = vi.spyOn(input, "blur");
+    // reka's own enter handler sits on the input itself, so an enter that
+    // reaches it would open the highlighted row
+    const reachedInput: string[] = [];
+    input.addEventListener("keydown", (event) => reachedInput.push(event.key));
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+
+    expect(blurSpy).toHaveBeenCalled();
+    expect(reachedInput).not.toContain("Enter");
+
+    wrapper.unmount();
+  });
+
+  it("skips the first-result highlight on the mobile sheet", async () => {
+    state.storeMock.isTouchscreen = true;
+    state.storeMock.mobileLayout = true;
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    const seen: string[] = [];
+    (
+      wrapper.get('[data-testid="palette-input"]').element as HTMLInputElement
+    ).addEventListener("keydown", (event) => seen.push(event.key));
+
+    await typeQuery(wrapper, "bohemian");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+    // no synthetic ArrowDown: there is no enter contract to prepare for
+    expect(seen).not.toContain("ArrowDown");
+
+    wrapper.unmount();
+  });
+
+  it("leaves the enter that commits an IME conversion to the composition", async () => {
+    state.storeMock.isTouchscreen = true;
+    state.storeMock.mobileLayout = true;
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "bohemian");
+
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    const blurSpy = vi.spyOn(input, "blur");
+    const reachedInput: string[] = [];
+    input.addEventListener("keydown", (event) => reachedInput.push(event.key));
+
+    // this enter picks the IME candidate; it is not a return-key press
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        bubbles: true,
+        isComposing: true,
+      }),
+    );
+
+    expect(blurSpy).not.toHaveBeenCalled();
+    expect(reachedInput).toContain("Enter");
+
+    wrapper.unmount();
+  });
+
+  it("keeps the desktop enter contract on a touchscreen laptop", async () => {
+    // a touch screen with the desktop dialog: the footer still advertises
+    // enter, so it must keep opening the top hit
+    state.storeMock.isTouchscreen = true;
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    const seen: string[] = [];
+    input.addEventListener("keydown", (event) => seen.push(event.key));
+
+    await typeQuery(wrapper, "bohemian");
+    expect(seen).toContain("ArrowDown");
+
+    const blurSpy = vi.spyOn(input, "blur");
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    expect(blurSpy).not.toHaveBeenCalled();
+    expect(seen).toContain("Enter");
+
+    wrapper.unmount();
+  });
+
+  it("highlights the first result on desktop and leaves focus alone on enter", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    const seen: string[] = [];
+    input.addEventListener("keydown", (event) => seen.push(event.key));
+
+    await typeQuery(wrapper, "bohemian");
+    // the synthetic ArrowDown that highlights the top hit for enter to open
+    expect(seen).toContain("ArrowDown");
+
+    const blurSpy = vi.spyOn(input, "blur");
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    expect(blurSpy).not.toHaveBeenCalled();
+    expect(seen).toContain("Enter");
 
     wrapper.unmount();
   });

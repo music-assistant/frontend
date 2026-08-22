@@ -888,3 +888,35 @@ describe("connection state changes", () => {
     wrapper.unmount();
   });
 });
+
+describe("credentials field input behavior", () => {
+  it("marks username and password inputs for autofill and disables mobile autocorrect", async () => {
+    mockStandaloneFrontend();
+    const wrapper = mountLogin();
+    await flushPromises();
+
+    await wrapper.find("input").setValue("http://music-assistant.local:8095");
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    const usernameInput = wrapper.find(
+      'input[placeholder="Enter your username"]',
+    );
+    const passwordInput = wrapper.find(
+      'input[placeholder="Enter your password"]',
+    );
+
+    expect(usernameInput.attributes()).toMatchObject({
+      autocomplete: "username",
+      autocapitalize: "none",
+      autocorrect: "off",
+      spellcheck: "false",
+    });
+    expect(passwordInput.attributes()).toMatchObject({
+      autocomplete: "current-password",
+      autocapitalize: "none",
+      autocorrect: "off",
+      spellcheck: "false",
+    });
+  });
+});

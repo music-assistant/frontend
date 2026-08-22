@@ -5,20 +5,23 @@ import {
 } from "@/composables/useMobileSidebarSide";
 import { canGoBack } from "@/helpers/navigation";
 import {
-  capturePageSnapshot,
-  type PageSnapshot,
-} from "@/helpers/page_snapshot";
-import { computed, onScopeDispose, ref, type StyleValue } from "vue";
+  capturePagePreview,
+  clearPagePreviews,
+  storePagePreview,
+  takePagePreview,
+  type PagePreview,
+} from "@/helpers/page_preview";
+import { computed, nextTick, onScopeDispose, ref, type StyleValue } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const EDGE_ZONE_PX = 32;
 const SWIPE_THRESHOLD_PX = 60;
-const VERTICAL_TOLERANCE_PX = 40;
 const DIRECTION_LOCK_PX = 12;
 const SCROLL_END_SLACK_PX = 1;
 const SETTLE_MS = 220;
 const SETTLE_EASING = "cubic-bezier(0.32, 0.72, 0, 1)";
-const RESTORE_MS = 120;
+const EDGE_SHADOW = "-8px 0 24px rgb(0 0 0 / 0.18)";
+const NAVIGATION_TIMEOUT_MS = 1000;
 const REVEAL_PARALLAX = 0.25;
 
 type SwipeAction = "menu" | "back";
@@ -32,17 +35,17 @@ type SwipeAction = "menu" | "back";
  * the sheet instead, and the left edge navigates back on every route.
  * Nothing happens when there is nowhere to go back to.
  *
- * A back swipe is interactive. The moment it commits, the router goes back
- * and the view being left is frozen into a snapshot laid over the top, so the
- * view behind it is on screen and trailing the finger for the whole drag
- * rather than appearing once the gesture is over. Releasing past the
- * threshold sees it out; releasing short of it slides the snapshot back and
- * undoes the navigation. Opening the sheet stays a plain threshold, as the
- * sheet brings its own animation.
+ * A back swipe drags the live page along with the finger, revealing a cached
+ * still of the view it would return to sliding in behind. History only moves
+ * at release: past the threshold the page slides out and the router goes
+ * back, exactly once; short of it, or when the system claims the touch, the
+ * page slides back into place and nothing is navigated. Opening the sheet
+ * stays a plain threshold, as the sheet brings its own animation.
  *
  * A carousel under the touch keeps the gesture only while it can still
  * scroll that way; parked at its start it cannot move, so the swipe belongs
- * to the navigation. The drag also has to commit to the horizontal axis.
+ * to the navigation. The drag also has to commit to the horizontal axis, and
+ * once it has, it keeps the gesture for the rest of the touch.
  *
  * Only active while the mobile sidebar is closed. Bind the returned handlers
  * as passive touchstart/touchmove/touchend/touchcancel listeners, and
@@ -58,35 +61,67 @@ export function useEdgeSwipeNavigation() {
   const touchStartY = ref(0);
   const swipeEdge = ref<MobileSidebarSide | null>(null);
   const swipeAction = ref<SwipeAction | null>(null);
+  const dragging = ref(false);
   const surfaceRef = ref<HTMLElement | null>(null);
   const pageOffset = ref(0);
   const settling = ref(false);
-  const revealing = ref(false);
+  const parked = ref(false);
 
-  let settleTimer: ReturnType<typeof setTimeout> | undefined;
-  let snapshot: PageSnapshot | null = null;
-  let restoreScroll: (() => void) | null = null;
+  let trackedTouchId: number | null = null;
   let gestureTarget: EventTarget | null = null;
+  let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  let landingTimer: ReturnType<typeof setTimeout> | undefined;
+  let unregisterLanding: (() => void) | null = null;
+  let preview: PagePreview | null = null;
+  let previewKey: string | null = null;
+
+  // the DOM still shows the outgoing page when afterEach runs, which is the
+  // last chance to photograph it for the swipe that later returns to it; only
+  // a forward navigation leaves that page one step back, so anything else
+  // (replace, back, failed) would store a still no swipe can ever reveal
+  const unregisterCapture = router.afterEach((to, from, failure) => {
+    const surface = surfaceRef.value;
+    if (failure || !isMobile.value || !surface) return;
+    if (router.options.history.state.back !== from.fullPath) return;
+    storePagePreview(from.fullPath, capturePagePreview(surface));
+  });
 
   const swipeStyle = computed<StyleValue | undefined>(() => {
-    if (!pageOffset.value && !settling.value) return undefined;
-
-    const x = revealing.value
-      ? -(viewportWidth() - pageOffset.value) * REVEAL_PARALLAX
-      : pageOffset.value;
+    // styled for the whole back drag, even at offset zero, so the page always
+    // stacks above the preview mounted behind it; menu drags stay untouched
+    const backDragging = dragging.value && swipeAction.value === "back";
+    if (
+      !pageOffset.value &&
+      !settling.value &&
+      !parked.value &&
+      !backDragging
+    ) {
+      return undefined;
+    }
 
     return {
-      transform: `translate3d(${x}px, 0, 0)`,
+      transform: `translate3d(${pageOffset.value}px, 0, 0)`,
       transition: settling.value
         ? `transform ${SETTLE_MS}ms ${SETTLE_EASING}`
         : "none",
+      boxShadow: EDGE_SHADOW,
+      // stack the live page above the preview mounted behind it
+      position: "relative",
+      zIndex: 1,
     };
   });
 
   function onTouchStart(event: TouchEvent) {
     if (!isMobile.value || openMobile.value) return;
-    const touch = event.touches[0];
+    // a settle or a committed navigation is still in flight; see it out first
+    if (settling.value || parked.value) return;
+    const touch = event.changedTouches?.[0] ?? event.touches[0];
     if (!touch) return;
+    // a second finger landing mid-gesture must not re-litigate it
+    if (gestureLive(event)) return;
+    // a drag whose finger vanished without an end left the page shifted;
+    // put everything back before this touch takes over
+    if (dragging.value) recoverStrandedDrag();
 
     touchStartX.value = touch.clientX;
     touchStartY.value = touch.clientY;
@@ -96,26 +131,8 @@ export function useEdgeSwipeNavigation() {
     const ours = edge && !scrollerOwnsSwipe(horizontalScrollerAt(event), edge);
     swipeEdge.value = ours ? edge : null;
     swipeAction.value = ours && edge ? actionFor(edge) : null;
-    if (swipeAction.value === "back") holdGesture(event.target);
-  }
-
-  function holdGesture(target: EventTarget | null) {
-    releaseGesture();
-    if (!target) return;
-    gestureTarget = target;
-    target.addEventListener("touchmove", onGestureMove, { passive: true });
-    target.addEventListener("touchend", onTouchEnd, { passive: true });
-    target.addEventListener("touchcancel", onTouchEnd, { passive: true });
-  }
-
-  const onGestureMove = (event: Event) => onTouchMove(event as TouchEvent);
-
-  function releaseGesture() {
-    if (!gestureTarget) return;
-    gestureTarget.removeEventListener("touchmove", onGestureMove);
-    gestureTarget.removeEventListener("touchend", onTouchEnd);
-    gestureTarget.removeEventListener("touchcancel", onTouchEnd);
-    gestureTarget = null;
+    trackedTouchId = swipeAction.value ? (touch.identifier ?? 0) : null;
+    if (swipeAction.value) holdGesture(event.target);
   }
 
   function onTouchMove(event: TouchEvent) {
@@ -123,25 +140,28 @@ export function useEdgeSwipeNavigation() {
     const action = swipeAction.value;
     if (!edge || !action || !isMobile.value || openMobile.value) return;
 
-    const touch = event.touches[0];
+    const touch = trackedTouch(event.touches);
     if (!touch) return;
 
     const deltaX = touch.clientX - touchStartX.value;
     const deltaY = touch.clientY - touchStartY.value;
 
-    if (
-      Math.abs(deltaX) < DIRECTION_LOCK_PX &&
-      Math.abs(deltaY) < DIRECTION_LOCK_PX
-    ) {
-      return;
-    }
-
-    if (
-      Math.abs(deltaY) > VERTICAL_TOLERANCE_PX ||
-      Math.abs(deltaY) >= Math.abs(deltaX)
-    ) {
-      abandonSwipe();
-      return;
+    if (!dragging.value) {
+      if (
+        Math.abs(deltaX) < DIRECTION_LOCK_PX &&
+        Math.abs(deltaY) < DIRECTION_LOCK_PX
+      ) {
+        return;
+      }
+      // the axis is decided once: vertical hands the touch to the page for
+      // good, horizontal keeps it for good — the vertical drift of a thumb
+      // arcing across the screen must not call off a drag under way
+      if (Math.abs(deltaY) >= Math.abs(deltaX)) {
+        clearGesture();
+        return;
+      }
+      dragging.value = true;
+      if (action === "back") mountPreview();
     }
 
     const traveled = edge === "left" ? deltaX : -deltaX;
@@ -149,75 +169,164 @@ export function useEdgeSwipeNavigation() {
     if (action === "menu") {
       if (traveled > SWIPE_THRESHOLD_PX) {
         setOpenMobile(true);
-        swipeEdge.value = null;
-        swipeAction.value = null;
+        clearGesture();
       }
       return;
     }
 
-    if (!revealing.value) beginReveal();
     setOffset(Math.max(0, Math.min(traveled, viewportWidth())));
   }
 
-  function onTouchEnd() {
+  function onTouchEnd(event?: TouchEvent) {
+    if (!endsTrackedTouch(event)) return;
     const action = swipeAction.value;
+    const dragged = dragging.value;
+    clearGesture();
+    if (action !== "back" || !dragged) return;
+
+    if (pageOffset.value > SWIPE_THRESHOLD_PX) commit();
+    else cancel();
+  }
+
+  // the system claimed the touch — often for its own back gesture, which
+  // performs the navigation itself, so committing here too would go back twice
+  function onTouchCancel(event?: TouchEvent) {
+    if (!endsTrackedTouch(event)) return;
+    const action = swipeAction.value;
+    const dragged = dragging.value;
+    clearGesture();
+    if (action === "back" && dragged) cancel();
+  }
+
+  function clearGesture() {
     swipeEdge.value = null;
     swipeAction.value = null;
+    dragging.value = false;
+    trackedTouchId = null;
     releaseGesture();
-    if (action !== "back" || !revealing.value) return;
-
-    if (pageOffset.value > SWIPE_THRESHOLD_PX) finishReveal();
-    else cancelReveal();
   }
 
-  function abandonSwipe() {
-    swipeEdge.value = null;
-    swipeAction.value = null;
+  // touch events keep targeting the node under the finger at touchstart; when
+  // a re-render detaches that node mid-drag they stop bubbling to <main>, so
+  // listeners on the node itself are what keep the gesture alive
+  function holdGesture(target: EventTarget | null) {
     releaseGesture();
-    if (revealing.value) cancelReveal();
+    if (!target) return;
+    gestureTarget = target;
+    target.addEventListener("touchmove", onGestureMove, { passive: true });
+    target.addEventListener("touchend", onGestureEnd, { passive: true });
+    target.addEventListener("touchcancel", onGestureCancel, { passive: true });
   }
 
-  function beginReveal() {
-    const surface = surfaceRef.value;
-    if (surface) {
-      restoreScroll = captureScroll(surface);
-      snapshot = capturePageSnapshot(surface);
-      snapshot.place(pageOffset.value);
-    }
-    revealing.value = true;
-    router.back();
+  const onGestureMove = (event: Event) => onTouchMove(event as TouchEvent);
+  const onGestureEnd = (event: Event) => onTouchEnd(event as TouchEvent);
+  const onGestureCancel = (event: Event) => onTouchCancel(event as TouchEvent);
+
+  function releaseGesture() {
+    if (!gestureTarget) return;
+    gestureTarget.removeEventListener("touchmove", onGestureMove);
+    gestureTarget.removeEventListener("touchend", onGestureEnd);
+    gestureTarget.removeEventListener("touchcancel", onGestureCancel);
+    gestureTarget = null;
   }
 
-  function finishReveal() {
+  function gestureLive(event: TouchEvent): boolean {
+    if (!swipeAction.value && !dragging.value) return false;
+    return trackedTouch(event.touches) !== undefined;
+  }
+
+  function trackedTouch(touches: TouchList): Touch | undefined {
+    return [...touches].find((t) => t.identifier === trackedTouchId);
+  }
+
+  // an end for some other finger must not end the tracked drag
+  function endsTrackedTouch(event?: TouchEvent): boolean {
+    if (!event?.changedTouches || trackedTouchId === null) return true;
+    return [...event.changedTouches].some(
+      (t) => t.identifier === trackedTouchId,
+    );
+  }
+
+  function recoverStrandedDrag() {
+    dragging.value = false;
+    pageOffset.value = 0;
+    shelvePreview();
+  }
+
+  function mountPreview() {
+    dropPreview();
+    const container = surfaceRef.value?.parentElement;
+    const backPath = router.options.history.state.back;
+    if (!container || typeof backPath !== "string") return;
+    preview = takePagePreview(backPath) ?? null;
+    previewKey = preview ? backPath : null;
+    preview?.mount(container);
+  }
+
+  function commit() {
+    const fromPath = route.fullPath;
     slide(viewportWidth(), () => {
-      revealing.value = false;
-      setOffset(0);
-      dropSnapshot();
+      // something else navigated while the page was sliding out; a back now
+      // would pop whatever that navigation put on top instead
+      if (route.fullPath !== fromPath) {
+        pageOffset.value = 0;
+        dropPreview();
+        return;
+      }
+      parked.value = true;
+      router.back();
+      awaitLanding();
     });
   }
 
-  function cancelReveal() {
-    slide(0, () => {
-      revealing.value = false;
-      setOffset(0);
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(() => {
-        restoreScroll?.();
-        dropSnapshot();
-      }, RESTORE_MS);
-      router.forward();
-    });
+  function cancel() {
+    slide(0, shelvePreview);
+  }
+
+  // nothing was navigated, so the still is as good as new for a retried swipe
+  function shelvePreview() {
+    if (preview && previewKey) {
+      preview.remove();
+      storePagePreview(previewKey, preview);
+    }
+    preview = null;
+    previewKey = null;
+  }
+
+  // the page stays parked off screen until the destination has rendered;
+  // snapping back any sooner would flash it over the incoming view
+  function awaitLanding() {
+    const land = () => {
+      if (!parked.value) return;
+      unregisterLanding?.();
+      unregisterLanding = null;
+      clearTimeout(landingTimer);
+      parked.value = false;
+      pageOffset.value = 0;
+      // the preview keeps covering the incoming page's first mount frame
+      const covering = preview;
+      preview = null;
+      previewKey = null;
+      requestAnimationFrame(() => covering?.remove());
+    };
+    unregisterLanding = router.afterEach(() => void nextTick(land));
+    // a navigation that errors out never reaches afterEach and must not
+    // leave the screen parked on nothing
+    landingTimer = setTimeout(land, NAVIGATION_TIMEOUT_MS);
   }
 
   function setOffset(offset: number) {
     pageOffset.value = offset;
-    snapshot?.place(offset, settling.value ? SETTLE_MS : undefined);
+    preview?.place(
+      -(viewportWidth() - offset) * REVEAL_PARALLAX,
+      settling.value ? SETTLE_MS : undefined,
+    );
   }
 
   function slide(offset: number, onArrival: () => void) {
     clearTimeout(settleTimer);
     if (prefersReducedMotion()) {
-      settling.value = false;
+      setOffset(offset);
       onArrival();
       return;
     }
@@ -229,10 +338,10 @@ export function useEdgeSwipeNavigation() {
     }, SETTLE_MS);
   }
 
-  function dropSnapshot() {
-    snapshot?.remove();
-    snapshot = null;
-    restoreScroll = null;
+  function dropPreview() {
+    preview?.remove();
+    preview = null;
+    previewKey = null;
   }
 
   function actionFor(edge: MobileSidebarSide): SwipeAction | null {
@@ -245,11 +354,22 @@ export function useEdgeSwipeNavigation() {
 
   onScopeDispose(() => {
     clearTimeout(settleTimer);
+    clearTimeout(landingTimer);
+    unregisterLanding?.();
+    unregisterCapture();
     releaseGesture();
-    dropSnapshot();
+    dropPreview();
+    clearPagePreviews();
   });
 
-  return { onTouchStart, onTouchMove, onTouchEnd, surfaceRef, swipeStyle };
+  return {
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    onTouchCancel,
+    surfaceRef,
+    swipeStyle,
+  };
 }
 
 /**
@@ -292,18 +412,6 @@ function scrollerOwnsSwipe(
   if (edge === "left") return scroller.scrollLeft > SCROLL_END_SLACK_PX;
   const maxScrollLeft = scroller.scrollWidth - scroller.clientWidth;
   return scroller.scrollLeft < maxScrollLeft - SCROLL_END_SLACK_PX;
-}
-
-function captureScroll(surface: HTMLElement): (() => void) | null {
-  const scroller = [...surface.querySelectorAll<HTMLElement>("*")].find(
-    (el) => el.scrollTop > 0,
-  );
-  if (!scroller) return null;
-  const top = scroller.scrollTop;
-  // leave it alone if the view already restored itself
-  return () => {
-    if (!scroller.scrollTop) scroller.scrollTop = top;
-  };
 }
 
 function viewportWidth(): number {

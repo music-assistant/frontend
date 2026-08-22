@@ -11,6 +11,7 @@ import {
   Player,
   PlayerQueue,
   PodcastEpisode,
+  QueueItem,
 } from "./interfaces";
 
 /**
@@ -162,6 +163,22 @@ export const getListItemProviderIconDomain = function (
     return item.provider_mappings[0].provider_domain;
   }
   return getProviderIconDomain(item);
+};
+
+/**
+ * Provider domain for a browse entry that stands for a provider itself,
+ * undefined for anything else.
+ */
+export const getProviderRootDomain = function (
+  item: MediaItemType | ItemMapping | QueueItem | undefined,
+): string | undefined {
+  if (!item || !("media_type" in item)) return undefined;
+  if (item.media_type !== MediaType.FOLDER) return undefined;
+  // the ".." entry one level down has the same path, so item_id has to match too
+  if (item.item_id !== "root") return undefined;
+  return "path" in item && item.path.endsWith("://")
+    ? item.provider
+    : undefined;
 };
 
 export const itemIsAvailable = function (

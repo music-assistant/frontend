@@ -400,7 +400,7 @@
                   isAdmin
                 "
                 :size="22"
-                class="cursor-pointer -ml-1"
+                class="cursor-pointer"
                 :title="$t('merge_into')"
                 @click="mergeGenre"
               />
