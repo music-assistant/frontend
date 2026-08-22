@@ -12,7 +12,11 @@ const {
   routeState,
   sidebarState,
 } = vi.hoisted(() => ({
-  afterEachHooks: [] as ((to: unknown, from: unknown) => void)[],
+  afterEachHooks: [] as ((
+    to: unknown,
+    from: unknown,
+    failure?: unknown,
+  ) => void)[],
   historyState: { back: null as string | null },
   mobileSidebarSide: { value: "left" as "left" | "right" },
   mockRouterBack: vi.fn(),
@@ -37,7 +41,9 @@ vi.mock("vue-router", () => ({
   useRoute: () => routeState,
   useRouter: () => ({
     back: mockRouterBack,
-    afterEach: (hook: (to: unknown, from: unknown) => void) => {
+    afterEach: (
+      hook: (to: unknown, from: unknown, failure?: unknown) => void,
+    ) => {
       afterEachHooks.push(hook);
       return () => {
         const at = afterEachHooks.indexOf(hook);
@@ -62,6 +68,14 @@ function touchEvent(x: number, y: number, target?: Element): TouchEvent {
     target,
     currentTarget: target?.closest("main"),
   } as unknown as TouchEvent;
+}
+
+/** Makes the page look like it runs inside an installed (home screen) app. */
+function runAsInstalledApp() {
+  Object.defineProperty(window.navigator, "standalone", {
+    value: true,
+    configurable: true,
+  });
 }
 
 /**
@@ -100,11 +114,30 @@ function endSwipe(onTouchEnd: () => void) {
   vi.advanceTimersByTime(SETTLE_MS);
 }
 
+/** Mounts the swipeable page surface under a fresh `<main>` in the body. */
+function mountSurface(surfaceRef: { value: HTMLElement | null }): HTMLElement {
+  const main = document.createElement("main");
+  const surface = document.createElement("div");
+  main.appendChild(surface);
+  document.body.appendChild(main);
+  surfaceRef.value = surface;
+  return main;
+}
+
+/** Runs the router's afterEach hooks as a navigation between two paths. */
+function fireNavigation(toPath: string, fromPath: string, failure?: unknown) {
+  for (const hook of afterEachHooks) {
+    hook(
+      { path: toPath, fullPath: toPath },
+      { path: fromPath, fullPath: fromPath },
+      failure,
+    );
+  }
+}
+
 /** Tells the composable the back navigation it asked for has finished. */
 async function landNavigation() {
-  for (const hook of afterEachHooks) {
-    hook({ fullPath: "/discover" }, { fullPath: "/album" });
-  }
+  fireNavigation("/discover", "/album");
   await nextTick();
 }
 
@@ -126,6 +159,7 @@ afterEach(() => {
   historyState.back = null;
   document.body.innerHTML = "";
   clearPagePreviews();
+  delete (window.navigator as { standalone?: boolean }).standalone;
   if (originalInnerWidth) {
     Object.defineProperty(window, "innerWidth", originalInnerWidth);
   }
@@ -341,6 +375,40 @@ describe("useEdgeSwipeNavigation", () => {
     expect(swipeStyle.value).toBeUndefined();
   });
 
+  // installed web apps get an OS back gesture over the same edge, animating a
+  // system snapshot of the previous page by itself; a second drag run next to
+  // it would paint the previous page twice, so ours stands down
+  it("leaves the back swipe to the OS in an installed web app", () => {
+    runAsInstalledApp();
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, swipeStyle } =
+      useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+
+    // the page must not follow the finger next to the OS animation either
+    expect(swipeStyle.value).toBeUndefined();
+
+    endSwipe(onTouchEnd);
+
+    expect(mockRouterBack).not.toHaveBeenCalled();
+    expect(swipeStyle.value).toBeUndefined();
+  });
+
+  // the OS gesture only takes the back half; the menu edge stays ours
+  it("still opens the menu in an installed web app", () => {
+    runAsInstalledApp();
+    historyState.back = "/settings";
+    const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(80, 100));
+
+    expect(mockSetOpenMobile).toHaveBeenCalledWith(true);
+  });
+
   // a stray thumb or palm landing mid-drag must not re-litigate a gesture
   // already under way
   it("ignores a second finger landing mid-drag", () => {
@@ -445,16 +513,10 @@ describe("useEdgeSwipeNavigation", () => {
     historyState.back = "/discover";
     const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef } =
       useEdgeSwipeNavigation();
-    const main = document.createElement("main");
-    const surface = document.createElement("div");
-    main.appendChild(surface);
-    document.body.appendChild(main);
-    surfaceRef.value = surface;
+    const main = mountSurface(surfaceRef);
 
     // the page behind was photographed when it was navigated away from
-    for (const hook of afterEachHooks) {
-      hook({ fullPath: "/album" }, { fullPath: "/discover" });
-    }
+    fireNavigation("/album", "/discover");
 
     onTouchStart(touchEvent(10, 100));
     onTouchMove(touchEvent(150, 100));
@@ -462,6 +524,8 @@ describe("useEdgeSwipeNavigation", () => {
     endSwipe(onTouchEnd);
 
     await landNavigation();
+    // still covering the incoming page's first frame at this point
+    expect(main.querySelectorAll("[inert]").length).toBe(1);
     vi.advanceTimersByTime(20); // the removal is deferred one frame
 
     expect(main.querySelectorAll("[inert]").length).toBe(0);
@@ -497,16 +561,10 @@ describe("useEdgeSwipeNavigation", () => {
     historyState.back = "/discover";
     const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef } =
       useEdgeSwipeNavigation();
-    const main = document.createElement("main");
-    const surface = document.createElement("div");
-    main.appendChild(surface);
-    document.body.appendChild(main);
-    surfaceRef.value = surface;
+    const main = mountSurface(surfaceRef);
 
     // the page behind was photographed when it was navigated away from
-    for (const hook of afterEachHooks) {
-      hook({ fullPath: "/album" }, { fullPath: "/discover" });
-    }
+    fireNavigation("/album", "/discover");
 
     onTouchStart(touchEvent(10, 100));
     onTouchMove(touchEvent(50, 100)); // 40px, under the 60px threshold
@@ -519,6 +577,110 @@ describe("useEdgeSwipeNavigation", () => {
     onTouchMove(touchEvent(50, 100));
 
     expect(main.querySelectorAll("[inert]").length).toBe(1);
+  });
+
+  // a navigation landing mid-drag — a background push, a hardware back
+  // button — pulls a new page onto the live surface while the drag still
+  // shows a still behind it, so the whole drag stops on the spot
+  it("resets the drag when something else navigates mid-gesture", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef, swipeStyle } =
+      useEdgeSwipeNavigation();
+    const main = mountSurface(surfaceRef);
+
+    // the page behind was photographed when it was navigated away from
+    fireNavigation("/album", "/discover");
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+    expect(main.querySelectorAll("[inert]").length).toBe(1);
+
+    fireNavigation("/other", "/album");
+
+    expect(main.querySelectorAll("[inert]").length).toBe(0);
+    expect(swipeStyle.value).toBeUndefined();
+
+    // the finger lifting afterwards has nothing left to commit
+    endSwipe(onTouchEnd);
+    expect(mockRouterBack).not.toHaveBeenCalled();
+
+    // the still went back on the shelf, so a retried swipe re-mounts it
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+    expect(main.querySelectorAll("[inert]").length).toBe(1);
+  });
+
+  // the same landing during the slide back into place after a swipe fell
+  // short: the settle must not carry on over the freshly navigated page
+  it("resets a settling cancel when something else navigates", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef, swipeStyle } =
+      useEdgeSwipeNavigation();
+    const main = mountSurface(surfaceRef);
+
+    // the page behind was photographed when it was navigated away from
+    fireNavigation("/album", "/discover");
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(50, 100)); // 40px, under the 60px threshold
+    onTouchEnd();
+    vi.advanceTimersByTime(100); // mid-settle
+
+    fireNavigation("/other", "/album");
+
+    expect(main.querySelectorAll("[inert]").length).toBe(0);
+    expect(swipeStyle.value).toBeUndefined();
+  });
+
+  // a navigation that failed moved nothing, so the drag has nothing to
+  // yield to and carries on
+  it("keeps the drag through a failed navigation", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef, swipeStyle } =
+      useEdgeSwipeNavigation();
+    const main = mountSurface(surfaceRef);
+
+    // the page behind was photographed when it was navigated away from
+    fireNavigation("/album", "/discover");
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+
+    fireNavigation("/album", "/album", new Error("duplicated"));
+
+    expect(main.querySelectorAll("[inert]").length).toBe(1);
+    expect(swipeStyle.value).toBeDefined();
+
+    endSwipe(onTouchEnd);
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+  });
+
+  // a query tucked into the URL mid-drag replaces the route in place: same
+  // path, same entry behind it, so the page never moved and neither does
+  // the drag
+  it("keeps the drag through a same-page query sync", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd, surfaceRef, swipeStyle } =
+      useEdgeSwipeNavigation();
+    const main = mountSurface(surfaceRef);
+
+    // the page behind was photographed when it was navigated away from
+    fireNavigation("/album", "/discover");
+
+    onTouchStart(touchEvent(10, 100));
+    onTouchMove(touchEvent(150, 100));
+
+    fireNavigation("/album", "/album");
+
+    expect(main.querySelectorAll("[inert]").length).toBe(1);
+    expect(swipeStyle.value).toBeDefined();
+
+    endSwipe(onTouchEnd);
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
   });
 
   // a thumb naturally arcs upward as it crosses the screen; once the drag has
