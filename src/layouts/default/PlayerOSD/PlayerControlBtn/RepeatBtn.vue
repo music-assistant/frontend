@@ -63,13 +63,8 @@ const isLoading = computed(() => {
 
 const isDynamic = computed(() => compProps.playerQueue?.is_dynamic === true);
 
-// An external session that owns the queue (queue_owner) handles repeat
-// natively — the server forwards the command — so it is exempt from the
-// infinite-stream disable (the current item is that session's AudioSource).
-const isInfiniteStream = computed(
-  () =>
-    isQueueInfiniteStream(compProps.playerQueue) &&
-    !compProps.playerQueue?.queue_owner,
+const isInfiniteStream = computed(() =>
+  isQueueInfiniteStream(compProps.playerQueue),
 );
 
 // The next repeat mode when the button is pressed: cycle OFF -> ALL -> ONE.

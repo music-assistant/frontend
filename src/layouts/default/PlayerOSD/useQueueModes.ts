@@ -26,13 +26,11 @@ export function useQueueModes() {
   );
 
   // Autoplay only applies to an active queue playing regular tracks, and is
-  // moot while dynamic mode is active (the queue already refills itself), for
-  // infinite streams, or while an external session owns the queue (it provides
-  // its own continuation).
+  // moot while dynamic mode is active (the queue already refills itself) or for
+  // infinite streams.
   const autoplayApplicable = computed(() => {
     const q = queue.value;
     if (!q || !q.active) return false;
-    if (q.queue_owner) return false;
     if (isQueueInfiniteStream(q)) return false;
     if (dynamicModeActive.value) return false;
     return "autoplay_enabled" in q;
