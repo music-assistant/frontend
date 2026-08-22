@@ -178,15 +178,30 @@ describe("ShuffleBtn", () => {
       expect(queueCommandShuffle).not.toHaveBeenCalled();
     });
 
-    // the player's own queue is always in the source list, so a player sitting
-    // on it must not be mistaken for one a source has taken over
-    it("leaves an idle player on its own source list alone", () => {
+    it("leaves an idle player alone", () => {
       const own = playerSource({ id: "player-1", can_shuffle: true });
       const wrapper = mountButton({
         player: player({ active_source: null, source_list: [own] }),
       });
 
       expect(isDisabled(wrapper)).toBe(true);
+    });
+
+    // the MA queue sits in the source list under the player's own id, so a
+    // player on its own queue must never be taken for one a source took over —
+    // reachable before that queue has arrived in the client's state, which is
+    // the only moment no queue resolves for it
+    it("never mistakes the player's own queue for a source", async () => {
+      const own = playerSource({ id: "player-1", can_shuffle: true });
+      const wrapper = mountButton({
+        player: player({ active_source: "player-1", source_list: [own] }),
+      });
+
+      expect(isDisabled(wrapper)).toBe(true);
+
+      await button(wrapper).trigger("click");
+
+      expect(playerCommandShuffle).not.toHaveBeenCalled();
     });
 
     it("prefers the queue whenever one is playing", async () => {
