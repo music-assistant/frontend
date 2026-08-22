@@ -27,7 +27,7 @@ import type {
   ExcludedGenreRow,
   GenreRow,
 } from "@/components/genre/GenreDataTable.vue";
-import { scheduleGenreScan } from "@/helpers/genre";
+import { mappedAliases, scheduleGenreScan } from "@/helpers/genre";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { EventMessage, Genre } from "@/plugins/api/interfaces";
@@ -65,7 +65,7 @@ const activeGenreRows = computed<GenreRow[]>(() =>
     genre,
     displayName: genre.name,
     thumbSrc: getImageThumbForItem(genre, ImageType.THUMB, 40) ?? undefined,
-    aliasCount: genre.genre_aliases?.length ?? 0,
+    aliasCount: genre.genre_alias_count ?? mappedAliases(genre).length,
     trackCount:
       allMediaCounts.value === null
         ? null

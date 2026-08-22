@@ -1019,6 +1019,9 @@ export interface PodcastEpisode extends MediaItem {
 
 export interface Genre extends MediaItem {
   genre_aliases?: string[] | null;
+  // mapped alias count (own name excluded), sent on summary listings
+  // instead of the full genre_aliases list
+  genre_alias_count?: number | null;
   // taxonomy this genre belongs to; null/undefined = music/general
   content_type?: MediaType | null;
 }
