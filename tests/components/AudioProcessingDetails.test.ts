@@ -683,7 +683,7 @@ describe("AudioProcessingDetails", () => {
     );
     expect(context.text()).not.toContain("Direct signal path");
     expect(context.findAll("li").map((detail) => detail.text())).toEqual([
-      "No normalization, crossfade, playback speed adjustment, or audio overlay is reported by the processing model.",
+      "Music Assistant applies no normalization, crossfade, playback speed adjustment, or audio overlay.",
       "Internal format: 16-bit PCM · 44.1 kHz · Stereo",
     ]);
   });

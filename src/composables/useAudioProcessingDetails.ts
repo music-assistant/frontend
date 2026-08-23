@@ -226,7 +226,9 @@ function buildProcessingStages(
   const { translate } = dependencies;
   const stages: AudioProcessingDisplayStage[] = [];
   const processing = chain.queue_processing;
-  // a step the source performed is listed too, but it leaves the shared path direct
+  // a step the source performed is named after the service that did it
+  const sourceName = dependencies.getProviderName(streamDetails.provider);
+  // such a step is listed too, but it leaves the shared path direct
   let serverAltersAudio = false;
   if (
     processing?.normalization &&
@@ -237,6 +239,7 @@ function buildProcessingStages(
         processing.normalization,
         translate,
         dependencies.locale,
+        sourceName,
       ),
     );
     serverAltersAudio ||= normalizationAppliedByServer(
@@ -258,7 +261,7 @@ function buildProcessingStages(
       key: "crossfade",
       icon: CrossfadeIcon,
       title: translate("streamdetails.audio_processing.crossfade", [
-        crossfadeModeLabel(processing.crossfade_mode, translate),
+        crossfadeModeLabel(processing.crossfade_mode, translate, sourceName),
       ]),
     });
     serverAltersAudio ||= crossfadeAppliedByServer(processing.crossfade_mode);
@@ -501,6 +504,7 @@ function normalizationStage(
   normalization: AudioNormalizationDetails,
   translate: Translate,
   locale: string,
+  sourceName: string,
 ): AudioProcessingDisplayStage {
   // the source names neither a target nor a measurement, so it has no details to show
   const details: string[] =
@@ -536,7 +540,9 @@ function normalizationStage(
     key: "normalization",
     icon: AudioLines,
     title: translate("streamdetails.audio_processing.normalization_title"),
-    subtitleParts: [normalizationModeLabel(normalization.mode, translate)],
+    subtitleParts: [
+      normalizationModeLabel(normalization.mode, translate, sourceName),
+    ],
     details,
   };
 }
@@ -1007,6 +1013,7 @@ function audioQualityLabel(
 function normalizationModeLabel(
   mode: string | undefined,
   translate: Translate,
+  sourceName: string,
 ): string {
   switch (mode) {
     case VolumeNormalizationMode.DISABLED:
@@ -1036,6 +1043,7 @@ function normalizationModeLabel(
     case VolumeNormalizationMode.SOURCE:
       return translate(
         "streamdetails.audio_processing.normalization_mode.source",
+        [sourceName],
       );
     default:
       return translate("streamdetails.audio_processing.unknown");
@@ -1053,7 +1061,11 @@ function measurementSourceLabel(
   return translate(`streamdetails.audio_processing.measurement.${source}`);
 }
 
-function crossfadeModeLabel(mode: string, translate: Translate): string {
+function crossfadeModeLabel(
+  mode: string,
+  translate: Translate,
+  sourceName: string,
+): string {
   switch (mode) {
     case CrossfadeMode.SMART_CROSSFADE:
       return translate("streamdetails.audio_processing.crossfade_mode.smart");
@@ -1066,7 +1078,9 @@ function crossfadeModeLabel(mode: string, translate: Translate): string {
         "streamdetails.audio_processing.crossfade_mode.disabled",
       );
     case CrossfadeMode.SOURCE:
-      return translate("streamdetails.audio_processing.crossfade_mode.source");
+      return translate("streamdetails.audio_processing.crossfade_mode.source", [
+        sourceName,
+      ]);
     default:
       return translate("streamdetails.audio_processing.unknown");
   }
