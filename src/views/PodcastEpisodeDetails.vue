@@ -46,6 +46,8 @@
     v-if="itemDetails"
     :key="episodeKey"
     itemtype="podcastepisodes"
+    :parent-item="parentPodcast"
+    :refresh-on-parent-update="true"
     :show-provider="false"
     :show-favorites-only-filter="false"
     :show-hide-fully-played-filter="true"
@@ -102,7 +104,7 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
-import type { PodcastEpisode } from "@/plugins/api/interfaces";
+import type { Podcast, PodcastEpisode } from "@/plugins/api/interfaces";
 import { Captions, ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -120,6 +122,8 @@ const episodeKey = computed(() => `${props.provider}.${props.itemId}`);
 const itemDetails = ref<PodcastEpisode>();
 // all episodes of the podcast, in its own order, for the steppers
 const siblings = ref<PodcastEpisode[]>([]);
+// the podcast itself, which the listing rows need for their play actions
+const parentPodcast = ref<Podcast>();
 const showTranscript = ref(false);
 const transcript = ref<string | null>(null);
 const transcriptLoaded = ref(false);
@@ -233,6 +237,14 @@ watch(
     const siblingEpisodes = await episodes;
     if (episodes !== episodesRequest) return;
     siblings.value = siblingEpisodes;
+    if (parentPodcast.value?.uri === episode.podcast.uri) return;
+    // only fetched when the podcast itself changes, so stepping through the
+    // episodes of one podcast does not keep asking for it
+    const podcast = await api
+      .getPodcast(episode.podcast.item_id, episode.podcast.provider)
+      .catch(() => undefined);
+    if (details !== detailsRequest) return;
+    parentPodcast.value = podcast;
   },
   { immediate: true },
 );
