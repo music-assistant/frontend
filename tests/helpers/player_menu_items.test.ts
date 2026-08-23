@@ -14,6 +14,8 @@ import {
   type Player,
   type PlayerOption,
   type PlayerQueue,
+  type PlayerSource,
+  RepeatMode,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
@@ -64,6 +66,10 @@ vi.mock("@/plugins/api", () => ({
     providers: {
       milkdrop_visualizer: { domain: "milkdrop_visualizer", available: true },
     },
+    queueCommandShuffle: vi.fn(),
+    queueCommandRepeat: vi.fn(),
+    playerCommandShuffle: vi.fn(),
+    playerCommandRepeat: vi.fn(),
   },
 }));
 
@@ -709,5 +715,128 @@ describe("visualizer menu entry", () => {
     expect(entry?.componentProps).toEqual({ playerId: player.player_id });
     // no toggle leaf: the on/off switch lives inside the popout
     expect(entry?.action).toBeUndefined();
+  });
+});
+
+describe("shuffle and repeat", () => {
+  const SPOTIFY = "spotify://audio_source/main";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /** A player taken over by a live external source, as the server publishes it. */
+  function playerOnSource(source: Partial<PlayerSource> = {}): Player {
+    const live = playerSource({
+      id: SPOTIFY,
+      name: "Spotify Connect",
+      ...source,
+    });
+    return makePlayer({ active_source: SPOTIFY, source_list: [live] });
+  }
+
+  function labels(player: Player, queue?: PlayerQueue): string[] {
+    return getPlayerMenuItems(player, queue, { context: "queue" }).map(
+      (item) => item.label,
+    );
+  }
+
+  function entry(
+    player: Player,
+    label: string,
+    queue?: PlayerQueue,
+  ): ContextMenuItem | undefined {
+    return getPlayerMenuItems(player, queue, { context: "queue" }).find(
+      (item) => item.label === label,
+    );
+  }
+
+  it("shuffles the queue when one is playing", () => {
+    entry(makePlayer(), "shuffle_enable", makeQueue())?.action?.();
+
+    expect(api.queueCommandShuffle).toHaveBeenCalledWith("kitchen", true);
+    expect(api.playerCommandShuffle).not.toHaveBeenCalled();
+  });
+
+  it("shuffles a live source's own session through the player", () => {
+    const player = playerOnSource({ can_shuffle: true });
+
+    entry(player, "shuffle_enable")?.action?.();
+
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", true);
+    expect(api.queueCommandShuffle).not.toHaveBeenCalled();
+  });
+
+  it("reads the shuffle state the source reports", () => {
+    const player = playerOnSource({ can_shuffle: true, shuffle_enabled: true });
+
+    entry(player, "shuffle_disable")?.action?.();
+
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+  });
+
+  it("repeats within a live source's own session through the player", () => {
+    const player = playerOnSource({ can_repeat: true });
+
+    entry(player, "select_repeat_mode")?.subItems?.[1]?.action?.();
+
+    expect(api.playerCommandRepeat).toHaveBeenCalledWith(
+      "kitchen",
+      RepeatMode.ALL,
+    );
+    expect(api.queueCommandRepeat).not.toHaveBeenCalled();
+  });
+
+  it("marks the repeat mode the source reports", () => {
+    const player = playerOnSource({
+      can_repeat: true,
+      repeat_mode: RepeatMode.ONE,
+    });
+
+    const subItems = entry(player, "select_repeat_mode")?.subItems;
+
+    expect(subItems?.map((item) => item.selected)).toEqual([
+      false,
+      false,
+      true,
+    ]);
+  });
+
+  // a source that cannot be reordered would accept the command and do nothing,
+  // so it must not be offered at all
+  it("offers neither for a source that cannot be reordered", () => {
+    const shown = labels(playerOnSource());
+
+    expect(shown).not.toContain("shuffle_enable");
+    expect(shown).not.toContain("select_repeat_mode");
+  });
+
+  it("offers neither with nothing playing", () => {
+    const shown = labels(makePlayer());
+
+    expect(shown).not.toContain("shuffle_enable");
+    expect(shown).not.toContain("select_repeat_mode");
+  });
+
+  // the MA queue sits in the source list under the player's own id
+  it("never mistakes the player's own queue for a source", () => {
+    const own = playerSource({
+      id: "kitchen",
+      can_shuffle: true,
+      can_repeat: true,
+    });
+    const player = makePlayer({
+      active_source: "kitchen",
+      source_list: [own],
+    });
+
+    expect(labels(player)).not.toContain("shuffle_enable");
+  });
+
+  it("offers neither on a dynamic queue", () => {
+    const shown = labels(makePlayer(), makeQueue({ is_dynamic: true }));
+
+    expect(shown).not.toContain("shuffle_enable");
+    expect(shown).not.toContain("select_repeat_mode");
   });
 });

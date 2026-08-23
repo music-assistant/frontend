@@ -1685,24 +1685,9 @@ export class MusicAssistantApi {
     // Configure shuffle setting on the the queue.
     this.playerQueueCommand(queueId, "shuffle", { shuffle_enabled });
   }
-  public queueCommandShuffleToggle(queueId: string) {
-    // Toggle shuffle mode for a queue
-    this.queueCommandShuffle(queueId, !this.queues[queueId].shuffle_enabled);
-  }
   public queueCommandRepeat(queueId: string, repeat_mode: RepeatMode) {
     // Configure repeat setting on the the queue.
     this.playerQueueCommand(queueId, "repeat", { repeat_mode });
-  }
-  public queueCommandRepeatToggle(queueId: string) {
-    // Toggle repeat mode of a queue
-    const queue = this.queues[queueId];
-    if (this.queues[queueId].repeat_mode == RepeatMode.OFF) {
-      this.queueCommandRepeat(queueId, RepeatMode.ONE);
-    } else if (this.queues[queueId].repeat_mode == RepeatMode.ONE) {
-      this.queueCommandRepeat(queueId, RepeatMode.ALL);
-    } else {
-      this.queueCommandRepeat(queueId, RepeatMode.OFF);
-    }
   }
   public queueCommandCrossfade(queueId: string, crossfade_enabled: boolean) {
     // Enable or disable crossfade on the queue.
