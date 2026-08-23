@@ -235,6 +235,31 @@ describe("RepeatBtn", () => {
       expect(playerCommandRepeat).not.toHaveBeenCalled();
     });
 
+    // the OSD passes store.activePlayer, a computed that yields a different
+    // object when the user switches player — so the source has to be resolved
+    // from the prop as it stands, not from the one captured at setup
+    it("re-reads the source when the active player changes", async () => {
+      const wrapper = mountButton({ player: playerOnSource() });
+
+      expect(isDisabled(wrapper)).toBe(false);
+
+      await wrapper.setProps({
+        player: player({
+          player_id: "player-2",
+          active_source: "line-in",
+          source_list: [playerSource({ id: "line-in", name: "Line In" })],
+        }),
+      });
+
+      // line-in orders nothing, so the control on the newly selected player
+      // must go dead rather than keep commanding the player left behind
+      expect(isDisabled(wrapper)).toBe(true);
+
+      await button(wrapper).trigger("click");
+
+      expect(playerCommandRepeat).not.toHaveBeenCalled();
+    });
+
     it("prefers the queue whenever one is playing", async () => {
       const wrapper = mountButton({
         player: playerOnSource(),

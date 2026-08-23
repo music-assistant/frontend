@@ -124,13 +124,18 @@ export const getPlayerMenuItems = (
       labelArgs: [],
       action: () => {
         // the menu can sit open while the state moves, and an update lands as
-        // an Object.assign onto these, so the target is read at click time —
-        // the source list is a fresh array by then, hence the re-resolve
+        // an Object.assign onto these, so both the target and the value are
+        // settled at click time — the source list is a fresh array by then,
+        // hence the re-resolve
         if (shuffleSource) {
           const live = resolveLiveSource(player, playerQueue);
+          // the source can end while the menu sits open, and the queue that
+          // takes the player back would otherwise be shuffled by a command
+          // meant for the session — with the value the entry offered inverted
+          if (!live?.can_shuffle) return;
           api.playerCommandShuffle(
             player.player_id,
-            live?.shuffle_enabled !== true,
+            live.shuffle_enabled !== true,
           );
         } else {
           api.queueCommandShuffle(
@@ -153,6 +158,9 @@ export const getPlayerMenuItems = (
     // to be settled at click time rather than the mode itself
     const setRepeatMode = (mode: RepeatMode) => {
       if (repeatSource) {
+        // the source can end while the menu sits open; a mode meant for its
+        // session must not land on the queue that took the player back
+        if (!resolveLiveSource(player, playerQueue)?.can_repeat) return;
         api.playerCommandRepeat(player.player_id, mode);
       } else {
         api.queueCommandRepeat(orderableQueue!.queue_id, mode);

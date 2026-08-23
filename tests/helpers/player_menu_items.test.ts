@@ -808,6 +808,21 @@ describe("shuffle and repeat", () => {
     expect(api.queueCommandShuffle).toHaveBeenCalledWith("kitchen", false);
   });
 
+  // the source can end while the menu sits open, and the player's own queue
+  // takes it back — a command meant for the session must not land there
+  it("does nothing when the source ended while the menu was open", () => {
+    const player = playerOnSource({ can_shuffle: true, shuffle_enabled: true });
+    const item = entry(player, "shuffle_disable");
+
+    // MA's queue is back, so the player reports itself as its own source
+    player.active_source = "kitchen";
+    player.source_list = [playerSource({ id: "kitchen", name: "Queue" })];
+    item?.action?.();
+
+    expect(api.playerCommandShuffle).not.toHaveBeenCalled();
+    expect(api.queueCommandShuffle).not.toHaveBeenCalled();
+  });
+
   it("repeats within a live source's own session through the player", () => {
     const player = playerOnSource({ can_repeat: true });
 
@@ -817,6 +832,32 @@ describe("shuffle and repeat", () => {
       "kitchen",
       RepeatMode.ALL,
     );
+    expect(api.queueCommandRepeat).not.toHaveBeenCalled();
+  });
+
+  it("repeats the queue when one is playing", () => {
+    entry(
+      makePlayer(),
+      "select_repeat_mode",
+      makeQueue(),
+    )?.subItems?.[1]?.action?.();
+
+    expect(api.queueCommandRepeat).toHaveBeenCalledWith(
+      "kitchen",
+      RepeatMode.ALL,
+    );
+    expect(api.playerCommandRepeat).not.toHaveBeenCalled();
+  });
+
+  it("sets no repeat mode when the source ended while the menu was open", () => {
+    const player = playerOnSource({ can_repeat: true });
+    const item = entry(player, "select_repeat_mode");
+
+    player.active_source = "kitchen";
+    player.source_list = [playerSource({ id: "kitchen", name: "Queue" })];
+    item?.subItems?.[1]?.action?.();
+
+    expect(api.playerCommandRepeat).not.toHaveBeenCalled();
     expect(api.queueCommandRepeat).not.toHaveBeenCalled();
   });
 
