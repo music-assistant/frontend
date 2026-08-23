@@ -253,7 +253,7 @@ export const getCollectionMediaTypeFromItemId = function (itemId: string) {
 };
 
 /**
- * Providers a static library playlist can be migrated to: the builtin
+ * Providers that a static library playlist can be migrated to: the builtin
  * (Music Assistant) provider and streaming providers that can create
  * playlists and edit their tracks. Dynamic playlists and non-library
  * playlists have no valid destinations.

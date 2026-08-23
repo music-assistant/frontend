@@ -11,7 +11,7 @@
           $t("migrate_playlist.title")
         }}</DialogTitle>
         <DialogDescription>
-          {{ $t("migrate_playlist.description", [playlist?.name]) }}
+          {{ $t("migrate_playlist.description", [playlist?.name ?? ""]) }}
         </DialogDescription>
       </DialogHeader>
 
