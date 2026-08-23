@@ -775,6 +775,39 @@ describe("shuffle and repeat", () => {
     expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", false);
   });
 
+  // the menu can sit open while a websocket update lands; updates Object.assign
+  // onto the player, so the click must act on what is true then, not at build
+  it("shuffles against the state at click time, not at build time", () => {
+    const player = playerOnSource({
+      can_shuffle: true,
+      shuffle_enabled: false,
+    });
+    const item = entry(player, "shuffle_enable");
+
+    // the source list arrives as a fresh array on a player update
+    player.source_list = [
+      playerSource({
+        id: SPOTIFY,
+        name: "Spotify Connect",
+        can_shuffle: true,
+        shuffle_enabled: true,
+      }),
+    ];
+    item?.action?.();
+
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+  });
+
+  it("shuffles the queue against the state at click time", () => {
+    const queue = makeQueue({ shuffle_enabled: false });
+    const item = entry(makePlayer(), "shuffle_enable", queue);
+
+    queue.shuffle_enabled = true;
+    item?.action?.();
+
+    expect(api.queueCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+  });
+
   it("repeats within a live source's own session through the player", () => {
     const player = playerOnSource({ can_repeat: true });
 

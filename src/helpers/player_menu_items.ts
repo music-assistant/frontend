@@ -123,10 +123,20 @@ export const getPlayerMenuItems = (
       label: shuffleEnabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
       action: () => {
+        // the menu can sit open while the state moves, and an update lands as
+        // an Object.assign onto these, so the target is read at click time —
+        // the source list is a fresh array by then, hence the re-resolve
         if (shuffleSource) {
-          api.playerCommandShuffle(player.player_id, !shuffleEnabled);
+          const live = resolveLiveSource(player, playerQueue);
+          api.playerCommandShuffle(
+            player.player_id,
+            live?.shuffle_enabled !== true,
+          );
         } else {
-          api.queueCommandShuffle(orderableQueue!.queue_id, !shuffleEnabled);
+          api.queueCommandShuffle(
+            orderableQueue!.queue_id,
+            !orderableQueue!.shuffle_enabled,
+          );
         }
       },
       icon: shuffleEnabled ? "mdi-shuffle-disabled" : "mdi-shuffle",
@@ -139,6 +149,8 @@ export const getPlayerMenuItems = (
     const repeatMode = repeatSource
       ? (repeatSource.repeat_mode ?? RepeatMode.OFF)
       : orderableQueue!.repeat_mode;
+    // each entry sets an explicit mode, so only the target of the command has
+    // to be settled at click time rather than the mode itself
     const setRepeatMode = (mode: RepeatMode) => {
       if (repeatSource) {
         api.playerCommandRepeat(player.player_id, mode);
