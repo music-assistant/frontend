@@ -4,9 +4,7 @@ import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { store } from "@/plugins/store";
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import { mount, type VueWrapper } from "@vue/test-utils";
-import { providerMapping } from "../fixtures/providerMapping";
-import { radio } from "../fixtures/radio";
-import { streamDetails } from "../fixtures/streamDetails";
+import { playerSource } from "../fixtures/playerSource";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import { createVuetify } from "vuetify";
@@ -294,9 +292,11 @@ describe("PlayerTrackDetails title", () => {
 
 describe("PlayerTrackDetails source badge", () => {
   beforeEach(() => {
-    (
-      store.activePlayer as unknown as { active_source?: string }
-    ).active_source = undefined;
+    Object.assign(store.activePlayer!, {
+      player_id: "player-1",
+      active_source: "player-1",
+      source_list: [],
+    });
   });
 
   afterEach(() => {
@@ -314,23 +314,6 @@ describe("PlayerTrackDetails source badge", () => {
   });
 
   function playRadioStation() {
-    store.activePlayerQueue = { queue_id: "q1", active: true } as never;
-    store.curQueueItem = {
-      media_item: radio({
-        name: "Radio 538",
-        provider_mappings: [providerMapping({ provider_domain: "tunein" })],
-      }),
-      streamdetails: streamDetails({
-        stream_metadata: {
-          title: "Live track",
-          artist: null,
-          album: null,
-          image_url: null,
-          duration: null,
-          uri: null,
-        },
-      }),
-    } as never;
     (
       store.activePlayer as unknown as { current_media: unknown }
     ).current_media = {
@@ -340,21 +323,29 @@ describe("PlayerTrackDetails source badge", () => {
     };
   }
 
-  // the server puts the station name in the album slot when the station has no
-  // real album, so the badge would otherwise repeat what is already on the line
-  it("names the station and drops it from the metadata line", () => {
+  function playExternalSource() {
+    const source = playerSource({ id: "line-in", name: "Line In" });
+    Object.assign(store.activePlayer!, {
+      active_source: source.id,
+      source_list: [source],
+    });
+  }
+
+  it("keeps the radio station in the metadata line without a badge", () => {
     playRadioStation();
 
     const details = mountDetails(false);
 
-    expect(details.get(".player-track-source").text()).toBe("Radio 538");
-    expect(details.get(".player-track-subtitle-text").text()).toBe("Artist");
+    expect(details.find(".player-track-source").exists()).toBe(false);
+    expect(details.get(".player-track-subtitle-text").text()).toContain(
+      "Radio 538",
+    );
   });
 
   // the full bar has the height for a third line, so the badge does not fight
   // the metadata for the width of the subtitle line
   it("gives the badge its own line under the metadata on the full bar", () => {
-    playRadioStation();
+    playExternalSource();
 
     const details = mountDetails(false);
 
@@ -369,7 +360,7 @@ describe("PlayerTrackDetails source badge", () => {
   // the compact bar keeps its two shallow lines, so the badge shrinks to its
   // icon beside the metadata and hands the name to the tooltip
   it("shrinks the badge to its icon on the compact bar", () => {
-    playRadioStation();
+    playExternalSource();
 
     const details = mountDetails(true);
 
@@ -377,7 +368,7 @@ describe("PlayerTrackDetails source badge", () => {
       ".player-track-subtitle-line .player-track-source",
     );
     expect(badge.text()).toBe("");
-    expect(badge.attributes("title")).toContain("Radio 538");
+    expect(badge.attributes("title")).toContain("Line In");
   });
 
   it("leaves an ordinary album on the metadata line", () => {
