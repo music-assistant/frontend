@@ -536,6 +536,9 @@ export enum VolumeNormalizationMode {
   FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
   FIXED_GAIN = "fixed_gain",
   FALLBACK_DYNAMIC = "fallback_dynamic",
+  // the source levelled its own audio, so the server left it alone: distinct from
+  // DISABLED, which means nothing normalized it at all
+  SOURCE = "source",
   UNKNOWN = "unknown",
 }
 
@@ -543,6 +546,8 @@ export enum CrossfadeMode {
   SMART_CROSSFADE = "smart_crossfade",
   STANDARD_CROSSFADE = "standard_crossfade",
   DISABLED = "disabled",
+  // the source crossfades its own playback, so the server does not
+  SOURCE = "source",
   UNKNOWN = "unknown",
 }
 
