@@ -53,6 +53,7 @@ const LISTING_ROUTES: Record<string, string | undefined> = {
   genre: "genres",
   playlist: "playlists",
   podcast: "podcasts",
+  podcast_episode: "podcasts",
   radio: "radios",
   track: "tracks",
   tracklisting: "tracks",

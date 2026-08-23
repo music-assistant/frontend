@@ -549,6 +549,7 @@ export const getContextMenuItems = async function (
       MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
+      MediaType.PODCAST_EPISODE,
       MediaType.TRACK,
     ].includes(items[0].media_type) &&
     (itemIsAvailable(items[0]) || isMusicBrainzItem(items[0]))
@@ -1065,11 +1066,14 @@ export const getContextMenuItems = async function (
   }
 
   // update metadata
+  // podcast episodes are never stored in the library, so there is nothing to write to
   if (
     managesLibrary &&
     items.length === 1 &&
     items[0] == parentItem &&
-    items[0].media_type !== MediaType.COLLECTION
+    ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
+      items[0].media_type,
+    )
   ) {
     contextMenuItems.push({
       label: "update_metadata",
@@ -1134,12 +1138,16 @@ export const getContextMenuItems = async function (
   }
   // refresh item: a library manager refreshes the page's own item; an item
   // none of the music services has any more is looked up on them again, which
-  // a library writer may do too
+  // a library writer may do too. podcast episodes are left out: they are
+  // fetched from the provider on every view, so there is no stored copy that
+  // could go stale
   const unavailable = items.length === 1 && !itemIsAvailable(items[0]);
   const canFindOnMusicServices = unavailable && canEditLibrary;
   if (
     items.length === 1 &&
-    items[0].media_type !== MediaType.COLLECTION &&
+    ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
+      items[0].media_type,
+    ) &&
     !isMusicBrainzItem(items[0]) &&
     ((managesLibrary && items[0] == parentItem) || canFindOnMusicServices)
   ) {
