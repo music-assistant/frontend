@@ -982,7 +982,7 @@ export interface Playlist extends MediaItem {
 // track matching tier accepted when migrating a playlist to another provider.
 // matching always cascades exact -> same_recording -> best_effort; the policy
 // only sets the lowest tier that is still accepted as a match.
-export enum MatchPolicy {
+export enum PlaylistMigrationMatchPolicy {
   EXACT = "exact",
   SAME_RECORDING = "same_recording",
   BEST_EFFORT = "best_effort",

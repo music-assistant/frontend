@@ -24,7 +24,7 @@ import {
   type EventMessage,
   type Genre,
   type MassEvent,
-  type MatchPolicy,
+  type PlaylistMigrationMatchPolicy,
   type MediaItem,
   type MediaItemType,
   type Player,
@@ -919,7 +919,7 @@ export class MusicAssistantApi {
   public migratePlaylist(
     db_playlist_id: string | number,
     destination_provider: string,
-    match_policy: MatchPolicy,
+    match_policy: PlaylistMigrationMatchPolicy,
     name?: string,
   ): Promise<BackgroundTask> {
     return this.sendCommand<BackgroundTask>(

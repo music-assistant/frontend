@@ -43,6 +43,7 @@ import type {
 } from "@/plugins/api/interfaces";
 import { playerQueue } from "../../fixtures/playerQueue";
 import { playlist } from "../../fixtures/playlist";
+import { providerMapping } from "../../fixtures/providerMapping";
 import { queueItem } from "../../fixtures/queueItem";
 
 describe("isAudioSource", () => {
@@ -257,15 +258,20 @@ describe("getPlaylistMigrationProviders", () => {
     ).toEqual([]);
   });
 
-  it("includes the builtin provider and eligible streaming providers", () => {
+  it("includes the builtin provider and eligible streaming providers, sorted by name", () => {
+    api.providers["another--1"] = provider({
+      instance_id: "another--1",
+      name: "Another Provider",
+    });
     const result = getPlaylistMigrationProviders(playlist());
-    expect(result.map((p) => p.instance_id).sort()).toEqual([
-      "builtin",
-      "spotify--1",
+    expect(result.map((p) => p.name)).toEqual([
+      "Another Provider",
+      "Music Assistant",
+      "Spotify",
     ]);
   });
 
-  it("excludes providers that can't create playlists, can't edit tracks, are unavailable, or aren't streaming providers", () => {
+  it("excludes providers that can't create playlists, can't edit tracks, are unavailable, aren't streaming providers, or aren't music providers", () => {
     delete api.providers["spotify--1"];
     api.providers["no-create"] = provider({
       instance_id: "no-create",
@@ -283,10 +289,30 @@ describe("getPlaylistMigrationProviders", () => {
       instance_id: "non-streaming",
       is_streaming_provider: false,
     });
+    api.providers["non-music"] = provider({
+      instance_id: "non-music",
+      type: ProviderType.PLAYER,
+    });
 
     // only the builtin provider from beforeEach remains eligible
     expect(
       getPlaylistMigrationProviders(playlist()).map((p) => p.instance_id),
     ).toEqual(["builtin"]);
+  });
+
+  it("still offers a provider the playlist is already mapped to, to allow creating a copy", () => {
+    const source = playlist({
+      provider_mappings: [
+        providerMapping({
+          provider_domain: "spotify",
+          provider_instance: "spotify--1",
+        }),
+      ],
+    });
+    expect(
+      getPlaylistMigrationProviders(source)
+        .map((p) => p.instance_id)
+        .sort(),
+    ).toEqual(["builtin", "spotify--1"]);
   });
 });

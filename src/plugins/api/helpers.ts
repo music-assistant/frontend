@@ -14,6 +14,7 @@ import {
   PodcastEpisode,
   ProviderFeature,
   ProviderInstance,
+  ProviderType,
   QueueItem,
 } from "./interfaces";
 
@@ -261,18 +262,23 @@ export const getPlaylistMigrationProviders = function (
   playlist: Playlist,
 ): ProviderInstance[] {
   if (playlist.is_dynamic || playlist.provider !== "library") return [];
-  return Object.values(api.providers).filter(
-    (provider) =>
-      provider.available &&
-      (provider.domain === "builtin" || provider.is_streaming_provider) &&
-      (provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) ||
+  return Object.values(api.providers)
+    .filter(
+      (provider) =>
+        provider.available &&
+        provider.type === ProviderType.MUSIC &&
+        (provider.domain === "builtin" || provider.is_streaming_provider) &&
+        (provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE,
+        ) ||
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_TRACKS,
+          )) &&
         provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_TRACKS,
-        )) &&
-      provider.supported_features.includes(
-        ProviderFeature.PLAYLIST_TRACKS_EDIT,
-      ),
-  );
+          ProviderFeature.PLAYLIST_TRACKS_EDIT,
+        ),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 };
 
 /**

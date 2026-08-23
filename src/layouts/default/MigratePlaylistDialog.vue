@@ -111,7 +111,7 @@ import {
 import api from "@/plugins/api";
 import { getPlaylistMigrationProviders } from "@/plugins/api/helpers";
 import {
-  MatchPolicy,
+  PlaylistMigrationMatchPolicy,
   type Playlist,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
@@ -129,21 +129,23 @@ const playlist = ref<Playlist>();
 const destinationProviders = ref<ProviderInstance[]>([]);
 const destinationProviderId = ref("");
 const destinationName = ref("");
-const matchPolicy = ref<MatchPolicy>(MatchPolicy.SAME_RECORDING);
+const matchPolicy = ref<PlaylistMigrationMatchPolicy>(
+  PlaylistMigrationMatchPolicy.SAME_RECORDING,
+);
 
 const matchPolicyOptions = computed(() => [
   {
-    value: MatchPolicy.EXACT,
+    value: PlaylistMigrationMatchPolicy.EXACT,
     title: $t("migrate_playlist.match_policy.exact.title"),
     description: $t("migrate_playlist.match_policy.exact.description"),
   },
   {
-    value: MatchPolicy.SAME_RECORDING,
+    value: PlaylistMigrationMatchPolicy.SAME_RECORDING,
     title: $t("migrate_playlist.match_policy.same_recording.title"),
     description: $t("migrate_playlist.match_policy.same_recording.description"),
   },
   {
-    value: MatchPolicy.BEST_EFFORT,
+    value: PlaylistMigrationMatchPolicy.BEST_EFFORT,
     title: $t("migrate_playlist.match_policy.best_effort.title"),
     description: $t("migrate_playlist.match_policy.best_effort.description"),
   },
@@ -163,7 +165,7 @@ onMounted(() => {
     destinationProviders.value = getPlaylistMigrationProviders(evt.playlist);
     destinationProviderId.value = "";
     destinationName.value = evt.playlist.name;
-    matchPolicy.value = MatchPolicy.SAME_RECORDING;
+    matchPolicy.value = PlaylistMigrationMatchPolicy.SAME_RECORDING;
     dialogKey.value++;
     showDialog.value = true;
   });

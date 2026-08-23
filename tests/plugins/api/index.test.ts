@@ -4,7 +4,7 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
-  MatchPolicy,
+  PlaylistMigrationMatchPolicy,
   type ServerInfoMessage,
   type SuccessResultMessage,
   TaskStatus,
@@ -221,6 +221,7 @@ describe("MusicAssistantApi error handling", () => {
       id: "task-1",
       name: "Migrate playlist",
       status: TaskStatus.PENDING,
+      report: null,
       logs: [],
       schedule: null,
       last_run: null,
@@ -243,7 +244,7 @@ describe("MusicAssistantApi error handling", () => {
     const result = api.migratePlaylist(
       "1",
       "spotify--1",
-      MatchPolicy.SAME_RECORDING,
+      PlaylistMigrationMatchPolicy.SAME_RECORDING,
       "My playlist",
     );
 
@@ -253,7 +254,7 @@ describe("MusicAssistantApi error handling", () => {
     expect(transport.lastCommand.args).toEqual({
       db_playlist_id: "1",
       destination_provider: "spotify--1",
-      match_policy: MatchPolicy.SAME_RECORDING,
+      match_policy: PlaylistMigrationMatchPolicy.SAME_RECORDING,
       name: "My playlist",
     });
 

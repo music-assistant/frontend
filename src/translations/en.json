@@ -2159,8 +2159,8 @@
         "match_policy_label": "Track matching",
         "match_policy": {
             "exact": {
-                "title": "Exact match only",
-                "description": "Only add tracks that match exactly. Tracks that can't be matched exactly are skipped."
+                "title": "Exact release only",
+                "description": "Only add tracks that match the exact release. Tracks that can't be matched this way are skipped."
             },
             "same_recording": {
                 "title": "Same recording (recommended)",
