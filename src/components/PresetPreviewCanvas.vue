@@ -31,6 +31,7 @@ const canvasEl = ref<HTMLCanvasElement | null>(null);
 const frameSource = createSyntheticFrameSource();
 let engine: VisualizerEngine | null = null;
 let engineCreating: Promise<VisualizerEngine | null> | null = null;
+let unmounted = false;
 
 const ensureEngine = async (): Promise<VisualizerEngine | null> => {
   if (!canvasEl.value) return null;
@@ -39,7 +40,13 @@ const ensureEngine = async (): Promise<VisualizerEngine | null> => {
     frameSource,
     "native",
   );
-  engine = await engineCreating;
+  const created = await engineCreating;
+  // Unmounted mid-create: tear down, or the render loop outlives the canvas.
+  if (unmounted) {
+    created?.destroy();
+    return null;
+  }
+  engine = created;
   return engine;
 };
 
@@ -61,6 +68,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  unmounted = true;
   engine?.destroy();
   engine = null;
 });

@@ -277,8 +277,13 @@ const cancelPersistTimer = () => {
   persistTimer = null;
 };
 
-// pendingPreset stays set after the flush: the preference refs catch up
-// asynchronously, and clearing it early would flicker the check mark.
+// Hand back to the prefs once they catch up with the flushed pick; clearing
+// at flush time would flicker the check mark.
+watch([presetPref, presetModePref], ([preset, mode]) => {
+  if (mode === "fixed" && preset === pendingPreset.value)
+    pendingPreset.value = null;
+});
+
 const flushPendingPreset = () => {
   cancelPersistTimer();
   const name = pendingPreset.value;

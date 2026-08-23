@@ -67,6 +67,7 @@ import { computed, ref, watch } from "vue";
 import { Star } from "@lucide/vue";
 import PresetPreviewCanvas from "@/components/PresetPreviewCanvas.vue";
 import { Input } from "@/components/ui/input";
+import { isHoverCapablePointer } from "@/helpers/visualizer/pointer";
 import { $t } from "@/plugins/i18n";
 
 const props = defineProps<{
@@ -90,7 +91,11 @@ let hoverTimer: number | null = null;
 // preset (shader) compiles.
 const HOVER_DWELL_MS = 150;
 
+// Touch fires pointerenter too; previews there stay tap-driven.
+const hoverCapable = isHoverCapablePointer();
+
 const onRowHover = (name: string | null) => {
+  if (!hoverCapable) return;
   if (hoverTimer !== null) window.clearTimeout(hoverTimer);
   hoverTimer = null;
   if (name === null) {
