@@ -23,7 +23,7 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import ShuffleIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleIcon.vue";
 import { getValueFromSources } from "@/helpers/utils";
-import { useLiveSource } from "@/composables/liveSource";
+import { useExternalSource } from "@/composables/externalSource";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { Player, PlayerQueue } from "@/plugins/api/interfaces";
@@ -43,15 +43,16 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 20,
 });
 
-const { liveSource } = useLiveSource(
+const { externalSource } = useExternalSource(
   toRef(compProps, "player"),
   toRef(compProps, "playerQueue"),
 );
 
-// A live source that orders its own session takes the command instead of the
-// queue; one that cannot leaves the button disabled rather than silently inert.
+// An external source that orders its own session takes the command instead of
+// the queue; one that cannot leaves the button disabled rather than silently
+// inert.
 const orderingSource = computed(() =>
-  liveSource.value?.can_shuffle ? liveSource.value : undefined,
+  externalSource.value?.can_shuffle ? externalSource.value : undefined,
 );
 
 const isLoading = computed(() => {
@@ -84,8 +85,8 @@ const shuffleActive = computed(() =>
     : compProps.playerQueue?.shuffle_enabled === true,
 );
 
-// A live source needs no queue to act on, so only the queue path carries the
-// queue's own reasons for being unavailable.
+// An external source needs no queue to act on, so only the queue path carries
+// the queue's own reasons for being unavailable.
 const isDisabled = computed(() => {
   if (isLoading.value) return true;
   if (orderingSource.value) return false;

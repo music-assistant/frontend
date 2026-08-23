@@ -11,7 +11,7 @@ import {
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
-import { resolveLiveSource } from "@/composables/liveSource";
+import { resolveExternalSource } from "@/composables/externalSource";
 import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
@@ -107,11 +107,13 @@ export const getPlayerMenuItems = (
   }
 
   const isDynamic = playerQueue?.is_dynamic === true;
-  // a live source orders its own session, so it takes these instead of the
+  // an external source orders its own session, so it takes these instead of the
   // queue — and it has no queue to read the state or the dynamic flag from
-  const liveSource = resolveLiveSource(player, playerQueue);
-  const shuffleSource = liveSource?.can_shuffle ? liveSource : undefined;
-  const repeatSource = liveSource?.can_repeat ? liveSource : undefined;
+  const externalSource = resolveExternalSource(player, playerQueue);
+  const shuffleSource = externalSource?.can_shuffle
+    ? externalSource
+    : undefined;
+  const repeatSource = externalSource?.can_repeat ? externalSource : undefined;
   const orderableQueue = playerQueue && !isDynamic ? playerQueue : undefined;
 
   // shuffle (queue menu only; hidden when the dedicated control is visible)
@@ -128,14 +130,14 @@ export const getPlayerMenuItems = (
         // settled at click time — the source list is a fresh array by then,
         // hence the re-resolve
         if (shuffleSource) {
-          const live = resolveLiveSource(player, playerQueue);
+          const current = resolveExternalSource(player, playerQueue);
           // the source can end while the menu sits open, and the queue that
           // takes the player back would otherwise be shuffled by a command
           // meant for the session — with the value the entry offered inverted
-          if (!live?.can_shuffle) return;
+          if (!current?.can_shuffle) return;
           api.playerCommandShuffle(
             player.player_id,
-            live.shuffle_enabled !== true,
+            current.shuffle_enabled !== true,
           );
         } else {
           api.queueCommandShuffle(
@@ -160,7 +162,7 @@ export const getPlayerMenuItems = (
       if (repeatSource) {
         // the source can end while the menu sits open; a mode meant for its
         // session must not land on the queue that took the player back
-        if (!resolveLiveSource(player, playerQueue)?.can_repeat) return;
+        if (!resolveExternalSource(player, playerQueue)?.can_repeat) return;
         api.playerCommandRepeat(player.player_id, mode);
       } else {
         api.queueCommandRepeat(orderableQueue!.queue_id, mode);
