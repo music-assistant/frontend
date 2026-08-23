@@ -2,23 +2,12 @@
   <!-- shuffle button -->
   <Icon
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="
-      !playerQueue ||
-      !playerQueue.active ||
-      isLoading ||
-      isInfiniteStream ||
-      isDynamic
-    "
+    :disabled="isDisabled"
     :color="getValueFromSources(icon?.color, [[shuffleActive, 'primary', '']])"
     :title="shuffleTitle"
     :data-dynamic="isDynamic || undefined"
     variant="button"
-    @click="
-      api.queueCommandShuffle(
-        playerQueue?.queue_id || '',
-        playerQueue?.shuffle_enabled ? false : true,
-      )
-    "
+    @click="toggleShuffle"
   >
     <ShuffleIcon
       v-if="shuffleActive"
@@ -34,15 +23,17 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import ShuffleIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleIcon.vue";
 import { getValueFromSources } from "@/helpers/utils";
+import { useLiveSource } from "@/composables/liveSource";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
-import { PlayerQueue } from "@/plugins/api/interfaces";
+import { Player, PlayerQueue } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { IconArrowsRight } from "@tabler/icons-vue";
-import { computed } from "vue";
+import { computed, toRef } from "vue";
 
 // properties
 export interface Props {
+  player: Player | undefined;
   playerQueue: PlayerQueue | undefined;
   icon?: IconProps;
   size?: number;
@@ -52,19 +43,25 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 20,
 });
 
+const { liveSource } = useLiveSource(
+  toRef(compProps, "player"),
+  toRef(compProps, "playerQueue"),
+);
+
+// A live source that orders its own session takes the command instead of the
+// queue; one that cannot leaves the button disabled rather than silently inert.
+const orderingSource = computed(() =>
+  liveSource.value?.can_shuffle ? liveSource.value : undefined,
+);
+
 const isLoading = computed(() => {
   return (
     compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
   );
 });
 
-// An external session that owns the queue (queue_owner) handles shuffle
-// natively — the server forwards the command — so it is exempt from the
-// infinite-stream disable (the current item is that session's AudioSource).
-const isInfiniteStream = computed(
-  () =>
-    isQueueInfiniteStream(compProps.playerQueue) &&
-    !compProps.playerQueue?.queue_owner,
+const isInfiniteStream = computed(() =>
+  isQueueInfiniteStream(compProps.playerQueue),
 );
 
 // In dynamic mode the queue manages its own ordering (smart shuffle is implied),
@@ -79,21 +76,45 @@ const smartShuffleActive = computed(
 );
 
 // Whether shuffle is enabled — drives the icon choice and the primary
-// highlight. The backend owns the smart/plain relationship, so this stays a
-// pure read of shuffle_enabled (smart state is surfaced via smartShuffleActive).
-const shuffleActive = computed(
-  () => compProps.playerQueue?.shuffle_enabled === true,
+// highlight. Read from whichever side is playing; the backend owns the
+// smart/plain relationship, so smart state is surfaced via smartShuffleActive.
+const shuffleActive = computed(() =>
+  orderingSource.value
+    ? orderingSource.value.shuffle_enabled === true
+    : compProps.playerQueue?.shuffle_enabled === true,
 );
+
+// A live source needs no queue to act on, so only the queue path carries the
+// queue's own reasons for being unavailable.
+const isDisabled = computed(() => {
+  if (isLoading.value) return true;
+  if (orderingSource.value) return false;
+  return (
+    !compProps.playerQueue ||
+    !compProps.playerQueue.active ||
+    isInfiniteStream.value ||
+    isDynamic.value
+  );
+});
 
 // State-aware tooltip. In dynamic mode the button is disabled and shuffle is
 // managed by the queue, so explain that rather than offering a toggle.
 const shuffleTitle = computed(() => {
   if (isDynamic.value) return $t("shuffle_dynamic_active");
   if (smartShuffleActive.value) return $t("shuffle_smart_active");
-  return compProps.playerQueue?.shuffle_enabled
-    ? $t("shuffle_disable")
-    : $t("shuffle_enable");
+  return shuffleActive.value ? $t("shuffle_disable") : $t("shuffle_enable");
 });
+
+function toggleShuffle() {
+  if (orderingSource.value && compProps.player) {
+    api.playerCommandShuffle(compProps.player.player_id, !shuffleActive.value);
+    return;
+  }
+  api.queueCommandShuffle(
+    compProps.playerQueue?.queue_id || "",
+    !shuffleActive.value,
+  );
+}
 </script>
 
 <style scoped>

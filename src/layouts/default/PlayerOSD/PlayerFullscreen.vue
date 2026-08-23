@@ -220,11 +220,6 @@
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
-            <!-- an external session owns the queue's ordering: the list is a
-                 read-only mirror, so say who manages it -->
-            <div v-if="queueOwnerName" class="queue-owner-hint">
-              {{ $t("queue_managed_by", [queueOwnerName]) }}
-            </div>
             <!-- the queue played through: say so, rather than leaving its last
                  track looking like it is still the current one -->
             <div v-if="queueEnded" class="queue-ended">
@@ -273,7 +268,6 @@
                   :state="row.state"
                   :is-playing="playerActive"
                   :dragging="draggingIndex === row.index"
-                  :read-only="queueExternallyManaged"
                   :marquee-sync="
                     row.state === 'playing'
                       ? playerMarqueeSync
@@ -392,6 +386,7 @@
           </div>
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
+            :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
@@ -423,6 +418,7 @@
           />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
+            :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="35px"
@@ -777,8 +773,6 @@ const {
   totalItems,
   upNextCount,
   queueEnded,
-  queueExternallyManaged,
-  queueOwnerName,
   totalSize,
   measureRow,
   playerActive,
@@ -1533,13 +1527,6 @@ onBeforeUnmount(() => {
 
 .queue-ended {
   padding: 8px 4px 12px;
-  text-align: center;
-  font-size: 0.85rem;
-  opacity: 0.6;
-}
-
-.queue-owner-hint {
-  padding: 8px 4px 4px;
   text-align: center;
   font-size: 0.85rem;
   opacity: 0.6;
