@@ -1,21 +1,26 @@
 import {
+  type BackgroundTask,
   type CommandMessage,
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  MatchPolicy,
   type ServerInfoMessage,
   type SuccessResultMessage,
+  TaskStatus,
 } from "@/plugins/api/interfaces";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockToastError } = vi.hoisted(() => ({
+const { mockToastError, mockToastInfo } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
+  mockToastInfo: vi.fn(),
 }));
 
 vi.mock("vue-sonner", () => ({
   toast: {
     error: mockToastError,
+    info: mockToastInfo,
   },
 }));
 
@@ -209,6 +214,69 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(result).resolves.toEqual(config);
+  });
+
+  it("migrates a playlist and notifies the background task toast", async () => {
+    const task: BackgroundTask = {
+      id: "task-1",
+      name: "Migrate playlist",
+      status: TaskStatus.PENDING,
+      logs: [],
+      schedule: null,
+      last_run: null,
+      next_run: null,
+      user_id: null,
+      last_run_user_id: null,
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
+      started_at: null,
+      finished_at: null,
+      last_error: null,
+      failure_count: 0,
+      failure_messages: [],
+      metadata: {},
+      progress: null,
+      progress_text: null,
+      allow_retry: false,
+      allow_cancel: true,
+    };
+    const result = api.migratePlaylist(
+      "1",
+      "spotify--1",
+      MatchPolicy.SAME_RECORDING,
+      "My playlist",
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/playlists/migrate_playlist",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      db_playlist_id: "1",
+      destination_provider: "spotify--1",
+      match_policy: MatchPolicy.SAME_RECORDING,
+      name: "My playlist",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: task,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(task);
+    expect(mockToastInfo).toHaveBeenCalledWith(
+      "background_tasks.toast.added",
+      expect.anything(),
+    );
+  });
+
+  it("reports playlist migration support once the server reaches schema 56", () => {
+    expect(api.supportsPlaylistMigration).toBe(false);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 56 };
+    expect(api.supportsPlaylistMigration).toBe(true);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 55 };
+    expect(api.supportsPlaylistMigration).toBe(false);
   });
 
   it("rejects in-flight commands when the connection closes", async () => {

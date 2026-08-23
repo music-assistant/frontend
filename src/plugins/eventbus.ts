@@ -64,6 +64,10 @@ export type ImportPlaylistEvent = {
   playlistName: string;
 };
 
+export type MigratePlaylistDialogEvent = {
+  playlist: Playlist;
+};
+
 export type CreateSmartPlaylistEvent = {
   providerId?: string;
 };
@@ -105,6 +109,7 @@ export type Events = {
   playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
+  migratePlaylistDialog: MigratePlaylistDialogEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;

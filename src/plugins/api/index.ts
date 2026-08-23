@@ -24,6 +24,7 @@ import {
   type EventMessage,
   type Genre,
   type MassEvent,
+  type MatchPolicy,
   type MediaItem,
   type MediaItemType,
   type Player,
@@ -81,6 +82,9 @@ const TRANSLATIONS_SCHEMA_VERSION = 32;
 
 // The shuffle argument on player_queues/play_media landed in API schema 51.
 const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
+
+// music/playlists/migrate_playlist landed in API schema 56.
+const MIGRATE_PLAYLIST_SCHEMA_VERSION = 56;
 
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
@@ -909,6 +913,26 @@ export class MusicAssistantApi {
   public exportPlaylist(db_playlist_id: string | number): Promise<string> {
     return this.sendCommand("music/playlists/export_playlist", {
       db_playlist_id,
+    });
+  }
+
+  public migratePlaylist(
+    db_playlist_id: string | number,
+    destination_provider: string,
+    match_policy: MatchPolicy,
+    name?: string,
+  ): Promise<BackgroundTask> {
+    return this.sendCommand<BackgroundTask>(
+      "music/playlists/migrate_playlist",
+      {
+        db_playlist_id,
+        destination_provider,
+        match_policy,
+        name,
+      },
+    ).then((task) => {
+      this._notifyBackgroundTaskStarted(task);
+      return task;
     });
   }
 
@@ -2918,6 +2942,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       TRANSLATIONS_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server can migrate a playlist to another provider (schema >= 56). */
+  public get supportsPlaylistMigration(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      MIGRATE_PLAYLIST_SCHEMA_VERSION
     );
   }
 
