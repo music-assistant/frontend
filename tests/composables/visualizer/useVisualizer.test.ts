@@ -49,11 +49,19 @@ const apiMocks = vi.hoisted(() => ({
 }));
 vi.mock("@/plugins/api", () => ({ default: apiMocks }));
 
-vi.mock("@/plugins/router", () => ({
-  default: {
-    currentRoute: ref({ path: "/party", query: {} as Record<string, string> }),
-  },
-}));
+vi.mock("@/plugins/router", async () => {
+  // Imported inside the factory: the hoisted mock runs before this module's
+  // own vue import binding is initialized.
+  const { ref } = await import("vue");
+  return {
+    default: {
+      currentRoute: ref({
+        path: "/party",
+        query: {} as Record<string, string>,
+      }),
+    },
+  };
+});
 
 // The module keeps singleton watch state; a fresh import per test keeps the
 // tests order-independent.
