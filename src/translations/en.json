@@ -1083,7 +1083,8 @@
                 "measurement_only": "Measured loudness",
                 "fallback_fixed_gain": "Fallback fixed gain",
                 "fixed_gain": "Fixed gain",
-                "fallback_dynamic": "Fallback dynamic"
+                "fallback_dynamic": "Fallback dynamic",
+                "source": "Handled by the source"
             },
             "measurement": {
                 "track": "Track",
@@ -1094,7 +1095,8 @@
             "crossfade_mode": {
                 "smart": "Smart",
                 "standard": "Standard",
-                "disabled": "Disabled"
+                "disabled": "Disabled",
+                "source": "Handled by the source"
             },
             "dsp_state": {
                 "enabled": "DSP active",
@@ -1107,7 +1109,7 @@
             "integer_pcm": "{0}-bit PCM",
             "direct_signal_path": "Direct signal path",
             "direct_signal_path_detail": "Audio passes through queue processing unchanged.",
-            "direct_signal_path_inactive_detail": "No volume normalization, crossfade, playback speed adjustment, or audio overlay is active.",
+            "direct_signal_path_inactive_detail": "Music Assistant applies no volume normalization, crossfade, playback speed adjustment, or audio overlay.",
             "no_shared_transforms": "No shared transforms reported",
             "no_shared_transforms_detail": "No normalization, crossfade, playback speed adjustment, or audio overlay is reported by the processing model.",
             "processing_headroom": "Processing headroom",

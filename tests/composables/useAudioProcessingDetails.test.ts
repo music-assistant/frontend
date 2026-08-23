@@ -501,6 +501,75 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     );
   });
 
+  it("keeps the path direct when the source handled the processing", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.SOURCE,
+          }),
+          crossfade_mode: CrossfadeMode.SOURCE,
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    // both steps are reported, but neither is ours, so the shared path stays direct
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Direct signal path",
+      "Volume normalization",
+      "Crossfade: Handled by the source",
+    ]);
+    const normalization = display.processingStages[1];
+    expect(normalization.subtitleParts).toEqual(["Handled by the source"]);
+    // our target and measurement describe neither, so there is nothing to list
+    expect(normalization.details).toEqual([]);
+  });
+
+  it("excludes source-handled processing from headroom reasons", () => {
+    const display = buildDisplay({
+      queue_processing: audioQueueProcessing({
+        pcm_format: makeFormat({
+          content_type: ContentType.PCM_F32LE,
+          codec_type: ContentType.PCM_F32LE,
+          bit_depth: 32,
+        }),
+        normalization: audioNormalizationDetails({
+          mode: VolumeNormalizationMode.SOURCE,
+        }),
+        crossfade_mode: CrossfadeMode.SOURCE,
+      }),
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["kitchen"],
+          output_format: makeFormat(),
+          fidelity: audioFidelity({ bit_perfect: false }),
+          dsp: audioDSPDetails({ state: DSPState.ENABLED, output_gain: -3 }),
+        }),
+      ],
+    });
+
+    const headroom = display.processingStages[0];
+    expect(headroom.title).toBe("Processing headroom");
+    expect(headroom.details).toContain(
+      "Floating-point headroom is available for: DSP.",
+    );
+  });
+
   it("formats every numeric detail with the supplied locale", () => {
     const format = makeFormat({
       content_type: ContentType.MP3,
