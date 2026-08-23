@@ -9,6 +9,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick, reactive } from "vue";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
 import { queueItem } from "../fixtures/queueItem";
@@ -140,6 +141,29 @@ describe("ShuffleBtn", () => {
       const wrapper = mountButton({
         player: playerOnSource({ shuffle_enabled: true }),
       });
+
+      expect(wrapper.findComponent(ShuffleIcon).exists()).toBe(true);
+      expect(button(wrapper).attributes("title")).toBe("shuffle_disable");
+    });
+
+    // a player update lands as an in-place assign with a fresh source list, so
+    // the control has to re-read what the source reports rather than keep what
+    // it read when it was built
+    it("follows the state the source reports as it changes", async () => {
+      const live = reactive(playerOnSource({ shuffle_enabled: false }));
+      const wrapper = mountButton({ player: live });
+
+      expect(wrapper.findComponent(ShuffleIcon).exists()).toBe(false);
+
+      live.source_list = [
+        playerSource({
+          id: live.active_source!,
+          name: "Spotify Connect",
+          can_shuffle: true,
+          shuffle_enabled: true,
+        }),
+      ];
+      await nextTick();
 
       expect(wrapper.findComponent(ShuffleIcon).exists()).toBe(true);
       expect(button(wrapper).attributes("title")).toBe("shuffle_disable");

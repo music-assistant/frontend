@@ -10,6 +10,7 @@ import {
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick, reactive } from "vue";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
 import { queueItem } from "../fixtures/queueItem";
@@ -154,6 +155,28 @@ describe("RepeatBtn", () => {
         "player-1",
         RepeatMode.ONE,
       );
+    });
+
+    // a player update lands as an in-place assign with a fresh source list, so
+    // the control has to re-read what the source reports rather than keep what
+    // it read when it was built
+    it("follows the mode the source reports as it changes", async () => {
+      const live = reactive(playerOnSource({ repeat_mode: RepeatMode.OFF }));
+      const wrapper = mountButton({ player: live });
+
+      expect(wrapper.findComponent(IconRepeatOff).exists()).toBe(true);
+
+      live.source_list = [
+        playerSource({
+          id: live.active_source!,
+          name: "Spotify Connect",
+          can_repeat: true,
+          repeat_mode: RepeatMode.ALL,
+        }),
+      ];
+      await nextTick();
+
+      expect(wrapper.findComponent(IconRepeat).exists()).toBe(true);
     });
 
     it("renders repeat-one when the source reports it", () => {
