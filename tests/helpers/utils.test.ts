@@ -11,6 +11,7 @@ import {
   paletteFromServer,
   rgbToHex,
   sleep,
+  stripBlankLines,
   truncateString,
 } from "@/helpers/utils";
 import type { MediaItemPalette } from "@/plugins/api/interfaces";
@@ -206,6 +207,45 @@ describe("formatDuration", () => {
     expect(formatDuration(5)).toBe("00:05");
     expect(formatDuration(65)).toBe("01:05");
     expect(formatDuration(3665)).toBe("01:01:05");
+  });
+});
+
+describe("stripBlankLines", () => {
+  it("drops blank lines but keeps the line breaks around them", () => {
+    expect(stripBlankLines("First.\n\nSecond.\n\n\nThird.")).toBe(
+      "First.\nSecond.\nThird.",
+    );
+  });
+
+  it("turns html paragraphs and breaks into plain lines", () => {
+    expect(stripBlankLines("<p>First.</p>\n<p>Second.</p>")).toBe(
+      "First.\nSecond.",
+    );
+    expect(stripBlankLines("Line one<br /><br />Line two")).toBe(
+      "Line one\nLine two",
+    );
+    expect(stripBlankLines("<p>Intro</p><p>&nbsp;</p><p>Outro</p>")).toBe(
+      "Intro\nOutro",
+    );
+  });
+
+  it("drops divider lines, which would otherwise read as a heading", () => {
+    expect(stripBlankLines("Show notes\n\n-----\n\nSupport us")).toBe(
+      "Show notes\nSupport us",
+    );
+  });
+
+  it("leaves other markup and list items alone", () => {
+    expect(stripBlankLines("Topics:\n\n- watches\n- science")).toBe(
+      "Topics:\n- watches\n- science",
+    );
+    expect(stripBlankLines('<p>See <a href="https://x.test">x</a></p>')).toBe(
+      'See <a href="https://x.test">x</a>',
+    );
+  });
+
+  it("handles escaped newlines from providers that send them literally", () => {
+    expect(stripBlankLines("One\\nTwo\\n\\nThree")).toBe("One\nTwo\nThree");
   });
 });
 

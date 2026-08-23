@@ -692,7 +692,7 @@ export const stripBlankLines = function (text: string): string {
   // reads them as an underline and turns the line above into a heading
   return normalizeLineBreaks(text)
     .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/?p[^>]*>/gi, "\n")
+    .replace(/<\/?p(?:\s[^>]*)?>/gi, "\n")
     .replaceAll("&nbsp;", " ")
     .replace(/^[ \t]*(?:[-=_*][ \t]*)+$/gm, "")
     .replace(/\n[^\S\n]*(?:\n[^\S\n]*)+/g, "\n")
