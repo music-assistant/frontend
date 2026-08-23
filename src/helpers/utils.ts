@@ -671,12 +671,32 @@ markdownPurifier.addHook("afterSanitizeAttributes", (node) => {
  * @param text - Markdown source. May use escaped `\n` sequences as newlines.
  */
 export const markdownToHtml = function (text: string): string {
-  // some sources encode their line breaks literally; block syntax only parses on real ones
-  const source = text.replaceAll("\\n", "\n").replaceAll(" \\", "\n");
+  const source = normalizeLineBreaks(text);
   // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
   return markdownPurifier.sanitize(marked(source, { breaks: true }) as string, {
     SANITIZE_NAMED_PROPS: true,
   });
+};
+
+/**
+ * Text without its blank lines, keeping the remaining line breaks.
+ *
+ * Descriptions arrive as markdown or as HTML, so both shapes are reduced to
+ * plain lines. For views that clamp the text to a few lines, where an empty
+ * line costs one of them.
+ *
+ * @param text - Description text, markdown or HTML.
+ */
+export const stripBlankLines = function (text: string): string {
+  // divider lines go as well: without the blank lines around them, markdown
+  // reads them as an underline and turns the line above into a heading
+  return normalizeLineBreaks(text)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/?p[^>]*>/gi, "\n")
+    .replaceAll("&nbsp;", " ")
+    .replace(/^[ \t]*(?:[-=_*][ \t]*)+$/gm, "")
+    .replace(/\n[^\S\n]*(?:\n[^\S\n]*)+/g, "\n")
+    .trim();
 };
 
 /**
@@ -814,4 +834,9 @@ export const getVolumeIconComponent = function (
   } else {
     return Volume2;
   }
+};
+
+// some sources encode their line breaks literally; block syntax only parses on real ones
+const normalizeLineBreaks = function (text: string): string {
+  return text.replaceAll("\\n", "\n").replaceAll(" \\", "\n");
 };

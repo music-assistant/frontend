@@ -1354,6 +1354,16 @@ export class MusicAssistantApi {
     });
   }
 
+  public getPodcastEpisode(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<PodcastEpisode> {
+    return this.sendCommand("music/podcasts/podcast_episode", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   public getItemByUri(uri: string): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
     return this.sendCommand("music/item_by_uri", {

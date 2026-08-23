@@ -502,6 +502,7 @@ export const getContextMenuItems = async function (
       MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
+      MediaType.PODCAST_EPISODE,
       MediaType.TRACK,
     ].includes(items[0].media_type) &&
     itemIsAvailable(items[0])
@@ -897,10 +898,13 @@ export const getContextMenuItems = async function (
   }
 
   // update metadata
+  // podcast episodes are never stored in the library, so there is nothing to write to
   if (
     items.length === 1 &&
     items[0] == parentItem &&
-    items[0].media_type !== MediaType.COLLECTION
+    ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
+      items[0].media_type,
+    )
   ) {
     contextMenuItems.push({
       label: "update_metadata",
@@ -958,9 +962,13 @@ export const getContextMenuItems = async function (
     }
   }
   // refresh item
+  // podcast episodes are fetched from the provider on every view, so there is
+  // no stored copy that could go stale
   if (
     items.length === 1 &&
-    items[0].media_type !== MediaType.COLLECTION &&
+    ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
+      items[0].media_type,
+    ) &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
   ) {
     contextMenuItems.push({

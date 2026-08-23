@@ -102,12 +102,26 @@
             height="80"
             style="padding-left: 10px"
           />
-          <v-card-title v-else>
-            <MarqueeText :sync="marqueeSync">
+          <v-card-title
+            v-else
+            :class="{
+              'title-with-steppers':
+                $slots['title-prepend'] || $slots['title-append'],
+            }"
+          >
+            <slot name="title-prepend"></slot>
+            <!-- width auto overrides the marquee's full width, so the title
+            takes only the space it needs and still shrinks (and scrolls) when
+            the steppers leave it too little -->
+            <MarqueeText
+              :sync="marqueeSync"
+              style="flex: 0 1 auto; width: auto; min-width: 0"
+            >
               <div class="selectable">
                 {{ headerTitle }}
               </div>
             </MarqueeText>
+            <slot name="title-append"></slot>
           </v-card-title>
 
           <!-- other details -->
@@ -287,6 +301,50 @@
               >
             </v-card-subtitle>
 
+            <!-- parent podcast of an episode -->
+            <v-card-subtitle
+              v-if="'podcast' in item && item.podcast"
+              class="title d-flex"
+            >
+              <v-icon
+                color="primary"
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                icon="mdi-podcast"
+              />
+              <MarqueeText :sync="marqueeSync">
+                <a
+                  style="color: secondary"
+                  @click="podcastClick(item.podcast)"
+                  >{{ item.podcast.name }}</a
+                >
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- publish date and length of an episode -->
+            <v-card-subtitle v-if="episodeInfo" class="title d-flex">
+              <template v-if="episodeInfo.date">
+                <v-icon
+                  color="primary"
+                  style="margin-left: -3px; margin-right: 3px"
+                  small
+                  icon="mdi-calendar"
+                />
+                {{ episodeInfo.date }}
+              </template>
+              <template v-if="episodeInfo.duration">
+                <v-icon
+                  color="primary"
+                  :style="`margin-left: ${
+                    episodeInfo.date ? '14px' : '-3px'
+                  }; margin-right: 3px`"
+                  small
+                  icon="mdi-clock-outline"
+                />
+                {{ episodeInfo.duration }}
+              </template>
+            </v-card-subtitle>
+
             <!-- Audiobook Collection -->
             <v-card-subtitle
               v-if="collectionMediaType === MediaType.AUDIOBOOK"
@@ -366,22 +424,25 @@
               v-if="item.media_type != MediaType.COLLECTION"
               class="flex items-center gap-2"
             >
-              <!-- favorite (heart) icon -->
-              <IconHeartFilled
-                v-if="item.favorite"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
-                @click="api.toggleFavorite(item)"
-              />
-              <IconHeart
-                v-else
-                :stroke-width="2"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
-                @click="api.toggleFavorite(item)"
-              />
+              <!-- favorite (heart) icon; podcast episodes are never stored in
+              the library, so they cannot be favorited -->
+              <template v-if="item.media_type != MediaType.PODCAST_EPISODE">
+                <IconHeartFilled
+                  v-if="item.favorite"
+                  :size="24"
+                  class="cursor-pointer"
+                  :title="$t('tooltip.favorite')"
+                  @click="api.toggleFavorite(item)"
+                />
+                <IconHeart
+                  v-else
+                  :stroke-width="2"
+                  :size="24"
+                  class="cursor-pointer"
+                  :title="$t('tooltip.favorite')"
+                  @click="api.toggleFavorite(item)"
+                />
+              </template>
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -427,8 +488,9 @@
           </div>
           <!-- Description/metadata -->
           <v-card-subtitle
-            v-if="shortDescription"
+            v-if="shortDescription || isPodcastEpisode"
             class="body-2 justify-left description-text"
+            :class="{ 'description-fixed-lines': isPodcastEpisode }"
             style="padding-bottom: 10px; cursor: pointer"
             @click="onDescriptionClick"
           >
@@ -516,10 +578,12 @@ import {
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import {
+  formatDuration,
   getAudiobookCollectionArtists,
   getAuthorsNarratorsArray,
   getImageThumbForItem,
   getPlayerName,
+  stripBlankLines,
 } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
@@ -535,6 +599,7 @@ import type {
   Genre,
   ItemMapping,
   MediaItemType,
+  Podcast,
 } from "@/plugins/api/interfaces";
 import {
   ImageType,
@@ -582,6 +647,24 @@ const headerTitle = computed(() => {
   return compProps.item.name;
 });
 
+const isPodcastEpisode = computed(
+  () => !!compProps.item && "podcast" in compProps.item,
+);
+
+// publish date and length of a podcast episode, each shown behind its own icon
+const episodeInfo = computed(() => {
+  const item = compProps.item;
+  if (!item || !("podcast" in item)) return undefined;
+  const date = item.metadata?.release_date
+    ? new Date(item.metadata.release_date).toLocaleDateString(undefined, {
+        dateStyle: "medium",
+      })
+    : "";
+  const duration = item.duration ? formatDuration(item.duration) : "";
+  if (!date && !duration) return undefined;
+  return { date, duration };
+});
+
 watch(
   () => compProps.item,
   async (val) => {
@@ -592,8 +675,11 @@ watch(
         getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
       menuItems.value = await getContextMenuItems([val], val);
-      // Load mapped genres for non-genre media items
-      if (val.media_type !== MediaType.GENRE) {
+      // Load mapped genres. Genres have none of their own, and podcast episodes
+      // are never stored in the library so nothing can be mapped to them.
+      if (
+        ![MediaType.GENRE, MediaType.PODCAST_EPISODE].includes(val.media_type)
+      ) {
         api
           .getGenresForMediaItem(val.media_type, val.item_id)
           .then((genres) => {
@@ -682,6 +768,16 @@ const artistClick = function (item: Artist | ItemMapping) {
     },
   });
 };
+const podcastClick = function (item: Podcast | ItemMapping) {
+  // podcast entry clicked
+  router.push({
+    name: "podcast",
+    params: {
+      itemId: item.item_id,
+      provider: item.provider,
+    },
+  });
+};
 
 const backButtonClick = function () {
   backFromMediaDetails(router);
@@ -738,13 +834,16 @@ const rawDescription = computed(() => {
 
 const shortDescription = computed(() => {
   const maxChars = 800;
-  if (rawDescription.value.length > maxChars) {
-    return rawDescription.value.substring(0, maxChars) + "…";
+  // the banner is clamped to a few lines, so a blank line costs one of them
+  const text = stripBlankLines(rawDescription.value);
+  if (text.length > maxChars) {
+    return text.substring(0, maxChars) + "…";
   }
-  return rawDescription.value;
+  return text;
 });
 
 const onDescriptionClick = (event: MouseEvent) => {
+  if (!rawDescription.value) return;
   // a link in the description opens on its own; don't also expand the text
   if ((event.target as HTMLElement).closest("a")) return;
   showFullInfo.value = !showFullInfo.value;
@@ -826,6 +925,26 @@ const collectionNarrators = computed(() => {
   border-width: 1px;
   border-style: solid;
   font-size: smaller;
+}
+
+/* the steppers sit either side of the title, which keeps the space between */
+.title-with-steppers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* episodes are stepped through in place, so their description holds the full
+   clamp height and the lines above it stay put from one episode to the next */
+.description-fixed-lines :deep(div) {
+  line-height: 1.5;
+  height: calc(5 * 1.5em);
+}
+
+@media (max-width: 1280px) {
+  .description-fixed-lines :deep(div) {
+    height: calc(3 * 1.5em);
+  }
 }
 
 .description-text :deep(div) {
