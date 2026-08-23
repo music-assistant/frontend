@@ -83,12 +83,8 @@
             ? { maxHeight: `${listMaxHeight}px` }
             : undefined
         "
-        @pointerleave="clearPreview"
       >
-        <DropdownMenuItem
-          @select.prevent="onPresetChange(RANDOM_VALUE)"
-          @pointerenter="clearPreview"
-        >
+        <DropdownMenuItem @select.prevent="onPresetChange(RANDOM_VALUE)">
           <span class="flex-1 truncate min-w-0">
             {{ $t("visualizer.preset_random") }}
           </span>
@@ -97,7 +93,6 @@
         <DropdownMenuItem
           v-if="favoritesPref.length > 0"
           @select.prevent="onPresetChange(RANDOM_FAVORITES_VALUE)"
-          @pointerenter="clearPreview"
         >
           <span class="flex-1 truncate min-w-0">
             {{ $t("visualizer.preset_random_favorites") }}
@@ -112,7 +107,6 @@
           v-for="name in sortedPresetNames"
           :key="name"
           @select.prevent="onPresetChange(name)"
-          @pointerenter="(e: PointerEvent) => onPresetHover(name, e)"
         >
           <span class="flex-1 truncate min-w-0">
             {{ favoritesPref.includes(name) ? `★ ${name}` : name }}
@@ -121,12 +115,11 @@
         </DropdownMenuItem>
       </div>
     </template>
-    <PresetHoverPreview :preset="previewPreset" :anchor="previewAnchor" live />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import {
   Check,
   ChevronDown,
@@ -136,7 +129,6 @@ import {
   Star,
   SwatchBook,
 } from "@lucide/vue";
-import PresetHoverPreview from "@/components/PresetHoverPreview.vue";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -148,8 +140,8 @@ import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  visualizerAuditionRequest,
 } from "@/composables/visualizer/state";
-import { usePresetHoverPreview } from "@/composables/visualizer/usePresetHoverPreview";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import { $t } from "@/plugins/i18n";
@@ -182,6 +174,12 @@ const presetModePref = getPreference<string>(
 
 const presetNames = ref<string[]>([]);
 
+// Taps audition instantly; the preference write (a full api.updateUser round
+// trip) is debounced, flushed at the latest when the menu closes.
+const PERSIST_DEBOUNCE_MS = 2000;
+const pendingPreset = ref<string | null>(null);
+let persistTimer: number | null = null;
+
 // Folded by default so the popout stays compact; per menu open, not persisted.
 const presetsExpanded = ref(false);
 const menuEl = ref<HTMLElement | null>(null);
@@ -193,9 +191,6 @@ const listMaxHeight = ref<number | null>(null);
 // into the space that is really free below never triggers a reposition. The
 // small floor keeps the fold usable when the popout sits near the bottom, at
 // the cost of a shift of at most that amount in that rare case.
-const { previewPreset, previewAnchor, onPresetHover, clearPreview } =
-  usePresetHoverPreview("[data-slot='dropdown-menu-sub-content']");
-
 const toggleExpanded = () => {
   if (!presetsExpanded.value && menuEl.value) {
     const panel =
@@ -205,8 +200,6 @@ const toggleExpanded = () => {
     listMaxHeight.value = Math.max(96, free);
   }
   presetsExpanded.value = !presetsExpanded.value;
-  // Folding removes the list; no pointerleave fires for it.
-  if (!presetsExpanded.value) clearPreview();
 };
 
 // Favourites float to the top of the picker.
@@ -255,6 +248,7 @@ watch(
 // The list reflects and controls the full selection: concrete preset
 // switches to fixed mode; the Random entries switch the mode back.
 const selectValue = computed(() => {
+  if (pendingPreset.value) return pendingPreset.value;
   if (presetModePref.value === "fixed" && presetPref.value)
     return presetPref.value;
   if (presetModePref.value === "random_favorites")
@@ -278,18 +272,45 @@ const showingLabel = computed(() => {
     : $t("visualizer.preset_random");
 });
 
-const onPresetChange = (value: unknown) => {
-  if (value === RANDOM_VALUE) {
-    void setPreference("visualizer_preset_mode", "random");
-    return;
-  }
-  if (value === RANDOM_FAVORITES_VALUE) {
-    void setPreference("visualizer_preset_mode", "random_favorites");
-    return;
-  }
-  void setPreference("visualizer_preset", String(value ?? ""));
-  void setPreference("visualizer_preset_mode", "fixed");
+const cancelPersistTimer = () => {
+  if (persistTimer !== null) window.clearTimeout(persistTimer);
+  persistTimer = null;
 };
+
+// pendingPreset stays set after the flush: the preference refs catch up
+// asynchronously, and clearing it early would flicker the check mark.
+const flushPendingPreset = () => {
+  cancelPersistTimer();
+  const name = pendingPreset.value;
+  if (name === null) return;
+  if (presetModePref.value !== "fixed" || presetPref.value !== name) {
+    void setPreference("visualizer_preset", name);
+    void setPreference("visualizer_preset_mode", "fixed");
+  }
+};
+
+const onPresetChange = (value: unknown) => {
+  if (value === RANDOM_VALUE || value === RANDOM_FAVORITES_VALUE) {
+    // The random mode is the newest intent; drop any pending fixed pick.
+    cancelPersistTimer();
+    pendingPreset.value = null;
+    void setPreference(
+      "visualizer_preset_mode",
+      value === RANDOM_VALUE ? "random" : "random_favorites",
+    );
+    return;
+  }
+  const name = String(value ?? "");
+  pendingPreset.value = name;
+  visualizerAuditionRequest.value = { name };
+  cancelPersistTimer();
+  persistTimer = window.setTimeout(() => {
+    persistTimer = null;
+    flushPendingPreset();
+  }, PERSIST_DEBOUNCE_MS);
+};
+
+onBeforeUnmount(flushPendingPreset);
 
 // Track drags locally so the labels stay live; the preference is persisted
 // only on commit (drag end) — every write is a full api.updateUser round-trip

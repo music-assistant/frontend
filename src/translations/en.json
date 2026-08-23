@@ -2360,8 +2360,9 @@
         "beat_dwell": "Minimum time between switches",
         "beat_dwell_description": "How long a preset stays on screen before a downbeat may switch it.",
         "favorites": "Favorite presets",
-        "no_favorites": "No favorites yet. Star the current preset in the fullscreen player.",
-        "remove_favorite": "Remove favorite",
+        "no_favorites": "No favorites yet. Star presets to build your curated list.",
+        "browse_presets": "Browse presets",
+        "use_previewed": "Use previewed: {0}",
         "credits": "Credits",
         "credits_butterchurn": "Rendering powered by Butterchurn by Jordan Berg (MIT license), the WebGL implementation of MilkDrop 2.",
         "credits_milkdrop": "MilkDrop was originally created by Ryan Geiss as a visualizer for Winamp. Presets are the work of the MilkDrop preset community, bundled via butterchurn-presets."

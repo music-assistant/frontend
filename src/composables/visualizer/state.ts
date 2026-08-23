@@ -8,27 +8,10 @@ import { ref } from "vue";
 
 export const currentVisualizerPreset = ref<string | null>(null);
 
-// Artwork tint the active canvas is currently applying (null = none), shared
-// so the preset hover preview recolors the same way as the main canvas.
-export const currentVisualizerTint = ref<string | null>(null);
-
-// The relay-fed canvas registers its waveform source here so other surfaces
-// (the preset hover preview) can render against the same live audio. Cleared
-// by identity: a torn-down canvas must not unregister its successor.
-type FrameSource = () => Uint8Array | null;
-let liveFrameSource: FrameSource | null = null;
-
-export function setLiveFrameSource(source: FrameSource): void {
-  liveFrameSource = source;
-}
-
-export function clearLiveFrameSource(source: FrameSource): void {
-  if (liveFrameSource === source) liveFrameSource = null;
-}
-
-export function liveVisualizerFrame(): Uint8Array | null {
-  return liveFrameSource ? liveFrameSource() : null;
-}
+// A preset tapped in the fullscreen menu, to show on the running canvas right
+// away; the menu persists the preference separately (deferred). Wrapped in an
+// object so re-auditioning the same name still triggers the canvas watcher.
+export const visualizerAuditionRequest = ref<{ name: string } | null>(null);
 
 // Defaults for the blur/opacity preferences. Every reader goes through these
 // (settings page, fullscreen menu, useVisualizer, and the canvas prop

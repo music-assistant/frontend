@@ -42,12 +42,10 @@ import {
 } from "@/composables/visualizer/useVisualizerEngine";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
-  clearLiveFrameSource,
   currentVisualizerPreset,
-  currentVisualizerTint,
-  setLiveFrameSource,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  visualizerAuditionRequest,
 } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
@@ -103,10 +101,6 @@ const covered = computed(
 );
 let relay: VisualizerRelayClient | null = null;
 let engine: VisualizerEngine | null = null;
-
-// Shared with the preset hover preview via the state module; stable identity
-// so registration follows this canvas's relay across reconnects.
-const liveFrames = () => (relay ? relay.currentFrame() : null);
 
 const { getPreference } = useUserPreferences();
 const qualityPref = getPreference<string>(
@@ -175,16 +169,6 @@ const tintStyle = computed(() => ({
   backgroundColor: tintColor.value ?? "transparent",
 }));
 
-// Publish the tint for the hover preview. Not while covered: the fullscreen
-// canvas on top owns the shared state then, like currentVisualizerPreset.
-watch(
-  tintColor,
-  (value) => {
-    if (!covered.value) currentVisualizerTint.value = value;
-  },
-  { immediate: true },
-);
-
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
 // canvas mounted onto a paused player starts hidden instead of fading out.
@@ -201,6 +185,8 @@ const layerStyle = computed(() => ({
 }));
 
 let lastPresetSwitchAt = 0;
+// What the engine has loaded, so a deferred audition write doesn't re-blend.
+let loadedPresetName: string | null = null;
 
 const pickPresetName = async (forceRandom = false): Promise<string | null> => {
   if (!forceRandom && presetModePref.value === "fixed" && props.preset)
@@ -222,8 +208,10 @@ const applyPreset = async (blendSec?: number, forceRandom = false) => {
   const requestId = ++presetRequestId;
   const name = await pickPresetName(forceRandom);
   if (requestId !== presetRequestId || !name || !engine) return;
+  if (name === loadedPresetName) return;
   lastPresetSwitchAt = performance.now();
   currentVisualizerPreset.value = name;
+  loadedPresetName = name;
   await engine.loadPresetByName(name, blendSec);
 };
 
@@ -254,7 +242,6 @@ const connectRelay = () => {
   // below connects as soon as the id arrives.
   if (!props.playerId) {
     streaming.value = false;
-    clearLiveFrameSource(liveFrames);
     return;
   }
   relay = new VisualizerRelayClient(
@@ -270,7 +257,6 @@ const connectRelay = () => {
     props.playerId,
   );
   relay.connect();
-  setLiveFrameSource(liveFrames);
 };
 
 const initialize = async () => {
@@ -289,7 +275,6 @@ const initialize = async () => {
     relay?.reportError(reason);
     relay?.close();
     relay = null;
-    clearLiveFrameSource(liveFrames);
     // Allow the mount/uncover/resize paths to retry from scratch (relay
     // included); a later engine-only recreation would render against no relay.
     initialized = false;
@@ -306,11 +291,12 @@ const createEngine = async () => {
   const requestId = ++engineRequestId;
   engine?.destroy();
   engine = null;
+  loadedPresetName = null;
   let created: VisualizerEngine | null = null;
   try {
     created = await createVisualizerEngine(
       canvasRef.value,
-      liveFrames,
+      () => (relay ? relay.currentFrame() : null),
       qualityPref.value,
     );
   } catch (error) {
@@ -390,6 +376,18 @@ watch(
   () => void applyPreset(),
 );
 
+// Auditions from the fullscreen menu load instantly; the menu's deferred
+// preference write then no-ops via the loadedPresetName guard.
+watch(visualizerAuditionRequest, async (request) => {
+  if (!request || !engine || request.name === loadedPresetName) return;
+  // Cancel an in-flight applyPreset pick.
+  presetRequestId++;
+  lastPresetSwitchAt = performance.now();
+  currentVisualizerPreset.value = request.name;
+  loadedPresetName = request.name;
+  await engine.loadPresetByName(request.name, 0);
+});
+
 // Quality changes need a fresh butterchurn instance (mesh/texture sizes are
 // fixed at creation).
 watch(
@@ -411,12 +409,10 @@ watch(covered, (isCovered) => {
     engine = null;
     relay?.close();
     relay = null;
-    clearLiveFrameSource(liveFrames);
     // Drop the shared preset name so the menu doesn't show (or let the star
     // act on) a preset that is no longer rendering. A re-mounting canvas resets
     // it asynchronously in applyPreset, always after this synchronous teardown.
     currentVisualizerPreset.value = null;
-    currentVisualizerTint.value = null;
   } else if (!initialized) {
     initializeWhenSized();
   } else {
@@ -446,9 +442,7 @@ onBeforeUnmount(() => {
   engine = null;
   relay?.close();
   relay = null;
-  clearLiveFrameSource(liveFrames);
   currentVisualizerPreset.value = null;
-  currentVisualizerTint.value = null;
 });
 </script>
 
