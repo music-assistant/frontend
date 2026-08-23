@@ -55,8 +55,8 @@
     :show-refresh-button="false"
     :load-items="loadOtherEpisodes"
     :sort-keys="[
-      'position',
       'position_desc',
+      'position',
       'name',
       'duration',
       'duration_desc',
@@ -147,11 +147,11 @@ const podcastKey = computed(() => {
   return podcast ? `${podcast.item_id}.${podcast.provider}` : "";
 });
 
-// the listing opens ordered by position, so the steppers follow that same order.
-// changing the sort in the listing moves it away from the steppers, which stay
-// on the podcast's own order
+// the listing opens newest first, so the steppers follow that same order and the
+// right arrow always lands on the row below. changing the sort in the listing
+// moves it away from the steppers, which stay on the podcast's own order
 const orderedSiblings = computed(() =>
-  [...siblings.value].sort((a, b) => (a.position || 0) - (b.position || 0)),
+  [...siblings.value].sort((a, b) => (b.position || 0) - (a.position || 0)),
 );
 
 const currentIndex = computed(() =>
