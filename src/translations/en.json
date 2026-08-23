@@ -1948,6 +1948,7 @@
         "view_details": "View task details",
         "remove_history": "Remove task from history",
         "log_title": "Task log",
+        "report_title": "Task report",
         "details_title": "Task details",
         "no_task_selected": "No task selected",
         "copy": "Copy",
