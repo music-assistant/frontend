@@ -1338,6 +1338,11 @@ export interface PlayerSource {
   can_play_pause: boolean;
   can_seek: boolean;
   can_next_previous: boolean;
+  can_shuffle: boolean;
+  can_repeat: boolean;
+  // the ordering the source reports for itself; null = it has not said
+  shuffle_enabled: boolean | null;
+  repeat_mode: RepeatMode | null;
 }
 
 export interface PlayerSoundMode {
