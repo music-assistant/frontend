@@ -163,6 +163,17 @@
             </div>
           </div>
 
+          <div v-if="task?.report" class="flex flex-col gap-3">
+            <Separator />
+            <div class="section-title">
+              {{ t("background_tasks.report_title") }}
+            </div>
+            <MarkdownText
+              :text="task.report"
+              class="task-report bg-muted/50 rounded-lg p-4 text-sm leading-relaxed select-text"
+            />
+          </div>
+
           <Separator />
 
           <div class="flex flex-wrap items-center justify-between gap-3">
@@ -207,6 +218,7 @@ import { Copy, Download, Pencil } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
+import MarkdownText from "@/components/MarkdownText.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

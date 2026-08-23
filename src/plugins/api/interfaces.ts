@@ -1574,6 +1574,7 @@ export interface BackgroundTask {
   id: string;
   name: string;
   status: TaskStatus;
+  report: string | null;
   logs: string[];
   schedule: TaskSchedule | null;
   last_run: string | null;
