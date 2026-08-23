@@ -114,8 +114,7 @@
     <template #subtitle>
       <div class="player-track-subtitle" :style="{ color: primaryColor }">
         <div class="player-track-subtitle-line">
-          <!-- the source the audio comes from; the compact bar only has room
-               for its icon beside the track metadata -->
+          <!-- the external source; the compact bar only has room for its icon -->
           <NowPlayingSourceBadge
             v-if="props.compact"
             icon-only
