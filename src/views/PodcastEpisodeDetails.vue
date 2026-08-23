@@ -1,5 +1,5 @@
 <template>
-  <InfoHeader :item="itemDetails">
+  <InfoHeader :item="itemDetails" :parent-item="parentPodcast">
     <template v-if="siblings.length > 1" #title-prepend>
       <ChevronLeft
         :size="26"
