@@ -18,7 +18,7 @@
         :style="canvasStyle"
       ></canvas>
       <div
-        v-if="streaming"
+        v-if="streaming && !shaderTint"
         class="visualizer-layer__tint"
         :style="tintStyle"
       ></div>
@@ -38,6 +38,7 @@ import {
   createVisualizerEngine,
   DECAY_MS,
   type VisualizerEngine,
+  type VisualizerPerfSample,
   isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { visualizerPreference } from "@/composables/visualizer/useVisualizer";
@@ -48,11 +49,13 @@ import {
 } from "@/composables/visualizer/state";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import {
+  ADAPTIVE_LADDER,
+  ADAPTIVE_START_LEVEL,
   DEFAULT_QUALITY,
-  TV_START_QUALITY,
-  stepDownQuality,
+  adaptiveProfile,
+  needsRebuild,
 } from "@/helpers/visualizer/quality";
-import { paletteFromServer } from "@/helpers/utils";
+import { hexToRgb, paletteFromServer } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { MediaItemPalette, PlaybackState } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -61,6 +64,7 @@ import {
   type ColorPalette,
   VisualizerRelayClient,
   reportVisualizerCapability,
+  reportVisualizerRender,
 } from "@/plugins/visualizer-relay";
 import vuetify from "@/plugins/vuetify";
 
@@ -126,16 +130,25 @@ const beatSwitchPref = visualizerPreference<boolean>(
 );
 const beatDwellPref = visualizerPreference<number>("visualizer_beat_dwell", 30);
 
+// on TV compositors the CSS blend tint costs more than the visualizer itself, so dashboard viewers tint in-shader instead
+const shaderTint = authManager.isDashboardViewer();
+
 const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
   // Oversize slightly when blurred so the edge vignette stays off-screen.
   transform: props.blur > 0 ? "scale(1.12)" : undefined,
+  // no second layer to fade in step with, so the opacity sits on the canvas itself
+  opacity:
+    shaderTint && props.opacity < 100 ? String(props.opacity / 100) : undefined,
 }));
 
 // Fades canvas and tint as one unit: the tint has to blend against an
 // opaque canvas, or it composites its own raw color over the background.
 const stackStyle = computed(() => ({
-  opacity: props.opacity < 100 ? String(props.opacity / 100) : undefined,
+  opacity:
+    !shaderTint && props.opacity < 100
+      ? String(props.opacity / 100)
+      : undefined,
 }));
 
 // The text-legibility scrim fades with the visualizer: a faint overlay
@@ -235,33 +248,134 @@ const onDownbeat = () => {
   void applyPreset(undefined, true);
 };
 
-// Adaptive quality for TV/cast displays: start at the sharp-but-bounded tv
-// tier, step down after ~6s of sustained sub-target rendering, or right away
-// when a sample shows the tier is hopeless. Down-only per mount: no
-// oscillation, and the next cast retries from the start tier.
+// adaptive quality for TV/cast displays, judged against the paced cadence rather than a fixed frame rate
 const TV_TARGET_FPS = 30;
-const TV_LOW_FPS_RATIO = 0.8;
-const TV_FAST_FAIL_RATIO = 0.5;
-const TV_LOW_SAMPLES_TO_STEP = 3;
-let adaptiveQuality: string = TV_START_QUALITY;
-let consecutiveLowSamples = 0;
+const TV_LATE_RATIO_STEP_DOWN = 0.2;
+const TV_LATE_RATIO_HOPELESS = 0.5;
+const TV_LATE_RATIO_STEP_UP = 0.02;
+const TV_FPS_SHORTFALL = 0.75;
+const TV_LOW_SAMPLES_TO_STEP = 2;
+const TV_GOOD_SAMPLES_TO_CLIMB = 6;
+const TV_SAMPLES_TO_SETTLE = 5;
+// a level that could not hold twice is not tried again, so the ladder settles instead of oscillating
+const TV_FAILURES_BEFORE_BLOCKED = 2;
+// minimum speed-up for a step down to count as having helped
+const TV_STEP_DOWN_PAYOFF = 1.15;
 
-const onTvFpsSample = (fps: number) => {
-  if (fps >= TV_TARGET_FPS * TV_LOW_FPS_RATIO) {
-    consecutiveLowSamples = 0;
+let adaptiveLevel = ADAPTIVE_START_LEVEL;
+// sharpest level still allowed to be tried again
+let adaptiveCeiling = 0;
+const levelFailures = new Map<number, number>();
+let lowSamples = 0;
+let goodSamples = 0;
+let steadySamples = 0;
+let settleReported = false;
+// cleared once a step down has been shown not to pay: a fill-rate remedy cannot fix a non-fill bottleneck
+let fillBound = true;
+let fpsBeforeStepDown = 0;
+let awaitingStepDownVerdict = false;
+let floorReported = false;
+
+const applyAdaptiveLevel = (next: number) => {
+  const from = adaptiveProfile(adaptiveLevel);
+  const to = adaptiveProfile(next);
+  adaptiveLevel = next;
+  lowSamples = 0;
+  goodSamples = 0;
+  steadySamples = 0;
+  settleReported = false;
+  // mesh density and FXAA are fixed at construction; anything else is an in-place resize
+  if (engine && !needsRebuild(from, to)) {
+    engine.setProfile(to);
     return;
   }
-  consecutiveLowSamples += 1;
-  const hopeless = fps < TV_TARGET_FPS * TV_FAST_FAIL_RATIO;
-  if (!hopeless && consecutiveLowSamples < TV_LOW_SAMPLES_TO_STEP) return;
-  consecutiveLowSamples = 0;
-  const nextTier = stepDownQuality(adaptiveQuality);
-  if (!nextTier) return;
-  console.info(
-    `[visualizer] ${Math.round(fps)}fps sustained at '${adaptiveQuality}', stepping down to '${nextTier}'`,
-  );
-  adaptiveQuality = nextTier;
   void createEngine();
+};
+
+const stepDown = (sample: VisualizerPerfSample) => {
+  const next = adaptiveLevel + 1;
+  if (next >= ADAPTIVE_LADDER.length) {
+    // nothing left to give up; say so once rather than going quiet
+    if (!floorReported) {
+      floorReported = true;
+      void reportVisualizerRender(sample, adaptiveLevel, "stuck at floor");
+    }
+    return;
+  }
+  const failures = (levelFailures.get(adaptiveLevel) ?? 0) + 1;
+  levelFailures.set(adaptiveLevel, failures);
+  if (failures >= TV_FAILURES_BEFORE_BLOCKED) adaptiveCeiling = next;
+  void reportVisualizerRender(sample, adaptiveLevel, "stepped down");
+  fpsBeforeStepDown = sample.fps;
+  awaitingStepDownVerdict = true;
+  applyAdaptiveLevel(next);
+};
+
+const onTvPerfSample = (sample: VisualizerPerfSample) => {
+  // first sample after a step down decides whether pixels were ever the problem
+  if (awaitingStepDownVerdict) {
+    awaitingStepDownVerdict = false;
+    if (sample.fps < fpsBeforeStepDown * TV_STEP_DOWN_PAYOFF) {
+      fillBound = false;
+      const back = adaptiveLevel - 1;
+      void reportVisualizerRender(
+        sample,
+        adaptiveLevel,
+        "step down did not pay",
+      );
+      applyAdaptiveLevel(Math.max(back, adaptiveCeiling));
+      return;
+    }
+  }
+
+  const struggling =
+    sample.lateRatio > TV_LATE_RATIO_STEP_DOWN ||
+    sample.fps < sample.targetFps * TV_FPS_SHORTFALL;
+
+  if (struggling) {
+    goodSamples = 0;
+    steadySamples = 0;
+    lowSamples += 1;
+    const hopeless = sample.lateRatio > TV_LATE_RATIO_HOPELESS;
+    if (!hopeless && lowSamples < TV_LOW_SAMPLES_TO_STEP) return;
+    lowSamples = 0;
+    if (!fillBound) {
+      // pinned with nothing more to try; report the resting state once
+      if (!settleReported) {
+        settleReported = true;
+        void reportVisualizerRender(
+          sample,
+          adaptiveLevel,
+          "pinned, not fill bound",
+        );
+      }
+      return;
+    }
+    stepDown(sample);
+    return;
+  }
+
+  lowSamples = 0;
+  if (sample.lateRatio > TV_LATE_RATIO_STEP_UP) {
+    goodSamples = 0;
+  } else {
+    goodSamples += 1;
+  }
+  if (goodSamples >= TV_GOOD_SAMPLES_TO_CLIMB) {
+    const next = adaptiveLevel - 1;
+    if (next >= adaptiveCeiling) {
+      void reportVisualizerRender(sample, adaptiveLevel, "stepped up");
+      applyAdaptiveLevel(next);
+      return;
+    }
+    goodSamples = 0;
+  }
+  // report where it came to rest once, for displays with no reachable console
+  steadySamples += 1;
+  if (steadySamples === TV_SAMPLES_TO_SETTLE && !settleReported) {
+    settleReported = true;
+    void reportVisualizerRender(sample, adaptiveLevel, "settled");
+  }
 };
 
 let initialized = false;
@@ -303,7 +417,7 @@ const initialize = async () => {
   if (engine) {
     // Fleet data: this display renders MilkDrop. Cast receivers and TVs have
     // no reachable console, so this is where their support becomes visible.
-    void reportVisualizerCapability("butterchurn");
+    void reportVisualizerCapability("butterchurn", engine.renderer);
   }
   if (!engine) {
     // WebGL2 unavailable or init failure: leave the layer transparent. Report it
@@ -335,17 +449,20 @@ const createEngine = async () => {
   let created: VisualizerEngine | null = null;
   // A dashboard viewer is a cast receiver or TV, so its quality adapts to
   // measured performance instead of trusting the (unreachable) quality
-  // preference: start at native (TV viewports report few CSS pixels behind a
-  // high devicePixelRatio, so lower tiers render visibly soft on the panel)
-  // and step down when the hardware cannot sustain the capped frame rate.
+  // preference: it walks the adaptive ladder towards whatever pixel budget the
+  // hardware can hold at the paced cadence.
   const constrainedDisplay = authManager.isDashboardViewer();
   try {
     created = await createVisualizerEngine(
       canvasRef.value,
       () => (relay ? relay.currentFrame() : null),
-      constrainedDisplay ? adaptiveQuality : qualityPref.value,
+      constrainedDisplay ? adaptiveProfile(adaptiveLevel) : qualityPref.value,
       constrainedDisplay
-        ? { maxFps: TV_TARGET_FPS, onFpsSample: onTvFpsSample }
+        ? {
+            maxFps: TV_TARGET_FPS,
+            onPerfSample: onTvPerfSample,
+            shaderTint: true,
+          }
         : undefined,
     );
   } catch (error) {
@@ -362,9 +479,17 @@ const createEngine = async () => {
       engine.setPaused(true, false);
       faded.value = true;
     }
+    applyTint();
     await applyPreset(0);
   }
 };
+
+const applyTint = () => {
+  if (!shaderTint) return;
+  engine?.setTint(tintColor.value ? hexToRgb(tintColor.value) : null);
+};
+
+watch(tintColor, applyTint);
 
 watch(playbackPaused, (isPaused) => {
   if (pauseTimer !== null) {

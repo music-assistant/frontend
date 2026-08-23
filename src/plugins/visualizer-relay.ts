@@ -11,7 +11,10 @@
 import { parseVisualizerBinary } from "@/helpers/visualizer/binaryFrames";
 import { FrameScheduler } from "@/helpers/visualizer/frameScheduler";
 import { ClockSync, computeTimeSample } from "@/helpers/visualizer/timeSync";
-import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
+import {
+  isVisualizerSupported,
+  type VisualizerPerfSample,
+} from "@/composables/visualizer/useVisualizerEngine";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -97,15 +100,55 @@ export function visualizerCanRender(): boolean {
  */
 export async function reportVisualizerCapability(
   renderer: "butterchurn" | "none",
+  gpu?: string,
 ): Promise<void> {
+  // fleet data about displays with no reachable console; desktops have one
+  if (!authManager.isDashboardViewer()) return;
   try {
     await api.sendCommand("milkdrop_visualizer/report_capability", {
       webgl2: isVisualizerSupported(),
       renderer,
+      gpu,
       user_agent: navigator.userAgent,
     });
   } catch (error) {
     console.warn("[visualizer] could not report capability:", error);
+  }
+}
+
+/**
+ * Record how a display is actually rendering, in the server log.
+ *
+ * Cast receivers have no reachable console and no devtools, so an adaptive
+ * display otherwise gives no way to tell what it settled on or why.
+ *
+ * @param sample - the measured render performance behind this report.
+ * @param level - the adaptive ladder level in use when it was measured.
+ * @param note - what prompted the report, e.g. "settled".
+ */
+export async function reportVisualizerRender(
+  sample: VisualizerPerfSample,
+  level: number,
+  note: string,
+): Promise<void> {
+  try {
+    await api.sendCommand("milkdrop_visualizer/report_capability", {
+      webgl2: true,
+      renderer: "butterchurn",
+      user_agent: navigator.userAgent,
+      render: {
+        note,
+        level,
+        fps: Math.round(sample.fps * 10) / 10,
+        target_fps: Math.round(sample.targetFps * 10) / 10,
+        late_ratio: Math.round(sample.lateRatio * 100) / 100,
+        pixels: sample.pixels,
+        render_ms: Math.round(sample.renderMs * 10) / 10,
+        blocked_ratio: Math.round(sample.blockedRatio * 100) / 100,
+      },
+    });
+  } catch (error) {
+    console.warn("[visualizer] could not report render performance:", error);
   }
 }
 

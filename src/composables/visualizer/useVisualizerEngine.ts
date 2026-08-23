@@ -11,7 +11,10 @@ import {
   getPreset,
   randomPresetName,
 } from "@/helpers/visualizer/presetLibrary";
-import { qualityProfile } from "@/helpers/visualizer/quality";
+import {
+  qualityProfile,
+  type QualityProfile,
+} from "@/helpers/visualizer/quality";
 
 const N_SAMPLES = 1024;
 const ZERO_LEVEL = 0x80;
@@ -23,6 +26,21 @@ const PRESET_BLEND_SEC = 2.7;
 export const DECAY_MS = 1500;
 export const ATTACK_MS = 1000;
 
+export interface VisualizerPerfSample {
+  // renders actually achieved per second
+  fps: number;
+  // renders per second the pacing asked for (refresh rate / vsync divisor)
+  targetFps: number;
+  // share of renders a whole display tick late; only rises when the GPU cannot keep up
+  lateRatio: number;
+  // drawing-buffer pixels behind those numbers
+  pixels: number;
+  // mean wall time inside butterchurn's render call
+  renderMs: number;
+  // share of the window the main thread spent inside long tasks
+  blockedRatio: number;
+}
+
 export interface VisualizerEngine {
   loadPresetByName(name: string, blendSec?: number): Promise<void>;
   loadRandomPreset(): Promise<string>;
@@ -32,6 +50,20 @@ export interface VisualizerEngine {
    * @param ramp - ramp the waveform down/up first; false switches on the spot.
    */
   setPaused(paused: boolean, ramp?: boolean): void;
+  /**
+   * Retune the drawing-buffer size in place. Only valid for profiles that
+   * share the running engine's mesh and FXAA settings (see `needsRebuild`).
+   */
+  setProfile(profile: QualityProfile): void;
+  /**
+   * Set or clear the artwork tint (shader-tint engines only; a no-op
+   * otherwise). Transitions over the same 1.5s the CSS tint layer uses.
+   *
+   * :param rgb: 0-255 color channels, or null to fade the tint out.
+   */
+  setTint(rgb: readonly [number, number, number] | null): void;
+  // what the GL context reports it is drawing with
+  readonly renderer: string;
   destroy(): void;
 }
 
@@ -82,53 +114,193 @@ function resolveButterchurnModule(module: unknown): ButterchurnStatic {
 }
 
 export interface VisualizerEngineOptions {
-  // Upper bound on render rate; rAF ticks above it are skipped. Constrained
-  // displays (cast receivers, TVs) cannot sustain 60fps MilkDrop rendering.
+  // upper bound on render rate; the loop renders on a whole vsync divisor at or below it
   maxFps?: number;
-  // Called with the achieved render rate roughly every 2 seconds of visible
-  // rendering, so a host can adapt quality to what the hardware sustains.
-  onFpsSample?: (fps: number) => void;
+  // called with achieved render performance roughly every 2s of visible rendering
+  onPerfSample?: (sample: VisualizerPerfSample) => void;
+  // apply the artwork tint in a WebGL pass (mix-blend-mode: color math) instead of a CSS blend layer
+  shaderTint?: boolean;
 }
+
+// mirrors the CSS tint layer's background-color transition
+const TINT_TRANSITION_MS = 1500;
+
+// the CSS Compositing spec's "color" blend: keep the preset's luminance, take hue/saturation from the tint
+const TINT_VERTEX_SHADER = `#version 300 es
+out vec2 v_uv;
+void main() {
+  vec2 pos = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  v_uv = pos;
+  gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+const TINT_FRAGMENT_SHADER = `#version 300 es
+precision mediump float;
+uniform sampler2D u_src;
+uniform vec3 u_tint;
+uniform float u_amount;
+in vec2 v_uv;
+out vec4 outColor;
+float lum(vec3 c) { return dot(c, vec3(0.30, 0.59, 0.11)); }
+vec3 clipColor(vec3 c) {
+  float l = lum(c);
+  float n = min(min(c.r, c.g), c.b);
+  float x = max(max(c.r, c.g), c.b);
+  if (n < 0.0 && l > n) c = l + ((c - l) * l) / (l - n);
+  if (x > 1.0 && x > l) c = l + ((c - l) * (1.0 - l)) / (x - l);
+  return c;
+}
+void main() {
+  vec3 src = texture(u_src, v_uv).rgb;
+  vec3 blended = clipColor(u_tint + (lum(src) - lum(u_tint)));
+  outColor = vec4(mix(src, blended, u_amount), 1.0);
+}`;
+
+interface TintPass {
+  draw(src: HTMLCanvasElement, nowMs: number): void;
+  setTint(rgb: readonly [number, number, number] | null): void;
+  destroy(): void;
+}
+
+// returns null when the pass cannot be built; butterchurn then draws to the visible canvas as usual
+function createTintPass(canvas: HTMLCanvasElement): TintPass | null {
+  const gl = canvas.getContext("webgl2");
+  if (!gl) return null;
+  const build = (type: number, source: string): WebGLShader | null => {
+    const shader = gl.createShader(type);
+    if (!shader) return null;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return null;
+    return shader;
+  };
+  const vertex = build(gl.VERTEX_SHADER, TINT_VERTEX_SHADER);
+  const fragment = build(gl.FRAGMENT_SHADER, TINT_FRAGMENT_SHADER);
+  const program = gl.createProgram();
+  if (!vertex || !fragment || !program) return null;
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  const tintLocation = gl.getUniformLocation(program, "u_tint");
+  const amountLocation = gl.getUniformLocation(program, "u_amount");
+
+  // color and strength ease toward their targets, standing in for the CSS transitions
+  let color: [number, number, number] = [0, 0, 0];
+  let targetColor: [number, number, number] = [0, 0, 0];
+  let amount = 0;
+  let targetAmount = 0;
+  let lastDrawAt = 0;
+  let started = false;
+
+  return {
+    draw(src, nowMs) {
+      const dt = lastDrawAt ? nowMs - lastDrawAt : 0;
+      lastDrawAt = nowMs;
+      const step = Math.min(dt / TINT_TRANSITION_MS, 1);
+      for (let i = 0; i < 3; i++) {
+        color[i] += (targetColor[i] - color[i]) * step;
+      }
+      amount += (targetAmount - amount) * step;
+      if (canvas.width !== src.width || canvas.height !== src.height) {
+        canvas.width = src.width;
+        canvas.height = src.height;
+      }
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.useProgram(program);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+      gl.uniform3f(tintLocation, color[0], color[1], color[2]);
+      gl.uniform1f(amountLocation, amount);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    },
+    setTint(rgb) {
+      if (rgb) {
+        targetColor = [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255];
+        // first color jumps straight in; only the strength fades, as the CSS v-if does
+        if (!started) {
+          started = true;
+          color = [...targetColor];
+        }
+        targetAmount = 1;
+      } else {
+        targetAmount = 0;
+      }
+    },
+    destroy() {
+      gl.deleteTexture(texture);
+      gl.deleteProgram(program);
+      gl.deleteShader(vertex);
+      gl.deleteShader(fragment);
+    },
+  };
+}
+
+// median frame gap, not the fastest: bursty delivery makes the minimum read as the panel rate
+const REFRESH_WINDOW_TICKS = 120;
+const MIN_TICK_MS = 1000 / 240;
+const MAX_TICK_MS = 1000 / 30;
+const DEFAULT_TICK_MS = 1000 / 60;
+const PERF_SAMPLE_WINDOW_MS = 2000;
 
 /**
  * Create the engine on a canvas. Returns null when WebGL2 is unavailable.
  *
  * @param canvas - the target canvas element.
  * @param getFrame - returns the waveform frame for "now", or null when none.
- * @param quality - render quality tier; defaults to the "high" profile.
+ * @param quality - a quality profile, or the name of a user-facing tier.
  * @param options - extra engine options, e.g. a frame rate cap.
  */
 export async function createVisualizerEngine(
   canvas: HTMLCanvasElement,
   getFrame: () => Uint8Array | null,
-  quality?: string,
+  quality?: string | QualityProfile,
   options?: VisualizerEngineOptions,
 ): Promise<VisualizerEngine | null> {
   if (!isVisualizerSupported()) return null;
   const butterchurn = resolveButterchurnModule(await import("butterchurn"));
   sharedAudioContext ??= new AudioContext();
-  const profile = qualityProfile(quality);
+  let profile = typeof quality === "object" ? quality : qualityProfile(quality);
 
   // Butterchurn's screen pass sets the GL viewport to exactly the width and
   // height it was given (its pixelRatio option only scales internal render
   // textures and defaults to devicePixelRatio, double-scaling if unmanaged).
   // So: size the canvas drawing buffer ourselves, hand butterchurn those
   // same dimensions, and pin its pixelRatio to 1. The quality profile
-  // supplies the dpr cap and render scale (CSS stretches the result).
-  const scale =
-    Math.min(window.devicePixelRatio || 1, profile.maxDpr) *
-    profile.renderScale;
-  const deviceSize = () => ({
-    width: Math.round(canvas.clientWidth * scale),
-    height: Math.round(canvas.clientHeight * scale),
-  });
+  // supplies the dpr cap, render scale and pixel budget (CSS stretches the
+  // result).
+  const deviceSize = () => {
+    const scale =
+      Math.min(window.devicePixelRatio || 1, profile.maxDpr) *
+      profile.renderScale;
+    let width = Math.round(canvas.clientWidth * scale);
+    let height = Math.round(canvas.clientHeight * scale);
+    const budget = profile.maxPixels;
+    if (budget && width * height > budget) {
+      const shrink = Math.sqrt(budget / (width * height));
+      width = Math.max(1, Math.round(width * shrink));
+      height = Math.max(1, Math.round(height * shrink));
+    }
+    return { width, height };
+  };
+  // with the shader tint, butterchurn renders into a detached canvas and the visible one shows the tinted copy
+  const tintPass = options?.shaderTint ? createTintPass(canvas) : null;
+  const targetCanvas = tintPass ? document.createElement("canvas") : canvas;
+
   let { width, height } = deviceSize();
-  canvas.width = width;
-  canvas.height = height;
+  targetCanvas.width = width;
+  targetCanvas.height = height;
 
   const visualizer: ButterchurnVisualizer = butterchurn.createVisualizer(
     sharedAudioContext,
-    canvas,
+    targetCanvas,
     {
       width,
       height,
@@ -139,17 +311,27 @@ export async function createVisualizerEngine(
     },
   );
 
+  // the unmasked string names the actual driver (a software rasterizer also reports WebGL2)
+  const describeRenderer = (): string => {
+    try {
+      const gl = canvas.getContext("webgl2");
+      if (!gl) return "unknown";
+      const info = gl.getExtension("WEBGL_debug_renderer_info");
+      return String(
+        (info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) ||
+          gl.getParameter(gl.RENDERER),
+      );
+    } catch {
+      return "unknown";
+    }
+  };
+  const renderer = describeRenderer();
+
   let rafHandle: number | null = null;
   let lastFrame: Uint8Array = SILENCE;
   let lastFrameAt = 0;
-  let lastRenderAt = 0;
   let destroyed = false;
   let paused = false;
-  // Half a 60Hz tick of slack, so a cap of 30 renders every second rAF tick
-  // instead of stuttering over 3 ticks when a tick lands fractionally early.
-  const minRenderIntervalMs = options?.maxFps
-    ? 1000 / options.maxFps - 1000 / 120
-    : 0;
   // Gain envelope on the waveform: 0 while paused, 1 while playing. The loop
   // halts once a wind-down lands.
   let rampStartedAt: number | null = null;
@@ -165,6 +347,7 @@ export async function createVisualizerEngine(
         timeByteArrayR: frame,
       },
     });
+    tintPass?.draw(targetCanvas, performance.now());
   };
 
   const stopLoop = () => {
@@ -176,6 +359,19 @@ export async function createVisualizerEngine(
   // canvas has to put a frame back up itself.
   const redrawIfHalted = () => {
     if (rafHandle === null && !destroyed) renderFrame(SILENCE);
+  };
+
+  const applySize = () => {
+    const size = deviceSize();
+    if (!size.width || !size.height) return;
+    if (size.width === width && size.height === height) return;
+    width = size.width;
+    height = size.height;
+    targetCanvas.width = width;
+    targetCanvas.height = height;
+    visualizer.setRendererSize(width, height, { pixelRatio: 1 });
+    // Resizing clears the drawing buffer, taking the frozen picture with it.
+    redrawIfHalted();
   };
 
   // Squared both ways: the wind-down drops off quickly, the return builds
@@ -201,24 +397,65 @@ export async function createVisualizerEngine(
     return scaledFrame;
   };
 
-  // Achieved-fps sampling for adaptive hosts. The window resets whenever the
-  // page was hidden, so a background stretch cannot read as a slow render.
-  let fpsSampleStart = 0;
-  let fpsSampleFrames = 0;
-  const FPS_SAMPLE_WINDOW_MS = 2000;
+  // whole-number vsync divisor pacing: a wall-clock gate drifts against the tick grid and reads as judder
+  let tickMs = DEFAULT_TICK_MS;
+  let tickDivisor = options?.maxFps
+    ? Math.max(1, Math.round(1000 / options.maxFps / tickMs))
+    : 1;
+  let lastTickAt = 0;
+  let ticksSinceRender = 0;
+  let windowTicks = 0;
+  const windowDeltas = new Float64Array(REFRESH_WINDOW_TICKS);
+  // until the first window lands the divisor rests on an assumed 60Hz; don't measure against that
+  let tickEstimated = false;
+
+  // perf sampling for adaptive hosts; resets when hidden so a background stretch cannot read as slow
+  let perfWindowStart = 0;
+  let perfRenders = 0;
+  let perfLateRenders = 0;
+  let perfRenderMs = 0;
+  let perfBlockedMs = 0;
+  let lastRenderAt = 0;
+
+  // long tasks tell a saturated main thread apart from one idling between frames
+  let longTaskObserver: PerformanceObserver | null = null;
+  try {
+    longTaskObserver = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) perfBlockedMs += entry.duration;
+    });
+    longTaskObserver.observe({ entryTypes: ["longtask"] });
+  } catch {
+    longTaskObserver = null;
+  }
 
   const renderLoop = () => {
     if (destroyed) return;
     rafHandle = requestAnimationFrame(renderLoop);
     if (document.visibilityState !== "visible") {
-      fpsSampleStart = 0;
+      perfWindowStart = 0;
+      lastTickAt = 0;
+      lastRenderAt = 0;
       return;
     }
-    if (minRenderIntervalMs > 0) {
-      const now = performance.now();
-      if (now - lastRenderAt < minRenderIntervalMs) return;
-      lastRenderAt = now;
+    const now = performance.now();
+    if (lastTickAt) {
+      windowDeltas[windowTicks] = now - lastTickAt;
+      if (++windowTicks >= REFRESH_WINDOW_TICKS) {
+        const sorted = Array.from(windowDeltas).sort((a, b) => a - b);
+        const median = sorted[REFRESH_WINDOW_TICKS >> 1];
+        tickMs = Math.min(Math.max(median, MIN_TICK_MS), MAX_TICK_MS);
+        // the MAX_TICK_MS clamp lands the divisor on 1 when frames already arrive at or below the target rate
+        tickDivisor = options?.maxFps
+          ? Math.max(1, Math.round(1000 / options.maxFps / tickMs))
+          : 1;
+        windowTicks = 0;
+        tickEstimated = true;
+      }
     }
+    lastTickAt = now;
+    if (tickDivisor > 1 && ++ticksSinceRender < tickDivisor) return;
+    ticksSinceRender = 0;
+
     const gain = currentGain();
     if (paused && gain <= 0) {
       // Wound down: only halting the loop stops the time-driven motion.
@@ -231,49 +468,60 @@ export async function createVisualizerEngine(
       const frame = getFrame();
       if (frame) {
         lastFrame = frame;
-        lastFrameAt = performance.now();
-      } else if (performance.now() - lastFrameAt > STARVATION_MS) {
+        lastFrameAt = now;
+      } else if (now - lastFrameAt > STARVATION_MS) {
         lastFrame = SILENCE;
       }
     }
     renderFrame(applyGain(lastFrame, gain));
-    if (options?.onFpsSample) {
-      const now = performance.now();
-      if (fpsSampleStart === 0) {
-        fpsSampleStart = now;
-        fpsSampleFrames = 0;
-      }
-      fpsSampleFrames += 1;
-      const elapsed = now - fpsSampleStart;
-      if (elapsed >= FPS_SAMPLE_WINDOW_MS) {
-        options.onFpsSample((fpsSampleFrames * 1000) / elapsed);
-        fpsSampleStart = now;
-        fpsSampleFrames = 0;
-      }
+    const renderCost = performance.now() - now;
+
+    const renderedAt = lastRenderAt;
+    lastRenderAt = now;
+    if (!options?.onPerfSample || !tickEstimated) {
+      perfWindowStart = 0;
+      return;
+    }
+    // the window's opening render marks the start rather than counting
+    if (perfWindowStart === 0) {
+      perfWindowStart = now;
+      perfRenders = 0;
+      perfLateRenders = 0;
+      perfRenderMs = 0;
+      perfBlockedMs = 0;
+      return;
+    }
+    if (renderedAt && now - renderedAt > tickDivisor * tickMs + tickMs * 0.5) {
+      // the scheduled slot passed while the previous render was still on the GPU
+      perfLateRenders += 1;
+    }
+    perfRenders += 1;
+    perfRenderMs += renderCost;
+    const elapsed = now - perfWindowStart;
+    if (elapsed >= PERF_SAMPLE_WINDOW_MS) {
+      options.onPerfSample({
+        fps: (perfRenders * 1000) / elapsed,
+        targetFps: 1000 / (tickDivisor * tickMs),
+        lateRatio: perfLateRenders / perfRenders,
+        pixels: width * height,
+        renderMs: perfRenderMs / perfRenders,
+        blockedRatio: Math.min(perfBlockedMs / elapsed, 1),
+      });
+      perfWindowStart = now;
+      perfRenders = 0;
+      perfLateRenders = 0;
+      perfRenderMs = 0;
+      perfBlockedMs = 0;
     }
   };
 
-  const resizeObserver = new ResizeObserver(() => {
-    const size = deviceSize();
-    if (
-      !size.width ||
-      !size.height ||
-      (size.width === width && size.height === height)
-    )
-      return;
-    width = size.width;
-    height = size.height;
-    canvas.width = width;
-    canvas.height = height;
-    visualizer.setRendererSize(width, height, { pixelRatio: 1 });
-    // Resizing clears the drawing buffer, taking the frozen picture with it.
-    redrawIfHalted();
-  });
+  const resizeObserver = new ResizeObserver(() => applySize());
   resizeObserver.observe(canvas);
 
   rafHandle = requestAnimationFrame(renderLoop);
 
   return {
+    renderer,
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
       const preset = await getPreset(name);
       if (!preset || destroyed) return;
@@ -307,10 +555,30 @@ export async function createVisualizerEngine(
       lastFrameAt = 0;
       if (rafHandle === null) rafHandle = requestAnimationFrame(renderLoop);
     },
+    setTint(rgb) {
+      tintPass?.setTint(rgb);
+    },
+    setProfile(next: QualityProfile) {
+      if (destroyed) return;
+      profile = next;
+      applySize();
+      // a resize mid-measurement would be blamed on the new size
+      perfWindowStart = 0;
+      lastRenderAt = 0;
+    },
     destroy() {
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
+      longTaskObserver?.disconnect();
+      tintPass?.destroy();
+      // release the detached canvas's GL context, or rebuilds can hit Chrome's live context cap
+      if (targetCanvas !== canvas) {
+        targetCanvas
+          .getContext("webgl2")
+          ?.getExtension("WEBGL_lose_context")
+          ?.loseContext();
+      }
     },
   };
 }

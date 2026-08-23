@@ -15,6 +15,8 @@ export interface QualityProfile {
   meshWidth: number;
   meshHeight: number;
   outputFXAA: boolean;
+  // aspect-preserving ceiling on drawing-buffer pixels; the adaptive ladder steps through these
+  maxPixels?: number;
 }
 
 export const QUALITY_PROFILES: Record<VisualizerQuality, QualityProfile> = {
@@ -50,21 +52,6 @@ export const QUALITY_PROFILES: Record<VisualizerQuality, QualityProfile> = {
 
 export const DEFAULT_QUALITY: VisualizerQuality = "high";
 
-// Internal tiers for adaptive (TV/cast) rendering; deliberately not part of
-// QUALITY_PROFILES, which the settings page enumerates as user choices.
-// "tv" keeps the full devicePixelRatio for panel sharpness at a bounded pixel
-// load (~1440x810 on a 1080p viewport): TV viewports report few CSS pixels
-// behind a high dpr, so dpr-clamped tiers render visibly soft there.
-const INTERNAL_PROFILES: Record<string, QualityProfile> = {
-  tv: {
-    renderScale: 0.75,
-    maxDpr: 2,
-    meshWidth: 48,
-    meshHeight: 36,
-    outputFXAA: true,
-  },
-};
-
 /**
  * Resolve a stored preference value to a profile, tolerating unknown values.
  */
@@ -72,23 +59,59 @@ export function qualityProfile(value: string | undefined): QualityProfile {
   if (value && value in QUALITY_PROFILES) {
     return QUALITY_PROFILES[value as VisualizerQuality];
   }
-  if (value && value in INTERNAL_PROFILES) {
-    return INTERNAL_PROFILES[value];
-  }
   return QUALITY_PROFILES[DEFAULT_QUALITY];
 }
 
-// Degradation ladder for displays that adapt to measured performance (TVs),
-// in monotonically decreasing pixel-load order at TV viewports.
-export const TV_START_QUALITY = "tv";
-const ADAPTIVE_LADDER = ["native", "tv", "high", "medium", "low"];
+// adaptive (TV/cast) ladder: pixel budgets, since the same scale factor lands on wildly different pixel loads across TV viewports
+const ADAPTIVE_MESH_WIDTH = 48;
+const ADAPTIVE_MESH_HEIGHT = 36;
+
+const adaptiveStep = (maxPixels: number): QualityProfile => ({
+  renderScale: 1,
+  maxDpr: 2,
+  meshWidth: ADAPTIVE_MESH_WIDTH,
+  meshHeight: ADAPTIVE_MESH_HEIGHT,
+  outputFXAA: true,
+  maxPixels,
+});
+
+// roughly ×0.7 in area per step; every step but the last is an in-place resize
+export const ADAPTIVE_LADDER: readonly QualityProfile[] = [
+  adaptiveStep(2_100_000), // 1080p at devicePixelRatio 2
+  adaptiveStep(1_470_000),
+  adaptiveStep(1_030_000),
+  adaptiveStep(720_000),
+  adaptiveStep(500_000),
+  adaptiveStep(350_000),
+  {
+    renderScale: 1,
+    maxDpr: 2,
+    meshWidth: 32,
+    meshHeight: 24,
+    outputFXAA: false,
+    maxPixels: 250_000,
+  },
+];
+
+// start one below the top; climbing back up is cheap when there is headroom
+export const ADAPTIVE_START_LEVEL = 1;
 
 /**
- * The next tier down from the given one, or null when already at the bottom
- * (or the value is unknown).
+ * The adaptive ladder step at the given level, clamped to the ladder's range.
  */
-export function stepDownQuality(current: string | undefined): string | null {
-  const index = current ? ADAPTIVE_LADDER.indexOf(current) : -1;
-  if (index === -1) return null;
-  return ADAPTIVE_LADDER[index + 1] ?? null;
+export function adaptiveProfile(level: number): QualityProfile {
+  const clamped = Math.min(Math.max(level, 0), ADAPTIVE_LADDER.length - 1);
+  return ADAPTIVE_LADDER[clamped];
+}
+
+/**
+ * Whether moving between two profiles needs a fresh engine rather than an
+ * in-place resize: mesh density and FXAA are fixed when butterchurn is built.
+ */
+export function needsRebuild(a: QualityProfile, b: QualityProfile): boolean {
+  return (
+    a.meshWidth !== b.meshWidth ||
+    a.meshHeight !== b.meshHeight ||
+    a.outputFXAA !== b.outputFXAA
+  );
 }
