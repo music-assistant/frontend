@@ -110,13 +110,7 @@
             }"
           >
             <slot name="title-prepend"></slot>
-            <!-- width auto overrides the marquee's full width, so the title
-            takes only the space it needs and still shrinks (and scrolls) when
-            the steppers leave it too little -->
-            <MarqueeText
-              :sync="marqueeSync"
-              style="flex: 0 1 auto; width: auto; min-width: 0"
-            >
+            <MarqueeText :sync="marqueeSync">
               <div class="selectable">
                 {{ headerTitle }}
               </div>
@@ -315,11 +309,9 @@
                 icon="mdi-podcast"
               />
               <MarqueeText :sync="marqueeSync">
-                <a
-                  style="color: secondary"
-                  @click="podcastClick(item.podcast)"
-                  >{{ item.podcast.name }}</a
-                >
+                <a @click="podcastClick(item.podcast)">{{
+                  item.podcast.name
+                }}</a>
               </MarqueeText>
             </v-card-subtitle>
 
@@ -642,18 +634,20 @@ const headerTitle = computed(() => {
 });
 
 const isPodcastEpisode = computed(
-  () => !!compProps.item && "podcast" in compProps.item,
+  () => compProps.item?.media_type === MediaType.PODCAST_EPISODE,
 );
 
 // publish date and length of a podcast episode, each shown behind its own icon
 const episodeInfo = computed(() => {
   const item = compProps.item;
   if (!item || !("podcast" in item)) return undefined;
-  const date = item.metadata?.release_date
-    ? new Date(item.metadata.release_date).toLocaleDateString(undefined, {
-        dateStyle: "medium",
-      })
-    : "";
+  const released = item.metadata?.release_date
+    ? new Date(item.metadata.release_date)
+    : undefined;
+  const date =
+    released && !isNaN(released.getTime())
+      ? released.toLocaleDateString(undefined, { dateStyle: "medium" })
+      : "";
   const duration = item.duration ? formatDuration(item.duration) : "";
   if (!date && !duration) return undefined;
   return { date, duration };
@@ -938,6 +932,15 @@ const collectionNarrators = computed(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* width auto overrides the marquee's own full width, so the title takes only
+   the space it needs and still shrinks (and scrolls) when the steppers leave
+   it too little */
+.title-with-steppers :deep(.marquee-container) {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 0;
 }
 
 /* episodes are stepped through in place, so their description holds the full

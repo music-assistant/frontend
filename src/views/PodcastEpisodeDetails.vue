@@ -44,7 +44,7 @@
   clicking through episodes quickly would leave the previous episode's list -->
   <ItemsListing
     v-if="itemDetails"
-    :key="`${props.provider}.${props.itemId}`"
+    :key="episodeKey"
     itemtype="podcastepisodes"
     :show-provider="false"
     :show-favorites-only-filter="false"
@@ -62,7 +62,7 @@
     :title="$t('other_episodes')"
     :hide-on-empty="true"
     :allow-collapse="true"
-    :path="`episode.${props.itemId}.${props.provider}`"
+    :path="`podcast_episodes.${podcastKey}`"
   />
 
   <Dialog v-model:open="showTranscript">
@@ -115,6 +115,8 @@ const props = defineProps<Props>();
 
 const router = useRouter();
 
+const episodeKey = computed(() => `${props.provider}.${props.itemId}`);
+
 const itemDetails = ref<PodcastEpisode>();
 // all episodes of the podcast, in its own order, for the steppers
 const siblings = ref<PodcastEpisode[]>([]);
@@ -134,9 +136,16 @@ const showTranscriptButton = computed(
   () => itemDetails.value?.metadata.has_transcript !== false,
 );
 
-// the listing orders episodes by position, so the steppers follow that same
-// order: a feed whose episodes carry mixed position numbers would otherwise
-// send the steppers somewhere other than the next row on screen
+// the sort and view choices belong to the podcast, so every episode of it opens
+// the listing the same way instead of storing a preference per episode
+const podcastKey = computed(() => {
+  const podcast = itemDetails.value?.podcast;
+  return podcast ? `${podcast.item_id}.${podcast.provider}` : "";
+});
+
+// the listing opens ordered by position, so the steppers follow that same order.
+// changing the sort in the listing moves it away from the steppers, which stay
+// on the podcast's own order
 const orderedSiblings = computed(() =>
   [...siblings.value].sort((a, b) => (a.position || 0) - (b.position || 0)),
 );
@@ -180,18 +189,21 @@ const openTranscript = async function () {
   showTranscript.value = true;
   if (transcriptLoaded.value || transcriptLoading.value) return;
   transcriptLoading.value = true;
+  const requested = episodeKey.value;
   try {
     // the server renders the cues as readable text, so this arrives without timestamps
     const [text] = await api.getPodcastEpisodeTranscript(
       props.itemId,
       props.provider,
     );
+    // stepping to another episode while this was in flight leaves it for that one
+    if (requested !== episodeKey.value) return;
     transcript.value = text;
     transcriptLoaded.value = true;
   } catch (error) {
     console.error("Failed to fetch podcast transcript:", error);
   } finally {
-    transcriptLoading.value = false;
+    if (requested === episodeKey.value) transcriptLoading.value = false;
   }
 };
 
@@ -201,10 +213,19 @@ watch(
     if (!itemId) return;
     transcript.value = null;
     transcriptLoaded.value = false;
+    transcriptLoading.value = false;
+    showTranscript.value = false;
     const details = (detailsRequest = api.getPodcastEpisode(itemId, provider));
-    const episodes = (episodesRequest = details.then((episode) =>
-      api.getPodcastEpisodes(episode.podcast.item_id, episode.podcast.provider),
-    ));
+    const episodes = (episodesRequest = details
+      .then((episode) =>
+        api.getPodcastEpisodes(
+          episode.podcast.item_id,
+          episode.podcast.provider,
+        ),
+      )
+      // an episode listing we cannot fetch leaves the steppers and the listing
+      // empty rather than failing the page
+      .catch(() => []));
     const episode = await details;
     // a quick click through the steppers can move on while these are in flight
     if (details !== detailsRequest) return;
