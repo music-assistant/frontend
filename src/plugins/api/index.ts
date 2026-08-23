@@ -930,6 +930,8 @@ export class MusicAssistantApi {
         match_policy,
         name,
       },
+      // the dialog shows its own error toast; avoid a duplicate global one.
+      { suppressGlobalError: true },
     ).then((task) => {
       this._notifyBackgroundTaskStarted(task);
       return task;

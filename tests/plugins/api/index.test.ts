@@ -270,6 +270,24 @@ describe("MusicAssistantApi error handling", () => {
     );
   });
 
+  it("rejects a failed migration without the global error toast", async () => {
+    const result = api.migratePlaylist(
+      "1",
+      "spotify--1",
+      PlaylistMigrationMatchPolicy.SAME_RECORDING,
+      "My playlist",
+    );
+    const error = createErrorResult(transport.lastCommand, "Migration failed");
+    const rejection = expect(result).rejects.toMatchObject({
+      message: "Migration failed",
+    });
+
+    transport.receive(error);
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
   it("reports playlist migration support once the server reaches schema 57", () => {
     expect(api.supportsPlaylistMigration).toBe(false);
 

@@ -10,9 +10,10 @@ import { enableAutoUnmount, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
 
-const { apiMock, eventHandlers } = vi.hoisted(() => ({
+const { apiMock, eventHandlers, toastMock } = vi.hoisted(() => ({
   apiMock: { migratePlaylist: vi.fn() },
   eventHandlers: {} as Record<string, (payload: unknown) => void>,
+  toastMock: { error: vi.fn() },
 }));
 
 vi.mock("@/plugins/api", () => ({ default: apiMock }));
@@ -37,7 +38,7 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 vi.mock("@/plugins/store", () => ({ store: { dialogActive: false } }));
 
-vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
+vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
 const selectStub = {
   name: "SelectStub",
@@ -172,5 +173,19 @@ describe("MigratePlaylistDialog", () => {
       PlaylistMigrationMatchPolicy.EXACT,
       "Renamed copy",
     );
+  });
+
+  it("shows exactly one local toast when the migration request fails", async () => {
+    apiMock.migratePlaylist.mockRejectedValueOnce(new Error("Server error"));
+    const wrapper = mountDialog();
+    open({ item_id: "42", name: "My Playlist" });
+    await wrapper.vm.$nextTick();
+
+    await select(wrapper).vm.$emit("update:modelValue", "spotify--1");
+    await submitButton(wrapper).trigger("click");
+    await wrapper.vm.$nextTick();
+
+    expect(toastMock.error).toHaveBeenCalledTimes(1);
+    expect(toastMock.error).toHaveBeenCalledWith("Server error");
   });
 });
