@@ -124,9 +124,11 @@ export function visualizerPreference<T>(
 ): ComputedRef<T> {
   const { getPreference } = useUserPreferences();
   const ownPreference = getPreference<T>(key, fallback);
+  // Started here rather than inside the computed, keeping the getter free of
+  // side effects.
+  if (authManager.isDashboardViewer()) startViewerPreferencesSync();
   return computed(() => {
     if (authManager.isDashboardViewer()) {
-      startViewerPreferencesSync();
       return (viewerPreferences.value[key] as T | undefined) ?? fallback;
     }
     return ownPreference.value;

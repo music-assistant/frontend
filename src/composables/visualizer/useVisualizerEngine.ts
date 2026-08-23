@@ -15,6 +15,7 @@ import {
   qualityProfile,
   type QualityProfile,
 } from "@/helpers/visualizer/quality";
+import { createTintPass } from "@/helpers/visualizer/tintPass";
 
 const N_SAMPLES = 1024;
 const ZERO_LEVEL = 0x80;
@@ -62,6 +63,9 @@ export interface VisualizerEngine {
    * :param rgb: 0-255 color channels, or null to fade the tint out.
    */
   setTint(rgb: readonly [number, number, number] | null): void;
+  // whether the artwork tint is applied by the engine's own WebGL pass; when
+  // false a hosting layer that wants a tint has to apply one itself (CSS)
+  readonly shaderTintActive: boolean;
   // what the GL context reports it is drawing with
   readonly renderer: string;
   destroy(): void;
@@ -120,127 +124,6 @@ export interface VisualizerEngineOptions {
   onPerfSample?: (sample: VisualizerPerfSample) => void;
   // apply the artwork tint in a WebGL pass (mix-blend-mode: color math) instead of a CSS blend layer
   shaderTint?: boolean;
-}
-
-// mirrors the CSS tint layer's background-color transition
-const TINT_TRANSITION_MS = 1500;
-
-// the CSS Compositing spec's "color" blend: keep the preset's luminance, take hue/saturation from the tint
-const TINT_VERTEX_SHADER = `#version 300 es
-out vec2 v_uv;
-void main() {
-  vec2 pos = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
-  v_uv = pos;
-  gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
-}`;
-
-const TINT_FRAGMENT_SHADER = `#version 300 es
-precision mediump float;
-uniform sampler2D u_src;
-uniform vec3 u_tint;
-uniform float u_amount;
-in vec2 v_uv;
-out vec4 outColor;
-float lum(vec3 c) { return dot(c, vec3(0.30, 0.59, 0.11)); }
-vec3 clipColor(vec3 c) {
-  float l = lum(c);
-  float n = min(min(c.r, c.g), c.b);
-  float x = max(max(c.r, c.g), c.b);
-  if (n < 0.0 && l > n) c = l + ((c - l) * l) / (l - n);
-  if (x > 1.0 && x > l) c = l + ((c - l) * (1.0 - l)) / (x - l);
-  return c;
-}
-void main() {
-  vec3 src = texture(u_src, v_uv).rgb;
-  vec3 blended = clipColor(u_tint + (lum(src) - lum(u_tint)));
-  outColor = vec4(mix(src, blended, u_amount), 1.0);
-}`;
-
-interface TintPass {
-  draw(src: HTMLCanvasElement, nowMs: number): void;
-  setTint(rgb: readonly [number, number, number] | null): void;
-  destroy(): void;
-}
-
-// returns null when the pass cannot be built; butterchurn then draws to the visible canvas as usual
-function createTintPass(canvas: HTMLCanvasElement): TintPass | null {
-  const gl = canvas.getContext("webgl2");
-  if (!gl) return null;
-  const build = (type: number, source: string): WebGLShader | null => {
-    const shader = gl.createShader(type);
-    if (!shader) return null;
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return null;
-    return shader;
-  };
-  const vertex = build(gl.VERTEX_SHADER, TINT_VERTEX_SHADER);
-  const fragment = build(gl.FRAGMENT_SHADER, TINT_FRAGMENT_SHADER);
-  const program = gl.createProgram();
-  if (!vertex || !fragment || !program) return null;
-  gl.attachShader(program, vertex);
-  gl.attachShader(program, fragment);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
-  const texture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-  const tintLocation = gl.getUniformLocation(program, "u_tint");
-  const amountLocation = gl.getUniformLocation(program, "u_amount");
-
-  // color and strength ease toward their targets, standing in for the CSS transitions
-  let color: [number, number, number] = [0, 0, 0];
-  let targetColor: [number, number, number] = [0, 0, 0];
-  let amount = 0;
-  let targetAmount = 0;
-  let lastDrawAt = 0;
-  let started = false;
-
-  return {
-    draw(src, nowMs) {
-      const dt = lastDrawAt ? nowMs - lastDrawAt : 0;
-      lastDrawAt = nowMs;
-      const step = Math.min(dt / TINT_TRANSITION_MS, 1);
-      for (let i = 0; i < 3; i++) {
-        color[i] += (targetColor[i] - color[i]) * step;
-      }
-      amount += (targetAmount - amount) * step;
-      if (canvas.width !== src.width || canvas.height !== src.height) {
-        canvas.width = src.width;
-        canvas.height = src.height;
-      }
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.useProgram(program);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
-      gl.uniform3f(tintLocation, color[0], color[1], color[2]);
-      gl.uniform1f(amountLocation, amount);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    },
-    setTint(rgb) {
-      if (rgb) {
-        targetColor = [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255];
-        // first color jumps straight in; only the strength fades, as the CSS v-if does
-        if (!started) {
-          started = true;
-          color = [...targetColor];
-        }
-        targetAmount = 1;
-      } else {
-        targetAmount = 0;
-      }
-    },
-    destroy() {
-      gl.deleteTexture(texture);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertex);
-      gl.deleteShader(fragment);
-    },
-  };
 }
 
 // median frame gap, not the fastest: bursty delivery makes the minimum read as the panel rate
@@ -353,6 +236,11 @@ export async function createVisualizerEngine(
   const stopLoop = () => {
     if (rafHandle !== null) cancelAnimationFrame(rafHandle);
     rafHandle = null;
+    // A halted stretch must not read as slow when the loop resumes: drop the
+    // open sample window and cadence marks, as the hidden-tab path does.
+    perfWindowStart = 0;
+    lastTickAt = 0;
+    lastRenderAt = 0;
   };
 
   // Nothing redraws while the loop is halted, so whatever invalidated the
@@ -417,15 +305,19 @@ export async function createVisualizerEngine(
   let perfBlockedMs = 0;
   let lastRenderAt = 0;
 
-  // long tasks tell a saturated main thread apart from one idling between frames
+  // long tasks tell a saturated main thread apart from one idling between
+  // frames; only adaptive hosts consume the measurement, so nobody else pays
+  // for the observer
   let longTaskObserver: PerformanceObserver | null = null;
-  try {
-    longTaskObserver = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) perfBlockedMs += entry.duration;
-    });
-    longTaskObserver.observe({ entryTypes: ["longtask"] });
-  } catch {
-    longTaskObserver = null;
+  if (options?.onPerfSample) {
+    try {
+      longTaskObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) perfBlockedMs += entry.duration;
+      });
+      longTaskObserver.observe({ entryTypes: ["longtask"] });
+    } catch {
+      longTaskObserver = null;
+    }
   }
 
   const renderLoop = () => {
@@ -522,6 +414,7 @@ export async function createVisualizerEngine(
 
   return {
     renderer,
+    shaderTintActive: tintPass !== null,
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
       const preset = await getPreset(name);
       if (!preset || destroyed) return;

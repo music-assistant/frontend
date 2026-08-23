@@ -18,7 +18,7 @@
         :style="canvasStyle"
       ></canvas>
       <div
-        v-if="streaming && !shaderTint"
+        v-if="streaming && !shaderTintActive"
         class="visualizer-layer__tint"
         :style="tintStyle"
       ></div>
@@ -38,7 +38,6 @@ import {
   createVisualizerEngine,
   DECAY_MS,
   type VisualizerEngine,
-  type VisualizerPerfSample,
   isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { visualizerPreference } from "@/composables/visualizer/useVisualizer";
@@ -47,14 +46,12 @@ import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
-import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import {
-  ADAPTIVE_LADDER,
-  ADAPTIVE_START_LEVEL,
-  DEFAULT_QUALITY,
-  adaptiveProfile,
-  needsRebuild,
-} from "@/helpers/visualizer/quality";
+  createAdaptiveQualityController,
+  TV_TARGET_FPS,
+} from "@/helpers/visualizer/adaptiveQuality";
+import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
+import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
 import { hexToRgb, paletteFromServer } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { MediaItemPalette, PlaybackState } from "@/plugins/api/interfaces";
@@ -130,8 +127,13 @@ const beatSwitchPref = visualizerPreference<boolean>(
 );
 const beatDwellPref = visualizerPreference<number>("visualizer_beat_dwell", 30);
 
-// on TV compositors the CSS blend tint costs more than the visualizer itself, so dashboard viewers tint in-shader instead
-const shaderTint = authManager.isDashboardViewer();
+// A dashboard viewer is a cast receiver or TV: on TV compositors the CSS
+// blend tint costs more than the visualizer itself, so these displays tint
+// in-shader instead, and their quality adapts to measured performance.
+const constrainedDisplay = authManager.isDashboardViewer();
+// Whether the running engine actually took over the tint. When its WebGL pass
+// could not be built, this stays false and the CSS tint layer steps back in.
+const shaderTintActive = ref(false);
 
 const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
@@ -139,14 +141,16 @@ const canvasStyle = computed(() => ({
   transform: props.blur > 0 ? "scale(1.12)" : undefined,
   // no second layer to fade in step with, so the opacity sits on the canvas itself
   opacity:
-    shaderTint && props.opacity < 100 ? String(props.opacity / 100) : undefined,
+    shaderTintActive.value && props.opacity < 100
+      ? String(props.opacity / 100)
+      : undefined,
 }));
 
 // Fades canvas and tint as one unit: the tint has to blend against an
 // opaque canvas, or it composites its own raw color over the background.
 const stackStyle = computed(() => ({
   opacity:
-    !shaderTint && props.opacity < 100
+    !shaderTintActive.value && props.opacity < 100
       ? String(props.opacity / 100)
       : undefined,
 }));
@@ -248,135 +252,24 @@ const onDownbeat = () => {
   void applyPreset(undefined, true);
 };
 
-// adaptive quality for TV/cast displays, judged against the paced cadence rather than a fixed frame rate
-const TV_TARGET_FPS = 30;
-const TV_LATE_RATIO_STEP_DOWN = 0.2;
-const TV_LATE_RATIO_HOPELESS = 0.5;
-const TV_LATE_RATIO_STEP_UP = 0.02;
-const TV_FPS_SHORTFALL = 0.75;
-const TV_LOW_SAMPLES_TO_STEP = 2;
-const TV_GOOD_SAMPLES_TO_CLIMB = 6;
-const TV_SAMPLES_TO_SETTLE = 5;
-// a level that could not hold twice is not tried again, so the ladder settles instead of oscillating
-const TV_FAILURES_BEFORE_BLOCKED = 2;
-// minimum speed-up for a step down to count as having helped
-const TV_STEP_DOWN_PAYOFF = 1.15;
-
-let adaptiveLevel = ADAPTIVE_START_LEVEL;
-// sharpest level still allowed to be tried again
-let adaptiveCeiling = 0;
-const levelFailures = new Map<number, number>();
-let lowSamples = 0;
-let goodSamples = 0;
-let steadySamples = 0;
-let settleReported = false;
-// cleared once a step down has been shown not to pay: a fill-rate remedy cannot fix a non-fill bottleneck
-let fillBound = true;
-let fpsBeforeStepDown = 0;
-let awaitingStepDownVerdict = false;
-let floorReported = false;
-
-const applyAdaptiveLevel = (next: number) => {
-  const from = adaptiveProfile(adaptiveLevel);
-  const to = adaptiveProfile(next);
-  adaptiveLevel = next;
-  lowSamples = 0;
-  goodSamples = 0;
-  steadySamples = 0;
-  settleReported = false;
-  // mesh density and FXAA are fixed at construction; anything else is an in-place resize
-  if (engine && !needsRebuild(from, to)) {
-    engine.setProfile(to);
-    return;
-  }
-  void createEngine();
-};
-
-const stepDown = (sample: VisualizerPerfSample) => {
-  const next = adaptiveLevel + 1;
-  if (next >= ADAPTIVE_LADDER.length) {
-    // nothing left to give up; say so once rather than going quiet
-    if (!floorReported) {
-      floorReported = true;
-      void reportVisualizerRender(sample, adaptiveLevel, "stuck at floor");
-    }
-    return;
-  }
-  const failures = (levelFailures.get(adaptiveLevel) ?? 0) + 1;
-  levelFailures.set(adaptiveLevel, failures);
-  if (failures >= TV_FAILURES_BEFORE_BLOCKED) adaptiveCeiling = next;
-  void reportVisualizerRender(sample, adaptiveLevel, "stepped down");
-  fpsBeforeStepDown = sample.fps;
-  awaitingStepDownVerdict = true;
-  applyAdaptiveLevel(next);
-};
-
-const onTvPerfSample = (sample: VisualizerPerfSample) => {
-  // first sample after a step down decides whether pixels were ever the problem
-  if (awaitingStepDownVerdict) {
-    awaitingStepDownVerdict = false;
-    if (sample.fps < fpsBeforeStepDown * TV_STEP_DOWN_PAYOFF) {
-      fillBound = false;
-      const back = adaptiveLevel - 1;
-      void reportVisualizerRender(
-        sample,
-        adaptiveLevel,
-        "step down did not pay",
-      );
-      applyAdaptiveLevel(Math.max(back, adaptiveCeiling));
+// Adaptive quality for TV/cast displays: the controller decides the ladder
+// level; putting it on screen and reporting stay here, with the engine
+// lifecycle. Its state deliberately survives engine rebuilds and cover
+// cycles — the hardware does not change between them.
+const adaptive = createAdaptiveQualityController({
+  applyProfile: (profile, rebuild) => {
+    // mesh density and FXAA are fixed at construction; anything else is an
+    // in-place resize
+    if (engine && !rebuild) {
+      engine.setProfile(profile);
       return;
     }
-  }
-
-  const struggling =
-    sample.lateRatio > TV_LATE_RATIO_STEP_DOWN ||
-    sample.fps < sample.targetFps * TV_FPS_SHORTFALL;
-
-  if (struggling) {
-    goodSamples = 0;
-    steadySamples = 0;
-    lowSamples += 1;
-    const hopeless = sample.lateRatio > TV_LATE_RATIO_HOPELESS;
-    if (!hopeless && lowSamples < TV_LOW_SAMPLES_TO_STEP) return;
-    lowSamples = 0;
-    if (!fillBound) {
-      // pinned with nothing more to try; report the resting state once
-      if (!settleReported) {
-        settleReported = true;
-        void reportVisualizerRender(
-          sample,
-          adaptiveLevel,
-          "pinned, not fill bound",
-        );
-      }
-      return;
-    }
-    stepDown(sample);
-    return;
-  }
-
-  lowSamples = 0;
-  if (sample.lateRatio > TV_LATE_RATIO_STEP_UP) {
-    goodSamples = 0;
-  } else {
-    goodSamples += 1;
-  }
-  if (goodSamples >= TV_GOOD_SAMPLES_TO_CLIMB) {
-    const next = adaptiveLevel - 1;
-    if (next >= adaptiveCeiling) {
-      void reportVisualizerRender(sample, adaptiveLevel, "stepped up");
-      applyAdaptiveLevel(next);
-      return;
-    }
-    goodSamples = 0;
-  }
-  // report where it came to rest once, for displays with no reachable console
-  steadySamples += 1;
-  if (steadySamples === TV_SAMPLES_TO_SETTLE && !settleReported) {
-    settleReported = true;
-    void reportVisualizerRender(sample, adaptiveLevel, "settled");
-  }
-};
+    void createEngine();
+  },
+  report: (sample, level, note) => {
+    void reportVisualizerRender(sample, level, note);
+  },
+});
 
 let initialized = false;
 let sizeObserver: ResizeObserver | null = null;
@@ -447,20 +340,19 @@ const createEngine = async () => {
   engine?.destroy();
   engine = null;
   let created: VisualizerEngine | null = null;
-  // A dashboard viewer is a cast receiver or TV, so its quality adapts to
-  // measured performance instead of trusting the (unreachable) quality
-  // preference: it walks the adaptive ladder towards whatever pixel budget the
-  // hardware can hold at the paced cadence.
-  const constrainedDisplay = authManager.isDashboardViewer();
+  // A constrained display's quality adapts to measured performance instead of
+  // trusting the (unreachable) quality preference: it walks the adaptive
+  // ladder towards whatever pixel budget the hardware can hold at the paced
+  // cadence.
   try {
     created = await createVisualizerEngine(
       canvasRef.value,
       () => (relay ? relay.currentFrame() : null),
-      constrainedDisplay ? adaptiveProfile(adaptiveLevel) : qualityPref.value,
+      constrainedDisplay ? adaptive.currentProfile() : qualityPref.value,
       constrainedDisplay
         ? {
             maxFps: TV_TARGET_FPS,
-            onPerfSample: onTvPerfSample,
+            onPerfSample: adaptive.onPerfSample,
             shaderTint: true,
           }
         : undefined,
@@ -473,6 +365,7 @@ const createEngine = async () => {
     return;
   }
   engine = created;
+  shaderTintActive.value = engine?.shaderTintActive ?? false;
   if (engine) {
     // Started up paused: nothing on screen to wind down.
     if (playbackPaused.value && pauseTimer === null) {
@@ -485,7 +378,7 @@ const createEngine = async () => {
 };
 
 const applyTint = () => {
-  if (!shaderTint) return;
+  if (!shaderTintActive.value) return;
   engine?.setTint(tintColor.value ? hexToRgb(tintColor.value) : null);
 };
 
@@ -551,10 +444,13 @@ watch(
 );
 
 // Quality changes need a fresh butterchurn instance (mesh/texture sizes are
-// fixed at creation).
+// fixed at creation). Not on constrained displays: they render on the
+// adaptive ladder, so the casting user's quality preference changing must
+// not restart their engine for nothing.
 watch(
   () => qualityPref.value,
   () => {
+    if (constrainedDisplay) return;
     // Not while covered: the engine is deliberately torn down then, and the
     // uncover path recreates it at the current quality anyway.
     if (initialized && !covered.value) void createEngine();

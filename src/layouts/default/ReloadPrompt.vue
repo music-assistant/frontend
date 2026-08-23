@@ -8,11 +8,16 @@ const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW();
 
 // A dashboard display (cast TV, kiosk) has no one to press "reload", so a
 // waiting update would leave it running the previous build forever: apply
-// updates immediately there instead of prompting.
+// updates immediately there instead of prompting. Immediate, in case the
+// flag was already set before this watcher registered.
 const isDashboardViewer = authManager.isDashboardViewer();
-watch(needRefresh, (refresh) => {
-  if (refresh && isDashboardViewer) void updateServiceWorker(true);
-});
+watch(
+  needRefresh,
+  (refresh) => {
+    if (refresh && isDashboardViewer) void updateServiceWorker(true);
+  },
+  { immediate: true },
+);
 
 const close = async () => {
   offlineReady.value = false;
