@@ -83,8 +83,8 @@ const TRANSLATIONS_SCHEMA_VERSION = 32;
 // The shuffle argument on player_queues/play_media landed in API schema 51.
 const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 
-// music/playlists/migrate_playlist landed in API schema 56.
-const MIGRATE_PLAYLIST_SCHEMA_VERSION = 56;
+// music/playlists/migrate_playlist landed in API schema 57.
+const MIGRATE_PLAYLIST_SCHEMA_VERSION = 57;
 
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
@@ -2945,7 +2945,7 @@ export class MusicAssistantApi {
     );
   }
 
-  /** Whether the connected server can migrate a playlist to another provider (schema >= 56). */
+  /** Whether the connected server can migrate a playlist to another provider (schema >= 57). */
   public get supportsPlaylistMigration(): boolean {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=

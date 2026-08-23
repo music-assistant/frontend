@@ -270,13 +270,13 @@ describe("MusicAssistantApi error handling", () => {
     );
   });
 
-  it("reports playlist migration support once the server reaches schema 56", () => {
+  it("reports playlist migration support once the server reaches schema 57", () => {
     expect(api.supportsPlaylistMigration).toBe(false);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 56 };
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 57 };
     expect(api.supportsPlaylistMigration).toBe(true);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 55 };
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 56 };
     expect(api.supportsPlaylistMigration).toBe(false);
   });
 
