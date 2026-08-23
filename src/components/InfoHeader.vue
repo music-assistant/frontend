@@ -618,6 +618,9 @@ import ProviderIcon from "./ProviderIcon.vue";
 export interface Props {
   // browse folders are listed, never opened in a details view
   item?: Exclude<MediaItemType, BrowseFolder>;
+  // container the item belongs to, which gives the play menu its options for
+  // playing on from the item (e.g. the podcast an episode belongs to)
+  parentItem?: MediaItemType;
   sortBy?: string;
 }
 const compProps = defineProps<Props>();
@@ -804,7 +807,7 @@ const playButtonClick = function (forceMenu = false) {
     compProps.item!,
     rect.right,
     rect.bottom,
-    undefined,
+    compProps.parentItem,
     forceMenu,
     compProps.sortBy,
   );
