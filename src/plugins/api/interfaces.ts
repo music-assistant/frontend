@@ -1271,12 +1271,6 @@ export interface PlayerQueue {
   // (is_dynamic), implicitly enabling autoplay and smart shuffle.
   sources: ItemMapping[];
   is_dynamic: boolean;
-  // queue_owner: uri of the AudioSource owning this queue's ordering while queue commands
-  // are delegated to an external session (e.g. Spotify Connect); null when MA owns the
-  // queue (server-derived, read-only; absent on older servers). While set, the items are
-  // a mirror the user can't edit and the session provides crossfade/autoplay natively —
-  // shuffle and repeat keep working (forwarded to the session).
-  queue_owner?: string | null;
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
   // must be serializable types only
@@ -1580,6 +1574,7 @@ export interface BackgroundTask {
   id: string;
   name: string;
   status: TaskStatus;
+  report: string | null;
   logs: string[];
   schedule: TaskSchedule | null;
   last_run: string | null;

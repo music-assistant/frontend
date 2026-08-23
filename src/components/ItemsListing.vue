@@ -1763,7 +1763,12 @@ const keyListener = function (e: KeyboardEvent) {
     selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
     focusSearch();
-  } else if (!searchHasFocus.value && e.key.length == 1) {
+  } else if (
+    !searchHasFocus.value &&
+    e.key.length == 1 &&
+    !e.ctrlKey &&
+    !e.metaKey
+  ) {
     showSearch.value = true;
     focusSearch();
   }

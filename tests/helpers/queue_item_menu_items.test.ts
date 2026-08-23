@@ -41,7 +41,7 @@ describe("getQueueItemMenuItems", () => {
     });
   });
 
-  it("offers the full action set on an MA-owned queue", () => {
+  it("offers the full action set on an up-next item", () => {
     const items = getQueueItemMenuItems(queueItem(), 3);
     expect(labels(items)).toEqual([
       "play_now",
@@ -51,25 +51,14 @@ describe("getQueueItemMenuItems", () => {
     ]);
   });
 
-  it("withholds the move/remove actions on an externally managed queue", () => {
-    storeMock.activePlayerQueue = playerQueue({
-      items: 5,
-      current_index: 0,
-      index_in_buffer: 1,
-      queue_owner: "spotify_connect--abc://audio_source/main",
-    });
-    const items = getQueueItemMenuItems(queueItem(), 3);
-    expect(labels(items)).toEqual(["play_now"]);
-  });
-
-  it("keeps play now and show info on an externally managed queue's track items", () => {
-    storeMock.activePlayerQueue = playerQueue({
-      items: 5,
-      current_index: 0,
-      index_in_buffer: 1,
-      queue_owner: "spotify_connect--abc://audio_source/main",
-    });
+  it("adds show info for track items", () => {
     const items = getQueueItemMenuItems(queueItem({ media_item: track() }), 3);
-    expect(labels(items)).toEqual(["play_now", "show_info"]);
+    expect(labels(items)).toEqual([
+      "play_now",
+      "play_next",
+      "queue_move_end",
+      "queue_delete",
+      "show_info",
+    ]);
   });
 });

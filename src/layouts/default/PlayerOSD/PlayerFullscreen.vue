@@ -220,11 +220,6 @@
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
-            <!-- an external session owns the queue's ordering: the list is a
-                 read-only mirror, so say who manages it -->
-            <div v-if="queueOwnerName" class="queue-owner-hint">
-              {{ $t("queue_managed_by", [queueOwnerName]) }}
-            </div>
             <!-- the queue played through: say so, rather than leaving its last
                  track looking like it is still the current one -->
             <div v-if="queueEnded" class="queue-ended">
@@ -273,7 +268,6 @@
                   :state="row.state"
                   :is-playing="playerActive"
                   :dragging="draggingIndex === row.index"
-                  :read-only="queueExternallyManaged"
                   :marquee-sync="
                     row.state === 'playing'
                       ? playerMarqueeSync
@@ -777,8 +771,6 @@ const {
   totalItems,
   upNextCount,
   queueEnded,
-  queueExternallyManaged,
-  queueOwnerName,
   totalSize,
   measureRow,
   playerActive,
@@ -1538,13 +1530,6 @@ onBeforeUnmount(() => {
   opacity: 0.6;
 }
 
-.queue-owner-hint {
-  padding: 8px 4px 4px;
-  text-align: center;
-  font-size: 0.85rem;
-  opacity: 0.6;
-}
-
 .main-media-details-image {
   flex: 1;
   min-height: 0;
@@ -1581,18 +1566,19 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   align-items: center;
   text-align: center;
-  padding: min(5%, 5vh) 0 10px;
+  --track-info-padding-top: min(5%, 5vh);
+  padding: var(--track-info-padding-top) 0 10px;
   overflow: hidden;
+}
+
+/* the badge already fills part of the gap below the artwork and hugs the
+   title, so the block trades half its top padding for it */
+.main-media-details-track-info:has(.main-media-details-source) {
+  --track-info-padding-top: min(2.5%, 2.5vh);
 }
 
 .main-media-details-track-info > * {
   max-width: 100%;
-}
-
-/* the badge introduces the title under it, so it pairs with the title rather
-   than sitting halfway up the block's own top padding */
-.main-media-details-source {
-  margin-bottom: 8px;
 }
 
 .player-bottom {
