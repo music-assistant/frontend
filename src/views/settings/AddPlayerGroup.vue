@@ -92,7 +92,7 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import { goBack } from "@/helpers/navigation";
-import { groupMemberPickerVisible } from "@/helpers/players";
+import { canBeGroupMember, groupMemberPickerVisible } from "@/helpers/players";
 import { markdownToHtml } from "@/helpers/utils";
 import { PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 
@@ -122,7 +122,8 @@ const syncPlayers = computed(() => {
         (x) =>
           x.available &&
           x.type != PlayerType.GROUP &&
-          groupMemberPickerVisible(x),
+          groupMemberPickerVisible(x) &&
+          canBeGroupMember(x),
       )
       .sort((a, b) =>
         (a.name ?? "")
@@ -137,7 +138,8 @@ const syncPlayers = computed(() => {
         if (
           !x.available ||
           x.type === PlayerType.GROUP ||
-          !groupMemberPickerVisible(x)
+          !groupMemberPickerVisible(x) ||
+          !canBeGroupMember(x)
         )
           return false;
         if (!x.supported_features.includes(PlayerFeature.SET_MEMBERS))
@@ -169,6 +171,7 @@ const syncPlayers = computed(() => {
         x.available &&
         x.type != PlayerType.GROUP &&
         groupMemberPickerVisible(x) &&
+        canBeGroupMember(x) &&
         x.provider == providerDetails.value?.instance_id,
     )
     .sort((a, b) =>

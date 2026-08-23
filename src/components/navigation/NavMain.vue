@@ -190,7 +190,13 @@ const draggedItem = computed(() =>
 
       <!-- Normal mode: navigation links -->
       <SidebarMenu v-else>
-        <SidebarMenuItem v-for="item in items" :key="item.title" class="mr-1.5">
+        <!-- the row gutter would skew the centred icon rail, so it lifts when
+             collapsed -->
+        <SidebarMenuItem
+          v-for="item in items"
+          :key="item.title"
+          class="mr-1.5 group-data-[collapsible=icon]:mr-0"
+        >
           <SidebarMenuButton
             :as="
               item.disabled || item.openInNewTab || item.action

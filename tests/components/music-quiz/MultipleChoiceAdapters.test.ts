@@ -104,7 +104,7 @@ describe("multiple-choice adapters", () => {
     wrapper.unmount();
   });
 
-  it("shows the existing reveal result states", () => {
+  it("renders no result banner on reveal since results live in the player header", () => {
     const state = {
       ...playerState,
       phase: "reveal",
@@ -127,8 +127,10 @@ describe("multiple-choice adapters", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("providers.music_quiz.correct");
-    expect(wrapper.text()).toContain("+7");
+    expect(wrapper.text()).not.toContain("providers.music_quiz.correct");
+    expect(wrapper.text()).not.toContain(
+      "providers.music_quiz.no_answer_submitted",
+    );
     wrapper.unmount();
   });
 

@@ -6,6 +6,7 @@
       class="player-controls-elements"
     >
       <ShuffleBtn
+        :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
         :icon="visibleComponents.shuffle.icon"
@@ -55,6 +56,7 @@
       class="player-controls-elements"
     >
       <RepeatBtn
+        :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         :icon="visibleComponents.repeat.icon"
         static-height="24px"

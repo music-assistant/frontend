@@ -7,6 +7,7 @@
     <div
       data-slot="command-input-wrapper"
       class="flex h-14 shrink-0 items-center gap-3 border-b px-4"
+      @keydown.enter.capture="dismissKeyboardOnTouch"
     >
       <Search class="size-5 shrink-0 opacity-50" />
       <ListboxFilter
@@ -14,6 +15,7 @@
         v-model="query"
         data-slot="command-input"
         auto-focus
+        enterkeyhint="done"
         :placeholder="$t('type_to_search')"
         class="placeholder:text-muted-foreground flex h-12 w-full rounded-md bg-transparent py-3 text-base outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
@@ -23,11 +25,10 @@
         type="button"
         tabindex="-1"
         class="command-center-clear"
-        :aria-label="$t('clear')"
         @mousedown.prevent
         @click="clearQuery"
       >
-        <X class="size-4" />
+        {{ $t("clear") }}
       </button>
     </div>
 
@@ -223,10 +224,10 @@
 </template>
 
 <script setup lang="ts">
+import CommandCenterShell from "@/components/CommandCenterShell.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import CommandCenterShell from "@/components/CommandCenterShell.vue";
 import {
   CommandGroup,
   CommandItem,
@@ -254,7 +255,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Check, History, Play, Search, X } from "@lucide/vue";
+import { Check, History, Play, Search } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
@@ -332,6 +333,19 @@ const clearQuery = function () {
 const focusInput = function () {
   const inputEl = filterRef.value?.$el as HTMLElement | undefined;
   inputEl?.focus();
+};
+
+// on the mobile sheet on a touch screen the on-screen keyboard drives the
+// interaction, and the return key's job is to put it away — the results are
+// already live — while reka would click the highlighted row, so the enter is
+// settled here on the wrapper before it can reach the input
+const dismissKeyboardOnTouch = function (event: KeyboardEvent) {
+  // the enter that commits an IME conversion belongs to the composition, not
+  // to us; keyCode 229 covers webkit reporting that keydown as not composing
+  if (event.isComposing || event.keyCode === 229) return;
+  if (!store.isTouchscreen || !store.mobileLayout) return;
+  event.stopPropagation();
+  (filterRef.value?.$el as HTMLElement | undefined)?.blur();
 };
 
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
@@ -585,10 +599,15 @@ watch([query, pagesOnly], () => {
   }, DEBOUNCE_MS);
 });
 
+// highlight the first row as results land so a desktop enter opens the top
+// hit; on the mobile sheet on a touch screen the on-screen keyboard drives
+// the interaction — there is no enter contract there and the phantom
+// highlight would read as a selection nobody made
 watch(
   () =>
     mediaSections.value.map((section) => section.items[0]?.uri ?? "").join("|"),
   async () => {
+    if (store.isTouchscreen && store.mobileLayout) return;
     if (!isOpen.value || !queryActive.value) return;
     await nextTick();
     const listEl = listRef.value?.$el as HTMLElement | undefined;
@@ -608,11 +627,14 @@ watch(
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 24px;
   height: 24px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--muted);
   color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
 }
 

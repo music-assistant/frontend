@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Grupo",
         "player": "Reproductor",
-        "stereo_pair": "Pareja estéreo",
-        "sync_group": "Grupo de sincronización"
+        "stereo_pair": "Pareja estéreo"
     },
     "players": "Reproductores",
     "playlist": "Lista de reproducción",
@@ -2234,7 +2233,6 @@
     "artist_no_library_audiobooks": "No tienes audiolibros de este autor\/narrador en tu biblioteca.",
     "artist_all_audiobooks": "Todos los audiolibros",
     "lights": "Luces",
-    "visualizers": "Visualizadores",
     "volume": "Volumen",
     "grouped_volume": "Volumen agrupado",
     "player_select": {

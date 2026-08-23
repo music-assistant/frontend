@@ -31,11 +31,7 @@
         @menu="(evt) => onMenu(evt, item)"
       >
         <template #prepend>
-          <ProviderIcon
-            :domain="item.domain"
-            :size="40"
-            class="provider-icon"
-          />
+          <ProviderIcon :domain="item.domain" :size="40" />
         </template>
 
         <template #title>
@@ -793,10 +789,6 @@ const getAllFilteredProviders = function () {
     gap: 4px;
     min-width: 0;
   }
-}
-
-.provider-icon {
-  margin-right: 0;
 }
 
 .provider-disabled {

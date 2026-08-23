@@ -53,8 +53,7 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Afspiller",
-        "stereo_pair": "Par i stereo",
-        "sync_group": "Synkroniseringsgruppe"
+        "stereo_pair": "Par i stereo"
     },
     "players": "Afspillere",
     "playlist": "Afspilningsliste",

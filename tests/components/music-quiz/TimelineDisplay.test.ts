@@ -278,7 +278,7 @@ describe("TimelineDisplay", () => {
     ).toBe(true);
     expect(
       cards.every((card) =>
-        card.classes().includes("grid-cols-[3rem_minmax(0,1fr)]"),
+        card.classes().includes("grid-cols-[2.5rem_minmax(0,1fr)_auto]"),
       ),
     ).toBe(true);
     expect(

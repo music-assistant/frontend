@@ -55,8 +55,7 @@
     "player_type": {
         "group": "Grupa",
         "player": "Plejer",
-        "stereo_pair": "Stereo par",
-        "sync_group": "Sinhronizuj grupu"
+        "stereo_pair": "Stereo par"
     },
     "players": "Plejeri",
     "playlist": "Plejlista",
@@ -2234,7 +2233,6 @@
     "artist_no_library_audiobooks": "Nemate nijednu audio-knjigu u svojoj biblioteci za ovog autora\/naratora.",
     "artist_all_audiobooks": "Sve audio-knjige",
     "lights": "Svetla",
-    "visualizers": "Vizuelizatori",
     "volume": "Jačina zvuka",
     "grouped_volume": "Grupna jačina zvuka",
     "player_select": {

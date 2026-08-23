@@ -99,9 +99,10 @@ vi.mock("@/components/Toolbar.vue", () => ({
   default: {
     name: "Toolbar",
     props: ["menuItems"],
-    // the centre slot is where the desktop search field goes
+    // the append slot is where the desktop search field goes, beside the
+    // button that opens it
     template:
-      '<div class="toolbar-stub"><slot name="title" /><slot name="center" /></div>',
+      '<div class="toolbar-stub"><slot name="title" /><slot name="append" /></div>',
   },
 }));
 vi.mock("@/components/Container.vue", () => stubComponent("Container"));
@@ -313,12 +314,22 @@ describe("ItemsListing per-page search", () => {
     store.mobileLayout = false;
   });
 
+  // the one button, which is a magnifier until the field is open and a close
+  // cross after that
+  const SEARCH_BUTTON_LABELS = [
+    "tooltip.search",
+    "tooltip.search_filter_active",
+    "close",
+  ];
+
   /** Clicks the magnifier in the toolbar, which is what opens the field. */
   async function toggleSearch(listing: ReturnType<typeof mountListingRaw>) {
     const items = listing
       .findComponent({ name: "Toolbar" })
-      .props("menuItems") as { icon?: string; action?: () => void }[];
-    const search = items.find((item) => item.icon === "mdi-magnify");
+      .props("menuItems") as { label?: string; action?: () => void }[];
+    const search = items.find(
+      (item) => item.label && SEARCH_BUTTON_LABELS.includes(item.label),
+    );
     expect(search, "the toolbar offers a search toggle").toBeDefined();
     search!.action?.();
     await flushPromises();
@@ -326,6 +337,15 @@ describe("ItemsListing per-page search", () => {
 
   function searchField(listing: ReturnType<typeof mountListingRaw>) {
     return listing.find(".search-field");
+  }
+
+  function searchButton(listing: ReturnType<typeof mountListingRaw>) {
+    const items = listing
+      .findComponent({ name: "Toolbar" })
+      .props("menuItems") as { label?: string }[];
+    return items.find(
+      (item) => item.label && SEARCH_BUTTON_LABELS.includes(item.label),
+    );
   }
 
   it("opens the field from the toolbar and closes it again", async () => {
@@ -338,6 +358,54 @@ describe("ItemsListing per-page search", () => {
 
     await toggleSearch(listing);
     expect(searchField(listing).exists()).toBe(false);
+  });
+
+  // the field opens into the slot the magnifier holds, so that button has to
+  // become the way back out rather than staying a toggle nothing points at
+  it("turns the toolbar magnifier into the close control while open", async () => {
+    const listing = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+
+    expect(searchButton(listing)?.label).toBe("tooltip.search");
+
+    await toggleSearch(listing);
+    expect(searchButton(listing)?.label).toBe("close");
+
+    await toggleSearch(listing);
+    expect(searchButton(listing)?.label).toBe("tooltip.search");
+
+    listing.unmount();
+  });
+
+  // on mobile the field is a row of its own with its own close button, so the
+  // toolbar one stays a plain toggle
+  it("leaves the mobile toolbar button a magnifier", async () => {
+    store.mobileLayout = true;
+    const mobile = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+    await toggleSearch(mobile);
+
+    expect(searchButton(mobile)?.label).toBe("tooltip.search");
+    expect(mobile.find(".listing-search--row").exists()).toBe(true);
+
+    mobile.unmount();
+  });
+
+  it("only offers the clear button once there is a term", async () => {
+    const listing = mountListingRaw({ showSearchButton: true });
+    await flushPromises();
+    await toggleSearch(listing);
+
+    expect(listing.find('.search-field button[type="button"]').exists()).toBe(
+      false,
+    );
+
+    await listing.get(".search-field input").setValue("hello");
+    expect(listing.find('.search-field button[type="button"]').exists()).toBe(
+      true,
+    );
+
+    listing.unmount();
   });
 
   it("names the listing it searches in its placeholder", async () => {
