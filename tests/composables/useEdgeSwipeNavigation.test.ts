@@ -624,6 +624,39 @@ describe("useEdgeSwipeNavigation", () => {
     expect(main.querySelectorAll("[inert]").length).toBe(1);
   });
 
+  // the same landing in the window between the touch starting and the 12px
+  // direction lock: the armed action was decided for the page that just left,
+  // so letting the finger carry on would commit a back it never asked for
+  it("disarms a pending gesture when something else navigates before the lock", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    fireNavigation("/other", "/album");
+
+    onTouchMove(touchEvent(150, 100));
+    endSwipe(onTouchEnd);
+
+    expect(mockRouterBack).not.toHaveBeenCalled();
+  });
+
+  // the query-sync exemption holds in that window too: the page never moved,
+  // so the armed gesture is still about the right page
+  it("keeps a pending gesture through a same-page query sync", () => {
+    routeState.name = "album";
+    historyState.back = "/discover";
+    const { onTouchStart, onTouchMove, onTouchEnd } = useEdgeSwipeNavigation();
+
+    onTouchStart(touchEvent(10, 100));
+    fireNavigation("/album", "/album");
+
+    onTouchMove(touchEvent(150, 100));
+    endSwipe(onTouchEnd);
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+  });
+
   // the same landing during the slide back into place after a swipe fell
   // short: the settle must not carry on over the freshly navigated page
   it("resets a settling cancel when something else navigates", () => {

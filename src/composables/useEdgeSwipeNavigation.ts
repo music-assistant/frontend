@@ -81,8 +81,9 @@ export function useEdgeSwipeNavigation() {
   let unregisterLanding: (() => void) | null = null;
   let preview: PagePreview | null = null;
   let previewKey: string | null = null;
-  // the entry behind the page at drag start is what the abort compares
-  // against, so an in-place query sync can be told apart from real movement
+  // the entry behind the page when the gesture arms is what the abort
+  // compares against, so an in-place query sync can be told apart from real
+  // movement
   let dragStartBack: unknown = null;
 
   // the DOM still shows the outgoing page when afterEach runs, which is the
@@ -97,14 +98,15 @@ export function useEdgeSwipeNavigation() {
     storePagePreview(from.fullPath, capturePagePreview(surface));
   });
 
-  // a navigation can land while a drag or its settle is still on stage — the
-  // OS back gesture, a background push, a hardware back button — pulling a new
-  // page onto the live surface while a still of it sits behind, so everything
-  // stops on the spot. A failed navigation moved nothing, and neither does a
-  // same-page query sync replacing in place; those leave the drag alone.
+  // a navigation can land while a gesture is armed, dragging, or settling —
+  // the OS back gesture, a background push, a hardware back button — pulling
+  // a new page onto the live surface, so everything stops on the spot: even
+  // an action still waiting on its direction lock was decided for the page
+  // that just left. A failed navigation moved nothing, and neither does a
+  // same-page query sync replacing in place; those leave the gesture alone.
   const unregisterAbort = router.afterEach((to, from, failure) => {
     if (failure || parked.value) return;
-    if (!dragging.value && !settling.value) return;
+    if (!swipeAction.value && !dragging.value && !settling.value) return;
     if (
       to.path === from.path &&
       router.options.history.state.back === dragStartBack
@@ -163,7 +165,10 @@ export function useEdgeSwipeNavigation() {
     swipeEdge.value = ours ? edge : null;
     swipeAction.value = ours && edge ? actionFor(edge) : null;
     trackedTouchId = swipeAction.value ? (touch.identifier ?? 0) : null;
-    if (swipeAction.value) holdGesture(event.target);
+    if (swipeAction.value) {
+      dragStartBack = router.options.history.state.back;
+      holdGesture(event.target);
+    }
   }
 
   function onTouchMove(event: TouchEvent) {
@@ -192,7 +197,6 @@ export function useEdgeSwipeNavigation() {
         return;
       }
       dragging.value = true;
-      dragStartBack = router.options.history.state.back;
       if (action === "back") mountPreview();
     }
 
