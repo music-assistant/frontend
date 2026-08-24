@@ -1,6 +1,9 @@
 import { loadSendspinClientIdentity } from "@sendspin/sendspin-js";
 import { reactive, ref, watch } from "vue";
 import {
+  BROWSER_MEDIA_CONTROLS,
+  BrowserMediaControlsMode,
+  getBrowserMediaControlsMode,
   readDeviceSetting,
   subscribeToDeviceSetting,
 } from "@/helpers/device_settings";
@@ -167,14 +170,15 @@ async function isAnotherTabActive(): Promise<boolean> {
 
 // Per-device settings that feed resolvePreferredMode().
 const WEB_PLAYER_ENABLED = "web_player_enabled";
-const BROWSER_CONTROLS_ENABLED = "enable_browser_controls";
 
 let highestPriority: string | undefined;
 let modeSyncInitialized = false;
 let modeSyncInitializationPromise: Promise<void> | null = null;
 let pendingModeApplication = Promise.resolve();
 
-function resolvePreferredMode(): WebPlayerMode {
+function resolvePreferredMode(
+  browserControlsMode: BrowserMediaControlsMode,
+): WebPlayerMode {
   // This route explicitly disables the web player
   const routeDisablesWebPlayer = router.currentRoute.value.matched.some(
     (record) => record.meta.disableWebPlayer === true,
@@ -202,35 +206,23 @@ function resolvePreferredMode(): WebPlayerMode {
     return WebPlayerMode.SENDSPIN_ONLY;
   }
 
-  const webPlayerEnabledPref = readDeviceSetting(WEB_PLAYER_ENABLED) || "true";
-  const browserControlsEnabledPref =
-    readDeviceSetting(BROWSER_CONTROLS_ENABLED) || "true";
-
-  if (
-    webPlayerEnabledPref !== "false" &&
-    browserControlsEnabledPref !== "false"
-  ) {
-    return WebPlayerMode.SENDSPIN_WITH_CONTROLS;
+  const webPlayerEnabled = readDeviceSetting(WEB_PLAYER_ENABLED) !== "false";
+  if (webPlayerEnabled) {
+    return browserControlsMode === BrowserMediaControlsMode.DISABLED
+      ? WebPlayerMode.SENDSPIN_ONLY
+      : WebPlayerMode.SENDSPIN_WITH_CONTROLS;
   }
-  if (
-    webPlayerEnabledPref !== "false" &&
-    browserControlsEnabledPref === "false"
-  ) {
-    return WebPlayerMode.SENDSPIN_ONLY;
-  }
-  if (
-    webPlayerEnabledPref === "false" &&
-    browserControlsEnabledPref !== "false"
-  ) {
-    return WebPlayerMode.CONTROLS_ONLY;
-  }
-  return WebPlayerMode.DISABLED;
+  return browserControlsMode === BrowserMediaControlsMode.ACTIVE_PLAYER
+    ? WebPlayerMode.CONTROLS_ONLY
+    : WebPlayerMode.DISABLED;
 }
 
 // Serializes mode updates so concurrent triggers (init/route/watchers) apply in order.
 function queueModeApplication(): Promise<void> {
   pendingModeApplication = pendingModeApplication.then(async () => {
-    const mode = resolvePreferredMode();
+    const browserControlsMode = getBrowserMediaControlsMode();
+    webPlayer.browserControlsMode = browserControlsMode;
+    const mode = resolvePreferredMode(browserControlsMode);
     if (mode !== webPlayer.mode || mode !== webPlayer.tabMode) {
       await webPlayer.setMode(mode);
     }
@@ -270,7 +262,7 @@ export async function initializeWebPlayerModeSync(): Promise<void> {
     // The settings page writes these straight to localStorage. Follow them here
     // so switching the web player off tears it down right away, in every tab of
     // this browser, instead of at the next navigation.
-    for (const setting of [WEB_PLAYER_ENABLED, BROWSER_CONTROLS_ENABLED]) {
+    for (const setting of [WEB_PLAYER_ENABLED, BROWSER_MEDIA_CONTROLS]) {
       subscribeToDeviceSetting(setting, () => {
         void queueModeApplication();
       });
@@ -307,6 +299,7 @@ async function canTakeControl(): Promise<boolean> {
 }
 
 export const webPlayer = reactive({
+  browserControlsMode: BrowserMediaControlsMode.WEB_PLAYER,
   // This is target mode shared across all tabs
   mode: WebPlayerMode.DISABLED,
   // This is the true mode of this tab.
@@ -359,12 +352,8 @@ export const webPlayer = reactive({
     }
 
     if (isPlaybackMode(mode)) {
-      // Sendspin player is handled separately through the SendspinPlayer component
-      // audioSource determines whether browser media controls are shown
-      this.audioSource =
-        mode === WebPlayerMode.SENDSPIN_WITH_CONTROLS
-          ? WebPlayerMode.CONTROLS_ONLY
-          : WebPlayerMode.DISABLED;
+      // Sendspin owns browser media controls in the playback tab.
+      this.audioSource = WebPlayerMode.DISABLED;
       // The sendspin client id is its Noise public key, so the SDK owns it. Mirror
       // it into localStorage for the tabs and the proxy handshake that read it.
       const player_id = loadSendspinClientIdentity().clientId;

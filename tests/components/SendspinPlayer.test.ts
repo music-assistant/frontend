@@ -1,4 +1,5 @@
 import SendspinPlayer from "@/components/SendspinPlayer.vue";
+import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
@@ -167,6 +168,7 @@ vi.mock("@/plugins/web_player", async () => {
       mode === "sendspin_only" || mode === "sendspin_with_controls",
     registerWebPlayerAudioUnlock: mockRegisterWebPlayerAudioUnlock,
     webPlayer: reactive({
+      browserControlsMode: "web_player",
       interacted: false,
       mode: "sendspin_only",
       tabMode: "sendspin_only",
@@ -258,6 +260,7 @@ describe("SendspinPlayer MediaSession", () => {
     mockSendspinUnlock.mockReset();
     mockSendspinUnlock.mockResolvedValue(undefined);
     webPlayer.interacted = false;
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.WEB_PLAYER;
     webPlayer.mode = WebPlayerMode.SENDSPIN_ONLY;
     webPlayer.tabMode = WebPlayerMode.SENDSPIN_ONLY;
     if (routeState.current) routeState.current.meta = {};
@@ -569,6 +572,83 @@ describe("SendspinPlayer MediaSession", () => {
 
     wrapper.unmount();
     expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
+  });
+
+  it("limits built-in-only controls to the web player", () => {
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.WEB_PLAYER;
+    apiMock.players["web-player"].playback_state = PlaybackState.PAUSED;
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    invokeAction("play");
+
+    expect(mockUseMediaBrowserMetaData).toHaveBeenCalledWith("web-player");
+    expect(mockPlayerCommandPlay).toHaveBeenCalledWith("web-player");
+    wrapper.unmount();
+  });
+
+  it("targets the selected player when that mode is enabled", () => {
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    invokeAction("play");
+
+    expect(mockUseMediaBrowserMetaData).toHaveBeenCalledWith(undefined);
+    expect(mockPlayerCommandPlay).toHaveBeenCalledWith("active-player");
+    wrapper.unmount();
+  });
+
+  it("starts selected-player controls when their mode becomes active", async () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
+    webPlayer.interacted = true;
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    playSpy.mockClear();
+
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+    await nextTick();
+
+    expect(playSpy).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("starts selected-player controls after the first interaction", async () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    playSpy.mockClear();
+
+    webPlayer.interacted = true;
+    await nextTick();
+
+    expect(playSpy).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("clears media controls when they are disabled", () => {
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.DISABLED;
+    seedStaleMediaSession();
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    expect(mockUseMediaBrowserMetaData).not.toHaveBeenCalled();
+    expect(mediaSession.metadata).toBeNull();
+    expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
+    invokeAllActions();
+    expectPlayerCommandsNotCalled();
+    wrapper.unmount();
   });
 
   it("continues clearing actions when an action is unsupported", () => {

@@ -1,6 +1,8 @@
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FrontendConfig from "@/views/settings/FrontendConfig.vue";
+import { BrowserMediaControlsMode } from "@/helpers/device_settings";
+import { ConfigEntryType } from "@/plugins/api/interfaces";
 
 const { apiMock, routerMock, storeMock, setPreference } = vi.hoisted(() => ({
   apiMock: { players: {}, providers: {} },
@@ -116,5 +118,32 @@ describe("FrontendConfig save", () => {
 
     expect(setPreference).toHaveBeenCalledWith("theme", "dark");
     expect(reload).toHaveBeenCalled();
+  });
+
+  it("defaults browser media controls to the built-in web player", async () => {
+    const wrapper = await mountPage();
+    const entries = (
+      wrapper.vm as unknown as {
+        config: {
+          key: string;
+          type: ConfigEntryType;
+          default_value: unknown;
+          value: unknown;
+          options: { value: unknown }[];
+        }[];
+      }
+    ).config;
+    const entry = entries.find(({ key }) => key === "enable_browser_controls");
+
+    expect(entry).toMatchObject({
+      type: ConfigEntryType.STRING,
+      default_value: BrowserMediaControlsMode.WEB_PLAYER,
+      value: BrowserMediaControlsMode.WEB_PLAYER,
+    });
+    expect(entry?.options.map(({ value }) => value)).toEqual([
+      BrowserMediaControlsMode.ACTIVE_PLAYER,
+      BrowserMediaControlsMode.WEB_PLAYER,
+      BrowserMediaControlsMode.DISABLED,
+    ]);
   });
 });
