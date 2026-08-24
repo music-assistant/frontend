@@ -554,8 +554,18 @@
             "description": "Allow playback to this device\/browser using the built-in Sendspin web player."
         },
         "enable_browser_controls": {
-            "label": "Enable browser media controls",
-            "description": "Allow control of playback using the browser's built-in media controls (e.g., media keys on your keyboard)."
+            "label": "Browser media controls",
+            "description": "Expose Music Assistant playback to browser and operating-system media controls, such as media keys and lock-screen controls. Device events such as phone calls, sleep, or closing a laptop lid may pause the controlled player.",
+            "options": {
+                "active_player": "Any actively selected player",
+                "web_player": "Built-in web player only",
+                "disabled": "Disabled"
+            },
+            "option_descriptions": {
+                "active_player": "Control the player currently selected in Music Assistant, including speakers elsewhere in your home.",
+                "web_player": "Control only audio played by the built-in web player on this device.",
+                "disabled": "Do not expose Music Assistant playback to browser or operating-system controls."
+            }
         },
         "settings_saved": "Settings saved successfully",
         "protocol_disabled_message": "Enable this protocol to configure its settings",

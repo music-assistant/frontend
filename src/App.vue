@@ -25,7 +25,7 @@
     v-if="
       webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
       webPlayer.interacted == true &&
-      !mediaSessionDisabled
+      selectedPlayerMediaControlsEnabled
     "
     :key="webPlayer.tabMode"
   />
@@ -47,6 +47,7 @@ import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
 import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
+  BrowserMediaControlsMode,
   FORCE_MOBILE_LAYOUT,
   readDeviceSetting,
   subscribeToDeviceSetting,
@@ -86,6 +87,7 @@ import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
 import {
   initializeWebPlayerModeSync,
+  isPlaybackMode,
   webPlayer,
   WebPlayerMode,
 } from "./plugins/web_player";
@@ -98,11 +100,27 @@ const { applyThemePreference: setTheme } = useThemePreference();
 const mediaSessionDisabled = computed(() =>
   isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
 );
+const selectedPlayerMediaControlsEnabled = computed(
+  () =>
+    !mediaSessionDisabled.value &&
+    webPlayer.browserControlsMode === BrowserMediaControlsMode.ACTIVE_PLAYER &&
+    webPlayer.tabMode === WebPlayerMode.CONTROLS_ONLY,
+);
 
 watch(
-  mediaSessionDisabled,
-  (disabled) => {
-    if (disabled) resetMediaSession();
+  [
+    mediaSessionDisabled,
+    () => webPlayer.browserControlsMode,
+    () => webPlayer.tabMode,
+  ],
+  ([disabled, controlsMode, tabMode]) => {
+    if (
+      disabled ||
+      (controlsMode !== BrowserMediaControlsMode.ACTIVE_PLAYER &&
+        !isPlaybackMode(tabMode))
+    ) {
+      resetMediaSession();
+    }
   },
   { immediate: true },
 );

@@ -130,8 +130,9 @@ const {
     },
     webPlayerMock: {
       audioSource: "disabled",
+      browserControlsMode: "active_player",
       interacted: false,
-      player_id: null,
+      player_id: null as string | null,
       setBaseUrl: vi.fn(),
       setInteracted: vi.fn(),
       tabMode: "disabled",
@@ -184,6 +185,8 @@ vi.mock("@/composables/useShortcuts", () => ({
 
 vi.mock("@/plugins/web_player", () => ({
   initializeWebPlayerModeSync: mockInitializeWebPlayerModeSync,
+  isPlaybackMode: (mode: string) =>
+    mode === "sendspin_only" || mode === "sendspin_with_controls",
   webPlayer: webPlayerMock,
   WebPlayerMode: {
     CONTROLS_ONLY: "controls_only",
@@ -348,6 +351,7 @@ describe("App initialization", () => {
     storeMock.isIngressSession = false;
     storeMock.isOnboarding = false;
     webPlayerMock.audioSource = "disabled";
+    webPlayerMock.browserControlsMode = "active_player";
     webPlayerMock.interacted = false;
     webPlayerMock.player_id = null;
     webPlayerMock.tabMode = "disabled";
@@ -555,6 +559,40 @@ describe("App initialization", () => {
     expect(
       wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),
     ).toBe(true);
+  });
+
+  it("leaves media controls to Sendspin in the playback tab", async () => {
+    stubMediaSession();
+    webPlayerMock.audioSource = "controls_only";
+    webPlayerMock.browserControlsMode = "active_player";
+    webPlayerMock.interacted = true;
+    webPlayerMock.player_id = "web-player";
+    webPlayerMock.tabMode = "sendspin_with_controls";
+
+    wrapper = await mountApp();
+
+    expect(
+      wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),
+    ).toBe(false);
+    expect(wrapper.findComponent({ name: "SendspinPlayer" }).exists()).toBe(
+      true,
+    );
+  });
+
+  it("does not control the selected player in built-in-only mode", async () => {
+    const mediaSession = stubMediaSession();
+    webPlayerMock.audioSource = "controls_only";
+    webPlayerMock.browserControlsMode = "web_player";
+    webPlayerMock.interacted = true;
+    webPlayerMock.tabMode = "controls_only";
+
+    wrapper = await mountApp();
+
+    expect(
+      wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),
+    ).toBe(false);
+    expect(mediaSession.metadata).toBeNull();
+    expect(mediaSession.playbackState).toBe("none");
   });
 
   it("clears browser media controls on participant routes for regular users", async () => {

@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
+import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import {
   isMediaSessionDisabled,
   resetMediaSession,
@@ -113,18 +114,16 @@ const resetLastSeekPos = () => {
   }, 2000);
 };
 
-// Determine which player's metadata to show:
-// - Web player's metadata when it's playing
-// - Selected player's metadata otherwise (undefined = uses store.activePlayerId)
-const metadataPlayerId = computed(() => {
-  const thisPlayer = api.players[props.playerId];
-  if (thisPlayer?.playback_state === PlaybackState.PLAYING) {
-    return props.playerId;
-  }
-  return undefined;
-});
-const mediaSessionDisabled = computed(() =>
-  isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
+// An undefined player ID makes the metadata helper follow the selected player.
+const metadataPlayerId = computed(() =>
+  webPlayer.browserControlsMode === BrowserMediaControlsMode.WEB_PLAYER
+    ? props.playerId
+    : undefined,
+);
+const mediaSessionDisabled = computed(
+  () =>
+    webPlayer.browserControlsMode === BrowserMediaControlsMode.DISABLED ||
+    isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
 );
 
 const correctionMode = computed(() => {
@@ -426,6 +425,7 @@ onBeforeUnmount(() => {
   pauseCommandTimeouts.clear();
   if (
     mediaSessionDisabled.value ||
+    webPlayer.browserControlsMode !== BrowserMediaControlsMode.ACTIVE_PLAYER ||
     webPlayer.tabMode !== WebPlayerMode.CONTROLS_ONLY
   ) {
     resetMediaSession();
