@@ -84,6 +84,9 @@ export type PlayerRenameDialogEvent = {
   defaultName?: string | null;
 };
 
+// finished: the flow reached its last step, as opposed to being aborted
+export type SetupFlowEndedCallback = (finished: boolean) => void;
+
 // Launches the setup flow dialog for one of: adding a provider (by domain),
 // reconfiguring a provider instance, or setting up a player.
 export type SetupFlowDialogEvent =
@@ -91,9 +94,9 @@ export type SetupFlowDialogEvent =
   | {
       kind: "reconfigure";
       instanceId: string;
-      onFlowEnded?: () => void;
+      onFlowEnded?: SetupFlowEndedCallback;
     }
-  | { kind: "player"; playerId: string };
+  | { kind: "player"; playerId: string; onFlowEnded?: SetupFlowEndedCallback };
 
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
