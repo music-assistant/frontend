@@ -1400,13 +1400,18 @@ export class MusicAssistantApi {
     media_type: MediaType,
     item_id: string,
     provider_instance_id_or_domain: string,
+    options?: { suppressGlobalError?: boolean },
   ): Promise<MediaItemType> {
     // Get single music item by id and media type.
-    return this.sendCommand("music/item", {
-      media_type,
-      item_id,
-      provider_instance_id_or_domain,
-    });
+    return this.sendCommand(
+      "music/item",
+      {
+        media_type,
+        item_id,
+        provider_instance_id_or_domain,
+      },
+      options,
+    );
   }
 
   public getLibraryItem(

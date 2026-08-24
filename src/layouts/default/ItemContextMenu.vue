@@ -372,8 +372,10 @@ export const showContextMenuForMediaItem = async function (
     return;
   }
 
+  const menuTargets = await withFullItemDetails(mediaItems);
+
   const contextMenuItems = await getContextMenuItems(
-    mediaItems,
+    menuTargets,
     parentItem,
     options,
   );
@@ -382,12 +384,12 @@ export const showContextMenuForMediaItem = async function (
 
   if (
     includePlayMenuItems &&
-    mediaItems[0].is_playable &&
-    itemIsAvailable(mediaItems[0])
+    menuTargets[0].is_playable &&
+    itemIsAvailable(menuTargets[0])
   ) {
     // Play menu items first, then context items
     menuItems = await getPlaybackContextMenuItems(
-      mediaItems,
+      menuTargets,
       parentItem,
       sortBy,
     );
@@ -1413,6 +1415,33 @@ const startAudioSourceMenuItem = function (
     labelArgs: [],
     disabled: !store.activePlayer,
   };
+};
+
+/**
+ * The given items with the detail the menu needs to decide what to offer.
+ *
+ * A single item without provider mappings is a lightweight reference (e.g. a
+ * discover page row) and is looked up in full; anything else, and anything that
+ * cannot be looked up, is returned unchanged.
+ */
+const withFullItemDetails = async function (
+  items: MediaItemTypeOrItemMapping[],
+): Promise<MediaItemTypeOrItemMapping[]> {
+  if (items.length != 1) return items;
+  const item = items[0];
+  if ("provider_mappings" in item || item.media_type == MediaType.FOLDER) {
+    return items;
+  }
+  // a failed lookup still opens the menu, without the actions needing the detail
+  const fullItem = await api
+    .getItem(item.media_type, item.item_id, item.provider, {
+      suppressGlobalError: true,
+    })
+    .catch((err) => {
+      console.error("[ItemContextMenu] failed to resolve %s", item.uri, err);
+      return undefined;
+    });
+  return fullItem ? [fullItem] : items;
 };
 
 // media types whose contents have an order that is worth shuffling. Audiobooks and

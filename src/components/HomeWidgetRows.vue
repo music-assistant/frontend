@@ -372,6 +372,7 @@ import EditorialTimeline from "@/components/discover/EditorialTimeline.vue";
 import {
   DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
+  IN_PROGRESS_ROW_ID,
   PLAYERS_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
@@ -953,6 +954,23 @@ const unsubscribeRecommendations = api.subscribe(
   },
 );
 
+// Any playlog change takes the item out of the "in progress" row. Drop the card
+// now and let the scheduled refresh bring the rest of the rows up to date.
+const unsubscribePlaylog = api.subscribe(
+  EventType.PLAYLOG_UPDATED,
+  (evt: EventMessage) => {
+    const uri = evt.object_id;
+    const items = rowItemsMap.value.get(IN_PROGRESS_ROW_ID);
+    if (uri && items) {
+      rowItemsMap.value.set(
+        IN_PROGRESS_ROW_ID,
+        items.filter((item) => item.uri !== uri),
+      );
+    }
+    scheduleRecommendationRefresh();
+  },
+);
+
 const unsubscribeProviderEvents = api.subscribe(
   EventType.PROVIDER_EVENT,
   (evt: EventMessage) => {
@@ -1020,6 +1038,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("resize", updateHeroNav);
   unsubscribeRecommendations();
   unsubscribeProviderEvents();
+  unsubscribePlaylog();
   cancelScheduledRecommendationRefresh();
   heroRo?.disconnect();
   heroRo = undefined;
