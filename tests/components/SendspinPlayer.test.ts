@@ -601,6 +601,40 @@ describe("SendspinPlayer MediaSession", () => {
     wrapper.unmount();
   });
 
+  it("starts selected-player controls when their mode becomes active", async () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
+    webPlayer.interacted = true;
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    playSpy.mockClear();
+
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+    await nextTick();
+
+    expect(playSpy).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("starts selected-player controls after the first interaction", async () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    playSpy.mockClear();
+
+    webPlayer.interacted = true;
+    await nextTick();
+
+    expect(playSpy).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
   it("clears media controls when they are disabled", () => {
     webPlayer.browserControlsMode = BrowserMediaControlsMode.DISABLED;
     seedStaleMediaSession();

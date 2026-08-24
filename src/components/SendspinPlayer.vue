@@ -174,41 +174,23 @@ watch(
   { immediate: true },
 );
 
-// Control silent audio based on interaction and metadata target
 watch(
-  [metadataPlayerId, () => webPlayer.interacted],
-  ([newPlayerId, interacted]) => {
-    if (!interacted) return;
-
-    // Stop silent audio when web player takes over
-    if (newPlayerId !== undefined && silentAudioRef.value) {
-      silentAudioRef.value.pause();
-    }
-  },
-  { immediate: true },
-);
-
-// Watch active player's playback state to control silent audio
-watch(
-  [() => store.activePlayer?.playback_state, mediaSessionDisabled],
-  ([state, disabled]) => {
-    if (disabled) {
-      if (silentAudioInterval) {
-        clearInterval(silentAudioInterval);
-        silentAudioInterval = undefined;
-      }
-      silentAudioRef.value?.pause();
-      return;
-    }
-    // Only control when showing active player metadata (not web player)
-    if (metadataPlayerId.value !== undefined) return;
-    if (!silentAudioRef.value) return;
-
-    // Clear existing interval
+  [
+    () => store.activePlayer?.playback_state,
+    mediaSessionDisabled,
+    metadataPlayerId,
+    () => webPlayer.interacted,
+  ],
+  ([state, disabled, targetPlayerId, interacted]) => {
     if (silentAudioInterval) {
       clearInterval(silentAudioInterval);
       silentAudioInterval = undefined;
     }
+    if (disabled || targetPlayerId !== undefined || !interacted) {
+      silentAudioRef.value?.pause();
+      return;
+    }
+    if (!silentAudioRef.value) return;
 
     if (state === PlaybackState.PLAYING) {
       silentAudioRef.value.play().catch(() => {});
