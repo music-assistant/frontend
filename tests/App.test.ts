@@ -600,7 +600,7 @@ describe("App initialization", () => {
     webPlayerMock.audioSource = "disabled";
     webPlayerMock.browserControlsMode = "active_player";
     webPlayerMock.interacted = true;
-    webPlayerMock.tabMode = "disabled";
+    webPlayerMock.tabMode = "controls_only";
 
     wrapper = await mountApp();
 

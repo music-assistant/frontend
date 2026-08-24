@@ -22,10 +22,7 @@
   />
 
   <PlayerBrowserMediaControls
-    v-if="
-      webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
-      selectedPlayerMediaControlsEnabled
-    "
+    v-if="selectedPlayerMediaControlsEnabled"
     :key="webPlayer.tabMode"
   />
   <SendspinPlayer
@@ -104,6 +101,7 @@ const selectedPlayerMediaControlsEnabled = computed(
     !mediaSessionDisabled.value &&
     webPlayer.interacted &&
     webPlayer.browserControlsMode === BrowserMediaControlsMode.ACTIVE_PLAYER &&
+    webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
     webPlayer.tabMode === WebPlayerMode.CONTROLS_ONLY,
 );
 
