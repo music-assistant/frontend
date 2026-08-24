@@ -104,6 +104,7 @@ export async function reportVisualizerCapability(
 ): Promise<void> {
   // fleet data about displays with no reachable console; desktops have one
   if (!authManager.isDashboardViewer()) return;
+  if (!api.supportsDashboardVisualizer) return;
   try {
     await api.sendCommand("milkdrop_visualizer/report_capability", {
       webgl2: isVisualizerSupported(),
@@ -131,6 +132,7 @@ export async function reportVisualizerRender(
   level: number,
   note: string,
 ): Promise<void> {
+  if (!api.supportsDashboardVisualizer) return;
   try {
     await api.sendCommand("milkdrop_visualizer/report_capability", {
       webgl2: true,
@@ -161,6 +163,7 @@ export async function reportVisualizerRender(
  */
 export async function visualizerShownOnDashboards(): Promise<boolean> {
   if (!visualizerProviderAvailable()) return false;
+  if (!api.supportsDashboardVisualizer) return false;
   try {
     const config = await api.sendCommand<Record<string, boolean>>(
       "milkdrop_visualizer/config",

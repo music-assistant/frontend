@@ -79,14 +79,16 @@ function startDashboardDefaultWatch(): void {
 const viewerPreferences = ref<Record<string, unknown>>({});
 let viewerPreferencesSyncStarted = false;
 
-// The viewer identifies its session by what it is showing (route + player);
-// re-fetched on the sessions-updated event, which the server also signals
-// when the casting user changes their preferences.
+// The viewer identifies its session by the dashboard_id the server put in its
+// launched url (plus what it is showing); re-fetched on the sessions-updated
+// event, which the server also signals when the casting user changes their
+// preferences.
 function startViewerPreferencesSync(): void {
   if (viewerPreferencesSyncStarted) return;
   viewerPreferencesSyncStarted = true;
   effectScope(true).run(() => {
     const fetchViewerPreferences = async () => {
+      if (!api.supportsDashboardVisualizer) return;
       const path = router.currentRoute.value.path;
       const dashboard = path.startsWith("/now-playing")
         ? "now_playing"
@@ -94,6 +96,7 @@ function startViewerPreferencesSync(): void {
           ? "music_quiz"
           : "party";
       const playerId = router.currentRoute.value.query.player;
+      const dashboardId = router.currentRoute.value.query.dashboard_id;
       try {
         viewerPreferences.value =
           (await api.sendCommand<Record<string, unknown>>(
@@ -101,6 +104,8 @@ function startViewerPreferencesSync(): void {
             {
               dashboard,
               player_id: typeof playerId === "string" ? playerId : undefined,
+              dashboard_id:
+                typeof dashboardId === "string" ? dashboardId : undefined,
             },
           )) ?? {};
       } catch (error) {

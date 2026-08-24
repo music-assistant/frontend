@@ -46,6 +46,7 @@ vi.mock("@/composables/userPreferences", () => ({
 const apiMocks = vi.hoisted(() => ({
   sendCommand: vi.fn(async (): Promise<Record<string, unknown>> => ({})),
   subscribe: vi.fn((_event: string, _callback: () => void) => () => {}),
+  supportsDashboardVisualizer: true,
 }));
 vi.mock("@/plugins/api", () => ({ default: apiMocks }));
 
@@ -172,6 +173,7 @@ describe("viewer preferences", () => {
     authMocks.authManager.isDashboardViewer.mockReturnValue(true);
     relayMocks.visualizerShownOnDashboards.mockResolvedValue(false);
     apiMocks.sendCommand.mockResolvedValue({});
+    apiMocks.supportsDashboardVisualizer = true;
   });
 
   it("renders with the casting user's preferences", async () => {
@@ -180,15 +182,34 @@ describe("viewer preferences", () => {
       visualizer_opacity: 55,
     });
     const { useVisualizer } = await importComposable();
+    // the launched url carries the display's dashboard id in the route query
+    const router = (await import("@/plugins/router")).default;
+    router.currentRoute.value.query.dashboard_id = "chromecast_abc";
     const { visualizerPresetPref, visualizerOpacityPref } = useVisualizer();
     await flushPromises();
 
     expect(apiMocks.sendCommand).toHaveBeenCalledWith(
       "dashboard/viewer_preferences",
-      { dashboard: "party", player_id: undefined },
+      {
+        dashboard: "party",
+        player_id: undefined,
+        dashboard_id: "chromecast_abc",
+      },
     );
     expect(visualizerPresetPref.value).toBe("martin - mandelbox explorer");
     expect(visualizerOpacityPref.value).toBe(55);
+  });
+
+  it("skips the fetch on servers without the command", async () => {
+    apiMocks.supportsDashboardVisualizer = false;
+    const { useVisualizer } = await importComposable();
+    useVisualizer();
+    await flushPromises();
+
+    expect(apiMocks.sendCommand).not.toHaveBeenCalledWith(
+      "dashboard/viewer_preferences",
+      expect.anything(),
+    );
   });
 
   it("ignores the owner's global toggle but honors their per-player override", async () => {
