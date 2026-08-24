@@ -5,6 +5,7 @@ import api, { ConnectionState } from ".";
 import {
   Audiobook,
   AudioSource,
+  CrossfadeMode,
   MediaItemType,
   ItemMapping,
   MediaType,
@@ -46,6 +47,25 @@ export const isQueueInfiniteStream = function (
 ): boolean {
   const mediaType = queue?.current_item?.media_item?.media_type;
   return mediaType === MediaType.RADIO || mediaType === MediaType.AUDIO_SOURCE;
+};
+
+/**
+ * Returns the provider serving a queue's current item when that source is the one
+ * crossfading it, or undefined when Music Assistant applies the fade (or none is).
+ *
+ * The queue's crossfade settings say nothing about who acts on them: a source that
+ * fades its own playback is handed the setting and does the overlap itself, so none
+ * of our timing reaches the audio.
+ */
+export const queueSourceCrossfadeProvider = function (
+  queue: PlayerQueue | undefined,
+): string | undefined {
+  const streamDetails = queue?.current_item?.streamdetails;
+  const crossfadeMode =
+    streamDetails?.audio_processing?.queue_processing?.crossfade_mode;
+  return crossfadeMode === CrossfadeMode.SOURCE
+    ? streamDetails?.provider
+    : undefined;
 };
 
 /**

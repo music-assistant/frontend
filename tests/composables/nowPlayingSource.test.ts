@@ -1,29 +1,16 @@
 import { reactive } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type {
+import {
+  MediaType,
+  type PlayerMedia,
   Player,
   PlayerQueue,
-  QueueItem,
-  StreamMetadata,
 } from "@/plugins/api/interfaces";
-import { audioSource } from "../fixtures/audioSource";
-import { providerMapping } from "../fixtures/providerMapping";
-import { queueItem } from "../fixtures/queueItem";
-import { radio } from "../fixtures/radio";
-import { streamDetails } from "../fixtures/streamDetails";
-import { track } from "../fixtures/track";
-
-// getSourceName resolves the player's active source against these
-const { apiMock } = vi.hoisted(() => ({
-  apiMock: { queues: {} as Record<string, unknown> },
-}));
-
-vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+import { playerSource } from "../fixtures/playerSource";
 
 const storeMock = reactive({
   activePlayer: undefined as Player | undefined,
   activePlayerQueue: undefined as PlayerQueue | undefined,
-  curQueueItem: undefined as QueueItem | undefined,
 });
 
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
@@ -41,42 +28,39 @@ function player(overrides: Partial<Player> = {}): Player {
   } as Player;
 }
 
-function metadata(overrides: Partial<StreamMetadata> = {}): StreamMetadata {
+function playerMedia(overrides: Partial<PlayerMedia> = {}): PlayerMedia {
   return {
-    title: "Live track",
+    uri: "test://media",
+    media_type: MediaType.TRACK,
+    title: null,
     artist: null,
     album: null,
     image_url: null,
+    palette: null,
     duration: null,
-    uri: null,
+    source_id: null,
+    elapsed_time: null,
+    elapsed_time_last_updated: null,
+    queue_item_id: null,
     ...overrides,
   };
 }
 
-/** Puts the item on an active queue, the way the server reports playback. */
-function playing(item: QueueItem) {
-  storeMock.activePlayerQueue = { queue_id: "player-1" } as PlayerQueue;
-  storeMock.curQueueItem = item;
-}
-
 beforeEach(() => {
-  apiMock.queues = {};
   storeMock.activePlayer = player();
   storeMock.activePlayerQueue = undefined;
-  storeMock.curQueueItem = undefined;
 });
 
 describe("useNowPlayingSource", () => {
-  it("names the plugin source playing on the queue", () => {
-    playing(
-      queueItem({
-        media_item: audioSource({
-          name: "Spotify Connect",
-          provider: "spotify_connect--abc",
-          provider_mappings: [],
-        }),
-      }),
-    );
+  it("names the active external player source", () => {
+    const source = playerSource({
+      id: "spotify_connect--abc://audio_source/main",
+      name: "Spotify Connect",
+    });
+    storeMock.activePlayer = player({
+      active_source: source.id,
+      source_list: [source],
+    });
 
     const { nowPlayingSource } = useNowPlayingSource();
 
@@ -86,72 +70,53 @@ describe("useNowPlayingSource", () => {
     });
   });
 
-  it("names the station once live metadata takes over the title", () => {
-    playing(
-      queueItem({
-        media_item: radio({
-          name: "Radio 538",
-          provider: "library",
-          provider_mappings: [providerMapping({ provider_domain: "tunein" })],
-        }),
-        streamdetails: streamDetails({ stream_metadata: metadata() }),
-      }),
-    );
-
-    const { nowPlayingSource } = useNowPlayingSource();
-
-    // the library is where the station is saved, not what streams it
-    expect(nowPlayingSource.value).toEqual({
-      name: "Radio 538",
-      iconDomain: "tunein",
-    });
-  });
-
-  it("stays silent for a station that still shows its own name", () => {
-    playing(
-      queueItem({
-        media_item: radio({ name: "Radio 538" }),
-        streamdetails: streamDetails({ stream_metadata: null }),
-      }),
-    );
-
-    const { nowPlayingSource } = useNowPlayingSource();
-
-    expect(nowPlayingSource.value).toBeUndefined();
-  });
-
-  it("stays silent for ordinary track playback", () => {
-    playing(queueItem({ media_item: track() }));
-
-    const { nowPlayingSource } = useNowPlayingSource();
-
-    expect(nowPlayingSource.value).toBeUndefined();
-  });
-
-  it("names an external source that took the player over", () => {
+  it("does not infer a provider for a native player source", () => {
+    const source = playerSource({ id: "line-in", name: "Line In" });
     storeMock.activePlayer = player({
-      active_source: "line-in",
-      source_list: [
-        {
-          id: "line-in",
-          name: "Line In",
-          passive: true,
-          can_play_pause: false,
-          can_seek: false,
-          can_next_previous: false,
-        },
-      ],
+      active_source: source.id,
+      source_list: [source],
     });
 
     const { nowPlayingSource } = useNowPlayingSource();
 
-    // no queue to read the source from, so it comes from the source list
-    expect(nowPlayingSource.value).toEqual({ name: "Line In" });
+    expect(nowPlayingSource.value).toEqual({
+      name: "Line In",
+      iconDomain: undefined,
+    });
+  });
+
+  it("keeps a radio station in the album subtitle", () => {
+    storeMock.activePlayer = player({
+      current_media: playerMedia({
+        media_type: MediaType.RADIO,
+        title: "Live track",
+        album: "Radio 538",
+      }),
+    });
+
+    const { nowPlayingSource, albumSubtitle } = useNowPlayingSource();
+
+    expect(nowPlayingSource.value).toBeUndefined();
+    expect(albumSubtitle.value).toBe("Radio 538");
+  });
+
+  it("stays silent for the player's own queue source", () => {
+    storeMock.activePlayer = player({
+      source_list: [playerSource({ id: "player-1", name: "Queue" })],
+    });
+
+    const { nowPlayingSource } = useNowPlayingSource();
+
+    expect(nowPlayingSource.value).toBeUndefined();
   });
 
   it("stays silent while the player is off", () => {
-    storeMock.activePlayer = player({ powered: false });
-    playing(queueItem({ media_item: audioSource({ name: "AirPlay" }) }));
+    const source = playerSource({ id: "airplay", name: "AirPlay" });
+    storeMock.activePlayer = player({
+      powered: false,
+      active_source: source.id,
+      source_list: [source],
+    });
 
     const { nowPlayingSource } = useNowPlayingSource();
 
@@ -166,13 +131,21 @@ describe("useNowPlayingSource", () => {
     expect(nowPlayingSource.value).toBeUndefined();
   });
 
-  it("follows the queue item as playback moves on", () => {
+  it("follows active source changes", () => {
+    const airplay = playerSource({
+      id: "airplay_receiver--abc://audio_source/main",
+      name: "AirPlay",
+    });
+    const queue = playerSource({ id: "player-1", name: "Queue" });
+    storeMock.activePlayer = player({
+      active_source: airplay.id,
+      source_list: [airplay, queue],
+    });
     const { nowPlayingSource } = useNowPlayingSource();
-    playing(queueItem({ media_item: audioSource({ name: "AirPlay" }) }));
 
     expect(nowPlayingSource.value?.name).toBe("AirPlay");
 
-    storeMock.curQueueItem = queueItem({ media_item: track() });
+    storeMock.activePlayer.active_source = queue.id;
 
     expect(nowPlayingSource.value).toBeUndefined();
   });

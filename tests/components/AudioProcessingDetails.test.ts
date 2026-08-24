@@ -636,7 +636,7 @@ describe("AudioProcessingDetails", () => {
     expect(directPath.findAll("li").map((detail) => detail.text())).toEqual([
       "Audio passes through queue processing unchanged.",
       "Internal format: 16-bit PCM · 44.1 kHz · Stereo",
-      "No volume normalization, crossfade, playback speed adjustment, or audio overlay is active.",
+      "Music Assistant applies no volume normalization, crossfade, playback speed adjustment, or audio overlay.",
     ]);
     expect(wrapper.find('[data-stage="dsp-state-0"]').exists()).toBe(false);
     const destination = wrapper.find('[data-stage="destination"]');
@@ -683,7 +683,7 @@ describe("AudioProcessingDetails", () => {
     );
     expect(context.text()).not.toContain("Direct signal path");
     expect(context.findAll("li").map((detail) => detail.text())).toEqual([
-      "No normalization, crossfade, playback speed adjustment, or audio overlay is reported by the processing model.",
+      "Music Assistant applies no normalization, crossfade, playback speed adjustment, or audio overlay.",
       "Internal format: 16-bit PCM · 44.1 kHz · Stereo",
     ]);
   });

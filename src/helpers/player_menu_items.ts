@@ -11,6 +11,7 @@ import {
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
+import { resolveExternalSource } from "@/composables/externalSource";
 import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
@@ -106,52 +107,85 @@ export const getPlayerMenuItems = (
   }
 
   const isDynamic = playerQueue?.is_dynamic === true;
+  // an external source orders its own session, so it takes these instead of the
+  // queue — and it has no queue to read the state or the dynamic flag from
+  const externalSource = resolveExternalSource(player, playerQueue);
+  const shuffleSource = externalSource?.can_shuffle
+    ? externalSource
+    : undefined;
+  const repeatSource = externalSource?.can_repeat ? externalSource : undefined;
+  const orderableQueue = playerQueue && !isDynamic ? playerQueue : undefined;
 
   // shuffle (queue menu only; hidden when the dedicated control is visible)
-  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
+  if (isQueue && (shuffleSource || orderableQueue) && !hideShuffleRepeat) {
+    const shuffleEnabled = shuffleSource
+      ? shuffleSource.shuffle_enabled === true
+      : orderableQueue!.shuffle_enabled;
     menuItems.push({
-      label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
+      label: shuffleEnabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
       action: () => {
-        api.queueCommandShuffleToggle(playerQueue.queue_id);
+        // the menu can sit open while the state moves, and an update lands as
+        // an Object.assign onto these, so both the target and the value are
+        // settled at click time — the source list is a fresh array by then,
+        // hence the re-resolve
+        if (shuffleSource) {
+          const current = resolveExternalSource(player, playerQueue);
+          // the source can end while the menu sits open, and the queue that
+          // takes the player back would otherwise be shuffled by a command
+          // meant for the session — with the value the entry offered inverted
+          if (!current?.can_shuffle) return;
+          api.playerCommandShuffle(
+            player.player_id,
+            current.shuffle_enabled !== true,
+          );
+        } else {
+          api.queueCommandShuffle(
+            orderableQueue!.queue_id,
+            !orderableQueue!.shuffle_enabled,
+          );
+        }
       },
-      icon: playerQueue.shuffle_enabled
-        ? "mdi-shuffle-disabled"
-        : "mdi-shuffle",
+      icon: shuffleEnabled ? "mdi-shuffle-disabled" : "mdi-shuffle",
     });
   }
 
   // repeat (queue menu only; hidden when the dedicated control is visible)
-  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
+  if (isQueue && (repeatSource || orderableQueue) && !hideShuffleRepeat) {
+    // a source that has not reported its mode reads as off
+    const repeatMode = repeatSource
+      ? (repeatSource.repeat_mode ?? RepeatMode.OFF)
+      : orderableQueue!.repeat_mode;
+    // each entry sets an explicit mode, so only the target of the command has
+    // to be settled at click time rather than the mode itself
+    const setRepeatMode = (mode: RepeatMode) => {
+      if (repeatSource) {
+        // the source can end while the menu sits open; a mode meant for its
+        // session must not land on the queue that took the player back
+        if (!resolveExternalSource(player, playerQueue)?.can_repeat) return;
+        api.playerCommandRepeat(player.player_id, mode);
+      } else {
+        api.queueCommandRepeat(orderableQueue!.queue_id, mode);
+      }
+    };
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
-      subItems: [
-        {
-          label: "repeat_mode.off",
-          labelArgs: [],
-          action: () => {
-            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.OFF);
-          },
-          selected: playerQueue.repeat_mode == RepeatMode.OFF,
+      // keys spelled out so they stay greppable for the translation sync
+      subItems: (
+        [
+          ["repeat_mode.off", RepeatMode.OFF],
+          ["repeat_mode.all", RepeatMode.ALL],
+          ["repeat_mode.one", RepeatMode.ONE],
+        ] as const
+      ).map(([label, mode]) => ({
+        label,
+        labelArgs: [],
+        action: () => {
+          setRepeatMode(mode);
         },
-        {
-          label: "repeat_mode.all",
-          labelArgs: [],
-          action: () => {
-            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.ALL);
-          },
-          selected: playerQueue.repeat_mode == RepeatMode.ALL,
-        },
-        {
-          label: "repeat_mode.one",
-          labelArgs: [],
-          action: () => {
-            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.ONE);
-          },
-          selected: playerQueue.repeat_mode == RepeatMode.ONE,
-        },
-      ],
+        selected: repeatMode == mode,
+      })),
       icon: "mdi-repeat",
     });
   }

@@ -124,7 +124,9 @@
             <CrossfadeIcon
               :size="16"
               :active="crossfadeEnabled"
-              :smart="crossfadeEnabled && smartFadesActive"
+              :smart="
+                crossfadeEnabled && smartFadesActive && !sourceCrossfadeName
+              "
             />
             <span v-if="showLabel">{{ $t("crossfade") }}</span>
           </Button>
@@ -138,7 +140,13 @@
             }}
           </p>
           <p
-            v-if="crossfadeEnabled && smartFadesActive"
+            v-if="crossfadeEnabled && sourceCrossfadeName"
+            class="mt-1 opacity-80"
+          >
+            {{ $t("crossfade_source_active", [sourceCrossfadeName]) }}
+          </p>
+          <p
+            v-else-if="crossfadeEnabled && smartFadesActive"
             class="mt-1 opacity-80"
           >
             {{ $t("crossfade_smart_active") }}
@@ -200,7 +208,10 @@ import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/Crossfad
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import api from "@/plugins/api";
-import { isQueueInfiniteStream } from "@/plugins/api/helpers";
+import {
+  isQueueInfiniteStream,
+  queueSourceCrossfadeProvider,
+} from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { AudioLines, MicVocal } from "@lucide/vue";
@@ -259,6 +270,14 @@ const crossfadeEnabled = computed(
 const smartFadesActive = computed(
   () => queue.value?.smart_fades_active === true,
 );
+
+// A source that fades its own playback does so instead of us: smart_fades_active
+// still reflects the queue setting, but none of our timing is applied, so the
+// display name of the service replaces the smart wording and its animation.
+const sourceCrossfadeName = computed(() => {
+  const provider = queueSourceCrossfadeProvider(queue.value);
+  return provider ? api.getProviderName(provider) : undefined;
+});
 
 // Crossfade only applies to an active queue that is playing regular tracks.
 // Hide the control entirely for external sources, audiosources and radio streams.

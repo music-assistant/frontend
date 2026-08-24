@@ -5,8 +5,6 @@ import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
-import { radio } from "../fixtures/radio";
-import { streamDetails } from "../fixtures/streamDetails";
 
 // Only the fields the lyrics clock and its gate read are mocked; the elapsed
 // time resolver reaches the queue through the player's active_source, so both
@@ -559,7 +557,7 @@ describe("PlayerFullscreen source badge", () => {
     return fullscreen.findAll(".sub")[0];
   }
 
-  it("names the station instead of repeating it as the album", async () => {
+  it("keeps the radio station name in the album line", async () => {
     const { store } = await import("@/plugins/store");
     const testStore = store as unknown as TestStore;
     testStore.activePlayer = {
@@ -574,29 +572,11 @@ describe("PlayerFullscreen source badge", () => {
         album: "Radio 538",
       },
     };
-    testStore.curQueueItem = {
-      queue_item_id: "qi-1",
-      media_item: radio({ name: "Radio 538" }),
-      streamdetails: streamDetails({
-        stream_metadata: {
-          title: "Live track",
-          artist: null,
-          album: null,
-          image_url: null,
-          duration: null,
-          uri: null,
-        },
-      }),
-    } as never;
 
     const fullscreen = await mountDetails();
 
-    expect(
-      fullscreen.findComponent({ name: "NowPlayingSourceBadge" }).exists(),
-    ).toBe(true);
-    // blanked, but still rendered so the artwork above keeps its height
     expect(albumLine(fullscreen).exists()).toBe(true);
-    expect(albumLine(fullscreen).text()).not.toContain("Radio 538");
+    expect(albumLine(fullscreen).text()).toContain("Radio 538");
   });
 
   it("leaves a real album on its line", async () => {

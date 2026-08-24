@@ -536,6 +536,9 @@ export enum VolumeNormalizationMode {
   FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
   FIXED_GAIN = "fixed_gain",
   FALLBACK_DYNAMIC = "fallback_dynamic",
+  // the source levelled its own audio, so the server left it alone: distinct from
+  // DISABLED, which means nothing normalized it at all
+  SOURCE = "source",
   UNKNOWN = "unknown",
 }
 
@@ -543,6 +546,8 @@ export enum CrossfadeMode {
   SMART_CROSSFADE = "smart_crossfade",
   STANDARD_CROSSFADE = "standard_crossfade",
   DISABLED = "disabled",
+  // the source crossfades its own playback, so the server does not
+  SOURCE = "source",
   UNKNOWN = "unknown",
 }
 
@@ -1019,6 +1024,9 @@ export interface PodcastEpisode extends MediaItem {
 
 export interface Genre extends MediaItem {
   genre_aliases?: string[] | null;
+  // mapped alias count (own name excluded), sent on summary listings
+  // instead of the full genre_aliases list
+  genre_alias_count?: number | null;
   // taxonomy this genre belongs to; null/undefined = music/general
   content_type?: MediaType | null;
 }
@@ -1338,6 +1346,11 @@ export interface PlayerSource {
   can_play_pause: boolean;
   can_seek: boolean;
   can_next_previous: boolean;
+  can_shuffle: boolean;
+  can_repeat: boolean;
+  // the ordering the source reports for itself; null = it has not said
+  shuffle_enabled: boolean | null;
+  repeat_mode: RepeatMode | null;
 }
 
 export interface PlayerSoundMode {
