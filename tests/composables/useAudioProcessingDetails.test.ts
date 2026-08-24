@@ -605,6 +605,74 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     );
   });
 
+  it("does not call a provider's own wider handoff an internal conversion", () => {
+    // a Spotify soloist stream: a 24-bit tier decoded upstream and handed over as
+    // 32-bit PCM, so Music Assistant received the wider container rather than made it
+    const sourceFormat = makeFormat({
+      content_type: ContentType.FLAC,
+      codec_type: ContentType.FLAC,
+      sample_rate: 44100,
+      bit_depth: 24,
+    });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S32LE,
+            codec_type: ContentType.PCM_S32LE,
+            sample_rate: 44100,
+            bit_depth: 32,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Direct signal path",
+    ]);
+  });
+
+  it("still reports an internal format that narrows the source", () => {
+    const sourceFormat = makeFormat({
+      content_type: ContentType.FLAC,
+      codec_type: ContentType.FLAC,
+      sample_rate: 44100,
+      bit_depth: 24,
+    });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: false }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Internal format conversion",
+    ]);
+  });
+
   it("does not contradict itself when only the source processed the audio", () => {
     const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
     const display = buildDisplay(

@@ -885,7 +885,7 @@ function hasMeaningfulInternalConversion(
 ): boolean {
   if (
     formatValueDiffers(sourceFormat.sample_rate, internalFormat.sample_rate) ||
-    formatValueDiffers(sourceFormat.bit_depth, internalFormat.bit_depth) ||
+    internalNarrowsBitDepth(sourceFormat, internalFormat) ||
     formatValueDiffers(sourceFormat.channels, internalFormat.channels)
   ) {
     return true;
@@ -904,6 +904,20 @@ function formatValueDiffers(
   internalValue: number,
 ): boolean {
   return sourceValue > 0 && internalValue > 0 && sourceValue !== internalValue;
+}
+
+// a wider internal container carries the source samples untouched: it is either
+// processing headroom or a provider that decoded upstream and handed over PCM
+// wider than the tier it advertises. Only narrowing drops bits.
+function internalNarrowsBitDepth(
+  sourceFormat: AudioFormat,
+  internalFormat: AudioFormat,
+): boolean {
+  return (
+    sourceFormat.bit_depth > 0 &&
+    internalFormat.bit_depth > 0 &&
+    internalFormat.bit_depth < sourceFormat.bit_depth
+  );
 }
 
 function audioFormatCodec(format: AudioFormat): string {
