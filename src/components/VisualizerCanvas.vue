@@ -524,6 +524,8 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   display: block;
+  /* An aspect-capped buffer (TV square render) is cropped, never stretched. */
+  object-fit: cover;
 }
 
 .visualizer-layer__tint {

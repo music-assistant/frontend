@@ -12,6 +12,7 @@ import {
   randomPresetName,
 } from "@/helpers/visualizer/presetLibrary";
 import {
+  boundedRenderSize,
   qualityProfile,
   type QualityProfile,
 } from "@/helpers/visualizer/quality";
@@ -157,21 +158,18 @@ export async function createVisualizerEngine(
   // textures and defaults to devicePixelRatio, double-scaling if unmanaged).
   // So: size the canvas drawing buffer ourselves, hand butterchurn those
   // same dimensions, and pin its pixelRatio to 1. The quality profile
-  // supplies the dpr cap, render scale and pixel budget (CSS stretches the
-  // result).
+  // supplies the dpr cap, render scale, aspect cap and pixel budget (CSS
+  // scales the result up; `object-fit: cover` crops when the aspect was
+  // capped below the element's).
   const deviceSize = () => {
     const scale =
       Math.min(window.devicePixelRatio || 1, profile.maxDpr) *
       profile.renderScale;
-    let width = Math.round(canvas.clientWidth * scale);
-    let height = Math.round(canvas.clientHeight * scale);
-    const budget = profile.maxPixels;
-    if (budget && width * height > budget) {
-      const shrink = Math.sqrt(budget / (width * height));
-      width = Math.max(1, Math.round(width * shrink));
-      height = Math.max(1, Math.round(height * shrink));
-    }
-    return { width, height };
+    return boundedRenderSize(
+      Math.round(canvas.clientWidth * scale),
+      Math.round(canvas.clientHeight * scale),
+      profile,
+    );
   };
   // with the shader tint, butterchurn renders into a detached canvas and the visible one shows the tinted copy
   const tintPass = options?.shaderTint ? createTintPass(canvas) : null;
