@@ -993,7 +993,7 @@ onMounted(async () => {
     // Refresh everything in the background so the restored page stays current.
     await loadRecommendationRows();
     if (unmounted) return;
-    await fetchMissingRowItems();
+    await refreshShownRowItems();
     if (unmounted) return;
     resolveHeroPicks();
     nextTick(() => {
