@@ -70,10 +70,22 @@ function touchEvent(x: number, y: number, target?: Element): TouchEvent {
   } as unknown as TouchEvent;
 }
 
-/** Makes the page look like it runs inside an installed (home screen) app. */
-function runAsInstalledApp() {
-  Object.defineProperty(window.navigator, "standalone", {
-    value: true,
+/**
+ * Frames the page in a host, as the Home Assistant panel does. The back half
+ * of the gesture is only ours there, so this is the default for these tests
+ * and `runInBrowserTab` is what opts out of it.
+ */
+function runInsideHost() {
+  Object.defineProperty(window, "top", {
+    value: {} as Window,
+    configurable: true,
+  });
+}
+
+/** Puts the page back at the top level, where the browser owns the back edge. */
+function runInBrowserTab() {
+  Object.defineProperty(window, "top", {
+    value: window,
     configurable: true,
   });
 }
@@ -144,6 +156,7 @@ async function landNavigation() {
 beforeEach(() => {
   vi.useFakeTimers();
   setViewportWidth(800);
+  runInsideHost();
 });
 
 afterEach(() => {
@@ -159,7 +172,7 @@ afterEach(() => {
   historyState.back = null;
   document.body.innerHTML = "";
   clearPagePreviews();
-  delete (window.navigator as { standalone?: boolean }).standalone;
+  runInBrowserTab();
   if (originalInnerWidth) {
     Object.defineProperty(window, "innerWidth", originalInnerWidth);
   }
@@ -375,11 +388,11 @@ describe("useEdgeSwipeNavigation", () => {
     expect(swipeStyle.value).toBeUndefined();
   });
 
-  // installed web apps get an OS back gesture over the same edge, animating a
-  // system snapshot of the previous page by itself; a second drag run next to
-  // it would paint the previous page twice, so ours stands down
-  it("leaves the back swipe to the OS in an installed web app", () => {
-    runAsInstalledApp();
+  // every mobile browser animates its own snapshot of the previous page over
+  // this edge, in a plain tab as much as in an installed app; a second drag
+  // run next to it would paint the previous page twice, so ours stands down
+  it("leaves the back swipe to the browser outside a host", () => {
+    runInBrowserTab();
     routeState.name = "album";
     historyState.back = "/discover";
     const { onTouchStart, onTouchMove, onTouchEnd, swipeStyle } =
@@ -397,9 +410,9 @@ describe("useEdgeSwipeNavigation", () => {
     expect(swipeStyle.value).toBeUndefined();
   });
 
-  // the OS gesture only takes the back half; the menu edge stays ours
-  it("still opens the menu in an installed web app", () => {
-    runAsInstalledApp();
+  // the browser gesture only takes the back half; the menu edge stays ours
+  it("still opens the menu outside a host", () => {
+    runInBrowserTab();
     historyState.back = "/settings";
     const { onTouchStart, onTouchMove } = useEdgeSwipeNavigation();
 
