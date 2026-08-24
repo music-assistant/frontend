@@ -595,6 +595,20 @@ describe("App initialization", () => {
     expect(mediaSession.playbackState).toBe("none");
   });
 
+  it("clears media controls when no component owns them", async () => {
+    const mediaSession = stubMediaSession();
+    webPlayerMock.audioSource = "disabled";
+    webPlayerMock.browserControlsMode = "active_player";
+    webPlayerMock.interacted = true;
+    webPlayerMock.tabMode = "disabled";
+
+    wrapper = await mountApp();
+
+    expect(mediaSession.metadata).toBeNull();
+    expect(mediaSession.playbackState).toBe("none");
+    expect(mediaSession.setActionHandler).toHaveBeenCalledTimes(7);
+  });
+
   it("clears browser media controls on participant routes for regular users", async () => {
     const mediaSession = stubMediaSession();
     webPlayerMock.audioSource = "controls_only";

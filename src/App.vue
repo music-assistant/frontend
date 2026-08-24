@@ -24,7 +24,6 @@
   <PlayerBrowserMediaControls
     v-if="
       webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
-      webPlayer.interacted == true &&
       selectedPlayerMediaControlsEnabled
     "
     :key="webPlayer.tabMode"
@@ -103,6 +102,7 @@ const mediaSessionDisabled = computed(() =>
 const selectedPlayerMediaControlsEnabled = computed(
   () =>
     !mediaSessionDisabled.value &&
+    webPlayer.interacted &&
     webPlayer.browserControlsMode === BrowserMediaControlsMode.ACTIVE_PLAYER &&
     webPlayer.tabMode === WebPlayerMode.CONTROLS_ONLY,
 );
@@ -110,15 +110,11 @@ const selectedPlayerMediaControlsEnabled = computed(
 watch(
   [
     mediaSessionDisabled,
-    () => webPlayer.browserControlsMode,
+    selectedPlayerMediaControlsEnabled,
     () => webPlayer.tabMode,
   ],
-  ([disabled, controlsMode, tabMode]) => {
-    if (
-      disabled ||
-      (controlsMode !== BrowserMediaControlsMode.ACTIVE_PLAYER &&
-        !isPlaybackMode(tabMode))
-    ) {
+  ([disabled, selectedControlsEnabled, tabMode]) => {
+    if (disabled || (!isPlaybackMode(tabMode) && !selectedControlsEnabled)) {
       resetMediaSession();
     }
   },
