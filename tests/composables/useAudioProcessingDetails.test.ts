@@ -44,6 +44,50 @@ vi.mock("@/plugins/api", async () => {
     },
   };
 });
+
+it.each([
+  [CrossfadeMode.SMART_CROSSFADE, "Smart"],
+  [CrossfadeMode.STANDARD_CROSSFADE, "Standard"],
+])(
+  "shows %s crossfade intent before a transition is reported",
+  (crossfadeIntent, label) => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          crossfade_mode: CrossfadeMode.DISABLED,
+        }),
+      },
+      makeFormat(),
+      crossfadeIntent,
+    );
+
+    expect(
+      display.processingStages.find((stage) => stage.key === "crossfade"),
+    ).toMatchObject({
+      title: "Crossfade",
+      subtitleParts: [label],
+    });
+  },
+);
+
+it("prefers crossfade intent over the reported fallback mode", () => {
+  const display = buildDisplay(
+    {
+      queue_processing: audioQueueProcessing({
+        crossfade_mode: CrossfadeMode.STANDARD_CROSSFADE,
+      }),
+    },
+    makeFormat(),
+    CrossfadeMode.SMART_CROSSFADE,
+  );
+
+  expect(
+    display.processingStages.find((stage) => stage.key === "crossfade"),
+  ).toMatchObject({
+    title: "Crossfade",
+    subtitleParts: ["Smart"],
+  });
+});
 vi.mock("@/composables/useDSPPresets", () => ({
   useDSPPresets: () => ({
     getPresetName: vi.fn(),
@@ -467,9 +511,12 @@ describe("buildAudioProcessingDetailsDisplay", () => {
         ],
       });
 
-      expect(display.processingStages.map((stage) => stage.title)).toContain(
-        "Crossfade: Unknown",
-      );
+      expect(
+        display.processingStages.find((stage) => stage.key === "crossfade"),
+      ).toMatchObject({
+        title: "Crossfade",
+        subtitleParts: ["Unknown"],
+      });
       expect(display.processingStages[0].details).toContain(
         "Floating-point headroom is available for: Crossfade.",
       );
@@ -526,16 +573,20 @@ describe("buildAudioProcessingDetailsDisplay", () => {
         ],
       },
       sourceFormat,
+      CrossfadeMode.SMART_CROSSFADE,
     );
 
     // both steps are reported, but neither is ours, so the shared path stays direct
     expect(display.processingStages.map((stage) => stage.title)).toEqual([
       "Direct signal path",
       "Volume normalization",
-      "Crossfade: Applied by Test provider",
+      "Crossfade",
     ]);
     const normalization = display.processingStages[1];
     expect(normalization.subtitleParts).toEqual(["Applied by Test provider"]);
+    expect(display.processingStages[2].subtitleParts).toEqual([
+      "Applied by Test provider",
+    ]);
     // our target and measurement describe neither, so there is nothing to list
     expect(normalization.details).toEqual([]);
   });
@@ -833,6 +884,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 function buildDisplay(
   chain: Partial<AudioProcessingChain> = {},
   format = makeFormat(),
+  crossfadeIntent?: CrossfadeMode,
 ) {
   return buildAudioProcessingDetailsDisplay(
     audioProcessingChain(chain),
@@ -842,6 +894,7 @@ function buildDisplay(
       audio_format: format,
     }),
     dependencies,
+    crossfadeIntent,
   );
 }
 

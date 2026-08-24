@@ -72,14 +72,20 @@ describe("PlayerFullscreenHeaderControls", () => {
   });
 
   it("does not animate a fade the source applied", () => {
-    // smart_fades_active only reflects the queue setting: none of our timing is
-    // applied here, so the twinkle would claim a fade we did not render
     seedQueue(CrossfadeMode.SOURCE);
 
     const icon = mountControls().findComponent(CrossfadeIcon);
 
-    expect(icon.props("active")).toBe(true);
     expect(icon.props("smart")).toBe(false);
+  });
+
+  it("does not animate a standard fade", () => {
+    seedQueue(CrossfadeMode.STANDARD_CROSSFADE);
+    queue.value!.smart_fades_active = false;
+
+    expect(mountControls().findComponent(CrossfadeIcon).props("smart")).toBe(
+      false,
+    );
   });
 
   it("animates our own smart fade", () => {
@@ -90,12 +96,13 @@ describe("PlayerFullscreenHeaderControls", () => {
     );
   });
 
-  it("names the service that applies the fade", () => {
+  it("mirrors the source fade details in the tooltip", () => {
     seedQueue(CrossfadeMode.SOURCE);
 
     const text = mountControls().text();
 
-    expect(text).toContain("Spotify applies the fade to this track");
-    expect(text).not.toContain("The fade timing is chosen automatically");
+    expect(text).toContain("Crossfade");
+    expect(text).toContain("Applied by Spotify");
+    expect(text).not.toContain("Disable crossfade");
   });
 });

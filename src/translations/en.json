@@ -2187,7 +2187,6 @@
     "crossfade_active": "Crossfade is active.",
     "crossfade_active_with_smart": "Crossfade is active with smart fades.",
     "crossfade_smart_active": "The fade timing is chosen automatically to suit each track.",
-    "crossfade_source_active": "{0} applies the fade to this track, not Music Assistant.",
     "lyrics": "Lyrics",
     "lyrics_unavailable_song": "There are no lyrics available for this track (yet).",
     "lyrics_unavailable_content": "Lyrics are not available for this media type.",

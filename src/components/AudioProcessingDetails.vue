@@ -110,12 +110,14 @@ import { qualityTierToColor } from "@/composables/useStreamQuality";
 import { $t } from "@/plugins/i18n";
 import type {
   AudioProcessingChain,
+  CrossfadeMode,
   StreamDetails,
 } from "@/plugins/api/interfaces";
 
 const props = defineProps<{
   chain: AudioProcessingChain;
   streamDetails: StreamDetails;
+  crossfadeIntent?: CrossfadeMode;
 }>();
 
 const {
@@ -127,6 +129,7 @@ const {
 } = useAudioProcessingDetails(
   toRef(props, "chain"),
   toRef(props, "streamDetails"),
+  toRef(props, "crossfadeIntent"),
 );
 </script>
 

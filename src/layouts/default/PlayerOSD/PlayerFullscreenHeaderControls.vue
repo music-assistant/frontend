@@ -109,8 +109,7 @@
       </Tooltip>
     </TooltipProvider>
 
-    <!-- crossfade: direct toggle (primary while enabled). The icon slowly
-         crossfades while enabled and twinkles while smart fades are active. -->
+    <!-- crossfade: direct toggle (primary while enabled) -->
     <TooltipProvider v-if="showCrossfade && queue" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
@@ -121,39 +120,13 @@
             :aria-label="$t('crossfade')"
             @click="toggleCrossfade"
           >
-            <CrossfadeIcon
-              :size="16"
-              :active="crossfadeEnabled"
-              :smart="
-                crossfadeEnabled && smartFadesActive && !sourceCrossfadeName
-              "
-            />
+            <CrossfadeIcon :size="16" :smart="smartCrossfadeActive" />
             <span v-if="showLabel">{{ $t("crossfade") }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
-          <p class="font-medium">
-            {{
-              crossfadeEnabled
-                ? $t("crossfade_disable")
-                : $t("crossfade_enable")
-            }}
-          </p>
-          <p
-            v-if="crossfadeEnabled && sourceCrossfadeName"
-            class="mt-1 opacity-80"
-          >
-            {{ $t("crossfade_source_active", [sourceCrossfadeName]) }}
-          </p>
-          <p
-            v-else-if="crossfadeEnabled && smartFadesActive"
-            class="mt-1 opacity-80"
-          >
-            {{ $t("crossfade_smart_active") }}
-          </p>
-          <p v-else-if="!crossfadeEnabled" class="mt-1 opacity-80">
-            {{ $t("crossfade_explanation") }}
-          </p>
+          <p class="font-medium">{{ $t("crossfade") }}</p>
+          <p class="mt-1 opacity-80">{{ crossfadeDescription }}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -271,12 +244,26 @@ const smartFadesActive = computed(
   () => queue.value?.smart_fades_active === true,
 );
 
-// A source that fades its own playback does so instead of us: smart_fades_active
-// still reflects the queue setting, but none of our timing is applied, so the
-// display name of the service replaces the smart wording and its animation.
 const sourceCrossfadeName = computed(() => {
   const provider = queueSourceCrossfadeProvider(queue.value);
   return provider ? api.getProviderName(provider) : undefined;
+});
+const smartCrossfadeActive = computed(
+  () =>
+    crossfadeEnabled.value &&
+    smartFadesActive.value &&
+    !sourceCrossfadeName.value,
+);
+const crossfadeDescription = computed(() => {
+  if (!crossfadeEnabled.value) return $t("crossfade_explanation");
+  if (sourceCrossfadeName.value) {
+    return $t("streamdetails.audio_processing.crossfade_mode.source", [
+      sourceCrossfadeName.value,
+    ]);
+  }
+  return smartFadesActive.value
+    ? $t("streamdetails.audio_processing.crossfade_mode.smart")
+    : $t("streamdetails.audio_processing.crossfade_mode.standard");
 });
 
 // Crossfade only applies to an active queue that is playing regular tracks.
