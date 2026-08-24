@@ -1212,10 +1212,11 @@ export const getPlaybackContextMenuItems = async function (
         disabled: !store.activePlayer,
       });
     }
-    // Play from here (podcast episode)
+    // Play from here (podcast episode). Episodes are listed newest first, so
+    // playback runs the other way: from the chosen episode forward in time.
     if (parentItem.media_type == MediaType.PODCAST) {
       playMenuItems.push({
-        label: "play_from_here",
+        label: "play_from_here_to_latest",
         action: () => {
           api.playMedia(parentItem.uri, undefined, {
             start_item: firstItem.item_id,
