@@ -45,17 +45,21 @@ export function useActiveAudioPath() {
       : CrossfadeMode.STANDARD_CROSSFADE;
   });
 
-  // a live external source only counts once no queue item is playing through it
+  // a live source only counts once no queue item is active at all — an active
+  // item with processing still pending must not fall back to a stale source
   const sourceAudio = computed(() => {
-    if (queueAudioProcessing.value) return undefined;
+    if (store.curQueueItem) return undefined;
     return store.activePlayer?.active_source_audio ?? undefined;
   });
   const sourceProviderDomain = computed(() => {
-    const source = resolveExternalSource(
-      store.activePlayer,
-      store.activePlayerQueue,
-    );
-    return source ? sourceProviderId(source.id) : undefined;
+    const player = store.activePlayer;
+    const source = resolveExternalSource(player, store.activePlayerQueue);
+    if (source) return sourceProviderId(source.id);
+    // sync/protocol child players may not carry the source_list entry
+    // themselves; active_source still follows the same "<provider>://…" id
+    return player?.active_source
+      ? sourceProviderId(player.active_source)
+      : undefined;
   });
 
   const activeAudioPath = computed<ActiveAudioPath | undefined>(() => {

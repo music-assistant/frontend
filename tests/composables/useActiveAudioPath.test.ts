@@ -126,6 +126,52 @@ describe("useActiveAudioPath", () => {
     ]);
   });
 
+  it("hides the pill for an active queue item whose processing chain has not arrived yet", () => {
+    // an active queue item with no audio_processing yet must never fall back
+    // to a source snapshot, even a stale one left over from before the queue
+    // took over playback
+    storeMock.curQueueItem = queueItem({
+      streamdetails: streamDetails({ audio_processing: null }),
+    });
+    storeMock.activePlayerQueue = playerQueue();
+    storeMock.activePlayer = player({
+      active_source_audio: {
+        input_format: audioFormat(),
+        input_fidelity: audioFidelity({ quality: AudioQuality.HI_RES }),
+        crossfade_mode: CrossfadeMode.DISABLED,
+        volume_normalization_mode: VolumeNormalizationMode.DISABLED,
+        outputs: [],
+      },
+    });
+
+    const { activeAudioPath, hasActiveAudioPath } = useActiveAudioPath();
+
+    expect(activeAudioPath.value).toBeUndefined();
+    expect(hasActiveAudioPath.value).toBe(false);
+  });
+
+  it("resolves the provider from active_source when the source list entry is missing", () => {
+    // a sync/protocol child player may not carry the source_list entry
+    // itself, but active_source still carries the provider-prefixed id
+    storeMock.activePlayer = player({
+      active_source: "airplay_receiver--1://audio_source/main",
+      source_list: [],
+      active_source_audio: {
+        input_format: audioFormat(),
+        input_fidelity: audioFidelity(),
+        crossfade_mode: CrossfadeMode.DISABLED,
+        volume_normalization_mode: VolumeNormalizationMode.DISABLED,
+        outputs: [],
+      },
+    });
+
+    const { activeAudioPath } = useActiveAudioPath();
+
+    expect(activeAudioPath.value?.streamDetails.provider).toBe(
+      "airplay_receiver--1",
+    );
+  });
+
   it("marks crossfade and normalization as source-applied only in SOURCE mode", () => {
     storeMock.activePlayer = player({
       active_source_audio: {
