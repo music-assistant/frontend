@@ -1,9 +1,5 @@
 <!--
-  Names the source producing the audio on the active player.
-
-  Live sources put the track they are streaming in the player's media, so this
-  is the only place the origin of that audio is stated outside the queue list.
-  Renders nothing while the media on screen already names itself.
+  Names the external source active on the player.
 -->
 <template>
   <Badge
@@ -20,27 +16,35 @@
     :aria-label="$t('tooltip.playing_from', [nowPlayingSource.name])"
     :title="$t('tooltip.playing_from', [nowPlayingSource.name])"
   >
-    <ProviderIcon
-      v-if="nowPlayingSource.iconDomain"
+    <img
+      v-if="iconDataUri"
       class="now-playing-source__icon"
-      :domain="nowPlayingSource.iconDomain"
-      :size="14"
+      :src="iconDataUri"
+      alt=""
+      :style="{ filter: applyInvert ? 'invert(1)' : undefined }"
     />
-    <span v-if="!iconOnly || !nowPlayingSource.iconDomain" class="truncate">
+    <AudioLines
+      v-else
+      class="now-playing-source__icon now-playing-source__fallback"
+      :size="14"
+      aria-hidden="true"
+    />
+    <span v-if="!iconOnly" class="truncate">
       {{ nowPlayingSource.name }}
     </span>
   </Badge>
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Badge } from "@/components/ui/badge";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
+import { useProviderIcon } from "@/composables/useProviderIcon";
+import { AudioLines } from "@lucide/vue";
 
 interface Props {
   /**
-   * Let the icon name the source on its own; the name stays available in the
-   * label and tooltip. Sources without an icon keep showing their name.
+   * Show only the provider or fallback icon. The name stays in the tooltip and
+   * accessible label.
    */
   iconOnly?: boolean;
   /**
@@ -54,10 +58,16 @@ interface Props {
 defineProps<Props>();
 
 const { nowPlayingSource } = useNowPlayingSource();
+const { iconDataUri, applyInvert } = useProviderIcon(
+  () => nowPlayingSource.value?.iconDomain,
+);
 </script>
 
 <style scoped>
 .now-playing-source__icon {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
+  object-fit: contain;
 }
 </style>

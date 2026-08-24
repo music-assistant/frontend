@@ -501,6 +501,245 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     );
   });
 
+  it("keeps the path direct when the source handled the processing", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.SOURCE,
+          }),
+          crossfade_mode: CrossfadeMode.SOURCE,
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    // both steps are reported, but neither is ours, so the shared path stays direct
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Direct signal path",
+      "Volume normalization",
+      "Crossfade: Applied by Test provider",
+    ]);
+    const normalization = display.processingStages[1];
+    expect(normalization.subtitleParts).toEqual(["Applied by Test provider"]);
+    // our target and measurement describe neither, so there is nothing to list
+    expect(normalization.details).toEqual([]);
+  });
+
+  it("still reports a transform of ours alongside a source-handled one", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.SOURCE,
+          }),
+          playback_speed: 1.25,
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    // the speed change is ours, so the path is no longer direct
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Volume normalization",
+      "Playback speed: 1.25x",
+    ]);
+  });
+
+  it("lets a normalization of ours suppress the direct path", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.MEASUREMENT_ONLY,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    expect(display.processingStages.map((stage) => stage.title)).not.toContain(
+      "Direct signal path",
+    );
+  });
+
+  it("does not call a provider's own wider handoff an internal conversion", () => {
+    // a Spotify soloist stream: a 24-bit tier decoded upstream and handed over as
+    // 32-bit PCM, so Music Assistant received the wider container rather than made it
+    const sourceFormat = makeFormat({
+      content_type: ContentType.FLAC,
+      codec_type: ContentType.FLAC,
+      sample_rate: 44100,
+      bit_depth: 24,
+    });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S32LE,
+            codec_type: ContentType.PCM_S32LE,
+            sample_rate: 44100,
+            bit_depth: 32,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Direct signal path",
+    ]);
+  });
+
+  it("still reports an internal format that narrows the source", () => {
+    const sourceFormat = makeFormat({
+      content_type: ContentType.FLAC,
+      codec_type: ContentType.FLAC,
+      sample_rate: 44100,
+      bit_depth: 24,
+    });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: false }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Internal format conversion",
+    ]);
+  });
+
+  it("does not contradict itself when only the source processed the audio", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.SOURCE,
+          }),
+          crossfade_mode: CrossfadeMode.SOURCE,
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            // an output that is not bit-perfect takes the other half of the fork
+            fidelity: audioFidelity({ bit_perfect: false }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    const context = display.processingStages[0];
+    expect(context.title).toBe("No shared transforms reported");
+    // the panel lists the source's two steps two rows below, so this line has to
+    // speak for us rather than for the processing model as a whole
+    expect(context.details).toContain(
+      "Music Assistant applies no normalization, crossfade, playback speed adjustment, or audio overlay.",
+    );
+  });
+
+  it("excludes source-handled processing from headroom reasons", () => {
+    const display = buildDisplay({
+      queue_processing: audioQueueProcessing({
+        pcm_format: makeFormat({
+          content_type: ContentType.PCM_F32LE,
+          codec_type: ContentType.PCM_F32LE,
+          bit_depth: 32,
+        }),
+        normalization: audioNormalizationDetails({
+          mode: VolumeNormalizationMode.SOURCE,
+        }),
+        crossfade_mode: CrossfadeMode.SOURCE,
+      }),
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["kitchen"],
+          output_format: makeFormat(),
+          fidelity: audioFidelity({ bit_perfect: false }),
+          dsp: audioDSPDetails({ state: DSPState.ENABLED, output_gain: -3 }),
+        }),
+      ],
+    });
+
+    const headroom = display.processingStages[0];
+    expect(headroom.title).toBe("Processing headroom");
+    expect(headroom.details).toContain(
+      "Floating-point headroom is available for: DSP.",
+    );
+  });
+
   it("formats every numeric detail with the supplied locale", () => {
     const format = makeFormat({
       content_type: ContentType.MP3,

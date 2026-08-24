@@ -26,14 +26,16 @@ import {
   getProviderRootDomain,
   isAudioSource,
   isQueueInfiniteStream,
+  queueSourceCrossfadeProvider,
   resolvePlayerQueue,
   waitForApiInitialization,
 } from "@/plugins/api/helpers";
-import { MediaType } from "@/plugins/api/interfaces";
+import { CrossfadeMode, MediaType } from "@/plugins/api/interfaces";
 import type {
   MediaItemType,
   PlayableMediaItemType,
   Player,
+  QueueItem,
 } from "@/plugins/api/interfaces";
 import { playerQueue } from "../../fixtures/playerQueue";
 import { queueItem } from "../../fixtures/queueItem";
@@ -59,6 +61,44 @@ describe("isAudioSource", () => {
 
   it("returns false for undefined", () => {
     expect(isAudioSource(undefined)).toBe(false);
+  });
+});
+
+describe("queueSourceCrossfadeProvider", () => {
+  const makeQueue = (crossfadeMode: CrossfadeMode | undefined) =>
+    playerQueue({
+      current_item: queueItem({
+        streamdetails: {
+          provider: "spotify--1",
+          audio_processing: crossfadeMode
+            ? { queue_processing: { crossfade_mode: crossfadeMode } }
+            : undefined,
+        },
+      } as unknown as Partial<QueueItem>),
+    });
+
+  it("returns the provider that applies the fade itself", () => {
+    expect(queueSourceCrossfadeProvider(makeQueue(CrossfadeMode.SOURCE))).toBe(
+      "spotify--1",
+    );
+  });
+
+  it("returns undefined when the fade is ours or absent", () => {
+    for (const mode of [
+      CrossfadeMode.SMART_CROSSFADE,
+      CrossfadeMode.STANDARD_CROSSFADE,
+      CrossfadeMode.DISABLED,
+      undefined,
+    ]) {
+      expect(queueSourceCrossfadeProvider(makeQueue(mode))).toBeUndefined();
+    }
+  });
+
+  it("returns undefined without a queue or a current item", () => {
+    expect(queueSourceCrossfadeProvider(undefined)).toBeUndefined();
+    expect(
+      queueSourceCrossfadeProvider(playerQueue({ current_item: null })),
+    ).toBeUndefined();
   });
 });
 

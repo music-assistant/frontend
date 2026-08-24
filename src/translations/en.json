@@ -1083,7 +1083,8 @@
                 "measurement_only": "Measured loudness",
                 "fallback_fixed_gain": "Fallback fixed gain",
                 "fixed_gain": "Fixed gain",
-                "fallback_dynamic": "Fallback dynamic"
+                "fallback_dynamic": "Fallback dynamic",
+                "source": "Applied by {0}"
             },
             "measurement": {
                 "track": "Track",
@@ -1094,7 +1095,8 @@
             "crossfade_mode": {
                 "smart": "Smart",
                 "standard": "Standard",
-                "disabled": "Disabled"
+                "disabled": "Disabled",
+                "source": "Applied by {0}"
             },
             "dsp_state": {
                 "enabled": "DSP active",
@@ -1107,9 +1109,9 @@
             "integer_pcm": "{0}-bit PCM",
             "direct_signal_path": "Direct signal path",
             "direct_signal_path_detail": "Audio passes through queue processing unchanged.",
-            "direct_signal_path_inactive_detail": "No volume normalization, crossfade, playback speed adjustment, or audio overlay is active.",
+            "direct_signal_path_inactive_detail": "Music Assistant applies no volume normalization, crossfade, playback speed adjustment, or audio overlay.",
             "no_shared_transforms": "No shared transforms reported",
-            "no_shared_transforms_detail": "No normalization, crossfade, playback speed adjustment, or audio overlay is reported by the processing model.",
+            "no_shared_transforms_detail": "Music Assistant applies no normalization, crossfade, playback speed adjustment, or audio overlay.",
             "processing_headroom": "Processing headroom",
             "processing_headroom_detail": "Music Assistant converts audio to floating point internally to create headroom and reduce clipping or precision loss during normalization, mixing, crossfade, DSP, and limiting.",
             "processing_headroom_reasons": "Floating-point headroom is available for: {0}.",
@@ -2175,6 +2177,7 @@
     "crossfade_active": "Crossfade is active.",
     "crossfade_active_with_smart": "Crossfade is active with smart fades.",
     "crossfade_smart_active": "The fade timing is chosen automatically to suit each track.",
+    "crossfade_source_active": "{0} applies the fade to this track, not Music Assistant.",
     "lyrics": "Lyrics",
     "lyrics_unavailable_song": "There are no lyrics available for this track (yet).",
     "lyrics_unavailable_content": "Lyrics are not available for this media type.",

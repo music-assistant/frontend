@@ -99,8 +99,7 @@
             </div>
           </div>
           <div class="main-media-details-track-info">
-            <!-- the source the audio comes from, when the title below is the
-                 track that source is streaming rather than the source itself -->
+            <!-- the external source streaming the media shown below -->
             <NowPlayingSourceBadge class="main-media-details-source" />
             <!-- player name as title if its powered off-->
             <v-card-title
