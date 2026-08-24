@@ -988,6 +988,7 @@ onMounted(async () => {
         ".content-section",
       ) as HTMLElement | null;
       if (el) el.scrollTop = snapshot.scrollPos;
+      observeHero();
     });
 
     // Refresh everything in the background so the restored page stays current.
