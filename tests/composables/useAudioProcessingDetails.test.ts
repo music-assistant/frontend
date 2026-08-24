@@ -45,49 +45,6 @@ vi.mock("@/plugins/api", async () => {
   };
 });
 
-it.each([
-  [CrossfadeMode.SMART_CROSSFADE, "Smart"],
-  [CrossfadeMode.STANDARD_CROSSFADE, "Standard"],
-])(
-  "shows %s crossfade intent before a transition is reported",
-  (crossfadeIntent, label) => {
-    const display = buildDisplay(
-      {
-        queue_processing: audioQueueProcessing({
-          crossfade_mode: CrossfadeMode.DISABLED,
-        }),
-      },
-      makeFormat(),
-      crossfadeIntent,
-    );
-
-    expect(
-      display.processingStages.find((stage) => stage.key === "crossfade"),
-    ).toMatchObject({
-      title: "Crossfade",
-      subtitleParts: [label],
-    });
-  },
-);
-
-it("prefers crossfade intent over the reported fallback mode", () => {
-  const display = buildDisplay(
-    {
-      queue_processing: audioQueueProcessing({
-        crossfade_mode: CrossfadeMode.STANDARD_CROSSFADE,
-      }),
-    },
-    makeFormat(),
-    CrossfadeMode.SMART_CROSSFADE,
-  );
-
-  expect(
-    display.processingStages.find((stage) => stage.key === "crossfade"),
-  ).toMatchObject({
-    title: "Crossfade",
-    subtitleParts: ["Smart"],
-  });
-});
 vi.mock("@/composables/useDSPPresets", () => ({
   useDSPPresets: () => ({
     getPresetName: vi.fn(),
@@ -546,6 +503,50 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     expect(display.processingStages[0].details).not.toContain(
       "Floating-point headroom is available for: Crossfade.",
     );
+  });
+
+  it.each([
+    [CrossfadeMode.SMART_CROSSFADE, "Smart"],
+    [CrossfadeMode.STANDARD_CROSSFADE, "Standard"],
+  ])(
+    "shows %s crossfade intent before a transition is reported",
+    (crossfadeIntent, label) => {
+      const display = buildDisplay(
+        {
+          queue_processing: audioQueueProcessing({
+            crossfade_mode: CrossfadeMode.DISABLED,
+          }),
+        },
+        makeFormat(),
+        crossfadeIntent,
+      );
+
+      expect(
+        display.processingStages.find((stage) => stage.key === "crossfade"),
+      ).toMatchObject({
+        title: "Crossfade",
+        subtitleParts: [label],
+      });
+    },
+  );
+
+  it("prefers crossfade intent over the reported fallback mode", () => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          crossfade_mode: CrossfadeMode.STANDARD_CROSSFADE,
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.SMART_CROSSFADE,
+    );
+
+    expect(
+      display.processingStages.find((stage) => stage.key === "crossfade"),
+    ).toMatchObject({
+      title: "Crossfade",
+      subtitleParts: ["Smart"],
+    });
   });
 
   it("keeps the path direct when the source handled the processing", () => {
