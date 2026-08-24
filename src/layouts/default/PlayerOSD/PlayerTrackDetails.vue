@@ -101,7 +101,7 @@
       <!-- format -->
       <div
         v-if="
-          streamDetails?.audio_format.content_type &&
+          hasActiveAudioPath &&
           !getBreakpointValue({ breakpoint: 'phone' }) &&
           showQualityDetailsBtn
         "
@@ -204,6 +204,7 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed, onUnmounted, ref, watch } from "vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import NowPlayingSourceBadge from "./NowPlayingSourceBadge.vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
@@ -258,6 +259,7 @@ onUnmounted(() => updateChapterTimer(false));
 const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
 
 const { albumSubtitle } = useNowPlayingSource();
+const { hasActiveAudioPath } = useActiveAudioPath();
 
 // properties
 interface Props {
@@ -281,11 +283,6 @@ const props = withDefaults(defineProps<Props>(), {
   primaryColor: "",
   compact: false,
   titleOpensDetails: false,
-});
-
-// computed properties
-const streamDetails = computed(() => {
-  return store.activePlayerQueue?.current_item?.streamdetails;
 });
 
 // size of the clickable artwork area; cover art fills this via its
