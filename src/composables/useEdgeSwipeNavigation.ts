@@ -3,6 +3,7 @@ import {
   useMobileSidebarSide,
   type MobileSidebarSide,
 } from "@/composables/useMobileSidebarSide";
+import { isEmbedded } from "@/helpers/embedded";
 import { canGoBack } from "@/helpers/navigation";
 import {
   capturePagePreview,
@@ -47,6 +48,12 @@ type SwipeAction = "menu" | "back";
  * to the navigation. The drag also has to commit to the horizontal axis, and
  * once it has, it keeps the gesture for the rest of the touch.
  *
+ * Mobile browsers bring their own back gesture over the same edge, so the
+ * back half of this gesture only runs when a host page frames the app (see
+ * `isEmbedded`) and keeps that gesture to itself; everywhere else the
+ * browser's animation is the only one. The menu edge is unaffected. A
+ * navigation that lands mid-gesture resets the drag on the spot.
+ *
  * Only active while the mobile sidebar is closed. Bind the returned handlers
  * as passive touchstart/touchmove/touchend/touchcancel listeners, and
  * `surfaceRef` plus `swipeStyle` on the element holding the page.
@@ -74,16 +81,42 @@ export function useEdgeSwipeNavigation() {
   let unregisterLanding: (() => void) | null = null;
   let preview: PagePreview | null = null;
   let previewKey: string | null = null;
+  // the entry behind the page when the gesture arms is what the abort
+  // compares against, so an in-place query sync can be told apart from real
+  // movement
+  let dragStartBack: unknown = null;
 
   // the DOM still shows the outgoing page when afterEach runs, which is the
   // last chance to photograph it for the swipe that later returns to it; only
   // a forward navigation leaves that page one step back, so anything else
-  // (replace, back, failed) would store a still no swipe can ever reveal
+  // (replace, back, failed) would store a still no swipe can ever reveal, and
+  // where the browser owns the back swipe no drag reveals one either
   const unregisterCapture = router.afterEach((to, from, failure) => {
     const surface = surfaceRef.value;
-    if (failure || !isMobile.value || !surface) return;
+    if (failure || !isMobile.value || !surface || systemOwnsBackSwipe()) return;
     if (router.options.history.state.back !== from.fullPath) return;
     storePagePreview(from.fullPath, capturePagePreview(surface));
+  });
+
+  // a navigation can land while a gesture is armed, dragging, or settling —
+  // the OS back gesture, a background push, a hardware back button — pulling
+  // a new page onto the live surface, so everything stops on the spot: even
+  // an action still waiting on its direction lock was decided for the page
+  // that just left. A failed navigation moved nothing, and neither does a
+  // same-page query sync replacing in place; those leave the gesture alone.
+  const unregisterAbort = router.afterEach((to, from, failure) => {
+    if (failure || parked.value) return;
+    if (!swipeAction.value && !dragging.value && !settling.value) return;
+    if (
+      to.path === from.path &&
+      router.options.history.state.back === dragStartBack
+    )
+      return;
+    clearTimeout(settleTimer);
+    settling.value = false;
+    clearGesture();
+    pageOffset.value = 0;
+    shelvePreview();
   });
 
   const swipeStyle = computed<StyleValue | undefined>(() => {
@@ -132,7 +165,10 @@ export function useEdgeSwipeNavigation() {
     swipeEdge.value = ours ? edge : null;
     swipeAction.value = ours && edge ? actionFor(edge) : null;
     trackedTouchId = swipeAction.value ? (touch.identifier ?? 0) : null;
-    if (swipeAction.value) holdGesture(event.target);
+    if (swipeAction.value) {
+      dragStartBack = router.options.history.state.back;
+      holdGesture(event.target);
+    }
   }
 
   function onTouchMove(event: TouchEvent) {
@@ -264,15 +300,7 @@ export function useEdgeSwipeNavigation() {
   }
 
   function commit() {
-    const fromPath = route.fullPath;
     slide(viewportWidth(), () => {
-      // something else navigated while the page was sliding out; a back now
-      // would pop whatever that navigation put on top instead
-      if (route.fullPath !== fromPath) {
-        pageOffset.value = 0;
-        dropPreview();
-        return;
-      }
       parked.value = true;
       router.back();
       awaitLanding();
@@ -349,6 +377,9 @@ export function useEdgeSwipeNavigation() {
     if (edge === side && (side === "right" || route.name === "discover")) {
       return "menu";
     }
+    // outside a host the browser owns this edge; claiming the touch too
+    // would paint the previous page twice
+    if (systemOwnsBackSwipe()) return null;
     return canGoBack(router) ? "back" : null;
   }
 
@@ -357,6 +388,7 @@ export function useEdgeSwipeNavigation() {
     clearTimeout(landingTimer);
     unregisterLanding?.();
     unregisterCapture();
+    unregisterAbort();
     releaseGesture();
     dropPreview();
     clearPagePreviews();
@@ -402,6 +434,15 @@ function horizontalScrollerAt(event: TouchEvent): Element | null {
     element = element.parentElement;
   }
   return null;
+}
+
+/** Whether the browser brings its own back-swipe gesture to this page. */
+function systemOwnsBackSwipe(): boolean {
+  // every mobile browser we run in claims the same edge: iOS animates a system
+  // snapshot of the previous page, Android chains the system back gesture. A
+  // second drag run next to one of those paints the previous page twice, so
+  // the gesture is only ours inside a host that keeps navigation to itself.
+  return !isEmbedded();
 }
 
 function scrollerOwnsSwipe(
