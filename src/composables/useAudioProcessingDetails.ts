@@ -147,6 +147,7 @@ const LOSSY_AUDIO_CODECS = new Set<string>([
 export function useAudioProcessingDetails(
   chain: MaybeRefOrGetter<AudioProcessingChain>,
   streamDetails: MaybeRefOrGetter<StreamDetails>,
+  crossfadeIntent: MaybeRefOrGetter<CrossfadeMode | undefined> = undefined,
 ) {
   const { t, locale } = useI18n({ useScope: "global" });
   const { getPresetName } = useDSPPresets({ optional: true });
@@ -168,6 +169,7 @@ export function useAudioProcessingDetails(
         getIRName,
         players: api.players,
       },
+      toValue(crossfadeIntent),
     );
   });
 
@@ -184,6 +186,7 @@ export function buildAudioProcessingDetailsDisplay(
   chain: AudioProcessingChain,
   streamDetails: StreamDetails,
   dependencies: AudioProcessingDetailsDependencies,
+  crossfadeIntent?: CrossfadeMode,
 ): AudioProcessingDetailsDisplay {
   return {
     inputQualityTier: audioQualityToTier(chain.input_fidelity.quality),
@@ -192,7 +195,12 @@ export function buildAudioProcessingDetailsDisplay(
       dependencies.translate,
     ),
     inputStages: buildInputStages(streamDetails, dependencies),
-    processingStages: buildProcessingStages(streamDetails, chain, dependencies),
+    processingStages: buildProcessingStages(
+      streamDetails,
+      chain,
+      dependencies,
+      crossfadeIntent,
+    ),
     outputPaths: chain.outputs.map((output, index) =>
       buildOutputDisplay(output, index, dependencies),
     ),
@@ -222,6 +230,7 @@ function buildProcessingStages(
   streamDetails: StreamDetails,
   chain: AudioProcessingChain,
   dependencies: AudioProcessingDetailsDependencies,
+  crossfadeIntent?: CrossfadeMode,
 ): AudioProcessingDisplayStage[] {
   const { translate } = dependencies;
   const stages: AudioProcessingDisplayStage[] = [];
@@ -256,15 +265,20 @@ function buildProcessingStages(
     });
     serverAltersAudio = true;
   }
-  if (processing && processing.crossfade_mode !== CrossfadeMode.DISABLED) {
+  const reportedCrossfadeMode = processing?.crossfade_mode;
+  // Keep source attribution; otherwise show the queue's current intent.
+  const crossfadeMode =
+    reportedCrossfadeMode === CrossfadeMode.SOURCE
+      ? reportedCrossfadeMode
+      : (crossfadeIntent ?? reportedCrossfadeMode);
+  serverAltersAudio ||= crossfadeAppliedByServer(reportedCrossfadeMode);
+  if (crossfadeMode && crossfadeMode !== CrossfadeMode.DISABLED) {
     stages.push({
       key: "crossfade",
       icon: CrossfadeIcon,
-      title: translate("streamdetails.audio_processing.crossfade", [
-        crossfadeModeLabel(processing.crossfade_mode, translate, sourceName),
-      ]),
+      title: translate("streamdetails.audio_processing.crossfade_title"),
+      subtitleParts: [crossfadeModeLabel(crossfadeMode, translate, sourceName)],
     });
-    serverAltersAudio ||= crossfadeAppliedByServer(processing.crossfade_mode);
   }
   if (processing?.overlay_active) {
     stages.push({
