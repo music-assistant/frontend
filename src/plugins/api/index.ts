@@ -2977,7 +2977,7 @@ export class MusicAssistantApi {
     );
   }
 
-  /** Whether the connected server accepts an explicit match_policy on import_playlist (schema >= 57). */
+  /** Whether the connected server accepts an explicit match_policy on import_playlist (schema >= 59). */
   public get supportsPlaylistMatchPolicy(): boolean {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
