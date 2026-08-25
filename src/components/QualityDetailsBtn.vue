@@ -1,6 +1,6 @@
 <template>
   <!-- streaming quality details -->
-  <Popover v-if="audioProcessing && streamDetails">
+  <Popover v-if="activeAudioPath">
     <!-- quality pill/chip trigger; pill = ghost-outline to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
@@ -37,9 +37,9 @@
         tabindex="-1"
       >
         <AudioProcessingDetails
-          :chain="audioProcessing"
-          :stream-details="streamDetails"
-          :crossfade-intent="crossfadeIntent"
+          :chain="activeAudioPath.audioProcessing"
+          :stream-details="activeAudioPath.streamDetails"
+          :crossfade-intent="activeAudioPath.crossfadeIntent"
         />
       </div>
     </PopoverContent>
@@ -62,28 +62,17 @@ import {
   qualityTierToColor,
   useStreamQuality,
 } from "@/composables/useStreamQuality";
-import { CrossfadeMode } from "@/plugins/api/interfaces";
+import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 
 // render the quality indicator as a rounded "pill" (matching the shadcn player
 // header controls) instead of the default square chip
 defineProps<{ pill?: boolean }>();
 
-const streamDetails = computed(
-  () => store.activePlayerQueue?.current_item?.streamdetails,
-);
-const audioProcessing = computed(
-  () => streamDetails.value?.audio_processing ?? undefined,
-);
-const crossfadeIntent = computed(() => {
-  const queue = store.activePlayerQueue;
-  if (!queue?.crossfade_enabled) return CrossfadeMode.DISABLED;
-  return queue.smart_fades_active
-    ? CrossfadeMode.SMART_CROSSFADE
-    : CrossfadeMode.STANDARD_CROSSFADE;
-});
+const { activeAudioPath } = useActiveAudioPath();
 
-const { minOutputQualityTier, maxOutputQualityTier } =
-  useStreamQuality(audioProcessing);
+const { minOutputQualityTier, maxOutputQualityTier } = useStreamQuality(
+  computed(() => activeAudioPath.value?.audioProcessing),
+);
 
 const qualityLabel = computed(() => {
   return qualityTierRangeLabel(
@@ -100,13 +89,16 @@ const qualityDetailsLabel = computed(() =>
 );
 const popoverFocusTarget = ref<HTMLElement>();
 
-// disable the trigger when there is no active queue with items
-const triggerDisabled = computed(
-  () =>
+// disable the trigger when there is no active queue with items; a live
+// source has no queue to check and is gated by the popover's own v-if instead
+const triggerDisabled = computed(() => {
+  if (activeAudioPath.value?.kind !== "queue") return false;
+  return (
     !store.activePlayerQueue ||
     !store.activePlayerQueue?.active ||
-    store.activePlayerQueue?.items == 0,
-);
+    store.activePlayerQueue?.items == 0
+  );
+});
 
 function focusPopoverContent(event: Event): void {
   event.preventDefault();
