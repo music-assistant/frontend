@@ -105,13 +105,7 @@
               class="mx-1 text-uppercase"
               :color="getStageColor(api.providerManifests[item.domain]?.stage)"
             >
-              {{
-                $t(
-                  String(
-                    api.providerManifests[item.domain]?.stage || "",
-                  ).toLowerCase(),
-                )
-              }}
+              {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
             </v-chip>
           </div>
         </template>
@@ -180,13 +174,7 @@
               class="mx-1 text-uppercase"
               :color="getStageColor(api.providerManifests[item.domain]?.stage)"
             >
-              {{
-                $t(
-                  String(
-                    api.providerManifests[item.domain]?.stage || "",
-                  ).toLowerCase(),
-                )
-              }}
+              {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
             </v-chip>
 
             <v-btn
@@ -268,6 +256,7 @@ import { useBackgroundTasks } from "@/composables/background-tasks/useBackground
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   canReconfigureProvider,
+  getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   providerRequiresReconfiguration,
 } from "@/helpers/provider_config";
@@ -392,7 +381,14 @@ const canReconfigure = function (provider: ProviderConfig) {
 };
 
 const shouldShowStageBadge = function (stage?: ProviderStage) {
-  return !!stage && stage !== ProviderStage.STABLE;
+  return (
+    stage !== ProviderStage.STABLE && !!getProviderStageTranslationKey(stage)
+  );
+};
+
+const getStageLabel = function (stage?: ProviderStage) {
+  const key = getProviderStageTranslationKey(stage);
+  return key ? $t(key) : "";
 };
 
 onMounted(() => {
