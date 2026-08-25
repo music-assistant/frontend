@@ -417,16 +417,23 @@ function selectPlayer(player: Player) {
     eventbus.emit("setupFlowDialog", {
       kind: "player",
       playerId: player.player_id,
+      onFlowEnded: (finished) => {
+        if (finished) activatePlayer(player.player_id);
+      },
     });
     store.showPlayersMenu = false;
     return;
   }
+  activatePlayer(player.player_id);
+  store.showPlayersMenu = false;
+}
+
+function activatePlayer(playerId: string) {
   // remember it here as well: picking the player that was already selected
   // automatically leaves store.activePlayerId untouched
   autoSelectedPlayerId = undefined;
-  rememberPlayer(player.player_id);
-  store.activePlayerId = player.player_id;
-  store.showPlayersMenu = false;
+  rememberPlayer(playerId);
+  store.activePlayerId = playerId;
 }
 
 function showVolumeControl(player: Player) {
