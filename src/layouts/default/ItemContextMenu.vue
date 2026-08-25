@@ -281,6 +281,7 @@ import {
   radioSupported,
 } from "@/helpers/radio";
 import {
+  getPlaylistMigrationProviders,
   isAudioSource,
   isItemInLibrary,
   itemIsAvailable,
@@ -309,6 +310,7 @@ import { toast } from "vue-sonner";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
   ArrowDown,
+  ArrowRightLeft,
   ArrowUp,
   Disc3,
   Download,
@@ -1006,6 +1008,27 @@ export const getContextMenuItems = async function (
       },
       icon: Download,
     });
+  }
+  // migrate playlist (static library playlists only, to a provider that
+  // supports creating playlists and editing their tracks)
+  if (
+    items.length === 1 &&
+    items[0] == parentItem &&
+    items[0].media_type === MediaType.PLAYLIST &&
+    items[0].provider === "library" &&
+    !(items[0] as Playlist).is_dynamic
+  ) {
+    const playlist = items[0] as Playlist;
+    if (getPlaylistMigrationProviders(playlist).length > 0) {
+      contextMenuItems.push({
+        label: "migrate_playlist.action",
+        labelArgs: [],
+        action: () => {
+          eventbus.emit("migratePlaylistDialog", { playlist });
+        },
+        icon: ArrowRightLeft,
+      });
+    }
   }
   // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook, genre)
   if (items.length === 1 && isShortcutItem(items[0]) && !!items[0].uri) {

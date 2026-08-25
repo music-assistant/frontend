@@ -943,6 +943,28 @@ export class MusicAssistantApi {
     });
   }
 
+  public migratePlaylist(
+    db_playlist_id: string | number,
+    destination_provider: string,
+    match_policy: PlaylistMatchPolicy,
+    name?: string,
+  ): Promise<BackgroundTask> {
+    return this.sendCommand<BackgroundTask>(
+      "music/playlists/migrate_playlist",
+      {
+        db_playlist_id,
+        destination_provider,
+        match_policy,
+        name,
+      },
+      // the dialog shows its own error toast; avoid a duplicate global one.
+      { suppressGlobalError: true },
+    ).then((task) => {
+      this._notifyBackgroundTaskStarted(task);
+      return task;
+    });
+  }
+
   public createSmartPlaylist(
     name: string,
     rules: SmartPlaylistRules,
