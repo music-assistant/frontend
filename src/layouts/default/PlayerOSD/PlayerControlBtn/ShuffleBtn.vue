@@ -24,6 +24,7 @@ import Icon, { IconProps } from "@/components/Icon.vue";
 import ShuffleIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleIcon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import { useExternalSource } from "@/composables/externalSource";
+import { resolveActiveSourceId } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { Player, PlayerQueue } from "@/plugins/api/interfaces";
@@ -89,6 +90,8 @@ const shuffleActive = computed(() =>
 // the queue's own reasons for being unavailable.
 const isDisabled = computed(() => {
   if (isLoading.value) return true;
+  // the command is addressed to the player, so there is nothing to send without one
+  if (!compProps.player) return true;
   if (orderingSource.value) return false;
   return (
     !compProps.playerQueue ||
@@ -106,14 +109,15 @@ const shuffleTitle = computed(() => {
   return shuffleActive.value ? $t("shuffle_disable") : $t("shuffle_enable");
 });
 
+// The command names the source the state being inverted was read from, so it
+// applies to whatever is playing — the live session or the queue — and never to
+// something that took the player in between.
 function toggleShuffle() {
-  if (orderingSource.value && compProps.player) {
-    api.playerCommandShuffle(compProps.player.player_id, !shuffleActive.value);
-    return;
-  }
-  api.queueCommandShuffle(
-    compProps.playerQueue?.queue_id || "",
+  if (!compProps.player) return;
+  api.playerCommandShuffle(
+    compProps.player.player_id,
     !shuffleActive.value,
+    resolveActiveSourceId(compProps.player),
   );
 }
 </script>

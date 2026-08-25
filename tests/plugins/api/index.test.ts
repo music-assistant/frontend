@@ -3,6 +3,7 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  RepeatMode,
   type ServerInfoMessage,
   type SuccessResultMessage,
 } from "@/plugins/api/interfaces";
@@ -209,6 +210,50 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(result).resolves.toEqual(config);
+  });
+
+  // the server refuses a command whose source is no longer playing, so both
+  // carry the source they were aimed at
+  it("names the source a shuffle or repeat was aimed at", () => {
+    api.playerCommandShuffle("player-1", true, "spotify://audio_source/main");
+
+    expect(transport.lastCommand.command).toBe("players/cmd/shuffle");
+    expect(transport.lastCommand.args).toEqual({
+      player_id: "player-1",
+      shuffle_enabled: true,
+      source_id: "spotify://audio_source/main",
+    });
+
+    api.playerCommandRepeat("player-1", RepeatMode.ALL, "player-1");
+
+    expect(transport.lastCommand.command).toBe("players/cmd/repeat");
+    expect(transport.lastCommand.args).toEqual({
+      player_id: "player-1",
+      repeat_mode: RepeatMode.ALL,
+      source_id: "player-1",
+    });
+  });
+
+  // a refusal is the guard doing its job, and the server localizes it down to a
+  // generic "the command failed", so putting it in front of the user only
+  // confuses — the control was simply aimed at something that stopped playing
+  it("swallows a refused ordering command without a toast", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const command = api.playerCommandShuffle("player-1", true, "gone");
+
+    transport.receive(
+      createErrorResult(
+        transport.lastCommand,
+        "The source this was meant for is no longer playing on Kitchen.",
+      ),
+    );
+
+    await expect(command).resolves.toBeUndefined();
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(mockToastError).not.toHaveBeenCalled();
   });
 
   it("rejects in-flight commands when the connection closes", async () => {

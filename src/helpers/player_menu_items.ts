@@ -12,6 +12,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { resolveExternalSource } from "@/composables/externalSource";
+import { resolveActiveSourceId } from "@/composables/activeSource";
 import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
@@ -115,6 +116,10 @@ export const getPlayerMenuItems = (
     : undefined;
   const repeatSource = externalSource?.can_repeat ? externalSource : undefined;
   const orderableQueue = playerQueue && !isDynamic ? playerQueue : undefined;
+  // the source the shuffle/repeat entries below are built for. Naming it on the
+  // command lets the server refuse one whose source stopped playing while the
+  // menu sat open, rather than let it land on whatever took the player since.
+  const commandSourceId = resolveActiveSourceId(player);
 
   // shuffle (queue menu only; hidden when the dedicated control is visible)
   if (isQueue && (shuffleSource || orderableQueue) && !hideShuffleRepeat) {
@@ -126,25 +131,12 @@ export const getPlayerMenuItems = (
       labelArgs: [],
       action: () => {
         // the menu can sit open while the state moves, and an update lands as
-        // an Object.assign onto these, so both the target and the value are
-        // settled at click time — the source list is a fresh array by then,
-        // hence the re-resolve
-        if (shuffleSource) {
-          const current = resolveExternalSource(player, playerQueue);
-          // the source can end while the menu sits open, and the queue that
-          // takes the player back would otherwise be shuffled by a command
-          // meant for the session — with the value the entry offered inverted
-          if (!current?.can_shuffle) return;
-          api.playerCommandShuffle(
-            player.player_id,
-            current.shuffle_enabled !== true,
-          );
-        } else {
-          api.queueCommandShuffle(
-            orderableQueue!.queue_id,
-            !orderableQueue!.shuffle_enabled,
-          );
-        }
+        // an Object.assign onto these, so the value is settled at click time —
+        // the source list is a fresh array by then, hence the re-resolve
+        const enabled = shuffleSource
+          ? resolveExternalSource(player, playerQueue)?.shuffle_enabled === true
+          : orderableQueue!.shuffle_enabled === true;
+        api.playerCommandShuffle(player.player_id, !enabled, commandSourceId);
       },
       icon: shuffleEnabled ? "mdi-shuffle-disabled" : "mdi-shuffle",
     });
@@ -156,18 +148,6 @@ export const getPlayerMenuItems = (
     const repeatMode = repeatSource
       ? (repeatSource.repeat_mode ?? RepeatMode.OFF)
       : orderableQueue!.repeat_mode;
-    // each entry sets an explicit mode, so only the target of the command has
-    // to be settled at click time rather than the mode itself
-    const setRepeatMode = (mode: RepeatMode) => {
-      if (repeatSource) {
-        // the source can end while the menu sits open; a mode meant for its
-        // session must not land on the queue that took the player back
-        if (!resolveExternalSource(player, playerQueue)?.can_repeat) return;
-        api.playerCommandRepeat(player.player_id, mode);
-      } else {
-        api.queueCommandRepeat(orderableQueue!.queue_id, mode);
-      }
-    };
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
@@ -182,7 +162,7 @@ export const getPlayerMenuItems = (
         label,
         labelArgs: [],
         action: () => {
-          setRepeatMode(mode);
+          api.playerCommandRepeat(player.player_id, mode, commandSourceId);
         },
         selected: repeatMode == mode,
       })),
