@@ -1805,21 +1805,44 @@ export class MusicAssistantApi {
   public playerCommandSeek(playerId: string, position: number) {
     this.playerCommand(playerId, "seek", { position });
   }
+  /**
+   * Set shuffle on whatever a player is playing.
+   *
+   * A live external source orders its own session, an MA queue orders its own
+   * items. Pass the source the command was aimed at (`resolveActiveSourceId`):
+   * the server refuses it when that source is no longer the one playing, which
+   * is the guard doing its job rather than a failure to report, so the refusal
+   * is swallowed instead of toasted.
+   */
   public playerCommandShuffle(
     playerId: string,
     shuffle_enabled: boolean,
+    source_id: string,
   ): Promise<void> {
-    // Configure shuffle on whatever the player is playing: a live external
-    // source orders its own session, an MA queue orders its own items.
-    return this.playerCommand(playerId, "shuffle", { shuffle_enabled });
+    return this.playerCommand(
+      playerId,
+      "shuffle",
+      { shuffle_enabled, source_id },
+      { suppressGlobalError: true },
+    ).catch(() => undefined);
   }
+  /**
+   * Set the repeat mode on whatever a player is playing.
+   *
+   * Takes and refuses `source_id` the same way {@link playerCommandShuffle}
+   * does.
+   */
   public playerCommandRepeat(
     playerId: string,
     repeat_mode: RepeatMode,
+    source_id: string,
   ): Promise<void> {
-    // Configure repeat on whatever the player is playing: a live external
-    // source repeats within its own session, an MA queue repeats its own items.
-    return this.playerCommand(playerId, "repeat", { repeat_mode });
+    return this.playerCommand(
+      playerId,
+      "repeat",
+      { repeat_mode, source_id },
+      { suppressGlobalError: true },
+    ).catch(() => undefined);
   }
 
   public playerCommandPower(playerId: string, powered: boolean): Promise<void> {
@@ -1986,14 +2009,19 @@ export class MusicAssistantApi {
     player_id: string,
     command: string,
     args?: Record<string, unknown>,
+    options?: { suppressGlobalError?: boolean },
   ): Promise<void> {
     /*
       Handle command to player
     */
-    return this.sendCommand(`players/cmd/${command}`, {
-      player_id,
-      ...args,
-    });
+    return this.sendCommand(
+      `players/cmd/${command}`,
+      {
+        player_id,
+        ...args,
+      },
+      options,
+    );
   }
 
   public removePlayer(playerId: string): Promise<void> {
