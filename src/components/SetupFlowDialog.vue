@@ -450,7 +450,7 @@ const canSubmit = computed(
 // A step whose only field is a required list of options has nothing else to
 // fill in, so picking one submits it.
 const autoAdvanceEntry = computed(() => {
-  const interactive = formEntries.value.filter(
+  const interactive = visibleFormEntries.value.filter(
     (entry) => !NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type),
   );
   if (interactive.length !== 1) return undefined;

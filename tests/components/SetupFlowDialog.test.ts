@@ -363,6 +363,18 @@ describe("SetupFlowDialog", () => {
     ]);
   });
 
+  it("ignores a hidden field when deciding to submit on pick", async () => {
+    apiMock.submitSetupFlow.mockResolvedValue(progressStep("submitted"));
+    const wrapper = await mountFormStep([
+      entry({ key: "token", type: ConfigEntryType.STRING, hidden: true }),
+      choiceEntry(),
+    ]);
+
+    await pickOption(wrapper, "b");
+
+    expect(apiMock.submitSetupFlow).toHaveBeenCalledOnce();
+  });
+
   it("waits for the button when a second field shares the form", async () => {
     const wrapper = await mountFormStep([
       choiceEntry(),
