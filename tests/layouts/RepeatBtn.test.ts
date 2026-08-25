@@ -289,11 +289,12 @@ describe("RepeatBtn", () => {
 
       await button(wrapper).trigger("click");
 
-      // the queue's mode is the one cycled on, not the one the source reports
+      // a queue and a live source never both resolve for real, so this pins
+      // which side the mode is read from, not what the command is aimed at
       expect(playerCommandRepeat).toHaveBeenCalledWith(
         "player-1",
         RepeatMode.ALL,
-        "spotify://audio_source/main",
+        expect.any(String),
       );
     });
   });

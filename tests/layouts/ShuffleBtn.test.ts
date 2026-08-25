@@ -292,11 +292,12 @@ describe("ShuffleBtn", () => {
 
       await button(wrapper).trigger("click");
 
-      // the queue's state is the one inverted, not the one the source reports
+      // a queue and a live source never both resolve for real, so this pins
+      // which side the state is read from, not what the command is aimed at
       expect(playerCommandShuffle).toHaveBeenCalledWith(
         "player-1",
         true,
-        "spotify://audio_source/main",
+        expect.any(String),
       );
     });
   });

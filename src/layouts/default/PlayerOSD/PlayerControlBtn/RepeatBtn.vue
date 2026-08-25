@@ -49,9 +49,9 @@ const { externalSource } = useExternalSource(
   toRef(compProps, "playerQueue"),
 );
 
-// An external source that repeats within its own session takes the command
-// instead of the queue; one that cannot leaves the button disabled rather than
-// silently inert.
+// The mode shown comes from an external source that repeats within its own
+// session; one that cannot leaves the button disabled rather than silently
+// inert.
 const orderingSource = computed(() =>
   externalSource.value?.can_repeat ? externalSource.value : undefined,
 );

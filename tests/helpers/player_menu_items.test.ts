@@ -829,7 +829,7 @@ describe("shuffle and repeat", () => {
 
   // the source can end while the menu sits open, and the player's own queue
   // takes it back — a command meant for the session must not land there
-  it("still names the source that ended while the menu was open", () => {
+  it("still names the shuffle source that ended while the menu was open", () => {
     const player = playerOnSource({ can_shuffle: true, shuffle_enabled: true });
     const item = entry(player, "shuffle_disable");
 
@@ -895,7 +895,7 @@ describe("shuffle and repeat", () => {
     );
   });
 
-  it("still names the source that ended while the menu was open", () => {
+  it("still names the repeat source that ended while the menu was open", () => {
     const player = playerOnSource({ can_repeat: true });
     const item = entry(player, "select_repeat_mode");
 
