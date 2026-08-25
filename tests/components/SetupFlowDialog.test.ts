@@ -12,6 +12,7 @@ import {
   type SetupFlowStep,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import type { SetupFlowDialogEvent } from "@/plugins/eventbus";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 
 const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
@@ -26,6 +27,7 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
         },
       },
       reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
+      setupPlayer: vi.fn<MusicAssistantApi["setupPlayer"]>(),
       state: {
         value: "authenticated",
       },
@@ -49,11 +51,7 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
 );
 
 let launchSetupFlow:
-  | ((event: {
-      kind: "reconfigure";
-      instanceId: string;
-      onFlowEnded: () => void;
-    }) => Promise<void>)
+  | ((event: SetupFlowDialogEvent) => Promise<void>)
   | undefined;
 
 vi.mock("@/plugins/api", () => ({
@@ -139,6 +137,27 @@ describe("SetupFlowDialog", () => {
       await flushPromises();
 
       expect(onFlowEnded).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each([
+    { type: FlowStepType.FINISH, finished: true },
+    { type: FlowStepType.ABORT, finished: false },
+  ])(
+    "reports finished=$finished when a player flow ends with $type",
+    async ({ type, finished }) => {
+      apiMock.setupPlayer.mockResolvedValue(terminalStep(type));
+      const onFlowEnded = vi.fn();
+      shallowMount(SetupFlowDialog);
+
+      await launchSetupFlow?.({
+        kind: "player",
+        playerId: "player-1",
+        onFlowEnded,
+      });
+      await flushPromises();
+
+      expect(onFlowEnded).toHaveBeenCalledExactlyOnceWith(finished);
     },
   );
 
