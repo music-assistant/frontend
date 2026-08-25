@@ -247,14 +247,16 @@ describe("MusicAssistantApi error handling", () => {
     };
 
     const refuse = () => {
-      vi.spyOn(console, "debug").mockImplementation(() => {});
+      const consoleDebug = vi
+        .spyOn(console, "debug")
+        .mockImplementation(() => {});
       const consoleError = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
       transport.receive(
         createErrorResult(transport.lastCommand, "The command failed."),
       );
-      return consoleError;
+      return { consoleDebug, consoleError };
     };
 
     // the control was aimed at something that stopped playing, so the refusal
@@ -269,11 +271,13 @@ describe("MusicAssistantApi error handling", () => {
       playerOn("took-over");
       const command = send();
 
-      const consoleError = refuse();
+      const { consoleDebug, consoleError } = refuse();
 
       await expect(command).resolves.toBeUndefined();
       expect(consoleError).not.toHaveBeenCalled();
       expect(mockToastError).not.toHaveBeenCalled();
+      // the quiet branch ran, rather than the error never being handled at all
+      expect(consoleDebug).toHaveBeenCalled();
     });
 
     // still the source it was aimed at, so something genuinely went wrong
@@ -288,7 +292,7 @@ describe("MusicAssistantApi error handling", () => {
       playerOn("playing");
       const command = send();
 
-      const consoleError = refuse();
+      const { consoleError } = refuse();
 
       await expect(command).resolves.toBeUndefined();
       expect(consoleError).toHaveBeenCalled();
@@ -302,7 +306,31 @@ describe("MusicAssistantApi error handling", () => {
       const command = api.playerCommandShuffle("player-1", true, "playing");
 
       playerOn("took-over");
-      const consoleError = refuse();
+      const { consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    // a player playing nothing but its own queue reports no active_source, and
+    // the server resolves that to the player's own id — so the id the control
+    // named still matches and the failure is real
+    it("surfaces a real failure on a player's own queue", async () => {
+      playerOn(null);
+      const command = api.playerCommandShuffle("player-1", true, "player-1");
+
+      refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
+
+    it("stays quiet when a player fell back to its own queue", async () => {
+      playerOn(null);
+      const command = api.playerCommandShuffle("player-1", true, "gone");
+
+      const { consoleError } = refuse();
 
       await expect(command).resolves.toBeUndefined();
       expect(consoleError).not.toHaveBeenCalled();
@@ -318,6 +346,34 @@ describe("MusicAssistantApi error handling", () => {
       await expect(command).resolves.toBeUndefined();
       expect(mockToastError).toHaveBeenCalledWith("The command failed.");
     });
+  });
+
+  // the predicate runs inside the message pump, so a throwing one must not take
+  // the reply (or the command waiting on it) with it
+  it("surfaces the failure when a suppression predicate throws", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const command = api.sendCommand("test/throwing", undefined, {
+      suppressGlobalError: () => {
+        throw new Error("predicate blew up");
+      },
+    });
+    const rejection = expect(command).rejects.toMatchObject({
+      message: "Visible failure",
+    });
+
+    transport.receive(
+      createErrorResult(transport.lastCommand, "Visible failure"),
+    );
+
+    await rejection;
+    expect(mockToastError).toHaveBeenCalledWith("Visible failure");
+    expect(consoleError).toHaveBeenCalledWith(
+      "[resultMessage] suppression check failed",
+      expect.any(Error),
+    );
+    expect(api["commands"].size).toBe(0);
   });
 
   it("rejects in-flight commands when the connection closes", async () => {

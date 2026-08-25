@@ -89,10 +89,10 @@ export interface CommandOptions {
    * best-effort command whose failure the caller handles (or expects) itself.
    *
    * Pass a predicate for a command where only some failures are expected: it is
-   * evaluated against the error when it arrives. The returned promise rejects
-   * either way.
+   * evaluated when the error arrives, not when the command is sent. The
+   * returned promise rejects either way.
    */
-  suppressGlobalError?: boolean | ((error: ErrorResultMessage) => boolean);
+  suppressGlobalError?: boolean | (() => boolean);
 }
 
 export interface PlayMediaOptions {
@@ -2853,8 +2853,7 @@ export class MusicAssistantApi {
     if ("error_code" in msg) {
       // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
-      const suppress = resultPromise?.suppressGlobalError;
-      if (typeof suppress === "function" ? suppress(msg) : suppress) {
+      if (this.isGlobalErrorSuppressed(resultPromise?.suppressGlobalError)) {
         // The caller opted out of global error handling (expected/best-effort
         // failure); it still receives the rejection below.
         console.debug("[resultMessage]", msg);
@@ -3504,11 +3503,31 @@ export class MusicAssistantApi {
   }
 
   /**
+   * Whether an error result skips the global console.error + error toast.
+   *
+   * A caller's predicate must never take down the message pump or the command
+   * still waiting on this reply, so one that throws falls back to showing the
+   * failure.
+   */
+  private isGlobalErrorSuppressed(
+    suppress: CommandOptions["suppressGlobalError"],
+  ): boolean {
+    if (typeof suppress !== "function") return !!suppress;
+    try {
+      return suppress();
+    } catch (err) {
+      console.error("[resultMessage] suppression check failed", err);
+      return false;
+    }
+  }
+
+  /**
    * Whether a player has since moved on from the source a command named.
    *
    * Identifies the server's refusal of a command aimed at a source that stopped
-   * playing: the player is moved on before the command is handled, so the state
-   * update has landed by the time the refusal comes back.
+   * playing. The player is moved on before the command is handled, and both
+   * messages share one ordered queue, so the state update has always landed by
+   * the time the refusal comes back.
    */
   private hasMovedOnFrom(playerId: string, sourceId: string): boolean {
     const player = this.players[playerId];
