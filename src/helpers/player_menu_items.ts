@@ -54,9 +54,9 @@ export const getPlayerSetupMenuItem = (
 
 export const getPlayerMenuItems = (
   player: Player,
-  // the player's own queue, i.e. resolvePlayerQueue(player) — the shuffle and
-  // repeat state and the source those commands are aimed at are both derived
-  // from this pair
+  // the queue playing on this player, i.e. resolvePlayerQueue(player) — the
+  // shuffle and repeat state and the source those commands are aimed at are
+  // both derived from this pair
   playerQueue: PlayerQueue | undefined,
   options: {
     // which surface this menu is rendered on:
