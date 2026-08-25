@@ -382,7 +382,7 @@ describe("MusicAssistantApi error handling", () => {
   });
 
   it("imports a playlist with the chosen match policy", async () => {
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 57 };
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 59 };
     const result = api.importPlaylist(
       "#EXTM3U",
       true,
@@ -419,13 +419,13 @@ describe("MusicAssistantApi error handling", () => {
     });
   });
 
-  it("reports playlist match policy support once the server reaches schema 57", () => {
+  it("reports playlist match policy support once the server reaches schema 59", () => {
     expect(api.supportsPlaylistMatchPolicy).toBe(false);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 57 };
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 59 };
     expect(api.supportsPlaylistMatchPolicy).toBe(true);
 
-    api.serverInfo.value = { ...SERVER_INFO, schema_version: 56 };
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 58 };
     expect(api.supportsPlaylistMatchPolicy).toBe(false);
   });
 

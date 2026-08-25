@@ -99,8 +99,8 @@ export interface CommandOptions {
   suppressGlobalError?: boolean | (() => boolean);
 }
 
-// The match_policy argument on music/playlists/import_playlist landed in API schema 57.
-const IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION = 57;
+// The match_policy argument on music/playlists/import_playlist landed in API schema 59.
+const IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION = 59;
 
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
