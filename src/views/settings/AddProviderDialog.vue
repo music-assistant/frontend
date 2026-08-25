@@ -50,7 +50,7 @@
             </div>
             <div class="provider-actions">
               <Badge
-                v-if="getStageLabel(provider.stage)"
+                v-if="getProviderStageTranslationKey(provider.stage)"
                 :variant="getStageVariant(provider.stage)"
                 class="text-uppercase"
               >
