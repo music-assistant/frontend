@@ -3,6 +3,8 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  type Player,
+  RepeatMode,
   type ServerInfoMessage,
   type SuccessResultMessage,
 } from "@/plugins/api/interfaces";
@@ -209,6 +211,169 @@ describe("MusicAssistantApi error handling", () => {
       partial: false,
     });
     await expect(result).resolves.toEqual(config);
+  });
+
+  // the server refuses a command whose source is no longer playing, so both
+  // carry the source they were aimed at
+  it("names the source a shuffle or repeat was aimed at", () => {
+    api.playerCommandShuffle("player-1", true, "spotify://audio_source/main");
+
+    expect(transport.lastCommand.command).toBe("players/cmd/shuffle");
+    expect(transport.lastCommand.args).toEqual({
+      player_id: "player-1",
+      shuffle_enabled: true,
+      source_id: "spotify://audio_source/main",
+    });
+
+    api.playerCommandRepeat("player-1", RepeatMode.ALL, "player-1");
+
+    expect(transport.lastCommand.command).toBe("players/cmd/repeat");
+    expect(transport.lastCommand.args).toEqual({
+      player_id: "player-1",
+      repeat_mode: RepeatMode.ALL,
+      source_id: "player-1",
+    });
+  });
+
+  describe("a refused ordering command", () => {
+    // the server refuses every one of these with the same code and the same
+    // localized "the command failed", so the player's own state is what tells
+    // the guard doing its job apart from something that actually went wrong
+    const playerOn = (activeSource: string | null) => {
+      api.players["player-1"] = {
+        player_id: "player-1",
+        active_source: activeSource,
+      } as Player;
+    };
+
+    const refuse = () => {
+      const consoleDebug = vi
+        .spyOn(console, "debug")
+        .mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      transport.receive(
+        createErrorResult(transport.lastCommand, "The command failed."),
+      );
+      return { consoleDebug, consoleError };
+    };
+
+    // the control was aimed at something that stopped playing, so the refusal
+    // is expected; putting it in front of the user would only confuse
+    it.each([
+      ["shuffle", () => api.playerCommandShuffle("player-1", true, "gone")],
+      [
+        "repeat",
+        () => api.playerCommandRepeat("player-1", RepeatMode.ALL, "gone"),
+      ],
+    ])("stays quiet when the player moved on (%s)", async (_name, send) => {
+      playerOn("took-over");
+      const command = send();
+
+      const { consoleDebug, consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+      // the quiet branch ran, rather than the error never being handled at all
+      expect(consoleDebug).toHaveBeenCalled();
+    });
+
+    // still the source it was aimed at, so something genuinely went wrong
+    // (a device or provider error) and the user deserves to hear about it
+    it.each([
+      ["shuffle", () => api.playerCommandShuffle("player-1", true, "playing")],
+      [
+        "repeat",
+        () => api.playerCommandRepeat("player-1", RepeatMode.ALL, "playing"),
+      ],
+    ])("surfaces a real failure (%s)", async (_name, send) => {
+      playerOn("playing");
+      const command = send();
+
+      const { consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).toHaveBeenCalled();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
+
+    // the whole point: the source moves between the click and the reply, so a
+    // decision taken when the command was sent would get this backwards
+    it("decides when the refusal arrives, not when the command was sent", async () => {
+      playerOn("playing");
+      const command = api.playerCommandShuffle("player-1", true, "playing");
+
+      playerOn("took-over");
+      const { consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    // a player playing nothing but its own queue reports no active_source, and
+    // the server resolves that to the player's own id — so the id the control
+    // named still matches and the failure is real
+    it("surfaces a real failure on a player's own queue", async () => {
+      playerOn(null);
+      const command = api.playerCommandShuffle("player-1", true, "player-1");
+
+      refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
+
+    it("stays quiet when a player fell back to its own queue", async () => {
+      playerOn(null);
+      const command = api.playerCommandShuffle("player-1", true, "gone");
+
+      const { consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    // nothing to compare against, so fall back to telling the user
+    it("surfaces a failure for a player it does not know", async () => {
+      const command = api.playerCommandShuffle("player-1", true, "gone");
+
+      refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
+  });
+
+  // the predicate runs inside the message pump, so a throwing one must not take
+  // the reply (or the command waiting on it) with it
+  it("surfaces the failure when a suppression predicate throws", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const command = api.sendCommand("test/throwing", undefined, {
+      suppressGlobalError: () => {
+        throw new Error("predicate blew up");
+      },
+    });
+    const rejection = expect(command).rejects.toMatchObject({
+      message: "Visible failure",
+    });
+
+    transport.receive(
+      createErrorResult(transport.lastCommand, "Visible failure"),
+    );
+
+    await rejection;
+    expect(mockToastError).toHaveBeenCalledWith("Visible failure");
+    expect(consoleError).toHaveBeenCalledWith(
+      "[resultMessage] suppression check failed",
+      expect.any(Error),
+    );
+    expect(api["commands"].size).toBe(0);
   });
 
   it("rejects in-flight commands when the connection closes", async () => {

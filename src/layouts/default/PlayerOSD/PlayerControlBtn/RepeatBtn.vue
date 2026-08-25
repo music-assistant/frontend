@@ -24,6 +24,7 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import { useExternalSource } from "@/composables/externalSource";
+import { resolveActiveSourceId } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { Player, PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
@@ -34,6 +35,9 @@ import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 // properties
 export interface Props {
   player: Player | undefined;
+  // the queue playing on this player, i.e. resolvePlayerQueue(player) — the
+  // state shown and the source the command is aimed at are both derived from
+  // this pair
   playerQueue: PlayerQueue | undefined;
   icon?: IconProps;
   size?: number;
@@ -48,9 +52,9 @@ const { externalSource } = useExternalSource(
   toRef(compProps, "playerQueue"),
 );
 
-// An external source that repeats within its own session takes the command
-// instead of the queue; one that cannot leaves the button disabled rather than
-// silently inert.
+// The mode shown comes from an external source that repeats within its own
+// session; one that cannot leaves the button disabled rather than silently
+// inert.
 const orderingSource = computed(() =>
   externalSource.value?.can_repeat ? externalSource.value : undefined,
 );
@@ -88,6 +92,8 @@ const nextRepeatMode = computed<RepeatMode>(() => {
 // the queue's own reasons for being unavailable.
 const isDisabled = computed(() => {
   if (isLoading.value) return true;
+  // the command is addressed to the player, so there is nothing to send without one
+  if (!compProps.player) return true;
   if (orderingSource.value) return false;
   return (
     !compProps.playerQueue ||
@@ -102,14 +108,15 @@ const repeatTitle = computed<string | undefined>(() =>
   isDynamic.value ? $t("repeat_dynamic_unavailable") : undefined,
 );
 
+// The command names the source the mode being cycled was read from, so it
+// applies to whatever is playing — the live session or the queue — and never to
+// something that took the player in between.
 function cycleRepeatMode() {
-  if (orderingSource.value && compProps.player) {
-    api.playerCommandRepeat(compProps.player.player_id, nextRepeatMode.value);
-    return;
-  }
-  api.queueCommandRepeat(
-    compProps.playerQueue?.queue_id || "",
+  if (!compProps.player) return;
+  api.playerCommandRepeat(
+    compProps.player.player_id,
     nextRepeatMode.value,
+    resolveActiveSourceId(compProps.player),
   );
 }
 </script>

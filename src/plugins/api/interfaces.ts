@@ -699,7 +699,8 @@ export interface ConfigEntry {
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
   // expanded_options [optional]: render the options inline - all of them, with their
-  // descriptions, visible at once (e.g. as a radio group) - instead of behind a dropdown.
+  // descriptions, visible at once - instead of behind a dropdown. A setup flow step whose
+  // only entry is a required one of these submits as soon as an option is picked.
   // Ignored when the entry has no options or is multi_value.
   expanded_options?: boolean;
   // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
