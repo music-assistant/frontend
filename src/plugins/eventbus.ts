@@ -84,7 +84,7 @@ export type PlayerRenameDialogEvent = {
   defaultName?: string | null;
 };
 
-// finished: the flow reached its last step, as opposed to being aborted
+// finished: the flow ended on a FINISH step rather than an ABORT
 export type SetupFlowEndedCallback = (finished: boolean) => void;
 
 // Launches the setup flow dialog for one of: adding a provider (by domain),
