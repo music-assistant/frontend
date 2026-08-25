@@ -54,6 +54,34 @@ describe("provider configuration state", () => {
   });
 
   it.each([
+    [
+      ProviderStatus.INCOMPATIBLE,
+      ProviderStage.DEPRECATED,
+      "settings.provider_status_retired",
+    ],
+    [
+      ProviderStatus.INCOMPATIBLE,
+      ProviderStage.STABLE,
+      "settings.provider_status_incompatible",
+    ],
+    [
+      ProviderStatus.INCOMPATIBLE,
+      undefined,
+      "settings.provider_status_incompatible",
+    ],
+    // only INCOMPATIBLE is ambiguous; a deprecated provider that still loads
+    // keeps its own status
+    [
+      ProviderStatus.LOADED,
+      ProviderStage.DEPRECATED,
+      "settings.provider_status_loaded",
+    ],
+    [undefined, ProviderStage.DEPRECATED, "settings.provider_status_unknown"],
+  ])("maps status %s at stage %s to %s", (status, stage, expected) => {
+    expect(getProviderStatusTranslationKey(status, stage)).toBe(expected);
+  });
+
+  it.each([
     [ProviderStage.ALPHA, "settings.stage.options.alpha"],
     [ProviderStage.BETA, "settings.stage.options.beta"],
     [ProviderStage.STABLE, "settings.stage.options.stable"],

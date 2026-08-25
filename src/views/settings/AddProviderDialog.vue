@@ -155,17 +155,19 @@ const providerStageOptions = computed(() => [
     label: $t("settings.stage.options.unmaintained"),
     value: ProviderStage.UNMAINTAINED,
   },
-  {
-    label: $t("settings.stage.options.deprecated"),
-    value: ProviderStage.DEPRECATED,
-  },
+  // no deprecated option: those providers never reach this list
 ]);
 
 const availableProviders = computed(() => {
   let providers = Object.values(api.providerManifests);
 
+  // a deprecated provider is retired: it can no longer be set up, so keep it
+  // out of the list even though it is no longer builtin
   providers = providers.filter(
-    (x) => !x.builtin && x.type !== ("core" as ProviderType),
+    (x) =>
+      !x.builtin &&
+      x.type !== ("core" as ProviderType) &&
+      x.stage !== ProviderStage.DEPRECATED,
   );
 
   return providers

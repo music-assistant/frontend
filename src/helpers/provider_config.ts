@@ -46,11 +46,22 @@ export const providerRequiresReconfiguration = (
   status === ProviderStatus.AUTH_REQUIRED &&
   canReconfigureProvider(status, hasSetupFlow, enabled);
 
+// A retired provider fails to load as INCOMPATIBLE (the server reuses
+// UnsupportedSystemError), so the stage is what tells the two apart.
 export const getProviderStatusTranslationKey = (
   status?: ProviderStatus | null,
-) =>
-  (status && PROVIDER_STATUS_TRANSLATION_KEYS[status]) ??
-  "settings.provider_status_unknown";
+  stage?: ProviderStage | string | null,
+) => {
+  if (
+    status === ProviderStatus.INCOMPATIBLE &&
+    stage === ProviderStage.DEPRECATED
+  )
+    return "settings.provider_status_retired";
+  return (
+    (status && PROVIDER_STATUS_TRANSLATION_KEYS[status]) ??
+    "settings.provider_status_unknown"
+  );
+};
 
 // Returns undefined for an absent or unrecognised stage so callers can skip the badge
 // entirely rather than render a raw key.
