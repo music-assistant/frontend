@@ -10,7 +10,8 @@ import { Player, PlayerSource } from "@/plugins/api/interfaces";
  * issued to it applies to.
  *
  * Pass this to a command that names the source it is aimed at, so it cannot
- * land on whatever took the player since.
+ * land on whatever took the player since. It answers from the player alone, so
+ * state read off a queue has to come from the queue playing on that player.
  */
 export function resolveActiveSourceId(player: Player): string {
   return player.active_source || player.player_id;

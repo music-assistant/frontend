@@ -35,6 +35,9 @@ import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 // properties
 export interface Props {
   player: Player | undefined;
+  // the queue playing on this player, i.e. resolvePlayerQueue(player) — the
+  // state shown and the source the command is aimed at are both derived from
+  // this pair
   playerQueue: PlayerQueue | undefined;
   icon?: IconProps;
   size?: number;
