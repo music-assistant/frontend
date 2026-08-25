@@ -157,19 +157,29 @@ describe("ConfigEntryField", () => {
     const wrapper = mountField(expandedOptionsEntry());
 
     expect(wrapper.find(".v-select").exists()).toBe(false);
-    expect(radioItems(wrapper)).toHaveLength(2);
+    expect(optionButtons(wrapper)).toHaveLength(2);
     // the whole point of the branch: no option (or its description) is hidden behind a click
     expect(wrapper.text()).toContain("FLAC");
     expect(wrapper.text()).toContain("Lossless, at a higher bitrate.");
     expect(wrapper.text()).toContain("Not supported by this player.");
   });
 
-  it("emits the value of the option behind the picked radio", async () => {
+  it("emits the value of the option behind the pressed button", async () => {
     const wrapper = mountField(expandedOptionsEntry());
 
-    await radioItems(wrapper)[0].trigger("click");
+    await optionButtons(wrapper)[0].trigger("click");
 
     expect(wrapper.emitted("update:value")).toEqual([["flac"]]);
+  });
+
+  // the options sit inside the setup flow's form, where a default-type button submits it
+  it("keeps option buttons out of the form's submit path", () => {
+    const wrapper = mountField(expandedOptionsEntry());
+
+    expect(optionButtons(wrapper).map((el) => el.attributes("type"))).toEqual([
+      "button",
+      "button",
+    ]);
   });
 
   it("keeps a multi_value entry on the dropdown", () => {
@@ -180,10 +190,10 @@ describe("ConfigEntryField", () => {
     });
 
     expect(wrapper.find(".v-select").exists()).toBe(true);
-    expect(radioItems(wrapper)).toHaveLength(0);
+    expect(optionButtons(wrapper)).toHaveLength(0);
   });
 
-  it("disables every radio with the form", () => {
+  it("disables every option button with the form", () => {
     expect(controlStates(mountField(expandedOptionsEntry(), true))).toEqual([
       true,
       true,
@@ -311,8 +321,8 @@ function sliderRowStates(wrapper: VueWrapper): Record<string, boolean> {
   };
 }
 
-function radioItems(wrapper: VueWrapper): DOMWrapper<Element>[] {
-  return wrapper.findAll('[data-slot="radio-group-item"]');
+function optionButtons(wrapper: VueWrapper): DOMWrapper<Element>[] {
+  return wrapper.findAll('[data-testid="option-button"]');
 }
 
 function isDisabled(el: Pick<DOMWrapper<Element>, "attributes">): boolean {

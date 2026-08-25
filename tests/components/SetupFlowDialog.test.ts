@@ -306,7 +306,86 @@ describe("SetupFlowDialog", () => {
 
     expect(submitDisabled(wrapper)).toBe(true);
   });
+
+  it("submits a lone choice step as soon as an option is picked", async () => {
+    apiMock.submitSetupFlow.mockResolvedValue(progressStep("submitted"));
+    const wrapper = await mountFormStep([choiceEntry()]);
+
+    await pickOption(wrapper, "b");
+
+    expect(apiMock.submitSetupFlow).toHaveBeenCalledWith("flow-1", {
+      method: "b",
+    });
+  });
+
+  it("still auto-advances past a label sitting beside the choice", async () => {
+    apiMock.submitSetupFlow.mockResolvedValue(progressStep("submitted"));
+    const wrapper = await mountFormStep([
+      entry({ key: "intro", type: ConfigEntryType.LABEL }),
+      choiceEntry(),
+    ]);
+
+    await pickOption(wrapper, "b");
+
+    expect(apiMock.submitSetupFlow).toHaveBeenCalledOnce();
+  });
+
+  it("drops the confirm button from a step that submits on pick", async () => {
+    const wrapper = await mountFormStep([choiceEntry()]);
+
+    expect(stepFooterLabels(wrapper)).toEqual(["cancel"]);
+  });
+
+  it("shows progress while a step that submits on pick is in flight", async () => {
+    apiMock.submitSetupFlow.mockReturnValue(
+      new Promise<SetupFlowStep>(() => {}),
+    );
+    const wrapper = await mountFormStep([choiceEntry()]);
+
+    await pickOption(wrapper, "b");
+
+    expect(
+      wrapper.find("dialog-footer-stub").findAll("spinner-stub"),
+    ).toHaveLength(1);
+  });
+
+  it("leaves an optional choice to the confirm button", async () => {
+    const wrapper = await mountFormStep([
+      { ...choiceEntry(), required: false },
+    ]);
+
+    await pickOption(wrapper, "b");
+
+    expect(apiMock.submitSetupFlow).not.toHaveBeenCalled();
+    expect(stepFooterLabels(wrapper)).toEqual([
+      "cancel",
+      "settings.setup_flow.next",
+    ]);
+  });
+
+  it("waits for the button when a second field shares the form", async () => {
+    const wrapper = await mountFormStep([
+      choiceEntry(),
+      entry({ key: "note", type: ConfigEntryType.STRING }),
+    ]);
+
+    await pickOption(wrapper, "b");
+
+    expect(apiMock.submitSetupFlow).not.toHaveBeenCalled();
+  });
 });
+
+async function pickOption(wrapper: VueWrapper, value: string) {
+  const row = wrapper
+    .findAllComponents({ name: "ConfigEntryRow" })
+    .find(
+      (candidate) =>
+        (candidate.props("confEntry") as ConfigEntry).key === "method",
+    );
+  if (!row) throw new Error("choice entry not rendered");
+  row.vm.$emit("update:value", value);
+  await flushPromises();
+}
 
 async function mountFormStep(entries: ConfigEntry[]) {
   apiMock.reconfigureProvider.mockResolvedValue(formStep(entries));
@@ -322,6 +401,14 @@ async function mountFormStep(entries: ConfigEntry[]) {
   await flushPromises();
 
   return wrapper;
+}
+
+// the per-field help dialog carries a footer of its own, so scope to the step's
+function stepFooterLabels(wrapper: VueWrapper) {
+  return wrapper
+    .find("dialog-footer-stub")
+    .findAll("button-stub")
+    .map((btn) => btn.text());
 }
 
 function submitDisabled(wrapper: VueWrapper) {
@@ -350,6 +437,19 @@ function formStep(entries: ConfigEntry[] = []): SetupFlowStep {
     step_id: "form",
     type: FlowStepType.FORM,
   };
+}
+
+function choiceEntry(): ConfigEntry {
+  return entry({
+    key: "method",
+    type: ConfigEntryType.STRING,
+    required: true,
+    expanded_options: true,
+    options: [
+      { title: "Code", value: "a" },
+      { title: "Manual", value: "b" },
+    ],
+  });
 }
 
 function entry(

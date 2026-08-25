@@ -231,7 +231,12 @@
           <Button variant="ghost" :disabled="busy" @click="close()">
             {{ $t("cancel") }}
           </Button>
-          <Button :disabled="!canSubmit" @click="submit">
+          <!-- a step that submits on pick has nothing left to confirm -->
+          <Button
+            v-if="!autoAdvanceEntry"
+            :disabled="!canSubmit"
+            @click="submit"
+          >
             <Spinner v-if="busy" class="size-4" />
             {{
               step.last_step
@@ -239,6 +244,12 @@
                 : $t("settings.setup_flow.next")
             }}
           </Button>
+          <div
+            v-else-if="busy"
+            class="flex h-9 items-center justify-center px-4"
+          >
+            <Spinner class="size-4" />
+          </div>
         </template>
 
         <template
@@ -436,6 +447,19 @@ const canSubmit = computed(
   () => !busy.value && allRequiredValuesPresent(formEntries.value),
 );
 
+// A step whose only field is a required list of options has nothing else to
+// fill in, so picking one submits it.
+const autoAdvanceEntry = computed(() => {
+  const interactive = formEntries.value.filter(
+    (entry) => !NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type),
+  );
+  if (interactive.length !== 1) return undefined;
+  const entry = interactive[0];
+  const isExpandedChoice =
+    entry.options.length > 0 && entry.expanded_options && !entry.multi_value;
+  return entry.required && isExpandedChoice ? entry : undefined;
+});
+
 const canOpenInstanceSettings = computed(
   () => launch.value?.kind === "provider" && !!step.value?.result?.instance_id,
 );
@@ -607,6 +631,10 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
 
 function onValueUpdate(entry: ConfigEntry, value: ConfigValueType) {
   entry.value = value;
+  if (entry.key === autoAdvanceEntry.value?.key) {
+    // submit() re-checks canSubmit, so the fresh value needs no validation here
+    void submit();
+  }
 }
 
 async function submit() {
