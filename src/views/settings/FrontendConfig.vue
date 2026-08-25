@@ -44,6 +44,9 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { DEVICE_SETTING_KEYS } from "@/constants";
 import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import {
+  BROWSER_MEDIA_CONTROLS,
+  BrowserMediaControlsMode,
+  getBrowserMediaControlsMode,
   MOBILE_SIDEBAR_SIDE,
   readDeviceSetting,
   saveDeviceSetting,
@@ -146,18 +149,29 @@ onMounted(() => {
       value: null,
     },
     {
-      key: "enable_browser_controls",
-      type: ConfigEntryType.BOOLEAN,
+      key: BROWSER_MEDIA_CONTROLS,
+      type: ConfigEntryType.STRING,
       label: "enable_browser_controls",
-      default_value: true,
+      default_value: BrowserMediaControlsMode.WEB_PLAYER,
       required: false,
-      options: [],
+      options: [
+        {
+          title: "active_player",
+          value: BrowserMediaControlsMode.ACTIVE_PLAYER,
+        },
+        {
+          title: "web_player",
+          value: BrowserMediaControlsMode.WEB_PLAYER,
+        },
+        {
+          title: "disabled",
+          value: BrowserMediaControlsMode.DISABLED,
+        },
+      ],
       multi_value: false,
       category: "display_settings",
       hidden: companionMode.value,
-      value:
-        localStorage.getItem("frontend.settings.enable_browser_controls") !==
-        "false",
+      value: getBrowserMediaControlsMode(),
     },
     {
       key: "force_mobile_layout",
@@ -271,8 +285,8 @@ onMounted(() => {
   }
 
   // These are frontend-only settings, so the frontend owns their translations (server-provided
-  // entries are localized server-side and arrive pre-resolved). ConfigEntryField renders the
-  // label/option titles directly, so resolve the frontend-owned ones here from the settings.* keys.
+  // entries are localized server-side and arrive pre-resolved). ConfigEntryField renders labels
+  // and option content directly, so resolve the frontend-owned ones here from the settings.* keys.
   for (const entry of configEntries) {
     // fall back to the in-code label/category if a locale is missing the string, so we never
     // surface a raw i18n key in the UI.
@@ -287,13 +301,19 @@ onMounted(() => {
     }
     const desc = $t(`settings.${entry.key}.description`);
     if (desc !== `settings.${entry.key}.description`) entry.description = desc;
-    entry.options = entry.options.map((opt) => ({
-      ...opt,
-      title: $t(
-        `settings.${entry.key}.options.${opt.value}`,
-        opt.title ?? String(opt.value),
-      ),
-    }));
+    entry.options = entry.options.map((opt) => {
+      const descriptionKey = `settings.${entry.key}.option_descriptions.${opt.value}`;
+      const description = $t(descriptionKey);
+      return {
+        ...opt,
+        title: $t(
+          `settings.${entry.key}.options.${opt.value}`,
+          opt.title ?? String(opt.value),
+        ),
+        description:
+          description === descriptionKey ? opt.description : description,
+      };
+    });
   }
   config.value = configEntries;
   initialValues = Object.fromEntries(

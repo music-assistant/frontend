@@ -554,8 +554,18 @@
             "description": "Allow playback to this device\/browser using the built-in Sendspin web player."
         },
         "enable_browser_controls": {
-            "label": "Enable browser media controls",
-            "description": "Allow control of playback using the browser's built-in media controls (e.g., media keys on your keyboard)."
+            "label": "Browser media controls",
+            "description": "Expose Music Assistant playback to browser and operating-system media controls, such as media keys and lock-screen controls. Device events such as phone calls, sleep, or closing a laptop lid may pause the controlled player.",
+            "options": {
+                "active_player": "Any actively selected player",
+                "web_player": "Built-in web player only",
+                "disabled": "Disabled"
+            },
+            "option_descriptions": {
+                "active_player": "Control the player currently selected in Music Assistant, including speakers elsewhere in your home.",
+                "web_player": "Control only audio played by the built-in web player on this device.",
+                "disabled": "Do not expose Music Assistant playback to browser or operating-system controls."
+            }
         },
         "settings_saved": "Settings saved successfully",
         "protocol_disabled_message": "Enable this protocol to configure its settings",
@@ -1017,7 +1027,7 @@
     "global_search": "Global search",
     "podcast_episode": "Episode",
     "podcast_episodes": "Episodes",
-    "play_from_here": "Play from here",
+    "play_from_here_to_latest": "Play from here to latest",
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",
     "all_players": "All players",
@@ -2266,7 +2276,6 @@
     "crossfade_active": "Crossfade is active.",
     "crossfade_active_with_smart": "Crossfade is active with smart fades.",
     "crossfade_smart_active": "The fade timing is chosen automatically to suit each track.",
-    "crossfade_source_active": "{0} applies the fade to this track, not Music Assistant.",
     "lyrics": "Lyrics",
     "lyrics_unavailable_song": "There are no lyrics available for this track (yet).",
     "lyrics_unavailable_content": "Lyrics are not available for this media type.",

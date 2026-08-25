@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import {
   AudioQuality,
+  CrossfadeMode,
   PlaybackState,
   type PlayerQueue,
   type StreamDetails,
@@ -27,7 +28,9 @@ vi.mock("@/plugins/store", () => ({
 }));
 vi.mock("@/components/AudioProcessingDetails.vue", () => ({
   default: {
-    template: '<div data-testid="audio-processing-details" />',
+    props: ["crossfadeIntent"],
+    template:
+      '<div data-testid="audio-processing-details" :data-crossfade-intent="crossfadeIntent" />',
   },
 }));
 
@@ -79,6 +82,28 @@ describe("QualityDetailsBtn", () => {
       "Show audio pipeline details (LQ-HR)",
     );
   });
+
+  it.each([
+    [false, false, CrossfadeMode.DISABLED],
+    [true, false, CrossfadeMode.STANDARD_CROSSFADE],
+    [true, true, CrossfadeMode.SMART_CROSSFADE],
+  ])(
+    "passes the effective crossfade intent to the pipeline",
+    (enabled, smart, expectedMode) => {
+      storeMock.activePlayerQueue = makeQueue({
+        ...makeStreamDetails(),
+        audio_processing: audioProcessingChain(),
+      });
+      storeMock.activePlayerQueue.crossfade_enabled = enabled;
+      storeMock.activePlayerQueue.smart_fades_active = smart;
+
+      expect(
+        mountButton()
+          .get('[data-testid="audio-processing-details"]')
+          .attributes("data-crossfade-intent"),
+      ).toBe(expectedMode);
+    },
+  );
 
   it.each([
     { pill: false, side: "top" },

@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
+import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import {
   isMediaSessionDisabled,
   resetMediaSession,
@@ -113,18 +114,16 @@ const resetLastSeekPos = () => {
   }, 2000);
 };
 
-// Determine which player's metadata to show:
-// - Web player's metadata when it's playing
-// - Selected player's metadata otherwise (undefined = uses store.activePlayerId)
-const metadataPlayerId = computed(() => {
-  const thisPlayer = api.players[props.playerId];
-  if (thisPlayer?.playback_state === PlaybackState.PLAYING) {
-    return props.playerId;
-  }
-  return undefined;
-});
-const mediaSessionDisabled = computed(() =>
-  isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
+// An undefined player ID makes the metadata helper follow the selected player.
+const metadataPlayerId = computed(() =>
+  webPlayer.browserControlsMode === BrowserMediaControlsMode.WEB_PLAYER
+    ? props.playerId
+    : undefined,
+);
+const mediaSessionDisabled = computed(
+  () =>
+    webPlayer.browserControlsMode === BrowserMediaControlsMode.DISABLED ||
+    isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
 );
 
 const correctionMode = computed(() => {
@@ -175,41 +174,23 @@ watch(
   { immediate: true },
 );
 
-// Control silent audio based on interaction and metadata target
 watch(
-  [metadataPlayerId, () => webPlayer.interacted],
-  ([newPlayerId, interacted]) => {
-    if (!interacted) return;
-
-    // Stop silent audio when web player takes over
-    if (newPlayerId !== undefined && silentAudioRef.value) {
-      silentAudioRef.value.pause();
-    }
-  },
-  { immediate: true },
-);
-
-// Watch active player's playback state to control silent audio
-watch(
-  [() => store.activePlayer?.playback_state, mediaSessionDisabled],
-  ([state, disabled]) => {
-    if (disabled) {
-      if (silentAudioInterval) {
-        clearInterval(silentAudioInterval);
-        silentAudioInterval = undefined;
-      }
-      silentAudioRef.value?.pause();
-      return;
-    }
-    // Only control when showing active player metadata (not web player)
-    if (metadataPlayerId.value !== undefined) return;
-    if (!silentAudioRef.value) return;
-
-    // Clear existing interval
+  [
+    () => store.activePlayer?.playback_state,
+    mediaSessionDisabled,
+    metadataPlayerId,
+    () => webPlayer.interacted,
+  ],
+  ([state, disabled, targetPlayerId, interacted]) => {
     if (silentAudioInterval) {
       clearInterval(silentAudioInterval);
       silentAudioInterval = undefined;
     }
+    if (disabled || targetPlayerId !== undefined || !interacted) {
+      silentAudioRef.value?.pause();
+      return;
+    }
+    if (!silentAudioRef.value) return;
 
     if (state === PlaybackState.PLAYING) {
       silentAudioRef.value.play().catch(() => {});
@@ -426,6 +407,7 @@ onBeforeUnmount(() => {
   pauseCommandTimeouts.clear();
   if (
     mediaSessionDisabled.value ||
+    webPlayer.browserControlsMode !== BrowserMediaControlsMode.ACTIVE_PLAYER ||
     webPlayer.tabMode !== WebPlayerMode.CONTROLS_ONLY
   ) {
     resetMediaSession();

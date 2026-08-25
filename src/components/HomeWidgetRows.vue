@@ -340,6 +340,26 @@
   </div>
 </template>
 
+<script lang="ts">
+import type {
+  Genre,
+  ItemMapping,
+  MediaItemTypeOrItemMapping,
+  RecommendationFolder,
+} from "@/plugins/api/interfaces";
+
+// Snapshot taken on unmount so a back/forward navigation back to Discover
+// renders the previous page instantly instead of refetching from empty.
+interface DiscoverSnapshot {
+  recommendations: RecommendationFolder[];
+  recentlyPlayed: ItemMapping[];
+  rowItemsMap: Map<string, MediaItemTypeOrItemMapping[]>;
+  genres: Genre[];
+  scrollPos: number;
+}
+let prevState: DiscoverSnapshot | undefined;
+</script>
+
 <script setup lang="ts">
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
@@ -381,11 +401,7 @@ import {
   PlaybackState,
   RecommendationFolderType,
   type EventMessage,
-  type Genre,
-  type ItemMapping,
-  type MediaItemTypeOrItemMapping,
   type Player,
-  type RecommendationFolder,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -407,10 +423,13 @@ import {
   ref,
   watch,
 } from "vue";
+import { useRouter } from "vue-router";
 
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
 });
+
+const router = useRouter();
 
 const loading = ref(true);
 const playersShelf = ref<EditorialShelfExpose | null>(null);
@@ -954,6 +973,36 @@ onMounted(async () => {
   loadGenres();
   window.addEventListener("resize", updateHeroNav);
 
+  // A history back/forward traversal sets `forward` on the entry we're
+  // returning to; a fresh navigation leaves it null.
+  if (prevState && router.options.history.state.forward != null) {
+    const snapshot = prevState;
+    recommendations.value = snapshot.recommendations;
+    recentlyPlayed.value = snapshot.recentlyPlayed;
+    rowItemsMap.value = snapshot.rowItemsMap;
+    genres.value = snapshot.genres;
+    resolveHeroPicks();
+    loading.value = false;
+    nextTick(() => {
+      const el = document.querySelector(
+        ".content-section",
+      ) as HTMLElement | null;
+      if (el) el.scrollTop = snapshot.scrollPos;
+      observeHero();
+    });
+
+    // Refresh everything in the background so the restored page stays current.
+    await loadRecommendationRows();
+    if (unmounted) return;
+    await refreshShownRowItems();
+    if (unmounted) return;
+    resolveHeroPicks();
+    nextTick(() => {
+      if (!unmounted) observeHero();
+    });
+    return;
+  }
+
   await loadRecommendationRows();
   if (unmounted) return;
   loading.value = false;
@@ -975,6 +1024,15 @@ onBeforeUnmount(() => {
   heroRo?.disconnect();
   heroRo = undefined;
   observedHeroGrid = null;
+
+  const el = document.querySelector(".content-section");
+  prevState = {
+    recommendations: recommendations.value,
+    recentlyPlayed: recentlyPlayed.value,
+    rowItemsMap: rowItemsMap.value,
+    genres: genres.value,
+    scrollPos: el?.scrollTop ?? 0,
+  };
 });
 </script>
 
