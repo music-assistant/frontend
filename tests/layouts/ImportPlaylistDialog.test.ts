@@ -109,6 +109,10 @@ beforeEach(() => {
     spotify: musicProvider("spotify--1", "Spotify"),
     tidal: musicProvider("tidal--1", "Tidal"),
   };
+  apiMock.importPlaylist.mockResolvedValue({
+    item_id: "1",
+    provider: "library",
+  });
   for (const key of Object.keys(eventHandlers)) delete eventHandlers[key];
 });
 
@@ -182,7 +186,7 @@ describe("ImportPlaylistDialog", () => {
     );
   });
 
-  it("sends only the deselected provider subset as match_providers", async () => {
+  it("sends only the remaining selected providers as match_providers", async () => {
     const wrapper = mountDialog();
     open();
     await wrapper.vm.$nextTick();
