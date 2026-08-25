@@ -96,8 +96,9 @@ function providerCheckbox(wrapper: VueWrapper, instanceId: string) {
 }
 
 function importButton(wrapper: VueWrapper) {
-  const buttons = wrapper.findAll("button");
-  return buttons[buttons.length - 1];
+  return wrapper
+    .findAll("button")
+    .find((button) => button.text() === "import_playlist")!;
 }
 
 enableAutoUnmount(afterEach);
