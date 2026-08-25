@@ -17,11 +17,14 @@
   >
     <div class="ed-card__art" :style="getStyle">
       <img
-        v-if="art.image && props.item.media_type != MediaType.COLLECTION"
+        v-if="artImage && props.item.media_type != MediaType.COLLECTION"
         class="ed-card__img"
-        :class="{ 'ed-card__img--genre': isGenre }"
+        :class="{
+          'ed-card__img--genre': isGenre,
+          'ed-card__img--provider': !art.image,
+        }"
         loading="lazy"
-        :src="art.image"
+        :src="artImage"
         :alt="item.name"
       />
       <MediaCollectionThumb
@@ -83,9 +86,13 @@
 </template>
 
 <script setup lang="ts">
-import { itemArtwork } from "@/components/discover/editorialArtwork";
+import {
+  itemArtwork,
+  placeholderBackground,
+} from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { useProviderIcon } from "@/composables/useProviderIcon";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -96,7 +103,10 @@ import {
   getAuthorsNarratorsArray,
   getBrowseFolderName,
 } from "@/helpers/utils";
-import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
+import {
+  getListItemProviderIconDomain,
+  getProviderRootDomain,
+} from "@/plugins/api/helpers";
 import {
   type Album,
   type BrowseFolder,
@@ -147,11 +157,19 @@ const art = computed(() => itemArtwork(props.item, 320));
 
 const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
 
-const getStyle = computed(() =>
-  props.item.media_type == MediaType.COLLECTION
-    ? {}
-    : { background: art.value.gradient },
+// provider entries in the browse root show the provider icon
+const { iconDataUri: providerRootIcon } = useProviderIcon(() =>
+  getProviderRootDomain(props.item),
 );
+const artImage = computed(() => art.value.image ?? providerRootIcon.value);
+
+const getStyle = computed(() => {
+  if (props.item.media_type == MediaType.COLLECTION) return {};
+  // a logo needs a plain backdrop rather than the banner artwork
+  if (!art.value.image && providerRootIcon.value)
+    return { background: placeholderBackground };
+  return { background: art.value.gradient };
+});
 
 const isPlayable = computed(() => props.item.is_playable !== false);
 const showPlay = computed(
@@ -319,7 +337,6 @@ const onMenu = (e: MouseEvent) => {
   top: 6px;
   left: 6px;
   z-index: 2;
-  margin: 0 !important;
 }
 .ed-card__img {
   width: 100%;
@@ -333,6 +350,11 @@ const onMenu = (e: MouseEvent) => {
   object-fit: contain;
   padding: 18%;
   filter: brightness(0) invert(1);
+}
+/* Inset the logo and keep wide wordmarks whole instead of cropped. */
+.ed-card__img--provider {
+  object-fit: contain;
+  padding: 18%;
 }
 .ed-card__select {
   position: absolute;

@@ -539,9 +539,11 @@ export class MusicAssistantApi {
   public getTrackPreviewUrl(
     provider_instance_id_or_domain: string,
     item_id: string,
-  ): string {
-    const encItemId = encodeURIComponent(encodeURIComponent(item_id));
-    return `${this.baseUrl}/preview?item_id=${encItemId}&provider=${provider_instance_id_or_domain}`;
+  ): Promise<string> {
+    return this.sendCommand("music/tracks/preview", {
+      provider_instance_id_or_domain,
+      item_id,
+    });
   }
 
   public getLibraryArtistsCount(
@@ -1683,24 +1685,9 @@ export class MusicAssistantApi {
     // Configure shuffle setting on the the queue.
     this.playerQueueCommand(queueId, "shuffle", { shuffle_enabled });
   }
-  public queueCommandShuffleToggle(queueId: string) {
-    // Toggle shuffle mode for a queue
-    this.queueCommandShuffle(queueId, !this.queues[queueId].shuffle_enabled);
-  }
   public queueCommandRepeat(queueId: string, repeat_mode: RepeatMode) {
     // Configure repeat setting on the the queue.
     this.playerQueueCommand(queueId, "repeat", { repeat_mode });
-  }
-  public queueCommandRepeatToggle(queueId: string) {
-    // Toggle repeat mode of a queue
-    const queue = this.queues[queueId];
-    if (this.queues[queueId].repeat_mode == RepeatMode.OFF) {
-      this.queueCommandRepeat(queueId, RepeatMode.ONE);
-    } else if (this.queues[queueId].repeat_mode == RepeatMode.ONE) {
-      this.queueCommandRepeat(queueId, RepeatMode.ALL);
-    } else {
-      this.queueCommandRepeat(queueId, RepeatMode.OFF);
-    }
   }
   public queueCommandCrossfade(queueId: string, crossfade_enabled: boolean) {
     // Enable or disable crossfade on the queue.
@@ -1817,6 +1804,22 @@ export class MusicAssistantApi {
   }
   public playerCommandSeek(playerId: string, position: number) {
     this.playerCommand(playerId, "seek", { position });
+  }
+  public playerCommandShuffle(
+    playerId: string,
+    shuffle_enabled: boolean,
+  ): Promise<void> {
+    // Configure shuffle on whatever the player is playing: a live external
+    // source orders its own session, an MA queue orders its own items.
+    return this.playerCommand(playerId, "shuffle", { shuffle_enabled });
+  }
+  public playerCommandRepeat(
+    playerId: string,
+    repeat_mode: RepeatMode,
+  ): Promise<void> {
+    // Configure repeat on whatever the player is playing: a live external
+    // source repeats within its own session, an MA queue repeats its own items.
+    return this.playerCommand(playerId, "repeat", { repeat_mode });
   }
 
   public playerCommandPower(playerId: string, powered: boolean): Promise<void> {

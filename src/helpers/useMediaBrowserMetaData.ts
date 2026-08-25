@@ -89,7 +89,11 @@ export function useMediaBrowserMetaData(player_id?: string) {
   const unwatch_metadata = watch(
     () => mediaMetadata.value,
     (newMetadata) => {
-      if (!newMetadata) return;
+      if (!newMetadata) {
+        navigator.mediaSession.metadata = null;
+        currentMediaMetadata = undefined;
+        return;
+      }
       //Lets make sure that the new media isn't spammed
       if (
         newMetadata.album === currentMediaMetadata?.album &&

@@ -77,17 +77,6 @@
             {{ store.activePlayer.current_media.title }}
           </MarqueeText>
         </div>
-        <!-- 3rd party source active -->
-        <div
-          v-else-if="
-            !store.activePlayerQueue && store.activePlayer.active_source
-          "
-          class="ma-line-clamp-1"
-        >
-          {{
-            $t("external_source_active", [getSourceName(store.activePlayer)])
-          }}
-        </div>
         <!-- queue ended message: the queue is still there, it just finished -->
         <div v-else-if="queueEnded" class="ma-line-clamp-1">
           {{ $t("queue_ended") }}
@@ -112,7 +101,7 @@
       <!-- format -->
       <div
         v-if="
-          streamDetails?.audio_format.content_type &&
+          hasActiveAudioPath &&
           !getBreakpointValue({ breakpoint: 'phone' }) &&
           showQualityDetailsBtn
         "
@@ -121,67 +110,79 @@
         <QualityDetailsBtn />
       </div>
     </template>
-    <!-- subtitle: off state or artist(s) + album -->
+    <!-- subtitle: off state or artist(s) + album, led by the active source -->
     <template #subtitle>
-      <!-- player powered off -->
-      <div
-        v-if="store.activePlayer?.powered == false"
-        :style="{
-          cursor: 'pointer',
-          color: primaryColor,
-        }"
-        @click.stop="store.showPlayersMenu = true"
-      >
-        {{ $t("off") }}
-      </div>
-      <button
-        v-else-if="currentChapter"
-        type="button"
-        class="player-track-chapter-button"
-        :style="{ color: primaryColor }"
-        @click.stop="store.showFullscreenPlayer = true"
-      >
-        <div class="ma-line-clamp-1">
-          <MarqueeText :sync="marqueeSync">
-            {{ currentChapter.chapter.name }}
-          </MarqueeText>
+      <div class="player-track-subtitle" :style="{ color: primaryColor }">
+        <div class="player-track-subtitle-line">
+          <!-- the external source; the compact bar only has room for its icon -->
+          <NowPlayingSourceBadge
+            v-if="props.compact"
+            icon-only
+            plain
+            class="player-track-source"
+          />
+          <!-- player powered off -->
+          <div
+            v-if="store.activePlayer?.powered == false"
+            style="cursor: pointer"
+            @click.stop="store.showPlayersMenu = true"
+          >
+            {{ $t("off") }}
+          </div>
+          <button
+            v-else-if="currentChapter"
+            type="button"
+            class="player-track-chapter-button"
+            @click.stop="store.showFullscreenPlayer = true"
+          >
+            <div class="ma-line-clamp-1">
+              <MarqueeText :sync="marqueeSync">
+                {{ currentChapter.chapter.name }}
+              </MarqueeText>
+            </div>
+          </button>
+          <div
+            v-else-if="
+              store.activePlayer?.current_media?.title &&
+              (store.activePlayer?.current_media?.artist || albumSubtitle)
+            "
+            class="player-track-subtitle-text"
+            style="cursor: pointer"
+            @click.stop="store.showFullscreenPlayer = true"
+          >
+            <div class="ma-line-clamp-1">
+              <MarqueeText :sync="marqueeSync">
+                <!-- artists(s) + album -->
+                <span
+                  v-if="
+                    store.activePlayer?.current_media?.artist &&
+                    albumSubtitle &&
+                    !props.showOnlyArtist
+                  "
+                >
+                  {{ store.activePlayer?.current_media?.artist }} •
+                  {{ albumSubtitle }}
+                </span>
+                <!-- artists(s) only -->
+                <span v-else-if="store.activePlayer?.current_media?.artist">
+                  {{ store.activePlayer?.current_media?.artist }}
+                </span>
+                <!-- album only -->
+                <span v-else-if="albumSubtitle">
+                  {{ albumSubtitle }}
+                </span>
+              </MarqueeText>
+            </div>
+          </div>
         </div>
-      </button>
-      <div
-        v-else-if="
-          store.activePlayer?.current_media?.title &&
-          (store.activePlayer?.current_media?.artist ||
-            store.activePlayer?.current_media?.album)
-        "
-        :style="{
-          cursor: 'pointer',
-          color: primaryColor,
-        }"
-        @click.stop="store.showFullscreenPlayer = true"
-      >
-        <div class="ma-line-clamp-1">
-          <MarqueeText :sync="marqueeSync">
-            <!-- artists(s) + album -->
-            <span
-              v-if="
-                store.activePlayer?.current_media?.artist &&
-                store.activePlayer?.current_media?.album &&
-                !props.showOnlyArtist
-              "
-            >
-              {{ store.activePlayer?.current_media?.artist }} •
-              {{ store.activePlayer?.current_media?.album }}
-            </span>
-            <!-- artists(s) only -->
-            <span v-else-if="store.activePlayer?.current_media?.artist">
-              {{ store.activePlayer?.current_media?.artist }}
-            </span>
-            <!-- album only -->
-            <span v-else-if="store.activePlayer?.current_media?.album">
-              {{ store.activePlayer?.current_media?.album }}
-            </span>
-          </MarqueeText>
-        </div>
+        <!-- the full bar has the height for the source to take a line of its
+             own under the track metadata; plain, so it aligns with the text
+             above instead of hanging indented in its pill -->
+        <NowPlayingSourceBadge
+          v-if="!props.compact"
+          plain
+          class="player-track-source"
+        />
       </div>
     </template>
   </v-list-item>
@@ -198,12 +199,14 @@ import { isQueueEnded } from "@/helpers/queue_position";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { resolveCurrentChapter } from "@/helpers/chapters";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
-import { getSourceName } from "@/plugins/api/helpers";
 import { MediaType, PlaybackState, PlayerType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed, onUnmounted, ref, watch } from "vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
+import { useNowPlayingSource } from "@/composables/nowPlayingSource";
+import NowPlayingSourceBadge from "./NowPlayingSourceBadge.vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
 const marqueeSync = new MarqueeTextSync();
@@ -255,6 +258,9 @@ onUnmounted(() => updateChapterTimer(false));
 
 const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
 
+const { albumSubtitle } = useNowPlayingSource();
+const { hasActiveAudioPath } = useActiveAudioPath();
+
 // properties
 interface Props {
   showOnlyArtist?: boolean;
@@ -277,11 +283,6 @@ const props = withDefaults(defineProps<Props>(), {
   primaryColor: "",
   compact: false,
   titleOpensDetails: false,
-});
-
-// computed properties
-const streamDetails = computed(() => {
-  return store.activePlayerQueue?.current_item?.streamdetails;
 });
 
 // size of the clickable artwork area; cover art fills this via its
@@ -315,6 +316,37 @@ function onTitleClick() {
 <style scoped>
 .player-media-thumb {
   margin-right: 10px;
+}
+
+.player-track-subtitle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* the icon badge leads the line and keeps its width; the track metadata
+   beside it is what gives way as the bar narrows */
+.player-track-subtitle-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.player-track-source {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+/* on the line itself (compact bar) an icon-less source shows its name, which
+   must leave the metadata beside it half the width */
+.player-track-subtitle-line .player-track-source {
+  max-width: 50%;
+}
+
+.player-track-subtitle-text {
+  min-width: 0;
 }
 
 /* the floating player keeps both text lines but drops below the two-line

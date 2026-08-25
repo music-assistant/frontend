@@ -147,6 +147,7 @@ const LOSSY_AUDIO_CODECS = new Set<string>([
 export function useAudioProcessingDetails(
   chain: MaybeRefOrGetter<AudioProcessingChain>,
   streamDetails: MaybeRefOrGetter<StreamDetails>,
+  crossfadeIntent: MaybeRefOrGetter<CrossfadeMode | undefined> = undefined,
 ) {
   const { t, locale } = useI18n({ useScope: "global" });
   const { getPresetName } = useDSPPresets({ optional: true });
@@ -168,6 +169,7 @@ export function useAudioProcessingDetails(
         getIRName,
         players: api.players,
       },
+      toValue(crossfadeIntent),
     );
   });
 
@@ -184,6 +186,7 @@ export function buildAudioProcessingDetailsDisplay(
   chain: AudioProcessingChain,
   streamDetails: StreamDetails,
   dependencies: AudioProcessingDetailsDependencies,
+  crossfadeIntent?: CrossfadeMode,
 ): AudioProcessingDetailsDisplay {
   return {
     inputQualityTier: audioQualityToTier(chain.input_fidelity.quality),
@@ -192,7 +195,12 @@ export function buildAudioProcessingDetailsDisplay(
       dependencies.translate,
     ),
     inputStages: buildInputStages(streamDetails, dependencies),
-    processingStages: buildProcessingStages(streamDetails, chain, dependencies),
+    processingStages: buildProcessingStages(
+      streamDetails,
+      chain,
+      dependencies,
+      crossfadeIntent,
+    ),
     outputPaths: chain.outputs.map((output, index) =>
       buildOutputDisplay(output, index, dependencies),
     ),
@@ -222,10 +230,15 @@ function buildProcessingStages(
   streamDetails: StreamDetails,
   chain: AudioProcessingChain,
   dependencies: AudioProcessingDetailsDependencies,
+  crossfadeIntent?: CrossfadeMode,
 ): AudioProcessingDisplayStage[] {
   const { translate } = dependencies;
   const stages: AudioProcessingDisplayStage[] = [];
   const processing = chain.queue_processing;
+  // a step the source performed is named after the service that did it
+  const sourceName = dependencies.getProviderName(streamDetails.provider);
+  // such a step is listed too, but it leaves the shared path direct
+  let serverAltersAudio = false;
   if (
     processing?.normalization &&
     processing.normalization.mode !== VolumeNormalizationMode.DISABLED
@@ -235,7 +248,11 @@ function buildProcessingStages(
         processing.normalization,
         translate,
         dependencies.locale,
+        sourceName,
       ),
+    );
+    serverAltersAudio ||= normalizationAppliedByServer(
+      processing.normalization,
     );
   }
   if (processing && processing.playback_speed !== 1) {
@@ -246,14 +263,21 @@ function buildProcessingStages(
         formatNumber(processing.playback_speed, 2, dependencies.locale),
       ]),
     });
+    serverAltersAudio = true;
   }
-  if (processing && processing.crossfade_mode !== CrossfadeMode.DISABLED) {
+  const reportedCrossfadeMode = processing?.crossfade_mode;
+  // Keep source attribution; otherwise show the queue's current intent.
+  const crossfadeMode =
+    reportedCrossfadeMode === CrossfadeMode.SOURCE
+      ? reportedCrossfadeMode
+      : (crossfadeIntent ?? reportedCrossfadeMode);
+  serverAltersAudio ||= crossfadeAppliedByServer(reportedCrossfadeMode);
+  if (crossfadeMode && crossfadeMode !== CrossfadeMode.DISABLED) {
     stages.push({
       key: "crossfade",
       icon: CrossfadeIcon,
-      title: translate("streamdetails.audio_processing.crossfade", [
-        crossfadeModeLabel(processing.crossfade_mode, translate),
-      ]),
+      title: translate("streamdetails.audio_processing.crossfade_title"),
+      subtitleParts: [crossfadeModeLabel(crossfadeMode, translate, sourceName)],
     });
   }
   if (processing?.overlay_active) {
@@ -262,13 +286,14 @@ function buildProcessingStages(
       icon: AudioLines,
       title: translate("streamdetails.audio_processing.overlay_active"),
     });
+    serverAltersAudio = true;
   }
   if (processing?.pcm_format) {
     const contextStage = processingContextStage(
       streamDetails.audio_format,
       processing.pcm_format,
       chain,
-      stages.length === 0,
+      !serverAltersAudio,
       translate,
       dependencies.locale,
     );
@@ -493,12 +518,17 @@ function normalizationStage(
   normalization: AudioNormalizationDetails,
   translate: Translate,
   locale: string,
+  sourceName: string,
 ): AudioProcessingDisplayStage {
-  const details: string[] = [
-    translate("streamdetails.audio_processing.measurement_source", [
-      measurementSourceLabel(normalization.measurement_source, translate),
-    ]),
-  ];
+  // the source names neither a target nor a measurement, so it has no details to show
+  const details: string[] =
+    normalization.mode === VolumeNormalizationMode.SOURCE
+      ? []
+      : [
+          translate("streamdetails.audio_processing.measurement_source", [
+            measurementSourceLabel(normalization.measurement_source, translate),
+          ]),
+        ];
   addDetail(
     details,
     "streamdetails.audio_processing.target_lufs",
@@ -524,7 +554,9 @@ function normalizationStage(
     key: "normalization",
     icon: AudioLines,
     title: translate("streamdetails.audio_processing.normalization_title"),
-    subtitleParts: [normalizationModeLabel(normalization.mode, translate)],
+    subtitleParts: [
+      normalizationModeLabel(normalization.mode, translate, sourceName),
+    ],
     details,
   };
 }
@@ -720,10 +752,7 @@ function processingHeadroomReasons(
 ): string[] {
   const reasons = new Set<string>();
   const processing = chain.queue_processing;
-  if (
-    processing?.normalization &&
-    processing.normalization.mode !== VolumeNormalizationMode.DISABLED
-  ) {
+  if (normalizationAppliedByServer(processing?.normalization)) {
     reasons.add(
       translate("streamdetails.audio_processing.normalization_title"),
     );
@@ -733,7 +762,7 @@ function processingHeadroomReasons(
       translate("streamdetails.audio_processing.playback_speed_title"),
     );
   }
-  if (processing && processing.crossfade_mode !== CrossfadeMode.DISABLED) {
+  if (crossfadeAppliedByServer(processing?.crossfade_mode)) {
     reasons.add(translate("streamdetails.audio_processing.crossfade_title"));
   }
   if (processing?.overlay_active) {
@@ -745,6 +774,33 @@ function processingHeadroomReasons(
     }
   }
   return [...reasons];
+}
+
+/**
+ * Whether the server itself corrected the level, rather than the source.
+ *
+ * A step the source performed is reported for context, but the server applied
+ * nothing: it neither reserved headroom for it nor altered the samples.
+ */
+function normalizationAppliedByServer(
+  normalization: AudioNormalizationDetails | null | undefined,
+): boolean {
+  return (
+    !!normalization &&
+    normalization.mode !== VolumeNormalizationMode.DISABLED &&
+    normalization.mode !== VolumeNormalizationMode.SOURCE
+  );
+}
+
+/**
+ * Whether the server itself mixed the overlap, rather than the source.
+ */
+function crossfadeAppliedByServer(mode: CrossfadeMode | undefined): boolean {
+  return (
+    mode !== undefined &&
+    mode !== CrossfadeMode.DISABLED &&
+    mode !== CrossfadeMode.SOURCE
+  );
 }
 
 function addDetail(
@@ -843,7 +899,7 @@ function hasMeaningfulInternalConversion(
 ): boolean {
   if (
     formatValueDiffers(sourceFormat.sample_rate, internalFormat.sample_rate) ||
-    formatValueDiffers(sourceFormat.bit_depth, internalFormat.bit_depth) ||
+    internalNarrowsBitDepth(sourceFormat, internalFormat) ||
     formatValueDiffers(sourceFormat.channels, internalFormat.channels)
   ) {
     return true;
@@ -862,6 +918,20 @@ function formatValueDiffers(
   internalValue: number,
 ): boolean {
   return sourceValue > 0 && internalValue > 0 && sourceValue !== internalValue;
+}
+
+// a wider internal container carries the source samples untouched: it is either
+// processing headroom or a provider that decoded upstream and handed over PCM
+// wider than the tier it advertises. Only narrowing drops bits.
+function internalNarrowsBitDepth(
+  sourceFormat: AudioFormat,
+  internalFormat: AudioFormat,
+): boolean {
+  return (
+    sourceFormat.bit_depth > 0 &&
+    internalFormat.bit_depth > 0 &&
+    internalFormat.bit_depth < sourceFormat.bit_depth
+  );
 }
 
 function audioFormatCodec(format: AudioFormat): string {
@@ -971,6 +1041,7 @@ function audioQualityLabel(
 function normalizationModeLabel(
   mode: string | undefined,
   translate: Translate,
+  sourceName: string,
 ): string {
   switch (mode) {
     case VolumeNormalizationMode.DISABLED:
@@ -997,6 +1068,11 @@ function normalizationModeLabel(
       return translate(
         "streamdetails.audio_processing.normalization_mode.fallback_dynamic",
       );
+    case VolumeNormalizationMode.SOURCE:
+      return translate(
+        "streamdetails.audio_processing.normalization_mode.source",
+        [sourceName],
+      );
     default:
       return translate("streamdetails.audio_processing.unknown");
   }
@@ -1013,7 +1089,11 @@ function measurementSourceLabel(
   return translate(`streamdetails.audio_processing.measurement.${source}`);
 }
 
-function crossfadeModeLabel(mode: string, translate: Translate): string {
+function crossfadeModeLabel(
+  mode: string,
+  translate: Translate,
+  sourceName: string,
+): string {
   switch (mode) {
     case CrossfadeMode.SMART_CROSSFADE:
       return translate("streamdetails.audio_processing.crossfade_mode.smart");
@@ -1025,6 +1105,10 @@ function crossfadeModeLabel(mode: string, translate: Translate): string {
       return translate(
         "streamdetails.audio_processing.crossfade_mode.disabled",
       );
+    case CrossfadeMode.SOURCE:
+      return translate("streamdetails.audio_processing.crossfade_mode.source", [
+        sourceName,
+      ]);
     default:
       return translate("streamdetails.audio_processing.unknown");
   }

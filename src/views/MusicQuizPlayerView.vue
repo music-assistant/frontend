@@ -111,6 +111,7 @@
         :rank="playerRank"
         :score="activeState.you.score"
         :score-delta="playerRoundScoreLabel"
+        :round-results="playerRoundResults"
       />
 
       <MusicQuizPlayerStage
@@ -165,7 +166,9 @@ import {
 } from "@/components/music-quiz/game_types";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
 import { type MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
-import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
+import MusicQuizPlayerHeader, {
+  type MusicQuizRoundResult,
+} from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
@@ -185,7 +188,6 @@ import {
 } from "@/composables/music-quiz/useMusicQuiz";
 import {
   getMusicQuizErrorMessage,
-  getMusicQuizRoundScore,
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,
   rankMusicQuizPlayers,
@@ -324,11 +326,47 @@ const playerRoundScoreLabel = computed(() =>
     ? getMusicQuizRoundScoreLabel(activeState.value, activeState.value.you.name)
     : "",
 );
-const playerRoundScore = computed(() =>
-  activeState.value
-    ? getMusicQuizRoundScore(activeState.value, activeState.value.you.name)
-    : undefined,
-);
+
+const playerRoundResults = computed<MusicQuizRoundResult[]>(() => {
+  const currentState = activeState.value;
+  if (!currentState || currentState.phase !== "reveal") return [];
+  const answer = currentState.you.answer;
+  if (!answer) return [];
+  // "bonuses" is required on timeline answers, unlike the optional bonus_results
+  if ("bonuses" in answer) {
+    const results: MusicQuizRoundResult[] = [];
+    if (answer.correct !== undefined) {
+      results.push({
+        key: "placement",
+        label: $t("providers.music_quiz.timeline_result_placement"),
+        correct: answer.correct,
+        points: answer.points ?? 0,
+      });
+    }
+    for (const bonus of answer.bonus_results ?? []) {
+      results.push({
+        key: bonus.bonus_type,
+        label: $t(
+          bonus.bonus_type === "artist"
+            ? "providers.music_quiz.timeline_artist_bonus"
+            : "providers.music_quiz.timeline_title_bonus",
+        ),
+        correct: bonus.correct,
+        points: bonus.points,
+      });
+    }
+    return results;
+  }
+  if (answer.correct === undefined) return [];
+  return [
+    {
+      key: "answer",
+      label: $t("providers.music_quiz.round_result_answer"),
+      correct: answer.correct,
+      points: answer.points ?? 0,
+    },
+  ];
+});
 
 const phaseText = computed(() => {
   const currentState = activeState.value;
@@ -367,32 +405,6 @@ watch(
   (phase) => {
     if (phase === "finished") void celebrate();
   },
-);
-
-watch(
-  [
-    () => activeState.value?.phase,
-    () => currentRound.value?.round_index,
-    () => activeState.value?.you.answer?.correct,
-    () => playerRoundScore.value,
-  ],
-  ([phase, , correct, points]) => {
-    if (phase !== "reveal" || correct === undefined || points === undefined) {
-      return;
-    }
-    const result = $t(
-      correct
-        ? "providers.music_quiz.correct"
-        : "providers.music_quiz.incorrect",
-    );
-    const message = `${result} +${points}`;
-    if (correct) {
-      toast.success(message);
-    } else {
-      toast.error(message);
-    }
-  },
-  { immediate: true },
 );
 
 async function handleJoin(name: string) {

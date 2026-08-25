@@ -1,7 +1,7 @@
 <template>
   <svg
     class="crossfade-icon"
-    :class="{ 'is-smart': smart, 'is-active': active && !smart }"
+    :class="{ 'is-smart': smart }"
     :width="size"
     :height="size"
     viewBox="0 0 24 24"
@@ -30,12 +30,10 @@
 withDefaults(
   defineProps<{
     size?: number | string;
-    active?: boolean;
     smart?: boolean;
   }>(),
   {
     size: 24,
-    active: false,
     smart: false,
   },
 );
@@ -46,14 +44,6 @@ withDefaults(
   display: inline-block;
   vertical-align: middle;
   overflow: visible;
-}
-
-.crossfade-icon.is-active .crossfade-ring {
-  animation: crossfade-ring-fade 2.4s ease-in-out infinite;
-}
-
-.crossfade-icon.is-active .crossfade-ring--b {
-  animation-delay: -1.2s;
 }
 
 .crossfade-icon.is-smart {
@@ -75,16 +65,6 @@ withDefaults(
 
 .crossfade-spark--delayed {
   animation-delay: -1.2s;
-}
-
-@keyframes crossfade-ring-fade {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
 }
 
 @keyframes crossfade-spark-travel {
@@ -115,8 +95,7 @@ withDefaults(
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crossfade-icon.is-smart,
-  .crossfade-icon.is-active .crossfade-ring {
+  .crossfade-icon.is-smart {
     animation: none;
   }
   .crossfade-spark {

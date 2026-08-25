@@ -58,6 +58,10 @@ const QUEUE_ID = "queue-1";
 const ANCHOR = 1_000_000;
 
 const setPositionState = vi.fn();
+const mediaSession = {
+  metadata: null as MediaMetadata | null,
+  setPositionState,
+};
 let serverTime = ANCHOR;
 let teardown: (() => void) | undefined;
 
@@ -96,9 +100,10 @@ beforeEach(() => {
     delete apiMock.queueElapsedTime[key];
   serverTime = ANCHOR;
   setPositionState.mockClear();
+  mediaSession.metadata = null;
   Object.defineProperty(navigator, "mediaSession", {
     configurable: true,
-    value: { setPositionState },
+    value: mediaSession,
   });
 });
 
@@ -286,5 +291,16 @@ describe("useMediaBrowserMetaData position state", () => {
     teardown = useMediaBrowserMetaData(PLAYER_ID);
 
     expect(setPositionState).toHaveBeenCalledWith();
+  });
+});
+
+describe("useMediaBrowserMetaData metadata", () => {
+  it("clears metadata when the target has no current media", () => {
+    mediaSession.metadata = {} as MediaMetadata;
+    apiMock.players[PLAYER_ID] = { player_id: PLAYER_ID } as Player;
+
+    teardown = useMediaBrowserMetaData(PLAYER_ID);
+
+    expect(mediaSession.metadata).toBeNull();
   });
 });

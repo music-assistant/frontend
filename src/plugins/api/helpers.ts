@@ -5,12 +5,14 @@ import api, { ConnectionState } from ".";
 import {
   Audiobook,
   AudioSource,
+  CrossfadeMode,
   MediaItemType,
   ItemMapping,
   MediaType,
   Player,
   PlayerQueue,
   PodcastEpisode,
+  QueueItem,
 } from "./interfaces";
 
 /**
@@ -45,6 +47,25 @@ export const isQueueInfiniteStream = function (
 ): boolean {
   const mediaType = queue?.current_item?.media_item?.media_type;
   return mediaType === MediaType.RADIO || mediaType === MediaType.AUDIO_SOURCE;
+};
+
+/**
+ * Returns the provider serving a queue's current item when that source is the one
+ * crossfading it, or undefined when Music Assistant applies the fade (or none is).
+ *
+ * The queue's crossfade settings say nothing about who acts on them: a source that
+ * fades its own playback is handed the setting and does the overlap itself, so none
+ * of our timing reaches the audio.
+ */
+export const queueSourceCrossfadeProvider = function (
+  queue: PlayerQueue | undefined,
+): string | undefined {
+  const streamDetails = queue?.current_item?.streamdetails;
+  const crossfadeMode =
+    streamDetails?.audio_processing?.queue_processing?.crossfade_mode;
+  return crossfadeMode === CrossfadeMode.SOURCE
+    ? streamDetails?.provider
+    : undefined;
 };
 
 /**
@@ -162,6 +183,22 @@ export const getListItemProviderIconDomain = function (
     return item.provider_mappings[0].provider_domain;
   }
   return getProviderIconDomain(item);
+};
+
+/**
+ * Provider domain for a browse entry that stands for a provider itself,
+ * undefined for anything else.
+ */
+export const getProviderRootDomain = function (
+  item: MediaItemType | ItemMapping | QueueItem | undefined,
+): string | undefined {
+  if (!item || !("media_type" in item)) return undefined;
+  if (item.media_type !== MediaType.FOLDER) return undefined;
+  // the ".." entry one level down has the same path, so item_id has to match too
+  if (item.item_id !== "root") return undefined;
+  return "path" in item && item.path.endsWith("://")
+    ? item.provider
+    : undefined;
 };
 
 export const itemIsAvailable = function (

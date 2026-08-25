@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { Plus } from "@lucide/vue";
 import AddGenreDialog from "@/components/AddGenreDialog.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
@@ -103,7 +104,7 @@ const menuItems = computed<ToolBarMenuItem[]>(() => {
     {
       label: "add_genre",
       labelArgs: [],
-      icon: "mdi-plus",
+      icon: Plus,
       action: () => {
         showAddGenreDialog.value = true;
       },

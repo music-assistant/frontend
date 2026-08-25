@@ -22,7 +22,8 @@ vi.mock("@/plugins/store", async () => {
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   canEditPlayerGroup: () => true,
   getPlayerGroupMemberCount: () => groupSize.value,
   groupMemberPickerVisible: () => true,

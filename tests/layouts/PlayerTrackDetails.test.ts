@@ -4,8 +4,9 @@ import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { store } from "@/plugins/store";
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import { mount, type VueWrapper } from "@vue/test-utils";
+import { playerSource } from "../fixtures/playerSource";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { nextTick } from "vue";
+import { nextTick, ref } from "vue";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
@@ -30,6 +31,8 @@ vi.mock("@/plugins/api", () => {
     players: {},
     queues: {},
     queueElapsedTime: {},
+    providers: {},
+    providerManifests: {},
   };
   return { api, default: api };
 });
@@ -40,6 +43,11 @@ vi.mock("@/composables/useServerTime", () => ({
 
 vi.mock("@/helpers/now_playing", () => ({
   openCurrentTrackDetails: vi.fn(),
+}));
+
+const hasActiveAudioPath = ref(false);
+vi.mock("@/composables/useActiveAudioPath", () => ({
+  useActiveAudioPath: () => ({ hasActiveAudioPath }),
 }));
 
 vi.mock("@/plugins/store", async () => {
@@ -72,19 +80,31 @@ const NOW = 1_700_000_000;
 let wrapper: VueWrapper | undefined;
 
 // MarqueeText pulls in resize/intersection observers unrelated to this test.
-function mountDetails(compact: boolean, titleOpensDetails = false) {
+// QualityDetailsBtn is stubbed to keep these mounts focused on this
+// component's own gating, not the popover's internals.
+function mountDetails(
+  compact: boolean,
+  titleOpensDetails = false,
+  showQualityDetailsBtn = false,
+) {
   wrapper = mount(PlayerTrackDetails, {
     props: {
       compact,
       titleOpensDetails,
-      showQualityDetailsBtn: false,
+      showQualityDetailsBtn,
       colorPalette: EMPTY_COLOR_PALETTE,
     },
     global: {
       plugins: [vuetify],
-      mocks: { $t: (key: string) => key },
+      mocks: {
+        $t: (key: string, args?: string[]) =>
+          args?.length ? `${key}:${args[0]}` : key,
+      },
       stubs: {
         MarqueeText: { template: "<span><slot /></span>" },
+        QualityDetailsBtn: {
+          template: '<div data-testid="quality-details-btn-stub" />',
+        },
       },
     },
   });
@@ -109,6 +129,9 @@ describe("PlayerTrackDetails chapters", () => {
     store.activePlayerQueue = undefined;
     store.curQueueItem = undefined;
     store.currentUser = undefined;
+    (
+      store.activePlayer as unknown as { active_source?: string }
+    ).active_source = undefined;
   });
 
   it("updates the chapter subtitle when the preference is enabled after mount", async () => {
@@ -278,5 +301,134 @@ describe("PlayerTrackDetails title", () => {
 
     expect(openCurrentTrackDetails).not.toHaveBeenCalled();
     expect(store.showFullscreenPlayer).toBe(true);
+  });
+});
+
+describe("PlayerTrackDetails source badge", () => {
+  beforeEach(() => {
+    Object.assign(store.activePlayer!, {
+      player_id: "player-1",
+      active_source: "player-1",
+      source_list: [],
+    });
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.activePlayerQueue = undefined;
+    store.curQueueItem = undefined;
+    (
+      store.activePlayer as unknown as { current_media: unknown }
+    ).current_media = {
+      title: "Song title",
+      artist: "Artist",
+      album: "Album",
+    };
+  });
+
+  function playRadioStation() {
+    (
+      store.activePlayer as unknown as { current_media: unknown }
+    ).current_media = {
+      title: "Live track",
+      artist: "Artist",
+      album: "Radio 538",
+    };
+  }
+
+  function playExternalSource() {
+    const source = playerSource({ id: "line-in", name: "Line In" });
+    Object.assign(store.activePlayer!, {
+      active_source: source.id,
+      source_list: [source],
+    });
+  }
+
+  it("keeps the radio station in the metadata line without a badge", () => {
+    playRadioStation();
+
+    const details = mountDetails(false);
+
+    expect(details.find(".player-track-source").exists()).toBe(false);
+    expect(details.get(".player-track-subtitle-text").text()).toContain(
+      "Radio 538",
+    );
+  });
+
+  // the full bar has the height for a third line, so the badge does not fight
+  // the metadata for the width of the subtitle line
+  it("gives the badge its own line under the metadata on the full bar", () => {
+    playExternalSource();
+
+    const details = mountDetails(false);
+
+    expect(
+      details.find(".player-track-subtitle-line .player-track-source").exists(),
+    ).toBe(false);
+    expect(
+      details.find(".player-track-subtitle > .player-track-source").exists(),
+    ).toBe(true);
+  });
+
+  // the compact bar keeps its two shallow lines, so the badge shrinks to its
+  // icon beside the metadata and hands the name to the tooltip
+  it("shrinks the badge to its icon on the compact bar", () => {
+    playExternalSource();
+
+    const details = mountDetails(true);
+
+    const badge = details.get(
+      ".player-track-subtitle-line .player-track-source",
+    );
+    expect(badge.text()).toBe("");
+    expect(badge.attributes("title")).toContain("Line In");
+  });
+
+  it("leaves an ordinary album on the metadata line", () => {
+    const details = mountDetails(false);
+
+    expect(details.find(".player-track-source").exists()).toBe(false);
+    expect(details.get(".player-track-subtitle-text").text()).toContain(
+      "Album",
+    );
+  });
+});
+
+describe("PlayerTrackDetails quality pill", () => {
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    hasActiveAudioPath.value = false;
+  });
+
+  it("shows the pill on the full bar when there is an active audio path", () => {
+    hasActiveAudioPath.value = true;
+
+    const details = mountDetails(false, false, true);
+
+    expect(
+      details.find('[data-testid="quality-details-btn-stub"]').exists(),
+    ).toBe(true);
+  });
+
+  it("hides the pill without an active audio path", () => {
+    hasActiveAudioPath.value = false;
+
+    const details = mountDetails(false, false, true);
+
+    expect(
+      details.find('[data-testid="quality-details-btn-stub"]').exists(),
+    ).toBe(false);
+  });
+
+  it("respects the caller's showQualityDetailsBtn opt-out", () => {
+    hasActiveAudioPath.value = true;
+
+    const details = mountDetails(false, false, false);
+
+    expect(
+      details.find('[data-testid="quality-details-btn-stub"]').exists(),
+    ).toBe(false);
   });
 });

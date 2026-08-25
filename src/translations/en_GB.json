@@ -31,7 +31,6 @@
     "delete_db": "Delete item from database",
     "details": "Details",
     "enter_url": "Enter the URL you want to manually add to the database",
-    "external_source_active": "External source active: {0}",
     "goto_album": "Go to album {0}",
     "goto_artist": "Go to artist {0}",
     "items_selected": "{0} item(s) selected",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "Group",
         "player": "Player",
-        "stereo_pair": "Stereo Pair",
-        "sync_group": "Sync Group"
+        "stereo_pair": "Stereo Pair"
     },
     "players": "Players",
     "playlist": "Playlist",

@@ -12,8 +12,8 @@
     :show-refresh-button="true"
     :load-items="loadPodcastEpisodes"
     :sort-keys="[
-      'position',
       'position_desc',
+      'position',
       'name',
       'duration',
       'duration_desc',

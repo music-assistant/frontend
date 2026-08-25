@@ -44,12 +44,20 @@
           :src="imageUrl"
           :alt="`${revealedEntry.title} - ${revealedEntry.artist}`"
           class="bg-muted mx-auto aspect-square w-full object-cover"
-          :class="compact ? 'max-w-32 rounded-lg' : 'max-w-56 rounded-xl'"
+          :class="
+            compact
+              ? 'max-w-32 rounded-lg'
+              : 'max-w-[min(11rem,22dvh)] rounded-xl'
+          "
         />
         <div
           v-else
           class="bg-muted text-muted-foreground mx-auto grid aspect-square w-full place-items-center"
-          :class="compact ? 'max-w-32 rounded-lg' : 'max-w-56 rounded-xl'"
+          :class="
+            compact
+              ? 'max-w-32 rounded-lg'
+              : 'max-w-[min(11rem,22dvh)] rounded-xl'
+          "
           aria-hidden="true"
         >
           <Music2 :class="compact ? 'size-8' : 'size-12'" />
@@ -87,25 +95,12 @@
         <Clock3 class="size-4" aria-hidden="true" />
         {{ autoAdvanceText }}
       </div>
-
-      <Button
-        v-if="showReadyButton && phase === 'reveal'"
-        class="w-full max-w-sm self-center"
-        size="lg"
-        :disabled="busy || isReady"
-        data-testid="music-timeline-ready"
-        @click="emit('ready')"
-      >
-        <Check class="size-4" />
-        {{ readyLabel }}
-      </Button>
     </CardContent>
   </Card>
 </template>
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type {
   MusicQuizTimelineRound,
@@ -114,7 +109,7 @@ import type {
 import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
-import { AudioLines, Check, Clock3, Music2 } from "@lucide/vue";
+import { AudioLines, Clock3, Music2 } from "@lucide/vue";
 import { computed } from "vue";
 
 const props = withDefaults(
@@ -122,21 +117,12 @@ const props = withDefaults(
     phase: MusicQuizPhase;
     round: MusicQuizTimelineRound;
     isFinalRound: boolean;
-    busy?: boolean;
-    isReady?: boolean;
-    readyLabel?: string;
-    showReadyButton?: boolean;
     compact?: boolean;
   }>(),
   {
-    busy: false,
-    isReady: false,
-    readyLabel: "",
-    showReadyButton: false,
     compact: false,
   },
 );
-const emit = defineEmits<{ ready: [] }>();
 
 const revealedEntry = computed(() => props.round.revealed_entry);
 const imageUrl = computed(() =>

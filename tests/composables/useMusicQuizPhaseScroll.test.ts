@@ -4,12 +4,18 @@ import { effectScope, nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const scrollIntoView = vi.fn();
+const scrollTo = vi.fn();
 
 beforeEach(() => {
   scrollIntoView.mockReset();
+  scrollTo.mockReset();
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
     configurable: true,
     value: scrollIntoView,
+  });
+  Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+    configurable: true,
+    value: scrollTo,
   });
   setReducedMotion(false);
 });
@@ -51,9 +57,13 @@ describe("useMusicQuizPhaseScroll", () => {
     scope.stop();
   });
 
-  it("scrolls again when the round reveals", async () => {
+  it("scrolls the scroll parent to the top when the round reveals", async () => {
     const { phase, roundIndex, target, scope } = createOptions();
-    target.value = document.createElement("section");
+    const scrollParent = document.createElement("main");
+    scrollParent.style.overflowY = "auto";
+    const section = document.createElement("section");
+    scrollParent.appendChild(section);
+    target.value = section;
     phase.value = "answering";
     roundIndex.value = 0;
 
@@ -64,7 +74,23 @@ describe("useMusicQuizPhaseScroll", () => {
     phase.value = "reveal";
     await nextTick();
 
-    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
+    scope.stop();
+  });
+
+  it("falls back to the document's scrolling element when no ancestor scrolls", async () => {
+    const { phase, roundIndex, target, scope } = createOptions();
+    target.value = document.createElement("section");
+    phase.value = "reveal";
+    roundIndex.value = 0;
+
+    createScroller({ phase, roundIndex, target, scope });
+    await nextTick();
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo).toHaveBeenCalledTimes(1);
     scope.stop();
   });
 

@@ -1,6 +1,5 @@
 import { computed, reactive } from "vue";
 import {
-  MediaType,
   Player,
   PlayerQueue,
   QueueItem,
@@ -34,9 +33,6 @@ interface Store {
   activePlayer?: Player;
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
-  globalSearchTerm?: string;
-  // media type filter for the global search; empty means all media types
-  globalSearchMediaTypes: MediaType[];
   prevState?: StoredState;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
@@ -81,8 +77,6 @@ export const store: Store = reactive({
       return store.activePlayerQueue.current_item ?? undefined;
     return undefined;
   }),
-  globalSearchTerm: undefined,
-  globalSearchMediaTypes: [],
   prevState: undefined,
   libraryArtistsCount: undefined,
   libraryAlbumsCount: undefined,

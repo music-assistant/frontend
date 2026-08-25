@@ -210,7 +210,13 @@ describe("AudioProcessingDetails", () => {
     ).toBe("Test provider");
     expect(text).toContain("32-bit float PCM");
     expect(text).toContain("Playback speed: 1.25x");
-    expect(text).toContain("Crossfade: Smart");
+    const crossfade = wrapper.find('[data-stage="crossfade"]');
+    expect(crossfade.find(".audio-processing-stage-title").text()).toBe(
+      "Crossfade",
+    );
+    expect(crossfade.find(".audio-processing-stage-subtitle").text()).toBe(
+      "Smart",
+    );
     expect(text).toContain("Audio overlay active");
     expect(
       wrapper
@@ -291,7 +297,13 @@ describe("AudioProcessingDetails", () => {
 
     const text = wrapper.text();
     expect(text).toContain("Quality unknown");
-    expect(text).toContain("Crossfade: Unknown");
+    const crossfade = wrapper.find('[data-stage="crossfade"]');
+    expect(crossfade.find(".audio-processing-stage-title").text()).toBe(
+      "Crossfade",
+    );
+    expect(crossfade.find(".audio-processing-stage-subtitle").text()).toBe(
+      "Unknown",
+    );
     expect(text).toContain("DSP state unknown");
     expect(text).toContain("Source channel: Unknown");
     expect(text).not.toContain("future");
@@ -347,6 +359,26 @@ describe("AudioProcessingDetails", () => {
         .findAll("li")
         .map((detail) => detail.text()),
     ).not.toContain("Floating-point headroom is available for: Crossfade.");
+  });
+
+  it("renders the queue crossfade intent before a transition is reported", () => {
+    const wrapper = mountDetails(
+      {
+        queue_processing: audioQueueProcessing({
+          crossfade_mode: CrossfadeMode.DISABLED,
+        }),
+      },
+      makeStreamDetails(),
+      CrossfadeMode.STANDARD_CROSSFADE,
+    );
+    const crossfade = wrapper.find('[data-stage="crossfade"]');
+
+    expect(crossfade.find(".audio-processing-stage-title").text()).toBe(
+      "Crossfade",
+    );
+    expect(crossfade.find(".audio-processing-stage-subtitle").text()).toBe(
+      "Standard",
+    );
   });
 
   it("renders audio formats as titles with atomic technical details", () => {
@@ -636,7 +668,7 @@ describe("AudioProcessingDetails", () => {
     expect(directPath.findAll("li").map((detail) => detail.text())).toEqual([
       "Audio passes through queue processing unchanged.",
       "Internal format: 16-bit PCM · 44.1 kHz · Stereo",
-      "No volume normalization, crossfade, playback speed adjustment, or audio overlay is active.",
+      "Music Assistant applies no volume normalization, crossfade, playback speed adjustment, or audio overlay.",
     ]);
     expect(wrapper.find('[data-stage="dsp-state-0"]').exists()).toBe(false);
     const destination = wrapper.find('[data-stage="destination"]');
@@ -683,7 +715,7 @@ describe("AudioProcessingDetails", () => {
     );
     expect(context.text()).not.toContain("Direct signal path");
     expect(context.findAll("li").map((detail) => detail.text())).toEqual([
-      "No normalization, crossfade, playback speed adjustment, or audio overlay is reported by the processing model.",
+      "Music Assistant applies no normalization, crossfade, playback speed adjustment, or audio overlay.",
       "Internal format: 16-bit PCM · 44.1 kHz · Stereo",
     ]);
   });
@@ -903,11 +935,13 @@ describe("AudioProcessingDetails", () => {
 function mountDetails(
   chain: Partial<AudioProcessingChain> = {},
   streamDetails = makeStreamDetails(),
+  crossfadeIntent?: CrossfadeMode,
 ) {
   return mount(AudioProcessingDetails, {
     props: {
       chain: audioProcessingChain(chain),
       streamDetails,
+      crossfadeIntent,
     },
     global: {
       plugins: [i18n],

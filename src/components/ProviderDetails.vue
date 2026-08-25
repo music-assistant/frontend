@@ -22,6 +22,7 @@
             <ProviderIcon
               :domain="providerMapping.provider_domain"
               :size="30"
+              class="mx-[10px]"
             />
           </template>
           <template #title>
@@ -106,7 +107,7 @@
           "
         >
           <template #prepend>
-            <ProviderIcon domain="library" :size="30" />
+            <ProviderIcon domain="library" :size="30" class="mx-[10px]" />
           </template>
           <template #title>{{ $t("music_assistant_library") }}</template>
           <template #subtitle>
@@ -131,6 +132,7 @@
 </template>
 
 <script setup lang="ts">
+import { ChevronDown, ChevronUp, DatabaseSearch } from "@lucide/vue";
 import Container from "@/components/Container.vue";
 import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
 import ListItem from "@/components/ListItem.vue";
@@ -172,18 +174,26 @@ const playBtnClick = function (providerMapping: ProviderMapping) {
   if (existing) {
     existing.load();
     delete demoPlayer[key];
-  } else {
-    const audio = new Audio(
-      getPreviewUrl(providerMapping.provider_instance, providerMapping.item_id),
-    );
-    demoPlayer[key] = audio;
-    audio.play();
+    return;
   }
-};
-const getPreviewUrl = function (provider: string, item_id: string) {
-  return `${
-    api.baseUrl
-  }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
+  // claim the slot before awaiting the url, so a second click while the request is
+  // in flight cannot start a second clip that the first would then orphan
+  const audio = new Audio();
+  demoPlayer[key] = audio;
+  api
+    .getTrackPreviewUrl(
+      providerMapping.provider_instance,
+      providerMapping.item_id,
+    )
+    .then((url) => {
+      // the stop path clears the slot; do not start playing a clip nobody wants
+      if (demoPlayer[key] !== audio) return;
+      audio.src = url;
+      return audio.play();
+    })
+    .catch(() => {
+      if (demoPlayer[key] === audio) delete demoPlayer[key];
+    });
 };
 
 // just enough of a provider mapping to identify an item: the library entry built for
@@ -295,7 +305,7 @@ const toolbarMenuItems = computed(() => {
     // search all providers option (only for library items when streaming providers are available)
     {
       label: "search_all_providers",
-      icon: "mdi-database-search",
+      icon: DatabaseSearch,
       action: searchAllProviders,
       overflowAllowed: false,
       disabled: mappingSearchInProgress.value,
@@ -307,7 +317,7 @@ const toolbarMenuItems = computed(() => {
     // toggle expand
     {
       label: "tooltip.collapse_expand",
-      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
+      icon: expanded.value ? ChevronUp : ChevronDown,
       action: toggleExpand,
       overflowAllowed: false,
     },
