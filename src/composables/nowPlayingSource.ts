@@ -40,7 +40,8 @@ export function useNowPlayingSource() {
   return { nowPlayingSource, albumSubtitle };
 }
 
-function sourceProviderId(sourceId: string): string | undefined {
+/** Provider domain/instance id prefix of a source id, e.g. "spotify" from "spotify://...". */
+export function sourceProviderId(sourceId: string): string | undefined {
   const separator = sourceId.indexOf("://");
   return separator > 0 ? sourceId.slice(0, separator) : undefined;
 }
