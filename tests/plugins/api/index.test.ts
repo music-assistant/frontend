@@ -3,6 +3,7 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  type Player,
   RepeatMode,
   type ServerInfoMessage,
   type SuccessResultMessage,
@@ -234,26 +235,89 @@ describe("MusicAssistantApi error handling", () => {
     });
   });
 
-  // a refusal is the guard doing its job, and the server localizes it down to a
-  // generic "the command failed", so putting it in front of the user only
-  // confuses — the control was simply aimed at something that stopped playing
-  it("swallows a refused ordering command without a toast", async () => {
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
-    vi.spyOn(console, "debug").mockImplementation(() => {});
-    const command = api.playerCommandShuffle("player-1", true, "gone");
+  describe("a refused ordering command", () => {
+    // the server refuses every one of these with the same code and the same
+    // localized "the command failed", so the player's own state is what tells
+    // the guard doing its job apart from something that actually went wrong
+    const playerOn = (activeSource: string | null) => {
+      api.players["player-1"] = {
+        player_id: "player-1",
+        active_source: activeSource,
+      } as Player;
+    };
 
-    transport.receive(
-      createErrorResult(
-        transport.lastCommand,
-        "The source this was meant for is no longer playing on Kitchen.",
-      ),
-    );
+    const refuse = () => {
+      vi.spyOn(console, "debug").mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      transport.receive(
+        createErrorResult(transport.lastCommand, "The command failed."),
+      );
+      return consoleError;
+    };
 
-    await expect(command).resolves.toBeUndefined();
-    expect(consoleError).not.toHaveBeenCalled();
-    expect(mockToastError).not.toHaveBeenCalled();
+    // the control was aimed at something that stopped playing, so the refusal
+    // is expected; putting it in front of the user would only confuse
+    it.each([
+      ["shuffle", () => api.playerCommandShuffle("player-1", true, "gone")],
+      [
+        "repeat",
+        () => api.playerCommandRepeat("player-1", RepeatMode.ALL, "gone"),
+      ],
+    ])("stays quiet when the player moved on (%s)", async (_name, send) => {
+      playerOn("took-over");
+      const command = send();
+
+      const consoleError = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    // still the source it was aimed at, so something genuinely went wrong
+    // (a device or provider error) and the user deserves to hear about it
+    it.each([
+      ["shuffle", () => api.playerCommandShuffle("player-1", true, "playing")],
+      [
+        "repeat",
+        () => api.playerCommandRepeat("player-1", RepeatMode.ALL, "playing"),
+      ],
+    ])("surfaces a real failure (%s)", async (_name, send) => {
+      playerOn("playing");
+      const command = send();
+
+      const consoleError = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).toHaveBeenCalled();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
+
+    // the whole point: the source moves between the click and the reply, so a
+    // decision taken when the command was sent would get this backwards
+    it("decides when the refusal arrives, not when the command was sent", async () => {
+      playerOn("playing");
+      const command = api.playerCommandShuffle("player-1", true, "playing");
+
+      playerOn("took-over");
+      const consoleError = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    // nothing to compare against, so fall back to telling the user
+    it("surfaces a failure for a player it does not know", async () => {
+      const command = api.playerCommandShuffle("player-1", true, "gone");
+
+      refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
   });
 
   it("rejects in-flight commands when the connection closes", async () => {
