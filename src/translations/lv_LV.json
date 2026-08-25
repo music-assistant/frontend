@@ -31,7 +31,6 @@
     "delete_db": "Dzēst vienumu no datubāzes",
     "details": "Sīkāka informācija",
     "enter_url": "Ievadiet URL, kuru vēlaties manuāli pievienot datubāzei",
-    "external_source_active": "Aktīvs ārējais avots: {0}",
     "goto_album": "Doties uz albumu {0}",
     "goto_artist": "Doties uz izpildītāju {0}",
     "items_selected": "{0} atlasīts(-i) vienums(-i)",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "Grupa",
         "player": "Atskaņotājs",
-        "stereo_pair": "Stereo Pāris",
-        "sync_group": "Sinhronizācijas Grupa"
+        "stereo_pair": "Stereo Pāris"
     },
     "players": "Atskaņotāji",
     "playlist": "Mūzikas saraksts",
@@ -256,8 +254,6 @@
                 "remove_confirm": "Vai tiešām vēlies noņemt šo DSP profilu?"
             }
         },
-        "dsp_enabled": "DSP ir iespējots",
-        "dsp_disabled": "DSP ir atspējots",
         "dsp_note_multi_device_group": {
             "label": "Tu vari konfigurēt DSP katram atskaņotājam atsevišķi."
         },
@@ -414,7 +410,6 @@
         "remote_access_qr_code": "QR Kods",
         "remote_access_qr_code_description": "Noskanē ar tālruņa kameru, lai izveidotu tūlītēju savienojumu.",
         "reset_to_defaults": "Atiestatīt uz noklusējuma",
-        "reset_to_defaults_confirm": "Vai tiešām vēlies atiestatīt visu iestatījumu vērtības uz noklusējuma? Tas nekavējoties saglabās izmaiņas.",
         "unsaved_changes": "Nesaglabātas Izmaiņas",
         "unsaved_changes_message": "Tev ir nesaglabātas izmaiņas. Vai tiešām vēlies iziet tās nesaglabājot?",
         "stay": "Palikt",
@@ -494,7 +489,6 @@
         "artist": "Izpildītājs",
         "name": "Alfabētiski",
         "name_desc": "Alfabētiski (dilstoši)",
-        "recent": "Nesen pievienots",
         "year_desc": "Izdošanas gads (dilstoši)",
         "duration_desc": "Ilgums (dilstoši)",
         "original": "Oriģinālā secībā",
@@ -506,9 +500,7 @@
         "last_played": "Pēdējo reizi atskaņots",
         "last_played_desc": "Pēdējo reizi atskaņots (dilstoši)",
         "play_count": "Atskaņojumu skaits",
-        "play_count_desc": "Atskaņojumu skaits (dilstoši)",
-        "artist_name": "Albuma Izpildītājs",
-        "artist_name_desc": "Albuma Izpildītājs (dilstoši)"
+        "play_count_desc": "Atskaņojumu skaits (dilstoši)"
     },
     "state": {
         "idle": "dīkstāvē",
@@ -535,7 +527,6 @@
         "open_provider_link": "Atvērt šo vienumu sniedzēja tīmekļa vietnē",
         "collapse_expand": "Sakļaut\/izvērst šo ierakstu",
         "back": "Atpakaļ",
-        "show_menu": "Rādīt\/slēpt izvēlni",
         "search_filter_active": "Meklēšana pašlaik filtrē rezultātus",
         "play_sample": "Atskaņot paraugu",
         "album_type": "Albuma veids",

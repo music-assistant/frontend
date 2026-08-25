@@ -31,12 +31,11 @@
           <h3 v-if="step.title" class="mb-2 text-base font-semibold">
             {{ step.title }}
           </h3>
-          <p
+          <MarkdownText
             v-if="step.description"
-            class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
-          >
-            {{ step.description }}
-          </p>
+            :text="step.description"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+          />
 
           <!-- base (non-field) error -->
           <Alert
@@ -56,7 +55,7 @@
               <ConfigEntryRow
                 :conf-entry="entry"
                 :show-password-values="showPasswordValues"
-                :disabled="busy || isEntryDisabled(entry)"
+                :disabled="busy || isDisabled(entry)"
                 @update:value="onValueUpdate(entry, $event)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
                 @help="onEntryHelp(entry)"
@@ -91,14 +90,13 @@
           <h3 class="mb-2 text-base font-semibold">
             {{ step.title ?? $t("settings.setup_flow.external_default_title") }}
           </h3>
-          <p
-            class="text-muted-foreground mb-4 text-sm leading-relaxed whitespace-pre-wrap"
-          >
-            {{
+          <MarkdownText
+            :text="
               step.description ??
-              $t("settings.setup_flow.external_default_text")
-            }}
-          </p>
+              $t('settings.setup_flow.external_default_text')
+            "
+            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+          />
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
@@ -158,12 +156,11 @@
               :model-value="(step.progress || 0) * 100"
               class="w-full max-w-[320px]"
             />
-            <p
+            <MarkdownText
               v-if="step.progress_text"
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.progress_text }}
-            </p>
+              :text="step.progress_text"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
             <div
               v-if="countdownText"
               class="text-muted-foreground flex items-center justify-center gap-1.5 text-xs"
@@ -187,12 +184,11 @@
             <h3 class="text-base font-semibold">
               {{ step.title ?? $t("settings.setup_flow.success_title") }}
             </h3>
-            <p
+            <MarkdownText
               v-if="step.description"
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.description }}
-            </p>
+              :text="step.description"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
           </div>
         </template>
 
@@ -221,11 +217,10 @@
                   : $t("settings.setup_flow.aborted_title"))
               }}
             </h3>
-            <p
-              class="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {{ step.reason || $t("settings.setup_flow.aborted_text") }}
-            </p>
+            <MarkdownText
+              :text="step.reason || $t('settings.setup_flow.aborted_text')"
+              class="text-muted-foreground w-full text-sm leading-relaxed"
+            />
           </div>
         </template>
       </div>
@@ -281,9 +276,10 @@
       <DialogHeader>
         <DialogTitle>{{ helpEntry?.label }}</DialogTitle>
       </DialogHeader>
-      <p class="text-muted-foreground text-sm whitespace-pre-wrap">
-        {{ helpEntry?.description }}
-      </p>
+      <MarkdownText
+        :text="helpEntry?.description"
+        class="text-muted-foreground text-sm"
+      />
       <DialogFooter>
         <Button
           v-if="helpEntry?.help_link"
@@ -299,6 +295,7 @@
 </template>
 
 <script setup lang="ts">
+import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -311,6 +308,13 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
+import { serverNow } from "@/composables/useServerTime";
+import {
+  allRequiredValuesPresent,
+  isEntryDisabled,
+  NON_INTERACTIVE_ENTRY_TYPES,
+  VALUELESS_ENTRY_TYPES,
+} from "@/helpers/config_entry_ui";
 import { api, ConnectionState } from "@/plugins/api";
 import {
   type ConfigEntry,
@@ -353,12 +357,17 @@ const launch = ref<SetupFlowDialogEvent | null>(null);
 const formEntries = ref<ConfigEntry[]>([]);
 const showPasswordValues = ref(false);
 const helpEntry = ref<ConfigEntry | undefined>(undefined);
-const now = ref(Date.now() / 1000);
+// on the server's clock, since the step's `expires_at` is a server timestamp
+const now = ref(serverNow());
 
 const formRef = ref<HTMLFormElement | null>(null);
 
 // monotonically increasing launch token; guards async step application
 let launchSeq = 0;
+// bumped whenever the dialog moves to another step; guards a late response from
+// overwriting a newer step that a push update already applied (flow_id alone
+// never changes mid-flow, so it can't be used for that)
+let stepSeq = 0;
 let completionNotified = false;
 
 let unsubscribeFlow: (() => void) | null = null;
@@ -371,14 +380,6 @@ let expiryReconciledFor: string | null = null;
 const SESSION_ENDED_STEP_ID = "__session_ended__";
 
 // terminal steps: closing them must not abort (the flow already ended server-side)
-const PRESENTATIONAL_TYPES = [
-  ConfigEntryType.DIVIDER,
-  ConfigEntryType.LABEL,
-  ConfigEntryType.ALERT,
-  ConfigEntryType.IMAGE,
-  ConfigEntryType.ACTION,
-];
-
 const isTerminal = computed(
   () =>
     step.value?.type === FlowStepType.FINISH ||
@@ -423,24 +424,17 @@ const dialogTitle = computed(() => {
 });
 
 const visibleFormEntries = computed(() =>
-  formEntries.value.filter((entry) => !entry.hidden),
+  formEntries.value.filter(
+    (entry) =>
+      !entry.hidden &&
+      // an unmet dependency can only be expressed by hiding these types
+      !(NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type) && isDisabled(entry)),
+  ),
 );
 
-const canSubmit = computed(() => {
-  if (busy.value) return false;
-  for (const entry of formEntries.value) {
-    if (PRESENTATIONAL_TYPES.includes(entry.type)) continue;
-    if (isEntryDisabled(entry)) continue;
-    if (
-      entry.required &&
-      isNullOrUndefined(entry.value) &&
-      isNullOrUndefined(entry.default_value)
-    ) {
-      return false;
-    }
-  }
-  return true;
-});
+const canSubmit = computed(
+  () => !busy.value && allRequiredValuesPresent(formEntries.value),
+);
 
 const canOpenInstanceSettings = computed(
   () => launch.value?.kind === "provider" && !!step.value?.result?.instance_id,
@@ -499,10 +493,10 @@ watch(countdownRemaining, (remaining) => {
 });
 
 function startCountdown() {
-  now.value = Date.now() / 1000;
+  now.value = serverNow();
   if (!countdownTimer) {
     countdownTimer = setInterval(() => {
-      now.value = Date.now() / 1000;
+      now.value = serverNow();
     }, 1000);
   }
 }
@@ -549,6 +543,11 @@ function startFlow(evt: SetupFlowDialogEvent): Promise<SetupFlowStep> {
 function applyStep(newStep: SetupFlowStep) {
   const prevFlowId = step.value?.flow_id;
   const prevStepId = step.value?.step_id;
+  // only a real step change invalidates in-flight requests: the same step being
+  // re-served (reconcile, validation errors) must not discard their responses
+  if (prevFlowId !== newStep.flow_id || prevStepId !== newStep.step_id) {
+    stepSeq++;
+  }
   step.value = newStep;
 
   // subscribe to push updates for non-terminal flows (external/progress advance this way)
@@ -595,7 +594,7 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
   if (preserveValues) {
     for (const entry of formEntries.value) previous[entry.key] = entry.value;
   }
-  formEntries.value = (formStep.entries || []).map((entry) => {
+  formEntries.value = formStep.entries.map((entry) => {
     const copy: ConfigEntry = { ...entry };
     if (preserveValues && entry.key in previous) {
       copy.value = previous[entry.key];
@@ -614,7 +613,7 @@ async function submit() {
   if (!step.value || !canSubmit.value) return;
   const values: Record<string, ConfigValueType> = {};
   for (const entry of formEntries.value) {
-    if (PRESENTATIONAL_TYPES.includes(entry.type)) continue;
+    if (VALUELESS_ENTRY_TYPES.includes(entry.type)) continue;
     let value = entry.value;
     if (value === undefined) value = null;
     // don't send back the obfuscated placeholder for unchanged secure strings
@@ -628,10 +627,12 @@ async function submit() {
   }
   busy.value = true;
   const flowId = step.value.flow_id;
+  const seq = stepSeq;
   try {
     const nextStep = await api.submitSetupFlow(flowId, values);
-    // the dialog may have been closed (or a new flow started) while awaiting
-    if (!open.value || step.value?.flow_id !== flowId) return;
+    // the dialog may have been closed, a new flow started, or a pushed update
+    // already advanced us past this step while the request ran
+    if (!open.value || seq !== stepSeq) return;
     applyStep(nextStep);
   } catch (err) {
     toast.error(String(err));
@@ -680,14 +681,15 @@ function reconcileFlow() {
   // re-fetch the current step; if the flow is gone server-side, end the dialog neutrally
   if (!open.value || !step.value || isTerminal.value) return;
   const flowId = step.value.flow_id;
+  const seq = stepSeq;
   api
     .getSetupFlow(flowId)
     .then((current) => {
-      if (!open.value || step.value?.flow_id !== flowId) return;
+      if (!open.value || seq !== stepSeq) return;
       applyStep(current);
     })
     .catch(() => {
-      if (!open.value || step.value?.flow_id !== flowId) return;
+      if (!open.value || seq !== stepSeq) return;
       cleanupFlow();
       applyStep({
         flow_id: flowId,
@@ -736,6 +738,8 @@ function close(sendAbort = true) {
   open.value = false;
   store.dialogActive = false;
   cleanupFlow();
+  // invalidate any in-flight request so it can't apply a step onto a relaunch
+  stepSeq++;
   step.value = null;
   launch.value = null;
   formEntries.value = [];
@@ -756,21 +760,7 @@ function onEntryHelp(entry: ConfigEntry) {
   else if (entry.help_link) openLink(entry.help_link);
 }
 
-function isEntryDisabled(entry: ConfigEntry): boolean {
-  if (isNullOrUndefined(entry.depends_on)) return false;
-  const dependency = formEntries.value.find((e) => e.key === entry.depends_on);
-  if (!dependency) return false;
-  const dependencyValue = dependency.value;
-  if (!isNullOrUndefined(entry.depends_on_value)) {
-    return dependencyValue != entry.depends_on_value;
-  }
-  if (!isNullOrUndefined(entry.depends_on_value_not)) {
-    return dependencyValue == entry.depends_on_value_not;
-  }
-  return !dependencyValue;
-}
-
-function isNullOrUndefined(value: unknown): boolean {
-  return value === null || value === undefined;
+function isDisabled(entry: ConfigEntry): boolean {
+  return isEntryDisabled(entry, formEntries.value);
 }
 </script>

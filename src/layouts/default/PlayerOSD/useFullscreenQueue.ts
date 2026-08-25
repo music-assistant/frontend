@@ -6,6 +6,7 @@ import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getQueueItemMenuItems } from "@/helpers/queue_item_menu_items";
+import { currentQueueIndex, isQueueEnded } from "@/helpers/queue_position";
 import { useQueueDragReorder } from "@/layouts/default/PlayerOSD/useQueueDragReorder";
 import api from "@/plugins/api";
 import {
@@ -15,7 +16,6 @@ import {
   MediaItemType,
   PlaybackState,
   QueueItem,
-  QueueOption,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -63,7 +63,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   // Section state for the queue item at the given absolute queue index.
   const itemState = (absIndex: number): QueueItemState => {
     const queue = store.activePlayerQueue;
-    const current = queue?.current_index ?? 0;
+    const current = currentQueueIndex(queue);
     const buffer = Math.max(queue?.index_in_buffer ?? current, current);
     if (absIndex < current) return "played";
     if (absIndex === current) return "playing";
@@ -75,10 +75,11 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   // absolute index (or null for none). "Now playing" labels just the current
   // track; "Up next" introduces everything after it (buffered items included —
   // they keep a subtle "buffered" tint so it's clear they're already cued).
+  // A queue that ended has no current track, so it gets neither divider.
   const dividerBefore = (absIndex: number): string | null => {
     const queue = store.activePlayerQueue;
     if (!queue) return null;
-    const current = queue.current_index ?? 0;
+    const current = currentQueueIndex(queue);
     if (absIndex === current) return "now_playing";
     if (absIndex === current + 1) return "up_next";
     return null;
@@ -89,9 +90,12 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   const upNextCount = computed(() => {
     const queue = store.activePlayerQueue;
     if (!queue) return 0;
-    const current = queue.current_index ?? 0;
+    const current = currentQueueIndex(queue);
     return Math.max(0, (queue.items ?? 0) - current - 1);
   });
+
+  // Whether the queue played through to its end and can be started over.
+  const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
 
   // Whether the player is actually rendering audio (drives the equalizer icon).
   const playerActive = computed(
@@ -281,8 +285,10 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     });
   };
 
-  const chapterClicked = (item: MediaItemType, chapter: MediaItemChapter) => {
-    api.playMedia(item.uri, QueueOption.PLAY, chapter.position.toString());
+  const chapterClicked = (_item: MediaItemType, chapter: MediaItemChapter) => {
+    const player = store.activePlayer;
+    if (!player) return;
+    api.playerCommandSeek(player.player_id, chapter.start);
   };
 
   // ---- drag-to-reorder (up-next items only) --------------------------------
@@ -400,6 +406,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     virtualRows,
     totalItems,
     upNextCount,
+    queueEnded,
     totalSize,
     measureRow,
     playerActive,

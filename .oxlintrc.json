@@ -1,11 +1,12 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["dist", "dev-dist", "coverage", "src/translations"],
-  "plugins": ["vue", "typescript", "oxc", "unicorn"],
-  "categories": {
-    "correctness": "error"
-  },
-  "rules": {
-    "no-unused-vars": "off"
-  }
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "ignorePatterns": ["dist", "dev-dist", "coverage", "src/translations"],
+    "plugins": ["vue", "typescript", "oxc", "unicorn", "import"],
+    "categories": {
+        "correctness": "error"
+    },
+    "rules": {
+        "no-unused-vars": "off",
+        "import/no-duplicates": "error"
+    }
 }

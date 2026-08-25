@@ -49,22 +49,22 @@ const entries: MusicQuizTimelineEntry[] = [
     is_anchor: false,
   },
 ];
-const originalScrollIntoView = Object.getOwnPropertyDescriptor(
+const originalScrollTo = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
-  "scrollIntoView",
+  "scrollTo",
 );
 const originalMatchMedia = Object.getOwnPropertyDescriptor(
   window,
   "matchMedia",
 );
-const scrollIntoView = vi.fn();
+const scrollTo = vi.fn();
 
 describe("TimelineDisplay", () => {
   beforeEach(() => {
-    scrollIntoView.mockReset();
-    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    scrollTo.mockReset();
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", {
       configurable: true,
-      value: scrollIntoView,
+      value: scrollTo,
     });
     Object.defineProperty(window, "matchMedia", {
       configurable: true,
@@ -83,14 +83,14 @@ describe("TimelineDisplay", () => {
   });
 
   afterAll(() => {
-    if (originalScrollIntoView) {
+    if (originalScrollTo) {
       Object.defineProperty(
         HTMLElement.prototype,
-        "scrollIntoView",
-        originalScrollIntoView,
+        "scrollTo",
+        originalScrollTo,
       );
     } else {
-      Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+      Reflect.deleteProperty(HTMLElement.prototype, "scrollTo");
     }
   });
 
@@ -278,7 +278,7 @@ describe("TimelineDisplay", () => {
     ).toBe(true);
     expect(
       cards.every((card) =>
-        card.classes().includes("grid-cols-[3rem_minmax(0,1fr)]"),
+        card.classes().includes("grid-cols-[2.5rem_minmax(0,1fr)_auto]"),
       ),
     ).toBe(true);
     expect(
@@ -293,14 +293,13 @@ describe("TimelineDisplay", () => {
         .filter((item) => item.find("article").exists())
         .every((item) => item.classes().includes("shrink-0")),
     ).toBe(true);
-    expect(scrollIntoView).toHaveBeenCalledOnce();
-    expect(scrollIntoView.mock.instances[0]).toBe(
-      display.get('article[data-entry-id="same-b"]').element,
+    expect(scrollTo).toHaveBeenCalledOnce();
+    expect(scrollTo.mock.instances[0]).toBe(
+      display.get("[data-timeline-scroll]").element,
     );
-    expect(scrollIntoView).toHaveBeenCalledWith({
+    expect(scrollTo).toHaveBeenCalledWith({
+      left: expect.any(Number),
       behavior: "smooth",
-      block: "nearest",
-      inline: "center",
     });
   });
 
@@ -313,14 +312,14 @@ describe("TimelineDisplay", () => {
       },
     });
     await flushPromises();
-    scrollIntoView.mockReset();
+    scrollTo.mockReset();
 
     await wrapper.setProps({ highlightedEntryId: "same-a" });
     await flushPromises();
 
-    expect(scrollIntoView).toHaveBeenCalledOnce();
-    expect(scrollIntoView.mock.instances[0]).toBe(
-      wrapper.get('article[data-entry-id="same-a"]').element,
+    expect(scrollTo).toHaveBeenCalledOnce();
+    expect(scrollTo.mock.instances[0]).toBe(
+      wrapper.get("[data-timeline-scroll]").element,
     );
   });
 
@@ -332,11 +331,11 @@ describe("TimelineDisplay", () => {
       },
     });
     await flushPromises();
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo).not.toHaveBeenCalled();
 
     await wrapper.setProps({ highlightedEntryId: "missing" });
     await flushPromises();
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 
   it("never scrolls vertical timelines", async () => {
@@ -351,7 +350,7 @@ describe("TimelineDisplay", () => {
     await wrapper.setProps({ highlightedEntryId: "same-a" });
     await flushPromises();
 
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 
   it("avoids animated scrolling when reduced motion is preferred", async () => {
@@ -368,10 +367,9 @@ describe("TimelineDisplay", () => {
     });
     await flushPromises();
 
-    expect(scrollIntoView).toHaveBeenCalledWith({
+    expect(scrollTo).toHaveBeenCalledWith({
+      left: expect.any(Number),
       behavior: "auto",
-      block: "nearest",
-      inline: "center",
     });
   });
 
@@ -391,10 +389,9 @@ describe("TimelineDisplay", () => {
     });
     await flushPromises();
 
-    expect(scrollIntoView).toHaveBeenCalledWith({
+    expect(scrollTo).toHaveBeenCalledWith({
+      left: expect.any(Number),
       behavior: "smooth",
-      block: "nearest",
-      inline: "center",
     });
   });
 

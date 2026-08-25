@@ -1,20 +1,13 @@
 <template>
   <template v-if="state.phase === 'answering'">
     <template v-if="canAnswerRound">
-      <div class="flex flex-col items-center gap-2">
-        <MusicQuizCountdown
-          :size="120"
-          :fraction="remainingFraction"
-          :label="remainingLabel || '…'"
-        />
-        <p class="text-center text-lg font-bold">
-          {{
-            placementLocked
-              ? $t("providers.music_quiz.timeline_placement_locked")
-              : $t("providers.music_quiz.timeline_choose_position")
-          }}
-        </p>
-      </div>
+      <p class="text-center text-lg font-bold">
+        {{
+          placementLocked
+            ? $t("providers.music_quiz.timeline_placement_locked")
+            : $t("providers.music_quiz.timeline_choose_position")
+        }}
+      </p>
 
       <TimelineDisplay
         :entries="currentRound.timeline"
@@ -31,7 +24,7 @@
             v-if="state.you.answer"
             ref="postPlacementRef"
             data-testid="timeline-post-placement"
-            class="scroll-mt-3"
+            class="scroll-mt-36"
             tabindex="-1"
             aria-live="polite"
           >
@@ -121,61 +114,18 @@
       :highlighted-entry-id="currentRound.revealed_entry?.entry_id"
     />
 
-    <div v-if="state.you.answer" class="flex flex-col gap-2" role="status">
-      <div
-        data-testid="timeline-placement-result"
-        class="flex items-center justify-center gap-2 rounded-lg p-3 font-semibold"
-        :class="
-          state.you.answer.correct
-            ? 'bg-green-500/15 text-green-700 dark:text-green-400'
-            : 'bg-red-500/10 text-destructive'
-        "
-      >
-        <CircleCheck
-          v-if="state.you.answer.correct"
-          class="size-5"
-          aria-hidden="true"
-        />
-        <CircleX v-else class="size-5" aria-hidden="true" />
-        {{
-          state.you.answer.correct
-            ? $t("providers.music_quiz.timeline_correct_placement")
-            : $t("providers.music_quiz.timeline_incorrect_placement")
-        }}
-        <span>+{{ state.you.answer.points ?? 0 }}</span>
-      </div>
-      <div
-        v-for="result in state.you.answer.bonus_results"
-        :key="result.bonus_type"
-        :data-testid="`timeline-${result.bonus_type}-result`"
-        class="flex items-center justify-center gap-2 rounded-lg p-2 text-sm font-medium"
-        :class="
-          result.correct
-            ? 'bg-green-500/15 text-green-700 dark:text-green-400'
-            : 'bg-red-500/10 text-destructive'
-        "
-      >
-        <CircleCheck v-if="result.correct" class="size-4" aria-hidden="true" />
-        <CircleX v-else class="size-4" aria-hidden="true" />
-        <span class="sr-only">
-          {{
-            result.correct
-              ? $t("providers.music_quiz.correct")
-              : $t("providers.music_quiz.incorrect")
-          }}
-        </span>
-        {{ bonusTypeLabel(result.bonus_type) }}
-        <span>+{{ result.points }}</span>
-      </div>
-    </div>
     <p
-      v-else-if="!canAnswerRound"
+      v-if="!state.you.answer && !canAnswerRound"
       class="text-muted-foreground text-center"
       role="status"
     >
       {{ $t("providers.music_quiz.waiting_for_next") }}
     </p>
-    <p v-else class="text-destructive text-center font-semibold" role="status">
+    <p
+      v-else-if="!state.you.answer"
+      class="text-destructive text-center font-semibold"
+      role="status"
+    >
       {{ $t("providers.music_quiz.no_answer_submitted") }}
     </p>
   </template>
@@ -189,7 +139,6 @@ import type {
   MusicQuizPlayerAnswerAdapterEmits,
   MusicQuizPlayerAnswerAdapterProps,
 } from "@/components/music-quiz/adapter_contracts";
-import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -199,10 +148,9 @@ import type {
   MusicQuizTimelineRound,
   MusicQuizTimelineBonusType,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
-import { CircleCheck, CircleX, Send, SkipForward } from "@lucide/vue";
+import { Send, SkipForward } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const MAX_BONUS_TEXT_LENGTH = 200;
@@ -259,11 +207,6 @@ const canAnswerRound = computed(
 const roundPlayerStatuses = computed(() =>
   getMusicQuizRoundPlayers(props.state.players, props.currentRound.round_index),
 );
-const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
-  active: () => props.state.phase === "answering",
-  deadline: () => props.currentRound.deadline,
-  duration: () => props.state.answer_duration,
-});
 const { postPlacementRef } = useTimelinePostPlacementFocus(
   () => activeBonus.value?.bonus_type,
   () => props.busy,

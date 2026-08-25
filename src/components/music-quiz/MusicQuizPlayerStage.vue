@@ -1,5 +1,10 @@
 <template>
-  <section v-if="state.phase === 'lobby'" class="flex flex-col gap-3">
+  <MusicQuizPreparingState
+    v-if="state.preparing"
+    class="rounded-xl border shadow-sm"
+  />
+
+  <section v-else-if="state.phase === 'lobby'" class="flex flex-col gap-3">
     <MusicQuizAutoStartStatus
       v-if="state.auto_start_at != null"
       :state="state"
@@ -18,8 +23,19 @@
     v-else-if="
       (state.phase === 'answering' || state.phase === 'reveal') && currentRound
     "
-    class="flex flex-col gap-3"
+    ref="answeringSectionRef"
+    class="flex flex-col gap-3 scroll-mt-3"
   >
+    <div
+      v-if="state.phase === 'answering'"
+      class="bg-background sticky top-0 z-10 flex flex-col items-center pb-2"
+    >
+      <MusicQuizCountdown
+        :size="120"
+        :fraction="remainingFraction"
+        :label="remainingLabel || '…'"
+      />
+    </div>
     <component
       :is="gameComponent"
       :state="state"
@@ -59,20 +75,24 @@
 
 <script setup lang="ts">
 import MusicQuizAutoStartStatus from "@/components/music-quiz/MusicQuizAutoStartStatus.vue";
+import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
+import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import type {
   MusicQuizAnswerSubmission,
   MusicQuizCurrentRound,
   MusicQuizSupportedPersonalizedState,
 } from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
+import { useMusicQuizPhaseScroll } from "@/composables/music-quiz/useMusicQuizPhaseScroll";
 import { $t } from "@/plugins/i18n";
 import { Trophy } from "@lucide/vue";
-import type { Component } from "vue";
+import { ref, type Component } from "vue";
 
-defineProps<{
+const props = defineProps<{
   state: MusicQuizSupportedPersonalizedState;
   currentRound: MusicQuizCurrentRound | null;
   busy: boolean;
@@ -85,6 +105,18 @@ const emit = defineEmits<{
   "submit-answer": [submission: MusicQuizAnswerSubmission];
   ready: [];
 }>();
+
+const answeringSectionRef = ref<HTMLElement | null>(null);
+const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
+  active: () => props.state.phase === "answering",
+  deadline: () => props.currentRound?.deadline,
+  duration: () => props.state.answer_duration,
+});
+useMusicQuizPhaseScroll({
+  phase: () => props.state.phase,
+  roundIndex: () => props.currentRound?.round_index ?? null,
+  target: answeringSectionRef,
+});
 
 function onSubmitAnswer(submission: MusicQuizAnswerSubmission) {
   emit("submit-answer", submission);

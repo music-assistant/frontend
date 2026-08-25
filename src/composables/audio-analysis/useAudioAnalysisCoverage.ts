@@ -78,16 +78,16 @@ export function useAudioAnalysisCoverage(): {
             "audio_analysis/coverage",
             { aa_domain: meta.domain },
           );
-          const total = cov.analyzed + cov.pending;
+          const analyzed = Math.max(0, cov.analyzed - cov.stale_version);
+          const total = analyzed + cov.pending;
           return {
             ...emptyRow(meta),
             available: true,
-            analyzed: cov.analyzed,
+            analyzed,
             pending: cov.pending,
             staleVersion: cov.stale_version,
             analysisVersion: cov.analysis_version,
-            coveragePct:
-              total > 0 ? Math.round((cov.analyzed / total) * 100) : 0,
+            coveragePct: total > 0 ? Math.round((analyzed / total) * 100) : 0,
             hasData: total > 0,
           } satisfies ProviderCoverageRow;
         } catch {

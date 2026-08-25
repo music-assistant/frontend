@@ -7,7 +7,12 @@
     />
     <v-divider />
     <v-list v-if="aliasSectionExpanded">
-      <ListItem v-for="alias in aliases" :key="alias">
+      <ListItem
+        v-for="alias in aliases"
+        :key="alias"
+        :link="canPromoteAlias(alias) && !operationInProgress"
+        @click="handleAliasClick(alias)"
+      >
         <template #prepend>
           <Route :size="20" />
         </template>
@@ -19,7 +24,7 @@
             size="icon-sm"
             :title="$t('promote_alias')"
             :disabled="operationInProgress"
-            @click="confirmPromoteAlias(alias)"
+            @click.stop="confirmPromoteAlias(alias)"
           >
             <ArrowUpFromLine :size="20" />
           </Button>
@@ -28,7 +33,7 @@
             size="icon-sm"
             :title="$t('remove_alias')"
             :disabled="operationInProgress"
-            @click="confirmRemoveAlias(alias)"
+            @click.stop="confirmRemoveAlias(alias)"
           >
             <Trash2 :size="20" />
           </Button>
@@ -73,6 +78,7 @@ import RemoveAliasDialog from "@/components/genre/RemoveAliasDialog.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
+import { mappedAliases } from "@/helpers/genre";
 import { formatAliasName } from "@/helpers/utils";
 import { Genre } from "@/plugins/api/interfaces";
 import {
@@ -110,12 +116,9 @@ const canPromoteAlias = (alias: string): boolean => {
   return !props.existingGenreNames.has(alias.toLowerCase());
 };
 
-const aliases = computed(() => {
-  const genreName = props.genre.name?.toLowerCase();
-  return (props.genre.genre_aliases || [])
-    .filter((alias) => alias.toLowerCase() !== genreName)
-    .sort((a, b) => a.localeCompare(b));
-});
+const aliases = computed(() =>
+  mappedAliases(props.genre).sort((a, b) => a.localeCompare(b)),
+);
 
 const mappedAliasesTitle = computed(
   () => `${t("mapped_aliases")} (${aliases.value.length})`,
@@ -152,6 +155,12 @@ const confirmRemoveAlias = (alias: string) => {
 const confirmPromoteAlias = (alias: string) => {
   aliasToPromote.value = alias;
   showPromoteDialog.value = true;
+};
+
+const handleAliasClick = (alias: string) => {
+  if (!operationInProgress.value && canPromoteAlias(alias)) {
+    confirmPromoteAlias(alias);
+  }
 };
 
 const toggleAliasSection = () => {

@@ -37,7 +37,7 @@
       <button
         v-show="hovering && canLeft"
         class="ed-shelf__nav ed-shelf__nav--left"
-        aria-label="Scroll left"
+        :aria-label="$t('tooltip.scroll_left')"
         @click="scroll(-1)"
       >
         <ChevronLeft :size="20" />
@@ -59,7 +59,7 @@
       <button
         v-show="hovering && canRight"
         class="ed-shelf__nav ed-shelf__nav--right"
-        aria-label="Scroll right"
+        :aria-label="$t('tooltip.scroll_right')"
         @click="scroll(1)"
       >
         <ChevronRight :size="20" />
@@ -83,7 +83,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface Props {
   title?: string;
-  subtitle?: string;
+  subtitle?: string | null;
   provider?: string;
   gap?: number;
   navCenter?: number;
@@ -264,10 +264,6 @@ onBeforeUnmount(() => {
 }
 .ed-shelf__provider {
   flex-shrink: 0;
-  /* ProviderIcon ships with its own horizontal margins; cancel them so it
-     lines up with the shelf gutter and the aside gap is consistent. */
-  margin-left: -10px;
-  margin-right: -10px;
 }
 .ed-shelf__actions {
   display: flex;

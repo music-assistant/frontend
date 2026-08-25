@@ -31,7 +31,6 @@
     "delete_db": "从数据库中删除项目",
     "details": "详细信息",
     "enter_url": "输入要手动添加到数据库的 URL",
-    "external_source_active": "激活外部源:{0}",
     "goto_album": "跳转到唱片集{0}",
     "goto_artist": "转到歌手{0}",
     "items_selected": "已选择{0}项",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "组",
         "player": "播放器",
-        "stereo_pair": "立体声配对",
-        "sync_group": "同步组"
+        "stereo_pair": "立体声配对"
     },
     "players": "播放器",
     "playlist": "播放列表",
@@ -224,12 +222,14 @@
                 "edited_channel": "绘制该通道的 EQ 响应",
                 "channel": "该频段将用于",
                 "per_channel_preamp": "{channel}的额外前置放大器增益",
-                "disable_multichannel_controls": "禁用多通道控制"
+                "disable_multichannel_controls": "禁用多通道控制",
+                "help": "精确的音色塑造：每个频段针对特定频率，可对其进行衰减或提升。衰减比提升更安全，因为提升可能会导致削波。"
             },
             "tone_control": {
                 "bass_level": "低音等级",
                 "mid_level": "中音等级",
-                "treble_level": "高音等级"
+                "treble_level": "高音等级",
+                "help": "一个简单的三频段调节功能，分别针对低音、中音和高音。如需更精细的调节，请使用参量均衡器。"
             },
             "parameter": {
                 "frequency": "频率",
@@ -261,10 +261,16 @@
                 "remove_confirm": "您确定要移除此 DSP 预设吗？",
                 "custom": "自定义",
                 "selected": "预设： {0}"
+            },
+            "input_gain_help": "设置进入信号链的电平。将其调低，以便为提升型滤波器预留余量。",
+            "output_gain_help": "调整信号链中每个滤波器应用后的输出电平。播放器音量稍后应用。",
+            "gain": {
+                "help": "将流经链中该节点的所有内容的电平提高或降低。"
+            },
+            "balance": {
+                "help": "将声音向左或右扬声器偏移。仅适用于立体声音频。"
             }
         },
-        "dsp_enabled": "DSP 已启用",
-        "dsp_disabled": "DSP 已禁用",
         "dsp_note_multi_device_group": {
             "label": "您可以为每个播放器单独配置 DSP。"
         },
@@ -424,7 +430,6 @@
         "remote_access_qr_code": "二维码",
         "remote_access_qr_code_description": "使用手机摄像头扫描即可立即连接。",
         "reset_to_defaults": "重置为默认值",
-        "reset_to_defaults_confirm": "您确定要将所有设置重置为默认值吗？此操作将立即保存更改。",
         "unsaved_changes": "未保存的更改",
         "unsaved_changes_message": "您有未保存的更改。您确定要不保存就离开吗？",
         "stay": "停留",
@@ -599,7 +604,6 @@
         "artist": "歌手",
         "name": "字母顺序",
         "name_desc": "字母顺序（降序）",
-        "recent": "最近添加",
         "year_desc": "发布年份（降序）",
         "duration_desc": "持续时间（降序）",
         "original": "原创",
@@ -612,8 +616,6 @@
         "last_played_desc": "上次播放（倒序）",
         "play_count": "播放次数",
         "play_count_desc": "播放次数（倒序）",
-        "artist_name": "唱片集歌手",
-        "artist_name_desc": "唱片集歌手（降序）",
         "album_sort_name": "唱片集（排序名称）"
     },
     "state": {
@@ -641,7 +643,6 @@
         "open_provider_link": "在提供程序的网站上打开此项目",
         "collapse_expand": "折叠\/展开此列表",
         "back": "返回",
-        "show_menu": "显示\/隐藏菜单",
         "search_filter_active": "筛选搜索的结果",
         "play_sample": "播放示例",
         "album_type": "唱片集类型",
@@ -1417,9 +1418,6 @@
             "playback_summary_remote": "远程 · 玩家使用自己的设备收听",
             "playback_venue_unavailable": "场地模式不可用。",
             "playback_remote_unavailable": "远程模式不可用。",
-            "speaker": "扬声器",
-            "choose_speaker": "选择一个扬声器",
-            "no_available_speakers": "未找到可用扬声器。请使用远程模式或检查播放器设置。",
             "no_playback_modes": "没有可用的播放模式。请检查您的音乐问答设置。",
             "loading_playback_options": "正在加载播放选项...",
             "error_load_playback_options": "无法加载播放选项",
@@ -1442,6 +1440,14 @@
             "play_along": "一起演奏",
             "host_controls": "主机控制",
             "return_to_host_panel": "返回主机面板"
+        },
+        "ai_radio": {
+            "fields": {
+                "shuffle_playlist_tracks": "随机播放列表曲目"
+            },
+            "field_descriptions": {
+                "shuffle_playlist_tracks": "以随机顺序播放源播放列表。关闭此选项可按播放列表本身的顺序播放。"
+            }
         }
     },
     "no_lyrics_available": "暂无歌词",

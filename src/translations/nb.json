@@ -31,7 +31,6 @@
     "delete_db": "Slett element fra databasen",
     "details": "Detaljer",
     "enter_url": "Skriv inn nettadressen du vil legge til manuelt i databasen",
-    "external_source_active": "Ekstern kilde aktiv: {0}",
     "goto_album": "Gå til album {0}",
     "goto_artist": "Gå til artist {0}",
     "items_selected": "{0} element(er) er valgt",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Spiller",
-        "stereo_pair": "Stereopar",
-        "sync_group": "Synkroniser gruppe"
+        "stereo_pair": "Stereopar"
     },
     "players": "Spillere",
     "playlist": "Spilleliste",
@@ -242,8 +240,6 @@
                 "remove_confirm": "Er du sikker på at du vil fjerne denne DSP-forhåndsinnstillingen?"
             }
         },
-        "dsp_enabled": "DSP er påslått",
-        "dsp_disabled": "DSP er avslått",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurere DSP for hver enkelt spiller."
         },
@@ -408,7 +404,6 @@
         "artist": "Artist",
         "name": "Alfabetisk",
         "name_desc": "Alfabetisk (synkende)",
-        "recent": "Nylig lagt til",
         "year_desc": "Utgivelsesår (synkende)",
         "duration_desc": "Varighet (synkende)",
         "original": "Original",
@@ -420,9 +415,7 @@
         "last_played": "Sist spilt",
         "last_played_desc": "Sist spilt (synkende)",
         "play_count": "Antall avspillinger",
-        "play_count_desc": "Antall avspillinger (synkende)",
-        "artist_name": "Album artist",
-        "artist_name_desc": "Album artist (synkende)"
+        "play_count_desc": "Antall avspillinger (synkende)"
     },
     "state": {
         "idle": "inaktiv",
@@ -449,7 +442,6 @@
         "open_provider_link": "Åpne dette elementet på leverandørens nettsted",
         "collapse_expand": "Skjul\/vis denne oppføringen",
         "back": "Tilbake",
-        "show_menu": "Vis\/skjul meny",
         "search_filter_active": "Søket filtrerer for øyeblikket resultater",
         "play_sample": "Spill av eksempel",
         "album_type": "Albumtype",

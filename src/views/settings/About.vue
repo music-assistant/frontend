@@ -38,6 +38,20 @@
 
         <Item variant="outline" size="sm" class="justify-between">
           <ItemContent>
+            <ItemTitle>{{ $t("settings.server_clock_offset") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <Badge v-if="clockOffsetIsLarge" variant="destructive">
+              {{ clockOffsetLabel }}
+            </Badge>
+            <span v-else class="text-xs font-mono text-muted-foreground">
+              {{ clockOffsetLabel }}
+            </span>
+          </ItemContent>
+        </Item>
+
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
             <ItemTitle>{{ $t("settings.server_as_addon") }}</ItemTitle>
           </ItemContent>
           <ItemContent class="flex-none text-right">
@@ -355,9 +369,33 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
+import { useServerTime } from "@/composables/useServerTime";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { computed, onMounted } from "vue";
+
+// Above this, the offset is a real misconfiguration on one of the two machines rather
+// than measurement noise, and worth calling out: it also affects things the frontend
+// cannot correct for, such as token expiry and scheduled tasks.
+const LARGE_CLOCK_OFFSET_SECONDS = 10;
+
+const { offsetSeconds: clockOffsetSeconds } = useServerTime();
+
+const clockOffsetIsLarge = computed(
+  () =>
+    clockOffsetSeconds.value !== null &&
+    Math.abs(clockOffsetSeconds.value) >= LARGE_CLOCK_OFFSET_SECONDS,
+);
+
+const clockOffsetLabel = computed(() => {
+  const offset = clockOffsetSeconds.value;
+  if (offset === null) return "—";
+  const sign = offset < 0 ? "-" : "+";
+  const magnitude = Math.abs(offset);
+  return magnitude < 1
+    ? `${sign}${Math.round(magnitude * 1000)} ms`
+    : `${sign}${magnitude.toFixed(1)} s`;
+});
 
 const changelogUrl = computed(() => {
   return "https://github.com/music-assistant/server/releases";

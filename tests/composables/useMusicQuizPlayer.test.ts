@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiCommandError } from "@/plugins/api/errors";
 
 const {
   mockGetMusicQuizInfo,
@@ -17,8 +18,11 @@ const {
   mockGetMusicQuizErrorMessage,
   mockMarkJoinedGameEnded,
   mockWaitForApiInitialization,
+  mockHasSeenMusicQuizLanding,
+  mockStoreMusicQuizLandingSeen,
   storedPlayerId,
   storedPlayerName,
+  seenLandingPlayerIds,
   providerHandlers,
   unmountHandlers,
   participantContext,
@@ -39,8 +43,11 @@ const {
   mockGetMusicQuizErrorMessage: vi.fn(),
   mockMarkJoinedGameEnded: vi.fn(),
   mockWaitForApiInitialization: vi.fn(),
+  mockHasSeenMusicQuizLanding: vi.fn(),
+  mockStoreMusicQuizLandingSeen: vi.fn(),
   storedPlayerId: { value: null as string | null },
   storedPlayerName: { value: "" },
+  seenLandingPlayerIds: new Set<string>(),
   providerHandlers: [] as Array<
     (event: { object_id?: string; data?: unknown }) => void
   >,
@@ -124,16 +131,12 @@ vi.mock("@/helpers/music_quiz", () => ({
   getStoredMusicQuizPlayerName: mockGetStoredPlayerName,
   clearStoredMusicQuizPlayerId: mockClearStoredPlayerId,
   getMusicQuizErrorMessage: mockGetMusicQuizErrorMessage,
-  isNoActiveGameError: (err: unknown) => {
-    const message = (
-      err instanceof Error ? err.message : typeof err === "string" ? err : ""
-    ).toLowerCase();
-    return (
-      message.includes("no active game") ||
-      message.includes("no active music quiz game") ||
-      (message.includes("no active") && message.includes("music quiz"))
-    );
-  },
+  hasSeenMusicQuizLanding: mockHasSeenMusicQuizLanding,
+  storeMusicQuizLandingSeen: mockStoreMusicQuizLandingSeen,
+  isNoActiveGameError: (err: unknown) =>
+    err instanceof ApiCommandError && err.error_code === 1001,
+  isUnknownPlayerError: (err: unknown) =>
+    err instanceof ApiCommandError && err.error_code === 1009,
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -379,6 +382,15 @@ describe("useMusicQuizPlayer", () => {
     mockMarkJoinedGameEnded.mockReset();
     mockWaitForApiInitialization.mockReset();
     mockWaitForApiInitialization.mockResolvedValue(undefined);
+    mockHasSeenMusicQuizLanding.mockReset();
+    mockStoreMusicQuizLandingSeen.mockReset();
+    seenLandingPlayerIds.clear();
+    mockHasSeenMusicQuizLanding.mockImplementation((_context, playerId) =>
+      seenLandingPlayerIds.has(playerId),
+    );
+    mockStoreMusicQuizLandingSeen.mockImplementation((_context, playerId) => {
+      seenLandingPlayerIds.add(playerId);
+    });
     mockHeartbeatMusicQuiz.mockResolvedValue(true);
     mockGetStoredPlayerId.mockImplementation(() => storedPlayerId.value);
     mockGetStoredPlayerName.mockImplementation(() => storedPlayerName.value);
@@ -632,7 +644,9 @@ describe("useMusicQuizPlayer", () => {
 
   it("recovers from a stale player token by returning to the join/info state", async () => {
     storedPlayerId.value = "stale-player";
-    mockGetMusicQuizState.mockRejectedValue(new Error("player not found"));
+    mockGetMusicQuizState.mockRejectedValue(
+      new ApiCommandError("Speler niet gevonden.", 1009),
+    );
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
 
     const player = useMusicQuizPlayer({ notifyError: vi.fn() });
@@ -645,10 +659,10 @@ describe("useMusicQuizPlayer", () => {
     expect(storedPlayerId.value).toBeNull();
   });
 
-  it("recovers from a no-active-game error (string rejection) without a toast", async () => {
+  it("recovers from a no-active-game error in any locale without a toast", async () => {
     storedPlayerId.value = "some-player";
     mockGetMusicQuizState.mockRejectedValue(
-      "There is no active Music Quiz game",
+      new ApiCommandError("Er is geen actief Music Quiz spel.", 1001),
     );
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
     const notifyError = vi.fn();
@@ -1569,6 +1583,60 @@ describe("useMusicQuizPlayer", () => {
     expect(player.currentRound.value).toBeNull();
     expect(player.players.value).toEqual([]);
     expect(player.yourName.value).toBe("");
+  });
+
+  it("starts with the landing unseen when there is no active player", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.landingSeen.value).toBe(false);
+  });
+
+  it("reflects the stored landing-seen flag for a reconnecting player", async () => {
+    storedPlayerId.value = "stored-player";
+    seenLandingPlayerIds.add("stored-player");
+    mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.landingSeen.value).toBe(true);
+    expect(mockHasSeenMusicQuizLanding).toHaveBeenCalledWith(
+      participantContext,
+      "stored-player",
+    );
+  });
+
+  it("marks the landing seen for the joined player and persists it", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    mockJoinMusicQuiz.mockResolvedValue({
+      player_id: "player-id",
+      state: PLAYER_STATE,
+    });
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+    await player.join("Player");
+
+    expect(player.landingSeen.value).toBe(false);
+
+    player.markLandingSeen();
+
+    expect(player.landingSeen.value).toBe(true);
+    expect(mockStoreMusicQuizLandingSeen).toHaveBeenCalledWith(
+      participantContext,
+      "player-id",
+    );
+  });
+
+  it("does not mark the landing seen without an active player", async () => {
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    player.markLandingSeen();
+
+    expect(mockStoreMusicQuizLandingSeen).not.toHaveBeenCalled();
+    expect(player.landingSeen.value).toBe(false);
   });
 
   it("does not expose gameplay for an unknown answer type", async () => {

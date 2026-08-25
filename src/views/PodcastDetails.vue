@@ -12,8 +12,8 @@
     :show-refresh-button="true"
     :load-items="loadPodcastEpisodes"
     :sort-keys="[
-      'position',
       'position_desc',
+      'position',
       'name',
       'duration',
       'duration_desc',
@@ -39,13 +39,9 @@ import {
   type Podcast,
   type EventMessage,
   type MediaItemType,
-  PodcastEpisode,
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
 import { watch, ref, onMounted, onBeforeUnmount } from "vue";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import { eventbus } from "@/plugins/eventbus";
 
 export interface Props {
   itemId: string;
@@ -82,44 +78,6 @@ onMounted(() => {
   );
   onBeforeUnmount(unsub);
 });
-
-const onMenu = function (
-  item: MediaItemType | MediaItemType[],
-  posX: number,
-  posY: number,
-) {
-  const mediaItems: MediaItemType[] = Array.isArray(item) ? item : [item];
-  const menuItems: ContextMenuItem[] = [];
-  const episode = mediaItems[0] as PodcastEpisode;
-  if (episode.fully_played || episode.resume_position_ms) {
-    menuItems.push({
-      label: "mark_unplayed",
-      action: async () => {
-        await api.markItemUnPlayed(episode);
-        loadItemDetails();
-      },
-    });
-  } else {
-    menuItems.push({
-      label: "mark_played",
-      action: async () => {
-        await api.markItemPlayed(episode, true);
-        loadItemDetails();
-      },
-    });
-  }
-  // open the contextmenu by emitting the event
-  eventbus.emit("contextmenu", {
-    items: menuItems,
-    posX: posX,
-    posY: posY,
-  });
-};
-
-const onClick = function (item: MediaItemType, posX: number, posY: number) {
-  if (!itemDetails.value || !itemIsAvailable(item)) return;
-  api.playMedia(itemDetails.value.uri, undefined, item.uri);
-};
 
 const loadPodcastEpisodes = async function (params: LoadDataParams) {
   return await api.getPodcastEpisodes(props.itemId, props.provider);

@@ -31,7 +31,6 @@
     "delete_db": "Elimina elemento dal database",
     "details": "Dettagli",
     "enter_url": "Immettere l'URL che si desidera aggiungere manualmente al database",
-    "external_source_active": "Sorgente esterna attiva: {0}",
     "goto_album": "Vai all'album {0}",
     "goto_artist": "Vai all'artista {0}",
     "items_selected": "{0} elemento\/i selezionato\/i",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "Gruppo",
         "player": "Lettore",
-        "stereo_pair": "Coppia stereo",
-        "sync_group": "Gruppo di sincronizzazione"
+        "stereo_pair": "Coppia stereo"
     },
     "players": "Lettori",
     "playlist": "Playlist",
@@ -249,7 +247,6 @@
                 "remove_confirm": "Confermi di voler rimuovere questo preset DSP?"
             }
         },
-        "dsp_enabled": "DSP abilitato",
         "dsp_note_multi_device_group": {
             "label": "Possibilità di configurare DSP per ogni player individualmente."
         },
@@ -309,7 +306,6 @@
         "artist": "Artista",
         "name": "In ordine alfabetico",
         "name_desc": "In ordine alfabetico (decrescente)",
-        "recent": "Aggiunto recentemente",
         "year_desc": "Anno di uscita (decrescente)",
         "duration_desc": "Durata (decrescente)",
         "original": "Originale",
@@ -322,8 +318,6 @@
         "last_played_desc": "Ultimo riprodotto (decrescente)",
         "play_count": "Conteggio delle riproduzioni",
         "play_count_desc": "Conteggio delle riproduzioni (decrescente)",
-        "artist_name": "Album artista",
-        "artist_name_desc": "Artista dell'album (decrescente)",
         "album_sort_name": "Album (in ordine alfabetico)"
     },
     "state": {
@@ -351,7 +345,6 @@
         "open_provider_link": "Apri questo articolo sul sito web del fornitore",
         "collapse_expand": "Collassa\/espandi questa lista",
         "back": "Indietro",
-        "show_menu": "Mostra\/nascondi il menù",
         "search_filter_active": "La ricerca sta attualmente filtrando i risultati",
         "play_sample": "Ascolta il campione",
         "album_type": "Tipo di album",

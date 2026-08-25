@@ -37,6 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { serverNow } from "@/composables/useServerTime";
 import { getSleepTimerMenuItems } from "@/helpers/sleep_timer";
 import { formatDuration } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
@@ -62,8 +63,9 @@ withDefaults(
 const pillClass = "relative";
 
 // Reactive clock that ticks every second while a timer is active, driving the
-// countdown and the auto-hide when it reaches zero.
-const now = ref(Date.now() / 1000);
+// countdown and the auto-hide when it reaches zero. On the server's clock, since
+// `sleep_timer_expires_at` is a server timestamp.
+const now = ref(serverNow());
 
 const expiresAt = computed(
   () => store.activePlayer?.sleep_timer_expires_at ?? null,
@@ -86,7 +88,7 @@ watch(
   active,
   (isActive) => {
     if (isActive && !ticker) {
-      ticker = setInterval(() => (now.value = Date.now() / 1000), 1000);
+      ticker = setInterval(() => (now.value = serverNow()), 1000);
     } else if (!isActive) {
       stopTicking();
     }

@@ -93,26 +93,11 @@
                 }}
               </span>
               <span class="protocol-chips">
-                <v-chip
+                <ProtocolChip
                   v-for="protocol in getOutputProtocols(item.player_id)"
                   :key="protocol.output_protocol_id"
-                  size="x-small"
-                  variant="tonal"
-                  class="protocol-chip"
-                  :class="{ 'protocol-chip--unavailable': !protocol.available }"
-                >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="protocol.protocol_domain!"
-                      :size="14"
-                      class="chip-icon"
-                    />
-                  </template>
-                  {{
-                    api.getProviderManifest(protocol.protocol_domain!)?.name ||
-                    protocol.protocol_domain
-                  }}
-                </v-chip>
+                  :protocol="protocol"
+                />
               </span>
             </div>
           </template>
@@ -183,13 +168,15 @@
 import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
-import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
-import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
-import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  getPlayerName,
+  getPlayerSettingsMenuItems,
+} from "@/helpers/player_settings_actions";
+import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -253,14 +240,6 @@ const loadItems = async function () {
     .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
 };
 
-const removePlayer = function (playerId: string) {
-  api.removePlayer(playerId).then(() => {
-    playerConfigs.value = playerConfigs.value.filter(
-      (x) => x.player_id != playerId,
-    );
-  });
-};
-
 const editPlayer = function (playerId: string, provider: string) {
   if (api.getProvider(provider)) {
     // only allow edit if provider is available
@@ -283,97 +262,22 @@ const handlePlayerClick = function (playerConfig: PlayerConfig) {
   editPlayer(playerConfig.player_id, playerConfig.provider);
 };
 
-const editPlayerDsp = function (playerId: string) {
-  router.push(`/settings/editplayer/${playerId}/dsp`);
-};
-
-const playerCanBeDeleted = function (playerId: string) {
-  const player = api.players[playerId];
-  if (!player) return true;
-  if (player.type === PlayerType.GROUP) {
-    return api
-      .getProvider(player.provider)
-      ?.supported_features.includes(ProviderFeature.REMOVE_GROUP_PLAYER);
-  }
-  return api
-    .getProvider(player.provider)
-    ?.supported_features.includes(ProviderFeature.REMOVE_PLAYER);
-};
-
-const toggleEnabled = function (config: PlayerConfig) {
-  config.enabled = !config.enabled;
-  api.savePlayerConfig(config.player_id, { enabled: config.enabled });
-};
-
-const getPlayerName = function (playerConfig: PlayerConfig) {
-  return (
-    playerConfig.name ||
-    api.players[playerConfig.player_id]?.name ||
-    playerConfig.default_name ||
-    playerConfig.player_id
-  );
-};
-
 const getOutputProtocols = function (playerId: string) {
-  // Return only non-native protocols (ones with a protocol_domain)
+  // all output methods for this player, native included
   return api.players[playerId]?.output_protocols || [];
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
-  const player = api.players[playerConfig.player_id];
-  const menuItems: ContextMenuItem[] = [
-    {
-      label: "open_player_settings",
-      labelArgs: [],
-      action: () => {
-        editPlayer(playerConfig.player_id, playerConfig.provider);
-      },
-      icon: "mdi-cog-outline",
-      disabled: !api.getProvider(playerConfig!.provider),
+  // the list has no PLAYER_REMOVED/PLAYER_CONFIG_REMOVED subscription, so a
+  // deleted player has to be dropped from it here
+  const menuItems = getPlayerSettingsMenuItems(playerConfig, {
+    includeSections: true,
+    onDeleted: () => {
+      playerConfigs.value = playerConfigs.value.filter(
+        (x) => x.player_id !== playerConfig.player_id,
+      );
     },
-  ];
-  const setupMenuItem = player && getPlayerSetupMenuItem(player);
-  if (setupMenuItem) menuItems.push(setupMenuItem);
-  menuItems.push(
-    {
-      label: "open_dsp_settings",
-      labelArgs: [],
-      action: () => {
-        editPlayerDsp(playerConfig.player_id);
-      },
-      icon: "mdi-equalizer",
-      hide: api.players[playerConfig.player_id]?.type === PlayerType.GROUP,
-    },
-    {
-      label: playerConfig.enabled ? "settings.disable" : "settings.enable",
-      labelArgs: [],
-      action: () => {
-        toggleEnabled(playerConfig);
-      },
-      icon: "mdi-cancel",
-      hide: !api.getProvider(playerConfig!.provider),
-    },
-    {
-      label: "settings.documentation",
-      labelArgs: [],
-      action: () => {
-        openLinkInNewTab(
-          api.getProviderManifest(playerConfig!.provider)?.documentation || "",
-        );
-      },
-      icon: "mdi-bookshelf",
-      disabled: !api.getProviderManifest(playerConfig!.provider)?.documentation,
-    },
-    {
-      label: "settings.delete",
-      labelArgs: [],
-      action: () => {
-        removePlayer(playerConfig.player_id);
-      },
-      icon: "mdi-delete",
-      hide: !playerCanBeDeleted(playerConfig.player_id),
-    },
-  );
+  });
   eventbus.emit("contextmenu", {
     items: menuItems,
     posX: (evt as PointerEvent).clientX,
@@ -414,11 +318,9 @@ const getAllFilteredPlayers = function () {
 
       // Check if any output protocol's domain matches a selected provider domain
       const player = api.players[item.player_id];
-      if (player?.output_protocols) {
-        return player.output_protocols.some(
-          (protocol) =>
-            protocol.protocol_domain &&
-            selectedProviderDomains.has(protocol.protocol_domain),
+      if (player) {
+        return player.output_protocols.some((protocol) =>
+          selectedProviderDomains.has(protocol.protocol_domain),
         );
       }
 
@@ -569,38 +471,6 @@ watch(
   display: inline-flex;
   gap: 4px;
   flex-wrap: wrap;
-}
-
-.protocol-chip {
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-
-.protocol-chip--unavailable {
-  opacity: 0.4;
-}
-
-.chip-icon {
-  margin: 0 !important;
-  width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
 }
 
 @media (max-width: 960px) {

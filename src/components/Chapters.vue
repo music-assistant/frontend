@@ -36,16 +36,17 @@
 </template>
 
 <script setup lang="ts">
+import { ChevronDown, ChevronUp } from "@lucide/vue";
 import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import { MediaItemChapter, type MediaItemType } from "@/plugins/api/interfaces";
+import { MediaItemChapter, type MediaItem } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
 
 export interface Props {
-  itemDetails: MediaItemType;
+  itemDetails: MediaItem;
 }
 const props = defineProps<Props>();
 
@@ -60,7 +61,7 @@ const toolbarMenuItems = computed(() => {
     // toggle expand
     {
       label: "tooltip.collapse_expand",
-      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
+      icon: expanded.value ? ChevronUp : ChevronDown,
       action: toggleExpand,
       overflowAllowed: false,
     },
@@ -69,6 +70,8 @@ const toolbarMenuItems = computed(() => {
 
 const chapterClicked = function (chapter: MediaItemChapter) {
   if (!props.itemDetails || !itemIsAvailable(props.itemDetails)) return;
-  api.playMedia(props.itemDetails.uri, undefined, chapter.position.toString());
+  api.playMedia(props.itemDetails.uri, undefined, {
+    start_item: chapter.position.toString(),
+  });
 };
 </script>

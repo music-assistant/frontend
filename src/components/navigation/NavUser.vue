@@ -67,7 +67,12 @@ const handleLogout = () => {
                 {{ initial }}
               </AvatarFallback>
             </Avatar>
-            <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
+            <!-- only the avatar fits the collapsed rail, so the name and the
+                 chevron hide the moment collapsing starts rather than linger
+                 over the still-shrinking row -->
+            <div
+              class="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden"
+            >
               <span class="truncate font-medium">{{ displayName }}</span>
               <span class="text-muted-foreground truncate text-xs">
                 {{ username }}
@@ -75,7 +80,7 @@ const handleLogout = () => {
             </div>
             <MoreVertical
               style="width: 1rem !important"
-              class="ml-auto shrink-0 opacity-70"
+              class="ml-auto shrink-0 opacity-70 group-data-[collapsible=icon]:hidden"
             />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
@@ -128,9 +133,3 @@ const handleLogout = () => {
     </SidebarMenuItem>
   </SidebarMenu>
 </template>
-
-<style scoped>
-.ha-menu-arrow {
-  color: rgb(var(--v-theme-primary, 3, 169, 244)) !important;
-}
-</style>

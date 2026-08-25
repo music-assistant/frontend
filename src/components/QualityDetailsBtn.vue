@@ -39,6 +39,7 @@
         <AudioProcessingDetails
           :chain="audioProcessing"
           :stream-details="streamDetails"
+          :crossfade-intent="crossfadeIntent"
         />
       </div>
     </PopoverContent>
@@ -61,6 +62,7 @@ import {
   qualityTierToColor,
   useStreamQuality,
 } from "@/composables/useStreamQuality";
+import { CrossfadeMode } from "@/plugins/api/interfaces";
 
 // render the quality indicator as a rounded "pill" (matching the shadcn player
 // header controls) instead of the default square chip
@@ -72,6 +74,13 @@ const streamDetails = computed(
 const audioProcessing = computed(
   () => streamDetails.value?.audio_processing ?? undefined,
 );
+const crossfadeIntent = computed(() => {
+  const queue = store.activePlayerQueue;
+  if (!queue?.crossfade_enabled) return CrossfadeMode.DISABLED;
+  return queue.smart_fades_active
+    ? CrossfadeMode.SMART_CROSSFADE
+    : CrossfadeMode.STANDARD_CROSSFADE;
+});
 
 const { minOutputQualityTier, maxOutputQualityTier } =
   useStreamQuality(audioProcessing);

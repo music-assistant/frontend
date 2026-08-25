@@ -16,24 +16,71 @@
       <template #title>
         <slot name="title">{{ title }}</slot>
       </template>
+
+      <template v-if="!store.mobileLayout" #append>
+        <Transition name="listing-search">
+          <div v-if="showSearchInput" class="listing-search-slot">
+            <SearchInput
+              ref="searchInputRef"
+              v-model="params.search"
+              clearable
+              class="listing-search listing-search--inline w-(--listing-search-width) shrink-0"
+              :placeholder="searchLabel"
+              :aria-label="searchLabel"
+              @focus="searchHasFocus = true"
+              @blur="searchHasFocus = false"
+            />
+          </div>
+        </Transition>
+      </template>
     </Toolbar>
 
     <v-divider />
 
-    <v-text-field
-      v-if="showSearchInput"
-      id="searchInput"
-      v-model="params.search"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('search')"
-      hide-details
-      variant="filled"
-      style="width: auto; margin-top: 10px"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-      @click:clear="onClear"
-    />
+    <div v-if="props.toolBarTabs !== undefined" class="content-tabs">
+      <Tabs
+        :model-value="activeTabId"
+        class="items-start"
+        @update:model-value="(v) => onTabChange(v as string)"
+      >
+        <TabsList class="h-auto w-auto gap-6 bg-transparent p-0">
+          <TabsTrigger
+            v-for="tab in props.toolBarTabs"
+            :key="tab.id"
+            :value="tab.id"
+            class="flex-none rounded-none border-0 bg-transparent px-1 pt-1 pb-2 text-[15px] text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_0_currentColor] dark:data-[state=active]:bg-transparent"
+          >
+            {{ tab.label }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
+
+    <div
+      v-if="showSearchInput && store.mobileLayout"
+      class="mx-2.5 mt-2.5 flex items-center gap-1"
+    >
+      <SearchInput
+        ref="searchInputRef"
+        v-model="params.search"
+        clearable
+        class="listing-search listing-search--row min-w-0 flex-1"
+        :placeholder="searchLabel"
+        :aria-label="searchLabel"
+        @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-10 shrink-0"
+        :aria-label="$t('close')"
+        :title="$t('close')"
+        @click="closeSearch"
+      >
+        <X class="size-[22px]" />
+      </Button>
+    </div>
 
     <Container
       v-if="expanded"
@@ -193,11 +240,24 @@
         </EmptyContent>
       </Empty>
 
-      <!-- box shown when item(s) selected -->
+      <!-- box shown when item(s) selected; vuetify writes the overlay z-index inline
+           (default 2000), so it has to be lowered here to stay behind the player bar
+           popouts (998) and their backdrops (997). that also puts it below the mobile
+           scrim, so it clears what covers the bottom rather than just the bars.
+           vuetify pads the snackbar by the measured bar height on its own, so that
+           is taken off, with a 16px floor in case the bar outgrows the offset -->
       <v-snackbar
         :model-value="selectedItems.length > 1"
         :timeout="-1"
-        style="margin-bottom: 120px"
+        :z-index="996"
+        style="
+          margin-bottom: max(
+            16px,
+            calc(
+              var(--bottom-obscured-height) + 16px - var(--v-layout-bottom, 0px)
+            )
+          );
+        "
       >
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
         <template #actions>
@@ -240,14 +300,15 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty";
+import { SearchInput } from "@/components/ui/search-input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCommandCenter } from "@/composables/useCommandCenter";
+import { SEARCHABLE_MEDIA_TYPES } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
-import {
-  handleMenuBtnClick,
-  panelViewItemResponsive,
-  scrollElement,
-} from "@/helpers/utils";
+import { handleMenuBtnClick } from "@/helpers/media_item_actions";
+import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { itemIsAvailable, itemSupportsPlayLog } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -266,7 +327,30 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "@lucide/vue";
+import {
+  ArrowUpDown,
+  CheckCheck,
+  ChevronDown,
+  ChevronUp,
+  Disc3,
+  Eye,
+  EyeClosed,
+  EyeOff,
+  Files,
+  FilterX,
+  Heart,
+  Layers,
+  LayoutGrid,
+  LayoutList,
+  LibraryBig,
+  ListChecks,
+  ListMusic,
+  MicVocal,
+  Package,
+  RefreshCw,
+  Search,
+  X,
+} from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -283,6 +367,14 @@ import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
 
+type LoadPagedDataFn = (params: LoadDataParams) => Promise<MediaItemType[]>;
+
+export interface ToolBarTab {
+  id: string;
+  label: string;
+  loadPagedData?: LoadPagedDataFn;
+}
+
 export interface LoadDataParams {
   offset: number;
   limit: number;
@@ -297,6 +389,7 @@ export interface LoadDataParams {
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
+  collapseCollections?: boolean;
 }
 // properties
 export interface Props {
@@ -315,6 +408,7 @@ export interface Props {
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
   showProviderFilter?: boolean;
+  showCollapseCollections?: boolean;
   // when set, the provider filter allows only a single selection at a time
   singleProviderFilter?: boolean;
   // when set, the provider filter is a required single selector: exactly one
@@ -339,7 +433,7 @@ export interface Props {
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
   // loadPagedData callback is provided for serverside paging/sorting
-  loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  loadPagedData?: LoadPagedDataFn;
   // loadItems callback is provided for flat non-paged listings
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   limit?: number;
@@ -351,6 +445,7 @@ export interface Props {
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel" | "panel_compact";
+  toolBarTabs?: ToolBarTab[];
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -368,6 +463,7 @@ const props = withDefaults(defineProps<Props>(), {
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
   showProviderFilter: undefined,
+  showCollapseCollections: undefined,
   singleProviderFilter: false,
   requireProviderSelection: false,
   providerFilterOptions: undefined,
@@ -391,14 +487,55 @@ const props = withDefaults(defineProps<Props>(), {
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
+  toolBarTabs: undefined,
 });
 
 // global refs
 const router = useRouter();
 const route = useRoute();
 const { t, te } = useI18n();
+const { open: openCommandCenter } = useCommandCenter();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
+const activeTabId = ref(props.toolBarTabs?.[0]?.id || "");
+watch(
+  () => props.toolBarTabs,
+  (tabs) => {
+    if (!tabs || tabs.length === 0) return;
+    if (tabs.some((tab) => tab.id === activeTabId.value)) return;
+    const hadActiveTab = activeTabId.value !== "";
+    const preferred = savedPrefs.value.activeTab;
+    const target = tabs.find((tab) => tab.id === preferred) ?? tabs[0];
+
+    activeTabId.value = target.id;
+
+    if (restoredFromPrevState) {
+      if (preferred && !tabs.some((tab) => tab.id === preferred)) {
+        loadData(true);
+      }
+    } else if (hadActiveTab || target.id !== tabs[0].id) {
+      loadData(true);
+    }
+  },
+);
+let restoredFromPrevState = false;
+
+const getActiveTab = () => {
+  return props.toolBarTabs?.find((tab) => tab.id === activeTabId.value);
+};
+
+const onTabChange = function (tabId: string) {
+  if (!tabId || tabId === activeTabId.value) return;
+  activeTabId.value = tabId;
+
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "activeTab",
+    tabId,
+  );
+  loadData(true);
+};
 
 // local refs
 const params = ref<LoadDataParams>({
@@ -412,6 +549,14 @@ const params = ref<LoadDataParams>({
 const viewMode = ref("list");
 const showSearch = ref(false);
 const searchHasFocus = ref(false);
+const searchInputRef = ref<InstanceType<typeof SearchInput>>();
+const listingMediaType = computed(() => MEDIA_TYPE_BY_ITEMTYPE[props.itemtype]);
+const searchLabel = computed(() => {
+  const mediaType = listingMediaType.value;
+  if (!mediaType) return t("search");
+  const labelKey = MEDIA_TYPE_LABEL_KEYS[mediaType] ?? `${mediaType}s`;
+  return t("search_in", [t(labelKey)]);
+});
 const pagedItems = ref<MediaItemType[]>([]);
 const allItems = ref<MediaItemType[]>([]);
 const loading = ref(false);
@@ -424,9 +569,41 @@ const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
 
+// used in tabbed item listings to prevent a timing-race condition, where
+// the selected tab shows items of the initial tab on entering the page
+let loadingTabId: string | undefined;
+let pendingTabLoad = false;
+
 // below this item count, the per-listing search option is hidden to reduce
 // clutter (consumers can force it on/off via the showSearchButton prop).
 const SEARCH_ITEM_THRESHOLD = 25;
+
+const MEDIA_TYPE_BY_ITEMTYPE: Record<string, MediaType> = {
+  artists: MediaType.ARTIST,
+  similarartists: MediaType.ARTIST,
+  albums: MediaType.ALBUM,
+  albumversions: MediaType.ALBUM,
+  artistalbums: MediaType.ALBUM,
+  trackalbums: MediaType.ALBUM,
+  tracks: MediaType.TRACK,
+  albumtracks: MediaType.TRACK,
+  artisttracks: MediaType.TRACK,
+  playlisttracks: MediaType.TRACK,
+  similartracks: MediaType.TRACK,
+  trackversions: MediaType.TRACK,
+  playlists: MediaType.PLAYLIST,
+  audiobooks: MediaType.AUDIOBOOK,
+  artistaudiobooks: MediaType.AUDIOBOOK,
+  podcasts: MediaType.PODCAST,
+  podcastepisodes: MediaType.PODCAST_EPISODE,
+  radios: MediaType.RADIO,
+  radioversions: MediaType.RADIO,
+  genres: MediaType.GENRE,
+};
+
+const MEDIA_TYPE_LABEL_KEYS: Partial<Record<MediaType, string>> = {
+  [MediaType.PODCAST_EPISODE]: "podcast_episodes",
+};
 
 interface DiscHeader {
   isDiscHeader: true;
@@ -491,7 +668,7 @@ const closeSearch = function () {
 };
 const focusSearch = function () {
   nextTick(() => {
-    document.getElementById("searchInput")?.focus();
+    searchInputRef.value?.focus();
   });
 };
 const toggleSearch = function () {
@@ -581,6 +758,17 @@ const toggleAlbumArtistsFilter = function () {
     params.value.albumArtistsFilter,
   );
   loadData(undefined, undefined, true);
+};
+
+const toggleCollapseCollections = function () {
+  params.value.collapseCollections = !params.value.collapseCollections;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "collapseCollections",
+    params.value.collapseCollections,
+  );
+  loadData(true, undefined, true);
 };
 
 const toggleHideEmptyFilter = function () {
@@ -722,12 +910,6 @@ const onRefreshClicked = function () {
   loadData(true, true);
 };
 
-const onClear = function () {
-  params.value.search = "";
-  showSearch.value = false;
-  loadData(undefined, undefined, true);
-};
-
 const changeSort = function (sort_key?: string) {
   if (sort_key !== undefined) {
     params.value.sortBy = sort_key;
@@ -803,20 +985,14 @@ const providerFilterSubItems = () =>
   }));
 
 const redirectSearch = function () {
-  store.globalSearchTerm = params.value.search;
-  const mediaTypeByItemtype: Record<string, MediaType> = {
-    artists: MediaType.ARTIST,
-    albums: MediaType.ALBUM,
-    tracks: MediaType.TRACK,
-    playlists: MediaType.PLAYLIST,
-    audiobooks: MediaType.AUDIOBOOK,
-    podcasts: MediaType.PODCAST,
-    radios: MediaType.RADIO,
-    genres: MediaType.GENRE,
-  };
-  const mediaType = mediaTypeByItemtype[props.itemtype];
-  store.globalSearchMediaTypes = mediaType ? [mediaType] : [];
-  router.push({ name: "search" });
+  const mediaType = listingMediaType.value;
+  openCommandCenter({
+    query: params.value.search,
+    mediaTypes:
+      mediaType && SEARCHABLE_MEDIA_TYPES.includes(mediaType)
+        ? [mediaType]
+        : [],
+  });
 };
 
 const loadNextPage = async function ({
@@ -841,6 +1017,9 @@ const loadNextPage = async function ({
 
 const loadAllItems = async function () {
   while (!allItemsReceived.value) {
+    // the paging can outlast the listing, so stop fetching once it is gone
+    if (unmounted) return;
+
     await loadNextPage({ done: function () {} });
   }
 };
@@ -868,6 +1047,7 @@ const hasActiveFilters = computed(() => {
     p.favoritesOnly ||
     p.libraryOnly ||
     p.albumArtistsFilter ||
+    (props.showCollapseCollections && p.collapseCollections) ||
     p.hideFullyPlayed ||
     // a required selector always has a provider chosen — that is not a "filter"
     (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
@@ -906,6 +1086,10 @@ const searchAvailable = computed(() => {
 const showSearchInput = computed(() => {
   return searchAvailable.value && showSearch.value && expanded.value;
 });
+
+const searchButtonCloses = computed(
+  () => showSearchInput.value && !store.mobileLayout,
+);
 
 const isLibraryItem = computed(() => {
   const libraryItemTypes = [
@@ -1054,7 +1238,7 @@ const menuItems = computed(() => {
     return [
       {
         label: "tooltip.collapse_expand",
-        icon: "mdi-chevron-down",
+        icon: ChevronDown,
         action: toggleExpand,
         overflowAllowed: false,
       },
@@ -1068,16 +1252,16 @@ const menuItems = computed(() => {
     if (showCheckboxes.value) {
       items.push({
         label: "tooltip.select_all",
-        icon: "mdi-select-all",
+        icon: CheckCheck,
         action: selectAll,
         overflowAllowed: true,
       });
     }
     items.push({
-      label: "tooltip.select_items",
-      icon: showCheckboxes.value
-        ? "mdi-checkbox-multiple-outline"
-        : "mdi-checkbox-multiple-blank-outline",
+      label: showCheckboxes.value
+        ? "tooltip.exit_select_items"
+        : "tooltip.select_items",
+      icon: ListChecks,
       action: toggleCheckboxes,
       active: showCheckboxes.value,
       overflowAllowed: true,
@@ -1087,7 +1271,7 @@ const menuItems = computed(() => {
   if (props.showLibraryOnlyFilter === true) {
     items.push({
       label: "tooltip.filter_library",
-      icon: "mdi-bookshelf",
+      icon: LibraryBig,
       action: toggleLibraryOnlyFilter,
       active: params.value.libraryOnly,
       overflowAllowed: true,
@@ -1124,7 +1308,7 @@ const menuItems = computed(() => {
   if (props.showFavoritesOnlyFilter === true) {
     items.push({
       label: "tooltip.filter_favorites",
-      icon: params.value.favoritesOnly ? "mdi-heart" : "mdi-heart-outline",
+      icon: Heart,
       action: toggleFavoriteFilter,
       active: params.value.favoritesOnly,
       overflowAllowed: true,
@@ -1135,9 +1319,7 @@ const menuItems = computed(() => {
   if (props.showHideFullyPlayedFilter === true) {
     items.push({
       label: "tooltip.filter_hide_fully_played",
-      icon: params.value.hideFullyPlayed
-        ? "mdi-eye-off"
-        : "mdi-eye-off-outline",
+      icon: EyeOff,
       action: toggleHideFullyPlayedFilter,
       active: params.value.hideFullyPlayed,
       overflowAllowed: true,
@@ -1148,11 +1330,20 @@ const menuItems = computed(() => {
   if (props.showAlbumArtistsOnlyFilter === true) {
     items.push({
       label: "tooltip.album_artist_filter",
-      icon: params.value.albumArtistsFilter
-        ? "mdi-account-music"
-        : "mdi-account-music-outline",
+      icon: MicVocal,
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
+      overflowAllowed: true,
+    });
+  }
+
+  // collapse collections filter
+  if (props.showCollapseCollections === true) {
+    items.push({
+      label: "tooltip.collapse_collections",
+      icon: Files,
+      action: toggleCollapseCollections,
+      active: params.value.collapseCollections,
       overflowAllowed: true,
     });
   }
@@ -1178,7 +1369,7 @@ const menuItems = computed(() => {
   if (props.showAlbumTypeFilter) {
     items.push({
       label: "tooltip.album_type",
-      icon: "mdi-album",
+      icon: Disc3,
       disabled: loading.value,
       active: params.value.albumType && params.value.albumType.length > 0,
       closeOnContentClick: false,
@@ -1209,7 +1400,7 @@ const menuItems = computed(() => {
   if (providerFilterAvailable.value && !props.requireProviderSelection) {
     items.push({
       label: "tooltip.filter_provider",
-      icon: "mdi-package-variant",
+      icon: Package,
       disabled: loading.value,
       active: !!params.value.provider && params.value.provider.length > 0,
       closeOnContentClick: props.singleProviderFilter,
@@ -1227,7 +1418,7 @@ const menuItems = computed(() => {
       label: newContentAvailable.value
         ? "tooltip.refresh_new_content"
         : "tooltip.refresh",
-      icon: "mdi-refresh",
+      icon: RefreshCw,
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
@@ -1239,7 +1430,7 @@ const menuItems = computed(() => {
   if (props.sortKeys?.length) {
     items.push({
       label: "tooltip.sort_options",
-      icon: "mdi-sort",
+      icon: ArrowUpDown,
       disabled: props.sortKeys.length <= 1 || loading.value,
       overflowAllowed: true,
       subItems: props.sortKeys.map((sortKey) => {
@@ -1257,12 +1448,14 @@ const menuItems = computed(() => {
   // toggle search (auto-hidden for small listings)
   if (searchAvailable.value) {
     items.push({
-      label: isSearchActive.value
-        ? "tooltip.search_filter_active"
-        : "tooltip.search",
-      icon: "mdi-magnify",
+      label: searchButtonCloses.value
+        ? "close"
+        : isSearchActive.value
+          ? "tooltip.search_filter_active"
+          : "tooltip.search",
+      icon: searchButtonCloses.value ? X : Search,
       action: toggleSearch,
-      active: isSearchActive.value,
+      active: isSearchActive.value && !searchButtonCloses.value,
       disabled: loading.value,
       overflowAllowed: false,
     });
@@ -1274,7 +1467,7 @@ const menuItems = computed(() => {
   if (providerFilterAvailable.value && props.requireProviderSelection) {
     items.push({
       label: "tooltip.select_provider",
-      icon: "mdi-package-variant",
+      icon: Package,
       disabled: loading.value,
       // single selection: close on pick so only one stays checked.
       closeOnContentClick: true,
@@ -1287,12 +1480,12 @@ const menuItems = computed(() => {
   if (!props.forcedViewMode)
     items.push({
       label: "tooltip.toggle_view_mode",
-      icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
+      icon: viewMode.value == "list" ? LayoutList : LayoutGrid,
       overflowAllowed: true,
       subItems: [
         {
           label: "view.list",
-          icon: "mdi-view-list",
+          icon: LayoutList,
           selected: viewMode.value == "list",
           action: () => {
             selectViewMode("list");
@@ -1300,7 +1493,7 @@ const menuItems = computed(() => {
         },
         {
           label: "view.panel",
-          icon: "mdi-grid",
+          icon: LayoutGrid,
           selected: viewMode.value == "panel",
           action: () => {
             selectViewMode("panel");
@@ -1308,7 +1501,7 @@ const menuItems = computed(() => {
         },
         {
           label: "view.panel_compact",
-          icon: "mdi-grid",
+          icon: LayoutGrid,
           selected: viewMode.value == "panel_compact",
           action: () => {
             selectViewMode("panel_compact");
@@ -1325,7 +1518,7 @@ const menuItems = computed(() => {
   if (props.allowCollapse === true) {
     items.push({
       label: "tooltip.collapse_expand",
-      icon: "mdi-chevron-up",
+      icon: ChevronUp,
       action: toggleExpand,
       overflowAllowed: false,
     });
@@ -1340,14 +1533,30 @@ const loadData = async function (
   FilterParamsChanged = false,
   offset = 0,
 ) {
+  let loadPagedData: LoadPagedDataFn | undefined = props.loadPagedData;
+  if (props.toolBarTabs !== undefined && props.toolBarTabs.length > 0) {
+    const activeTab = getActiveTab();
+    if (activeTab !== undefined && activeTab.loadPagedData !== undefined) {
+      loadPagedData = activeTab.loadPagedData;
+    }
+  }
+  const currentTabId = props.toolBarTabs?.length
+    ? getActiveTab()?.id
+    : undefined;
   if (loading.value) {
+    // Record whether the currently requested tab differs from the tab being loaded.
+    // Using assignment (not only setting to true) avoids a redundant reload if the
+    // user switches tabs and then switches back before the current load finishes.
+    pendingTabLoad = currentTabId !== loadingTabId;
+
     // we could potentially be called multiple times due to multiple watchers
     // so ignore if we're already loading
     return;
   }
   loading.value = true;
+  loadingTabId = currentTabId;
 
-  if (FilterParamsChanged && props.loadPagedData != null) {
+  if (FilterParamsChanged && loadPagedData != null) {
     // on paged server listings, we need to clear the list on filter params change
     clear = true;
   }
@@ -1365,41 +1574,49 @@ const loadData = async function (
     newContentAvailable.value = false;
   }
 
-  params.value.offset = offset;
-  params.value.limit = props.limit;
-  params.value.refresh = refresh;
+  try {
+    params.value.offset = offset;
+    params.value.limit = props.limit;
+    params.value.refresh = refresh;
 
-  if (props.loadPagedData != null) {
-    // server side paged listing (with filter support)
-    const nextItems = await props.loadPagedData(params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
+    if (loadPagedData != null) {
+      // server side paged listing (with filter support)
+      const nextItems = await loadPagedData(params.value);
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
+      if (Math.abs(nextItems.length - props.limit) > 10) {
+        allItemsReceived.value = true;
+      }
+    } else if (props.loadItems != null) {
+      // grab items from loadItems callback
+      if (!initialDataReceived.value || refresh) {
+        // load all items from the callback
+        allItems.value = await props.loadItems(params.value);
+        initialDataReceived.value = true;
+      }
+      // filter items
+      const nextItems = getFilteredItems(allItems.value, params.value);
+      if (params.value.offset) {
+        pagedItems.value.push(...nextItems);
+      } else {
+        pagedItems.value = nextItems;
+      }
+      // mark allItemsReceived if we have all items
+      allItemsReceived.value = nextItems.length < props.limit;
     }
-    if (Math.abs(nextItems.length - props.limit) > 10) {
-      allItemsReceived.value = true;
-    }
-  } else if (props.loadItems != null) {
-    // grab items from loadItems callback
-    if (!initialDataReceived.value || refresh) {
-      // load all items from the callback
-      allItems.value = await props.loadItems(params.value);
-      initialDataReceived.value = true;
-    }
-    // filter items
-    const nextItems = getFilteredItems(allItems.value, params.value);
-    if (params.value.offset) {
-      pagedItems.value.push(...nextItems);
-    } else {
-      pagedItems.value = nextItems;
-    }
-    // mark allItemsReceived if we have all items
-    allItemsReceived.value = nextItems.length < props.limit;
+  } finally {
+    params.value.refresh = false;
+    loading.value = false;
+    tempHide.value = false;
   }
-  params.value.refresh = false;
-  loading.value = false;
-  tempHide.value = false;
+
+  if (pendingTabLoad) {
+    pendingTabLoad = false;
+    await loadData(true);
+  }
 };
 
 // Re-derive from the current props.path: browse reuses one ItemsListing
@@ -1414,6 +1631,13 @@ const savedPrefs = computed(
 const restoreSettings = async function () {
   // restore settings for this path/itemtype
   const prefs = savedPrefs.value;
+
+  if (
+    prefs.activeTab &&
+    props.toolBarTabs?.some((tab) => tab.id === prefs.activeTab)
+  ) {
+    activeTabId.value = prefs.activeTab;
+  }
 
   // get stored/default viewMode for this itemtype
   if (props.forcedViewMode) {
@@ -1460,6 +1684,14 @@ const restoreSettings = async function () {
     prefs.albumArtistsFilter !== undefined
   ) {
     params.value.albumArtistsFilter = prefs.albumArtistsFilter;
+  }
+
+  // get stored/default collapse Collection for this itemtype
+  if (
+    props.showCollapseCollections !== false &&
+    prefs.collapseCollections !== undefined
+  ) {
+    params.value.collapseCollections = prefs.collapseCollections;
   }
 
   // get stored/default hideEmptyFilter for this itemtype (default: true = hide empty)
@@ -1531,7 +1763,12 @@ const keyListener = function (e: KeyboardEvent) {
     selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
     focusSearch();
-  } else if (!searchHasFocus.value && e.key.length == 1) {
+  } else if (
+    !searchHasFocus.value &&
+    e.key.length == 1 &&
+    !e.ctrlKey &&
+    !e.metaKey
+  ) {
     showSearch.value = true;
     focusSearch();
   }
@@ -1660,6 +1897,9 @@ const loadGenreOptions = async () => {
     const mediaType = itemtypeToMediaType[props.itemtype];
 
     do {
+      // the paging can outlast the listing, so stop fetching once it is gone
+      if (unmounted) return;
+
       page = await api.getLibraryGenres({
         limit: pageSize,
         offset,
@@ -1678,13 +1918,24 @@ const loadGenreOptions = async () => {
 
     genreOptions.value = all;
   } catch {
-    toast.error(t("error_loading_genres"));
+    toast.error(t("settings.error_loading_genres"));
   }
 };
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
+
+const clearSelection = () => {
+  selectedItems.value = [];
+  showCheckboxes.value = false;
+};
+
+// Set by the unmount hook, so the async startup can tell that the listing it is
+// working for is already gone.
+let unmounted = false;
+
 onBeforeUnmount(() => {
-  eventbus.off("clearSelection");
+  unmounted = true;
+  eventbus.off("clearSelection", clearSelection);
   _unsubscribeMediaEvents?.();
 });
 
@@ -1693,6 +1944,7 @@ onMounted(async () => {
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
   if (props.restoreState && store.prevState?.path == key) {
+    restoredFromPrevState = true;
     params.value = store.prevState.params;
     pagedItems.value = store.prevState.pagedItems;
     allItems.value = store.prevState.allItems;
@@ -1716,12 +1968,12 @@ onMounted(async () => {
   }
 
   await loadGenreOptions();
+  // The await can outlast the listing, and the unmount hook only reaches what
+  // was already set up by the time it ran.
+  if (unmounted) return;
 
   // Listen for selection clearing events
-  eventbus.on("clearSelection", () => {
-    selectedItems.value = [];
-    showCheckboxes.value = false;
-  });
+  eventbus.on("clearSelection", clearSelection);
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(
@@ -1745,14 +1997,13 @@ onMounted(async () => {
         // update item
         const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
         if (idx >= 0) {
-          const playData = evt.data as Record<string, unknown>;
-          if ("fully_played" in pagedItems.value[idx])
-            pagedItems.value[idx].fully_played = playData[
-              "fully_played"
-            ] as boolean;
-          if ("resume_position_ms" in pagedItems.value[idx])
-            pagedItems.value[idx].resume_position_ms =
-              (playData["seconds_played"] as number) * 1000;
+          const item = pagedItems.value[idx];
+          if (itemSupportsPlayLog(item)) {
+            const playData = evt.data as Record<string, unknown>;
+            item.fully_played = playData["fully_played"] as boolean;
+            item.resume_position_ms =
+              ((playData["seconds_played"] as number) ?? 0) * 1000;
+          }
         }
       }
     },
@@ -1780,7 +2031,7 @@ export interface StoredState {
 }
 
 const getSortName = function (
-  item: MediaItemType | ItemMapping,
+  item: MediaItemType | ItemMapping | null | undefined,
   preferSortName = false,
 ) {
   if (!item) return "";
@@ -1905,13 +2156,6 @@ const getFilteredItems = function (
   if (params.sortBy == "year_desc") {
     result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
   }
-  if (params.sortBy == "recent") {
-    result.sort((a, b) => {
-      const aTimestamp = "timestamp_added" in a ? a.timestamp_added : 0;
-      const bTimestamp = "timestamp_added" in b ? b.timestamp_added : 0;
-      return bTimestamp - aTimestamp;
-    });
-  }
 
   if (params.sortBy == "duration") {
     result.sort(
@@ -1929,7 +2173,7 @@ const getFilteredItems = function (
   }
 
   if (params.favoritesOnly) {
-    result = result.filter((x) => x.favorite);
+    result = result.filter((x) => "favorite" in x && x.favorite);
   }
 
   if (params.hideFullyPlayed) {
@@ -1975,6 +2219,35 @@ defineExpose({
 </script>
 
 <style scoped>
+.listing-search-slot {
+  --listing-search-width: clamp(0px, calc(100vw - 560px), 280px);
+  display: flex;
+  width: var(--listing-search-width);
+}
+
+.listing-search-enter-active,
+.listing-search-leave-active {
+  overflow: hidden;
+  transition: width 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.listing-search-enter-from,
+.listing-search-leave-to {
+  width: 0;
+}
+
+.listing-search--inline {
+  font-size: 0.9375rem;
+  font-weight: 400;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listing-search-enter-active,
+  .listing-search-leave-active {
+    transition: none;
+  }
+}
+
 .disc-header {
   display: flex;
   align-items: flex-end;
@@ -2039,5 +2312,13 @@ defineExpose({
   max-width: 10%;
   flex-basis: 10%;
   padding: 8px;
+}
+.content-tabs {
+  padding: 10px 16px 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 </style>

@@ -79,7 +79,7 @@
           </v-btn>
         </v-form>
         <br />
-        <v-btn block @click="router.back()">
+        <v-btn block @click="goBack(router, { name: 'playersettings' })">
           {{ $t("close") }}
         </v-btn>
       </div>
@@ -91,7 +91,9 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { groupMemberPickerVisible, markdownToHtml } from "@/helpers/utils";
+import { goBack } from "@/helpers/navigation";
+import { canBeGroupMember, groupMemberPickerVisible } from "@/helpers/players";
+import { markdownToHtml } from "@/helpers/utils";
 import { PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 
 // global refs
@@ -120,7 +122,8 @@ const syncPlayers = computed(() => {
         (x) =>
           x.available &&
           x.type != PlayerType.GROUP &&
-          groupMemberPickerVisible(x),
+          groupMemberPickerVisible(x) &&
+          canBeGroupMember(x),
       )
       .sort((a, b) =>
         (a.name ?? "")
@@ -135,7 +138,8 @@ const syncPlayers = computed(() => {
         if (
           !x.available ||
           x.type === PlayerType.GROUP ||
-          !groupMemberPickerVisible(x)
+          !groupMemberPickerVisible(x) ||
+          !canBeGroupMember(x)
         )
           return false;
         if (!x.supported_features.includes(PlayerFeature.SET_MEMBERS))
@@ -167,6 +171,7 @@ const syncPlayers = computed(() => {
         x.available &&
         x.type != PlayerType.GROUP &&
         groupMemberPickerVisible(x) &&
+        canBeGroupMember(x) &&
         x.provider == providerDetails.value?.instance_id,
     )
     .sort((a, b) =>

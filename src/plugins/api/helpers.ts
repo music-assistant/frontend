@@ -3,12 +3,16 @@
 import { watch } from "vue";
 import api, { ConnectionState } from ".";
 import {
+  Audiobook,
   AudioSource,
+  CrossfadeMode,
   MediaItemType,
   ItemMapping,
   MediaType,
   Player,
   PlayerQueue,
+  PodcastEpisode,
+  QueueItem,
 } from "./interfaces";
 
 /**
@@ -46,15 +50,47 @@ export const isQueueInfiniteStream = function (
 };
 
 /**
+ * Returns the provider serving a queue's current item when that source is the one
+ * crossfading it, or undefined when Music Assistant applies the fade (or none is).
+ *
+ * The queue's crossfade settings say nothing about who acts on them: a source that
+ * fades its own playback is handed the setting and does the overlap itself, so none
+ * of our timing reaches the audio.
+ */
+export const queueSourceCrossfadeProvider = function (
+  queue: PlayerQueue | undefined,
+): string | undefined {
+  const streamDetails = queue?.current_item?.streamdetails;
+  const crossfadeMode =
+    streamDetails?.audio_processing?.queue_processing?.crossfade_mode;
+  return crossfadeMode === CrossfadeMode.SOURCE
+    ? streamDetails?.provider
+    : undefined;
+};
+
+/**
  * Type guard for AudioSource media items.
  * AudioSource is a first-class MediaItem representing a plugin source
  * (Spotify Connect, AirPlay receiver, Snapcast, etc.) — its capability
  * flags drive which transport controls are surfaced when active.
  */
 export const isAudioSource = function (
-  item: MediaItemType | ItemMapping | undefined,
+  item: MediaItemType | ItemMapping | null | undefined,
 ): item is AudioSource {
   return item?.media_type === MediaType.AUDIO_SOURCE;
+};
+
+/**
+ * Type guard for media items that track played state (fully_played /
+ * resume_position_ms): podcast episodes and audiobooks.
+ */
+export const itemSupportsPlayLog = function (
+  item: MediaItemType | ItemMapping | undefined,
+): item is Audiobook | PodcastEpisode {
+  return (
+    item?.media_type === MediaType.PODCAST_EPISODE ||
+    item?.media_type === MediaType.AUDIOBOOK
+  );
 };
 
 /**
@@ -149,10 +185,28 @@ export const getListItemProviderIconDomain = function (
   return getProviderIconDomain(item);
 };
 
+/**
+ * Provider domain for a browse entry that stands for a provider itself,
+ * undefined for anything else.
+ */
+export const getProviderRootDomain = function (
+  item: MediaItemType | ItemMapping | QueueItem | undefined,
+): string | undefined {
+  if (!item || !("media_type" in item)) return undefined;
+  if (item.media_type !== MediaType.FOLDER) return undefined;
+  // the ".." entry one level down has the same path, so item_id has to match too
+  if (item.item_id !== "root") return undefined;
+  return "path" in item && item.path.endsWith("://")
+    ? item.provider
+    : undefined;
+};
+
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
   if (item.media_type == MediaType.FOLDER) return true;
+  if (item.media_type == MediaType.COLLECTION && item.provider == "library")
+    return true;
   if (
     (item.media_type == MediaType.GENRE ||
       item.media_type == MediaType.GENRE_ALIAS) &&
@@ -178,6 +232,40 @@ export const getSourceName = function (player: Player) {
     }
   }
   return source_id;
+};
+
+/**
+ * The queue playing on the given player, or undefined when it has none.
+ *
+ * A player either plays the queue of the source it is attached to, or its own
+ * queue when it has no source; an inactive own queue does not count.
+ *
+ * A player taken over by an external source is attached to no queue at all, so
+ * callers get undefined for it rather than an inactive queue. The queue that is
+ * returned reads `active` in every settled state, and reads inactive only while a
+ * handover back to it is still propagating.
+ */
+export function resolvePlayerQueue(player?: Player): PlayerQueue | undefined {
+  if (player?.active_source && player.active_source in api.queues) {
+    return api.queues[player.active_source];
+  }
+  if (
+    player &&
+    !player.active_source &&
+    player.player_id in api.queues &&
+    api.queues[player.player_id].active
+  ) {
+    return api.queues[player.player_id];
+  }
+  return undefined;
+}
+
+export const getCollectionMediaTypeFromItemId = function (itemId: string) {
+  // the item id is defined by the backend as "<MediaType>___<collection_name>"
+  const itemIdType = itemId.split("___", 1)[0];
+  return Object.values(MediaType).includes(itemIdType as MediaType)
+    ? (itemIdType as MediaType)
+    : MediaType.UNKNOWN;
 };
 
 /**

@@ -29,7 +29,6 @@
     "delete_db": "Slet emne fra databasen",
     "details": "Detaljer",
     "enter_url": "Indtast den URL, du vil føje til databasen",
-    "external_source_active": "Ekstern kilde aktiv: {0}",
     "goto_album": "Gå til album {0}",
     "goto_artist": "Gå til kunstner {0}",
     "items_selected": "{0} emne(r) valgt",
@@ -54,8 +53,7 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Afspiller",
-        "stereo_pair": "Par i stereo",
-        "sync_group": "Synkroniseringsgruppe"
+        "stereo_pair": "Par i stereo"
     },
     "players": "Afspillere",
     "playlist": "Afspilningsliste",
@@ -252,8 +250,6 @@
                 "remove_confirm": "Er du sikker på, at du vil fjerne denne DSP-forudindstilling?"
             }
         },
-        "dsp_enabled": "DSP er aktiveret",
-        "dsp_disabled": "DSP er deaktiveret",
         "dsp_note_multi_device_group": {
             "label": "Du kan konfigurere DSP'en for hver enkelt afspiller."
         },
@@ -332,7 +328,6 @@
         "artist": "Kunstner",
         "name": "Alfabetisk",
         "name_desc": "Alfabetisk (faldende)",
-        "recent": "Nyligt tilføjet",
         "year_desc": "Udgivelsesår (faldende)",
         "duration_desc": "Varighed (faldende)",
         "original": "Original",
@@ -344,9 +339,7 @@
         "last_played": "Sidst spillet",
         "last_played_desc": "Sidst spillet (faldende)",
         "play_count": "Antal afspilninger",
-        "play_count_desc": "Antal afspilninger (faldende)",
-        "artist_name": "Albumkunstner",
-        "artist_name_desc": "Albumkunstner (faldende)"
+        "play_count_desc": "Antal afspilninger (faldende)"
     },
     "state": {
         "idle": "keder sig",
@@ -373,7 +366,6 @@
         "open_provider_link": "Åbn dette element på udbyderens hjemmeside",
         "collapse_expand": "Skjul\/udvid listen",
         "back": "Tilbage",
-        "show_menu": "Vis\/skjul menu",
         "search_filter_active": "Søgningen filtrerer i øjeblikket resultater",
         "play_sample": "Afspil prøve",
         "album_type": "Album type",

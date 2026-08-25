@@ -99,7 +99,7 @@
           :disabled="loading || !isFormValid"
         >
           <Spinner v-if="loading" />
-          {{ isEditMode ? $t("save") : $t("add") }}
+          {{ isEditMode ? $t("settings.save") : $t("add") }}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -200,7 +200,7 @@ watch(
     if (active != null) store.dialogActive = active;
     if (active && compProps.editItem) {
       // Pre-populate fields with current values
-      const thumbImage = compProps.editItem.metadata?.images?.find(
+      const thumbImage = compProps.editItem.metadata.images?.find(
         (img) => img.type === ImageType.THUMB,
       );
       form.reset({

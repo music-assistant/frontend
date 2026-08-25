@@ -43,11 +43,11 @@
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
 import {
-  getArtistsString,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
-} from "@/helpers/utils";
+} from "@/helpers/media_item_actions";
+import { getArtistsString } from "@/helpers/utils";
 import {
   type Album,
   type ItemMapping,

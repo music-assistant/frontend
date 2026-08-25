@@ -1,8 +1,17 @@
 <template>
   <div class="party-view" :style="gradientBackgroundStyle">
+    <!-- MilkDrop visualizer takes over the backdrop when enabled -->
+    <VisualizerCanvas
+      v-if="visualizerActive"
+      :preset="visualizerPresetPref"
+      :blur="visualizerBlurPref"
+      :opacity="visualizerOpacityPref"
+      :player-id="store.activePlayer?.player_id"
+      covered-when-fullscreen
+    />
     <!-- Blurred album art background: separate element so the browser can cache the texture -->
     <div
-      v-if="useAlbumArtBackground && albumArtUrl"
+      v-else-if="useAlbumArtBackground && albumArtUrl"
       class="background-image"
       :style="{ backgroundImage: `url(${albumArtUrl})` }"
     ></div>
@@ -25,7 +34,8 @@
         'party-content',
         {
           'party-content--karaoke': karaokeMode,
-          'party-content--album-art': useAlbumArtBackground && !!albumArtUrl,
+          'party-content--album-art':
+            visualizerActive || (useAlbumArtBackground && !!albumArtUrl),
           'party-content--light-text': useLightChrome,
         },
       ]"
@@ -48,18 +58,7 @@
 
         <!-- Right: controls -->
         <div class="flex items-center gap-2 shrink-0">
-          <!-- Fullscreen: minimize button -->
-          <Button
-            v-if="isFullscreen && !hideBackButton"
-            variant="ghost-icon"
-            size="icon-sm"
-            :aria-label="$t('tooltip.exit_fullscreen')"
-            @click="goFullscreen(false)"
-          >
-            <Minimize2 :size="13" />
-          </Button>
-
-          <!-- Non-fullscreen: actions -->
+          <!-- Guest access badge sits ahead of the icon cluster -->
           <template v-if="!isFullscreen">
             <Badge
               v-if="qrAvailable"
@@ -79,6 +78,36 @@
               <WifiOff :size="11" />
               {{ $t("providers.party.guest_access_disabled") }}
             </Badge>
+          </template>
+
+          <!-- Visualizer toggle; also available in fullscreen, where the
+               party screen normally runs -->
+          <Button
+            v-if="visualizerAvailable"
+            variant="ghost-icon"
+            size="icon-sm"
+            :aria-label="$t('visualizer.toggle')"
+            @click="toggleVisualizer"
+          >
+            <Droplet
+              :size="13"
+              :fill="visualizerEnabledPref ? 'currentColor' : 'none'"
+            />
+          </Button>
+
+          <!-- Fullscreen: minimize button -->
+          <Button
+            v-if="isFullscreen && !hideBackButton"
+            variant="ghost-icon"
+            size="icon-sm"
+            :aria-label="$t('tooltip.exit_fullscreen')"
+            @click="goFullscreen(false)"
+          >
+            <Minimize2 :size="13" />
+          </Button>
+
+          <!-- Non-fullscreen: actions -->
+          <template v-if="!isFullscreen">
             <Button
               v-if="partyInstanceId"
               variant="ghost-icon"
@@ -246,10 +275,11 @@
       </template>
     </div>
     <div
-      class="absolute right-1 flex items-center gap-2 opacity-50 font-medium"
+      class="absolute flex items-center gap-2 opacity-50 font-medium"
       :style="{
         color: chromeTextColor,
         bottom: 'var(--party-player-bottom)',
+        right: 'var(--party-player-right)',
       }"
     >
       <span>{{ $t("providers.party.powered_by") }}</span>
@@ -294,6 +324,7 @@
 import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyQR from "@/components/party/PartyQR.vue";
+import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
 import {
   AlertDialog,
@@ -308,6 +339,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
+import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import {
   ImageColorPalette,
   getMediaItemImageUrl,
@@ -324,6 +356,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
+  Droplet,
   Maximize2,
   Minimize2,
   Music,
@@ -343,8 +376,15 @@ const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
 const logoDarkSrc = new URL("@/assets/logo/logo-dark.svg", import.meta.url)
   .href;
 
+// Set by the unmount hook, so the async work below can tell that the view it
+// belongs to is gone before it acts on a result.
+let unmounted = false;
+
 const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>("party/player");
+  // Leaving the view mid-request would otherwise hand the whole app the party
+  // player, over whatever the next route picked.
+  if (unmounted) return;
   accessError.value = "";
   if (partyPlayerId) {
     store.activePlayerId = partyPlayerId;
@@ -430,7 +470,13 @@ const goToSettings = () => {
   }
 };
 
+// A frameless session can also be started elsewhere (a dashboard viewer login,
+// a ?frameless deep link) and is meant to last, so this view only switches back
+// off the fullscreen it switched on itself.
+let enteredFullscreen = false;
+
 const goFullscreen = (frameless: boolean) => {
+  enteredFullscreen = frameless;
   store.frameless = frameless;
   if (frameless) {
     document.documentElement.requestFullscreen?.();
@@ -443,6 +489,7 @@ const goFullscreen = (frameless: boolean) => {
 const onFullscreenChange = () => {
   if (!document.fullscreenElement && store.frameless) {
     store.frameless = false;
+    enteredFullscreen = false;
   }
 };
 onMounted(() => {
@@ -454,6 +501,10 @@ onBeforeUnmount(() => {
   if (typeof document !== "undefined") {
     document.removeEventListener("fullscreenchange", onFullscreenChange);
   }
+  // Leaving without the minimize button — browser back, a redirect — takes the
+  // listener above with it, so the rest of the app would be left with no
+  // navigation and no player bar.
+  if (enteredFullscreen) goFullscreen(false);
 });
 
 // Compact mode: hide previous tracks on small screens to reclaim space
@@ -470,8 +521,20 @@ onBeforeUnmount(() => {
 // Album art background is always active
 const useAlbumArtBackground = computed(() => true);
 
+const {
+  visualizerEnabledPref,
+  visualizerPresetPref,
+  visualizerBlurPref,
+  visualizerOpacityPref,
+  visualizerAvailable,
+  visualizerActive,
+  toggleVisualizer,
+} = useVisualizer(() => store.activePlayer?.player_id);
+
+// The track cards show the queue's position, so their play state comes from
+// the queue too.
 const isPlaying = computed(
-  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+  () => store.activePlayerQueue?.state === PlaybackState.PLAYING,
 );
 
 // Queue items state
@@ -491,8 +554,8 @@ const fetchLyrics = async () => {
   if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
 
   const track = mediaItem as Track;
-  const existingPlain = track.metadata?.lyrics?.trim() || null;
-  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+  const existingPlain = track.metadata.lyrics?.trim() || null;
+  const existingSynced = track.metadata.lrc_lyrics?.trim() || null;
 
   if (existingPlain || existingSynced) {
     currentLyrics.value = { plain: existingPlain, synced: existingSynced };
@@ -518,8 +581,7 @@ const lyricsEnabled = computed(() => karaokeMode.value);
 const lyricsTextColor = computed(() =>
   albumArtUrl.value ? "#FFFFFF" : isDark.value ? "#FFFFFF" : "#000000",
 );
-const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
-  useLyricsElapsedTime(lyricsEnabled);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsEnabled);
 
 const colorPalette = computed<ImageColorPalette>(() =>
   paletteFromServer(store.activePlayer?.current_media?.palette),
@@ -698,13 +760,20 @@ let wakeLock: WakeLockSentinel | null = null;
 const requestWakeLock = async () => {
   if ("wakeLock" in navigator) {
     try {
-      wakeLock = await navigator.wakeLock.request("screen");
-      wakeLock.addEventListener("release", () => {
+      const sentinel = await navigator.wakeLock.request("screen");
+      // The request can outlive the view, and the unmount hook has no way to
+      // reach a sentinel that did not exist while it ran.
+      if (unmounted) {
+        sentinel.release();
+        return;
+      }
+      wakeLock = sentinel;
+      sentinel.addEventListener("release", () => {
         console.debug("Wake lock released");
         wakeLock = null;
         // Re-acquire wake lock if document is still visible
         // This handles cases where the system releases it unexpectedly
-        if (document.visibilityState === "visible") {
+        if (!unmounted && document.visibilityState === "visible") {
           requestWakeLock();
         }
       });
@@ -723,26 +792,12 @@ const handleVisibilityChange = () => {
 };
 
 // Lifecycle and event subscriptions
-// Apply layout overrides to the parent .content-section so the party view
-// fills its container. Scoped to mount/unmount to avoid leaking global styles.
-const parentSection = ref<HTMLElement | null>(null);
-
-const applyParentStyles = () => {
-  const el = document.querySelector(".content-section");
-  if (el instanceof HTMLElement) {
-    parentSection.value = el;
-    el.classList.add("party-view-active");
-  }
-};
-
-const cleanupParentStyles = () => {
-  if (parentSection.value) {
-    parentSection.value.classList.remove("party-view-active");
-    parentSection.value = null;
-  }
-};
-
 const BURN_IN_SWAP_MS = 10 * 60 * 1000; // 10 minutes
+
+// onMounted subscribes after its awaits, where the component is no longer the
+// active instance and onBeforeUnmount would be a no-op, so the subscriptions
+// are collected here for the unmount hook registered at setup level.
+const unsubscribers: Array<() => void> = [];
 
 watch(antiBurnIn, (enabled) => {
   if (burnInInterval) {
@@ -760,12 +815,13 @@ watch(antiBurnIn, (enabled) => {
 });
 
 onMounted(async () => {
-  // Apply parent container overrides
-  applyParentStyles();
+  // Registered before the first await, so that leaving the view while one is
+  // still pending cannot attach the listener after the unmount hook has
+  // already removed it.
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 
   // Request wake lock to keep screen on
   await requestWakeLock();
-  document.addEventListener("visibilitychange", handleVisibilityChange);
 
   // Set active player from party config (needed when opened in a new tab
   // where the Default layout's player selection logic doesn't run)
@@ -773,6 +829,12 @@ onMounted(async () => {
 
   // Fetch party configuration via shared composable
   const config = await fetchConfig();
+
+  // Leaving the view while the awaits above are still in flight runs the
+  // unmount hook before anything below has been registered, so bail out
+  // rather than subscribe to events nothing will clean up.
+  if (unmounted) return;
+
   if (config) {
     if (config.karaoke_mode !== undefined) {
       karaokeMode.value = config.karaoke_mode;
@@ -792,36 +854,35 @@ onMounted(async () => {
   fetchQueueItems();
 
   // Subscribe to queue item updates
-  const unsub1 = api.subscribe(
-    EventType.QUEUE_ITEMS_UPDATED,
-    (evt: EventMessage) => {
+  unsubscribers.push(
+    api.subscribe(EventType.QUEUE_ITEMS_UPDATED, (evt: EventMessage) => {
       if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
       // Force refetch when items are added/removed (e.g., Play Next)
       // This ensures the view updates even if we're "within buffer"
       fetchQueueItems(true);
-    },
+    }),
   );
-  onBeforeUnmount(unsub1);
 
   // Subscribe to queue updates (for index changes)
-  const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
-    if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
-    // Don't force refetch for index changes - let buffer optimization work
-    fetchQueueItems();
-  });
-  onBeforeUnmount(unsub2);
+  unsubscribers.push(
+    api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
+      if (evt.object_id !== store.activePlayerQueue?.queue_id) return;
+      // Don't force refetch for index changes - let buffer optimization work
+      fetchQueueItems();
+    }),
+  );
 
   // Subscribe to provider updates to detect party player config changes
-  const unsub3 = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    await refreshPartyPlayer();
-    fetchQueueItems(true);
-  });
-  onBeforeUnmount(unsub3);
+  unsubscribers.push(
+    api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+      await refreshPartyPlayer();
+      fetchQueueItems(true);
+    }),
+  );
 
   // Re-resolve party player when a different queue starts playing (auto mode)
-  const unsub4 = api.subscribe(
-    EventType.QUEUE_UPDATED,
-    async (evt: EventMessage) => {
+  unsubscribers.push(
+    api.subscribe(EventType.QUEUE_UPDATED, async (evt: EventMessage) => {
       if (evt.object_id !== store.activePlayerQueue?.queue_id) {
         const updatedQueue = api.queues[evt.object_id as string];
         if (updatedQueue?.state === PlaybackState.PLAYING) {
@@ -829,13 +890,14 @@ onMounted(async () => {
           fetchQueueItems(true);
         }
       }
-    },
+    }),
   );
-  onBeforeUnmount(unsub4);
 });
 
 // Cleanup when leaving the party view
 onBeforeUnmount(() => {
+  unmounted = true;
+  unsubscribers.forEach((unsubscribe) => unsubscribe());
   // Release wake lock
   if (wakeLock) {
     wakeLock.release();
@@ -845,8 +907,6 @@ onBeforeUnmount(() => {
     clearInterval(burnInInterval);
     burnInInterval = null;
   }
-  stopTick();
-  cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 
@@ -1330,22 +1390,35 @@ watch(
 </style>
 
 <style>
-/* Classes toggled programmatically on .content-section by mount/unmount */
+/* .party-view-active is set by layouts/default/View.vue for the party route */
 .content-section.party-view-active {
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
   padding-bottom: 0 !important;
-  /* total bottom offset for overlays (here, "Powered by"): player bar + tailwind spacing-1 gap */
-  --party-player-bottom: 94px; /* 90px player bar (View.vue .content-section) + 4px (spacing-1) */
+  /* total bottom offset for overlays (here, "Powered by"): the bars pinned to
+     the bottom of the screen + tailwind spacing-1 gap */
+  --party-player-bottom: calc(var(--bottom-bars-height) + 4px);
+  /* the player bar runs the full width here, so there is no edge to line up
+     with and the overlay keeps its own gap from the side */
+  --party-player-right: 4px;
 }
 
 .content-section--mobile.party-view-active {
   padding-bottom: 0 !important;
-  --party-player-bottom: 189px; /* 185px above Footer.vue gradient overlay + 4px (spacing-1) */
+  /* the player card sits on the dock, whose surface shows a rim further above
+     it, so the same gap is measured from there */
+  --party-player-bottom: calc(
+    var(--bottom-bars-height) + var(--mobile-dock-rim) + 4px
+  );
+  /* takes the floating player card's inset, so the two right edges line up. The
+     device inset is left out: this positions inside the layout, which is padded
+     by it already, unlike the fixed bars that have to add it themselves */
+  --party-player-right: var(--mobile-player-inset-x);
 }
 
 .content-section--frameless.party-view-active {
   --party-player-bottom: 4px; /* no player bar; tw spacing-1 gap from screen edge */
+  --party-player-right: 4px; /* nothing to line up with either */
 }
 </style>

@@ -4,14 +4,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import {
   AudioQuality,
-  ContentType,
-  MediaType,
+  CrossfadeMode,
   PlaybackState,
   type PlayerQueue,
-  RepeatMode,
   type StreamDetails,
 } from "@/plugins/api/interfaces";
 import { i18n } from "@/plugins/i18n";
+import {
+  audioFidelity,
+  audioOutputDetails,
+  audioProcessingChain,
+} from "../fixtures/audioProcessing";
+import { playerQueue } from "../fixtures/playerQueue";
+import { queueItem } from "../fixtures/queueItem";
+import { streamDetails } from "../fixtures/streamDetails";
 
 const storeMock = vi.hoisted(() => ({
   activePlayerQueue: undefined as PlayerQueue | undefined,
@@ -22,7 +28,9 @@ vi.mock("@/plugins/store", () => ({
 }));
 vi.mock("@/components/AudioProcessingDetails.vue", () => ({
   default: {
-    template: '<div data-testid="audio-processing-details" />',
+    props: ["crossfadeIntent"],
+    template:
+      '<div data-testid="audio-processing-details" :data-crossfade-intent="crossfadeIntent" />',
   },
 }));
 
@@ -55,12 +63,12 @@ describe("QualityDetailsBtn", () => {
   it("renders embedded details and the authoritative quality range", () => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
+      audio_processing: audioProcessingChain({
         outputs: [
-          { fidelity: { quality: AudioQuality.LOW } },
-          { fidelity: { quality: AudioQuality.HI_RES } },
+          outputWithQuality(AudioQuality.LOW),
+          outputWithQuality(AudioQuality.HI_RES),
         ],
-      },
+      }),
     });
 
     const wrapper = mountButton();
@@ -71,9 +79,31 @@ describe("QualityDetailsBtn", () => {
     ).toBe(true);
     expect(wrapper.text()).toContain("LQ-HR");
     expect(wrapper.get("button").attributes("aria-label")).toBe(
-      "Show audio chain details (LQ-HR)",
+      "Show audio pipeline details (LQ-HR)",
     );
   });
+
+  it.each([
+    [false, false, CrossfadeMode.DISABLED],
+    [true, false, CrossfadeMode.STANDARD_CROSSFADE],
+    [true, true, CrossfadeMode.SMART_CROSSFADE],
+  ])(
+    "passes the effective crossfade intent to the pipeline",
+    (enabled, smart, expectedMode) => {
+      storeMock.activePlayerQueue = makeQueue({
+        ...makeStreamDetails(),
+        audio_processing: audioProcessingChain(),
+      });
+      storeMock.activePlayerQueue.crossfade_enabled = enabled;
+      storeMock.activePlayerQueue.smart_fades_active = smart;
+
+      expect(
+        mountButton()
+          .get('[data-testid="audio-processing-details"]')
+          .attributes("data-crossfade-intent"),
+      ).toBe(expectedMode);
+    },
+  );
 
   it.each([
     { pill: false, side: "top" },
@@ -81,9 +111,9 @@ describe("QualityDetailsBtn", () => {
   ])("uses the compact popover layout on the $side side", ({ pill, side }) => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
-        outputs: [{ fidelity: { quality: AudioQuality.STANDARD } }],
-      },
+      audio_processing: audioProcessingChain({
+        outputs: [outputWithQuality(AudioQuality.STANDARD)],
+      }),
     });
 
     const wrapper = mountButton({ pill });
@@ -101,9 +131,9 @@ describe("QualityDetailsBtn", () => {
   it("moves focus into the audio-chain popover when opened", async () => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
-        outputs: [{ fidelity: { quality: AudioQuality.STANDARD } }],
-      },
+      audio_processing: audioProcessingChain({
+        outputs: [outputWithQuality(AudioQuality.STANDARD)],
+      }),
     });
 
     const wrapper = mount(QualityDetailsBtn, {
@@ -116,7 +146,7 @@ describe("QualityDetailsBtn", () => {
       '[data-testid="audio-processing-popover-content"]',
     );
     expect(content?.getAttribute("aria-label")).toBe(
-      "Show audio chain details",
+      "Show audio pipeline details",
     );
     expect(content?.contains(document.activeElement)).toBe(true);
     expect(document.activeElement?.classList).toContain(
@@ -143,52 +173,19 @@ function mountButton(props: { pill?: boolean } = {}) {
   });
 }
 
+function outputWithQuality(quality: AudioQuality) {
+  return audioOutputDetails({ fidelity: audioFidelity({ quality }) });
+}
+
 function makeStreamDetails(): StreamDetails {
-  return {
-    provider: "test",
-    item_id: "track-1",
-    audio_format: {
-      content_type: ContentType.FLAC,
-      codec_type: ContentType.FLAC,
-      sample_rate: 44100,
-      bit_depth: 16,
-      channels: 2,
-      output_format_str: "",
-      bit_rate: 0,
-    },
-    media_type: MediaType.TRACK,
-  };
+  return streamDetails({ provider: "test", item_id: "track-1" });
 }
 
 function makeQueue(streamdetails: StreamDetails): PlayerQueue {
-  return {
-    queue_id: "queue-1",
-    active: true,
-    display_name: "Queue",
-    available: true,
+  return playerQueue({
+    // the button stays hidden for an empty queue
     items: 1,
-    shuffle_enabled: false,
-    smart_shuffle_active: false,
-    autoplay_enabled: false,
-    repeat_mode: RepeatMode.OFF,
-    crossfade_enabled: false,
-    smart_fades_active: false,
-    overlay_enabled: false,
-    overlay_volume: 100,
-    elapsed_time: 0,
-    elapsed_time_last_updated: 0,
     state: PlaybackState.PLAYING,
-    current_item: {
-      queue_id: "queue-1",
-      queue_item_id: "item-1",
-      name: "Track",
-      duration: 180,
-      sort_index: 0,
-      streamdetails,
-      available: true,
-    },
-    sources: [],
-    enqueued_media_items: [],
-    is_dynamic: false,
-  };
+    current_item: queueItem({ name: "Track", duration: 180, streamdetails }),
+  });
 }

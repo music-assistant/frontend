@@ -5,7 +5,7 @@
     :class="
       presentMode
         ? 'w-full lg:h-full lg:min-h-0 lg:overflow-hidden'
-        : 'mx-auto w-full max-w-6xl p-4 sm:p-5'
+        : 'mx-auto flex min-h-full w-full max-w-6xl flex-col p-4 sm:p-5'
     "
   >
     <MusicQuizPresentStage
@@ -25,7 +25,7 @@
       @exit="exitPresentMode"
     />
 
-    <section v-else class="flex flex-col gap-4">
+    <section v-else class="flex flex-1 flex-col gap-4">
       <header class="flex items-center justify-between gap-3">
         <div class="min-w-0">
           <h1 class="text-2xl font-bold">
@@ -58,33 +58,39 @@
 
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
-      <Card v-if="!state && !loading" class="mx-auto w-full max-w-xl">
-        <CardContent
-          class="flex flex-col items-center gap-4 px-5 py-8 text-center sm:px-8"
+      <div
+        v-if="!state && !loading"
+        class="flex flex-1 items-center justify-center"
+      >
+        <Empty
+          class="bg-card w-full max-w-xl rounded-xl border border-solid px-5 py-10 shadow-sm sm:px-8"
         >
-          <span
-            class="bg-primary/10 text-primary grid size-14 place-items-center rounded-full"
-          >
-            <PartyPopper class="size-7" />
-          </span>
-          <div class="flex flex-col gap-1">
-            <h2 class="text-xl font-bold">
+          <EmptyHeader>
+            <EmptyMedia
+              variant="icon"
+              class="bg-primary/10 text-primary size-14 rounded-full"
+            >
+              <MicVocal class="size-7" />
+            </EmptyMedia>
+            <EmptyTitle class="text-xl font-bold">
               {{ $t("providers.music_quiz.no_active_game") }}
-            </h2>
-            <p class="text-muted-foreground">
+            </EmptyTitle>
+            <EmptyDescription class="text-base">
               {{ $t("providers.music_quiz.create_intro") }}
-            </p>
-          </div>
-          <Button
-            size="lg"
-            data-testid="new-game-empty"
-            @click="openSetupDialog"
-          >
-            <Plus class="size-4" />
-            {{ $t("providers.music_quiz.new_game") }}
-          </Button>
-        </CardContent>
-      </Card>
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              size="lg"
+              data-testid="new-game-empty"
+              @click="openSetupDialog"
+            >
+              <Plus class="size-4" />
+              {{ $t("providers.music_quiz.new_game") }}
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
 
       <MusicQuizUnsupportedGame
         v-else-if="state && !activeState"
@@ -94,7 +100,8 @@
       />
 
       <MusicQuizPreparingState
-        v-else-if="starting && activeState"
+        v-else-if="isPreparing && activeState"
+        :autofocus="starting"
         class="rounded-xl border shadow-sm"
       />
 
@@ -175,7 +182,7 @@
         data-testid="setup-dialog"
         class="max-h-[calc(100dvh-1rem)] overflow-y-auto p-4 sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
       >
-        <DialogHeader class="pr-8 text-left">
+        <DialogHeader class="sr-only">
           <DialogTitle>{{ $t("providers.music_quiz.new_game") }}</DialogTitle>
           <DialogDescription>
             {{ $t("providers.music_quiz.create_intro") }}
@@ -205,26 +212,25 @@
 </template>
 
 <script setup lang="ts">
-import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
-import MusicQuizEndGameDialog from "@/components/music-quiz/MusicQuizEndGameDialog.vue";
 import {
   getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
   supportsMusicQuizListenIn,
 } from "@/components/music-quiz/game_types";
+import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
+import MusicQuizEndGameDialog from "@/components/music-quiz/MusicQuizEndGameDialog.vue";
 import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
-import MusicQuizPresentStage from "@/components/music-quiz/MusicQuizPresentStage.vue";
 import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
+import MusicQuizPresentStage from "@/components/music-quiz/MusicQuizPresentStage.vue";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizSessionPanels from "@/components/music-quiz/MusicQuizSessionPanels.vue";
 import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
 import ShowDashboardButton from "@/components/ShowDashboardButton.vue";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -232,6 +238,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   isSupportedMusicQuiz,
   type MusicQuizCreateRequest,
@@ -247,7 +261,7 @@ import api, { ConnectionState } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { Gamepad2, PartyPopper, Plus, Settings } from "@lucide/vue";
+import { Gamepad2, MicVocal, Plus, Settings } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -333,6 +347,12 @@ const statusText = computed(() => {
   if (state.value) return $t("providers.music_quiz.unsupported_title");
   return $t("providers.music_quiz.no_active_game");
 });
+
+// The local flag covers the gap between issuing a host action and the server
+// reporting that round preparation is underway.
+const isPreparing = computed(
+  () => starting.value || activeState.value?.preparing === true,
+);
 
 const isActiveRound = computed(
   () =>

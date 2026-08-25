@@ -1,18 +1,23 @@
 /* Various global styles used throughout the app */
 
+/* The box model the whole app is written against - every width composed with
+   padding counts the padding in. Declared here rather than left to Vuetify's
+   reset, which states the same thing but goes away with that stylesheet. */
+html {
+  box-sizing: border-box;
+}
+
+*,
+::before,
+::after {
+  box-sizing: inherit;
+}
+
 @font-face {
   font-family: "Material Icons Outlined";
   font-style: normal;
   font-weight: 400;
   src: url(@/assets/material-icons-outlined.woff2) format("woff2");
-}
-
-@font-face {
-  font-family: "JetBrains Mono Medium";
-  font-weight: 400;
-  font-style: normal;
-  font-display: auto;
-  src: url(@/assets/JetBrainsMono-Medium.woff2) format("woff2");
 }
 
 .material-icons-outlined {
@@ -31,8 +36,143 @@
   -webkit-font-smoothing: antialiased;
 }
 
+:root {
+  --device-inset-top: env(safe-area-inset-top, 0px);
+  --device-inset-right: env(safe-area-inset-right, 0px);
+  --device-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --device-inset-left: env(safe-area-inset-left, 0px);
+  /* Room below the bottom navigation buttons. The home indicator and the
+     gesture bar sit well inside the inset reserved around them, so the buttons
+     take a share of it instead of all of it, never dropping below the floor. */
+  --mobile-navigation-inset-bottom: max(
+    12px,
+    calc(var(--device-inset-bottom) * 0.65)
+  );
+  /* Size of a single bottom navigation button, which the bar sizes itself from,
+     so the two can never drift apart. */
+  --mobile-navigation-item-height: 72px;
+  /* How far the dock sits in from the sides of the screen. */
+  --mobile-dock-inset-x: 12px;
+  /* How far the dock's surface shows around the sides and top of the player card
+     sitting on it. The top edge of the dock is this far above the card, so
+     anything hovering above the dock has to clear it too. */
+  --mobile-dock-rim: 4px;
+  /* Where the floating player card sits, one rim inside the dock it rides on. */
+  --mobile-player-inset-x: calc(
+    var(--mobile-dock-inset-x) + var(--mobile-dock-rim)
+  );
+  /* Space the bottom navigation occupies. Anything anchored above it (sheets,
+     popovers, the player bar, scroll padding) is positioned from this. */
+  --mobile-navigation-height: calc(
+    var(--mobile-navigation-item-height) + var(--mobile-navigation-inset-bottom)
+  );
+  /* Height of the blur behind the dock. It softens what scrolls under it without
+     hiding it, and fades out towards the top, so it clears the dock's own top by
+     a further 16px for the fade to finish above it rather than across it. The
+     card is measured at runtime, so this follows it rather than assuming a height
+     the card is free to outgrow. */
+  --mobile-player-scrim-height: calc(
+    var(--mobile-navigation-height) + var(--player-bar-overlay-height, 0px) +
+      var(--mobile-dock-rim) + 16px
+  );
+  /* Space the player bar occupies in the desktop layout, where it sits flush
+     against the bottom of the screen. The mobile player bar floats and varies
+     with its contents, so it is measured at runtime instead. */
+  --player-bar-height: 104px;
+  /* Room the bars pinned to the bottom of the screen take up together, for
+     anything that has to float clear of them. */
+  --bottom-bars-height: calc(
+    var(--player-bar-height) + var(--device-inset-bottom)
+  );
+  /* How far up the screen the bottom is covered, for anything that stacks below
+     what covers it and still has to stay visible. */
+  --bottom-obscured-height: var(--bottom-bars-height);
+  /* Gap the player bar popouts keep from the bar below them. */
+  --player-bar-popout-gap: 8px;
+  /* How far in from the sides of the screen the popouts sit. Taken from the
+     mobile dock, which is what they hang above there: the two share an edge and
+     the player card stays the only thing set in from it. */
+  --player-bar-popout-inset-x: var(--mobile-dock-inset-x);
+  /* Room a tall popout leaves at the top of the screen, so it keeps reading as a
+     card floating above the player bar instead of a full-height panel. */
+  --player-bar-popout-top-gap: 24px;
+}
+
+:root[data-embedded-layout] {
+  --device-inset-top: 0px;
+  --device-inset-right: 0px;
+  --device-inset-bottom: 0px;
+  --device-inset-left: 0px;
+}
+
+/* The footer sets this marker while the mobile bars are on screen. There the
+   player bar sits on the navigation, so the two together are what has to be
+   cleared. */
+:root[data-player-bar-overlay] {
+  --bottom-bars-height: calc(
+    var(--mobile-navigation-height) + var(--player-bar-overlay-height)
+  );
+}
+
+/* Stacking order for anything pinned to the screen, lowest first. Each value is
+   declared at its own call site (several are component props that cannot read a
+   custom property), so this is the reference for choosing one, not the source of
+   truth. Pick the band that describes the element rather than a number that
+   happens to be free.
+
+        996  multi-select "x items selected" bar
+        997  player bar popout backdrops
+        998  player bar popouts
+        999  scrim behind the floating mobile player bar
+       1000  desktop player bar
+       2000  mobile bottom navigation, and Vuetify's default overlay z-index
+       2001  floating mobile player bar
+       2002  app update prompt
+       2100  settings loading overlays
+       9000  fullscreen player
+       9001  player select backdrop, opened from the fullscreen player
+       9002  player select popout, opened from the fullscreen player
+       9999  dialogs
+      10000  popovers, select menus, and their backdrops
+      10001  anything that has to clear those, whatever it is
+     100000  sheets
+     100001  menus opened from a sheet or a player bar popout
+     999999  item context menu
+
+   Values below this range mostly order elements inside a component's own
+   stacking context.
+
+   Two Vuetify behaviours to know about before placing something in this range:
+   - VOverlay writes its z-index as an inline style, so no stylesheet rule can
+     change one without !important. It defaults to 2000, which lands an
+     unconfigured overlay on top of the player bar; v-dialog raises that to 2400.
+   - An overlay activated while another Vuetify overlay is open takes that one's
+     z-index + 10 and ignores its own prop, so it can end up either side of where
+     the prop asked for. v-snackbar and v-tooltip are bumped this way as well:
+     leaving the shared stack only stops them raising the next overlay. */
+
 html {
   overflow: hidden;
+  /* Nothing here scrolls, so a downward drag no in-page scroller consumes
+     chains out of the Home Assistant ingress iframe and its app takes that for
+     a pull-to-refresh, reloading. The root is where the viewport reads this
+     from - on body it is ignored. The horizontal axis stays open, so the
+     browser keeps its back-navigation swipe. */
+  overscroll-behavior-y: none;
+  /* iOS Safari tints the status bar from this background. Must stay set. */
+  background-color: rgb(var(--v-theme-background));
+}
+
+/* A drag starting where nothing scrolls - a panel header, the fullscreen player
+   - gives the rule above no chain to cut, and embedded it reaches the host
+   instead, whose pull-to-refresh reloads us. Refusing the pan stops it. The
+   value resets at every scroll container, which is what leaves the lists
+   scrolling and why the panels have to repeat it: Vuetify makes both the
+   fullscreen player's card and the `.v-overlay__content` wrapper above it
+   scroll containers, so the root's value never reaches inside. */
+:root[data-embedded-layout],
+:root[data-embedded-layout] [data-player-panel] {
+  touch-action: pinch-zoom;
 }
 
 * {
@@ -122,14 +262,14 @@ a {
 }
 
 .ma-line-clamp-2 {
-  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  line-height: 1.5em;
-  height: 3em;
+  white-space: pre-line;
   word-wrap: break-word;
   box-sizing: border-box;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
 }
 
 .small-icon {

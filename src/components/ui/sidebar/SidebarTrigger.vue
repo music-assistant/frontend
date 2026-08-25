@@ -6,8 +6,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-// import { toggleHAMenu } from "@/plugins/homeassistant";
-// import { store } from "@/plugins/store";
 import { PanelLeft } from "@lucide/vue";
 import { computed, type HTMLAttributes } from "vue";
 import { useSidebar } from "./utils";
@@ -19,15 +17,6 @@ const props = defineProps<{
 const { toggleSidebar, state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
-
-// const showHaButton = computed(() => store.isIngressSession);
-
-// const handleHAMenuToggle = () => {
-//   if (isMobile.value) {
-//     setOpenMobile(false);
-//   }
-//   toggleHAMenu();
-// };
 </script>
 
 <template>
@@ -35,7 +24,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
     :class="[
       'trigger-container',
       'flex w-full min-w-0 flex-col overflow-hidden',
-      isCollapsed && '-mr-2 trigger-container--collapsed',
+      isCollapsed && 'trigger-container--collapsed',
       props.class,
     ]"
   >
@@ -45,59 +34,27 @@ const isCollapsed = computed(() => state.value === "collapsed");
         isCollapsed ? 'flex-col' : 'flex-row',
       ]"
     >
-      <!-- HA BUTTON COMMENTED OUT -->
-      <!-- <Tooltip v-if="showHaButton">
-        <TooltipTrigger as-child>
-          <Button
-            v-if="showHaButton"
-            variant="outline"
-            :size="isCollapsed ? 'icon' : 'default'"
-            :class="[
-              isCollapsed && 'order-first',
-              !isCollapsed && 'min-w-0 flex-1',
-            ]"
-            @click="handleHAMenuToggle"
-          >
-            <template v-if="isCollapsed">
-              <img
-                src="@/assets/home-assistant-logo.svg"
-                alt="Home Assistant"
-                class="h-4 w-4 shrink-0"
-              />
-            </template>
-            <template v-else>
-              <span class="flex min-w-0 items-center gap-2">
-                <img
-                  src="@/assets/home-assistant-logo.svg"
-                  alt="Home Assistant"
-                  class="h-4 w-4 shrink-0"
-                />
-                <span class="min-w-0">HA Menu</span>
-              </span>
-              <ArrowLeftToLine class="ha-menu-arrow ml-auto size-4 shrink-0" />
-            </template>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          HA Menu
-        </TooltipContent>
-      </Tooltip> -->
       <Tooltip>
         <TooltipTrigger as-child>
+          <!-- collapsed, the trigger takes the menu buttons' size so the rail
+               reads as one column -->
           <Button
             data-sidebar="trigger"
             data-slot="sidebar-trigger"
             variant="ghost"
             size="icon"
-            :class="['flex-shrink-0', !isCollapsed && 'ml-auto']"
+            :class="[
+              'flex-shrink-0 group-data-[collapsible=icon]:size-8!',
+              !isCollapsed && 'ml-auto',
+            ]"
             @click="toggleSidebar"
           >
             <PanelLeft />
-            <span class="sr-only">Toggle Sidebar</span>
+            <span class="sr-only">{{ $t("sidebar.toggle") }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          {{ isCollapsed ? "Expand Sidebar" : "Collapse Sidebar" }}
+          {{ isCollapsed ? $t("sidebar.expand") : $t("sidebar.collapse") }}
         </TooltipContent>
       </Tooltip>
     </div>
@@ -115,7 +72,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
   width: 100%;
 }
 
-.navuser-trigger :deep([data-sidebar="menu-button"]) {
+.trigger-container .navuser-trigger :deep([data-sidebar="menu-button"]) {
   margin-left: 0 !important;
   padding-right: 0;
 }
@@ -145,8 +102,13 @@ const isCollapsed = computed(() => state.value === "collapsed");
   height: 2rem !important;
 }
 
-.ha-menu-arrow {
-  color: rgb(var(--v-theme-primary, 3, 169, 244)) !important;
+/* the avatar centres on a margin anchored off the rail's final width, less
+   the 6px the menu ul above keeps per side, so it holds still through the
+   collapse animation */
+.trigger-container--collapsed
+  .navuser-trigger
+  :deep([data-sidebar="menu-button"] [data-slot="avatar"]) {
+  margin-left: calc((var(--sidebar-width-icon) - 2rem) / 2 - 6px);
 }
 
 .trigger-container.flex-col {
@@ -156,12 +118,5 @@ const isCollapsed = computed(() => state.value === "collapsed");
 
 .trigger-container.flex-row {
   flex-direction: row;
-}
-
-.ha-logo-icon {
-  width: 16px;
-  height: 16px;
-  display: block;
-  margin: auto;
 }
 </style>

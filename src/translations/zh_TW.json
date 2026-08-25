@@ -178,8 +178,6 @@
         "provider": "提供來源",
         "album": "專輯 (按字母順序排列)",
         "artist": "歌手",
-        "artist_name": "專輯歌手",
-        "artist_name_desc": "專輯歌手（降序排列）",
         "album_sort_name": "專輯 (名稱排序)"
     },
     "sync_running": "正在同步一個或多個音樂提供來源。",

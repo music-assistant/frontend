@@ -110,12 +110,14 @@ import { qualityTierToColor } from "@/composables/useStreamQuality";
 import { $t } from "@/plugins/i18n";
 import type {
   AudioProcessingChain,
+  CrossfadeMode,
   StreamDetails,
 } from "@/plugins/api/interfaces";
 
 const props = defineProps<{
   chain: AudioProcessingChain;
   streamDetails: StreamDetails;
+  crossfadeIntent?: CrossfadeMode;
 }>();
 
 const {
@@ -127,6 +129,7 @@ const {
 } = useAudioProcessingDetails(
   toRef(props, "chain"),
   toRef(props, "streamDetails"),
+  toRef(props, "crossfadeIntent"),
 );
 </script>
 
@@ -274,9 +277,9 @@ const {
   align-items: center;
   justify-content: center;
   flex: 0 0 18px;
+  /* pin the size whatever width the provider icon sets on itself inline */
   width: 18px !important;
-  height: 18px !important;
-  margin: 0 !important;
+  height: 18px;
   overflow: hidden;
 }
 

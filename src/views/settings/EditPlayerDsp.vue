@@ -1,74 +1,75 @@
 <template>
   <section v-if="dsp">
-    <v-toolbar color="transparent" class="border-b pr-4">
-      <v-switch
-        v-model="dsp.enabled"
-        hide-details
-        color="primary"
-        class="pl-4"
-      />
-      <v-toolbar-title>{{
-        $t("settings.dsp.configure_on", { name: playerName })
-      }}</v-toolbar-title>
-      <v-menu offset-y transition="slide-y-transition">
-        <template #activator="{ props: menuProps }">
-          <Badge
-            v-if="selectedPresetLabel"
-            :aria-label="selectedPresetLabel"
-            :title="selectedPresetLabel"
-            data-testid="selected-dsp-preset"
-            class="mr-2 max-w-24 md:mr-4 md:max-w-48"
-            variant="outline"
-          >
-            <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
-          </Badge>
-          <v-btn v-bind="menuProps" class="mr-4" :class="getButtonClass()">
-            <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-tray-arrow-down </v-icon>
-            <span class="d-none d-md-inline">
+    <div class="flex items-center gap-2 border-b px-4 py-2">
+      <Switch v-model="dsp.enabled" />
+      <h2 class="min-w-0 flex-1 truncate text-base font-medium">
+        {{ $t("settings.dsp.configure_on", { name: playerName }) }}
+      </h2>
+      <Badge
+        v-if="selectedPresetLabel"
+        :aria-label="selectedPresetLabel"
+        :title="selectedPresetLabel"
+        data-testid="selected-dsp-preset"
+        class="max-w-24 md:max-w-48"
+        variant="outline"
+      >
+        <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
+      </Badge>
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button variant="secondary">
+            <Download />
+            <span class="hidden md:inline">
               {{ $t("settings.dsp.presets.load") }}
             </span>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item v-if="dspPresets.length === 0">
-            <v-list-item-title>
-              {{ $t("settings.dsp.presets.empty_warning") }}
-            </v-list-item-title>
-          </v-list-item>
-          <v-list-item
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          class="min-w-[max(8rem,var(--reka-dropdown-menu-trigger-width))]"
+        >
+          <DropdownMenuItem v-if="dspPresets.length === 0" disabled>
+            {{ $t("settings.dsp.presets.empty_warning") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem
             v-for="preset in dspPresets"
             v-else
-            :key="preset.preset_id"
+            :key="preset.preset_id ?? undefined"
+            class="justify-between gap-4"
             @click="loadPreset(preset)"
           >
-            <v-list-item-title>{{ preset.name }}</v-list-item-title>
-            <template #append>
-              <v-btn
-                icon="mdi-delete"
-                variant="text"
-                density="compact"
-                @click.stop="removePreset(preset.preset_id)"
-              />
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-      <v-btn :class="getButtonClass()" @click="showSavePresetDialog = true">
-        <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-content-save </v-icon>
-        <span class="d-none d-md-inline">
+            <span class="min-w-0 truncate">{{ preset.name }}</span>
+            <!-- .stop keeps the click off the item, which would otherwise
+                 select the preset and close the menu. -->
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              :aria-label="$t('delete')"
+              @click.stop="removePreset(preset.preset_id)"
+            >
+              <Trash2 />
+            </Button>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Button variant="secondary" @click="showSavePresetDialog = true">
+        <Save />
+        <span class="hidden md:inline">
           {{ $t("settings.dsp.presets.save") }}
         </span>
-      </v-btn>
-    </v-toolbar>
+      </Button>
+    </div>
 
-    <v-container fluid class="pa-4">
-      <v-row :class="{ 'justify-center': mobile }" class="flex-nowrap">
+    <div class="p-4">
+      <div
+        class="flex flex-nowrap gap-6"
+        :class="{ 'justify-center': mobileLayout }"
+      >
         <!-- Timeline Column -->
-        <v-col
-          v-if="!mobile || selectedStage === null"
-          class="flex-grow-0 flex-shrink-0"
-          :class="{ 'border-e pr-4': !mobile }"
-          align-self="start"
+        <div
+          v-if="!mobileLayout || selectedStage === null"
+          class="shrink-0 grow-0 self-start"
+          :class="{ 'border-r border-border pr-4': !mobileLayout }"
         >
           <DSPPipeline
             :dsp="dsp"
@@ -78,90 +79,83 @@
             @on-move-filter="(d) => moveFilter(d.index, d.direction)"
             @on-delete-filter="removeFilter"
           />
-        </v-col>
+        </div>
 
         <!-- Filter Settings Panel -->
-        <v-col v-if="selectedStage != null" style="min-width: 0">
+        <div v-if="selectedStage != null" class="min-w-0 flex-1">
           <!-- Toolbar of the selected item -->
-          <v-toolbar
-            density="compact"
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-            class="border-b"
+          <div
+            class="flex min-h-12 items-center gap-1 border-b bg-muted px-2 py-1.5"
           >
-            <v-btn
-              v-if="mobile"
-              class="hidden-xs-only"
-              icon
+            <Button
+              v-if="mobileLayout"
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('back')"
               @click="selectedStage = null"
             >
-              <v-icon>mdi-arrow-left</v-icon>
-            </v-btn>
-            <v-toolbar-title>{{ stageTitle(selectedStage) }}</v-toolbar-title>
-            <v-btn
+              <ArrowLeft />
+            </Button>
+            <h3 class="min-w-0 flex-1 truncate px-2 font-medium">
+              {{ stageTitle(selectedStage) }}
+            </h3>
+            <Button
               v-if="
                 typeof selectedStage === 'number' &&
-                !mobile &&
+                !mobileLayout &&
                 selectedStage > 0
               "
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.move_up')"
               @click="moveFilter(selectedStage, 'up')"
             >
-              <v-icon>mdi-arrow-up</v-icon>
-            </v-btn>
-            <v-btn
+              <ArrowUp />
+            </Button>
+            <Button
               v-if="
                 typeof selectedStage === 'number' &&
-                !mobile &&
+                !mobileLayout &&
                 selectedStage < dsp.filters.length - 1
               "
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.move_down')"
               @click="moveFilter(selectedStage, 'down')"
             >
-              <v-icon>mdi-arrow-down</v-icon>
-            </v-btn>
+              <ArrowDown />
+            </Button>
 
-            <v-switch
+            <Switch
               v-if="typeof selectedStage === 'number'"
               v-model="dsp.filters[selectedStage].enabled"
-              hide-details
-              color="primary"
-              class="mr-4"
+              class="mx-2"
             />
-            <v-btn
+            <Button
               v-if="typeof selectedStage === 'number'"
-              icon
+              variant="ghost"
+              size="icon-sm"
+              :aria-label="$t('settings.dsp.delete_filter')"
               @click="removeFilter(selectedStage)"
             >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </v-toolbar>
+              <Trash2 />
+            </Button>
+          </div>
 
           <!-- Settings of the Input stage -->
-          <v-card
-            v-if="selectedStage === 'input'"
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-if="selectedStage === 'input'" class="bg-muted">
             <DSPSlider v-model="dsp.input_gain" type="gain" />
             <DSPHelp :text="$t('settings.dsp.input_gain_help')" />
-          </v-card>
+          </div>
 
           <!-- Settings of the Output stage -->
-          <v-card
-            v-else-if="selectedStage === 'output'"
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-else-if="selectedStage === 'output'" class="bg-muted">
             <DSPSlider v-model="dsp.output_gain" type="gain" />
             <DSPHelp :text="$t('settings.dsp.output_gain_help')" />
-          </v-card>
+          </div>
 
           <!-- Settings of the selected DSP Filter -->
-          <v-card
-            v-else
-            flat
-            :color="$vuetify.theme.current.dark ? 'surface' : 'surface-light'"
-          >
+          <div v-else class="bg-muted">
             <DSPParametricEQ
               v-if="
                 dsp.filters[selectedStage].type === DSPFilterType.PARAMETRIC_EQ
@@ -207,9 +201,45 @@
               "
               v-model="dsp.filters[selectedStage] as TransposeFilter"
             />
-          </v-card>
-        </v-col>
-      </v-row>
+            <DSPSafetyLimiter
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.SAFETY_LIMITER
+              "
+              v-model="dsp.filters[selectedStage] as SafetyLimiterFilter"
+            />
+            <DSPCompressor
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.COMPRESSOR
+              "
+              v-model="dsp.filters[selectedStage] as CompressorFilter"
+            />
+            <DSPHighLowPass
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.HIGH_LOW_PASS
+              "
+              v-model="dsp.filters[selectedStage] as HighLowPassFilter"
+            />
+            <DSPConvolution
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CONVOLUTION
+              "
+              v-model="dsp.filters[selectedStage] as ConvolutionFilter"
+            />
+            <DSPStereoWidth
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.STEREO_WIDTH
+              "
+              v-model="dsp.filters[selectedStage] as StereoWidthFilter"
+            />
+            <DSPCrossfeed
+              v-else-if="
+                dsp.filters[selectedStage].type === DSPFilterType.CROSSFEED
+              "
+              v-model="dsp.filters[selectedStage] as CrossfeedFilter"
+            />
+          </div>
+        </div>
+      </div>
 
       <Alert v-if="!dsp.enabled" variant="warning" class="mt-5">
         <TriangleAlert />
@@ -217,64 +247,83 @@
           {{ $t("settings.dsp.disabled_message") }}
         </AlertDescription>
       </Alert>
-    </v-container>
+    </div>
 
     <!-- Save DSP Preset Dialog -->
-    <v-dialog v-model="showSavePresetDialog" max-width="300">
-      <v-card>
-        <v-card-title>{{ $t("settings.dsp.presets.save") }}</v-card-title>
-        <v-card-text>
-          <v-text-field
+    <Dialog v-model:open="showSavePresetDialog">
+      <DialogContent class="sm:max-w-[360px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.dsp.presets.save") }}</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-2">
+          <Label for="dsp-preset-name">
+            {{ $t("settings.dsp.presets.name") }}
+          </Label>
+          <Input
+            id="dsp-preset-name"
             v-model="newPresetName"
-            :label="$t('settings.dsp.presets.name')"
             :placeholder="$t('settings.dsp.presets.name_placeholder')"
-            variant="outlined"
           />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="showSavePresetDialog = false">
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showSavePresetDialog = false">
             {{ $t("cancel") }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            :disabled="!newPresetName.trim()"
-            @click="savePreset"
-          >
+          </Button>
+          <Button :disabled="!newPresetName.trim()" @click="savePreset">
             {{ $t("settings.dsp.presets.save") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Add Filter Dialog -->
-    <v-dialog v-model="showAddFilterDialog" max-width="300">
-      <v-card>
-        <v-card-title>{{ $t("settings.dsp.filter.add") }}</v-card-title>
-        <v-card-text>
-          <v-select
-            v-model="newFilterType"
-            :items="filterTypes"
-            :label="$t('settings.dsp.filter.type')"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="showAddFilterDialog = false">{{ $t("cancel") }}</v-btn>
-          <v-btn color="primary" @click="addFilter">{{
+    <Dialog v-model:open="showAddFilterDialog">
+      <DialogContent class="sm:max-w-[360px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.dsp.filter.add") }}</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-2">
+          <Label for="dsp-filter-type">
+            {{ $t("settings.dsp.filter.type") }}
+          </Label>
+          <Select
+            :model-value="newFilterType"
+            @update:model-value="
+              (value) => (newFilterType = value as DSPFilterType)
+            "
+          >
+            <SelectTrigger id="dsp-filter-type" class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="filterType in filterTypes"
+                :key="filterType.value"
+                :value="filterType.value"
+              >
+                {{ filterType.title }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showAddFilterDialog = false">
+            {{ $t("cancel") }}
+          </Button>
+          <Button @click="addFilter">{{
             $t("settings.dsp.filter.add")
-          }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, toRaw, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
-import { useDisplay, useTheme } from "vuetify";
 import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
 import {
   DSPConfig,
   DSPConfigPreset,
@@ -284,8 +333,15 @@ import {
   type GainFilter,
   type BalanceFilter,
   type TransposeFilter,
+  type ConvolutionFilter,
+  type StereoWidthFilter,
+  type CrossfeedFilter,
   ParametricEQFilter,
   ToneControlFilter,
+  type SafetyLimiterFilter,
+  type CompressorFilter,
+  type HighLowPassFilter,
+  HighLowPassMode,
   EventType,
 } from "@/plugins/api/interfaces";
 import { getPlayerName } from "@/helpers/utils";
@@ -294,18 +350,58 @@ import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
 import DSPTranspose from "@/components/dsp/DSPTranspose.vue";
+import DSPSafetyLimiter from "@/components/dsp/DSPSafetyLimiter.vue";
+import DSPCompressor from "@/components/dsp/DSPCompressor.vue";
+import DSPHighLowPass from "@/components/dsp/DSPHighLowPass.vue";
+import DSPConvolution from "@/components/dsp/DSPConvolution.vue";
+import DSPStereoWidth from "@/components/dsp/DSPStereoWidth.vue";
+import DSPCrossfeed from "@/components/dsp/DSPCrossfeed.vue";
+import { COMPRESSOR_PRESETS } from "@/components/dsp/compressorPresets";
+import { DEFAULT_HIGH_PASS_FREQUENCY } from "@/components/dsp/highLowPass";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
-import { TriangleAlert } from "@lucide/vue";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Download,
+  Save,
+  Trash2,
+  TriangleAlert,
+} from "@lucide/vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
+  dspFilterTypeLabel,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
 
 const { t } = useI18n();
-const theme = useTheme();
 
 const props = defineProps<{
   playerId?: string;
@@ -318,7 +414,9 @@ const showAddFilterDialog = ref(false);
 const showSavePresetDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
 const newPresetName = ref("");
-const { mobile } = useDisplay();
+// The app's own definition of a mobile layout, which also covers tablets and
+// the force-mobile setting, rather than Vuetify's width-only breakpoint.
+const mobileLayout = computed(() => store.mobileLayout);
 let updatedFromServer = false;
 let localConfigGeneration = 0;
 let applyRequestId = 0;
@@ -366,12 +464,6 @@ const selectedPresetLabel = computed(() => {
 });
 
 // Methods
-const getButtonClass = (): string => {
-  return theme.global.current.value.dark
-    ? "bg-grey-darken-3"
-    : "bg-grey-lighten-3";
-};
-
 const selectStage = (index: number | "input" | "output") => {
   selectedStage.value = index;
 };
@@ -379,7 +471,8 @@ const selectStage = (index: number | "input" | "output") => {
 const stageTitle = (index: number | "input" | "output") => {
   if (index === "input") return t("settings.dsp.input");
   if (index === "output") return t("settings.dsp.output");
-  return t(`settings.dsp.types.${dsp.value?.filters[index].type}`);
+  const filter = dsp.value?.filters[index];
+  return filter ? dspFilterTypeLabel(filter) : "";
 };
 
 const addFilter = () => {
@@ -425,6 +518,55 @@ const addFilter = () => {
         enabled: true,
         type: DSPFilterType.TRANSPOSE,
         semitones: 0,
+      };
+      break;
+    case DSPFilterType.SAFETY_LIMITER:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.SAFETY_LIMITER,
+        ceiling: -2.0,
+      };
+      break;
+    case DSPFilterType.COMPRESSOR:
+      // Start from the Light preset so a new compressor opens in Basic mode.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.COMPRESSOR,
+        ...COMPRESSOR_PRESETS.light,
+      };
+      break;
+    case DSPFilterType.HIGH_LOW_PASS:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.HIGH_LOW_PASS,
+        mode: HighLowPassMode.HIGH_PASS,
+        frequency: DEFAULT_HIGH_PASS_FREQUENCY,
+        slope: 12,
+      };
+      break;
+    case DSPFilterType.CONVOLUTION:
+      // An empty ir_id is valid: the filter is added first, the impulse
+      // response picked afterwards.
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CONVOLUTION,
+        ir_id: "",
+        gain: 0,
+      };
+      break;
+    case DSPFilterType.STEREO_WIDTH:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.STEREO_WIDTH,
+        width: 1,
+      };
+      break;
+    case DSPFilterType.CROSSFEED:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.CROSSFEED,
+        strength: 0.2,
+        soundstage: 0.5,
       };
       break;
     default:
@@ -530,7 +672,7 @@ const savePreset = async () => {
   }
 };
 
-const removePreset = async (presetId: string | undefined) => {
+const removePreset = async (presetId?: string | null) => {
   if (!presetId || !confirm(t("settings.dsp.presets.remove_confirm"))) return;
 
   await api.removeDSPPreset(presetId);
@@ -539,9 +681,9 @@ const removePreset = async (presetId: string | undefined) => {
 // Watchers
 
 watch(
-  mobile,
-  (mobile) => {
-    if (!mobile && selectedStage.value === null) {
+  mobileLayout,
+  (isMobile) => {
+    if (!isMobile && selectedStage.value === null) {
       selectStage("input");
     }
   },
@@ -560,7 +702,7 @@ watch(
     localConfigGeneration += 1;
     const loadRequestId = ++playerLoadRequestId;
     clearServerDSPConfig();
-    selectedStage.value = mobile.value ? null : "input";
+    selectedStage.value = mobileLayout.value ? null : "input";
     // Don't overwrite the config for the newly selected player
     if (val) {
       unsubPlayerDSP = api.subscribe(

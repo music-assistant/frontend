@@ -1,6 +1,5 @@
 import api from "@/plugins/api";
 import type {
-  AIRadioMode,
   AIRadioSection,
   AIRadioSession,
   AIRadioStation,
@@ -8,7 +7,7 @@ import type {
   Playlist,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const STATUS_POLL_ACTIVE_MS = 5000;
@@ -43,12 +42,31 @@ let statusLoadedOnce = false;
 let statusPollTimer: ReturnType<typeof setTimeout> | null = null;
 let statusPollingEnabled = false;
 
+// Reactive on api.providers, mirroring useHosts' check, so callers that only
+// need the show/session caches don't have to depend on useHosts for this.
+const aiRadioAvailable = computed(() =>
+  Object.values(api.providers ?? {}).some(
+    (provider) => provider.domain === "ai_radio" && provider.available,
+  ),
+);
+
+let showSessionStatePrefetched = false;
+
+// Prefetch as soon as the provider is there, so the queue DJ menu can
+// resolve an on-air show's host from anywhere in the app, not just this view.
+watch(
+  aiRadioAvailable,
+  (available) => {
+    if (available) prefetchShowSessionState();
+  },
+  { immediate: true },
+);
+
 interface StartShowOptions {
   playerIdOverride?: string;
   sourcePlaylistIdOverride?: string;
   sourcePlaylistProviderOverride?: string;
   dynamicSourcePlaytimeCapOverride?: number;
-  dynamicBatchSizeOverride?: number;
 }
 
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
@@ -193,9 +211,22 @@ async function loadStatus(): Promise<AIRadioSession[]> {
   }
 }
 
+/**
+ * Warms the shows + sessions caches the queue DJ menu reads to resolve an
+ * on-air show's host. Without this, opening that menu outside the AI Radio
+ * page (which is what normally loads these) would see stale/empty caches.
+ */
+function prefetchShowSessionState(): void {
+  if (showSessionStatePrefetched) return;
+  showSessionStatePrefetched = true;
+  Promise.all([loadShows(), loadStatus()]).catch(() => {
+    // Best effort: allow a later availability flip to try again.
+    showSessionStatePrefetched = false;
+  });
+}
+
 async function startShow(
   stationId: string,
-  mode: AIRadioMode,
   overrides?: StartShowOptions,
 ): Promise<AIRadioSession> {
   startingShowId.value = stationId;
@@ -203,9 +234,8 @@ async function startShow(
   try {
     const args: Record<string, unknown> = {
       station_id: stationId,
-      mode,
     };
-    if (overrides?.playerIdOverride && mode === "dynamic") {
+    if (overrides?.playerIdOverride) {
       args.player_id_override = overrides.playerIdOverride;
     }
     if (overrides?.sourcePlaylistIdOverride) {
@@ -219,9 +249,6 @@ async function startShow(
       args.dynamic_source_playtime_cap_override =
         overrides.dynamicSourcePlaytimeCapOverride;
     }
-    if (typeof overrides?.dynamicBatchSizeOverride === "number") {
-      args.dynamic_batch_size_override = overrides.dynamicBatchSizeOverride;
-    }
     const result = await api.sendCommand<AIRadioSession>(
       "ai_radio/start",
       args,
@@ -231,11 +258,7 @@ async function startShow(
       (item) => item.session_id === result.session_id,
     );
     if (current?.status !== "failed") {
-      toast.success(
-        mode === "playlist"
-          ? $t("providers.ai_radio.toast.playlist_starting")
-          : $t("providers.ai_radio.toast.live_starting"),
-      );
+      toast.success($t("providers.ai_radio.toast.live_starting"));
     }
     return current || result;
   } finally {

@@ -98,16 +98,75 @@ describe("useAudioAnalysisCoverage", () => {
     expect(row.domain).toBe("sonic_analysis");
     expect(row.name).toBe("Sonic Analysis");
     expect(row.available).toBe(true);
-    expect(row.analyzed).toBe(78);
+    expect(row.analyzed).toBe(75);
     expect(row.pending).toBe(22);
     expect(row.staleVersion).toBe(3);
     expect(row.analysisVersion).toBe(5);
-    expect(row.coveragePct).toBe(78);
+    expect(row.coveragePct).toBe(77);
     expect(mockSendCommand).toHaveBeenCalledWith("audio_analysis/coverage", {
       aa_domain: "sonic_analysis",
     });
     // Only one call per AA provider — no /status probe.
     expect(mockSendCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it("excludes stale analyses from the completed count and total", async () => {
+    setProviders([
+      {
+        type: ProviderType.AUDIO_ANALYSIS,
+        domain: "sonic_analysis",
+        name: "Sonic Analysis",
+        instance_id: "sa1",
+        available: true,
+      },
+    ]);
+    mockAa({
+      sonic_analysis: {
+        analyzed: 19696,
+        pending: 18154,
+        stale_version: 18154,
+        analysis_version: 5,
+      },
+    });
+
+    const c = useAudioAnalysisCoverage();
+    await c.refresh();
+
+    const row = c.rows.value[0];
+    expect(row.analyzed).toBe(1542);
+    expect(row.analyzed + row.pending).toBe(19696);
+    expect(row.pending).toBe(18154);
+    expect(row.staleVersion).toBe(18154);
+    expect(row.coveragePct).toBe(8);
+  });
+
+  it("clamps the completed count when stale analyses exceed analyzed", async () => {
+    setProviders([
+      {
+        type: ProviderType.AUDIO_ANALYSIS,
+        domain: "sonic_analysis",
+        name: "Sonic Analysis",
+        instance_id: "sa1",
+        available: true,
+      },
+    ]);
+    mockAa({
+      sonic_analysis: {
+        analyzed: 2,
+        pending: 8,
+        stale_version: 3,
+        analysis_version: 5,
+      },
+    });
+
+    const c = useAudioAnalysisCoverage();
+    await c.refresh();
+
+    const row = c.rows.value[0];
+    expect(row.analyzed).toBe(0);
+    expect(row.pending).toBe(8);
+    expect(row.staleVersion).toBe(3);
+    expect(row.coveragePct).toBe(0);
   });
 
   it("guards divide-by-zero (0 analyzed, 0 pending) -> 0 pct, hasData false", async () => {

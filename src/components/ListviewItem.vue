@@ -50,7 +50,23 @@
             v-else-if="!albumTrackView"
             class="media-thumb listitem-media-thumb"
           >
-            <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+            <div
+              v-if="
+                item.media_type == MediaType.COLLECTION && item != undefined
+              "
+            >
+              <MediaCollectionThumb
+                size="50"
+                :item="item as MediaCollection<MediaItemType>"
+                :thumb-offset="5"
+              />
+            </div>
+            <div v-else>
+              <MediaItemThumb
+                size="50"
+                :item="isAvailable ? item : undefined"
+              />
+            </div>
           </div>
         </template>
         <!-- ===== DESKTOP (hover-capable): blue play reveals on hover ===== -->
@@ -86,10 +102,23 @@
               :class="{ 'is-playable': item.is_playable }"
               @click="onPlayAreaClick"
             >
-              <MediaItemThumb
-                size="50"
-                :item="isAvailable ? item : undefined"
-              />
+              <div
+                v-if="
+                  item.media_type == MediaType.COLLECTION && item != undefined
+                "
+              >
+                <MediaCollectionThumb
+                  size="50"
+                  :item="item as MediaCollection<MediaItemType>"
+                  :thumb-offset="5"
+                />
+              </div>
+              <div v-else>
+                <MediaItemThumb
+                  size="50"
+                  :item="isAvailable ? item : undefined"
+                />
+              </div>
               <span v-if="item.is_playable" class="listitem-play-blue">
                 <Play :size="16" fill="currentColor" :stroke-width="0" />
               </span>
@@ -161,26 +190,27 @@
       </div>
       <!-- audiobook author(s) -->
       <div v-else-if="'authors' in item && item.authors">
-        {{ item.authors.join(" / ") }}
+        {{ getAuthorsNarratorsArray(item.authors).join(" / ") }}
       </div>
       <!-- audiobook publisher -->
       <div v-else-if="'publisher' in item && item.publisher">
         {{ item.publisher }}
+      </div>
+      <div v-else-if="item.media_type == MediaType.COLLECTION">
+        {{ $t("collection") }}
       </div>
       <!-- description -->
       <div
         v-else-if="
           'metadata' in item &&
           item.metadata?.description &&
-          [MediaType.RADIO, MediaType.PLAYLIST, MediaType.FOLDER].includes(
-            item.media_type,
-          )
+          [MediaType.RADIO, MediaType.PLAYLIST].includes(item.media_type)
         "
       >
         {{ truncateString(item.metadata.description, 150) }}
       </div>
       <!-- media type label -->
-      <div v-else-if="'media_type' in item && !item.provider_mappings">
+      <div v-else-if="!('provider_mappings' in item)">
         {{ $t(item.media_type) }}
       </div>
     </template>
@@ -223,6 +253,7 @@
         v-if="getBreakpointValue('bp2') && showProvider"
         :domain="getListItemProviderIconDomain(item)"
         :size="24"
+        class="mx-[10px]"
       />
 
       <!-- fully played or in progress icon -->
@@ -244,6 +275,7 @@
           getBreakpointValue('bp3') &&
           'favorite' in item &&
           showFavorite &&
+          item.media_type != MediaType.COLLECTION &&
           !$vuetify.display.mobile
         "
         class="favorite-button-wrapper"
@@ -275,11 +307,14 @@ import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
-  formatDuration,
-  getArtistsString,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
+} from "@/helpers/media_item_actions";
+import {
+  formatDuration,
+  getArtistsString,
+  getAuthorsNarratorsArray,
   truncateString,
 } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
@@ -287,6 +322,7 @@ import {
   AlbumType,
   ContentType,
   MediaType,
+  type MediaCollection,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -300,6 +336,7 @@ import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import ListviewItemTitle from "./ListviewItemTitle.vue";
+import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
@@ -343,6 +380,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   isDisabled: false,
   isAvailable: true,
   parentItem: undefined,
+  sortBy: undefined,
 });
 
 // computed properties
@@ -362,7 +400,6 @@ const collabArtists = computed(() => {
 const HiResDetails = computed(() => {
   if (!("provider_mappings" in compProps.item)) return "";
   for (const prov of compProps.item.provider_mappings) {
-    if (!prov.audio_format) continue;
     if (prov.audio_format.content_type == undefined) continue;
     if (
       ![
