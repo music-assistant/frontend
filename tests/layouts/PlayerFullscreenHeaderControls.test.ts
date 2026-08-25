@@ -1,5 +1,6 @@
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
+import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { CrossfadeMode, type PlayerQueue } from "@/plugins/api/interfaces";
 import { shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +9,7 @@ import { ref } from "vue";
 // Only what the crossfade control reads is mocked; the rest of the header is
 // stubbed out by shallowMount.
 const queue = ref<Partial<PlayerQueue> | undefined>(undefined);
+const hasActiveAudioPath = ref(false);
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -19,6 +21,9 @@ vi.mock("@/plugins/api", () => ({
 vi.mock("@/plugins/store", () => ({ store: { mobileLayout: false } }));
 vi.mock("@/composables/useAudioOverlay", () => ({
   useAudioOverlay: () => ({ openOverlayDialog: vi.fn() }),
+}));
+vi.mock("@/composables/useActiveAudioPath", () => ({
+  useActiveAudioPath: () => ({ hasActiveAudioPath }),
 }));
 vi.mock("@/layouts/default/PlayerOSD/useQueueModes", () => ({
   useQueueModes: () => ({
@@ -69,6 +74,7 @@ function seedQueue(crossfadeMode: CrossfadeMode): void {
 describe("PlayerFullscreenHeaderControls", () => {
   beforeEach(() => {
     queue.value = undefined;
+    hasActiveAudioPath.value = false;
   });
 
   it("does not animate a fade the source applied", () => {
@@ -104,5 +110,21 @@ describe("PlayerFullscreenHeaderControls", () => {
     expect(text).toContain("Crossfade");
     expect(text).toContain("Applied by Spotify");
     expect(text).not.toContain("Disable crossfade");
+  });
+
+  it("shows the quality pill when there is an active audio path", () => {
+    hasActiveAudioPath.value = true;
+
+    expect(mountControls().findComponent(QualityDetailsBtn).exists()).toBe(
+      true,
+    );
+  });
+
+  it("hides the quality pill without an active audio path", () => {
+    hasActiveAudioPath.value = false;
+
+    expect(mountControls().findComponent(QualityDetailsBtn).exists()).toBe(
+      false,
+    );
   });
 });

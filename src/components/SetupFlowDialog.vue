@@ -589,10 +589,10 @@ function applyStep(newStep: SetupFlowStep) {
   if (
     isTerminal.value &&
     !completionNotified &&
-    launch.value?.kind === "reconfigure"
+    (launch.value?.kind === "reconfigure" || launch.value?.kind === "player")
   ) {
     completionNotified = true;
-    launch.value.onFlowEnded?.();
+    launch.value.onFlowEnded?.(newStep.type === FlowStepType.FINISH);
   }
 
   if (newStep.type === FlowStepType.FORM) {

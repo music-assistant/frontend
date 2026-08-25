@@ -1178,6 +1178,16 @@ export interface AudioProcessingChain {
   outputs: AudioOutputDetails[];
 }
 
+// active_source_audio: a compact audio-path snapshot for a live external source
+// (e.g. Spotify Connect) that has no queue item to carry StreamDetails on.
+export interface ActiveSourceAudioDetails {
+  input_format: AudioFormat;
+  input_fidelity: AudioFidelity;
+  crossfade_mode: CrossfadeMode;
+  volume_normalization_mode: VolumeNormalizationMode;
+  outputs: AudioOutputDetails[];
+}
+
 export interface StreamMetadata {
   // mandatory fields
   title: string;
@@ -1454,6 +1464,11 @@ export interface Player {
   // sleep_timer_expires_at: unix (utc) timestamp at which the active sleep timer
   // will stop playback, or null when no sleep timer is set.
   sleep_timer_expires_at: number | null;
+
+  // active_source_audio: audio-path snapshot for a live external source (e.g.
+  // Spotify Connect) playing on active_source; null while a queue item is
+  // playing instead, or while nothing is known yet. Absent on older servers.
+  active_source_audio?: ActiveSourceAudioDetails | null;
 }
 
 // provider

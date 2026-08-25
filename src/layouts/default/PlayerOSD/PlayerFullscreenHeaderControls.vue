@@ -4,7 +4,7 @@
     <SleepTimerBtn pill />
 
     <!-- streaming quality details chip (moved up from under the track info) -->
-    <QualityDetailsBtn v-if="store.curQueueItem?.streamdetails" pill />
+    <QualityDetailsBtn v-if="hasActiveAudioPath" pill />
 
     <!-- lyrics: available -> clickable toggle (fully primary while the panel is open) -->
     <TooltipProvider v-if="lyricsState === 'available'" :delay-duration="200">
@@ -179,6 +179,7 @@ import {
 import AutoplayIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/AutoplayIcon.vue";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
+import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import api from "@/plugins/api";
 import {
@@ -204,6 +205,8 @@ const lyricsTooltip = computed(() =>
     ? $t("lyrics_loading")
     : $t("lyrics_unavailable_song"),
 );
+
+const { hasActiveAudioPath } = useActiveAudioPath();
 
 // Shared dynamic/autoplay state (also used by the queue mode banner).
 const {
