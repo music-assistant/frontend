@@ -56,9 +56,15 @@ export const getProviderStatusTranslationKey = (
 // entirely rather than render a raw key.
 export const getProviderStageTranslationKey = (
   stage?: ProviderStage | string | null,
-) =>
-  (stage && PROVIDER_STAGE_TRANSLATION_KEYS[stage as ProviderStage]) ||
-  undefined;
+) => {
+  if (!stage) return undefined;
+  return Object.prototype.hasOwnProperty.call(
+    PROVIDER_STAGE_TRANSLATION_KEYS,
+    stage,
+  )
+    ? PROVIDER_STAGE_TRANSLATION_KEYS[stage as ProviderStage]
+    : undefined;
+};
 
 export const getProviderSupportIssuesUrl = (domain: string) => {
   const label = PROVIDER_SUPPORT_LABELS[domain] ?? domain;
