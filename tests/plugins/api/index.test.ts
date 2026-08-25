@@ -4,12 +4,14 @@ import {
   type DSPConfig,
   type ErrorResultMessage,
   type Player,
+  PlaylistMatchPolicy,
   RepeatMode,
   type ServerInfoMessage,
   type SuccessResultMessage,
 } from "@/plugins/api/interfaces";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { playlist } from "../../fixtures/playlist";
 
 const { mockToastError } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
@@ -377,6 +379,54 @@ describe("MusicAssistantApi error handling", () => {
       expect.any(Error),
     );
     expect(api["commands"].size).toBe(0);
+  });
+
+  it("imports a playlist with the chosen match policy", async () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 57 };
+    const result = api.importPlaylist(
+      "#EXTM3U",
+      true,
+      ["spotify--1"],
+      PlaylistMatchPolicy.EXACT,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/playlists/import_playlist",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      m3u_data: "#EXTM3U",
+      library_matching: true,
+      match_providers: ["spotify--1"],
+      match_policy: PlaylistMatchPolicy.EXACT,
+    });
+
+    const importedPlaylist = playlist({ item_id: "1", name: "My playlist" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: importedPlaylist,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(importedPlaylist);
+  });
+
+  it("omits match_policy when it isn't provided", () => {
+    api.importPlaylist("#EXTM3U", true, ["spotify--1"]);
+
+    expect(transport.lastCommand.args).toEqual({
+      m3u_data: "#EXTM3U",
+      library_matching: true,
+      match_providers: ["spotify--1"],
+    });
+  });
+
+  it("reports playlist match policy support once the server reaches schema 57", () => {
+    expect(api.supportsPlaylistMatchPolicy).toBe(false);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 57 };
+    expect(api.supportsPlaylistMatchPolicy).toBe(true);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 56 };
+    expect(api.supportsPlaylistMatchPolicy).toBe(false);
   });
 
   it("rejects in-flight commands when the connection closes", async () => {

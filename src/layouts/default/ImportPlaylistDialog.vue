@@ -16,6 +16,9 @@
 
         <div v-if="musicProviders.length" class="flex flex-col gap-3 mt-4">
           <Label>{{ $t("import_playlist_search_providers") }}</Label>
+          <p class="text-muted-foreground text-xs">
+            {{ $t("import_playlist_search_providers_description") }}
+          </p>
           <div class="flex flex-col gap-2">
             <div
               v-for="provider in musicProviders"
@@ -31,6 +34,34 @@
                 {{ provider.name }}
               </Label>
             </div>
+          </div>
+
+          <div v-if="showMatchPolicy" class="flex flex-col gap-2 mt-2">
+            <Label>{{ $t("import_playlist_match_policy_label") }}</Label>
+            <RadioGroup v-model="matchPolicy" class="gap-2">
+              <div
+                v-for="option in matchPolicyOptions"
+                :key="option.value"
+                class="flex items-start gap-3 rounded-md border p-3"
+              >
+                <RadioGroupItem
+                  :id="`import-playlist-policy-${option.value}`"
+                  :value="option.value"
+                  class="mt-0.5"
+                />
+                <Label
+                  :for="`import-playlist-policy-${option.value}`"
+                  class="flex flex-1 flex-col items-start gap-1 font-normal"
+                >
+                  <span class="text-sm font-medium">{{ option.title }}</span>
+                  <span
+                    class="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap"
+                  >
+                    {{ option.description }}
+                  </span>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
         </div>
       </DialogHeader>
@@ -61,8 +92,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import api from "@/plugins/api";
-import { ProviderFeature, ProviderType } from "@/plugins/api/interfaces";
+import {
+  PlaylistMatchPolicy,
+  ProviderFeature,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import { type ImportPlaylistEvent, eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -73,6 +109,9 @@ const dialogKey = ref(0);
 const m3uData = ref("");
 const playlistName = ref("");
 const selectedProviders = ref<string[]>([]);
+const matchPolicy = ref<PlaylistMatchPolicy>(
+  PlaylistMatchPolicy.SAME_RECORDING,
+);
 
 const musicProviders = computed(() => {
   return Object.values(api.providers)
@@ -85,6 +124,30 @@ const musicProviders = computed(() => {
     .sort((a, b) => a.name.localeCompare(b.name));
 });
 
+// older servers always match on the full track title/artist; only offer the
+// policy choice once the server can actually honor it.
+const showMatchPolicy = computed(
+  () => musicProviders.value.length > 0 && api.supportsPlaylistMatchPolicy,
+);
+
+const matchPolicyOptions = computed(() => [
+  {
+    value: PlaylistMatchPolicy.EXACT,
+    title: $t("import_playlist_match_policy_exact_title"),
+    description: $t("import_playlist_match_policy_exact_description"),
+  },
+  {
+    value: PlaylistMatchPolicy.SAME_RECORDING,
+    title: $t("import_playlist_match_policy_same_recording_title"),
+    description: $t("import_playlist_match_policy_same_recording_description"),
+  },
+  {
+    value: PlaylistMatchPolicy.BEST_EFFORT,
+    title: $t("import_playlist_match_policy_best_effort_title"),
+    description: $t("import_playlist_match_policy_best_effort_description"),
+  },
+]);
+
 watch(showDialog, (open) => {
   store.dialogActive = open;
 });
@@ -94,6 +157,7 @@ onMounted(() => {
     m3uData.value = evt.m3uData;
     playlistName.value = evt.playlistName;
     selectedProviders.value = musicProviders.value.map((p) => p.instance_id);
+    matchPolicy.value = PlaylistMatchPolicy.SAME_RECORDING;
     dialogKey.value++;
     showDialog.value = true;
   });
@@ -121,6 +185,7 @@ const doImport = async () => {
       selectedProviders.value.length < musicProviders.value.length
         ? selectedProviders.value
         : undefined,
+      showMatchPolicy.value ? matchPolicy.value : undefined,
     );
     toast.success($t("playlist_created"), {
       action: {

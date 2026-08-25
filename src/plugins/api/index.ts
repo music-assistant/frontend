@@ -57,6 +57,7 @@ import {
   PlayableMediaItemType,
   PlayerConfig,
   PlayerQueueConfig,
+  PlaylistMatchPolicy,
   Podcast,
   PodcastEpisode,
   ProviderConfig,
@@ -97,6 +98,9 @@ export interface CommandOptions {
    */
   suppressGlobalError?: boolean | (() => boolean);
 }
+
+// The match_policy argument on music/playlists/import_playlist landed in API schema 57.
+const IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION = 57;
 
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
@@ -932,11 +936,13 @@ export class MusicAssistantApi {
     m3u_data: string,
     library_matching: boolean = true,
     match_providers?: string[],
+    match_policy?: PlaylistMatchPolicy,
   ): Promise<Playlist> {
     return this.sendCommand("music/playlists/import_playlist", {
       m3u_data,
       library_matching,
       match_providers,
+      match_policy,
     });
   }
 
@@ -2968,6 +2974,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server accepts an explicit match_policy on import_playlist (schema >= 57). */
+  public get supportsPlaylistMatchPolicy(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION
     );
   }
 
