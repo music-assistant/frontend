@@ -55,7 +55,11 @@
     "player_type": {
         "group": "Grupo",
         "player": "Reproductor",
-        "stereo_pair": "Pareja estéreo"
+        "stereo_pair": "Pareja estéreo",
+        "display": "Pantalla",
+        "visualizer": "Visualizador",
+        "light": "Luz",
+        "unknown": "Desconocido"
     },
     "players": "Reproductores",
     "playlist": "Lista de reproducción",
@@ -408,7 +412,6 @@
         "users_description": "Gestiona las cuentas de usuario, los roles y los permisos.",
         "system_description": "Configura los ajustes del servidor de Music Assistant y los módulos principales.",
         "system": "Sistema",
-        "view_documentation": "Ver documentación",
         "about": "Acerca de",
         "about_description": "Información de versión, créditos y más",
         "auto_refresh_log": "Actualización automática",
@@ -513,7 +516,8 @@
             "preferences": "Preferencias",
             "display_settings": "Pantalla",
             "dsp": "DSP",
-            "volume_control": "Control de volumen"
+            "volume_control": "Control de volumen",
+            "audiobooks": "Audiolibros"
         },
         "onboarding_subtitle": "Empecemos conectando tus fuentes de música y dispositivos de audio.",
         "onboarding_music_title": "Música",
@@ -539,8 +543,18 @@
             "description": "Permitir la reproducción en este dispositivo\/navegador mediante el reproductor web Sendspin integrado."
         },
         "enable_browser_controls": {
-            "label": "Activar los controles multimedia del navegador",
-            "description": "Permitir el control de la reproducción mediante los controles multimedia integrados en el navegador (por ejemplo, las teclas multimedia del teclado)."
+            "label": "Controles multimedia del navegador",
+            "description": "Exponer la reproducción de Music Assistant a los controles multimedia del navegador y del sistema operativo, como las teclas multimedia y los controles de la pantalla de bloqueo. Los eventos del dispositivo, como llamadas telefónicas, suspensión o cierre de la tapa de un portátil, pueden pausar el reproductor controlado.",
+            "options": {
+                "active_player": "Cualquier reproductor seleccionado activamente",
+                "web_player": "Solo el reproductor web integrado",
+                "disabled": "Desactivado"
+            },
+            "option_descriptions": {
+                "active_player": "Controlar el reproductor seleccionado actualmente en Music Assistant, incluidos los altavoces de otras zonas de tu casa.",
+                "web_player": "Controlar únicamente el audio reproducido por el reproductor web integrado en este dispositivo.",
+                "disabled": "No exponer la reproducción de Music Assistant a los controles del navegador o del sistema operativo."
+            }
         },
         "settings_saved": "Ajustes guardados correctamente",
         "protocol_disabled_message": "Activa este protocolo para configurar sus ajustes.",
@@ -777,7 +791,11 @@
             "description": "Vibrar al ajustar el control deslizante de volumen. Solo en dispositivos táctiles con motor de vibración."
         },
         "player_option_error": "Error al establecer la opción del reproductor: {key} {value}",
-        "server_logs_load_failed": "No se han podido cargar los registros del servidor"
+        "server_logs_load_failed": "No se han podido cargar los registros del servidor",
+        "audiobook_chapter_progress": {
+            "label": "Mostrar el progreso del capítulo del audiolibro",
+            "description": "Mostrar el tiempo transcurrido y restante del capítulo actual del audiolibro en lugar del audiolibro completo."
+        }
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -896,7 +914,11 @@
         "show_menu": "Mostrar\/ocultar menú",
         "show_context_menu": "Mostrar menú contextual",
         "scroll_left": "Desplazar hacia la izquierda",
-        "scroll_right": "Desplazar hacia la derecha"
+        "scroll_right": "Desplazar hacia la derecha",
+        "hide_provider": "Ocultar proveedor de música",
+        "exit_select_items": "Salir de la selección múltiple",
+        "playing_from": "Reproduciendo desde {0}",
+        "open_documentation": "Abrir la documentación de {provider}"
     },
     "topresult": "Resultados más importantes",
     "track": "Canción",
@@ -968,7 +990,6 @@
     "global_search": "Búsqueda global",
     "podcast_episode": "Episodio",
     "podcast_episodes": "Episodios",
-    "play_from_here": "Reproducir desde aquí",
     "dsp_active": "Activo",
     "currently_playing_players": "Reproduciendo actualmente",
     "all_players": "Todos los reproductores",
@@ -1034,7 +1055,8 @@
                 "measurement_only": "Sonoridad medida",
                 "fallback_fixed_gain": "Ganancia fija de respaldo",
                 "fixed_gain": "Ganancia fija",
-                "fallback_dynamic": "Ganancia dinámica de respaldo"
+                "fallback_dynamic": "Ganancia dinámica de respaldo",
+                "source": "Aplicado por {0}"
             },
             "measurement": {
                 "track": "Canción",
@@ -1045,7 +1067,8 @@
             "crossfade_mode": {
                 "smart": "Inteligente",
                 "standard": "Estándar",
-                "disabled": "Desactivado"
+                "disabled": "Desactivado",
+                "source": "Aplicado por {0}"
             },
             "dsp_state": {
                 "enabled": "DSP activo",
@@ -1058,9 +1081,9 @@
             "integer_pcm": "{0}-bit PCM",
             "direct_signal_path": "Ruta de señal directa",
             "direct_signal_path_detail": "El audio pasa por el procesamiento de cola sin cambios.",
-            "direct_signal_path_inactive_detail": "No hay activa ninguna normalización de volumen, fundido cruzado, ajuste de velocidad de reproducción ni superposición de audio.",
+            "direct_signal_path_inactive_detail": "Music Assistant no aplica normalización de volumen, transición entre canciones, ajuste de velocidad de reproducción ni superposición de audio.",
             "no_shared_transforms": "No se han informado transformaciones compartidas",
-            "no_shared_transforms_detail": "El modelo de procesamiento no informa de ninguna normalización de volumen, fundido cruzado, ajuste de velocidad de reproducción ni superposición de audio.",
+            "no_shared_transforms_detail": "Music Assistant no aplica normalización, transición entre canciones, ajuste de velocidad de reproducción ni superposición de audio.",
             "processing_headroom": "Margen de procesamiento",
             "processing_headroom_detail": "Music Assistant convierte internamente el audio a coma flotante para crear margen dinámico y reducir la saturación o la pérdida de precisión durante la normalización, la mezcla, el fundido cruzado, el procesamiento DSP y la limitación.",
             "processing_headroom_reasons": "El margen de coma flotante está disponible para: {0}.",
@@ -1519,7 +1542,6 @@
             "current_music": "Música en reproducción",
             "copy_music_name": "Copiar título de la canción",
             "copy_music_name_failed": "No se pudo copiar el título de la canción",
-            "loading_lyrics": "Cargando letras...",
             "no_winner": "Esta vez no hay ganador",
             "winner_single": "{0} gana con {1} puntos",
             "winner_multiple": "{0} empata por la victoria con {1} puntos",
@@ -1676,7 +1698,9 @@
             "no_available_players": "No se han encontrado reproductor disponibles. Usa el modo remoto o comprueba la configuración de los reproductores.",
             "how_to_play_guess_the_song_description": "Escucha la canción que se está reproduciendo y elige el título correcto entre las opciones antes de que se acabe el tiempo.",
             "how_to_play_trivia_description": "Responde preguntas de trivial sobre música. Elige la respuesta que creas correcta antes de que se acabe el tiempo.",
-            "landing_continue": "Continuar"
+            "landing_continue": "Continuar",
+            "timeline_result_placement": "Ubicación",
+            "round_result_answer": "Respuesta"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -1991,7 +2015,8 @@
             "log_copy_failed": "No se ha podido copiar el registro de tareas.",
             "log_download_started": "Descarga del registro de tareas iniciada.",
             "log_download_failed": "No hay ningún registro de tareas disponible para descargar."
-        }
+        },
+        "report_title": "Informe de tareas"
     },
     "not_found_headline": "Vaya, esta página no está en la lista de reproducción.",
     "not_found_subtext": "La canción que buscas se ha perdido entre proveedores. Vuelve atrás o busca algo nuevo.",
@@ -2251,7 +2276,6 @@
     "visualizer": {
         "title": "MilkDrop",
         "preset_random": "Ajuste predefinido aleatorio",
-        "open_settings": "Ajustes del visualizador",
         "toggle": "Activar o desactivar el visualizador MilkDrop",
         "preset_random_favorites": "Aleatorio entre los favoritos",
         "toggle_favorite": "Añadir este ajuste predefinido a favoritos",
@@ -2283,7 +2307,8 @@
         "remove_favorite": "Eliminar de favoritos",
         "credits": "Créditos",
         "credits_butterchurn": "Renderizado mediante Butterchurn, de Jordan Berg (licencia MIT), la implementación WebGL de MilkDrop 2.",
-        "credits_milkdrop": "MilkDrop fue creado originalmente por Ryan Geiss como visualizador para Winamp. Los ajustes predefinidos son obra de la comunidad de usuarios de MilkDrop y se incluyen mediante butterchurn-presets."
+        "credits_milkdrop": "MilkDrop fue creado originalmente por Ryan Geiss como visualizador para Winamp. Los ajustes predefinidos son obra de la comunidad de usuarios de MilkDrop y se incluyen mediante butterchurn-presets.",
+        "enabled": "Activado"
     },
     "ai_dj": "Activar el DJ de radio con IA",
     "ai_dj_off": "Apagado",
@@ -2360,5 +2385,13 @@
     "audio_overlay_add_custom_explanation": "Añade tu propio sonido ambiental mediante la URL de una transmisión.",
     "audio_overlay_no_custom_sounds": "Todavía no se han añadido sonidos personalizados.",
     "audio_overlay_custom_added": "{0} añadido",
-    "audio_overlay_custom_add_failed": "No se ha podido añadir el sonido personalizado. Comprueba que la URL apunta a una transmisión de audio reproducible."
+    "audio_overlay_custom_add_failed": "No se ha podido añadir el sonido personalizado. Comprueba que la URL apunta a una transmisión de audio reproducible.",
+    "search_in": "Buscar en {0}...",
+    "pages": "Páginas",
+    "recent_searches": "Búsquedas recientes",
+    "command_center_navigate": "Navegar",
+    "command_center_open": "Abrir",
+    "command_center_keep_typing": "Sigue escribiendo para buscar...",
+    "screens": "Pantallas",
+    "play_from_here_to_latest": "Reproducir desde aquí hasta la más reciente"
 }

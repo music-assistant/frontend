@@ -34,7 +34,7 @@
         "@tanstack/vue-virtual": "3.13.30",
         "@types/qrcode": "^1.5.6",
         "@vueuse/core": "^14.3.0",
-        "butterchurn": "2.6.7",
+        "butterchurn": "https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz",
         "butterchurn-presets": "2.4.7",
         "canvas-confetti": "^1.9.4",
         "class-variance-authority": "^0.7.1",

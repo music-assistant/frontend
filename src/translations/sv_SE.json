@@ -55,7 +55,11 @@
     "player_type": {
         "group": "Grupp",
         "player": "Spelare",
-        "stereo_pair": "Stereo par"
+        "stereo_pair": "Stereo par",
+        "display": "Skärm",
+        "visualizer": "Visualisera",
+        "light": "Ljus",
+        "unknown": "Okänd"
     },
     "players": "Spelare",
     "playlist": "Spellista",
@@ -408,7 +412,6 @@
         "users_description": "Hantera användarkonton, roller och behörigheter",
         "system_description": "Konfigurera serverinställningar och kärnmoduler för Music Assistant",
         "system": "System",
-        "view_documentation": "Visa dokumentationen",
         "about": "Om",
         "about_description": "Versionsinformation, medverkande och mer",
         "auto_refresh_log": "Automatisk uppdatering",
@@ -513,7 +516,8 @@
             "preferences": "Inställningar",
             "display_settings": "Visa",
             "dsp": "DSP",
-            "volume_control": "Volymkontroll"
+            "volume_control": "Volymkontroll",
+            "audiobooks": "Ljudböcker"
         },
         "onboarding_subtitle": "Nu kommer vi igång genom att ansluta dina musikkällor och ljudenheter.",
         "onboarding_music_title": "Musik",
@@ -539,8 +543,18 @@
             "description": "Tillåt uppspelning till den här enheten\/webbläsaren med den inbyggda Sendspin webbspelaren."
         },
         "enable_browser_controls": {
-            "label": "Aktivera webbläsarens mediekontroller",
-            "description": "Tillåt kontroll över uppspelning med webbläsarens inbyggda mediekontroller (t.ex. medietangenter på tangentbordet)."
+            "label": "Webbläsarmedia i webbläsaren",
+            "description": "Visa uppspelning av Music Assistant för mediekontroller i webbläsare och operativsystem, till exempel medietangenter och låsskärmskontroller. Enhetshändelser som telefonsamtal, viloläge eller att stänga en laptops lock kan pausa den styrda spelaren.",
+            "options": {
+                "active_player": "Vilken aktivt vald spelare som helst",
+                "web_player": "Endast inbyggd webbspelare",
+                "disabled": "Inaktiverad"
+            },
+            "option_descriptions": {
+                "active_player": "Styr den spelare som för närvarande är vald i Music Assistant, inklusive högtalare på andra ställen i hemmet.",
+                "web_player": "Styr endast ljud som spelas upp av den inbyggda webbspelaren på den här enheten.",
+                "disabled": "Utsätt inte uppspelning av Music Assistant för webbläsare eller operativsystemkontroller."
+            }
         },
         "settings_saved": "Inställningarna har sparats",
         "protocol_disabled_message": "Aktivera det här protokollet för att konfigurera dess inställningar",
@@ -745,7 +759,7 @@
         "visualizer": "Visualiserare",
         "visualizer_enabled": {
             "label": "MilkDrop visualiserare",
-            "description": "Visa en MilkDrop-visualisering bakom helskärmsspelaren, som reagerar live på musiken. Varje spelare kan åsidosätta detta från sin helskärmsmeny."
+            "description": "Visa en MilkDrop-visualisering bakom helskärmsspelaren, som reagerar live på musiken. Varje spelare kan åsidosätta detta från sin helskärmsmeny. Vågformen kopplas från Sendspin-strömmen, så den erbjuds endast för spelare med en Sendspin-utgång."
         },
         "visualizer_blur": {
             "label": "Visualiserar suddighet",
@@ -777,7 +791,11 @@
             "description": "Vibrera medan du justerar volymreglaget. Rör endast enheter med vibrationsmotor."
         },
         "player_option_error": "Fel vid inställning av spelaralternativ: {key} {value}",
-        "server_logs_load_failed": "Misslyckades med att läsa in serverloggar"
+        "server_logs_load_failed": "Misslyckades med att läsa in serverloggar",
+        "audiobook_chapter_progress": {
+            "label": "Visa förloppet i ljudbokskapitlet",
+            "description": "Visa förfluten och återstående tid för det aktuella ljudbokskapitlet istället för hela ljudboken."
+        }
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -896,7 +914,11 @@
         "show_menu": "Visa\/dölj meny",
         "show_context_menu": "Visa kontextmenyn",
         "scroll_left": "Scrolla åt vänster",
-        "scroll_right": "Scrolla åt höger"
+        "scroll_right": "Scrolla åt höger",
+        "hide_provider": "Dölj musikleverantör",
+        "exit_select_items": "Avsluta flerval",
+        "playing_from": "Spelar från {0}",
+        "open_documentation": "Öppna {provider} dokumentationen"
     },
     "topresult": "Toppresultat",
     "track": "Spår",
@@ -968,7 +990,6 @@
     "global_search": "Global sökning",
     "podcast_episode": "Avsnitt",
     "podcast_episodes": "Avsnitt",
-    "play_from_here": "Spela härifrån",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Spelar just nu",
     "all_players": "Alla spelare",
@@ -1034,7 +1055,8 @@
                 "measurement_only": "Uppmätt ljudstyrka",
                 "fallback_fixed_gain": "Alternativ fast förstärkning",
                 "fixed_gain": "Fast förstärkning",
-                "fallback_dynamic": "Reservdynamik"
+                "fallback_dynamic": "Reservdynamik",
+                "source": "Tillämpad av {0}"
             },
             "measurement": {
                 "track": "Spår",
@@ -1045,7 +1067,8 @@
             "crossfade_mode": {
                 "smart": "Smart",
                 "standard": "Standard",
-                "disabled": "Inaktiverad"
+                "disabled": "Inaktiverad",
+                "source": "Tillämpad av {0}"
             },
             "dsp_state": {
                 "enabled": "DSP aktiv",
@@ -1058,9 +1081,9 @@
             "integer_pcm": "{0}-bit PCM",
             "direct_signal_path": "Direkt signalväg",
             "direct_signal_path_detail": "Ljudet passerar oförändrat genom kö behandlingen.",
-            "direct_signal_path_inactive_detail": "Ingen volymnormalisering, övertoning, justering av uppspelningshastighet eller ljudöverlagring är aktiv.",
+            "direct_signal_path_inactive_detail": "Music Assistant tillämpar ingen volymnormalisering, övertoning, justering av uppspelningshastighet eller ljudöverlagring.",
             "no_shared_transforms": "Inga delade transformationer rapporterades",
-            "no_shared_transforms_detail": "Ingen normalisering, övertoning, justering av uppspelningshastighet eller ljudöverlagring rapporteras av bearbetningsmodellen.",
+            "no_shared_transforms_detail": "Music Assistant tillämpar ingen normalisering, övertoning, justering av uppspelningshastighet eller ljudöverlagring.",
             "processing_headroom": "Bearbetningsutrymme",
             "processing_headroom_detail": "Music Assistant konverterar ljud till flyttal internt för att skapa fri höjd och minska klippning eller precisionsförlust under normalisering, mixning, crossfade, DSP och begränsning.",
             "processing_headroom_reasons": "Flyttalshöjd är tillgänglig för: {0}.",
@@ -1519,7 +1542,6 @@
             "current_music": "Aktuell musik",
             "copy_music_name": "Kopiera låttitel",
             "copy_music_name_failed": "Kunde inte kopiera låttiteln",
-            "loading_lyrics": "Laddar text...",
             "no_winner": "Ingen vinnare den här gången",
             "winner_single": "{0} vinner med {1} poäng",
             "winner_multiple": "{0} oavgjort för seger med {1} poäng",
@@ -1676,7 +1698,9 @@
             "no_available_players": "Inga tillgängliga spelare hittades. Använd fjärrläge eller kontrollera spelarinställningarna.",
             "how_to_play_guess_the_song_description": "Lyssna på låten som spelas och välj rätt titel från alternativen innan tiden rinner ut.",
             "how_to_play_trivia_description": "Svara på frågesporter om musik. Välj det svar du tror är rätt innan tiden rinner ut.",
-            "landing_continue": "Fortsätt"
+            "landing_continue": "Fortsätt",
+            "timeline_result_placement": "Placering",
+            "round_result_answer": "Svar"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -1991,7 +2015,8 @@
             "log_copy_failed": "Misslyckades med att kopiera uppgiftsloggen.",
             "log_download_started": "Nerladdning av uppgiftslogg har startat.",
             "log_download_failed": "Ingen uppgiftslogg tillgänglig för nerladdning."
-        }
+        },
+        "report_title": "Uppgiftsrapport"
     },
     "not_found_headline": "Hoppsan, den här sidan finns inte med på låtlistan.",
     "not_found_subtext": "Låten du letar efter har försvunnit mellan leverantörerna. Gå tillbaka eller hitta något nytt.",
@@ -2217,7 +2242,10 @@
         "disconnect": "Kopplar ifrån {0}",
         "loading": "Laddar enheter...",
         "no_devices": "Inga strömnings enheter hittades",
-        "started": "Strömmar till \"{0}\""
+        "started": "Strömmar till \"{0}\"",
+        "get_url": "Hämta URL för instrumentpanelen",
+        "uri_copied": "Kontrollpanelens URL kopierad till urklipp",
+        "uri_copy_failed": "Misslyckades med att kopiera instrumentpanelens URL till urklipp"
     },
     "reconfigure_player": "Konfigurera om spelaren",
     "configure_player": "Konfigurera spelaren",
@@ -2248,7 +2276,6 @@
     "visualizer": {
         "title": "MilkDrop",
         "preset_random": "Slumpmässig förinställning",
-        "open_settings": "Visualiserar inställningar",
         "toggle": "Aktivera MilkDrop visualiseringen",
         "preset_random_favorites": "Slumpmässigt från favoriter",
         "toggle_favorite": "Favorisera den här förinställningen",
@@ -2280,7 +2307,8 @@
         "remove_favorite": "Ta bort favorit",
         "credits": "Krediter",
         "credits_butterchurn": "Rendering med hjälp av Butterchurn av Jordan Berg (MIT licens), WebGL implementeringen av MilkDrop 2.",
-        "credits_milkdrop": "MilkDrop skapades ursprungligen av Ryan Geiss som en visualiserare för Winamp. Förinställningar är ett verk av MilkDrop-förinställningarna, samlade via butterchurn-presets."
+        "credits_milkdrop": "MilkDrop skapades ursprungligen av Ryan Geiss som en visualiserare för Winamp. Förinställningar är ett verk av MilkDrop-förinställningarna, samlade via butterchurn-presets.",
+        "enabled": "Aktiverad"
     },
     "ai_dj": "Aktivera AI Radio DJ",
     "ai_dj_off": "Av",
@@ -2351,5 +2379,19 @@
         "stop_and_ungroup": "Stoppa och av gruppera"
     },
     "play_shuffled": "Spela blandat",
-    "players_in_group": "Spelare i gruppen"
+    "players_in_group": "Spelare i gruppen",
+    "audio_overlay_custom_sounds": "Anpassade ljud",
+    "audio_overlay_add_custom": "Lägg till anpassat ljud",
+    "audio_overlay_add_custom_explanation": "Lägg till ditt eget omgivande ljud via strömnings URL.",
+    "audio_overlay_no_custom_sounds": "Inga anpassade ljud har lagts till än.",
+    "audio_overlay_custom_added": "{0} tillagd",
+    "audio_overlay_custom_add_failed": "Misslyckades med att lägga till anpassat ljud. Kontrollera att URL:en pekar på en spelbar ljudström.",
+    "search_in": "Sök i {0}...",
+    "pages": "Sidor",
+    "recent_searches": "Senaste sökningar",
+    "command_center_navigate": "navigera",
+    "command_center_open": "öppna",
+    "command_center_keep_typing": "Fortsätt skriva för att söka...",
+    "screens": "Skärmar",
+    "play_from_here_to_latest": "Spela härifrån till senaste"
 }

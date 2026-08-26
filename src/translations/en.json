@@ -676,6 +676,7 @@
         },
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
+        "provider_status_retired": "Retired",
         "provider_status_error": "Setup failed",
         "remove_provider": "Remove provider",
         "remove_provider_confirm": "Remove this provider? This cannot be undone.",
