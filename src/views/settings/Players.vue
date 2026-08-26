@@ -5,6 +5,7 @@
         @update:search="searchQuery = $event"
         @update:providers="selectedProviders = $event"
         @update:types="selectedPlayerTypes = $event"
+        @update:statuses="selectedStatuses = $event"
       />
       <div class="header-actions">
         <Button
@@ -209,6 +210,7 @@ const playerConfigs = ref<PlayerConfig[]>([]);
 const searchQuery = ref<string>("");
 const selectedProviders = ref<string[]>([]);
 const selectedPlayerTypes = ref<string[]>([]);
+const selectedStatuses = ref<string[]>([]);
 const showAddPlayerGroupDialog = ref<boolean>(false);
 
 // listen for item updates to refresh items when that happens
@@ -337,6 +339,25 @@ const getAllFilteredPlayers = function () {
       const player = api.players[item.player_id];
       const playerType = player?.type ?? PlayerType.PLAYER;
       return selectedPlayerTypes.value.includes(playerType);
+    });
+  }
+
+  if (selectedStatuses.value.length > 0) {
+    filtered = filtered.filter((item) => {
+      const player = api.players[item.player_id];
+      return selectedStatuses.value.some((status) => {
+        if (status === "available") {
+          // serialized available is false while a player needs setup
+          return item.enabled && player?.available;
+        }
+        if (status === "needs_setup") {
+          return item.enabled && player?.needs_setup;
+        }
+        if (status === "unavailable") {
+          return item.enabled && !player?.available && !player?.needs_setup;
+        }
+        return status === "disabled" && !item.enabled;
+      });
     });
   }
 

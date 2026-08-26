@@ -371,6 +371,7 @@ export enum PlayerType {
   DISPLAY = "display",
   VISUALIZER = "visualizer",
   LIGHT = "light",
+  SOURCE = "source", // A capture-only device that provides audio input.
   UNKNOWN = "unknown",
 }
 
@@ -781,6 +782,10 @@ export enum FlowStepType {
   // fallback
   UNKNOWN = "unknown",
 }
+
+// step_id a FINISH step carries when there is nothing to report (e.g. a one-click
+// device approval); the setup dialog closes instead of showing a success screen
+export const SILENT_FINISH_STEP_ID = "finish_silent";
 
 export interface SetupFlowStep {
   // A single step of a running setup flow (add/reconfigure a provider or set up a player).

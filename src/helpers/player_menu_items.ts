@@ -10,6 +10,7 @@ import {
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
+import { isSelectablePlayer } from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { resolveExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -215,8 +216,7 @@ export const getPlayerMenuItems = (
           (p) =>
             p.player_id != playerQueue!.queue_id &&
             p.player_id != player.player_id &&
-            p.available &&
-            p.enabled &&
+            isSelectablePlayer(p) &&
             !p.synced_to &&
             !p.hide_in_ui,
         )

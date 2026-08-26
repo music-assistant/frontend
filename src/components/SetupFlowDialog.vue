@@ -333,6 +333,7 @@ import {
   type ConfigValueType,
   FlowStepType,
   SECURE_STRING_SUBSTITUTE,
+  SILENT_FINISH_STEP_ID,
   type SetupFlowStep,
 } from "@/plugins/api/interfaces";
 import { eventbus, type SetupFlowDialogEvent } from "@/plugins/eventbus";
@@ -593,6 +594,15 @@ function applyStep(newStep: SetupFlowStep) {
   ) {
     completionNotified = true;
     launch.value.onFlowEnded?.(newStep.type === FlowStepType.FINISH);
+  }
+
+  // a silent finish (e.g. a one-click device approval) needs no success screen
+  if (
+    newStep.type === FlowStepType.FINISH &&
+    newStep.step_id === SILENT_FINISH_STEP_ID
+  ) {
+    close(false);
+    return;
   }
 
   if (newStep.type === FlowStepType.FORM) {
