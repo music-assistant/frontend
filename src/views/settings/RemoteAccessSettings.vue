@@ -144,16 +144,12 @@
               {{ $t("settings.remote_access_id_explanation") }}
             </p>
             <div class="remote-id-display-wrapper">
-              <div class="remote-id-boxes">
-                <div
-                  v-for="(part, index) in remoteIdParts"
-                  :key="index"
-                  class="remote-id-box"
-                  :class="`remote-id-box-${index}`"
-                >
-                  <code class="remote-id-box-text">{{ part }}</code>
-                </div>
-              </div>
+              <SegmentedCodeInput
+                readonly
+                class="min-w-0 flex-1"
+                :model-value="remoteIdParts"
+                :layout="remoteIdLayout"
+              />
               <v-btn
                 icon="mdi-content-copy"
                 variant="text"
@@ -347,6 +343,8 @@
 <script setup lang="ts">
 import remoteAccessDiagram from "@/assets/remote-access-diagram.svg";
 import Container from "@/components/Container.vue";
+import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
+import { splitCode } from "@/helpers/segmented_code";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { RemoteAccessInfo } from "@/plugins/api/interfaces";
@@ -368,16 +366,10 @@ let unmounted = false;
 
 // Split remote ID into 4 parts: 8-5-5-8 characters
 const remoteIdLengths = [8, 5, 5, 8];
-const remoteIdParts = computed(() => {
-  const id = remoteAccessInfo.value?.remote_id || "";
-  const parts: string[] = [];
-  let offset = 0;
-  for (const len of remoteIdLengths) {
-    parts.push(id.slice(offset, offset + len));
-    offset += len;
-  }
-  return parts;
-});
+const remoteIdLayout = remoteIdLengths.map((length) => ({ length }));
+const remoteIdParts = computed(() =>
+  splitCode(remoteAccessInfo.value?.remote_id || "", remoteIdLengths),
+);
 
 onMounted(async () => {
   await loadRemoteAccessInfo();
@@ -663,59 +655,6 @@ watch(
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.remote-id-boxes {
-  display: flex;
-  gap: 8px;
-}
-
-.remote-id-box {
-  background: rgba(var(--v-theme-surface), 0.8);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 10px;
-  padding: 12px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
-  min-width: 0;
-}
-
-.remote-id-box:hover {
-  border-color: rgba(var(--v-theme-primary), 0.3);
-  background: rgba(var(--v-theme-surface), 1);
-}
-
-/* Adjust widths proportionally based on character count (8, 5, 5, 8) */
-.remote-id-box-0,
-.remote-id-box-3 {
-  flex: 8;
-}
-
-.remote-id-box-1,
-.remote-id-box-2 {
-  flex: 5;
-}
-
-.remote-id-box-text {
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    Monaco,
-    Consolas,
-    Liberation Mono,
-    Courier New,
-    monospace;
-  font-size: 1rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: rgb(var(--v-theme-on-surface));
-  text-align: center;
-  white-space: nowrap;
 }
 
 .copy-button {
