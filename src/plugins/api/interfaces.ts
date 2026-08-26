@@ -649,6 +649,10 @@ export interface ServerInfoMessage {
   onboard_done: boolean;
   name: string | null;
   status: CoreState;
+  // internal_url supersedes base_url; older servers only send base_url
+  internal_url: string | null;
+  external_url: string | null;
+  has_remote_access: boolean;
 }
 
 export type MessageType =
