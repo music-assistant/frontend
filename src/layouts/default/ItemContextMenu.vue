@@ -1418,8 +1418,8 @@ const startAudioSourceMenuItem = function (
 };
 
 /**
- * Resolve a single lightweight reference (no provider mappings) to its full
- * item so the menu can decide what to offer; anything else is returned as is.
+ * Hydrate a single lightweight reference (no provider mappings) with the play
+ * state the menu needs; anything else is returned as is.
  */
 const withFullItemDetails = async function (
   items: MediaItemTypeOrItemMapping[],
@@ -1438,16 +1438,15 @@ const withFullItemDetails = async function (
       console.error("[ItemContextMenu] failed to resolve %s", item.uri, err);
       return undefined;
     });
-  if (!fullItem) return items;
-  // keep the caller's identity: the playlog is keyed by the reference the card
-  // holds, not by the resolved item
+  if (!fullItem || !itemSupportsPlayLog(fullItem)) return items;
+  // hydrate only the play state onto the reference: id-based actions (favorites,
+  // library) and the playlog are keyed by the identity the card holds
   return [
     {
-      ...fullItem,
-      item_id: item.item_id,
-      provider: item.provider,
-      uri: item.uri,
-    },
+      ...item,
+      fully_played: fullItem.fully_played,
+      resume_position_ms: fullItem.resume_position_ms,
+    } as MediaItemTypeOrItemMapping,
   ];
 };
 

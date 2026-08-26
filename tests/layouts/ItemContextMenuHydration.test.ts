@@ -1,18 +1,18 @@
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import {
   MediaType,
+  type Audiobook,
   type ItemMapping,
-  type PodcastEpisode,
 } from "@/plugins/api/interfaces";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { podcast } from "../fixtures/podcast";
 import { providerMapping } from "../fixtures/providerMapping";
 
 const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
   emittedMenus: [] as ContextMenuDialogEvent[],
   apiMock: {
     getItem: vi.fn(),
+    getLibraryItem: vi.fn(),
     getProvider: vi.fn(),
     getCoreConfigValue: vi.fn(),
     markItemPlayed: vi.fn(),
@@ -42,33 +42,34 @@ vi.mock("@/plugins/eventbus", () => ({
 // the lightweight reference a discover row card holds: provider identity, no
 // provider mappings and no played state
 const reference: ItemMapping = {
-  item_id: "ep-1",
-  provider: "gpodder--abc",
-  name: "Episode 1",
+  item_id: "book-1",
+  provider: "audiobookshelf--abc",
+  name: "Book 1",
   version: "",
-  uri: "gpodder--abc://podcast_episode/ep-1",
+  uri: "audiobookshelf--abc://audiobook/book-1",
   external_ids: [],
   is_playable: true,
-  media_type: MediaType.PODCAST_EPISODE,
+  media_type: MediaType.AUDIOBOOK,
   available: true,
 };
 
-// the same episode as the lookup returns it: a different (library) identity,
-// with the played state the menu needs
-const resolved: PodcastEpisode = {
+// the same audiobook as the lookup returns it: a different (library) identity,
+// favorited, with the played state the menu needs
+const resolved: Audiobook = {
   item_id: "42",
   provider: "library",
-  uri: "library://podcast_episode/42",
-  name: "Episode 1",
+  uri: "library://audiobook/42",
+  name: "Book 1",
   version: "",
   external_ids: [],
   is_playable: true,
-  media_type: MediaType.PODCAST_EPISODE,
-  provider_mappings: [providerMapping()],
+  media_type: MediaType.AUDIOBOOK,
+  provider_mappings: [providerMapping({ in_library: true })],
   metadata: {},
-  favorite: false,
-  position: 1,
-  podcast: podcast(),
+  favorite: true,
+  publisher: null,
+  authors: [],
+  narrators: [],
   duration: 1800,
   fully_played: false,
   resume_position_ms: 120000,
@@ -80,16 +81,21 @@ beforeEach(() => {
 });
 
 describe("showContextMenuForMediaItem hydration", () => {
-  it("uses the looked-up detail but keeps the reference identity on actions", async () => {
+  it("uses the looked-up play state but keeps the reference identity", async () => {
     apiMock.getItem.mockResolvedValue(resolved);
 
     await showContextMenuForMediaItem(reference);
 
     // mark_unplayed is only offered because the lookup supplied the progress
+    const labels = emittedMenus[0].items.map((x) => x.label);
     const markUnplayed = emittedMenus[0].items.find(
       (x) => x.label === "mark_unplayed",
     );
     expect(markUnplayed).toBeDefined();
+    // id-based actions must not leak in from the resolved item: their commands
+    // take a library id, which the reference identity is not
+    expect(labels).not.toContain("favorites_remove");
+    expect(labels).not.toContain("remove_library");
 
     // the playlog is keyed by the identity the card holds, not the resolved one
     await markUnplayed?.action?.();
