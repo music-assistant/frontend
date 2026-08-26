@@ -1418,15 +1418,16 @@ const startAudioSourceMenuItem = function (
 };
 
 /**
- * Hydrate a single lightweight reference (no provider mappings) with the play
- * state the menu needs; anything else is returned as is.
+ * Hydrate a single audiobook or podcast-episode reference (no provider
+ * mappings) with the play state the menu needs; anything else is returned
+ * as is.
  */
 const withFullItemDetails = async function (
   items: MediaItemTypeOrItemMapping[],
 ): Promise<MediaItemTypeOrItemMapping[]> {
   if (items.length != 1) return items;
   const item = items[0];
-  if ("provider_mappings" in item || item.media_type == MediaType.FOLDER) {
+  if ("provider_mappings" in item || !itemSupportsPlayLog(item)) {
     return items;
   }
   // a failed lookup still opens the menu, without the actions needing the detail

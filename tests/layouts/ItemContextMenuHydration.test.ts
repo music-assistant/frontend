@@ -108,6 +108,17 @@ describe("showContextMenuForMediaItem hydration", () => {
     );
   });
 
+  it("does not look up items that carry no play state", async () => {
+    await showContextMenuForMediaItem({
+      ...reference,
+      media_type: MediaType.TRACK,
+      uri: "audiobookshelf--abc://track/book-1",
+    });
+
+    expect(apiMock.getItem).not.toHaveBeenCalled();
+    expect(emittedMenus).toHaveLength(1);
+  });
+
   it("still opens the menu when the lookup fails", async () => {
     apiMock.getItem.mockRejectedValue(new Error("provider unavailable"));
 
