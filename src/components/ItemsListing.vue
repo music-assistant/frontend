@@ -112,14 +112,53 @@
             <PanelViewSkeleton />
           </v-col>
         </v-row>
+        <ShelfTrack
+          v-else-if="viewMode === 'row'"
+          class="items-row"
+          :tiles-per-view="
+            panelViewItemResponsive($vuetify.display.width) + 0.5
+          "
+        >
+          <PanelViewSkeleton
+            v-for="n in 8"
+            :key="'skeleton-row-' + n"
+            class="items-row__skeleton"
+          />
+        </ShelfTrack>
       </template>
 
+      <!-- row view -->
+      <ShelfTrack
+        v-if="viewMode == 'row' && itemsVisible"
+        ref="rowTrack"
+        class="items-row"
+        :tiles-per-view="panelViewItemResponsive($vuetify.display.width) + 0.5"
+        @end-reached="onRowEndReached"
+      >
+        <PanelviewItem
+          v-for="item in pagedItems"
+          :key="item.uri"
+          :item="item"
+          :fluid="false"
+          :is-selected="isSelected(item)"
+          :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
+          :show-actions="
+            ['tracks', 'albums', 'albumtracks', 'artists', 'genres'].includes(
+              itemtype,
+            )
+          "
+          :show-track-number="showTrackNumber"
+          :is-available="itemIsAvailable(item)"
+          :is-playing="isPlaying(item, itemtype)"
+          :disable-play-button="isPlayActionInProgress"
+          :parent-item="parentItem"
+          :sort-by="params.sortBy"
+          @select="onSelect"
+        />
+      </ShelfTrack>
+
       <v-infinite-scroll
-        v-if="
-          !tempHide &&
-          !(pagedItems.length == 0 && allItemsReceived) &&
-          !(loading && pagedItems.length === 0)
-        "
+        v-if="viewMode != 'row' && itemsVisible"
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
         :load-more-text="$t('load_more_items')"
@@ -288,6 +327,7 @@
 import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
+import ShelfTrack, { type ShelfTrackExpose } from "@/components/ShelfTrack.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
@@ -444,7 +484,7 @@ export interface Props {
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
-  forcedViewMode?: "list" | "panel" | "panel_compact";
+  forcedViewMode?: "list" | "panel" | "panel_compact" | "row";
   toolBarTabs?: ToolBarTab[];
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -1015,6 +1055,21 @@ const loadNextPage = async function ({
   done("ok");
 };
 
+const rowTrack = ref<ShelfTrackExpose | null>(null);
+
+// the row view scrolls horizontally, so it pages off the track's end instead
+// of the (vertical) infinite scroller
+const onRowEndReached = function () {
+  if (
+    loading.value ||
+    allItemsReceived.value ||
+    pagedItems.value.length === 0
+  ) {
+    return;
+  }
+  loadNextPage({ done: () => {} });
+};
+
 const loadAllItems = async function () {
   while (!allItemsReceived.value) {
     // the paging can outlast the listing, so stop fetching once it is gone
@@ -1025,6 +1080,15 @@ const loadAllItems = async function () {
 };
 
 // computed properties
+// hides the items while the listing is suppressed, known to be empty, or
+// still waiting on its first page (the skeletons cover that last case)
+const itemsVisible = computed(
+  () =>
+    !tempHide.value &&
+    !(pagedItems.value.length == 0 && allItemsReceived.value) &&
+    !(loading.value && pagedItems.value.length === 0),
+);
+
 const isSearchActive = computed(() => {
   let searchActive = false;
   if (params.value.search && params.value.search.length !== 0) {
@@ -1572,6 +1636,8 @@ const loadData = async function (
     allItemsReceived.value = false;
     initialDataReceived.value = false;
     newContentAvailable.value = false;
+    // a fresh result set starts at the left again
+    rowTrack.value?.scrollToStart();
   }
 
   try {
@@ -2312,6 +2378,15 @@ defineExpose({
   max-width: 10%;
   flex-basis: 10%;
   padding: 8px;
+}
+.items-row {
+  /* the listing already sits in a padded container, so the shelf only needs
+     to match the panel grid's column padding */
+  --ed-gutter: 8px;
+}
+.items-row__skeleton {
+  flex: 0 0 auto;
+  width: calc(var(--ed-tile-art, 168px) + 16px);
 }
 .content-tabs {
   padding: 10px 16px 0;

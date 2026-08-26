@@ -80,6 +80,7 @@
           'sort_name_desc',
           'year_desc',
         ]"
+        forced-view-mode="row"
         :title="$t('artist_all_albums')"
         :subtitle="$t('on_provider', [activeAlbumProvider])"
         :allow-collapse="true"
@@ -124,6 +125,7 @@
         :show-refresh-button="false"
         :load-items="loadArtistTopAlbums"
         :sort-keys="['original', 'name', 'year', 'year_desc']"
+        forced-view-mode="row"
         :title="$t('artist_topalbums')"
         :subtitle="$t('on_provider', [activeTopAlbumProvider])"
         :allow-collapse="true"
@@ -158,6 +160,7 @@
         :provider-filter-options="similarArtistsProviderIds"
         :show-refresh-button="false"
         :load-items="loadSimilarArtists"
+        forced-view-mode="row"
         :title="$t('similar_artists')"
         :subtitle="$t('on_provider', [activeSimilarArtistsProvider])"
         :allow-collapse="true"

@@ -1,6 +1,6 @@
 <template>
   <EditorialMediaCard
-    fluid
+    :fluid="fluid"
     :item="item"
     :is-available="isAvailable"
     :is-selected="isSelected"
@@ -85,6 +85,7 @@ export interface Props {
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  fluid?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   size: 200,
@@ -96,6 +97,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   disablePlayButton: false,
   parentItem: undefined,
   sortBy: undefined,
+  fluid: true,
 });
 
 const emit = defineEmits<{
