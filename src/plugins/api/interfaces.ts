@@ -424,6 +424,8 @@ export enum EventType {
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
   MEDIA_ITEM_PLAYED = "media_item_played",
+  // an item's playlog entry changed; object_id is the item uri
+  PLAYLOG_UPDATED = "playlog_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
@@ -624,6 +626,16 @@ export interface EventMessage {
   data?: unknown;
 }
 export type MassEvent = EventMessage;
+
+// data of the PLAYLOG_UPDATED event
+export interface PlaylogUpdate {
+  uri: string;
+  media_type: MediaType;
+  fully_played: boolean;
+  seconds_played: number;
+  // the user the change applies to, null when it applies to all users
+  userid?: string | null;
+}
 
 export interface ServerInfoMessage {
   server_id: string;
