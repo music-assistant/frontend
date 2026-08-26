@@ -98,6 +98,13 @@ describe("AddProviderDialog", () => {
     expect(names).toEqual(["Spotify"]);
   });
 
+  it("omits the stage badge for a stable provider", async () => {
+    // stable is the norm, so a badge would be noise on nearly every row
+    await openDialog();
+
+    expect(document.querySelector("[data-slot='badge']")).toBeNull();
+  });
+
   it("omits the stage badge for a manifest without a stage", async () => {
     apiMock.providerManifests = {
       spotify: providerManifest({

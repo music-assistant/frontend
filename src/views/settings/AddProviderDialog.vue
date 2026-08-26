@@ -50,7 +50,7 @@
             </div>
             <div class="provider-actions">
               <Badge
-                v-if="getProviderStageTranslationKey(provider.stage)"
+                v-if="shouldShowStageBadge(provider.stage)"
                 :variant="getStageVariant(provider.stage)"
                 class="text-uppercase"
               >
@@ -89,7 +89,10 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
-import { getProviderStageTranslationKey } from "@/helpers/provider_config";
+import {
+  getProviderStageTranslationKey,
+  shouldShowStageBadge,
+} from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
   ProviderConfig,

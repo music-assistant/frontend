@@ -6,6 +6,7 @@ import {
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
   providerRequiresReconfiguration,
+  shouldShowStageBadge,
 } from "./provider_config";
 
 describe("provider configuration state", () => {
@@ -93,6 +94,19 @@ describe("provider configuration state", () => {
     ["something_new", undefined],
   ])("maps provider stage %s to %s", (stage, expected) => {
     expect(getProviderStageTranslationKey(stage)).toBe(expected);
+  });
+
+  it.each([
+    [ProviderStage.STABLE, false],
+    [ProviderStage.ALPHA, true],
+    [ProviderStage.BETA, true],
+    [ProviderStage.EXPERIMENTAL, true],
+    [ProviderStage.UNMAINTAINED, true],
+    [ProviderStage.DEPRECATED, true],
+    [undefined, false],
+    ["something_new", false],
+  ])("badges provider stage %s: %s", (stage, expected) => {
+    expect(shouldShowStageBadge(stage)).toBe(expected);
   });
 
   it.each([
