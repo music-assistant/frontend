@@ -77,6 +77,10 @@ export const getProviderStageTranslationKey = (
     : undefined;
 };
 
+// Stable is the norm, so only the stages that warrant a warning get a badge.
+export const shouldShowStageBadge = (stage?: ProviderStage | string | null) =>
+  stage !== ProviderStage.STABLE && !!getProviderStageTranslationKey(stage);
+
 export const getProviderSupportIssuesUrl = (domain: string) => {
   const label = PROVIDER_SUPPORT_LABELS[domain] ?? domain;
   return `https://github.com/music-assistant/support/issues?q=${encodeURIComponent(
