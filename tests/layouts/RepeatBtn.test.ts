@@ -17,16 +17,12 @@ import { queueItem } from "../fixtures/queueItem";
 import { radio } from "../fixtures/radio";
 
 vi.mock("@/plugins/api", () => {
-  const api = {
-    queueCommandRepeat: vi.fn(),
-    playerCommandRepeat: vi.fn(),
-  };
+  const api = { playerCommandRepeat: vi.fn() };
   return { api, default: api };
 });
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
-const queueCommandRepeat = vi.mocked(api.queueCommandRepeat);
 const playerCommandRepeat = vi.mocked(api.playerCommandRepeat);
 
 // Vuetify is not installed in the test app, and Icon.vue renders its icon
@@ -43,6 +39,12 @@ function player(overrides: Partial<Player> = {}): Player {
     source_list: [],
     ...overrides,
   } as unknown as Player;
+}
+
+/** A player playing Music Assistant's own queue, as the server publishes it. */
+function playerOnQueue() {
+  const own = playerSource({ id: "player-1", name: "Music Assistant Queue" });
+  return player({ active_source: own.id, source_list: [own] });
 }
 
 /** A player taken over by a live external source, as the server publishes it. */
@@ -86,19 +88,29 @@ describe("RepeatBtn", () => {
       { from: RepeatMode.OFF, to: RepeatMode.ALL },
       { from: RepeatMode.ALL, to: RepeatMode.ONE },
       { from: RepeatMode.ONE, to: RepeatMode.OFF },
-    ])("cycles the queue from $from to $to", async ({ from, to }) => {
-      const wrapper = mountButton({
-        playerQueue: playerQueue({ repeat_mode: from }),
-      });
+    ])(
+      // the queue is a source like any other, listed under the player's own id,
+      // so the command names it and the server refuses it once something else
+      // has taken the player
+      "cycles the queue from $from to $to through the player",
+      async ({ from, to }) => {
+        const wrapper = mountButton({
+          player: playerOnQueue(),
+          playerQueue: playerQueue({ repeat_mode: from }),
+        });
 
-      await button(wrapper).trigger("click");
+        await button(wrapper).trigger("click");
 
-      expect(queueCommandRepeat).toHaveBeenCalledWith("queue-1", to);
-      expect(playerCommandRepeat).not.toHaveBeenCalled();
-    });
+        expect(playerCommandRepeat).toHaveBeenCalledWith(
+          "player-1",
+          to,
+          "player-1",
+        );
+      },
+    );
 
     it("is disabled without a queue to repeat", () => {
-      const wrapper = mountButton();
+      const wrapper = mountButton({ player: playerOnQueue() });
 
       expect(isDisabled(wrapper)).toBe(true);
       // nothing is playing, so the button reads off rather than showing the
@@ -108,6 +120,7 @@ describe("RepeatBtn", () => {
 
     it("is disabled on an inactive queue", () => {
       const wrapper = mountButton({
+        player: playerOnQueue(),
         playerQueue: playerQueue({ active: false }),
       });
 
@@ -116,6 +129,7 @@ describe("RepeatBtn", () => {
 
     it("is disabled on an infinite stream", () => {
       const wrapper = mountButton({
+        player: playerOnQueue(),
         playerQueue: playerQueue({
           current_item: queueItem({
             media_item: radio({ media_type: MediaType.RADIO }),
@@ -124,6 +138,13 @@ describe("RepeatBtn", () => {
       });
 
       expect(isDisabled(wrapper)).toBe(true);
+    });
+
+    // the command is addressed to the player, so there is nothing to send
+    it("is disabled without a player", () => {
+      expect(isDisabled(mountButton({ playerQueue: playerQueue() }))).toBe(
+        true,
+      );
     });
   });
 
@@ -138,8 +159,8 @@ describe("RepeatBtn", () => {
       expect(playerCommandRepeat).toHaveBeenCalledWith(
         "player-1",
         RepeatMode.ALL,
+        "spotify://audio_source/main",
       );
-      expect(queueCommandRepeat).not.toHaveBeenCalled();
     });
 
     it("cycles on from the mode the source reports", async () => {
@@ -154,6 +175,7 @@ describe("RepeatBtn", () => {
       expect(playerCommandRepeat).toHaveBeenCalledWith(
         "player-1",
         RepeatMode.ONE,
+        "spotify://audio_source/main",
       );
     });
 
@@ -206,7 +228,6 @@ describe("RepeatBtn", () => {
       await button(wrapper).trigger("click");
 
       expect(playerCommandRepeat).not.toHaveBeenCalled();
-      expect(queueCommandRepeat).not.toHaveBeenCalled();
     });
 
     it("leaves an idle player alone", () => {
@@ -262,17 +283,19 @@ describe("RepeatBtn", () => {
 
     it("prefers the queue whenever one is playing", async () => {
       const wrapper = mountButton({
-        player: playerOnSource(),
-        playerQueue: playerQueue(),
+        player: playerOnSource({ repeat_mode: RepeatMode.ALL }),
+        playerQueue: playerQueue({ repeat_mode: RepeatMode.OFF }),
       });
 
       await button(wrapper).trigger("click");
 
-      expect(queueCommandRepeat).toHaveBeenCalledWith(
-        "queue-1",
+      // a queue and a live source never both resolve for real, so this pins
+      // which side the mode is read from, not what the command is aimed at
+      expect(playerCommandRepeat).toHaveBeenCalledWith(
+        "player-1",
         RepeatMode.ALL,
+        expect.any(String),
       );
-      expect(playerCommandRepeat).not.toHaveBeenCalled();
     });
   });
 });

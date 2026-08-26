@@ -7,7 +7,7 @@
       <ItemsListing
         v-if="itemDetails && !loading && itemDetails.provider == 'library'"
         itemtype="artistalbums"
-        :path="`artistalbums.${itemId}.${provider}`"
+        path="artistalbums"
         :parent-item="itemDetails"
         :show-provider="true"
         :show-favorites-only-filter="true"
@@ -34,7 +34,7 @@
       <ItemsListing
         v-if="itemDetails && !loading && itemDetails.provider == 'library'"
         itemtype="artisttracks"
-        :path="`artisttracks.${itemId}.${provider}`"
+        path="artisttracks"
         :parent-item="itemDetails"
         :show-provider="true"
         :show-favorites-only-filter="true"
@@ -169,7 +169,7 @@
       <ItemsListing
         v-if="itemDetails && !loading && itemDetails.provider == 'library'"
         itemtype="artistaudiobooks"
-        :path="`artistaudiobooks.${itemId}.${provider}`"
+        path="artistaudiobooks"
         :parent-item="itemDetails"
         :show-provider="true"
         :show-favorites-only-filter="true"

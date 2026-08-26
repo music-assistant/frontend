@@ -711,7 +711,7 @@ describe("EditProvider", () => {
     const setupFlowCall = eventbusMock.emit.mock.calls.find(
       ([event]) => event === "setupFlowDialog",
     );
-    setupFlowCall?.[1].onFlowEnded();
+    setupFlowCall?.[1].onFlowEnded(true);
     await flushPromises();
 
     expect(apiMock.getProviderConfig).toHaveBeenCalledTimes(2);
