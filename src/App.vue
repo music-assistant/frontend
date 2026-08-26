@@ -43,8 +43,10 @@ import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
 import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
+  BROWSER_MEDIA_CONTROLS,
   BrowserMediaControlsMode,
   FORCE_MOBILE_LAYOUT,
+  getBrowserMediaControlsMode,
   readDeviceSetting,
   subscribeToDeviceSetting,
 } from "@/helpers/device_settings";
@@ -77,7 +79,7 @@ import {
   subscribeToHAProperties,
   unsubscribeFromHAProperties,
 } from "./plugins/homeassistant";
-import { getPageTitle } from "@/helpers/pageTitle";
+import { DEFAULT_PAGE_TITLE, getPageTitle } from "@/helpers/pageTitle";
 import type { User } from "./plugins/api/interfaces";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
@@ -105,14 +107,23 @@ const selectedPlayerMediaControlsEnabled = computed(
     webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
     webPlayer.tabMode === WebPlayerMode.CONTROLS_ONLY,
 );
+const browserMediaControlsEnabled = ref(true);
+
+const applyBrowserMediaControlsEnabled = () => {
+  browserMediaControlsEnabled.value =
+    getBrowserMediaControlsMode() !== BrowserMediaControlsMode.DISABLED;
+};
 
 watch(
   [
     () => store.activePlayer?.current_media?.title,
     () => store.activePlayer?.current_media?.artist,
+    browserMediaControlsEnabled,
   ],
-  ([title, artist]) => {
-    document.title = getPageTitle(title ?? undefined, artist ?? undefined);
+  ([title, artist, controlsEnabled]) => {
+    document.title = controlsEnabled
+      ? getPageTitle(title ?? undefined, artist ?? undefined)
+      : DEFAULT_PAGE_TITLE;
   },
   { immediate: true },
 );
@@ -459,6 +470,11 @@ onMounted(async () => {
   }
   applyForceMobileLayout();
   subscribeToDeviceSetting(FORCE_MOBILE_LAYOUT, applyForceMobileLayout);
+  applyBrowserMediaControlsEnabled();
+  subscribeToDeviceSetting(
+    BROWSER_MEDIA_CONTROLS,
+    applyBrowserMediaControlsEnabled,
+  );
 
   setTheme();
 

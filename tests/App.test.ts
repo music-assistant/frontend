@@ -544,6 +544,35 @@ describe("App initialization", () => {
     expect(document.title).toBe("Music Assistant - Your music, Your way");
   });
 
+  it("uses the branded browser title when browser media controls are disabled", async () => {
+    localStorage.setItem(
+      "frontend.settings.enable_browser_controls",
+      "disabled",
+    );
+    storeMock.activePlayer = {
+      current_media: { title: "Song Title", artist: "Artist Name" },
+    };
+
+    wrapper = await mountApp();
+
+    expect(document.title).toBe("Music Assistant - Your music, Your way");
+  });
+
+  it("updates the browser title when browser media controls are toggled", async () => {
+    storeMock.activePlayer = {
+      current_media: { title: "Song Title", artist: "Artist Name" },
+    };
+
+    wrapper = await mountApp();
+    saveDeviceSetting("enable_browser_controls", "disabled");
+    await nextTick();
+    expect(document.title).toBe("Music Assistant - Your music, Your way");
+
+    saveDeviceSetting("enable_browser_controls", "web_player");
+    await nextTick();
+    expect(document.title).toBe("Song Title — Artist Name");
+  });
+
   it.each(["party", "music_quiz"] as const)(
     "does not mount browser media controls for a %s guest fallback tab",
     async (type) => {
