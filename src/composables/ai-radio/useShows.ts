@@ -58,7 +58,7 @@ let showSessionStatePrefetched = false;
 watch(
   aiRadioAvailable,
   (available) => {
-    // Session-scoped viewers lack the config scopes this needs and never open the queue DJ menu.
+    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
     if (available && authManager.guestSessionKind() === null)
       prefetchShowSessionState();
   },
