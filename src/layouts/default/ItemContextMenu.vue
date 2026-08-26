@@ -1441,7 +1441,18 @@ const withFullItemDetails = async function (
       console.error("[ItemContextMenu] failed to resolve %s", item.uri, err);
       return undefined;
     });
-  return fullItem ? [fullItem] : items;
+  if (!fullItem) return items;
+  // Keep the caller's identity. The playlog is keyed by the reference the card
+  // holds, so commanding with the resolved item would touch a different entry
+  // and report back a uri the row cannot match.
+  return [
+    {
+      ...fullItem,
+      item_id: item.item_id,
+      provider: item.provider,
+      uri: item.uri,
+    },
+  ];
 };
 
 // media types whose contents have an order that is worth shuffling. Audiobooks and
