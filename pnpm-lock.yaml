@@ -54,8 +54,8 @@ importers:
         specifier: ^14.3.0
         version: 14.3.0(vue@3.5.41(typescript@6.0.3))
       butterchurn:
-        specifier: https://github.com/jozefKruszynski/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz
-        version: https://github.com/jozefKruszynski/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz
+        specifier: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz
+        version: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz
       butterchurn-presets:
         specifier: 2.4.7
         version: 2.4.7
@@ -2558,8 +2558,8 @@ packages:
   butterchurn-presets@2.4.7:
     resolution: {integrity: sha512-4MdM8ripz/VfH1BCldrIKdAc/1ryJFBDvqlyow6Ivo1frwj0H3duzvSMFC7/wIjAjxb1QpwVHVqGqS9uAFKhpg==}
 
-  butterchurn@https://github.com/jozefKruszynski/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz:
-    resolution: {integrity: sha512-NPOYkwmT3x8sz5UYGFiVEo0fLMcVdkxh9Dojog9LMeOx8nz0XVDIAqALy2BdIwHONQANdfuZer1nBv0YZ5UvLw==, tarball: https://github.com/jozefKruszynski/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz}
+  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz:
+    resolution: {integrity: sha512-NPOYkwmT3x8sz5UYGFiVEo0fLMcVdkxh9Dojog9LMeOx8nz0XVDIAqALy2BdIwHONQANdfuZer1nBv0YZ5UvLw==, tarball: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz}
     version: 3.0.0-beta.5.ma.2
 
   cacheable@2.3.5:
@@ -7062,7 +7062,7 @@ snapshots:
       ecma-proposal-math-extensions: 0.0.2
       lodash: 4.18.1
 
-  butterchurn@https://github.com/jozefKruszynski/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz:
+  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.2/butterchurn-3.0.0-beta.5.ma.2.tgz:
     dependencies:
       '@assemblyscript/loader': 0.28.20
       ecma-proposal-math-extensions: 0.0.2
