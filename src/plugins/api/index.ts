@@ -83,6 +83,9 @@ const TRANSLATIONS_SCHEMA_VERSION = 32;
 // The shuffle argument on player_queues/play_media landed in API schema 51.
 const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 
+// The player_id argument on music/browse landed in API schema 61.
+const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
+
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -1485,9 +1488,17 @@ export class MusicAssistantApi {
     }
   }
 
-  public browse(path?: string): Promise<MediaItemType[]> {
+  public browse(path?: string, player_id?: string): Promise<MediaItemType[]> {
     // Browse Music providers.
-    return this.sendCommand("music/browse", { path });
+    // player_id scopes player-bound audio sources to that player;
+    // older servers (schema < 61) don't accept the argument, so omit it there.
+    const supportsPlayerId =
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      BROWSE_PLAYER_ID_SCHEMA_VERSION;
+    return this.sendCommand("music/browse", {
+      path,
+      player_id: supportsPlayerId ? player_id : undefined,
+    });
   }
 
   public search(
