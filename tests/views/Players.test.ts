@@ -186,6 +186,19 @@ describe("Players", () => {
     );
   });
 
+  it("filters the list by player status", async () => {
+    const wrapper = await mountPlayers("list");
+    const filters = wrapper.findComponent({ name: "PlayerFilters" });
+
+    filters.vm.$emit("update:statuses", ["needs_setup"]);
+    await flushPromises();
+    expect(wrapper.find(".player-list-item").exists()).toBe(true);
+
+    filters.vm.$emit("update:statuses", ["available"]);
+    await flushPromises();
+    expect(wrapper.find(".player-list-item").exists()).toBe(false);
+  });
+
   it("drops a deleted player from the list", async () => {
     const wrapper = await mountPlayers("list");
     await wrapper.get(".player-list-item").trigger("contextmenu");

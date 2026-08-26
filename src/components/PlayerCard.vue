@@ -29,14 +29,18 @@
         <button
           type="button"
           class="player-select-action focus-visible:ring-ring absolute inset-0 z-0 rounded-md text-left outline-none focus-visible:ring-2"
-          :disabled="!player.available && !player.needs_setup"
+          :disabled="
+            (!player.available && !player.needs_setup) || isInformationalSource
+          "
           @click="emit('click', player)"
         >
           <span class="sr-only">
             {{
               player.needs_setup
                 ? $t("configure_player")
-                : $t("tooltip.select_player")
+                : isInformationalSource
+                  ? $t("player_type.source")
+                  : $t("tooltip.select_player")
             }}:
             {{ accessiblePlayerLabel }}
             <template v-if="player.needs_setup">
@@ -112,6 +116,12 @@
                 <TriangleAlert class="size-3" />
                 {{ $t("settings.setup_required") }}
               </Badge>
+              <p
+                v-if="player.type === PlayerType.SOURCE"
+                class="text-muted-foreground truncate text-xs"
+              >
+                {{ $t("player_type.source") }}
+              </p>
               <p
                 v-if="player.powered !== false && player.current_media?.title"
                 class="truncate text-xs font-medium"
@@ -285,6 +295,11 @@ const artworkFailed = ref(false);
 const { activeSource } = useActiveSource(toRef(props, "player"));
 
 const playerQueue = computed(() => resolvePlayerQueue(props.player));
+
+// a set-up audio input can't be selected for playback; its row only informs
+const isInformationalSource = computed(
+  () => props.player.type === PlayerType.SOURCE && !props.player.needs_setup,
+);
 
 const artworkUrl = computed(() => {
   if (

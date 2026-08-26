@@ -8,6 +8,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigEntryType,
   FlowStepType,
+  SILENT_FINISH_STEP_ID,
   type ConfigEntry,
   type SetupFlowStep,
 } from "@/plugins/api/interfaces";
@@ -160,6 +161,26 @@ describe("SetupFlowDialog", () => {
       expect(onFlowEnded).toHaveBeenCalledExactlyOnceWith(finished);
     },
   );
+
+  it("closes without an abort when a flow finishes silently", async () => {
+    apiMock.setupPlayer.mockResolvedValue({
+      ...terminalStep(FlowStepType.FINISH),
+      step_id: SILENT_FINISH_STEP_ID,
+    });
+    const onFlowEnded = vi.fn();
+    shallowMount(SetupFlowDialog);
+
+    await launchSetupFlow?.({
+      kind: "player",
+      playerId: "player-1",
+      onFlowEnded,
+    });
+    await flushPromises();
+
+    expect(onFlowEnded).toHaveBeenCalledExactlyOnceWith(true);
+    expect(storeMock.dialogActive).toBe(false);
+    expect(apiMock.abortSetupFlow).not.toHaveBeenCalled();
+  });
 
   it("keeps the pushed step when a stale submit response lands after it", async () => {
     apiMock.reconfigureProvider.mockResolvedValue(formStep());

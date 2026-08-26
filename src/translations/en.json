@@ -68,9 +68,11 @@
         "display": "Screen",
         "visualizer": "Visualizer",
         "light": "Light",
+        "source": "Audio input",
         "unknown": "Unknown"
     },
     "players": "Players",
+    "players_need_setup": "A new device was discovered that needs to be set up | {count} new devices were discovered that need to be set up",
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
@@ -89,6 +91,7 @@
     "refresh_item": "Refresh item",
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
+    "review": "Review",
     "search": "Search",
     "settings": {
         "add_new": "Add new",
@@ -121,6 +124,13 @@
         "server_logs_load_failed": "Failed to load server logs",
         "player_provider": "Provider",
         "player_settings": "Player settings",
+        "player_status": {
+            "available": "Available",
+            "needs_setup": "Needs setup",
+            "unavailable": "Unavailable",
+            "disabled": "Disabled"
+        },
+        "player_status_label": "Status",
         "player_type_label": "Player type",
         "playerproviders": "Player providers",
         "players": "Players",
