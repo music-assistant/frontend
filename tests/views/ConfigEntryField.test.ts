@@ -210,6 +210,31 @@ describe("ConfigEntryField", () => {
     expect(controlStates(mountField(confEntry))).toEqual([true]);
   });
 
+  it("renders a pairing code entry as one box per code character", () => {
+    const wrapper = mountField(pairingCodeEntry());
+
+    expect(wrapper.findComponent({ name: "PairingCodeField" }).exists()).toBe(
+      true,
+    );
+    expect(wrapper.findAll("input.pairing-code-input")).toHaveLength(6);
+  });
+
+  // not part of INTERACTIVE_ENTRIES: that matrix expects exactly one control per entry
+  it("disables every pairing code box", () => {
+    const states = (disabled: boolean) =>
+      controlStates(mountField(pairingCodeEntry(), disabled));
+
+    expect(states(false)).toEqual(Array.from({ length: 6 }, () => false));
+    expect(states(true)).toEqual(Array.from({ length: 6 }, () => true));
+  });
+
+  it("keeps a pairing code entry without a format usable as a text input", () => {
+    const wrapper = mountField(pairingCodeEntry(null));
+
+    expect(wrapper.findAll("input.pairing-code-input")).toHaveLength(0);
+    expect(wrapper.find("input.pairing-code-fallback").exists()).toBe(true);
+  });
+
   it("disables a read_only ranged entry while the form itself is enabled", () => {
     const confEntry = {
       ...rangedEntry(ConfigEntryType.INTEGER),
@@ -268,6 +293,10 @@ function expandedOptionsEntry(): ConfigEntryUI {
       },
     ],
   });
+}
+
+function pairingCodeEntry(format: string | null = "###-###"): ConfigEntryUI {
+  return entry({ key: "pin", type: ConfigEntryType.PAIRING_CODE, format });
 }
 
 function hassControlsEntry(): ConfigEntryUI {

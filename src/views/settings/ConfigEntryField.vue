@@ -161,6 +161,15 @@
       @click:clear="onClear"
     />
 
+    <!-- pairing code: one box per code character -->
+    <PairingCodeField
+      v-else-if="confEntry.type == ConfigEntryType.PAIRING_CODE"
+      :entry="confEntry"
+      :label="displayLabel()"
+      :disabled="isFieldDisabled"
+      @update:value="onUpdateValue($event)"
+    />
+
     <!-- value with all options expanded: one button per option -->
     <RadioGroupField
       v-else-if="
@@ -301,6 +310,7 @@ import AlertField from "./fields/AlertField.vue";
 import HassControlPickerField from "./fields/HassControlPickerField.vue";
 import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
+import PairingCodeField from "./fields/PairingCodeField.vue";
 import RadioGroupField from "./fields/RadioGroupField.vue";
 import {
   ConfigEntryUI,

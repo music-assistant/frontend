@@ -515,6 +515,7 @@ export enum ConfigEntryType {
   BOOLEAN = "boolean",
   STRING = "string",
   SECURE_STRING = "secure_string",
+  PAIRING_CODE = "pairing_code",
   INTEGER = "integer",
   FLOAT = "float",
   LABEL = "label",
@@ -704,6 +705,10 @@ export interface ConfigEntry {
   options: ConfigValueOption[];
   // range [optional]: select values within range
   range?: number[] | null;
+  // format [optional]: for PAIRING_CODE entries — '#' digit box, 'X' alphanumeric
+  // (uppercase) box, any other character a rendered separator; the value is the code
+  // without separators
+  format?: string | null;
   // description [optional]: extended description of the setting.
   description?: string | null;
   // help_link [optional]: link to help article.
