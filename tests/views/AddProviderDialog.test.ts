@@ -65,18 +65,37 @@ describe("AddProviderDialog", () => {
 
   it("labels the stage badge from the translated stage key", async () => {
     apiMock.providerManifests = {
-      local_audio: providerManifest({
-        domain: "local_audio",
-        name: "Local Audio Out",
-        stage: ProviderStage.DEPRECATED,
+      soundcloud: providerManifest({
+        domain: "soundcloud",
+        name: "SoundCloud",
+        stage: ProviderStage.UNMAINTAINED,
       }),
     };
 
     await openDialog();
 
     expect(document.querySelector("[data-slot='badge']")?.textContent).toBe(
-      "settings.stage.options.deprecated",
+      "settings.stage.options.unmaintained",
     );
+  });
+
+  it("omits a deprecated provider from the list", async () => {
+    apiMock.providerManifests = {
+      local_audio: providerManifest({
+        domain: "local_audio",
+        name: "Local Audio Out",
+        stage: ProviderStage.DEPRECATED,
+      }),
+      spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
+    };
+
+    await openDialog();
+
+    // a retired provider can no longer be set up, so it must not be offered
+    const names = [...document.querySelectorAll(".provider-name")].map(
+      (el) => el.textContent,
+    );
+    expect(names).toEqual(["Spotify"]);
   });
 
   it("omits the stage badge for a manifest without a stage", async () => {

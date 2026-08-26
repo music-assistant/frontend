@@ -36,14 +36,14 @@
           <div class="font-semibold">
             {{ $t("settings.provider_requires_attention") }}
           </div>
-          <div
-            class="mt-0.5 text-sm whitespace-pre-wrap break-words opacity-90"
-          >
-            {{
+          <!-- markdown: a retirement message links to the replacement add-on -->
+          <MarkdownText
+            class="mt-0.5 text-sm opacity-90"
+            :text="
               config.last_error?.message ||
-              $t("settings.provider_status_auth_required")
-            }}
-          </div>
+              $t('settings.provider_status_auth_required')
+            "
+          />
           <div
             v-if="
               config.status === ProviderStatus.INCOMPATIBLE ||
@@ -283,6 +283,7 @@
 </template>
 
 <script setup lang="ts">
+import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { Badge } from "@/components/ui/badge";
@@ -394,7 +395,12 @@ const canToggleEnabled = computed(
 );
 
 const providerStatusLabel = computed(() =>
-  t(getProviderStatusTranslationKey(config.value?.status)),
+  t(
+    getProviderStatusTranslationKey(
+      config.value?.status,
+      providerManifest.value?.stage,
+    ),
+  ),
 );
 
 const providerStatusClass = computed(() =>

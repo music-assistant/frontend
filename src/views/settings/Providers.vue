@@ -93,7 +93,7 @@
               :title="
                 isErrorStatus(item.status)
                   ? getErrorText(item)
-                  : statusLabel(item.status)
+                  : statusLabel(item)
               "
             />
             <v-chip
@@ -156,7 +156,7 @@
               :title="
                 isErrorStatus(item.status)
                   ? getErrorText(item)
-                  : statusLabel(item.status)
+                  : statusLabel(item)
               "
             >
               <v-icon
@@ -200,9 +200,7 @@
                 size="16"
                 :color="statusColor(item.status)"
               />
-              <span class="provider-error-text">{{
-                statusLabel(item.status)
-              }}</span>
+              <span class="provider-error-text">{{ statusLabel(item) }}</span>
             </div>
             <div class="provider-error-detail mt-1">
               {{ getErrorText(item) }}
@@ -601,8 +599,13 @@ const statusColor = function (status?: ProviderStatus | null) {
     .otherwise(() => "grey");
 };
 
-const statusLabel = function (status?: ProviderStatus | null) {
-  return $t(getProviderStatusTranslationKey(status));
+const statusLabel = function (item: ProviderConfig) {
+  return $t(
+    getProviderStatusTranslationKey(
+      item.status,
+      api.providerManifests[item.domain]?.stage,
+    ),
+  );
 };
 
 // an error status carries a (user-relevant) reason in last_error
