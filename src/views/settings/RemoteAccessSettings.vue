@@ -826,19 +826,6 @@ watch(
     justify-content: flex-start;
   }
 
-  .remote-id-boxes {
-    gap: 6px;
-  }
-
-  .remote-id-box {
-    padding: 10px 4px;
-  }
-
-  .remote-id-box-text {
-    font-size: 0.85rem;
-    letter-spacing: 0.02em;
-  }
-
   .step-item {
     gap: 12px;
   }
@@ -855,19 +842,6 @@ watch(
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
-  }
-
-  .remote-id-boxes {
-    gap: 4px;
-  }
-
-  .remote-id-box {
-    padding: 8px 2px;
-  }
-
-  .remote-id-box-text {
-    font-size: 0.75rem;
-    letter-spacing: 0;
   }
 
   .copy-button {

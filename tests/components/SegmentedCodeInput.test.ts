@@ -78,6 +78,15 @@ describe("SegmentedCodeInput (grouped boxes)", () => {
     expect(boxValues(wrapper)).toEqual(["ABCD", "EFG", "HIJK"]);
   });
 
+  // the last box has nothing to spill into, so the leftovers are dropped
+  it("truncates a paste that lands in the last box", async () => {
+    const wrapper = mountInput();
+
+    await paste(wrapper, 2, "WXYZ1234");
+
+    expect(boxValues(wrapper)).toEqual(["", "", "WXYZ"]);
+  });
+
   it("distributes a partial paste from the box it lands in", async () => {
     const wrapper = mountInput({ modelValue: ["ABCD", "", ""] });
 

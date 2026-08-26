@@ -30,6 +30,8 @@ const emit = defineEmits<{
   submit: [];
 }>();
 
+defineExpose({ focusFirstEmpty });
+
 type Segment = { length: number; digitsOnly: boolean };
 type RenderCell =
   | { type: "box"; index: number; segment: Segment }
@@ -187,21 +189,19 @@ function onBoxFocus(index: number, event: FocusEvent) {
   }
 }
 
-// focuses the first box that still misses characters, or the last when complete
+// focuses the first box that still misses characters, or the last when complete;
+// deferred so that a caller which just changed modelValue picks the box from the
+// updated value rather than the one still bound at call time
 function focusFirstEmpty() {
-  const values = boxValues.value;
-  const first = segments.value.findIndex(
-    (segment, index) => values[index].length < segment.length,
-  );
-  const target = first === -1 ? lastIndex.value : first;
-  if (segments.value[target].length === 1) {
-    focusBox(target);
-  } else {
-    moveCaret({ segment: target, offset: values[target].length });
-  }
+  nextTick(() => {
+    const values = boxValues.value;
+    const first = segments.value.findIndex(
+      (segment, index) => values[index].length < segment.length,
+    );
+    const target = first === -1 ? lastIndex.value : first;
+    applyFocus({ segment: target, offset: values[target].length });
+  });
 }
-
-defineExpose({ focusFirstEmpty });
 
 function setInputRef(index: number) {
   return (el: Element | ComponentPublicInstance | null) => {
@@ -255,19 +255,24 @@ function update(updated: string[]) {
 }
 
 function focusBox(index: number) {
-  nextTick(() => {
-    const input = inputRefs.value[index];
-    input?.focus();
-    input?.select();
-  });
+  focusAt({ segment: index, offset: 0 });
 }
 
 function moveCaret(position: CaretPosition) {
-  nextTick(() => {
-    const input = inputRefs.value[position.segment];
-    input?.focus();
-    input?.setSelectionRange(position.offset, position.offset);
-  });
+  focusAt(position);
+}
+
+function focusAt(position: CaretPosition) {
+  nextTick(() => applyFocus(position));
+}
+
+// a single-character box selects its content so typing overwrites it; a longer
+// one takes a caret, since it behaves as an ordinary text field
+function applyFocus(position: CaretPosition) {
+  const input = inputRefs.value[position.segment];
+  input?.focus();
+  if (segments.value[position.segment].length === 1) input?.select();
+  else input?.setSelectionRange(position.offset, position.offset);
 }
 </script>
 
@@ -291,8 +296,9 @@ function moveCaret(position: CaretPosition) {
         :class="cellClass"
         :style="boxStyle(cell.segment)"
       >
+        <!-- shrinks with the viewport so a long code keeps fitting its box -->
         <code
-          class="text-foreground font-mono text-base tracking-wider whitespace-nowrap max-[500px]:text-sm"
+          class="text-foreground font-mono text-base tracking-wider whitespace-nowrap max-[768px]:text-[0.85rem] max-[768px]:tracking-[0.02em] max-[500px]:text-xs max-[500px]:tracking-normal"
         >
           {{ boxValues[cell.index] }}
         </code>
