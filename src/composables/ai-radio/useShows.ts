@@ -6,6 +6,7 @@ import type {
   AIRadioStatus,
   Playlist,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
@@ -57,7 +58,9 @@ let showSessionStatePrefetched = false;
 watch(
   aiRadioAvailable,
   (available) => {
-    if (available) prefetchShowSessionState();
+    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
+    if (available && authManager.guestSessionKind() === null)
+      prefetchShowSessionState();
   },
   { immediate: true },
 );
