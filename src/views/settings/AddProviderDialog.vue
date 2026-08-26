@@ -50,10 +50,11 @@
             </div>
             <div class="provider-actions">
               <Badge
+                v-if="getProviderStageTranslationKey(provider.stage)"
                 :variant="getStageVariant(provider.stage)"
                 class="text-uppercase"
               >
-                {{ $t(String(provider.stage || "").toLowerCase()) }}
+                {{ getStageLabel(provider.stage) }}
               </Badge>
               <ChevronRight class="h-4 w-4" />
             </div>
@@ -88,6 +89,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { getProviderStageTranslationKey } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
   ProviderConfig,
@@ -153,17 +155,19 @@ const providerStageOptions = computed(() => [
     label: $t("settings.stage.options.unmaintained"),
     value: ProviderStage.UNMAINTAINED,
   },
-  {
-    label: $t("settings.stage.options.deprecated"),
-    value: ProviderStage.DEPRECATED,
-  },
+  // no deprecated option: those providers never reach this list
 ]);
 
 const availableProviders = computed(() => {
   let providers = Object.values(api.providerManifests);
 
+  // a deprecated provider is retired: it can no longer be set up, so keep it
+  // out of the list even though it is no longer builtin
   providers = providers.filter(
-    (x) => !x.builtin && x.type !== ("core" as ProviderType),
+    (x) =>
+      !x.builtin &&
+      x.type !== ("core" as ProviderType) &&
+      x.stage !== ProviderStage.DEPRECATED,
   );
 
   return providers
@@ -256,6 +260,11 @@ const addProvider = function (provider: ProviderManifest) {
     kind: "provider",
     domain: provider.domain,
   });
+};
+
+const getStageLabel = function (stage?: string) {
+  const key = getProviderStageTranslationKey(stage);
+  return key ? $t(key) : "";
 };
 
 const getStageVariant = function (

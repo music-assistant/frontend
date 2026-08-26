@@ -76,12 +76,18 @@ vi.mock("@/plugins/eventbus", () => ({
   eventbus: eventbusMock,
 }));
 
-vi.mock("@/helpers/utils", () => ({
-  getExternalLinkUrl: (url?: string) =>
-    url?.startsWith("http://") || url?.startsWith("https://") ? url : undefined,
-  markdownToHtml: (value: string) => value,
-  openActionUrlEntries: <T>(entries: T) => entries,
-}));
+vi.mock("@/helpers/utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/helpers/utils")>();
+  return {
+    getExternalLinkUrl: (url?: string) =>
+      url?.startsWith("http://") || url?.startsWith("https://")
+        ? url
+        : undefined,
+    // the real renderer, so the error banner's markdown is assertable
+    markdownToHtml: actual.markdownToHtml,
+    openActionUrlEntries: <T>(entries: T) => entries,
+  };
+});
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
@@ -718,6 +724,34 @@ describe("EditProvider", () => {
     expect(wrapper.text()).not.toContain(
       "settings.provider_requires_attention",
     );
+  });
+
+  it("renders a markdown link in the provider error banner", async () => {
+    // a retired provider's message points at its replacement, so the link has
+    // to survive into the banner
+    const config = spotifyConfig(ProviderStatus.INCOMPATIBLE);
+    config.last_error = {
+      error_code: 1,
+      message:
+        "This provider is retired. Use the [Local Audio add-on](https://example.com/addon) instead.",
+    };
+    apiMock.getProviderConfig.mockResolvedValue(config);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: { ...providerDetailsStubs, MarkdownText: false },
+      },
+    });
+    await flushPromises();
+
+    const link = wrapper.get("a[href='https://example.com/addon']");
+    expect(link.text()).toBe("Local Audio add-on");
   });
 
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
