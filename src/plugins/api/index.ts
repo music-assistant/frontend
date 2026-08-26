@@ -1400,7 +1400,7 @@ export class MusicAssistantApi {
     media_type: MediaType,
     item_id: string,
     provider_instance_id_or_domain: string,
-    options?: { suppressGlobalError?: boolean },
+    options?: CommandOptions,
   ): Promise<MediaItemType> {
     // Get single music item by id and media type.
     return this.sendCommand(
