@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import { Input } from "@/components/ui/input";
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import type { ConfigValueType } from "@/plugins/api/interfaces";
-import { $t } from "@/plugins/i18n";
 import {
   computed,
   nextTick,
-  onMounted,
   ref,
+  useId,
   watch,
   type ComponentPublicInstance,
 } from "vue";
@@ -58,31 +58,35 @@ const slotIsDigit = computed(() =>
 const slotCount = computed(() => slotIsDigit.value.length);
 const isNumeric = computed(() => slotIsDigit.value.every(Boolean));
 
+const labelId = useId();
+
 // one entered character per code slot
 const cells = ref<string[]>([]);
 const inputRefs = ref<(HTMLInputElement | null)[]>([]);
 // the value of the last update:value emission; the parent writes it straight back
-// to entry.value, so the watch below must not mistake that echo for an external reset
+// to entry.value, so the watch below must not mistake that echo for an external
+// reset — compared normalized because the parent rewrites null to default_value
 let lastEmitted: ConfigValueType | undefined;
 
 seedCells();
-
-onMounted(() => {
-  if (layout.value && !props.disabled) focusFirstEmpty();
-});
 
 // re-served setup-flow steps reuse this component instance (keyed on entry.key),
 // so an externally changed value must resync the boxes instead of keeping stale ones
 watch(
   () => props.entry.value,
   (value) => {
-    if (!layout.value || value === lastEmitted) return;
+    if (!layout.value || normalizeCode(value) === normalizeCode(lastEmitted)) {
+      return;
+    }
     if (normalizeCode(value) === cells.value.join("")) return;
     seedCells();
     lastEmitted = undefined;
     if (!props.disabled) focusFirstEmpty();
   },
 );
+
+// a re-served step may carry a different format for the same entry key
+watch(slotCount, seedCells);
 
 function onCellInput(index: number, event: Event) {
   const input = event.target as HTMLInputElement;
@@ -134,6 +138,11 @@ function onCellPaste(index: number, event: ClipboardEvent) {
 function onCellFocus(event: FocusEvent) {
   // select the content so typing overwrites instead of appending
   (event.target as HTMLInputElement).select();
+}
+
+function onFallbackInput(value: string | number) {
+  // an emptied input reads as a cleared entry
+  emit("update:value", value === "" ? null : String(value));
 }
 
 function setInputRef(index: number) {
@@ -200,19 +209,25 @@ function focusFirstEmpty() {
 </script>
 
 <template>
-  <div v-if="layout" class="pairing-code-field">
-    <v-label class="pairing-code-label">
-      {{ label }}
-    </v-label>
-    <div class="pairing-code-boxes">
+  <div class="flex w-full flex-col gap-2 py-1">
+    <span :id="labelId" class="text-muted-foreground text-sm">{{ label }}</span>
+    <div
+      v-if="layout"
+      role="group"
+      :aria-labelledby="labelId"
+      class="flex flex-wrap items-center gap-2 max-[500px]:gap-1"
+    >
       <template v-for="(cell, position) of layout" :key="position">
-        <span v-if="cell.type === 'separator'" class="pairing-code-separator">
+        <span
+          v-if="cell.type === 'separator'"
+          class="pairing-code-separator text-muted-foreground font-mono text-xl select-none max-[500px]:text-lg"
+        >
           {{ cell.text }}
         </span>
         <input
           v-else
           :ref="setInputRef(cell.index)"
-          class="pairing-code-input"
+          class="pairing-code-input border-input text-foreground selection:bg-primary selection:text-primary-foreground caret-primary dark:bg-input/30 focus:border-ring focus:ring-ring/50 h-12 w-11 min-w-0 rounded-lg border bg-transparent text-center font-mono text-xl shadow-xs transition-[color,box-shadow] outline-none focus:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 max-[500px]:h-11 max-[500px]:w-9 max-[500px]:text-lg"
           type="text"
           :value="cells[cell.index]"
           :inputmode="isNumeric ? 'numeric' : 'text'"
@@ -228,92 +243,16 @@ function focusFirstEmpty() {
         />
       </template>
     </div>
+
+    <!-- no (valid) format: plain text input so the entry stays usable -->
+    <Input
+      v-else
+      class="pairing-code-fallback text-center font-mono tracking-wider"
+      :model-value="String(entry.value ?? '')"
+      :placeholder="entry.default_value?.toString()"
+      :disabled="disabled"
+      :aria-labelledby="labelId"
+      @update:model-value="onFallbackInput"
+    />
   </div>
-
-  <!-- no (valid) format: plain text input so the entry stays usable -->
-  <v-text-field
-    v-else
-    :model-value="entry.value"
-    :placeholder="entry.default_value?.toString()"
-    clearable
-    :disabled="disabled"
-    :label="label"
-    :required="entry.required"
-    :rules="[(v) => !(!v && entry.required) || $t('settings.invalid_input')]"
-    variant="outlined"
-    density="comfortable"
-    class="pairing-code-fallback"
-    @update:model-value="emit('update:value', $event)"
-    @click:clear="emit('update:value', null)"
-  />
 </template>
-
-<style scoped>
-.pairing-code-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 4px 0 8px;
-}
-
-.pairing-code-label {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.pairing-code-boxes {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.pairing-code-input {
-  width: 44px;
-  height: 48px;
-  min-width: 0;
-  text-align: center;
-  font-family: monospace;
-  font-size: 1.25rem;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 10px;
-  background: rgb(var(--v-theme-surface));
-  color: rgb(var(--v-theme-on-surface));
-  caret-color: rgb(var(--v-theme-primary));
-  outline: none;
-}
-
-.pairing-code-input:focus {
-  border-color: rgb(var(--v-theme-primary));
-  outline: 1px solid rgb(var(--v-theme-primary));
-}
-
-.pairing-code-input:disabled {
-  opacity: 0.5;
-}
-
-.pairing-code-separator {
-  font-family: monospace;
-  font-size: 1.25rem;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  user-select: none;
-}
-
-.pairing-code-fallback :deep(input) {
-  text-align: center;
-  font-family: monospace;
-  letter-spacing: 0.05em;
-}
-
-@media (max-width: 500px) {
-  .pairing-code-boxes {
-    gap: 4px;
-  }
-
-  .pairing-code-input {
-    width: 36px;
-    height: 44px;
-    font-size: 1.1rem;
-  }
-}
-</style>

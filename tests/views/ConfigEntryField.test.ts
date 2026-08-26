@@ -232,7 +232,7 @@ describe("ConfigEntryField", () => {
     const wrapper = mountField(pairingCodeEntry(null));
 
     expect(wrapper.findAll("input.pairing-code-input")).toHaveLength(0);
-    expect(wrapper.find(".pairing-code-fallback input").exists()).toBe(true);
+    expect(wrapper.find("input.pairing-code-fallback").exists()).toBe(true);
   });
 
   it("disables a read_only ranged entry while the form itself is enabled", () => {

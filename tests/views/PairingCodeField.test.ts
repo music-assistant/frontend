@@ -90,6 +90,17 @@ describe("PairingCodeField", () => {
     },
   );
 
+  // mobile keyboards and OTP autofill can deliver the whole code in one input event
+  it("fills every box from a single input event carrying the full code", async () => {
+    const wrapper = mountField();
+
+    await boxes(wrapper)[0].setValue("123456");
+    await nextTick();
+
+    expect(boxValues(wrapper)).toEqual(["1", "2", "3", "4", "5", "6"]);
+    expect(wrapper.emitted("update:value")).toEqual([["123456"]]);
+  });
+
   it("emits null again when a character is cleared after completion", async () => {
     const wrapper = mountField();
     await typeCode(wrapper, "123456");
@@ -123,7 +134,7 @@ describe("PairingCodeField", () => {
       const wrapper = mountField({ format });
 
       expect(boxes(wrapper)).toHaveLength(0);
-      expect(wrapper.find(".pairing-code-fallback input").exists()).toBe(true);
+      expect(wrapper.find("input.pairing-code-fallback").exists()).toBe(true);
     },
   );
 
@@ -147,6 +158,20 @@ describe("PairingCodeField", () => {
     await nextTick();
 
     expect(boxValues(wrapper)).toEqual(["6", "5", "4", "3", "2", "1"]);
+  });
+
+  it("keeps typed boxes when the parent echoes the null emission back", async () => {
+    const wrapper = mountField();
+    await typeCode(wrapper, "123456");
+    // the parent writes the completed code back to entry.value...
+    await wrapper.setProps({ entry: pairingEntry({ value: "123456" }) });
+
+    await boxes(wrapper)[5].trigger("keydown", { key: "Backspace" });
+    // ...and echoes the null emission back as the (null) default_value
+    await wrapper.setProps({ entry: pairingEntry({ value: null }) });
+    await nextTick();
+
+    expect(boxValues(wrapper)).toEqual(["1", "2", "3", "4", "5", ""]);
   });
 });
 
