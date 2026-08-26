@@ -424,8 +424,7 @@ export enum EventType {
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
   MEDIA_ITEM_PLAYED = "media_item_played",
-  // playlog_updated: an item was played, marked played or unplayed, or credited
-  // by a played track or episode; object_id is the item uri
+  // an item's playlog entry changed; object_id is the item uri
   PLAYLOG_UPDATED = "playlog_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",

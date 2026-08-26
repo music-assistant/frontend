@@ -955,16 +955,13 @@ const unsubscribeRecommendations = api.subscribe(
   },
 );
 
-// Marking an item played or resetting it takes it out of the "in progress" row.
-// Drop the card now and let the scheduled refresh bring the rest of the rows up
-// to date. A partial-progress update (pause, another app syncing progress) means
-// the item belongs in the row, so only the refresh acts on it.
+// Played or reset items leave the "in progress" row right away; partial progress
+// (pause, another app syncing) belongs in the row, so only the refresh acts on it.
 const unsubscribePlaylog = api.subscribe(
   EventType.PLAYLOG_UPDATED,
   (evt: EventMessage) => {
     const update = evt.data as PlaylogUpdate | undefined;
-    // the playlog is per user, so a change belonging to someone else leaves
-    // this user's rows alone. A null userid applies to everyone.
+    // per-user playlog: ignore changes belonging to another user (null = everyone)
     if (update?.userid && update.userid !== store.currentUser?.user_id) return;
     const leavesInProgress =
       update && (update.fully_played || update.seconds_played === 0);

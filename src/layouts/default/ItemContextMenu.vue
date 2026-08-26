@@ -1418,11 +1418,8 @@ const startAudioSourceMenuItem = function (
 };
 
 /**
- * The given items with the detail the menu needs to decide what to offer.
- *
- * A single item without provider mappings is a lightweight reference (e.g. a
- * discover page row) and is looked up in full; anything else, and anything that
- * cannot be looked up, is returned unchanged.
+ * Resolve a single lightweight reference (no provider mappings) to its full
+ * item so the menu can decide what to offer; anything else is returned as is.
  */
 const withFullItemDetails = async function (
   items: MediaItemTypeOrItemMapping[],
@@ -1442,9 +1439,8 @@ const withFullItemDetails = async function (
       return undefined;
     });
   if (!fullItem) return items;
-  // Keep the caller's identity. The playlog is keyed by the reference the card
-  // holds, so commanding with the resolved item would touch a different entry
-  // and report back a uri the row cannot match.
+  // keep the caller's identity: the playlog is keyed by the reference the card
+  // holds, not by the resolved item
   return [
     {
       ...fullItem,
