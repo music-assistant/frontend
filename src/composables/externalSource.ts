@@ -13,9 +13,9 @@ import { Player, PlayerQueue, PlayerSource } from "@/plugins/api/interfaces";
  *
  * Unlike `useActiveSource`, which answers with whichever source list entry is
  * active and so happily returns the Music Assistant queue's own entry, this
- * narrows to a source that has genuinely taken the player over — callers route
- * a command on the answer rather than merely greying a control out, and sending
- * an MA queue's shuffle to the player command would be wrong.
+ * narrows to a source that has genuinely taken the player over — callers read
+ * what a control shows off the answer, and a queue's own state lives on the
+ * PlayerQueue rather than on its source entry.
  *
  * Pass the queue belonging to the same player, i.e. `resolvePlayerQueue(player)`.
  */

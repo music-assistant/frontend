@@ -161,7 +161,7 @@
       @click:clear="onClear"
     />
 
-    <!-- value with all options expanded: radio group -->
+    <!-- value with all options expanded: one button per option -->
     <RadioGroupField
       v-else-if="
         confEntry.options.length > 0 &&
@@ -170,7 +170,6 @@
       "
       :label="displayLabel()"
       :options="displayOptions"
-      :value="confEntry.value"
       :disabled="isFieldDisabled"
       @update:value="onUpdateValue($event)"
     />

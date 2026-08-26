@@ -66,8 +66,6 @@ vi.mock("@/plugins/api", () => ({
     providers: {
       milkdrop_visualizer: { domain: "milkdrop_visualizer", available: true },
     },
-    queueCommandShuffle: vi.fn(),
-    queueCommandRepeat: vi.fn(),
     playerCommandShuffle: vi.fn(),
     playerCommandRepeat: vi.fn(),
   },
@@ -751,11 +749,17 @@ describe("shuffle and repeat", () => {
     );
   }
 
-  it("shuffles the queue when one is playing", () => {
+  // the queue is a source like any other, listed under the player's own id, so
+  // the command names it and the server refuses it once something else has
+  // taken the player
+  it("shuffles the queue through the player when one is playing", () => {
     entry(makePlayer(), "shuffle_enable", makeQueue())?.action?.();
 
-    expect(api.queueCommandShuffle).toHaveBeenCalledWith("kitchen", true);
-    expect(api.playerCommandShuffle).not.toHaveBeenCalled();
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      true,
+      "kitchen",
+    );
   });
 
   it("shuffles a live source's own session through the player", () => {
@@ -763,8 +767,11 @@ describe("shuffle and repeat", () => {
 
     entry(player, "shuffle_enable")?.action?.();
 
-    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", true);
-    expect(api.queueCommandShuffle).not.toHaveBeenCalled();
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      true,
+      SPOTIFY,
+    );
   });
 
   it("reads the shuffle state the source reports", () => {
@@ -772,7 +779,11 @@ describe("shuffle and repeat", () => {
 
     entry(player, "shuffle_disable")?.action?.();
 
-    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      false,
+      SPOTIFY,
+    );
   });
 
   // the menu can sit open while a websocket update lands; updates Object.assign
@@ -795,7 +806,11 @@ describe("shuffle and repeat", () => {
     ];
     item?.action?.();
 
-    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      false,
+      SPOTIFY,
+    );
   });
 
   it("shuffles the queue against the state at click time", () => {
@@ -805,12 +820,16 @@ describe("shuffle and repeat", () => {
     queue.shuffle_enabled = true;
     item?.action?.();
 
-    expect(api.queueCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      false,
+      "kitchen",
+    );
   });
 
   // the source can end while the menu sits open, and the player's own queue
   // takes it back — a command meant for the session must not land there
-  it("does nothing when the source ended while the menu was open", () => {
+  it("still names the shuffle source that ended while the menu was open", () => {
     const player = playerOnSource({ can_shuffle: true, shuffle_enabled: true });
     const item = entry(player, "shuffle_disable");
 
@@ -819,8 +838,35 @@ describe("shuffle and repeat", () => {
     player.source_list = [playerSource({ id: "kitchen", name: "Queue" })];
     item?.action?.();
 
-    expect(api.playerCommandShuffle).not.toHaveBeenCalled();
-    expect(api.queueCommandShuffle).not.toHaveBeenCalled();
+    // whatever value it carries is moot: the command is addressed to the
+    // session that ended, so the server refuses it rather than shuffle the
+    // queue that took the player back
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      expect.any(Boolean),
+      SPOTIFY,
+    );
+  });
+
+  // the other way around, and the reason the queue names its target too: a
+  // source takes the player while the menu sits open, and the setting would
+  // otherwise land on a queue that is no longer playing and surprise the user
+  // whenever it resumes
+  it("still names the queue a source took over while the menu was open", () => {
+    const player = makePlayer();
+    const item = entry(player, "shuffle_enable", makeQueue());
+
+    player.active_source = SPOTIFY;
+    player.source_list = [
+      playerSource({ id: SPOTIFY, name: "Spotify Connect", can_shuffle: true }),
+    ];
+    item?.action?.();
+
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      true,
+      "kitchen",
+    );
   });
 
   it("repeats within a live source's own session through the player", () => {
@@ -831,25 +877,25 @@ describe("shuffle and repeat", () => {
     expect(api.playerCommandRepeat).toHaveBeenCalledWith(
       "kitchen",
       RepeatMode.ALL,
+      SPOTIFY,
     );
-    expect(api.queueCommandRepeat).not.toHaveBeenCalled();
   });
 
-  it("repeats the queue when one is playing", () => {
+  it("repeats the queue through the player when one is playing", () => {
     entry(
       makePlayer(),
       "select_repeat_mode",
       makeQueue(),
     )?.subItems?.[1]?.action?.();
 
-    expect(api.queueCommandRepeat).toHaveBeenCalledWith(
+    expect(api.playerCommandRepeat).toHaveBeenCalledWith(
       "kitchen",
       RepeatMode.ALL,
+      "kitchen",
     );
-    expect(api.playerCommandRepeat).not.toHaveBeenCalled();
   });
 
-  it("sets no repeat mode when the source ended while the menu was open", () => {
+  it("still names the repeat source that ended while the menu was open", () => {
     const player = playerOnSource({ can_repeat: true });
     const item = entry(player, "select_repeat_mode");
 
@@ -857,8 +903,11 @@ describe("shuffle and repeat", () => {
     player.source_list = [playerSource({ id: "kitchen", name: "Queue" })];
     item?.subItems?.[1]?.action?.();
 
-    expect(api.playerCommandRepeat).not.toHaveBeenCalled();
-    expect(api.queueCommandRepeat).not.toHaveBeenCalled();
+    expect(api.playerCommandRepeat).toHaveBeenCalledWith(
+      "kitchen",
+      RepeatMode.ALL,
+      SPOTIFY,
+    );
   });
 
   it("marks the repeat mode the source reports", () => {

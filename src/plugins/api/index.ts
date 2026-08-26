@@ -2,6 +2,7 @@ import { store } from "../store";
 
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
+import { resolveActiveSourceId } from "@/composables/activeSource";
 import {
   resetServerTime,
   serverNow,
@@ -82,6 +83,18 @@ const TRANSLATIONS_SCHEMA_VERSION = 32;
 // The shuffle argument on player_queues/play_media landed in API schema 51.
 const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 
+export interface CommandOptions {
+  /**
+   * Skip the global console.error + error toast for an error result. Use for a
+   * best-effort command whose failure the caller handles (or expects) itself.
+   *
+   * Pass a predicate for a command where only some failures are expected: it is
+   * evaluated when the error arrives, not when the command is sent. The
+   * returned promise rejects either way.
+   */
+  suppressGlobalError?: boolean | (() => boolean);
+}
+
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
   queue_id?: string;
@@ -149,7 +162,7 @@ export class MusicAssistantApi {
     {
       resolve: (result: unknown) => void;
       reject: (err: unknown) => void;
-      suppressGlobalError?: boolean;
+      suppressGlobalError?: CommandOptions["suppressGlobalError"];
     }
   >;
 
@@ -1563,7 +1576,7 @@ export class MusicAssistantApi {
     media_item: MediaItemTypeOrItemMapping,
     fully_played?: boolean,
     seconds_played?: number,
-    options?: { suppressGlobalError?: boolean },
+    options?: CommandOptions,
   ): Promise<void> {
     // optimistically update the local object so the UI reflects the new state;
     // keep resume_position_ms present (instead of deleting the key) because
@@ -1585,7 +1598,7 @@ export class MusicAssistantApi {
   }
   public markItemUnPlayed(
     media_item: MediaItemTypeOrItemMapping,
-    options?: { suppressGlobalError?: boolean },
+    options?: CommandOptions,
   ): Promise<void> {
     // optimistically update the local object so the UI reflects the new state
     if (itemSupportsPlayLog(media_item)) {
@@ -1805,21 +1818,44 @@ export class MusicAssistantApi {
   public playerCommandSeek(playerId: string, position: number) {
     this.playerCommand(playerId, "seek", { position });
   }
+  /**
+   * Set shuffle on whatever a player is playing.
+   *
+   * A live external source orders its own session, an MA queue orders its own
+   * items. Pass the source the command was aimed at (`resolveActiveSourceId`):
+   * the server refuses it when that source is no longer the one playing, which
+   * is the guard doing its job rather than a failure to report, so that refusal
+   * alone stays quiet. Anything else that went wrong is toasted as usual.
+   */
   public playerCommandShuffle(
     playerId: string,
     shuffle_enabled: boolean,
+    source_id: string,
   ): Promise<void> {
-    // Configure shuffle on whatever the player is playing: a live external
-    // source orders its own session, an MA queue orders its own items.
-    return this.playerCommand(playerId, "shuffle", { shuffle_enabled });
+    return this.playerCommand(
+      playerId,
+      "shuffle",
+      { shuffle_enabled, source_id },
+      { suppressGlobalError: () => this.hasMovedOnFrom(playerId, source_id) },
+    ).catch(() => undefined);
   }
+  /**
+   * Set the repeat mode on whatever a player is playing.
+   *
+   * Takes and refuses `source_id` the same way {@link playerCommandShuffle}
+   * does.
+   */
   public playerCommandRepeat(
     playerId: string,
     repeat_mode: RepeatMode,
+    source_id: string,
   ): Promise<void> {
-    // Configure repeat on whatever the player is playing: a live external
-    // source repeats within its own session, an MA queue repeats its own items.
-    return this.playerCommand(playerId, "repeat", { repeat_mode });
+    return this.playerCommand(
+      playerId,
+      "repeat",
+      { repeat_mode, source_id },
+      { suppressGlobalError: () => this.hasMovedOnFrom(playerId, source_id) },
+    ).catch(() => undefined);
   }
 
   public playerCommandPower(playerId: string, powered: boolean): Promise<void> {
@@ -1986,14 +2022,19 @@ export class MusicAssistantApi {
     player_id: string,
     command: string,
     args?: Record<string, unknown>,
+    options?: CommandOptions,
   ): Promise<void> {
     /*
       Handle command to player
     */
-    return this.sendCommand(`players/cmd/${command}`, {
-      player_id,
-      ...args,
-    });
+    return this.sendCommand(
+      `players/cmd/${command}`,
+      {
+        player_id,
+        ...args,
+      },
+      options,
+    );
   }
 
   public removePlayer(playerId: string): Promise<void> {
@@ -2812,7 +2853,7 @@ export class MusicAssistantApi {
     if ("error_code" in msg) {
       // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
-      if (resultPromise?.suppressGlobalError) {
+      if (this.isGlobalErrorSuppressed(resultPromise?.suppressGlobalError)) {
         // The caller opted out of global error handling (expected/best-effort
         // failure); it still receives the rejection below.
         console.debug("[resultMessage]", msg);
@@ -3350,14 +3391,7 @@ export class MusicAssistantApi {
   public sendCommand<Result>(
     command: string,
     args?: Record<string, unknown>,
-    options?: {
-      /**
-       * Suppress the global console.error + error toast for an error result.
-       * Use for best-effort commands where the caller handles (or expects)
-       * failure itself; the returned promise still rejects as usual.
-       */
-      suppressGlobalError?: boolean;
-    },
+    options?: CommandOptions,
   ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
@@ -3466,6 +3500,38 @@ export class MusicAssistantApi {
     for (const command of pending) {
       command.reject(new ConnectionLostError());
     }
+  }
+
+  /**
+   * Whether an error result skips the global console.error + error toast.
+   *
+   * A caller's predicate must never take down the message pump or the command
+   * still waiting on this reply, so one that throws falls back to showing the
+   * failure.
+   */
+  private isGlobalErrorSuppressed(
+    suppress: CommandOptions["suppressGlobalError"],
+  ): boolean {
+    if (typeof suppress !== "function") return !!suppress;
+    try {
+      return suppress();
+    } catch (err) {
+      console.error("[resultMessage] suppression check failed", err);
+      return false;
+    }
+  }
+
+  /**
+   * Whether a player has since moved on from the source a command named.
+   *
+   * Identifies the server's refusal of a command aimed at a source that stopped
+   * playing. The player is moved on before the command is handled, and both
+   * messages share one ordered queue, so the state update has always landed by
+   * the time the refusal comes back.
+   */
+  private hasMovedOnFrom(playerId: string, sourceId: string): boolean {
+    const player = this.players[playerId];
+    return !!player && resolveActiveSourceId(player) !== sourceId;
   }
 
   private _genCmdId(): string {
