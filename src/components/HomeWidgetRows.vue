@@ -403,6 +403,7 @@ import {
   RecommendationFolderType,
   type EventMessage,
   type Player,
+  type PlaylogUpdate,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -959,7 +960,11 @@ const unsubscribeRecommendations = api.subscribe(
 const unsubscribePlaylog = api.subscribe(
   EventType.PLAYLOG_UPDATED,
   (evt: EventMessage) => {
-    const uri = evt.object_id;
+    const update = evt.data as PlaylogUpdate | undefined;
+    // the playlog is per user, so a change belonging to someone else leaves
+    // this user's rows alone. A null userid applies to everyone.
+    if (update?.userid && update.userid !== store.currentUser?.user_id) return;
+    const uri = update?.uri ?? evt.object_id;
     const items = rowItemsMap.value.get(IN_PROGRESS_ROW_ID);
     if (uri && items) {
       rowItemsMap.value.set(

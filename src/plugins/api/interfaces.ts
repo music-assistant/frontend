@@ -628,6 +628,16 @@ export interface EventMessage {
 }
 export type MassEvent = EventMessage;
 
+// data of the PLAYLOG_UPDATED event
+export interface PlaylogUpdate {
+  uri: string;
+  media_type: MediaType;
+  fully_played: boolean;
+  seconds_played: number;
+  // the user the change applies to, null when it applies to all users
+  userid?: string | null;
+}
+
 export interface ServerInfoMessage {
   server_id: string;
   server_version: string;
