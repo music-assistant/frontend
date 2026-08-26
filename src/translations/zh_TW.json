@@ -88,7 +88,6 @@
         "frontend_description": "自訂使用者介面主題及外觀",
         "onboarding_title": "歡迎使用 Music Assistant！",
         "system": "系統",
-        "view_documentation": "檢視文件",
         "library_stats": "音樂庫統計",
         "core_module": {
             "cache": {
