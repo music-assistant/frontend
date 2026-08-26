@@ -119,6 +119,20 @@ describe("SegmentedCodeInput (grouped boxes)", () => {
     expect(boxValues(wrapper)).toEqual(["ABCD", "EFG", "HIJK"]);
   });
 
+  // aria-label is a declared prop, so it never falls through to the root on its own
+  it("names the group and every box from the aria label", () => {
+    const wrapper = mountInput({ ariaLabel: "Remote ID" });
+
+    expect(wrapper.get("[role='group']").attributes("aria-label")).toBe(
+      "Remote ID",
+    );
+    expect(boxes(wrapper).map((box) => box.attributes("aria-label"))).toEqual([
+      "Remote ID 1/3",
+      "Remote ID 2/3",
+      "Remote ID 3/3",
+    ]);
+  });
+
   it("renders static boxes without inputs in readonly mode", () => {
     const wrapper = mount(SegmentedCodeInput, {
       props: {

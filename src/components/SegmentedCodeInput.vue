@@ -274,6 +274,7 @@ function moveCaret(position: CaretPosition) {
 <template>
   <div
     :role="readonly ? undefined : 'group'"
+    :aria-label="readonly ? undefined : ariaLabel"
     class="flex w-full flex-wrap items-center gap-2 max-[500px]:gap-1"
   >
     <template v-for="(cell, position) of renderCells" :key="position">
