@@ -50,10 +50,11 @@
             </div>
             <div class="provider-actions">
               <Badge
+                v-if="getProviderStageTranslationKey(provider.stage)"
                 :variant="getStageVariant(provider.stage)"
                 class="text-uppercase"
               >
-                {{ $t(String(provider.stage || "").toLowerCase()) }}
+                {{ getStageLabel(provider.stage) }}
               </Badge>
               <ChevronRight class="h-4 w-4" />
             </div>
@@ -88,6 +89,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { getProviderStageTranslationKey } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
   ProviderConfig,
@@ -256,6 +258,11 @@ const addProvider = function (provider: ProviderManifest) {
     kind: "provider",
     domain: provider.domain,
   });
+};
+
+const getStageLabel = function (stage?: string) {
+  const key = getProviderStageTranslationKey(stage);
+  return key ? $t(key) : "";
 };
 
 const getStageVariant = function (
