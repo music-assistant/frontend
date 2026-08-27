@@ -23,7 +23,7 @@
     "artist_albums": "Alben",
     "artist_toptracks": "Top Titel",
     "artists": "Interpreten",
-    "browse": "Durchsuchen",
+    "browse": "Ordneransicht",
     "clear_selection": "Auswahl aufheben",
     "close": "Schließen",
     "create_playlist": "Erstelle Wiedergabeliste auf {0}",
@@ -55,7 +55,11 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Wiedergabegerät",
-        "stereo_pair": "Stereo-Paar"
+        "stereo_pair": "Stereo-Paar",
+        "display": "Bildschirm",
+        "visualizer": "Visualizer",
+        "light": "Licht",
+        "unknown": "Unbekannt"
     },
     "players": "Wiedergabegeräte",
     "playlist": "Wiedergabeliste",
@@ -408,7 +412,6 @@
         "users_description": "Benutzerkonten, Rollen und Berechtigungen verwalten",
         "system_description": "Konfigurieren der Servereinstellungen und Kernmodule von Music Assistant",
         "system": "System",
-        "view_documentation": "Dokumentation ansehen",
         "about": "Über",
         "about_description": "Versionsinformationen, Mitwirkende und mehr",
         "auto_refresh_log": "Automatische Aktualisierung",
@@ -513,7 +516,8 @@
             "preferences": "Präferenzen",
             "display_settings": "Anzeige",
             "dsp": "DSP",
-            "volume_control": "Lautstärkeregler"
+            "volume_control": "Lautstärkeregler",
+            "audiobooks": "Hörbücher"
         },
         "onboarding_subtitle": "Verbinde zunächst deine Musikquellen und Audiogeräte.",
         "onboarding_music_title": "Musik",
@@ -628,7 +632,7 @@
         },
         "audio_analysis_description": "Verfolge die Abdeckung der Audioanalyse bei deinen Anbietern.",
         "audio_analysis_concurrency": {
-            "title": "Hintergrundanalyse der Gleichzeitigkeit",
+            "title": "Gleichzeitige Hintergrundanalysen",
             "description": "Steuere, wie viele Titel während des nächtlichen Hintergrundscans gleichzeitig analysiert werden. Diese Einstellung befindet sich in der Streams-Kernkonfiguration.",
             "open_settings": "Streams-Einstellungen öffnen"
         },
@@ -777,7 +781,11 @@
             "description": "Vibration beim Verstellen des Lautstärkereglers. Nur für Touch-Geräte mit Vibrationsmotor."
         },
         "player_option_error": "Fehler beim Festlegen der Wiedergabegeräte-Optionen: {key} {value}",
-        "server_logs_load_failed": "Serverprotokolle konnten nicht geladen werden"
+        "server_logs_load_failed": "Serverprotokolle konnten nicht geladen werden",
+        "audiobook_chapter_progress": {
+            "label": "Fortschritt im Hörbuchkapitel anzeigen",
+            "description": "Zeige die verstrichene und verbleibende Zeit für das aktuelle Hörbuchkapitel anstelle der Gesamtdauer des Hörbuchs an."
+        }
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -896,7 +904,11 @@
         "show_menu": "Menü ein-\/ausblenden",
         "show_context_menu": "Kontextmenü anzeigen",
         "scroll_left": "Nach links scrollen",
-        "scroll_right": "Nach rechts scrollen"
+        "scroll_right": "Nach rechts scrollen",
+        "hide_provider": "Musikdienst ausblenden",
+        "exit_select_items": "Mehrfachauswahl beenden",
+        "playing_from": "Wiedergabe von {0}",
+        "open_documentation": "Öffne die {provider} Dokumentation"
     },
     "topresult": "Top-Ergebnis",
     "track": "Titel",
@@ -968,7 +980,6 @@
     "global_search": "Globale Suche",
     "podcast_episode": "Episode",
     "podcast_episodes": "Episoden",
-    "play_from_here": "Ab hier wiedergeben",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Aktuelle Wiedergabe",
     "all_players": "Alle Wiedergabegeräte",
@@ -1034,7 +1045,8 @@
                 "measurement_only": "Gemessene Lautstärke",
                 "fallback_fixed_gain": "Feste Fallback-Verstärkung",
                 "fixed_gain": "Feste Verstärkung",
-                "fallback_dynamic": "Dynamischer Fallback"
+                "fallback_dynamic": "Dynamischer Fallback",
+                "source": "Angewendet von {0}"
             },
             "measurement": {
                 "track": "Titel",
@@ -1045,7 +1057,8 @@
             "crossfade_mode": {
                 "smart": "Smart",
                 "standard": "Standard",
-                "disabled": "Deaktiviert"
+                "disabled": "Deaktiviert",
+                "source": "Angewendet von {0}"
             },
             "dsp_state": {
                 "enabled": "DSP aktiv",
@@ -1058,9 +1071,9 @@
             "integer_pcm": "{0}-Bit PCM",
             "direct_signal_path": "Direkter Signalweg",
             "direct_signal_path_detail": "Audiodaten durchlaufen die Warteschlangenverarbeitung unverändert.",
-            "direct_signal_path_inactive_detail": "Es sind weder eine Lautstärkenormalisierung noch ein Überblenden, eine Anpassung der Wiedergabegeschwindigkeit oder eine Audioüberlagerung aktiv.",
+            "direct_signal_path_inactive_detail": "Music Assistant wendet keine Lautstärkenormalisierung, Überblendung, Wiedergabegeschwindigkeitsanpassung oder Audioüberlagerung an.",
             "no_shared_transforms": "Es wurden keine gemeinsam genutzten Transformationen gemeldet",
-            "no_shared_transforms_detail": "Das Verarbeitungsmodell meldet keine Normalisierung, Überblendung, Anpassung der Wiedergabegeschwindigkeit oder Audio-Overlay.",
+            "no_shared_transforms_detail": "Music Assistant wendet keine Normalisierung, Überblendung, Anpassung der Wiedergabegeschwindigkeit oder Audio-Overlay an.",
             "processing_headroom": "Verarbeitungsspielraum",
             "processing_headroom_detail": "Music Assistant wandelt Audio intern in Gleitkommazahlen um, um Spielraum zu schaffen und Clipping oder Präzisionsverluste während Normalisierung, Mixen, Crossfade, DSP und Limitieren zu reduzieren.",
             "processing_headroom_reasons": "Für folgende Funktionen steht Gleitkomma-Spielraum zur Verfügung: {0}.",
@@ -1430,8 +1443,8 @@
             "request": "Anfragen",
             "link_copy_fail": "Link konnte nicht kopiert werden",
             "link_copy_success": "Link kopiert!",
-            "confirm_disable_guest_access": "Möchtest du den Gastzugang wirklich deaktivieren? Gäste können dann weder der Party beitreten, noch Musik durchsuchen oder Lieder zur Warteschlange hinzufügen.",
-            "confirm_enable_guest_access": "Möchtest du wirklich den Gastzugang aktivieren? Dadurch kann jeder mit dem Link oder QR-Code an der Party teilnehmen, Musik durchsuchen und Songs zur Warteschlange hinzufügen.",
+            "confirm_disable_guest_access": "Soll der Gastzugang wirklich deaktiviert werden? Gäste können dann keiner Party beitreten, Musik durchsuchen oder Lieder der Warteschlange anfügen.",
+            "confirm_enable_guest_access": "Soll der Gastzugang wirklich aktiviert werden? Dadurch kann jeder mit diesem Link oder QR-Code an der Party teilnehmen, Musik durchsuchen und Songs der Warteschlange anfügen.",
             "disable_guest_access": "Gastzugang deaktivieren",
             "enable_guest_access": "Gastzugang aktivieren",
             "guest_access_enabled": "Gastzugang aktiviert",
@@ -1608,7 +1621,6 @@
             "current_music": "Aktuelle Musik",
             "copy_music_name": "Songtitel kopieren",
             "copy_music_name_failed": "Songtitel konnte nicht kopiert werden",
-            "loading_lyrics": "Liedtext wird geladen...",
             "no_winner": "Diesmal gab es keinen Gewinner",
             "winner_single": "{0} Siege mit {1} Punkten",
             "winner_multiple": "{0} Gleichstand um den Sieg mit {1} Punkte",
@@ -1765,7 +1777,9 @@
             "no_available_players": "Es wurden keine verfügbaren Wiedergabegeräte gefunden. Verwende den Remote-Modus oder überprüfe die Wiedergabegeräte-Einstellungen.",
             "how_to_play_guess_the_song_description": "Höre dir das aktuell gespielte Lied an und wähle den richtigen Titel aus den vorgegebenen Optionen aus, bevor die Zeit abläuft.",
             "how_to_play_trivia_description": "Beantworte Quizfragen zum Thema Musik. Wähle die Antwort, die du für richtig hältst, bevor die Zeit abläuft.",
-            "landing_continue": "Fortsetzen"
+            "landing_continue": "Fortsetzen",
+            "timeline_result_placement": "Platzierung",
+            "round_result_answer": "Antwort"
         },
         "ai_radio": {
             "title": "AI-Radio",
@@ -1795,7 +1809,7 @@
             "field_descriptions": {
                 "source_playtime_cap": "Maximale Gesamtspielzeit der Hintergrundmusik in Minuten. Die Titel werden in der Reihenfolge abgespielt, in der sie in der Sendung vorkommen, bis die Obergrenze erreicht ist. Für keine Begrenzung den Wert auf 0 setzen.",
                 "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die AI gesendet.",
-                "shuffle_playlist_tracks": "Die Quell-Playlist wird in zufälliger Reihenfolge abgespielt. Deaktiviere diese Option, um die Reihenfolge der Playlist beizubehalten."
+                "shuffle_playlist_tracks": "Die Quell-Wiedergabeliste wird in zufälliger Reihenfolge abgespielt. Deaktiviere diese Option, um die Reihenfolge der Wiedergabeliste beizubehalten."
             },
             "web_search": {
                 "disabled": "deaktiviert (kein Web-Tool)",
@@ -2080,7 +2094,8 @@
             "log_copy_failed": "Fehler beim Kopieren des Aufgabenprotokolls.",
             "log_download_started": "Der Download des Aufgabenprotokolls wurde gestartet.",
             "log_download_failed": "Kein Aufgabenprotokoll zum Herunterladen verfügbar."
-        }
+        },
+        "report_title": "Aufgabenbericht"
     },
     "not_found_headline": "Oh, diese Seite gehört nicht zur Setlist.",
     "not_found_subtext": "Der gesuchte Titel ist zwischen den Anbietern verloren gegangen. Gehe zurück oder suche nach etwas Neuem.",
@@ -2340,7 +2355,6 @@
     "visualizer": {
         "title": "MilkDrop",
         "preset_random": "Zufällige Voreinstellung",
-        "open_settings": "Visualizer-Einstellungen",
         "toggle": "Den MilkDrop-Visualizer ein- oder ausschalten",
         "preset_random_favorites": "Zufällige Auswahl aus den Favoriten",
         "toggle_favorite": "Diese Voreinstellung als Favorit speichern",
@@ -2372,7 +2386,8 @@
         "remove_favorite": "Favoriten entfernen",
         "credits": "Credits",
         "credits_butterchurn": "Die Darstellung erfolgt mithilfe von „Butterchurn“ von Jordan Berg (MIT-Lizenz), der WebGL-Implementierung von MilkDrop 2.",
-        "credits_milkdrop": "MilkDrop wurde ursprünglich von Ryan Geiss als Visualizer für Winamp entwickelt. Die Voreinstellungen stammen aus der MilkDrop-Voreinstellungs-Community und werden über „butterchurn-presets“ gebündelt."
+        "credits_milkdrop": "MilkDrop wurde ursprünglich von Ryan Geiss als Visualizer für Winamp entwickelt. Die Voreinstellungen stammen aus der MilkDrop-Voreinstellungs-Community und werden über „butterchurn-presets“ gebündelt.",
+        "enabled": "Aktiviert"
     },
     "ai_dj": "AI Radio DJ aktivieren",
     "ai_dj_off": "Aus",
@@ -2449,5 +2464,13 @@
     "audio_overlay_add_custom_explanation": "Füge deine eigenen Umgebungsgeräusche per Stream-URL hinzu.",
     "audio_overlay_no_custom_sounds": "Es wurden noch keine benutzerdefinierten Sounds hinzugefügt.",
     "audio_overlay_custom_added": "{0} hinzugefügt",
-    "audio_overlay_custom_add_failed": "Das Hinzufügen eines benutzerdefinierten Sounds ist fehlgeschlagen. Überprüfe, ob die URL auf einen abspielbaren Audiostream verweist."
+    "audio_overlay_custom_add_failed": "Das Hinzufügen eines benutzerdefinierten Sounds ist fehlgeschlagen. Überprüfe, ob die URL auf einen abspielbaren Audiostream verweist.",
+    "search_in": "Suche in {0}...",
+    "pages": "Seiten",
+    "recent_searches": "Letzte Suchanfragen",
+    "command_center_navigate": "navigieren",
+    "command_center_open": "öffnen",
+    "command_center_keep_typing": "Tippe weiter, um zu suchen...",
+    "screens": "Bildschirme",
+    "play_from_here_to_latest": "Von hier bis zum neuesten Abschnitt abspielen"
 }

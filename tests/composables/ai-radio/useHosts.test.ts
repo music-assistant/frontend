@@ -30,7 +30,7 @@ vi.mock("@/plugins/api", async () => {
 });
 
 vi.mock("@/plugins/auth", () => ({
-  authManager: { isAdmin: () => false },
+  authManager: { isAdmin: () => false, guestSessionKind: () => null },
 }));
 
 vi.mock("@/plugins/router", () => ({

@@ -31,6 +31,7 @@ import ToolbarHeading, {
 } from "@/components/ToolbarHeading.vue";
 import api from "@/plugins/api";
 import { MediaItemType, MediaType } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { Folder } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -76,7 +77,10 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
 });
 
 const loadItems = async function (params: LoadDataParams) {
-  const items: Array<MediaItemType> = await api.browse(props.path);
+  const items: Array<MediaItemType> = await api.browse(
+    props.path,
+    store.activePlayerId,
+  );
   hasOnlyFolders.value = items.every(
     (item) => item.media_type === MediaType.FOLDER,
   );

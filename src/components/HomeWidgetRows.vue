@@ -372,6 +372,7 @@ import EditorialTimeline from "@/components/discover/EditorialTimeline.vue";
 import {
   DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
+  IN_PROGRESS_ROW_ID,
   PLAYERS_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
@@ -402,6 +403,7 @@ import {
   RecommendationFolderType,
   type EventMessage,
   type Player,
+  type PlaylogUpdate,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -953,6 +955,28 @@ const unsubscribeRecommendations = api.subscribe(
   },
 );
 
+// Played or reset items leave the "in progress" row right away; partial progress
+// (pause, another app syncing) belongs in the row, so only the refresh acts on it.
+const unsubscribePlaylog = api.subscribe(
+  EventType.PLAYLOG_UPDATED,
+  (evt: EventMessage) => {
+    const update = evt.data as PlaylogUpdate | undefined;
+    // per-user playlog: ignore changes belonging to another user (null = everyone)
+    if (update?.userid && update.userid !== store.currentUser?.user_id) return;
+    const leavesInProgress =
+      update && (update.fully_played || update.seconds_played === 0);
+    const uri = update?.uri ?? evt.object_id;
+    const items = rowItemsMap.value.get(IN_PROGRESS_ROW_ID);
+    if (leavesInProgress && uri && items) {
+      rowItemsMap.value.set(
+        IN_PROGRESS_ROW_ID,
+        items.filter((item) => item.uri !== uri),
+      );
+    }
+    scheduleRecommendationRefresh();
+  },
+);
+
 const unsubscribeProviderEvents = api.subscribe(
   EventType.PROVIDER_EVENT,
   (evt: EventMessage) => {
@@ -1020,6 +1044,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("resize", updateHeroNav);
   unsubscribeRecommendations();
   unsubscribeProviderEvents();
+  unsubscribePlaylog();
   cancelScheduledRecommendationRefresh();
   heroRo?.disconnect();
   heroRo = undefined;

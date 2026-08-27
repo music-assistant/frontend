@@ -1,6 +1,7 @@
 import { useShows } from "@/composables/ai-radio/useShows";
 import api from "@/plugins/api";
 import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
@@ -44,7 +45,9 @@ const aiRadioAvailable = computed(() =>
 watch(
   aiRadioAvailable,
   (available) => {
-    if (available) prefetchQueueDjState();
+    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
+    if (available && authManager.guestSessionKind() === null)
+      prefetchQueueDjState();
   },
   { immediate: true },
 );

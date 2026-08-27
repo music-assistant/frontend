@@ -51,6 +51,9 @@ const SERVER_INFO: ServerInfoMessage = {
   homeassistant_addon: false,
   onboard_done: true,
   status: CoreState.RUNNING,
+  internal_url: "http://test.local",
+  external_url: null,
+  has_remote_access: false,
 };
 
 class TestTransport extends BaseTransport {

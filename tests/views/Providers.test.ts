@@ -1,7 +1,7 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ProviderStatus } from "@/plugins/api/interfaces";
+import { ProviderStage, ProviderStatus } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
 import { providerConfig } from "../fixtures/providerConfig";
@@ -87,12 +87,17 @@ const ListItemStub = {
   template: `
     <div data-testid="provider-row" @click="$emit('click')">
       <slot name="subtitle" />
+      <slot name="append" />
     </div>
   `,
 };
 
 const SlotStub = {
   template: "<div><slot /></div>",
+};
+
+const ChipStub = {
+  template: '<div data-testid="stage-badge"><slot /></div>',
 };
 
 const ButtonStub = {
@@ -107,6 +112,7 @@ const ButtonStub = {
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getProvider.mockReturnValue(undefined);
+  apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
 });
@@ -258,6 +264,22 @@ describe("Providers", () => {
       menuItems.map((item: { label: string }) => item.label),
     ).not.toContain("settings.reconfigure");
   });
+
+  it("labels the stage badge from the translated stage key", async () => {
+    apiMock.providerManifests.spotify.stage = ProviderStage.DEPRECATED;
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(wrapper.get('[data-testid="stage-badge"]').text()).toBe(
+      "settings.stage.options.deprecated",
+    );
+  });
+
+  it("hides the stage badge for a stable provider", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(wrapper.find('[data-testid="stage-badge"]').exists()).toBe(false);
+  });
 });
 
 async function mountProviders(
@@ -295,6 +317,7 @@ async function mountProviders(
         Container: SlotStub,
         ListItem: ListItemStub,
         VBtn: ButtonStub,
+        VChip: ChipStub,
         VList: SlotStub,
       },
     },
