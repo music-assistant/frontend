@@ -24,9 +24,10 @@ if ! grep -Fqx "$MARKER" <<< "$WHEEL_FILES"; then
   exit 1
 fi
 
-# Every sdist entry sits under a <name>-<version>/ directory.
-SDIST_FILES=$(tar -tzf "${SDISTS[0]}")
-if ! grep -Fq "/$MARKER" <<< "$SDIST_FILES"; then
+# Strip the <name>-<version>/ directory every sdist entry sits under, so the
+# marker can be matched whole-line rather than as a substring.
+SDIST_FILES=$(tar -tzf "${SDISTS[0]}" | cut -d/ -f2-)
+if ! grep -Fqx "$MARKER" <<< "$SDIST_FILES"; then
   echo "::error::${SDISTS[0]##*/} does not contain $MARKER."
   exit 1
 fi
