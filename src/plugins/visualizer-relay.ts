@@ -117,6 +117,38 @@ export async function reportVisualizerCapability(
   }
 }
 
+// cap so a per-frame exception storm cannot flood the server log
+const MAX_ERROR_REPORTS = 3;
+let errorReportsSent = 0;
+let errorReportingInstalled = false;
+
+/**
+ * Forward uncaught page errors to the server log, for displays with no
+ * reachable console. Installed once; only the first few errors are sent.
+ */
+export function installVisualizerErrorReporting(): void {
+  if (errorReportingInstalled) return;
+  if (!authManager.isDashboardViewer()) return;
+  errorReportingInstalled = true;
+  const send = (message: string) => {
+    if (errorReportsSent >= MAX_ERROR_REPORTS) return;
+    errorReportsSent += 1;
+    api
+      .sendCommand("milkdrop_visualizer/report_capability", {
+        user_agent: navigator.userAgent,
+        error: message.slice(0, 500),
+      })
+      .catch(() => undefined);
+  };
+  window.addEventListener("error", (event) => {
+    const src = event.filename ? ` (${event.filename}:${event.lineno})` : "";
+    send(`${event.message}${src}`);
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    send(`unhandled rejection: ${String(event.reason)}`);
+  });
+}
+
 /**
  * Record how a display is actually rendering, in the server log.
  *
@@ -140,6 +172,7 @@ export async function reportVisualizerRender(
       user_agent: navigator.userAgent,
       render: {
         note,
+        preset: sample.preset?.slice(0, 120) ?? "",
         level,
         fps: Math.round(sample.fps * 10) / 10,
         target_fps: Math.round(sample.targetFps * 10) / 10,
@@ -147,6 +180,13 @@ export async function reportVisualizerRender(
         pixels: sample.pixels,
         render_ms: Math.round(sample.renderMs * 10) / 10,
         blocked_ratio: Math.round(sample.blockedRatio * 100) / 100,
+        ...(sample.gpu
+          ? {
+              gpu_warp: Math.round((sample.gpu.warp ?? 0) * 10) / 10,
+              gpu_blur: Math.round((sample.gpu.blur ?? 0) * 10) / 10,
+              gpu_comp: Math.round((sample.gpu.comp ?? 0) * 10) / 10,
+            }
+          : {}),
       },
     });
   } catch (error) {

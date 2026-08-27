@@ -7,6 +7,11 @@
  * and stops stepping once a step down demonstrably did not help (the
  * bottleneck is not pixel fill). Every move is handed to the report callback,
  * since these displays have no reachable console.
+ *
+ * The ladder is deliberately the only mechanism. A chain of targeted remedies
+ * (coarser mesh, blur clamp, instance clamp, reduced rate) used to live here;
+ * engine-side fixes made them obsolete and their trial verdicts proved
+ * unreliable around preset changes, so they were removed rather than hardened.
  */
 
 import type { VisualizerPerfSample } from "@/composables/visualizer/useVisualizerEngine";
@@ -36,6 +41,10 @@ const TV_STEP_DOWN_PAYOFF = 1.15;
 // ... capped just under the paced target: achieved fps can never exceed the
 // target, so a lateness fix shows up as fps recovering to it, not surpassing it
 const TV_PAYOFF_TARGET_SHARE = 0.95;
+// early samples cover module fetch and the first WASM preset compile, not rendering
+const TV_WARMUP_SAMPLES = 3;
+// heartbeat cadence in samples (~2s each), so a resting session keeps reporting
+const TV_STEADY_REPORT_EVERY = 30;
 
 export interface AdaptiveQualityCallbacks {
   /**
@@ -72,6 +81,14 @@ export function createAdaptiveQualityController(
   let fpsBeforeStepDown = 0;
   let awaitingStepDownVerdict = false;
   let floorReported = false;
+  let warmupSamples = 0;
+  let samplesSinceReport = 0;
+  let lastPreset: string | undefined;
+
+  const report = (sample: VisualizerPerfSample, note: string) => {
+    samplesSinceReport = 0;
+    callbacks.report(sample, level, note);
+  };
 
   const applyLevel = (next: number) => {
     const from = adaptiveProfile(level);
@@ -90,20 +107,41 @@ export function createAdaptiveQualityController(
       // nothing left to give up; say so once rather than going quiet
       if (!floorReported) {
         floorReported = true;
-        callbacks.report(sample, level, "stuck at floor");
+        report(sample, "stuck at floor");
       }
       return;
     }
     const failures = (levelFailures.get(level) ?? 0) + 1;
     levelFailures.set(level, failures);
     if (failures >= TV_FAILURES_BEFORE_BLOCKED) ceiling = next;
-    callbacks.report(sample, level, "stepped down");
+    report(sample, "stepped down");
     fpsBeforeStepDown = sample.fps;
     awaitingStepDownVerdict = true;
     applyLevel(next);
   };
 
   const onPerfSample = (sample: VisualizerPerfSample) => {
+    if (warmupSamples < TV_WARMUP_SAMPLES) {
+      warmupSamples += 1;
+      lastPreset = sample.preset;
+      return;
+    }
+    // a new preset is a new bottleneck profile: reported for log attribution,
+    // and the not-fill-bound conclusion is re-armed rather than kept for life
+    if (sample.preset !== lastPreset) {
+      lastPreset = sample.preset;
+      fillBound = true;
+      awaitingStepDownVerdict = false;
+      settleReported = false;
+      report(sample, "preset changed");
+    }
+    // heartbeat between state-change reports, so long resting stretches
+    // (settled or pinned) stay visible in the log
+    samplesSinceReport += 1;
+    if (samplesSinceReport >= TV_STEADY_REPORT_EVERY) {
+      report(sample, "steady");
+    }
+
     // first sample after a step down decides whether pixels were ever the
     // problem
     if (awaitingStepDownVerdict) {
@@ -113,10 +151,9 @@ export function createAdaptiveQualityController(
         sample.targetFps * TV_PAYOFF_TARGET_SHARE,
       );
       if (sample.fps < payoffBar) {
+        report(sample, "step down did not pay");
         fillBound = false;
-        const back = level - 1;
-        callbacks.report(sample, level, "step down did not pay");
-        applyLevel(Math.max(back, ceiling));
+        applyLevel(Math.max(level - 1, ceiling));
         return;
       }
     }
@@ -133,10 +170,10 @@ export function createAdaptiveQualityController(
       if (!hopeless && lowSamples < TV_LOW_SAMPLES_TO_STEP) return;
       lowSamples = 0;
       if (!fillBound) {
-        // pinned with nothing more to try; report the resting state once
+        // pinned with nothing to try; report the resting state once
         if (!settleReported) {
           settleReported = true;
-          callbacks.report(sample, level, "pinned, not fill bound");
+          report(sample, "pinned, not fill bound");
         }
         return;
       }
@@ -153,7 +190,7 @@ export function createAdaptiveQualityController(
     if (goodSamples >= TV_GOOD_SAMPLES_TO_CLIMB) {
       const next = level - 1;
       if (next >= ceiling) {
-        callbacks.report(sample, level, "stepped up");
+        report(sample, "stepped up");
         applyLevel(next);
         return;
       }
@@ -163,7 +200,7 @@ export function createAdaptiveQualityController(
     steadySamples += 1;
     if (steadySamples === TV_SAMPLES_TO_SETTLE && !settleReported) {
       settleReported = true;
-      callbacks.report(sample, level, "settled");
+      report(sample, "settled");
     }
   };
 

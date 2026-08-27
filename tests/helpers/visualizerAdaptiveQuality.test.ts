@@ -25,6 +25,7 @@ const sample = (
   pixels: 1_000_000,
   renderMs: 5,
   blockedRatio: 0,
+  preset: "some preset",
   ...over,
 });
 
@@ -46,6 +47,9 @@ describe("the adaptive quality controller", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     controller = createAdaptiveQualityController({ applyProfile, report });
+    // the first three samples are warm-up (module fetch, first preset
+    // compile) and are ignored entirely
+    for (let i = 0; i < 3; i++) controller.onPerfSample(good());
   });
 
   it("starts at the ladder's start level", () => {
@@ -80,27 +84,47 @@ describe("the adaptive quality controller", () => {
     );
   });
 
-  it("reverts a step down that did not pay and stops treating fill as the bottleneck", () => {
+  it("pins when a step down does not pay, and reports it once", () => {
     controller.onPerfSample(slow());
     controller.onPerfSample(slow());
     // barely faster than the fps 20 before the step: pixels were not the
-    // problem
+    // problem, so the ladder gives up instead of blurring pointlessly
     controller.onPerfSample(sample({ fps: 21 }));
-    expect(applyProfile).toHaveBeenLastCalledWith(
-      ADAPTIVE_LADDER[ADAPTIVE_START_LEVEL],
-      false,
-    );
     expect(notes(report)).toContain("step down did not pay");
+    expect(controller.currentProfile()).toBe(
+      ADAPTIVE_LADDER[ADAPTIVE_START_LEVEL],
+    );
 
-    // struggling again: no further step downs, just the pinned report, once
     controller.onPerfSample(slow());
     controller.onPerfSample(slow());
     controller.onPerfSample(slow());
     controller.onPerfSample(slow());
-    expect(applyProfile).toHaveBeenCalledTimes(2);
     expect(
       notes(report).filter((note) => note === "pinned, not fill bound"),
     ).toHaveLength(1);
+    // no further ladder moves while pinned
+    expect(applyProfile).toHaveBeenCalledTimes(2);
+  });
+
+  it("re-arms the ladder when the preset changes", () => {
+    // conclude "not fill bound" on the first preset
+    controller.onPerfSample(slow());
+    controller.onPerfSample(slow());
+    controller.onPerfSample(sample({ fps: 21 }));
+    controller.onPerfSample(slow());
+    controller.onPerfSample(slow());
+    expect(notes(report)).toContain("pinned, not fill bound");
+    const applied = applyProfile.mock.calls.length;
+
+    // a new preset may well be fill bound; the ladder steps for it again
+    const heavy = () => sample({ fps: 12, lateRatio: 0.6, preset: "other" });
+    controller.onPerfSample(heavy());
+    expect(notes(report)).toContain("preset changed");
+    controller.onPerfSample(heavy());
+    expect(applyProfile.mock.calls.length).toBeGreaterThan(applied);
+    expect(
+      notes(report).filter((note) => note === "stepped down").length,
+    ).toBeGreaterThan(1);
   });
 
   it("counts a lateness fix as payoff even though fps is capped at the target", () => {

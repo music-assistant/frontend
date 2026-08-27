@@ -41,6 +41,10 @@ export interface VisualizerPerfSample {
   renderMs: number;
   // share of the window the main thread spent inside long tasks
   blockedRatio: number;
+  // GPU section times in ms (EMA), when the driver exposes timer queries
+  gpu?: { warp?: number; blur?: number; comp?: number };
+  // preset on screen while the window was measured
+  preset?: string;
 }
 
 export interface VisualizerEngine {
@@ -127,12 +131,48 @@ export interface VisualizerEngineOptions {
   shaderTint?: boolean;
 }
 
-// median frame gap, not the fastest: bursty delivery makes the minimum read as the panel rate
 const REFRESH_WINDOW_TICKS = 120;
 const MIN_TICK_MS = 1000 / 240;
 const MAX_TICK_MS = 1000 / 30;
+// Panels come in standard rates; under GPU throttling the rAF gaps are whole
+// multiples of the true tick, so the estimator picks the slowest standard rate
+// whose multiples explain the window instead of averaging throttled gaps into
+// a phantom rate.
+const STANDARD_TICKS_MS = [240, 165, 144, 120, 100, 90, 75, 60, 50, 30].map(
+  (hz) => 1000 / hz,
+);
+const TICK_FIT_TOLERANCE = 0.06;
+
+function fitStandardTick(gaps: Float64Array): number | null {
+  // slowest rate first: every gap trivially fits a fast-enough tick's
+  // multiples, so the LARGEST tick that fits is the informative one
+  for (let i = STANDARD_TICKS_MS.length - 1; i >= 0; i--) {
+    const tick = STANDARD_TICKS_MS[i];
+    let residual = 0;
+    let ok = true;
+    for (const gap of gaps) {
+      const k = Math.max(1, Math.round(gap / tick));
+      const err = Math.abs(gap - k * tick) / gap;
+      if (err > TICK_FIT_TOLERANCE * 3) {
+        ok = false;
+        break;
+      }
+      residual += err;
+    }
+    if (ok && residual / gaps.length <= TICK_FIT_TOLERANCE) return tick;
+  }
+  return null;
+}
+
+// The panel rate is a device property: once any window proves a faster tick,
+// a slower estimate later can only mean throttling, never a slower panel.
+// Latched at module level so engine rebuilds inherit it.
+let latchedTickMs: number | null = null;
 const DEFAULT_TICK_MS = 1000 / 60;
 const PERF_SAMPLE_WINDOW_MS = 2000;
+// samples taken while a preset blend renders both presets (or while the new
+// one compiles) measure a workload that is about to vanish; skip them
+const PERF_BLEND_SETTLE_MS = 500;
 
 /**
  * Create the engine on a canvas. Returns null when WebGL2 is unavailable.
@@ -150,6 +190,10 @@ export async function createVisualizerEngine(
 ): Promise<VisualizerEngine | null> {
   if (!isVisualizerSupported()) return null;
   const butterchurn = resolveButterchurnModule(await import("butterchurn"));
+  // fork builds can blend the tint inside their own output pass: one context,
+  // one canvas, no per-frame copy
+  const engineTint =
+    options?.shaderTint === true && butterchurn.supportsEngineTint === true;
   sharedAudioContext ??= new AudioContext();
   let profile = typeof quality === "object" ? quality : qualityProfile(quality);
 
@@ -172,8 +216,11 @@ export async function createVisualizerEngine(
     );
   };
   // with the shader tint, butterchurn renders into a detached canvas and the visible one shows the tinted copy
-  const tintPass = options?.shaderTint ? createTintPass(canvas) : null;
+  const tintPass =
+    options?.shaderTint && !engineTint ? createTintPass(canvas) : null;
   const targetCanvas = tintPass ? document.createElement("canvas") : canvas;
+
+  let currentPresetName = "";
 
   let { width, height } = deviceSize();
   targetCanvas.width = width;
@@ -189,6 +236,8 @@ export async function createVisualizerEngine(
       meshWidth: profile.meshWidth,
       meshHeight: profile.meshHeight,
       outputFXAA: profile.outputFXAA,
+      // v3 presets ship eel-compiled equations only; never fall back to the JS interpreter
+      onlyUseWASM: true,
     },
   );
 
@@ -283,13 +332,14 @@ export async function createVisualizerEngine(
     return scaledFrame;
   };
 
-  // whole-number vsync divisor pacing: a wall-clock gate drifts against the tick grid and reads as judder
+  // Pacing is a time gate with half-tick tolerance: rAF fires on the tick
+  // grid, so admitting the tick nearest the target interval stays grid-aligned
+  // (no judder), and a GPU-throttled loop whose gaps already exceed the
+  // interval is never skipped further.
   let tickMs = DEFAULT_TICK_MS;
-  let tickDivisor = options?.maxFps
-    ? Math.max(1, Math.round(1000 / options.maxFps / tickMs))
-    : 1;
+  const baseMaxFps = options?.maxFps ?? 0;
+  let targetIntervalMs = baseMaxFps ? 1000 / baseMaxFps : 0;
   let lastTickAt = 0;
-  let ticksSinceRender = 0;
   let windowTicks = 0;
   const windowDeltas = new Float64Array(REFRESH_WINDOW_TICKS);
   // until the first window lands the divisor rests on an assumed 60Hz; don't measure against that
@@ -297,6 +347,7 @@ export async function createVisualizerEngine(
 
   // perf sampling for adaptive hosts; resets when hidden so a background stretch cannot read as slow
   let perfWindowStart = 0;
+  let perfGuardUntil = 0;
   let perfRenders = 0;
   let perfLateRenders = 0;
   let perfRenderMs = 0;
@@ -331,20 +382,34 @@ export async function createVisualizerEngine(
     if (lastTickAt) {
       windowDeltas[windowTicks] = now - lastTickAt;
       if (++windowTicks >= REFRESH_WINDOW_TICKS) {
-        const sorted = Array.from(windowDeltas).sort((a, b) => a - b);
-        const median = sorted[REFRESH_WINDOW_TICKS >> 1];
-        tickMs = Math.min(Math.max(median, MIN_TICK_MS), MAX_TICK_MS);
-        // the MAX_TICK_MS clamp lands the divisor on 1 when frames already arrive at or below the target rate
-        tickDivisor = options?.maxFps
-          ? Math.max(1, Math.round(1000 / options.maxFps / tickMs))
-          : 1;
+        const fitted = fitStandardTick(windowDeltas);
+        let estimate: number;
+        if (fitted !== null) {
+          estimate = fitted;
+        } else {
+          // no standard rate explains the window (wild jitter): fall back to
+          // the median gap
+          const sorted = Array.from(windowDeltas).sort((a, b) => a - b);
+          estimate = sorted[REFRESH_WINDOW_TICKS >> 1];
+        }
+        latchedTickMs =
+          latchedTickMs === null ? estimate : Math.min(latchedTickMs, estimate);
+        tickMs = Math.min(Math.max(latchedTickMs, MIN_TICK_MS), MAX_TICK_MS);
         windowTicks = 0;
         tickEstimated = true;
       }
     }
     lastTickAt = now;
-    if (tickDivisor > 1 && ++ticksSinceRender < tickDivisor) return;
-    ticksSinceRender = 0;
+    // tolerance scales with the target: a quarter interval capped at one tick,
+    // so reduced-rate targets admit throttled ticks instead of over-quantizing
+    if (
+      targetIntervalMs &&
+      lastRenderAt &&
+      now - lastRenderAt <
+        targetIntervalMs - Math.min(tickMs, targetIntervalMs * 0.25)
+    ) {
+      return;
+    }
 
     const gain = currentGain();
     if (paused && gain <= 0) {
@@ -372,6 +437,10 @@ export async function createVisualizerEngine(
       perfWindowStart = 0;
       return;
     }
+    if (now < perfGuardUntil) {
+      perfWindowStart = 0;
+      return;
+    }
     // the window's opening render marks the start rather than counting
     if (perfWindowStart === 0) {
       perfWindowStart = now;
@@ -381,7 +450,10 @@ export async function createVisualizerEngine(
       perfBlockedMs = 0;
       return;
     }
-    if (renderedAt && now - renderedAt > tickDivisor * tickMs + tickMs * 0.5) {
+    const expectedIntervalMs = Math.max(targetIntervalMs, tickMs);
+    // full-tick tolerance: the controller's thresholds treat "late" as
+    // grossly late, not one tick shy of perfect
+    if (renderedAt && now - renderedAt > expectedIntervalMs + tickMs) {
       // the scheduled slot passed while the previous render was still on the GPU
       perfLateRenders += 1;
     }
@@ -391,11 +463,13 @@ export async function createVisualizerEngine(
     if (elapsed >= PERF_SAMPLE_WINDOW_MS) {
       options.onPerfSample({
         fps: (perfRenders * 1000) / elapsed,
-        targetFps: 1000 / (tickDivisor * tickMs),
+        targetFps: 1000 / Math.max(targetIntervalMs, tickMs),
         lateRatio: perfLateRenders / perfRenders,
         pixels: width * height,
         renderMs: perfRenderMs / perfRenders,
         blockedRatio: Math.min(perfBlockedMs / elapsed, 1),
+        gpu: visualizer.getGpuTimings?.() ?? undefined,
+        preset: currentPresetName,
       });
       perfWindowStart = now;
       perfRenders = 0;
@@ -412,19 +486,27 @@ export async function createVisualizerEngine(
 
   return {
     renderer,
-    shaderTintActive: tintPass !== null,
+    shaderTintActive: tintPass !== null || engineTint,
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
       const preset = await getPreset(name);
       if (!preset || destroyed) return;
+      currentPresetName = name;
       // A halted loop has no frames to blend across.
-      visualizer.loadPreset(preset, rafHandle === null ? 0 : blendSec);
+      const blend = rafHandle === null ? 0 : blendSec;
+      await visualizer.loadPreset(preset, blend);
+      // the WASM equation compile stalls the loop; keep it out of the open sample window
+      perfWindowStart = 0;
+      perfGuardUntil = performance.now() + blend * 1000 + PERF_BLEND_SETTLE_MS;
       redrawIfHalted();
     },
     async loadRandomPreset() {
       const name = await randomPresetName();
       const preset = await getPreset(name);
       if (preset && !destroyed) {
-        visualizer.loadPreset(preset, 0);
+        currentPresetName = name;
+        await visualizer.loadPreset(preset, 0);
+        perfWindowStart = 0;
+        perfGuardUntil = performance.now() + PERF_BLEND_SETTLE_MS;
         redrawIfHalted();
       }
       return name;
@@ -447,11 +529,19 @@ export async function createVisualizerEngine(
       if (rafHandle === null) rafHandle = requestAnimationFrame(renderLoop);
     },
     setTint(rgb) {
-      tintPass?.setTint(rgb);
+      if (engineTint) {
+        visualizer.setTint?.(rgb);
+      } else {
+        tintPass?.setTint(rgb);
+      }
     },
     setProfile(next: QualityProfile) {
       if (destroyed) return;
       profile = next;
+      // a profile may reduce the pacing target (CPU-bound preset remedy)
+      const fps = baseMaxFps;
+      targetIntervalMs = fps ? 1000 / fps : 0;
+      // optional-called: release builds without the clamp simply ignore it
       applySize();
       // a resize mid-measurement would be blamed on the new size
       perfWindowStart = 0;

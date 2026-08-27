@@ -14,7 +14,9 @@ let cache: PresetMap | null = null;
 let loading: Promise<PresetMap> | null = null;
 
 // The UMD packs may arrive plain, under `default`, or under `default.default`
-// depending on the bundler's CJS interop; probe all nestings.
+// depending on the bundler's CJS interop; probe all nestings. v2 packs expose
+// getPresets(), v3 packs export the preset map itself; presets are told apart
+// from interop wrappers by their `baseVals` field.
 function packPresets(module: unknown): PresetMap {
   const record = module as Record<string, unknown>;
   const candidates = [
@@ -25,6 +27,14 @@ function packPresets(module: unknown): PresetMap {
   for (const candidate of candidates) {
     if (candidate && typeof (candidate as PresetPack).getPresets === "function")
       return (candidate as PresetPack).getPresets();
+  }
+  for (const candidate of [...candidates].reverse()) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const entries = Object.entries(candidate).filter(
+      ([, value]) =>
+        typeof value === "object" && value !== null && "baseVals" in value,
+    );
+    if (entries.length) return Object.fromEntries(entries);
   }
   return {};
 }
@@ -40,7 +50,7 @@ export async function loadPresetLibrary(): Promise<PresetMap> {
     Object.assign(presets, packPresets(base));
     try {
       const extra: unknown =
-        await import("butterchurn-presets/lib/butterchurnPresetsExtra.min.js");
+        await import("butterchurn-presets/dist/extra.min.js");
       Object.assign(presets, packPresets(extra));
     } catch {
       // Extra pack is optional; the base pack alone is fine.

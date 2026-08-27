@@ -60,6 +60,7 @@ import { store } from "@/plugins/store";
 import {
   type ColorPalette,
   VisualizerRelayClient,
+  installVisualizerErrorReporting,
   reportVisualizerCapability,
   reportVisualizerRender,
 } from "@/plugins/visualizer-relay";
@@ -305,6 +306,8 @@ const connectRelay = () => {
 const initialize = async () => {
   if (initialized || !canvasRef.value) return;
   initialized = true;
+  // consoleless displays report their uncaught errors to the server log
+  installVisualizerErrorReporting();
   connectRelay();
   await createEngine();
   if (engine) {
