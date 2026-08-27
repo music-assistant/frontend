@@ -18,6 +18,6 @@ const props = withDefaults(
   <Loader2Icon
     role="status"
     :aria-label="$t('loading_short')"
-    :class="cn('size-4 animate-spin', props.class)"
+    :class="cn('size-4 shrink-0 animate-spin', props.class)"
   />
 </template>
