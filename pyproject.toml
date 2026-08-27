@@ -23,7 +23,9 @@ zip-safe  = false
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["music_assistant_frontend"]
+# `pnpm build` writes the bundle here; its assets/ subdirectory has no __init__.py,
+# so the glob relies on namespace discovery to include it.
+include = ["music_assistant_frontend", "music_assistant_frontend.*"]
 
 [tool.codespell]
 ignore-words-list = "provid,hass,followings"
