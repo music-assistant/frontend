@@ -1,4 +1,4 @@
-import { ProviderStatus } from "@/plugins/api/interfaces";
+import { ProviderStage, ProviderStatus } from "@/plugins/api/interfaces";
 
 const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
   [ProviderStatus.LOADED]: "settings.provider_status_loaded",
@@ -7,6 +7,15 @@ const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
   [ProviderStatus.AUTH_REQUIRED]: "settings.provider_status_auth_required",
   [ProviderStatus.INCOMPATIBLE]: "settings.provider_status_incompatible",
   [ProviderStatus.ERROR]: "settings.provider_status_error",
+};
+
+const PROVIDER_STAGE_TRANSLATION_KEYS: Record<ProviderStage, string> = {
+  [ProviderStage.ALPHA]: "settings.stage.options.alpha",
+  [ProviderStage.BETA]: "settings.stage.options.beta",
+  [ProviderStage.STABLE]: "settings.stage.options.stable",
+  [ProviderStage.EXPERIMENTAL]: "settings.stage.options.experimental",
+  [ProviderStage.UNMAINTAINED]: "settings.stage.options.unmaintained",
+  [ProviderStage.DEPRECATED]: "settings.stage.options.deprecated",
 };
 
 // Support labels predate some provider domains and do not always use the same name.
@@ -37,11 +46,40 @@ export const providerRequiresReconfiguration = (
   status === ProviderStatus.AUTH_REQUIRED &&
   canReconfigureProvider(status, hasSetupFlow, enabled);
 
+// A retired provider fails to load as INCOMPATIBLE (the server reuses
+// UnsupportedSystemError), so the stage is what tells the two apart.
 export const getProviderStatusTranslationKey = (
   status?: ProviderStatus | null,
-) =>
-  (status && PROVIDER_STATUS_TRANSLATION_KEYS[status]) ??
-  "settings.provider_status_unknown";
+  stage?: ProviderStage | string | null,
+) => {
+  if (
+    status === ProviderStatus.INCOMPATIBLE &&
+    stage === ProviderStage.DEPRECATED
+  )
+    return "settings.provider_status_retired";
+  return (
+    (status && PROVIDER_STATUS_TRANSLATION_KEYS[status]) ??
+    "settings.provider_status_unknown"
+  );
+};
+
+// Returns undefined for an absent or unrecognised stage so callers can skip the badge
+// entirely rather than render a raw key.
+export const getProviderStageTranslationKey = (
+  stage?: ProviderStage | string | null,
+) => {
+  if (!stage) return undefined;
+  return Object.prototype.hasOwnProperty.call(
+    PROVIDER_STAGE_TRANSLATION_KEYS,
+    stage,
+  )
+    ? PROVIDER_STAGE_TRANSLATION_KEYS[stage as ProviderStage]
+    : undefined;
+};
+
+// Stable is the norm, so only the stages that warrant a warning get a badge.
+export const shouldShowStageBadge = (stage?: ProviderStage | string | null) =>
+  stage !== ProviderStage.STABLE && !!getProviderStageTranslationKey(stage);
 
 export const getProviderSupportIssuesUrl = (domain: string) => {
   const label = PROVIDER_SUPPORT_LABELS[domain] ?? domain;

@@ -371,6 +371,7 @@ export enum PlayerType {
   DISPLAY = "display",
   VISUALIZER = "visualizer",
   LIGHT = "light",
+  SOURCE = "source", // A capture-only device that provides audio input.
   UNKNOWN = "unknown",
 }
 
@@ -424,6 +425,8 @@ export enum EventType {
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
   MEDIA_ITEM_PLAYED = "media_item_played",
+  // an item's playlog entry changed; object_id is the item uri
+  PLAYLOG_UPDATED = "playlog_updated",
   PROVIDERS_UPDATED = "providers_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
@@ -513,6 +516,7 @@ export enum ConfigEntryType {
   BOOLEAN = "boolean",
   STRING = "string",
   SECURE_STRING = "secure_string",
+  PAIRING_CODE = "pairing_code",
   INTEGER = "integer",
   FLOAT = "float",
   LABEL = "label",
@@ -625,6 +629,16 @@ export interface EventMessage {
 }
 export type MassEvent = EventMessage;
 
+// data of the PLAYLOG_UPDATED event
+export interface PlaylogUpdate {
+  uri: string;
+  media_type: MediaType;
+  fully_played: boolean;
+  seconds_played: number;
+  // the user the change applies to, null when it applies to all users
+  userid?: string | null;
+}
+
 export interface ServerInfoMessage {
   server_id: string;
   server_version: string;
@@ -635,6 +649,10 @@ export interface ServerInfoMessage {
   onboard_done: boolean;
   name: string | null;
   status: CoreState;
+  // internal_url supersedes base_url; older servers only send base_url
+  internal_url: string | null;
+  external_url: string | null;
+  has_remote_access: boolean;
 }
 
 export type MessageType =
@@ -692,6 +710,10 @@ export interface ConfigEntry {
   options: ConfigValueOption[];
   // range [optional]: select values within range
   range?: number[] | null;
+  // format [optional]: for PAIRING_CODE entries — '#' digit box, 'X' alphanumeric
+  // (uppercase) box, any other character a rendered separator; the value is the code
+  // without separators
+  format?: string | null;
   // description [optional]: extended description of the setting.
   description?: string | null;
   // help_link [optional]: link to help article.
@@ -699,7 +721,8 @@ export interface ConfigEntry {
   // multi_value [optional]: allow multiple values from the list
   multi_value?: boolean;
   // expanded_options [optional]: render the options inline - all of them, with their
-  // descriptions, visible at once (e.g. as a radio group) - instead of behind a dropdown.
+  // descriptions, visible at once - instead of behind a dropdown. A setup flow step whose
+  // only entry is a required one of these submits as soon as an option is picked.
   // Ignored when the entry has no options or is multi_value.
   expanded_options?: boolean;
   // depends_on [optional]: key of another entry that gates this one; an unresolved key counts
@@ -763,6 +786,10 @@ export enum FlowStepType {
   // fallback
   UNKNOWN = "unknown",
 }
+
+// step_id a FINISH step carries when there is nothing to report (e.g. a one-click
+// device approval); the setup dialog closes instead of showing a success screen
+export const SILENT_FINISH_STEP_ID = "finish_silent";
 
 export interface SetupFlowStep {
   // A single step of a running setup flow (add/reconfigure a provider or set up a player).

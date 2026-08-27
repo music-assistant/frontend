@@ -55,7 +55,11 @@
     "player_type": {
         "group": "Groep",
         "player": "Speler",
-        "stereo_pair": "Stereopaar"
+        "stereo_pair": "Stereopaar",
+        "display": "Beeldscherm",
+        "visualizer": "Visualizer",
+        "light": "Licht",
+        "unknown": "Onbekend"
     },
     "players": "Spelers",
     "playlist": "Afspeellijst",
@@ -408,7 +412,6 @@
         "users_description": "Beheer gebruikersaccounts, rollen en machtigingen",
         "system_description": "Configureer de serverinstellingen en systeemmodules van Music Assistant",
         "system": "Systeem",
-        "view_documentation": "Bekijk documentatie",
         "about": "Over",
         "about_description": "Versie-informatie, credits en meer",
         "auto_refresh_log": "Automatisch vernieuwen",
@@ -513,7 +516,8 @@
             "preferences": "Voorkeuren",
             "display_settings": "Weergave",
             "dsp": "DSP",
-            "volume_control": "Volumeregeling"
+            "volume_control": "Volumeregeling",
+            "audiobooks": "Luisterboeken"
         },
         "onboarding_subtitle": "Laten we beginnen met het aansluiten van je muziekbronnen en audioapparaten.",
         "onboarding_music_title": "Muziek",
@@ -540,7 +544,17 @@
         },
         "enable_browser_controls": {
             "label": "Schakel de mediabediening van de browser in",
-            "description": "Sta afspeelbediening toe met de ingebouwde media bedieningselementen van de browser (bijvoorbeeld de mediatoetsen op je toetsenbord)."
+            "description": "Sta afspeelbediening toe met de ingebouwde media bedieningselementen van de browser (bijvoorbeeld de mediatoetsen op je toetsenbord).",
+            "options": {
+                "active_player": "Elke actief geselecteerde speler",
+                "web_player": "Alleen ingebouwde webplayer",
+                "disabled": "Uitgeschakeld"
+            },
+            "option_descriptions": {
+                "active_player": "Bedien het apparaat dat momenteel is geselecteerd in Music Assistant, inclusief andere luidsprekers in je huis.",
+                "web_player": "Je kunt alleen het geluid regelen dat wordt afgespeeld via de ingebouwde webspeler op dit apparaat.",
+                "disabled": "Stel de afspeelfunctie van Music Assistant niet bloot aan de bedieningselementen van de browser of het besturingssysteem."
+            }
         },
         "settings_saved": "Instellingen succesvol opgeslagen",
         "protocol_disabled_message": "Schakel dit protocol in om de instellingen te configureren",
@@ -777,7 +791,11 @@
             "description": "Trillen tijdens het aanpassen van de volumeschuifregelaar. Alleen voor apparaten met een trilmotor."
         },
         "player_option_error": "Fout bij het instellen van speleroptie: {key} {value}",
-        "server_logs_load_failed": "Het laden van de serverlogboeken is mislukt"
+        "server_logs_load_failed": "Het laden van de serverlogboeken is mislukt",
+        "audiobook_chapter_progress": {
+            "label": "Laat hoofdstukvoortgang luisterboek zien",
+            "description": "Laat verstreken en resterende tijd van het huidige hoofdstuk zien in plaats van de resterende tijd van het volledige luisterboek."
+        }
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -833,7 +851,7 @@
         "refresh": "De lijst vernieuwen",
         "refresh_new_content": "Er is nieuwe inhoud beschikbaar, klik om te vernieuwen",
         "search": "Zoekveld weergeven\/verbergen",
-        "select_items": "Meerdere items selecteren",
+        "select_items": "Bulkselectie",
         "sort_options": "Sorteeropties",
         "toggle_view_mode": "Weergavemodus wijzigen",
         "filter_favorites": "Alleen favorieten weergeven",
@@ -896,7 +914,11 @@
         "show_menu": "Toon of verberg menu",
         "show_context_menu": "Laat contextmenu zien",
         "scroll_left": "Scrol naar links",
-        "scroll_right": "Scrol naar rechts"
+        "scroll_right": "Scrol naar rechts",
+        "hide_provider": "Muziekprovider verbergen",
+        "exit_select_items": "Bulkselectie verlaten",
+        "playing_from": "Afspelen vanaf {0}",
+        "open_documentation": "Open de {provider} documentatie"
     },
     "topresult": "Topresultaat",
     "track": "Nummer",
@@ -968,7 +990,6 @@
     "global_search": "Globaal zoeken",
     "podcast_episode": "Aflevering",
     "podcast_episodes": "Afleveringen",
-    "play_from_here": "Speel vanaf hier",
     "dsp_active": "Actief",
     "currently_playing_players": "Nu aan het afspelen",
     "all_players": "Alle spelers",
@@ -1034,7 +1055,8 @@
                 "measurement_only": "Gemeten loudness",
                 "fallback_fixed_gain": "Vaste gain (fallback)",
                 "fixed_gain": "Vaste gain",
-                "fallback_dynamic": "Dynamische fallback"
+                "fallback_dynamic": "Dynamische fallback",
+                "source": "Toegepast door {0}"
             },
             "measurement": {
                 "track": "Nummer",
@@ -1045,7 +1067,8 @@
             "crossfade_mode": {
                 "smart": "Slim",
                 "standard": "Standaard",
-                "disabled": "Uitgeschakeld"
+                "disabled": "Uitgeschakeld",
+                "source": "Toegepast door {0}"
             },
             "dsp_state": {
                 "enabled": "DSP actief",
@@ -1164,22 +1187,22 @@
         "role": "Rol",
         "admin_role": "Beheerder",
         "user_role": "Gebruiker",
-        "enabled": "Ingeschakeld",
-        "disabled": "Uitgeschakeld",
-        "enable_user": "Gebruiker inschakelen",
-        "disable_user": "Gebruiker uitschakelen",
+        "enabled": "Actief",
+        "disabled": "Inactief",
+        "enable_user": "Gebruiker activeren",
+        "disable_user": "Gebruiker deactiveren",
         "user_created": "Gebruiker succesvol aangemaakt",
         "user_create_failed": "Het aanmaken van de gebruiker is mislukt",
         "user_updated": "Gebruiker succesvol bijgewerkt",
         "user_update_failed": "Het bijwerken van de gebruiker is mislukt",
         "user_deleted": "Gebruiker succesvol verwijderd",
         "user_delete_failed": "Het verwijderen van de gebruiker is mislukt",
-        "user_disabled": "Gebruiker succesvol uitgeschakeld",
-        "user_disable_failed": "Het uitschakelen van de gebruiker is mislukt",
-        "user_enabled": "Gebruiker succesvol ingeschakeld",
-        "user_enable_failed": "Het inschakelen van de gebruiker is mislukt",
+        "user_disabled": "Gebruiker succesvol gedeactiveerd",
+        "user_disable_failed": "Het deactiveren van de gebruiker is mislukt",
+        "user_enabled": "Gebruiker succesvol geactiveerd",
+        "user_enable_failed": "Het activeren van de gebruiker is mislukt",
         "password_optional_hint": "Laat dit leeg om het huidige wachtwoord te behouden",
-        "confirm_disable_user": "Weet je zeker dat je deze gebruiker wilt uitschakelen?",
+        "confirm_disable_user": "Weet je zeker dat je deze gebruiker wilt deactiveren?",
         "confirm_delete_user": "Weet je zeker dat je deze gebruiker wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
         "delete_user": "Gebruiker verwijderen",
         "admin_required": "Beheerderstoegang vereist",
@@ -1519,7 +1542,6 @@
             "current_music": "Huidige muziek",
             "copy_music_name": "Nummertitel kopiëren",
             "copy_music_name_failed": "Kon nummertitel niet kopiëren",
-            "loading_lyrics": "Songtekst laden...",
             "no_winner": "Geen winnaar deze keer",
             "winner_single": "{0} wint met {1} punten",
             "winner_multiple": "{0} gedeelde overwinning met {1} punten",
@@ -1676,7 +1698,9 @@
             "no_available_players": "Er zijn geen beschikbare spelers gevonden. Gebruik de Op afstand-modus of controleer de instellingen van de spelers.",
             "how_to_play_guess_the_song_description": "Luister naar het nummer dat wordt afgespeeld en kies de juiste titel uit de opties voordat de tijd om is.",
             "how_to_play_trivia_description": "Beantwoord triviavragen over muziek. Kies het antwoord dat volgens jou juist is voordat de tijd om is.",
-            "landing_continue": "Doorgaan"
+            "landing_continue": "Doorgaan",
+            "timeline_result_placement": "Positie",
+            "round_result_answer": "Antwoord"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -1991,7 +2015,8 @@
             "log_copy_failed": "Het kopiëren van het taaklogboek is mislukt.",
             "log_download_started": "Downloaden van taaklogboek gestart.",
             "log_download_failed": "Geen taaklogboek beschikbaar om te downloaden."
-        }
+        },
+        "report_title": "Taakrapport"
     },
     "not_found_headline": "Oeps, deze pagina is van de setlist.",
     "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende providers verdwenen. Ga terug of zoek naar iets nieuws.",
@@ -2251,7 +2276,6 @@
     "visualizer": {
         "title": "MilkDrop",
         "preset_random": "Willekeurige preset",
-        "open_settings": "Visualizer-instellingen",
         "toggle": "De MilkDrop-visualizer schakelen",
         "preset_random_favorites": "Willekeurig uit favorieten",
         "toggle_favorite": "Voeg deze preset aan favorieten toe",
@@ -2283,7 +2307,8 @@
         "remove_favorite": "Favoriet verwijderen",
         "credits": "Credits",
         "credits_butterchurn": "Weergave mogelijk gemaakt door Butterchurn van Jordan Berg (MIT-licentie), de WebGL-implementatie van MilkDrop 2.",
-        "credits_milkdrop": "MilkDrop is oorspronkelijk ontwikkeld door Ryan Geiss als visualizer voor Winamp. De presets zijn het werk van de MilkDrop-presetgemeenschap en worden gebundeld via butterchurn-presets."
+        "credits_milkdrop": "MilkDrop is oorspronkelijk ontwikkeld door Ryan Geiss als visualizer voor Winamp. De presets zijn het werk van de MilkDrop-presetgemeenschap en worden gebundeld via butterchurn-presets.",
+        "enabled": "Ingeschakeld"
     },
     "ai_dj": "AI Radio DJ inschakelen",
     "ai_dj_off": "Uit",
@@ -2354,5 +2379,19 @@
         "stop_and_ungroup": "Stoppen en groep opheffen"
     },
     "play_shuffled": "Geshuffeld afspelen",
-    "players_in_group": "Spelers in de groep"
+    "players_in_group": "Spelers in de groep",
+    "audio_overlay_custom_sounds": "Aangepaste geluiden",
+    "audio_overlay_add_custom": "Een aangepast geluid toevoegen",
+    "audio_overlay_add_custom_explanation": "Voeg je eigen omgevingsgeluid toe via een stream-URL.",
+    "audio_overlay_no_custom_sounds": "Er zijn nog geen aangepaste geluiden toegevoegd.",
+    "audio_overlay_custom_added": "{0} toegevoegd",
+    "audio_overlay_custom_add_failed": "Het toevoegen van een aangepast geluid is mislukt. Controleer of de URL naar een afspeelbare audiostream verwijst.",
+    "search_in": "Zoek in {0}...",
+    "pages": "Pagina's",
+    "recent_searches": "Recente zoekopdrachten",
+    "command_center_navigate": "Navigeer",
+    "command_center_open": "Openen",
+    "command_center_keep_typing": "Blijf typen om te zoeken...",
+    "screens": "Beeldschermen",
+    "play_from_here_to_latest": "Speel vanaf hier tot de laatste"
 }

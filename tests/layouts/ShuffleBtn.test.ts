@@ -16,16 +16,12 @@ import { queueItem } from "../fixtures/queueItem";
 import { radio } from "../fixtures/radio";
 
 vi.mock("@/plugins/api", () => {
-  const api = {
-    queueCommandShuffle: vi.fn(),
-    playerCommandShuffle: vi.fn(),
-  };
+  const api = { playerCommandShuffle: vi.fn() };
   return { api, default: api };
 });
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
-const queueCommandShuffle = vi.mocked(api.queueCommandShuffle);
 const playerCommandShuffle = vi.mocked(api.playerCommandShuffle);
 
 // Vuetify is not installed in the test app, and Icon.vue renders its icon
@@ -42,6 +38,12 @@ function player(overrides: Partial<Player> = {}): Player {
     source_list: [],
     ...overrides,
   } as unknown as Player;
+}
+
+/** A player playing Music Assistant's own queue, as the server publishes it. */
+function playerOnQueue() {
+  const own = playerSource({ id: "player-1", name: "Music Assistant Queue" });
+  return player({ active_source: own.id, source_list: [own] });
 }
 
 /** A player taken over by a live external source, as the server publishes it. */
@@ -81,31 +83,46 @@ beforeEach(() => {
 
 describe("ShuffleBtn", () => {
   describe("on a Music Assistant queue", () => {
-    it("shuffles the queue", async () => {
-      const wrapper = mountButton({ playerQueue: playerQueue() });
+    // the queue is a source like any other, listed under the player's own id,
+    // so the command names it and the server refuses it once something else
+    // has taken the player
+    it("shuffles the queue through the player", async () => {
+      const wrapper = mountButton({
+        player: playerOnQueue(),
+        playerQueue: playerQueue(),
+      });
 
       await button(wrapper).trigger("click");
 
-      expect(queueCommandShuffle).toHaveBeenCalledWith("queue-1", true);
-      expect(playerCommandShuffle).not.toHaveBeenCalled();
+      expect(playerCommandShuffle).toHaveBeenCalledWith(
+        "player-1",
+        true,
+        "player-1",
+      );
     });
 
     it("turns shuffle back off", async () => {
       const wrapper = mountButton({
+        player: playerOnQueue(),
         playerQueue: playerQueue({ shuffle_enabled: true }),
       });
 
       await button(wrapper).trigger("click");
 
-      expect(queueCommandShuffle).toHaveBeenCalledWith("queue-1", false);
+      expect(playerCommandShuffle).toHaveBeenCalledWith(
+        "player-1",
+        false,
+        "player-1",
+      );
     });
 
     it("is disabled without a queue to shuffle", () => {
-      expect(isDisabled(mountButton())).toBe(true);
+      expect(isDisabled(mountButton({ player: playerOnQueue() }))).toBe(true);
     });
 
     it("is disabled on an inactive queue", () => {
       const wrapper = mountButton({
+        player: playerOnQueue(),
         playerQueue: playerQueue({ active: false }),
       });
 
@@ -114,6 +131,7 @@ describe("ShuffleBtn", () => {
 
     it("is disabled on an infinite stream", () => {
       const wrapper = mountButton({
+        player: playerOnQueue(),
         playerQueue: playerQueue({
           current_item: queueItem({
             media_item: radio({ media_type: MediaType.RADIO }),
@@ -122,6 +140,13 @@ describe("ShuffleBtn", () => {
       });
 
       expect(isDisabled(wrapper)).toBe(true);
+    });
+
+    // the command is addressed to the player, so there is nothing to send
+    it("is disabled without a player", () => {
+      expect(isDisabled(mountButton({ playerQueue: playerQueue() }))).toBe(
+        true,
+      );
     });
   });
 
@@ -133,8 +158,11 @@ describe("ShuffleBtn", () => {
 
       await button(wrapper).trigger("click");
 
-      expect(playerCommandShuffle).toHaveBeenCalledWith("player-1", true);
-      expect(queueCommandShuffle).not.toHaveBeenCalled();
+      expect(playerCommandShuffle).toHaveBeenCalledWith(
+        "player-1",
+        true,
+        "spotify://audio_source/main",
+      );
     });
 
     it("renders the state the source reports", () => {
@@ -176,7 +204,11 @@ describe("ShuffleBtn", () => {
 
       await button(wrapper).trigger("click");
 
-      expect(playerCommandShuffle).toHaveBeenCalledWith("player-1", false);
+      expect(playerCommandShuffle).toHaveBeenCalledWith(
+        "player-1",
+        false,
+        "spotify://audio_source/main",
+      );
     });
 
     // the source has not reported its ordering yet, so the control still has to
@@ -199,7 +231,6 @@ describe("ShuffleBtn", () => {
       await button(wrapper).trigger("click");
 
       expect(playerCommandShuffle).not.toHaveBeenCalled();
-      expect(queueCommandShuffle).not.toHaveBeenCalled();
     });
 
     it("leaves an idle player alone", () => {
@@ -255,14 +286,19 @@ describe("ShuffleBtn", () => {
 
     it("prefers the queue whenever one is playing", async () => {
       const wrapper = mountButton({
-        player: playerOnSource(),
-        playerQueue: playerQueue(),
+        player: playerOnSource({ shuffle_enabled: true }),
+        playerQueue: playerQueue({ shuffle_enabled: false }),
       });
 
       await button(wrapper).trigger("click");
 
-      expect(queueCommandShuffle).toHaveBeenCalledWith("queue-1", true);
-      expect(playerCommandShuffle).not.toHaveBeenCalled();
+      // a queue and a live source never both resolve for real, so this pins
+      // which side the state is read from, not what the command is aimed at
+      expect(playerCommandShuffle).toHaveBeenCalledWith(
+        "player-1",
+        true,
+        expect.any(String),
+      );
     });
   });
 });

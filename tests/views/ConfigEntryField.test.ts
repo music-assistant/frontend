@@ -157,19 +157,29 @@ describe("ConfigEntryField", () => {
     const wrapper = mountField(expandedOptionsEntry());
 
     expect(wrapper.find(".v-select").exists()).toBe(false);
-    expect(radioItems(wrapper)).toHaveLength(2);
+    expect(optionButtons(wrapper)).toHaveLength(2);
     // the whole point of the branch: no option (or its description) is hidden behind a click
     expect(wrapper.text()).toContain("FLAC");
     expect(wrapper.text()).toContain("Lossless, at a higher bitrate.");
     expect(wrapper.text()).toContain("Not supported by this player.");
   });
 
-  it("emits the value of the option behind the picked radio", async () => {
+  it("emits the value of the option behind the pressed button", async () => {
     const wrapper = mountField(expandedOptionsEntry());
 
-    await radioItems(wrapper)[0].trigger("click");
+    await optionButtons(wrapper)[0].trigger("click");
 
     expect(wrapper.emitted("update:value")).toEqual([["flac"]]);
+  });
+
+  // the options sit inside the setup flow's form, where a default-type button submits it
+  it("keeps option buttons out of the form's submit path", () => {
+    const wrapper = mountField(expandedOptionsEntry());
+
+    expect(optionButtons(wrapper).map((el) => el.attributes("type"))).toEqual([
+      "button",
+      "button",
+    ]);
   });
 
   it("keeps a multi_value entry on the dropdown", () => {
@@ -180,10 +190,10 @@ describe("ConfigEntryField", () => {
     });
 
     expect(wrapper.find(".v-select").exists()).toBe(true);
-    expect(radioItems(wrapper)).toHaveLength(0);
+    expect(optionButtons(wrapper)).toHaveLength(0);
   });
 
-  it("disables every radio with the form", () => {
+  it("disables every option button with the form", () => {
     expect(controlStates(mountField(expandedOptionsEntry(), true))).toEqual([
       true,
       true,
@@ -198,6 +208,31 @@ describe("ConfigEntryField", () => {
     });
 
     expect(controlStates(mountField(confEntry))).toEqual([true]);
+  });
+
+  it("renders a pairing code entry as one box per code character", () => {
+    const wrapper = mountField(pairingCodeEntry());
+
+    expect(wrapper.findComponent({ name: "PairingCodeField" }).exists()).toBe(
+      true,
+    );
+    expect(wrapper.findAll("input.pairing-code-input")).toHaveLength(6);
+  });
+
+  // not part of INTERACTIVE_ENTRIES: that matrix expects exactly one control per entry
+  it("disables every pairing code box", () => {
+    const states = (disabled: boolean) =>
+      controlStates(mountField(pairingCodeEntry(), disabled));
+
+    expect(states(false)).toEqual(Array.from({ length: 6 }, () => false));
+    expect(states(true)).toEqual(Array.from({ length: 6 }, () => true));
+  });
+
+  it("keeps a pairing code entry without a format usable as a text input", () => {
+    const wrapper = mountField(pairingCodeEntry(null));
+
+    expect(wrapper.findAll("input.pairing-code-input")).toHaveLength(0);
+    expect(wrapper.find("input.pairing-code-fallback").exists()).toBe(true);
   });
 
   it("disables a read_only ranged entry while the form itself is enabled", () => {
@@ -260,6 +295,10 @@ function expandedOptionsEntry(): ConfigEntryUI {
   });
 }
 
+function pairingCodeEntry(format: string | null = "###-###"): ConfigEntryUI {
+  return entry({ key: "pin", type: ConfigEntryType.PAIRING_CODE, format });
+}
+
 function hassControlsEntry(): ConfigEntryUI {
   return entry({
     key: "power_controls",
@@ -311,8 +350,8 @@ function sliderRowStates(wrapper: VueWrapper): Record<string, boolean> {
   };
 }
 
-function radioItems(wrapper: VueWrapper): DOMWrapper<Element>[] {
-  return wrapper.findAll('[data-slot="radio-group-item"]');
+function optionButtons(wrapper: VueWrapper): DOMWrapper<Element>[] {
+  return wrapper.findAll('[data-testid="option-button"]');
 }
 
 function isDisabled(el: Pick<DOMWrapper<Element>, "attributes">): boolean {

@@ -270,7 +270,6 @@
         "users_description": "Управление на потребителски акаунти, роли и разрешения",
         "system_description": "Конфигуриране на настройките на сървъра Music Assistant и основните модули",
         "system": "Система",
-        "view_documentation": "Преглед на документацията",
         "about": "Относно",
         "about_description": "Информация за версията, кредити и още",
         "auto_refresh_log": "Автоматично опресняване",
@@ -357,7 +356,8 @@
             "web_player": "Уеб плейър",
             "options": "Опции на плейъра",
             "preferences": "Предпочитания",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "audiobooks": "Аудиокниги"
         },
         "onboarding_subtitle": "Нека започнем, като свържете вашите музикални източници и аудио устройства.",
         "onboarding_music_title": "Музика",
@@ -495,7 +495,9 @@
         "timestamp_modified": "Дата на актуализиране",
         "timestamp_modified_desc": "Дата на актуализиране (низходящо)",
         "last_played": "Последно възпроизвеждани",
-        "last_played_desc": "Последно възпроизвеждани (в низходящ ред)"
+        "last_played_desc": "Последно възпроизвеждани (в низходящ ред)",
+        "ascending": "Възходящо",
+        "descending": "Низходящо"
     },
     "state": {
         "idle": "празен ход",
@@ -602,7 +604,6 @@
     "global_search": "Глобално търсене",
     "podcast_episode": "Епизод",
     "podcast_episodes": "Епизоди",
-    "play_from_here": "Възпроизвеждане от тук",
     "dsp_active": "Активен",
     "currently_playing_players": "В момента се възпроизвежда",
     "all_players": "Всички плейъри",
@@ -1103,7 +1104,11 @@
                     "news": "Новини"
                 },
                 "host_placeholder": "Изберете хост",
-                "create_host_cta": "Създаване на хост"
+                "create_host_cta": "Създаване на хост",
+                "option_key_placeholder": "напр. глас",
+                "option_value_placeholder": "напр. en_US-lessac-medium",
+                "add_option": "Добавяне на опция",
+                "remove_option": "Премахване на опцията"
             },
             "fields": {
                 "voice": "Глас",
@@ -1399,6 +1404,17 @@
     "faceted_filter": {
         "clear": "Изчистване на филтрите",
         "selected": "Избрани са {count}"
+    },
+    "clear": "Изчистване",
+    "pagination": {
+        "first_page": "Отидете на първата страница",
+        "previous_page": "Отидете на предишната страница",
+        "next_page": "Отидете на следващата страница",
+        "last_page": "Отидете на последната страница"
+    },
+    "data_table": {
+        "view": "Преглед",
+        "hide": "Скриване"
     },
     "sidebar": {
         "title": "Странична лента",

@@ -188,6 +188,10 @@ jobs:
           rm -rf dist music_assistant_frontend.egg-info
           python3 -m build
 
+      - name: Verify the package ships the frontend
+        if: steps.inspect_release.outputs.already_published != 'true'
+        run: .github/scripts/verify-python-package.sh
+
       - name: Create or verify tag
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
@@ -270,20 +274,10 @@ jobs:
         if: steps.inspect_release.outputs.already_published != 'true'
         run: |
           RELEASE_ID="${{ steps.prepare_draft.outputs.release_id }}"
+          # The verify step above already established that dist/ holds exactly
+          # one wheel and one source distribution, both carrying the frontend.
           shopt -s nullglob
-          WHEELS=(dist/*.whl)
-          SDISTS=(dist/*.tar.gz)
-          if (( ${#WHEELS[@]} != 1 || ${#SDISTS[@]} != 1 )); then
-            echo "::error::Expected one wheel and one source distribution."
-            exit 1
-          fi
-          ASSETS=("${WHEELS[@]}" "${SDISTS[@]}")
-          for ASSET in "${ASSETS[@]}"; do
-            if [[ ! -s "$ASSET" ]]; then
-              echo "::error::Release asset $ASSET is empty."
-              exit 1
-            fi
-          done
+          ASSETS=(dist/*.whl dist/*.tar.gz)
 
           read -r RELEASE_TAG IS_DRAFT <<< "$(
             gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \

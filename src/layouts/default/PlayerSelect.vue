@@ -209,9 +209,13 @@ import {
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
-import { isBuiltinPlayer, isPlayerActive } from "@/helpers/players";
+import {
+  isBuiltinPlayer,
+  isPlayerActive,
+  isSelectablePlayer,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
-import type { Player } from "@/plugins/api/interfaces";
+import { PlayerType, type Player } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
@@ -263,10 +267,12 @@ let lastInteractionWasKeyboard = false;
 let restoreFocusOnClose = false;
 let autoSelectedPlayerId: string | undefined;
 
-// PlayerSelect is the only surface that lists needs_setup players: a click here
-// launches the setup flow (see selectPlayer) instead of selecting/playing them.
+// PlayerSelect is the only surface that lists needs_setup players (a click here
+// launches the setup flow, see selectPlayer) and capture-only audio inputs
+// (informational rows, so the device stays discoverable).
 const orderedPlayers = useOrderedPlayers({
   allowNeedsSetup: true,
+  allowSources: true,
   selectedPlayerFirst: showSelectedPlayerFirst,
   activePlayersFirst: showActivePlayersFirst,
   includePausedAsActive: true,
@@ -418,12 +424,16 @@ function selectPlayer(player: Player) {
       kind: "player",
       playerId: player.player_id,
       onFlowEnded: (finished) => {
-        if (finished) activatePlayer(player.player_id);
+        if (finished && player.type !== PlayerType.SOURCE) {
+          activatePlayer(player.player_id);
+        }
       },
     });
     store.showPlayersMenu = false;
     return;
   }
+  // an audio input can't be a playback target; its row is informational
+  if (player.type === PlayerType.SOURCE) return;
   activatePlayer(player.player_id);
   store.showPlayersMenu = false;
 }
@@ -515,30 +525,28 @@ function selectDefaultPlayer() {
   if (lastPlayerId === BUILTIN_PLAYER_PREFERENCE) return selectBuiltinPlayer();
   if (lastPlayerId) {
     if (!(lastPlayerId in api.players)) return;
-    if (isSelectablePlayer(lastPlayerId)) return lastPlayerId;
+    if (isSelectablePlayerId(lastPlayerId)) return lastPlayerId;
   }
   const builtinPlayerId = selectBuiltinPlayer();
   if (builtinPlayerId) return builtinPlayerId;
   const selectablePlayers = orderedPlayers.value.filter((player) =>
-    isSelectablePlayer(player.player_id),
+    isSelectablePlayerId(player.player_id),
   );
   return (selectablePlayers.find(isPlayerActive) ?? selectablePlayers[0])
     ?.player_id;
 }
 
 function selectBuiltinPlayer() {
-  if (isSelectablePlayer(webPlayer.player_id)) {
+  if (isSelectablePlayerId(webPlayer.player_id)) {
     return webPlayer.player_id;
   }
-  if (isSelectablePlayer(store.companionPlayerId)) {
+  if (isSelectablePlayerId(store.companionPlayerId)) {
     return store.companionPlayerId;
   }
 }
 
-function isSelectablePlayer(playerId: string | null | undefined) {
-  if (!playerId) return false;
-  const player = api.players[playerId];
-  return player?.enabled && player.available && !player.needs_setup;
+function isSelectablePlayerId(playerId: string | null | undefined) {
+  return !!playerId && isSelectablePlayer(api.players[playerId]);
 }
 
 async function scrollSelectedPlayerIntoView() {

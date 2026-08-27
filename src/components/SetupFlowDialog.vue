@@ -231,7 +231,12 @@
           <Button variant="ghost" :disabled="busy" @click="close()">
             {{ $t("cancel") }}
           </Button>
-          <Button :disabled="!canSubmit" @click="submit">
+          <!-- a step that submits on pick has nothing left to confirm -->
+          <Button
+            v-if="!autoAdvanceEntry"
+            :disabled="!canSubmit"
+            @click="submit"
+          >
             <Spinner v-if="busy" class="size-4" />
             {{
               step.last_step
@@ -239,6 +244,12 @@
                 : $t("settings.setup_flow.next")
             }}
           </Button>
+          <div
+            v-else-if="busy"
+            class="flex h-9 items-center justify-center px-4"
+          >
+            <Spinner class="size-4" />
+          </div>
         </template>
 
         <template
@@ -322,6 +333,7 @@ import {
   type ConfigValueType,
   FlowStepType,
   SECURE_STRING_SUBSTITUTE,
+  SILENT_FINISH_STEP_ID,
   type SetupFlowStep,
 } from "@/plugins/api/interfaces";
 import { eventbus, type SetupFlowDialogEvent } from "@/plugins/eventbus";
@@ -435,6 +447,19 @@ const visibleFormEntries = computed(() =>
 const canSubmit = computed(
   () => !busy.value && allRequiredValuesPresent(formEntries.value),
 );
+
+// A step whose only field is a required list of options has nothing else to
+// fill in, so picking one submits it.
+const autoAdvanceEntry = computed(() => {
+  const interactive = visibleFormEntries.value.filter(
+    (entry) => !NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type),
+  );
+  if (interactive.length !== 1) return undefined;
+  const entry = interactive[0];
+  const isExpandedChoice =
+    entry.options.length > 0 && entry.expanded_options && !entry.multi_value;
+  return entry.required && isExpandedChoice ? entry : undefined;
+});
 
 const canOpenInstanceSettings = computed(
   () => launch.value?.kind === "provider" && !!step.value?.result?.instance_id,
@@ -571,6 +596,15 @@ function applyStep(newStep: SetupFlowStep) {
     launch.value.onFlowEnded?.(newStep.type === FlowStepType.FINISH);
   }
 
+  // a silent finish (e.g. a one-click device approval) needs no success screen
+  if (
+    newStep.type === FlowStepType.FINISH &&
+    newStep.step_id === SILENT_FINISH_STEP_ID
+  ) {
+    close(false);
+    return;
+  }
+
   if (newStep.type === FlowStepType.FORM) {
     // preserve typed values when the same form is re-served with validation errors
     const sameForm =
@@ -607,6 +641,10 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
 
 function onValueUpdate(entry: ConfigEntry, value: ConfigValueType) {
   entry.value = value;
+  if (entry.key === autoAdvanceEntry.value?.key) {
+    // submit() re-checks canSubmit, so the fresh value needs no validation here
+    void submit();
+  }
 }
 
 async function submit() {
