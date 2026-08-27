@@ -73,29 +73,7 @@ jobs:
         run: python3 -m build
 
       - name: Verify the Python package ships the frontend
-        run: |
-          shopt -s nullglob
-          WHEELS=(dist/*.whl)
-          SDISTS=(dist/*.tar.gz)
-          if (( ${#WHEELS[@]} != 1 || ${#SDISTS[@]} != 1 )); then
-            echo "::error::Expected one wheel and one source distribution in dist/."
-            exit 1
-          fi
-
-          # A missing frontend directory or a broken MANIFEST.in graft still
-          # builds cleanly and yields a metadata-only package, so check the
-          # payload instead of trusting the exit code.
-          WHEEL_FILES=$(unzip -Z1 "${WHEELS[0]}")
-          if ! grep -qx "music_assistant_frontend/index\.html" <<< "$WHEEL_FILES"; then
-            echo "::error::${WHEELS[0]##*/} does not contain music_assistant_frontend/index.html."
-            exit 1
-          fi
-
-          SDIST_FILES=$(tar -tzf "${SDISTS[0]}")
-          if ! grep -qx "[^/]*/music_assistant_frontend/index\.html" <<< "$SDIST_FILES"; then
-            echo "::error::${SDISTS[0]##*/} does not contain music_assistant_frontend/index.html."
-            exit 1
-          fi
+        run: .github/scripts/verify-python-package.sh
 
       # disable typecheck for now
       # - name: Typecheck
