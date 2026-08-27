@@ -39,28 +39,26 @@
           <div v-if="showMatchPolicy" class="flex flex-col gap-2 mt-2">
             <Label>{{ $t("import_playlist_match_policy_label") }}</Label>
             <RadioGroup v-model="matchPolicy" class="gap-2">
-              <div
+              <Label
                 v-for="option in matchPolicyOptions"
                 :key="option.value"
-                class="flex items-start gap-3 rounded-md border p-3"
+                :for="`import-playlist-policy-${option.value}`"
+                class="flex items-start gap-3 rounded-md border p-3 font-normal cursor-pointer"
               >
                 <RadioGroupItem
                   :id="`import-playlist-policy-${option.value}`"
                   :value="option.value"
                   class="mt-0.5"
                 />
-                <Label
-                  :for="`import-playlist-policy-${option.value}`"
-                  class="flex flex-1 flex-col items-start gap-1 font-normal"
-                >
+                <span class="flex flex-1 flex-col items-start gap-1">
                   <span class="text-sm font-medium">{{ option.title }}</span>
                   <span
                     class="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap"
                   >
                     {{ option.description }}
                   </span>
-                </Label>
-              </div>
+                </span>
+              </Label>
             </RadioGroup>
           </div>
         </div>
