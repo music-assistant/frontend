@@ -353,11 +353,13 @@ export const getMediaImageUrl = function (
 };
 
 /**
- * Check if an image provider is available.
+ * Check if an image can still be fetched.
  */
-const imageProviderIsAvailable = function (provider: string) {
-  if (provider === "http" || provider === "builtin") return true;
-  return api.getProvider(provider)?.available === true;
+const imageIsResolvable = function (img: MediaItemImage) {
+  // a full URL stays fetchable without the provider that supplied it
+  if (img.remotely_accessible) return true;
+  if (img.provider === "http" || img.provider === "builtin") return true;
+  return api.getProvider(img.provider)?.available === true;
 };
 
 /**
@@ -392,7 +394,7 @@ export const getMediaItemImage = function (
     "image" in mediaItem &&
     mediaItem.image &&
     mediaItem.image.type == type &&
-    imageProviderIsAvailable(mediaItem.image.provider)
+    imageIsResolvable(mediaItem.image)
   )
     return mediaItem.image;
 
@@ -405,8 +407,7 @@ export const getMediaItemImage = function (
   // handle regular image within mediaitem
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (img.type == type && imageProviderIsAvailable(img.provider))
-        return img;
+      if (img.type == type && imageIsResolvable(img)) return img;
     }
   }
 

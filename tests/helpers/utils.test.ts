@@ -4,6 +4,7 @@ import {
   formatDuration,
   formatRelativeTime,
   getExternalLinkUrl,
+  getMediaItemImage,
   hexToRgb,
   kebabize,
   numberRange,
@@ -13,7 +14,12 @@ import {
   sleep,
   truncateString,
 } from "@/helpers/utils";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import { ImageType } from "@/plugins/api/interfaces";
+import type {
+  MediaItemImage,
+  MediaItemPalette,
+  MediaItemType,
+} from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock } = vi.hoisted(() => ({
@@ -22,6 +28,7 @@ const { apiMock } = vi.hoisted(() => ({
       value: null as { server_version: string } | null,
     },
     players: {},
+    getProvider: vi.fn(),
   },
 }));
 
@@ -35,6 +42,7 @@ vi.mock("@/plugins/breakpoint", () => ({
 
 beforeEach(() => {
   apiMock.serverInfo.value = null;
+  apiMock.getProvider.mockReset();
 });
 
 afterEach(() => {
@@ -397,6 +405,115 @@ describe("utility functions", () => {
 
     it("handles single number range", () => {
       expect(numberRange(5, 5)).toEqual([5]);
+    });
+  });
+});
+
+describe("getMediaItemImage", () => {
+  const image = function (overrides: Partial<MediaItemImage> = {}) {
+    return {
+      type: ImageType.THUMB,
+      path: "https://theaudiodb.com/cover.jpg",
+      provider: "theaudiodb",
+      remotely_accessible: true,
+      ...overrides,
+    } as MediaItemImage;
+  };
+
+  const albumWithImages = function (images: MediaItemImage[]) {
+    return { metadata: { images } } as unknown as MediaItemType;
+  };
+
+  it("keeps a remotely accessible image when its provider is not loaded", () => {
+    apiMock.getProvider.mockReturnValue(undefined);
+    const img = image();
+
+    expect(getMediaItemImage(albumWithImages([img]))).toBe(img);
+  });
+
+  it("drops a provider relative image when its provider is not loaded", () => {
+    apiMock.getProvider.mockReturnValue(undefined);
+    const img = image({ path: "covers/1.jpg", remotely_accessible: false });
+
+    expect(getMediaItemImage(albumWithImages([img]))).toBeUndefined();
+  });
+
+  it("keeps a provider relative image while its provider is available", () => {
+    apiMock.getProvider.mockReturnValue({ available: true });
+    const img = image({ path: "covers/1.jpg", remotely_accessible: false });
+
+    expect(getMediaItemImage(albumWithImages([img]))).toBe(img);
+  });
+
+  it("skips an unusable image and returns the next usable one", () => {
+    apiMock.getProvider.mockImplementation((provider: string) =>
+      provider === "filesystem" ? { available: true } : undefined,
+    );
+    const unusable = image({
+      path: "covers/1.jpg",
+      remotely_accessible: false,
+    });
+    const usable = image({
+      path: "covers/2.jpg",
+      provider: "filesystem",
+      remotely_accessible: false,
+    });
+
+    expect(getMediaItemImage(albumWithImages([unusable, usable]))).toBe(usable);
+  });
+
+  it("only returns an image of the requested type", () => {
+    apiMock.getProvider.mockReturnValue(undefined);
+    const landscape = image({ type: ImageType.LANDSCAPE });
+
+    expect(
+      getMediaItemImage(albumWithImages([landscape]), ImageType.FANART),
+    ).toBeUndefined();
+  });
+
+  it("falls back to a landscape image when there is no thumb", () => {
+    apiMock.getProvider.mockReturnValue(undefined);
+    const landscape = image({ type: ImageType.LANDSCAPE });
+
+    expect(getMediaItemImage(albumWithImages([landscape]))).toBe(landscape);
+  });
+
+  it("drops an image from a provider that is loaded but unavailable", () => {
+    apiMock.getProvider.mockReturnValue({ available: false });
+    const img = image({ path: "covers/1.jpg", remotely_accessible: false });
+
+    expect(getMediaItemImage(albumWithImages([img]))).toBeUndefined();
+  });
+
+  it("keeps a builtin image without consulting the providers", () => {
+    apiMock.getProvider.mockReturnValue(undefined);
+    const img = image({
+      path: "covers/1.jpg",
+      provider: "builtin",
+      remotely_accessible: false,
+    });
+
+    expect(getMediaItemImage(albumWithImages([img]))).toBe(img);
+    expect(apiMock.getProvider).not.toHaveBeenCalled();
+  });
+
+  describe("image on an item mapping", () => {
+    const mappingWithImage = function (img: MediaItemImage) {
+      return { image: img } as unknown as MediaItemType;
+    };
+
+    it("keeps a remotely accessible image when its provider is not loaded", () => {
+      apiMock.getProvider.mockReturnValue(undefined);
+      const img = image();
+
+      expect(getMediaItemImage(mappingWithImage(img))).toBe(img);
+    });
+
+    it("drops a provider relative image when its provider is not loaded", () => {
+      apiMock.getProvider.mockReturnValue(undefined);
+      const img = image({ path: "covers/1.jpg", remotely_accessible: false });
+
+      expect(getMediaItemImage(mappingWithImage(img))).toBeUndefined();
     });
   });
 });
