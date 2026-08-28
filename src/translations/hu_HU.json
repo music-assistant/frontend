@@ -116,7 +116,6 @@
         "reload": "Újratöltés",
         "save": "Mentés",
         "settings": "Beállítások",
-        "setup_provider": "Szolgáltató beállítása: {0}",
         "sync": "Szinkronizálás most",
         "sync_running": "A szolgáltató szinkronizálása folyamatban van",
         "core_modules": "Alapmodulok",

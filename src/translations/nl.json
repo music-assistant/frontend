@@ -120,7 +120,6 @@
         "reload": "Herladen",
         "save": "Opslaan",
         "settings": "Instellingen",
-        "setup_provider": "Provider: {0} instellen",
         "sync": "Nu synchroniseren",
         "sync_running": "Deze provider wordt nu gesynchroniseerd",
         "core_modules": "Systeemmodule",

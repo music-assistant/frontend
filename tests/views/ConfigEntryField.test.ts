@@ -69,6 +69,12 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
   ],
 ];
 
+// the two fields that render their own header above the control
+const HEADED_FIELDS: [string, ConfigEntryUI][] = [
+  ["pairing code", pairingCodeEntry()],
+  ["expanded options", expandedOptionsEntry()],
+];
+
 describe("ConfigEntryField", () => {
   it.each([ConfigEntryType.INTEGER, ConfigEntryType.FLOAT])(
     "disables the slider and the number input of a ranged %s entry together",
@@ -227,6 +233,33 @@ describe("ConfigEntryField", () => {
     expect(states(false)).toEqual(Array.from({ length: 6 }, () => false));
     expect(states(true)).toEqual(Array.from({ length: 6 }, () => true));
   });
+
+  // an empty label is how a step drops the header above a special field; a missing
+  // one still needs the key as a fallback
+  it.each(HEADED_FIELDS)(
+    "renders no header above a %s field with an empty label",
+    (_name, confEntry) => {
+      const wrapper = mountField({ ...confEntry, label: "" });
+
+      expect(
+        wrapper.get('[role="group"]').attributes("aria-labelledby"),
+      ).toBeUndefined();
+      expect(wrapper.text()).not.toContain(confEntry.key);
+    },
+  );
+
+  it.each(HEADED_FIELDS)(
+    "heads a %s field without a label with its key",
+    (_name, confEntry) => {
+      const wrapper = mountField({ ...confEntry, label: null });
+
+      const labelId = wrapper
+        .get('[role="group"]')
+        .attributes("aria-labelledby");
+      expect(labelId).toBeDefined();
+      expect(wrapper.get(`#${labelId}`).text()).toBe(confEntry.key);
+    },
+  );
 
   it("keeps a pairing code entry without a format usable as a text input", () => {
     const wrapper = mountField(pairingCodeEntry(null));

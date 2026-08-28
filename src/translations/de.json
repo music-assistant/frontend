@@ -120,7 +120,6 @@
         "reload": "Aktualisieren",
         "save": "Speichern",
         "settings": "Einstellungen",
-        "setup_provider": "Anbieter einrichten: {0}",
         "sync": "Jetzt Änderungen synchronisieren",
         "sync_running": "Dieser Anbieter wird jetzt synchronisiert",
         "core_modules": "Kernmodule",

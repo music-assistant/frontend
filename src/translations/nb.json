@@ -116,7 +116,6 @@
         "reload": "Last inn på nytt",
         "save": "Lagre",
         "settings": "Innstillinger",
-        "setup_provider": "Oppsett leverandør: {0}",
         "sync": "Synkroniser nå",
         "sync_running": "Denne leverandøren blir nå synkronisert",
         "core_modules": "Kjernemoduler",

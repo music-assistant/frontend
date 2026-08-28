@@ -120,7 +120,6 @@
         "reload": "Ponovo učitajte",
         "save": "Sačuvajte",
         "settings": "Podešavanja",
-        "setup_provider": "Podestite integraciju: {0}",
         "sync": "Sinhronizujte odmah",
         "sync_running": "Ova integracija se trenutno sinhronizuje",
         "core_modules": "Sistemski moduli",

@@ -116,7 +116,6 @@
         "reload": "Ricarica",
         "save": "Salva",
         "settings": "Impostazioni",
-        "setup_provider": "Impostazioni provider: {0}",
         "sync": "Sincronizza ora",
         "sync_running": "Questo provider si sta sincronizzando",
         "core_modules": "Moduli principali",

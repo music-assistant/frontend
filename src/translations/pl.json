@@ -116,7 +116,6 @@
         "reload": "Odśwież",
         "save": "Zapisz",
         "settings": "Ustawienia",
-        "setup_provider": "Konfiguracja dostawcy: {0}",
         "sync": "Synchronizuj teraz",
         "sync_running": "Ten dostawca jest teraz synchronizowany",
         "core_modules": "Główne moduły",
