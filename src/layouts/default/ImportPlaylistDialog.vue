@@ -48,11 +48,13 @@
                 <RadioGroupItem
                   :id="`import-playlist-policy-${option.value}`"
                   :value="option.value"
+                  :aria-describedby="`import-playlist-policy-${option.value}-description`"
                   class="mt-0.5"
                 />
                 <span class="flex flex-1 flex-col items-start gap-1">
                   <span class="text-sm font-medium">{{ option.title }}</span>
                   <span
+                    :id="`import-playlist-policy-${option.value}-description`"
                     class="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap"
                   >
                     {{ option.description }}

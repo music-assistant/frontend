@@ -218,4 +218,20 @@ describe("ImportPlaylistDialog", () => {
       undefined,
     );
   });
+
+  it("associates each match policy option's description via aria-describedby", async () => {
+    const wrapper = mountDialog();
+    open();
+    await wrapper.vm.$nextTick();
+
+    const radio = wrapper.get(
+      `#import-playlist-policy-${PlaylistMatchPolicy.EXACT}`,
+    );
+    const descriptionId = radio.attributes("aria-describedby")!;
+
+    expect(descriptionId).toBe(
+      `import-playlist-policy-${PlaylistMatchPolicy.EXACT}-description`,
+    );
+    expect(wrapper.find(`#${descriptionId}`).exists()).toBe(true);
+  });
 });
