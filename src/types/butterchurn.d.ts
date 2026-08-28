@@ -10,12 +10,8 @@ declare module "butterchurn" {
   export interface ButterchurnVisualizer {
     render(opts?: { audioLevels?: ButterchurnAudioLevels }): void;
     loadPreset(preset: object, blendTimeSec?: number): Promise<void>;
-    // present from fork release ma.3; callers optional-call it
-    setMaxBlurPasses?(passes: number): void;
     // present from the gpu-pipeline fork builds; null when unsupported
     getGpuTimings?(): Record<string, number> | null;
-    // clamp on custom shape instances (gpu-pipeline fork builds)
-    setMaxShapeInstances?(maxInstances: number): void;
     // engine-side artwork tint (gpu-pipeline fork builds)
     setTint?(rgb: readonly [number, number, number] | null): void;
     // present from the palette-colors fork branch; callers optional-call it

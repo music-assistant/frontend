@@ -73,8 +73,9 @@ export interface VisualizerEngine {
    * instead of washing the whole frame in a single hue. A no-op on engines
    * without the capability. Transitions over the same 1.5s as the tint.
    *
-   * :param colors: Three 0-255 rgb triples (waveform, outer border, inner
-   *   border), or null to fade them back to the preset's own colors.
+   * :param colors: Four 0-255 rgb triples (waveform, outer border, inner
+   *   border, motion vectors), or null to fade them back to the preset's own
+   *   colors.
    */
   setPaletteColors(
     colors: readonly (readonly [number, number, number])[] | null,
@@ -169,8 +170,49 @@ const STANDARD_TICKS_MS = [240, 165, 144, 120, 100, 90, 75, 60, 50, 30].map(
   (hz) => 1000 / hz,
 );
 const TICK_FIT_TOLERANCE = 0.06;
+// pacing tolerance: a quarter of the target interval, capped at one tick
+const PACING_TOLERANCE_SHARE = 0.25;
+// float slop, so 25.000000000000004 / 8.333333333333334 lands on 3 ticks, not 4
+const PACING_TICK_EPSILON = 1e-6;
 
-function fitStandardTick(gaps: Float64Array): number | null {
+/**
+ * The gap after which the pacing gate admits a render.
+ *
+ * rAF fires on the tick grid, so admitting the tick nearest the target
+ * interval stays grid-aligned (no judder), and a GPU-throttled loop whose gaps
+ * already exceed the interval is never skipped further.
+ */
+function pacingThresholdMs(targetIntervalMs: number, tickMs: number): number {
+  return (
+    targetIntervalMs -
+    Math.min(tickMs, targetIntervalMs * PACING_TOLERANCE_SHARE)
+  );
+}
+
+/**
+ * The interval the loop actually renders at: the smallest whole number of
+ * display ticks that clears the pacing gate.
+ *
+ * The maxFps option is only an upper bound. Renders land on the tick grid, so
+ * a 30fps cap on a 120Hz panel paces at every third tick (40fps), not 30, and
+ * measuring against the cap would under-read both lateness and shortfall.
+ */
+export function pacedIntervalMs(
+  targetIntervalMs: number,
+  tickMs: number,
+): number {
+  if (!targetIntervalMs) return tickMs;
+  const ticks = Math.max(
+    1,
+    Math.ceil(
+      pacingThresholdMs(targetIntervalMs, tickMs) / tickMs -
+        PACING_TICK_EPSILON,
+    ),
+  );
+  return ticks * tickMs;
+}
+
+export function fitStandardTick(gaps: Float64Array): number | null {
   // slowest rate first: every gap trivially fits a fast-enough tick's
   // multiples, so the LARGEST tick that fits is the informative one
   for (let i = STANDARD_TICKS_MS.length - 1; i >= 0; i--) {
@@ -361,13 +403,10 @@ export async function createVisualizerEngine(
     return scaledFrame;
   };
 
-  // Pacing is a time gate with half-tick tolerance: rAF fires on the tick
-  // grid, so admitting the tick nearest the target interval stays grid-aligned
-  // (no judder), and a GPU-throttled loop whose gaps already exceed the
-  // interval is never skipped further.
+  // Pacing is a time gate on the measured tick; see pacingThresholdMs.
   let tickMs = DEFAULT_TICK_MS;
-  const baseMaxFps = options?.maxFps ?? 0;
-  let targetIntervalMs = baseMaxFps ? 1000 / baseMaxFps : 0;
+  const maxFps = options?.maxFps ?? 0;
+  const targetIntervalMs = maxFps ? 1000 / maxFps : 0;
   let lastTickAt = 0;
   let windowTicks = 0;
   const windowDeltas = new Float64Array(REFRESH_WINDOW_TICKS);
@@ -429,13 +468,10 @@ export async function createVisualizerEngine(
       }
     }
     lastTickAt = now;
-    // tolerance scales with the target: a quarter interval capped at one tick,
-    // so reduced-rate targets admit throttled ticks instead of over-quantizing
     if (
       targetIntervalMs &&
       lastRenderAt &&
-      now - lastRenderAt <
-        targetIntervalMs - Math.min(tickMs, targetIntervalMs * 0.25)
+      now - lastRenderAt < pacingThresholdMs(targetIntervalMs, tickMs)
     ) {
       return;
     }
@@ -479,7 +515,9 @@ export async function createVisualizerEngine(
       perfBlockedMs = 0;
       return;
     }
-    const expectedIntervalMs = Math.max(targetIntervalMs, tickMs);
+    // measured against the cadence the loop actually paces at, not the maxFps
+    // cap: the two differ whenever the cap is not a whole divisor of the panel
+    const expectedIntervalMs = pacedIntervalMs(targetIntervalMs, tickMs);
     // full-tick tolerance: the controller's thresholds treat "late" as
     // grossly late, not one tick shy of perfect
     if (renderedAt && now - renderedAt > expectedIntervalMs + tickMs) {
@@ -492,7 +530,7 @@ export async function createVisualizerEngine(
     if (elapsed >= PERF_SAMPLE_WINDOW_MS) {
       options.onPerfSample({
         fps: (perfRenders * 1000) / elapsed,
-        targetFps: 1000 / Math.max(targetIntervalMs, tickMs),
+        targetFps: 1000 / expectedIntervalMs,
         lateRatio: perfLateRenders / perfRenders,
         pixels: width * height,
         renderMs: perfRenderMs / perfRenders,
@@ -575,10 +613,6 @@ export async function createVisualizerEngine(
     setProfile(next: QualityProfile) {
       if (destroyed) return;
       profile = next;
-      // a profile may reduce the pacing target (CPU-bound preset remedy)
-      const fps = baseMaxFps;
-      targetIntervalMs = fps ? 1000 / fps : 0;
-      // optional-called: release builds without the clamp simply ignore it
       applySize();
       // a resize mid-measurement would be blamed on the new size
       perfWindowStart = 0;

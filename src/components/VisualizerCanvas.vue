@@ -41,11 +41,11 @@ import {
   isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { visualizerPreference } from "@/composables/visualizer/useVisualizer";
+import { useVisualizerPalette } from "@/composables/visualizer/useVisualizerPalette";
 import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
-  VISUALIZER_PALETTE_RAMP_DEFAULT,
 } from "@/composables/visualizer/state";
 import {
   createAdaptiveQualityController,
@@ -53,9 +53,9 @@ import {
 } from "@/helpers/visualizer/adaptiveQuality";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
-import { hexToRgb, paletteFromServer } from "@/helpers/utils";
+import { hexToRgb } from "@/helpers/utils";
 import api from "@/plugins/api";
-import { MediaItemPalette, PlaybackState } from "@/plugins/api/interfaces";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import {
@@ -65,7 +65,6 @@ import {
   reportVisualizerCapability,
   reportVisualizerRender,
 } from "@/plugins/visualizer-relay";
-import vuetify from "@/plugins/vuetify";
 
 // Settle time before winding down: track changes and buffer stalls drop a
 // player out of "playing" for a moment, and halting on those reads as a stutter.
@@ -127,14 +126,6 @@ const beatSwitchPref = visualizerPreference<boolean>(
   "visualizer_beat_switch",
   false,
 );
-const paletteColorsPref = visualizerPreference<boolean>(
-  "visualizer_palette_colors",
-  false,
-);
-const paletteRampPref = visualizerPreference<number>(
-  "visualizer_palette_ramp",
-  VISUALIZER_PALETTE_RAMP_DEFAULT,
-);
 const beatDwellPref = visualizerPreference<number>("visualizer_beat_dwell", 30);
 
 // A dashboard viewer is a cast receiver or TV: on TV compositors the CSS
@@ -182,79 +173,25 @@ const playbackPaused = computed(() => {
 
 const colorPalette = ref<ColorPalette>({});
 
-// Hand the relay's palette (validated there, absent fields as null) to the
-// same helper the OSD uses, so the two can only ever pick the same color.
-const serverPalette = computed<MediaItemPalette>(() => {
-  const wire = colorPalette.value;
-  return {
-    background_dark: wire.background_dark ?? null,
-    background_light: wire.background_light ?? null,
-    primary: wire.primary ?? null,
-    accent: wire.accent ?? null,
-    on_dark: wire.on_dark ?? null,
-    on_light: wire.on_light ?? null,
-  };
-});
-
-// The theme pick mirrors Player.vue's artwork tint; a missing variant means no
-// tint rather than a stand-in color the rest of the app would never show.
-const tintColor = computed(() => {
-  const { lightColor, darkColor } = paletteFromServer(serverPalette.value);
-  const useDark = props.forceDarkPalette || vuetify.theme.current.value.dark;
-  return (useDark ? darkColor : lightColor) || null;
+const {
+  tintColor,
+  tintForEngine,
+  paletteColors,
+  paletteActive,
+  paletteRamp,
+  paletteRampStrength,
+  rampActive,
+} = useVisualizerPalette({
+  palette: colorPalette,
+  forceDark: () => props.forceDarkPalette,
+  paletteColorsSupported: paletteSupported,
+  paletteRampSupported: rampSupported,
 });
 
 // mix-blend-mode: color keeps the preset's own luminance, just shifts hue.
 const tintStyle = computed(() => ({
   backgroundColor: tintColor.value ?? "transparent",
 }));
-
-// Only ever one side of the palette: mixing on_dark with on_light would put two
-// contrast families on screen at once. Backgrounds stay unused, they are not
-// meant for the thin foreground elements these three colors land on.
-const paletteColors = computed<[number, number, number][] | null>(() => {
-  if (!paletteColorsPref.value) return null;
-  const wire = colorPalette.value;
-  const useDark = props.forceDarkPalette || vuetify.theme.current.value.dark;
-  const foreground = useDark ? wire.on_light : wire.on_dark;
-  if (!foreground || !wire.primary || !wire.accent) return null;
-  // waveform, outer border, inner border, motion vectors
-  return [foreground, wire.primary, wire.accent, foreground];
-});
-
-// A whole-frame tint would flatten all three back to a single hue.
-const paletteActive = computed(
-  () => paletteSupported.value && paletteColors.value !== null,
-);
-
-// Rec.601 luma, the weighting the engine's own blend uses.
-const luma = ([r, g, b]: [number, number, number]) =>
-  0.3 * r + 0.59 * g + 0.11 * b;
-
-// Anchors for the engine's luminance ramp, one side of the palette only and
-// ordered dark to light. primary and accent have no variants, so they sit
-// wherever their own brightness puts them.
-const paletteRamp = computed<[number, number, number][] | null>(() => {
-  if (paletteRampPref.value <= 0) return null;
-  const wire = colorPalette.value;
-  const useDark = props.forceDarkPalette || vuetify.theme.current.value.dark;
-  const anchors = [
-    useDark ? wire.background_dark : wire.background_light,
-    wire.primary,
-    wire.accent,
-    useDark ? wire.on_dark : wire.on_light,
-  ].filter((color): color is [number, number, number] => !!color);
-  if (anchors.length === 0) return null;
-  return anchors.sort((first, second) => luma(first) - luma(second));
-});
-
-const rampActive = computed(
-  () => rampSupported.value && paletteRamp.value !== null,
-);
-
-const paletteRampStrength = computed(
-  () => Math.min(Math.max(paletteRampPref.value, 0), 100) / 100,
-);
 
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
@@ -372,8 +309,7 @@ const initialize = async () => {
     // Fleet data: this display renders MilkDrop. Cast receivers and TVs have
     // no reachable console, so this is where their support becomes visible.
     void reportVisualizerCapability("butterchurn", engine.renderer);
-  }
-  if (!engine) {
+  } else {
     // WebGL2 unavailable or init failure: leave the layer transparent. Report it
     // over the relay before closing, so displays with no reachable console (cast
     // receivers, kiosks) still say why they are showing a plain background.
@@ -442,12 +378,9 @@ const createEngine = async () => {
   }
 };
 
-// The ramp is the flat tint's replacement, not an extra layer on top of it:
-// it recolors by brightness where the tint forces one hue on everything.
 const applyTint = () => {
   if (!shaderTintActive.value) return;
-  const replaced = paletteActive.value || rampActive.value;
-  const tint = replaced ? null : tintColor.value;
+  const tint = tintForEngine.value;
   engine?.setTint(tint ? hexToRgb(tint) : null);
 };
 
@@ -461,15 +394,9 @@ const applyPaletteRamp = () => {
   engine?.setPaletteRamp(paletteRamp.value, paletteRampStrength.value);
 };
 
-watch(tintColor, applyTint);
-watch(paletteColors, () => {
-  applyPaletteColors();
-  applyTint();
-});
-watch([paletteRamp, paletteRampStrength], () => {
-  applyPaletteRamp();
-  applyTint();
-});
+watch(tintForEngine, applyTint);
+watch(paletteColors, applyPaletteColors);
+watch([paletteRamp, paletteRampStrength], applyPaletteRamp);
 
 watch(playbackPaused, (isPaused) => {
   if (pauseTimer !== null) {

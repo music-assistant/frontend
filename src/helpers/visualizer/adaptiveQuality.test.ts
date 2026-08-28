@@ -9,11 +9,8 @@ import type { VisualizerPerfSample } from "@/composables/visualizer/useVisualize
 import {
   createAdaptiveQualityController,
   type AdaptiveQualityController,
-} from "@/helpers/visualizer/adaptiveQuality";
-import {
-  ADAPTIVE_LADDER,
-  ADAPTIVE_START_LEVEL,
-} from "@/helpers/visualizer/quality";
+} from "./adaptiveQuality";
+import { ADAPTIVE_LADDER, ADAPTIVE_START_LEVEL } from "./quality";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const sample = (
@@ -185,6 +182,47 @@ describe("the adaptive quality controller", () => {
     expect(applyProfile).toHaveBeenCalledTimes(applied);
     expect(notes(report).filter((note) => note === "stepped up")).toHaveLength(
       1,
+    );
+  });
+
+  it("reports being pinned by a blocked level, once", () => {
+    controller.onPerfSample(slow());
+    controller.onPerfSample(slow());
+    for (let i = 0; i < 6; i++) controller.onPerfSample(good());
+    controller.onPerfSample(slow());
+    controller.onPerfSample(slow());
+    for (let i = 0; i < 24; i++) controller.onPerfSample(good());
+    expect(
+      notes(report).filter((note) => note === "pinned at ceiling"),
+    ).toHaveLength(1);
+  });
+
+  it("never calls the top of the ladder a ceiling", () => {
+    // clean from the start: it climbs to level 0 and rests there, which is
+    // headroom, not a level something failed at
+    for (let i = 0; i < 30; i++) controller.onPerfSample(good());
+    expect(notes(report)).toContain("stepped up");
+    expect(notes(report)).not.toContain("pinned at ceiling");
+  });
+
+  it("unblocks the failed levels when the preset changes", () => {
+    // pin the start level with two failures, as above
+    controller.onPerfSample(slow());
+    controller.onPerfSample(slow());
+    for (let i = 0; i < 6; i++) controller.onPerfSample(good());
+    controller.onPerfSample(slow());
+    controller.onPerfSample(slow());
+    const pinned = controller.currentProfile();
+
+    // A heavy preset must not cap the display for the rest of the session:
+    // the next preset is a fresh bottleneck profile, so the blocked levels go
+    // with the not-fill-bound verdict.
+    controller.onPerfSample(sample({ preset: "another preset" }));
+    for (let i = 0; i < 12; i++)
+      controller.onPerfSample(sample({ preset: "another preset" }));
+    expect(controller.currentProfile()).not.toBe(pinned);
+    expect(ADAPTIVE_LADDER.indexOf(controller.currentProfile())).toBeLessThan(
+      ADAPTIVE_LADDER.indexOf(pinned),
     );
   });
 

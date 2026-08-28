@@ -3,8 +3,8 @@
  * device-pixel-ratio cap, warp mesh density, and FXAA.
  *
  * Rendering cost scales roughly with renderScale² × dpr² (GPU fill) and
- * mesh vertex count (per-vertex preset equations, CPU-bound on the v2
- * engine), so the tiers span tablet-friendly to full retina.
+ * mesh vertex count (per-vertex preset equations), so the tiers span
+ * tablet-friendly to full retina.
  */
 
 export type VisualizerQuality = "low" | "medium" | "high" | "native";

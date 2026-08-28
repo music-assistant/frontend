@@ -17,3 +17,4 @@ export const VISUALIZER_OPACITY_DEFAULT = 40;
 // sliding freely; 0 is off and skips the shader work entirely.
 export const VISUALIZER_PALETTE_RAMP_STEP = 25;
 export const VISUALIZER_PALETTE_RAMP_DEFAULT = 75;
+export const VISUALIZER_PALETTE_COLORS_DEFAULT = true;

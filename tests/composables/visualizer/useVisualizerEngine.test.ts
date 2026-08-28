@@ -8,6 +8,8 @@ import {
   ATTACK_MS,
   createVisualizerEngine,
   DECAY_MS,
+  fitStandardTick,
+  pacedIntervalMs,
   type VisualizerEngine,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -190,5 +192,71 @@ describe("createVisualizerEngine pause envelope", () => {
     await engine!.loadPresetByName("preset", 2.7);
 
     expect(loadPreset).toHaveBeenCalledWith(expect.anything(), 0);
+  });
+});
+
+/**
+ * The maxFps option is only an upper bound: renders land on the tick grid, so
+ * the cadence the loop actually holds is the panel rate over a whole divisor.
+ * Reporting the cap instead of that cadence would under-read both the fps
+ * shortfall and the lateness the adaptive controller steps on.
+ */
+describe("pacedIntervalMs", () => {
+  const HZ = (hz: number) => 1000 / hz;
+  const CAP_30 = 1000 / 30;
+
+  it("matches the cap when it is a whole divisor of the panel", () => {
+    expect(pacedIntervalMs(CAP_30, HZ(60))).toBeCloseTo(HZ(30), 6);
+  });
+
+  it("paces faster than a 30fps cap on a 120Hz panel", () => {
+    // every third tick, not every fourth: 40fps, which is what the gate admits
+    expect(pacedIntervalMs(CAP_30, HZ(120))).toBeCloseTo(HZ(40), 6);
+    expect(1000 / pacedIntervalMs(CAP_30, HZ(120))).toBeCloseTo(40, 6);
+  });
+
+  it("paces slower than the cap when no divisor reaches it", () => {
+    // a 50Hz panel can only do 25fps under a 30fps cap
+    expect(pacedIntervalMs(CAP_30, HZ(50))).toBeCloseTo(HZ(25), 6);
+  });
+
+  it("lands on whole ticks for every standard panel rate", () => {
+    for (const hz of [50, 60, 75, 90, 100, 120, 144, 165, 240]) {
+      const tick = HZ(hz);
+      const ticks = pacedIntervalMs(CAP_30, tick) / tick;
+      expect(ticks).toBeCloseTo(Math.round(ticks), 6);
+      expect(ticks).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it("renders every tick when nothing caps the rate", () => {
+    expect(pacedIntervalMs(0, HZ(120))).toBe(HZ(120));
+  });
+});
+
+describe("fitStandardTick", () => {
+  const gaps = (ms: number, jitter = 0) =>
+    Float64Array.from({ length: 120 }, (_, i) =>
+      i % 2 ? ms + jitter : ms - jitter,
+    );
+
+  it("recognises an unthrottled panel rate", () => {
+    expect(fitStandardTick(gaps(1000 / 120))).toBeCloseTo(1000 / 120, 6);
+    expect(fitStandardTick(gaps(1000 / 60))).toBeCloseTo(1000 / 60, 6);
+  });
+
+  it("reads a throttled 120Hz window as the rate its gaps prove", () => {
+    // every other tick dropped: the window can only prove 60Hz, and the
+    // engine's latch keeps the faster rate it has already seen
+    expect(fitStandardTick(gaps(1000 / 60))).toBeCloseTo(1000 / 60, 6);
+  });
+
+  it("tolerates jitter inside the fit band", () => {
+    expect(fitStandardTick(gaps(1000 / 60, 0.4))).toBeCloseTo(1000 / 60, 6);
+  });
+
+  it("gives up on a window no standard rate explains", () => {
+    const wild = Float64Array.from({ length: 120 }, (_, i) => 5 + (i % 7) * 9);
+    expect(fitStandardTick(wild)).toBeNull();
   });
 });

@@ -398,6 +398,7 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  VISUALIZER_PALETTE_COLORS_DEFAULT,
   VISUALIZER_PALETTE_RAMP_DEFAULT,
   VISUALIZER_PALETTE_RAMP_STEP,
 } from "@/composables/visualizer/state";
@@ -428,7 +429,10 @@ const presetModePref = getPreference<string>(
   "random",
 );
 const presetPref = getPreference("visualizer_preset", "");
-const paletteColorsPref = getPreference("visualizer_palette_colors", false);
+const paletteColorsPref = getPreference(
+  "visualizer_palette_colors",
+  VISUALIZER_PALETTE_COLORS_DEFAULT,
+);
 const paletteRampPref = getPreference(
   "visualizer_palette_ramp",
   VISUALIZER_PALETTE_RAMP_DEFAULT,

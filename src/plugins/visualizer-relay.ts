@@ -153,7 +153,9 @@ export function installVisualizerErrorReporting(): void {
  * Record how a display is actually rendering, in the server log.
  *
  * Cast receivers have no reachable console and no devtools, so an adaptive
- * display otherwise gives no way to tell what it settled on or why.
+ * display otherwise gives no way to tell what it settled on or why. Sent on
+ * every ladder move plus a heartbeat every TV_STEADY_REPORT_EVERY samples, so
+ * a resting display still reports about once a minute.
  *
  * @param sample - the measured render performance behind this report.
  * @param level - the adaptive ladder level in use when it was measured.
@@ -164,6 +166,8 @@ export async function reportVisualizerRender(
   level: number,
   note: string,
 ): Promise<void> {
+  // the hardcoded capability fields below only hold for a rendering display
+  if (!authManager.isDashboardViewer()) return;
   if (!api.supportsDashboardVisualizer) return;
   try {
     await api.sendCommand("milkdrop_visualizer/report_capability", {

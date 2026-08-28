@@ -28,6 +28,8 @@ function packPresets(module: unknown): PresetMap {
     if (candidate && typeof (candidate as PresetPack).getPresets === "function")
       return (candidate as PresetPack).getPresets();
   }
+  // deepest nesting first: an interop wrapper's own keys would otherwise
+  // match before the preset map it wraps
   for (const candidate of [...candidates].reverse()) {
     if (!candidate || typeof candidate !== "object") continue;
     const entries = Object.entries(candidate).filter(

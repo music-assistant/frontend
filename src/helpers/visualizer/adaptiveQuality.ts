@@ -33,8 +33,8 @@ const TV_FPS_SHORTFALL = 0.75;
 const TV_LOW_SAMPLES_TO_STEP = 2;
 const TV_GOOD_SAMPLES_TO_CLIMB = 6;
 const TV_SAMPLES_TO_SETTLE = 5;
-// a level that could not hold twice is not tried again, so the ladder
-// settles instead of oscillating
+// a level that could not hold twice is not tried again for this preset, so
+// the ladder settles instead of oscillating
 const TV_FAILURES_BEFORE_BLOCKED = 2;
 // minimum speed-up for a step down to count as having helped ...
 const TV_STEP_DOWN_PAYOFF = 1.15;
@@ -81,6 +81,7 @@ export function createAdaptiveQualityController(
   let fpsBeforeStepDown = 0;
   let awaitingStepDownVerdict = false;
   let floorReported = false;
+  let ceilingReported = false;
   let warmupSamples = 0;
   let samplesSinceReport = 0;
   let lastPreset: string | undefined;
@@ -126,13 +127,20 @@ export function createAdaptiveQualityController(
       lastPreset = sample.preset;
       return;
     }
-    // a new preset is a new bottleneck profile: reported for log attribution,
-    // and the not-fill-bound conclusion is re-armed rather than kept for life
+    // A new preset is a new bottleneck profile, so every conclusion drawn
+    // about the old one is dropped: the not-fill-bound verdict and the blocked
+    // levels alike. Keeping the ceiling would let one heavy preset pin the
+    // display for the rest of the session, since the climb is gated on it.
+    // The climb still needs TV_GOOD_SAMPLES_TO_CLIMB clean samples, which
+    // bounds the re-armed ladder to about one probe per preset.
     if (sample.preset !== lastPreset) {
       lastPreset = sample.preset;
       fillBound = true;
+      ceiling = 0;
+      levelFailures.clear();
       awaitingStepDownVerdict = false;
       settleReported = false;
+      ceilingReported = false;
       report(sample, "preset changed");
     }
     // heartbeat between state-change reports, so long resting stretches
@@ -195,6 +203,13 @@ export function createAdaptiveQualityController(
         return;
       }
       goodSamples = 0;
+      // Clean samples but a failed level in the way; say so once, as the floor
+      // does. Level 0 with no failures behind it is not pinned, it is simply
+      // the top of the ladder, and "settled" below already covers that.
+      if (ceiling > 0 && !ceilingReported) {
+        ceilingReported = true;
+        report(sample, "pinned at ceiling");
+      }
     }
     // report where it came to rest once, for displays with no reachable console
     steadySamples += 1;
