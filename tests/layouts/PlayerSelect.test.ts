@@ -119,6 +119,13 @@ vi.mock("@/helpers/players", () => ({
   isPlayerActive: (player: Player) =>
     player.playback_state === PlaybackState.PLAYING ||
     player.playback_state === PlaybackState.PAUSED,
+  isSelectablePlayer: (player?: Player) =>
+    Boolean(
+      player?.enabled &&
+      player.available &&
+      !player.needs_setup &&
+      player.type !== PlayerType.SOURCE,
+    ),
   playerVisible: () => true,
 }));
 
@@ -676,6 +683,21 @@ describe("PlayerSelect", () => {
 
     expect(store.activePlayerId).toBe(player.player_id);
     expect(store.showPlayersMenu).toBe(false);
+  });
+
+  it("lists an audio input without ever selecting it", async () => {
+    const source = createPlayer("turntable", "Turntable");
+    source.type = PlayerType.SOURCE;
+    api.players = { [source.player_id]: source };
+    const wrapper = mountPlayerSelect();
+
+    // listed for discoverability, but never auto-picked as the default player
+    expect(wrapper.find('[data-player-id="turntable"]').exists()).toBe(true);
+    expect(store.activePlayerId).toBeUndefined();
+
+    await wrapper.find(".select-player").trigger("click");
+
+    expect(store.activePlayerId).toBeUndefined();
   });
 
   it("starts setup instead of selecting a setup-required player", async () => {

@@ -35,15 +35,20 @@ export const isPlayerActive = function (player: Player): boolean {
  * Check if the player may be shown to the user.
  *
  * Set allowGroupChilds to also include players that are synced to or part of a
- * group, and allowNeedsSetup to include players that still need to be set up.
+ * group, allowNeedsSetup to include players that still need to be set up, and
+ * allowSources to include capture-only audio input devices.
  */
 export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
   allowNeedsSetup = false,
+  allowSources = false,
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
+  // A capture-only device renders nothing: list it only where it is presented
+  // as an audio input (opt-in via allowSources), never among playback targets.
+  if (player.type === PlayerType.SOURCE && !allowSources) return false;
   if (player.synced_to && !allowGroupChilds) {
     return false;
   }
@@ -74,6 +79,23 @@ export const playerVisible = function (
 };
 
 /**
+ * Check if the player may become the active playback target.
+ *
+ * Capture-only audio inputs are listed for discoverability but never render
+ * audio, so they can never be selected.
+ */
+export const isSelectablePlayer = function (
+  player: Player | null | undefined,
+): boolean {
+  return Boolean(
+    player?.enabled &&
+    player.available &&
+    !player.needs_setup &&
+    player.type !== PlayerType.SOURCE,
+  );
+};
+
+/**
  * Check if the player may be offered as a group member.
  *
  * Hiding a player only removes it from the main listings, so it stays pickable
@@ -87,12 +109,13 @@ export const groupMemberPickerVisible = function (player: Player): boolean {
 /**
  * Check if the player can take part in grouping.
  *
- * Capture-only devices report an unknown type: they exist so the device still
- * has a settings page, but they render nothing, so they are never offered as
- * a group member.
+ * Capture-only devices (audio inputs, or an unknown type from an older server)
+ * render nothing, so they are never offered as a group member.
  */
 export const canBeGroupMember = function (player: Player): boolean {
-  return player.type !== PlayerType.UNKNOWN;
+  return (
+    player.type !== PlayerType.UNKNOWN && player.type !== PlayerType.SOURCE
+  );
 };
 
 /**

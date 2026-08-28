@@ -5,6 +5,7 @@ import {
   groupMemberPickerVisible,
   isBuiltinPlayer,
   isPlayerGrouped,
+  isSelectablePlayer,
   playerVisible,
 } from "@/helpers/players";
 import {
@@ -218,6 +219,13 @@ describe("playerVisible", () => {
     expect(playerVisible(createPlayer({ hide_in_ui: true }))).toBe(false);
   });
 
+  it("lists an audio input only where sources are opted in", () => {
+    const player = createPlayer({ type: PlayerType.SOURCE });
+
+    expect(playerVisible(player)).toBe(false);
+    expect(playerVisible(player, false, false, true)).toBe(true);
+  });
+
   it("shows the hidden player of this device", () => {
     const player = createPlayer({
       player_id: "local-web-player",
@@ -333,6 +341,31 @@ describe("canBeGroupMember", () => {
     expect(canBeGroupMember(createPlayer({ type: PlayerType.UNKNOWN }))).toBe(
       false,
     );
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.SOURCE }))).toBe(
+      false,
+    );
+  });
+});
+
+describe("isSelectablePlayer", () => {
+  it("accepts a healthy regular player", () => {
+    expect(isSelectablePlayer(createPlayer())).toBe(true);
+  });
+
+  it("rejects an audio input, even a fully set up one", () => {
+    expect(isSelectablePlayer(createPlayer({ type: PlayerType.SOURCE }))).toBe(
+      false,
+    );
+  });
+
+  it("rejects a player that still needs setup", () => {
+    expect(
+      isSelectablePlayer(createPlayer({ available: false, needs_setup: true })),
+    ).toBe(false);
+  });
+
+  it("rejects a missing player", () => {
+    expect(isSelectablePlayer(undefined)).toBe(false);
   });
 });
 

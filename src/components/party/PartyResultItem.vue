@@ -48,7 +48,7 @@
           :style="{ '--btn-bg': boostBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'next')"
         >
-          <Spinner v-if="isBoostLoading" :size="16" />
+          <Spinner v-if="isBoostLoading" class="size-4" />
           <Rocket v-else :size="16" />
           {{ $t("providers.party.boost") }}
         </Button>
@@ -62,7 +62,7 @@
           :style="{ '--btn-bg': requestBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'end')"
         >
-          <Spinner v-if="isAddLoading" :size="16" />
+          <Spinner v-if="isAddLoading" class="size-4" />
           <ListPlus v-else :size="16" />
           {{ $t("providers.party.request") }}
         </Button>

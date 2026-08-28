@@ -257,6 +257,7 @@ import {
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   providerRequiresReconfiguration,
+  shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -375,12 +376,6 @@ const canReconfigure = function (provider: ProviderConfig) {
     provider.status,
     api.providerManifests[provider.domain]?.has_setup_flow,
     provider.enabled,
-  );
-};
-
-const shouldShowStageBadge = function (stage?: ProviderStage) {
-  return (
-    stage !== ProviderStage.STABLE && !!getProviderStageTranslationKey(stage)
   );
 };
 

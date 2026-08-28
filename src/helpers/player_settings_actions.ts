@@ -3,6 +3,7 @@
 // from here so the two never drift apart.
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
+import { isSelectablePlayer } from "@/helpers/players";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { setUserPreference } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
@@ -209,9 +210,7 @@ function selectFallbackPlayer(playerId: string) {
   store.activePlayerId = Object.values(api.players).find(
     (candidate) =>
       candidate.player_id !== playerId &&
-      candidate.available &&
-      candidate.enabled &&
-      !candidate.needs_setup &&
+      isSelectablePlayer(candidate) &&
       !candidate.hide_in_ui &&
       !candidate.synced_to,
   )?.player_id;

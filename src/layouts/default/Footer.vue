@@ -94,18 +94,12 @@ function clearOverlay() {
   /* it only exists to soften what is behind it, so it never takes a tap */
   pointer-events: none;
   z-index: 999;
+  /* must stay unprefixed: the minifier keeps only the last of a hand-written
+     pair, and -webkit-backdrop-filter alone is dead in Chromium */
   backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   /* the mask is what makes the blur ramp up towards the player instead of
      ending on a visible line */
   mask-image: linear-gradient(
-    to top,
-    #000 0%,
-    #000 35%,
-    rgba(0, 0, 0, 0.55) 65%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
     to top,
     #000 0%,
     #000 35%,

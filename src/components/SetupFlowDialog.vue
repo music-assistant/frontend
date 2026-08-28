@@ -23,7 +23,7 @@
       <div class="min-h-[120px] flex-1 overflow-y-auto px-5 py-5">
         <!-- Starting / loading state (no step yet) -->
         <div v-if="!step" class="flex items-center justify-center py-8">
-          <Spinner :size="44" class="text-primary" />
+          <Spinner class="text-primary size-11" />
         </div>
 
         <!-- FORM step -->
@@ -114,7 +114,7 @@
               }}</span>
             </div>
             <div class="text-muted-foreground flex items-center gap-2 text-sm">
-              <Spinner :size="18" />
+              <Spinner class="size-4.5" />
               <span>{{ $t("settings.setup_flow.external_waiting") }}</span>
             </div>
             <a
@@ -148,8 +148,7 @@
             />
             <Spinner
               v-if="step.progress === null || step.progress === undefined"
-              :size="52"
-              class="text-primary"
+              class="text-primary size-13"
             />
             <Progress
               v-else
@@ -333,6 +332,7 @@ import {
   type ConfigValueType,
   FlowStepType,
   SECURE_STRING_SUBSTITUTE,
+  SILENT_FINISH_STEP_ID,
   type SetupFlowStep,
 } from "@/plugins/api/interfaces";
 import { eventbus, type SetupFlowDialogEvent } from "@/plugins/eventbus";
@@ -593,6 +593,15 @@ function applyStep(newStep: SetupFlowStep) {
   ) {
     completionNotified = true;
     launch.value.onFlowEnded?.(newStep.type === FlowStepType.FINISH);
+  }
+
+  // a silent finish (e.g. a one-click device approval) needs no success screen
+  if (
+    newStep.type === FlowStepType.FINISH &&
+    newStep.step_id === SILENT_FINISH_STEP_ID
+  ) {
+    close(false);
+    return;
   }
 
   if (newStep.type === FlowStepType.FORM) {
