@@ -361,6 +361,24 @@ const imageProviderIsAvailable = function (provider: string) {
 };
 
 /**
+ * Check if an image can still be fetched.
+ *
+ * A remotely accessible path is a self-contained url, so the server resolves it
+ * by url alone and never needs the provider that supplied it to be loaded. Only
+ * a provider-relative path (a local file path, say) genuinely depends on its
+ * provider being around to resolve it.
+ *
+ * This matters for artwork written by a provider that is no longer loaded - a
+ * metadata provider that has since been disabled, for instance. Such an image
+ * stays perfectly servable, but gating it on provider availability discards it
+ * and leaves the item to fall back to a generated initials avatar.
+ */
+const imageIsUsable = function (img: MediaItemImage) {
+  if (img.remotely_accessible) return true;
+  return imageProviderIsAvailable(img.provider);
+};
+
+/**
  * Get image from a MediaItem, ItemMapping, or QueueItem.
  */
 export const getMediaItemImage = function (
@@ -392,7 +410,7 @@ export const getMediaItemImage = function (
     "image" in mediaItem &&
     mediaItem.image &&
     mediaItem.image.type == type &&
-    imageProviderIsAvailable(mediaItem.image.provider)
+    imageIsUsable(mediaItem.image)
   )
     return mediaItem.image;
 
@@ -405,8 +423,7 @@ export const getMediaItemImage = function (
   // handle regular image within mediaitem
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (img.type == type && imageProviderIsAvailable(img.provider))
-        return img;
+      if (img.type == type && imageIsUsable(img)) return img;
     }
   }
 
