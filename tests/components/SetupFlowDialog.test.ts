@@ -20,11 +20,14 @@ const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
   () => ({
     apiMock: {
       abortSetupFlow: vi.fn<MusicAssistantApi["abortSetupFlow"]>(),
-      players: {},
+      players: {
+        "player-1": { name: "Living Room" },
+      },
       providerManifests: {},
       providers: {
         "spotify--test": {
           domain: "spotify",
+          name: "Spotify",
         },
       },
       reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
@@ -67,7 +70,8 @@ vi.mock("@/plugins/eventbus", () => ({
 }));
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: (key: string, args?: unknown[]) =>
+    args?.length ? `${key}:${args.join(",")}` : key,
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -161,6 +165,60 @@ describe("SetupFlowDialog", () => {
       expect(onFlowEnded).toHaveBeenCalledExactlyOnceWith(finished);
     },
   );
+
+  it.each([
+    [
+      "player",
+      { kind: "player", playerId: "player-1" },
+      "settings.setup_flow.setup_title:Living Room",
+    ],
+    [
+      "reconfigure",
+      { kind: "reconfigure", instanceId: "spotify--test" },
+      "settings.setup_flow.reconfigure_title:Spotify",
+    ],
+  ] as [string, SetupFlowDialogEvent, string][])(
+    "heads a %s flow with the name of what it sets up",
+    async (_kind, event, expected) => {
+      const wrapper = await mountHeader(event);
+
+      expect(headerText(wrapper, "dialog-title-stub")).toBe(expected);
+    },
+  );
+
+  // the id is all the launch event carries, so an unknown target must still read sanely
+  it("heads a player flow with an unnamed title when the player is unknown", async () => {
+    const wrapper = await mountHeader({
+      kind: "player",
+      playerId: "player-gone",
+    });
+
+    expect(headerText(wrapper, "dialog-title-stub")).toBe(
+      "settings.setup_flow.setup_player_title",
+    );
+  });
+
+  it("puts the step's own title under the flow title", async () => {
+    const wrapper = await mountHeader(
+      { kind: "player", playerId: "player-1" },
+      { ...formStep(), title: "Enter the pairing code" },
+    );
+
+    expect(headerText(wrapper, "dialog-description-stub")).toBe(
+      "Enter the pairing code",
+    );
+  });
+
+  it("leaves the subtitle out when the step brings no title", async () => {
+    const wrapper = await mountHeader({ kind: "player", playerId: "player-1" });
+
+    expect(
+      wrapper
+        .find("dialog-header-stub")
+        .find("dialog-description-stub")
+        .exists(),
+    ).toBe(false);
+  });
 
   it("closes without an abort when a flow finishes silently", async () => {
     apiMock.setupPlayer.mockResolvedValue({
@@ -437,6 +495,27 @@ async function pickOption(wrapper: VueWrapper, value: string) {
   if (!row) throw new Error("choice entry not rendered");
   row.vm.$emit("update:value", value);
   await flushPromises();
+}
+
+async function mountHeader(
+  event: SetupFlowDialogEvent,
+  step: SetupFlowStep = formStep(),
+) {
+  apiMock.setupPlayer.mockResolvedValue(step);
+  apiMock.reconfigureProvider.mockResolvedValue(step);
+  const wrapper = shallowMount(SetupFlowDialog, {
+    global: { renderStubDefaultSlot: true },
+  });
+
+  await launchSetupFlow?.(event);
+  await flushPromises();
+
+  return wrapper;
+}
+
+// the per-field help dialog carries a title of its own, so scope to the step's header
+function headerText(wrapper: VueWrapper, stub: string) {
+  return wrapper.find("dialog-header-stub").find(stub).text();
 }
 
 async function mountFormStep(entries: ConfigEntry[]) {
