@@ -702,7 +702,8 @@ export interface ConfigEntry {
   key: string;
   type: ConfigEntryType;
   // label: localized display label, resolved server-side; null when the entry carries no
-  // in-code label and no translation matches - fall back to `key`
+  // in-code label and no translation matches - fall back to `key`. An empty string is a
+  // deliberate "no label", for entries whose control speaks for itself
   label: string | null;
   default_value: ConfigValueType;
   required: boolean;

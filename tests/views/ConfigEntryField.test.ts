@@ -69,7 +69,7 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
   ],
 ];
 
-// the two fields that render their own header above the control
+// the fields that render their own header above the control and expose a labelled group
 const HEADED_FIELDS: [string, ConfigEntryUI][] = [
   ["pairing code", pairingCodeEntry()],
   ["expanded options", expandedOptionsEntry()],

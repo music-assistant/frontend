@@ -18,7 +18,7 @@
           <DialogTitle class="truncate">{{ flowTitle }}</DialogTitle>
           <DialogDescription
             v-if="stepTitle"
-            class="text-foreground truncate font-medium"
+            class="text-foreground line-clamp-2 font-medium"
           >
             {{ stepTitle }}
           </DialogDescription>
@@ -203,7 +203,7 @@
       </div>
 
       <!-- Actions -->
-      <DialogFooter v-if="step" class="items-center border-t px-4 py-3">
+      <DialogFooter v-if="step" class="border-t px-4 py-3 sm:items-center">
         <div
           v-if="countdownText"
           class="text-muted-foreground mr-auto flex items-center gap-1.5 text-xs"
@@ -435,7 +435,7 @@ const flowTitle = computed(() => {
 const stepTitle = computed(() => {
   if (step.value?.type === FlowStepType.FORM) return step.value.title || "";
   if (step.value?.type === FlowStepType.EXTERNAL) {
-    return step.value.title || $t("settings.setup_flow.external_default_title");
+    return step.value.title ?? $t("settings.setup_flow.external_default_title");
   }
   return "";
 });
