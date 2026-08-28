@@ -66,6 +66,7 @@ describe("backFromMediaDetails", () => {
     ["genre", "genres"],
     ["playlist", "playlists"],
     ["podcast", "podcasts"],
+    ["podcast_episode", "podcasts"],
     ["radio", "radios"],
     ["track", "tracks"],
   ])("goes up from %s opened directly to %s", (details, listing) => {

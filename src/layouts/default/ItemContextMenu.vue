@@ -434,6 +434,15 @@ export const showPlayMenuForMediaItem = async function (
   const firstItem = playableItems[0];
 
   let playMenuItems: ContextMenuItem[] = [];
+  // an episode played from its own page has a podcast to play on from, which
+  // the enqueue options below cannot express
+  if (
+    playableItems.length == 1 &&
+    parentItem?.media_type == MediaType.PODCAST &&
+    parentItem.uri != firstItem.uri
+  ) {
+    playMenuItems.push(playPodcastFromHereMenuItem(firstItem, parentItem));
+  }
   const defaultEnqueueOption = await getDefaultEnqueueOption(firstItem);
   if (isAudioSource(firstItem)) {
     playMenuItems.push(
@@ -502,6 +511,7 @@ export const getContextMenuItems = async function (
       MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
+      MediaType.PODCAST_EPISODE,
       MediaType.TRACK,
     ].includes(items[0].media_type) &&
     itemIsAvailable(items[0])
@@ -897,10 +907,13 @@ export const getContextMenuItems = async function (
   }
 
   // update metadata
+  // podcast episodes are never stored in the library, so there is nothing to write to
   if (
     items.length === 1 &&
     items[0] == parentItem &&
-    items[0].media_type !== MediaType.COLLECTION
+    ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
+      items[0].media_type,
+    )
   ) {
     contextMenuItems.push({
       label: "update_metadata",
@@ -958,9 +971,13 @@ export const getContextMenuItems = async function (
     }
   }
   // refresh item
+  // podcast episodes are fetched from the provider on every view, so there is
+  // no stored copy that could go stale
   if (
     items.length === 1 &&
-    items[0].media_type !== MediaType.COLLECTION &&
+    ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
+      items[0].media_type,
+    ) &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
   ) {
     contextMenuItems.push({
@@ -1214,20 +1231,9 @@ export const getPlaybackContextMenuItems = async function (
         disabled: !store.activePlayer,
       });
     }
-    // Play from here (podcast episode). Episodes are listed newest first, so
-    // playback runs the other way: from the chosen episode forward in time.
+    // Play from here (podcast episode)
     if (parentItem.media_type == MediaType.PODCAST) {
-      playMenuItems.push({
-        label: "play_from_here_to_latest",
-        action: () => {
-          api.playMedia(parentItem.uri, undefined, {
-            start_item: firstItem.item_id,
-          });
-        },
-        icon: PlayCircle,
-        labelArgs: [],
-        disabled: !store.activePlayer,
-      });
+      playMenuItems.push(playPodcastFromHereMenuItem(firstItem, parentItem));
     }
   }
   // Default/configured enqueue option at the top (if play from here is not applicable)
@@ -1399,6 +1405,27 @@ const buildEnqueueMenuItems = function (
  * queue would never be reached: starting it is the only meaningful action. The
  * configured default decides whether the existing queue is kept or replaced.
  */
+/**
+ * Menu entry that plays a podcast from the given episode onwards.
+ *
+ * Episodes are listed newest first, so playback runs the other way, from the
+ * chosen episode forward in time to the latest one.
+ */
+const playPodcastFromHereMenuItem = function (
+  episode: MediaItemTypeOrItemMapping,
+  podcast: MediaItemType,
+): ContextMenuItem {
+  return {
+    label: "play_from_here_to_latest",
+    labelArgs: [],
+    action: () => {
+      api.playMedia(podcast.uri, undefined, { start_item: episode.item_id });
+    },
+    icon: PlayCircle,
+    disabled: !store.activePlayer,
+  };
+};
+
 const startAudioSourceMenuItem = function (
   items: MediaItemTypeOrItemMapping[],
   defaultEnqueueOption: QueueOption,
