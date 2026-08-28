@@ -2,8 +2,8 @@
   MilkDrop (butterchurn) visualizer layer.
 
   Renders behind the view content (absolute, z-index 0, no pointer events),
-  fed by MA core's visualizer relay. A tint layer recolors toward the track's
-  artwork color; a subtle scrim keeps overlaid text legible; the blur option
+  fed by MA core's visualizer relay. The engine recolors toward the track's
+  artwork palette; a subtle scrim keeps overlaid text legible; the blur option
   previews the "ambient background" treatment. Renders nothing (transparent)
   while unsupported or disconnected, so the regular gradient background
   underneath stays visible. Pausing or stopping the player winds it down
@@ -11,17 +11,12 @@
 -->
 <template>
   <div class="visualizer-layer" aria-hidden="true" :style="layerStyle">
-    <div class="visualizer-layer__stack" :style="stackStyle">
+    <div class="visualizer-layer__stack">
       <canvas
         ref="canvasRef"
         class="visualizer-layer__canvas"
         :style="canvasStyle"
       ></canvas>
-      <div
-        v-if="streaming && !shaderTintActive && !paletteActive && !rampActive"
-        class="visualizer-layer__tint"
-        :style="tintStyle"
-      ></div>
     </div>
     <div
       v-if="streaming"
@@ -53,7 +48,6 @@ import {
 } from "@/helpers/visualizer/adaptiveQuality";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
-import { hexToRgb } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -132,9 +126,6 @@ const beatDwellPref = visualizerPreference<number>("visualizer_beat_dwell", 30);
 // blend tint costs more than the visualizer itself, so these displays tint
 // in-shader instead, and their quality adapts to measured performance.
 const constrainedDisplay = authManager.isDashboardViewer();
-// Whether the running engine actually took over the tint. When its WebGL pass
-// could not be built, this stays false and the CSS tint layer steps back in.
-const shaderTintActive = ref(false);
 const paletteSupported = ref(false);
 const rampSupported = ref(false);
 
@@ -142,20 +133,9 @@ const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
   // Oversize slightly when blurred so the edge vignette stays off-screen.
   transform: props.blur > 0 ? "scale(1.12)" : undefined,
-  // no second layer to fade in step with, so the opacity sits on the canvas itself
-  opacity:
-    shaderTintActive.value && props.opacity < 100
-      ? String(props.opacity / 100)
-      : undefined,
-}));
-
-// Fades canvas and tint as one unit: the tint has to blend against an
-// opaque canvas, or it composites its own raw color over the background.
-const stackStyle = computed(() => ({
-  opacity:
-    !shaderTintActive.value && props.opacity < 100
-      ? String(props.opacity / 100)
-      : undefined,
+  // the engine recolors in its own pass, so there is no second layer to fade
+  // in step with and the opacity sits on the canvas itself
+  opacity: props.opacity < 100 ? String(props.opacity / 100) : undefined,
 }));
 
 // The text-legibility scrim fades with the visualizer: a faint overlay
@@ -174,8 +154,6 @@ const playbackPaused = computed(() => {
 const colorPalette = ref<ColorPalette>({});
 
 const {
-  tintColor,
-  tintForEngine,
   paletteColors,
   paletteActive,
   paletteRamp,
@@ -187,11 +165,6 @@ const {
   paletteColorsSupported: paletteSupported,
   paletteRampSupported: rampSupported,
 });
-
-// mix-blend-mode: color keeps the preset's own luminance, just shifts hue.
-const tintStyle = computed(() => ({
-  backgroundColor: tintColor.value ?? "transparent",
-}));
 
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
@@ -231,8 +204,12 @@ const applyPreset = async (blendSec?: number, forceRandom = false) => {
   const name = await pickPresetName(forceRandom);
   if (requestId !== presetRequestId || !name || !engine) return;
   lastPresetSwitchAt = performance.now();
-  currentVisualizerPreset.value = name;
-  await engine.loadPresetByName(name, blendSec);
+  // The engine substitutes a random preset for a name the packs no longer
+  // carry, so what is showing is whatever it reports back, not what was asked
+  // for.
+  const loaded = await engine.loadPresetByName(name, blendSec);
+  if (requestId !== presetRequestId || !loaded) return;
+  currentVisualizerPreset.value = loaded;
 };
 
 // Preset auto-switch on downbeats (MA's neural beat tracker), rate-limited
@@ -350,7 +327,6 @@ const createEngine = async () => {
         ? {
             maxFps: TV_TARGET_FPS,
             onPerfSample: adaptive.onPerfSample,
-            shaderTint: true,
           }
         : undefined,
     );
@@ -362,7 +338,6 @@ const createEngine = async () => {
     return;
   }
   engine = created;
-  shaderTintActive.value = engine?.shaderTintActive ?? false;
   paletteSupported.value = engine?.paletteColorsSupported ?? false;
   rampSupported.value = engine?.paletteRampSupported ?? false;
   if (engine) {
@@ -373,15 +348,8 @@ const createEngine = async () => {
     }
     applyPaletteColors();
     applyPaletteRamp();
-    applyTint();
     await applyPreset(0);
   }
-};
-
-const applyTint = () => {
-  if (!shaderTintActive.value) return;
-  const tint = tintForEngine.value;
-  engine?.setTint(tint ? hexToRgb(tint) : null);
 };
 
 const applyPaletteColors = () => {
@@ -394,7 +362,6 @@ const applyPaletteRamp = () => {
   engine?.setPaletteRamp(paletteRamp.value, paletteRampStrength.value);
 };
 
-watch(tintForEngine, applyTint);
 watch(paletteColors, applyPaletteColors);
 watch([paletteRamp, paletteRampStrength], applyPaletteRamp);
 
@@ -530,8 +497,6 @@ onBeforeUnmount(() => {
 .visualizer-layer__stack {
   position: absolute;
   inset: 0;
-  /* Isolate so the tint blends against the canvas alone, not the backdrop. */
-  isolation: isolate;
 }
 
 .visualizer-layer__canvas {
@@ -540,13 +505,6 @@ onBeforeUnmount(() => {
   display: block;
   /* An aspect-capped buffer (TV square render) is cropped, never stretched. */
   object-fit: cover;
-}
-
-.visualizer-layer__tint {
-  position: absolute;
-  inset: 0;
-  mix-blend-mode: color;
-  transition: background-color 1.5s ease;
 }
 
 .visualizer-layer__scrim {

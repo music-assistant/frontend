@@ -46,6 +46,7 @@
       <Palette :size="20" class="visualizer-menu__icon" />
       <Slider
         :model-value="[paletteRampDraft]"
+        :aria-label="$t('visualizer.palette_ramp')"
         :min="0"
         :max="100"
         :step="VISUALIZER_PALETTE_RAMP_STEP"

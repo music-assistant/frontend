@@ -17,6 +17,7 @@ import {
 } from "@/composables/visualizer/useVisualizerEngine";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
+import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
 const N_SAMPLES = 1024; // matches butterchurn's fixed internal buffers
@@ -98,6 +99,13 @@ export function visualizerCanRender(): boolean {
  * display that cannot render (and thus never opens a relay connection) still
  * gets its probe result recorded.
  */
+// The dashboard id the server put in the launched url. Reports carry it so a
+// server with several displays can tell whose report it is logging.
+function reportingDashboardId(): string | undefined {
+  const value = router.currentRoute.value.query.dashboard_id;
+  return typeof value === "string" ? value : undefined;
+}
+
 export async function reportVisualizerCapability(
   renderer: "butterchurn" | "none",
   gpu?: string,
@@ -111,15 +119,21 @@ export async function reportVisualizerCapability(
       renderer,
       gpu,
       user_agent: navigator.userAgent,
+      dashboard_id: reportingDashboardId(),
     });
   } catch (error) {
     console.warn("[visualizer] could not report capability:", error);
   }
 }
 
-// cap so a per-frame exception storm cannot flood the server log
-const MAX_ERROR_REPORTS = 3;
-let errorReportsSent = 0;
+// Rate cap so a per-frame exception storm cannot flood the server log. A
+// rolling window rather than a lifetime cap: these displays run for weeks, and
+// a lifetime cap would permanently mute the only diagnostics they have after
+// the first few errors.
+const MAX_ERROR_REPORTS_PER_WINDOW = 3;
+const ERROR_REPORT_WINDOW_MS = 60 * 60 * 1000;
+const MAX_ERROR_MESSAGE_CHARS = 500;
+let errorReportTimes: number[] = [];
 let errorReportingInstalled = false;
 
 /**
@@ -131,12 +145,17 @@ export function installVisualizerErrorReporting(): void {
   if (!authManager.isDashboardViewer()) return;
   errorReportingInstalled = true;
   const send = (message: string) => {
-    if (errorReportsSent >= MAX_ERROR_REPORTS) return;
-    errorReportsSent += 1;
+    const now = Date.now();
+    errorReportTimes = errorReportTimes.filter(
+      (at) => now - at < ERROR_REPORT_WINDOW_MS,
+    );
+    if (errorReportTimes.length >= MAX_ERROR_REPORTS_PER_WINDOW) return;
+    errorReportTimes.push(now);
     api
       .sendCommand("milkdrop_visualizer/report_capability", {
         user_agent: navigator.userAgent,
-        error: message.slice(0, 500),
+        error: message.slice(0, MAX_ERROR_MESSAGE_CHARS),
+        dashboard_id: reportingDashboardId(),
       })
       .catch(() => undefined);
   };
@@ -174,6 +193,7 @@ export async function reportVisualizerRender(
       webgl2: true,
       renderer: "butterchurn",
       user_agent: navigator.userAgent,
+      dashboard_id: reportingDashboardId(),
       render: {
         note,
         preset: sample.preset?.slice(0, 120) ?? "",
@@ -382,16 +402,6 @@ export class VisualizerRelayClient {
           for (const ts of pending) this.scheduleDownbeat(ts);
         }
       } else if (message.type === "stream/start") {
-        // The server advertises the message types it will serve. Without
-        // "color" (color_tint disabled) no color message will ever replace a
-        // tint kept across a reconnect, so it has to be dropped here.
-        const types = (
-          message.payload as { visualizer?: { types?: unknown } } | undefined
-        )?.visualizer?.types;
-        if (Array.isArray(types) && !types.includes("color")) {
-          this.colorPalette = {};
-          this.callbacks.onColor?.({});
-        }
         this.setState("streaming");
       } else if (
         message.type === "stream/clear" ||

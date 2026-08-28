@@ -1,12 +1,11 @@
 /**
- * Derives every artwork colour the visualizer can apply from the relay's
- * palette: the flat CSS tint, the preset's own element colours, and the
- * luminance ramp that remaps the whole image.
+ * Derives the artwork colours the visualizer applies from the relay's palette:
+ * the preset's own element colours, and the luminance ramp that remaps the
+ * whole image.
  *
- * The three are mutually exclusive by construction. The ramp and the element
- * colours are engine capabilities, so both are gated on what the running
- * engine reports it supports; whichever of them is live replaces the flat
- * tint rather than stacking on top of it.
+ * Both are engine capabilities, so both are gated on what the running engine
+ * reports it supports, and the two can be live at once. A one-anchor ramp is
+ * mathematically the old flat tint, so no separate tint path is kept.
  */
 
 import { computed, toValue, type MaybeRefOrGetter, type Ref } from "vue";
@@ -15,8 +14,6 @@ import {
   VISUALIZER_PALETTE_COLORS_DEFAULT,
   VISUALIZER_PALETTE_RAMP_DEFAULT,
 } from "@/composables/visualizer/state";
-import { paletteFromServer } from "@/helpers/utils";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
 import type { ColorPalette } from "@/plugins/visualizer-relay";
 import vuetify from "@/plugins/vuetify";
 
@@ -52,33 +49,15 @@ export function useVisualizerPalette(options: VisualizerPaletteOptions) {
     () => toValue(options.forceDark) || vuetify.theme.current.value.dark,
   );
 
-  // Hand the relay's palette (validated there, absent fields as null) to the
-  // same helper the OSD uses, so the two can only ever pick the same color.
-  const serverPalette = computed<MediaItemPalette>(() => {
-    const wire = options.palette.value;
-    return {
-      background_dark: wire.background_dark ?? null,
-      background_light: wire.background_light ?? null,
-      primary: wire.primary ?? null,
-      accent: wire.accent ?? null,
-      on_dark: wire.on_dark ?? null,
-      on_light: wire.on_light ?? null,
-    };
-  });
-
-  // The theme pick mirrors Player.vue's artwork tint; a missing variant means no
-  // tint rather than a stand-in color the rest of the app would never show.
-  const tintColor = computed(() => {
-    const { lightColor, darkColor } = paletteFromServer(serverPalette.value);
-    return (useDark.value ? darkColor : lightColor) || null;
-  });
-
   // Backgrounds stay unused here, they are not meant for the thin foreground
-  // elements these colors land on.
+  // elements these colors land on. on_dark is the variant meant to be drawn on
+  // a dark background, so it is the one a dark treatment takes: the flat tint
+  // can take either (its blend keeps the source luminance and only shifts hue)
+  // but a waveform line is drawn at its own brightness and has to contrast.
   const paletteColors = computed<Rgb[] | null>(() => {
     if (!paletteColorsPref.value) return null;
     const wire = options.palette.value;
-    const foreground = useDark.value ? wire.on_light : wire.on_dark;
+    const foreground = useDark.value ? wire.on_dark : wire.on_light;
     if (!foreground || !wire.primary || !wire.accent) return null;
     // waveform, outer border, inner border, motion vectors
     return [foreground, wire.primary, wire.accent, foreground];
@@ -97,14 +76,13 @@ export function useVisualizerPalette(options: VisualizerPaletteOptions) {
       useDark.value ? wire.on_dark : wire.on_light,
     ].filter((color): color is Rgb => !!color);
     if (anchors.length === 0) return null;
-    return anchors.sort((first, second) => luma(first) - luma(second));
+    return [...anchors].sort((first, second) => luma(first) - luma(second));
   });
 
   const paletteRampStrength = computed(
     () => Math.min(Math.max(paletteRampPref.value, 0), 100) / 100,
   );
 
-  // A whole-frame tint would flatten the preset's elements back to a single hue.
   const paletteActive = computed(
     () => options.paletteColorsSupported.value && paletteColors.value !== null,
   );
@@ -113,16 +91,7 @@ export function useVisualizerPalette(options: VisualizerPaletteOptions) {
     () => options.paletteRampSupported.value && paletteRamp.value !== null,
   );
 
-  // The ramp and the element colors are the flat tint's replacement, not an
-  // extra layer on top of it: they recolor by brightness and by element where
-  // the tint forces one hue on everything.
-  const tintForEngine = computed(() =>
-    paletteActive.value || rampActive.value ? null : tintColor.value,
-  );
-
   return {
-    tintColor,
-    tintForEngine,
     paletteColors,
     paletteActive,
     paletteRamp,

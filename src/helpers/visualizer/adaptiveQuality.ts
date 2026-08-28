@@ -115,10 +115,12 @@ export function createAdaptiveQualityController(
     const failures = (levelFailures.get(level) ?? 0) + 1;
     levelFailures.set(level, failures);
     if (failures >= TV_FAILURES_BEFORE_BLOCKED) ceiling = next;
-    report(sample, "stepped down");
     fpsBeforeStepDown = sample.fps;
     awaitingStepDownVerdict = true;
+    // reported after the move, so the level in the log is the one now on
+    // screen; every other note reports the level in effect
     applyLevel(next);
+    report(sample, "stepped down");
   };
 
   const onPerfSample = (sample: VisualizerPerfSample) => {
@@ -198,8 +200,8 @@ export function createAdaptiveQualityController(
     if (goodSamples >= TV_GOOD_SAMPLES_TO_CLIMB) {
       const next = level - 1;
       if (next >= ceiling) {
-        report(sample, "stepped up");
         applyLevel(next);
+        report(sample, "stepped up");
         return;
       }
       goodSamples = 0;

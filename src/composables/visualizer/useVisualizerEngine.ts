@@ -16,7 +16,11 @@ import {
   qualityProfile,
   type QualityProfile,
 } from "@/helpers/visualizer/quality";
-import { createTintPass } from "@/helpers/visualizer/tintPass";
+import {
+  createTickEstimator,
+  pacedIntervalMs,
+  pacingThresholdMs,
+} from "@/helpers/visualizer/framePacing";
 
 const N_SAMPLES = 1024;
 const ZERO_LEVEL = 0x80;
@@ -48,7 +52,12 @@ export interface VisualizerPerfSample {
 }
 
 export interface VisualizerEngine {
-  loadPresetByName(name: string, blendSec?: number): Promise<void>;
+  /**
+   * Load a preset by name, falling back to a random one when the name is not
+   * in the loaded packs. Resolves with the name actually put on screen, or ""
+   * when nothing could be loaded.
+   */
+  loadPresetByName(name: string, blendSec?: number): Promise<string>;
   loadRandomPreset(): Promise<string>;
   /**
    * Suspend the render loop (playback paused/stopped) or resume it.
@@ -62,16 +71,9 @@ export interface VisualizerEngine {
    */
   setProfile(profile: QualityProfile): void;
   /**
-   * Set or clear the artwork tint (shader-tint engines only; a no-op
-   * otherwise). Transitions over the same 1.5s the CSS tint layer uses.
-   *
-   * :param rgb: 0-255 color channels, or null to fade the tint out.
-   */
-  setTint(rgb: readonly [number, number, number] | null): void;
-  /**
    * Color the preset's own waveform and borders from the artwork palette,
    * instead of washing the whole frame in a single hue. A no-op on engines
-   * without the capability. Transitions over the same 1.5s as the tint.
+   * without the capability. Transitions over 1.5s.
    *
    * :param colors: Four 0-255 rgb triples (waveform, outer border, inner
    *   border, motion vectors), or null to fade them back to the preset's own
@@ -92,9 +94,6 @@ export interface VisualizerEngine {
     colors: readonly (readonly [number, number, number])[] | null,
     strength: number,
   ): void;
-  // whether the artwork tint is applied by the engine's own WebGL pass; when
-  // false a hosting layer that wants a tint has to apply one itself (CSS)
-  readonly shaderTintActive: boolean;
   // whether this engine can take palette colors at all
   readonly paletteColorsSupported: boolean;
   // whether this engine can remap the image to a palette ramp
@@ -113,16 +112,48 @@ export interface VisualizerEngine {
  * Chrome drops the oldest live context on overflow — the running visualizer.
  */
 let webgl2Supported: boolean | null = null;
+const UNKNOWN_RENDERER = "unknown";
+let probedRenderer = UNKNOWN_RENDERER;
 
 export function isVisualizerSupported(): boolean {
   if (webgl2Supported === null) {
+    let gl: WebGL2RenderingContext | null = null;
     try {
-      webgl2Supported = !!document.createElement("canvas").getContext("webgl2");
+      gl = document.createElement("canvas").getContext("webgl2");
+      webgl2Supported = !!gl;
     } catch {
       webgl2Supported = false;
     }
+    // Separately guarded: the unmasked string names the actual driver (a
+    // software rasterizer also reports WebGL2), but a driver that throws on
+    // the query must cost us the string, not the visualizer.
+    if (gl) {
+      try {
+        const info = gl.getExtension("WEBGL_debug_renderer_info");
+        probedRenderer =
+          String(
+            (info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) ||
+              gl.getParameter(gl.RENDERER),
+          ) || UNKNOWN_RENDERER;
+      } catch {
+        probedRenderer = UNKNOWN_RENDERER;
+      }
+    }
   }
   return webgl2Supported;
+}
+
+/**
+ * What this device reports it draws with.
+ *
+ * Read from the support probe rather than the visualizer's canvas: butterchurn
+ * renders into its own OffscreenCanvas and takes a 2D context on the canvas it
+ * is given, so asking that canvas for a webgl2 context returns null and would
+ * report every display as unknown.
+ */
+export function visualizerRenderer(): string {
+  isVisualizerSupported();
+  return probedRenderer;
 }
 
 // One never-resumed AudioContext satisfies butterchurn's constructor; the
@@ -155,89 +186,8 @@ export interface VisualizerEngineOptions {
   maxFps?: number;
   // called with achieved render performance roughly every 2s of visible rendering
   onPerfSample?: (sample: VisualizerPerfSample) => void;
-  // apply the artwork tint in a WebGL pass (mix-blend-mode: color math) instead of a CSS blend layer
-  shaderTint?: boolean;
 }
 
-const REFRESH_WINDOW_TICKS = 120;
-const MIN_TICK_MS = 1000 / 240;
-const MAX_TICK_MS = 1000 / 30;
-// Panels come in standard rates; under GPU throttling the rAF gaps are whole
-// multiples of the true tick, so the estimator picks the slowest standard rate
-// whose multiples explain the window instead of averaging throttled gaps into
-// a phantom rate.
-const STANDARD_TICKS_MS = [240, 165, 144, 120, 100, 90, 75, 60, 50, 30].map(
-  (hz) => 1000 / hz,
-);
-const TICK_FIT_TOLERANCE = 0.06;
-// pacing tolerance: a quarter of the target interval, capped at one tick
-const PACING_TOLERANCE_SHARE = 0.25;
-// float slop, so 25.000000000000004 / 8.333333333333334 lands on 3 ticks, not 4
-const PACING_TICK_EPSILON = 1e-6;
-
-/**
- * The gap after which the pacing gate admits a render.
- *
- * rAF fires on the tick grid, so admitting the tick nearest the target
- * interval stays grid-aligned (no judder), and a GPU-throttled loop whose gaps
- * already exceed the interval is never skipped further.
- */
-function pacingThresholdMs(targetIntervalMs: number, tickMs: number): number {
-  return (
-    targetIntervalMs -
-    Math.min(tickMs, targetIntervalMs * PACING_TOLERANCE_SHARE)
-  );
-}
-
-/**
- * The interval the loop actually renders at: the smallest whole number of
- * display ticks that clears the pacing gate.
- *
- * The maxFps option is only an upper bound. Renders land on the tick grid, so
- * a 30fps cap on a 120Hz panel paces at every third tick (40fps), not 30, and
- * measuring against the cap would under-read both lateness and shortfall.
- */
-export function pacedIntervalMs(
-  targetIntervalMs: number,
-  tickMs: number,
-): number {
-  if (!targetIntervalMs) return tickMs;
-  const ticks = Math.max(
-    1,
-    Math.ceil(
-      pacingThresholdMs(targetIntervalMs, tickMs) / tickMs -
-        PACING_TICK_EPSILON,
-    ),
-  );
-  return ticks * tickMs;
-}
-
-export function fitStandardTick(gaps: Float64Array): number | null {
-  // slowest rate first: every gap trivially fits a fast-enough tick's
-  // multiples, so the LARGEST tick that fits is the informative one
-  for (let i = STANDARD_TICKS_MS.length - 1; i >= 0; i--) {
-    const tick = STANDARD_TICKS_MS[i];
-    let residual = 0;
-    let ok = true;
-    for (const gap of gaps) {
-      const k = Math.max(1, Math.round(gap / tick));
-      const err = Math.abs(gap - k * tick) / gap;
-      if (err > TICK_FIT_TOLERANCE * 3) {
-        ok = false;
-        break;
-      }
-      residual += err;
-    }
-    if (ok && residual / gaps.length <= TICK_FIT_TOLERANCE) return tick;
-  }
-  return null;
-}
-
-// The panel rate is a device property: once any window proves a faster tick,
-// a slower estimate later can only mean throttling, never a slower panel.
-// Latched at module level so engine rebuilds inherit it.
-let latchedTickMs: number | null = null;
-const DEFAULT_TICK_MS = 1000 / 60;
 const PERF_SAMPLE_WINDOW_MS = 2000;
 // samples taken while a preset blend renders both presets (or while the new
 // one compiles) measure a workload that is about to vanish; skip them
@@ -259,10 +209,6 @@ export async function createVisualizerEngine(
 ): Promise<VisualizerEngine | null> {
   if (!isVisualizerSupported()) return null;
   const butterchurn = resolveButterchurnModule(await import("butterchurn"));
-  // fork builds can blend the tint inside their own output pass: one context,
-  // one canvas, no per-frame copy
-  const engineTint =
-    options?.shaderTint === true && butterchurn.supportsEngineTint === true;
   const paletteColorsSupported = butterchurn.supportsPaletteColors === true;
   const paletteRampSupported = butterchurn.supportsPaletteRamp === true;
   sharedAudioContext ??= new AudioContext();
@@ -286,20 +232,15 @@ export async function createVisualizerEngine(
       profile,
     );
   };
-  // with the shader tint, butterchurn renders into a detached canvas and the visible one shows the tinted copy
-  const tintPass =
-    options?.shaderTint && !engineTint ? createTintPass(canvas) : null;
-  const targetCanvas = tintPass ? document.createElement("canvas") : canvas;
-
   let currentPresetName = "";
 
   let { width, height } = deviceSize();
-  targetCanvas.width = width;
-  targetCanvas.height = height;
+  canvas.width = width;
+  canvas.height = height;
 
   const visualizer: ButterchurnVisualizer = butterchurn.createVisualizer(
     sharedAudioContext,
-    targetCanvas,
+    canvas,
     {
       width,
       height,
@@ -312,21 +253,7 @@ export async function createVisualizerEngine(
     },
   );
 
-  // the unmasked string names the actual driver (a software rasterizer also reports WebGL2)
-  const describeRenderer = (): string => {
-    try {
-      const gl = canvas.getContext("webgl2");
-      if (!gl) return "unknown";
-      const info = gl.getExtension("WEBGL_debug_renderer_info");
-      return String(
-        (info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) ||
-          gl.getParameter(gl.RENDERER),
-      );
-    } catch {
-      return "unknown";
-    }
-  };
-  const renderer = describeRenderer();
+  const renderer = visualizerRenderer();
 
   let rafHandle: number | null = null;
   let lastFrame: Uint8Array = SILENCE;
@@ -348,7 +275,6 @@ export async function createVisualizerEngine(
         timeByteArrayR: frame,
       },
     });
-    tintPass?.draw(targetCanvas, performance.now());
   };
 
   const stopLoop = () => {
@@ -373,8 +299,8 @@ export async function createVisualizerEngine(
     if (size.width === width && size.height === height) return;
     width = size.width;
     height = size.height;
-    targetCanvas.width = width;
-    targetCanvas.height = height;
+    canvas.width = width;
+    canvas.height = height;
     visualizer.setRendererSize(width, height, { pixelRatio: 1 });
     // Resizing clears the drawing buffer, taking the frozen picture with it.
     redrawIfHalted();
@@ -403,15 +329,13 @@ export async function createVisualizerEngine(
     return scaledFrame;
   };
 
-  // Pacing is a time gate on the measured tick; see pacingThresholdMs.
-  let tickMs = DEFAULT_TICK_MS;
+  // Pacing is a time gate on the measured tick; see pacingThresholdMs. Until
+  // the estimator's first window lands the divisor rests on an assumed 60Hz,
+  // which is not worth measuring against.
+  const ticks = createTickEstimator();
   const maxFps = options?.maxFps ?? 0;
   const targetIntervalMs = maxFps ? 1000 / maxFps : 0;
   let lastTickAt = 0;
-  let windowTicks = 0;
-  const windowDeltas = new Float64Array(REFRESH_WINDOW_TICKS);
-  // until the first window lands the divisor rests on an assumed 60Hz; don't measure against that
-  let tickEstimated = false;
 
   // perf sampling for adaptive hosts; resets when hidden so a background stretch cannot read as slow
   let perfWindowStart = 0;
@@ -447,31 +371,12 @@ export async function createVisualizerEngine(
       return;
     }
     const now = performance.now();
-    if (lastTickAt) {
-      windowDeltas[windowTicks] = now - lastTickAt;
-      if (++windowTicks >= REFRESH_WINDOW_TICKS) {
-        const fitted = fitStandardTick(windowDeltas);
-        let estimate: number;
-        if (fitted !== null) {
-          estimate = fitted;
-        } else {
-          // no standard rate explains the window (wild jitter): fall back to
-          // the median gap
-          const sorted = Array.from(windowDeltas).sort((a, b) => a - b);
-          estimate = sorted[REFRESH_WINDOW_TICKS >> 1];
-        }
-        latchedTickMs =
-          latchedTickMs === null ? estimate : Math.min(latchedTickMs, estimate);
-        tickMs = Math.min(Math.max(latchedTickMs, MIN_TICK_MS), MAX_TICK_MS);
-        windowTicks = 0;
-        tickEstimated = true;
-      }
-    }
+    ticks.observe(now, lastTickAt);
     lastTickAt = now;
     if (
       targetIntervalMs &&
       lastRenderAt &&
-      now - lastRenderAt < pacingThresholdMs(targetIntervalMs, tickMs)
+      now - lastRenderAt < pacingThresholdMs(targetIntervalMs, ticks.tickMs)
     ) {
       return;
     }
@@ -493,12 +398,15 @@ export async function createVisualizerEngine(
         lastFrame = SILENCE;
       }
     }
+    // timed from here, not from the callback's entry: the tick estimator and
+    // the frame fetch above are not what renderMs is meant to report
+    const renderStart = performance.now();
     renderFrame(applyGain(lastFrame, gain));
-    const renderCost = performance.now() - now;
+    const renderCost = performance.now() - renderStart;
 
     const renderedAt = lastRenderAt;
     lastRenderAt = now;
-    if (!options?.onPerfSample || !tickEstimated) {
+    if (!options?.onPerfSample || !ticks.estimated) {
       perfWindowStart = 0;
       return;
     }
@@ -517,10 +425,10 @@ export async function createVisualizerEngine(
     }
     // measured against the cadence the loop actually paces at, not the maxFps
     // cap: the two differ whenever the cap is not a whole divisor of the panel
-    const expectedIntervalMs = pacedIntervalMs(targetIntervalMs, tickMs);
+    const expectedIntervalMs = pacedIntervalMs(targetIntervalMs, ticks.tickMs);
     // full-tick tolerance: the controller's thresholds treat "late" as
     // grossly late, not one tick shy of perfect
-    if (renderedAt && now - renderedAt > expectedIntervalMs + tickMs) {
+    if (renderedAt && now - renderedAt > expectedIntervalMs + ticks.tickMs) {
       // the scheduled slot passed while the previous render was still on the GPU
       perfLateRenders += 1;
     }
@@ -553,13 +461,20 @@ export async function createVisualizerEngine(
 
   return {
     renderer,
-    shaderTintActive: tintPass !== null || engineTint,
     paletteColorsSupported,
     paletteRampSupported,
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
-      const preset = await getPreset(name);
-      if (!preset || destroyed) return;
-      currentPresetName = name;
+      // A stored preset name outlives the pack that held it: the v3 packs
+      // renamed and dropped presets, so a fixed or favourited choice saved
+      // against v2 can be gone. Fall back rather than leaving the canvas blank.
+      let loadedName = name;
+      let preset = await getPreset(name);
+      if (!preset) {
+        loadedName = await randomPresetName();
+        preset = loadedName ? await getPreset(loadedName) : undefined;
+      }
+      if (!preset || destroyed) return "";
+      currentPresetName = loadedName;
       // A halted loop has no frames to blend across.
       const blend = rafHandle === null ? 0 : blendSec;
       await visualizer.loadPreset(preset, blend);
@@ -567,6 +482,7 @@ export async function createVisualizerEngine(
       perfWindowStart = 0;
       perfGuardUntil = performance.now() + blend * 1000 + PERF_BLEND_SETTLE_MS;
       redrawIfHalted();
+      return loadedName;
     },
     async loadRandomPreset() {
       const name = await randomPresetName();
@@ -597,17 +513,12 @@ export async function createVisualizerEngine(
       lastFrameAt = 0;
       if (rafHandle === null) rafHandle = requestAnimationFrame(renderLoop);
     },
-    setTint(rgb) {
-      if (engineTint) {
-        visualizer.setTint?.(rgb);
-      } else {
-        tintPass?.setTint(rgb);
-      }
-    },
     setPaletteColors(colors) {
+      if (destroyed) return;
       visualizer.setPaletteColors?.(colors);
     },
     setPaletteRamp(colors, strength) {
+      if (destroyed) return;
       visualizer.setPaletteRamp?.(colors, strength);
     },
     setProfile(next: QualityProfile) {
@@ -623,14 +534,6 @@ export async function createVisualizerEngine(
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
       longTaskObserver?.disconnect();
-      tintPass?.destroy();
-      // release the detached canvas's GL context, or rebuilds can hit Chrome's live context cap
-      if (targetCanvas !== canvas) {
-        targetCanvas
-          .getContext("webgl2")
-          ?.getExtension("WEBGL_lose_context")
-          ?.loseContext();
-      }
     },
   };
 }

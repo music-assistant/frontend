@@ -12,8 +12,6 @@ declare module "butterchurn" {
     loadPreset(preset: object, blendTimeSec?: number): Promise<void>;
     // present from the gpu-pipeline fork builds; null when unsupported
     getGpuTimings?(): Record<string, number> | null;
-    // engine-side artwork tint (gpu-pipeline fork builds)
-    setTint?(rgb: readonly [number, number, number] | null): void;
     // present from the palette-colors fork branch; callers optional-call it
     setPaletteColors?(
       colors: readonly (readonly [number, number, number])[] | null,
@@ -31,8 +29,6 @@ declare module "butterchurn" {
   }
 
   export interface ButterchurnStatic {
-    // fork builds that blend the artwork tint in their own output pass
-    supportsEngineTint?: boolean;
     // fork builds that can color the preset's own waveform and borders
     supportsPaletteColors?: boolean;
     // fork builds that can remap the image to a palette ramp

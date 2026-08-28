@@ -112,7 +112,19 @@ function startViewerPreferencesSync(): void {
         console.warn("[visualizer] could not fetch viewer preferences:", error);
       }
     };
-    void fetchViewerPreferences();
+    // Watched rather than fetched once, for the same reason the plugin default
+    // is: a cast receiver boots straight into a dashboard route, so serverInfo
+    // (and with it the schema version this command needs) is often still
+    // loading when the hosting view mounts. A plain call here would no-op and
+    // the viewer would sit on fallbacks until some unrelated session event
+    // happened along.
+    watch(
+      () => api.supportsDashboardVisualizer,
+      (supported) => {
+        if (supported) void fetchViewerPreferences();
+      },
+      { immediate: true },
+    );
     api.subscribe(EventType.DASHBOARD_SESSIONS_UPDATED, () => {
       void fetchViewerPreferences();
     });
@@ -146,6 +158,10 @@ export function visualizerPreference<T>(
  * so it stays reactive when called inside a computed.
  */
 export function visualizerEnabledForPlayer(playerId?: string): boolean {
+  // Both sources this reads are lazily started singletons, and this is also
+  // called from plain functions (the player menu builder) that never go
+  // through useVisualizer.
+  startDashboardDefaultWatch();
   if (authManager.isDashboardViewer()) {
     startViewerPreferencesSync();
     // The casting user's GLOBAL toggle describes their own screens, not the

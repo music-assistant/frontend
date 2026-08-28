@@ -10,7 +10,10 @@ import type {
   VisualizerEngineOptions,
   VisualizerPerfSample,
 } from "@/composables/visualizer/useVisualizerEngine";
-import { ADAPTIVE_LADDER } from "@/helpers/visualizer/quality";
+import {
+  ADAPTIVE_LADDER,
+  ADAPTIVE_START_LEVEL,
+} from "@/helpers/visualizer/quality";
 import { TV_TARGET_FPS } from "@/helpers/visualizer/adaptiveQuality";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -52,16 +55,14 @@ vi.mock("@/plugins/router", () => ({
 }));
 
 const engine = vi.hoisted(() => ({
-  loadPresetByName: vi.fn(async () => {}),
+  loadPresetByName: vi.fn(async (name: string) => name),
   loadRandomPreset: vi.fn(async () => "preset"),
   setPaused: vi.fn(),
   setProfile: vi.fn(),
-  setTint: vi.fn(),
   setPaletteColors: vi.fn(),
   setPaletteRamp: vi.fn(),
   destroy: vi.fn(),
   renderer: "stub gpu",
-  shaderTintActive: true,
   paletteColorsSupported: false,
   paletteRampSupported: true,
 }));
@@ -160,11 +161,10 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     expect(createVisualizerEngine.mock.lastCall![2]).toBe(ADAPTIVE_LADDER[1]);
   });
 
-  it("paces to the TV target and tints in a shader", async () => {
+  it("paces to the TV target and reports its performance", async () => {
     await mountCanvas();
     const options = engineOptions();
     expect(options.maxFps).toBe(TV_TARGET_FPS);
-    expect(options.shaderTint).toBe(true);
     expect(options.onPerfSample).toBeTypeOf("function");
   });
 
@@ -186,9 +186,10 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     warmUp();
     feed({ fps: 20 });
     feed({ fps: 20 });
+    // the level in the report is the one now on screen, not the one left
     expect(reportVisualizerRender).toHaveBeenCalledWith(
       expect.objectContaining({ fps: 20 }),
-      1,
+      ADAPTIVE_START_LEVEL + 1,
       "stepped down",
     );
   });
@@ -213,19 +214,6 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     );
   });
 
-  it("drops the flat tint while the ramp is doing the recoloring", async () => {
-    await mountCanvas();
-    relayCallbacks.onColor!({
-      background_light: [240, 240, 240],
-      primary: [200, 0, 0],
-      accent: [0, 0, 255],
-      on_light: [20, 20, 20],
-    });
-    await flushPromises();
-    // the ramp replaces the tint rather than stacking with it
-    expect(engine.setTint).toHaveBeenLastCalledWith(null);
-  });
-
   it("colors the preset's own elements without being asked to", async () => {
     // on by default, so a supporting engine gets the colors with no preference
     // written; only one side of the palette is ever used
@@ -234,23 +222,19 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     relayCallbacks.onColor!({
       primary: [200, 0, 0],
       accent: [0, 0, 255],
-      on_dark: [10, 10, 10],
-      on_light: [240, 240, 240],
+      // on_dark is the variant for drawing ON a dark background, so it is the
+      // light-looking colour of the pair
+      on_dark: [240, 240, 240],
+      on_light: [10, 10, 10],
     });
     await flushPromises();
-    // waveform, outer border, inner border, motion vectors
+    // waveform, outer border, inner border, motion vectors. This suite runs on
+    // the light theme, so the elements take the on-light variant.
     expect(engine.setPaletteColors).toHaveBeenLastCalledWith([
       [10, 10, 10],
       [200, 0, 0],
       [0, 0, 255],
       [10, 10, 10],
     ]);
-  });
-
-  it("keeps the CSS tint layer out of the DOM while the engine tints", async () => {
-    const wrapper = await mountCanvas();
-    relayCallbacks.onState!("streaming");
-    await flushPromises();
-    expect(wrapper.find(".visualizer-layer__tint").exists()).toBe(false);
   });
 });
