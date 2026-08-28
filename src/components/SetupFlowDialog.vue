@@ -416,10 +416,14 @@ const flowTitle = computed(() => {
       api.getProviderManifest(launch.value.domain)?.name || launch.value.domain;
     return $t("settings.setup_flow.setup_title", [name]);
   }
+  // the launch event carries only an id, so neither instance nor player is
+  // guaranteed to be in the store; both fall back to an unnamed title
   if (launch.value.kind === "reconfigure") {
-    return $t("settings.reconfigure");
+    const instance = api.providers[launch.value.instanceId];
+    return instance
+      ? $t("settings.setup_flow.reconfigure_title", [instance.name])
+      : $t("settings.reconfigure");
   }
-  // the launch event carries only the id, so the player need not be in the store
   const player = api.players[launch.value.playerId];
   return player
     ? $t("settings.setup_flow.setup_title", [player.name])

@@ -757,6 +757,7 @@
             "open_settings": "Open settings",
             "setup_player_title": "Set up player",
             "setup_title": "Set up {0}",
+            "reconfigure_title": "Reconfigure {0}",
             "expires_in": "Expires in {0}",
             "external_default_title": "Continue in your browser",
             "external_default_text": "A new browser window will open so you can sign in and authorize Music Assistant. Come back here once you're done — this dialog continues automatically.",
