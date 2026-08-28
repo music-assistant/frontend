@@ -18,7 +18,7 @@
         :style="canvasStyle"
       ></canvas>
       <div
-        v-if="streaming && !shaderTintActive && !paletteActive"
+        v-if="streaming && !shaderTintActive && !paletteActive && !rampActive"
         class="visualizer-layer__tint"
         :style="tintStyle"
       ></div>
@@ -248,6 +248,10 @@ const paletteRamp = computed<[number, number, number][] | null>(() => {
   return anchors.sort((first, second) => luma(first) - luma(second));
 });
 
+const rampActive = computed(
+  () => rampSupported.value && paletteRamp.value !== null,
+);
+
 const paletteRampStrength = computed(
   () => Math.min(Math.max(paletteRampPref.value, 0), 100) / 100,
 );
@@ -438,9 +442,12 @@ const createEngine = async () => {
   }
 };
 
+// The ramp is the flat tint's replacement, not an extra layer on top of it:
+// it recolors by brightness where the tint forces one hue on everything.
 const applyTint = () => {
   if (!shaderTintActive.value) return;
-  const tint = paletteActive.value ? null : tintColor.value;
+  const replaced = paletteActive.value || rampActive.value;
+  const tint = replaced ? null : tintColor.value;
   engine?.setTint(tint ? hexToRgb(tint) : null);
 };
 
@@ -459,7 +466,10 @@ watch(paletteColors, () => {
   applyPaletteColors();
   applyTint();
 });
-watch([paletteRamp, paletteRampStrength], applyPaletteRamp);
+watch([paletteRamp, paletteRampStrength], () => {
+  applyPaletteRamp();
+  applyTint();
+});
 
 watch(playbackPaused, (isPaused) => {
   if (pauseTimer !== null) {
