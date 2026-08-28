@@ -54,8 +54,8 @@ importers:
         specifier: ^14.3.0
         version: 14.3.0(vue@3.5.41(typescript@6.0.3))
       butterchurn:
-        specifier: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.3/butterchurn-3.0.0-beta.5.ma.3.tgz
-        version: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.3/butterchurn-3.0.0-beta.5.ma.3.tgz
+        specifier: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz
+        version: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz
       butterchurn-presets:
         specifier: 3.0.0-beta.4
         version: 3.0.0-beta.4
@@ -2555,9 +2555,9 @@ packages:
   butterchurn-presets@3.0.0-beta.4:
     resolution: {integrity: sha512-TbQLUPvGOYMZAtWKoCmBtludh9aQZ6NaMGQU4lvPeadBPy3Du3yNmwBjlTMLP5c5mRWElxQPjTL1PtR7FZK3OQ==}
 
-  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.3/butterchurn-3.0.0-beta.5.ma.3.tgz:
-    resolution: {integrity: sha512-aEJ6ot5hPfHMLSuiGzNhniuHQgMsb0XFoX9luQ4KQFGHTuRJWcrEVASg/cnqmNbdIVJ3WrJxkvDHjRhU1xfifg==, tarball: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.3/butterchurn-3.0.0-beta.5.ma.3.tgz}
-    version: 3.0.0-beta.5.ma.3
+  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz:
+    resolution: {integrity: sha512-yO/NaBbhJ88yct9ACA8SHl0nxfPqhNWvpb9ZIJ5w/eVgcbyN/zIxANTxcwIjBQ6ruCOyZc+Rs/aM1WLT7QIZpA==, tarball: https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz}
+    version: 3.0.0-beta.5.ma.4
 
   cacheable@2.3.5:
     resolution: {integrity: sha512-EQfaKe09tl615iNvq/TBRWTFf1AKJNXYQSsMx0Z3EI0nA+pVsVPS8wJhnRlkbdacKPh1d0qVIhwTc2zsQNFEEg==}
@@ -7042,7 +7042,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.29.7
 
-  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.3/butterchurn-3.0.0-beta.5.ma.3.tgz:
+  butterchurn@https://github.com/music-assistant/butterchurn/releases/download/v3.0.0-beta.5.ma.4/butterchurn-3.0.0-beta.5.ma.4.tgz:
     dependencies:
       '@assemblyscript/loader': 0.28.20
       ecma-proposal-math-extensions: 0.0.2
