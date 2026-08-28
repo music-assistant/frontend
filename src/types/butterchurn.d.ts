@@ -18,6 +18,14 @@ declare module "butterchurn" {
     setMaxShapeInstances?(maxInstances: number): void;
     // engine-side artwork tint (gpu-pipeline fork builds)
     setTint?(rgb: readonly [number, number, number] | null): void;
+    // present from the palette-colors fork branch; callers optional-call it
+    setPaletteColors?(
+      colors: readonly (readonly [number, number, number])[] | null,
+    ): void;
+    setPaletteRamp?(
+      colors: readonly (readonly [number, number, number])[] | null,
+      strength: number,
+    ): void;
     setRendererSize(
       width: number,
       height: number,
@@ -29,6 +37,10 @@ declare module "butterchurn" {
   export interface ButterchurnStatic {
     // fork builds that blend the artwork tint in their own output pass
     supportsEngineTint?: boolean;
+    // fork builds that can color the preset's own waveform and borders
+    supportsPaletteColors?: boolean;
+    // fork builds that can remap the image to a palette ramp
+    supportsPaletteRamp?: boolean;
     createVisualizer(
       context: AudioContext,
       canvas: HTMLCanvasElement,

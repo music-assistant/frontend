@@ -68,9 +68,36 @@ export interface VisualizerEngine {
    * :param rgb: 0-255 color channels, or null to fade the tint out.
    */
   setTint(rgb: readonly [number, number, number] | null): void;
+  /**
+   * Color the preset's own waveform and borders from the artwork palette,
+   * instead of washing the whole frame in a single hue. A no-op on engines
+   * without the capability. Transitions over the same 1.5s as the tint.
+   *
+   * :param colors: Three 0-255 rgb triples (waveform, outer border, inner
+   *   border), or null to fade them back to the preset's own colors.
+   */
+  setPaletteColors(
+    colors: readonly (readonly [number, number, number])[] | null,
+  ): void;
+  /**
+   * Remap the whole image into a palette ramp, keeping the preset's own
+   * luminance. A no-op on engines without the capability.
+   *
+   * :param colors: Ramp anchors ordered dark to light as 0-255 rgb triples,
+   *   or null to fade the remap out.
+   * :param strength: 0-1 blend strength at the end of the transition.
+   */
+  setPaletteRamp(
+    colors: readonly (readonly [number, number, number])[] | null,
+    strength: number,
+  ): void;
   // whether the artwork tint is applied by the engine's own WebGL pass; when
   // false a hosting layer that wants a tint has to apply one itself (CSS)
   readonly shaderTintActive: boolean;
+  // whether this engine can take palette colors at all
+  readonly paletteColorsSupported: boolean;
+  // whether this engine can remap the image to a palette ramp
+  readonly paletteRampSupported: boolean;
   // what the GL context reports it is drawing with
   readonly renderer: string;
   destroy(): void;
@@ -194,6 +221,8 @@ export async function createVisualizerEngine(
   // one canvas, no per-frame copy
   const engineTint =
     options?.shaderTint === true && butterchurn.supportsEngineTint === true;
+  const paletteColorsSupported = butterchurn.supportsPaletteColors === true;
+  const paletteRampSupported = butterchurn.supportsPaletteRamp === true;
   sharedAudioContext ??= new AudioContext();
   let profile = typeof quality === "object" ? quality : qualityProfile(quality);
 
@@ -487,6 +516,8 @@ export async function createVisualizerEngine(
   return {
     renderer,
     shaderTintActive: tintPass !== null || engineTint,
+    paletteColorsSupported,
+    paletteRampSupported,
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
       const preset = await getPreset(name);
       if (!preset || destroyed) return;
@@ -534,6 +565,12 @@ export async function createVisualizerEngine(
       } else {
         tintPass?.setTint(rgb);
       }
+    },
+    setPaletteColors(colors) {
+      visualizer.setPaletteColors?.(colors);
+    },
+    setPaletteRamp(colors, strength) {
+      visualizer.setPaletteRamp?.(colors, strength);
     },
     setProfile(next: QualityProfile) {
       if (destroyed) return;

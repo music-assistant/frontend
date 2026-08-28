@@ -18,7 +18,7 @@
         :style="canvasStyle"
       ></canvas>
       <div
-        v-if="streaming && !shaderTintActive"
+        v-if="streaming && !shaderTintActive && !paletteActive"
         class="visualizer-layer__tint"
         :style="tintStyle"
       ></div>
@@ -45,6 +45,7 @@ import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  VISUALIZER_PALETTE_RAMP_DEFAULT,
 } from "@/composables/visualizer/state";
 import {
   createAdaptiveQualityController,
@@ -126,6 +127,14 @@ const beatSwitchPref = visualizerPreference<boolean>(
   "visualizer_beat_switch",
   false,
 );
+const paletteColorsPref = visualizerPreference<boolean>(
+  "visualizer_palette_colors",
+  false,
+);
+const paletteRampPref = visualizerPreference<number>(
+  "visualizer_palette_ramp",
+  VISUALIZER_PALETTE_RAMP_DEFAULT,
+);
 const beatDwellPref = visualizerPreference<number>("visualizer_beat_dwell", 30);
 
 // A dashboard viewer is a cast receiver or TV: on TV compositors the CSS
@@ -135,6 +144,8 @@ const constrainedDisplay = authManager.isDashboardViewer();
 // Whether the running engine actually took over the tint. When its WebGL pass
 // could not be built, this stays false and the CSS tint layer steps back in.
 const shaderTintActive = ref(false);
+const paletteSupported = ref(false);
+const rampSupported = ref(false);
 
 const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
@@ -197,6 +208,49 @@ const tintColor = computed(() => {
 const tintStyle = computed(() => ({
   backgroundColor: tintColor.value ?? "transparent",
 }));
+
+// Only ever one side of the palette: mixing on_dark with on_light would put two
+// contrast families on screen at once. Backgrounds stay unused, they are not
+// meant for the thin foreground elements these three colors land on.
+const paletteColors = computed<[number, number, number][] | null>(() => {
+  if (!paletteColorsPref.value) return null;
+  const wire = colorPalette.value;
+  const useDark = props.forceDarkPalette || vuetify.theme.current.value.dark;
+  const foreground = useDark ? wire.on_light : wire.on_dark;
+  if (!foreground || !wire.primary || !wire.accent) return null;
+  // waveform, outer border, inner border, motion vectors
+  return [foreground, wire.primary, wire.accent, foreground];
+});
+
+// A whole-frame tint would flatten all three back to a single hue.
+const paletteActive = computed(
+  () => paletteSupported.value && paletteColors.value !== null,
+);
+
+// Rec.601 luma, the weighting the engine's own blend uses.
+const luma = ([r, g, b]: [number, number, number]) =>
+  0.3 * r + 0.59 * g + 0.11 * b;
+
+// Anchors for the engine's luminance ramp, one side of the palette only and
+// ordered dark to light. primary and accent have no variants, so they sit
+// wherever their own brightness puts them.
+const paletteRamp = computed<[number, number, number][] | null>(() => {
+  if (paletteRampPref.value <= 0) return null;
+  const wire = colorPalette.value;
+  const useDark = props.forceDarkPalette || vuetify.theme.current.value.dark;
+  const anchors = [
+    useDark ? wire.background_dark : wire.background_light,
+    wire.primary,
+    wire.accent,
+    useDark ? wire.on_dark : wire.on_light,
+  ].filter((color): color is [number, number, number] => !!color);
+  if (anchors.length === 0) return null;
+  return anchors.sort((first, second) => luma(first) - luma(second));
+});
+
+const paletteRampStrength = computed(
+  () => Math.min(Math.max(paletteRampPref.value, 0), 100) / 100,
+);
 
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
@@ -369,12 +423,16 @@ const createEngine = async () => {
   }
   engine = created;
   shaderTintActive.value = engine?.shaderTintActive ?? false;
+  paletteSupported.value = engine?.paletteColorsSupported ?? false;
+  rampSupported.value = engine?.paletteRampSupported ?? false;
   if (engine) {
     // Started up paused: nothing on screen to wind down.
     if (playbackPaused.value && pauseTimer === null) {
       engine.setPaused(true, false);
       faded.value = true;
     }
+    applyPaletteColors();
+    applyPaletteRamp();
     applyTint();
     await applyPreset(0);
   }
@@ -382,10 +440,26 @@ const createEngine = async () => {
 
 const applyTint = () => {
   if (!shaderTintActive.value) return;
-  engine?.setTint(tintColor.value ? hexToRgb(tintColor.value) : null);
+  const tint = paletteActive.value ? null : tintColor.value;
+  engine?.setTint(tint ? hexToRgb(tint) : null);
+};
+
+const applyPaletteColors = () => {
+  if (!paletteSupported.value) return;
+  engine?.setPaletteColors(paletteColors.value);
+};
+
+const applyPaletteRamp = () => {
+  if (!rampSupported.value) return;
+  engine?.setPaletteRamp(paletteRamp.value, paletteRampStrength.value);
 };
 
 watch(tintColor, applyTint);
+watch(paletteColors, () => {
+  applyPaletteColors();
+  applyTint();
+});
+watch([paletteRamp, paletteRampStrength], applyPaletteRamp);
 
 watch(playbackPaused, (isPaused) => {
   if (pauseTimer !== null) {
