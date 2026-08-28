@@ -19,6 +19,7 @@ permissions:
 
 env:
   NODE_VERSION: "22.x" # set this to the node version to use
+  PYTHON_VERSION: "3.12" # set this to the python version to use
 
 jobs:
   test-and-lint:
@@ -26,6 +27,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
@@ -38,7 +44,9 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          python3 -m pip install build
         env:
           CI: true
 
@@ -56,6 +64,16 @@ jobs:
         run: pnpm build
         env:
           CI: true
+
+      # The Python package wraps the freshly built frontend, so this has to run
+      # after `pnpm build`. Nothing else exercises the packaging config, so
+      # without this a mistake in pyproject.toml or MANIFEST.in first shows up
+      # as a failed release.
+      - name: Build Python package
+        run: python3 -m build
+
+      - name: Verify the Python package ships the frontend
+        run: .github/scripts/verify-python-package.sh
 
       # disable typecheck for now
       # - name: Typecheck
