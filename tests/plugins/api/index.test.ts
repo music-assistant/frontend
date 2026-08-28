@@ -419,6 +419,22 @@ describe("MusicAssistantApi error handling", () => {
     });
   });
 
+  it("omits match_policy on older servers even when a policy is passed", () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 58 };
+    api.importPlaylist(
+      "#EXTM3U",
+      true,
+      ["spotify--1"],
+      PlaylistMatchPolicy.EXACT,
+    );
+
+    expect(transport.lastCommand.args).toEqual({
+      m3u_data: "#EXTM3U",
+      library_matching: true,
+      match_providers: ["spotify--1"],
+    });
+  });
+
   it("reports playlist match policy support once the server reaches schema 59", () => {
     expect(api.supportsPlaylistMatchPolicy).toBe(false);
 

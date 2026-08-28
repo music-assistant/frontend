@@ -942,7 +942,8 @@ export class MusicAssistantApi {
       m3u_data,
       library_matching,
       match_providers,
-      match_policy,
+      // omit on older servers so the call doesn't send an unsupported argument
+      match_policy: this.supportsPlaylistMatchPolicy ? match_policy : undefined,
     });
   }
 
