@@ -114,6 +114,7 @@
         "reload": "새로고침",
         "save": "저장",
         "settings": "설정",
+        "setup_provider": "공급자 설정: {0}",
         "sync": "지금 동기화",
         "sync_running": "이 공급자는 현재 동기화 중입니다.",
         "core_modules": "코어 모듈",

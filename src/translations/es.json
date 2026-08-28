@@ -120,6 +120,7 @@
         "reload": "Recargar",
         "save": "Guardar",
         "settings": "Ajustes",
+        "setup_provider": "Ajustes del proveedor: {0}",
         "sync": "Sincronizar ahora",
         "sync_running": "Este proveedor está siendo sincronizado ahora",
         "core_modules": "Módulos del núcleo",

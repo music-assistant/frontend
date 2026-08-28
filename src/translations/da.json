@@ -114,6 +114,7 @@
         "reload": "Genindlæs",
         "save": "Gem",
         "settings": "Indstillinger",
+        "setup_provider": "Opsæt udbyder {0}",
         "sync": "Synkroniser nu",
         "sync_running": "Denne udbyder synkroniseres",
         "core_modules": "Generelle moduler",

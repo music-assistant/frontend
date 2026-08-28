@@ -115,6 +115,7 @@
         "reload": "Lataa uudelleen",
         "save": "Tallenna",
         "settings": "Asetukset",
+        "setup_provider": "Määritä tarjoaja: {0}",
         "sync": "Synkronoi nyt",
         "sync_running": "Tätä palveluntarjoajaa synkronoidaan nyt",
         "core_modules": "Ydinmoduulit",

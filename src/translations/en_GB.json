@@ -116,6 +116,7 @@
         "reload": "Reload",
         "save": "Save",
         "settings": "Settings",
+        "setup_provider": "Setup provider: {0}",
         "sync": "Synchronise now",
         "sync_running": "This provider is now being synchronised",
         "core_modules": "Core modules",

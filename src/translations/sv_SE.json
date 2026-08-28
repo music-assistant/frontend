@@ -120,6 +120,7 @@
         "reload": "Ladda om",
         "save": "Spara",
         "settings": "Inställningar",
+        "setup_provider": "Ställ in leverantör: {0}",
         "sync": "Synkronisera nu",
         "sync_running": "Denna leverantör synkroniseras nu",
         "core_modules": "Kärnmoduler",

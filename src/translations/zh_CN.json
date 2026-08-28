@@ -116,6 +116,7 @@
         "reload": "重新加载",
         "save": "保存",
         "settings": "设置",
+        "setup_provider": "设置提供程序:  {0}",
         "sync": "立即同步",
         "sync_running": "现在同步该提供程序",
         "core_modules": "核心模块",

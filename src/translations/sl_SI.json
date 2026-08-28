@@ -114,6 +114,7 @@
         "reload": "Ponovno naloži",
         "save": "Shrani",
         "settings": "Nastavitve",
+        "setup_provider": "Ponudnik nastavitev: {0}",
         "sync": "Sinhronizirajte zdaj",
         "sync_running": "Ta ponudnik se zdaj sinhronizira",
         "core_modules": "Jedrni moduli",
