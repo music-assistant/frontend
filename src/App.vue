@@ -41,7 +41,10 @@ import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
-import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
+import {
+  restoreStrayViewerParams,
+  sanitizeDashboardViewerPath,
+} from "@/helpers/dashboard_viewer_access";
 import {
   BROWSER_MEDIA_CONTROLS,
   BrowserMediaControlsMode,
@@ -397,9 +400,16 @@ const completeInitialization = async () => {
   } else if (isGuestAccessSession) {
     router.push("/guest");
   } else if (isDashboardViewer) {
+    // A re-cast to a session that is still authenticated never reaches the login
+    // flow, so the url it was launched with is what re-pins it; the stored path
+    // only covers a plain reload, whose url no longer carries one.
+    const launchedPath = urlParams.get("path");
     const pinnedPath = sanitizeDashboardViewerPath(
-      sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY),
+      launchedPath === null
+        ? sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY)
+        : restoreStrayViewerParams(launchedPath, window.location.search),
     );
+    sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, pinnedPath);
     router.replace(pinnedPath);
   }
   // Don't push to any route here - let the router handle navigation naturally

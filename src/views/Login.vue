@@ -454,7 +454,10 @@ import {
   PENDING_JOIN_CODE_STORAGE_KEY,
   PENDING_JOIN_TYPE_STORAGE_KEY,
 } from "@/helpers/guest_session";
-import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
+import {
+  restoreStrayViewerParams,
+  sanitizeDashboardViewerPath,
+} from "@/helpers/dashboard_viewer_access";
 import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
@@ -858,7 +861,11 @@ const completeDashboardAuth = async (
   dashboardCode: string,
   rawPath: string | null,
 ): Promise<boolean> => {
-  const path = sanitizeDashboardViewerPath(rawPath);
+  const path = sanitizeDashboardViewerPath(
+    rawPath === null
+      ? null
+      : restoreStrayViewerParams(rawPath, window.location.search),
+  );
   if (!(await tryGuestCodeAuth(dashboardCode)).authenticated) {
     return false;
   }
