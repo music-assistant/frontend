@@ -382,6 +382,14 @@ const completeInitialization = async () => {
     await refreshPluginEnabledStates();
   } else if (isDashboardViewer) {
     console.debug("[App] Dashboard viewer - fetching player/queue state only");
+    // Before anything else can throw: a display with no reachable console that
+    // fails to render at all never mounts the visualizer canvas, so installing
+    // this any later would miss exactly the failures it exists to report.
+    // Imported lazily to keep the relay (and the router module it pulls in) out
+    // of App's own import graph.
+    void import("@/plugins/visualizer-relay").then((relay) =>
+      relay.installVisualizerErrorReporting(),
+    );
     // Dashboards render live player/queue state, which regular guests don't need
     await api.fetchState();
   } else {

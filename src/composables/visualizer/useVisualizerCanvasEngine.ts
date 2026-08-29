@@ -23,7 +23,6 @@ import { authManager } from "@/plugins/auth";
 import {
   type ColorPalette,
   VisualizerRelayClient,
-  installVisualizerErrorReporting,
   reportVisualizerCapability,
   reportVisualizerRender,
 } from "@/plugins/visualizer-relay";
@@ -156,8 +155,6 @@ export function useVisualizerCanvasEngine(
   const initialize = async () => {
     if (initialized || !options.canvas.value) return;
     initialized = true;
-    // consoleless displays report their uncaught errors to the server log
-    installVisualizerErrorReporting();
     connectRelay();
     await createEngine();
     if (engine) {

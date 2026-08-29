@@ -102,6 +102,8 @@ function startViewerPreferencesSync(): void {
               dashboard_id:
                 typeof dashboardId === "string" ? dashboardId : undefined,
             },
+            // a failing fetch would otherwise toast on a display nobody can reach
+            { suppressGlobalError: true },
           )) ?? {};
       } catch (error) {
         console.warn("[visualizer] could not fetch viewer preferences:", error);

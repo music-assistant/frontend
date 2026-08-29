@@ -207,6 +207,8 @@ describe("viewer preferences", () => {
         player_id: undefined,
         dashboard_id: "chromecast_abc",
       },
+      // never toasts on a display nobody can reach
+      { suppressGlobalError: true },
     );
     expect(visualizerPresetPref.value).toBe("martin - mandelbox explorer");
     expect(visualizerOpacityPref.value).toBe(55);
