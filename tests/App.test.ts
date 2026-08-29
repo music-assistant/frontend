@@ -122,6 +122,9 @@ const {
             username: string;
           }
         | undefined,
+      activePlayer: undefined as
+        | { current_media?: { title?: string; artist?: string } }
+        | undefined,
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
       isIngressSession: false,
@@ -347,6 +350,7 @@ describe("App initialization", () => {
     haStateMock.kioskModeEnabled = false;
     mockGetKioskModePreference.mockReturnValue(true);
     storeMock.currentUser = undefined;
+    storeMock.activePlayer = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
     storeMock.isOnboarding = false;
@@ -520,6 +524,53 @@ describe("App initialization", () => {
     expect(apiMock.state.value).toBe("initialized");
     expect(wrapper.find("router-view-stub").exists()).toBe(true);
     expectStartupDataRequestedBeforeReveal();
+  });
+
+  it("sets the browser title from the selected player's current media", async () => {
+    storeMock.activePlayer = {
+      current_media: { title: "Song Title", artist: "Artist Name" },
+    };
+
+    wrapper = await mountApp();
+
+    expect(document.title).toBe("Song Title — Artist Name");
+  });
+
+  it("uses the branded browser title when current media is incomplete", async () => {
+    storeMock.activePlayer = { current_media: { title: "Song Title" } };
+
+    wrapper = await mountApp();
+
+    expect(document.title).toBe("Music Assistant - Your music, Your way");
+  });
+
+  it("uses the branded browser title when browser media controls are disabled", async () => {
+    localStorage.setItem(
+      "frontend.settings.enable_browser_controls",
+      "disabled",
+    );
+    storeMock.activePlayer = {
+      current_media: { title: "Song Title", artist: "Artist Name" },
+    };
+
+    wrapper = await mountApp();
+
+    expect(document.title).toBe("Music Assistant - Your music, Your way");
+  });
+
+  it("updates the browser title when browser media controls are toggled", async () => {
+    storeMock.activePlayer = {
+      current_media: { title: "Song Title", artist: "Artist Name" },
+    };
+
+    wrapper = await mountApp();
+    saveDeviceSetting("enable_browser_controls", "disabled");
+    await nextTick();
+    expect(document.title).toBe("Music Assistant - Your music, Your way");
+
+    saveDeviceSetting("enable_browser_controls", "web_player");
+    await nextTick();
+    expect(document.title).toBe("Song Title — Artist Name");
   });
 
   it.each(["party", "music_quiz"] as const)(
