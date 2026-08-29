@@ -135,7 +135,18 @@
                 <ChevronLeft :size="20" />
               </button>
 
-              <div ref="heroGrid" class="ed-hero-grid" @scroll="updateHeroNav">
+              <div
+                ref="heroGrid"
+                class="ed-hero-grid"
+                :class="{ 'ed-hero-grid--dragging': heroDragging }"
+                @scroll="updateHeroNav"
+                @pointerdown="onHeroPointerDown"
+                @pointermove="onHeroPointerMove"
+                @pointerup="onHeroPointerUp"
+                @pointercancel="onHeroPointerUp"
+                @click.capture="onHeroClickCapture"
+                @dragstart.prevent
+              >
                 <EditorialHeroCard
                   class="ed-hero-grid__lead"
                   :item="heroEntries[0].item"
@@ -393,6 +404,7 @@ import {
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { useDragScroll } from "@/composables/useDragScroll";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { panelViewItemResponsive } from "@/helpers/utils";
@@ -635,6 +647,14 @@ const scrollHero = (dir: number) => {
   if (!el) return;
   el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
 };
+
+const {
+  dragging: heroDragging,
+  onPointerDown: onHeroPointerDown,
+  onPointerMove: onHeroPointerMove,
+  onPointerUp: onHeroPointerUp,
+  onClickCapture: onHeroClickCapture,
+} = useDragScroll(heroGrid);
 
 let heroRo: ResizeObserver | undefined;
 let observedHeroGrid: HTMLElement | null = null;
@@ -1245,6 +1265,12 @@ onBeforeUnmount(() => {
 }
 .ed-hero-grid::-webkit-scrollbar {
   display: none;
+}
+.ed-hero-grid--dragging {
+  cursor: grabbing;
+  user-select: none;
+  /* snapping fights the drag while the pointer drives scrollLeft */
+  scroll-snap-type: none;
 }
 .ed-hero-grid__lead {
   flex: 1.5 0 520px;
