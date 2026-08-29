@@ -136,7 +136,7 @@
               </button>
 
               <div
-                ref="heroGrid"
+                :ref="setHeroGridRef"
                 class="ed-hero-grid"
                 :class="{ 'ed-hero-grid--dragging': heroDragging }"
                 @scroll="updateHeroNav"
@@ -631,6 +631,11 @@ const heroColumns = computed<HeroEntry[][]>(() => {
 // Safari swallow the first tap as "hover" instead of a click.
 const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
 const heroGrid = ref<HTMLElement | null>(null);
+// a plain ref would come back as an array here, since the row is rendered
+// inside the v-for over the rows
+const setHeroGridRef = (el: unknown) => {
+  heroGrid.value = el instanceof HTMLElement ? el : null;
+};
 const heroHovering = ref(false);
 const heroCanLeft = ref(false);
 const heroCanRight = ref(false);
