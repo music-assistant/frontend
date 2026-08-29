@@ -1012,6 +1012,15 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
+// track matching tier accepted when matching playlist tracks against a
+// provider's library. matching always cascades exact -> same_recording ->
+// best_effort; the policy only sets the lowest tier that is still accepted.
+export enum PlaylistMatchPolicy {
+  EXACT = "exact",
+  SAME_RECORDING = "same_recording",
+  BEST_EFFORT = "best_effort",
+}
+
 export interface Radio extends MediaItem {
   is_dynamic: boolean;
 }
