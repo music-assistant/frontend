@@ -99,8 +99,8 @@ export interface CommandOptions {
   suppressGlobalError?: boolean | (() => boolean);
 }
 
-// The match_policy argument on music/playlists/import_playlist landed in API schema 59.
-const IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION = 59;
+// The match_policy argument on music/playlists/import_playlist landed in API schema 66.
+const IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION = 66;
 
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
@@ -2978,7 +2978,7 @@ export class MusicAssistantApi {
     );
   }
 
-  /** Whether the connected server accepts an explicit match_policy on import_playlist (schema >= 59). */
+  /** Whether the connected server accepts an explicit match_policy on import_playlist (schema >= 66). */
   public get supportsPlaylistMatchPolicy(): boolean {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
