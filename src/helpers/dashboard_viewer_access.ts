@@ -10,6 +10,22 @@ const DASHBOARD_VIEWER_ROUTES = new Set([
 // Route params the viewer needs to identify itself and what it is showing.
 const VIEWER_ROUTE_PARAMS = ["player", "dashboard_id"] as const;
 
+// The dashboard kind the server knows each route by.
+export type DashboardKind = "now_playing" | "music_quiz" | "party";
+const DASHBOARD_KIND_BY_PREFIX: ReadonlyArray<[string, DashboardKind]> = [
+  ["/now-playing", "now_playing"],
+  ["/music-quiz", "music_quiz"],
+];
+const DEFAULT_DASHBOARD_KIND: DashboardKind = "party";
+
+/** Which dashboard a viewer route is showing, as the server names it. */
+export function dashboardKindForPath(path: string): DashboardKind {
+  const match = DASHBOARD_KIND_BY_PREFIX.find(([prefix]) =>
+    path.startsWith(prefix),
+  );
+  return match ? match[1] : DEFAULT_DASHBOARD_KIND;
+}
+
 function pathnameOf(path: string): string {
   return path.split("?")[0] ?? path;
 }

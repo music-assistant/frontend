@@ -116,25 +116,37 @@ describe("visualizer dashboard default", () => {
     relayMocks.visualizerShownOnDashboards.mockResolvedValue(true);
   });
 
-  it("follows the plugin setting when no preference is stored", async () => {
+  // show_on_dashboards describes cast displays, not the user's own screens, so
+  // it must not reach a regular session that has never picked.
+  it("leaves a regular session off when no preference is stored", async () => {
     const { useVisualizer, visualizerEnabledForPlayer } =
       await importComposable();
     // Hosting a view starts the module-level watch that fetches the setting.
     const { visualizerEnabledPref } = useVisualizer();
     await flushPromises();
     expect(relayMocks.visualizerShownOnDashboards).toHaveBeenCalled();
-    expect(visualizerEnabledPref.value).toBe(true);
-    expect(visualizerEnabledForPlayer()).toBe(true);
+    expect(visualizerEnabledPref.value).toBe(false);
+    expect(visualizerEnabledForPlayer()).toBe(false);
   });
 
-  it("lets an explicit global preference override the plugin setting", async () => {
+  it("follows the plugin setting on a dashboard viewer", async () => {
+    authMocks.authManager.isDashboardViewer.mockReturnValue(true);
     const { useVisualizer, visualizerEnabledForPlayer } =
       await importComposable();
     const { visualizerEnabledPref } = useVisualizer();
     await flushPromises();
-    storeMock.store.currentUser.preferences["visualizer_enabled"] = false;
-    expect(visualizerEnabledPref.value).toBe(false);
-    expect(visualizerEnabledForPlayer()).toBe(false);
+    expect(visualizerEnabledPref.value).toBe(true);
+    expect(visualizerEnabledForPlayer()).toBe(true);
+  });
+
+  it("lets an explicit global preference win over the default", async () => {
+    const { useVisualizer, visualizerEnabledForPlayer } =
+      await importComposable();
+    const { visualizerEnabledPref } = useVisualizer();
+    await flushPromises();
+    storeMock.store.currentUser.preferences["visualizer_enabled"] = true;
+    expect(visualizerEnabledPref.value).toBe(true);
+    expect(visualizerEnabledForPlayer()).toBe(true);
   });
 
   it("lets a per-player preference override everything", async () => {

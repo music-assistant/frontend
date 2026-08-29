@@ -31,6 +31,7 @@ import {
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
 import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
+import { dashboardKindForPath } from "@/helpers/dashboard_viewer_access";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -43,10 +44,9 @@ import {
   visualizerShownOnDashboards,
 } from "@/plugins/visualizer-relay";
 
-// The plugin's show_on_dashboards setting: the enabled-default for sessions
-// with no stored preference. A cast dashboard runs as the dashboard viewer,
-// which has no user preferences and no way to set any, so this server-side
-// setting decides for it; an explicit preference always wins.
+// The plugin's show_on_dashboards setting. A cast dashboard runs as the
+// dashboard viewer, which has no user preferences and no way to set any, so
+// this decides for it; the casting user's per-player override still wins.
 const dashboardDefaultEnabled = ref(false);
 let dashboardDefaultWatchStarted = false;
 
@@ -89,12 +89,7 @@ function startViewerPreferencesSync(): void {
   effectScope(true).run(() => {
     const fetchViewerPreferences = async () => {
       if (!api.supportsDashboardVisualizer) return;
-      const path = router.currentRoute.value.path;
-      const dashboard = path.startsWith("/now-playing")
-        ? "now_playing"
-        : path.startsWith("/music-quiz")
-          ? "music_quiz"
-          : "party";
+      const dashboard = dashboardKindForPath(router.currentRoute.value.path);
       const playerId = router.currentRoute.value.query.player;
       const dashboardId = router.currentRoute.value.query.dashboard_id;
       try {
@@ -179,9 +174,8 @@ export function visualizerEnabledForPlayer(playerId?: string): boolean {
     const override = prefs?.[`visualizer_enabled.${playerId}`];
     if (override !== undefined) return Boolean(override);
   }
-  return Boolean(
-    prefs?.["visualizer_enabled"] ?? dashboardDefaultEnabled.value,
-  );
+  // show_on_dashboards deliberately does not reach here; this is not a dashboard
+  return Boolean(prefs?.["visualizer_enabled"] ?? false);
 }
 
 export function toggleVisualizerForPlayer(playerId?: string): void {

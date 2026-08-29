@@ -71,7 +71,8 @@ export function pacedIntervalMs(
 
 /**
  * The slowest standard panel rate whose whole multiples explain every gap in
- * the window, or null when no standard rate fits.
+ * the window, or null when no standard rate fits. Gaps must be positive; the
+ * estimator drops the rest before they reach here.
  */
 export function fitStandardTick(gaps: Float64Array): number | null {
   // slowest rate first: every gap trivially fits a fast-enough tick's
@@ -94,9 +95,10 @@ export function fitStandardTick(gaps: Float64Array): number | null {
   return null;
 }
 
-// The panel rate is a device property: once any window proves a faster tick,
-// a slower estimate later can only mean throttling, never a slower panel.
-// Latched at module level so engine rebuilds inherit it.
+// A slower estimate after a faster one almost always means throttling, not a
+// slower panel, so the fastest is latched and engine rebuilds inherit it. A
+// window dragged to a slower monitor stays latched and reads as throttled;
+// only cast/TV hosts measure against this, and those never change panels.
 let latchedTickMs: number | null = null;
 
 /** Drop the latched panel rate. Test seam; the latch is otherwise permanent. */
@@ -130,7 +132,9 @@ export function createTickEstimator(): TickEstimator {
       return estimated;
     },
     observe(now: number, since: number) {
-      if (!since) return;
+      // a non-positive gap says nothing about the tick grid, and would divide
+      // by zero in the fit's relative error
+      if (!since || now <= since) return;
       windowDeltas[windowTicks] = now - since;
       if (++windowTicks < REFRESH_WINDOW_TICKS) return;
       const fitted = fitStandardTick(windowDeltas);

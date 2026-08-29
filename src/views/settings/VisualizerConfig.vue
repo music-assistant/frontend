@@ -50,6 +50,7 @@
           </div>
           <Switch
             :model-value="enabledPref"
+            :aria-label="$t('settings.visualizer_enabled.label')"
             @update:model-value="
               (v: boolean) => setPref('visualizer_enabled', v)
             "
@@ -262,6 +263,7 @@
           </div>
           <Switch
             :model-value="paletteColorsPref"
+            :aria-label="$t('visualizer.palette_colors')"
             @update:model-value="
               (v: boolean) => setPref('visualizer_palette_colors', v)
             "
@@ -277,6 +279,7 @@
           </div>
           <Switch
             :model-value="beatSwitchPref"
+            :aria-label="$t('visualizer.beat_switch')"
             @update:model-value="
               (v: boolean) => setPref('visualizer_beat_switch', v)
             "

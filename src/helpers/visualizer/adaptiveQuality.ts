@@ -143,6 +143,7 @@ export function createAdaptiveQualityController(
       awaitingStepDownVerdict = false;
       settleReported = false;
       ceilingReported = false;
+      floorReported = false;
       report(sample, "preset changed");
     }
     // heartbeat between state-change reports, so long resting stretches

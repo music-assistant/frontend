@@ -8,6 +8,9 @@
   while unsupported or disconnected, so the regular gradient background
   underneath stays visible. Pausing or stopping the player winds it down
   (waveform to silence, layer faded out) and suspends the render loop.
+
+  Engine, relay and adaptive quality lifecycle lives in
+  useVisualizerCanvasEngine; this file is presentation and preferences.
 -->
 <template>
   <div class="visualizer-layer" aria-hidden="true" :style="layerStyle">
@@ -27,38 +30,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import {
   ATTACK_MS,
-  createVisualizerEngine,
   DECAY_MS,
-  type VisualizerEngine,
-  isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { visualizerPreference } from "@/composables/visualizer/useVisualizer";
+import { useVisualizerCanvasEngine } from "@/composables/visualizer/useVisualizerCanvasEngine";
 import { useVisualizerPalette } from "@/composables/visualizer/useVisualizerPalette";
 import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
-import {
-  createAdaptiveQualityController,
-  TV_TARGET_FPS,
-} from "@/helpers/visualizer/adaptiveQuality";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import {
-  type ColorPalette,
-  VisualizerRelayClient,
-  installVisualizerErrorReporting,
-  reportVisualizerCapability,
-  reportVisualizerRender,
-} from "@/plugins/visualizer-relay";
 
 // Settle time before winding down: track changes and buffer stalls drop a
 // player out of "playing" for a moment, and halting on those reads as a stutter.
@@ -96,12 +85,9 @@ const props = withDefaults(
 );
 
 const canvasRef = ref<HTMLCanvasElement>();
-const streaming = ref(false);
 const covered = computed(
   () => props.coveredWhenFullscreen && store.showFullscreenPlayer,
 );
-let relay: VisualizerRelayClient | null = null;
-let engine: VisualizerEngine | null = null;
 
 // On a dashboard viewer these resolve to the casting user's preferences.
 const qualityPref = visualizerPreference<string>(
@@ -122,12 +108,43 @@ const beatSwitchPref = visualizerPreference<boolean>(
 );
 const beatDwellPref = visualizerPreference<number>("visualizer_beat_dwell", 30);
 
-// A dashboard viewer is a cast receiver or TV: on TV compositors the CSS
-// blend tint costs more than the visualizer itself, so these displays tint
-// in-shader instead, and their quality adapts to measured performance.
-const constrainedDisplay = authManager.isDashboardViewer();
-const paletteSupported = ref(false);
-const rampSupported = ref(false);
+// An unresolved player keeps rendering: with no id there is no relay
+// connection either, so there is nothing to wind down.
+const playbackPaused = computed(() => {
+  const player = props.playerId ? api.players?.[props.playerId] : undefined;
+  return !!player && player.playback_state !== PlaybackState.PLAYING;
+});
+
+const {
+  streaming,
+  colorPalette,
+  paletteColorsSupported,
+  paletteRampSupported,
+  faded,
+  currentEngine,
+  setPaused,
+  rebuildForQuality,
+} = useVisualizerCanvasEngine({
+  canvas: canvasRef,
+  playerId: () => props.playerId,
+  covered: () => covered.value,
+  quality: () => qualityPref.value,
+  applyPreset: (blendSec) => applyPreset(blendSec),
+  applyPalette: () => {
+    applyPaletteColors();
+    applyPaletteRamp();
+  },
+  paused: () => playbackPaused.value,
+  onDownbeat: () => onDownbeat(),
+});
+
+const { paletteColors, paletteRamp, paletteRampStrength } =
+  useVisualizerPalette({
+    palette: colorPalette,
+    forceDark: () => props.forceDarkPalette,
+    paletteColorsSupported,
+    paletteRampSupported,
+  });
 
 const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
@@ -143,33 +160,6 @@ const canvasStyle = computed(() => ({
 const scrimStyle = computed(() => ({
   opacity: String(props.opacity / 100),
 }));
-
-// An unresolved player keeps rendering: with no id there is no relay
-// connection either, so there is nothing to wind down.
-const playbackPaused = computed(() => {
-  const player = props.playerId ? api.players?.[props.playerId] : undefined;
-  return !!player && player.playback_state !== PlaybackState.PLAYING;
-});
-
-const colorPalette = ref<ColorPalette>({});
-
-const {
-  paletteColors,
-  paletteActive,
-  paletteRamp,
-  paletteRampStrength,
-  rampActive,
-} = useVisualizerPalette({
-  palette: colorPalette,
-  forceDark: () => props.forceDarkPalette,
-  paletteColorsSupported: paletteSupported,
-  paletteRampSupported: rampSupported,
-});
-
-// Fading the layer as a whole multiplies with the opacity preference rather
-// than fighting it, and takes the scrim with it. Seeded from the gate, so a
-// canvas mounted onto a paused player starts hidden instead of fading out.
-const faded = ref(playbackPaused.value);
 
 const layerStyle = computed(() => ({
   // Both ends written out: removing the property leaves nothing to transition
@@ -196,12 +186,13 @@ const pickPresetName = async (forceRandom = false): Promise<string | null> => {
 let presetRequestId = 0;
 
 const applyPreset = async (blendSec?: number, forceRandom = false) => {
-  if (!engine) return;
+  if (!currentEngine()) return;
   // Preference changes can fire this concurrently (preset + mode are two
   // writes); only the latest request may load, or a stale async pick could
   // override the user's explicit choice.
   const requestId = ++presetRequestId;
   const name = await pickPresetName(forceRandom);
+  const engine = currentEngine();
   if (requestId !== presetRequestId || !name || !engine) return;
   lastPresetSwitchAt = performance.now();
   // The engine substitutes a random preset for a name the packs no longer
@@ -225,264 +216,31 @@ const onDownbeat = () => {
   void applyPreset(undefined, true);
 };
 
-// Adaptive quality for TV/cast displays: the controller decides the ladder
-// level; putting it on screen and reporting stay here, with the engine
-// lifecycle. Its state deliberately survives engine rebuilds and cover
-// cycles — the hardware does not change between them.
-const adaptive = createAdaptiveQualityController({
-  applyProfile: (profile, rebuild) => {
-    // mesh density and FXAA are fixed at construction; anything else is an
-    // in-place resize
-    if (engine && !rebuild) {
-      engine.setProfile(profile);
-      return;
-    }
-    void createEngine();
-  },
-  report: (sample, level, note) => {
-    void reportVisualizerRender(sample, level, note);
-  },
-});
-
-let initialized = false;
-let sizeObserver: ResizeObserver | null = null;
-
-const connectRelay = () => {
-  relay?.close();
-  relay = null;
-  // Don't carry the old player's tint over until the new relay speaks.
-  colorPalette.value = {};
-  // Without a player the server would pick one itself (whichever Sendspin
-  // player happens to be playing), so a canvas mounted before its view has
-  // resolved the player would briefly visualize a different one. The watcher
-  // below connects as soon as the id arrives.
-  if (!props.playerId) {
-    streaming.value = false;
-    return;
-  }
-  relay = new VisualizerRelayClient(
-    {
-      onState: (state) => {
-        streaming.value = state === "streaming";
-      },
-      onDownbeat,
-      onColor: (palette) => {
-        colorPalette.value = palette;
-      },
-    },
-    props.playerId,
-  );
-  relay.connect();
-};
-
-const initialize = async () => {
-  if (initialized || !canvasRef.value) return;
-  initialized = true;
-  // consoleless displays report their uncaught errors to the server log
-  installVisualizerErrorReporting();
-  connectRelay();
-  await createEngine();
-  if (engine) {
-    // Fleet data: this display renders MilkDrop. Cast receivers and TVs have
-    // no reachable console, so this is where their support becomes visible.
-    void reportVisualizerCapability("butterchurn", engine.renderer);
-  } else {
-    // WebGL2 unavailable or init failure: leave the layer transparent. Report it
-    // over the relay before closing, so displays with no reachable console (cast
-    // receivers, kiosks) still say why they are showing a plain background.
-    const reason = isVisualizerSupported()
-      ? "visualizer engine failed to start"
-      : "WebGL2 unavailable in this browser";
-    console.warn(`[visualizer] ${reason}, falling back to gradient`);
-    relay?.reportError(reason);
-    relay?.close();
-    relay = null;
-    // Allow the mount/uncover/resize paths to retry from scratch (relay
-    // included); a later engine-only recreation would render against no relay.
-    initialized = false;
-  }
-};
-
-let engineRequestId = 0;
-let pauseTimer: number | null = null;
-
-const createEngine = async () => {
-  if (!canvasRef.value) return;
-  // Rapid quality changes must not leave two butterchurn instances (and two
-  // rAF loops) on one canvas: only the newest request keeps its engine.
-  const requestId = ++engineRequestId;
-  engine?.destroy();
-  engine = null;
-  let created: VisualizerEngine | null = null;
-  // A constrained display's quality adapts to measured performance instead of
-  // trusting the (unreachable) quality preference: it walks the adaptive
-  // ladder towards whatever pixel budget the hardware can hold at the paced
-  // cadence.
-  try {
-    created = await createVisualizerEngine(
-      canvasRef.value,
-      () => (relay ? relay.currentFrame() : null),
-      constrainedDisplay ? adaptive.currentProfile() : qualityPref.value,
-      constrainedDisplay
-        ? {
-            maxFps: TV_TARGET_FPS,
-            onPerfSample: adaptive.onPerfSample,
-          }
-        : undefined,
-    );
-  } catch (error) {
-    console.error("[visualizer] engine init failed:", error);
-  }
-  if (requestId !== engineRequestId) {
-    created?.destroy();
-    return;
-  }
-  engine = created;
-  paletteSupported.value = engine?.paletteColorsSupported ?? false;
-  rampSupported.value = engine?.paletteRampSupported ?? false;
-  if (engine) {
-    // Started up paused: nothing on screen to wind down.
-    if (playbackPaused.value && pauseTimer === null) {
-      engine.setPaused(true, false);
-      faded.value = true;
-    }
-    applyPaletteColors();
-    applyPaletteRamp();
-    await applyPreset(0);
-  }
-};
-
+// Gated on support, not on having colors: a null palette is how the engine is
+// told to fade the recoloring back out.
 const applyPaletteColors = () => {
-  if (!paletteSupported.value) return;
-  engine?.setPaletteColors(paletteColors.value);
+  if (!paletteColorsSupported.value) return;
+  currentEngine()?.setPaletteColors(paletteColors.value);
 };
 
 const applyPaletteRamp = () => {
-  if (!rampSupported.value) return;
-  engine?.setPaletteRamp(paletteRamp.value, paletteRampStrength.value);
+  if (!paletteRampSupported.value) return;
+  currentEngine()?.setPaletteRamp(paletteRamp.value, paletteRampStrength.value);
 };
 
 watch(paletteColors, applyPaletteColors);
 watch([paletteRamp, paletteRampStrength], applyPaletteRamp);
 
-watch(playbackPaused, (isPaused) => {
-  if (pauseTimer !== null) {
-    clearTimeout(pauseTimer);
-    pauseTimer = null;
-  }
-  if (isPaused) {
-    pauseTimer = window.setTimeout(() => {
-      pauseTimer = null;
-      // Ramp and fade run together; the loop halts as the fade lands.
-      engine?.setPaused(true);
-      faded.value = true;
-    }, PAUSE_SETTLE_MS);
-  } else {
-    engine?.setPaused(false);
-    faded.value = false;
-  }
-});
+watch(playbackPaused, (isPaused) => setPaused(isPaused, PAUSE_SETTLE_MS));
 
-// Start once the canvas has real layout size, deferring via a ResizeObserver
-// when it hasn't yet. A canvas hidden behind a dialog transition (or briefly
-// laid out at zero) reports 0x0; initialising then sizes the drawing buffer to
-// nothing. Safe to call repeatedly: initialize() and the observer both no-op
-// once running.
-const initializeWhenSized = () => {
-  const canvas = canvasRef.value;
-  if (!canvas || initialized) return;
-  // Remote (WebRTC) sessions cannot reach the relay route; starting up would
-  // only produce an endless connect/retry loop.
-  if (api.isRemoteConnection.value) return;
-  if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
-    void initialize();
-    return;
-  }
-  if (sizeObserver) return;
-  sizeObserver = new ResizeObserver(() => {
-    // Re-check covered: the fullscreen player may have opened while this
-    // canvas was still waiting for layout; initialising then would start a
-    // second engine behind it. The uncover path calls initializeWhenSized
-    // again, so a held-back observer still gets its init.
-    if (covered.value) return;
-    if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
-      sizeObserver?.disconnect();
-      sizeObserver = null;
-      void initialize();
-    }
-  });
-  sizeObserver.observe(canvas);
-};
-
-onMounted(() => {
-  if (covered.value) return;
-  initializeWhenSized();
-});
+// Quality changes need a fresh butterchurn instance (mesh/texture sizes are
+// fixed at creation).
+watch(() => qualityPref.value, rebuildForQuality);
 
 watch(
   () => [props.preset, presetModePref.value],
   () => void applyPreset(),
 );
-
-// Quality changes need a fresh butterchurn instance (mesh/texture sizes are
-// fixed at creation). Not on constrained displays: they render on the
-// adaptive ladder, so the casting user's quality preference changing must
-// not restart their engine for nothing.
-watch(
-  () => qualityPref.value,
-  () => {
-    if (constrainedDisplay) return;
-    // Not while covered: the engine is deliberately torn down then, and the
-    // uncover path recreates it at the current quality anyway.
-    if (initialized && !covered.value) void createEngine();
-  },
-);
-
-// Release GPU and socket while covered; restore when revealed again. A canvas
-// that first mounted while covered has never initialised, so uncovering it must
-// start it up rather than only reconnecting an existing engine.
-watch(covered, (isCovered) => {
-  if (isCovered) {
-    if (!initialized) return;
-    engine?.destroy();
-    engine = null;
-    relay?.close();
-    relay = null;
-    // Drop the shared preset name so the menu doesn't show (or let the star
-    // act on) a preset that is no longer rendering. A re-mounting canvas resets
-    // it asynchronously in applyPreset, always after this synchronous teardown.
-    currentVisualizerPreset.value = null;
-  } else if (!initialized) {
-    initializeWhenSized();
-  } else {
-    connectRelay();
-    void createEngine();
-  }
-});
-
-// Follow the viewed player: (re)connect the relay when it changes, including
-// the first time the hosting view resolves it. The engine keeps rendering; it
-// pulls from whichever relay instance is current.
-watch(
-  () => props.playerId,
-  () => {
-    if (initialized && engine) connectRelay();
-  },
-);
-
-onBeforeUnmount(() => {
-  sizeObserver?.disconnect();
-  sizeObserver = null;
-  if (pauseTimer !== null) {
-    clearTimeout(pauseTimer);
-    pauseTimer = null;
-  }
-  engine?.destroy();
-  engine = null;
-  relay?.close();
-  relay = null;
-  currentVisualizerPreset.value = null;
-});
 </script>
 
 <style scoped>

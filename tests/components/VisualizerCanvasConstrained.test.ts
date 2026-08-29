@@ -24,10 +24,13 @@ type StateCallback = (state: string) => void;
 const relayCallbacks = vi.hoisted(
   () => ({}) as { onColor?: ColorCallback; onState?: StateCallback },
 );
+// every player id the canvas has opened a relay for, in order
+const relayPlayerIds = vi.hoisted(() => [] as string[]);
 vi.mock("@/plugins/visualizer-relay", () => ({
   VisualizerRelayClient: class {
-    constructor(callbacks: Record<string, unknown>) {
+    constructor(callbacks: Record<string, unknown>, playerId: string) {
       Object.assign(relayCallbacks, callbacks);
+      relayPlayerIds.push(playerId);
     }
     connect() {}
     close() {}
@@ -152,8 +155,30 @@ describe("VisualizerCanvas on a cast dashboard", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    relayPlayerIds.length = 0;
     engine.paletteColorsSupported = false;
     createVisualizerEngine.mockImplementation(async () => engine);
+  });
+
+  // The butterchurn chunk is megabytes, and a cast receiver resolves its player
+  // off the socket; the id landing mid-build must not lose the relay for good.
+  it("connects the relay for a player that resolves while the engine builds", async () => {
+    let releaseEngine = () => {};
+    createVisualizerEngine.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseEngine = () => resolve(engine);
+        }),
+    );
+    const wrapper = mount(VisualizerCanvas, { props: { playerId: "" } });
+    await flushPromises();
+    expect(relayPlayerIds).toEqual([]);
+
+    await wrapper.setProps({ playerId: "p1" });
+    releaseEngine();
+    await flushPromises();
+
+    expect(relayPlayerIds).toEqual(["p1"]);
   });
 
   it("renders on the adaptive ladder, not the quality preference", async () => {

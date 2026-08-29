@@ -26,6 +26,9 @@ declare module "butterchurn" {
       opts?: { pixelRatio?: number },
     ): void;
     connectAudio(node: AudioNode): void;
+    // releases the internal OffscreenCanvas' WebGL2 context; the visualizer is
+    // unusable afterwards
+    loseGLContext?(): void;
   }
 
   export interface ButterchurnStatic {
