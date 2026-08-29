@@ -88,8 +88,8 @@ const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
 
 // dashboard/viewer_preferences and the milkdrop_visualizer config/report_capability
-// commands landed in API schema 64.
-const DASHBOARD_VISUALIZER_SCHEMA_VERSION = 64;
+// commands landed in API schema 66.
+const DASHBOARD_VISUALIZER_SCHEMA_VERSION = 66;
 
 export interface CommandOptions {
   /**
