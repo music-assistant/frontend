@@ -30,6 +30,8 @@ export function useDragScroll(el: Ref<HTMLElement | null>): DragScroll {
     if (e.pointerType !== "mouse" || e.button !== 0) return;
     pointerDown = true;
     swallowClick = false;
+    // a scroller that unmounted mid-gesture never got its pointerup
+    dragging.value = false;
     startX = e.clientX;
     startScroll = el.value?.scrollLeft ?? 0;
   };

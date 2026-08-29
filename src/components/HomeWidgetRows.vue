@@ -680,6 +680,9 @@ const observeHero = () => {
   observedHeroGrid = el;
 };
 
+// the row mounts and unmounts as rows are hidden and shown, so watch the
+// element as well as the content in it
+watch(heroGrid, observeHero);
 watch(heroEntries, () => nextTick(observeHero), { deep: false });
 
 // Assign heroEntries only when the picks actually changed — cheap insurance
@@ -1271,7 +1274,8 @@ onBeforeUnmount(() => {
 .ed-hero-grid::-webkit-scrollbar {
   display: none;
 }
-.ed-hero-grid--dragging {
+/* doubled up so it outranks the .ed-hero-grid rules in the media queries below */
+.ed-hero-grid.ed-hero-grid--dragging {
   cursor: grabbing;
   user-select: none;
   /* snapping fights the drag while the pointer drives scrollLeft */

@@ -1,6 +1,6 @@
 import { useDragScroll } from "@/composables/useDragScroll";
 import { describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 
 interface Scroller {
   scrollLeft: number;
@@ -97,6 +97,41 @@ describe("useDragScroll", () => {
     const next = click();
     drag.onClickCapture(next);
     expect(next.stopPropagation).not.toHaveBeenCalled();
+  });
+
+  it("clears a swallowed click that never arrived", () => {
+    const el = scroller();
+    const drag = setup(el);
+
+    drag.onPointerDown(down(100));
+    drag.onPointerMove(move(40));
+    drag.onPointerUp();
+
+    // no click followed, and the next gesture is a plain click
+    drag.onPointerDown(down(100));
+    drag.onPointerUp();
+
+    const e = click();
+    drag.onClickCapture(e);
+    expect(e.stopPropagation).not.toHaveBeenCalled();
+  });
+
+  it("clears a drag left hanging by a scroller that went away", () => {
+    const el = ref<Scroller | null>(scroller());
+    const drag = useDragScroll(el as unknown as Ref<HTMLElement | null>);
+
+    drag.onPointerDown(down(100));
+    drag.onPointerMove(move(40));
+    expect(drag.dragging.value).toBe(true);
+
+    // the row unmounts mid-drag, so no pointerup ever lands
+    el.value = null;
+    drag.onPointerMove(move(20));
+    expect(drag.dragging.value).toBe(true);
+
+    el.value = scroller();
+    drag.onPointerDown(down(100));
+    expect(drag.dragging.value).toBe(false);
   });
 
   it("keeps a row that has nothing to scroll clickable", () => {
