@@ -21,6 +21,10 @@ import {
   pacedIntervalMs,
   pacingThresholdMs,
 } from "@/helpers/visualizer/framePacing";
+import {
+  createPerfSampler,
+  type VisualizerPerfSample,
+} from "@/helpers/visualizer/perfSampler";
 
 const N_SAMPLES = 1024;
 const ZERO_LEVEL = 0x80;
@@ -31,25 +35,6 @@ const PRESET_BLEND_SEC = 2.7;
 // and back up over ATTACK_MS on resume. Exported so the layer fades in step.
 export const DECAY_MS = 1500;
 export const ATTACK_MS = 1000;
-
-export interface VisualizerPerfSample {
-  // renders actually achieved per second
-  fps: number;
-  // renders per second the pacing asked for (refresh rate / vsync divisor)
-  targetFps: number;
-  // share of renders a whole display tick late; only rises when the GPU cannot keep up
-  lateRatio: number;
-  // drawing-buffer pixels behind those numbers
-  pixels: number;
-  // mean wall time inside butterchurn's render call
-  renderMs: number;
-  // share of the window the main thread spent inside long tasks
-  blockedRatio: number;
-  // GPU section times in ms (EMA), when the driver exposes timer queries
-  gpu?: { warp?: number; blur?: number; comp?: number };
-  // preset on screen while the window was measured
-  preset?: string;
-}
 
 export interface VisualizerEngine {
   /**
@@ -188,7 +173,6 @@ export interface VisualizerEngineOptions {
   onPerfSample?: (sample: VisualizerPerfSample) => void;
 }
 
-const PERF_SAMPLE_WINDOW_MS = 2000;
 // samples taken while a preset blend renders both presets (or while the new
 // one compiles) measure a workload that is about to vanish; skip them
 const PERF_BLEND_SETTLE_MS = 500;
@@ -282,7 +266,7 @@ export async function createVisualizerEngine(
     rafHandle = null;
     // A halted stretch must not read as slow when the loop resumes: drop the
     // open sample window and cadence marks, as the hidden-tab path does.
-    perfWindowStart = 0;
+    sampler.reset();
     lastTickAt = 0;
     lastRenderAt = 0;
   };
@@ -336,36 +320,17 @@ export async function createVisualizerEngine(
   const maxFps = options?.maxFps ?? 0;
   const targetIntervalMs = maxFps ? 1000 / maxFps : 0;
   let lastTickAt = 0;
-
-  // perf sampling for adaptive hosts; resets when hidden so a background stretch cannot read as slow
-  let perfWindowStart = 0;
-  let perfGuardUntil = 0;
-  let perfRenders = 0;
-  let perfLateRenders = 0;
-  let perfRenderMs = 0;
-  let perfBlockedMs = 0;
   let lastRenderAt = 0;
 
-  // long tasks tell a saturated main thread apart from one idling between
-  // frames; only adaptive hosts consume the measurement, so nobody else pays
-  // for the observer
-  let longTaskObserver: PerformanceObserver | null = null;
-  if (options?.onPerfSample) {
-    try {
-      longTaskObserver = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) perfBlockedMs += entry.duration;
-      });
-      longTaskObserver.observe({ entryTypes: ["longtask"] });
-    } catch {
-      longTaskObserver = null;
-    }
-  }
+  // perf sampling for adaptive hosts; a no-op sampler everywhere else
+  const sampler = createPerfSampler(options?.onPerfSample);
 
   const renderLoop = () => {
     if (destroyed) return;
     rafHandle = requestAnimationFrame(renderLoop);
     if (document.visibilityState !== "visible") {
-      perfWindowStart = 0;
+      // a background stretch must not read as slow
+      sampler.reset();
       lastTickAt = 0;
       lastRenderAt = 0;
       return;
@@ -406,52 +371,24 @@ export async function createVisualizerEngine(
 
     const renderedAt = lastRenderAt;
     lastRenderAt = now;
-    if (!options?.onPerfSample || !ticks.estimated) {
-      perfWindowStart = 0;
+    if (!sampler.enabled) return;
+    if (!ticks.estimated) {
+      sampler.reset();
       return;
     }
-    if (now < perfGuardUntil) {
-      perfWindowStart = 0;
-      return;
-    }
-    // the window's opening render marks the start rather than counting
-    if (perfWindowStart === 0) {
-      perfWindowStart = now;
-      perfRenders = 0;
-      perfLateRenders = 0;
-      perfRenderMs = 0;
-      perfBlockedMs = 0;
-      return;
-    }
-    // measured against the cadence the loop actually paces at, not the maxFps
-    // cap: the two differ whenever the cap is not a whole divisor of the panel
-    const expectedIntervalMs = pacedIntervalMs(targetIntervalMs, ticks.tickMs);
-    // full-tick tolerance: the controller's thresholds treat "late" as
-    // grossly late, not one tick shy of perfect
-    if (renderedAt && now - renderedAt > expectedIntervalMs + ticks.tickMs) {
-      // the scheduled slot passed while the previous render was still on the GPU
-      perfLateRenders += 1;
-    }
-    perfRenders += 1;
-    perfRenderMs += renderCost;
-    const elapsed = now - perfWindowStart;
-    if (elapsed >= PERF_SAMPLE_WINDOW_MS) {
-      options.onPerfSample({
-        fps: (perfRenders * 1000) / elapsed,
-        targetFps: 1000 / expectedIntervalMs,
-        lateRatio: perfLateRenders / perfRenders,
-        pixels: width * height,
-        renderMs: perfRenderMs / perfRenders,
-        blockedRatio: Math.min(perfBlockedMs / elapsed, 1),
-        gpu: visualizer.getGpuTimings?.() ?? undefined,
-        preset: currentPresetName,
-      });
-      perfWindowStart = now;
-      perfRenders = 0;
-      perfLateRenders = 0;
-      perfRenderMs = 0;
-      perfBlockedMs = 0;
-    }
+    sampler.onRender({
+      now,
+      renderedAt,
+      renderMs: renderCost,
+      // measured against the cadence the loop actually paces at, not the
+      // maxFps cap: the two differ whenever the cap is not a whole divisor of
+      // the panel
+      expectedIntervalMs: pacedIntervalMs(targetIntervalMs, ticks.tickMs),
+      tickMs: ticks.tickMs,
+      pixels: width * height,
+      preset: currentPresetName,
+      gpu: () => visualizer.getGpuTimings?.() ?? undefined,
+    });
   };
 
   const resizeObserver = new ResizeObserver(() => applySize());
@@ -479,8 +416,10 @@ export async function createVisualizerEngine(
       const blend = rafHandle === null ? 0 : blendSec;
       await visualizer.loadPreset(preset, blend);
       // the WASM equation compile stalls the loop; keep it out of the open sample window
-      perfWindowStart = 0;
-      perfGuardUntil = performance.now() + blend * 1000 + PERF_BLEND_SETTLE_MS;
+      sampler.reset();
+      sampler.guardUntil(
+        performance.now() + blend * 1000 + PERF_BLEND_SETTLE_MS,
+      );
       redrawIfHalted();
       return loadedName;
     },
@@ -490,8 +429,8 @@ export async function createVisualizerEngine(
       if (preset && !destroyed) {
         currentPresetName = name;
         await visualizer.loadPreset(preset, 0);
-        perfWindowStart = 0;
-        perfGuardUntil = performance.now() + PERF_BLEND_SETTLE_MS;
+        sampler.reset();
+        sampler.guardUntil(performance.now() + PERF_BLEND_SETTLE_MS);
         redrawIfHalted();
       }
       return name;
@@ -526,14 +465,14 @@ export async function createVisualizerEngine(
       profile = next;
       applySize();
       // a resize mid-measurement would be blamed on the new size
-      perfWindowStart = 0;
+      sampler.reset();
       lastRenderAt = 0;
     },
     destroy() {
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
-      longTaskObserver?.disconnect();
+      sampler.destroy();
       // Every engine holds its own WebGL2 context and rebuilds are routine;
       // Chrome drops the oldest live context on overflow.
       visualizer.loseGLContext?.();

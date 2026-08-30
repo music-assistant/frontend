@@ -11,10 +11,8 @@
 import { parseVisualizerBinary } from "@/helpers/visualizer/binaryFrames";
 import { FrameScheduler } from "@/helpers/visualizer/frameScheduler";
 import { ClockSync, computeTimeSample } from "@/helpers/visualizer/timeSync";
-import {
-  isVisualizerSupported,
-  type VisualizerPerfSample,
-} from "@/composables/visualizer/useVisualizerEngine";
+import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
+import type { VisualizerPerfSample } from "@/helpers/visualizer/perfSampler";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";

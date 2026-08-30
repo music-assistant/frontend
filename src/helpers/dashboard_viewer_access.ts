@@ -20,8 +20,9 @@ const DEFAULT_DASHBOARD_KIND: DashboardKind = "party";
 
 /** Which dashboard a viewer route is showing, as the server names it. */
 export function dashboardKindForPath(path: string): DashboardKind {
-  const match = DASHBOARD_KIND_BY_PREFIX.find(([prefix]) =>
-    path.startsWith(prefix),
+  const pathname = pathnameOf(path);
+  const match = DASHBOARD_KIND_BY_PREFIX.find(
+    ([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
   return match ? match[1] : DEFAULT_DASHBOARD_KIND;
 }

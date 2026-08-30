@@ -2990,7 +2990,7 @@ export class MusicAssistantApi {
     );
   }
 
-  /** Whether the connected server implements the dashboard visualizer commands (schema >= 64). */
+  /** Whether the connected server implements the dashboard visualizer commands (schema >= 66). */
   public get supportsDashboardVisualizer(): boolean {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=

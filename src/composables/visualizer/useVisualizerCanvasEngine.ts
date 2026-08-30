@@ -158,9 +158,8 @@ export function useVisualizerCanvasEngine(
     connectRelay();
     await createEngine();
     if (engine) {
-      // The player can resolve while the engine's chunk is still downloading,
-      // and the watcher below skips that window; catch it up here.
-      if (options.playerId() && !relay) connectRelay();
+      // A player resolving while the engine's chunk downloads is handled by
+      // the playerId watcher below; initialized is already true then.
       // Fleet data: cast receivers and TVs have no reachable console, so this
       // is where their support becomes visible.
       void reportVisualizerCapability("butterchurn", engine.renderer);
@@ -180,16 +179,13 @@ export function useVisualizerCanvasEngine(
   };
 
   // A canvas hidden behind a dialog transition (or briefly laid out at zero)
-  // reports 0x0; initialising then sizes the drawing buffer to nothing. Safe to
-  // call repeatedly: initialize() and the observer both no-op once running.
-  const initializeWhenSized = () => {
+  // reports 0x0; starting an engine then sizes the drawing buffer to nothing.
+  // Safe to call repeatedly: the observer no-ops while one is already waiting.
+  const runWhenSized = (start: () => void) => {
     const canvas = options.canvas.value;
-    if (!canvas || initialized) return;
-    // Remote (WebRTC) sessions cannot reach the relay route; starting up would
-    // only produce an endless connect/retry loop.
-    if (api.isRemoteConnection.value) return;
+    if (!canvas) return;
     if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
-      void initialize();
+      start();
       return;
     }
     if (sizeObserver) return;
@@ -200,10 +196,18 @@ export function useVisualizerCanvasEngine(
       if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
         sizeObserver?.disconnect();
         sizeObserver = null;
-        void initialize();
+        start();
       }
     });
     sizeObserver.observe(canvas);
+  };
+
+  const initializeWhenSized = () => {
+    if (initialized) return;
+    // Remote (WebRTC) sessions cannot reach the relay route; starting up would
+    // only produce an endless connect/retry loop.
+    if (api.isRemoteConnection.value) return;
+    runWhenSized(() => void initialize());
   };
 
   /** Wind down on pause after a settle delay, or come back immediately. */
@@ -231,6 +235,8 @@ export function useVisualizerCanvasEngine(
 
   const teardown = () => {
     clearPauseTimer();
+    // An engine still being created must not install itself after this.
+    engineRequestId += 1;
     engine?.destroy();
     engine = null;
     relay?.close();
@@ -256,7 +262,8 @@ export function useVisualizerCanvasEngine(
         initializeWhenSized();
       } else {
         connectRelay();
-        void createEngine();
+        // The reveal can land mid-transition with the canvas still at 0x0.
+        runWhenSized(() => void createEngine());
       }
     },
   );

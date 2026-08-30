@@ -5,7 +5,7 @@
  * headroom, blocks levels that failed twice, and reports every move for
  * displays with no reachable console.
  */
-import type { VisualizerPerfSample } from "@/composables/visualizer/useVisualizerEngine";
+import type { VisualizerPerfSample } from "@/helpers/visualizer/perfSampler";
 import {
   createAdaptiveQualityController,
   type AdaptiveQualityController,

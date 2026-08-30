@@ -14,7 +14,7 @@
  * unreliable around preset changes, so they were removed rather than hardened.
  */
 
-import type { VisualizerPerfSample } from "@/composables/visualizer/useVisualizerEngine";
+import type { VisualizerPerfSample } from "@/helpers/visualizer/perfSampler";
 import {
   ADAPTIVE_LADDER,
   ADAPTIVE_START_LEVEL,
@@ -141,6 +141,9 @@ export function createAdaptiveQualityController(
       ceiling = 0;
       levelFailures.clear();
       awaitingStepDownVerdict = false;
+      lowSamples = 0;
+      goodSamples = 0;
+      steadySamples = 0;
       settleReported = false;
       ceilingReported = false;
       floorReported = false;

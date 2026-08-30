@@ -6,10 +6,8 @@
  * sibling suite deliberately mocks away by pinning isDashboardViewer to false.
  */
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
-import type {
-  VisualizerEngineOptions,
-  VisualizerPerfSample,
-} from "@/composables/visualizer/useVisualizerEngine";
+import type { VisualizerEngineOptions } from "@/composables/visualizer/useVisualizerEngine";
+import type { VisualizerPerfSample } from "@/helpers/visualizer/perfSampler";
 import {
   ADAPTIVE_LADDER,
   ADAPTIVE_START_LEVEL,
