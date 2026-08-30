@@ -3,7 +3,7 @@
     class="rounded-lg player-card"
     :class="{
       'player-disabled': !playerConfig.enabled,
-      'player-unavailable': !isAvailable,
+      'player-unavailable': isUnavailable,
     }"
     @click="handleClick"
   >
@@ -26,27 +26,10 @@
       </div>
 
       <!-- Player needs setup warning -->
-      <div v-if="playerConfig.enabled && needsSetup" class="player-warning">
-        <v-chip
-          size="x-small"
-          variant="tonal"
-          color="warning"
-          class="player-warning-chip"
-        >
-          <v-icon icon="mdi-alert-circle" size="14" start />
-          {{ $t("settings.player_needs_setup") }}
-        </v-chip>
-        <v-btn
-          size="small"
-          color="warning"
-          variant="flat"
-          block
-          class="mt-2"
-          @click.stop="handleSetup"
-        >
-          {{ $t("settings.start_setup") }}
-        </v-btn>
-      </div>
+      <PlayerSetupWarning
+        v-if="playerConfig.enabled && needsSetup"
+        @setup="handleSetup"
+      />
 
       <div class="card-footer">
         <div class="protocol-chips">
@@ -65,7 +48,7 @@
             :title="$t('settings.player_disabled')"
           />
           <v-icon
-            v-else-if="!isAvailable"
+            v-else-if="isUnavailable"
             icon="mdi-timer-sand"
             size="16"
             color="grey"
@@ -80,6 +63,8 @@
 <script setup lang="ts">
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
+import { isPlayerUnavailable } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -96,7 +81,7 @@ const emit = defineEmits<{
 }>();
 
 const player = computed(() => api.players[props.playerConfig.player_id]);
-const isAvailable = computed(() => player.value?.available ?? false);
+const isUnavailable = computed(() => isPlayerUnavailable(player.value));
 const needsSetup = computed(() => player.value?.needs_setup ?? false);
 const providerDomain = computed(
   () =>
@@ -159,17 +144,6 @@ const handleSetup = () => {
 
 .player-unavailable {
   opacity: 0.7;
-}
-
-.player-warning {
-  display: flex;
-  flex-direction: column;
-}
-
-.player-warning-chip {
-  align-self: flex-start;
-  font-size: 10px;
-  font-weight: 500;
 }
 
 .card-content {

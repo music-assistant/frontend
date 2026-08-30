@@ -21,8 +21,8 @@
 
     <div class="pl-5 font-weight-medium">
       {{
-        $t("settings.players_total", getAllFilteredPlayers().length, {
-          named: { count: getAllFilteredPlayers().length },
+        $t("settings.players_total", filteredPlayers.length, {
+          named: { count: filteredPlayers.length },
         })
       }}
     </div>
@@ -32,13 +32,15 @@
     >
       <v-list v-if="viewMode === 'list'" class="players-list">
         <ListItem
-          v-for="item in getAllFilteredPlayers()"
+          v-for="item in filteredPlayers"
           :key="item.player_id"
           link
           :show-menu-btn="true"
           :class="{
             'player-disabled': !item.enabled,
-            'player-unavailable': !api.players[item.player_id]?.available,
+            'player-unavailable': isPlayerUnavailable(
+              api.players[item.player_id],
+            ),
           }"
           @click="handlePlayerClick(item)"
           @menu="(evt) => onMenu(evt, item)"
@@ -62,29 +64,10 @@
           <template #subtitle>
             <div class="player-meta">
               <!-- Player needs setup warning -->
-              <div
+              <PlayerSetupWarning
                 v-if="item.enabled && api.players[item.player_id]?.needs_setup"
-                class="player-warning"
-              >
-                <v-chip
-                  size="x-small"
-                  variant="tonal"
-                  color="warning"
-                  class="player-warning-chip"
-                >
-                  <v-icon icon="mdi-alert-circle" size="14" start />
-                  {{ $t("settings.player_needs_setup") }}
-                </v-chip>
-                <v-btn
-                  size="x-small"
-                  color="warning"
-                  variant="flat"
-                  class="ml-2"
-                  @click.stop="startPlayerSetup(item.player_id)"
-                >
-                  {{ $t("settings.start_setup") }}
-                </v-btn>
-              </div>
+                @setup="startPlayerSetup(item.player_id)"
+              />
               <span v-else class="provider-name">
                 {{
                   api.players[item.player_id]?.device_info
@@ -112,15 +95,13 @@
                 color="grey"
                 :title="$t('settings.player_disabled')"
               />
-              <v-icon
+              <CircleAlert
                 v-else-if="api.players[item.player_id]?.needs_setup"
-                icon="mdi-alert-circle"
-                size="20"
-                color="warning"
+                class="size-5 text-warning"
                 :title="$t('settings.player_needs_setup')"
               />
               <v-icon
-                v-else-if="!api.players[item.player_id]?.available"
+                v-else-if="isPlayerUnavailable(api.players[item.player_id])"
                 icon="mdi-timer-sand"
                 size="20"
                 color="grey"
@@ -133,7 +114,7 @@
 
       <div v-else class="players-grid">
         <SettingsPlayerCard
-          v-for="item in getAllFilteredPlayers()"
+          v-for="item in filteredPlayers"
           :key="item.player_id"
           :player-config="item"
           @click="handlePlayerClick"
@@ -142,7 +123,7 @@
         />
       </div>
 
-      <div v-if="getAllFilteredPlayers().length === 0" class="empty-state">
+      <div v-if="filteredPlayers.length === 0" class="empty-state">
         <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
         <div class="empty-title">{{ $t("no_content") }}</div>
         <div class="empty-message">
@@ -171,12 +152,14 @@ import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import {
   getPlayerName,
   getPlayerSettingsMenuItems,
 } from "@/helpers/player_settings_actions";
+import { isPlayerUnavailable } from "@/helpers/players";
 import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -186,7 +169,7 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { Plus } from "@lucide/vue";
+import { CircleAlert, Plus } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
@@ -287,7 +270,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   });
 };
 
-const getAllFilteredPlayers = function () {
+const filteredPlayers = computed(() => {
   let filtered = [...playerConfigs.value];
 
   if (searchQuery.value) {
@@ -360,7 +343,7 @@ const getAllFilteredPlayers = function () {
   return filtered.sort((a, b) =>
     getPlayerName(a).localeCompare(getPlayerName(b)),
   );
-};
+});
 
 // watchers
 watch(
@@ -541,17 +524,6 @@ watch(
 
 .player-unavailable {
   opacity: 0.7;
-}
-
-.player-warning {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.player-warning-chip {
-  font-size: 10px;
-  font-weight: 500;
 }
 
 .missing-players-hint {
