@@ -311,7 +311,7 @@
                 "help": "Raises or lowers the level of everything passing through this point in the pipeline."
             },
             "balance": {
-                "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
+                "help": "Shifts the sound towards the left or right speaker."
             },
             "stereo_width": {
                 "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound.",
