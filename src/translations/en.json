@@ -314,7 +314,7 @@
                 "help": "Shifts the sound towards the left or right speaker."
             },
             "stereo_width": {
-                "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound.",
+                "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound. Only applies to stereo audio.",
                 "clip_hint": "Widening past Original can raise peaks and cause clipping. Consider adding a Limiter after this filter.",
                 "scale": {
                     "mono": "Mono",
@@ -323,7 +323,7 @@
                 }
             },
             "crossfeed": {
-                "help": "Makes headphone listening feel more natural by gently blending the left and right channels, similar to listening to speakers.",
+                "help": "Makes headphone listening feel more natural by gently blending the left and right channels, similar to listening to speakers. Only applies to stereo audio.",
                 "presets": {
                     "low": "Low",
                     "medium": "Medium",
