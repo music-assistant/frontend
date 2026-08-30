@@ -1,4 +1,3 @@
-import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { Player, PlayerConfig } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
@@ -14,6 +13,8 @@ const { apiMock } = vi.hoisted(() => ({
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
 }));
+
+import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 
 const playerConfig = {
   enabled: true,
