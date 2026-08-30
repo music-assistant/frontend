@@ -105,7 +105,9 @@ function normalizeCode(value: unknown): string {
 
 <template>
   <div class="flex w-full flex-col gap-2 py-1">
-    <span :id="labelId" class="text-muted-foreground text-sm">{{ label }}</span>
+    <span v-if="label" :id="labelId" class="text-muted-foreground text-sm">{{
+      label
+    }}</span>
     <SegmentedCodeInput
       v-if="layout"
       ref="codeInput"
@@ -113,8 +115,8 @@ function normalizeCode(value: unknown): string {
       :layout="layout"
       :disabled="disabled"
       otp-autofill
-      :aria-label="label"
-      :aria-labelledby="labelId"
+      :aria-label="label || undefined"
+      :aria-labelledby="label ? labelId : undefined"
       cell-class="pairing-code-input"
       separator-class="pairing-code-separator"
       @update:model-value="onCellsUpdate"
@@ -127,7 +129,7 @@ function normalizeCode(value: unknown): string {
       :model-value="String(entry.value ?? '')"
       :placeholder="entry.default_value?.toString()"
       :disabled="disabled"
-      :aria-labelledby="labelId"
+      :aria-labelledby="label ? labelId : undefined"
       @update:model-value="onFallbackInput"
     />
   </div>

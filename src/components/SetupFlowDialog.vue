@@ -14,23 +14,26 @@
           <ProviderIcon v-if="iconDomain" :domain="iconDomain" :size="32" />
           <Settings2 v-else :size="28" />
         </span>
-        <DialogTitle class="min-w-0 flex-1 truncate">
-          {{ dialogTitle }}
-        </DialogTitle>
+        <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+          <DialogTitle class="truncate">{{ flowTitle }}</DialogTitle>
+          <DialogDescription
+            v-if="stepTitle"
+            class="text-foreground line-clamp-2 font-medium"
+          >
+            {{ stepTitle }}
+          </DialogDescription>
+        </div>
       </DialogHeader>
 
       <!-- Body -->
       <div class="min-h-[120px] flex-1 overflow-y-auto px-5 py-5">
         <!-- Starting / loading state (no step yet) -->
         <div v-if="!step" class="flex items-center justify-center py-8">
-          <Spinner :size="44" class="text-primary" />
+          <Spinner class="text-primary size-11" />
         </div>
 
         <!-- FORM step -->
         <template v-else-if="step.type === FlowStepType.FORM">
-          <h3 v-if="step.title" class="mb-2 text-base font-semibold">
-            {{ step.title }}
-          </h3>
           <MarkdownText
             v-if="step.description"
             :text="step.description"
@@ -75,21 +78,10 @@
               aria-hidden="true"
             ></button>
           </form>
-
-          <div
-            v-if="countdownText"
-            class="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs"
-          >
-            <Clock :size="14" />
-            <span>{{ countdownText }}</span>
-          </div>
         </template>
 
         <!-- EXTERNAL step -->
         <template v-else-if="step.type === FlowStepType.EXTERNAL">
-          <h3 class="mb-2 text-base font-semibold">
-            {{ step.title ?? $t("settings.setup_flow.external_default_title") }}
-          </h3>
           <MarkdownText
             :text="
               step.description ??
@@ -114,7 +106,7 @@
               }}</span>
             </div>
             <div class="text-muted-foreground flex items-center gap-2 text-sm">
-              <Spinner :size="18" />
+              <Spinner class="size-4.5" />
               <span>{{ $t("settings.setup_flow.external_waiting") }}</span>
             </div>
             <a
@@ -124,13 +116,6 @@
               rel="noopener"
               >{{ $t("settings.setup_flow.external_fallback") }}</a
             >
-          </div>
-          <div
-            v-if="countdownText"
-            class="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs"
-          >
-            <Clock :size="14" />
-            <span>{{ countdownText }}</span>
           </div>
         </template>
 
@@ -148,8 +133,7 @@
             />
             <Spinner
               v-if="step.progress === null || step.progress === undefined"
-              :size="52"
-              class="text-primary"
+              class="text-primary size-13"
             />
             <Progress
               v-else
@@ -161,13 +145,6 @@
               :text="step.progress_text"
               class="text-muted-foreground w-full text-sm leading-relaxed"
             />
-            <div
-              v-if="countdownText"
-              class="text-muted-foreground flex items-center justify-center gap-1.5 text-xs"
-            >
-              <Clock :size="14" />
-              <span>{{ countdownText }}</span>
-            </div>
           </div>
         </template>
 
@@ -226,7 +203,15 @@
       </div>
 
       <!-- Actions -->
-      <DialogFooter v-if="step" class="border-t px-4 py-3">
+      <DialogFooter v-if="step" class="border-t px-4 py-3 sm:items-center">
+        <div
+          v-if="countdownText"
+          class="text-muted-foreground mr-auto flex items-center gap-1.5 text-xs"
+        >
+          <Clock :size="14" />
+          <span>{{ countdownText }}</span>
+        </div>
+
         <template v-if="step.type === FlowStepType.FORM">
           <Button variant="ghost" :disabled="busy" @click="close()">
             {{ $t("cancel") }}
@@ -313,6 +298,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -422,17 +408,36 @@ const iconDomain = computed(() => {
   return undefined;
 });
 
-const dialogTitle = computed(() => {
+// names what the flow is setting up; heads the dialog for every step
+const flowTitle = computed(() => {
   if (!launch.value) return "";
   if (launch.value.kind === "provider") {
     const name =
       api.getProviderManifest(launch.value.domain)?.name || launch.value.domain;
-    return $t("settings.setup_provider", [name]);
+    return $t("settings.setup_flow.setup_title", [name]);
   }
+  // the launch event carries only an id, so neither instance nor player is
+  // guaranteed to be in the store; both fall back to an unnamed title
   if (launch.value.kind === "reconfigure") {
-    return $t("settings.reconfigure");
+    const instance = api.providers[launch.value.instanceId];
+    return instance
+      ? $t("settings.setup_flow.reconfigure_title", [instance.name])
+      : $t("settings.reconfigure");
   }
-  return $t("settings.setup_flow.setup_player_title");
+  const player = api.players[launch.value.playerId];
+  return player
+    ? $t("settings.setup_flow.setup_title", [player.name])
+    : $t("settings.setup_flow.setup_player_title");
+});
+
+// the step's own title, shown under the flow title. Only the steps the user acts on
+// hoist it; the finish and abort screens keep theirs next to their status icon
+const stepTitle = computed(() => {
+  if (step.value?.type === FlowStepType.FORM) return step.value.title || "";
+  if (step.value?.type === FlowStepType.EXTERNAL) {
+    return step.value.title ?? $t("settings.setup_flow.external_default_title");
+  }
+  return "";
 });
 
 const visibleFormEntries = computed(() =>
