@@ -9,11 +9,12 @@ import type {
   MusicQuizTimelinePersonalizedState,
   MusicQuizTimelineRound,
 } from "@/composables/music-quiz/useMusicQuiz";
+import type { MusicAssistantApi } from "@/plugins/api";
 import { mount, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGetTrackLyrics } = vi.hoisted(() => ({
-  mockGetTrackLyrics: vi.fn(),
+  mockGetTrackLyrics: vi.fn<MusicAssistantApi["getTrackLyrics"]>(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -232,6 +233,42 @@ describe("Music Timeline game adapters", () => {
     await vi.advanceTimersByTimeAsync(13_000);
 
     expect(countdown.text()).toContain("0s");
+  });
+
+  it("renders nothing for players while answering", () => {
+    const wrapper = mount(MusicTimelinePlayerRound, {
+      props: {
+        state: { ...playerState, phase: "answering" },
+        currentRound: answeringRound,
+        busy: false,
+      },
+    });
+
+    expect(wrapper.find('[data-testid="music-timeline-round"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("pins the Ready button to the bottom of the stage during reveal", async () => {
+    const wrapper = mount(MusicTimelinePlayerRound, {
+      props: {
+        state: playerState,
+        currentRound: revealRound,
+        busy: false,
+      },
+    });
+    const readyButton = wrapper.get('[data-testid="music-timeline-ready"]');
+    const footer = readyButton.element.parentElement;
+
+    expect(footer?.classList.contains("sticky")).toBe(true);
+    expect(
+      footer?.classList.contains("bottom-[var(--device-inset-bottom,0px)]"),
+    ).toBe(true);
+    expect(footer?.classList.contains("order-last")).toBe(true);
+
+    await readyButton.trigger("click");
+
+    expect(wrapper.emitted("ready")).toEqual([[]]);
   });
 
   it("keeps intermediate Ready after song details", async () => {

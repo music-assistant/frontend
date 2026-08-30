@@ -92,6 +92,21 @@ const leaderboardRows = players.map((player, index) => ({
 })) satisfies MusicQuizLeaderboardRow[];
 
 describe("MusicTimelinePresentBody", () => {
+  it("splits reveal evenly on the dashboard, keeps the host ratio elsewhere", () => {
+    for (const [dashboard, expected] of [
+      [true, "lg:grid-cols-[minmax(16rem,1fr)_minmax(22rem,1fr)]"],
+      [false, "lg:grid-cols-[minmax(16rem,2fr)_minmax(22rem,3fr)]"],
+    ] as const) {
+      const wrapper = mount(MusicTimelinePresentBody, {
+        props: { state, currentRound, leaderboardRows, dashboard },
+      });
+      expect(
+        wrapper.get('[data-testid="music-timeline-present-body"]').classes(),
+      ).toContain(expected);
+      wrapper.unmount();
+    }
+  });
+
   it("keeps song and score panels before the bottom timeline", () => {
     const wrapper = mount(MusicTimelinePresentBody, {
       props: {

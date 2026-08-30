@@ -129,7 +129,7 @@
               <button
                 v-show="heroHovering && heroCanLeft"
                 class="ed-hero-nav ed-hero-nav--left"
-                aria-label="Scroll left"
+                :aria-label="$t('tooltip.scroll_left')"
                 @click="scrollHero(-1)"
               >
                 <ChevronLeft :size="20" />
@@ -160,7 +160,7 @@
               <button
                 v-show="heroHovering && heroCanRight"
                 class="ed-hero-nav ed-hero-nav--right"
-                aria-label="Scroll right"
+                :aria-label="$t('tooltip.scroll_right')"
                 @click="scrollHero(1)"
               >
                 <ChevronRight :size="20" />
@@ -168,12 +168,16 @@
             </div>
           </section>
 
-          <!-- Recommendation shelf -->
-          <EditorialShelf
-            v-else-if="row.kind === 'recommendation' && row.folder"
+          <!-- Timeline recommendation -->
+          <EditorialTimeline
+            v-if="
+              row.kind === 'recommendation' &&
+              row.folder?.type === RecommendationFolderType.TIMELINE &&
+              rowItemsMap.get(row.id) !== undefined
+            "
             :title="row.folder.name"
-            :subtitle="row.folder.subtitle"
-            :provider="folderProvider(row.folder)"
+            :provider="row.folder.provider"
+            :items="rowItemsMap.get(row.id) ?? []"
             :dimmed="editMode && row.hidden"
             :tiles-per-view="tilesPerView"
           >
@@ -196,6 +200,61 @@
                 <EyeOff v-else />
               </Button>
             </template>
+          </EditorialTimeline>
+
+          <!-- Recommendation shelf (including timeline loading state) -->
+          <EditorialShelf
+            v-else-if="row.kind === 'recommendation' && row.folder"
+            :title="row.folder.name"
+            :subtitle="row.folder.subtitle"
+            :provider="folderProvider(row.folder)"
+            :dimmed="editMode && row.hidden"
+            :tiles-per-view="tilesPerView"
+          >
+            <template
+              v-if="editMode || rowSupportsProviderFilter(row.folder)"
+              #actions
+            >
+              <template v-if="editMode">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_row')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </template>
+              <FacetedFilter
+                v-if="rowSupportsProviderFilter(row.folder)"
+                :model-value="getRowHiddenProviders(row.id)"
+                :title="$t('tooltip.hide_provider')"
+                :options="providerFilterOptions"
+                @update:model-value="
+                  (providerIds) =>
+                    onRowHiddenProvidersChange(row.id, providerIds)
+                "
+              >
+                <template #trigger>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    :aria-label="$t('tooltip.hide_provider')"
+                  >
+                    <ListFilter />
+                  </Button>
+                </template>
+              </FacetedFilter>
+            </template>
             <!-- Skeleton tiles while a fetch is in flight - and for hidden rows
                  in edit mode (never fetched until unhidden) - so every row
                  reserves its final height and nothing shifts as items land. -->
@@ -204,6 +263,14 @@
                 v-for="n in skeletonTileCount"
                 :key="`skeleton-${n}`"
               />
+            </template>
+            <template
+              v-else-if="
+                (rowItemsMap.get(row.id)?.length ?? 0) === 0 &&
+                rowHasActiveFilter(row)
+              "
+            >
+              <p class="ed-shelf__empty">{{ $t("no_content_filter") }}</p>
             </template>
             <template v-else>
               <EditorialMediaCard
@@ -234,8 +301,12 @@
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  :title="row.hidden ? $t('enable') : $t('disable')"
-                  :aria-label="row.hidden ? $t('enable') : $t('disable')"
+                  :title="
+                    row.hidden ? $t('settings.enable') : $t('settings.disable')
+                  "
+                  :aria-label="
+                    row.hidden ? $t('settings.enable') : $t('settings.disable')
+                  "
                   @click="toggleRow(row)"
                 >
                   <Eye v-if="!row.hidden" />
@@ -269,6 +340,26 @@
   </div>
 </template>
 
+<script lang="ts">
+import type {
+  Genre,
+  ItemMapping,
+  MediaItemTypeOrItemMapping,
+  RecommendationFolder,
+} from "@/plugins/api/interfaces";
+
+// Snapshot taken on unmount so a back/forward navigation back to Discover
+// renders the previous page instantly instead of refetching from empty.
+interface DiscoverSnapshot {
+  recommendations: RecommendationFolder[];
+  recentlyPlayed: ItemMapping[];
+  rowItemsMap: Map<string, MediaItemTypeOrItemMapping[]>;
+  genres: Genre[];
+  scrollPos: number;
+}
+let prevState: DiscoverSnapshot | undefined;
+</script>
+
 <script setup lang="ts">
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
@@ -277,9 +368,11 @@ import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf, {
   type EditorialShelfExpose,
 } from "@/components/discover/EditorialShelf.vue";
+import EditorialTimeline from "@/components/discover/EditorialTimeline.vue";
 import {
   DEFAULT_PRIORITY_ROWS,
   GENRES_ROW_ID,
+  IN_PROGRESS_ROW_ID,
   PLAYERS_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
@@ -290,6 +383,14 @@ import {
   isRecommendationRowVisible,
   rowIdsNeedingItems,
 } from "@/components/discover/utils/rowItems";
+import {
+  eligibleFilterProviders,
+  getRowHiddenProviders,
+  resolveProviderFilterParam,
+  rowSupportsProviderFilter,
+  setRowHiddenProviders,
+} from "@/components/discover/utils/rowProviderFilter";
+import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { useListDragReorder } from "@/composables/useListDragReorder";
@@ -299,12 +400,10 @@ import api from "@/plugins/api";
 import {
   EventType,
   PlaybackState,
+  RecommendationFolderType,
   type EventMessage,
-  type Genre,
-  type ItemMapping,
-  type MediaItemTypeOrItemMapping,
   type Player,
-  type RecommendationFolder,
+  type PlaylogUpdate,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -315,6 +414,7 @@ import {
   Eye,
   EyeOff,
   GripVertical,
+  ListFilter,
   RefreshCw,
 } from "@lucide/vue";
 import {
@@ -325,10 +425,13 @@ import {
   ref,
   watch,
 } from "vue";
+import { useRouter } from "vue-router";
 
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
 });
+
+const router = useRouter();
 
 const loading = ref(true);
 const playersShelf = ref<EditorialShelfExpose | null>(null);
@@ -402,6 +505,47 @@ watch(
 );
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
+
+// Provider instances a user may filter recommendation rows by -- currently
+// loaded music providers, restricted to the user's own provider_filter when set.
+const providerFilterOptions = computed(() =>
+  eligibleFilterProviders(
+    Object.values(api.providers),
+    store.currentUser?.provider_filter ?? [],
+  )
+    .map((provider) => ({
+      value: provider.instance_id,
+      label: provider.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+);
+
+const providerFilterParamForRow = (rowId: string): string[] | undefined =>
+  resolveProviderFilterParam(
+    providerFilterOptions.value.map((option) => option.value),
+    getRowHiddenProviders(rowId),
+  );
+
+// Persists the row's hidden-provider choice and re-fetches just that row so
+// its items reflect the new filter. Clears the row's cached items first: the
+// preference (read by rowHasActiveFilter) updates synchronously, but the
+// refetch is async, so leaving the stale, now-mismatched items in place could
+// drop the row (and its filter control) from view for that gap.
+const onRowHiddenProvidersChange = (
+  rowId: string,
+  hiddenProviderIds: string[],
+): void => {
+  setRowHiddenProviders(rowId, hiddenProviderIds);
+  rowItemsMap.value.delete(rowId);
+  fetchRowItems([rowId]);
+};
+
+// Whether a row currently has eligible provider(s) hidden -- used to keep the
+// row (and its filter control) visible even if that filter empties its results.
+const rowHasActiveFilter = (row: DiscoverRow): boolean =>
+  row.folder !== undefined &&
+  rowSupportsProviderFilter(row.folder) &&
+  providerFilterParamForRow(row.id) !== undefined;
 
 // --- Top Picks (Model B): a balanced interleave of items across the rows the
 // user has enabled. Only shown, non-empty recommendation folders feed it, so
@@ -628,6 +772,7 @@ const displayedRows = computed(() =>
           row,
           rowItemsMap.value.get(row.id),
           props.editMode,
+          rowHasActiveFilter(row),
         )
       : props.editMode || !row.hidden,
   ),
@@ -694,6 +839,10 @@ const loadRecommendationRows = async () => {
   else console.error("Failed to load recently played:", recent.reason);
 };
 
+// Guards against a slower, superseded fetch overwriting a newer one for the
+// same row (e.g. rapid provider-filter changes).
+const rowFetchGeneration = new Map<string, number>();
+
 // Fetches and stores items for the given recommendation row ids, in parallel.
 // Each row's result lands in `rowItemsMap` as soon as its own fetch resolves.
 const fetchRowItems = async (ids: string[]): Promise<void> => {
@@ -702,8 +851,13 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
     ids.map(async (id) => {
       const folder = folders.get(id);
       if (!folder) return;
+      const generation = (rowFetchGeneration.get(id) ?? 0) + 1;
+      rowFetchGeneration.set(id, generation);
+      const providers = rowSupportsProviderFilter(folder)
+        ? providerFilterParamForRow(id)
+        : undefined;
       const items = await api
-        .getRecommendationItems(folder.provider, folder.item_id)
+        .getRecommendationItems(folder.provider, folder.item_id, providers)
         .catch((err) => {
           console.error(
             `Failed to load items for recommendation row ${id}:`,
@@ -711,6 +865,7 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
           );
           return undefined;
         });
+      if (rowFetchGeneration.get(id) !== generation) return;
       if (items !== undefined) {
         rowItemsMap.value.set(id, items);
       } else if (!rowItemsMap.value.has(id)) {
@@ -756,7 +911,7 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
-let isUnmounted = false;
+let unmounted = false;
 let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
 
 const cancelScheduledRecommendationRefresh = () => {
@@ -770,13 +925,13 @@ const scheduleRecommendationRefresh = () => {
   cancelScheduledRecommendationRefresh();
   refreshRecommendationsTimer = setTimeout(async () => {
     refreshRecommendationsTimer = undefined;
-    if (isUnmounted) return;
+    if (unmounted) return;
     // Refetches the catalog and the shown rows' content so play-history rows
     // and rotated picks stay current.
     await loadRecommendationRows();
-    if (isUnmounted) return;
+    if (unmounted) return;
     await refreshShownRowItems();
-    if (isUnmounted) return;
+    if (unmounted) return;
     resolveHeroPicks();
   }, 1500);
 };
@@ -800,32 +955,109 @@ const unsubscribeRecommendations = api.subscribe(
   },
 );
 
+// Played or reset items leave the "in progress" row right away; partial progress
+// (pause, another app syncing) belongs in the row, so only the refresh acts on it.
+const unsubscribePlaylog = api.subscribe(
+  EventType.PLAYLOG_UPDATED,
+  (evt: EventMessage) => {
+    const update = evt.data as PlaylogUpdate | undefined;
+    // per-user playlog: ignore changes belonging to another user (null = everyone)
+    if (update?.userid && update.userid !== store.currentUser?.user_id) return;
+    const leavesInProgress =
+      update && (update.fully_played || update.seconds_played === 0);
+    const uri = update?.uri ?? evt.object_id;
+    const items = rowItemsMap.value.get(IN_PROGRESS_ROW_ID);
+    if (leavesInProgress && uri && items) {
+      rowItemsMap.value.set(
+        IN_PROGRESS_ROW_ID,
+        items.filter((item) => item.uri !== uri),
+      );
+    }
+    scheduleRecommendationRefresh();
+  },
+);
+
+const unsubscribeProviderEvents = api.subscribe(
+  EventType.PROVIDER_EVENT,
+  (evt: EventMessage) => {
+    if (
+      evt.data &&
+      typeof evt.data === "object" &&
+      "event" in evt.data &&
+      evt.data.event === "recommendations_updated"
+    ) {
+      scheduleRecommendationRefresh();
+    }
+  },
+);
+
 onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
   loadGenres();
   window.addEventListener("resize", updateHeroNav);
 
+  // A history back/forward traversal sets `forward` on the entry we're
+  // returning to; a fresh navigation leaves it null.
+  if (prevState && router.options.history.state.forward != null) {
+    const snapshot = prevState;
+    recommendations.value = snapshot.recommendations;
+    recentlyPlayed.value = snapshot.recentlyPlayed;
+    rowItemsMap.value = snapshot.rowItemsMap;
+    genres.value = snapshot.genres;
+    resolveHeroPicks();
+    loading.value = false;
+    nextTick(() => {
+      const el = document.querySelector(
+        ".content-section",
+      ) as HTMLElement | null;
+      if (el) el.scrollTop = snapshot.scrollPos;
+      observeHero();
+    });
+
+    // Refresh everything in the background so the restored page stays current.
+    await loadRecommendationRows();
+    if (unmounted) return;
+    await refreshShownRowItems();
+    if (unmounted) return;
+    resolveHeroPicks();
+    nextTick(() => {
+      if (!unmounted) observeHero();
+    });
+    return;
+  }
+
   await loadRecommendationRows();
-  if (isUnmounted) return;
+  if (unmounted) return;
   loading.value = false;
 
   await fetchMissingRowItems();
-  if (isUnmounted) return;
+  if (unmounted) return;
   resolveHeroPicks();
   nextTick(() => {
-    if (!isUnmounted) observeHero();
+    if (!unmounted) observeHero();
   });
 });
 
 onBeforeUnmount(() => {
-  isUnmounted = true;
+  unmounted = true;
   window.removeEventListener("resize", updateHeroNav);
   unsubscribeRecommendations();
+  unsubscribeProviderEvents();
+  unsubscribePlaylog();
   cancelScheduledRecommendationRefresh();
   heroRo?.disconnect();
   heroRo = undefined;
   observedHeroGrid = null;
+
+  const el = document.querySelector(".content-section");
+  prevState = {
+    recommendations: recommendations.value,
+    recentlyPlayed: recentlyPlayed.value,
+    rowItemsMap: rowItemsMap.value,
+    genres: genres.value,
+    scrollPos: el?.scrollTop ?? 0,
+  };
 });
 </script>
 
@@ -958,6 +1190,12 @@ onBeforeUnmount(() => {
 
 .ed-dimmed {
   opacity: 0.4;
+}
+.ed-shelf__empty {
+  min-width: 100%;
+  padding: 8px 4px;
+  font-size: 0.875rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .ed-hero-row__head {
   display: flex;

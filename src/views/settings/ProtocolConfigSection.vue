@@ -29,84 +29,31 @@
         @update:value="emit('update:value', conf_entry, $event)"
         @toggle-password="emit('toggle-password')"
         @action="emit('action', conf_entry)"
-        @open-dsp="emit('open-dsp')"
-        @open-options="emit('open-options')"
         @help="emit('help', conf_entry)"
       />
 
-      <!-- Enable/disable toggles for the optional output protocols -->
-      <template v-if="optionalProtocolPanels.length > 0">
-        <p class="text-muted-foreground mt-4 mb-2 border-b pb-1 text-xs">
-          {{ $t("settings.protocol_enable_label") }}
-        </p>
-        <TooltipProvider :delay-duration="200">
-          <div
-            v-for="panel of optionalProtocolPanels"
-            :key="'toggle-' + panel"
-            class="flex items-center gap-3 py-2.5"
+      <template v-if="protocolPanels.length > 0">
+        <component
+          :is="hasMultipleProtocols ? Accordion : 'div'"
+          :type="hasMultipleProtocols ? 'single' : undefined"
+          :collapsible="hasMultipleProtocols || undefined"
+          class="space-y-2"
+        >
+          <component
+            :is="hasMultipleProtocols ? AccordionItem : 'div'"
+            v-for="panel of protocolPanels"
+            :key="panel"
+            :value="hasMultipleProtocols ? panel : undefined"
+            class="rounded-[6px] border bg-card px-4 shadow-sm"
           >
-            <ProviderIcon
-              v-if="getProtocolDomain(panel)"
-              :domain="getProtocolDomain(panel)!"
-              :size="22"
-              class="shrink-0"
-            />
-            <span class="min-w-0 flex-1 text-sm">
-              {{ getCategoryTranslation(panel) }}
-            </span>
-            <!-- A read_only toggle cannot be changed right now (e.g. a derived protocol
-                 whose base protocol is disabled); the entry description explains why -->
-            <Tooltip
-              v-if="
-                isProtocolToggleReadOnly(panel) &&
-                getProtocolEnabledEntry(panel)?.description
+            <component
+              :is="hasMultipleProtocols ? AccordionTrigger : 'div'"
+              :class="
+                hasMultipleProtocols
+                  ? 'hover:no-underline'
+                  : 'flex items-start py-4 text-left text-sm font-medium'
               "
             >
-              <TooltipTrigger as-child>
-                <button
-                  type="button"
-                  class="text-muted-foreground shrink-0 opacity-60 hover:opacity-100"
-                  :aria-label="$t('tooltip.help')"
-                >
-                  <Info :size="16" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" class="max-w-[300px]">
-                {{ getProtocolEnabledEntry(panel)?.description }}
-              </TooltipContent>
-            </Tooltip>
-            <Switch
-              :model-value="!!getProtocolEnabledEntry(panel)?.value"
-              :disabled="
-                !isProtocolProviderAvailable(panel) ||
-                isProtocolToggleReadOnly(panel)
-              "
-              class="shrink-0"
-              @update:model-value="
-                emit('update:value', getProtocolEnabledEntry(panel)!, $event)
-              "
-            />
-          </div>
-        </TooltipProvider>
-      </template>
-
-      <!-- Per-protocol configuration: native (always on) + enabled optional -->
-      <template v-if="configurableProtocolPanels.length > 0">
-        <p class="text-muted-foreground mt-4 mb-2 border-b pb-1 text-xs">
-          {{ $t("settings.protocol_configure_label") }}
-        </p>
-        <Accordion
-          type="multiple"
-          :model-value="openConfigPanels"
-          @update:model-value="openConfigPanels = $event as string[]"
-        >
-          <AccordionItem
-            v-for="panel of configurableProtocolPanels"
-            :key="panel"
-            :value="panel"
-            class="border-b-0"
-          >
-            <AccordionTrigger class="hover:no-underline">
               <span class="flex items-center gap-2">
                 <ProviderIcon
                   v-if="getProtocolDomain(panel)"
@@ -114,31 +61,47 @@
                   :size="22"
                 />
                 <span>{{ getProtocolConfigureTitle(panel) }}</span>
+                <Badge
+                  v-if="getOutputProtocol(panel)?.is_native"
+                  variant="secondary"
+                >
+                  {{ $t("settings.protocol_native_badge") }}
+                </Badge>
               </span>
-            </AccordionTrigger>
-            <AccordionContent class="pt-3">
+            </component>
+            <component
+              :is="hasMultipleProtocols ? AccordionContent : 'div'"
+              :class="['border-t pt-4', { 'pb-4': !hasMultipleProtocols }]"
+            >
               <div
-                v-if="entriesForCategory(panel).length === 0"
+                v-if="!isProtocolProviderAvailable(panel)"
+                class="protocol-empty-message"
+              >
+                {{ $t("settings.protocol_provider_unavailable") }}
+              </div>
+              <ConfigEntryRow
+                v-for="conf_entry of protocolEntriesForCategory(panel)"
+                :key="conf_entry.key"
+                :conf-entry="conf_entry"
+                :show-password-values="showPasswordValues"
+                :disabled="isProtocolEntryDisabled(panel, conf_entry)"
+                @update:value="emit('update:value', conf_entry, $event)"
+                @toggle-password="emit('toggle-password')"
+                @action="emit('action', conf_entry)"
+                @help="emit('help', conf_entry)"
+              />
+              <div
+                v-if="
+                  isProtocolProviderAvailable(panel) &&
+                  entriesForCategory(panel).length === 0
+                "
                 class="protocol-empty-message"
               >
                 {{ getProtocolEmptyMessage(panel) }}
               </div>
-              <ConfigEntryRow
-                v-for="conf_entry of entriesForCategory(panel)"
-                :key="conf_entry.key"
-                :conf-entry="conf_entry"
-                :show-password-values="showPasswordValues"
-                :disabled="isDisabled(conf_entry)"
-                @update:value="emit('update:value', conf_entry, $event)"
-                @toggle-password="emit('toggle-password')"
-                @action="emit('action', conf_entry)"
-                @open-dsp="emit('open-dsp')"
-                @open-options="emit('open-options')"
-                @help="emit('help', conf_entry)"
-              />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+            </component>
+          </component>
+        </component>
       </template>
     </div>
   </div>
@@ -146,25 +109,19 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import { api } from "@/plugins/api";
 import { ConfigValueType, OutputProtocol } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Antenna, Info } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { Antenna } from "@lucide/vue";
+import { computed } from "vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
 
 const props = defineProps<{
@@ -183,12 +140,7 @@ const emit = defineEmits<{
   (e: "action", entry: ConfigEntryUI): void;
   (e: "help", entry: ConfigEntryUI): void;
   (e: "toggle-password"): void;
-  (e: "open-dsp"): void;
-  (e: "open-options"): void;
 }>();
-
-// Config sections stay collapsed by default; the user opens the one they want.
-const openConfigPanels = ref<string[]>([]);
 
 const entriesForCategory = function (category: string) {
   return props.visibleEntriesByCategory[category] || [];
@@ -207,6 +159,8 @@ const protocolGeneralEntries = computed(() =>
   entriesForCategory("protocol_general"),
 );
 
+const hasMultipleProtocols = computed(() => props.protocolPanels.length > 1);
+
 const getProtocolDomain = function (category: string): string | undefined {
   if (!category.startsWith("protocol_")) return undefined;
   // Extract domain from "protocol_{domain}" format
@@ -223,36 +177,13 @@ const getProtocolEnabledEntry = function (
   );
 };
 
-// The server serves the toggle read_only when it cannot be changed right now, e.g. a
-// derived protocol (Sendspin over AirPlay) while its base protocol is disabled.
-const isProtocolToggleReadOnly = function (category: string): boolean {
-  return !!getProtocolEnabledEntry(category)?.read_only;
+const protocolEntriesForCategory = function (
+  category: string,
+): ConfigEntryUI[] {
+  const entries = entriesForCategory(category);
+  const enabledEntry = getProtocolEnabledEntry(category);
+  return enabledEntry ? [enabledEntry, ...entries] : entries;
 };
-
-// Optional protocols (those with an enable/disable entry) get a dedicated toggle
-// and, once enabled, a configuration section. The native protocol has no separate
-// toggleable provider, so it is always on.
-const optionalProtocolPanels = computed(() =>
-  props.protocolPanels.filter((p) => getProtocolEnabledEntry(p)),
-);
-
-const nativeProtocolPanels = computed(() =>
-  props.protocolPanels.filter((p) => !getProtocolEnabledEntry(p)),
-);
-
-// Only enabled optional protocols get a configuration section.
-const enabledOptionalProtocolPanels = computed(() =>
-  optionalProtocolPanels.value.filter(
-    (p) => getProtocolEnabledEntry(p)?.value !== false,
-  ),
-);
-
-// The native protocol (always on) plus any enabled optional protocols each get a
-// "Configure" section.
-const configurableProtocolPanels = computed(() => [
-  ...nativeProtocolPanels.value,
-  ...enabledOptionalProtocolPanels.value,
-]);
 
 // A protocol's backing provider can be disabled/unavailable independently. Only
 // optional protocols (those with an enabled entry) are served by a separate,
@@ -263,6 +194,13 @@ const isProtocolProviderAvailable = function (category: string): boolean {
   const provider = api.getProvider(domain);
   // Only treat as unavailable when we resolve a provider that reports unavailable.
   return provider ? provider.available : true;
+};
+
+const isProtocolEntryDisabled = function (
+  category: string,
+  entry: ConfigEntryUI,
+): boolean {
+  return !isProtocolProviderAvailable(category) || props.isDisabled(entry);
 };
 
 // Display name for a protocol — the provider's own name, falling back to the
@@ -296,10 +234,7 @@ const getProtocolBaseName = function (category: string): string | undefined {
     (p) => p.output_protocol_id === derivedFrom,
   );
   if (!base) return undefined;
-  const provider = base.protocol_domain
-    ? api.getProvider(base.protocol_domain)
-    : undefined;
-  return provider?.name || base.name;
+  return api.getProvider(base.protocol_domain)?.name || base.name;
 };
 
 // Accordion title for a protocol's configuration section; derived transports include
@@ -325,19 +260,6 @@ const hasHiddenAdvancedSettings = function (category: string): boolean {
 };
 
 const getProtocolEmptyMessage = function (category: string): string {
-  const enabledEntry = getProtocolEnabledEntry(category);
-
-  // Optional protocol whose backing provider is unavailable
-  if (enabledEntry && !isProtocolProviderAvailable(category)) {
-    return $t("settings.protocol_provider_unavailable");
-  }
-
-  const isEnabled = enabledEntry?.value !== false;
-  if (!isEnabled) {
-    return $t("settings.protocol_disabled_message");
-  }
-
-  // Protocol is enabled but no settings visible
   if (hasHiddenAdvancedSettings(category)) {
     return $t("settings.protocol_no_settings_with_advanced");
   }

@@ -50,6 +50,15 @@ export type DeleteConfirmationDialogEvent = {
   onConfirm: () => void | Promise<void>;
 };
 
+export type PlayerGroupPlaybackChange = "remove" | "power_off";
+
+export type PlayerGroupPlaybackDialogEvent = {
+  change: PlayerGroupPlaybackChange;
+  playerName: string;
+  onKeepPlaying: () => void | Promise<void>;
+  onStopAndUngroup: () => void | Promise<void>;
+};
+
 export type ImportPlaylistEvent = {
   m3uData: string;
   playlistName: string;
@@ -63,6 +72,21 @@ export type AudioOverlayDialogEvent = {
   queueId: string;
 };
 
+export type PlayAnnouncementDialogEvent = {
+  playerId: string;
+};
+
+export type PlayerRenameDialogEvent = {
+  playerId: string;
+  // the custom name currently set, empty while the player uses its default name
+  name?: string | null;
+  // shown as the placeholder and restored when the custom name is cleared
+  defaultName?: string | null;
+};
+
+// finished: the flow ended on a FINISH step rather than an ABORT
+export type SetupFlowEndedCallback = (finished: boolean) => void;
+
 // Launches the setup flow dialog for one of: adding a provider (by domain),
 // reconfiguring a provider instance, or setting up a player.
 export type SetupFlowDialogEvent =
@@ -70,9 +94,9 @@ export type SetupFlowDialogEvent =
   | {
       kind: "reconfigure";
       instanceId: string;
-      onFlowEnded?: () => void;
+      onFlowEnded?: SetupFlowEndedCallback;
     }
-  | { kind: "player"; playerId: string };
+  | { kind: "player"; playerId: string; onFlowEnded?: SetupFlowEndedCallback };
 
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
@@ -81,10 +105,13 @@ export type Events = {
   mergeGenreDialog: MergeGenreDialogEvent;
   deleteGenreDialog: DeleteGenreDialogEvent;
   deleteConfirmationDialog: DeleteConfirmationDialogEvent;
+  playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
+  playAnnouncementDialog: PlayAnnouncementDialogEvent;
+  playerRenameDialog: PlayerRenameDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

@@ -1,100 +1,74 @@
-import { getLucideIcon, getLucideIconNames, isMdiIcon } from "@/helpers/icon";
+import {
+  getLucideIcon,
+  PLAYER_ICON_FALLBACK,
+  PLAYER_ICON_IDS,
+  PLAYER_ICON_OPTIONS,
+} from "@/helpers/icon";
 import { describe, expect, it } from "vitest";
 
 describe("icon helpers", () => {
   describe("getLucideIcon", () => {
-    it("returns undefined for MDI icons", () => {
-      expect(getLucideIcon("mdi-speaker")).toBeUndefined();
-      expect(getLucideIcon("mdi-music")).toBeUndefined();
-    });
-
     it("returns undefined for null/undefined", () => {
       expect(getLucideIcon(null)).toBeUndefined();
       expect(getLucideIcon(undefined)).toBeUndefined();
     });
 
-    it("resolves Lucide icons with numeric suffixes", () => {
-      // Test kebab-to-pascal conversion with numbers
-      const music2 = getLucideIcon("music-2");
-      expect(music2).toBeDefined();
-
-      const disc3 = getLucideIcon("disc-3");
-      expect(disc3).toBeDefined();
+    it("returns undefined for values outside the set", () => {
+      expect(getLucideIcon("mdi-speaker")).toBeUndefined();
+      expect(getLucideIcon("some-random-icon")).toBeUndefined();
     });
 
-    it("resolves standard Lucide icons", () => {
-      const speaker = getLucideIcon("speaker");
-      expect(speaker).toBeDefined();
-
-      const home = getLucideIcon("home");
-      expect(home).toBeDefined();
+    it("resolves every canonical manifest id to a component", () => {
+      for (const id of PLAYER_ICON_IDS) {
+        expect(
+          getLucideIcon(id),
+          `manifest id "${id}" must resolve`,
+        ).toBeDefined();
+      }
     });
 
     it("resolves custom MA icons", () => {
-      const homepod = getLucideIcon("homepod-mini");
-      expect(homepod).toBeDefined();
-
-      const sonos = getLucideIcon("sonos");
-      expect(sonos).toBeDefined();
+      expect(getLucideIcon("homepod-mini")).toBeDefined();
+      expect(getLucideIcon("sonos")).toBeDefined();
+      expect(getLucideIcon("wiim")).toBeDefined();
+      expect(getLucideIcon("speakers")).toBeDefined();
     });
 
-    it("resolves MA icon aliases", () => {
-      // Test that aliases work (if any are defined). Even when no aliases
-      // exist, this validates the lookup path runs without throwing.
-      expect(() => getLucideIcon("some-alias-that-might-exist")).not.toThrow();
-    });
-  });
-
-  describe("isMdiIcon", () => {
-    it("returns true for MDI icons", () => {
-      expect(isMdiIcon("mdi-speaker")).toBe(true);
-      expect(isMdiIcon("mdi-home")).toBe(true);
+    it("resolves semantic ids to their mapped Lucide component", () => {
+      expect(getLucideIcon("living-room")).toBeDefined();
+      expect(getLucideIcon("kitchen")).toBeDefined();
+      expect(getLucideIcon("vinyl")).toBeDefined();
     });
 
-    it("returns false for non-MDI icons", () => {
-      expect(isMdiIcon("speaker")).toBe(false);
-      expect(isMdiIcon("homepod-mini")).toBe(false);
-    });
-
-    it("returns false for null/undefined", () => {
-      expect(isMdiIcon(null)).toBe(false);
-      expect(isMdiIcon(undefined)).toBe(false);
+    it("resolves app icons outside the player set", () => {
+      // AI-radio show preset icons.
+      expect(getLucideIcon("sunrise")).toBeDefined();
+      expect(getLucideIcon("disc-3")).toBeDefined();
+      expect(getLucideIcon("book-open")).toBeDefined();
+      expect(getLucideIcon("party-popper")).toBeDefined();
     });
   });
 
-  describe("getLucideIconNames", () => {
-    it("returns a non-empty sorted array", async () => {
-      const names = await getLucideIconNames();
-      expect(names.length).toBeGreaterThan(1000); // Lucide has ~1900 icons
-      expect(names).toEqual([...names].sort()); // Verify sorted
+  describe("manifest", () => {
+    it("exposes the canonical id list", () => {
+      expect(PLAYER_ICON_IDS.length).toBeGreaterThanOrEqual(30);
+      expect(PLAYER_ICON_IDS).toContain("speaker");
     });
 
-    it("returns kebab-case names", async () => {
-      const names = await getLucideIconNames();
-      // All names should be lowercase with hyphens
-      names.forEach((name) => {
-        expect(name).toMatch(/^[a-z0-9-]+$/);
-      });
+    it("has a fallback that is a canonical id and resolves", () => {
+      expect(PLAYER_ICON_IDS).toContain(PLAYER_ICON_FALLBACK);
+      expect(getLucideIcon(PLAYER_ICON_FALLBACK)).toBeDefined();
     });
 
-    it("includes icons with numeric suffixes", async () => {
-      const names = await getLucideIconNames();
-      expect(names).toContain("music-2");
-      expect(names).toContain("disc-3");
-    });
-
-    it("excludes Icon suffix aliases", async () => {
-      const names = await getLucideIconNames();
-      // SpeakerIcon, MusicIcon etc should be filtered out
-      const hasIconSuffix = names.some((name) => name.endsWith("-icon"));
-      expect(hasIconSuffix).toBe(false);
-    });
-
-    it("excludes Lucide prefix aliases", async () => {
-      const names = await getLucideIconNames();
-      // LucideSpeaker etc should be filtered out
-      const hasLucidePrefix = names.some((name) => name.startsWith("lucide-"));
-      expect(hasLucidePrefix).toBe(false);
+    it("provides display metadata for every id", () => {
+      expect(PLAYER_ICON_OPTIONS.length).toBe(PLAYER_ICON_IDS.length);
+      for (const option of PLAYER_ICON_OPTIONS) {
+        expect(
+          option.name,
+          `id "${option.id}" must have a display name`,
+        ).toBeTruthy();
+        expect(Array.isArray(option.keywords)).toBe(true);
+      }
     });
   });
 });

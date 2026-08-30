@@ -48,7 +48,7 @@
           :style="{ '--btn-bg': boostBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'next')"
         >
-          <Spinner v-if="isBoostLoading" :size="16" />
+          <Spinner v-if="isBoostLoading" class="size-4" />
           <Rocket v-else :size="16" />
           {{ $t("providers.party.boost") }}
         </Button>
@@ -62,7 +62,7 @@
           :style="{ '--btn-bg': requestBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'end')"
         >
-          <Spinner v-if="isAddLoading" :size="16" />
+          <Spinner v-if="isAddLoading" class="size-4" />
           <ListPlus v-else :size="16" />
           {{ $t("providers.party.request") }}
         </Button>
@@ -135,7 +135,8 @@ const onItemClick = () => {
   if (props.item.media_type === MediaType.TRACK) {
     emit("toggleExpand", `${props.item.media_type}-${props.item.item_id}`);
   } else if (props.item.media_type === MediaType.ARTIST) {
-    emit("selectArtist", props.item);
+    // media_type is a plain enum on both members, so it does not narrow the union for TS
+    emit("selectArtist", props.item as Artist);
   }
 };
 

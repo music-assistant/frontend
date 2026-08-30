@@ -1,0 +1,434 @@
+import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerTrackDetails from "@/layouts/default/PlayerOSD/PlayerTrackDetails.vue";
+import { openCurrentTrackDetails } from "@/helpers/now_playing";
+import { store } from "@/plugins/store";
+import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
+import { mount, type VueWrapper } from "@vue/test-utils";
+import { playerSource } from "../fixtures/playerSource";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick, ref } from "vue";
+import { createVuetify } from "vuetify";
+import * as components from "vuetify/components";
+import * as directives from "vuetify/directives";
+
+// Non-phone, so the non-compact outer thumb container uses its wider 64px
+// size; the artwork/fallback content size is asserted independently of it.
+vi.mock("@/plugins/breakpoint", () => ({
+  getBreakpointValue: () => false,
+}));
+
+// Pulls in the fullscreen dialog's own player/queue/waveform machinery,
+// unrelated to the track details compact layout under test here.
+vi.mock("@/layouts/default/PlayerOSD/PlayerFullscreen.vue", () => ({
+  default: { template: "<div />" },
+}));
+
+// QualityDetailsBtn's audio-processing chain imports ProviderIcon, which
+// needs the real api singleton; stub it since it is never shown here
+// (showQualityDetailsBtn is false in every test below).
+vi.mock("@/plugins/api", () => {
+  const api = {
+    players: {},
+    queues: {},
+    queueElapsedTime: {},
+    providers: {},
+    providerManifests: {},
+  };
+  return { api, default: api };
+});
+
+vi.mock("@/composables/useServerTime", () => ({
+  serverNow: () => Date.now() / 1000,
+}));
+
+vi.mock("@/helpers/now_playing", () => ({
+  openCurrentTrackDetails: vi.fn(),
+}));
+
+const hasActiveAudioPath = ref(false);
+vi.mock("@/composables/useActiveAudioPath", () => ({
+  useActiveAudioPath: () => ({ hasActiveAudioPath }),
+}));
+
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    store: reactive({
+      activePlayer: {
+        powered: true,
+        icon: undefined,
+        type: "player",
+        group_members: [],
+        current_media: {
+          title: "Song title",
+          artist: "Artist",
+          album: "Album",
+        },
+      },
+      activePlayerQueue: undefined,
+      curQueueItem: undefined,
+      currentUser: undefined,
+      showFullscreenPlayer: false,
+      showPlayersMenu: false,
+    }),
+  };
+});
+
+const vuetify = createVuetify({ components, directives });
+
+const NOW = 1_700_000_000;
+let wrapper: VueWrapper | undefined;
+
+// MarqueeText pulls in resize/intersection observers unrelated to this test.
+// QualityDetailsBtn is stubbed to keep these mounts focused on this
+// component's own gating, not the popover's internals.
+function mountDetails(
+  compact: boolean,
+  titleOpensDetails = false,
+  showQualityDetailsBtn = false,
+) {
+  wrapper = mount(PlayerTrackDetails, {
+    props: {
+      compact,
+      titleOpensDetails,
+      showQualityDetailsBtn,
+      colorPalette: EMPTY_COLOR_PALETTE,
+    },
+    global: {
+      plugins: [vuetify],
+      mocks: {
+        $t: (key: string, args?: string[]) =>
+          args?.length ? `${key}:${args[0]}` : key,
+      },
+      stubs: {
+        MarqueeText: { template: "<span><slot /></span>" },
+        QualityDetailsBtn: {
+          template: '<div data-testid="quality-details-btn-stub" />',
+        },
+      },
+    },
+  });
+  return wrapper;
+}
+
+describe("PlayerTrackDetails chapters", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW * 1000);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    (
+      store.activePlayer as unknown as { current_media: unknown }
+    ).current_media = {
+      title: "Song title",
+      artist: "Artist",
+      album: "Album",
+    };
+    store.activePlayerQueue = undefined;
+    store.curQueueItem = undefined;
+    store.currentUser = undefined;
+    (
+      store.activePlayer as unknown as { active_source?: string }
+    ).active_source = undefined;
+  });
+
+  it("updates the chapter subtitle when the preference is enabled after mount", async () => {
+    const details = mountDetails(false);
+    const testStore = store as typeof store & {
+      currentUser?: { preferences?: Record<string, unknown> };
+    };
+    const testApi = (await import("@/plugins/api")).default as unknown as {
+      queues: Record<string, unknown>;
+      queueElapsedTime: Record<string, unknown>;
+    };
+    testApi.queues.q1 = {
+      queue_id: "q1",
+      active: true,
+      state: "playing",
+      current_item: { extra_attributes: {} },
+    };
+    testApi.queueElapsedTime.q1 = {
+      elapsed_time: 59,
+      elapsed_time_last_updated: NOW,
+    };
+    testStore.currentUser = {
+      user_id: "test-user",
+      username: "test-user",
+      role: "user",
+      enabled: true,
+      preferences: { audiobook_chapter_progress: true },
+    } as never;
+    testStore.activePlayerQueue = {
+      queue_id: "q1",
+      active: true,
+      state: "playing" as never,
+    } as never;
+    testStore.activePlayer = {
+      ...testStore.activePlayer!,
+      active_source: "q1",
+      playback_state: "playing" as never,
+      current_media: {
+        title: "Book",
+        artist: "Author",
+        album: null,
+        media_type: "audiobook" as never,
+        duration: 120,
+        elapsed_time: 59,
+        elapsed_time_last_updated: NOW,
+        queue_item_id: "item-1",
+      } as never,
+    };
+    testStore.curQueueItem = {
+      queue_item_id: "item-1",
+      media_item: {
+        media_type: "audiobook" as never,
+        metadata: {
+          chapters: [
+            { position: 1, name: "First", start: 0, end: 60 },
+            { position: 2, name: "Second", start: 60, end: 120 },
+          ],
+        },
+      },
+    } as never;
+    await nextTick();
+    expect(details.text()).toContain("First");
+
+    await vi.advanceTimersByTimeAsync(2000);
+    await nextTick();
+    expect(details.text()).toContain("Second");
+    expect(details.get(".player-track-chapter-button").element.tagName).toBe(
+      "BUTTON",
+    );
+  });
+});
+
+describe("PlayerTrackDetails compact mode", () => {
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.activePlayer!.current_media!.image_url = null;
+  });
+
+  it.each([
+    { compact: false, size: 60, iconSize: 32, containerSize: 64 },
+    { compact: true, size: 40, iconSize: 22, containerSize: 40 },
+  ])(
+    "falls back to a $size px icon and keeps both text lines when compact=$compact",
+    ({ compact, size, iconSize, containerSize }) => {
+      const details = mountDetails(compact);
+
+      // compact only shrinks the row, so the subtitle line stays either way
+      expect(details.findComponent({ name: "VListItem" }).props("lines")).toBe(
+        "two",
+      );
+      expect(details.text()).toContain("Artist");
+      // the shallower row height rides on this class
+      expect(
+        details
+          .get(".player-track-details")
+          .classes("player-track-details--compact"),
+      ).toBe(compact);
+      const iconThumb = details.get(".icon-thumb");
+      expect(iconThumb.attributes("style")).toContain(`height: ${size}px`);
+      expect(iconThumb.attributes("style")).toContain(`width: ${size}px`);
+      expect(details.findComponent(PlayerIcon).props("size")).toBe(iconSize);
+      // the wider non-phone container still grows to 64px outside compact
+      // mode, independent of the fallback icon's own content size
+      expect(details.get(".player-media-thumb").attributes("style")).toContain(
+        `height: ${containerSize}px`,
+      );
+    },
+  );
+
+  it.each([
+    { compact: false, containerSize: 64 },
+    { compact: true, containerSize: 40 },
+  ])(
+    "renders cover art sized to its $containerSize px wrapper when compact=$compact",
+    ({ compact, containerSize }) => {
+      store.activePlayer!.current_media!.image_url =
+        "https://example.com/art.jpg";
+      const details = mountDetails(compact);
+
+      expect(details.find(".icon-thumb").exists()).toBe(false);
+      expect(details.findComponent({ name: "VImg" }).exists()).toBe(true);
+      // cover art fills its w-full h-full wrapper, so the outer container
+      // is what actually controls the rendered artwork size
+      expect(details.get(".player-media-thumb").attributes("style")).toContain(
+        `height: ${containerSize}px`,
+      );
+    },
+  );
+});
+
+describe("PlayerTrackDetails title", () => {
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.showFullscreenPlayer = false;
+    vi.mocked(openCurrentTrackDetails).mockClear();
+  });
+
+  // the artwork and the bar around it are what open the player, so the title is
+  // free to be the way into the track itself
+  it("opens the track details where the bar asks for it", async () => {
+    const details = mountDetails(false, true);
+
+    await details.get(".v-list-item-title .ma-line-clamp-1").trigger("click");
+
+    expect(openCurrentTrackDetails).toHaveBeenCalled();
+    expect(store.showFullscreenPlayer).toBe(false);
+  });
+
+  // the floating mobile bar is one big target for the player, and the title is
+  // most of it
+  it("opens the player everywhere else", async () => {
+    const details = mountDetails(true);
+
+    await details.get(".v-list-item-title .ma-line-clamp-1").trigger("click");
+
+    expect(openCurrentTrackDetails).not.toHaveBeenCalled();
+    expect(store.showFullscreenPlayer).toBe(true);
+  });
+
+  // the artwork keeps opening the player on both bars
+  it("opens the player from the artwork even where the title does not", async () => {
+    const details = mountDetails(false, true);
+
+    await details.get(".player-media-thumb").trigger("click");
+
+    expect(openCurrentTrackDetails).not.toHaveBeenCalled();
+    expect(store.showFullscreenPlayer).toBe(true);
+  });
+});
+
+describe("PlayerTrackDetails source badge", () => {
+  beforeEach(() => {
+    Object.assign(store.activePlayer!, {
+      player_id: "player-1",
+      active_source: "player-1",
+      source_list: [],
+    });
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.activePlayerQueue = undefined;
+    store.curQueueItem = undefined;
+    (
+      store.activePlayer as unknown as { current_media: unknown }
+    ).current_media = {
+      title: "Song title",
+      artist: "Artist",
+      album: "Album",
+    };
+  });
+
+  function playRadioStation() {
+    (
+      store.activePlayer as unknown as { current_media: unknown }
+    ).current_media = {
+      title: "Live track",
+      artist: "Artist",
+      album: "Radio 538",
+    };
+  }
+
+  function playExternalSource() {
+    const source = playerSource({ id: "line-in", name: "Line In" });
+    Object.assign(store.activePlayer!, {
+      active_source: source.id,
+      source_list: [source],
+    });
+  }
+
+  it("keeps the radio station in the metadata line without a badge", () => {
+    playRadioStation();
+
+    const details = mountDetails(false);
+
+    expect(details.find(".player-track-source").exists()).toBe(false);
+    expect(details.get(".player-track-subtitle-text").text()).toContain(
+      "Radio 538",
+    );
+  });
+
+  // the full bar has the height for a third line, so the badge does not fight
+  // the metadata for the width of the subtitle line
+  it("gives the badge its own line under the metadata on the full bar", () => {
+    playExternalSource();
+
+    const details = mountDetails(false);
+
+    expect(
+      details.find(".player-track-subtitle-line .player-track-source").exists(),
+    ).toBe(false);
+    expect(
+      details.find(".player-track-subtitle > .player-track-source").exists(),
+    ).toBe(true);
+  });
+
+  // the compact bar keeps its two shallow lines, so the badge shrinks to its
+  // icon beside the metadata and hands the name to the tooltip
+  it("shrinks the badge to its icon on the compact bar", () => {
+    playExternalSource();
+
+    const details = mountDetails(true);
+
+    const badge = details.get(
+      ".player-track-subtitle-line .player-track-source",
+    );
+    expect(badge.text()).toBe("");
+    expect(badge.attributes("title")).toContain("Line In");
+  });
+
+  it("leaves an ordinary album on the metadata line", () => {
+    const details = mountDetails(false);
+
+    expect(details.find(".player-track-source").exists()).toBe(false);
+    expect(details.get(".player-track-subtitle-text").text()).toContain(
+      "Album",
+    );
+  });
+});
+
+describe("PlayerTrackDetails quality pill", () => {
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    hasActiveAudioPath.value = false;
+  });
+
+  it("shows the pill on the full bar when there is an active audio path", () => {
+    hasActiveAudioPath.value = true;
+
+    const details = mountDetails(false, false, true);
+
+    expect(
+      details.find('[data-testid="quality-details-btn-stub"]').exists(),
+    ).toBe(true);
+  });
+
+  it("hides the pill without an active audio path", () => {
+    hasActiveAudioPath.value = false;
+
+    const details = mountDetails(false, false, true);
+
+    expect(
+      details.find('[data-testid="quality-details-btn-stub"]').exists(),
+    ).toBe(false);
+  });
+
+  it("respects the caller's showQualityDetailsBtn opt-out", () => {
+    hasActiveAudioPath.value = true;
+
+    const details = mountDetails(false, false, false);
+
+    expect(
+      details.find('[data-testid="quality-details-btn-stub"]').exists(),
+    ).toBe(false);
+  });
+});

@@ -3,6 +3,7 @@ import type { Component } from "vue";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { api } from "@/plugins/api";
+import type { Genre } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
 
 // Module-level timer so the debounce survives component unmount / navigation.
@@ -16,6 +17,14 @@ export function scheduleGenreScan(delay = 10_000) {
       // fire-and-forget; GenreTable and LibraryGenres refresh via genre event subscription
     });
   }, delay);
+}
+
+// The genre's own name is stored in genre_aliases, so it is excluded here.
+export function mappedAliases(genre: Genre): string[] {
+  const genreName = genre.name?.toLowerCase();
+  return (genre.genre_aliases || []).filter(
+    (alias) => alias.toLowerCase() !== genreName,
+  );
 }
 
 // Icon mapping for different media types in genre overview
@@ -33,6 +42,7 @@ export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
   [MediaType.GENRE_ALIAS]: Route,
   [MediaType.PODCAST_EPISODE]: "mdi-podcast",
   [MediaType.FOLDER]: "mdi-folder",
+  [MediaType.COLLECTION]: "mdi-note-multiple-outline",
   [MediaType.UNKNOWN]: "mdi-help-circle-outline",
 };
 

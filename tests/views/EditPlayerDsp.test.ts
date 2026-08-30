@@ -7,24 +7,30 @@ import type {
   ToneControlFilter,
 } from "@/plugins/api/interfaces";
 import { DSPFilterType, EventType } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import EditPlayerDsp from "@/views/settings/EditPlayerDsp.vue";
 
 const apiMock = vi.hoisted(() => ({
-  applyDSPPreset: vi.fn(),
-  getDSPConfig: vi.fn(),
+  applyDSPPreset: vi.fn<MusicAssistantApi["applyDSPPreset"]>(),
+  getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
   playerDSPCallback: undefined as
     | ((event: { data: DSPConfig }) => void)
     | undefined,
   players: { "player-1": {} },
-  removeDSPPreset: vi.fn(),
-  saveDSPConfig: vi.fn(),
-  saveDSPPreset: vi.fn(),
+  removeDSPPreset: vi.fn<MusicAssistantApi["removeDSPPreset"]>(),
+  saveDSPConfig: vi.fn<MusicAssistantApi["saveDSPConfig"]>(),
+  saveDSPPreset: vi.fn<MusicAssistantApi["saveDSPPreset"]>(),
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),
 }));
 const registryMock = vi.hoisted(() => ({
   presets: undefined as Ref<DSPConfigPreset[]> | undefined,
 }));
+// The view reads only mobileLayout, and the real store calls into
+// @/helpers/utils at import time, which is mocked down to getPlayerName here.
+const storeMock = vi.hoisted(() => ({ mobileLayout: false }));
+
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -54,18 +60,8 @@ vi.mock("vue-i18n", async (importOriginal) => {
     }),
   };
 });
-vi.mock("vuetify", async () => {
-  const { ref } = await import("vue");
-  return {
-    useDisplay: () => ({ mobile: ref(false) }),
-    useTheme: () => ({
-      global: { current: ref({ dark: false }) },
-    }),
-  };
-});
-
 const SwitchStub = {
-  name: "VSwitch",
+  name: "Switch",
   props: ["modelValue"],
   emits: ["update:modelValue"],
   template:
@@ -649,42 +645,21 @@ async function mountEditor() {
     global: {
       mocks: {
         $t: translate,
-        $vuetify: {
-          theme: { current: { dark: false } },
-        },
       },
       stubs: {
         Badge: { template: "<span><slot /></span>" },
+        Button: { template: "<button><slot /></button>" },
+        DropdownMenu: { template: "<div><slot /></div>" },
+        DropdownMenuContent: { template: "<div><slot /></div>" },
+        DropdownMenuItem: {
+          template: '<button class="preset-item"><slot /></button>',
+        },
+        DropdownMenuTrigger: { template: "<div><slot /></div>" },
         DSPParametricEQ: true,
         DSPPipeline: PipelineStub,
         DSPSlider: true,
         DSPToneControl: ToneControlStub,
-        VAlert: true,
-        VBtn: { template: "<button><slot /></button>" },
-        VCard: { template: "<div><slot /></div>" },
-        VCardActions: { template: "<div><slot /></div>" },
-        VCardText: { template: "<div><slot /></div>" },
-        VCardTitle: { template: "<div><slot /></div>" },
-        VCol: { template: "<div><slot /></div>" },
-        VContainer: { template: "<div><slot /></div>" },
-        VDialog: { template: "<div><slot /></div>" },
-        VIcon: true,
-        VList: { template: "<div><slot /></div>" },
-        VListItem: {
-          template:
-            '<button class="preset-item"><slot /><slot name="append" /></button>',
-        },
-        VListItemTitle: { template: "<span><slot /></span>" },
-        VMenu: {
-          template: '<div><slot name="activator" :props="{}" /><slot /></div>',
-        },
-        VRow: { template: "<div><slot /></div>" },
-        VSelect: { template: "<div />" },
-        VSpacer: true,
-        VSwitch: SwitchStub,
-        VTextField: { template: "<div />" },
-        VToolbar: { template: "<div><slot /></div>" },
-        VToolbarTitle: { template: "<span><slot /></span>" },
+        Switch: SwitchStub,
       },
     },
   });

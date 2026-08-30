@@ -1,13 +1,15 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ProviderStatus, ProviderType } from "@/plugins/api/interfaces";
+import { ProviderStage, ProviderStatus } from "@/plugins/api/interfaces";
+import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
+import { providerConfig } from "../fixtures/providerConfig";
 
 const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
   apiMock: {
-    getProvider: vi.fn(),
-    getProviderConfigs: vi.fn(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
     providerManifests: {
       spotify: {
         allow_disable: true,
@@ -20,10 +22,10 @@ const { apiMock, eventbusMock, routeMock, routerMock } = vi.hoisted(() => ({
       },
     },
     providers: {},
-    removeProviderConfig: vi.fn(),
-    saveProviderConfig: vi.fn(),
-    sendCommand: vi.fn(),
-    startSync: vi.fn(),
+    reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+    removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
+    startSync: vi.fn<MusicAssistantApi["startSync"]>(),
     subscribe: vi.fn(),
   },
   eventbusMock: {
@@ -85,12 +87,17 @@ const ListItemStub = {
   template: `
     <div data-testid="provider-row" @click="$emit('click')">
       <slot name="subtitle" />
+      <slot name="append" />
     </div>
   `,
 };
 
 const SlotStub = {
   template: "<div><slot /></div>",
+};
+
+const ChipStub = {
+  template: '<div data-testid="stage-badge"><slot /></div>',
 };
 
 const ButtonStub = {
@@ -105,6 +112,8 @@ const ButtonStub = {
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getProvider.mockReturnValue(undefined);
+  apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
+  apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
 });
 
@@ -164,7 +173,7 @@ describe("Providers", () => {
     const setupFlowCall = eventbusMock.emit.mock.calls.find(
       ([event]) => event === "setupFlowDialog",
     );
-    setupFlowCall?.[1].onFlowEnded();
+    setupFlowCall?.[1].onFlowEnded(true);
     await flushPromises();
     expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(2);
   });
@@ -194,6 +203,22 @@ describe("Providers", () => {
     expect(routerMock.push).toHaveBeenCalledWith(
       "/settings/editprovider/spotify--test",
     );
+  });
+
+  it("reloads a provider through the shared API action", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
+
+    const contextMenuCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "contextmenu",
+    );
+    const reloadItem = contextMenuCall?.[1].items.find(
+      (item: { label: string }) => item.label === "settings.reload_provider",
+    );
+    reloadItem.action();
+
+    expect(apiMock.reloadProvider).toHaveBeenCalledWith("spotify--test");
   });
 
   it("omits reconfigure from the menu when no setup flow exists", async () => {
@@ -239,6 +264,22 @@ describe("Providers", () => {
       menuItems.map((item: { label: string }) => item.label),
     ).not.toContain("settings.reconfigure");
   });
+
+  it("labels the stage badge from the translated stage key", async () => {
+    apiMock.providerManifests.spotify.stage = ProviderStage.DEPRECATED;
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(wrapper.get('[data-testid="stage-badge"]').text()).toBe(
+      "settings.stage.options.deprecated",
+    );
+  });
+
+  it("hides the stage badge for a stable provider", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(wrapper.find('[data-testid="stage-badge"]').exists()).toBe(false);
+  });
 });
 
 async function mountProviders(
@@ -248,7 +289,7 @@ async function mountProviders(
 ) {
   apiMock.providerManifests.spotify.has_setup_flow = hasSetupFlow;
   apiMock.getProviderConfigs.mockResolvedValue([
-    {
+    providerConfig({
       domain: "spotify",
       enabled,
       instance_id: "spotify--test",
@@ -258,8 +299,7 @@ async function mountProviders(
       },
       name: "Spotify",
       status,
-      type: ProviderType.MUSIC,
-    },
+    }),
   ]);
 
   const wrapper = shallowMount(Providers, {
@@ -277,6 +317,7 @@ async function mountProviders(
         Container: SlotStub,
         ListItem: ListItemStub,
         VBtn: ButtonStub,
+        VChip: ChipStub,
         VList: SlotStub,
       },
     },

@@ -59,21 +59,24 @@
         <FieldLabel for="quiz-difficulty">
           {{ $t("providers.music_quiz.difficulty") }}
         </FieldLabel>
-        <NativeSelect id="quiz-difficulty" v-model="difficulty" class="w-full">
-          <option value="easy">
-            {{ $t("providers.music_quiz.difficulty_easy") }}
-          </option>
-          <option value="normal">
-            {{ $t("providers.music_quiz.difficulty_normal") }}
-          </option>
-          <option value="hard">
-            {{ $t("providers.music_quiz.difficulty_hard") }}
-          </option>
-        </NativeSelect>
+        <Select v-model="difficulty">
+          <SelectTrigger id="quiz-difficulty" class="w-full">
+            <SelectValue>{{ difficultyLabel }}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="option in difficultyOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </Field>
     </div>
 
-    <slot name="before-sources" />
+    <slot name="before-sources"></slot>
 
     <MusicQuizSourceSelector
       v-model="sourceUris"
@@ -85,7 +88,7 @@
       :disabled="busy || !canCreate || !sharedConfigValid"
       @click="create"
     >
-      <PartyPopper class="size-4" />
+      <Plus class="size-4" />
       {{ $t("create") }}
     </Button>
   </div>
@@ -100,7 +103,13 @@ import type {
 } from "@/components/music-quiz/adapter_contracts";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   NumberField,
   NumberFieldContent,
@@ -112,8 +121,9 @@ import type {
   MusicQuizDifficulty,
   MusicQuizGuessTheSongConfig,
 } from "@/composables/music-quiz/useMusicQuiz";
+import { getMusicQuizDifficultyOptions } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
-import { PartyPopper } from "@lucide/vue";
+import { Plus } from "@lucide/vue";
 import { computed, ref } from "vue";
 
 const MIN_ROUNDS = 2;
@@ -135,6 +145,12 @@ const answerDuration = ref(30);
 const difficulty = ref<MusicQuizDifficulty>("normal");
 const sourceUris = ref<string[]>([]);
 const canCreate = computed(() => sourceUris.value.length > 0);
+const difficultyOptions = computed(() => getMusicQuizDifficultyOptions());
+const difficultyLabel = computed(
+  () =>
+    difficultyOptions.value.find((option) => option.value === difficulty.value)
+      ?.label ?? "",
+);
 
 function create() {
   if (!canCreate.value || !props.sharedConfigValid) return;

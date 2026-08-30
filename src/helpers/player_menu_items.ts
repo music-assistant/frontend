@@ -4,25 +4,42 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import {
   Player,
+  PlayerFeature,
   PlayerQueue,
   PlayerType,
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
+import { isSelectablePlayer } from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
+import { resolveExternalSource } from "@/composables/externalSource";
+import { resolveActiveSourceId } from "@/composables/activeSource";
+import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
+import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
+import { visualizerEnabledForPlayer } from "@/composables/visualizer/useVisualizer";
+import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
+import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
+import { h, markRaw } from "vue";
+import { useHosts } from "@/composables/ai-radio/useHosts";
+import { useShows } from "@/composables/ai-radio/useShows";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { getPlayerSetupLabel } from "@/helpers/player_config";
+import { togglePlayerPower } from "@/helpers/player_group_playback";
+import { errorMessage } from "@/helpers/ai_radio";
+import { toast } from "vue-sonner";
 
 export const getPlayerSetupMenuItem = (
   player: Pick<Player, "player_id" | "needs_setup" | "has_setup_flow">,
 ): ContextMenuItem | undefined => {
-  if (!player.has_setup_flow && !player.needs_setup) return undefined;
+  const label = getPlayerSetupLabel(player);
+  if (!label) return undefined;
 
   return {
-    label: player.needs_setup ? "configure_player" : "reconfigure_player",
+    label,
     labelArgs: [],
     action: () => {
       store.showFullscreenPlayer = false;
@@ -38,6 +55,9 @@ export const getPlayerSetupMenuItem = (
 
 export const getPlayerMenuItems = (
   player: Player,
+  // the queue playing on this player, i.e. resolvePlayerQueue(player) — the
+  // shuffle and repeat state and the source those commands are aimed at are
+  // both derived from this pair
   playerQueue: PlayerQueue | undefined,
   options: {
     // which surface this menu is rendered on:
@@ -61,7 +81,7 @@ export const getPlayerMenuItems = (
       label: player.powered ? "power_off_player" : "power_on_player",
       labelArgs: [],
       action: () => {
-        api.playerCommandPowerToggle(player.player_id);
+        return togglePlayerPower(player);
       },
       icon: "mdi-power",
     });
@@ -92,52 +112,64 @@ export const getPlayerMenuItems = (
   }
 
   const isDynamic = playerQueue?.is_dynamic === true;
+  // an external source orders its own session, so it takes these instead of the
+  // queue — and it has no queue to read the state or the dynamic flag from
+  const externalSource = resolveExternalSource(player, playerQueue);
+  const shuffleSource = externalSource?.can_shuffle
+    ? externalSource
+    : undefined;
+  const repeatSource = externalSource?.can_repeat ? externalSource : undefined;
+  const orderableQueue = playerQueue && !isDynamic ? playerQueue : undefined;
+  // the source the shuffle/repeat entries below are built for. Naming it on the
+  // command lets the server refuse one whose source stopped playing while the
+  // menu sat open, rather than let it land on whatever took the player since.
+  const commandSourceId = resolveActiveSourceId(player);
 
   // shuffle (queue menu only; hidden when the dedicated control is visible)
-  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
+  if (isQueue && (shuffleSource || orderableQueue) && !hideShuffleRepeat) {
+    const shuffleEnabled = shuffleSource
+      ? shuffleSource.shuffle_enabled === true
+      : orderableQueue!.shuffle_enabled;
     menuItems.push({
-      label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
+      label: shuffleEnabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
       action: () => {
-        api.queueCommandShuffleToggle(playerQueue.queue_id);
+        // the menu can sit open while the state moves, and an update lands as
+        // an Object.assign onto these, so the value is settled at click time —
+        // the source list is a fresh array by then, hence the re-resolve
+        const enabled = shuffleSource
+          ? resolveExternalSource(player, playerQueue)?.shuffle_enabled === true
+          : orderableQueue!.shuffle_enabled === true;
+        api.playerCommandShuffle(player.player_id, !enabled, commandSourceId);
       },
-      icon: playerQueue.shuffle_enabled
-        ? "mdi-shuffle-disabled"
-        : "mdi-shuffle",
+      icon: shuffleEnabled ? "mdi-shuffle-disabled" : "mdi-shuffle",
     });
   }
 
   // repeat (queue menu only; hidden when the dedicated control is visible)
-  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
+  if (isQueue && (repeatSource || orderableQueue) && !hideShuffleRepeat) {
+    // a source that has not reported its mode reads as off
+    const repeatMode = repeatSource
+      ? (repeatSource.repeat_mode ?? RepeatMode.OFF)
+      : orderableQueue!.repeat_mode;
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
-      subItems: [
-        {
-          label: "repeat_mode.off",
-          labelArgs: [],
-          action: () => {
-            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.OFF);
-          },
-          selected: playerQueue.repeat_mode == RepeatMode.OFF,
+      // keys spelled out so they stay greppable for the translation sync
+      subItems: (
+        [
+          ["repeat_mode.off", RepeatMode.OFF],
+          ["repeat_mode.all", RepeatMode.ALL],
+          ["repeat_mode.one", RepeatMode.ONE],
+        ] as const
+      ).map(([label, mode]) => ({
+        label,
+        labelArgs: [],
+        action: () => {
+          api.playerCommandRepeat(player.player_id, mode, commandSourceId);
         },
-        {
-          label: "repeat_mode.all",
-          labelArgs: [],
-          action: () => {
-            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.ALL);
-          },
-          selected: playerQueue.repeat_mode == RepeatMode.ALL,
-        },
-        {
-          label: "repeat_mode.one",
-          labelArgs: [],
-          action: () => {
-            api.queueCommandRepeat(playerQueue!.queue_id, RepeatMode.ONE);
-          },
-          selected: playerQueue.repeat_mode == RepeatMode.ONE,
-        },
-      ],
+        selected: repeatMode == mode,
+      })),
       icon: "mdi-repeat",
     });
   }
@@ -158,6 +190,22 @@ export const getPlayerMenuItems = (
     });
   }
 
+  // play announcement (both menus; the server announces on any player, natively or
+  // through its own fallback, so this only needs a TTS engine to speak the message)
+  if (player.type !== PlayerType.PROTOCOL) {
+    const { announcementAvailable, openAnnouncementDialog } = useAnnouncement();
+    if (announcementAvailable.value) {
+      menuItems.push({
+        label: "play_announcement",
+        labelArgs: [],
+        action: () => {
+          openAnnouncementDialog(player.player_id);
+        },
+        icon: markRaw(Megaphone),
+      });
+    }
+  }
+
   // transfer queue (both menus; only when the queue is the active source)
   if (playerQueue?.active && playerQueue.items > 0) {
     menuItems.push({
@@ -168,8 +216,7 @@ export const getPlayerMenuItems = (
           (p) =>
             p.player_id != playerQueue!.queue_id &&
             p.player_id != player.player_id &&
-            p.available &&
-            p.enabled &&
+            isSelectablePlayer(p) &&
             !p.synced_to &&
             !p.hide_in_ui,
         )
@@ -240,6 +287,64 @@ export const getPlayerMenuItems = (
     });
   }
 
+  // Queue-only AI DJ entry, built from useHosts'/useShows' prefetched caches.
+  // A queue runs exactly one host at a time, so while a show is on air its
+  // host is that host: render it as a single disabled row rather than the
+  // hosts submenu, which would otherwise show the (now irrelevant) sticky
+  // queue-DJ assignment.
+  const {
+    hosts,
+    queueDjStatus,
+    aiRadioAvailable,
+    loadHosts,
+    loadQueueDjStatus,
+  } = useHosts();
+  const { sessions, shows, loadStatus } = useShows();
+  if (isQueue && playerQueue && aiRadioAvailable.value) {
+    const queueId = playerQueue.queue_id;
+    const runningSession = sessions.value.find(
+      (session) => session.status === "running" && session.queue_id === queueId,
+    );
+    if (runningSession) {
+      const show = shows.value.find((s) => s.id === runningSession.station_id);
+      const host = show
+        ? hosts.value.find((h) => h.id === show.host_id)
+        : undefined;
+      menuItems.push({
+        label: host ? "ai_dj_show_on_air" : "ai_dj_show_on_air_unknown",
+        labelArgs: host ? [host.name] : [],
+        icon: markRaw(Sparkles),
+        disabled: true,
+      });
+    } else {
+      const activeHostId = queueDjStatus.value[queueId];
+      menuItems.push({
+        label: "ai_dj",
+        labelArgs: [],
+        icon: markRaw(Sparkles),
+        subItems: [
+          ...hosts.value.map((host) => ({
+            label: host.name,
+            labelArgs: [],
+            selected: activeHostId === host.id,
+            action: () => assignQueueDj(queueId, host.id),
+          })),
+          {
+            label: "ai_dj_off",
+            labelArgs: [],
+            selected: !activeHostId,
+            action: () => assignQueueDj(queueId, null),
+          },
+        ],
+      });
+    }
+    // Best-effort staleness refresh; the menu above is already built from
+    // the prefetched caches, so a failure here has nothing to surface.
+    void loadHosts().catch(() => undefined);
+    void loadQueueDjStatus().catch(() => undefined);
+    void loadStatus().catch(() => undefined);
+  }
+
   // select sound mode (player menu only; only when more than one is selectable)
   const selectableSoundModes = player.sound_mode_list.filter(
     (s) => !s.passive || s.id == player.active_sound_mode,
@@ -267,72 +372,80 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // settings shortcuts (admin only)
+  // MilkDrop visualizer popout (both menus), kept just above the settings
+  // entry; the droplet fills while enabled for this player (live, since the
+  // enabled preference is reactive store state)
+  if (visualizerProviderAvailable()) {
+    menuItems.push({
+      label: "settings.visualizer_enabled.label",
+      icon: markRaw(() =>
+        h(Droplet, {
+          fill: visualizerEnabledForPlayer(player.player_id)
+            ? "currentColor"
+            : "none",
+        }),
+      ),
+      subComponent: markRaw(VisualizerMenuControl),
+      componentProps: { playerId: player.player_id },
+    });
+  }
+
+  // open the settings (both menus, admin only)
   if (authManager.isAdmin()) {
-    // open queue settings (queue menu only)
-    if (isQueue) {
+    const openSettings = (path: string) => () => {
+      store.showFullscreenPlayer = false;
+      store.showPlayersMenu = false;
+      router.push(path);
+    };
+    if (isPlayer) {
+      // the player settings page links on to the other sections from there
       menuItems.push({
-        label: "open_queue_settings",
+        label: "open_settings",
         labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(
-            `/settings/editqueue/${playerQueue?.queue_id ?? player.player_id}`,
-          );
-        },
+        action: openSettings(`/settings/editplayer/${player.player_id}`),
         icon: "mdi-cog-outline",
       });
-    }
-
-    // open player settings (player menu only)
-    if (isPlayer) {
-      menuItems.push({
-        label: "open_player_settings",
+    } else {
+      const subItems: ContextMenuItem[] = [];
+      if (playerQueue) {
+        subItems.push({
+          label: "settings.queue_settings",
+          labelArgs: [],
+          action: openSettings(`/settings/editqueue/${playerQueue.queue_id}`),
+        });
+      }
+      subItems.push({
+        label: "settings.player_settings",
         labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}`);
-        },
+        action: openSettings(`/settings/editplayer/${player.player_id}`),
+      });
+      if (player.type !== PlayerType.GROUP) {
+        subItems.push({
+          label: "settings.category.dsp",
+          labelArgs: [],
+          action: openSettings(`/settings/editplayer/${player.player_id}/dsp`),
+        });
+      }
+      menuItems.push({
+        label: "open_settings",
+        labelArgs: [],
         icon: "mdi-cog-outline",
-      });
-    }
-
-    // configure the player or re-run its setup flow on demand
-    if (isPlayer) {
-      const setupMenuItem = getPlayerSetupMenuItem(player);
-      if (setupMenuItem) menuItems.push(setupMenuItem);
-    }
-
-    // open dsp settings (player menu only)
-    if (isPlayer && player.type !== PlayerType.GROUP) {
-      menuItems.push({
-        label: "open_dsp_settings",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/dsp`);
-        },
-        icon: "mdi-equalizer",
-      });
-    }
-
-    // open player options (both menus)
-    if (player.options.length > 0) {
-      menuItems.push({
-        label: "player_options.open",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/options`);
-        },
-        icon: "mdi-tune",
+        subItems,
       });
     }
   }
 
   return menuItems;
 };
+
+/** Assigns (or clears) a queue's AI DJ host, reporting a failed command to the user. */
+async function assignQueueDj(
+  queueId: string,
+  hostId: string | null,
+): Promise<void> {
+  try {
+    await useHosts().setQueueDj(queueId, hostId);
+  } catch (error) {
+    toast.error(errorMessage(error));
+  }
+}

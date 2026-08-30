@@ -1,5 +1,5 @@
 <template>
-  <Toaster rich-colors />
+  <Toaster rich-colors close-button />
 
   <!-- Login screen (when not authenticated) -->
   <Login
@@ -13,12 +13,16 @@
   <!-- Main app (when authenticated and service worker ready for remote) -->
   <router-view v-else-if="showMainApp" />
 
+  <!-- Kiosk mode leaves Home Assistant no chrome of its own, and this screen
+       carries none of ours: a server that is away or restarting would strand
+       the panel on a spinner with nowhere to go. -->
+  <HomeAssistantMenuButton
+    v-if="showLogin && haState.kioskModeEnabled"
+    class="ha-escape-button"
+  />
+
   <PlayerBrowserMediaControls
-    v-if="
-      webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
-      webPlayer.interacted == true &&
-      !mediaSessionDisabled
-    "
+    v-if="selectedPlayerMediaControlsEnabled"
     :key="webPlayer.tabMode"
   />
   <SendspinPlayer
@@ -33,10 +37,19 @@
 </template>
 
 <script setup lang="ts">
+import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
 import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
+import {
+  BROWSER_MEDIA_CONTROLS,
+  BrowserMediaControlsMode,
+  FORCE_MOBILE_LAYOUT,
+  getBrowserMediaControlsMode,
+  readDeviceSetting,
+  subscribeToDeviceSetting,
+} from "@/helpers/device_settings";
 import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
@@ -60,17 +73,20 @@ import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { pruneStaleProviderFilters } from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
-// import {
-//   subscribeToHAProperties,
-//   unsubscribeFromHAProperties,
-//   getKioskModePreference
-// } from "./plugins/homeassistant";
+import {
+  getKioskModePreference,
+  haState,
+  subscribeToHAProperties,
+  unsubscribeFromHAProperties,
+} from "./plugins/homeassistant";
+import { DEFAULT_PAGE_TITLE, getPageTitle } from "@/helpers/pageTitle";
 import type { User } from "./plugins/api/interfaces";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
 import {
   initializeWebPlayerModeSync,
+  isPlaybackMode,
   webPlayer,
   WebPlayerMode,
 } from "./plugins/web_player";
@@ -83,11 +99,45 @@ const { applyThemePreference: setTheme } = useThemePreference();
 const mediaSessionDisabled = computed(() =>
   isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
 );
+const selectedPlayerMediaControlsEnabled = computed(
+  () =>
+    !mediaSessionDisabled.value &&
+    webPlayer.interacted &&
+    webPlayer.browserControlsMode === BrowserMediaControlsMode.ACTIVE_PLAYER &&
+    webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
+    webPlayer.tabMode === WebPlayerMode.CONTROLS_ONLY,
+);
+const browserMediaControlsEnabled = ref(true);
+
+const applyBrowserMediaControlsEnabled = () => {
+  browserMediaControlsEnabled.value =
+    getBrowserMediaControlsMode() !== BrowserMediaControlsMode.DISABLED;
+};
 
 watch(
-  mediaSessionDisabled,
-  (disabled) => {
-    if (disabled) resetMediaSession();
+  [
+    () => store.activePlayer?.current_media?.title,
+    () => store.activePlayer?.current_media?.artist,
+    browserMediaControlsEnabled,
+  ],
+  ([title, artist, controlsEnabled]) => {
+    document.title = controlsEnabled
+      ? getPageTitle(title ?? undefined, artist ?? undefined)
+      : DEFAULT_PAGE_TITLE;
+  },
+  { immediate: true },
+);
+
+watch(
+  [
+    mediaSessionDisabled,
+    selectedPlayerMediaControlsEnabled,
+    () => webPlayer.tabMode,
+  ],
+  ([disabled, selectedControlsEnabled, tabMode]) => {
+    if (disabled || (!isPlaybackMode(tabMode) && !selectedControlsEnabled)) {
+      resetMediaSession();
+    }
   },
   { immediate: true },
 );
@@ -115,6 +165,15 @@ const interactedHandler = function () {
   window.removeEventListener("click", interactedHandler);
 };
 
+/**
+ * Tear down a guest session that the server no longer accepts.
+ *
+ * :return: True when the tab is being reloaded into the full application, so
+ *     the caller must not continue.
+ */
+const handleEndedGuestSession = (): boolean =>
+  authManager.endRejectedGuestSession().outcome === "own-session-restored";
+
 const handleRemoteConnected = async (transport: ITransport) => {
   isConnected.value = true;
 
@@ -132,7 +191,6 @@ const handleRemoteAuthenticated = async (credentials: {
   user?: User;
 }) => {
   try {
-    const { authManager } = await import("@/plugins/auth");
     let user = credentials.user;
 
     if (credentials.user && !credentials.token && !credentials.username) {
@@ -187,7 +245,6 @@ const handleLocalConnect = async (serverAddress: string) => {
     console.debug("[App] API already initialized, skipping");
     return;
   }
-  const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
   await httpProxyBridge.ensureReady();
   await httpProxyBridge.setTransport(null);
@@ -216,6 +273,7 @@ const refreshPluginEnabledStates = async () => {
     refreshPluginEnabledState("party"),
     refreshPluginEnabledState("music_quiz"),
     refreshPluginEnabledState("ai_radio"),
+    refreshPluginEnabledState("milkdrop_visualizer"),
   ]);
 };
 
@@ -263,6 +321,20 @@ const completeInitialization = async () => {
     console.error("[App] No server info received");
     return;
   }
+
+  // Home Assistant pads its ingress iframe for the device safe area, leaving a
+  // strip of its own background we cannot reach from in here. Take that padding
+  // over so the app runs to the edge of the screen like it does anywhere else,
+  // and ask it to drop its own header and menu while we are at it.
+  // Ask before anything else is awaited, so the app lays itself out once.
+  // Reconnecting runs this again while the subscription is still standing.
+  if (store.isIngressSession && !haState.isSubscribed) {
+    subscribeToHAProperties({
+      handleSafeArea: true,
+      kioskMode: getKioskModePreference(),
+    });
+  }
+
   const userInfo = await api.getCurrentUserInfo();
   if (!userInfo) {
     console.error("[App] No user info received");
@@ -278,13 +350,6 @@ const completeInitialization = async () => {
   if (!isGuestAccessSession && !isDashboardViewer && connectionIdentity) {
     authManager.bindPersistentToken(connectionIdentity);
   }
-
-  // Enable kiosk mode when running in Home Assistant ingress
-  // COMMENTED OUT - HA INTEGRATION DISABLED
-  // if (store.isIngressSession && serverInfo.homeassistant_addon) {
-  // const kioskPref = getKioskModePreference();
-  // subscribeToHAProperties({ kioskMode: kioskPref, router });
-  // }
 
   // TODO: Remove this migration code in v2.9 release
   // Migrate localStorage settings to user preferences (one-time migration)
@@ -392,13 +457,6 @@ const completeInitialization = async () => {
 onMounted(async () => {
   initGlobalShortcutsSync();
 
-  // Detect if running as installed PWA (works across iOS, Android, and desktop)
-  const nav = window.navigator as Navigator & { standalone?: boolean };
-  store.isInPWAMode =
-    nav.standalone === true ||
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.matchMedia("(display-mode: fullscreen)").matches;
-
   // TODO: Remove localStorage fallback once migration period is over (language moved to user preferences)
   const langPref =
     (store.currentUser?.preferences?.language as string | undefined) ||
@@ -410,8 +468,13 @@ onMounted(async () => {
       Array.from(i18n.global.availableLocales),
     );
   }
-  store.forceMobileLayout =
-    localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
+  applyForceMobileLayout();
+  subscribeToDeviceSetting(FORCE_MOBILE_LAYOUT, applyForceMobileLayout);
+  applyBrowserMediaControlsEnabled();
+  subscribeToDeviceSetting(
+    BROWSER_MEDIA_CONTROLS,
+    applyBrowserMediaControlsEnabled,
+  );
 
   setTheme();
 
@@ -474,7 +537,6 @@ onMounted(async () => {
         // Reset initialization flag to allow re-initialization after reconnection
         initializationCompleted = false;
 
-        const { authManager } = await import("@/plugins/auth");
         if (store.isIngressSession) {
           // In Ingress mode, authentication happens via HA proxy headers
           try {
@@ -504,7 +566,9 @@ onMounted(async () => {
                 "[App] Re-authentication after reconnect failed:",
                 error,
               );
-              api.requireAuthentication();
+              if (!handleEndedGuestSession()) {
+                api.requireAuthentication();
+              }
             }
           } else {
             api.requireAuthentication();
@@ -545,8 +609,12 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  // unsubscribeFromHAProperties();
+  unsubscribeFromHAProperties();
 });
+
+function applyForceMobileLayout() {
+  store.forceMobileLayout = readDeviceSetting(FORCE_MOBILE_LAYOUT) === "true";
+}
 
 function getCurrentAuthConnectionIdentity() {
   return api.isRemoteConnection.value
@@ -556,3 +624,14 @@ function getCurrentAuthConnectionIdentity() {
     : createLocalConnectionIdentity(api.baseUrl);
 }
 </script>
+
+<style scoped>
+/* Sits where Home Assistant's own menu button would be. Pinned to the viewport,
+   so it owns the device insets rather than inheriting a parent's padding. */
+.ha-escape-button {
+  position: fixed;
+  top: calc(var(--device-inset-top, 0px) + 0.75rem);
+  left: calc(var(--device-inset-left, 0px) + 0.75rem);
+  z-index: 1000;
+}
+</style>

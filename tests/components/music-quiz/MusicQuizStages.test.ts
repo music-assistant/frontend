@@ -93,6 +93,7 @@ const gameDefinition = {
   answerType: "multiple_choice",
   labelKey: "providers.music_quiz.game_type_guess_the_song",
   descriptionKey: "",
+  howToPlayDescriptionKey: "",
   icon: { template: "<span />" },
   requiresBackendAvailability: false,
   supportsListenIn: true,
@@ -302,6 +303,88 @@ describe("Music Quiz shared stages", () => {
     expect(
       wrapper.get('[data-testid="leaderboard"]').attributes("data-compact"),
     ).toBe("false");
+  });
+
+  it("replaces the player podium while the server prepares a restart", async () => {
+    const state = {
+      ...playerState,
+      phase: "finished",
+      current_round: null,
+      preparing: true,
+    } satisfies MusicQuizGuessTheSongPersonalizedState;
+    const wrapper = mount(MusicQuizPlayerStage, {
+      props: {
+        state,
+        currentRound: null,
+        busy: false,
+        leaderboardRows,
+        winnerText: "Player wins",
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          MusicQuizLeaderboard: leaderboardStub,
+          MusicQuizPodium: true,
+        },
+      },
+    });
+
+    expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.findComponent(MusicQuizPodium).exists()).toBe(false);
+    expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(false);
+
+    await wrapper.setProps({ state: { ...state, preparing: false } });
+
+    expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+  });
+
+  it("replaces the present podium while the server prepares a restart", () => {
+    const state = {
+      ...hostState,
+      phase: "finished",
+      current_round: null,
+      preparing: true,
+    } satisfies MusicQuizGuessTheSongHostState;
+    const wrapper = mount(MusicQuizPresentStage, {
+      props: {
+        state,
+        game: gameDefinition,
+        currentRound: null,
+        leaderboardRows,
+        winnerText: "Player wins",
+        phaseLabel: "Finished",
+        roundLabel: "",
+        joinLink: "https://example.test/join",
+        isConnectionDegraded: false,
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          Button: true,
+          MusicQuizConnectionBanners: true,
+          MusicQuizLeaderboard: true,
+          MusicQuizPodium: true,
+          MusicQuizQrCard: true,
+        },
+      },
+    });
+
+    expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
+      true,
+    );
+    expect(
+      wrapper.find('[data-testid="music-quiz-present-finished"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find('[data-testid="music-quiz-present-lobby"]').exists(),
+    ).toBe(false);
   });
 
   it("shows joined guests the remaining server time and handles cancellation", async () => {

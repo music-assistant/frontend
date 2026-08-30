@@ -1,7 +1,8 @@
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
     <DialogContent
-      class="add-provider-dialog h-[60vh] max-h-[60vh] flex flex-col p-0"
+      class="h-[85dvh] max-h-[85dvh] sm:h-[60vh] sm:max-h-[60vh] flex flex-col p-0"
+      @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
@@ -9,11 +10,7 @@
 
       <div class="px-6 pb-2 flex-shrink-0">
         <InputGroup class="search-field">
-          <InputGroupInput
-            ref="searchInput"
-            v-model="searchQuery"
-            :placeholder="$t('search')"
-          />
+          <InputGroupInput v-model="searchQuery" :placeholder="$t('search')" />
           <InputGroupAddon>
             <Search />
           </InputGroupAddon>
@@ -53,10 +50,11 @@
             </div>
             <div class="provider-actions">
               <Badge
+                v-if="shouldShowStageBadge(provider.stage)"
                 :variant="getStageVariant(provider.stage)"
                 class="text-uppercase"
               >
-                {{ $t(String(provider.stage || "").toLowerCase()) }}
+                {{ getStageLabel(provider.stage) }}
               </Badge>
               <ChevronRight class="h-4 w-4" />
             </div>
@@ -90,6 +88,11 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import {
+  getProviderStageTranslationKey,
+  shouldShowStageBadge,
+} from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
   ProviderConfig,
@@ -102,7 +105,7 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, Search } from "@lucide/vue";
 import { match } from "ts-pattern";
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const props = defineProps<{
@@ -128,7 +131,6 @@ const route = useRoute();
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderStages = ref<string[]>([]);
-const searchInput = ref<{ focus: () => void } | null>(null);
 
 const activeTypeFilter = computed(() => (route.query.types as string) || null);
 
@@ -156,17 +158,19 @@ const providerStageOptions = computed(() => [
     label: $t("settings.stage.options.unmaintained"),
     value: ProviderStage.UNMAINTAINED,
   },
-  {
-    label: $t("settings.stage.options.deprecated"),
-    value: ProviderStage.DEPRECATED,
-  },
+  // no deprecated option: those providers never reach this list
 ]);
 
 const availableProviders = computed(() => {
   let providers = Object.values(api.providerManifests);
 
+  // a deprecated provider is retired: it can no longer be set up, so keep it
+  // out of the list even though it is no longer builtin
   providers = providers.filter(
-    (x) => !x.builtin && x.type !== ("core" as ProviderType),
+    (x) =>
+      !x.builtin &&
+      x.type !== ("core" as ProviderType) &&
+      x.stage !== ProviderStage.DEPRECATED,
   );
 
   return providers
@@ -261,6 +265,11 @@ const addProvider = function (provider: ProviderManifest) {
   });
 };
 
+const getStageLabel = function (stage?: string) {
+  const key = getProviderStageTranslationKey(stage);
+  return key ? $t(key) : "";
+};
+
 const getStageVariant = function (
   stage?: string,
 ): "default" | "secondary" | "outline" | "destructive" {
@@ -303,20 +312,12 @@ watch(
     if (isOpen) {
       // Refresh provider configs when dialog opens
       loadItems();
-      nextTick(() => {
-        searchInput.value?.focus();
-      });
     }
   },
 );
 </script>
 
 <style scoped>
-.add-provider-dialog {
-  display: flex;
-  flex-direction: column;
-}
-
 .search-field {
   width: 100%;
 }
@@ -414,11 +415,5 @@ watch(
   font-size: 14px;
   color: rgba(var(--v-theme-on-surface), 0.5);
   line-height: 1.4;
-}
-
-@media (max-width: 600px) {
-  .add-provider-dialog {
-    max-height: 500px;
-  }
 }
 </style>

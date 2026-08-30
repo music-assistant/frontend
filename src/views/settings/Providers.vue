@@ -31,11 +31,7 @@
         @menu="(evt) => onMenu(evt, item)"
       >
         <template #prepend>
-          <ProviderIcon
-            :domain="item.domain"
-            :size="40"
-            class="provider-icon"
-          />
+          <ProviderIcon :domain="item.domain" :size="40" />
         </template>
 
         <template #title>
@@ -97,7 +93,7 @@
               :title="
                 isErrorStatus(item.status)
                   ? getErrorText(item)
-                  : statusLabel(item.status)
+                  : statusLabel(item)
               "
             />
             <v-chip
@@ -109,13 +105,7 @@
               class="mx-1 text-uppercase"
               :color="getStageColor(api.providerManifests[item.domain]?.stage)"
             >
-              {{
-                $t(
-                  String(
-                    api.providerManifests[item.domain]?.stage || "",
-                  ).toLowerCase(),
-                )
-              }}
+              {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
             </v-chip>
           </div>
         </template>
@@ -166,7 +156,7 @@
               :title="
                 isErrorStatus(item.status)
                   ? getErrorText(item)
-                  : statusLabel(item.status)
+                  : statusLabel(item)
               "
             >
               <v-icon
@@ -184,13 +174,7 @@
               class="mx-1 text-uppercase"
               :color="getStageColor(api.providerManifests[item.domain]?.stage)"
             >
-              {{
-                $t(
-                  String(
-                    api.providerManifests[item.domain]?.stage || "",
-                  ).toLowerCase(),
-                )
-              }}
+              {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
             </v-chip>
 
             <v-btn
@@ -216,9 +200,7 @@
                 size="16"
                 :color="statusColor(item.status)"
               />
-              <span class="provider-error-text">{{
-                statusLabel(item.status)
-              }}</span>
+              <span class="provider-error-text">{{ statusLabel(item) }}</span>
             </div>
             <div class="provider-error-detail mt-1">
               {{ getErrorText(item) }}
@@ -272,7 +254,10 @@ import { useBackgroundTasks } from "@/composables/background-tasks/useBackground
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   canReconfigureProvider,
+  getProviderStageTranslationKey,
+  getProviderStatusTranslationKey,
   providerRequiresReconfiguration,
+  shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -394,8 +379,9 @@ const canReconfigure = function (provider: ProviderConfig) {
   );
 };
 
-const shouldShowStageBadge = function (stage?: ProviderStage) {
-  return !!stage && stage !== ProviderStage.STABLE;
+const getStageLabel = function (stage?: ProviderStage) {
+  const key = getProviderStageTranslationKey(stage);
+  return key ? $t(key) : "";
 };
 
 onMounted(() => {
@@ -421,9 +407,7 @@ const toggleEnabled = function (config: ProviderConfig) {
 
 const reloadProvider = function (providerInstanceId: string) {
   api
-    .sendCommand("config/providers/reload", {
-      instance_id: providerInstanceId,
-    })
+    .reloadProvider(providerInstanceId)
     .catch((err) => toast.error(String(err)));
 };
 
@@ -481,7 +465,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       hide: providerManifest.builtin,
     },
     {
-      label: "settings.reload",
+      label: "settings.reload_provider",
       labelArgs: [],
       action: () => {
         reloadProvider(item.instance_id);
@@ -589,7 +573,7 @@ const getStageColor = function (stage?: string) {
 };
 
 // status indicator helpers: a loaded (healthy) provider shows no indicator
-const statusIcon = function (status?: ProviderStatus) {
+const statusIcon = function (status?: ProviderStatus | null) {
   return match(status)
     .with(ProviderStatus.DISABLED, () => "mdi-cancel")
     .with(ProviderStatus.LOADING, () => "mdi-timer-sand")
@@ -599,7 +583,7 @@ const statusIcon = function (status?: ProviderStatus) {
     .otherwise(() => "");
 };
 
-const statusColor = function (status?: ProviderStatus) {
+const statusColor = function (status?: ProviderStatus | null) {
   return match(status)
     .with(
       ProviderStatus.AUTH_REQUIRED,
@@ -610,22 +594,17 @@ const statusColor = function (status?: ProviderStatus) {
     .otherwise(() => "grey");
 };
 
-const statusLabel = function (status?: ProviderStatus) {
-  return match(status)
-    .with(ProviderStatus.DISABLED, () => $t("settings.provider_disabled"))
-    .with(ProviderStatus.LOADING, () => $t("settings.not_loaded"))
-    .with(ProviderStatus.AUTH_REQUIRED, () =>
-      $t("settings.provider_status_auth_required"),
-    )
-    .with(ProviderStatus.INCOMPATIBLE, () =>
-      $t("settings.provider_status_incompatible"),
-    )
-    .with(ProviderStatus.ERROR, () => $t("settings.provider_status_error"))
-    .otherwise(() => "");
+const statusLabel = function (item: ProviderConfig) {
+  return $t(
+    getProviderStatusTranslationKey(
+      item.status,
+      api.providerManifests[item.domain]?.stage,
+    ),
+  );
 };
 
 // an error status carries a (user-relevant) reason in last_error
-const isErrorStatus = function (status?: ProviderStatus) {
+const isErrorStatus = function (status?: ProviderStatus | null) {
   return (
     status === ProviderStatus.AUTH_REQUIRED ||
     status === ProviderStatus.INCOMPATIBLE ||
@@ -804,10 +783,6 @@ const getAllFilteredProviders = function () {
     gap: 4px;
     min-width: 0;
   }
-}
-
-.provider-icon {
-  margin-right: 0;
 }
 
 .provider-disabled {

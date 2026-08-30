@@ -1,3 +1,4 @@
+import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
 import type {
   MusicQuizSupportedHostState,
@@ -230,6 +231,9 @@ describe("MusicQuizDashboardView host actions", () => {
     const status = wrapper.get('[data-testid="music-quiz-preparing"]');
     expect(status.attributes("role")).toBe("status");
     expect(status.text()).toContain("providers.music_quiz.preparing_game");
+    expect(
+      wrapper.findComponent(MusicQuizPreparingState).props("autofocus"),
+    ).toBe(true);
     expect(wrapper.find('[data-testid="start-now"]').exists()).toBe(false);
 
     finishStart();
@@ -238,6 +242,28 @@ describe("MusicQuizDashboardView host actions", () => {
     expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
       false,
     );
+  });
+
+  it("shows preparation progress when the server reports preparing", async () => {
+    state.value = { ...HOST_STATE, preparing: true };
+    const wrapper = mountDashboard();
+
+    expect(
+      wrapper.get('[data-testid="music-quiz-preparing"]').text(),
+    ).toContain("providers.music_quiz.preparing_game");
+    // A host tab that did not issue the action must not have focus pulled away.
+    expect(
+      wrapper.findComponent(MusicQuizPreparingState).props("autofocus"),
+    ).toBe(false);
+    expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(false);
+
+    state.value = { ...HOST_STATE, preparing: false };
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(true);
   });
 
   it("deletes the finished game before opening fresh setup", async () => {

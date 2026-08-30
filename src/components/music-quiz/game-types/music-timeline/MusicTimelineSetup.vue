@@ -41,42 +41,44 @@
         <FieldLabel for="music-timeline-artist-bonus">
           {{ $t("providers.music_quiz.timeline_artist_bonus") }}
         </FieldLabel>
-        <NativeSelect
-          id="music-timeline-artist-bonus"
-          v-model="artistBonusMode"
-          class="w-full"
-        >
-          <option
-            v-for="option in bonusModeOptions"
-            :key="option.value"
-            :value="option.value"
-          >
-            {{ option.label }}
-          </option>
-        </NativeSelect>
+        <Select v-model="artistBonusMode">
+          <SelectTrigger id="music-timeline-artist-bonus" class="w-full">
+            <SelectValue>{{ bonusModeLabel(artistBonusMode) }}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="option in bonusModeOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </Field>
 
       <Field>
         <FieldLabel for="music-timeline-title-bonus">
           {{ $t("providers.music_quiz.timeline_title_bonus") }}
         </FieldLabel>
-        <NativeSelect
-          id="music-timeline-title-bonus"
-          v-model="titleBonusMode"
-          class="w-full"
-        >
-          <option
-            v-for="option in bonusModeOptions"
-            :key="option.value"
-            :value="option.value"
-          >
-            {{ option.label }}
-          </option>
-        </NativeSelect>
+        <Select v-model="titleBonusMode">
+          <SelectTrigger id="music-timeline-title-bonus" class="w-full">
+            <SelectValue>{{ bonusModeLabel(titleBonusMode) }}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="option in bonusModeOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </Field>
     </div>
 
-    <slot name="before-sources" />
+    <slot name="before-sources"></slot>
 
     <MusicQuizSourceSelector
       v-model="sourceUris"
@@ -88,7 +90,7 @@
       :disabled="busy || !canCreate || !sharedConfigValid"
       @click="create"
     >
-      <ListPlus class="size-4" />
+      <Plus class="size-4" />
       {{ $t("create") }}
     </Button>
   </div>
@@ -103,7 +105,13 @@ import type {
 } from "@/components/music-quiz/adapter_contracts";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   NumberField,
   NumberFieldContent,
@@ -116,7 +124,7 @@ import type {
   MusicQuizTimelineBonusMode,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
-import { ListPlus } from "@lucide/vue";
+import { Plus } from "@lucide/vue";
 import { computed, ref } from "vue";
 
 const MIN_ROUNDS = 1;
@@ -150,6 +158,12 @@ const bonusModeOptions = computed(() => [
     label: $t("providers.music_quiz.timeline_bonus_multiple_choice"),
   },
 ]);
+
+function bonusModeLabel(mode: MusicQuizTimelineBonusMode) {
+  return (
+    bonusModeOptions.value.find((option) => option.value === mode)?.label ?? ""
+  );
+}
 
 function create() {
   if (!canCreate.value || !props.sharedConfigValid) return;

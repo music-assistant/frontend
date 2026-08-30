@@ -123,4 +123,10 @@ venv/*
 !.vscode/launch.json
 !.vscode/tasks.json
 .coverage
+
+# personal VS Code workspaces
+*.code-workspace
+
+# nested git worktrees
+/.claude/worktrees
 /.worktrees

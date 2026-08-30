@@ -58,63 +58,65 @@
         >
           <label
             for="music-quiz-playback-venue"
-            class="flex min-w-0 items-start gap-3 rounded-lg border p-3 transition-colors"
+            class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-lg border p-3 transition-colors select-none"
             :class="modeCardClasses('venue', venueAvailable)"
           >
             <RadioGroupItem
               id="music-quiz-playback-venue"
               value="venue"
+              :class="RADIO_CLASS"
               :disabled="disabled || !venueAvailable"
               aria-describedby="music-quiz-playback-venue-description"
-            />
-            <span class="flex min-w-0 flex-col gap-1">
-              <span class="font-medium">
-                {{ $t("providers.music_quiz.playback_venue") }}
-              </span>
-              <span
-                id="music-quiz-playback-venue-description"
-                class="text-muted-foreground text-sm"
-              >
-                {{ $t("providers.music_quiz.playback_venue_help") }}
-              </span>
-              <span
-                v-if="!venueAvailable"
-                class="text-destructive text-xs"
-                data-testid="music-quiz-venue-unavailable"
-              >
-                {{ venueUnavailableReason }}
-              </span>
+            >
+              <span :class="RADIO_DOT_CLASS"></span>
+            </RadioGroupItem>
+            <span class="min-w-0 font-medium">
+              {{ $t("providers.music_quiz.playback_venue") }}
+            </span>
+            <span
+              id="music-quiz-playback-venue-description"
+              class="text-muted-foreground col-start-2 text-sm"
+            >
+              {{ $t("providers.music_quiz.playback_venue_help") }}
+            </span>
+            <span
+              v-if="!venueAvailable"
+              class="text-destructive col-start-2 text-xs"
+              data-testid="music-quiz-venue-unavailable"
+            >
+              {{ venueUnavailableReason }}
             </span>
           </label>
 
           <label
             for="music-quiz-playback-remote"
-            class="flex min-w-0 items-start gap-3 rounded-lg border p-3 transition-colors"
+            class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-lg border p-3 transition-colors select-none"
             :class="modeCardClasses('remote', options.remote_available)"
           >
             <RadioGroupItem
               id="music-quiz-playback-remote"
               value="remote"
+              :class="RADIO_CLASS"
               :disabled="disabled || !options.remote_available"
               aria-describedby="music-quiz-playback-remote-description"
-            />
-            <span class="flex min-w-0 flex-col gap-1">
-              <span class="font-medium">
-                {{ $t("providers.music_quiz.playback_remote") }}
-              </span>
-              <span
-                id="music-quiz-playback-remote-description"
-                class="text-muted-foreground text-sm"
-              >
-                {{ $t("providers.music_quiz.playback_remote_help") }}
-              </span>
-              <span
-                v-if="!options.remote_available"
-                class="text-destructive text-xs"
-                data-testid="music-quiz-remote-unavailable"
-              >
-                {{ $t("providers.music_quiz.playback_remote_unavailable") }}
-              </span>
+            >
+              <span :class="RADIO_DOT_CLASS"></span>
+            </RadioGroupItem>
+            <span class="min-w-0 font-medium">
+              {{ $t("providers.music_quiz.playback_remote") }}
+            </span>
+            <span
+              id="music-quiz-playback-remote-description"
+              class="text-muted-foreground col-start-2 text-sm"
+            >
+              {{ $t("providers.music_quiz.playback_remote_help") }}
+            </span>
+            <span
+              v-if="!options.remote_available"
+              class="text-destructive col-start-2 text-xs"
+              data-testid="music-quiz-remote-unavailable"
+            >
+              {{ $t("providers.music_quiz.playback_remote_unavailable") }}
             </span>
           </label>
         </RadioGroup>
@@ -122,26 +124,30 @@
 
       <Field v-if="modelValue.mode === 'venue'">
         <FieldLabel for="music-quiz-venue-player">
-          {{ $t("providers.music_quiz.speaker") }}
+          {{ $t("providers.music_quiz.player") }}
         </FieldLabel>
-        <NativeSelect
-          id="music-quiz-venue-player"
-          v-model="venuePlayerId"
-          class="w-full"
-          :disabled="disabled || !venueAvailable"
-          :aria-invalid="!disabled && venueAvailable && !venueSelectionValid"
-        >
-          <option value="" disabled>
-            {{ $t("providers.music_quiz.choose_speaker") }}
-          </option>
-          <option
-            v-for="player in options.venue_players"
-            :key="player.player_id"
-            :value="player.player_id"
+        <Select v-model="venuePlayerId" :disabled="disabled || !venueAvailable">
+          <SelectTrigger
+            id="music-quiz-venue-player"
+            class="w-full"
+            :aria-invalid="!disabled && venueAvailable && !venueSelectionValid"
           >
-            {{ player.name }}
-          </option>
-        </NativeSelect>
+            <SelectValue
+              :placeholder="$t('providers.music_quiz.choose_player')"
+            >
+              {{ venuePlayerName ?? $t("providers.music_quiz.choose_player") }}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="player in options.venue_players"
+              :key="player.player_id"
+              :value="player.player_id"
+            >
+              {{ player.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </Field>
 
       <p
@@ -157,15 +163,21 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldLabel,
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
-import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/ui/native-select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type {
   MusicQuizMode,
   MusicQuizPlaybackOptions,
@@ -175,6 +187,11 @@ import { $t } from "@/plugins/i18n";
 import { LoaderCircle, RefreshCw, TriangleAlert } from "@lucide/vue";
 import type { AcceptableValue } from "reka-ui";
 import { computed } from "vue";
+
+const RADIO_CLASS =
+  "grid size-5 place-items-center border-2 shadow-none data-[state=checked]:border-primary dark:data-[state=checked]:bg-transparent";
+const RADIO_DOT_CLASS =
+  "bg-primary animate-in zoom-in-50 size-2.5 rounded-full duration-150";
 
 const props = defineProps<{
   modelValue: MusicQuizPlaybackSelection;
@@ -203,12 +220,18 @@ const venueSelectionValid = computed(
     ),
 );
 const venuePlayerId = computed({
-  get: () => props.modelValue.venuePlayerId ?? "",
+  get: () => props.modelValue.venuePlayerId ?? undefined,
   set: (value: AcceptableValue) => updateVenuePlayer(value),
 });
+const venuePlayerName = computed(
+  () =>
+    props.options?.venue_players.find(
+      (player) => player.player_id === props.modelValue.venuePlayerId,
+    )?.name,
+);
 const venueUnavailableReason = computed(() =>
   props.options?.venue_players.length === 0
-    ? $t("providers.music_quiz.no_available_speakers")
+    ? $t("providers.music_quiz.no_available_players")
     : $t("providers.music_quiz.playback_venue_unavailable"),
 );
 
@@ -231,6 +254,6 @@ function modeCardClasses(mode: MusicQuizMode, available: boolean) {
   if (!available) return "cursor-not-allowed bg-muted/30 opacity-70";
   return props.modelValue.mode === mode
     ? "border-primary bg-primary/5 cursor-pointer"
-    : "hover:border-primary/50 cursor-pointer";
+    : "hover:border-primary/50 hover:bg-accent/30 cursor-pointer";
 }
 </script>

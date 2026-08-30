@@ -4,17 +4,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import {
   AudioQuality,
-  ContentType,
-  MediaType,
+  CrossfadeMode,
   PlaybackState,
   type PlayerQueue,
-  RepeatMode,
+  type QueueItem,
   type StreamDetails,
+  VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 import { i18n } from "@/plugins/i18n";
+import {
+  audioFidelity,
+  audioOutputDetails,
+  audioProcessingChain,
+} from "../fixtures/audioProcessing";
+import { audioFormat } from "../fixtures/audioFormat";
+import { playerQueue } from "../fixtures/playerQueue";
+import { queueItem } from "../fixtures/queueItem";
+import { streamDetails } from "../fixtures/streamDetails";
 
 const storeMock = vi.hoisted(() => ({
+  activePlayer: undefined as { active_source_audio?: unknown } | undefined,
   activePlayerQueue: undefined as PlayerQueue | undefined,
+  curQueueItem: undefined as QueueItem | undefined,
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -22,13 +33,17 @@ vi.mock("@/plugins/store", () => ({
 }));
 vi.mock("@/components/AudioProcessingDetails.vue", () => ({
   default: {
-    template: '<div data-testid="audio-processing-details" />',
+    props: ["crossfadeIntent"],
+    template:
+      '<div data-testid="audio-processing-details" :data-crossfade-intent="crossfadeIntent" />',
   },
 }));
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
+  storeMock.activePlayer = undefined;
   storeMock.activePlayerQueue = undefined;
+  storeMock.curQueueItem = undefined;
   document.body.innerHTML = "";
 });
 
@@ -55,12 +70,12 @@ describe("QualityDetailsBtn", () => {
   it("renders embedded details and the authoritative quality range", () => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
+      audio_processing: audioProcessingChain({
         outputs: [
-          { fidelity: { quality: AudioQuality.LOW } },
-          { fidelity: { quality: AudioQuality.HI_RES } },
+          outputWithQuality(AudioQuality.LOW),
+          outputWithQuality(AudioQuality.HI_RES),
         ],
-      },
+      }),
     });
 
     const wrapper = mountButton();
@@ -71,8 +86,90 @@ describe("QualityDetailsBtn", () => {
     ).toBe(true);
     expect(wrapper.text()).toContain("LQ-HR");
     expect(wrapper.get("button").attributes("aria-label")).toBe(
-      "Show audio chain details (LQ-HR)",
+      "Show audio pipeline details (LQ-HR)",
     );
+  });
+
+  it.each([
+    [false, false, CrossfadeMode.DISABLED],
+    [true, false, CrossfadeMode.STANDARD_CROSSFADE],
+    [true, true, CrossfadeMode.SMART_CROSSFADE],
+  ])(
+    "passes the effective crossfade intent to the pipeline",
+    (enabled, smart, expectedMode) => {
+      storeMock.activePlayerQueue = makeQueue({
+        ...makeStreamDetails(),
+        audio_processing: audioProcessingChain(),
+      });
+      storeMock.activePlayerQueue.crossfade_enabled = enabled;
+      storeMock.activePlayerQueue.smart_fades_active = smart;
+
+      expect(
+        mountButton()
+          .get('[data-testid="audio-processing-details"]')
+          .attributes("data-crossfade-intent"),
+      ).toBe(expectedMode);
+    },
+  );
+
+  describe("live external source, with no active queue item", () => {
+    it("renders the pill from the output quality range", () => {
+      storeMock.activePlayer = {
+        active_source_audio: {
+          input_format: audioFormat(),
+          input_fidelity: audioFidelity({ quality: AudioQuality.LOW }),
+          crossfade_mode: CrossfadeMode.DISABLED,
+          volume_normalization_mode: VolumeNormalizationMode.DISABLED,
+          outputs: [
+            outputWithQuality(AudioQuality.STANDARD),
+            outputWithQuality(AudioQuality.HI_RES),
+          ],
+        },
+      };
+
+      const wrapper = mountButton();
+
+      expect(wrapper.find('[data-testid="quality-popover"]').exists()).toBe(
+        true,
+      );
+      expect(wrapper.text()).toContain("SQ-HR");
+    });
+
+    it("falls back to the input fidelity before any output has reported one", () => {
+      storeMock.activePlayer = {
+        active_source_audio: {
+          input_format: audioFormat(),
+          input_fidelity: audioFidelity({ quality: AudioQuality.HI_RES }),
+          crossfade_mode: CrossfadeMode.DISABLED,
+          volume_normalization_mode: VolumeNormalizationMode.DISABLED,
+          outputs: [],
+        },
+      };
+
+      expect(mountButton().text()).toContain("HR");
+    });
+
+    it("never disables the trigger, since there is no queue to check", () => {
+      storeMock.activePlayer = {
+        active_source_audio: {
+          input_format: audioFormat(),
+          input_fidelity: audioFidelity(),
+          crossfade_mode: CrossfadeMode.DISABLED,
+          volume_normalization_mode: VolumeNormalizationMode.DISABLED,
+          outputs: [],
+        },
+      };
+
+      expect(mountButton().get("button").attributes("disabled")).toBeFalsy();
+    });
+
+    it("does not render on older servers that never send a source snapshot", () => {
+      storeMock.activePlayer = {};
+
+      expect(
+        mountButton().find('[data-testid="quality-popover"]').exists(),
+      ).toBe(false);
+    });
   });
 
   it.each([
@@ -81,9 +178,9 @@ describe("QualityDetailsBtn", () => {
   ])("uses the compact popover layout on the $side side", ({ pill, side }) => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
-        outputs: [{ fidelity: { quality: AudioQuality.STANDARD } }],
-      },
+      audio_processing: audioProcessingChain({
+        outputs: [outputWithQuality(AudioQuality.STANDARD)],
+      }),
     });
 
     const wrapper = mountButton({ pill });
@@ -101,9 +198,9 @@ describe("QualityDetailsBtn", () => {
   it("moves focus into the audio-chain popover when opened", async () => {
     storeMock.activePlayerQueue = makeQueue({
       ...makeStreamDetails(),
-      audio_processing: {
-        outputs: [{ fidelity: { quality: AudioQuality.STANDARD } }],
-      },
+      audio_processing: audioProcessingChain({
+        outputs: [outputWithQuality(AudioQuality.STANDARD)],
+      }),
     });
 
     const wrapper = mount(QualityDetailsBtn, {
@@ -116,7 +213,7 @@ describe("QualityDetailsBtn", () => {
       '[data-testid="audio-processing-popover-content"]',
     );
     expect(content?.getAttribute("aria-label")).toBe(
-      "Show audio chain details",
+      "Show audio pipeline details",
     );
     expect(content?.contains(document.activeElement)).toBe(true);
     expect(document.activeElement?.classList).toContain(
@@ -143,52 +240,23 @@ function mountButton(props: { pill?: boolean } = {}) {
   });
 }
 
-function makeStreamDetails(): StreamDetails {
-  return {
-    provider: "test",
-    item_id: "track-1",
-    audio_format: {
-      content_type: ContentType.FLAC,
-      codec_type: ContentType.FLAC,
-      sample_rate: 44100,
-      bit_depth: 16,
-      channels: 2,
-      output_format_str: "",
-      bit_rate: 0,
-    },
-    media_type: MediaType.TRACK,
-  };
+function outputWithQuality(quality: AudioQuality) {
+  return audioOutputDetails({ fidelity: audioFidelity({ quality }) });
 }
 
+function makeStreamDetails(): StreamDetails {
+  return streamDetails({ provider: "test", item_id: "track-1" });
+}
+
+/** Builds an active queue with the given stream details and wires it (and its
+ * current item) into the store mock, mirroring the real store's derivation. */
 function makeQueue(streamdetails: StreamDetails): PlayerQueue {
-  return {
-    queue_id: "queue-1",
-    active: true,
-    display_name: "Queue",
-    available: true,
+  const queue = playerQueue({
+    // the button stays hidden for an empty queue
     items: 1,
-    shuffle_enabled: false,
-    smart_shuffle_active: false,
-    autoplay_enabled: false,
-    repeat_mode: RepeatMode.OFF,
-    crossfade_enabled: false,
-    smart_fades_active: false,
-    overlay_enabled: false,
-    overlay_volume: 100,
-    elapsed_time: 0,
-    elapsed_time_last_updated: 0,
     state: PlaybackState.PLAYING,
-    current_item: {
-      queue_id: "queue-1",
-      queue_item_id: "item-1",
-      name: "Track",
-      duration: 180,
-      sort_index: 0,
-      streamdetails,
-      available: true,
-    },
-    sources: [],
-    enqueued_media_items: [],
-    is_dynamic: false,
-  };
+    current_item: queueItem({ name: "Track", duration: 180, streamdetails }),
+  });
+  storeMock.curQueueItem = queue.current_item ?? undefined;
+  return queue;
 }

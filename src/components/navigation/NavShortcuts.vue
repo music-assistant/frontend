@@ -32,7 +32,7 @@ import {
 } from "@/composables/useHoldToOpenMenu";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import {
-  getShortcutUri,
+  findPinnedUriForItem,
   reorderShortcutStandalone,
   useShortcuts,
   type ShortcutItem,
@@ -164,7 +164,10 @@ const {
     const source = pinnedItems.value[from];
     const target = pinnedItems.value[to];
     if (!source || !target) return;
-    reorderShortcutStandalone(getShortcutUri(source), getShortcutUri(target));
+    const sourceUri = findPinnedUriForItem(source);
+    const targetUri = findPinnedUriForItem(target);
+    if (!sourceUri || !targetUri) return;
+    reorderShortcutStandalone(sourceUri, targetUri);
   },
 });
 
@@ -193,12 +196,13 @@ const draggedItem = computed(() =>
                 <SidebarMenuSkeleton :show-icon="true" />
               </SidebarMenuItem>
             </template>
-            <!-- Pinned shortcuts -->
+            <!-- Pinned shortcuts. The row gutter would skew the centred icon
+                 rail, so it lifts when collapsed. -->
             <SidebarMenuItem
               v-for="({ item, url }, index) in pinnedItemsWithUrls"
               :key="item.uri"
               v-hold="(e: Event) => onHold(e, item)"
-              class="mr-1.5"
+              class="mr-1.5 group-data-[collapsible=icon]:mr-0"
               :class="{
                 'shortcut-item': editMode,
                 'shortcut-item-dragging': draggingIndex === index,

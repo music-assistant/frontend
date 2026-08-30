@@ -55,6 +55,41 @@
       </Button>
     </Alert>
 
+    <!-- Newly discovered devices that still need setup; Review opens the
+         players list filtered down to them. -->
+    <Alert
+      v-if="isAdmin && showSetupPrompt && playersNeedingSetup.length > 0"
+      variant="warning"
+      class="mx-7 mb-6 mt-4 flex w-auto items-center gap-3 py-3 pl-4 pr-3 [&>svg]:translate-y-0"
+    >
+      <TriangleAlert class="size-5 shrink-0" />
+      <AlertDescription class="min-w-0 flex-1">
+        {{
+          $t("players_need_setup", playersNeedingSetup.length, {
+            named: { count: playersNeedingSetup.length },
+          })
+        }}
+      </AlertDescription>
+      <Button
+        variant="secondary"
+        size="sm"
+        class="shrink-0"
+        @click="reviewSetupPlayers"
+      >
+        {{ $t("review") }}
+        <ArrowRight class="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="shrink-0"
+        :aria-label="$t('close')"
+        @click="showSetupPrompt = false"
+      >
+        <X class="size-4" />
+      </Button>
+    </Alert>
+
     <HomeWidgetRows :edit-mode="editMode" />
 
     <!-- Floating exit button while editing the home screen -->
@@ -82,9 +117,10 @@ import {
   CircleAlert,
   Compass,
   SquarePen,
+  TriangleAlert,
   X,
 } from "@lucide/vue";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -92,6 +128,18 @@ const editMode = ref(false);
 const hasProviderErrors = ref(false);
 const showProviderWarning = ref(true);
 const erroredProviderType = ref<string | null>(null);
+const isAdmin = ref(false);
+const showSetupPrompt = ref(true);
+
+const playersNeedingSetup = computed(() =>
+  Object.values(api.players).filter(
+    (player) => player.enabled && player.needs_setup,
+  ),
+);
+
+const reviewSetupPlayers = () => {
+  router.push({ name: "playersettings", query: { status: "needs_setup" } });
+};
 
 const handleHomescreenEditToggle = () => {
   editMode.value = !editMode.value;
@@ -109,6 +157,7 @@ const navigateToProviders = () => {
 };
 
 onMounted(async () => {
+  isAdmin.value = authManager.isAdmin();
   if (authManager.isAdmin()) {
     try {
       const configs = await api.getProviderConfigs();
@@ -142,10 +191,13 @@ onMounted(async () => {
 
 .ed-edit-done {
   position: fixed;
-  right: 24px;
-  top: 24px;
-  z-index: 1000;
-  border-radius: 999px;
+  right: calc(24px + var(--device-inset-right));
+  top: calc(24px + var(--device-inset-top));
+  /* Only has to clear the drag ghost in HomeWidgetRows, so it stays out of the
+     global stacking scale and below the player bar and its backdrops. */
+  z-index: 60;
+  /* Outweighs the equally-!important radius the button's own variants carry. */
+  border-radius: 999px !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 </style>

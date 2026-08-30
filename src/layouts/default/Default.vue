@@ -1,10 +1,9 @@
 <template>
   <v-app>
-    <MainView v-if="store.frameless" />
-    <template v-else>
-      <MainView />
-      <Footer />
-    </template>
+    <!-- a single view across both modes, so toggling fullscreen swaps the
+         chrome without tearing down the view behind it -->
+    <MainView />
+    <Footer v-if="!store.frameless" />
   </v-app>
   <reload-prompt />
 </template>
@@ -16,6 +15,7 @@ import ReloadPrompt from "./ReloadPrompt.vue";
 import { store } from "@/plugins/store";
 import { watch } from "vue";
 import api from "@/plugins/api";
+import { isSelectablePlayer } from "@/helpers/players";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
@@ -28,8 +28,9 @@ watch(
     // newActivePlayer can be either player id or player name
     const newPlayerId = Object.values(api.players).find((p) => {
       return (
-        p.player_id.toLowerCase() === newPlayerString ||
-        p.name.toLowerCase() === newPlayerString
+        (p.player_id.toLowerCase() === newPlayerString ||
+          p.name.toLowerCase() === newPlayerString) &&
+        isSelectablePlayer(p)
       );
     })?.player_id;
 

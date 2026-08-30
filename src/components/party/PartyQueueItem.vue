@@ -53,7 +53,7 @@
           :style="{ '--btn-bg': boostBadgeColor }"
           @click.stop="$emit('boost', item)"
         >
-          <Spinner v-if="boosting" :size="16" />
+          <Spinner v-if="boosting" class="size-4" />
           <Rocket v-else :size="16" />
           {{ $t("providers.party.boost") }}
         </Button>

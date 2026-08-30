@@ -6,6 +6,7 @@
       class="player-controls-elements"
     >
       <ShuffleBtn
+        :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
         :icon="visibleComponents.shuffle.icon"
@@ -33,6 +34,7 @@
         :player-queue="store.activePlayerQueue"
         class="media-controls-item"
         :icon="visibleComponents.play.icon"
+        :size="visibleComponents.play.size"
       />
     </div>
     <!-- next button -->
@@ -54,6 +56,7 @@
       class="player-controls-elements"
     >
       <RepeatBtn
+        :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
         :icon="visibleComponents.repeat.icon"
         static-height="24px"
@@ -86,6 +89,8 @@ export interface Props {
     play?: {
       isVisible?: boolean;
       icon?: IconProps;
+      /** glyph size in px; the button box comes from `icon` */
+      size?: number;
     };
     previous?: {
       isVisible?: boolean;

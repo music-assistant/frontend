@@ -31,7 +31,6 @@
     "delete_db": "Delete item from database",
     "details": "Details",
     "enter_url": "Enter the URL you want to manually add to the database",
-    "external_source_active": "External source active: {0}",
     "goto_album": "Go to album {0}",
     "goto_artist": "Go to artist {0}",
     "items_selected": "{0} item(s) selected",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "Group",
         "player": "Player",
-        "stereo_pair": "Stereo Pair",
-        "sync_group": "Sync Group"
+        "stereo_pair": "Stereo Pair"
     },
     "players": "Players",
     "playlist": "Playlist",
@@ -255,8 +253,6 @@
                 "remove_confirm": "Are you sure you want to remove this DSP preset?"
             }
         },
-        "dsp_enabled": "DSP is enabled",
-        "dsp_disabled": "DSP is disabled",
         "dsp_note_multi_device_group": {
             "label": "You can configure the DSP for each player individually."
         },
@@ -273,7 +269,7 @@
         "playerprovider": "Player provider",
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
-        "providers_total": "{0} total provider{1}",
+        "providers_total": "{count} total provider | {count} total providers",
         "stage": {
             "label": "Stage",
             "options": {
@@ -299,7 +295,6 @@
         "users_description": "Manage user accounts, roles, and permissions",
         "system_description": "Configure Music Assistant server settings and core modules",
         "system": "System",
-        "view_documentation": "View documentation",
         "about": "About",
         "about_description": "Version information, credits and more",
         "auto_refresh_log": "Auto-refresh",
@@ -392,7 +387,7 @@
         "players_count": "{0} player{1}",
         "one_player": "1 player",
         "view_players": "View players",
-        "players_total": "{0} total player{1}",
+        "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
         "provider_codeowners": "This provider is contributed\/maintained by",
@@ -411,7 +406,6 @@
         "remote_access_qr_code": "QR Code",
         "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
         "reset_to_defaults": "Reset to defaults",
-        "reset_to_defaults_confirm": "Are you sure you want to reset all settings to their default values? This will save the changes immediately.",
         "unsaved_changes": "Unsaved changes",
         "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
         "stay": "Stay",
@@ -437,7 +431,6 @@
         "artist": "Artist",
         "name": "Alphabetically",
         "name_desc": "Alphabetically (descending)",
-        "recent": "Recently added",
         "year_desc": "Release year (descending)",
         "duration_desc": "Duration (descending)",
         "original": "Original",
@@ -449,9 +442,7 @@
         "last_played": "Last played",
         "last_played_desc": "Last played (descending)",
         "play_count": "Play count",
-        "play_count_desc": "Play count (descending)",
-        "artist_name": "Album artist",
-        "artist_name_desc": "Album artist (descending)"
+        "play_count_desc": "Play count (descending)"
     },
     "state": {
         "idle": "idle",
@@ -478,7 +469,6 @@
         "open_provider_link": "Open this item on the provider's website",
         "collapse_expand": "Collapse\/expand this listing",
         "back": "Back",
-        "show_menu": "Show\/hide menu",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",
@@ -558,7 +548,6 @@
     "global_search": "Global search",
     "podcast_episode": "Episode",
     "podcast_episodes": "Episodes",
-    "play_from_here": "Play from here",
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",
     "all_players": "All players",
@@ -765,6 +754,9 @@
     },
     "more_options": "More options",
     "edit": "Edit",
+    "background_tasks": {
+        "total": "{count} total background task | {count} total background tasks"
+    },
     "smart_playlist": {
         "favorites_yes": "Yes",
         "field_favorite": "Favourite"

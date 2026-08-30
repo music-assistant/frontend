@@ -181,6 +181,17 @@ describe("MusicQuizHostControlsMenu", () => {
     ).toBeDefined();
   });
 
+  it("keeps a pending indicator on the trigger after the menu closes", () => {
+    const idleTrigger = mountMenu().get('[data-testid="guest-host-controls"]');
+    expect(idleTrigger.find('[role="status"]').exists()).toBe(false);
+
+    busy.value = true;
+    const trigger = mountMenu().get('[data-testid="guest-host-controls"]');
+
+    expect(trigger.attributes("aria-busy")).toBe("true");
+    expect(trigger.find('[role="status"]').exists()).toBe(true);
+  });
+
   it("loads only the host state needed by the menu", () => {
     mountMenu();
 
@@ -195,6 +206,7 @@ function mountMenu() {
   const passthroughStub = { template: "<div><slot /></div>" };
   return mount(MusicQuizHostControlsMenu, {
     global: {
+      mocks: { $t: (key: string) => key },
       stubs: {
         Button: {
           props: ["disabled"],

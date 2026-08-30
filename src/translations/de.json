@@ -23,7 +23,7 @@
     "artist_albums": "Alben",
     "artist_toptracks": "Top Titel",
     "artists": "Interpreten",
-    "browse": "Durchsuchen",
+    "browse": "Ordneransicht",
     "clear_selection": "Auswahl aufheben",
     "close": "Schließen",
     "create_playlist": "Erstelle Wiedergabeliste auf {0}",
@@ -31,9 +31,8 @@
     "delete_db": "Element aus Datenbank entfernen",
     "details": "Details",
     "enter_url": "Gib die URL ein, die manuell zur Datenbank hinzugefügt werden soll.",
-    "external_source_active": "Externe Quelle aktiv: {0}",
-    "goto_album": "Zum Album {0}",
-    "goto_artist": "Zum Interpreten {0}",
+    "goto_album": "Album {0} ansehen",
+    "goto_artist": "Interpreten {0} ansehen",
     "items_selected": "{0} Einträge ausgewählt",
     "items_total": "{0} Einträge",
     "library": "Bibliothek",
@@ -57,7 +56,10 @@
         "group": "Gruppe",
         "player": "Wiedergabegerät",
         "stereo_pair": "Stereo-Paar",
-        "sync_group": "Sync-Gruppe"
+        "display": "Bildschirm",
+        "visualizer": "Visualizer",
+        "light": "Licht",
+        "unknown": "Unbekannt"
     },
     "players": "Wiedergabegeräte",
     "playlist": "Wiedergabeliste",
@@ -224,12 +226,14 @@
                 "edited_channel": "EQ-Antwort für diesen Kanal\/diese Kanäle aufzeichnen",
                 "channel": "Das Band wird angewendet auf",
                 "per_channel_preamp": "Zusätzlicher Pegel für Vorverstärker für {channel}",
-                "disable_multichannel_controls": "Mehrkanalsteuerung deaktivieren"
+                "disable_multichannel_controls": "Mehrkanalsteuerung deaktivieren",
+                "help": "Präzise Klangformung: Jedes Frequenzband ist auf eine bestimmte Frequenz ausgerichtet und kann diese entweder absenken oder anheben. Das Absenken ist sicherer als das Anheben, da es bei letzterem zu Clipping kommen kann."
             },
             "tone_control": {
                 "bass_level": "Basspegel",
                 "mid_level": "Mittenpegel",
-                "treble_level": "Höhenpegel"
+                "treble_level": "Höhenpegel",
+                "help": "Eine einfache Dreiband-Einstellung für Bässe, Mitten und Höhen. Verwende den parametrischen EQ für eine feinere Regelung."
             },
             "parameter": {
                 "frequency": "Frequenz",
@@ -242,7 +246,13 @@
                 "tone_control": "Klangregelung",
                 "gain": "Verstärkung",
                 "balance": "Balance",
-                "transpose": "Transponieren"
+                "transpose": "Transponieren",
+                "stereo_width": "Stereobreite",
+                "crossfeed": "Crossfeed",
+                "convolution": "Faltung",
+                "safety_limiter": "Sicherheitsbegrenzer",
+                "compressor": "Kompressor",
+                "high_low_pass": "Hoch-\/Tiefpass"
             },
             "channels": {
                 "ALL": "Alle",
@@ -271,10 +281,95 @@
                 "unit_singular": "Halbton",
                 "concert_pitch_432": "A = 432 Hz",
                 "concert_pitch_432_hint": "Stelle die Konzertstimmung so ein, dass A auf 432 Hz gestimmt ist."
+            },
+            "input_gain_help": "Stellt den Pegel am Eingang der Pipeline ein. Verringere ihn, um Spielraum für Filter zu lassen, die den Pegel anheben.",
+            "output_gain_help": "Passt den Pegel am Ausgang der Pipeline an, nachdem alle Filter angewendet wurden. Die Wiedergabegeräte-Lautstärke wird später angewendet.",
+            "gain": {
+                "help": "Erhöht oder verringert den Pegel aller Signale, die diesen Punkt in der Pipeline passieren."
+            },
+            "balance": {
+                "help": "Verschiebt den Ton zum linken oder rechten Lautsprecher. Gilt nur für Stereo-Audio."
+            },
+            "stereo_width": {
+                "help": "Stellt die Breite des Stereobildes ein. Links von der Mitte verengt sich das Klangbild in Richtung Mono, rechts wird es breiter.",
+                "clip_hint": "Eine Einstellung, die über den Wert Original hinausgeht, kann Spitzenwerte erzeugen und zu Clipping führen. Erwäge nach diesem Filter einen Limiter einzubinden.",
+                "scale": {
+                    "mono": "Mono",
+                    "original": "Original",
+                    "wide": "Breit"
+                }
+            },
+            "crossfeed": {
+                "help": "Sorgt für ein natürlicheres Hörerlebnis beim Hören über Kopfhörer, indem der linke und der rechte Kanal sanft miteinander verschmolzen werden – ähnlich wie beim Hören über Lautsprecher.",
+                "presets": {
+                    "low": "Niedrig",
+                    "medium": "Mittel",
+                    "high": "Hoch"
+                }
+            },
+            "convolution": {
+                "help": "Bei der Faltung wird eine aufgezeichnete Impulsantwort auf das Audiosignal angewendet – dies dient zur Raum- oder Lautsprecherkorrektur sowie zur Kopfhörersimulation. Die Verstärkung sollte negativ oder null sein, da eine Impulsantwort die Gesamtlautstärke verändert.",
+                "impulse_response": "Impulsantwort",
+                "none": "Keine ausgewählt",
+                "missing": "Impulsantwort nicht verfügbar",
+                "manage_irs": "IR-Dateien verwalten",
+                "library": "Impulsantwort-Bibliothek",
+                "library_help": "Impulsantworten werden auf dem Server umgewandelt und gespeichert, sodass jede hier hochgeladene Impulsantwort allen Wiedergabegeräten zur Verfügung steht.",
+                "empty": "Es wurden noch keine Impulsantworten hochgeladen.",
+                "choose_file": "Datei auswählen",
+                "no_file": "Keine Datei ausgewählt",
+                "name": "Name",
+                "upload": "Hochladen",
+                "upload_failed": "Hochladen fehlgeschlagen",
+                "too_large": "Diese Datei überschreitet die von {0} festgelegte MiB-Grenze.",
+                "remove": "Impulsantwort löschen",
+                "remove_confirm": "„{0}“ löschen? Alle Faltungsfilter, die diesen Wert verwenden – unabhängig vom Wiedergabegerät oder Preset –, werden auf keine Impulsantwort zurückgesetzt.",
+                "mono": "Mono",
+                "stereo": "Stereo",
+                "channel_count": "{0} Kanäle"
+            },
+            "safety_limiter": {
+                "help": "Fängt Frequenzspitzen ab, die sonst übersteuern und deine Lautsprecher beschädigen könnten. Platziere es als letztes Element in der Signalkette.",
+                "ceiling": "Decke"
+            },
+            "compressor": {
+                "help": "Gleicht die Lautstärke aus, indem die lautesten Passagen gedämpft werden, sodass leisere Details hörbar bleiben.",
+                "preset": "Voreinstellung",
+                "custom": "Benutzerdefiniert",
+                "threshold": "Schwelle",
+                "ratio": "Verhältnis",
+                "attack": "Angriff",
+                "release": "Freigeben",
+                "knee": "Knie",
+                "makeup": "Ausgleichsgewinn",
+                "presets": {
+                    "light": "Leicht",
+                    "medium": "Mittel",
+                    "heavy": "Schwer",
+                    "light_desc": "Sanftes Nivellieren",
+                    "medium_desc": "Ausgewogene Steuerung",
+                    "heavy_desc": "Fest und kraftvoll"
+                }
+            },
+            "high_low_pass": {
+                "help": "Entfernt alle Frequenzen auf einer Seite der Grenzfrequenz. Wird häufig verwendet, um tiefe Bässe von kleinen Lautsprechern fernzuhalten.",
+                "mode_label": "Modus",
+                "mode": {
+                    "high_pass": "Hochpass",
+                    "low_pass": "Tiefpass"
+                },
+                "mode_desc": {
+                    "high_pass": "Entfernt Inhalte unterhalb des Grenzwerts",
+                    "low_pass": "Entfernt Inhalte oberhalb des Grenzwerts"
+                },
+                "slope": "Steigung",
+                "slope_desc": {
+                    "12": "Sanft",
+                    "24": "Mittel",
+                    "48": "Steil"
+                }
             }
         },
-        "dsp_enabled": "DSP ist aktiviert.",
-        "dsp_disabled": "DSP ist deaktiviert.",
         "dsp_note_multi_device_group": {
             "label": "Der DSP kann für jedes Wiedergabegerät einzeln konfiguriert werden."
         },
@@ -317,7 +412,6 @@
         "users_description": "Benutzerkonten, Rollen und Berechtigungen verwalten",
         "system_description": "Konfigurieren der Servereinstellungen und Kernmodule von Music Assistant",
         "system": "System",
-        "view_documentation": "Dokumentation ansehen",
         "about": "Über",
         "about_description": "Versionsinformationen, Mitwirkende und mehr",
         "auto_refresh_log": "Automatische Aktualisierung",
@@ -421,20 +515,21 @@
             "options": "Optionen für Wiedergabegerät",
             "preferences": "Präferenzen",
             "display_settings": "Anzeige",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "volume_control": "Lautstärkeregler",
+            "audiobooks": "Hörbücher"
         },
         "onboarding_subtitle": "Verbinde zunächst deine Musikquellen und Audiogeräte.",
         "onboarding_music_title": "Musik",
         "onboarding_music_desc": "Verbinde deine Streaming-Dienste wie Spotify, Tidal oder deine lokale Musikbibliothek.",
         "onboarding_add_music": "Musik hinzufügen",
         "onboarding_player_title": "Wiedergabegeräte",
-        "onboarding_player_desc": "Verbinde deine Lautsprecher und Geräte wie Sonos, Chromecast oder AirPlay.",
+        "onboarding_player_desc": "Verbinde deine Ausgabegeräte und Geräte wie Sonos, Chromecast oder AirPlay.",
         "onboarding_add_player": "Wiedergabegeräte hinzufügen",
         "onboarding_footer": "Du kannst über diese Einstellungsseite jederzeit weitere Anbieter hinzufügen.",
         "remote_access_qr_code": "QR-Code",
         "remote_access_qr_code_description": "Scanne mit deiner Handykamera, um sofort eine Verbindung herzustellen.",
         "reset_to_defaults": "Auf Standardeinstellungen zurücksetzen",
-        "reset_to_defaults_confirm": "Möchtest du wirklich alle Einstellungen auf die Standardwerte zurücksetzen? Dadurch werden die Änderungen sofort gespeichert.",
         "unsaved_changes": "Ungesicherte Änderungen",
         "unsaved_changes_message": "Du hast ungespeicherte Änderungen. Möchtest du die Änderungen wirklich ohne Speichern beenden?",
         "stay": "Bleiben",
@@ -537,7 +632,7 @@
         },
         "audio_analysis_description": "Verfolge die Abdeckung der Audioanalyse bei deinen Anbietern.",
         "audio_analysis_concurrency": {
-            "title": "Hintergrundanalyse der Gleichzeitigkeit",
+            "title": "Gleichzeitige Hintergrundanalysen",
             "description": "Steuere, wie viele Titel während des nächtlichen Hintergrundscans gleichzeitig analysiert werden. Diese Einstellung befindet sich in der Streams-Kernkonfiguration.",
             "open_settings": "Streams-Einstellungen öffnen"
         },
@@ -568,7 +663,7 @@
             "delete": "Löschfehler (Wiederholung erzwingen)",
             "clear_all": "Alle löschen",
             "clear_all_confirm": "Alle Fehler beheben?",
-            "clear_all_description": "Dadurch werden alle unter „{0}“ protokollierten Fehler gelöscht, sodass die Titel beim nächsten Scan erneut analysiert werden.",
+            "clear_all_description": "Dadurch werden alle unter {0} protokollierten Fehler gelöscht, sodass die Titel beim nächsten Scan erneut analysiert werden.",
             "cleared_one": "Fehler behoben – der Titel wird erneut analysiert.",
             "cleared_many": "{0} Fehler wurden behoben.",
             "clear_error": "Fehler konnten nicht behoben werden. Bitte versuche es erneut.",
@@ -577,7 +672,7 @@
         "queue_global_settings_hint": "Diese Einstellungen gelten nur für diese Warteschlange. Du kannst auch die Standardeinstellungen konfigurieren, die für alle Wiedergabegeräte-Warteschlangen gelten.",
         "queue_global_settings_link": "Globale Warteschlangeneinstellungen öffnen",
         "protocol_provider_unavailable": "Der Anbieter für dieses Ausgabeprotokoll ist derzeit nicht verfügbar.",
-        "protocol_multi_info": "Dieses Wiedergabegerät unterstützt mehrere Ausgabeprotokolle. Music Assistant verbindet diese automatisch miteinander, sodass sie wie ein einziges Wiedergabegerät funktionieren – aktiviere einfach die Protokolle, die du verwenden möchtest.",
+        "protocol_multi_info": "Dieses Wiedergabegerät unterstützt mehrere Ausgabeprotokolle. Music Assistant kombiniert diese zu einem einzigen Wiedergabegerät. Wähle unten ein Protokoll aus, um dessen Verwendung zu konfigurieren.",
         "protocol_enable_label": "Ausgabeprotokolle aktivieren",
         "protocol_configure_title": "Konfigurieren {name}",
         "protocol_configure_label": "Ausgabeprotokolle konfigurieren",
@@ -614,7 +709,83 @@
             "session_ended_title": "Setup-Sitzung beendet",
             "session_ended_text": "Die Einrichtungssitzung ist beendet – möglicherweise ist sie bereits abgeschlossen. Überprüfe dies bitte bei deinen Anbietern oder Wiedergabegeräten."
         },
-        "options": "Optionen"
+        "options": "Optionen",
+        "add_group_player_desc": "Erstelle eine permanente Wiedergabegeräte-Gruppe mit {0} Wiedergabegeräten. Wenn du in dieser Wiedergabegeräte-Gruppe abspielst, werden die Mitglieds-Wiedergabegeräte automatisch synchronisiert.",
+        "server_clock_offset": "Zeitversatz (Server gegenüber diesem Gerät)",
+        "action_completed": "Aktion abgeschlossen",
+        "hass_controls": {
+            "add_hass_entity": "Eine Home Assistant-Entität hinzufügen...",
+            "add_entity": "Entität hinzufügen...",
+            "title": {
+                "power_controls": "Wähle eine Leistungssteuerung",
+                "volume_controls": "Wähle einen Lautstärkeregler",
+                "mute_controls": "Wähle einen Stummschaltregler"
+            },
+            "search_placeholder": "Suche nach Entität, Gerät oder Bereich...",
+            "no_results": "Keine übereinstimmenden Entitäten",
+            "search_failed": "Die Home Assistant-Entitäten konnten nicht durchsucht werden. Bitte überprüfe, ob Home Assistant verbunden ist.",
+            "truncated": "Es wurden mehr Treffer gefunden, als hier angezeigt werden können. Verfeinere deine Suche, um die Ergebnisse einzugrenzen.",
+            "no_device": "Kein Gerät",
+            "no_area": "Kein Bereich",
+            "none_selected": "Keine Entitäten ausgewählt",
+            "remove_entity": "Entität entfernen",
+            "already_added": "Hinzugefügt",
+            "role": {
+                "power": "Leistung",
+                "volume": "Lautstärke",
+                "mute": "Stumm"
+            }
+        },
+        "known_issues": "Bekannte Probleme",
+        "provider_status_loaded": "Läuft",
+        "provider_status_loading": "Wird geladen",
+        "provider_status_disabled": "Deaktiviert",
+        "provider_status_unknown": "Unbekannt",
+        "player_saved": "Wiedergabegeräte-Einstellungen gespeichert",
+        "provider_settings": "{name} Anbietereinstellungen",
+        "reload_provider": "Anbieter neu laden",
+        "protocol_native_badge": "Nativ",
+        "visualizer_description": "Einstellungen, Voreinstellungen und Favoriten für den MilkDrop-Musikvisualizer",
+        "visualizer": "Visualizer",
+        "visualizer_enabled": {
+            "label": "MilkDrop-Visualizer",
+            "description": "Im Hintergrund des Vollbildplayers wird ein MilkDrop-Visualisierer angezeigt, der live auf die Musik reagiert. Jedes Wiedergabegerät kann dies über sein Vollbildmenü deaktivieren. Die Wellenform wird aus dem Sendspin-Stream abgerufen und steht daher nur Wiedergabegeräten mit Sendspin-Ausgang zur Verfügung."
+        },
+        "visualizer_blur": {
+            "label": "Visualizer-Unschärfe",
+            "description": "Verfeinert die Visualisierung für einen ruhigeren Hintergrund. Der Wert 0 deaktiviert die Unschärfe."
+        },
+        "visualizer_opacity": {
+            "label": "Deckkraft des Visualizers",
+            "description": "Bei niedrigeren Werten werden die Albumfarben durchscheinend dargestellt. Ab 50 % wechselt die Ansicht zu einem dunklen Erscheinungsbild mit hellem Text."
+        },
+        "ha_kiosk_mode": {
+            "label": "Vollbildmodus in Home Assistant nutzen",
+            "description": "Blende die Kopfzeile und die Seitenleiste von Home Assistant aus, damit Music Assistant den gesamten Bildschirm einnimmt. Über die Home-Assistant-Schaltfläche im Menü kannst du diese wieder einblenden."
+        },
+        "delete_player_title": "{0} löschen?",
+        "delete_player_confirmation": "Dieses Wiedergabegerät wird aus Music Assistant entfernt. Seine Einstellungen gehen dabei verloren, und es kann nur durch eine erneute Einrichtung wiederhergestellt werden.",
+        "queue_settings_description": "Wiedergabeeinstellungen für die Warteschlange, aus der dieses Wiedergabegerät abspielt",
+        "dsp_description": "Filter und Verstärkung werden auf alles angewendet, was dieses Wiedergabegerät abspielt.",
+        "player_options_description": "Optionen und Lesarten, die das Wiedergabegerät selbst bietet",
+        "volume_slider_mode": {
+            "label": "Verhalten des Lautstärkereglers",
+            "description": "Absolut: Durch Tippen oder Ziehen des Reglers wird die Lautstärke auf die entsprechende Position eingestellt. Relativ: Durch Ziehen wird die Lautstärke mit halber Geschwindigkeit vom aktuellen Wert nach oben oder unten angepasst, wodurch kleine Änderungen leichter möglich sind.",
+            "options": {
+                "absolute": "Absolut (Sprung zur Position)",
+                "relative": "Relativ (zum Anpassen ziehen)"
+            }
+        },
+        "volume_haptics": {
+            "label": "Haptisches Feedback zur Lautstärke",
+            "description": "Vibration beim Verstellen des Lautstärkereglers. Nur für Touch-Geräte mit Vibrationsmotor."
+        },
+        "player_option_error": "Fehler beim Festlegen der Wiedergabegeräte-Optionen: {key} {value}",
+        "server_logs_load_failed": "Serverprotokolle konnten nicht geladen werden",
+        "audiobook_chapter_progress": {
+            "label": "Fortschritt im Hörbuchkapitel anzeigen",
+            "description": "Zeige die verstrichene und verbleibende Zeit für das aktuelle Hörbuchkapitel anstelle der Gesamtdauer des Hörbuchs an."
+        }
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -631,7 +802,6 @@
         "artist": "Interpret",
         "name": "Alphabetisch",
         "name_desc": "Alphabetisch (absteigend)",
-        "recent": "Kürzlich hinzugefügt",
         "year_desc": "Erscheinungsjahr (absteigend)",
         "duration_desc": "Dauer (absteigend)",
         "original": "Standard",
@@ -644,9 +814,15 @@
         "last_played_desc": "Zuletzt gespielt (absteigend)",
         "play_count": "Wiedergabezähler",
         "play_count_desc": "Wiedergabezähler (absteigend)",
-        "artist_name": "Albuminterpret",
-        "artist_name_desc": "Albuminterpret (absteigend)",
-        "album_sort_name": "Album (Sortiername)"
+        "album_sort_name": "Album (Sortiername)",
+        "album_artist_name": "Albuminterpret",
+        "album_artist_name_desc": "Albuminterpret (absteigend)",
+        "track_artist_name": "Interpret des Titels",
+        "track_artist_name_desc": "Interpret des Titels (absteigend)",
+        "ascending": "Ansteigend",
+        "ascending_abbreviation": "Anst.",
+        "descending": "Absteigend",
+        "descending_abbreviation": "Abst."
     },
     "state": {
         "idle": "Inaktiv",
@@ -673,7 +849,6 @@
         "open_provider_link": "Auf Website des Anbieters ansehen",
         "collapse_expand": "Auflistung aus-\/einklappen",
         "back": "Zurück",
-        "show_menu": "Menü anzeigen\/verbergen",
         "search_filter_active": "Die Suche filtert aktuell die Ergebnisse",
         "play_sample": "Beispiel wiedergeben",
         "album_type": "Albumtyp",
@@ -721,7 +896,19 @@
         "import_file": "Datei importieren",
         "bpm": "Tempo (Schläge pro Minute)",
         "musical_key": "Tonart",
-        "show_dashboard": "Dashboard auf ein Gerät übertragen"
+        "show_dashboard": "Dashboard auf ein Gerät übertragen",
+        "collapse_collections": "Sammlungen ausblenden",
+        "volume_down": "Lautstärke verringern",
+        "volume_up": "Lautstärke erhöhen",
+        "show_full_path": "Den vollständigen Pfad anzeigen",
+        "show_menu": "Menü ein-\/ausblenden",
+        "show_context_menu": "Kontextmenü anzeigen",
+        "scroll_left": "Nach links scrollen",
+        "scroll_right": "Nach rechts scrollen",
+        "hide_provider": "Musikdienst ausblenden",
+        "exit_select_items": "Mehrfachauswahl beenden",
+        "playing_from": "Wiedergabe von {0}",
+        "open_documentation": "Öffne die {provider} Dokumentation"
     },
     "topresult": "Top-Ergebnis",
     "track": "Titel",
@@ -793,7 +980,6 @@
     "global_search": "Globale Suche",
     "podcast_episode": "Episode",
     "podcast_episodes": "Episoden",
-    "play_from_here": "Ab hier wiedergeben",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Aktuelle Wiedergabe",
     "all_players": "Alle Wiedergabegeräte",
@@ -859,7 +1045,8 @@
                 "measurement_only": "Gemessene Lautstärke",
                 "fallback_fixed_gain": "Feste Fallback-Verstärkung",
                 "fixed_gain": "Feste Verstärkung",
-                "fallback_dynamic": "Dynamischer Fallback"
+                "fallback_dynamic": "Dynamischer Fallback",
+                "source": "Angewendet von {0}"
             },
             "measurement": {
                 "track": "Titel",
@@ -870,7 +1057,8 @@
             "crossfade_mode": {
                 "smart": "Smart",
                 "standard": "Standard",
-                "disabled": "Deaktiviert"
+                "disabled": "Deaktiviert",
+                "source": "Angewendet von {0}"
             },
             "dsp_state": {
                 "enabled": "DSP aktiv",
@@ -880,18 +1068,18 @@
             },
             "mono": "Mono",
             "stereo": "Stereo",
-            "integer_pcm": "{0}-Bit-PCM",
+            "integer_pcm": "{0}-Bit PCM",
             "direct_signal_path": "Direkter Signalweg",
             "direct_signal_path_detail": "Audiodaten durchlaufen die Warteschlangenverarbeitung unverändert.",
-            "direct_signal_path_inactive_detail": "Es sind weder eine Lautstärkenormalisierung noch ein Überblenden, eine Anpassung der Wiedergabegeschwindigkeit oder eine Audioüberlagerung aktiv.",
+            "direct_signal_path_inactive_detail": "Music Assistant wendet keine Lautstärkenormalisierung, Überblendung, Wiedergabegeschwindigkeitsanpassung oder Audioüberlagerung an.",
             "no_shared_transforms": "Es wurden keine gemeinsam genutzten Transformationen gemeldet",
-            "no_shared_transforms_detail": "Das Verarbeitungsmodell meldet keine Normalisierung, Überblendung, Anpassung der Wiedergabegeschwindigkeit oder Audio-Overlay.",
+            "no_shared_transforms_detail": "Music Assistant wendet keine Normalisierung, Überblendung, Anpassung der Wiedergabegeschwindigkeit oder Audio-Overlay an.",
             "processing_headroom": "Verarbeitungsspielraum",
-            "processing_headroom_detail": "Music Assistant wandelt Audio intern in Gleitkommazahlen um, um Spielraum zu schaffen und Clipping oder Präzisionsverluste während Normalisierung, Mixing, Crossfade, DSP und Limiting zu reduzieren.",
+            "processing_headroom_detail": "Music Assistant wandelt Audio intern in Gleitkommazahlen um, um Spielraum zu schaffen und Clipping oder Präzisionsverluste während Normalisierung, Mixen, Crossfade, DSP und Limitieren zu reduzieren.",
             "processing_headroom_reasons": "Für folgende Funktionen steht Gleitkomma-Spielraum zur Verfügung: {0}.",
             "internal_format_detail": "Internes Format: {0}",
             "internal_format_conversion": "Interne Formatkonvertierung",
-            "internal_format_conversion_detail": "Der Musikassistent konvertiert das interne Verarbeitungsformat vor der Ausgabe.",
+            "internal_format_conversion_detail": "Music Assistant konvertiert das interne Verarbeitungsformat vor der Ausgabe.",
             "normalization_title": "Lautstärke normalisieren",
             "playback_speed_title": "Wiedergabegeschwindigkeit",
             "crossfade_title": "Crossfade",
@@ -902,7 +1090,8 @@
             "bit_perfect_detail": "Bit-perfekt: Die decodierten Quell-Samples gelangen unverändert an den Ausgang.",
             "samples_changed_detail": "Die Audioverarbeitung oder die verlustfreie Formatkonvertierung hat die Audiodaten verändert. Dies ist nicht bitgenau, sollte aber keinen hörbaren Qualitätsverlust verursachen.",
             "lossy_output_detail": "Die Ausgabe erfolgt mit einem verlustbehafteten Codec. Dies ist nicht bitgenau und kann die Klangqualität beeinträchtigen.",
-            "bit_perfect_unknown_detail": "Der bitgenaue Status ist nicht verfügbar."
+            "bit_perfect_unknown_detail": "Der bitgenaue Status ist nicht verfügbar.",
+            "mixed_to_mono": "Gemischt zu Mono"
         },
         "processing_header": "Verarbeitung",
         "more_info_for": "Weitere Informationen über {item}"
@@ -1026,7 +1215,9 @@
         "select_providers": "Wähle Musikanbieter",
         "save_changes": "Änderungen speichern",
         "update_password": "Passwort aktualisieren",
-        "guest_role": "Gast"
+        "guest_role": "Gast",
+        "tokens_load_failed": "Zugriffstoken konnten nicht geladen werden",
+        "users_load_failed": "Benutzer konnten nicht geladen werden"
     },
     "login": {
         "subtitle": "Verbinde dich mit deinem Musikserver",
@@ -1074,7 +1265,26 @@
         "scan_qr_code": "Scanne den QR-Code.",
         "scan_qr_hint": "Richte deine Kamera auf den QR-Code, der in den Servereinstellungen deines Music Assistant angezeigt wird.",
         "qr_invalid": "Ungültiger QR-Code. Bitte scanne einen Music Assistant Fernbedienungs-ID QR-Code.",
-        "qr_camera_error": "Kann nicht auf Kamera zugreifen. Prüfe die Berechtigungen."
+        "qr_camera_error": "Kann nicht auf Kamera zugreifen. Prüfe die Berechtigungen.",
+        "error_party_auth_failed": "Konnte nicht an der Party teilnehmen",
+        "remote_only_info": "Stelle eine Remoteverbindung zu deinem Music Assistant-Server her.",
+        "server_address_hint": "Gib die vollständige URL deines Music Assistant-Servers ein.",
+        "connecting_ingress": "Verbindung über Home Assistant ...",
+        "connecting_local_party": "Verbindung zur Party wird hergestellt...",
+        "connecting_remote_party": "Verbindung zur Party wird hergestellt...",
+        "joining_party": "Der Party beitreten...",
+        "reconnecting": "Wiederverbinden",
+        "reconnecting_message": "Es wird versucht, die Verbindung zum Server wiederherzustellen...",
+        "error_ingress_failed": "Anmeldung über Home Assistant nicht möglich",
+        "error_invalid_credentials": "Die Anmeldung ist fehlgeschlagen. Bitte überprüfe deinen Benutzernamen und dein Passwort.",
+        "guest_ended_party_title": "Deine Party-Session ist beendet",
+        "guest_ended_party_message": "Bitte den Gastgeber, den Party-Link oder den QR-Code noch einmal zu teilen, damit du wieder beitreten kannst.",
+        "guest_ended_quiz_title": "Deine Quizrunde ist beendet.",
+        "guest_ended_quiz_message": "Bitte den Gastgeber, den Quiz-Link oder den QR-Code noch einmal zu teilen, damit du wieder teilnehmen kannst.",
+        "guest_ended_dashboard_title": "Diese Dashboard-Sitzung ist beendet",
+        "guest_ended_dashboard_message": "Rufe das Dashboard erneut über Music Assistant auf, um fortzufahren.",
+        "continue_to_app": "Weiter zu Music Assistant",
+        "scan_qr_hint_guest": "Richte deine Kamera auf den QR-Code, den der Gastgeber zeigt."
     },
     "yes": "Ja",
     "no": "Nein",
@@ -1170,7 +1380,7 @@
     },
     "playlist_create_media_types": "Der Anbieter {0} unterstützt diese Medientypen:",
     "playlist_mix_allowed": "Diese Medientypen können gemischt werden.",
-    "playlist_mix_not_allowed": "Dieser Anbieter unterstützt keine Mischung verschiedener Medientypen in Wiedergabelisten. Bitte wähle Medientyp aus, für den du eine Wiedergabeliste erstellen möchtest:",
+    "playlist_mix_not_allowed": "Dieser Anbieter unterstützt keine Mischung verschiedener Medientypen in Wiedergabelisten. Bitte wähle den Medientyp aus, für den du eine Wiedergabeliste erstellen möchtest:",
     "playlist_create_provider_error": "Anbieter nicht erreichbar.",
     "playlist_create_no_type_selected": "Kein Medientyp ausgewählt.",
     "exclude_genre": "Genre ausschließen",
@@ -1180,11 +1390,11 @@
         "party": {
             "guest_page": {
                 "add_available": "Verfügbare hinzufügen",
-                "add_queue_disabled": "Die Funktion „Zur Warteschlange hinzufügen“ ist vom Host deaktiviert.",
+                "add_queue_disabled": "Zur Warteschlange hinzufügen ist vom Host deaktiviert.",
                 "add_queue_limit_reached": "Die maximale Anzahl an Warteschlangenelementen ist erreicht. Nächste Verwendung möglich in {0} Minuten.",
                 "add_to_queue_failed": "Das Hinzufügen zur Warteschlange ist fehlgeschlagen. Bitte versuche es erneut.",
                 "boost_available": "Boost verfügbar",
-                "boost_disabled": "Die Option „Boost“ ist vom Host deaktiviert.",
+                "boost_disabled": "Boost ist vom Host deaktiviert.",
                 "boost_limit_reached": "Boost-Limit erreicht. Nächste Nutzung möglich in {0} Minuten.",
                 "current_queue": "Aktuelle Warteschlange",
                 "filter_songs": "Lieder",
@@ -1199,7 +1409,7 @@
                 "searching": "Suche…",
                 "search_placeholder": "Suche nach Liedern oder Interpreten…",
                 "search_results_count": "Suchergebnisse ({0})",
-                "skip_disabled": "Die Option „Song überspringen“ ist vom Host deaktiviert.",
+                "skip_disabled": "Song überspringen ist vom Host deaktiviert.",
                 "skip_failed": "Lied konnte nicht übersprungen werden. Bitte versuche es erneut.",
                 "skip_limit_reached": "Überspringlimit erreicht. Nächster Überspringvorgang verfügbar in {0} Minuten.",
                 "skip": "Überspringen",
@@ -1233,8 +1443,8 @@
             "request": "Anfragen",
             "link_copy_fail": "Link konnte nicht kopiert werden",
             "link_copy_success": "Link kopiert!",
-            "confirm_disable_guest_access": "Möchtest du den Gastzugang wirklich deaktivieren? Gäste können dann weder der Party beitreten, noch Musik durchsuchen oder Lieder zur Warteschlange hinzufügen.",
-            "confirm_enable_guest_access": "Möchtest du wirklich den Gastzugang aktivieren? Dadurch kann jeder mit dem Link oder QR-Code an der Party teilnehmen, Musik durchsuchen und Songs zur Warteschlange hinzufügen.",
+            "confirm_disable_guest_access": "Soll der Gastzugang wirklich deaktiviert werden? Gäste können dann keiner Party beitreten, Musik durchsuchen oder Lieder der Warteschlange anfügen.",
+            "confirm_enable_guest_access": "Soll der Gastzugang wirklich aktiviert werden? Dadurch kann jeder mit diesem Link oder QR-Code an der Party teilnehmen, Musik durchsuchen und Songs der Warteschlange anfügen.",
             "disable_guest_access": "Gastzugang deaktivieren",
             "enable_guest_access": "Gastzugang aktivieren",
             "guest_access_enabled": "Gastzugang aktiviert",
@@ -1322,7 +1532,6 @@
             "current_music": "Aktuelle Musik",
             "copy_music_name": "Songtitel kopieren",
             "copy_music_name_failed": "Songtitel konnte nicht kopiert werden",
-            "loading_lyrics": "Liedtext wird geladen...",
             "no_winner": "Diesmal gab es keinen Gewinner",
             "winner_single": "{0} Siege mit {1} Punkten",
             "winner_multiple": "{0} Gleichstand um den Sieg mit {1} Punkte",
@@ -1333,14 +1542,14 @@
             "listen_in": "Höre zu",
             "listen_in_venue": "Höre die Musik auf diesem Gerät",
             "listen_in_remote": "Höre die Musik auf diesem Gerät",
-            "error_load_state": "Der Quizstatus konnte nicht geladen werden.",
+            "error_load_state": "Der Quiz-Status konnte nicht geladen werden.",
             "error_create": "Das Quiz konnte nicht erstellt werden.",
             "error_start": "Das Quiz konnte nicht gestartet werden.",
             "error_reveal": "Die Antwort konnte nicht preisgegeben werden.",
             "error_next": "Konnte nicht in die nächste Runde einziehen.",
             "error_reset": "Das Quiz konnte nicht zurückgesetzt werden.",
             "error_delete": "Das Quiz konnte nicht gelöscht werden.",
-            "error_load_info": "Quizinformationen konnten nicht geladen werden.",
+            "error_load_info": "Quiz-Informationen konnten nicht geladen werden.",
             "error_join": "Am Quiz konnte nicht teilgenommen werden.",
             "error_not_joined": "Du bist nicht bei diesem Quiz angemeldet.",
             "error_answer": "Deine Antwort konnte nicht übermittelt werden.",
@@ -1405,7 +1614,7 @@
             "artist_count": "{0} Interpret",
             "artists_count": "{0} Interpreten",
             "game_type_trivia": "Musik-Trivia",
-            "game_type_trivia_description": "Beantworte KI-generierte Musikfragen basierend auf deiner ausgewählten Bibliothek.",
+            "game_type_trivia_description": "Beantworte AI-generierte Musikfragen basierend auf deiner ausgewählten Bibliothek.",
             "phase_answer_revealed": "Die Antwort ist enthüllt!",
             "error_load_game_types": "Die verfügbaren Quiztypen konnten nicht geladen werden.",
             "game_ended_wait": "Bitte den Spielleiter, ein neues Spiel zu starten, wenn alle bereit sind.",
@@ -1443,16 +1652,13 @@
             "playback_help": "Wähle aus, wo die Spieler die Musik hören sollen.",
             "playback_mode": "Wiedergabemodus",
             "playback_venue": "Veranstaltungsort",
-            "playback_venue_help": "Spiele Musik über einen Lautsprecher ab.",
+            "playback_venue_help": "Musik auf einem Wiedergabegerät abspielen.",
             "playback_remote": "Remote",
             "playback_remote_help": "Die Spieler hören auf ihrem eigenen Gerät.",
             "playback_summary_venue": "Veranstaltungsort · {0}",
             "playback_summary_remote": "Fernzugriff · Spieler hören auf ihrem eigenen Gerät",
             "playback_venue_unavailable": "Der Veranstaltungsmodus ist nicht verfügbar.",
             "playback_remote_unavailable": "Der Fernsteuerungsmodus ist nicht verfügbar.",
-            "speaker": "Lautsprecher",
-            "choose_speaker": "Wähle einen Lautsprecher aus",
-            "no_available_speakers": "Es wurden keine verfügbaren Lautsprecher gefunden. Verwende den Fernbedienungsmodus oder überprüfe die Wiedergabegeräte-Einstellungen.",
             "no_playback_modes": "Es sind keine Wiedergabemodi verfügbar. Überprüfe deine Einstellungen für das Musikquiz.",
             "loading_playback_options": "Wiedergabeoptionen werden geladen...",
             "error_load_playback_options": "Wiedergabeoptionen konnten nicht geladen werden",
@@ -1461,7 +1667,7 @@
             "preparing_game_help": "Die ausgewählte Musik wird geladen und die Runden werden erstellt. Dies kann einen Moment dauern.",
             "settings": "Einstellungen für das Musikquiz",
             "more_share_options": "Weitere Optionen zum Teilen",
-            "share_description": "Klicke auf diesen Link oder scanne den QR-Code, um am Music-Quiz teilzunehmen.",
+            "share_description": "Klicke auf diesen Link oder scanne den QR-Code, um am Musik-Quiz teilzunehmen.",
             "share_failed": "Die Einladung zum Quiz konnte nicht geteilt werden",
             "share_invitation": "Einladung teilen",
             "share_title": "Mach mit beim Music Assistant-Quiz",
@@ -1474,7 +1680,17 @@
             "timeline_place_in_year": "In {0}",
             "play_along": "Mitspielen",
             "host_controls": "Host-Steuerung",
-            "return_to_host_panel": "Zurück zum Host-Panel"
+            "return_to_host_panel": "Zurück zum Host-Panel",
+            "dashboard_waiting": "Warten auf den Beginn des Quiz",
+            "name_that_track": "Wie heißt der Titel?",
+            "player": "Wiedergabegerät",
+            "choose_player": "Wähle ein Wiedergabegerät aus",
+            "no_available_players": "Es wurden keine verfügbaren Wiedergabegeräte gefunden. Verwende den Remote-Modus oder überprüfe die Wiedergabegeräte-Einstellungen.",
+            "how_to_play_guess_the_song_description": "Höre dir das aktuell gespielte Lied an und wähle den richtigen Titel aus den vorgegebenen Optionen aus, bevor die Zeit abläuft.",
+            "how_to_play_trivia_description": "Beantworte Quizfragen zum Thema Musik. Wähle die Antwort, die du für richtig hältst, bevor die Zeit abläuft.",
+            "landing_continue": "Fortsetzen",
+            "timeline_result_placement": "Platzierung",
+            "round_result_answer": "Antwort"
         },
         "ai_radio": {
             "title": "AI-Radio",
@@ -1495,15 +1711,16 @@
                 "web_search_mode": "Web-Suchmodus",
                 "character_limit": "Zeichenbegrenzung",
                 "prompt": "Eingabeaufforderung",
-                "clear_queue_on_dynamic_start": "Warteschlange bei dynamischem Start leeren",
-                "dynamic_batch_size": "Dynamische Stapelgröße",
-                "instructions": "Anweisungen für Gastgeber und Programm"
+                "instructions": "Anweisungen für Gastgeber und Programm",
+                "shuffle_playlist_tracks": "Wiedergabeliste zufällig abspielen",
+                "voice": "Stimme",
+                "host": "Host",
+                "language": "Sprache"
             },
             "field_descriptions": {
-                "source_playtime_cap": "Maximale Gesamtspielzeit der Hintergrundmusik in Minuten. Die Titel werden nach dem Zufallsprinzip ausgewählt, bis die Obergrenze erreicht ist. So erhältst du eine zufällige Auswahl aus der Wiedergabeliste und nicht nur den ersten Teil davon. Lasse den Wert auf 0 stehen, wenn du keine Begrenzung wünschst.",
-                "clear_queue_on_dynamic_start": "Ersetze den aktuellen Titel in der Wiedergabeliste, sobald die Sendung startet. Deaktiviere diese Option, um die Sendung stattdessen an die Wiedergabeliste anzuhängen und den aktuellen Titel weiterlaufen zu lassen.",
-                "dynamic_batch_size": "Wie viele Titel der Sender gleichzeitig vorbereitet. Größere Stapel bedeuten weniger Pausen, während das nächste Segment generiert wird, aber eine längere Wartezeit, bevor die Sendung beginnt.",
-                "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die KI gesendet."
+                "source_playtime_cap": "Maximale Gesamtspielzeit der Hintergrundmusik in Minuten. Die Titel werden in der Reihenfolge abgespielt, in der sie in der Sendung vorkommen, bis die Obergrenze erreicht ist. Für keine Begrenzung den Wert auf 0 setzen.",
+                "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die AI gesendet.",
+                "shuffle_playlist_tracks": "Die Quell-Wiedergabeliste wird in zufälliger Reihenfolge abgespielt. Deaktiviere diese Option, um die Reihenfolge der Wiedergabeliste beizubehalten."
             },
             "web_search": {
                 "disabled": "deaktiviert (kein Web-Tool)",
@@ -1526,10 +1743,10 @@
                 "select_section": "Wähle mindestens einen Abschnitt aus.",
                 "section_order_required": "Die Reihenfolge der Abschnitte erfordert mindestens eine Regel.",
                 "rule_requires_flow": "Regel {0} erfordert mindestens ein Ablaufelement",
-                "must_needs_section": "Regel {0}, Ablauf {1}: „MUST“ benötigt einen Abschnitt",
+                "must_needs_section": "Regel {0}, Ablauf {1}: MUST benötigt einen Abschnitt",
                 "alternative_needs_choice": "Regel {0}, Ablauf {1}: ALTERNATIVE erfordert mindestens eine gültige Auswahl",
                 "optional_needs_section": "Regel {0}, Ablauf {1}: OPTIONAL benötigt einen Abschnitt",
-                "optional_chance_numeric": "Regel {0}, Ablauf {1}: OPTIONAL „chance“ muss ein numerischer Wert sein",
+                "optional_chance_numeric": "Regel {0}, Ablauf {1}: OPTIONAL Die Chance muss ein numerischer Wert sein",
                 "section_name_required": "Der Name des Abschnitts ist erforderlich",
                 "section_prompt_required": "Die Angabe des Abschnitts ist erforderlich",
                 "no_station_loaded": "Kein Sender geladen",
@@ -1539,14 +1756,14 @@
                 "discard_changes_title": "Änderungen verwerfen?",
                 "discard_changes": "Du hast ungespeicherte Änderungen, die verloren gehen.",
                 "delete_station_title": "Sender löschen?",
-                "delete_station": "Diese Station löschen?"
+                "delete_station": "Diese Station löschen?",
+                "delete_host_title": "Host löschen?",
+                "delete_host": "Diesen Host löschen?"
             },
             "toast": {
                 "playlists_truncated": "Es wurden nur die ersten {0} Wiedergabelisten geladen.",
                 "unavailable": "AI-Radio ist nicht aktiviert.",
-                "playlist_starting": "Die Wiedergabeliste wird erstellt – sie wird in Kürze in deiner Bibliothek angezeigt.",
                 "live_starting": "Live-Radio gestartet",
-                "playlist_start_failed": "Die Erstellung der Wiedergabeliste ist fehlgeschlagen",
                 "live_start_failed": "Live-Radio konnte nicht gestartet werden",
                 "session_stopped": "AI-Radio-Sitzung beendet",
                 "session_stop_failed": "AI-Radio-Sitzung konnte nicht gestoppt werden",
@@ -1554,59 +1771,47 @@
                 "station_save_failed": "Station konnte nicht gespeichert werden",
                 "station_deleted": "Station gelöscht",
                 "station_duplicated": "Station dupliziert",
-                "session_failed": "AI Radio-Ausführung fehlgeschlagen: {0}"
+                "session_failed": "AI Radio-Ausführung fehlgeschlagen: {0}",
+                "host_saved": "Host gespeichert",
+                "host_deleted": "Host gelöscht",
+                "tts_engines_load_failed": "Sprachoptionen konnten nicht geladen werden"
             },
             "header": {
-                "subtitle": "Verwandle eine Wiedergabeliste in eine Radiosendung mit einem KI-Moderator."
+                "subtitle": "Verwandle eine Wiedergabeliste in eine Radiosendung mit einem AI-Moderator."
             },
             "gallery": {
-                "empty_title": "Erstelle deine erste Show",
-                "empty_description": "AI Radio verwandelt eine deiner Wiedergabelisten in eine Radiosendung mit einem KI-Moderator. AI Radio benötigt einen KI-fähigen Anbieter (z. B. Home Assistant), um den Moderator zu generieren – konfiguriere diesen unter „Einstellungen“ → „Plugins“.",
-                "create_cta": "Show erstellen",
-                "new_show": "Neue Show",
-                "refresh": "Aktualisieren"
+                "empty_title": "Erstelle deine erste Sendung",
+                "empty_description": "AI Radio verwandelt eine deiner Wiedergabelisten in eine Radiosendung mit einem AI-Moderator. AI Radio benötigt einen AI-fähigen Anbieter (z. B. Home Assistant), um den Moderator zu generieren – konfiguriere diesen unter Einstellungen → Plugins.",
+                "create_cta": "Sendung erstellen",
+                "new_show": "Neue Sendung",
+                "refresh": "Aktualisieren",
+                "title": "Sendungen",
+                "add_show": "Sendung hinzufügen"
             },
             "card": {
                 "play": "Abspielen",
                 "starting": "Starte...",
                 "stop": "Stopp",
-                "stopping": "Anhalten...",
                 "on_air": "Auf Sendung",
-                "generate_playlist": "Wiedergabeliste erstellen und speichern",
                 "customize": "Anpassen",
                 "duplicate": "Duplikat",
                 "duplicate_name": "{0} (Kopie)",
                 "delete": "Löschen",
                 "session_failed": "Letzter Durchlauf fehlgeschlagen",
-                "open_playlist": "Generierte Wiedergabeliste öffnen",
                 "status_failed": "Fehlgeschlagen {0}",
-                "status_playlist_ready": "Wiedergabeliste bereit · {0}",
                 "status_last_on_air": "Zuletzt auf Sendung {0}",
                 "no_player": "Wähle zuerst ein Wiedergabegerät aus.",
                 "start_failed": "Start fehlgeschlagen von: {0}",
-                "switch_show_title": "Show wechseln?",
+                "switch_show_title": "Sendung wechseln?",
                 "switch_show_confirm": "„{0}“ läuft gerade. Ausschalten und stattdessen „{1}“ abspielen?",
                 "switch_show_confirm_label": "Umschalten"
             },
-            "phase": {
-                "preparing": "Vorbereitungen für deine Show…",
-                "fetch_source_tracks": "Titel werden abgerufen…",
-                "planning_sections": "Die Show wird geplant…",
-                "generating_llm": "Die Zeilen des Moderators schreiben…",
-                "generating_tts": "Aufnahme der Stimme des Moderators…",
-                "publishing_playlist": "Wiedergabeliste wird veröffentlicht…",
-                "initializing_queue": "Die Warteschlange wird vorbereitet…",
-                "queueing_batch": "Musik wird geladen…",
-                "waiting_for_playback": "Warten auf die Wiedergabe…"
-            },
             "create": {
-                "title": "Erstelle eine Show",
-                "description": "Wähle eine Wiedergabeliste, einen Moderationsstil und gib an, wie gesprächig die Sendung sein soll.",
+                "title": "Eine Sendung erstellen",
+                "description": "Wähle eine Wiedergabeliste und einen Moderator für deine Sendung aus.",
                 "playlist_label": "Quell-Wiedergabeliste",
                 "playlist_placeholder": "Wähle eine Wiedergabeliste aus",
                 "playlist_empty": "Keine Wiedergabelisten gefunden",
-                "preset_label": "Moderationsstil",
-                "talk_label": "Gesprächigkeit",
                 "name_label": "Name der Sendung",
                 "default_name": "{0} — {1}",
                 "create": "Erstellen",
@@ -1614,35 +1819,14 @@
                 "creating": "Wird erstellt...",
                 "validation": {
                     "playlist_required": "Wähle eine Quell-Wiedergabeliste aus",
-                    "name_required": "Der Name der Sendung ist erforderlich"
-                }
-            },
-            "presets": {
-                "morning_show": {
-                    "name": "Morgensendung",
-                    "description": "Sympathischer, optimistischer Moderator mit Wetter- und Nachrichtenmeldungen."
+                    "name_required": "Der Name der Sendung ist erforderlich",
+                    "host_required": "Wähle einen Host aus"
                 },
-                "minimal_dj": {
-                    "name": "Minimal DJ",
-                    "description": "Ruhige, unaufdringliche Übergänge, die nicht stören."
-                },
-                "music_nerd": {
-                    "name": "Musiknerd",
-                    "description": "Zwischen den Liedern werden Fakten und Wissenswertes über den Künstler geteilt."
-                },
-                "party_host": {
-                    "name": "Gastgeber der Feier",
-                    "description": "Energiegeladene Rufe, um die Party am Laufen zu halten."
-                }
-            },
-            "talk": {
-                "rarely": "Selten",
-                "normal": "Normal",
-                "chatty": "Gesprächig"
+                "playlist_search": "Wiedergabelisten durchsuchen"
             },
             "prereq": {
-                "title": "KI-Anbieter benötigt",
-                "description": "AI Radio benötigt einen KI-fähigen Anbieter (z. B. Home Assistant), um den Host zu generieren.",
+                "title": "AI-Anbieter benötigt",
+                "description": "AI Radio benötigt einen AI-fähigen Anbieter (z. B. Home Assistant), um den Host zu generieren.",
                 "action": "Gehe zu Einstellungen → Plugins"
             },
             "customize": {
@@ -1657,9 +1841,53 @@
                 "blank_segment_name": "Neues Segment",
                 "segment_name": "Segmentname",
                 "use_current_player": "Aktuelles Wiedergabegerät verwenden",
-                "lossy_warning_title": "Beim Speichern vereinfacht",
-                "lossy_warning_description": "Diese Sendung verwendet eine komplexe Konfiguration, die hier nicht vollständig dargestellt werden kann. Beim Speichern wird sie in das oben gezeigte vereinfachte Segmentformat umgeschrieben.",
-                "prompt_placeholders_hint": "Verfügbare Platzhalter: {placeholders}"
+                "segment_templates": {
+                    "intro": "Einleitung",
+                    "transition": "Übergang",
+                    "weather": "Wetter",
+                    "news": "Nachrichten",
+                    "artist_fact": "Fakten zum Interpreten",
+                    "sign_off": "Abmelden"
+                },
+                "host_placeholder": "Wähle einen Host aus",
+                "host_required": "Wähle einen Host aus, bevor du speicherst",
+                "no_hosts_hint": "Du benötigst einen Moderator, bevor du diese Sendung speichern kannst.",
+                "create_host_cta": "Einen Host erstellen",
+                "prompt_placeholders_label": "Platzhalter – zum Kopieren antippen:",
+                "prompt_placeholder_copied": "{0} wurde in die Zwischenablage kopiert",
+                "prompt_placeholder_copy_failed": "{0} konnte nicht in die Zwischenablage kopiert werden",
+                "prompt_placeholder_copy_aria": "Kopiere {0}",
+                "personality_title": "Persönlichkeit",
+                "tts_options_title": "Erweiterte TTS-Optionen",
+                "tts_options_help": "Fügen Sie nur Schlüssel hinzu, die von der von dir ausgewählten Engine unterstützt werden, da ein nicht unterstützter Schlüssel dazu führen kann, dass der gesamte Clip abgelehnt wird.",
+                "option_key": "Optionsschlüssel",
+                "option_key_placeholder": "z.B. Stimme",
+                "option_value": "Optionswert",
+                "option_value_placeholder": "z.B. en_US-lessac-medium",
+                "add_option": "Option hinzufügen",
+                "remove_option": "Option entfernen"
+            },
+            "hosts": {
+                "title": "Hosts",
+                "add_host": "Host hinzufügen",
+                "card": {
+                    "edit": "Bearbeiten"
+                },
+                "editor": {
+                    "title": "Host anpassen",
+                    "save": "Host speichern",
+                    "name_label": "Hostname",
+                    "default_voice": "Standard",
+                    "validation": {
+                        "name_required": "Ein Hostname ist erforderlich.",
+                        "duplicate_name": "Ein Host mit dem Namen „{0}“ existiert bereits.",
+                        "name_check_failed": "Der Name konnte nicht als eindeutig verifiziert werden. Es wurden keine Daten gespeichert.",
+                        "segments_required": "Füge mindestens ein Segment hinzu",
+                        "segment_prompt_required": "Jedes Segment benötigt eine Eingabeaufforderung"
+                    },
+                    "default_language": "Serversprache übernehmen"
+                },
+                "blank_host": "Leerer Host"
             }
         }
     },
@@ -1725,7 +1953,7 @@
             "daily_at": "Täglich um {0}",
             "every_days_at": "Alle {0} Tage um {1}",
             "weekly_at": "Wöchentlich {0} um {1}",
-            "disabled_suffix": " (deaktiviert)",
+            "disabled_suffix": "(deaktiviert)",
             "last_run": "Letzter Lauf von {0}",
             "next_run": "Nächster Lauf von {0}"
         },
@@ -1777,9 +2005,10 @@
             "log_copy_failed": "Fehler beim Kopieren des Aufgabenprotokolls.",
             "log_download_started": "Der Download des Aufgabenprotokolls wurde gestartet.",
             "log_download_failed": "Kein Aufgabenprotokoll zum Herunterladen verfügbar."
-        }
+        },
+        "report_title": "Aufgabenbericht"
     },
-    "not_found_headline": "Ups, diese Seite gehört nicht zur Setlist.",
+    "not_found_headline": "Oh, diese Seite gehört nicht zur Setlist.",
     "not_found_subtext": "Der gesuchte Titel ist zwischen den Anbietern verloren gegangen. Gehe zurück oder suche nach etwas Neuem.",
     "restore_genre": "Wiederherstellen",
     "genre_name": "Genre-Name",
@@ -1881,7 +2110,8 @@
         "unit_months": "Monate",
         "last_played_ago": "vor",
         "op_greater_than": "größer als",
-        "op_less_than": "weniger als"
+        "op_less_than": "weniger als",
+        "picker_search": "Suche {label}"
     },
     "explore": "Erkunden",
     "shortcuts": "Abkürzungen",
@@ -1929,7 +2159,7 @@
     "lyrics_show": "Zeige den Liedtext für diesen Titel an",
     "lyrics_hide": "Liedtext für diesen Titel ausblenden",
     "lyrics_loading": "Die Liedtexte werden abgerufen...",
-    "show_audio_chain_details": "Details zur Audiokette anzeigen",
+    "show_audio_chain_details": "Details zur Audio-Pipeline anzeigen",
     "show_less": "Weniger anzeigen",
     "show_more": "Mehr anzeigen",
     "autoplay_on_title": "Die automatische Wiedergabe ist aktiviert",
@@ -1949,17 +2179,17 @@
         "120": "2 Stunden"
     },
     "shuffle_smart_active": "Die automatische Zufallswiedergabe ist aktiviert. Klicke hier, um sie auszuschalten.",
-    "goto_album_radio": "Zum Album-Radio",
-    "goto_artist_radio": "Zum Interpreten-Radio",
-    "goto_genre_radio": "Zum Genre-Radio",
-    "goto_playlist_radio": "Zum Wiedergabelisten-Radio-Seite",
-    "goto_radio": "Zum Radio",
-    "goto_track_radio": "Zum Lieder-Radio",
+    "goto_album_radio": "Endlosen Album-Mix ansehen",
+    "goto_artist_radio": "Endlosen Interpreten-Mix ansehen",
+    "goto_genre_radio": "Endlosen Genre-Mix ansehen",
+    "goto_playlist_radio": "Endlosen Wiedergabelisten-Mix ansehen",
+    "goto_radio": "Endlosen Mix ansehen",
+    "goto_track_radio": "Endlosen Titel-Mix ansehen",
     "autoplay_dynamic_title": "Die automatische Wiedergabe ist aktiviert.",
     "autoplay_dynamic_lead": "Deine Warteschlange wird entsprechend deiner Auswahl dynamisch gefüllt:",
     "autoplay_dynamic_desc": "Deine Warteschlange wird entsprechend deiner Auswahl dynamisch gefüllt.",
-    "autoplay_on_desc_sources": "In deiner Wiedergabeliste läuft gerade „{0}“. Wenn das Lied zu Ende ist, sorgt die Autoplay-Funktion dafür, dass die Musik weiterläuft, indem sie weitere Titel entsprechend deiner Vorlieben hinzufügt.",
-    "autoplay_off_desc_sources": "In deiner Wiedergabeliste läuft gerade „{0}“ und die Wiedergabe endet, sobald der Titel zu Ende ist. Aktiviere die automatische Wiedergabe, damit die Musik automatisch mit weiteren Titeln weiterläuft.",
+    "autoplay_on_desc_sources": "In deiner Wiedergabeliste läuft gerade {0}. Wenn das Lied zu Ende ist, sorgt die Autoplay-Funktion dafür, dass die Musik weiterläuft, indem sie weitere Titel entsprechend deiner Vorlieben hinzufügt.",
+    "autoplay_off_desc_sources": "In deiner Wiedergabeliste läuft gerade {0} und die Wiedergabe endet, sobald der Titel zu Ende ist. Aktiviere die automatische Wiedergabe, damit die Musik automatisch mit weiteren Titeln weiterläuft.",
     "shuffle_dynamic_active": "Die intelligente Zufallswiedergabe ist aktiviert, da die Wiedergabeliste im dynamischen Modus abgespielt wird.",
     "repeat_dynamic_unavailable": "Die Wiederholungsfunktion ist nicht verfügbar, während die Wiedergabeliste im dynamischen Modus läuft.",
     "audio_analysis": "Audioanalyse",
@@ -1997,14 +2227,161 @@
     "searching": "Suche…",
     "pause": "Pausieren",
     "play_failed": "Spielaktion fehlgeschlagen",
-    "show_audio_chain_details_for_quality": "Details der Audiokette anzeigen ({quality})",
+    "show_audio_chain_details_for_quality": "Details zur Audio-Pipeline anzeigen ({quality})",
     "dashboard": {
         "disconnect": "Trennen {0}",
         "loading": "Geräte werden geladen...",
         "no_devices": "Keine Cast-Geräte gefunden",
-        "started": "Casting für „{0}“"
+        "started": "Casting für „{0}“",
+        "get_url": "Dashboard-URL abrufen",
+        "uri_copied": "Dashboard-URL in die Zwischenablage kopiert",
+        "uri_copy_failed": "Fehler beim Kopieren der Dashboard-URL in die Zwischenablage"
     },
     "reconfigure_player": "Wiedergabegerät neu konfigurieren",
     "configure_player": "Wiedergabegerät konfigurieren",
-    "plugins": "Plugins"
+    "plugins": "Plugins",
+    "queue_ended": "Wiedergabe beendet",
+    "play_from_beginning": "Von Anfang an abspielen",
+    "audiobooks_in_collection": "Hörbücher in dieser Sammlung",
+    "collection_no_audiobooks": "Diese Sammlung enthält keine Hörbücher.",
+    "error_generic": "Es ist ein Fehler aufgetreten. Bitte versuche es erneut.",
+    "artist_no_library_audiobooks": "In deiner Bibliothek befinden sich keine Hörbücher dieses Autors bzw. Sprechers.",
+    "artist_all_audiobooks": "Alle Hörbücher",
+    "lights": "Lichter",
+    "volume": "Lautstärke",
+    "grouped_volume": "Lautstärke der Gruppe",
+    "player_select": {
+        "active_player_volume_only": "Lautstärkeregler nur für aktive Wiedergabegeräte anzeigen",
+        "and_more": "...und {0} mehr",
+        "disable_player_confirmation": "Dieses Wiedergabegerät wird ausgeblendet, bis es in den Wiedergabegeräte-Einstellungen wieder aktiviert wird.",
+        "disable_player_title": "{0} deaktivieren?",
+        "display_options": "Anzeigeoptionen",
+        "rename_player": "Wiedergabegerät umbenennen",
+        "rename_player_description": "Gib einen neuen Namen für dieses Wiedergabegerät ein.",
+        "show_active_players_first": "Aktive Wiedergabegeräte zuerst anzeigen",
+        "show_grouped_players": "Gruppenmitglieder anzeigen",
+        "show_selected_player_first": "Das ausgewählten Wiedergabegeräte zuerst anzeigen"
+    },
+    "mark_played_partial_failure": "Die {0} Folge(n) konnten nicht aktualisiert werden.",
+    "visualizer": {
+        "title": "MilkDrop",
+        "preset_random": "Zufällige Voreinstellung",
+        "toggle": "Den MilkDrop-Visualizer ein- oder ausschalten",
+        "preset_random_favorites": "Zufällige Auswahl aus den Favoriten",
+        "toggle_favorite": "Diese Voreinstellung als Favorit speichern",
+        "provider_missing": "Das MilkDrop Visualizer-Plugin ist nicht installiert oder nicht verfügbar. Füge es unter „Einstellungen → Anbieter“ hinzu, um den Visualizer zu nutzen.",
+        "section_general": "Aussehen",
+        "section_presets": "Voreinstellungen",
+        "quality": "Renderqualität",
+        "quality_description": "Höhere Stufen sorgen für eine schärfere Darstellung, beanspruchen jedoch die GPU und CPU stärker. Verwende auf Tablets und Fernsehern die niedrige Stufe.",
+        "quality_options": {
+            "low": "Niedrig (Tablets \/ Fernseher)",
+            "medium": "Mittel",
+            "high": "Hoch",
+            "native": "Nativ"
+        },
+        "preset_mode": "Voreinstellungsauswahl",
+        "preset_mode_description": "Wie der Visualizer auswählt, welche MilkDrop-Voreinstellung angezeigt wird.",
+        "preset_mode_options": {
+            "random": "Zufällig aus allen Voreinstellungen",
+            "random_favorites": "Zufällig aus den Favoriten",
+            "fixed": "Feste Voreinstellung"
+        },
+        "fixed_preset": "Voreinstellung",
+        "beat_switch": "Voreinstellung auf Downbeat umschalten",
+        "beat_switch_description": "Wechselt bei einem Downbeat zu einer anderen Voreinstellung. Überschreibt eine festgelegte Voreinstellung.",
+        "beat_dwell": "Mindestzeit zwischen den Schaltvorgängen",
+        "beat_dwell_description": "Wie lange ein Preset auf dem Bildschirm angezeigt wird, bevor es durch einen Downbeat ersetzt werden kann.",
+        "favorites": "Lieblingsvoreinstellungen",
+        "no_favorites": "Noch keine Favoriten. Markiere die aktuelle Voreinstellung im Vollbildplayer mit einem Stern.",
+        "remove_favorite": "Favoriten entfernen",
+        "credits": "Credits",
+        "credits_butterchurn": "Die Darstellung erfolgt mithilfe von „Butterchurn“ von Jordan Berg (MIT-Lizenz), der WebGL-Implementierung von MilkDrop 2.",
+        "credits_milkdrop": "MilkDrop wurde ursprünglich von Ryan Geiss als Visualizer für Winamp entwickelt. Die Voreinstellungen stammen aus der MilkDrop-Voreinstellungs-Community und werden über „butterchurn-presets“ gebündelt.",
+        "enabled": "Aktiviert"
+    },
+    "ai_dj": "AI Radio DJ aktivieren",
+    "ai_dj_off": "Aus",
+    "ai_dj_show_on_air": "Auf Sendung: {0}",
+    "ai_dj_show_on_air_unknown": "Eine Sendung wird gerade ausgestrahlt",
+    "menu": "Menü",
+    "main_navigation": "Startseite",
+    "play_announcement": "Benachrichtigung abspielen",
+    "play_announcement_explanation": "Sprich eine Nachricht laut auf {0}",
+    "play_announcement_message": "Nachricht",
+    "play_announcement_message_placeholder": "Das Essen ist fertig!",
+    "play_announcement_pre_announce": "Spiele zuerst ein Glockenspiel.",
+    "play_announcement_send": "Ankündigung",
+    "play_announcement_sent": "Benachrichtigung gesendet an {0}",
+    "play_announcement_playing": "Wird abgespielt...",
+    "play_announcement_volume": "Lautstärke",
+    "play_announcement_volume_default": "Standard-Wiedergabegerät",
+    "play_announcement_mode_type": "Gib eine Nachricht ein",
+    "play_announcement_mode_speak": "Sprechen",
+    "play_announcement_hold_to_speak": "Halte die Taste gedrückt und sprich",
+    "play_announcement_connecting": "Verbinde…",
+    "play_announcement_speaking": "Sprechen",
+    "play_announcement_finishing": "Fertigstellen...",
+    "play_announcement_mic_denied": "Music Assistant darf das Mikrofon nicht benutzen.",
+    "play_announcement_mic_failed": "Das Mikrofon konnte nicht gestartet werden.",
+    "play_announcement_live_failed": "Die Benachrichtigung konnte nicht abgespielt werden.",
+    "dynamic_radio_heading": "Dynamische Station",
+    "dynamic_radio_empty_desc": "Dieser Sender hat keine Titel zurückgegeben. Versuche es in einem Moment erneut.",
+    "home_assistant_menu": "Home Assistant",
+    "playback_speed_value": "{0}x",
+    "offline_ready": "App ist für den Offline-Betrieb bereit",
+    "update_available": "Eine neue Version ist verfügbar. Aktualisiere die Seite.",
+    "reload": "Aktualisieren",
+    "open_settings": "Einstellungen",
+    "faceted_filter": {
+        "clear": "Filter löschen",
+        "clear_all_for": "Alle {title} FIlter löschen",
+        "clear_for": "{title} Filter löschen",
+        "remove_filter": "{label} Filter entfernen",
+        "search_for": "Suche {title}",
+        "selected": "{count} ausgewählt"
+    },
+    "clear": "Leeren",
+    "pagination": {
+        "first_page": "Zur ersten Seite",
+        "previous_page": "Zur vorherigen Seite",
+        "next_page": "Zur nächsten Seite",
+        "last_page": "Zur letzten Seite"
+    },
+    "data_table": {
+        "view": "Anzeigen",
+        "toggle_columns": "Spalten ein-\/ausblenden",
+        "hide": "Ausblenden"
+    },
+    "sidebar": {
+        "title": "Seitenleiste",
+        "description": "Zeigt die mobile Seitenleiste an.",
+        "toggle": "Seitenleiste ein-\/ausblenden",
+        "expand": "Seitenleiste erweitern",
+        "collapse": "Seitenleiste ausblenden"
+    },
+    "loading_short": "Wird geladen",
+    "player_group_playback": {
+        "title": "Gruppenwiedergabe",
+        "remove_message": "Die Wiedergabe ist aktiv. {0} Wenn dieses Wiedergabegerät aus der Gruppe entfernt wird, wird die Wiedergabesitzung auf die verbleibenden Wiedergabegeräte verschoben.",
+        "power_off_message": "Die Wiedergabe ist aktiv. {0} Durch Ausschalten des Geräts wird die Wiedergabesitzung auf die verbleibenden Wiedergabegeräte übertragen.",
+        "keep_playing": "Weiter abspielen",
+        "stop_and_ungroup": "Stoppen und Gruppierung aufheben."
+    },
+    "play_shuffled": "Gemischt abspielen",
+    "players_in_group": "Wiedergabegeräte in Gruppe",
+    "audio_overlay_custom_sounds": "Benutzerdefinierte Sounds",
+    "audio_overlay_add_custom": "Benutzerdefinierten Sound hinzufügen",
+    "audio_overlay_add_custom_explanation": "Füge deine eigenen Umgebungsgeräusche per Stream-URL hinzu.",
+    "audio_overlay_no_custom_sounds": "Es wurden noch keine benutzerdefinierten Sounds hinzugefügt.",
+    "audio_overlay_custom_added": "{0} hinzugefügt",
+    "audio_overlay_custom_add_failed": "Das Hinzufügen eines benutzerdefinierten Sounds ist fehlgeschlagen. Überprüfe, ob die URL auf einen abspielbaren Audiostream verweist.",
+    "search_in": "Suche in {0}...",
+    "pages": "Seiten",
+    "recent_searches": "Letzte Suchanfragen",
+    "command_center_navigate": "navigieren",
+    "command_center_open": "öffnen",
+    "command_center_keep_typing": "Tippe weiter, um zu suchen...",
+    "screens": "Bildschirme",
+    "play_from_here_to_latest": "Von hier bis zum neuesten Abschnitt abspielen"
 }

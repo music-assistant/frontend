@@ -1,14 +1,35 @@
 <template>
   <Container class="max-w-4xl mx-auto px-4 py-6 space-y-6">
-    <!-- Version Information -->
+    <!-- Server Information -->
     <Card>
       <CardHeader>
-        <CardTitle>{{ $t("settings.version_info") }}</CardTitle>
-        <CardDescription>
-          {{ $t("settings.server_version") }}
-        </CardDescription>
+        <CardTitle>{{ $t("settings.server_info") }}</CardTitle>
+        <CardAction v-if="isAdmin">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            :title="$t('settings.core_module.webserver.name')"
+            @click="editWebserverConfig"
+          >
+            <Pencil class="size-4" />
+            <span class="sr-only">
+              {{ $t("settings.core_module.webserver.name") }}
+            </span>
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent class="space-y-2">
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.server_name") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-sm font-medium">
+              {{ api.serverInfo.value?.name }}
+            </span>
+          </ItemContent>
+        </Item>
+
         <Item variant="outline" size="sm" class="justify-between">
           <ItemContent>
             <ItemTitle>{{ $t("settings.server_version") }}</ItemTitle>
@@ -20,18 +41,60 @@
           </ItemContent>
         </Item>
 
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.server_internal_url") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <span class="text-xs font-mono text-muted-foreground break-all">
+              {{ internalUrl }}
+            </span>
+          </ItemContent>
+        </Item>
+
         <Item
-          v-if="!api.serverInfo.value?.homeassistant_addon"
+          v-if="api.serverInfo.value?.external_url"
           variant="outline"
           size="sm"
           class="justify-between"
         >
           <ItemContent>
-            <ItemTitle>{{ $t("settings.server_base_url") }}</ItemTitle>
+            <ItemTitle>{{ $t("settings.server_external_url") }}</ItemTitle>
           </ItemContent>
           <ItemContent class="flex-none text-right">
             <span class="text-xs font-mono text-muted-foreground break-all">
-              {{ api.serverInfo.value?.base_url }}
+              {{ api.serverInfo.value?.external_url }}
+            </span>
+          </ItemContent>
+        </Item>
+
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.server_remote_access") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <Badge
+              :variant="
+                api.serverInfo.value?.has_remote_access ? 'default' : 'outline'
+              "
+            >
+              {{
+                api.serverInfo.value?.has_remote_access ? $t("yes") : $t("no")
+              }}
+            </Badge>
+          </ItemContent>
+        </Item>
+
+        <Item variant="outline" size="sm" class="justify-between">
+          <ItemContent>
+            <ItemTitle>{{ $t("settings.server_clock_offset") }}</ItemTitle>
+          </ItemContent>
+          <ItemContent class="flex-none text-right">
+            <Badge v-if="clockOffsetIsLarge" variant="destructive">
+              {{ clockOffsetLabel }}
+            </Badge>
+            <span v-else class="text-xs font-mono text-muted-foreground">
+              {{ clockOffsetLabel }}
             </span>
           </ItemContent>
         </Item>
@@ -347,17 +410,59 @@
 import openHomeFoundationLogo from "@/assets/open-home-foundation-logo.svg";
 import Container from "@/components/Container.vue";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
+import { useServerTime } from "@/composables/useServerTime";
 import { api } from "@/plugins/api";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
+import { Pencil } from "@lucide/vue";
 import { computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+
+// Above this, the offset is a real misconfiguration on one of the two machines rather
+// than measurement noise, and worth calling out: it also affects things the frontend
+// cannot correct for, such as token expiry and scheduled tasks.
+const LARGE_CLOCK_OFFSET_SECONDS = 10;
+
+const router = useRouter();
+
+const { offsetSeconds: clockOffsetSeconds } = useServerTime();
+
+const isAdmin = computed(() => authManager.isAdmin());
+
+// older servers only report the (now deprecated) base_url
+const internalUrl = computed(
+  () =>
+    api.serverInfo.value?.internal_url || api.serverInfo.value?.base_url || "",
+);
+
+const editWebserverConfig = () => {
+  router.push({ name: "editcore", params: { domain: "webserver" } });
+};
+
+const clockOffsetIsLarge = computed(
+  () =>
+    clockOffsetSeconds.value !== null &&
+    Math.abs(clockOffsetSeconds.value) >= LARGE_CLOCK_OFFSET_SECONDS,
+);
+
+const clockOffsetLabel = computed(() => {
+  const offset = clockOffsetSeconds.value;
+  if (offset === null) return "—";
+  const sign = offset < 0 ? "-" : "+";
+  const magnitude = Math.abs(offset);
+  return magnitude < 1
+    ? `${sign}${Math.round(magnitude * 1000)} ms`
+    : `${sign}${magnitude.toFixed(1)} s`;
+});
 
 const changelogUrl = computed(() => {
   return "https://github.com/music-assistant/server/releases";

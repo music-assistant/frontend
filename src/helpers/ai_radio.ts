@@ -1,14 +1,14 @@
 import type {
   AIRadioAlternativeChoice,
   AIRadioFlowItem,
+  AIRadioHost,
   AIRadioOptionalGuards,
   AIRadioSection,
   AIRadioSectionOrderRule,
   AIRadioStation,
-  AIRadioStationGeneral,
   AIRadioWebSearchMode,
 } from "@/plugins/api/interfaces";
-import { $t, i18n } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
 
 // Sentinel for "no selection" in shadcn Select components, which do not
 // allow SelectItem values to be empty strings.
@@ -68,10 +68,13 @@ export const relativeTimeFromIso = (
   if (Number.isNaN(thenMs)) return "";
   const diffSeconds = Math.round((thenMs - nowMs) / 1000);
   const absSeconds = Math.abs(diffSeconds);
-  const rtf = new Intl.RelativeTimeFormat(i18n.global.locale.value, {
-    numeric: "auto",
-    style: "narrow",
-  });
+  const rtf = new Intl.RelativeTimeFormat(
+    canonicalizeLocale(i18n.global.locale.value),
+    {
+      numeric: "auto",
+      style: "narrow",
+    },
+  );
   if (absSeconds < 60) return rtf.format(0, "second");
   if (absSeconds < 3600)
     return rtf.format(Math.trunc(diffSeconds / 60), "minute");
@@ -80,26 +83,12 @@ export const relativeTimeFromIso = (
   return rtf.format(Math.trunc(diffSeconds / 86400), "day");
 };
 
-export const asGeneralDefaults = (
-  general?: AIRadioStationGeneral,
-): AIRadioStationGeneral => {
-  return {
-    instructions: general?.instructions || "",
-    weather_provider: general?.weather_provider || "open_meteo",
-    weather_timeout_seconds:
-      typeof general?.weather_timeout_seconds === "number"
-        ? general.weather_timeout_seconds
-        : 8,
-  };
-};
-
 // -----------------------------------------------------------------------
-// Show model: the UI-facing "segment" representation of a station, and the
-// compiler/decompiler that translate it to/from the backend station+section
-// contract (MUST/ALTERNATIVE/OPTIONAL flow items + guards).
+// Host model: the UI "segment" representation of a host's spoken content,
+// and the compiler/decompiler for the backend host+section contract.
 // -----------------------------------------------------------------------
 
-/** One spoken segment in a show, edited as a single row in the Customize UI. */
+/** One spoken segment a host can play, edited as a single row in the host editor. */
 export interface ShowSegment {
   id: string;
   name: string;
@@ -112,7 +101,7 @@ export interface ShowSegment {
 /**
  * When a segment plays, expressed in UI-friendly terms.
  * Compiles down to MUST (start/end/every_song) or OPTIONAL with derived
- * chance/guards (every_n_songs/every_n_min/occasionally) — see compileShow.
+ * chance/guards (every_n_songs/every_n_min/occasionally) — see compileHost.
  */
 export type PlaysRule =
   | { kind: "start" }
@@ -122,233 +111,100 @@ export type PlaysRule =
   | { kind: "every_n_min"; n: number }
   | { kind: "occasionally"; percent: number };
 
-export type TalkativenessLevel = "rarely" | "normal" | "chatty";
-
-/** Station-level fields the Customize UI edits outside of the segment list. */
+/** Station-level fields the Customize UI edits. */
 export interface ShowBasics {
   id?: string;
   name: string;
   sourcePlaylistId: string;
   sourcePlaylistProvider: string;
-  targetPlaylistProvider: string;
   defaultPlayerId: string;
   maxDurationMinutes: number;
   shuffleSourceTracks: boolean;
-  dynamicBatchSize: number;
-  dynamicPollSeconds: number;
-  dynamicPrefetchRemainingTracks: number;
-  clearQueueOnStart: boolean;
-  general: AIRadioStationGeneral;
 }
 
+/** A show is just a playlist plus a reference to the host that voices it. */
 export interface ShowDraft {
   basics: ShowBasics;
-  segments: ShowSegment[];
-}
-
-export type ShowPresetKey =
-  | "morning_show"
-  | "minimal_dj"
-  | "music_nerd"
-  | "party_host";
-
-/** A bundled host-style starting point offered in the create dialog. */
-export interface ShowPreset {
-  key: ShowPresetKey;
-  /** Kebab-case Lucide icon name, resolved via helpers/icon.ts#getLucideIcon. */
-  icon: string;
-  segments: ShowSegment[];
-  /** Seeds general.instructions — the host personality + program style. */
-  instructions: string;
+  hostId: string;
 }
 
 const SONG_TRANSITION_PROMPT =
   "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Create a natural radio transition that connects both songs, sounds informed but concise, and avoids filler or repetition.";
 
-export const PRESETS: ShowPreset[] = [
+/** Neutral starter instructions for a brand-new custom host, mirroring the server's built-in default. */
+export const GENERIC_HOST_INSTRUCTIONS =
+  "Host personality: warm, sharp, music-literate, and slightly premium without sounding formal. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid clichés, mention concrete details when available, and maintain a believable radio flow between sections.";
+
+/**
+ * Persona-neutral segment templates mirroring the server's built-in section
+ * defaults (ai_radio provider's `_default_sections_template`) where one exists.
+ */
+export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
   {
-    key: "morning_show",
-    icon: "sunrise",
-    instructions:
-      "Host personality: warm, energetic, upbeat morning-show host who sounds fully awake and glad to be on air. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid cliches, mention concrete details when available, and maintain a believable radio flow between sections.",
-    segments: [
-      {
-        id: "intro",
-        name: "Intro",
-        prompt:
-          "The next track is <next_songinfo>. Open the morning show like a warm, upbeat host: brief good-morning greeting, one concrete hook about the song or artist, and a clean handoff into the music.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "start" },
-      },
-      {
-        id: "transition",
-        name: "Transition",
-        prompt:
-          "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Create a natural, energetic morning-show transition that connects both songs, sounds informed but concise, and avoids filler or repetition.",
-        webSearch: "allow",
-        maxChars: 650,
-        plays: { kind: "every_n_songs", n: 3 },
-      },
-      {
-        id: "weather",
-        name: "Weather",
-        prompt:
-          "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth morning-show phrasing.",
-        webSearch: "disabled",
-        maxChars: 500,
-        plays: { kind: "every_n_min", n: 60 },
-      },
-      {
-        id: "news",
-        name: "News",
-        prompt:
-          "Create a short global news bulletin anchored to <timestamp>. Use web search. Include two or three current items that are broadly relevant, clearly separated, fact-focused, and written for spoken delivery.",
-        webSearch: "force",
-        maxChars: 700,
-        plays: { kind: "every_n_min", n: 60 },
-      },
-      {
-        id: "sign_off",
-        name: "Sign-off",
-        prompt:
-          "The last track played was <prev_songinfo>. Close the morning show with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "end" },
-      },
-    ],
+    id: "intro",
+    name: "Intro",
+    prompt:
+      "The next track is <next_songinfo>. Open the program like a polished radio host: brief welcome, confident energy, one concrete hook about the song or artist, and a clean handoff into the music.",
+    webSearch: "disabled",
+    maxChars: 650,
+    plays: { kind: "start" },
   },
   {
-    key: "minimal_dj",
-    icon: "disc-3",
-    instructions:
-      "Host personality: minimal, calm, understated DJ who lets the music lead. Program instructions: keep every segment brief, avoid small talk, avoid cliches, and never overshadow the songs with unnecessary commentary.",
-    segments: [
-      {
-        id: "transition",
-        name: "Transition",
-        prompt:
-          "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Give a short, minimal DJ transition: one or two sentences, calm tone, no filler, just enough to bridge the songs.",
-        webSearch: "disabled",
-        maxChars: 300,
-        plays: { kind: "every_n_songs", n: 3 },
-      },
-    ],
+    id: "transition",
+    name: "Transition",
+    prompt: SONG_TRANSITION_PROMPT,
+    webSearch: "allow",
+    maxChars: 650,
+    plays: { kind: "every_song" },
   },
   {
-    key: "music_nerd",
-    icon: "book-open",
-    instructions:
-      "Host personality: knowledgeable, enthusiastic music nerd who loves sharing context without lecturing. Program instructions: write for spoken delivery, keep segments concise, favor concrete facts over generic praise, avoid cliches, and maintain a believable radio flow between sections.",
-    segments: [
-      {
-        id: "intro",
-        name: "Intro",
-        prompt:
-          "The next track is <next_songinfo>. Open the program like a knowledgeable music host: brief welcome, one genuinely interesting detail about the artist or genre, and a clean handoff into the music.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "start" },
-      },
-      {
-        id: "artist_fact",
-        name: "Artist fact",
-        prompt:
-          "The next track is <next_songinfo>. Share one specific, well-researched fact about the artist, the recording, or its influence. Keep it precise and avoid generic trivia.",
-        webSearch: "allow",
-        maxChars: 500,
-        plays: { kind: "every_n_songs", n: 2 },
-      },
-      {
-        id: "transition",
-        name: "Transition",
-        prompt: SONG_TRANSITION_PROMPT,
-        webSearch: "allow",
-        maxChars: 650,
-        plays: { kind: "every_song" },
-      },
-    ],
+    id: "weather",
+    name: "Weather",
+    prompt:
+      "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth radio phrasing.",
+    webSearch: "disabled",
+    maxChars: 500,
+    plays: { kind: "every_n_min", n: 60 },
   },
   {
-    key: "party_host",
-    icon: "party-popper",
-    instructions:
-      "Host personality: high-energy, confident party host who keeps the crowd hyped. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid cliches, and maintain a believable, energetic radio flow between sections.",
-    segments: [
-      {
-        id: "hype_intro",
-        name: "Hype intro",
-        prompt:
-          "The next track is <next_songinfo>. Open the party like a hype radio host: high energy, one confident line about the song or artist, and a clean handoff that gets people moving.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "start" },
-      },
-      {
-        id: "shout_out",
-        name: "Shout-out",
-        prompt:
-          "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Deliver a high-energy party transition with a quick shout-out vibe: keep it fun, confident, and concise, and avoid filler or repetition.",
-        webSearch: "allow",
-        maxChars: 650,
-        plays: { kind: "every_n_songs", n: 3 },
-      },
-      {
-        id: "sign_off",
-        name: "Sign-off",
-        prompt:
-          "The last track played was <prev_songinfo>. Close the party with a memorable, high-energy sign-off: brief hype recap, warm farewell, and language that sounds like the end of a real party set.",
-        webSearch: "disabled",
-        maxChars: 650,
-        plays: { kind: "end" },
-      },
-    ],
+    id: "news",
+    name: "News",
+    prompt:
+      "Create a short global news bulletin anchored to <timestamp>. Use web search. Include two or three current items that are broadly relevant, clearly separated, fact-focused, and written for spoken delivery.",
+    webSearch: "force",
+    maxChars: 700,
+    plays: { kind: "every_n_min", n: 60 },
+  },
+  {
+    id: "artist_fact",
+    name: "Artist fact",
+    prompt:
+      "The next track is <next_songinfo>. Share one genuinely interesting fact about the track or its artist, keeping it precise, engaging, and free of generic trivia.",
+    webSearch: "allow",
+    maxChars: 500,
+    plays: { kind: "every_n_songs", n: 3 },
+  },
+  {
+    id: "sign_off",
+    name: "Sign-off",
+    prompt:
+      "The last track played was <prev_songinfo>. Close the program with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
+    webSearch: "disabled",
+    maxChars: 650,
+    plays: { kind: "end" },
   },
 ];
 
+const GENERIC_HOST_SEED_IDS = ["intro", "transition", "sign_off"] as const;
+
 /**
- * Adjusts a preset's segment frequencies for the create dialog's talkativeness
- * slider. Treats every_song/every_n_songs segments as "the transition" (the
- * main recurring host segment) and every_n_min/occasionally segments as
- * "extras" (weather, news, facts); start/end segments are never adjusted.
+ * One segment per placement (start/every_song/end) for a brand-new custom
+ * host, so it starts generic rather than cloned from a persona preset.
  */
-export const applyTalkativeness = (
-  segments: ShowSegment[],
-  level: TalkativenessLevel,
-): ShowSegment[] => {
-  if (level === "normal") {
-    return segments;
-  }
-  return segments.map((segment) => {
-    const { plays } = segment;
-    if (plays.kind === "start" || plays.kind === "end") {
-      return segment;
-    }
-    if (plays.kind === "every_song" || plays.kind === "every_n_songs") {
-      if (level === "rarely") {
-        return { ...segment, plays: { kind: "every_n_songs", n: 3 } };
-      }
-      return { ...segment, plays: { kind: "every_song" } };
-    }
-    // Extras: halve frequency for "rarely", leave untouched for "chatty".
-    if (level === "rarely") {
-      if (plays.kind === "every_n_min") {
-        return { ...segment, plays: { kind: "every_n_min", n: plays.n * 2 } };
-      }
-      if (plays.kind === "occasionally") {
-        return {
-          ...segment,
-          plays: {
-            kind: "occasionally",
-            percent: Math.max(1, Math.round(plays.percent / 2)),
-          },
-        };
-      }
-    }
-    return segment;
-  });
-};
+export const GENERIC_HOST_SEGMENTS: ShowSegment[] =
+  GENERIC_SEGMENT_TEMPLATES.filter((segment) =>
+    (GENERIC_HOST_SEED_IDS as readonly string[]).includes(segment.id),
+  );
 
 /** Prompt for the hidden ai_meta merge section, verbatim from the backend example. */
 export const MERGE_SECTION_PROMPT =
@@ -379,7 +235,7 @@ const flowItemForBetweenSegment = (segment: ShowSegment): AIRadioFlowItem => {
         OPTIONAL: {
           section: segment.id,
           chance: Math.min(1, 2 / n),
-          guards: buildOptionalGuards(segment.prompt, n - 1, 0),
+          guards: buildOptionalGuards(segment.prompt, n, 0),
         },
       };
     }
@@ -421,20 +277,28 @@ const dedupeId = (id: string, used: Set<string>): string => {
   return candidate;
 };
 
+interface CompiledSegments {
+  sections: AIRadioSection[];
+  sectionOrder: AIRadioSectionOrderRule[];
+  mergeSectionId: string;
+}
+
 /**
- * Compiles a show draft into the full station payload the backend expects:
- * one AIRadioSection per segment plus a hidden ai_meta merge section, and a
- * section_order built per segment.plays (start/end -> MUST rules in list
- * order, everything else -> a single between_songs rule where every_song is
- * MUST and the rest are OPTIONAL with derived chance/guards).
+ * Builds a host's sections + section_order, namespacing ids with hostId
+ * (shared sections library) idempotently for decompileHost round-trips.
  */
-export const compileShow = (draft: ShowDraft): AIRadioStation => {
-  const stationId = draft.basics.id?.trim() || slugify(draft.basics.name);
+const compileSegments = (
+  segments: ShowSegment[],
+  hostId: string,
+): CompiledSegments => {
   const usedIds = new Set<string>();
 
   const sections: AIRadioSection[] = [];
-  const resolved = draft.segments.map((segment) => {
-    const id = dedupeId(slugify(segment.id || segment.name), usedIds);
+  const resolved = segments.map((segment) => {
+    const rawId = segment.id || segment.name;
+    const prefix = `${hostId}_`;
+    const namespacedId = rawId.startsWith(prefix) ? rawId : `${prefix}${rawId}`;
+    const id = dedupeId(slugify(namespacedId), usedIds);
     sections.push({
       id,
       name: segment.name,
@@ -476,7 +340,7 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
     });
   }
 
-  const mergeSectionId = dedupeId(`${stationId}_smoother`, usedIds);
+  const mergeSectionId = dedupeId(`${hostId}_smoother`, usedIds);
   sections.push({
     id: mergeSectionId,
     name: "Between Songs Mix",
@@ -484,64 +348,185 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
     prompt: MERGE_SECTION_PROMPT,
   });
 
+  return { sections, sectionOrder, mergeSectionId };
+};
+
+/** Compiles a show draft into the station payload the backend expects: a playlist reference plus its host. */
+export const compileShow = (draft: ShowDraft): AIRadioStation => {
+  const stationId = draft.basics.id?.trim() || slugify(draft.basics.name);
+
   return {
     id: stationId,
     name: draft.basics.name.trim(),
     source_playlist_id: draft.basics.sourcePlaylistId,
     source_playlist_provider: draft.basics.sourcePlaylistProvider || "library",
-    target_playlist_provider: draft.basics.targetPlaylistProvider || "builtin",
     default_player_id: draft.basics.defaultPlayerId || "",
     max_duration_minutes: draft.basics.maxDurationMinutes,
     shuffle_source_tracks: draft.basics.shuffleSourceTracks,
-    dynamic_batch_size: draft.basics.dynamicBatchSize,
-    dynamic_poll_seconds: draft.basics.dynamicPollSeconds,
-    dynamic_prefetch_remaining_tracks:
-      draft.basics.dynamicPrefetchRemainingTracks,
-    clear_queue_on_start: draft.basics.clearQueueOnStart,
-    merge_section_id: mergeSectionId,
-    general: draft.basics.general,
+    host_id: draft.hostId,
+  };
+};
+
+/** A host's persona/voice, edited in the Hosts UI and assignable to a queue's DJ. */
+export interface HostDraft {
+  id: string;
+  name: string;
+  instructions: string;
+  // ttsEngine: "" = provider default
+  ttsEngine: string;
+  // language: "" = follow the server language
+  language: string;
+  // options: free-form key/value pairs passed straight through to the TTS engine
+  options: Record<string, unknown>;
+  segments: ShowSegment[];
+}
+
+export interface CompiledHost {
+  host: AIRadioHost;
+  sections: AIRadioSection[];
+}
+
+/**
+ * Compiles a host draft into the AIRadioHost payload plus the AIRadioSection
+ * content it references (see compileSegments). Sections are returned rather
+ * than embedded. v3 hosts don't carry section content, so callers must
+ * persist them (ai_radio/sections/save) before saving the host.
+ */
+export const compileHost = (draft: HostDraft): CompiledHost => {
+  const hostId = draft.id.trim() || slugify(draft.name);
+  const { sections, sectionOrder, mergeSectionId } = compileSegments(
+    draft.segments,
+    hostId,
+  );
+
+  return {
+    host: {
+      id: hostId,
+      name: draft.name.trim(),
+      instructions: draft.instructions,
+      tts_engine: draft.ttsEngine,
+      language: draft.language,
+      options: draft.options,
+      section_ids: sections.map((section) => section.id),
+      section_order: sectionOrder,
+      merge_section_id: mergeSectionId,
+    },
     sections,
-    section_order: sectionOrder,
   };
 };
 
 export interface DecompiledShow {
   basics: ShowBasics;
-  segments: ShowSegment[];
-  /**
-   * True when decompiling hit one of the lossy fallback cases below — the
-   * Customize UI shows a warning that saving will rewrite the show in the
-   * simplified segment format.
-   */
-  lossy: boolean;
+  hostId: string;
 }
 
+/** Inverts section_order into segments via `toSegment`, mirroring compileSegments' chance/guard formulas where possible. */
+const decompileSectionOrder = (
+  sectionOrder: AIRadioSectionOrderRule[] | undefined,
+  toSegment: (sectionId: string, plays: PlaysRule) => ShowSegment | null,
+): { segments: ShowSegment[] } => {
+  const decompileBetweenItem = (item: AIRadioFlowItem): ShowSegment[] => {
+    if ("MUST" in item) {
+      const segment = toSegment(item.MUST, { kind: "every_song" });
+      return segment ? [segment] : [];
+    }
+    if ("ALTERNATIVE" in item) {
+      const choices: AIRadioAlternativeChoice[] =
+        item.ALTERNATIVE.choices || [];
+      if (choices.length === 1) {
+        const segment = toSegment(choices[0].section, { kind: "every_song" });
+        return segment ? [segment] : [];
+      }
+      const total = choices.reduce((sum, c) => sum + (c.weight || 0), 0) || 1;
+      return choices
+        .map((choice) =>
+          toSegment(choice.section, {
+            kind: "occasionally",
+            percent: Math.round((choice.weight / total) * 100),
+          }),
+        )
+        .filter((s): s is ShowSegment => s !== null);
+    }
+    // OPTIONAL: invert compileSegments' exact chance/guard formulas where
+    // possible, otherwise fall back to a plain "occasionally" percent.
+    const { section: sectionId, chance = 0, guards } = item.OPTIONAL;
+    const minGap = guards?.min_gap_songs || 0;
+    const maxPer60 = guards?.max_per_60min || 0;
+    let plays: PlaysRule;
+    if (maxPer60 > 0 && Math.abs(chance - 1) < 1e-6) {
+      plays = {
+        kind: "every_n_min",
+        n: Math.max(1, Math.round(60 / maxPer60)),
+      };
+    } else if (
+      minGap > 1 &&
+      Math.abs(chance - Math.min(1, 2 / minGap)) < 1e-6
+    ) {
+      plays = { kind: "every_n_songs", n: minGap };
+    } else if (
+      // Legacy min_gap_songs = n - 1 shape from the v2->v3 migration; minGap 1
+      // excluded so old n=2 (min_gap 1/chance 1) still decompiles as "occasionally 100%".
+      minGap >= 2 &&
+      Math.abs(chance - Math.min(1, 2 / (minGap + 1))) < 1e-6
+    ) {
+      plays = { kind: "every_n_songs", n: minGap + 1 };
+    } else {
+      plays = { kind: "occasionally", percent: Math.round(chance * 100) };
+    }
+    const segment = toSegment(sectionId, plays);
+    return segment ? [segment] : [];
+  };
+
+  const segments: ShowSegment[] = [];
+  for (const rule of sectionOrder || []) {
+    if (rule.when === "start_of_playlist" || rule.when === "end_of_playlist") {
+      const kind: PlaysRule["kind"] =
+        rule.when === "start_of_playlist" ? "start" : "end";
+      for (const item of rule.flow) {
+        if ("MUST" in item) {
+          const segment = toSegment(item.MUST, { kind });
+          if (segment) segments.push(segment);
+        }
+      }
+      continue;
+    }
+    for (const item of rule.flow) {
+      segments.push(...decompileBetweenItem(item));
+    }
+  }
+
+  return { segments };
+};
+
+/** Inverse of compileShow, for opening an existing station in the Customize view. */
+export const decompileStation = (station: AIRadioStation): DecompiledShow => {
+  const basics: ShowBasics = {
+    id: station.id,
+    name: station.name,
+    sourcePlaylistId: station.source_playlist_id,
+    sourcePlaylistProvider: station.source_playlist_provider || "library",
+    defaultPlayerId: station.default_player_id || "",
+    maxDurationMinutes: station.max_duration_minutes || 0,
+    shuffleSourceTracks: station.shuffle_source_tracks !== false,
+  };
+
+  return { basics, hostId: station.host_id };
+};
+
 /**
- * Best-effort inverse of compileShow, for opening an existing/imported
- * station in the Customize view. Lossy cases (flagged via the returned
- * `lossy` bit):
- * - ALTERNATIVE with >1 choice decompiles to N independent "occasionally"
- *   segments (weight -> percent of the total); the original weighted
- *   pick-one semantics can't be reconstructed from independent chances.
- * - An OPTIONAL item whose guards don't match one of compileShow's exact
- *   chance/guard formulas falls back to "occasionally" using its raw chance.
- * The hidden merge section (station.merge_section_id / type "ai_meta") is
- * always excluded from the segment list.
+ * Best-effort inverse of compileHost, for opening an existing host in the
+ * Hosts UI. `sections` is the section content library the host's
+ * section_ids reference (e.g. loaded via ai_radio/sections/list).
  */
-export const decompileStation = (
-  station: AIRadioStation,
+export const decompileHost = (
+  host: AIRadioHost,
   sections: AIRadioSection[],
-): DecompiledShow => {
-  let lossy = false;
+): HostDraft => {
   const sectionMap = new Map<string, AIRadioSection>();
   for (const section of sections) {
     sectionMap.set(section.id, section);
   }
-  // Embedded sections take precedence over the shared library fallback.
-  for (const section of station.sections || []) {
-    sectionMap.set(section.id, section);
-  }
-  const mergeId = station.merge_section_id || "";
+  const mergeId = host.merge_section_id || "";
 
   const toSegment = (
     sectionId: string,
@@ -561,89 +546,17 @@ export const decompileStation = (
     };
   };
 
-  const decompileBetweenItem = (item: AIRadioFlowItem): ShowSegment[] => {
-    if ("MUST" in item) {
-      const segment = toSegment(item.MUST, { kind: "every_song" });
-      return segment ? [segment] : [];
-    }
-    if ("ALTERNATIVE" in item) {
-      const choices: AIRadioAlternativeChoice[] =
-        item.ALTERNATIVE.choices || [];
-      if (choices.length === 1) {
-        const segment = toSegment(choices[0].section, { kind: "every_song" });
-        return segment ? [segment] : [];
-      }
-      lossy = true;
-      const total = choices.reduce((sum, c) => sum + (c.weight || 0), 0) || 1;
-      return choices
-        .map((choice) =>
-          toSegment(choice.section, {
-            kind: "occasionally",
-            percent: Math.round((choice.weight / total) * 100),
-          }),
-        )
-        .filter((s): s is ShowSegment => s !== null);
-    }
-    // OPTIONAL: invert compileShow's exact chance/guard formulas where
-    // possible, otherwise fall back to a plain "occasionally" percent.
-    const { section: sectionId, chance = 0, guards } = item.OPTIONAL;
-    const minGap = guards?.min_gap_songs || 0;
-    const maxPer60 = guards?.max_per_60min || 0;
-    let plays: PlaysRule;
-    if (maxPer60 > 0 && Math.abs(chance - 1) < 1e-6) {
-      plays = {
-        kind: "every_n_min",
-        n: Math.max(1, Math.round(60 / maxPer60)),
-      };
-    } else if (
-      minGap > 0 &&
-      Math.abs(chance - Math.min(1, 2 / (minGap + 1))) < 1e-6
-    ) {
-      plays = { kind: "every_n_songs", n: minGap + 1 };
-    } else {
-      lossy = true;
-      plays = { kind: "occasionally", percent: Math.round(chance * 100) };
-    }
-    const segment = toSegment(sectionId, plays);
-    return segment ? [segment] : [];
+  const { segments } = decompileSectionOrder(host.section_order, toSegment);
+
+  return {
+    id: host.id,
+    name: host.name,
+    instructions: host.instructions,
+    ttsEngine: host.tts_engine,
+    language: host.language || "",
+    options: host.options || {},
+    segments,
   };
-
-  const segments: ShowSegment[] = [];
-  for (const rule of station.section_order || []) {
-    if (rule.when === "start_of_playlist" || rule.when === "end_of_playlist") {
-      const kind: PlaysRule["kind"] =
-        rule.when === "start_of_playlist" ? "start" : "end";
-      for (const item of rule.flow) {
-        if ("MUST" in item) {
-          const segment = toSegment(item.MUST, { kind });
-          if (segment) segments.push(segment);
-        }
-      }
-      continue;
-    }
-    for (const item of rule.flow) {
-      segments.push(...decompileBetweenItem(item));
-    }
-  }
-
-  const basics: ShowBasics = {
-    id: station.id,
-    name: station.name,
-    sourcePlaylistId: station.source_playlist_id,
-    sourcePlaylistProvider: station.source_playlist_provider || "library",
-    targetPlaylistProvider: station.target_playlist_provider || "builtin",
-    defaultPlayerId: station.default_player_id || "",
-    maxDurationMinutes: station.max_duration_minutes || 0,
-    shuffleSourceTracks: station.shuffle_source_tracks !== false,
-    dynamicBatchSize: station.dynamic_batch_size || 3,
-    dynamicPollSeconds: station.dynamic_poll_seconds || 5,
-    dynamicPrefetchRemainingTracks:
-      station.dynamic_prefetch_remaining_tracks || 2,
-    clearQueueOnStart: station.clear_queue_on_start !== false,
-    general: asGeneralDefaults(station.general),
-  };
-
-  return { basics, segments, lossy };
 };
 
 const PLAYS_RULE_LABEL_KEYS: Record<PlaysRule["kind"], string> = {
@@ -678,4 +591,68 @@ export const resolveShowPlayerId = (
 export const getQueryValue = (value: unknown) => {
   if (typeof value !== "string") return "";
   return value.trim();
+};
+
+/**
+ * Appends " 2", " 3", ... until `name` doesn't collide with `existingNames`.
+ * Compares on the slug `compileHost` derives the id from, so "A b" and "A-b" collide.
+ */
+export const uniqueHostName = (
+  name: string,
+  existingNames: string[],
+): string => {
+  const used = new Set(existingNames.map(slugify));
+  if (!used.has(slugify(name))) return name;
+  let suffix = 2;
+  let candidate = `${name} ${suffix}`;
+  while (used.has(slugify(candidate))) {
+    suffix += 1;
+    candidate = `${name} ${suffix}`;
+  }
+  return candidate;
+};
+
+// Plain integers/decimals only, so "007" and "1.2.3" stay strings.
+const NUMERIC_OPTION_VALUE = /^-?(0|[1-9]\d*)(\.\d+)?$/;
+
+/**
+ * Coerces a raw TTS option input into the JSON value the engine expects:
+ * "true"/"false" become booleans, a plain integer or decimal becomes a
+ * number, everything else (including "" and version-like strings) stays a string.
+ */
+export const coerceOptionValue = (raw: string): unknown => {
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  if (raw !== "" && NUMERIC_OPTION_VALUE.test(raw)) return Number(raw);
+  return raw;
+};
+
+/** Inverse of coerceOptionValue, for showing a stored option value back in its text input. */
+export const optionValueToText = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+};
+
+/**
+ * Builds a host's options Record from editable key/value rows: keys are
+ * trimmed, rows with an empty (or whitespace-only) key are dropped, and a
+ * duplicate key takes its last row's value.
+ */
+export const rowsToOptions = (
+  rows: { key: string; value: string }[],
+): Record<string, unknown> => {
+  const options: Record<string, unknown> = {};
+  for (const row of rows) {
+    const key = row.key.trim();
+    if (!key) continue;
+    options[key] = coerceOptionValue(row.value);
+  }
+  return options;
 };

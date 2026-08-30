@@ -4,7 +4,7 @@
     <SleepTimerBtn pill />
 
     <!-- streaming quality details chip (moved up from under the track info) -->
-    <QualityDetailsBtn v-if="store.curQueueItem?.streamdetails" pill />
+    <QualityDetailsBtn v-if="hasActiveAudioPath" pill />
 
     <!-- lyrics: available -> clickable toggle (fully primary while the panel is open) -->
     <TooltipProvider v-if="lyricsState === 'available'" :delay-duration="200">
@@ -109,8 +109,7 @@
       </Tooltip>
     </TooltipProvider>
 
-    <!-- crossfade: direct toggle (primary while enabled). The icon slowly
-         crossfades while enabled and twinkles while smart fades are active. -->
+    <!-- crossfade: direct toggle (primary while enabled) -->
     <TooltipProvider v-if="showCrossfade && queue" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
@@ -121,31 +120,13 @@
             :aria-label="$t('crossfade')"
             @click="toggleCrossfade"
           >
-            <CrossfadeIcon
-              :size="16"
-              :active="crossfadeEnabled"
-              :smart="crossfadeEnabled && smartFadesActive"
-            />
+            <CrossfadeIcon :size="16" :smart="smartCrossfadeActive" />
             <span v-if="showLabel">{{ $t("crossfade") }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
-          <p class="font-medium">
-            {{
-              crossfadeEnabled
-                ? $t("crossfade_disable")
-                : $t("crossfade_enable")
-            }}
-          </p>
-          <p
-            v-if="crossfadeEnabled && smartFadesActive"
-            class="mt-1 opacity-80"
-          >
-            {{ $t("crossfade_smart_active") }}
-          </p>
-          <p v-else-if="!crossfadeEnabled" class="mt-1 opacity-80">
-            {{ $t("crossfade_explanation") }}
-          </p>
+          <p class="font-medium">{{ $t("crossfade") }}</p>
+          <p class="mt-1 opacity-80">{{ crossfadeDescription }}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -198,9 +179,13 @@ import {
 import AutoplayIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/AutoplayIcon.vue";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
+import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import api from "@/plugins/api";
-import { isQueueInfiniteStream } from "@/plugins/api/helpers";
+import {
+  isQueueInfiniteStream,
+  queueSourceCrossfadeProvider,
+} from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { AudioLines, MicVocal } from "@lucide/vue";
@@ -220,6 +205,8 @@ const lyricsTooltip = computed(() =>
     ? $t("lyrics_loading")
     : $t("lyrics_unavailable_song"),
 );
+
+const { hasActiveAudioPath } = useActiveAudioPath();
 
 // Shared dynamic/autoplay state (also used by the queue mode banner).
 const {
@@ -259,6 +246,28 @@ const crossfadeEnabled = computed(
 const smartFadesActive = computed(
   () => queue.value?.smart_fades_active === true,
 );
+
+const sourceCrossfadeName = computed(() => {
+  const provider = queueSourceCrossfadeProvider(queue.value);
+  return provider ? api.getProviderName(provider) : undefined;
+});
+const smartCrossfadeActive = computed(
+  () =>
+    crossfadeEnabled.value &&
+    smartFadesActive.value &&
+    !sourceCrossfadeName.value,
+);
+const crossfadeDescription = computed(() => {
+  if (!crossfadeEnabled.value) return $t("crossfade_explanation");
+  if (sourceCrossfadeName.value) {
+    return $t("streamdetails.audio_processing.crossfade_mode.source", [
+      sourceCrossfadeName.value,
+    ]);
+  }
+  return smartFadesActive.value
+    ? $t("streamdetails.audio_processing.crossfade_mode.smart")
+    : $t("streamdetails.audio_processing.crossfade_mode.standard");
+});
 
 // Crossfade only applies to an active queue that is playing regular tracks.
 // Hide the control entirely for external sources, audiosources and radio streams.

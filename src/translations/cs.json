@@ -31,7 +31,6 @@
     "delete_db": "Smazat položku z databáze",
     "details": "Podrobnosti",
     "enter_url": "Zadejte adresu URL, kterou chcete ručně přidat do databáze.",
-    "external_source_active": "Aktivní externí zdroj: {0}",
     "goto_album": "Přejít na album {0}",
     "goto_artist": "Přejít na umělce {0}",
     "items_selected": "Počet vybraných položek: {0}",
@@ -56,8 +55,7 @@
     "player_type": {
         "group": "Skupina",
         "player": "Přehrávač",
-        "stereo_pair": "Stereofonní pár",
-        "sync_group": "Sladěná skupina"
+        "stereo_pair": "Stereofonní pár"
     },
     "players": "Přehrávače",
     "playlist": "Playlist",
@@ -256,8 +254,6 @@
                 "remove_confirm": "Opravdu chcete tuto předvolbu DSP odebrat?"
             }
         },
-        "dsp_enabled": "DSP je zapnuto",
-        "dsp_disabled": "DSP je vypnuto",
         "dsp_note_multi_device_group": {
             "label": "DSP můžete nakonfigurovat pro každý přehrávač zvlášť."
         },
@@ -300,7 +296,6 @@
         "users_description": "Správa uživatelských účtů, rolí a oprávnění",
         "system_description": "Konfigurace nastavení serveru Music Assistant a základních modulů",
         "system": "Systém",
-        "view_documentation": "Zobrazit dokumentaci",
         "about": "O aplikaci",
         "about_description": "Informace o verzi, kredity a další informace",
         "auto_refresh_log": "Automatické obnovení",
@@ -414,7 +409,6 @@
         "remote_access_qr_code": "QR kód",
         "remote_access_qr_code_description": "Naskenujte fotoaparátem telefonu pro okamžité připojení.",
         "reset_to_defaults": "Obnovit na výchozí nastavení",
-        "reset_to_defaults_confirm": "Opravdu chcete obnovit všechna nastavení na výchozí hodnoty? Tím se změny okamžitě uloží.",
         "unsaved_changes": "Neuložené změny",
         "unsaved_changes_message": "Máte neuložené změny. Opravdu chcete odejít bez uložení?",
         "stay": "Zůstat",
@@ -494,7 +488,6 @@
         "artist": "Umělec",
         "name": "Abecedně",
         "name_desc": "Abecedně (sestupně)",
-        "recent": "Nedávno přidané",
         "year_desc": "Rok vydání (sestupně)",
         "duration_desc": "Doba trvání (sestupně)",
         "original": "Původní",
@@ -506,9 +499,7 @@
         "last_played": "Naposledy hrané",
         "last_played_desc": "Naposledy hrané (sestupně)",
         "play_count": "Počet přehrání",
-        "play_count_desc": "Počet přehrání (sestupně)",
-        "artist_name": "Umělec alba",
-        "artist_name_desc": "Umělec alba (sestupně)"
+        "play_count_desc": "Počet přehrání (sestupně)"
     },
     "state": {
         "idle": "nečinný",
@@ -535,7 +526,6 @@
         "open_provider_link": "Otevřít tuto položku na webu poskytovatele",
         "collapse_expand": "Sbalit\/rozbalit tento výpis",
         "back": "Zpět",
-        "show_menu": "Zobrazit\/skrýt menu",
         "search_filter_active": "Vyhledávání právě filtruje výsledky",
         "play_sample": "Přehrát ukázku",
         "album_type": "Typ alba",
@@ -618,7 +608,6 @@
     "global_search": "Globální vyhledávání",
     "podcast_episode": "Epizoda",
     "podcast_episodes": "Epizody",
-    "play_from_here": "Přehrát odtud",
     "dsp_active": "Aktivní",
     "currently_playing_players": "Právě hraje",
     "all_players": "Všechny přehrávače",

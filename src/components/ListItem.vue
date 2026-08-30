@@ -16,7 +16,7 @@
         v-if="showMenuBtn"
         variant="icon"
         icon="mdi-dots-vertical"
-        aria-label="Show context menu"
+        :aria-label="$t('tooltip.show_context_menu')"
         @click.stop="(v: Event) => $emit('menu', v)"
       />
     </template>

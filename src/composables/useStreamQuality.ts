@@ -1,6 +1,7 @@
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import {
-  type AudioProcessingChain,
+  type AudioFidelity,
+  type AudioOutputDetails,
   AudioQuality,
 } from "@/plugins/api/interfaces";
 
@@ -74,23 +75,35 @@ export function audioQualityToTier(quality: AudioQuality | string | undefined) {
   }
 }
 
+// the fields either an AudioProcessingChain or an ActiveSourceAudioDetails
+// snapshot carries, which is all this needs to resolve a quality tier
+export interface QualityTierSource {
+  input_fidelity: AudioFidelity;
+  outputs: AudioOutputDetails[];
+}
+
 export function useStreamQuality(
-  audioProcessing: MaybeRefOrGetter<AudioProcessingChain | null | undefined>,
+  source: MaybeRefOrGetter<QualityTierSource | null | undefined>,
 ) {
   const knownOutputQualityTiers = computed(() =>
-    (toValue(audioProcessing)?.outputs ?? [])
-      .map((output) => audioQualityToTier(output.fidelity?.quality))
+    (toValue(source)?.outputs ?? [])
+      .map((output) => audioQualityToTier(output.fidelity.quality))
       .filter((tier) => tier !== QualityTier.UNKNOWN),
+  );
+  // before any output has reported its quality, the input's own fidelity is
+  // the best signal available (e.g. a live source right as it starts)
+  const inputQualityTier = computed(() =>
+    audioQualityToTier(toValue(source)?.input_fidelity.quality),
   );
   const minOutputQualityTier = computed(() =>
     knownOutputQualityTiers.value.length
       ? Math.min(...knownOutputQualityTiers.value)
-      : QualityTier.UNKNOWN,
+      : inputQualityTier.value,
   );
   const maxOutputQualityTier = computed(() =>
     knownOutputQualityTiers.value.length
       ? Math.max(...knownOutputQualityTiers.value)
-      : QualityTier.UNKNOWN,
+      : inputQualityTier.value,
   );
 
   return {

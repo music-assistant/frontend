@@ -1,4 +1,7 @@
 import SendspinPlayer from "@/components/SendspinPlayer.vue";
+import { BrowserMediaControlsMode } from "@/helpers/device_settings";
+import type { MusicAssistantApi } from "@/plugins/api";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -32,8 +35,26 @@ afterAll(() => {
   }
 });
 
+// Only the fields the component and the timing helper read are mocked.
+interface MockPlayer {
+  player_id?: string;
+  active_source?: string;
+  playback_state?: PlaybackState;
+  synced_to?: string;
+  group_members: string[];
+}
+
+interface MockQueue {
+  queue_id: string;
+  state?: PlaybackState;
+  active?: boolean;
+  current_item?: { extra_attributes?: { playback_speed?: number } };
+}
+
 const {
   authState,
+  apiMock,
+  storeMock,
   mockPlayerCommandNext,
   mockPlayerCommandPause,
   mockPlayerCommandPlay,
@@ -41,26 +62,68 @@ const {
   mockPlayerCommandSeek,
   mockPrepareSendspinSession,
   mockRegisterWebPlayerAudioUnlock,
+  mockSendCommand,
+  mockSendspinConnect,
+  mockSendspinDisconnect,
   mockSendspinUnlock,
   mockUseMediaBrowserMetaData,
   routeState,
-} = vi.hoisted(() => ({
-  authState: {
-    guest: null as "music_quiz" | "party" | null,
-  },
-  mockPlayerCommandNext: vi.fn(),
-  mockPlayerCommandPause: vi.fn(),
-  mockPlayerCommandPlay: vi.fn(),
-  mockPlayerCommandPrevious: vi.fn(),
-  mockPlayerCommandSeek: vi.fn(),
-  mockPrepareSendspinSession: vi.fn(),
-  mockRegisterWebPlayerAudioUnlock: vi.fn<(handler: () => boolean) => void>(),
-  mockSendspinUnlock: vi.fn<() => Promise<void>>(),
-  mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
-  routeState: {
-    current: null as { meta: Record<string, unknown> } | null,
-  },
-}));
+  sendspinState,
+} = vi.hoisted(() => {
+  const mockPlayerCommandNext = vi.fn<MusicAssistantApi["playerCommandNext"]>();
+  const mockPlayerCommandPause =
+    vi.fn<MusicAssistantApi["playerCommandPause"]>();
+  const mockPlayerCommandPlay = vi.fn<MusicAssistantApi["playerCommandPlay"]>();
+  const mockPlayerCommandPrevious =
+    vi.fn<MusicAssistantApi["playerCommandPrevious"]>();
+  const mockPlayerCommandSeek = vi.fn<MusicAssistantApi["playerCommandSeek"]>();
+  const mockSendCommand = vi.fn<MusicAssistantApi["sendCommand"]>();
+  return {
+    authState: {
+      guest: null as "music_quiz" | "party" | null,
+    },
+    // Mutable so tests can drive the players/queues the seek handlers read.
+    apiMock: {
+      players: {} as Record<string, MockPlayer>,
+      queues: {} as Record<string, MockQueue>,
+      queueElapsedTime: {} as Record<
+        string,
+        { elapsed_time?: number; elapsed_time_last_updated?: number }
+      >,
+      playerCommandNext: mockPlayerCommandNext,
+      playerCommandPause: mockPlayerCommandPause,
+      playerCommandPlay: mockPlayerCommandPlay,
+      playerCommandPrevious: mockPlayerCommandPrevious,
+      playerCommandSeek: mockPlayerCommandSeek,
+      sendCommand: mockSendCommand,
+    },
+    storeMock: {
+      activePlayerId: "active-player",
+      activePlayer: undefined as MockPlayer | undefined,
+    },
+    mockPlayerCommandNext,
+    mockPlayerCommandPause,
+    mockPlayerCommandPlay,
+    mockPlayerCommandPrevious,
+    mockPlayerCommandSeek,
+    mockPrepareSendspinSession: vi.fn(),
+    mockRegisterWebPlayerAudioUnlock: vi.fn<(handler: () => boolean) => void>(),
+    mockSendCommand,
+    mockSendspinConnect: vi.fn<() => Promise<void>>(),
+    mockSendspinDisconnect: vi.fn<(reason?: string) => void>(),
+    mockSendspinUnlock: vi.fn<() => Promise<void>>(),
+    sendspinState: {
+      pairingToken: null as string | null,
+      lastOptions: null as {
+        reconnect?: { onReconnected?: () => void };
+      } | null,
+    },
+    mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
+    routeState: {
+      current: null as { meta: Record<string, unknown> } | null,
+    },
+  };
+});
 
 vi.mock("@/helpers/useMediaBrowserMetaData", () => ({
   useMediaBrowserMetaData: mockUseMediaBrowserMetaData,
@@ -84,36 +147,11 @@ vi.mock("vue-router", async () => {
 });
 
 vi.mock("@/plugins/api", () => ({
-  default: {
-    players: {
-      "web-player": {
-        playback_state: "playing",
-        group_members: [],
-      },
-    },
-    queueElapsedTime: {
-      queue: {
-        elapsed_time: 30,
-      },
-    },
-    playerCommandNext: mockPlayerCommandNext,
-    playerCommandPause: mockPlayerCommandPause,
-    playerCommandPlay: mockPlayerCommandPlay,
-    playerCommandPrevious: mockPlayerCommandPrevious,
-    playerCommandSeek: mockPlayerCommandSeek,
-  },
+  default: apiMock,
 }));
 
 vi.mock("@/plugins/store", () => ({
-  store: {
-    activePlayerId: "active-player",
-    activePlayer: {
-      playback_state: "playing",
-    },
-    activePlayerQueue: {
-      queue_id: "queue",
-    },
-  },
+  store: storeMock,
 }));
 
 vi.mock("@/plugins/web_player", async () => {
@@ -126,9 +164,13 @@ vi.mock("@/plugins/web_player", async () => {
       SENDSPIN_WITH_CONTROLS: "sendspin_with_controls",
     },
     clearWebPlayerAudioUnlock: vi.fn(),
+    isPlaybackMode: (mode: string) =>
+      mode === "sendspin_only" || mode === "sendspin_with_controls",
     registerWebPlayerAudioUnlock: mockRegisterWebPlayerAudioUnlock,
     webPlayer: reactive({
+      browserControlsMode: "web_player",
       interacted: false,
+      mode: "sendspin_only",
       tabMode: "sendspin_only",
     }),
   };
@@ -139,14 +181,21 @@ vi.mock("@/plugins/sendspin-connection", () => ({
   prepareSendspinSession: mockPrepareSendspinSession,
 }));
 
-vi.mock("@/plugins/api/helpers", () => ({
+vi.mock("@/plugins/api/helpers", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/plugins/api/helpers")>()),
   getDeviceName: () => "Browser",
 }));
 
 vi.mock("@sendspin/sendspin-js", () => ({
   SendspinPlayer: class {
-    connect = vi.fn();
-    disconnect = vi.fn();
+    constructor(options: (typeof sendspinState)["lastOptions"]) {
+      sendspinState.lastOptions = options;
+    }
+    connect = mockSendspinConnect;
+    get pairingToken() {
+      return sendspinState.pairingToken;
+    }
+    disconnect = mockSendspinDisconnect;
     setCorrectionMode = vi.fn();
     setMuted = vi.fn();
     setVolume = vi.fn();
@@ -178,6 +227,9 @@ const actions: MediaSessionAction[] = [
   "seekbackward",
 ];
 
+// epoch seconds the fake clock starts at; timestamps below are relative to this
+const ANCHOR = 1_700_000_000;
+
 describe("SendspinPlayer MediaSession", () => {
   beforeEach(() => {
     authState.guest = null;
@@ -198,9 +250,18 @@ describe("SendspinPlayer MediaSession", () => {
     mockPlayerCommandPrevious.mockReset();
     mockPlayerCommandSeek.mockReset();
     mockRegisterWebPlayerAudioUnlock.mockClear();
+    mockSendCommand.mockReset();
+    mockSendCommand.mockResolvedValue(undefined);
+    mockSendspinConnect.mockReset();
+    mockSendspinConnect.mockResolvedValue(undefined);
+    mockSendspinDisconnect.mockReset();
+    sendspinState.pairingToken = "SP:0TESTTOKEN";
+    sendspinState.lastOptions = null;
     mockSendspinUnlock.mockReset();
     mockSendspinUnlock.mockResolvedValue(undefined);
     webPlayer.interacted = false;
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.WEB_PLAYER;
+    webPlayer.mode = WebPlayerMode.SENDSPIN_ONLY;
     webPlayer.tabMode = WebPlayerMode.SENDSPIN_ONLY;
     if (routeState.current) routeState.current.meta = {};
     Object.defineProperty(navigator, "mediaSession", {
@@ -208,6 +269,21 @@ describe("SendspinPlayer MediaSession", () => {
       value: mediaSession,
     });
     vi.stubGlobal("localStorage", createStorage());
+    apiMock.players = {
+      "web-player": {
+        player_id: "web-player",
+        playback_state: PlaybackState.PLAYING,
+        active_source: "queue",
+        group_members: [],
+      },
+    };
+    apiMock.queues = { queue: { queue_id: "queue", active: true } };
+    apiMock.queueElapsedTime = { queue: { elapsed_time: 30 } };
+    storeMock.activePlayer = {
+      player_id: "active-player",
+      playback_state: PlaybackState.PLAYING,
+      group_members: [],
+    };
   });
 
   afterEach(() => {
@@ -273,6 +349,100 @@ describe("SendspinPlayer MediaSession", () => {
 
     expect(unlockAudio()).toBe(true);
     expect(mockSendspinUnlock).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("hands the server its pairing token once connected", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "sendspin/pair_web_player",
+      { pairing_token: "SP:0TESTTOKEN" },
+      { suppressGlobalError: true },
+    );
+    wrapper.unmount();
+  });
+
+  it("re-pairs after the sendspin transport reconnects on its own", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+    mockSendCommand.mockClear();
+
+    // The server may have dropped the pairing while we were away (guest
+    // pairings are removed on disconnect), so a reconnect pairs again.
+    sendspinState.lastOptions?.reconnect?.onReconnected?.();
+
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "sendspin/pair_web_player",
+      { pairing_token: "SP:0TESTTOKEN" },
+      { suppressGlobalError: true },
+    );
+    wrapper.unmount();
+  });
+
+  it("keeps the player registered while another tab takes over playback", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    // Only this tab steps back; the browser still wants a player.
+    webPlayer.tabMode = WebPlayerMode.CONTROLS_ONLY;
+    wrapper.unmount();
+
+    expect(mockSendspinDisconnect).toHaveBeenCalledWith("restart");
+  });
+
+  it("unregisters the player once this browser wants none", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    webPlayer.mode = WebPlayerMode.CONTROLS_ONLY;
+    webPlayer.tabMode = WebPlayerMode.CONTROLS_ONLY;
+    wrapper.unmount();
+
+    expect(mockSendspinDisconnect).toHaveBeenCalledWith("user_request");
+  });
+
+  it("does not connect a player when unmounted while the session is prepared", async () => {
+    let resolvePrepare!: () => void;
+    mockPrepareSendspinSession.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolvePrepare = resolve;
+      }),
+    );
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    wrapper.unmount();
+    resolvePrepare();
+    await flushPromises();
+
+    // A player connected here would never be disconnected again.
+    expect(mockSendspinConnect).not.toHaveBeenCalled();
+  });
+
+  it("skips pairing when the client has no pairing token", async () => {
+    sendspinState.pairingToken = null;
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockSendCommand).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 
@@ -404,6 +574,83 @@ describe("SendspinPlayer MediaSession", () => {
     expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
   });
 
+  it("limits built-in-only controls to the web player", () => {
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.WEB_PLAYER;
+    apiMock.players["web-player"].playback_state = PlaybackState.PAUSED;
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    invokeAction("play");
+
+    expect(mockUseMediaBrowserMetaData).toHaveBeenCalledWith("web-player");
+    expect(mockPlayerCommandPlay).toHaveBeenCalledWith("web-player");
+    wrapper.unmount();
+  });
+
+  it("targets the selected player when that mode is enabled", () => {
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    invokeAction("play");
+
+    expect(mockUseMediaBrowserMetaData).toHaveBeenCalledWith(undefined);
+    expect(mockPlayerCommandPlay).toHaveBeenCalledWith("active-player");
+    wrapper.unmount();
+  });
+
+  it("starts selected-player controls when their mode becomes active", async () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
+    webPlayer.interacted = true;
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    playSpy.mockClear();
+
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+    await nextTick();
+
+    expect(playSpy).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("starts selected-player controls after the first interaction", async () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.ACTIVE_PLAYER;
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    playSpy.mockClear();
+
+    webPlayer.interacted = true;
+    await nextTick();
+
+    expect(playSpy).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("clears media controls when they are disabled", () => {
+    webPlayer.browserControlsMode = BrowserMediaControlsMode.DISABLED;
+    seedStaleMediaSession();
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    expect(mockUseMediaBrowserMetaData).not.toHaveBeenCalled();
+    expect(mediaSession.metadata).toBeNull();
+    expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
+    invokeAllActions();
+    expectPlayerCommandsNotCalled();
+    wrapper.unmount();
+  });
+
   it("continues clearing actions when an action is unsupported", () => {
     authState.guest = "party";
     mediaSession.setActionHandler.mockImplementation((action, handler) => {
@@ -420,12 +667,185 @@ describe("SendspinPlayer MediaSession", () => {
     expect(handlers.get("seekbackward")).toBeNull();
     wrapper.unmount();
   });
+
+  // Registering seekforward/seekbackward is skipped on iOS/Mac (see
+  // registerMediaSessionActionHandlers), so these override the file-wide
+  // "iPhone" user agent to exercise the handlers.
+  describe("seekforward/seekbackward extrapolation", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(ANCHOR * 1000);
+      Object.defineProperty(navigator, "userAgent", {
+        configurable: true,
+        value: "Android",
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(navigator, "userAgent", {
+        configurable: true,
+        value: "iPhone",
+      });
+    });
+
+    it("seeks forward from the extrapolated (displayed) position at 2x speed", () => {
+      seedPlayingQueue({ elapsed_time: 30, secondsAgo: 3, playback_speed: 2 });
+
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      invokeAction("seekforward", { seekOffset: 10 });
+
+      // Displayed position is 30 + 3s * 2x = 36, so a +10s skip lands on 46;
+      // the raw stored position would give 40.
+      expect(mockPlayerCommandSeek).toHaveBeenCalledWith("web-player", 46);
+      wrapper.unmount();
+    });
+
+    it("seeks backward from the extrapolated (displayed) position at 2x speed", () => {
+      seedPlayingQueue({ elapsed_time: 30, secondsAgo: 3, playback_speed: 2 });
+
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      invokeAction("seekbackward", { seekOffset: 10 });
+
+      expect(mockPlayerCommandSeek).toHaveBeenCalledWith("web-player", 26);
+      wrapper.unmount();
+    });
+
+    it("clamps seekbackward at 0 instead of going negative", () => {
+      seedPlayingQueue({ elapsed_time: 2, secondsAgo: 1, playback_speed: 2 });
+
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      invokeAction("seekbackward", { seekOffset: 10 });
+
+      // Displayed position is 2 + 1s * 2x = 4; 4 - 10 would go negative.
+      expect(mockPlayerCommandSeek).toHaveBeenCalledWith("web-player", 0);
+      wrapper.unmount();
+    });
+
+    it("chains repeated seekforward presses off the previous target instead of re-resolving", () => {
+      seedPlayingQueue({ elapsed_time: 30, secondsAgo: 3, playback_speed: 2 });
+
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      invokeAction("seekforward", { seekOffset: 10 });
+      expect(mockPlayerCommandSeek).toHaveBeenLastCalledWith("web-player", 46);
+
+      // Resolving the position again instead of chaining would land on 16 here.
+      apiMock.queueElapsedTime.queue.elapsed_time = 0;
+      invokeAction("seekforward", { seekOffset: 10 });
+      expect(mockPlayerCommandSeek).toHaveBeenLastCalledWith("web-player", 56);
+
+      wrapper.unmount();
+    });
+
+    it("resolves the position again once the chained seek position expires", () => {
+      seedPlayingQueue({ elapsed_time: 30, secondsAgo: 3, playback_speed: 2 });
+
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      invokeAction("seekforward", { seekOffset: 10 });
+      expect(mockPlayerCommandSeek).toHaveBeenLastCalledWith("web-player", 46);
+
+      vi.advanceTimersByTime(2000);
+
+      // Displayed position is now 30 + 5s * 2x = 40, so the skip lands on 50;
+      // chaining off the previous target would give 56.
+      invokeAction("seekforward", { seekOffset: 10 });
+      expect(mockPlayerCommandSeek).toHaveBeenLastCalledWith("web-player", 50);
+
+      wrapper.unmount();
+    });
+
+    it("seeks relative to the target player, not the active player", () => {
+      // The web player is listening in at 36s while the selected player, whose
+      // metadata the media session would otherwise follow, sits at 500s.
+      seedPlayingQueue({ elapsed_time: 30, secondsAgo: 3, playback_speed: 2 });
+      apiMock.players["active-player"] = {
+        player_id: "active-player",
+        playback_state: PlaybackState.PLAYING,
+        active_source: "other-queue",
+        group_members: [],
+      };
+      apiMock.queues["other-queue"] = {
+        queue_id: "other-queue",
+        state: PlaybackState.PLAYING,
+        active: true,
+      };
+      apiMock.queueElapsedTime["other-queue"] = {
+        elapsed_time: 500,
+        elapsed_time_last_updated: ANCHOR,
+      };
+      storeMock.activePlayer = apiMock.players["active-player"];
+
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      invokeAction("seekforward", { seekOffset: 10 });
+
+      // The active player's position would give 510.
+      expect(mockPlayerCommandSeek).toHaveBeenCalledWith("web-player", 46);
+      wrapper.unmount();
+    });
+
+    it("does not seek when no timing source is available", () => {
+      apiMock.queues = {};
+      apiMock.queueElapsedTime = {};
+
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      invokeAction("seekforward", { seekOffset: 10 });
+      invokeAction("seekbackward", { seekOffset: 10 });
+
+      expect(mockPlayerCommandSeek).not.toHaveBeenCalled();
+      wrapper.unmount();
+    });
+
+    it("seeks to the start for a seekto of 0", () => {
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      invokeAction("seekto", { seekTime: 0 });
+
+      expect(mockPlayerCommandSeek).toHaveBeenCalledWith("web-player", 0);
+      wrapper.unmount();
+    });
+  });
 });
 
 function getAudioUnlockHandler(): () => boolean {
   const handler = mockRegisterWebPlayerAudioUnlock.mock.calls.at(-1)?.[0];
   if (!handler) throw new Error("Audio unlock handler was not registered");
   return handler;
+}
+
+/**
+ * Set the queue the web player is attached to playing at the given position.
+ */
+function seedPlayingQueue(timing: {
+  elapsed_time: number;
+  secondsAgo: number;
+  playback_speed: number;
+}): void {
+  apiMock.queues.queue = {
+    queue_id: "queue",
+    state: PlaybackState.PLAYING,
+    active: true,
+    current_item: {
+      extra_attributes: { playback_speed: timing.playback_speed },
+    },
+  };
+  apiMock.queueElapsedTime.queue = {
+    elapsed_time: timing.elapsed_time,
+    elapsed_time_last_updated: ANCHOR - timing.secondsAgo,
+  };
 }
 
 function seedStaleMediaSession(): void {

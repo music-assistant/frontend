@@ -1,14 +1,16 @@
 import { api } from "@/plugins/api";
 import {
   Artist,
+  type Audiobook,
   BrowseFolder,
   type ConfigEntry,
   ConfigEntryType,
   ImageType,
   ItemMapping,
+  type MediaCollection,
   MediaItemImage,
+  type MediaItemPalette,
   MediaItemType,
-  MediaItemTypeOrItemMapping,
   MediaType,
   Player,
   PlayerConfig,
@@ -20,69 +22,64 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 
-import {
-  showContextMenuForMediaItem,
-  showPlayMenuForMediaItem,
-} from "@/layouts/default/ItemContextMenu.vue";
-import { itemIsAvailable } from "@/plugins/api/helpers";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
-import router from "@/plugins/router";
-import { store } from "@/plugins/store";
-import { $t } from "@/plugins/i18n";
-import { toast } from "vue-sonner";
-import { webPlayer } from "@/plugins/web_player";
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
-export const openLinkInNewTab = function (url: string) {
-  if (!url) return url;
-  // auto-translate music-assistant.io links to beta site
-  if (
-    api &&
-    api.serverInfo &&
-    api.serverInfo.value &&
-    (api.serverInfo.value.server_version == "0.0.0" ||
-      api.serverInfo.value.server_version.includes("b"))
-  ) {
-    url = url.replace("://music-assistant.io", "://beta.music-assistant.io");
+export const isWebUrl = (url?: string | null): url is string => {
+  if (!url) return false;
+  try {
+    return ["http:", "https:"].includes(new URL(url).protocol);
+  } catch {
+    return false;
   }
-  window.open(url, "_blank");
+};
+
+export const getExternalLinkUrl = (url?: string | null) => {
+  if (!isWebUrl(url)) return undefined;
+
+  const parsedUrl = new URL(url);
+  const serverVersion = api.serverInfo.value?.server_version;
+  if (
+    (serverVersion === "0.0.0" || serverVersion?.includes("b")) &&
+    parsedUrl.hostname === "music-assistant.io"
+  ) {
+    parsedUrl.hostname = "beta.music-assistant.io";
+    return parsedUrl.toString();
+  }
+  return url;
+};
+
+export const openLinkInNewTab = function (url: string) {
+  const target = getExternalLinkUrl(url);
+  if (target) openWebUrlOnce(target);
 };
 
 export const openActionUrlEntries = (entries: ConfigEntry[]): ConfigEntry[] => {
-  // Open URL-type entries returned by a config invoke_action response (one-shot)
-  // via an anchor click, which browsers treat more leniently than window.open
-  // when the triggering user gesture has just expired. Only web URLs are
-  // opened, and all URL entries are dropped from the rendered form.
-  const urls: string[] = [];
+  // Open URL-type entries returned by a config invoke_action response (one-shot).
+  // Only web URLs are opened, and all URL entries are dropped from the rendered form.
   for (const entry of entries) {
     if (entry.type !== ConfigEntryType.URL) continue;
     const target = entry.value ?? entry.default_value;
-    if (typeof target !== "string") continue;
-    try {
-      if (["http:", "https:"].includes(new URL(target).protocol)) {
-        urls.push(target);
-      }
-    } catch {
-      // not a parseable url: drop silently
-    }
-  }
-  for (const url of urls) {
-    const a = document.createElement("a");
-    a.setAttribute("href", url);
-    a.setAttribute("target", "_blank");
-    a.setAttribute("rel", "noopener");
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    if (typeof target === "string") openWebUrlOnce(target);
   }
   return entries.filter((e) => e.type !== ConfigEntryType.URL);
 };
 
-export const parseBool = (val: string | boolean | undefined | null) => {
-  if (val == undefined || val == null) return false;
-  if (!val) return false;
-  if (typeof val === "boolean") return val;
-  return !!JSON.parse(String(val).toLowerCase());
+export const openActionResultUrl = (url?: string | null) => {
+  // Open the url of a config action result (one-shot).
+  if (url) openWebUrlOnce(url);
+};
+
+const openWebUrlOnce = (url: string) => {
+  // Open via an anchor click, which browsers treat more leniently than
+  // window.open when the triggering user gesture has just expired.
+  if (!isWebUrl(url)) return;
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("target", "_blank");
+  a.setAttribute("rel", "noopener");
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 };
 
 export const formatDuration = function (totalSeconds: number) {
@@ -202,6 +199,36 @@ export const getArtistsString = function (
     .join(" | ");
 };
 
+export const getAuthorsNarratorsArray = function (
+  authorsNarrators: Array<string | Artist>,
+) {
+  if (!authorsNarrators) return [];
+  const _authorsNarrators: string[] = [];
+  authorsNarrators.forEach((authorNarrator) => {
+    if (typeof authorNarrator === "string") {
+      _authorsNarrators.push(authorNarrator);
+    } else {
+      _authorsNarrators.push(authorNarrator.name);
+    }
+  });
+  return _authorsNarrators;
+};
+
+export const getAudiobookCollectionArtists = function (
+  collection: MediaCollection<Audiobook>,
+  selector: (book: Audiobook) => (string | Artist)[],
+): string[] {
+  const artists = new Set<string>();
+
+  collection.items.forEach((book) => {
+    getAuthorsNarratorsArray(selector(book)).forEach((name) =>
+      artists.add(name),
+    );
+  });
+
+  return [...artists];
+};
+
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
   // The server now provides the display name and (when a resolver is active) strips
   // translation_key from the wire, so the client can no longer localize it itself: use the
@@ -227,7 +254,7 @@ export const getStreamingProviderMappings = function (
 ) {
   const result: ProviderMapping[] = [];
   if (!itemDetails || !("provider_mappings" in itemDetails)) return result;
-  for (const provider_mapping of itemDetails.provider_mappings || []) {
+  for (const provider_mapping of itemDetails.provider_mappings) {
     if (provider_mapping.provider_domain.startsWith("filesystem")) continue;
     if (provider_mapping.provider_domain == "plex") continue;
     if (
@@ -280,7 +307,7 @@ const normalizeImageProxySize = function (size?: number): number {
  * - Otherwise return the URL as-is
  */
 export const getMediaImageUrl = function (
-  imageUrl: string | undefined,
+  imageUrl: string | null | undefined,
 ): string {
   if (!imageUrl) return "";
 
@@ -334,6 +361,24 @@ const imageProviderIsAvailable = function (provider: string) {
 };
 
 /**
+ * Check if an image can still be fetched.
+ *
+ * A remotely accessible path is a self-contained url, so the server resolves it
+ * by url alone and never needs the provider that supplied it to be loaded. Only
+ * a provider-relative path (a local file path, say) genuinely depends on its
+ * provider being around to resolve it.
+ *
+ * This matters for artwork written by a provider that is no longer loaded - a
+ * metadata provider that has since been disabled, for instance. Such an image
+ * stays perfectly servable, but gating it on provider availability discards it
+ * and leaves the item to fall back to a generated initials avatar.
+ */
+const imageIsUsable = function (img: MediaItemImage) {
+  if (img.remotely_accessible) return true;
+  return imageProviderIsAvailable(img.provider);
+};
+
+/**
  * Get image from a MediaItem, ItemMapping, or QueueItem.
  */
 export const getMediaItemImage = function (
@@ -365,7 +410,7 @@ export const getMediaItemImage = function (
     "image" in mediaItem &&
     mediaItem.image &&
     mediaItem.image.type == type &&
-    imageProviderIsAvailable(mediaItem.image.provider)
+    imageIsUsable(mediaItem.image)
   )
     return mediaItem.image;
 
@@ -378,8 +423,7 @@ export const getMediaItemImage = function (
   // handle regular image within mediaitem
   if ("metadata" in mediaItem && mediaItem.metadata.images) {
     for (const img of mediaItem.metadata.images) {
-      if (img.type == type && imageProviderIsAvailable(img.provider))
-        return img;
+      if (img.type == type && imageIsUsable(img)) return img;
     }
   }
 
@@ -404,9 +448,7 @@ export const getMediaItemImage = function (
 export const getMediaItemImageUrl = function (
   img: MediaItemImage,
   size?: number,
-  checksum?: string,
 ): string {
-  if (!checksum) checksum = "";
   if (!img || !img.path) return "";
   if (img.path.startsWith("data:image")) return img.path;
   if (
@@ -418,11 +460,9 @@ export const getMediaItemImageUrl = function (
     // Note that we play it safe here and always enforce the proxy if the schema is different
     const normalizedSize = normalizeImageProxySize(size);
     if (img.proxy_id && serverSupportsOpaqueImageProxy()) {
-      // canonical /imageproxy/<proxy_id>?size=&checksum= form. checksum is kept
-      // as a cache-buster query param (the server ignores unknown params).
+      // canonical /imageproxy/<proxy_id>?size= form
       const params = new URLSearchParams();
       if (normalizedSize) params.set("size", String(normalizedSize));
-      if (checksum) params.set("checksum", checksum);
       const qs = params.toString();
       return qs
         ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
@@ -430,7 +470,7 @@ export const getMediaItemImageUrl = function (
     }
     // legacy form, for servers on schema < 31 or images without a proxy_id
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
-    const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
+    const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}`;
     if (normalizedSize) return imageUrl + `&size=${normalizedSize}`;
     return imageUrl;
   }
@@ -450,9 +490,7 @@ export const getImageThumbForItem = function (
   // find image in mediaitem
   const img = getMediaItemImage(mediaItem, type);
   if (!img || !img.path) return undefined;
-  const checksum =
-    "metadata" in mediaItem ? mediaItem.metadata?.cache_checksum : "";
-  return getMediaItemImageUrl(img, size, checksum);
+  return getMediaItemImageUrl(img, size);
 };
 
 export const numberRange = function (start: number, end: number): number[] {
@@ -629,52 +667,48 @@ export const panelViewItemResponsive = function (displaySize: number) {
   }
 };
 
-export function isTouchscreenDevice() {
-  // detect if device/browser is touch enabled
-  let result = false;
-  if (window.PointerEvent && "maxTouchPoints" in navigator) {
-    if (navigator.maxTouchPoints > 0) {
-      result = true;
-    }
-  } else {
-    if (
-      window.matchMedia &&
-      window.matchMedia("(any-pointer:coarse)").matches
-    ) {
-      result = true;
-    } else if (window.TouchEvent || "ontouchstart" in window) {
-      result = true;
-    }
-  }
-  return result;
-}
+// Own instance, so the anchor rewrite below stays confined to rendered markdown
+const markdownPurifier = DOMPurify();
 
+// Send every link to a new tab (keeping the app itself loaded) and withhold the
+// opener from the target page.
+markdownPurifier.addHook("afterSanitizeAttributes", (node) => {
+  if (node.nodeName === "A" && node.hasAttribute("href")) {
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
+
+/**
+ * Render markdown as sanitized HTML, safe to pass to `v-html`.
+ *
+ * Supports the full block syntax (lists, paragraphs, ...) and turns single
+ * newlines into line breaks. Links always open in a new tab.
+ *
+ * @param text - Markdown source. May use escaped `\n` sequences as newlines.
+ */
 export const markdownToHtml = function (text: string): string {
-  text = text
-    .replaceAll(/\\n/g, "<br />")
-    .replaceAll("\n", "<br />")
-    .replaceAll(" \\", "<br />");
+  // some sources encode their line breaks literally; block syntax only parses on real ones
+  const source = text.replaceAll("\\n", "\n").replaceAll(" \\", "\n");
   // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
-  return DOMPurify.sanitize(marked(text) as string, {
+  return markdownPurifier.sanitize(marked(source, { breaks: true }) as string, {
     SANITIZE_NAMED_PROPS: true,
   });
 };
 
 /**
- * Copy text to clipboard with proper error handling.
+ * Copy text to the clipboard.
  *
- * Handles scenarios where navigator.clipboard is unavailable (non-HTTPS contexts,
- * unsupported browsers, or permission issues) by falling back to a temporary
- * textarea element.
- *
- * :param text: The text to copy to the clipboard.
- * :return: Promise that resolves to true if successful, false otherwise.
+ * :param text: The text to copy.
+ * :return: Promise that resolves to true only when the text actually reached
+ *   the clipboard.
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
 
-  // Modern Clipboard API: only available in secure contexts (HTTPS / localhost).
-  if (window.isSecureContext && navigator.clipboard?.writeText) {
+  // Only exposed in secure contexts (https / localhost); the catch also
+  // covers a permission the browser refuses.
+  if (navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);
       return true;
@@ -686,194 +720,68 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     }
   }
 
-  // Fallback for non-secure contexts. Append inside the active dialog (if any)
-  // so a focus trap (e.g. Reka UI Dialog) does not steal focus and clear the
-  // textarea's selection before execCommand("copy") runs.
-  const host =
-    document.activeElement?.closest<HTMLElement>("[role=dialog]") ??
-    document.body;
-  const textArea = document.createElement("textarea");
-  textArea.value = text;
-  textArea.setAttribute("readonly", "");
-  textArea.style.position = "fixed";
-  textArea.style.top = "0";
-  textArea.style.left = "0";
-  textArea.style.width = "1px";
-  textArea.style.height = "1px";
-  textArea.style.opacity = "0";
-  textArea.style.pointerEvents = "none";
-  host.appendChild(textArea);
-  try {
-    textArea.focus();
-    textArea.select();
-    textArea.setSelectionRange(0, text.length);
-    return document.execCommand("copy");
-  } catch (error) {
-    console.error("Failed to copy to clipboard:", error);
-    return false;
-  } finally {
-    host.removeChild(textArea);
-  }
+  return legacyCopy(text);
 }
 
-export const isBuiltinPlayer = function (player: Player): boolean {
-  return (
-    player.player_id === webPlayer.player_id ||
-    player.player_id === store.companionPlayerId ||
-    player.output_protocols?.filter(
-      (x) =>
-        x.output_protocol_id === webPlayer.player_id ||
-        x.output_protocol_id === store.companionPlayerId,
-    ).length > 0
-  );
-};
+/**
+ * Copy text by selecting it and running the copy command, for contexts without
+ * the Clipboard API.
+ *
+ * :param text: The text to copy.
+ * :return: True when the text reached the clipboard.
+ */
+const legacyCopy = function (text: string): boolean {
+  // Reka UI menus and dialogs trap focus and pull it back into themselves, which
+  // clears a selection made anywhere else, so keep the node inside the trap.
+  const host =
+    document.activeElement?.closest<HTMLElement>(
+      "[role=dialog], [role=menu]",
+    ) ?? document.body;
 
-export const playerVisible = function (
-  player: Player,
-  allowGroupChilds = false,
-  allowNeedsSetup = false,
-): boolean {
-  // perform some basic checks if we may use/show the player
-  if (!player.enabled) return false;
-  if (player.synced_to && !allowGroupChilds) {
-    return false;
-  }
-  if (player.active_group && !allowGroupChilds) return false;
-  // A player that needs setup is serialized as unavailable. Only surface it
-  // (dimmed, with a "Setup required" affordance) where a click launches its
-  // setup flow (opt-in via allowNeedsSetup); elsewhere a click would select or
-  // play the player, so an unusable needs_setup player must stay hidden.
-  if (!player.available && !(player.needs_setup && allowNeedsSetup)) {
-    return false;
-  }
-  if (isBuiltinPlayer(player)) {
-    return true;
-  }
-  if (player.hide_in_ui) {
-    return false;
-  }
-  if (
-    store.currentUser &&
-    store.currentUser.player_filter.length > 0 &&
-    player.player_id != webPlayer.player_id &&
-    !store.currentUser.player_filter.includes(player.player_id)
-  ) {
-    // for non-admin users, the playerfilter is applied in the backend
-    // but for admin users we need to filter here as well
-    return false;
-  }
-  return true;
-};
+  const node = document.createElement("span");
+  node.textContent = text;
+  node.setAttribute("aria-hidden", "true");
+  // Browsers refuse to copy from a node they treat as not rendered, so clip it
+  // out of sight instead of hiding it.
+  node.style.all = "unset";
+  node.style.position = "fixed";
+  node.style.top = "0";
+  node.style.clip = "rect(0, 0, 0, 0)";
+  node.style.whiteSpace = "pre";
+  // global.css disables selection on every element
+  node.style.setProperty("-webkit-user-select", "text");
+  node.style.userSelect = "text";
 
-// Keep hidden players out of group pickers unless they represent this device or
-// are player types intended to be grouped with audio players.
-export const groupMemberPickerVisible = function (player: Player): boolean {
-  return (
-    !player.hide_in_ui ||
-    isBuiltinPlayer(player) ||
-    player.type === PlayerType.LIGHT ||
-    player.type === PlayerType.VISUALIZER
-  );
-};
-
-/* Handle play button click */
-export const handlePlayBtnClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-  forceMenu?: boolean,
-  sortBy?: string,
-) {
-  // a failed play action must never be silent: without feedback the play
-  // button appears dead (e.g. while the connection is re-establishing)
-  const onPlayError = (err: Error) => {
-    console.error("Play action failed:", err);
-    toast.error($t("play_failed"));
+  let copied = false;
+  const onCopy = function (event: ClipboardEvent) {
+    // without a clipboard to write to, leave the copy to the browser and let
+    // the caller report a failure rather than an unverifiable success
+    if (!event.clipboardData) return;
+    event.preventDefault();
+    event.clipboardData.setData("text/plain", text);
+    copied = true;
   };
-  // we show the play menu for the item once (if playerTip has not been dismissed)
-  if (!forceMenu && store.activePlayer?.available) {
-    if (
-      item.media_type == MediaType.TRACK &&
-      (parentItem?.media_type == MediaType.PLAYLIST ||
-        parentItem?.media_type == MediaType.ALBUM) &&
-      store.activePlayerQueue
-    ) {
-      // special case: playing a track from a playlist/album - play from here
-      api
-        .playMedia(parentItem.uri, undefined, item.item_id, undefined, sortBy)
-        .catch(onPlayError);
-      return;
-    }
-    // else: play the item directly
-    api.playMedia(item).catch(onPlayError);
-    return;
-  }
-  showPlayMenuForMediaItem(item, parentItem, posX, posY).catch(onPlayError);
-};
+  node.addEventListener("copy", onCopy);
 
-/* Handle media item click */
-export const handleMediaItemClick = function (
-  item: MediaItemTypeOrItemMapping,
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-) {
-  // open menu when item is unavailable so the user has a way to remove/refresh the item
-  if (!itemIsAvailable(item)) {
-    handleMenuBtnClick(item, posX, posY, undefined, false);
-    return;
+  const selection = window.getSelection();
+  host.appendChild(node);
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    // The command reports success even when nothing was written, so the handler
+    // above is what tells us whether the text really got there.
+    document.execCommand("copy");
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+  } finally {
+    selection?.removeAllRanges();
+    node.removeEventListener("copy", onCopy);
+    node.remove();
   }
 
-  // folder items always open in browse view
-  if (item.media_type == MediaType.FOLDER) {
-    router.push({
-      name: "browse",
-      query: {
-        path: (item as BrowseFolder).path,
-      },
-    });
-    return;
-  }
-
-  // podcast episode has no details view so show play menu directly
-  // TODO: revisit this once we have a proper podcast episode details view
-  if (item.media_type == MediaType.PODCAST_EPISODE) {
-    handlePlayBtnClick(item, posX, posY, parentItem, true);
-    return;
-  }
-
-  // all other: go to details view
-  router.push({
-    name: item.media_type,
-    params: {
-      itemId: item.item_id,
-      provider: item.provider,
-    },
-  });
-};
-
-/* Handle menu button click */
-export const handleMenuBtnClick = function (
-  item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
-  posX: number,
-  posY: number,
-  parentItem?: MediaItemType,
-  includePlayMenuItems = true,
-  sortBy?: string,
-) {
-  const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
-    ? item
-    : [item];
-  showContextMenuForMediaItem(
-    mediaItems,
-    parentItem,
-    posX,
-    posY,
-    includePlayMenuItems,
-    includePlayMenuItems,
-    sortBy,
-  );
+  return copied;
 };
 
 /**

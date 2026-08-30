@@ -1,9 +1,13 @@
 <template>
   <Card
     v-hold="onHold"
-    class="gap-0 rounded-lg p-2 shadow-none transition-colors"
+    class="relative justify-center gap-0 rounded-lg p-2 shadow-none transition-colors"
     :class="{
       'border-primary bg-primary/15': player.player_id === store.activePlayerId,
+      'ring-primary/50 ring-1':
+        showSelectedIndicator && player.player_id === store.activePlayerId,
+      'pt-4':
+        showSelectedIndicator && player.player_id === store.activePlayerId,
       'opacity-80':
         !player.needs_setup && player.playback_state === PlaybackState.IDLE,
       'opacity-60': !player.needs_setup && player.powered === false,
@@ -13,24 +17,51 @@
     @contextmenu.prevent.stop="openPlayerMenu"
     @touchstart.passive="onTouchStart"
   >
+    <Badge
+      v-if="showSelectedIndicator && player.player_id === store.activePlayerId"
+      as="span"
+      class="selected-player-badge absolute -top-2 left-3 z-10 h-5 rounded-full px-2.5 py-0 text-[11px] leading-none shadow-xs"
+    >
+      {{ $t("player_tip.selected_player") }}
+    </Badge>
     <div class="flex min-w-0 items-center gap-1">
-      <button
-        type="button"
-        class="player-select-action focus-visible:ring-ring flex min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2"
-        :disabled="!player.available && !player.needs_setup"
-        @click="emit('click', player)"
-      >
-        <span class="sr-only">{{ $t("tooltip.select_player") }}: </span>
+      <div class="relative flex min-w-0 flex-1">
+        <button
+          type="button"
+          class="player-select-action focus-visible:ring-ring absolute inset-0 z-0 rounded-md text-left outline-none focus-visible:ring-2"
+          :disabled="
+            (!player.available && !player.needs_setup) || isInformationalSource
+          "
+          @click="emit('click', player)"
+        >
+          <span class="sr-only">
+            {{
+              player.needs_setup
+                ? $t("configure_player")
+                : isInformationalSource
+                  ? $t("player_type.source")
+                  : $t("tooltip.select_player")
+            }}:
+            {{ accessiblePlayerLabel }}
+            <template v-if="player.needs_setup">
+              . {{ $t("settings.setup_required") }}
+            </template>
+            <template v-else-if="playerStatus">
+              . {{ $t(playerStatus) }}
+            </template>
+          </span>
+        </button>
         <div
-          class="player-card-main flex min-w-0 flex-1"
+          class="player-card-main pointer-events-none relative z-[1] flex min-w-0 flex-1"
           :class="
             useStackedMediaLayout ? 'flex-col gap-1.5' : 'items-center gap-3'
           "
         >
           <PlayerCardTitle
             v-if="useStackedMediaLayout"
-            :player-name="getPlayerName(player, 27)"
-            :member-names="groupMemberNames"
+            :player-name="cardPlayerName"
+            :member-names="displayedGroupMemberNames"
+            :member-layout="groupMemberLayout"
           >
             <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
           </PlayerCardTitle>
@@ -70,8 +101,9 @@
             <div class="min-w-0 flex-1 py-0.5">
               <PlayerCardTitle
                 v-if="!useStackedMediaLayout"
-                :player-name="getPlayerName(player, 27)"
-                :member-names="groupMemberNames"
+                :player-name="cardPlayerName"
+                :member-names="displayedGroupMemberNames"
+                :member-layout="groupMemberLayout"
               >
                 <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
               </PlayerCardTitle>
@@ -85,6 +117,12 @@
                 {{ $t("settings.setup_required") }}
               </Badge>
               <p
+                v-if="player.type === PlayerType.SOURCE"
+                class="text-muted-foreground truncate text-xs"
+              >
+                {{ $t("player_type.source") }}
+              </p>
+              <p
                 v-if="player.powered !== false && player.current_media?.title"
                 class="truncate text-xs font-medium"
               >
@@ -96,15 +134,10 @@
               >
                 {{ mediaByline }}
               </p>
-              <span
-                v-else-if="playerQueue?.items === 0"
-                class="sr-only"
-                :aria-label="$t('queue_empty')"
-              ></span>
             </div>
           </div>
         </div>
-      </button>
+      </div>
 
       <div
         class="player-card-actions flex shrink-0 items-center"
@@ -126,29 +159,9 @@
         </Button>
 
         <Button
-          v-if="canEditGroupMembers"
-          variant="ghost"
-          size="icon-sm"
-          class="relative"
-          :disabled="!player.available"
-          :aria-label="`${$t('tooltip.group_members')}: ${groupMemberCount}`"
-          :aria-pressed="showMemberControls"
-          @click.stop="emit('toggle-member-controls', player)"
-        >
-          <Speaker class="size-5" />
-          <Badge
-            as="span"
-            class="absolute -top-1 -right-1 h-4 min-w-4 rounded-full px-1 text-[10px]"
-          >
-            {{ groupMemberCount }}
-          </Badge>
-        </Button>
-
-        <Button
           v-if="canPlayPause"
           variant="ghost"
           size="icon-sm"
-          :class="{ 'ml-1': canEditGroupMembers }"
           :disabled="!player.available || playActionInProgress"
           :aria-label="
             player.playback_state === PlaybackState.PLAYING
@@ -166,10 +179,28 @@
         </Button>
 
         <Button
+          v-if="showGroupControl"
+          data-player-group-control
+          variant="ghost"
+          size="icon-sm"
+          :disabled="!player.available || !canEditGroupMembers"
+          :aria-label="`${$t('tooltip.group_members')}: ${groupMemberCount}`"
+          :aria-controls="groupControlsExpanded ? groupControlsId : undefined"
+          :aria-expanded="groupControlsExpanded"
+          @click.stop="toggleMemberControls"
+        >
+          <PlayerGroupIcon
+            :count="groupMemberCount"
+            outset-count
+            class="size-5"
+          />
+        </Button>
+
+        <Button
           v-if="showMenuButton"
           variant="ghost"
           size="icon-sm"
-          :class="{ '-ml-1': canPlayPause }"
+          :class="{ '-ml-1': showGroupControl || canPlayPause }"
           :disabled="!player.available"
           :aria-label="$t('tooltip.more_options')"
           @click.stop="openPlayerMenu"
@@ -180,11 +211,12 @@
     </div>
 
     <VolumeControl
-      v-if="showVolumeControl"
+      v-if="showVolumeControl || showMemberControls"
+      :id="showMemberControls ? groupControlsId : undefined"
       :player="player"
       :show-member-controls="player.available && showMemberControls"
       :show-child-volumes="player.available && showChildVolumes"
-      :show-volume-control="player.powered !== false"
+      :show-volume-control="showVolumeControl && player.powered !== false"
       :allow-wheel="false"
       @toggle-child-volumes="emit('toggle-child-volumes', player)"
     />
@@ -194,6 +226,7 @@
 <script setup lang="ts">
 import PlayerCardTitle from "@/components/PlayerCardTitle.vue";
 import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
+import PlayerGroupIcon from "@/components/PlayerGroupIcon.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { Badge } from "@/components/ui/badge";
@@ -207,16 +240,18 @@ import {
 } from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
-  getMediaImageUrl,
-  getPlayerName,
+  canEditPlayerGroup,
+  getPlayerGroupMemberCount,
   isBuiltinPlayer,
-} from "@/helpers/utils";
+} from "@/helpers/players";
+import { isQueueEnded } from "@/helpers/queue_position";
+import { getMediaImageUrl, getPlayerName } from "@/helpers/utils";
 import api from "@/plugins/api";
+import { resolvePlayerQueue } from "@/plugins/api/helpers";
 import {
   PlaybackState,
   type Player,
   PLAYER_CONTROL_NONE,
-  PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -226,7 +261,6 @@ import {
   Pause,
   Play,
   Power,
-  Speaker,
   TriangleAlert,
 } from "@lucide/vue";
 import { computed, ref, toRef, watch } from "vue";
@@ -239,29 +273,33 @@ export interface Props {
   showMemberControls?: boolean;
   showGroupControls?: boolean;
   showGroupMemberNames?: boolean;
+  groupMemberLayout?: "subtitle" | "subtitle-list" | "title-list";
   stackMediaDetails?: boolean;
   allowPowerControl?: boolean;
+  showDisabledGroupControl?: boolean;
+  groupControlExpanded?: boolean;
+  groupControlsId?: string;
+  showSelectedIndicator?: boolean;
 }
-
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  groupMemberLayout: "subtitle",
+  groupControlsId: undefined,
+});
 const emit = defineEmits<{
   (event: "click", player: Player): void;
   (event: "toggle-child-volumes", player: Player): void;
-  (event: "toggle-member-controls", player: Player): void;
+  (event: "toggle-member-controls", player: Player, trigger: HTMLElement): void;
 }>();
 
 const artworkFailed = ref(false);
 const { activeSource } = useActiveSource(toRef(props, "player"));
 
-const playerQueue = computed(() => {
-  if (props.player.active_source && props.player.active_source in api.queues) {
-    return api.queues[props.player.active_source];
-  }
-  if (!props.player.active_source && props.player.player_id in api.queues) {
-    return api.queues[props.player.player_id];
-  }
-  return undefined;
-});
+const playerQueue = computed(() => resolvePlayerQueue(props.player));
+
+// a set-up audio input can't be selected for playback; its row only informs
+const isInformationalSource = computed(
+  () => props.player.type === PlayerType.SOURCE && !props.player.needs_setup,
+);
 
 const artworkUrl = computed(() => {
   if (
@@ -303,25 +341,20 @@ const playActionInProgress = computed(
 );
 
 const canEditGroupMembers = computed(
+  () => props.showGroupControls && canEditPlayerGroup(props.player),
+);
+const showGroupControl = computed(
   () =>
     props.showGroupControls &&
-    props.player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
-    (props.player.can_group_with.length > 0 ||
-      props.player.group_members.some(
-        (playerId) =>
-          playerId !== props.player.player_id &&
-          !props.player.static_group_members.includes(playerId),
-      )),
+    (canEditGroupMembers.value || props.showDisabledGroupControl === true),
+);
+const groupControlsExpanded = computed(
+  () => props.groupControlExpanded ?? props.showMemberControls === true,
 );
 
-const groupMemberCount = computed(() => {
-  const childCount = new Set(
-    props.player.group_members.filter(
-      (playerId) => playerId !== props.player.player_id,
-    ),
-  ).size;
-  return props.player.type === PlayerType.GROUP ? childCount : childCount + 1;
-});
+const groupMemberCount = computed(() =>
+  getPlayerGroupMemberCount(props.player),
+);
 
 const groupMemberNames = computed(() => {
   if (!props.showGroupMemberNames) return [];
@@ -342,6 +375,48 @@ const groupMemberNames = computed(() => {
   return [props.player.name, ...childNames];
 });
 
+const cardPlayerName = computed(() =>
+  props.groupMemberLayout === "subtitle-list" &&
+  groupMemberNames.value.length > 0
+    ? props.player.name
+    : getPlayerName(props.player, 27),
+);
+
+const displayedGroupMemberNames = computed(() => {
+  if (
+    props.groupMemberLayout === "subtitle-list" &&
+    props.player.type !== PlayerType.GROUP
+  ) {
+    return groupMemberNames.value.slice(1);
+  }
+  return groupMemberNames.value;
+});
+
+const accessibleGroupMemberNames = computed(() =>
+  props.player.type !== PlayerType.GROUP &&
+  props.groupMemberLayout !== "subtitle-list"
+    ? displayedGroupMemberNames.value.slice(1)
+    : displayedGroupMemberNames.value,
+);
+
+const accessiblePlayerLabel = computed(() =>
+  [
+    props.player.name,
+    ...accessibleGroupMemberNames.value,
+    props.player.current_media?.title,
+    mediaByline.value,
+  ]
+    .filter(Boolean)
+    .join(". "),
+);
+
+const playerStatus = computed(() => {
+  if (mediaByline.value) return undefined;
+  if (isQueueEnded(playerQueue.value)) return "queue_ended";
+  if (playerQueue.value?.items === 0) return "queue_empty";
+  return undefined;
+});
+
 watch(
   () => props.player.current_media?.image_url,
   () => {
@@ -360,6 +435,13 @@ function openPlayerMenu(event: Event) {
     posX: position.x,
     posY: position.y,
   });
+}
+
+function toggleMemberControls(event: MouseEvent) {
+  const trigger = event.currentTarget;
+  if (trigger instanceof HTMLElement) {
+    emit("toggle-member-controls", props.player, trigger);
+  }
 }
 
 const { onHold, onTouchStart, swallowClickAfterHold } =

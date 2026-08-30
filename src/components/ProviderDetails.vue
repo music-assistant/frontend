@@ -22,6 +22,7 @@
             <ProviderIcon
               :domain="providerMapping.provider_domain"
               :size="30"
+              class="mx-[10px]"
             />
           </template>
           <template #title>
@@ -37,11 +38,7 @@
             </v-chip>
           </template>
           <template #subtitle>
-            <span
-              v-if="
-                itemDetails.media_type == MediaType.TRACK &&
-                providerMapping.audio_format
-              "
+            <span v-if="itemDetails.media_type == MediaType.TRACK"
               >{{ providerMapping.audio_format.content_type }} |
               {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{
                 providerMapping.audio_format.bit_depth
@@ -58,17 +55,14 @@
               @click.prevent="openLinkInNewTab(providerMapping.url)"
               >{{ getProviderUri(providerMapping) }}</a
             >
-            <span v-else style="opacity: 0.4" :title="$t('copy_uri')">{{
+            <span v-else style="opacity: 0.4" :title="$t('tooltip.copy_uri')">{{
               getProviderUri(providerMapping)
             }}</span>
           </template>
           <template #append>
             <!-- hi res icon -->
             <v-img
-              v-if="
-                providerMapping.audio_format &&
-                providerMapping.audio_format.bit_depth > 16
-              "
+              v-if="providerMapping.audio_format.bit_depth > 16"
               :src="iconHiRes"
               width="30"
               alt=""
@@ -108,11 +102,12 @@
                 provider_domain: 'library',
                 item_id: itemDetails.item_id,
                 available: true,
+                url: null,
               })
           "
         >
           <template #prepend>
-            <ProviderIcon domain="library" :size="30" />
+            <ProviderIcon domain="library" :size="30" class="mx-[10px]" />
           </template>
           <template #title>{{ $t("music_assistant_library") }}</template>
           <template #subtitle>
@@ -137,6 +132,7 @@
 </template>
 
 <script setup lang="ts">
+import { ChevronDown, ChevronUp, DatabaseSearch } from "@lucide/vue";
 import Container from "@/components/Container.vue";
 import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
 import ListItem from "@/components/ListItem.vue";
@@ -148,7 +144,7 @@ import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
-  type MediaItemType,
+  type MediaItem,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -158,7 +154,7 @@ import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 export interface Props {
-  itemDetails: MediaItemType;
+  itemDetails: MediaItem;
 }
 const props = defineProps<Props>();
 
@@ -178,21 +174,36 @@ const playBtnClick = function (providerMapping: ProviderMapping) {
   if (existing) {
     existing.load();
     delete demoPlayer[key];
-  } else {
-    const audio = new Audio(
-      getPreviewUrl(providerMapping.provider_instance, providerMapping.item_id),
-    );
-    demoPlayer[key] = audio;
-    audio.play();
+    return;
   }
-};
-const getPreviewUrl = function (provider: string, item_id: string) {
-  return `${
-    api.baseUrl
-  }/preview?item_id=${encodeURIComponent(item_id)}&provider=${provider}`;
+  // claim the slot before awaiting the url, so a second click while the request is
+  // in flight cannot start a second clip that the first would then orphan
+  const audio = new Audio();
+  demoPlayer[key] = audio;
+  api
+    .getTrackPreviewUrl(
+      providerMapping.provider_instance,
+      providerMapping.item_id,
+    )
+    .then((url) => {
+      // the stop path clears the slot; do not start playing a clip nobody wants
+      if (demoPlayer[key] !== audio) return;
+      audio.src = url;
+      return audio.play();
+    })
+    .catch(() => {
+      if (demoPlayer[key] === audio) delete demoPlayer[key];
+    });
 };
 
-const getProviderUri = function (mapping: ProviderMapping) {
+// just enough of a provider mapping to identify an item: the library entry built for
+// the menu below carries only these fields, not the full server-sent mapping
+type ProviderMappingRef = Pick<
+  ProviderMapping,
+  "provider_instance" | "provider_domain" | "item_id" | "available" | "url"
+>;
+
+const getProviderUri = function (mapping: ProviderMappingRef) {
   return `${mapping.provider_instance}://${props.itemDetails.media_type}/${mapping.item_id}`;
 };
 
@@ -223,7 +234,7 @@ const toggleExpand = function () {
   expanded.value = !expanded.value;
 };
 
-const onMenu = function (evt: Event, providerMapping: ProviderMapping) {
+const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
   const mouseEvt = evt as MouseEvent;
   const menuItems = [
     {
@@ -294,7 +305,7 @@ const toolbarMenuItems = computed(() => {
     // search all providers option (only for library items when streaming providers are available)
     {
       label: "search_all_providers",
-      icon: "mdi-database-search",
+      icon: DatabaseSearch,
       action: searchAllProviders,
       overflowAllowed: false,
       disabled: mappingSearchInProgress.value,
@@ -306,7 +317,7 @@ const toolbarMenuItems = computed(() => {
     // toggle expand
     {
       label: "tooltip.collapse_expand",
-      icon: expanded.value ? "mdi-chevron-up" : "mdi-chevron-down",
+      icon: expanded.value ? ChevronUp : ChevronDown,
       action: toggleExpand,
       overflowAllowed: false,
     },

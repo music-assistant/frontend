@@ -98,17 +98,27 @@ describe("MusicQuizLeaderboard", () => {
       ]),
     );
     expect(wrapper.findAll("li")).toHaveLength(30);
+    // the name is the column that gives way; the score and its round delta are
+    // short and must never clip
     expect(wrapper.get("li span.min-w-0.flex-1").classes()).toContain(
       "truncate",
     );
-    const score = wrapper.get("li span.max-w-\\[45\\%\\]");
-    expect(score.classes()).toContain("max-w-[45%]");
-    expect(score.classes()).not.toContain("shrink-0");
-    expect(score.get("strong").classes()).toEqual(
-      expect.arrayContaining(["min-w-0", "flex-1", "truncate"]),
-    );
-    expect(score.get("span").classes()).toEqual(
-      expect.arrayContaining(["min-w-0", "flex-1", "truncate"]),
-    );
+    const score = wrapper.get("li > span:last-child");
+    expect(score.get("strong").classes()).not.toContain("truncate");
+    expect(score.get("span").classes()).not.toContain("truncate");
+  });
+
+  it("counts the ranked players next to the title", () => {
+    const wrapper = mount(MusicQuizLeaderboard, { props: { rows } });
+
+    expect(wrapper.get('[data-slot="card-title"]').text()).toContain("(2)");
+  });
+
+  it("drops the list entirely when nobody has joined", () => {
+    const wrapper = mount(MusicQuizLeaderboard, { props: { rows: [] } });
+
+    // an empty list still cost the card a content row plus the flex gap above it
+    expect(wrapper.find('[data-slot="card-content"]').exists()).toBe(false);
+    expect(wrapper.get('[data-slot="card-title"]').text()).toContain("(0)");
   });
 });

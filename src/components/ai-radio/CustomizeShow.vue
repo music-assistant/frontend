@@ -41,16 +41,6 @@
     </div>
 
     <template v-else>
-      <Alert v-if="lossy" variant="warning">
-        <TriangleAlert class="h-4 w-4" />
-        <AlertTitle>
-          {{ $t("providers.ai_radio.customize.lossy_warning_title") }}
-        </AlertTitle>
-        <AlertDescription>
-          {{ $t("providers.ai_radio.customize.lossy_warning_description") }}
-        </AlertDescription>
-      </Alert>
-
       <Card class="rounded-[6px]">
         <CardHeader>
           <CardTitle>{{
@@ -68,6 +58,40 @@
           <div class="flex flex-col gap-1.5">
             <Label>{{ $t("providers.ai_radio.create.playlist_label") }}</Label>
             <AiRadioPlaylistPicker v-model="playlistSelection" />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <Label for="customize-show-host">
+              {{ $t("providers.ai_radio.fields.host") }}
+            </Label>
+            <Select v-model="hostSelectValue">
+              <SelectTrigger id="customize-show-host" class="w-full">
+                <SelectValue
+                  :placeholder="
+                    $t('providers.ai_radio.customize.host_placeholder')
+                  "
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="host in hosts"
+                  :key="host.id"
+                  :value="host.id"
+                >
+                  {{ host.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p v-if="hosts.length === 0" class="text-xs text-muted-foreground">
+              {{ $t("providers.ai_radio.customize.no_hosts_hint") }}
+              <button
+                type="button"
+                class="underline underline-offset-2 hover:text-foreground"
+                @click="emit('open-hosts')"
+              >
+                {{ $t("providers.ai_radio.customize.create_host_cta") }}
+              </button>
+            </p>
           </div>
 
           <div class="flex flex-col gap-1.5">
@@ -95,59 +119,6 @@
         </CardContent>
       </Card>
 
-      <Card class="rounded-[6px]">
-        <CardHeader class="flex-row items-center justify-between space-y-0">
-          <CardTitle>
-            {{ $t("providers.ai_radio.customize.segments_title") }}
-          </CardTitle>
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="sm">
-                <Plus class="h-4 w-4" />
-                {{ $t("providers.ai_radio.customize.add_segment") }}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" class="max-h-80 overflow-y-auto">
-              <DropdownMenuItem @click="addBlankSegment">
-                {{ $t("providers.ai_radio.customize.blank_segment") }}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <template v-for="preset in PRESETS" :key="preset.key">
-                <DropdownMenuLabel class="text-xs text-muted-foreground">
-                  {{ $t(`providers.ai_radio.presets.${preset.key}.name`) }}
-                </DropdownMenuLabel>
-                <DropdownMenuItem
-                  v-for="segment in preset.segments"
-                  :key="segment.id"
-                  @click="addSegmentFromTemplate(segment)"
-                >
-                  {{ segment.name }}
-                </DropdownMenuItem>
-              </template>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </CardHeader>
-        <CardContent class="space-y-2">
-          <p
-            v-if="draft.segments.length === 0"
-            class="py-6 text-center text-sm text-muted-foreground"
-          >
-            {{ $t("providers.ai_radio.customize.segments_empty") }}
-          </p>
-          <SegmentRow
-            v-for="(segment, index) in draft.segments"
-            :key="segment.id"
-            :segment="segment"
-            :can-move-up="index > 0"
-            :can-move-down="index < draft.segments.length - 1"
-            @update="(value) => updateSegment(index, value)"
-            @move-up="moveSegment(index, -1)"
-            @move-down="moveSegment(index, 1)"
-            @remove="removeSegment(index)"
-          />
-        </CardContent>
-      </Card>
-
       <Accordion type="single" collapsible>
         <AccordionItem
           value="advanced"
@@ -157,16 +128,6 @@
             {{ $t("providers.ai_radio.customize.advanced") }}
           </AccordionTrigger>
           <AccordionContent class="grid gap-4 pt-2 md:grid-cols-2">
-            <div class="flex flex-col gap-1.5 md:col-span-2">
-              <FieldLabel
-                :label="$t('providers.ai_radio.fields.instructions')"
-                :description="
-                  $t('providers.ai_radio.field_descriptions.instructions')
-                "
-              />
-              <Textarea v-model="draft.basics.general.instructions" rows="4" />
-            </div>
-
             <div class="flex flex-col gap-1.5">
               <FieldLabel
                 :label="$t('providers.ai_radio.fields.source_playtime_cap')"
@@ -184,22 +145,6 @@
                 </NumberFieldContent>
               </NumberField>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <FieldLabel
-                :label="$t('providers.ai_radio.fields.dynamic_batch_size')"
-                :description="
-                  $t('providers.ai_radio.field_descriptions.dynamic_batch_size')
-                "
-              />
-              <NumberField v-model="draft.basics.dynamicBatchSize" :min="1">
-                <NumberFieldContent>
-                  <NumberFieldDecrement />
-                  <NumberFieldInput />
-                  <NumberFieldIncrement />
-                </NumberFieldContent>
-              </NumberField>
-            </div>
-
             <div class="flex items-center gap-3">
               <FieldLabel
                 html-for="customize-shuffle-source-tracks"
@@ -215,24 +160,6 @@
                 v-model="draft.basics.shuffleSourceTracks"
               />
             </div>
-
-            <div class="flex items-center gap-3">
-              <FieldLabel
-                html-for="customize-clear-queue"
-                :label="
-                  $t('providers.ai_radio.fields.clear_queue_on_dynamic_start')
-                "
-                :description="
-                  $t(
-                    'providers.ai_radio.field_descriptions.clear_queue_on_dynamic_start',
-                  )
-                "
-              />
-              <Switch
-                id="customize-clear-queue"
-                v-model="draft.basics.clearQueueOnStart"
-              />
-            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
@@ -245,24 +172,14 @@ import AiRadioPlaylistPicker, {
   type PlaylistSelection,
 } from "@/components/ai-radio/AiRadioPlaylistPicker.vue";
 import FieldLabel from "@/components/ai-radio/FieldLabel.vue";
-import SegmentRow from "@/components/ai-radio/SegmentRow.vue";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -280,22 +197,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
+import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
 import {
   compileShow,
-  deepClone,
   decompileStation,
   errorMessage,
   NONE_SELECT_VALUE,
-  PRESETS,
   type ShowDraft,
-  type ShowSegment,
 } from "@/helpers/ai_radio";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft, Loader2, Plus, TriangleAlert } from "@lucide/vue";
+import { ArrowLeft, Loader2 } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -307,16 +221,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   back: [];
   saved: [];
+  "open-hosts": [];
 }>();
 
 const router = useRouter();
-const { sections, loadSections, getShow, saveShow, playlistFor } = useShows();
+const { getShow, saveShow, playlistFor } = useShows();
+const { hosts, loadHosts } = useHosts();
 const orderedPlayers = useOrderedPlayers();
 
 const loading = ref(true);
 const loadError = ref("");
 const saving = ref(false);
-const lossy = ref(false);
 const draft = ref<ShowDraft | null>(null);
 let originalSnapshot = "";
 
@@ -343,6 +258,14 @@ const playlistSelection = computed<PlaylistSelection | undefined>({
   },
 });
 
+const hostSelectValue = computed({
+  get: () => draft.value?.hostId || "",
+  set: (value: string) => {
+    if (!draft.value) return;
+    draft.value.hostId = value;
+  },
+});
+
 const defaultPlayerSelectValue = computed({
   get: () => draft.value?.basics.defaultPlayerId || NONE_SELECT_VALUE,
   set: (value: string) => {
@@ -351,55 +274,6 @@ const defaultPlayerSelectValue = computed({
       value === NONE_SELECT_VALUE ? "" : value;
   },
 });
-
-function updateSegment(index: number, segment: ShowSegment) {
-  draft.value?.segments.splice(index, 1, segment);
-}
-
-function moveSegment(index: number, delta: number) {
-  if (!draft.value) return;
-  const { segments } = draft.value;
-  const newIndex = index + delta;
-  if (newIndex < 0 || newIndex >= segments.length) return;
-  const [item] = segments.splice(index, 1);
-  segments.splice(newIndex, 0, item);
-}
-
-function removeSegment(index: number) {
-  draft.value?.segments.splice(index, 1);
-}
-
-/** Appends numeric suffixes until `id` doesn't collide with an existing draft segment. */
-function uniqueSegmentId(id: string): string {
-  const used = new Set(draft.value?.segments.map((s) => s.id) || []);
-  let candidate = id;
-  let suffix = 2;
-  while (used.has(candidate)) {
-    candidate = `${id}_${suffix}`;
-    suffix += 1;
-  }
-  return candidate;
-}
-
-function addSegmentFromTemplate(template: ShowSegment) {
-  if (!draft.value) return;
-  draft.value.segments.push({
-    ...deepClone(template),
-    id: uniqueSegmentId(template.id),
-  });
-}
-
-function addBlankSegment() {
-  if (!draft.value) return;
-  draft.value.segments.push({
-    id: uniqueSegmentId("segment"),
-    name: $t("providers.ai_radio.customize.blank_segment_name"),
-    prompt: "",
-    webSearch: "disabled",
-    maxChars: 500,
-    plays: { kind: "every_song" },
-  });
-}
 
 function confirmDiscard(onConfirm: () => void) {
   eventbus.emit("deleteConfirmationDialog", {
@@ -420,6 +294,10 @@ function handleBack() {
 
 async function handleSave() {
   if (!draft.value) return;
+  if (!draft.value.hostId) {
+    toast.error($t("providers.ai_radio.customize.host_required"));
+    return;
+  }
   saving.value = true;
   try {
     const station = compileShow(draft.value);
@@ -443,13 +321,12 @@ onBeforeRouteLeave((to) => {
 
 onMounted(async () => {
   try {
-    if (sections.value.length === 0) {
-      await loadSections();
-    }
+    // Always refresh: a cached list still renders instantly, but host names
+    // edited elsewhere would otherwise show up stale in the picker.
+    await loadHosts();
     const station = await getShow(props.stationId);
-    const decompiled = decompileStation(station, sections.value);
-    draft.value = { basics: decompiled.basics, segments: decompiled.segments };
-    lossy.value = decompiled.lossy;
+    const decompiled = decompileStation(station);
+    draft.value = { basics: decompiled.basics, hostId: decompiled.hostId };
     originalSnapshot = JSON.stringify(draft.value);
   } catch (error) {
     loadError.value = errorMessage(error);

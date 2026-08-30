@@ -1,5 +1,5 @@
 import VolumeControl from "@/components/VolumeControl.vue";
-import { api } from "@/plugins/api";
+import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   IdentifierType,
   PlaybackState,
@@ -14,14 +14,21 @@ vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
     players: {} as Record<string, Player>,
-    getPlayer: vi.fn(),
-    playerCommandSetMembers: vi.fn(() => Promise.resolve()),
+    getPlayer: vi.fn<MusicAssistantApi["getPlayer"]>(),
+    playerCommandSetMembers: vi.fn<
+      MusicAssistantApi["playerCommandSetMembers"]
+    >(() => Promise.resolve()),
   });
   return { api, default: api };
 });
 
-vi.mock("@/helpers/utils", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/players")>()),
   groupMemberPickerVisible: () => true,
+}));
+
+vi.mock("@/helpers/player_group_playback", () => ({
+  requestGroupPlaybackConfirmation: () => false,
 }));
 
 vi.mock("@/layouts/default/PlayerOSD/PlayerVolume.vue", () => ({
@@ -59,6 +66,9 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     device_info: {
       model: "Test",
       manufacturer: "Test",
+      software_version: null,
+      model_id: null,
+      manufacturer_id: null,
       identifiers: {
         [IdentifierType.MAC_ADDRESS]: "",
         [IdentifierType.SERIAL_NUMBER]: "",
@@ -82,13 +92,23 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     group_volume: 25,
     group_volume_muted: false,
     hide_in_ui: false,
+    private: false,
     icon: "speaker",
     power_control: "power",
     volume_control: "volume",
     mute_control: "mute",
     needs_setup: false,
+    has_setup_flow: false,
     output_protocols: [],
     active_output_protocol: null,
+    elapsed_time: null,
+    elapsed_time_last_updated: null,
+    current_media: null,
+    active_source: null,
+    active_sound_mode: null,
+    active_group: null,
+    synced_to: null,
+    sleep_timer_expires_at: null,
     ...overrides,
   };
 }

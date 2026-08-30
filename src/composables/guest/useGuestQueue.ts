@@ -5,9 +5,13 @@
 
 import { ref, computed, watch, nextTick } from "vue";
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
-import type { PlayerQueue, QueueItem } from "@/plugins/api/interfaces";
-import { EventType, type EventMessage } from "@/plugins/api/interfaces";
+import {
+  type EventMessage,
+  EventType,
+  type PlayerQueue,
+  type QueueItem,
+} from "@/plugins/api/interfaces";
+import { currentQueueIndex as resolveCurrentQueueIndex } from "@/helpers/queue_position";
 
 export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
   const queueItems = ref<QueueItem[]>([]);
@@ -18,12 +22,12 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
   const loadingMoreQueueItems = ref(false);
 
   const currentQueue = computed(() => {
-    const queueId = partyQueueId.value || store.activePlayerQueue?.queue_id;
+    const queueId = partyQueueId.value;
     return queueId ? api.queues[queueId] : null;
   });
 
-  const currentQueueIndex = computed(
-    () => currentQueue.value?.current_index ?? 0,
+  const currentQueueIndex = computed(() =>
+    resolveCurrentQueueIndex(currentQueue.value),
   );
 
   const scrollToCurrentItem = async () => {
@@ -72,7 +76,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
   );
 
   const fetchQueueItems = async (reset = true) => {
-    const queueId = partyQueueId.value || store.activePlayerQueue?.queue_id;
+    const queueId = partyQueueId.value;
     if (!queueId) {
       queueItems.value = [];
       return;
@@ -88,7 +92,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
       }
 
       if (reset) {
-        const currentIdx = queue?.current_index ?? 0;
+        const currentIdx = resolveCurrentQueueIndex(queue);
         const offset = Math.max(0, currentIdx - 10);
         queueFetchOffset.value = offset;
 
@@ -133,8 +137,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
     const unsub1 = api.subscribe(
       EventType.QUEUE_ITEMS_UPDATED,
       (evt: EventMessage) => {
-        const queueId = partyQueueId.value || store.activePlayerQueue?.queue_id;
-        if (evt.object_id === queueId) {
+        if (evt.object_id === partyQueueId.value) {
           fetchQueueItems(true);
         }
       },
@@ -143,8 +146,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
     const unsub2 = api.subscribe(
       EventType.QUEUE_UPDATED,
       (evt: EventMessage) => {
-        const queueId = partyQueueId.value || store.activePlayerQueue?.queue_id;
-        if (evt.object_id === queueId) {
+        if (evt.object_id === partyQueueId.value) {
           const currentIdx = currentQueueIndex.value;
           const fetchedStart = queueFetchOffset.value;
           const fetchedEnd = fetchedStart + queueItems.value.length;
