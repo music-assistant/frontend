@@ -55,7 +55,11 @@
             <div class="group-popout-label">
               {{ truncateString(child.name, 20) }}
             </div>
-            <PlayerVolume :player="child" width="100%" />
+            <PlayerVolume
+              :player="child"
+              width="100%"
+              :allow-wheel="allowWheel"
+            />
           </div>
           <!-- Group volume at bottom with divider -->
           <div class="group-popout-divider"></div>
@@ -65,6 +69,7 @@
               :prefer-group-volume="true"
               :enable-popout="false"
               width="100%"
+              :allow-wheel="allowWheel"
             />
           </div>
         </div>
