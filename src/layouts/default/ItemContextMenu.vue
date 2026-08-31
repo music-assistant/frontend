@@ -4,11 +4,7 @@
   we steer its visibility through the centralized eventbus.
 -->
 <template>
-  <DropdownMenu
-    :open="show"
-    :modal="!store.showPlayersMenu"
-    @update:open="onOpenChange"
-  >
+  <DropdownMenu :open="show" :modal="modal" @update:open="onOpenChange">
     <DropdownMenuContent
       data-item-context-menu
       :reference="reference"
@@ -167,6 +163,9 @@ const reference = computed(() => ({
   getBoundingClientRect: () => new DOMRect(posX.value, posY.value, 0, 0),
 }));
 
+// a modal menu blocks the page behind it; the players menu keeps it clickable
+const modal = computed(() => !store.showPlayersMenu);
+
 const MenuItemIcon = (props: { icon?: string | Component; size?: number }) => {
   if (!props.icon) return null;
   return typeof props.icon === "string"
@@ -193,6 +192,11 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
   }));
 });
 
+// the menu can be opened on top of another dialog that stays open behind it
+// (such as the search popup), so closing it restores the flag rather than
+// clearing it for the dialog underneath
+let dialogActiveBeforeOpen = false;
+
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
@@ -200,6 +204,7 @@ onMounted(() => {
     posY.value = evt.posY || 0;
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
     nextTick(() => {
+      if (!show.value) dialogActiveBeforeOpen = store.dialogActive;
       show.value = true;
       store.dialogActive = true;
     });
@@ -214,7 +219,7 @@ onBeforeUnmount(() => {
 
 const onOpenChange = function (value: boolean) {
   show.value = value;
-  store.dialogActive = value;
+  store.dialogActive = value || dialogActiveBeforeOpen;
 };
 
 function closeOnOutsidePointer(event: PointerEvent) {
@@ -232,9 +237,13 @@ function closeOnOutsidePointer(event: PointerEvent) {
     return;
   }
 
+  // consume the press so a dialog underneath (such as the search popup)
+  // does not treat it as an outside press and close as well
+  if (modal.value) event.stopPropagation();
+
   show.value = false;
   queueMicrotask(() => {
-    if (!show.value) store.dialogActive = false;
+    if (!show.value) store.dialogActive = dialogActiveBeforeOpen;
   });
 }
 
@@ -631,9 +640,12 @@ export const getContextMenuItems = async function (
     });
   }
 
-  let resolvedItem = firstItem;
+  // Library membership and favorites are keyed by the library item id,
+  // which provider items and item mappings do not carry, so resolve the
+  // counterpart the library holds. Library rows are verified too since a
+  // row can outlive its item (a list kept open, a cached search result).
+  let libraryItem: MediaItemType | undefined;
   if (
-    (firstItem.provider != "library" || !("provider_mappings" in firstItem)) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -645,19 +657,28 @@ export const getContextMenuItems = async function (
       MediaType.TRACK,
     ].includes(firstItem.media_type)
   ) {
-    // resolve itemmapping or non-library item
-    resolvedItem =
+    libraryItem =
       (await api.getLibraryItem(
         firstItem.media_type,
         firstItem.item_id,
         firstItem.provider,
-      )) || firstItem;
+      )) ?? undefined;
   }
+  const resolvedItem = libraryItem ?? firstItem;
+
+  // Only the first item of a selection is resolved, so a single item acts
+  // on its library counterpart while a multi-selection keeps its own
+  // identity.
+  const actionTargets = items.length === 1 ? [resolvedItem] : items;
+  const inLibrary =
+    items.length === 1
+      ? libraryItem !== undefined
+      : isItemInLibrary(resolvedItem);
 
   // add to library (genres are excluded: they are managed via the dedicated
   // add-genre dialog and delete/merge actions, not generic library membership)
   if (
-    !isItemInLibrary(resolvedItem) &&
+    !inLibrary &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -674,7 +695,7 @@ export const getContextMenuItems = async function (
       labelArgs: [],
       action: () => {
         for (const item of items) {
-          api.addItemToLibrary(item);
+          api.addItemToLibrary(addableItem(item));
           // optimistically flag the mappings so the derived state re-evaluates
           if ("provider_mappings" in item)
             item.provider_mappings.forEach((pm) => (pm.in_library = true));
@@ -687,7 +708,7 @@ export const getContextMenuItems = async function (
   }
   // remove from library
   if (
-    isItemInLibrary(resolvedItem) &&
+    inLibrary &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -707,8 +728,10 @@ export const getContextMenuItems = async function (
           message: $t("confirm_library_remove"),
           confirmLabel: $t("remove"),
           onConfirm: () => {
+            for (const target of actionTargets) {
+              api.removeItemFromLibrary(target.media_type, target.item_id);
+            }
             for (const item of items) {
-              api.removeItemFromLibrary(item.media_type, item.item_id);
               // optimistically clear membership so the derived state re-evaluates;
               // favorite implies membership, so it must clear too
               if ("favorite" in item) item.favorite = false;
@@ -730,8 +753,8 @@ export const getContextMenuItems = async function (
     });
   }
   // Favorites handling - supports mixed states like played/unplayed
-  if (items.length > 0 && items.every((item) => "favorite" in item)) {
-    const favoritableItems = items.filter(
+  if (actionTargets.every((item) => "favorite" in item)) {
+    const favoritableItems = actionTargets.filter(
       (item) =>
         [
           MediaType.ALBUM,
@@ -745,9 +768,22 @@ export const getContextMenuItems = async function (
         ].includes(item.media_type) && itemIsAvailable(item),
     );
 
+    // a favorite belongs to the library item, so an item the provider reports
+    // as its own favorite only counts as one once the library holds it
+    const isFavorite = (item: MediaItemTypeOrItemMapping) =>
+      inLibrary && "favorite" in item && item.favorite === true;
+
+    // the actions run on the library copy while the next menu is built from
+    // the item the caller holds, so its flag has to follow
+    const markFavorite = (favorite: boolean) => {
+      for (const item of items) {
+        if ("favorite" in item) item.favorite = favorite;
+      }
+    };
+
     if (favoritableItems.length > 0) {
-      const allFavorited = favoritableItems.every((item) => item.favorite);
-      const allNotFavorited = favoritableItems.every((item) => !item.favorite);
+      const allFavorited = favoritableItems.every(isFavorite);
+      const allNotFavorited = !favoritableItems.some(isFavorite);
 
       // If all items are favorited, show "remove from favorites"
       if (allFavorited) {
@@ -758,6 +794,7 @@ export const getContextMenuItems = async function (
             for (const item of favoritableItems) {
               api.removeItemFromFavorites(item.media_type, item.item_id);
             }
+            markFavorite(false);
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
@@ -771,8 +808,9 @@ export const getContextMenuItems = async function (
           labelArgs: [],
           action: () => {
             for (const item of favoritableItems) {
-              api.addItemToFavorites(item);
+              api.addItemToFavorites(addableItem(item));
             }
+            markFavorite(true);
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
@@ -786,9 +824,10 @@ export const getContextMenuItems = async function (
           labelArgs: [],
           action: () => {
             for (const item of favoritableItems.filter(
-              (item) => !item.favorite,
+              (item) => !isFavorite(item),
             )) {
-              api.addItemToFavorites(item);
+              api.addItemToFavorites(addableItem(item));
+              if ("favorite" in item) item.favorite = true;
             }
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
@@ -800,10 +839,9 @@ export const getContextMenuItems = async function (
           label: "favorites_remove",
           labelArgs: [],
           action: () => {
-            for (const item of favoritableItems.filter(
-              (item) => item.favorite,
-            )) {
+            for (const item of favoritableItems.filter(isFavorite)) {
               api.removeItemFromFavorites(item.media_type, item.item_id);
+              if ("favorite" in item) item.favorite = false;
             }
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
@@ -1415,6 +1453,26 @@ const startAudioSourceMenuItem = function (
     labelArgs: [],
     disabled: !store.activePlayer,
   };
+};
+
+/**
+ * The identity to hand an add command for the given item. Adding a library
+ * row whose item no longer exists fails on its dead id, so a library row is
+ * sent as one of its provider mappings, which the server resolves back to a
+ * library item.
+ */
+const addableItem = function (
+  item: MediaItemTypeOrItemMapping,
+): string | MediaItemTypeOrItemMapping {
+  if (item.provider !== "library" || !("provider_mappings" in item)) {
+    return item;
+  }
+  const mapping =
+    item.provider_mappings.find(
+      (pm) => pm.available && api.providers[pm.provider_instance]?.available,
+    ) ?? item.provider_mappings[0];
+  if (!mapping) return item;
+  return `${mapping.provider_instance}://${item.media_type}/${mapping.item_id}`;
 };
 
 /**
