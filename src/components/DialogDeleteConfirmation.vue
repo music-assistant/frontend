@@ -79,7 +79,7 @@ const reset = () => {
 let dialogActiveBeforeOpen = false;
 
 watch(open, (v) => {
-  store.dialogActive = v || dialogActiveBeforeOpen;
+  store.dialogActive = v || (dialogActiveBeforeOpen && store.dialogActive);
   if (!v) {
     // Reset after close animation
     setTimeout(reset, 200);

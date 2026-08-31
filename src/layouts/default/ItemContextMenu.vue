@@ -219,7 +219,9 @@ onBeforeUnmount(() => {
 
 const onOpenChange = function (value: boolean) {
   show.value = value;
-  store.dialogActive = value || dialogActiveBeforeOpen;
+  // the dialog underneath may have closed on its own in the meantime, so
+  // only a flag that is still set is restored
+  store.dialogActive = value || (dialogActiveBeforeOpen && store.dialogActive);
 };
 
 function closeOnOutsidePointer(event: PointerEvent) {
@@ -243,7 +245,8 @@ function closeOnOutsidePointer(event: PointerEvent) {
 
   show.value = false;
   queueMicrotask(() => {
-    if (!show.value) store.dialogActive = dialogActiveBeforeOpen;
+    if (!show.value)
+      store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
   });
 }
 
@@ -657,12 +660,22 @@ export const getContextMenuItems = async function (
       MediaType.TRACK,
     ].includes(firstItem.media_type)
   ) {
+    // a failed lookup still opens the menu, on the item's own claims
     libraryItem =
-      (await api.getLibraryItem(
-        firstItem.media_type,
-        firstItem.item_id,
-        firstItem.provider,
-      )) ?? undefined;
+      (await api
+        .getLibraryItem(
+          firstItem.media_type,
+          firstItem.item_id,
+          firstItem.provider,
+        )
+        .catch((err) => {
+          console.error(
+            "[ItemContextMenu] library lookup failed for %s",
+            firstItem.uri,
+            err,
+          );
+          return null;
+        })) ?? undefined;
   }
   const resolvedItem = libraryItem ?? firstItem;
 
@@ -670,9 +683,11 @@ export const getContextMenuItems = async function (
   // on its library counterpart while a multi-selection keeps its own
   // identity.
   const actionTargets = items.length === 1 ? [resolvedItem] : items;
+  // a library row alone is not membership, since the backend also keeps
+  // rows for relatives of saved items, so the resolved row is checked too
   const inLibrary =
     items.length === 1
-      ? libraryItem !== undefined
+      ? libraryItem !== undefined && isItemInLibrary(libraryItem)
       : isItemInLibrary(resolvedItem);
 
   // add to library (genres are excluded: they are managed via the dedicated
@@ -768,10 +783,12 @@ export const getContextMenuItems = async function (
         ].includes(item.media_type) && itemIsAvailable(item),
     );
 
-    // a favorite belongs to the library item, so an item the provider reports
-    // as its own favorite only counts as one once the library holds it
+    // a favorite belongs to the library item, so a single item follows its
+    // resolved membership while a multi selection reads each item's own flag
     const isFavorite = (item: MediaItemTypeOrItemMapping) =>
-      inLibrary && "favorite" in item && item.favorite === true;
+      "favorite" in item &&
+      item.favorite === true &&
+      (items.length > 1 || inLibrary);
 
     // the actions run on the library copy while the next menu is built from
     // the item the caller holds, so its flag has to follow
