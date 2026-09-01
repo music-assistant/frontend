@@ -28,12 +28,18 @@ const { emitEvent, getPreference, isAdmin, preferenceState, setPreference } =
     setPreference: vi.fn(),
   }));
 
+// plain let read lazily by the mock, so tests can flip it per case
+let supportsPartyPlayerResolution = true;
+
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
     players: {} as Record<string, Player>,
     // the menu's ai dj entry derives availability from the provider list
     providers: {},
+    get supportsPartyPlayerResolution() {
+      return supportsPartyPlayerResolution;
+    },
   });
   return { api, default: api };
 });
@@ -366,6 +372,7 @@ describe("PlayerSelect", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isDashboardViewer = false;
+    supportsPartyPlayerResolution = true;
     const preferenceValues = preferenceState.reactiveValues;
     if (preferenceValues) {
       for (const key of Object.keys(preferenceValues)) {
@@ -604,6 +611,17 @@ describe("PlayerSelect", () => {
 
     // ...and is not persisted as the shared viewer user's choice
     expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("still auto-selects for a dashboard viewer on a server that can't resolve the party player", () => {
+    isDashboardViewer = true;
+    supportsPartyPlayerResolution = false;
+    const attic = createPlayer("attic", "Attic");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(attic.player_id);
   });
 
   it("keeps the remembered player when it is unavailable at startup", () => {

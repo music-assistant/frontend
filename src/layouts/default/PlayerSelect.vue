@@ -484,8 +484,10 @@ function resetPanelState() {
 }
 
 function checkDefaultPlayer() {
-  // dashboard viewers never pick players themselves; the hosting view pins one
-  if (authManager.isDashboardViewer()) return;
+  // dashboard viewers never pick players themselves; the hosting view pins one.
+  // older servers can't resolve the party player, so fall back to auto-select.
+  if (authManager.isDashboardViewer() && api.supportsPartyPlayerResolution)
+    return;
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
   if (!defaultPlayerId) return;
@@ -503,7 +505,8 @@ function checkDefaultPlayer() {
  * device, which only registers a moment after the app has started.
  */
 function preferBuiltinPlayer() {
-  if (authManager.isDashboardViewer()) return;
+  if (authManager.isDashboardViewer() && api.supportsPartyPlayerResolution)
+    return;
   if (store.activePlayerId !== autoSelectedPlayerId) return;
   if (getPreference<string>("activePlayerId").value) return;
   const builtinPlayerId = selectBuiltinPlayer();
