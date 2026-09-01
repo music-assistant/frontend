@@ -59,7 +59,8 @@
         "display": "Skärm",
         "visualizer": "Visualisera",
         "light": "Ljus",
-        "unknown": "Okänd"
+        "unknown": "Okänd",
+        "source": "Ljudingång"
     },
     "players": "Spelare",
     "playlist": "Spellista",
@@ -120,14 +121,12 @@
         "reload": "Ladda om",
         "save": "Spara",
         "settings": "Inställningar",
-        "setup_provider": "Ställ in leverantör: {0}",
         "sync": "Synkronisera nu",
         "sync_running": "Denna leverantör synkroniseras nu",
         "core_modules": "Kärnmoduler",
         "server_info": "Serverinformation",
         "server_id": "Server-ID",
         "server_version": "Serverversion",
-        "server_base_url": "Bas-URL",
         "server_as_addon": "Home Assistant tillägg",
         "artists_in_library": "Artister i biblioteket",
         "albums_in_library": "Album i biblioteket",
@@ -416,7 +415,6 @@
         "about_description": "Versionsinformation, medverkande och mer",
         "auto_refresh_log": "Automatisk uppdatering",
         "log_truncated": "Visar sista {0} rader. Ladda ner hela loggfilen för fullständig historik.",
-        "version_info": "Versionsinformation",
         "library_stats": "Biblioteksstatistik",
         "links": "Länkar",
         "changelog": "Ändringslogg",
@@ -717,7 +715,9 @@
             "external_default_text": "Ett nytt webbläsarfönster öppnas så att du kan logga in och auktorisera Musikassistenten. Kom tillbaka hit när du är klar – dialogrutan fortsätter automatiskt.",
             "external_host": "Öppnar {0}",
             "session_ended_title": "Installationssessionen avslutad",
-            "session_ended_text": "Installationssessionen avslutades – den kan ha slutförts. Kontrollera dina leverantörer eller spelare för att bekräfta."
+            "session_ended_text": "Installationssessionen avslutades – den kan ha slutförts. Kontrollera dina leverantörer eller spelare för att bekräfta.",
+            "setup_title": "Sätt upp {0}",
+            "reconfigure_title": "Konfigurera om {0}"
         },
         "options": "Alternativ",
         "add_group_player_desc": "Skapa en permanent spelargrupp med {0} spelare. När du spelar i den här spelargruppen synkroniseras medlemsspelarna automatiskt.",
@@ -795,7 +795,19 @@
         "audiobook_chapter_progress": {
             "label": "Visa förloppet i ljudbokskapitlet",
             "description": "Visa förfluten och återstående tid för det aktuella ljudbokskapitlet istället för hela ljudboken."
-        }
+        },
+        "provider_status_retired": "Pensionerad",
+        "player_status": {
+            "available": "Tillgänglig",
+            "needs_setup": "Behöver konfigureras",
+            "unavailable": "Inte tillgänglig",
+            "disabled": "Inaktiverad"
+        },
+        "player_status_label": "Status",
+        "server_name": "Servernamn",
+        "server_internal_url": "Intern URL",
+        "server_external_url": "Extern URL",
+        "server_remote_access": "Fjärråtkomst"
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -2393,5 +2405,15 @@
     "command_center_open": "öppna",
     "command_center_keep_typing": "Fortsätt skriva för att söka...",
     "screens": "Skärmar",
-    "play_from_here_to_latest": "Spela härifrån till senaste"
+    "play_from_here_to_latest": "Spela härifrån till senaste",
+    "players_need_setup": "En ny enhet upptäcktes som behöver konfigureras | {count} nya enheter upptäcktes som behöver konfigureras",
+    "review": "Recension",
+    "import_playlist_search_providers_description": "Utvalda leverantörer används som reservkällor när ett spårs originalkälla inte är tillgänglig.",
+    "import_playlist_match_policy_label": "Spårmatchning",
+    "import_playlist_match_policy_exact_title": "Exakt utgåva",
+    "import_playlist_match_policy_exact_description": "Matcha bara spår mot exakt samma utgåva.",
+    "import_playlist_match_policy_same_recording_title": "Samma inspelning (rekommenderas)",
+    "import_playlist_match_policy_same_recording_description": "Föredra en exakt matchning, annars acceptera samma inspelning från en annan utgåva.",
+    "import_playlist_match_policy_best_effort_title": "Bästa insats",
+    "import_playlist_match_policy_best_effort_description": "Föredra en exakt matchning, sedan samma inspelning, annars acceptera den närmaste tillgängliga matchningen."
 }
