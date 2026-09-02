@@ -102,6 +102,9 @@ export interface CommandOptions {
 // The match_policy argument on music/playlists/import_playlist landed in API schema 66.
 const IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION = 66;
 
+// Venue-mode party player resolution without guest access landed in API schema 66.
+const PARTY_PLAYER_RESOLUTION_SCHEMA_VERSION = 66;
+
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
   queue_id?: string;
@@ -2983,6 +2986,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server resolves the party player without guest access (schema >= 66). */
+  public get supportsPartyPlayerResolution(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      PARTY_PLAYER_RESOLUTION_SCHEMA_VERSION
     );
   }
 

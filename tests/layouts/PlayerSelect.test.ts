@@ -28,12 +28,18 @@ const { emitEvent, getPreference, isAdmin, preferenceState, setPreference } =
     setPreference: vi.fn(),
   }));
 
+// plain let read lazily by the mock, so tests can flip it per case
+let supportsPartyPlayerResolution = true;
+
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
     players: {} as Record<string, Player>,
     // the menu's ai dj entry derives availability from the provider list
     providers: {},
+    get supportsPartyPlayerResolution() {
+      return supportsPartyPlayerResolution;
+    },
   });
   return { api, default: api };
 });
@@ -75,9 +81,13 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
+// plain let read lazily by the mock, so tests can flip it per case
+let isDashboardViewer = false;
+
 vi.mock("@/plugins/auth", () => ({
   authManager: {
     isAdmin,
+    isDashboardViewer: () => isDashboardViewer,
   },
 }));
 
@@ -361,6 +371,8 @@ describe("PlayerSelect", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    isDashboardViewer = false;
+    supportsPartyPlayerResolution = true;
     const preferenceValues = preferenceState.reactiveValues;
     if (preferenceValues) {
       for (const key of Object.keys(preferenceValues)) {
@@ -578,6 +590,38 @@ describe("PlayerSelect", () => {
 
     expect(store.activePlayerId).toBe(builtin.player_id);
     expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("never auto-selects for a dashboard viewer", async () => {
+    isDashboardViewer = true;
+    const attic = createPlayer("attic", "Attic");
+    const builtin = createPlayer("builtin", "This device");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+    // no automatic default: the hosting dashboard view pins the player
+    expect(store.activePlayerId).toBeUndefined();
+
+    // a view's pin survives the built-in player registering late...
+    store.activePlayerId = attic.player_id;
+    api.players[builtin.player_id] = builtin;
+    store.companionPlayerId = builtin.player_id;
+    await nextTick();
+    expect(store.activePlayerId).toBe(attic.player_id);
+
+    // ...and is not persisted as the shared viewer user's choice
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("still auto-selects for a dashboard viewer on a server that can't resolve the party player", () => {
+    isDashboardViewer = true;
+    supportsPartyPlayerResolution = false;
+    const attic = createPlayer("attic", "Attic");
+    api.players = { [attic.player_id]: attic };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(attic.player_id);
   });
 
   it("keeps the remembered player when it is unavailable at startup", () => {

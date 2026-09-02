@@ -216,6 +216,7 @@ import {
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlayerType, type Player } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
@@ -347,6 +348,8 @@ watch(
     // would overwrite the player the user actually selected earlier
     if (playerId === autoSelectedPlayerId) return;
     autoSelectedPlayerId = undefined;
+    // dashboard viewer preferences are shared by every dashboard session
+    if (authManager.isDashboardViewer()) return;
     rememberPlayer(playerId);
   },
 );
@@ -481,6 +484,10 @@ function resetPanelState() {
 }
 
 function checkDefaultPlayer() {
+  // dashboard viewers never pick players themselves; the hosting view pins one.
+  // older servers can't resolve the party player, so fall back to auto-select.
+  if (authManager.isDashboardViewer() && api.supportsPartyPlayerResolution)
+    return;
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
   if (!defaultPlayerId) return;
@@ -498,6 +505,8 @@ function checkDefaultPlayer() {
  * device, which only registers a moment after the app has started.
  */
 function preferBuiltinPlayer() {
+  if (authManager.isDashboardViewer() && api.supportsPartyPlayerResolution)
+    return;
   if (store.activePlayerId !== autoSelectedPlayerId) return;
   if (getPreference<string>("activePlayerId").value) return;
   const builtinPlayerId = selectBuiltinPlayer();
