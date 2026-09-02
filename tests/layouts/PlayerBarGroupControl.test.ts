@@ -1,8 +1,9 @@
 import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
+import { CircleFadingPlus, Copy } from "@lucide/vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { groupSize } = vi.hoisted(() => ({ groupSize: { value: 3 } }));
+const { groupSize } = vi.hoisted(() => ({ groupSize: { value: 2 } }));
 
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -41,7 +42,7 @@ function mountGroupButton(props: { floating?: boolean } = {}) {
 
 describe("PlayerBarGroupControl", () => {
   beforeEach(() => {
-    groupSize.value = 3;
+    groupSize.value = 2;
   });
 
   afterEach(() => {
@@ -74,22 +75,19 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
   });
 
-  it("keeps the visible member count in the accessible name", () => {
+  it("shows a multi-player state when a group is active", () => {
     const trigger = mountGroupButton();
 
     expect(trigger.attributes("aria-label")).toBe(
-      "tooltip.group_members: 3 players",
+      "tooltip.group_members: 2 players",
     );
-    expect(trigger.get(".player-bar-action-label").text()).toBe("3 players");
+    expect(trigger.get(".player-bar-action-label").text()).toBe("2 players");
+    expect(wrapper!.findComponent(Copy).exists()).toBe(true);
+    expect(wrapper!.findComponent(CircleFadingPlus).exists()).toBe(false);
+    expect(trigger.find("[data-player-group-count]").exists()).toBe(false);
   });
 
-  it("shows the member count on the icon badge", () => {
-    const trigger = mountGroupButton();
-
-    expect(trigger.get("[data-player-group-count]").text()).toBe("3");
-  });
-
-  it("draws the speaker at the line weight of the bar it sits in", () => {
+  it("draws each state icon at the line weight of the bar it sits in", () => {
     expect(mountGroupButton().get("svg").attributes("stroke-width")).toBe(
       "1.4",
     );
@@ -106,24 +104,33 @@ describe("PlayerBarGroupControl", () => {
   it("drops the member count label in the floating player", () => {
     const trigger = mountGroupButton({ floating: true });
 
-    // the round floating trigger has no room for the label, so the badge is
-    // the only place the count shows; the accessible name still spells it out
+    // The round floating trigger has no room for a visible label; the icon
+    // carries the state visually and the accessible name still spells it out.
     expect(trigger.find(".player-bar-action-label").exists()).toBe(false);
-    expect(trigger.get("[data-player-group-count]").text()).toBe("3");
+    expect(wrapper!.findComponent(Copy).exists()).toBe(true);
     expect(trigger.attributes("aria-label")).toBe(
-      "tooltip.group_members: 3 players",
+      "tooltip.group_members: 2 players",
     );
   });
 
-  it("names a single member in the singular", () => {
+  it("invites grouping instead of presenting one player as a group", () => {
     groupSize.value = 1;
     const trigger = mountGroupButton();
 
-    expect(trigger.attributes("aria-label")).toBe(
-      "tooltip.group_members: 1 player_type.player",
-    );
+    expect(trigger.attributes("aria-label")).toBe("tooltip.group_members");
     expect(trigger.get(".player-bar-action-label").text()).toBe(
-      "1 player_type.player",
+      "player_type.group",
     );
+    expect(wrapper!.findComponent(CircleFadingPlus).exists()).toBe(true);
+    expect(wrapper!.findComponent(Copy).exists()).toBe(false);
+  });
+
+  it("uses the add-group icon in the floating player when ungrouped", () => {
+    groupSize.value = 1;
+    const trigger = mountGroupButton({ floating: true });
+
+    expect(trigger.find(".player-bar-action-label").exists()).toBe(false);
+    expect(trigger.attributes("aria-label")).toBe("tooltip.group_members");
+    expect(wrapper!.findComponent(CircleFadingPlus).exists()).toBe(true);
   });
 });

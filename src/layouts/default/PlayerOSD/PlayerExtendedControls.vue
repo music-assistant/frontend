@@ -1,11 +1,18 @@
 <template>
   <div class="player-bar-action-row flex min-w-0 items-center">
-    <PlayerBarVolumeControl
+    <div
       v-if="volume?.isVisible && store.activePlayer"
-      :player="store.activePlayer"
-    />
-    <PlayerBarGroupControl v-if="player?.isVisible" />
-    <PlayerBarPlayerButton v-if="player?.isVisible" />
+      class="player-bar-volume-control-slot flex items-center"
+    >
+      <PlayerBarVolumeControl :player="store.activePlayer" />
+    </div>
+    <div
+      v-if="player?.isVisible"
+      class="player-bar-target-controls flex min-w-0 items-center"
+    >
+      <PlayerBarPlayerButton />
+      <PlayerBarGroupControl />
+    </div>
   </div>
 </template>
 

@@ -42,22 +42,24 @@
         >
           <span v-if="floating" class="inline-flex">
             <!-- matches the track menu beside it in the floating bar -->
-            <PlayerGroupIcon
-              :count="memberCount"
+            <component
+              :is="groupIcon"
               :stroke-width="1.5"
-              class="size-8"
+              class="size-7"
+              aria-hidden="true"
             />
           </span>
           <template v-else>
             <span class="player-bar-action-icon">
-              <PlayerGroupIcon
-                :count="memberCount"
+              <component
+                :is="groupIcon"
                 :stroke-width="1.4"
                 class="size-7"
+                aria-hidden="true"
               />
             </span>
             <span class="player-bar-action-label">
-              {{ memberCountLabel }}
+              {{ groupControlLabel }}
             </span>
           </template>
         </Button>
@@ -92,7 +94,6 @@
 </template>
 
 <script setup lang="ts">
-import PlayerGroupIcon from "@/components/PlayerGroupIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -118,6 +119,7 @@ import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { CircleFadingPlus, Copy } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import PlayerGroupPanel from "./PlayerGroupPanel.vue";
 
@@ -143,16 +145,21 @@ const canEditGroup = computed(
 const memberCount = computed(() =>
   player.value ? getPlayerGroupMemberCount(player.value) : 0,
 );
+const isGrouped = computed(() => memberCount.value > 1);
+const groupIcon = computed(() => (isGrouped.value ? Copy : CircleFadingPlus));
 const memberCountLabel = computed(
-  () =>
-    `${memberCount.value} ${
-      memberCount.value === 1 ? $t("player_type.player") : $t("players")
-    }`,
+  () => `${memberCount.value} ${$t("players")}`,
 );
-// the spoken label has to contain the button's visible text, so it leads with
-// the purpose and keeps the member count; reka-ui names the panel after it too
-const groupMembersLabel = computed(
-  () => `${$t("tooltip.group_members")}: ${memberCountLabel.value}`,
+const groupControlLabel = computed(() =>
+  isGrouped.value ? memberCountLabel.value : $t("player_type.group"),
+);
+// The spoken label contains the visible label and names the panel reka-ui
+// associates with this trigger. A single player is an invitation to group;
+// once grouped, the member count becomes useful state.
+const groupMembersLabel = computed(() =>
+  isGrouped.value
+    ? `${$t("tooltip.group_members")}: ${memberCountLabel.value}`
+    : $t("tooltip.group_members"),
 );
 const groupMembers = computed(() => {
   if (!player.value) return [];
