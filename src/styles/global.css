@@ -79,6 +79,7 @@ html {
      against the bottom of the screen. The mobile player bar floats and varies
      with its contents, so it is measured at runtime instead. */
   --player-bar-height: 104px;
+  --desktop-footer-height: var(--player-bar-height);
   /* Room the bars pinned to the bottom of the screen take up together, for
      anything that has to float clear of them. */
   --bottom-bars-height: calc(

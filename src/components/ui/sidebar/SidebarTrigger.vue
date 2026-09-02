@@ -20,44 +20,25 @@ const isCollapsed = computed(() => state.value === "collapsed");
 </script>
 
 <template>
-  <div
-    :class="[
-      'trigger-container',
-      'flex w-full min-w-0 flex-col overflow-hidden',
-      isCollapsed && 'trigger-container--collapsed',
-      props.class,
-    ]"
-  >
-    <div
-      :class="[
-        'flex w-full min-w-0 items-center gap-1 px-0',
-        isCollapsed ? 'flex-col' : 'flex-row',
-      ]"
-    >
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <!-- collapsed, the trigger takes the menu buttons' size so the rail
-               reads as one column -->
-          <Button
-            data-sidebar="trigger"
-            data-slot="sidebar-trigger"
-            variant="ghost"
-            size="icon"
-            :class="[
-              'flex-shrink-0 group-data-[collapsible=icon]:size-8!',
-              !isCollapsed && 'ml-auto',
-            ]"
-            @click="toggleSidebar"
-          >
-            <PanelLeft />
-            <span class="sr-only">{{ $t("sidebar.toggle") }}</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          {{ isCollapsed ? $t("sidebar.expand") : $t("sidebar.collapse") }}
-        </TooltipContent>
-      </Tooltip>
-    </div>
+  <div :class="['flex w-full min-w-0 flex-col overflow-hidden', props.class]">
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <Button
+          data-sidebar="trigger"
+          data-slot="sidebar-trigger"
+          variant="ghost"
+          size="icon"
+          :class="['flex-shrink-0', isCollapsed ? 'mx-auto' : 'ml-auto']"
+          @click="toggleSidebar"
+        >
+          <PanelLeft />
+          <span class="sr-only">Toggle Sidebar</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right" align="center" :hidden="!isCollapsed">
+        {{ isCollapsed ? "Expand Sidebar" : "Collapse Sidebar" }}
+      </TooltipContent>
+    </Tooltip>
     <div class="navuser-trigger w-full min-w-0">
       <NavUser />
     </div>
@@ -65,58 +46,13 @@ const isCollapsed = computed(() => state.value === "collapsed");
 </template>
 
 <style scoped>
-.trigger-container {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  width: 100%;
-}
-
-.trigger-container .navuser-trigger :deep([data-sidebar="menu-button"]) {
+.navuser-trigger :deep([data-sidebar="menu-button"]) {
   margin-left: 0 !important;
   padding-right: 0;
 }
 
-.trigger-container:not(.trigger-container--collapsed)
-  .navuser-trigger
-  :deep(ul[data-sidebar="menu"]) {
+.navuser-trigger :deep(ul[data-sidebar="menu"]) {
   padding-left: 0 !important;
   padding-right: 0 !important;
-}
-
-.trigger-container--collapsed .navuser-trigger :deep(ul[data-sidebar="menu"]) {
-  padding-left: 6px !important;
-  padding-right: 6px !important;
-}
-
-.trigger-container--collapsed
-  .navuser-trigger
-  :deep([data-sidebar="menu-button"]) {
-  width: 100% !important;
-}
-
-.trigger-container--collapsed
-  .navuser-trigger
-  :deep([data-sidebar="menu-button"] .rounded-lg) {
-  width: 2rem !important;
-  height: 2rem !important;
-}
-
-/* the avatar centres on a margin anchored off the rail's final width, less
-   the 6px the menu ul above keeps per side, so it holds still through the
-   collapse animation */
-.trigger-container--collapsed
-  .navuser-trigger
-  :deep([data-sidebar="menu-button"] [data-slot="avatar"]) {
-  margin-left: calc((var(--sidebar-width-icon) - 2rem) / 2 - 6px);
-}
-
-.trigger-container.flex-col {
-  flex-direction: column;
-  justify-content: center;
-}
-
-.trigger-container.flex-row {
-  flex-direction: row;
 }
 </style>

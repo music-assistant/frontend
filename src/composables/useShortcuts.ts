@@ -42,6 +42,7 @@ const SUPPORTED_TYPES = new Set([
 ]);
 
 const PREF_KEY = "sidebar.shortcuts";
+export const HIDDEN_PREF_KEY = "sidebar.hidden_shortcuts";
 export const MAX_SHORTCUTS = 50;
 
 interface ParsedShortcutUri {
@@ -197,6 +198,20 @@ function _getPinnedUris(): string[] {
   return (store.currentUser?.preferences?.[PREF_KEY] as string[]) ?? [];
 }
 
+function _getHiddenShortcutUris(): string[] {
+  return (store.currentUser?.preferences?.[HIDDEN_PREF_KEY] as string[]) ?? [];
+}
+
+async function removeHiddenUriIfPresent(uri: string): Promise<void> {
+  const hiddenUris = _getHiddenShortcutUris();
+  const nextUris = hiddenUris.filter(
+    (hiddenUri) => !isSameShortcutUri(hiddenUri, uri),
+  );
+  if (nextUris.length !== hiddenUris.length) {
+    await setUserPreference(HIDDEN_PREF_KEY, nextUris);
+  }
+}
+
 export function isShortcutPinned(uri: string): boolean {
   return _getPinnedUris().some((pinnedUri) =>
     isSameShortcutUri(pinnedUri, uri),
@@ -222,6 +237,7 @@ export async function unpinShortcutStandaloneItem(
     PREF_KEY,
     _getPinnedUris().filter((pinnedUri) => !isUriMatchingItem(pinnedUri, item)),
   );
+  await removeHiddenUriIfPresent(getShortcutUri(item));
 }
 
 export async function pinShortcutStandalone(
@@ -243,6 +259,7 @@ async function removePinnedUriIfPresent(uri: string): Promise<void> {
   if (nextUris.length !== currentUris.length) {
     await setUserPreference(PREF_KEY, nextUris);
   }
+  await removeHiddenUriIfPresent(uri);
 }
 
 export function initGlobalShortcutsSync(): void {
@@ -328,6 +345,7 @@ export function useShortcuts() {
   const { getPreference, setPreference } = useUserPreferences();
 
   const pinnedUris = getPreference<string[]>(PREF_KEY, []);
+  const hiddenUris = getPreference<string[]>(HIDDEN_PREF_KEY, []);
   const resolvedItems = ref<ShortcutItem[]>([]);
   // true whenever pinnedUris is non-empty but resolvedItems hasn't been populated yet
   const isLoading = ref(pinnedUris.value.length > 0);
@@ -399,6 +417,25 @@ export function useShortcuts() {
       PREF_KEY,
       pinnedUris.value.filter((u) => !isSameShortcutUri(u, uri)),
     );
+    await setPreference(
+      HIDDEN_PREF_KEY,
+      hiddenUris.value.filter((u) => !isSameShortcutUri(u, uri)),
+    );
+  }
+
+  function isShortcutHidden(uri: string): boolean {
+    return hiddenUris.value.some((hiddenUri) =>
+      isSameShortcutUri(hiddenUri, uri),
+    );
+  }
+
+  async function toggleShortcutHidden(uri: string): Promise<void> {
+    const nextUris = isShortcutHidden(uri)
+      ? hiddenUris.value.filter(
+          (hiddenUri) => !isSameShortcutUri(hiddenUri, uri),
+        )
+      : [...hiddenUris.value, uri];
+    await setPreference(HIDDEN_PREF_KEY, nextUris);
   }
 
   // React to external changes (e.g. pinShortcutStandalone from the context menu)
@@ -483,6 +520,18 @@ export function useShortcuts() {
           return true;
         });
     }),
+    visiblePinnedItems: computed(() =>
+      pinnedUris.value
+        .map((uri) =>
+          resolvedItems.value.find(
+            (item) => isUriMatchingItem(uri, item) && !isShortcutHidden(uri),
+          ),
+        )
+        .filter((item): item is ShortcutItem => !!item),
+    ),
+    hiddenShortcutUris: hiddenUris,
+    isShortcutHidden,
+    toggleShortcutHidden,
     isLoading,
     pinnedCount: computed(() => pinnedUris.value.length),
     isPinned,

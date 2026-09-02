@@ -255,6 +255,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Check, History, Play, Search } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
@@ -529,29 +530,12 @@ const statusNote = computed(() => {
   return "";
 });
 
-const onKeydown = function (event: KeyboardEvent) {
-  if (
-    (event.metaKey || event.ctrlKey) &&
-    !event.altKey &&
-    !event.shiftKey &&
-    !event.repeat &&
-    event.key.toLowerCase() === "k"
-  ) {
-    event.preventDefault();
-    if (isOpen.value) {
-      close();
-    } else if (!store.dialogActive) {
-      open();
-    }
-  }
-};
-
-onMounted(() => {
-  window.addEventListener("keydown", onKeydown);
+useHotkey("Mod+K", () => {
+  if (isOpen.value) close();
+  else if (!store.dialogActive) open();
 });
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", onKeydown);
   clearTimeout(debounceTimer);
   if (isOpen.value) {
     store.dialogActive = false;

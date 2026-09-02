@@ -49,10 +49,8 @@ const mobileSheetSide = useMobileSidebarSide();
       data-slot="sidebar"
       data-mobile="true"
       :side="mobileSheetSide"
-      :class="[
-        'sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden',
-        `sidebar-mobile-sheet--${mobileSheetSide}`,
-      ]"
+      class="sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+      overlay-class="sidebar-mobile-overlay"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
       }"
@@ -80,7 +78,7 @@ const mobileSheetSide = useMobileSidebarSide();
     <div
       :class="
         cn(
-          'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
+          'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear group-data-[collapsible=icon]:duration-0',
           'group-data-[collapsible=offcanvas]:w-0',
           'group-data-[side=right]:rotate-180',
           variant === 'floating' || variant === 'inset'
@@ -92,7 +90,7 @@ const mobileSheetSide = useMobileSidebarSide();
     <div
       :class="
         cn(
-          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
+          'fixed top-0 bottom-[var(--desktop-footer-height,0px)] z-10 hidden w-(--sidebar-width) overflow-hidden transition-[width] duration-200 ease-linear group-data-[collapsible=icon]:duration-0 md:flex',
           side === 'left'
             ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
             : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
@@ -116,27 +114,14 @@ const mobileSheetSide = useMobileSidebarSide();
 </template>
 
 <style>
-/* :root lifts these above the equally-!important size, padding and radius
-   utilities the sheet carries */
-:root .sidebar-mobile-sheet {
-  /* The panel keeps the edge-to-edge span its own utilities give it, so its
-     surface fills the strips the phone reserves for the status bar and the home
-     indicator, and pads its contents back out of them. */
+.sidebar-mobile-sheet {
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100dvh !important;
   border-radius: 0 !important;
-  /* The widths below count that padding in. */
-  box-sizing: border-box;
-  padding-top: var(--device-inset-top) !important;
-  padding-bottom: var(--device-inset-bottom) !important;
 }
 
-/* Widened by the inset they pad away, so the menu keeps its full width. */
-:root .sidebar-mobile-sheet--left {
-  width: calc(var(--sidebar-width) + var(--device-inset-left)) !important;
-  padding-left: var(--device-inset-left) !important;
-}
-
-:root .sidebar-mobile-sheet--right {
-  width: calc(var(--sidebar-width) + var(--device-inset-right)) !important;
-  padding-right: var(--device-inset-right) !important;
+.sidebar-mobile-overlay {
+  bottom: 0 !important;
 }
 </style>

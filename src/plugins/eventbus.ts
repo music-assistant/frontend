@@ -117,6 +117,8 @@ export type Events = {
   clearSelection: void;
   genreExcluded: void;
   "mobile-sidebar-open": void;
+  keyboardShortcutsDialog: void;
+  "player-toggle-lyrics": void;
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();

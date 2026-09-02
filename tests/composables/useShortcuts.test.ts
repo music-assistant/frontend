@@ -3,23 +3,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h } from "vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 
-const { mockUpdateUser, mockSubscribe, storeMock } = vi.hoisted(() => {
-  return {
-    mockUpdateUser: vi.fn<MusicAssistantApi["updateUser"]>(),
-    mockSubscribe: vi.fn(() => vi.fn()),
-    storeMock: {
-      currentUser: {
-        user_id: "user-1",
-        preferences: {} as Record<string, unknown>,
+const { mockUpdateUser, mockSubscribe, mockGetItemByUri, storeMock } =
+  vi.hoisted(() => {
+    return {
+      mockUpdateUser: vi.fn<MusicAssistantApi["updateUser"]>(),
+      mockSubscribe: vi.fn(() => vi.fn()),
+      mockGetItemByUri: vi.fn(),
+      storeMock: {
+        currentUser: {
+          user_id: "user-1",
+          preferences: {} as Record<string, unknown>,
+        },
       },
-    },
-  };
-});
+    };
+  });
 
 vi.mock("@/plugins/api", () => ({
   api: {
     updateUser: mockUpdateUser,
     subscribe: mockSubscribe,
+    getItemByUri: mockGetItemByUri,
   },
 }));
 
@@ -29,6 +32,7 @@ vi.mock("@/plugins/store", () => ({
 
 import {
   getShortcutMoveAvailability,
+  getShortcutUri,
   useShortcuts,
   isShortcutPinned,
   isShortcutPinnedItem,
@@ -224,15 +228,17 @@ describe("useShortcuts standalone helpers", () => {
 
 describe("useShortcuts media item subscription", () => {
   // the composable's hooks bind to whichever component calls it
+  let shortcutState!: ReturnType<typeof useShortcuts>;
   const Consumer = defineComponent({
     setup() {
-      useShortcuts();
+      shortcutState = useShortcuts();
       return () => h("div");
     },
   });
 
   beforeEach(() => {
     mockSubscribe.mockClear();
+    mockGetItemByUri.mockReset();
     storeMock.currentUser = { user_id: "user-1", preferences: {} };
   });
 
@@ -254,5 +260,51 @@ describe("useShortcuts media item subscription", () => {
     await flushPromises();
 
     expect(mockSubscribe).not.toHaveBeenCalled();
+  });
+
+  it("filters hidden shortcuts normally and exposes them while editing", async () => {
+    const item = podcast();
+    const uri = getShortcutUri(item);
+    storeMock.currentUser.preferences = {
+      "sidebar.shortcuts": [uri],
+      "sidebar.hidden_shortcuts": [uri],
+    };
+    mockGetItemByUri.mockResolvedValue(item);
+
+    const consumer = mount(Consumer);
+    await flushPromises();
+
+    expect(shortcutState.pinnedItems.value).toHaveLength(1);
+    expect(shortcutState.visiblePinnedItems.value).toHaveLength(0);
+    expect(shortcutState.isShortcutHidden(uri)).toBe(true);
+
+    await shortcutState.toggleShortcutHidden(uri);
+    await flushPromises();
+    expect(
+      storeMock.currentUser.preferences["sidebar.hidden_shortcuts"],
+    ).toEqual([]);
+
+    consumer.unmount();
+    const restoredConsumer = mount(Consumer);
+    await flushPromises();
+    expect(shortcutState.visiblePinnedItems.value).toHaveLength(1);
+
+    restoredConsumer.unmount();
+  });
+
+  it("removes hidden state when a shortcut is unpinned", async () => {
+    const item = podcast();
+    const uri = getShortcutUri(item);
+    storeMock.currentUser.preferences = {
+      "sidebar.shortcuts": [uri],
+      "sidebar.hidden_shortcuts": [uri],
+    };
+
+    await unpinShortcutStandaloneItem(item);
+
+    expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([]);
+    expect(
+      storeMock.currentUser.preferences["sidebar.hidden_shortcuts"],
+    ).toEqual([]);
   });
 });

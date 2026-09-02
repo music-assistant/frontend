@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
 import NavShortcuts from "@/components/navigation/NavShortcuts.vue";
+import AppLogo from "@/components/AppLogo.vue";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -8,22 +9,25 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarTrigger,
+  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
   commandCenterHotkeyLabel,
   useCommandCenter,
 } from "@/composables/useCommandCenter";
+import { useThemePreference } from "@/composables/useThemePreference";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { haState } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
-import { Check } from "@lucide/vue";
+import { Check, LogOut, Moon, PanelLeft, Sun } from "@lucide/vue";
 import { computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import NavHomeAssistant from "./NavHomeAssistant.vue";
-import NavMobile from "./NavMobile.vue";
+import NavHeaderMenu from "./NavHeaderMenu.vue";
+import NavUser from "./NavUser.vue";
 import {
   getMenuItems,
   resolveMenuConfig,
@@ -32,7 +36,6 @@ import {
 
 const router = useRouter();
 const { t } = useI18n();
-const { toggleSidebar, setOpen, state, isMobile } = useSidebar();
 const { open: openCommandCenter } = useCommandCenter();
 
 const editMode = computed(() => store.navMenuEditMode);
@@ -98,7 +101,12 @@ const sections = computed(() => {
   return resolved;
 });
 
+const { toggleSidebar, setOpen, state, isMobile, setOpenMobile } = useSidebar();
+const { isDarkTheme, setThemePreference } = useThemePreference();
 const collapsed = computed(() => state.value === "collapsed");
+const themeToggleLabel = computed(() =>
+  t(`settings.theme.options.${isDarkTheme.value ? "light" : "dark"}`),
+);
 
 // Editing needs the full (labeled) menu, so pop the sidebar open when edit
 // mode is entered from anywhere (profile menu, settings page shortcut), and
@@ -116,6 +124,16 @@ const handleOpenSidebar = () => {
   }
 };
 
+const toggleTheme = () =>
+  setThemePreference(isDarkTheme.value ? "light" : "dark");
+
+const handleFooterLogout = () => {
+  if (isMobile.value) {
+    setOpenMobile(false);
+  }
+  authManager.logout();
+};
+
 onMounted(() => {
   eventbus.on("mobile-sidebar-open", handleOpenSidebar);
 });
@@ -128,45 +146,55 @@ onUnmounted(() => {
 
 <template>
   <Sidebar collapsible="icon">
-    <SidebarHeader>
-      <SidebarMenu>
-        <div class="sidebar-header-row">
-          <!-- collapsed, the 30px logo centres on a margin anchored off the
-               rail's final width (less the header's 1rem side padding), so it
-               holds still while the width animates -->
+    <SidebarHeader
+      class="h-16 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:pb-0"
+    >
+      <SidebarMenu class="group-data-[collapsible=icon]:gap-2">
+        <SidebarMenuItem>
           <div
-            class="sidebar-header"
-            :style="
-              collapsed
-                ? {
-                    marginLeft:
-                      'calc((var(--sidebar-width-icon) - 1rem - 30px) / 2)',
-                  }
-                : { marginLeft: '7px' }
-            "
-            @click="router.push('/')"
+            class="flex w-full items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center"
           >
-            <img
-              src="@/assets/icon.svg"
-              alt="Music Assistant"
-              class="sidebar-header-logo"
-            />
-            <div v-if="!collapsed" class="sidebar-header-title">
-              Music Assistant
+            <div
+              class="relative flex min-w-0 cursor-pointer items-center gap-1.5 transition-opacity duration-300 ease-[ease]"
+              @click="router.push('/')"
+            >
+              <AppLogo />
+              <div
+                v-if="!collapsed"
+                class="mt-[3px] ml-2.5 overflow-hidden text-[1.2rem] font-bold whitespace-nowrap transition-opacity duration-200 ease-[ease]"
+              >
+                Music Assistant
+              </div>
             </div>
+            <Button
+              v-if="editMode"
+              variant="ghost"
+              size="icon-lg"
+              class="shrink-0"
+              :title="t('menu_edit_disable')"
+              :aria-label="t('menu_edit_disable')"
+              data-testid="sidebar-edit-done"
+              @click="store.navMenuEditMode = false"
+            >
+              <Check class="size-4" />
+            </Button>
+            <NavHeaderMenu v-else-if="!collapsed" />
           </div>
-        </div>
+        </SidebarMenuItem>
+        <SidebarMenuItem v-if="collapsed" class="flex w-full items-center">
+          <NavHeaderMenu />
+        </SidebarMenuItem>
+        <!-- Search goes here. -->
       </SidebarMenu>
     </SidebarHeader>
-    <SidebarContent>
+    <SidebarContent class="scroll-fade">
       <NavMain
         :items="discoverItems"
         :label="sections.explore.label"
         :default-label="sections.explore.defaultLabel"
-        :label-hidden="sections.explore.labelHidden"
         section-id="explore"
         :edit-mode="editMode"
-        class="mt-1"
+        separator="collapsed"
       />
       <NavMain
         :items="libraryItems"
@@ -175,6 +203,7 @@ onUnmounted(() => {
         :label-hidden="sections.library.labelHidden"
         section-id="library"
         :edit-mode="editMode"
+        separator="always"
       />
       <NavMain
         :items="pluginItems"
@@ -183,6 +212,7 @@ onUnmounted(() => {
         :label-hidden="sections.plugins.labelHidden"
         section-id="plugins"
         :edit-mode="editMode"
+        separator="always"
       />
       <NavMain
         :items="systemItems"
@@ -191,135 +221,80 @@ onUnmounted(() => {
         :label-hidden="sections.system.labelHidden"
         section-id="system"
         :edit-mode="editMode"
+        separator="always"
       />
       <NavShortcuts :edit-mode="editMode" />
     </SidebarContent>
-    <SidebarFooter>
-      <Button
-        v-if="editMode"
-        class="menu-edit-done"
-        @click="store.navMenuEditMode = false"
-      >
-        <Check class="size-4" />
-        {{ t("menu_edit_disable") }}
-      </Button>
+    <SidebarFooter
+      class="h-16 pb-3 pr-5 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:pb-3 group-data-[collapsible=icon]:pr-0"
+    >
       <!-- Kiosk mode leaves no Home Assistant chrome on screen, so this is the
            only way back to it. -->
       <NavHomeAssistant v-if="haState.kioskModeEnabled" />
-      <NavMobile v-if="isMobile" />
-      <SidebarTrigger v-else />
+      <div
+        v-else
+        class="flex w-full items-center pt-1 [&>button]:rounded-md"
+        :class="[
+          collapsed ? 'flex-col' : 'flex-row',
+          'group-data-[collapsible=icon]:gap-2',
+        ]"
+      >
+        <Button
+          v-if="collapsed"
+          variant="ghost"
+          size="icon"
+          title="Toggle sidebar"
+          aria-label="Toggle sidebar"
+          data-testid="sidebar-footer-collapse"
+          class="basis-auto shrink-0 grow-0"
+          @click="toggleSidebar"
+        >
+          <PanelLeft />
+        </Button>
+        <NavUser class="min-w-0 flex-1" />
+        <div v-if="!collapsed" class="flex items-center justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Toggle sidebar"
+            aria-label="Toggle sidebar"
+            data-testid="sidebar-footer-collapse"
+            class="basis-auto shrink-0 grow-0"
+            @click="toggleSidebar"
+          >
+            <PanelLeft />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            :title="themeToggleLabel"
+            :aria-label="themeToggleLabel"
+            data-testid="sidebar-footer-theme"
+            class="basis-auto shrink-0 grow-0"
+            @click="toggleTheme"
+          >
+            <Sun v-if="isDarkTheme" />
+            <Moon v-else />
+          </Button>
+          <Button
+            v-if="!store.isIngressSession"
+            variant="ghost"
+            size="icon"
+            title="Sign out"
+            aria-label="Sign out"
+            data-testid="sidebar-footer-logout"
+            class="basis-auto shrink-0 grow-0"
+            @click="handleFooterLogout"
+          >
+            <LogOut />
+          </Button>
+        </div>
+      </div>
     </SidebarFooter>
   </Sidebar>
 </template>
 
-<style scoped>
-.sidebar-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.sidebar-header-logo {
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-}
-
-.sidebar-header-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin: 3px 0 0 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  transition: opacity 0.2s ease;
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  margin: 2px 15px 8px 0;
-  gap: 6px;
-  transition: opacity 0.3s ease;
-  position: relative;
-  cursor: pointer;
-}
-
-.menu-edit-done {
-  width: 100%;
-  border-radius: 999px;
-}
-
-:deep([data-sidebar="group"]) {
-  padding-left: 0 !important;
-  padding-right: 0.5rem !important;
-  padding-top: 0.125rem !important;
-  padding-bottom: 0.125rem !important;
-}
-
-:deep([data-sidebar="group-label"]) {
-  height: 1.75rem !important;
-  padding-left: 1rem !important;
-  font-size: 0.875rem !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.01em !important;
-  color: hsl(var(--sidebar-foreground)) !important;
-  opacity: 0.55;
-}
-
-:deep([data-sidebar="menu-button"]) {
-  margin-left: 0.5rem !important;
-  margin-right: 0.5rem !important;
-  min-height: 1.75rem !important;
-  padding-top: 0.125rem !important;
-  padding-bottom: 0.125rem !important;
-}
-
-/* collapsed to the icon rail, the buttons (2rem wide) centre on a margin
-   anchored off the rail's final width — which --sidebar-width-icon always
-   holds, the scrollbar gutter's widening included — rather than the animating
-   one, so they hold still through the collapse animation */
-[data-collapsible="icon"] :deep([data-sidebar="menu-button"]) {
-  margin-left: calc((var(--sidebar-width-icon) - 2rem) / 2) !important;
-  margin-right: 0 !important;
-}
-
-:deep([data-sidebar="menu-button"] > svg) {
-  width: 1.6rem !important;
-  height: 1.6rem !important;
-  margin-right: 0.5rem !important;
-}
-
-:deep([data-sidebar="menu-button"] > svg.artist-icon) {
-  width: 1.2rem !important;
-  height: 1.2rem !important;
-  margin-right: 0.3rem !important;
-}
-
-:deep([data-sidebar="menu-button"] > svg.genre-icon) {
-  width: auto !important;
-  height: auto !important;
-  margin-right: 0.3rem !important;
-}
-
-@media (min-height: 700px) {
-  :deep([data-sidebar="menu-button"]) {
-    min-height: 2.25rem !important;
-    padding-top: 0.375rem !important;
-    padding-bottom: 0.375rem !important;
-  }
-
-  :deep([data-sidebar="menu-button"] > svg) {
-    width: 2rem !important;
-    height: 2rem !important;
-  }
-
-  :deep([data-sidebar="menu-button"] > svg.artist-icon) {
-    width: 1.4rem !important;
-    height: 1.4rem !important;
-  }
-}
-</style>
+<style scoped></style>
 
 <style>
 [data-mobile="true"] [data-sidebar="footer"] [data-sidebar="menu-button"] {
