@@ -139,7 +139,7 @@ describe("ImportPlaylistDialog", () => {
     expect(radioGroup(wrapper).exists()).toBe(false);
   });
 
-  it("hides the match policy picker on servers older than schema 66", async () => {
+  it("hides the match policy picker on servers older than schema 67", async () => {
     apiMock.supportsPlaylistMatchPolicy = false;
     const wrapper = mountDialog();
     open();
@@ -203,7 +203,7 @@ describe("ImportPlaylistDialog", () => {
     );
   });
 
-  it("omits match_policy on servers older than schema 66", async () => {
+  it("omits match_policy on servers older than schema 67", async () => {
     apiMock.supportsPlaylistMatchPolicy = false;
     const wrapper = mountDialog();
     open();
