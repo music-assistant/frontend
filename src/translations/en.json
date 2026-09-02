@@ -2389,6 +2389,10 @@
             "fixed": "Fixed preset"
         },
         "fixed_preset": "Preset",
+        "palette_ramp": "Recolor everything to the artwork",
+        "palette_ramp_description": "Remap the whole picture into the artwork's colors, keeping the preset's own brightness so motion and detail survive. At full strength every preset takes on the album's palette.",
+        "palette_colors": "Color elements from the artwork",
+        "palette_colors_description": "Color the preset's waveform and borders with the artwork palette instead of tinting the whole picture. Only presets that draw those elements are affected.",
         "beat_switch": "Switch preset on downbeat",
         "beat_switch_description": "Switch to another preset on a downbeat. Overrides a fixed preset.",
         "beat_dwell": "Minimum time between switches",

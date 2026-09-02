@@ -50,6 +50,7 @@
           </div>
           <Switch
             :model-value="enabledPref"
+            :aria-label="$t('settings.visualizer_enabled.label')"
             @update:model-value="
               (v: boolean) => setPref('visualizer_enabled', v)
             "
@@ -152,6 +153,42 @@
             >
           </div>
         </div>
+
+        <div
+          class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        >
+          <div class="min-w-0">
+            <div class="font-medium">
+              {{ $t("visualizer.palette_ramp") }}
+            </div>
+            <div class="text-sm text-muted-foreground">
+              {{ $t("visualizer.palette_ramp_description") }}
+            </div>
+          </div>
+          <div class="flex w-full shrink-0 items-center gap-3 sm:w-64">
+            <Slider
+              :model-value="[paletteRampDraft]"
+              :aria-label="$t('visualizer.palette_ramp')"
+              :min="0"
+              :max="100"
+              :step="VISUALIZER_PALETTE_RAMP_STEP"
+              @update:model-value="
+                (v: number[] | undefined) =>
+                  (paletteRampDraft = v?.[0] ?? VISUALIZER_PALETTE_RAMP_DEFAULT)
+              "
+              @value-commit="
+                (v: number[]) =>
+                  setPref(
+                    'visualizer_palette_ramp',
+                    v[0] ?? VISUALIZER_PALETTE_RAMP_DEFAULT,
+                  )
+              "
+            />
+            <span class="w-12 text-right text-sm tabular-nums"
+              >{{ paletteRampDraft }}%</span
+            >
+          </div>
+        </div>
       </CardContent>
     </Card>
 
@@ -219,6 +256,22 @@
 
         <div class="flex items-center justify-between gap-6">
           <div class="min-w-0">
+            <div class="font-medium">{{ $t("visualizer.palette_colors") }}</div>
+            <div class="text-sm text-muted-foreground">
+              {{ $t("visualizer.palette_colors_description") }}
+            </div>
+          </div>
+          <Switch
+            :model-value="paletteColorsPref"
+            :aria-label="$t('visualizer.palette_colors')"
+            @update:model-value="
+              (v: boolean) => setPref('visualizer_palette_colors', v)
+            "
+          />
+        </div>
+
+        <div class="flex items-center justify-between gap-6">
+          <div class="min-w-0">
             <div class="font-medium">{{ $t("visualizer.beat_switch") }}</div>
             <div class="text-sm text-muted-foreground">
               {{ $t("visualizer.beat_switch_description") }}
@@ -226,6 +279,7 @@
           </div>
           <Switch
             :model-value="beatSwitchPref"
+            :aria-label="$t('visualizer.beat_switch')"
             @update:model-value="
               (v: boolean) => setPref('visualizer_beat_switch', v)
             "
@@ -348,6 +402,9 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  VISUALIZER_PALETTE_COLORS_DEFAULT,
+  VISUALIZER_PALETTE_RAMP_DEFAULT,
+  VISUALIZER_PALETTE_RAMP_STEP,
 } from "@/composables/visualizer/state";
 import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
 import {
@@ -376,6 +433,14 @@ const presetModePref = getPreference<string>(
   "random",
 );
 const presetPref = getPreference("visualizer_preset", "");
+const paletteColorsPref = getPreference(
+  "visualizer_palette_colors",
+  VISUALIZER_PALETTE_COLORS_DEFAULT,
+);
+const paletteRampPref = getPreference(
+  "visualizer_palette_ramp",
+  VISUALIZER_PALETTE_RAMP_DEFAULT,
+);
 const beatSwitchPref = getPreference("visualizer_beat_switch", false);
 const beatDwellPref = getPreference("visualizer_beat_dwell", 30);
 const favoritesPref = getPreference<string[]>("visualizer_favorites", []);
@@ -390,6 +455,8 @@ const opacityDraft = ref(opacityPref.value);
 watch(opacityPref, (value) => (opacityDraft.value = value));
 const blurDraft = ref(blurPref.value);
 watch(blurPref, (value) => (blurDraft.value = value));
+const paletteRampDraft = ref(paletteRampPref.value);
+watch(paletteRampPref, (value) => (paletteRampDraft.value = value));
 const beatDwellDraft = ref(beatDwellPref.value);
 watch(beatDwellPref, (value) => (beatDwellDraft.value = value));
 

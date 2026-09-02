@@ -12,8 +12,10 @@ import { parseVisualizerBinary } from "@/helpers/visualizer/binaryFrames";
 import { FrameScheduler } from "@/helpers/visualizer/frameScheduler";
 import { ClockSync, computeTimeSample } from "@/helpers/visualizer/timeSync";
 import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
+import type { VisualizerPerfSample } from "@/helpers/visualizer/perfSampler";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
+import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
 const N_SAMPLES = 1024; // matches butterchurn's fixed internal buffers
@@ -84,6 +86,168 @@ export function visualizerProviderAvailable(): boolean {
 export function visualizerCanRender(): boolean {
   if (api.isRemoteConnection.value) return false;
   return isVisualizerSupported();
+}
+
+// The dashboard id the server put in the launched url. Reports carry it so a
+// server with several displays can tell whose report it is logging.
+function reportingDashboardId(): string | undefined {
+  const value = router.currentRoute.value.query.dashboard_id;
+  return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * Send one capability report with the envelope and gating every report shares.
+ *
+ * Central so no reporter can forget one, the toast suppression especially: a
+ * failing report would otherwise toast on a display nobody can reach.
+ *
+ * :param context: what the report was about, for the warning.
+ * :param fields: the report body, merged over the shared envelope.
+ */
+async function sendCapabilityReport(
+  context: string,
+  fields: Record<string, unknown>,
+): Promise<void> {
+  if (!authManager.isDashboardViewer()) return;
+  if (!api.supportsDashboardVisualizer) return;
+  try {
+    await api.sendCommand(
+      "milkdrop_visualizer/report_capability",
+      {
+        user_agent: navigator.userAgent,
+        dashboard_id: reportingDashboardId(),
+        ...fields,
+      },
+      { suppressGlobalError: true },
+    );
+  } catch (error) {
+    console.warn(`[visualizer] could not report ${context}:`, error);
+  }
+}
+
+/**
+ * Report this display's render capabilities to the server.
+ *
+ * Cast and TV receivers vary wildly in graphics support and have no reachable
+ * console; the server logs these reports so it is knowable which devices can
+ * render MilkDrop and which cannot. Sent over the main API socket, so a
+ * display that cannot render (and thus never opens a relay connection) still
+ * gets its probe result recorded.
+ */
+export async function reportVisualizerCapability(
+  renderer: "butterchurn" | "none",
+  gpu?: string,
+): Promise<void> {
+  await sendCapabilityReport("capability", {
+    webgl2: isVisualizerSupported(),
+    renderer,
+    gpu,
+  });
+}
+
+// Rate cap so a per-frame exception storm cannot flood the server log. A
+// rolling window rather than a lifetime cap: these displays run for weeks, and
+// a lifetime cap would permanently mute the only diagnostics they have after
+// the first few errors.
+const MAX_ERROR_REPORTS_PER_WINDOW = 3;
+const ERROR_REPORT_WINDOW_MS = 60 * 60 * 1000;
+const MAX_ERROR_MESSAGE_CHARS = 500;
+// preset names are author-supplied and occasionally enormous
+const PRESET_NAME_REPORT_CHARS = 120;
+let errorReportTimes: number[] = [];
+let errorReportingInstalled = false;
+
+/**
+ * Forward uncaught page errors to the server log, for displays with no
+ * reachable console. Installed once; only the first few errors are sent.
+ */
+export function installVisualizerErrorReporting(): void {
+  if (errorReportingInstalled) return;
+  if (!authManager.isDashboardViewer()) return;
+  errorReportingInstalled = true;
+  const send = (message: string) => {
+    const now = Date.now();
+    errorReportTimes = errorReportTimes.filter(
+      (at) => now - at < ERROR_REPORT_WINDOW_MS,
+    );
+    if (errorReportTimes.length >= MAX_ERROR_REPORTS_PER_WINDOW) return;
+    errorReportTimes.push(now);
+    void sendCapabilityReport("a page error", {
+      error: message.slice(0, MAX_ERROR_MESSAGE_CHARS),
+    });
+  };
+  window.addEventListener("error", (event) => {
+    const src = event.filename ? ` (${event.filename}:${event.lineno})` : "";
+    send(`${event.message}${src}`);
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    send(`unhandled rejection: ${String(event.reason)}`);
+  });
+}
+
+/**
+ * Record how a display is actually rendering, in the server log.
+ *
+ * Cast receivers have no reachable console and no devtools, so an adaptive
+ * display otherwise gives no way to tell what it settled on or why. Sent on
+ * every ladder move plus a heartbeat every TV_STEADY_REPORT_EVERY samples, so
+ * a resting display still reports about once a minute.
+ *
+ * @param sample - the measured render performance behind this report.
+ * @param level - the adaptive ladder level in use when it was measured.
+ * @param note - what prompted the report, e.g. "settled".
+ */
+export async function reportVisualizerRender(
+  sample: VisualizerPerfSample,
+  level: number,
+  note: string,
+): Promise<void> {
+  // the hardcoded capability fields below only hold for a rendering display
+  await sendCapabilityReport("render performance", {
+    webgl2: true,
+    renderer: "butterchurn",
+    render: {
+      note,
+      preset: sample.preset?.slice(0, PRESET_NAME_REPORT_CHARS) ?? "",
+      level,
+      fps: Math.round(sample.fps * 10) / 10,
+      target_fps: Math.round(sample.targetFps * 10) / 10,
+      late_ratio: Math.round(sample.lateRatio * 100) / 100,
+      pixels: sample.pixels,
+      render_ms: Math.round(sample.renderMs * 10) / 10,
+      blocked_ratio: Math.round(sample.blockedRatio * 100) / 100,
+      ...(sample.gpu
+        ? {
+            gpu_warp: Math.round((sample.gpu.warp ?? 0) * 10) / 10,
+            gpu_blur: Math.round((sample.gpu.blur ?? 0) * 10) / 10,
+            gpu_comp: Math.round((sample.gpu.comp ?? 0) * 10) / 10,
+          }
+        : {}),
+    },
+  });
+}
+
+/**
+ * Whether the plugin is configured to show the visualizer on dashboard screens.
+ *
+ * Cast dashboards run as the dashboard viewer, which has no user preferences and
+ * no way to set any, so this server-side setting decides for them. Dashboards
+ * only; a normal session falls back to off.
+ */
+export async function visualizerShownOnDashboards(): Promise<boolean> {
+  if (!visualizerProviderAvailable()) return false;
+  if (!api.supportsDashboardVisualizer) return false;
+  try {
+    const config = await api.sendCommand<Record<string, boolean>>(
+      "milkdrop_visualizer/config",
+      undefined,
+      { suppressGlobalError: true },
+    );
+    return config?.show_on_dashboards === true;
+  } catch (error) {
+    console.warn("[visualizer] could not read the plugin config:", error);
+    return false;
+  }
 }
 
 export class VisualizerRelayClient {
@@ -174,7 +338,7 @@ export class VisualizerRelayClient {
       this.clearBeatTimers();
       this.clock.clear();
       this.scheduler.clear();
-      // No onColor: the canvas keeps its tint across a reconnect on purpose;
+      // No onColor: the canvas keeps its palette across a reconnect on purpose;
       // stream/start clears it when the server no longer serves color.
       this.colorPalette = {};
       if (this.closed) return;
@@ -251,7 +415,8 @@ export class VisualizerRelayClient {
       } else if (message.type === "stream/start") {
         // The server advertises the message types it will serve. Without
         // "color" (color_tint disabled) no color message will ever replace a
-        // tint kept across a reconnect, so it has to be dropped here.
+        // palette kept across a reconnect, so it has to be dropped here or the
+        // engine goes on recoloring from a dead track's artwork.
         const types = (
           message.payload as { visualizer?: { types?: unknown } } | undefined
         )?.visualizer?.types;

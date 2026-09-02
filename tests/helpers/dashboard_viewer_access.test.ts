@@ -1,5 +1,6 @@
 import {
   getDashboardViewerNavigationRedirect,
+  restoreStrayViewerParams,
   sanitizeDashboardViewerPath,
 } from "@/helpers/dashboard_viewer_access";
 import { describe, expect, it } from "vitest";
@@ -31,6 +32,54 @@ describe("dashboard viewer dashboard path", () => {
 
   it("keeps the host route allowed for viewers pinned there by an older server", () => {
     expect(sanitizeDashboardViewerPath("/music-quiz")).toBe("/music-quiz");
+  });
+});
+
+describe("stranded viewer route params", () => {
+  it("restores a param a double-decoding client flattened out of the path", () => {
+    expect(
+      restoreStrayViewerParams(
+        "/now-playing?player=abc",
+        "?dashboard=CODE&path=/now-playing?player=abc&dashboard_id=kiosk1",
+      ),
+    ).toBe("/now-playing?player=abc&dashboard_id=kiosk1");
+  });
+
+  it("restores every stranded param, not just the first", () => {
+    expect(
+      restoreStrayViewerParams(
+        "/now-playing",
+        "?dashboard=CODE&path=/now-playing&player=abc&dashboard_id=kiosk1",
+      ),
+    ).toBe("/now-playing?player=abc&dashboard_id=kiosk1");
+  });
+
+  it("leaves an intact url untouched", () => {
+    const path = "/now-playing?player=abc&dashboard_id=kiosk1";
+    expect(restoreStrayViewerParams(path, "?dashboard=CODE&path=..")).toBe(
+      path,
+    );
+  });
+
+  it("never overrides a param the route already carries", () => {
+    expect(
+      restoreStrayViewerParams(
+        "/now-playing?player=abc",
+        "?player=stale&dashboard_id=kiosk1",
+      ),
+    ).toBe("/now-playing?player=abc&dashboard_id=kiosk1");
+  });
+
+  it("ignores query params that are not viewer route params", () => {
+    expect(
+      restoreStrayViewerParams("/party", "?dashboard=CODE&remote_id=xyz"),
+    ).toBe("/party");
+  });
+
+  it("encodes a restored value", () => {
+    expect(restoreStrayViewerParams("/party", "?dashboard_id=a b/c")).toBe(
+      "/party?dashboard_id=a%20b%2Fc",
+    );
   });
 });
 

@@ -38,7 +38,7 @@ vi.mock("@/plugins/router", () => ({
   default: {},
 }));
 vi.mock("@/plugins/auth", () => ({
-  authManager: {},
+  authManager: { isDashboardViewer: () => false },
   default: {},
 }));
 

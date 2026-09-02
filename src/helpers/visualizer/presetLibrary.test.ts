@@ -8,9 +8,10 @@ vi.mock("butterchurn-presets", () => ({
     getPresets: () => ({ "Alpha - one": { a: 1 }, "beta - two": { b: 2 } }),
   },
 }));
-vi.mock("butterchurn-presets/lib/butterchurnPresetsExtra.min.js", () => ({
+// the v3 packs export the preset map itself, recognised by `baseVals`
+vi.mock("butterchurn-presets/dist/extra.min.js", () => ({
   getPresets: undefined,
-  default: { getPresets: () => ({ "Gamma - three": { c: 3 } }) },
+  default: { "Gamma - three": { baseVals: { c: 3 } } },
 }));
 
 describe("presetLibrary", () => {
@@ -31,7 +32,7 @@ describe("presetLibrary", () => {
 
   it("returns presets by name", async () => {
     const { getPreset } = await import("./presetLibrary");
-    expect(await getPreset("Gamma - three")).toEqual({ c: 3 });
+    expect(await getPreset("Gamma - three")).toEqual({ baseVals: { c: 3 } });
     expect(await getPreset("nope")).toBeUndefined();
   });
 

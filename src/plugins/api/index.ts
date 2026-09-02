@@ -87,6 +87,10 @@ const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 // The player_id argument on music/browse landed in API schema 61.
 const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
 
+// dashboard/viewer_preferences and the milkdrop_visualizer config/report_capability
+// commands landed in API schema 66.
+const DASHBOARD_VISUALIZER_SCHEMA_VERSION = 66;
+
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -2983,6 +2987,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       IMPORT_PLAYLIST_MATCH_POLICY_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server implements the dashboard visualizer commands (schema >= 66). */
+  public get supportsDashboardVisualizer(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      DASHBOARD_VISUALIZER_SCHEMA_VERSION
     );
   }
 
