@@ -9,12 +9,37 @@
         <span class="player-card-name truncate text-sm leading-5 font-medium">
           {{ name }}
         </span>
+        <span
+          v-if="index === 0"
+          class="player-playback-indicator flex size-4 shrink-0 items-center justify-center"
+          :class="{
+            'text-primary': playing,
+            invisible: !playing,
+          }"
+          role="img"
+          :aria-label="playing ? $t('state.playing') : undefined"
+          :aria-hidden="!playing"
+        >
+          <AudioLines aria-hidden="true" class="size-4" />
+        </span>
         <slot v-if="index === 0"></slot>
       </div>
     </template>
     <div v-else class="flex min-w-0 items-center gap-1.5">
       <span class="player-card-name truncate text-sm font-medium">
         {{ playerName }}
+      </span>
+      <span
+        class="player-playback-indicator flex size-4 shrink-0 items-center justify-center"
+        :class="{
+          'text-primary': playing,
+          invisible: !playing,
+        }"
+        role="img"
+        :aria-label="playing ? $t('state.playing') : undefined"
+        :aria-hidden="!playing"
+      >
+        <AudioLines aria-hidden="true" class="size-4" />
       </span>
       <slot></slot>
     </div>
@@ -54,6 +79,7 @@
 </template>
 
 <script setup lang="ts">
+import { AudioLines } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const props = withDefaults(
@@ -62,10 +88,12 @@ const props = withDefaults(
     memberNames: string[];
     memberLayout?: "subtitle" | "subtitle-list" | "title-list";
     memberLimit?: number;
+    playing?: boolean;
   }>(),
   {
     memberLayout: "subtitle",
     memberLimit: 2,
+    playing: false,
   },
 );
 

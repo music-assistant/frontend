@@ -9,7 +9,9 @@
       'pt-4':
         showSelectedIndicator && player.player_id === store.activePlayerId,
       'opacity-80':
-        !player.needs_setup && player.playback_state === PlaybackState.IDLE,
+        !stackMediaDetails &&
+        !player.needs_setup &&
+        player.playback_state === PlaybackState.IDLE,
       'opacity-60': !player.needs_setup && player.powered === false,
       'opacity-40': !player.available && !player.needs_setup,
     }"
@@ -62,6 +64,7 @@
             :player-name="cardPlayerName"
             :member-names="displayedGroupMemberNames"
             :member-layout="groupMemberLayout"
+            :playing="isPlaying"
           >
             <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
           </PlayerCardTitle>
@@ -74,7 +77,12 @@
             "
           >
             <div
-              class="bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
+              class="player-card-media flex size-11 shrink-0 items-center justify-center overflow-hidden"
+              :class="{
+                'bg-muted rounded-md': artworkUrl || !useStackedMediaLayout,
+                'player-card-media-placeholder':
+                  useStackedMediaLayout && !artworkUrl,
+              }"
             >
               <img
                 v-if="artworkUrl"
@@ -94,7 +102,13 @@
                   )
                 "
                 :size="24"
-                class="opacity-80"
+                :class="
+                  useStackedMediaLayout
+                    ? hasSelectedMedia
+                      ? 'text-foreground opacity-100'
+                      : 'text-foreground opacity-50'
+                    : 'opacity-80'
+                "
               />
             </div>
 
@@ -104,6 +118,7 @@
                 :player-name="cardPlayerName"
                 :member-names="displayedGroupMemberNames"
                 :member-layout="groupMemberLayout"
+                :playing="isPlaying"
               >
                 <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
               </PlayerCardTitle>
@@ -320,15 +335,25 @@ const mediaByline = computed(() =>
     .join(" • "),
 );
 
-const hasMediaDetails = computed(
+const hasSelectedMedia = computed(
   () =>
     props.player.powered !== false &&
-    Boolean(props.player.current_media?.title || mediaByline.value),
+    (props.player.playback_state === PlaybackState.PLAYING ||
+      props.player.playback_state === PlaybackState.PAUSED ||
+      Boolean(
+        props.player.current_media?.title ||
+        mediaByline.value ||
+        props.player.current_media?.image_url,
+      )),
 );
 
-const useStackedMediaLayout = computed(
-  () => props.stackMediaDetails === true && hasMediaDetails.value,
+const isPlaying = computed(
+  () =>
+    props.player.powered !== false &&
+    props.player.playback_state === PlaybackState.PLAYING,
 );
+
+const useStackedMediaLayout = computed(() => props.stackMediaDetails === true);
 
 const canPlayPause = computed(
   () => activeSource.value?.can_play_pause === true,

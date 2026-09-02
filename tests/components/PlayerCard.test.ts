@@ -533,7 +533,7 @@ describe("PlayerCard", () => {
     expect(members.classes()).toContain("text-[11px]");
   });
 
-  it("stacks player identity above loaded media only when requested", () => {
+  it("stacks player identity above media only when requested", () => {
     const player = createPlayer({
       playback_state: PlaybackState.PLAYING,
       current_media: createPlayerMedia({
@@ -571,17 +571,86 @@ describe("PlayerCard", () => {
     );
   });
 
-  it("keeps idle selector cards compact", () => {
+  it("anchors idle selector titles above a minimal faded speaker icon", () => {
     const wrapper = mountPlayerCard(createPlayer(), {
       stackMediaDetails: true,
     });
 
-    expect(wrapper.find(".player-card-main").classes()).not.toContain(
-      "flex-col",
-    );
-    expect(wrapper.find(".player-card-actions").classes()).not.toContain(
+    expect(wrapper.classes()).not.toContain("opacity-80");
+    expect(wrapper.find(".player-card-main").classes()).toContain("flex-col");
+    expect(
+      wrapper.find(".player-card-main > .player-card-title").exists(),
+    ).toBe(true);
+    expect(
+      wrapper.find(".player-card-media-row .player-card-title").exists(),
+    ).toBe(false);
+    expect(wrapper.find(".player-card-actions").classes()).toContain(
       "self-end",
     );
+    const media = wrapper.get(".player-card-media-placeholder");
+    expect(media.classes()).not.toContain("border");
+    expect(media.classes()).not.toContain("bg-muted");
+    expect(media.classes()).not.toContain("rounded-md");
+    expect(media.get(".player-icon").classes()).toContain("opacity-50");
+    expect(media.get(".player-icon").classes()).toContain("text-foreground");
+  });
+
+  it("uses full speaker-icon contrast when media is selected without artwork", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        playback_state: PlaybackState.PLAYING,
+        current_media: createPlayerMedia({ title: "Hate Me Now" }),
+      }),
+      { stackMediaDetails: true },
+    );
+
+    const icon = wrapper.get(".player-card-media-placeholder .player-icon");
+    expect(icon.classes()).toContain("opacity-100");
+    expect(icon.classes()).toContain("text-foreground");
+  });
+
+  it("reserves a title slot for the playing-state indicator", () => {
+    const idleCard = mountPlayerCard(createPlayer(), {
+      stackMediaDetails: true,
+    });
+    const idleIndicator = idleCard.get(".player-playback-indicator");
+
+    expect(idleIndicator.classes()).toContain("invisible");
+    expect(idleIndicator.attributes("aria-hidden")).toBe("true");
+    idleCard.unmount();
+
+    const playingCard = mountPlayerCard(
+      createPlayer({ playback_state: PlaybackState.PLAYING }),
+      { stackMediaDetails: true },
+    );
+    const playingIndicator = playingCard.get(".player-playback-indicator");
+
+    expect(playingIndicator.classes()).not.toContain("invisible");
+    expect(playingIndicator.classes()).toContain("text-primary");
+    expect(playingIndicator.attributes("aria-label")).toBe("state.playing");
+    expect(playingIndicator.attributes("aria-hidden")).toBe("false");
+    playingCard.unmount();
+
+    const pausedCard = mountPlayerCard(
+      createPlayer({ playback_state: PlaybackState.PAUSED }),
+      { stackMediaDetails: true },
+    );
+    const pausedIndicator = pausedCard.get(".player-playback-indicator");
+
+    expect(pausedIndicator.classes()).toContain("invisible");
+    expect(pausedIndicator.attributes("aria-hidden")).toBe("true");
+  });
+
+  it("shows the playing-state indicator beside names in unstacked cards", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({ playback_state: PlaybackState.PLAYING }),
+    );
+    const title = wrapper.get(".player-card-media-row .player-card-title");
+    const indicator = title.get(".player-playback-indicator");
+
+    expect(indicator.classes()).not.toContain("invisible");
+    expect(indicator.classes()).toContain("text-primary");
+    expect(indicator.attributes("aria-label")).toBe("state.playing");
   });
 
   it.each([PlaybackState.PLAYING, PlaybackState.PAUSED])(
