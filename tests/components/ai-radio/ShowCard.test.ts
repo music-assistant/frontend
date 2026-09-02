@@ -13,6 +13,7 @@ const { playMedia, queueCommandClear } = vi.hoisted(() => ({
 vi.mock("@/plugins/api", () => ({
   default: {
     players: {},
+    queues: {},
     providers: {},
     sendCommand: vi.fn(async () => ({})),
     getLibraryPlaylists: vi.fn<MusicAssistantApi["getLibraryPlaylists"]>(

@@ -1827,7 +1827,7 @@
                 "unavailable": "AI Radio is not enabled.",
                 "live_starting": "Live radio started",
                 "live_start_failed": "Failed to start live radio",
-                "session_stopped": "AI Radio session stopped",
+                "show_stopped": "Show stopped",
                 "session_stop_failed": "Failed to stop AI Radio session",
                 "station_saved": "Station saved",
                 "station_save_failed": "Failed to save station",

@@ -57,30 +57,6 @@ const aiRadioAvailable = computed(() =>
 let showStatePrefetched = false;
 let unsubscribeDjStatusEvents: (() => void) | null = null;
 
-// Declared ahead of the immediate watch below, which may subscribe right away.
-const refreshDjStatusDebounced = useDebounceFn(() => {
-  // Best effort: the next queue event retries.
-  refreshDjStatus().catch(() => undefined);
-}, DJ_STATUS_REFRESH_DEBOUNCE_MS);
-
-// Prefetch and track DJ state as soon as the provider is there, so the queue
-// DJ menu can resolve an on-air show's host from anywhere in the app, not just
-// this view.
-watch(
-  aiRadioAvailable,
-  (available) => {
-    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
-    if (available && authManager.guestSessionKind() === null) {
-      prefetchShowState();
-      subscribeDjStatusEvents();
-    } else {
-      unsubscribeDjStatusEvents?.();
-      unsubscribeDjStatusEvents = null;
-    }
-  },
-  { immediate: true },
-);
-
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 };
@@ -209,14 +185,17 @@ function onAirQueueId(showId: string): string | undefined {
   );
 }
 
-/** Plays a show as its radio media item on the given player's queue. */
+/** Plays a show as its radio media item on the queue the given player plays from. */
 async function startShow(showId: string, playerId: string): Promise<void> {
   startingShowId.value = showId;
   dismissNoAiProviderAlert();
   try {
-    await api.playMedia(showUri(showId), undefined, { queue_id: playerId });
+    await api.playMedia(showUri(showId), undefined, {
+      queue_id: activeQueueId(playerId),
+    });
     toast.success($t("providers.ai_radio.toast.live_starting"));
-    await refreshDjStatus();
+    // Best effort: the queue events reconcile the on-air state anyway.
+    await refreshDjStatus().catch(() => undefined);
   } finally {
     startingShowId.value = "";
   }
@@ -233,7 +212,7 @@ async function stopShow(showId: string): Promise<void> {
     const remaining = { ...djStatus.value };
     delete remaining[queueId];
     djStatus.value = remaining;
-    toast.success($t("providers.ai_radio.toast.session_stopped"));
+    toast.success($t("providers.ai_radio.toast.show_stopped"));
   } finally {
     stoppingShowId.value = "";
   }
@@ -264,12 +243,32 @@ function prefetchShowState(): void {
   });
 }
 
+/** The queue a player plays from: its group leader's when synced, else its own (mirrors api.playMedia's default). */
+function activeQueueId(playerId: string): string {
+  const player = api.players[playerId];
+  return player?.active_source && player.active_source in api.queues
+    ? player.active_source
+    : playerId;
+}
+
+const refreshDjStatusDebounced = useDebounceFn(() => {
+  // Best effort: the next queue event retries.
+  refreshDjStatus().catch(() => undefined);
+}, DJ_STATUS_REFRESH_DEBOUNCE_MS);
+
 function subscribeDjStatusEvents(): void {
   if (unsubscribeDjStatusEvents) return;
   unsubscribeDjStatusEvents = api.subscribe_multi(
     DJ_STATUS_EVENTS,
     refreshDjStatusDebounced,
   );
+  // Events missed while unsubscribed (e.g. across a reconnect) are reconciled here.
+  void refreshDjStatusDebounced();
+}
+
+function unsubscribeDjStatusEventsIfAny(): void {
+  unsubscribeDjStatusEvents?.();
+  unsubscribeDjStatusEvents = null;
 }
 
 export function useShows() {
@@ -301,3 +300,23 @@ export function useShows() {
     dismissNoAiProviderAlert,
   };
 }
+
+// Prefetch and track DJ state as soon as the provider is there, so the queue
+// DJ menu can resolve an on-air show's host from anywhere in the app, not just
+// this view. Registered last: the immediate callback reaches everything above.
+watch(
+  aiRadioAvailable,
+  (available) => {
+    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
+    if (available && authManager.guestSessionKind() === null) {
+      prefetchShowState();
+      subscribeDjStatusEvents();
+    } else {
+      unsubscribeDjStatusEventsIfAny();
+    }
+  },
+  { immediate: true },
+);
+
+// A hot reload re-registers the watch above; drop the old listener first.
+import.meta.hot?.dispose(unsubscribeDjStatusEventsIfAny);

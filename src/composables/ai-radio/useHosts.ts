@@ -44,16 +44,6 @@ const aiRadioAvailable = computed(() =>
   ),
 );
 
-// Prefetch as soon as the provider is there, including when it already is.
-watch(
-  aiRadioAvailable,
-  (available) => {
-    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
-    if (available && authManager.guestSessionKind() === null) prefetchHosts();
-  },
-  { immediate: true },
-);
-
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 };
@@ -190,3 +180,14 @@ export function useHosts() {
     setQueueDj,
   };
 }
+
+// Prefetch as soon as the provider is there, including when it already is.
+// Registered last: the immediate callback reaches everything above.
+watch(
+  aiRadioAvailable,
+  (available) => {
+    // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
+    if (available && authManager.guestSessionKind() === null) prefetchHosts();
+  },
+  { immediate: true },
+);
