@@ -13,6 +13,7 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "vue-sonner";
 import { providerConfig } from "./fixtures/providerConfig";
 import { user } from "./fixtures/user";
 
@@ -271,6 +272,7 @@ vi.mock("vue-sonner", () => ({
   toast: {
     dismiss: vi.fn(),
     info: vi.fn(),
+    loading: vi.fn(() => 1),
     warning: vi.fn(),
   },
 }));
@@ -407,6 +409,7 @@ describe("App initialization", () => {
     wrapper?.unmount();
     wrapper = undefined;
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it.each(["party", "music_quiz"] as const)(
@@ -762,6 +765,24 @@ describe("App initialization", () => {
     expect(wrapper.find("router-view-stub").exists()).toBe(true);
   });
 
+  it("keeps the app on screen while a reconnect is in progress", async () => {
+    wrapper = await mountApp();
+    vi.useFakeTimers();
+
+    apiMock.state.value = "reconnecting";
+    await nextTick();
+    expect(wrapper.find("router-view-stub").exists()).toBe(true);
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(false);
+    expect(toast.loading).toHaveBeenCalledOnce();
+
+    // A reconnect that takes too long hands over to the login screen after all.
+    vi.advanceTimersByTime(10_000);
+    await nextTick();
+    expect(wrapper.find("router-view-stub").exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "Login" }).exists()).toBe(true);
+    expect(toast.dismiss).toHaveBeenCalled();
+  });
+
   it.each(["party", "music_quiz"] as const)(
     "records an ended %s guest session when reconnecting is rejected",
     async (type) => {
@@ -837,12 +858,17 @@ describe("App initialization", () => {
     wrapper = await mountApp();
     expect(wrapper.find(".ha-escape-button").exists()).toBe(false);
 
-    // This screen replaces the whole app, sidebar and all, and kiosk mode has
-    // left Home Assistant nothing on screen either: without this the panel is a
-    // spinner with nowhere to go for as long as the server stays away.
+    // The app, sidebar and all, stays up while a reconnect is in progress.
+    vi.useFakeTimers();
     apiMock.state.value = "reconnecting";
     await nextTick();
+    expect(wrapper.find(".ha-escape-button").exists()).toBe(false);
 
+    // The login screen replaces the whole app, sidebar and all, and kiosk mode
+    // has left Home Assistant nothing on screen either: without this the panel
+    // is a spinner with nowhere to go for as long as the server stays away.
+    vi.advanceTimersByTime(10_000);
+    await nextTick();
     expect(wrapper.find(".ha-escape-button").exists()).toBe(true);
   });
 
