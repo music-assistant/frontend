@@ -25,6 +25,7 @@ vi.mock("@/plugins/api", async () => {
       players: {},
       providers: reactive<Record<string, ProviderInstance>>({}),
       sendCommand,
+      subscribe_multi: vi.fn(() => () => undefined),
     },
   };
 });
@@ -75,7 +76,8 @@ const host: AIRadioHost = {
 
 sendCommand.mockImplementation(async (command: string) => {
   if (command === "ai_radio/hosts/list") return [host];
-  if (command === "ai_radio/queue_dj/status") return { kitchen: "host-1" };
+  if (command === "ai_radio/queue_dj/status")
+    return { kitchen: { host_id: "host-1", station_id: "" } };
   return undefined;
 });
 

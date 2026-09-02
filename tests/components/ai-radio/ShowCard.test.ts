@@ -1,24 +1,39 @@
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
-import { useShows } from "@/composables/ai-radio/useShows";
+import { showUri, useShows } from "@/composables/ai-radio/useShows";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { i18n } from "@/plugins/i18n";
-import type { AIRadioSession, AIRadioStation } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import type { AIRadioStation } from "@/plugins/api/interfaces";
+import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+const { playMedia, queueCommandClear } = vi.hoisted(() => ({
+  playMedia: vi.fn(async () => undefined),
+  queueCommandClear: vi.fn(),
+}));
 
 vi.mock("@/plugins/api", () => ({
   default: {
     players: {},
-    sendCommand: vi.fn(async () => []),
+    providers: {},
+    sendCommand: vi.fn(async () => ({})),
     getLibraryPlaylists: vi.fn<MusicAssistantApi["getLibraryPlaylists"]>(
       async () => [],
     ),
+    playMedia,
+    queueCommandClear,
   },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: { activePlayerId: "kitchen" },
 }));
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+
+vi.mock("vue-sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
 const show = {
@@ -28,48 +43,86 @@ const show = {
   source_playlist_provider: "library",
 } as AIRadioStation;
 
-const session = (status: string): AIRadioSession =>
-  ({
-    session_id: "s1",
-    station_id: show.id,
-    mode: "dynamic",
-    status,
-    created_at: "2026-07-29T11:00:00Z",
-    ended_at: status === "running" ? null : "2026-07-29T11:30:00Z",
-  }) as unknown as AIRadioSession;
-
-const renderCard = (locale: string, sessionStatus: string) => {
-  const previous = i18n.global.locale.value;
-  i18n.global.locale.value = locale;
-  useShows().sessions.value = [session(sessionStatus)];
-  try {
-    return mount(ShowCard, { props: { show }, shallow: true });
-  } finally {
-    i18n.global.locale.value = previous;
-  }
-};
-
-afterEach(() => {
-  useShows().sessions.value = [];
+const onAir = (queueId: string, stationId = show.id) => ({
+  [queueId]: { host_id: "host-1", station_id: stationId },
 });
 
-describe("ShowCard status chip", () => {
-  it("renders the last-on-air chip for a stopped show under an underscored locale", () => {
-    const wrapper = renderCard("en_GB", "stopped");
-
-    expect(wrapper.find(".show-card__status-chip").exists()).toBe(true);
-    expect(wrapper.text()).toContain("Last on air");
+const renderCard = (overrides: Partial<AIRadioStation> = {}) =>
+  mount(ShowCard, {
+    props: { show: { ...show, ...overrides } },
+    shallow: true,
   });
 
-  it("renders the chip under a hyphenated locale", () => {
-    const wrapper = renderCard("en-GB", "stopped");
+afterEach(() => {
+  vi.clearAllMocks();
+  useShows().djStatus.value = {};
+});
 
-    expect(wrapper.text()).toContain("Last on air");
+describe("ShowCard on-air state", () => {
+  it("offers play while no queue's dj runs the show", () => {
+    const wrapper = renderCard();
+
+    expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
+    expect(wrapper.find('[aria-label="Stop"]').exists()).toBe(false);
+    expect(wrapper.find(".show-card__onair").exists()).toBe(false);
+    expect(wrapper.find(".show-card__title--playing").exists()).toBe(false);
   });
 
-  it("renders no relative-time chip while the show is on air", () => {
-    const wrapper = renderCard("en_GB", "running");
+  it("marks the show on air and offers stop while a queue's dj runs it", () => {
+    useShows().djStatus.value = onAir("livingroom");
+    const wrapper = renderCard();
 
-    expect(wrapper.find(".show-card__status-chip").exists()).toBe(false);
+    expect(wrapper.find('[aria-label="Stop"]').exists()).toBe(true);
+    expect(wrapper.find('[aria-label="Play"]').exists()).toBe(false);
+    expect(wrapper.find(".show-card__onair").exists()).toBe(true);
+    expect(wrapper.find(".show-card__title--playing").exists()).toBe(true);
+  });
+
+  it("ignores a manually armed dj and other shows on air", () => {
+    useShows().djStatus.value = {
+      ...onAir("kitchen", ""),
+      ...onAir("livingroom", "another_show"),
+    };
+    const wrapper = renderCard();
+
+    expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
+    expect(wrapper.find(".show-card__onair").exists()).toBe(false);
+  });
+});
+
+describe("ShowCard play/stop", () => {
+  it("plays the show as its radio item on the active player", async () => {
+    const wrapper = renderCard();
+
+    await wrapper.find('[aria-label="Play"]').trigger("click");
+    await flushPromises();
+
+    expect(playMedia).toHaveBeenCalledWith(showUri(show.id), undefined, {
+      queue_id: "kitchen",
+    });
+  });
+
+  it("prefers the show's default player over the active one", async () => {
+    const wrapper = renderCard({ default_player_id: "bedroom" });
+
+    await wrapper.find('[aria-label="Play"]').trigger("click");
+    await flushPromises();
+
+    expect(playMedia).toHaveBeenCalledWith(showUri(show.id), undefined, {
+      queue_id: "bedroom",
+    });
+  });
+
+  it("stops the show by clearing the queue it plays on", async () => {
+    useShows().djStatus.value = onAir("livingroom");
+    const wrapper = renderCard();
+
+    await wrapper.find('[aria-label="Stop"]').trigger("click");
+    await flushPromises();
+
+    expect(queueCommandClear).toHaveBeenCalledWith("livingroom");
+    // Reflected right away; the queue events reconcile with the server later.
+    expect(useShows().onAirQueueId(show.id)).toBeUndefined();
+    expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
   });
 });
