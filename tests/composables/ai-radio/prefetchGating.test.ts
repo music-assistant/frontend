@@ -1,4 +1,4 @@
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProviderInstance } from "@/plugins/api/interfaces";
 import { ProviderType } from "@/plugins/api/interfaces";
@@ -30,9 +30,19 @@ async function mockApiAndAuth(guestSessionKind: string | null) {
   });
   const sendCommand = vi.fn().mockResolvedValue({});
   const subscribeMulti = vi.fn(() => () => undefined);
-  const api = { providers, sendCommand, subscribe_multi: subscribeMulti };
+  const state = ref("authenticated");
+  const api = {
+    providers,
+    state,
+    sendCommand,
+    subscribe_multi: subscribeMulti,
+  };
 
-  vi.doMock("@/plugins/api", () => ({ api, default: api }));
+  vi.doMock("@/plugins/api", () => ({
+    api,
+    default: api,
+    ConnectionState: { AUTHENTICATED: "authenticated" },
+  }));
   vi.doMock("@/plugins/auth", () => ({
     authManager: { guestSessionKind: () => guestSessionKind },
     default: { guestSessionKind: () => guestSessionKind },

@@ -204,6 +204,7 @@ const {
   loadingShows,
   loadingSections,
   loadingPlaylists,
+  loadingDjStatus,
   loadShows,
   loadSections,
   refreshDjStatus,
@@ -226,7 +227,8 @@ const isRefreshing = computed(
     loadingHosts.value ||
     loadingShows.value ||
     loadingSections.value ||
-    loadingPlaylists.value,
+    loadingPlaylists.value ||
+    loadingDjStatus.value,
 );
 const showEmptyState = computed(
   () => !loadingShows.value && shows.value.length === 0,

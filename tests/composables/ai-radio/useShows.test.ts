@@ -1,11 +1,12 @@
 import { showUri, useShows } from "@/composables/ai-radio/useShows";
-import api from "@/plugins/api";
+import api, { ConnectionState } from "@/plugins/api";
 import {
   EventType,
   type Player,
   type PlayerQueue,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
+import { flushPromises } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "vue-sonner";
@@ -24,18 +25,24 @@ const { playMedia, sendCommand, subscribeMulti, unsubscribe } = vi.hoisted(
   }),
 );
 
-// api.providers must be reactive here: the event tracking hangs off a watch on
-// the provider list, which is exactly what this suite exercises.
+// api.providers and api.state must be reactive here: the event tracking hangs
+// off watches on the provider list and the connection state, which is exactly
+// what this suite exercises.
 vi.mock("@/plugins/api", async () => {
-  const { reactive } = await import("vue");
+  const { reactive, ref } = await import("vue");
   return {
     default: {
       players: {} as Record<string, Player>,
       queues: {} as Record<string, PlayerQueue>,
       providers: reactive<Record<string, ProviderInstance>>({}),
+      state: ref("authenticated"),
       sendCommand,
       playMedia,
       subscribe_multi: subscribeMulti,
+    },
+    ConnectionState: {
+      AUTHENTICATED: "authenticated",
+      RECONNECTING: "reconnecting",
     },
   };
 });
@@ -137,7 +144,6 @@ describe("useShows dj status tracking", () => {
         EventType.QUEUE_ITEMS_UPDATED,
         EventType.QUEUE_UPDATED,
         EventType.PLAYER_REMOVED,
-        EventType.CONNECTED,
       ],
       expect.any(Function),
     );
@@ -155,16 +161,20 @@ describe("useShows dj status tracking", () => {
     expect(djStatusCalls()).toBe(1);
   });
 
-  it("reconciles dj status once after a reconnect, debounced like other events", async () => {
+  it("reconciles dj status once the connection re-authenticates, debounced like other events", async () => {
     await setProviderAvailable(true);
     // Subscribing reconciles once itself; let that settle before counting.
     vi.advanceTimersByTime(DEBOUNCE_MS);
     sendCommand.mockClear();
-    // subscribe_multi registers one callback shared by every event in DJ_STATUS_EVENTS,
-    // which now includes CONNECTED; invoking it here stands in for that event firing.
-    const onDjStatusEvent = subscribeMulti.mock.calls[0][1] as () => void;
 
-    onDjStatusEvent();
+    // Stand in for a reconnect: CONNECTED fires before re-auth completes, so
+    // the reconcile must wait for the transition to AUTHENTICATED.
+    api.state.value = ConnectionState.RECONNECTING;
+    await nextTick();
+    expect(djStatusCalls()).toBe(0);
+
+    api.state.value = ConnectionState.AUTHENTICATED;
+    await nextTick();
     expect(djStatusCalls()).toBe(0);
 
     vi.advanceTimersByTime(DEBOUNCE_MS);
@@ -182,11 +192,22 @@ describe("useShows dj status tracking", () => {
 });
 
 describe("useShows stopShow", () => {
+  const liveStatus = {
+    livingroom: { host_id: "host-1", station_id: "show-1" },
+  };
+
+  /** Wires the dj-status re-check to report the given status just ahead of the clear. */
+  function mockFreshStatus(
+    status: Record<string, { host_id: string; station_id: string }>,
+  ) {
+    sendCommand.mockImplementation(async (command) =>
+      command === "ai_radio/queue_dj/status" ? status : undefined,
+    );
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
-    useShows().djStatus.value = {
-      livingroom: { host_id: "host-1", station_id: "show-1" },
-    };
+    useShows().djStatus.value = { ...liveStatus };
   });
 
   afterEach(() => {
@@ -194,7 +215,7 @@ describe("useShows stopShow", () => {
   });
 
   it("clears the queue and removes the on-air entry once the command resolves", async () => {
-    sendCommand.mockResolvedValueOnce(undefined);
+    mockFreshStatus(liveStatus);
 
     await useShows().stopShow("show-1");
 
@@ -206,7 +227,10 @@ describe("useShows stopShow", () => {
   });
 
   it("keeps the entry and skips the success toast when the clear command fails", async () => {
-    sendCommand.mockRejectedValueOnce(new Error("Connection lost"));
+    sendCommand.mockImplementation(async (command) => {
+      if (command === "ai_radio/queue_dj/status") return liveStatus;
+      throw new Error("Connection lost");
+    });
 
     await expect(useShows().stopShow("show-1")).rejects.toThrow(
       "Connection lost",
@@ -216,20 +240,39 @@ describe("useShows stopShow", () => {
     expect(toast.success).not.toHaveBeenCalled();
   });
 
-  it("marks the show as stopping while the clear command is pending", async () => {
+  it("marks the show as stopping while the fresh status and clear commands are pending", async () => {
     let resolveClear: () => void = () => undefined;
-    sendCommand.mockReturnValueOnce(
-      new Promise((resolve) => {
+    sendCommand.mockImplementation(async (command) => {
+      if (command === "ai_radio/queue_dj/status") return liveStatus;
+      return new Promise((resolve) => {
         resolveClear = () => resolve(undefined);
-      }),
-    );
+      });
+    });
 
     const stopPromise = useShows().stopShow("show-1");
     await nextTick();
-    expect(useShows().stoppingShowId.value).toBe("show-1");
+    expect(useShows().isStopping("show-1")).toBe(true);
+
+    // Let the fresh-status fetch resolve so the clear command is actually issued.
+    await flushPromises();
 
     resolveClear();
     await stopPromise;
-    expect(useShows().stoppingShowId.value).toBe("");
+    expect(useShows().isStopping("show-1")).toBe(false);
+  });
+
+  it("applies the fresh status without clearing when the queue already moved on", async () => {
+    // The cached djStatus still shows the show live, but a fresh read (as
+    // taken right before the clear) shows the queue moved on to other content.
+    mockFreshStatus({});
+
+    await useShows().stopShow("show-1");
+
+    expect(sendCommand).not.toHaveBeenCalledWith(
+      "player_queues/clear",
+      expect.anything(),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(useShows().djStatus.value).toEqual({});
   });
 });

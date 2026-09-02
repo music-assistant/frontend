@@ -7,7 +7,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { playMedia, sendCommand } = vi.hoisted(() => ({
   playMedia: vi.fn(async () => undefined),
-  sendCommand: vi.fn(async () => ({})),
+  sendCommand: vi.fn(
+    async (_command?: string, _args?: Record<string, unknown>) => ({}),
+  ),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -115,6 +117,11 @@ describe("ShowCard play/stop", () => {
 
   it("stops the show by clearing the queue it plays on", async () => {
     useShows().djStatus.value = onAir("livingroom");
+    // stopShow re-checks live status right before clearing; report the show
+    // still on air so the clear actually happens.
+    sendCommand.mockImplementation(async (command) =>
+      command === "ai_radio/queue_dj/status" ? onAir("livingroom") : {},
+    );
     const wrapper = renderCard();
 
     await wrapper.find('[aria-label="Stop"]').trigger("click");

@@ -146,7 +146,6 @@ const emit = defineEmits<{
 const {
   shows,
   startingShowId,
-  stoppingShowId,
   deletingShowId,
   savingShow,
   playlistFor,
@@ -156,11 +155,12 @@ const {
   startShow,
   stopShow,
   onAirQueueId,
+  isStopping: isShowStopping,
   reportStartError,
 } = useShows();
 
 const isStarting = computed(() => startingShowId.value === props.show.id);
-const isStopping = computed(() => stoppingShowId.value === props.show.id);
+const isStopping = computed(() => isShowStopping(props.show.id));
 const isDeleting = computed(() => deletingShowId.value === props.show.id);
 // Duplicate reuses the shared save-in-flight flag; there's no dedicated per-show one.
 const isDuplicating = computed(() => savingShow.value);

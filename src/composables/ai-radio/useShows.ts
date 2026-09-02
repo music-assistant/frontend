@@ -1,4 +1,4 @@
-import api from "@/plugins/api";
+import api, { ConnectionState } from "@/plugins/api";
 import type {
   AIRadioQueueDJStatus,
   AIRadioSection,
@@ -9,7 +9,7 @@ import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { useDebounceFn } from "@vueuse/core";
-import { computed, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const PLAYLIST_PAGE_SIZE = 200;
@@ -20,14 +20,11 @@ const NO_AI_PROVIDER_MARKER = /no ai provider/i;
 // before reading the result back.
 const DJ_STATUS_REFRESH_DEBOUNCE_MS = 1000;
 // Events after which the server may have armed or detached a queue's DJ.
-// CONNECTED covers a transport reconnect: providers are resolved again
-// synchronously, so the availability watch never re-fires to catch missed events.
 const DJ_STATUS_EVENTS = [
   EventType.QUEUE_ADDED,
   EventType.QUEUE_ITEMS_UPDATED,
   EventType.QUEUE_UPDATED,
   EventType.PLAYER_REMOVED,
-  EventType.CONNECTED,
 ];
 
 const shows = ref<AIRadioStation[]>([]);
@@ -39,11 +36,14 @@ const djStatus = ref<AIRadioQueueDJStatus>({});
 const loadingShows = ref(false);
 const loadingSections = ref(false);
 const loadingPlaylists = ref(false);
+const loadingDjStatus = ref(false);
 const savingShow = ref(false);
-// Station id currently being deleted/started/stopped, so only that card reflects it.
+// Station id currently being deleted/started, so only that card reflects it.
 const deletingShowId = ref("");
 const startingShowId = ref("");
-const stoppingShowId = ref("");
+// Station ids with a stop in flight; a Set because two shows on two different
+// queues can be stopped at once.
+const stoppingShowIds = reactive(new Set<string>());
 
 // Set when a start attempt fails with a "No AI provider" error; drives the
 // gallery's persistent prereq banner (a toast alone isn't enough there).
@@ -59,6 +59,7 @@ const aiRadioAvailable = computed(() =>
 
 let showStatePrefetched = false;
 let unsubscribeDjStatusEvents: (() => void) | null = null;
+let stopAuthenticatedWatch: (() => void) | null = null;
 
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
@@ -173,12 +174,23 @@ async function deleteShow(stationId: string): Promise<void> {
   }
 }
 
-async function refreshDjStatus(): Promise<AIRadioQueueDJStatus> {
-  const result = await api.sendCommand<AIRadioQueueDJStatus>(
-    "ai_radio/queue_dj/status",
-  );
-  djStatus.value = result || {};
-  return djStatus.value;
+async function refreshDjStatus(
+  suppressGlobalError = false,
+): Promise<AIRadioQueueDJStatus> {
+  loadingDjStatus.value = true;
+  try {
+    const result = suppressGlobalError
+      ? await api.sendCommand<AIRadioQueueDJStatus>(
+          "ai_radio/queue_dj/status",
+          undefined,
+          { suppressGlobalError: true },
+        )
+      : await api.sendCommand<AIRadioQueueDJStatus>("ai_radio/queue_dj/status");
+    djStatus.value = result || {};
+    return djStatus.value;
+  } finally {
+    loadingDjStatus.value = false;
+  }
 }
 
 /** The queue a show is currently on air on, if any (drives a show card's "On air" state). */
@@ -186,6 +198,11 @@ function onAirQueueId(showId: string): string | undefined {
   return Object.keys(djStatus.value).find(
     (queueId) => djStatus.value[queueId].station_id === showId,
   );
+}
+
+/** Whether a stop is currently in flight for the given show. */
+function isStopping(showId: string): boolean {
+  return stoppingShowIds.has(showId);
 }
 
 /** Plays a show as its radio media item on the queue the given player plays from. */
@@ -208,8 +225,13 @@ async function startShow(showId: string, playerId: string): Promise<void> {
 async function stopShow(showId: string): Promise<void> {
   const queueId = onAirQueueId(showId);
   if (!queueId) return;
-  stoppingShowId.value = showId;
+  stoppingShowIds.add(showId);
   try {
+    // djStatus can be up to DJ_STATUS_REFRESH_DEBOUNCE_MS stale, so the queue may
+    // have moved on to other content since; re-check right before the destructive
+    // clear so that content isn't touched. This also applies the fresh status.
+    const fresh = await refreshDjStatus();
+    if (fresh[queueId]?.station_id !== showId) return;
     await api.sendCommand("player_queues/clear", { queue_id: queueId });
     // Optimistic: the detach also lands with the queue events, which refresh the real state.
     const remaining = { ...djStatus.value };
@@ -217,7 +239,7 @@ async function stopShow(showId: string): Promise<void> {
     djStatus.value = remaining;
     toast.success($t("providers.ai_radio.toast.show_stopped"));
   } finally {
-    stoppingShowId.value = "";
+    stoppingShowIds.delete(showId);
   }
 }
 
@@ -256,7 +278,7 @@ function activeQueueId(playerId: string): string {
 
 const refreshDjStatusDebounced = useDebounceFn(() => {
   // Best effort: the next queue event retries.
-  refreshDjStatus().catch(() => undefined);
+  refreshDjStatus(true).catch(() => undefined);
 }, DJ_STATUS_REFRESH_DEBOUNCE_MS);
 
 function subscribeDjStatusEvents(): void {
@@ -265,6 +287,21 @@ function subscribeDjStatusEvents(): void {
     DJ_STATUS_EVENTS,
     refreshDjStatusDebounced,
   );
+  // A transport reconnect resolves providers again synchronously, so the
+  // availability watch never re-fires to catch events missed while it was down.
+  // CONNECTED fires before the connection is (re)authenticated, so wait for
+  // AUTHENTICATED instead - reconciling any earlier would just get rejected.
+  stopAuthenticatedWatch = watch(
+    () => api.state.value,
+    (state, prev) => {
+      if (
+        state === ConnectionState.AUTHENTICATED &&
+        prev !== ConnectionState.AUTHENTICATED
+      ) {
+        void refreshDjStatusDebounced();
+      }
+    },
+  );
   // Events missed before this subscription started are reconciled here.
   void refreshDjStatusDebounced();
 }
@@ -272,6 +309,8 @@ function subscribeDjStatusEvents(): void {
 function unsubscribeDjStatusEventsIfAny(): void {
   unsubscribeDjStatusEvents?.();
   unsubscribeDjStatusEvents = null;
+  stopAuthenticatedWatch?.();
+  stopAuthenticatedWatch = null;
 }
 
 export function useShows() {
@@ -283,10 +322,10 @@ export function useShows() {
     loadingShows,
     loadingSections,
     loadingPlaylists,
+    loadingDjStatus,
     savingShow,
     deletingShowId,
     startingShowId,
-    stoppingShowId,
     noAiProviderAlert,
     loadShows,
     loadSections,
@@ -297,6 +336,7 @@ export function useShows() {
     deleteShow,
     refreshDjStatus,
     onAirQueueId,
+    isStopping,
     startShow,
     stopShow,
     reportStartError,

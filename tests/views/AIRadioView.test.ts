@@ -5,6 +5,7 @@ import { useShows } from "@/composables/ai-radio/useShows";
 import type { AIRadioHost, AIRadioStation } from "@/plugins/api/interfaces";
 import AIRadioView from "@/views/AIRadioView.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 type SendCommand = (
@@ -130,6 +131,7 @@ afterEach(() => {
   useShows().shows.value = [];
   useShows().djStatus.value = {};
   useShows().playlists.value = [];
+  useShows().loadingDjStatus.value = false;
   document.body.replaceChildren();
 });
 
@@ -237,5 +239,29 @@ describe("AIRadioView open/close lifecycle", () => {
     await flushPromises();
 
     expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+});
+
+describe("AIRadioView refresh button", () => {
+  it("stays disabled while the dj-status refresh is still pending", async () => {
+    routeMock.query = {};
+    setupSendCommand([]);
+    const view = await mountView();
+
+    // Every other refresh call has settled by now; only the dj-status one is
+    // still outstanding, but the button must stay busy until it settles too.
+    useShows().loadingDjStatus.value = true;
+    await nextTick();
+    expect(
+      view.find('[aria-label="Refresh"]').attributes("disabled"),
+    ).toBeDefined();
+
+    useShows().loadingDjStatus.value = false;
+    await nextTick();
+    expect(
+      view.find('[aria-label="Refresh"]').attributes("disabled"),
+    ).toBeUndefined();
+
+    view.unmount();
   });
 });
