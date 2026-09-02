@@ -86,7 +86,8 @@ describe("PlayerBarGroupControl", () => {
     expect(wrapper!.findComponent(CircleFadingPlus).exists()).toBe(false);
     const count = trigger.get("[data-player-group-count]");
     expect(count.text()).toBe("2");
-    expect(count.classes()).toContain("bg-blue-500");
+    expect(count.classes()).toContain("bg-primary");
+    expect(count.get("span").classes()).toContain("text-primary-foreground");
   });
 
   it("draws each state icon at the line weight of the bar it sits in", () => {

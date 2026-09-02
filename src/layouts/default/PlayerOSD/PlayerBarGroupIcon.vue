@@ -7,9 +7,9 @@
       data-player-group-count
       as="span"
       variant="outline"
-      class="absolute top-0 right-0 h-4.5 min-w-4.5 rounded-full border-transparent bg-blue-500 px-1 text-[11px] font-normal shadow-none"
+      class="absolute top-0 right-0 h-4.5 min-w-4.5 rounded-full border-transparent bg-primary px-1 text-[11px] font-normal shadow-none"
     >
-      <span class="text-white">{{ count }}</span>
+      <span class="text-primary-foreground">{{ count }}</span>
     </Badge>
   </span>
 </template>
