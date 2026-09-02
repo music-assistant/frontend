@@ -22,7 +22,6 @@ const { apiMock, eventHandlers } = vi.hoisted(() => ({
   apiMock: {
     importPlaylist: vi.fn(),
     providers: {} as Record<string, unknown>,
-    supportsPlaylistMatchPolicy: true,
   },
   eventHandlers: {} as Record<string, (payload: unknown) => void>,
 }));
@@ -105,7 +104,6 @@ enableAutoUnmount(afterEach);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  apiMock.supportsPlaylistMatchPolicy = true;
   apiMock.providers = {
     spotify: musicProvider("spotify--1", "Spotify"),
     tidal: musicProvider("tidal--1", "Tidal"),
@@ -132,15 +130,6 @@ describe("ImportPlaylistDialog", () => {
 
   it("hides the match policy picker when no providers are available", async () => {
     apiMock.providers = {};
-    const wrapper = mountDialog();
-    open();
-    await wrapper.vm.$nextTick();
-
-    expect(radioGroup(wrapper).exists()).toBe(false);
-  });
-
-  it("hides the match policy picker on servers older than schema 67", async () => {
-    apiMock.supportsPlaylistMatchPolicy = false;
     const wrapper = mountDialog();
     open();
     await wrapper.vm.$nextTick();
@@ -200,22 +189,6 @@ describe("ImportPlaylistDialog", () => {
       true,
       ["spotify--1"],
       PlaylistMatchPolicy.SAME_RECORDING,
-    );
-  });
-
-  it("omits match_policy on servers older than schema 67", async () => {
-    apiMock.supportsPlaylistMatchPolicy = false;
-    const wrapper = mountDialog();
-    open();
-    await wrapper.vm.$nextTick();
-
-    await importButton(wrapper).trigger("click");
-
-    expect(apiMock.importPlaylist).toHaveBeenCalledWith(
-      "#EXTM3U",
-      true,
-      undefined,
-      undefined,
     );
   });
 
