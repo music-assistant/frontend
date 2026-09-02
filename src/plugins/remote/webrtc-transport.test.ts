@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebRTCTransport } from "./webrtc-transport";
 import { TransportState } from "./transport";
 
-/** Exposes the private members this suite exercises without `any` sprinkled everywhere. */
+/** Private members this suite drives. */
 type TransportInternals = {
   scheduleReconnect(): void;
   reconnectAttempts: number;
@@ -21,6 +21,7 @@ describe("WebRTCTransport.scheduleReconnect", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("retries immediately on the first attempt", () => {
@@ -36,6 +37,10 @@ describe("WebRTCTransport.scheduleReconnect", () => {
   });
 
   it("backs off with jitter from the second attempt on", () => {
+    // Pin the jitter to its minimum so the delay lands on an exact boundary:
+    // 1000 * 1.5^1 * (0.5 + 0 * 0.5) = 750ms.
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
     const transport = makeTransport();
     const connect = vi.fn().mockResolvedValue(undefined);
     transport.connect = connect;
@@ -44,10 +49,9 @@ describe("WebRTCTransport.scheduleReconnect", () => {
     (transport as unknown as TransportInternals).scheduleReconnect();
 
     expect(transport.state).toBe(TransportState.RECONNECTING);
-    // second attempt delay is 1000 * 1.5^1 * jitter(0.5..1) => 750-1500ms
-    vi.advanceTimersByTime(0);
+    vi.advanceTimersByTime(749);
     expect(connect).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1500);
+    vi.advanceTimersByTime(1);
     expect(connect).toHaveBeenCalledTimes(1);
   });
 });

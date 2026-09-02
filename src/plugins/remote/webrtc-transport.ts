@@ -749,8 +749,7 @@ export class WebRTCTransport extends BaseTransport {
     this.setState(TransportState.RECONNECTING);
     this.emit("close", "Connection lost, reconnecting...");
 
-    // Retry right away the first time (the drop is usually transient); back off
-    // with jitter on later attempts so reconnects don't line up at fixed intervals.
+    // First retry is immediate; later ones back off with jitter so reconnects don't line up.
     let delay = 0;
     if (this.reconnectAttempts > 0) {
       const backoff = Math.min(

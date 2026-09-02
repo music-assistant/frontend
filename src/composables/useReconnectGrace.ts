@@ -1,17 +1,21 @@
 import { ConnectionState } from "@/plugins/api";
-import { getCurrentScope, onScopeDispose, ref, watch, type Ref } from "vue";
+import {
+  getCurrentScope,
+  onScopeDispose,
+  readonly,
+  ref,
+  watch,
+  type Ref,
+} from "vue";
 
 /**
- * Tracks whether the API connection is in the middle of a transparent
- * reconnect, so callers can keep the app mounted instead of dropping back
- * to the login screen for a connection blip.
+ * Whether the API connection is in the middle of a reconnect that started from a
+ * working session, so callers can keep the app mounted meanwhile.
  *
- * The returned `recovering` ref flips to `true` the moment `state` leaves
- * `INITIALIZED` for `RECONNECTING`, and stays `true` through the
- * reconnect/re-authenticate/re-initialize sequence. It flips back to
- * `false` once `state` reaches `INITIALIZED` again, once the reconnect
- * gives up or needs the user (`FAILED`, `DISCONNECTED`, `AUTH_REQUIRED`),
- * or after `graceMs` without recovering, whichever comes first.
+ * The returned ref turns `true` when `state` goes from `INITIALIZED` to `RECONNECTING`
+ * and back to `false` once `INITIALIZED` is reached again, when the reconnect gives up
+ * or needs the user (`FAILED`, `DISCONNECTED`, `AUTH_REQUIRED`), or after `graceMs`
+ * without further progress.
  */
 export function useReconnectGrace(
   state: Ref<ConnectionState>,
@@ -27,16 +31,20 @@ export function useReconnectGrace(
     }
   };
 
+  const startTimer = () => {
+    clearTimer();
+    timer = setTimeout(() => {
+      recovering.value = false;
+    }, graceMs);
+  };
+
   const stop = watch(state, (newState, oldState) => {
     if (
       newState === ConnectionState.RECONNECTING &&
       oldState === ConnectionState.INITIALIZED
     ) {
       recovering.value = true;
-      clearTimer();
-      timer = setTimeout(() => {
-        recovering.value = false;
-      }, graceMs);
+      startTimer();
       return;
     }
 
@@ -52,6 +60,9 @@ export function useReconnectGrace(
     ) {
       recovering.value = false;
       clearTimer();
+    } else {
+      // Still recovering (e.g. re-authenticating): give it a fresh grace window.
+      startTimer();
     }
   });
 
@@ -62,5 +73,5 @@ export function useReconnectGrace(
     });
   }
 
-  return recovering;
+  return readonly(recovering);
 }

@@ -146,17 +146,15 @@ watch(
 const isConnected = ref(false);
 const loginComponent = ref<InstanceType<typeof Login> | null>(null);
 
-// A dropped connection recovers transparently (transport reconnect + re-auth +
-// re-init) within the grace window, so the app stays mounted instead of
-// bouncing through the login screen for a blip.
+// Keep the app mounted while a dropped connection recovers, instead of bouncing
+// through the login screen.
 const recovering = useReconnectGrace(api.state);
 
 const showLogin = computed(
   () => api.state.value !== ConnectionState.INITIALIZED && !recovering.value,
 );
 
-// Show main app when API is initialized (or transparently recovering) AND
-// (not remote OR service worker is ready)
+// Show main app when API is initialized or recovering AND (not remote OR service worker is ready)
 const showMainApp = computed(() => {
   if (api.state.value !== ConnectionState.INITIALIZED && !recovering.value) {
     return false;
