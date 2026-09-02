@@ -84,7 +84,9 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.get(".player-bar-action-label").text()).toBe("2 players");
     expect(wrapper!.findComponent(Copy).exists()).toBe(true);
     expect(wrapper!.findComponent(CircleFadingPlus).exists()).toBe(false);
-    expect(trigger.find("[data-player-group-count]").exists()).toBe(false);
+    const count = trigger.get("[data-player-group-count]");
+    expect(count.text()).toBe("2");
+    expect(count.classes()).toContain("bg-blue-500");
   });
 
   it("draws each state icon at the line weight of the bar it sits in", () => {
@@ -101,13 +103,14 @@ describe("PlayerBarGroupControl", () => {
     ).toBe("1.5");
   });
 
-  it("drops the member count label in the floating player", () => {
+  it("keeps the count badge but drops the text label in the floating player", () => {
     const trigger = mountGroupButton({ floating: true });
 
     // The round floating trigger has no room for a visible label; the icon
     // carries the state visually and the accessible name still spells it out.
     expect(trigger.find(".player-bar-action-label").exists()).toBe(false);
     expect(wrapper!.findComponent(Copy).exists()).toBe(true);
+    expect(trigger.get("[data-player-group-count]").text()).toBe("2");
     expect(trigger.attributes("aria-label")).toBe(
       "tooltip.group_members: 2 players",
     );
@@ -123,6 +126,7 @@ describe("PlayerBarGroupControl", () => {
     );
     expect(wrapper!.findComponent(CircleFadingPlus).exists()).toBe(true);
     expect(wrapper!.findComponent(Copy).exists()).toBe(false);
+    expect(trigger.find("[data-player-group-count]").exists()).toBe(false);
   });
 
   it("uses the add-group icon in the floating player when ungrouped", () => {
@@ -132,5 +136,6 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.find(".player-bar-action-label").exists()).toBe(false);
     expect(trigger.attributes("aria-label")).toBe("tooltip.group_members");
     expect(wrapper!.findComponent(CircleFadingPlus).exists()).toBe(true);
+    expect(trigger.find("[data-player-group-count]").exists()).toBe(false);
   });
 });

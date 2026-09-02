@@ -42,20 +42,18 @@
         >
           <span v-if="floating" class="inline-flex">
             <!-- matches the track menu beside it in the floating bar -->
-            <component
-              :is="groupIcon"
+            <PlayerBarGroupIcon
+              :count="memberCount"
               :stroke-width="1.5"
               class="size-7"
-              aria-hidden="true"
             />
           </span>
           <template v-else>
             <span class="player-bar-action-icon">
-              <component
-                :is="groupIcon"
+              <PlayerBarGroupIcon
+                :count="memberCount"
                 :stroke-width="1.4"
                 class="size-7"
-                aria-hidden="true"
               />
             </span>
             <span class="player-bar-action-label">
@@ -119,8 +117,8 @@ import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { CircleFadingPlus, Copy } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+import PlayerBarGroupIcon from "./PlayerBarGroupIcon.vue";
 import PlayerGroupPanel from "./PlayerGroupPanel.vue";
 
 withDefaults(
@@ -146,7 +144,6 @@ const memberCount = computed(() =>
   player.value ? getPlayerGroupMemberCount(player.value) : 0,
 );
 const isGrouped = computed(() => memberCount.value > 1);
-const groupIcon = computed(() => (isGrouped.value ? Copy : CircleFadingPlus));
 const memberCountLabel = computed(
   () => `${memberCount.value} ${$t("players")}`,
 );
