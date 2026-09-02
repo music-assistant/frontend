@@ -5,9 +5,9 @@ import type { AIRadioStation } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { playMedia, queueCommandClear } = vi.hoisted(() => ({
+const { playMedia, sendCommand } = vi.hoisted(() => ({
   playMedia: vi.fn(async () => undefined),
-  queueCommandClear: vi.fn(),
+  sendCommand: vi.fn(async () => ({})),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -15,12 +15,11 @@ vi.mock("@/plugins/api", () => ({
     players: {},
     queues: {},
     providers: {},
-    sendCommand: vi.fn(async () => ({})),
+    sendCommand,
     getLibraryPlaylists: vi.fn<MusicAssistantApi["getLibraryPlaylists"]>(
       async () => [],
     ),
     playMedia,
-    queueCommandClear,
   },
 }));
 
@@ -121,7 +120,9 @@ describe("ShowCard play/stop", () => {
     await wrapper.find('[aria-label="Stop"]').trigger("click");
     await flushPromises();
 
-    expect(queueCommandClear).toHaveBeenCalledWith("livingroom");
+    expect(sendCommand).toHaveBeenCalledWith("player_queues/clear", {
+      queue_id: "livingroom",
+    });
     // Reflected right away; the queue events reconcile with the server later.
     expect(useShows().onAirQueueId(show.id)).toBeUndefined();
     expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);

@@ -8,6 +8,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "vue-sonner";
 
 type SendCommand = (
   command: string,
@@ -120,7 +121,9 @@ describe("useShows dj status tracking", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Leave the provider unavailable so the next test starts unsubscribed.
+    await setProviderAvailable(false);
     vi.useRealTimers();
     vi.clearAllMocks();
   });
@@ -134,6 +137,7 @@ describe("useShows dj status tracking", () => {
         EventType.QUEUE_ITEMS_UPDATED,
         EventType.QUEUE_UPDATED,
         EventType.PLAYER_REMOVED,
+        EventType.CONNECTED,
       ],
       expect.any(Function),
     );
@@ -151,6 +155,22 @@ describe("useShows dj status tracking", () => {
     expect(djStatusCalls()).toBe(1);
   });
 
+  it("reconciles dj status once after a reconnect, debounced like other events", async () => {
+    await setProviderAvailable(true);
+    // Subscribing reconciles once itself; let that settle before counting.
+    vi.advanceTimersByTime(DEBOUNCE_MS);
+    sendCommand.mockClear();
+    // subscribe_multi registers one callback shared by every event in DJ_STATUS_EVENTS,
+    // which now includes CONNECTED; invoking it here stands in for that event firing.
+    const onDjStatusEvent = subscribeMulti.mock.calls[0][1] as () => void;
+
+    onDjStatusEvent();
+    expect(djStatusCalls()).toBe(0);
+
+    vi.advanceTimersByTime(DEBOUNCE_MS);
+    expect(djStatusCalls()).toBe(1);
+  });
+
   it("stops listening once the provider goes away", async () => {
     await setProviderAvailable(true);
     expect(unsubscribe).not.toHaveBeenCalled();
@@ -158,5 +178,58 @@ describe("useShows dj status tracking", () => {
     await setProviderAvailable(false);
 
     expect(unsubscribe).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("useShows stopShow", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useShows().djStatus.value = {
+      livingroom: { host_id: "host-1", station_id: "show-1" },
+    };
+  });
+
+  afterEach(() => {
+    useShows().djStatus.value = {};
+  });
+
+  it("clears the queue and removes the on-air entry once the command resolves", async () => {
+    sendCommand.mockResolvedValueOnce(undefined);
+
+    await useShows().stopShow("show-1");
+
+    expect(sendCommand).toHaveBeenCalledWith("player_queues/clear", {
+      queue_id: "livingroom",
+    });
+    expect(useShows().onAirQueueId("show-1")).toBeUndefined();
+    expect(toast.success).toHaveBeenCalled();
+  });
+
+  it("keeps the entry and skips the success toast when the clear command fails", async () => {
+    sendCommand.mockRejectedValueOnce(new Error("Connection lost"));
+
+    await expect(useShows().stopShow("show-1")).rejects.toThrow(
+      "Connection lost",
+    );
+
+    expect(useShows().onAirQueueId("show-1")).toBe("livingroom");
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it("marks the show as stopping while the clear command is pending", async () => {
+    let resolveClear: () => void = () => undefined;
+    sendCommand.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveClear = () => resolve(undefined);
+      }),
+    );
+
+    const stopPromise = useShows().stopShow("show-1");
+    await nextTick();
+    expect(useShows().stoppingShowId.value).toBe("show-1");
+
+    resolveClear();
+    await stopPromise;
+    expect(useShows().stoppingShowId.value).toBe("");
   });
 });

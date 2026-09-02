@@ -20,11 +20,14 @@ const NO_AI_PROVIDER_MARKER = /no ai provider/i;
 // before reading the result back.
 const DJ_STATUS_REFRESH_DEBOUNCE_MS = 1000;
 // Events after which the server may have armed or detached a queue's DJ.
+// CONNECTED covers a transport reconnect: providers are resolved again
+// synchronously, so the availability watch never re-fires to catch missed events.
 const DJ_STATUS_EVENTS = [
   EventType.QUEUE_ADDED,
   EventType.QUEUE_ITEMS_UPDATED,
   EventType.QUEUE_UPDATED,
   EventType.PLAYER_REMOVED,
+  EventType.CONNECTED,
 ];
 
 const shows = ref<AIRadioStation[]>([]);
@@ -207,8 +210,8 @@ async function stopShow(showId: string): Promise<void> {
   if (!queueId) return;
   stoppingShowId.value = showId;
   try {
-    api.queueCommandClear(queueId);
-    // Optimistic: the detach lands with the queue events, which refresh the real state.
+    await api.sendCommand("player_queues/clear", { queue_id: queueId });
+    // Optimistic: the detach also lands with the queue events, which refresh the real state.
     const remaining = { ...djStatus.value };
     delete remaining[queueId];
     djStatus.value = remaining;
@@ -262,7 +265,7 @@ function subscribeDjStatusEvents(): void {
     DJ_STATUS_EVENTS,
     refreshDjStatusDebounced,
   );
-  // Events missed while unsubscribed (e.g. across a reconnect) are reconciled here.
+  // Events missed before this subscription started are reconciled here.
   void refreshDjStatusDebounced();
 }
 
