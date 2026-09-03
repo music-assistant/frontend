@@ -16,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "vue-sonner";
 import { providerConfig } from "./fixtures/providerConfig";
 import { user } from "./fixtures/user";
+import { store } from "@/plugins/store";
 
 const {
   apiMock,
@@ -497,6 +498,27 @@ describe("App initialization", () => {
     await signalProvidersUpdated();
     expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(8);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
+  });
+
+  it("takes the server's copy of the user when the provider set changes", async () => {
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    const cleaned = user({
+      preferences: { "sidebar.shortcuts": ["library://album/1"] },
+    });
+    // the prune reads store.currentUser, so record what it would have written back
+    let prunedShortcuts: unknown;
+    mockPruneStaleProviderFilters.mockImplementation(async () => {
+      prunedShortcuts = store.currentUser?.preferences?.["sidebar.shortcuts"];
+    });
+    apiMock.getCurrentUserInfo.mockResolvedValue(cleaned);
+
+    await signalProvidersUpdated();
+
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
+    expect(store.currentUser).toBe(cleaned);
+    // the refetch has to land first, or the prune writes the old shortcuts back
+    expect(prunedShortcuts).toEqual(["library://album/1"]);
   });
 
   it("waits for the startup data before revealing the main app", async () => {
