@@ -623,7 +623,7 @@ describe("PlayerCard", () => {
     });
     const idleIndicator = idleCard.get(".player-playback-indicator");
 
-    expect(idleIndicator.classes()).toContain("invisible");
+    expect(idleIndicator.classes()).toContain("hidden");
     expect(idleIndicator.attributes("aria-hidden")).toBe("true");
     idleCard.unmount();
 
@@ -633,7 +633,7 @@ describe("PlayerCard", () => {
     );
     const playingIndicator = playingCard.get(".player-playback-indicator");
 
-    expect(playingIndicator.classes()).not.toContain("invisible");
+    expect(playingIndicator.classes()).not.toContain("hidden");
     expect(playingIndicator.classes()).toContain("text-primary");
     expect(playingIndicator.attributes("aria-label")).toBe("state.playing");
     expect(playingIndicator.attributes("aria-hidden")).toBe("false");
@@ -645,7 +645,7 @@ describe("PlayerCard", () => {
     );
     const pausedIndicator = pausedCard.get(".player-playback-indicator");
 
-    expect(pausedIndicator.classes()).toContain("invisible");
+    expect(pausedIndicator.classes()).toContain("hidden");
     expect(pausedIndicator.attributes("aria-hidden")).toBe("true");
   });
 
@@ -656,7 +656,7 @@ describe("PlayerCard", () => {
     const title = wrapper.get(".player-card-media-row .player-card-title");
     const indicator = title.get(".player-playback-indicator");
 
-    expect(indicator.classes()).not.toContain("invisible");
+    expect(indicator.classes()).not.toContain("hidden");
     expect(indicator.classes()).toContain("text-primary");
     expect(indicator.attributes("aria-label")).toBe("state.playing");
   });
