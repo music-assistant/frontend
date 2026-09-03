@@ -627,11 +627,13 @@ onMounted(async () => {
     }
     // The server rewrites the sidebar shortcuts held on the user when a provider is removed.
     // Refresh before pruning, which saves preferences and would write the old set back.
+    // Without a fresh user there is nothing safe to prune against, so leave it for next time.
     const userInfo = await api.getCurrentUserInfo();
-    if (userInfo) {
-      authManager.setCurrentUser(userInfo);
-      store.currentUser = userInfo;
+    if (!userInfo) {
+      return;
     }
+    authManager.setCurrentUser(userInfo);
+    store.currentUser = userInfo;
     await pruneStaleProviderFilters();
   });
 });

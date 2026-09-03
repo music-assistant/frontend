@@ -521,6 +521,19 @@ describe("App initialization", () => {
     expect(prunedShortcuts).toEqual(["library://album/1"]);
   });
 
+  it("leaves preferences alone when the user cannot be fetched", async () => {
+    wrapper = await mountApp();
+    mockPruneStaleProviderFilters.mockClear();
+    const stale = store.currentUser;
+    apiMock.getCurrentUserInfo.mockResolvedValue(null);
+
+    await signalProvidersUpdated();
+
+    // pruning saves the whole preference set, so it must not run against the old copy
+    expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
+    expect(store.currentUser).toBe(stale);
+  });
+
   it("waits for the startup data before revealing the main app", async () => {
     const serverState = createDeferred<void>();
     const pluginConfigs = createDeferred<ProviderConfig[]>();
