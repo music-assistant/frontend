@@ -104,7 +104,7 @@
 
       <div
         ref="playerList"
-        class="player-volume-scroller min-h-0 flex-1 overflow-y-auto pb-6"
+        class="player-volume-scroller min-h-0 flex-1 overflow-y-auto pb-3"
       >
         <!-- keeps search controls above the cards scrolling underneath -->
         <div
