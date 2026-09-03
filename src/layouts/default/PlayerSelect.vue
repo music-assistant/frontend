@@ -106,7 +106,7 @@
         ref="playerList"
         class="player-volume-scroller min-h-0 flex-1 overflow-y-auto pb-6"
       >
-        <!-- outranks the selected player badge on the cards scrolling underneath -->
+        <!-- keeps search controls above the cards scrolling underneath -->
         <div
           v-if="showSearch"
           class="bg-background sticky top-0 z-20 px-3 pt-3 pb-2"

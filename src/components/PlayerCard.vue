@@ -6,8 +6,6 @@
       'border-primary bg-primary/15': player.player_id === store.activePlayerId,
       'ring-primary/50 ring-1':
         showSelectedIndicator && player.player_id === store.activePlayerId,
-      'pt-4':
-        showSelectedIndicator && player.player_id === store.activePlayerId,
       'opacity-80':
         !stackMediaDetails &&
         !player.needs_setup &&
@@ -19,13 +17,6 @@
     @contextmenu.prevent.stop="openPlayerMenu"
     @touchstart.passive="onTouchStart"
   >
-    <Badge
-      v-if="showSelectedIndicator && player.player_id === store.activePlayerId"
-      as="span"
-      class="selected-player-badge absolute -top-2 left-3 z-10 h-5 rounded-full px-2.5 py-0 text-[11px] leading-none shadow-xs"
-    >
-      {{ $t("player_tip.selected_player") }}
-    </Badge>
     <div class="flex min-w-0 items-center gap-1">
       <div class="relative flex min-w-0 flex-1">
         <button
@@ -65,6 +56,7 @@
             :member-names="displayedGroupMemberNames"
             :member-layout="groupMemberLayout"
             :playing="isPlaying"
+            :selected="isSelectedPlayer"
           >
             <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
           </PlayerCardTitle>
@@ -119,6 +111,7 @@
                 :member-names="displayedGroupMemberNames"
                 :member-layout="groupMemberLayout"
                 :playing="isPlaying"
+                :selected="isSelectedPlayer"
               >
                 <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
               </PlayerCardTitle>
@@ -145,7 +138,7 @@
               </p>
               <p
                 v-if="player.powered !== false && mediaByline"
-                class="text-muted-foreground truncate text-xs"
+                class="player-card-media-byline text-foreground/60 truncate text-xs"
               >
                 {{ mediaByline }}
               </p>
@@ -358,6 +351,12 @@ const isPlaying = computed(
   () =>
     props.player.powered !== false &&
     props.player.playback_state === PlaybackState.PLAYING,
+);
+
+const isSelectedPlayer = computed(
+  () =>
+    props.showSelectedIndicator === true &&
+    props.player.player_id === store.activePlayerId,
 );
 
 const useStackedMediaLayout = computed(

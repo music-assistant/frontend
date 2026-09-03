@@ -263,15 +263,22 @@ describe("PlayerCard", () => {
     const wrapper = mountPlayerCard(
       createPlayer({
         player_id: "active",
+        playback_state: PlaybackState.PLAYING,
       }),
       { showSelectedIndicator: true },
     );
 
     expect(wrapper.classes()).toContain("ring-1");
-    expect(wrapper.classes()).toContain("pt-4");
-    const badge = wrapper.get(".selected-player-badge");
-    expect(badge.text()).toBe("player_tip.selected_player");
-    expect(badge.classes()).toContain("rounded-full");
+    expect(wrapper.classes()).not.toContain("pt-4");
+    expect(wrapper.find(".selected-player-badge").exists()).toBe(false);
+    const indicator = wrapper.get(".selected-player-indicator");
+    expect(indicator.text()).toBe("player_tip.selected");
+    expect(indicator.attributes("variant")).toBe("default");
+    expect(
+      wrapper
+        .find(".player-playback-indicator + .selected-player-indicator")
+        .exists(),
+    ).toBe(true);
   });
 
   it("keeps the player details in the selection action name", () => {
@@ -566,6 +573,12 @@ describe("PlayerCard", () => {
     expect(selectorCard.find(".player-card-media-row").text()).toContain(
       "Hate Me Now",
     );
+    expect(selectorCard.get(".player-card-media-byline").classes()).toContain(
+      "text-foreground/60",
+    );
+    expect(
+      selectorCard.get(".player-card-media-byline").classes(),
+    ).not.toContain("text-muted-foreground");
     expect(selectorCard.find(".player-card-actions").classes()).toContain(
       "self-end",
     );
