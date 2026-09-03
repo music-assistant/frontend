@@ -23,6 +23,7 @@ vi.mock("@/plugins/api", async () => {
 
 import api from "@/plugins/api";
 import {
+  getPlaylistMigrationProviders,
   getProviderRootDomain,
   isAudioSource,
   isQueueInfiniteStream,
@@ -30,14 +31,22 @@ import {
   resolvePlayerQueue,
   waitForApiInitialization,
 } from "@/plugins/api/helpers";
-import { CrossfadeMode, MediaType } from "@/plugins/api/interfaces";
+import {
+  CrossfadeMode,
+  MediaType,
+  ProviderFeature,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import type {
   MediaItemType,
   PlayableMediaItemType,
   Player,
+  ProviderInstance,
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { playerQueue } from "../../fixtures/playerQueue";
+import { playlist } from "../../fixtures/playlist";
+import { providerMapping } from "../../fixtures/providerMapping";
 import { queueItem } from "../../fixtures/queueItem";
 
 describe("isAudioSource", () => {
@@ -243,5 +252,134 @@ describe("getProviderRootDomain", () => {
       getProviderRootDomain({ media_type: MediaType.TRACK } as MediaItemType),
     ).toBe(undefined);
     expect(getProviderRootDomain(undefined)).toBe(undefined);
+  });
+});
+
+describe("getPlaylistMigrationProviders", () => {
+  const provider = (
+    overrides: Partial<ProviderInstance>,
+  ): ProviderInstance => ({
+    type: ProviderType.MUSIC,
+    domain: "spotify",
+    name: "Spotify",
+    instance_id: "spotify--1",
+    supported_features: [
+      ProviderFeature.PLAYLIST_CREATE_TRACKS,
+      ProviderFeature.PLAYLIST_TRACKS_EDIT,
+    ],
+    available: true,
+    is_streaming_provider: true,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
+    api.providers["builtin"] = provider({
+      domain: "builtin",
+      name: "Music Assistant",
+      instance_id: "builtin",
+      is_streaming_provider: false,
+      supported_features: [
+        ProviderFeature.PLAYLIST_CREATE,
+        ProviderFeature.PLAYLIST_TRACKS_EDIT,
+      ],
+    });
+    api.providers["spotify--1"] = provider({});
+  });
+
+  it("returns an empty list for a dynamic playlist", () => {
+    expect(
+      getPlaylistMigrationProviders(playlist({ is_dynamic: true })),
+    ).toEqual([]);
+  });
+
+  it("returns an empty list for a playlist that isn't in the library", () => {
+    expect(
+      getPlaylistMigrationProviders(playlist({ provider: "spotify" })),
+    ).toEqual([]);
+  });
+
+  it("returns an empty list for a playlist that doesn't support tracks", () => {
+    expect(
+      getPlaylistMigrationProviders(
+        playlist({
+          supported_mediatypes: [
+            MediaType.PODCAST_EPISODE,
+            MediaType.AUDIOBOOK,
+            MediaType.RADIO,
+          ],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("includes providers for a playlist that supports tracks alongside other media types", () => {
+    const result = getPlaylistMigrationProviders(
+      playlist({
+        supported_mediatypes: [MediaType.TRACK, MediaType.RADIO],
+      }),
+    );
+    expect(result.map((p) => p.instance_id).sort()).toEqual([
+      "builtin",
+      "spotify--1",
+    ]);
+  });
+
+  it("includes the builtin provider and eligible streaming providers, sorted by name", () => {
+    api.providers["another--1"] = provider({
+      instance_id: "another--1",
+      name: "Another Provider",
+    });
+    const result = getPlaylistMigrationProviders(playlist());
+    expect(result.map((p) => p.name)).toEqual([
+      "Another Provider",
+      "Music Assistant",
+      "Spotify",
+    ]);
+  });
+
+  it("excludes providers that can't create playlists, can't edit tracks, are unavailable, aren't streaming providers, or aren't music providers", () => {
+    delete api.providers["spotify--1"];
+    api.providers["no-create"] = provider({
+      instance_id: "no-create",
+      supported_features: [ProviderFeature.PLAYLIST_TRACKS_EDIT],
+    });
+    api.providers["no-edit"] = provider({
+      instance_id: "no-edit",
+      supported_features: [ProviderFeature.PLAYLIST_CREATE_TRACKS],
+    });
+    api.providers["unavailable"] = provider({
+      instance_id: "unavailable",
+      available: false,
+    });
+    api.providers["non-streaming"] = provider({
+      instance_id: "non-streaming",
+      is_streaming_provider: false,
+    });
+    api.providers["non-music"] = provider({
+      instance_id: "non-music",
+      type: ProviderType.PLAYER,
+    });
+
+    // only the builtin provider from beforeEach remains eligible
+    expect(
+      getPlaylistMigrationProviders(playlist()).map((p) => p.instance_id),
+    ).toEqual(["builtin"]);
+  });
+
+  it("doesn't exclude a provider merely because the playlist is already mapped there (allows same-provider copies)", () => {
+    const source = playlist({
+      provider_mappings: [
+        providerMapping({
+          provider_domain: "spotify",
+          provider_instance: "spotify--1",
+        }),
+      ],
+    });
+    expect(
+      getPlaylistMigrationProviders(source)
+        .map((p) => p.instance_id)
+        .sort(),
+    ).toEqual(["builtin", "spotify--1"]);
   });
 });

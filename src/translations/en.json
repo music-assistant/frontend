@@ -2183,6 +2183,31 @@
         "op_less_than": "less than",
         "picker_search": "Search {label}"
     },
+    "migrate_playlist": {
+        "action": "Migrate playlist",
+        "title": "Migrate playlist",
+        "description": "Copy \"{0}\" to another provider, matching its tracks along the way.",
+        "destination_label": "Destination",
+        "destination_placeholder": "Choose a destination",
+        "name_label": "Playlist name",
+        "match_policy_label": "Track matching",
+        "match_policy": {
+            "exact": {
+                "title": "Exact release",
+                "description": "Only add tracks that match the exact same release. Tracks that can't be matched this way are skipped."
+            },
+            "same_recording": {
+                "title": "Same recording",
+                "description": "Prefer an exact match, otherwise accept the same recording from a different release. Tracks that can't be matched this way are skipped."
+            },
+            "best_effort": {
+                "title": "Best effort",
+                "description": "Prefer an exact match, then the same recording, otherwise accept the closest available match."
+            }
+        },
+        "submit": "Migrate",
+        "no_destinations_error": "No eligible destination provider is available for this playlist."
+    },
     "explore": "Explore",
     "shortcuts": "Shortcuts",
     "system": "System",
