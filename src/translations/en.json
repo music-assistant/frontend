@@ -1358,6 +1358,7 @@
     "remove_provider_mapping_confirm": "Are you sure you want to remove this provider mapping? This will unlink the item from the current item details. It may come back if you perform a rescan for all provider matches.",
     "map_provider_mapping": "Map this provider entry to the current item",
     "player_tip": {
+        "selected": "Selected",
         "selected_player": "Selected player",
         "currently_playing": "Currently playing on",
         "click_to_change": "Click below to change output device"

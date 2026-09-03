@@ -6,10 +6,10 @@
       'border-primary bg-primary/15': player.player_id === store.activePlayerId,
       'ring-primary/50 ring-1':
         showSelectedIndicator && player.player_id === store.activePlayerId,
-      'pt-4':
-        showSelectedIndicator && player.player_id === store.activePlayerId,
       'opacity-80':
-        !player.needs_setup && player.playback_state === PlaybackState.IDLE,
+        !stackMediaDetails &&
+        !player.needs_setup &&
+        player.playback_state === PlaybackState.IDLE,
       'opacity-60': !player.needs_setup && player.powered === false,
       'opacity-40': !player.available && !player.needs_setup,
     }"
@@ -17,13 +17,6 @@
     @contextmenu.prevent.stop="openPlayerMenu"
     @touchstart.passive="onTouchStart"
   >
-    <Badge
-      v-if="showSelectedIndicator && player.player_id === store.activePlayerId"
-      as="span"
-      class="selected-player-badge absolute -top-2 left-3 z-10 h-5 rounded-full px-2.5 py-0 text-[11px] leading-none shadow-xs"
-    >
-      {{ $t("player_tip.selected_player") }}
-    </Badge>
     <div class="flex min-w-0 items-center gap-1">
       <div class="relative flex min-w-0 flex-1">
         <button
@@ -58,14 +51,17 @@
           "
         >
           <PlayerCardTitle
-            v-if="useStackedMediaLayout"
+            v-if="stackMediaDetails"
             :player-name="cardPlayerName"
             :member-names="displayedGroupMemberNames"
             :member-layout="groupMemberLayout"
+            :playing="isPlaying"
+            :selected="isSelectedPlayer"
           >
             <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
           </PlayerCardTitle>
           <div
+            v-if="!stackMediaDetails || hasStackedDetails"
             class="player-card-media-row"
             :class="
               useStackedMediaLayout
@@ -74,7 +70,13 @@
             "
           >
             <div
-              class="bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
+              v-if="!stackMediaDetails || hasSelectedMedia"
+              class="player-card-media flex size-11 shrink-0 items-center justify-center overflow-hidden"
+              :class="{
+                'bg-muted rounded-md': artworkUrl || !useStackedMediaLayout,
+                'player-card-media-placeholder':
+                  useStackedMediaLayout && !artworkUrl,
+              }"
             >
               <img
                 v-if="artworkUrl"
@@ -94,7 +96,11 @@
                   )
                 "
                 :size="24"
-                class="opacity-80"
+                :class="
+                  useStackedMediaLayout
+                    ? 'text-foreground opacity-100'
+                    : 'opacity-80'
+                "
               />
             </div>
 
@@ -104,6 +110,8 @@
                 :player-name="cardPlayerName"
                 :member-names="displayedGroupMemberNames"
                 :member-layout="groupMemberLayout"
+                :playing="isPlaying"
+                :selected="isSelectedPlayer"
               >
                 <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
               </PlayerCardTitle>
@@ -130,7 +138,7 @@
               </p>
               <p
                 v-if="player.powered !== false && mediaByline"
-                class="text-muted-foreground truncate text-xs"
+                class="player-card-media-byline text-foreground/60 truncate text-xs"
               >
                 {{ mediaByline }}
               </p>
@@ -320,14 +328,39 @@ const mediaByline = computed(() =>
     .join(" • "),
 );
 
-const hasMediaDetails = computed(
+const hasSelectedMedia = computed(
   () =>
     props.player.powered !== false &&
-    Boolean(props.player.current_media?.title || mediaByline.value),
+    (props.player.playback_state === PlaybackState.PLAYING ||
+      props.player.playback_state === PlaybackState.PAUSED ||
+      Boolean(
+        props.player.current_media?.title ||
+        mediaByline.value ||
+        props.player.current_media?.image_url,
+      )),
+);
+
+const hasStackedDetails = computed(
+  () =>
+    hasSelectedMedia.value ||
+    props.player.needs_setup ||
+    props.player.type === PlayerType.SOURCE,
+);
+
+const isPlaying = computed(
+  () =>
+    props.player.powered !== false &&
+    props.player.playback_state === PlaybackState.PLAYING,
+);
+
+const isSelectedPlayer = computed(
+  () =>
+    props.showSelectedIndicator === true &&
+    props.player.player_id === store.activePlayerId,
 );
 
 const useStackedMediaLayout = computed(
-  () => props.stackMediaDetails === true && hasMediaDetails.value,
+  () => props.stackMediaDetails === true && hasStackedDetails.value,
 );
 
 const canPlayPause = computed(

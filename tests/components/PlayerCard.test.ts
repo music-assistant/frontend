@@ -263,15 +263,22 @@ describe("PlayerCard", () => {
     const wrapper = mountPlayerCard(
       createPlayer({
         player_id: "active",
+        playback_state: PlaybackState.PLAYING,
       }),
       { showSelectedIndicator: true },
     );
 
     expect(wrapper.classes()).toContain("ring-1");
-    expect(wrapper.classes()).toContain("pt-4");
-    const badge = wrapper.get(".selected-player-badge");
-    expect(badge.text()).toBe("player_tip.selected_player");
-    expect(badge.classes()).toContain("rounded-full");
+    expect(wrapper.classes()).not.toContain("pt-4");
+    expect(wrapper.find(".selected-player-badge").exists()).toBe(false);
+    const indicator = wrapper.get(".selected-player-indicator");
+    expect(indicator.text()).toBe("player_tip.selected");
+    expect(indicator.attributes("variant")).toBe("default");
+    expect(
+      wrapper
+        .find(".player-playback-indicator + .selected-player-indicator")
+        .exists(),
+    ).toBe(true);
   });
 
   it("keeps the player details in the selection action name", () => {
@@ -533,7 +540,7 @@ describe("PlayerCard", () => {
     expect(members.classes()).toContain("text-[11px]");
   });
 
-  it("stacks player identity above loaded media only when requested", () => {
+  it("stacks player identity above media only when requested", () => {
     const player = createPlayer({
       playback_state: PlaybackState.PLAYING,
       current_media: createPlayerMedia({
@@ -566,22 +573,92 @@ describe("PlayerCard", () => {
     expect(selectorCard.find(".player-card-media-row").text()).toContain(
       "Hate Me Now",
     );
+    expect(selectorCard.get(".player-card-media-byline").classes()).toContain(
+      "text-foreground/60",
+    );
+    expect(
+      selectorCard.get(".player-card-media-byline").classes(),
+    ).not.toContain("text-muted-foreground");
     expect(selectorCard.find(".player-card-actions").classes()).toContain(
       "self-end",
     );
   });
 
-  it("keeps idle selector cards compact", () => {
+  it("keeps idle selector cards to one line without a speaker icon", () => {
     const wrapper = mountPlayerCard(createPlayer(), {
       stackMediaDetails: true,
     });
 
+    expect(wrapper.classes()).not.toContain("opacity-80");
     expect(wrapper.find(".player-card-main").classes()).not.toContain(
       "flex-col",
     );
+    expect(
+      wrapper.find(".player-card-main > .player-card-title").exists(),
+    ).toBe(true);
+    expect(wrapper.find(".player-card-media-row").exists()).toBe(false);
+    expect(wrapper.find(".player-icon").exists()).toBe(false);
     expect(wrapper.find(".player-card-actions").classes()).not.toContain(
       "self-end",
     );
+  });
+
+  it("uses full speaker-icon contrast when media is selected without artwork", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        playback_state: PlaybackState.PLAYING,
+        current_media: createPlayerMedia({ title: "Hate Me Now" }),
+      }),
+      { stackMediaDetails: true },
+    );
+
+    const icon = wrapper.get(".player-card-media-placeholder .player-icon");
+    expect(icon.classes()).toContain("opacity-100");
+    expect(icon.classes()).toContain("text-foreground");
+  });
+
+  it("reserves a title slot for the playing-state indicator", () => {
+    const idleCard = mountPlayerCard(createPlayer(), {
+      stackMediaDetails: true,
+    });
+    const idleIndicator = idleCard.get(".player-playback-indicator");
+
+    expect(idleIndicator.classes()).toContain("hidden");
+    expect(idleIndicator.attributes("aria-hidden")).toBe("true");
+    idleCard.unmount();
+
+    const playingCard = mountPlayerCard(
+      createPlayer({ playback_state: PlaybackState.PLAYING }),
+      { stackMediaDetails: true },
+    );
+    const playingIndicator = playingCard.get(".player-playback-indicator");
+
+    expect(playingIndicator.classes()).not.toContain("hidden");
+    expect(playingIndicator.classes()).toContain("text-primary");
+    expect(playingIndicator.attributes("aria-label")).toBe("state.playing");
+    expect(playingIndicator.attributes("aria-hidden")).toBe("false");
+    playingCard.unmount();
+
+    const pausedCard = mountPlayerCard(
+      createPlayer({ playback_state: PlaybackState.PAUSED }),
+      { stackMediaDetails: true },
+    );
+    const pausedIndicator = pausedCard.get(".player-playback-indicator");
+
+    expect(pausedIndicator.classes()).toContain("hidden");
+    expect(pausedIndicator.attributes("aria-hidden")).toBe("true");
+  });
+
+  it("shows the playing-state indicator beside names in unstacked cards", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({ playback_state: PlaybackState.PLAYING }),
+    );
+    const title = wrapper.get(".player-card-media-row .player-card-title");
+    const indicator = title.get(".player-playback-indicator");
+
+    expect(indicator.classes()).not.toContain("hidden");
+    expect(indicator.classes()).toContain("text-primary");
+    expect(indicator.attributes("aria-label")).toBe("state.playing");
   });
 
   it.each([PlaybackState.PLAYING, PlaybackState.PAUSED])(
