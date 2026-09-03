@@ -5,6 +5,7 @@ import { useShows } from "@/composables/ai-radio/useShows";
 import type { AIRadioHost, AIRadioStation } from "@/plugins/api/interfaces";
 import AIRadioView from "@/views/AIRadioView.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 type SendCommand = (
@@ -104,68 +105,13 @@ const getShowFetchCount = () =>
     ([command]) => command === "ai_radio/stations/get",
   ).length;
 
-const getStatusFetchCount = () =>
-  sendCommand.mock.calls.filter(([command]) => command === "ai_radio/status")
-    .length;
+const getDjStatusFetchCount = () =>
+  sendCommand.mock.calls.filter(
+    ([command]) => command === "ai_radio/queue_dj/status",
+  ).length;
 
 function findButtonByText(wrapper: VueWrapper, text: string) {
   return wrapper.findAll("button").find((button) => button.text() === text);
-}
-
-/**
- * Records document listeners while a view runs.
- *
- * `live()` reports the event types attached right now; `stop()` restores the
- * originals and reports what is still attached, which is what tells a removed
- * listener apart from one added back afterwards.
- */
-function trackDocumentListeners() {
-  const attached = new Map<unknown, string>();
-  const { addEventListener, removeEventListener } = document;
-  document.addEventListener = ((type: string, handler: never) => {
-    attached.set(handler, type);
-    return addEventListener.call(document, type, handler);
-  }) as never;
-  document.removeEventListener = ((type: string, handler: never) => {
-    attached.delete(handler);
-    return removeEventListener.call(document, type, handler);
-  }) as never;
-  return {
-    live: () => [...attached.values()],
-    stop: () => {
-      Object.assign(document, { addEventListener, removeEventListener });
-      return [...attached.values()];
-    },
-  };
-}
-
-/**
- * Records the status poll timers armed while a view runs.
- *
- * `pending()` reports the ones not cleared again, which is what a poll loop
- * still running boils down to. Poll delays start at 5s, well clear of the
- * short timeouts the components and the test harness arm themselves.
- */
-function trackPollTimers() {
-  const POLL_DELAY_FLOOR_MS = 5000;
-  const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
-  const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
-  return {
-    pending: () => {
-      const cleared = new Set(clearTimeoutSpy.mock.calls.map(([id]) => id));
-      return setTimeoutSpy.mock.results
-        .filter(
-          (_result, index) =>
-            Number(setTimeoutSpy.mock.calls[index][1]) >= POLL_DELAY_FLOOR_MS,
-        )
-        .map((result) => result.value)
-        .filter((timer) => !cleared.has(timer));
-    },
-    stop: () => {
-      setTimeoutSpy.mockRestore();
-      clearTimeoutSpy.mockRestore();
-    },
-  };
 }
 
 // Attached so isVisible() can resolve computed style (v-show toggling).
@@ -183,11 +129,9 @@ afterEach(() => {
   routeMock.query = { station_id: STATION_ID };
   useHosts().hosts.value = [];
   useShows().shows.value = [];
-  useShows().sessions.value = [];
+  useShows().djStatus.value = {};
   useShows().playlists.value = [];
-  // Polling state lives in the composable's module scope, so a run left behind
-  // here would decide what the next test sees.
-  useShows().stopStatusPolling();
+  useShows().loadingDjStatus.value = false;
   document.body.replaceChildren();
 });
 
@@ -272,49 +216,52 @@ describe("AIRadioView host editor / show editor interplay", () => {
   });
 });
 
-describe("AIRadioView status polling lifecycle", () => {
-  it("polls while the page is open and stops once it is closed", async () => {
+describe("AIRadioView open/close lifecycle", () => {
+  it("refreshes the on-air state when the page opens", async () => {
     routeMock.query = {};
     setupSendCommand([]);
-    const listeners = trackDocumentListeners();
-    const timers = trackPollTimers();
 
-    const view = mountViewRaw();
-    await flushPromises();
-    const listeningWhileOpen = listeners.live();
-    const pendingWhileOpen = timers.pending();
+    const view = await mountView();
 
+    // The provider list is empty here, so nothing but the view itself asks.
+    expect(getDjStatusFetchCount()).toBe(1);
     view.unmount();
-    const listeningAfterClose = listeners.stop();
-    const pendingAfterClose = timers.pending();
-    timers.stop();
-
-    expect(listeningWhileOpen).toContain("visibilitychange");
-    expect(pendingWhileOpen).toHaveLength(1);
-    expect(getStatusFetchCount()).toBeGreaterThan(0);
-    expect(listeningAfterClose).not.toContain("visibilitychange");
-    expect(pendingAfterClose).toHaveLength(0);
   });
 
-  it("sets nothing up when the page is closed while still loading", async () => {
-    // leaving before the loads resolve runs the unmount hook first, so anything
-    // starting afterwards would poll on for the lifetime of the page
+  it("leaves the route alone when the page is closed while still loading", async () => {
+    // leaving before the loads resolve runs the unmount hook first, so the
+    // startup must not touch a route this view no longer owns
     routeMock.query = { station_id: STATION_ID };
     setupSendCommand([]);
-    const listeners = trackDocumentListeners();
-    const timers = trackPollTimers();
 
     const view = mountViewRaw();
     view.unmount();
     await flushPromises();
-    const remaining = listeners.stop();
-    const pending = timers.pending();
-    timers.stop();
 
-    expect(remaining).not.toContain("visibilitychange");
-    expect(pending).toHaveLength(0);
-    expect(getStatusFetchCount()).toBe(0);
-    // by now the query belongs to whatever route replaced this one
     expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+});
+
+describe("AIRadioView refresh button", () => {
+  it("stays disabled while the dj-status refresh is still pending", async () => {
+    routeMock.query = {};
+    setupSendCommand([]);
+    const view = await mountView();
+
+    // Every other refresh call has settled by now; only the dj-status one is
+    // still outstanding, but the button must stay busy until it settles too.
+    useShows().loadingDjStatus.value = true;
+    await nextTick();
+    expect(
+      view.find('[aria-label="Refresh"]').attributes("disabled"),
+    ).toBeDefined();
+
+    useShows().loadingDjStatus.value = false;
+    await nextTick();
+    expect(
+      view.find('[aria-label="Refresh"]').attributes("disabled"),
+    ).toBeUndefined();
+
+    view.unmount();
   });
 });

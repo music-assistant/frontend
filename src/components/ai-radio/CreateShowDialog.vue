@@ -239,7 +239,7 @@ async function playAfterCreate(stationId: string, defaultPlayerId?: string) {
     return;
   }
   try {
-    await startShow(stationId, { playerIdOverride: playerId });
+    await startShow(stationId, playerId);
   } catch (error) {
     const message = errorMessage(error);
     toast.error($t("providers.ai_radio.card.start_failed", [message]));

@@ -1826,14 +1826,10 @@
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
                 "unavailable": "AI Radio is not enabled.",
                 "live_starting": "Live radio started",
-                "live_start_failed": "Failed to start live radio",
-                "session_stopped": "AI Radio session stopped",
-                "session_stop_failed": "Failed to stop AI Radio session",
+                "show_stopped": "Show stopped",
                 "station_saved": "Station saved",
-                "station_save_failed": "Failed to save station",
                 "station_deleted": "Station deleted",
                 "station_duplicated": "Station duplicated",
-                "session_failed": "AI Radio run failed: {0}",
                 "host_saved": "Host saved",
                 "host_deleted": "Host deleted",
                 "tts_engines_load_failed": "Failed to load voice options"
@@ -1852,21 +1848,14 @@
             },
             "card": {
                 "play": "Play",
-                "starting": "Starting...",
                 "stop": "Stop",
                 "on_air": "On air",
                 "customize": "Customize",
                 "duplicate": "Duplicate",
                 "duplicate_name": "{0} (copy)",
                 "delete": "Delete",
-                "session_failed": "Last run failed",
-                "status_failed": "Failed {0}",
-                "status_last_on_air": "Last on air {0}",
                 "no_player": "Select a player first",
-                "start_failed": "Failed to start: {0}",
-                "switch_show_title": "Switch show?",
-                "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
-                "switch_show_confirm_label": "Switch"
+                "start_failed": "Failed to start: {0}"
             },
             "create": {
                 "title": "Create a show",

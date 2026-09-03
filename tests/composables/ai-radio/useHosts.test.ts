@@ -16,16 +16,20 @@ const { sendCommand } = vi.hoisted(() => ({
   sendCommand: vi.fn(),
 }));
 
-// api.providers must be reactive here: the prefetch hangs off a watch on the
-// provider list, which is exactly what this test exercises.
+// api.providers and api.state must be reactive here: the prefetch hangs off a
+// watch on the provider list, and useShows separately watches connection
+// state to reconcile the dj status after a reconnect.
 vi.mock("@/plugins/api", async () => {
-  const { reactive } = await import("vue");
+  const { reactive, ref } = await import("vue");
   return {
     default: {
       players: {},
       providers: reactive<Record<string, ProviderInstance>>({}),
+      state: ref("authenticated"),
       sendCommand,
+      subscribe_multi: vi.fn(() => () => undefined),
     },
+    ConnectionState: { AUTHENTICATED: "authenticated" },
   };
 });
 
@@ -75,7 +79,8 @@ const host: AIRadioHost = {
 
 sendCommand.mockImplementation(async (command: string) => {
   if (command === "ai_radio/hosts/list") return [host];
-  if (command === "ai_radio/queue_dj/status") return { kitchen: "host-1" };
+  if (command === "ai_radio/queue_dj/status")
+    return { kitchen: { host_id: "host-1", station_id: "" } };
   return undefined;
 });
 

@@ -1,4 +1,4 @@
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProviderInstance } from "@/plugins/api/interfaces";
 import { ProviderType } from "@/plugins/api/interfaces";
@@ -23,23 +23,32 @@ const aiRadioProvider: ProviderInstance = {
   is_streaming_provider: null,
 };
 
-/** Mocks @/plugins/api and @/plugins/auth for a fresh module import, returning the sendCommand spy. */
+/** Mocks @/plugins/api and @/plugins/auth for a fresh module import, returning the api spies. */
 async function mockApiAndAuth(guestSessionKind: string | null) {
   const providers = reactive<Record<string, ProviderInstance>>({
     ai_radio: aiRadioProvider,
   });
   const sendCommand = vi.fn().mockResolvedValue({});
+  const subscribeMulti = vi.fn(() => () => undefined);
+  const state = ref("authenticated");
+  const api = {
+    providers,
+    state,
+    sendCommand,
+    subscribe_multi: subscribeMulti,
+  };
 
   vi.doMock("@/plugins/api", () => ({
-    api: { providers, sendCommand },
-    default: { providers, sendCommand },
+    api,
+    default: api,
+    ConnectionState: { AUTHENTICATED: "authenticated" },
   }));
   vi.doMock("@/plugins/auth", () => ({
     authManager: { guestSessionKind: () => guestSessionKind },
     default: { guestSessionKind: () => guestSessionKind },
   }));
 
-  return sendCommand;
+  return { sendCommand, subscribeMulti };
 }
 
 /** Lets the module-level watcher's synchronous callback finish its async prefetch work. */
@@ -57,20 +66,21 @@ describe("ai_radio prefetch gating for session-scoped sessions", () => {
     vi.doUnmock("@/plugins/i18n");
   });
 
-  it("sends no ai_radio commands for a session-scoped session", async () => {
+  it("sends no ai_radio commands and tracks no queue events for a session-scoped session", async () => {
     vi.resetModules();
-    const sendCommand = await mockApiAndAuth("dashboard");
+    const { sendCommand, subscribeMulti } = await mockApiAndAuth("dashboard");
 
     await import("@/composables/ai-radio/useShows");
     await import("@/composables/ai-radio/useHosts");
     await flushMicrotasks();
 
     expect(sendCommand).not.toHaveBeenCalled();
+    expect(subscribeMulti).not.toHaveBeenCalled();
   });
 
-  it("prefetches ai_radio state for a regular session", async () => {
+  it("prefetches ai_radio state and tracks queue events for a regular session", async () => {
     vi.resetModules();
-    const sendCommand = await mockApiAndAuth(null);
+    const { sendCommand, subscribeMulti } = await mockApiAndAuth(null);
 
     await import("@/composables/ai-radio/useShows");
     await import("@/composables/ai-radio/useHosts");
@@ -80,10 +90,11 @@ describe("ai_radio prefetch gating for session-scoped sessions", () => {
     expect(calledCommands).toEqual(
       expect.arrayContaining([
         "ai_radio/stations/list",
-        "ai_radio/status",
         "ai_radio/hosts/list",
         "ai_radio/queue_dj/status",
       ]),
     );
+    // The DJ status is kept fresh from queue events rather than polled.
+    expect(subscribeMulti).toHaveBeenCalledTimes(1);
   });
 });
