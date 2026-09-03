@@ -2112,6 +2112,13 @@ watch(
         step.value = "reconnecting";
       }
     } else if (
+      (connectionState === ConnectionState.CONNECTED ||
+        connectionState === ConnectionState.AUTHENTICATED) &&
+      step.value === "auto-connect"
+    ) {
+      // Mounted into a reconnect already in flight: show what a mount at RECONNECTING would.
+      step.value = "reconnecting";
+    } else if (
       connectionState === ConnectionState.FAILED ||
       connectionState === ConnectionState.DISCONNECTED
     ) {
@@ -2128,19 +2135,22 @@ watch(
       }
     }
   },
+  { immediate: true },
 );
 
-// Start auto-connect on mount (unless already reconnecting)
+// Start auto-connect on mount; any other mount-time state is a reconnect
+// already under way (its own transport is live), handled above instead.
 onMounted(() => {
   // Delay showing login UI to prevent flash during auto-authentication
   setTimeout(() => {
     showLoginUI.value = true;
   }, 300);
 
-  if (api.state.value !== ConnectionState.RECONNECTING) {
+  if (
+    api.state.value === ConnectionState.DISCONNECTED ||
+    api.state.value === ConnectionState.FAILED
+  ) {
     autoConnect();
-  } else {
-    step.value = "reconnecting";
   }
 });
 </script>
