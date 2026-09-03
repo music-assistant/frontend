@@ -8,6 +8,12 @@
         class="works-search"
         :aria-label="searchPlaceholder"
       />
+      <YearRangeFilter
+        v-model:from="yearFrom"
+        v-model:to="yearTo"
+        :earliest="composedBounds.earliest"
+        :latest="composedBounds.latest"
+      />
       <label class="works-sort">
         {{ $t("classical_sort_label") }}
         <select v-model="sort">
@@ -27,12 +33,9 @@
           <span class="work-composer">{{ w.composer }}</span>
           <span class="work-title">{{ w.name }}</span>
         </router-link>
-        <span v-if="w.catalog_number" class="work-catalog">
-          {{ w.catalog_number }}
-        </span>
-        <span v-if="w.year_composed" class="work-year">
-          {{ w.year_composed }}
-        </span>
+        <!-- Rendered even when empty so every row keeps all four columns. -->
+        <span class="work-catalog">{{ w.catalog_number }}</span>
+        <span class="work-year">{{ w.year_composed }}</span>
         <span class="work-recordings">
           {{ w.recording_count }}
           {{
@@ -55,6 +58,8 @@
 <script setup lang="ts">
 import { normalizeForFilter } from "@/helpers/utils";
 import { getWorks, type ClassicalWorkSummary } from "@/services/classical";
+import YearRangeFilter from "@/views/classical/components/YearRangeFilter.vue";
+import { useYearRange, yearBounds } from "@/views/classical/yearRange";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -68,6 +73,8 @@ const works = ref<ClassicalWorkSummary[]>([]);
 const search = ref("");
 const sort = ref<SortKey>("composer");
 
+const { from: yearFrom, to: yearTo, matches: matchesYear } = useYearRange();
+
 const searchPlaceholder = computed(() =>
   t("classical_filter_works_placeholder"),
 );
@@ -78,14 +85,20 @@ onMounted(async () => {
 
 const collator = new Intl.Collator(undefined, { numeric: true });
 
+// Placeholder years, so the boxes advertise the span the library actually covers.
+const composedBounds = computed(() =>
+  yearBounds(works.value.map((w) => w.year_composed)),
+);
+
 const filteredWorks = computed(() => {
   const q = normalizeForFilter(search.value.trim());
-  const filtered = q
-    ? works.value.filter((w) => {
-        const hay = `${w.composer} ${w.name} ${w.catalog_number ?? ""}`;
-        return normalizeForFilter(hay).includes(q);
-      })
-    : works.value;
+  const filtered = works.value.filter((w) => {
+    if (q) {
+      const hay = `${w.composer} ${w.name} ${w.catalog_number ?? ""}`;
+      if (!normalizeForFilter(hay).includes(q)) return false;
+    }
+    return matchesYear(w.year_composed);
+  });
   const sorted = [...filtered];
   sorted.sort((a, b) => {
     switch (sort.value) {
@@ -162,15 +175,18 @@ const filteredWorks = computed(() => {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  /* Column tracks live on the list, and the rows borrow them through subgrid,
+     so catalog, year and count line up all the way down. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  column-gap: 0.75rem;
 }
 
 .work-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: baseline;
-  gap: 0.75rem;
   padding: 0.5rem 0.25rem;
   border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.06));
 }

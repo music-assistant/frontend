@@ -29,17 +29,26 @@
     />
     <v-divider />
 
-    <RecordingsFilter
-      v-model="query"
-      :committed="committed"
-      :count="displayedRecordings.length"
-      :performer-name="committedKind === 'performer' ? performerName : ''"
-      :term="committedKind === 'text' ? committedTerm : ''"
-      class="recordings-filter"
-      @commit="commitFilter"
-      @edit="editFilter"
-      @clear="clearFilter"
-    />
+    <div class="recordings-controls">
+      <RecordingsFilter
+        v-model="query"
+        :committed="committed"
+        :count="displayedRecordings.length"
+        :performer-name="committedKind === 'performer' ? performerName : ''"
+        :term="committedKind === 'text' ? committedTerm : ''"
+        :generic-no-match="yearRangeActive"
+        class="recordings-filter"
+        @commit="commitFilter"
+        @edit="editFilter"
+        @clear="clearFilter"
+      />
+      <YearRangeFilter
+        v-model:from="yearFrom"
+        v-model:to="yearTo"
+        :earliest="recordedBounds.earliest"
+        :latest="recordedBounds.latest"
+      />
+    </div>
     <div v-if="displayedRecordings.length" class="recordings-list">
       <WorkRecordingCard
         v-for="r in displayedRecordings"
@@ -96,7 +105,9 @@ import {
 } from "@/services/classical";
 import RecordingsFilter from "@/views/classical/components/RecordingsFilter.vue";
 import WorkRecordingCard from "@/views/classical/components/WorkRecordingCard.vue";
+import YearRangeFilter from "@/views/classical/components/YearRangeFilter.vue";
 import { openMovementMenu, openRecordingMenu } from "@/views/classical/menu";
+import { useYearRange, yearBounds } from "@/views/classical/yearRange";
 import { normalizeForFilter } from "@/helpers/utils";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -124,6 +135,19 @@ const committed = ref(false);
 const committedKind = ref<"text" | "performer" | null>(null);
 const committedTerm = ref("");
 const performerArtistId = ref<string | null>(null);
+
+// Recordings carry the year they were performed, so the range filters on that.
+const {
+  from: yearFrom,
+  to: yearTo,
+  isActive: yearRangeActive,
+  matches: matchesYear,
+  clear: clearYearRange,
+} = useYearRange();
+
+const recordedBounds = computed(() =>
+  yearBounds(recordings.value.map((r) => r.year)),
+);
 
 const performerLookup = computed(() => makePerformerLookup(performers.value));
 
@@ -167,7 +191,7 @@ const matchesArtist = (r: ClassicalRecording, id: string): boolean =>
   (r.performer_ids?.includes(id) ?? false) ||
   (r.credits?.some((c) => c.artist_id === id) ?? false);
 
-const displayedRecordings = computed(() => {
+const matchedRecordings = computed(() => {
   if (
     committed.value &&
     committedKind.value === "performer" &&
@@ -187,6 +211,10 @@ const displayedRecordings = computed(() => {
     .map((s) => s.r);
 });
 
+const displayedRecordings = computed(() =>
+  matchedRecordings.value.filter((r) => matchesYear(r.year)),
+);
+
 const artistItem = computed<Artist | undefined>(() => {
   const w = work.value;
   if (!w) return undefined;
@@ -204,6 +232,7 @@ const artistItem = computed<Artist | undefined>(() => {
 });
 
 const resetFilter = () => {
+  clearYearRange();
   query.value = "";
   committed.value = false;
   committedKind.value = null;
@@ -340,8 +369,17 @@ const formatWorkType = (raw: string) => {
   text-decoration: underline;
 }
 
-.recordings-filter {
+.recordings-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
   margin: 0.5rem 1rem 0;
+}
+
+.recordings-filter {
+  flex: 1;
+  min-width: 200px;
 }
 
 .recordings-list {

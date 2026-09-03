@@ -37,6 +37,9 @@
             <strong>{{ term }}</strong>
           </template>
         </i18n-t>
+        <span v-else-if="genericNoMatch">
+          {{ $t("classical_no_recordings_match") }}
+        </span>
         <i18n-t v-else keypath="classical_filter_no_match" tag="span">
           <template #term>
             <strong>{{ displayTerm }}</strong>
@@ -61,6 +64,9 @@ const props = defineProps<{
   count: number;
   performerName?: string;
   term?: string;
+  /** Report an empty list plainly rather than blaming the committed term,
+      for when another filter is also narrowing the list. */
+  genericNoMatch?: boolean;
 }>();
 
 const emit = defineEmits<{
