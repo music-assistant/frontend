@@ -11,7 +11,11 @@ import {
   MediaType,
   Player,
   PlayerQueue,
+  Playlist,
   PodcastEpisode,
+  ProviderFeature,
+  ProviderInstance,
+  ProviderType,
   QueueItem,
 } from "./interfaces";
 
@@ -266,6 +270,42 @@ export const getCollectionMediaTypeFromItemId = function (itemId: string) {
   return Object.values(MediaType).includes(itemIdType as MediaType)
     ? (itemIdType as MediaType)
     : MediaType.UNKNOWN;
+};
+
+/**
+ * Providers that a static library playlist can be migrated to: the builtin
+ * provider and streaming providers that can create playlists and edit
+ * their tracks. Returns an empty list for dynamic, non-library, or
+ * non-track playlists (migration only moves tracks). A provider the
+ * playlist is already mapped to is still included, so same-provider-instance
+ * copies are allowed.
+ */
+export const getPlaylistMigrationProviders = function (
+  playlist: Playlist,
+): ProviderInstance[] {
+  if (
+    playlist.is_dynamic ||
+    playlist.provider !== "library" ||
+    !playlist.supported_mediatypes.includes(MediaType.TRACK)
+  )
+    return [];
+  return Object.values(api.providers)
+    .filter(
+      (provider) =>
+        provider.available &&
+        provider.type === ProviderType.MUSIC &&
+        (provider.domain === "builtin" || provider.is_streaming_provider) &&
+        (provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE,
+        ) ||
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_TRACKS,
+          )) &&
+        provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_TRACKS_EDIT,
+        ),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 };
 
 /**
