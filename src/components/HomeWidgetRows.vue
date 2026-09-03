@@ -78,12 +78,14 @@
           </EditorialShelf>
 
           <!-- Top picks row -->
-          <section
+          <EditorialShelf
             v-else-if="row.kind === 'top_picks'"
-            class="ed-section ed-hero-row"
-            :class="{ 'ed-dimmed': editMode && row.hidden }"
+            class="ed-hero-row"
+            :nav-center="160"
+            :dimmed="editMode && row.hidden"
+            style="--ed-card-pad: 0px"
           >
-            <div class="ed-hero-row__head">
+            <template #header>
               <div class="ed-hero-row__title-group">
                 <h2 class="ed-hero-row__title">
                   {{ $t("top_picks_for_you") }}
@@ -100,73 +102,45 @@
                   />
                 </Button>
               </div>
-              <div v-if="editMode" class="ed-edit-controls">
-                <button
-                  class="ed-drag-handle"
-                  :aria-label="$t('queue_reorder')"
-                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
-                  @click.stop
-                >
-                  <GripVertical />
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  :aria-label="$t('tooltip.toggle_top_picks')"
-                  @click="toggleRow(row)"
-                >
-                  <Eye v-if="!row.hidden" />
-                  <EyeOff v-else />
-                </Button>
-              </div>
-            </div>
+            </template>
+            <template v-if="editMode" #actions>
+              <button
+                class="ed-drag-handle"
+                :aria-label="$t('queue_reorder')"
+                @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                @click.stop
+              >
+                <GripVertical />
+              </button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :aria-label="$t('tooltip.toggle_top_picks')"
+                @click="toggleRow(row)"
+              >
+                <Eye v-if="!row.hidden" />
+                <EyeOff v-else />
+              </Button>
+            </template>
+            <EditorialHeroCard
+              class="ed-hero-grid__lead"
+              :item="heroEntries[0].item"
+              :tag="heroEntries[0].tag"
+              large
+            />
             <div
-              class="ed-hero-row__viewport"
-              @mouseenter="heroHovering = canHover"
-              @mouseleave="heroHovering = false"
+              v-for="(col, i) in heroColumns"
+              :key="i"
+              class="ed-hero-grid__col"
             >
-              <!-- prev -->
-              <button
-                v-show="heroHovering && heroCanLeft"
-                class="ed-hero-nav ed-hero-nav--left"
-                :aria-label="$t('tooltip.scroll_left')"
-                @click="scrollHero(-1)"
-              >
-                <ChevronLeft :size="20" />
-              </button>
-
-              <div ref="heroGrid" class="ed-hero-grid" @scroll="updateHeroNav">
-                <EditorialHeroCard
-                  class="ed-hero-grid__lead"
-                  :item="heroEntries[0].item"
-                  :tag="heroEntries[0].tag"
-                  large
-                />
-                <div
-                  v-for="(col, i) in heroColumns"
-                  :key="i"
-                  class="ed-hero-grid__col"
-                >
-                  <EditorialHeroCard
-                    v-for="entry in col"
-                    :key="entry.item.uri"
-                    :item="entry.item"
-                    :tag="entry.tag"
-                  />
-                </div>
-              </div>
-
-              <!-- next -->
-              <button
-                v-show="heroHovering && heroCanRight"
-                class="ed-hero-nav ed-hero-nav--right"
-                :aria-label="$t('tooltip.scroll_right')"
-                @click="scrollHero(1)"
-              >
-                <ChevronRight :size="20" />
-              </button>
+              <EditorialHeroCard
+                v-for="entry in col"
+                :key="entry.item.uri"
+                :item="entry.item"
+                :tag="entry.tag"
+              />
             </div>
-          </section>
+          </EditorialShelf>
 
           <!-- Timeline recommendation -->
           <EditorialTimeline
@@ -408,15 +382,7 @@ import {
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  EyeOff,
-  GripVertical,
-  ListFilter,
-  RefreshCw,
-} from "@lucide/vue";
+import { Eye, EyeOff, GripVertical, ListFilter, RefreshCw } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -611,51 +577,6 @@ const heroColumns = computed<HeroEntry[][]>(() => {
   for (let i = 0; i < rest.length; i += 2) cols.push(rest.slice(i, i + 2));
   return cols;
 });
-
-// --- Top Picks horizontal scroller (lead + columns that overflow on narrower
-// screens) with hover chevrons, mirroring EditorialShelf's nav affordance. ---
-// Only track hover (for the nav chevrons) on hover-capable devices. On touch
-// devices the emulated mouseenter would mutate the DOM, which makes mobile
-// Safari swallow the first tap as "hover" instead of a click.
-const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
-const heroGrid = ref<HTMLElement | null>(null);
-const heroHovering = ref(false);
-const heroCanLeft = ref(false);
-const heroCanRight = ref(false);
-
-const updateHeroNav = () => {
-  const el = heroGrid.value;
-  if (!el) return;
-  heroCanLeft.value = el.scrollLeft > 1;
-  heroCanRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
-};
-
-const scrollHero = (dir: number) => {
-  const el = heroGrid.value;
-  if (!el) return;
-  el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
-};
-
-let heroRo: ResizeObserver | undefined;
-let observedHeroGrid: HTMLElement | null = null;
-
-const observeHero = () => {
-  const el = heroGrid.value;
-  if (!(el instanceof HTMLElement)) {
-    heroRo?.disconnect();
-    observedHeroGrid = null;
-    return;
-  }
-  updateHeroNav();
-  if (!("ResizeObserver" in window)) return;
-  heroRo ??= new ResizeObserver(updateHeroNav);
-  if (observedHeroGrid === el) return;
-  heroRo.disconnect();
-  heroRo.observe(el);
-  observedHeroGrid = el;
-};
-
-watch(heroEntries, () => nextTick(observeHero), { deep: false });
 
 // Assign heroEntries only when the picks actually changed — cheap insurance
 // against redundant re-renders from repeated builds with identical content.
@@ -995,7 +916,6 @@ onMounted(async () => {
   // Genres is its own row and isn't part of the fast catalog call, so it
   // doesn't gate the page spinner.
   loadGenres();
-  window.addEventListener("resize", updateHeroNav);
 
   // A history back/forward traversal sets `forward` on the entry we're
   // returning to; a fresh navigation leaves it null.
@@ -1012,7 +932,6 @@ onMounted(async () => {
         ".content-section",
       ) as HTMLElement | null;
       if (el) el.scrollTop = snapshot.scrollPos;
-      observeHero();
     });
 
     // Refresh everything in the background so the restored page stays current.
@@ -1021,9 +940,6 @@ onMounted(async () => {
     await refreshShownRowItems();
     if (unmounted) return;
     resolveHeroPicks();
-    nextTick(() => {
-      if (!unmounted) observeHero();
-    });
     return;
   }
 
@@ -1034,21 +950,14 @@ onMounted(async () => {
   await fetchMissingRowItems();
   if (unmounted) return;
   resolveHeroPicks();
-  nextTick(() => {
-    if (!unmounted) observeHero();
-  });
 });
 
 onBeforeUnmount(() => {
   unmounted = true;
-  window.removeEventListener("resize", updateHeroNav);
   unsubscribeRecommendations();
   unsubscribeProviderEvents();
   unsubscribePlaylog();
   cancelScheduledRecommendationRefresh();
-  heroRo?.disconnect();
-  heroRo = undefined;
-  observedHeroGrid = null;
 
   const el = document.querySelector(".content-section");
   prevState = {
@@ -1184,10 +1093,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.ed-hero-row {
-  padding: 0 28px;
-}
-
 .ed-dimmed {
   opacity: 0.4;
 }
@@ -1196,12 +1101,6 @@ onBeforeUnmount(() => {
   padding: 8px 4px;
   font-size: 0.875rem;
   color: rgba(var(--v-theme-on-surface), 0.6);
-}
-.ed-hero-row__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 14px;
 }
 .ed-hero-row__title-group {
   display: flex;
@@ -1227,24 +1126,13 @@ onBeforeUnmount(() => {
     transform: rotate(360deg);
   }
 }
-.ed-hero-row__viewport {
-  position: relative;
-}
 /* Horizontal scroller: fixed-size lead + columns of 2, so cards don't stretch
    on wide screens. The default viewport shows the lead + 2 columns; the
    remaining columns scroll into view (and fit outright on big screens). */
-.ed-hero-grid {
-  display: flex;
-  gap: 14px;
+.ed-hero-row :deep(.ed-shelf__track) {
   height: 320px;
-  position: relative;
-  overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-}
-.ed-hero-grid::-webkit-scrollbar {
-  display: none;
+  padding-block: 0;
 }
 .ed-hero-grid__lead {
   flex: 1.5 0 520px;
@@ -1262,38 +1150,6 @@ onBeforeUnmount(() => {
 .ed-hero-grid__col > * {
   flex: 1;
   min-height: 0;
-}
-.ed-hero-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3;
-  width: 38px;
-  height: 38px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: rgb(var(--v-theme-on-background));
-  background: rgb(var(--v-theme-panel));
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
-}
-.ed-hero-nav:hover {
-  background: rgb(var(--v-theme-surface));
-}
-.ed-hero-nav:active {
-  transform: translateY(-50%) scale(0.94);
-}
-.ed-hero-nav--left {
-  left: 12px;
-}
-.ed-hero-nav--right {
-  right: 12px;
 }
 
 .ed-genres {
@@ -1326,38 +1182,26 @@ onBeforeUnmount(() => {
   .ed-genres__grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .ed-hero-grid {
-    display: flex;
+  .ed-hero-row :deep(.ed-shelf__track) {
     height: auto;
     gap: 12px;
-    overflow-x: auto;
     overflow-y: visible;
     scroll-snap-type: x mandatory;
-    /* pan-y too: a vertical swipe starting on a tile must scroll the page */
-    touch-action: pan-x pan-y;
-    scrollbar-width: none;
-    margin-inline: -28px;
-    padding-inline: 28px;
-    /* snap tiles to the gutter so the first tile lines up with the title */
-    scroll-padding-inline: 28px;
-  }
-  .ed-hero-grid::-webkit-scrollbar {
-    display: none;
   }
   .ed-hero-grid__col {
     display: contents;
   }
-  .ed-hero-row .ed-hero-grid :deep(.ed-hero) {
+  .ed-hero-row :deep(.ed-hero) {
     flex: 0 0 44%;
     height: 220px;
     min-height: 0;
     scroll-snap-align: start;
   }
 
-  .ed-hero-row .ed-hero-grid :deep(.ed-hero--large .ed-hero__title) {
+  .ed-hero-row :deep(.ed-hero--large .ed-hero__title) {
     font-size: 18px;
   }
-  .ed-hero-row .ed-hero-grid :deep(.ed-hero--large .ed-hero__content) {
+  .ed-hero-row :deep(.ed-hero--large .ed-hero__content) {
     padding: 16px;
   }
 }
@@ -1366,25 +1210,16 @@ onBeforeUnmount(() => {
   .ed-section {
     margin-bottom: 16px;
   }
-  .ed-hero-row,
   .ed-genres {
     padding-left: 16px;
     padding-right: 16px;
   }
-  .ed-hero-grid {
-    margin-inline: -16px;
-    padding-inline: 16px;
-    scroll-padding-inline: 16px;
-  }
-  .ed-hero-row .ed-hero-grid :deep(.ed-hero) {
+  .ed-hero-row :deep(.ed-hero) {
     flex: 0 0 82%;
     height: 200px;
   }
   .ed-hero-row__title {
     font-size: 22px;
-  }
-  .ed-hero-nav {
-    display: none;
   }
   .ed-drag-ghost {
     left: 16px;

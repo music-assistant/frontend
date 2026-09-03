@@ -35,8 +35,11 @@
     >
       <!-- prev -->
       <button
-        v-show="hovering && canLeft"
         class="ed-shelf__nav ed-shelf__nav--left"
+        :style="{
+          opacity: leftEdgeOpacity,
+          visibility: leftNavVisible ? 'visible' : 'hidden',
+        }"
         :aria-label="$t('tooltip.scroll_left')"
         @click="scroll(-1)"
       >
@@ -55,10 +58,30 @@
         <slot></slot>
       </div>
 
+      <div
+        class="ed-shelf__overflow-fade ed-shelf__overflow-fade--left"
+        :style="{
+          opacity: leftEdgeOpacity,
+          visibility: leftEdgeOpacity > 0 ? 'visible' : 'hidden',
+        }"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="ed-shelf__overflow-fade ed-shelf__overflow-fade--right"
+        :style="{
+          opacity: rightEdgeOpacity,
+          visibility: rightEdgeOpacity > 0 ? 'visible' : 'hidden',
+        }"
+        aria-hidden="true"
+      ></div>
+
       <!-- next -->
       <button
-        v-show="hovering && canRight"
         class="ed-shelf__nav ed-shelf__nav--right"
+        :style="{
+          opacity: rightEdgeOpacity,
+          visibility: rightNavVisible ? 'visible' : 'hidden',
+        }"
         :aria-label="$t('tooltip.scroll_right')"
         @click="scroll(1)"
       >
@@ -106,6 +129,7 @@ const PHONE_CARD_PAD = 8;
 const MIN_ART = 120;
 const MAX_ART = 280;
 const ART_TOP_OFFSET = 12;
+const DEFAULT_GUTTER = 28;
 
 // Only track hover (for the nav chevrons) on hover-capable devices. On touch
 // devices the emulated mouseenter would mutate the DOM, which makes mobile
@@ -113,12 +137,19 @@ const ART_TOP_OFFSET = 12;
 const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
 const track = ref<HTMLElement | null>(null);
 const hovering = ref(false);
-const canLeft = ref(false);
-const canRight = ref(false);
+const leftEdgeOpacity = ref(0);
+const rightEdgeOpacity = ref(0);
+const gutterWidth = ref(DEFAULT_GUTTER);
 const tileArt = ref<number | null>(null);
 
 const navTop = computed(() =>
   tileArt.value != null ? ART_TOP_OFFSET + tileArt.value / 2 : props.navCenter,
+);
+const leftNavVisible = computed(
+  () => leftEdgeOpacity.value > 0 && (!canHover || hovering.value),
+);
+const rightNavVisible = computed(
+  () => rightEdgeOpacity.value > 0 && (!canHover || hovering.value),
 );
 
 const verticalScrollParent = (el: HTMLElement): HTMLElement => {
@@ -155,18 +186,39 @@ const updateTileArt = () => {
   const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
   const gap = isPhone ? Math.min(props.gap, PHONE_GAP) : props.gap;
   const cardPad = isPhone ? PHONE_CARD_PAD : CARD_PAD;
-  const size = el.clientWidth / props.tilesPerView - gap - cardPad;
+  const trackStyles = getComputedStyle(el);
+  const horizontalInset =
+    (Number.parseFloat(trackStyles.paddingLeft) || 0) +
+    (Number.parseFloat(trackStyles.paddingRight) || 0);
+  const contentWidth = el.clientWidth - horizontalInset;
+  const size = contentWidth / props.tilesPerView - gap - cardPad;
   tileArt.value = Math.round(Math.max(MIN_ART, Math.min(MAX_ART, size)));
 };
 
-const update = () => {
+const updateEdgeOpacity = () => {
   const el = track.value;
   if (!el) return;
-  canLeft.value = el.scrollLeft > 1;
-  canRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+  const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+  const scrollPosition = Math.min(maxScroll, Math.max(0, el.scrollLeft));
+  leftEdgeOpacity.value = Math.min(1, scrollPosition / gutterWidth.value);
+  rightEdgeOpacity.value = Math.min(
+    1,
+    (maxScroll - scrollPosition) / gutterWidth.value,
+  );
+};
+
+const updateLayout = () => {
+  const el = track.value;
+  if (!el) return;
+  const trackStyles = getComputedStyle(el);
+  gutterWidth.value =
+    Number.parseFloat(trackStyles.paddingRight) ||
+    Number.parseFloat(trackStyles.getPropertyValue("--ed-gutter")) ||
+    DEFAULT_GUTTER;
+  updateEdgeOpacity();
   updateTileArt();
 };
-const onScroll = () => update();
+const onScroll = () => updateEdgeOpacity();
 
 watch(() => props.tilesPerView, updateTileArt);
 
@@ -190,8 +242,12 @@ function alignItemStart(selector: string) {
     scrollToStart();
     return;
   }
+  const trackStyles = getComputedStyle(el);
+  const startInset = Number.parseFloat(trackStyles.paddingLeft) || 0;
   const delta =
-    item.getBoundingClientRect().left - el.getBoundingClientRect().left;
+    item.getBoundingClientRect().left -
+    el.getBoundingClientRect().left -
+    startInset;
   el.scrollBy({ left: delta, behavior: "smooth" });
 }
 
@@ -201,17 +257,23 @@ defineExpose<EditorialShelfExpose>({
 });
 
 let ro: ResizeObserver | undefined;
+let mutationObserver: MutationObserver | undefined;
 onMounted(() => {
-  update();
-  window.addEventListener("resize", update);
+  updateLayout();
+  window.addEventListener("resize", updateLayout);
   if (track.value && "ResizeObserver" in window) {
-    ro = new ResizeObserver(update);
+    ro = new ResizeObserver(updateLayout);
     ro.observe(track.value);
+  }
+  if (track.value && "MutationObserver" in window) {
+    mutationObserver = new MutationObserver(updateLayout);
+    mutationObserver.observe(track.value, { childList: true, subtree: true });
   }
 });
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", update);
+  window.removeEventListener("resize", updateLayout);
   ro?.disconnect();
+  mutationObserver?.disconnect();
 });
 </script>
 
@@ -277,10 +339,9 @@ onBeforeUnmount(() => {
 
 .ed-shelf__viewport {
   position: relative;
-  padding-left: calc(var(--ed-gutter) - var(--ed-card-pad));
-  padding-right: var(--ed-gutter);
 }
 .ed-shelf__track {
+  box-sizing: border-box;
   display: flex;
   align-items: flex-start;
   gap: var(--ed-gap, 14px);
@@ -288,16 +349,32 @@ onBeforeUnmount(() => {
   overflow-x: auto;
   overflow-y: visible;
   overscroll-behavior-x: contain;
+  /* Keep resting content on the page grid while letting scrolled content
+     travel through the gutters to the viewport edge. */
   padding-block: 4px;
+  padding-left: calc(var(--ed-gutter) - var(--ed-card-pad));
+  padding-right: var(--ed-gutter);
   /* pan-y too: a vertical swipe starting on a tile must scroll the page */
   touch-action: pan-x pan-y;
   scroll-snap-type: x proximity;
   overflow-anchor: none;
-  scroll-padding-inline: calc(var(--ed-gutter) - var(--ed-card-pad));
+  scroll-padding-left: calc(var(--ed-gutter) - var(--ed-card-pad));
+  scroll-padding-right: var(--ed-gutter);
 }
-.ed-shelf__track::after {
-  content: "";
-  flex: 0 0 calc(var(--ed-gutter) - var(--ed-gap, 14px));
+.ed-shelf__overflow-fade {
+  position: absolute;
+  inset-block: 0;
+  z-index: 2;
+  width: clamp(24px, 3.75vw, 48px);
+  pointer-events: none;
+}
+.ed-shelf__overflow-fade--left {
+  left: 0;
+  background: linear-gradient(to right, var(--background), transparent);
+}
+.ed-shelf__overflow-fade--right {
+  right: 0;
+  background: linear-gradient(to right, transparent, var(--background));
 }
 .ma-scroll {
   scrollbar-width: none;
