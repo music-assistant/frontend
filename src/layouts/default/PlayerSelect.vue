@@ -74,30 +74,6 @@
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
-              :model-value="showSelectedPlayerFirst"
-              @select.prevent
-              @update:model-value="
-                setBooleanPreference(
-                  PLAYER_SELECT_PREFERENCES.showSelectedPlayerFirst,
-                  $event,
-                )
-              "
-            >
-              {{ $t("player_select.show_selected_player_first") }}
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              :model-value="showActivePlayersFirst"
-              @select.prevent
-              @update:model-value="
-                setBooleanPreference(
-                  PLAYER_SELECT_PREFERENCES.showActivePlayersFirst,
-                  $event,
-                )
-              "
-            >
-              {{ $t("player_select.show_active_players_first") }}
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
               :model-value="showGroupMemberNames"
               @select.prevent
               @update:model-value="
@@ -236,8 +212,6 @@ const SEARCH_PLAYER_THRESHOLD = 10;
 const BUILTIN_PLAYER_PREFERENCE = "<builtinplayer>";
 const PLAYER_SELECT_PREFERENCES = {
   showVolumeForActivePlayersOnly: "playerSelect.showVolumeForActivePlayersOnly",
-  showSelectedPlayerFirst: "playerSelect.showSelectedPlayerFirst",
-  showActivePlayersFirst: "playerSelect.showActivePlayersFirst",
   showGroupMemberNames: "playerSelect.showGroupMemberNames",
 } as const;
 
@@ -248,14 +222,6 @@ const playerList = ref<HTMLElement>();
 const { getPreference, setPreference } = useUserPreferences();
 const showVolumeForActivePlayersOnly = getPreference<boolean>(
   PLAYER_SELECT_PREFERENCES.showVolumeForActivePlayersOnly,
-  true,
-);
-const showSelectedPlayerFirst = getPreference<boolean>(
-  PLAYER_SELECT_PREFERENCES.showSelectedPlayerFirst,
-  true,
-);
-const showActivePlayersFirst = getPreference<boolean>(
-  PLAYER_SELECT_PREFERENCES.showActivePlayersFirst,
   true,
 );
 const showGroupMemberNames = getPreference<boolean>(
@@ -273,9 +239,6 @@ let autoSelectedPlayerId: string | undefined;
 const orderedPlayers = useOrderedPlayers({
   allowNeedsSetup: true,
   allowSources: true,
-  selectedPlayerFirst: showSelectedPlayerFirst,
-  activePlayersFirst: showActivePlayersFirst,
-  includePausedAsActive: true,
 });
 
 const showSearch = computed(
@@ -328,12 +291,6 @@ watch(
     });
   },
 );
-
-watch(showSelectedPlayerFirst, (showFirst) => {
-  if (!showFirst && store.showPlayersMenu) {
-    void scrollSelectedPlayerIntoView();
-  }
-});
 
 watch(showSearch, (isVisible) => {
   if (!isVisible) playerSearchQuery.value = "";
@@ -550,9 +507,7 @@ function isSelectablePlayerId(playerId: string | null | undefined) {
 }
 
 async function scrollSelectedPlayerIntoView() {
-  if (showSelectedPlayerFirst.value || !store.showPlayersMenu) {
-    return;
-  }
+  if (!store.showPlayersMenu) return;
 
   await nextTick();
   const activePlayerId = store.activePlayerId;

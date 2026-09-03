@@ -60,7 +60,7 @@
           "
         >
           <PlayerCardTitle
-            v-if="useStackedMediaLayout"
+            v-if="stackMediaDetails"
             :player-name="cardPlayerName"
             :member-names="displayedGroupMemberNames"
             :member-layout="groupMemberLayout"
@@ -69,6 +69,7 @@
             <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
           </PlayerCardTitle>
           <div
+            v-if="!stackMediaDetails || hasStackedDetails"
             class="player-card-media-row"
             :class="
               useStackedMediaLayout
@@ -77,6 +78,7 @@
             "
           >
             <div
+              v-if="!stackMediaDetails || hasSelectedMedia"
               class="player-card-media flex size-11 shrink-0 items-center justify-center overflow-hidden"
               :class="{
                 'bg-muted rounded-md': artworkUrl || !useStackedMediaLayout,
@@ -104,9 +106,7 @@
                 :size="24"
                 :class="
                   useStackedMediaLayout
-                    ? hasSelectedMedia
-                      ? 'text-foreground opacity-100'
-                      : 'text-foreground opacity-50'
+                    ? 'text-foreground opacity-100'
                     : 'opacity-80'
                 "
               />
@@ -347,13 +347,22 @@ const hasSelectedMedia = computed(
       )),
 );
 
+const hasStackedDetails = computed(
+  () =>
+    hasSelectedMedia.value ||
+    props.player.needs_setup ||
+    props.player.type === PlayerType.SOURCE,
+);
+
 const isPlaying = computed(
   () =>
     props.player.powered !== false &&
     props.player.playback_state === PlaybackState.PLAYING,
 );
 
-const useStackedMediaLayout = computed(() => props.stackMediaDetails === true);
+const useStackedMediaLayout = computed(
+  () => props.stackMediaDetails === true && hasStackedDetails.value,
+);
 
 const canPlayPause = computed(
   () => activeSource.value?.can_play_pause === true,

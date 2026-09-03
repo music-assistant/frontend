@@ -571,28 +571,23 @@ describe("PlayerCard", () => {
     );
   });
 
-  it("anchors idle selector titles above a minimal faded speaker icon", () => {
+  it("keeps idle selector cards to one line without a speaker icon", () => {
     const wrapper = mountPlayerCard(createPlayer(), {
       stackMediaDetails: true,
     });
 
     expect(wrapper.classes()).not.toContain("opacity-80");
-    expect(wrapper.find(".player-card-main").classes()).toContain("flex-col");
+    expect(wrapper.find(".player-card-main").classes()).not.toContain(
+      "flex-col",
+    );
     expect(
       wrapper.find(".player-card-main > .player-card-title").exists(),
     ).toBe(true);
-    expect(
-      wrapper.find(".player-card-media-row .player-card-title").exists(),
-    ).toBe(false);
-    expect(wrapper.find(".player-card-actions").classes()).toContain(
+    expect(wrapper.find(".player-card-media-row").exists()).toBe(false);
+    expect(wrapper.find(".player-icon").exists()).toBe(false);
+    expect(wrapper.find(".player-card-actions").classes()).not.toContain(
       "self-end",
     );
-    const media = wrapper.get(".player-card-media-placeholder");
-    expect(media.classes()).not.toContain("border");
-    expect(media.classes()).not.toContain("bg-muted");
-    expect(media.classes()).not.toContain("rounded-md");
-    expect(media.get(".player-icon").classes()).toContain("opacity-50");
-    expect(media.get(".player-icon").classes()).toContain("text-foreground");
   });
 
   it("uses full speaker-icon contrast when media is selected without artwork", () => {
