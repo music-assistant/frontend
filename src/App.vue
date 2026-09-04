@@ -621,13 +621,20 @@ onMounted(async () => {
   });
 
   // Re-prune when the provider set changes at runtime.
-  api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-    if (
-      !authManager.isGuestAccessSession() &&
-      !authManager.isDashboardViewer()
-    ) {
-      void pruneStaleProviderFilters();
+  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    if (authManager.isGuestAccessSession() || authManager.isDashboardViewer()) {
+      return;
     }
+    // The server rewrites the sidebar shortcuts held on the user when a provider is removed.
+    // Refresh before pruning, which saves preferences and would write the old set back.
+    // Without a fresh user there is nothing safe to prune against, so leave it for next time.
+    const userInfo = await api.getCurrentUserInfo();
+    if (!userInfo) {
+      return;
+    }
+    authManager.setCurrentUser(userInfo);
+    store.currentUser = userInfo;
+    await pruneStaleProviderFilters();
   });
 });
 
