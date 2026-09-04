@@ -75,6 +75,7 @@ describe("getMenuItems (sidebar.menu preference)", () => {
       "party",
       "music_quiz",
       "ai_radio",
+      "library_automations",
       "milkdrop_visualizer",
     ]);
 
@@ -90,6 +91,7 @@ describe("getMenuItems (sidebar.menu preference)", () => {
       "party",
       "music_quiz",
       "ai_radio",
+      "library_automations",
       "milkdrop_visualizer",
     ]);
 
@@ -101,6 +103,7 @@ describe("getMenuItems (sidebar.menu preference)", () => {
       "party",
       "music_quiz",
       "ai_radio",
+      "library_automations",
       "milkdrop_visualizer",
     ]);
   });

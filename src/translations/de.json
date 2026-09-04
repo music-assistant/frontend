@@ -1459,6 +1459,95 @@
             "share_named_title": "Verbinden {0}",
             "share_title": "Mach mit bei der Music Assistant Party!"
         },
+        "library_automations": {
+            "title": "Bibliotheks-Automationen",
+            "subtitle": "Automatisch auf Bibliotheks-Ereignisse reagieren, z. B. einen defavorisierten Titel zu einer Playlist hinzufügen.",
+            "add_rule": "Neue Regel",
+            "empty_title": "Noch keine Automations-Regeln",
+            "empty_description": "Lege eine Regel an, um automatisch auf Bibliotheks-Ereignisse zu reagieren, z. B. einen Titel beim Defavorisieren in eine Playlist zu verschieben.",
+            "create_cta": "Erste Regel erstellen",
+            "card": {
+                "edit": "Bearbeiten",
+                "delete": "Löschen"
+            },
+            "confirm": {
+                "delete_title": "Regel löschen?",
+                "delete_message": "Diese Automations-Regel wird dauerhaft gelöscht.",
+                "delete_confirm": "Löschen"
+            },
+            "toast": {
+                "rule_saved": "Regel gespeichert",
+                "rule_deleted": "Regel gelöscht",
+                "rule_enabled": "Regel aktiviert",
+                "rule_disabled": "Regel deaktiviert"
+            },
+            "form": {
+                "create_title": "Neue Automations-Regel",
+                "edit_title": "Automations-Regel bearbeiten",
+                "name_label": "Name",
+                "name_placeholder": "z. B. Defavorisierte Titel verschieben",
+                "trigger_label": "Wenn",
+                "trigger_placeholder": "Trigger auswählen",
+                "media_types_label": "Gilt für",
+                "media_type_track": "Titel",
+                "media_type_album": "Alben",
+                "media_type_artist": "Künstler",
+                "action_label": "Dann",
+                "action_placeholder": "Aktion auswählen",
+                "playlist_name_label": "Playlist-Name",
+                "playlist_name_placeholder": "z. B. Aussortiert",
+                "conditions_label": "Nur wenn (optional)",
+                "conditions_add": "Bedingung hinzufügen",
+                "condition_logic_and": "Alle Bedingungen müssen zutreffen",
+                "condition_logic_or": "Mindestens eine Bedingung muss zutreffen",
+                "condition_field_name": "Name",
+                "condition_field_genre": "Genre",
+                "condition_field_provider": "Provider",
+                "condition_field_explicit": "Explizit",
+                "condition_operator_eq": "ist",
+                "condition_operator_contains": "enthält",
+                "condition_operator_in": "ist eines von",
+                "condition_field_in_playlist": "Playlist",
+                "condition_field_hint_name": "Der Titel/Name des auslösenden Titels, Albums oder Künstlers selbst (also z. B. nicht der Album-Name bei einem Titel).",
+                "condition_field_hint_genre": "Eine Genre-Bezeichnung, wie in der Bibliothek hinterlegt (trifft zu, wenn eines der Genres des Elements diesen Text enthält).",
+                "condition_provider_placeholder": "Provider auswählen",
+                "condition_playlists_label": "Playlist(en) auswählen",
+                "condition_playlists_empty": "Noch keine Playlisten in der Bibliothek",
+                "condition_value_placeholder": "Wert",
+                "cancel": "Abbrechen",
+                "save": "Speichern",
+                "create": "Regel erstellen",
+                "saving": "Speichert..."
+            },
+            "trigger": {
+                "media_item_unfavorited": {
+                    "title": "Titel defavorisiert",
+                    "description": "Löst aus, sobald ein Titel, Album oder Künstler aus den Favoriten entfernt wird."
+                },
+                "media_item_favorited": {
+                    "title": "Titel favorisiert",
+                    "description": "Löst aus, sobald ein Titel, Album oder Künstler als Favorit markiert wird."
+                },
+                "media_item_added_to_library": {
+                    "title": "Zur Bibliothek hinzugefügt",
+                    "description": "Löst aus, wenn ein Titel, Album oder Künstler neu zur Bibliothek hinzugefügt wird."
+                }
+            },
+            "action": {
+                "add_to_playlist": {
+                    "title": "Zu Playlist hinzufügen",
+                    "description": "Fügt den auslösenden Titel (bzw. alle Titel eines auslösenden Albums/Künstlers) zu einer Playlist hinzu und legt sie bei Bedarf automatisch an."
+                },
+                "remove_from_playlist": {
+                    "title": "Aus Playlist entfernen",
+                    "description": "Entfernt den/die auslösenden Titel aus einer Playlist, falls vorhanden."
+                },
+                "remove_from_library": {
+                    "title": "Aus Bibliothek entfernen",
+                    "description": "Entfernt das auslösende Element vollständig aus der Bibliothek."
+                }
+            }
+        },
         "music_quiz": {
             "title": "Musikquiz",
             "create_intro": "Erstelle ein neues Quizspiel, um dein Musikwissen zu testen!",
