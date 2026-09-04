@@ -327,10 +327,10 @@
                 "help": "Raises or lowers the level of everything passing through this point in the pipeline."
             },
             "balance": {
-                "help": "Shifts the sound towards the left or right speaker. Only applies to stereo audio."
+                "help": "Shifts the sound towards the left or right speaker."
             },
             "stereo_width": {
-                "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound.",
+                "help": "Adjusts the stereo image width. Left of center narrows towards mono, right widens the sound. Only applies to stereo audio.",
                 "clip_hint": "Widening past Original can raise peaks and cause clipping. Consider adding a Limiter after this filter.",
                 "scale": {
                     "mono": "Mono",
@@ -339,7 +339,7 @@
                 }
             },
             "crossfeed": {
-                "help": "Makes headphone listening feel more natural by gently blending the left and right channels, similar to listening to speakers.",
+                "help": "Makes headphone listening feel more natural by gently blending the left and right channels, similar to listening to speakers. Only applies to stereo audio.",
                 "presets": {
                     "low": "Low",
                     "medium": "Medium",
@@ -2217,6 +2217,31 @@
         "op_greater_than": "greater than",
         "op_less_than": "less than",
         "picker_search": "Search {label}"
+    },
+    "migrate_playlist": {
+        "action": "Migrate playlist",
+        "title": "Migrate playlist",
+        "description": "Copy \"{0}\" to another provider, matching its tracks along the way.",
+        "destination_label": "Destination",
+        "destination_placeholder": "Choose a destination",
+        "name_label": "Playlist name",
+        "match_policy_label": "Track matching",
+        "match_policy": {
+            "exact": {
+                "title": "Exact release",
+                "description": "Only add tracks that match the exact same release. Tracks that can't be matched this way are skipped."
+            },
+            "same_recording": {
+                "title": "Same recording",
+                "description": "Prefer an exact match, otherwise accept the same recording from a different release. Tracks that can't be matched this way are skipped."
+            },
+            "best_effort": {
+                "title": "Best effort",
+                "description": "Prefer an exact match, then the same recording, otherwise accept the closest available match."
+            }
+        },
+        "submit": "Migrate",
+        "no_destinations_error": "No eligible destination provider is available for this playlist."
     },
     "explore": "Explore",
     "shortcuts": "Shortcuts",

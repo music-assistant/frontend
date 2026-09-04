@@ -124,11 +124,7 @@ const musicProviders = computed(() => {
     .sort((a, b) => a.name.localeCompare(b.name));
 });
 
-// older servers always match on the full track title/artist; only offer the
-// policy choice once the server can actually honor it.
-const showMatchPolicy = computed(
-  () => musicProviders.value.length > 0 && api.supportsPlaylistMatchPolicy,
-);
+const showMatchPolicy = computed(() => musicProviders.value.length > 0);
 
 const matchPolicyOptions = computed(() => [
   {
