@@ -5,6 +5,8 @@
         :icon="typeof icon === 'string' ? icon : undefined"
         size="small"
         :disabled="iconAction == null"
+        :aria-label="toolbarIconLabel"
+        :aria-hidden="toolbarIconLabel ? undefined : true"
         style="opacity: 0.8"
         @click="iconAction?.()"
       >
@@ -34,6 +36,8 @@
         variant="ghost"
         size="icon-lg"
         :title="menuItemLabel(menuItem)"
+        :aria-label="menuItemLabel(menuItem)"
+        :aria-haspopup="menuItem.subItems?.length ? 'menu' : undefined"
         :disabled="menuItem.disabled == true"
         @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
       >
@@ -46,7 +50,12 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <DropdownMenu v-if="overflowItems.length" v-model:open="overflowMenuOpen">
         <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="icon-lg" :title="$t('menu')">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            :title="$t('menu')"
+            :aria-label="$t('menu')"
+          >
             <span class="relative inline-flex">
               <EllipsisVertical class="size-[22px]" />
               <span v-if="menuActive" :class="ACTIVE_DOT_CLASS"></span>
@@ -112,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
 import MenuItemIcon from "@/components/MenuItemIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -145,6 +155,7 @@ interface Props {
   menuActive?: boolean;
   isDiscoverPage?: boolean;
   iconAction?: () => void;
+  iconLabel?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   color: "transparent",
@@ -156,6 +167,7 @@ const props = withDefaults(defineProps<Props>(), {
   enforceOverflowMenu: false,
   menuActive: false,
   iconAction: undefined,
+  iconLabel: undefined,
 });
 
 const ACTIVE_DOT_CLASS =
@@ -224,6 +236,16 @@ const onMenuItemClick = (
     menuItem.action();
   }
 };
+
+const toolbarIconLabel = computed(() => {
+  if (props.iconLabel) return props.iconLabel;
+  // an actionable icon is a back button; name it after its action, never
+  // after the page title
+  if (props.iconAction) return $t("back");
+  if (props.title) return props.title;
+  if (props.isDiscoverPage) return $t("discover");
+  return undefined;
+});
 
 // emitters
 const emit = defineEmits<{

@@ -9,6 +9,7 @@
       ])
     "
     :title="repeatTitle"
+    :aria-label="repeatButtonLabel"
     :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="cycleRepeatMode"
@@ -79,6 +80,11 @@ const repeatMode = computed<RepeatMode>(() => {
   }
   return compProps.playerQueue?.repeat_mode ?? RepeatMode.OFF;
 });
+
+// Accessible name carries the mode in effect, since the icon alone is silent.
+const repeatButtonLabel = computed(
+  () => `${$t("select_repeat_mode")}: ${$t(`repeat_mode.${repeatMode.value}`)}`,
+);
 
 // The next repeat mode when the button is pressed: cycle OFF -> ALL -> ONE.
 // (The button is disabled for radio/dynamic queues, so those don't apply here.)

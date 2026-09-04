@@ -355,6 +355,7 @@
             <MenuButton
               id="playbutton"
               :text="playButtonText"
+              :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
               :disabled="!item"
               :loading="playActionInProgress"
               style="margin-right: 8px; margin-bottom: 4px"
@@ -367,21 +368,17 @@
               class="flex items-center gap-2"
             >
               <!-- favorite (heart) icon -->
-              <IconHeartFilled
-                v-if="item.favorite"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
+              <button
+                type="button"
+                class="favorite-icon-button"
+                :aria-label="favoriteButtonLabel"
+                :aria-pressed="item.favorite ? 'true' : 'false'"
+                :title="favoriteButtonLabel"
                 @click="api.toggleFavorite(item)"
-              />
-              <IconHeart
-                v-else
-                :stroke-width="2"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
-                @click="api.toggleFavorite(item)"
-              />
+              >
+                <IconHeartFilled v-if="item.favorite" :size="24" />
+                <IconHeart v-else :stroke-width="2" :size="24" />
+              </button>
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
@@ -757,6 +754,9 @@ const artistLogo = computed(() => {
 });
 
 const isAdmin = computed(() => authManager.isAdmin());
+const favoriteButtonLabel = computed(() =>
+  compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
+);
 
 const mergeGenre = () => {
   if (!compProps.item) return;
@@ -821,6 +821,25 @@ const collectionNarrators = computed(() => {
 .background-image .v-img__img--cover {
   object-position: 50% 20%;
 }
+
+.favorite-icon-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: currentColor;
+  cursor: pointer;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+}
+
+.favorite-icon-button:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
 .v-card--variant-elevated {
   box-shadow: none;
   border-width: 1px;

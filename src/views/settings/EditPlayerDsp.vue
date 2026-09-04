@@ -1,7 +1,11 @@
 <template>
   <section v-if="dsp">
     <div class="flex items-center gap-2 border-b px-4 py-2">
-      <Switch v-model="dsp.enabled" />
+      <Switch
+        v-model="dsp.enabled"
+        :aria-label="dspToggleLabel"
+        :title="dspToggleLabel"
+      />
       <h2 class="min-w-0 flex-1 truncate text-base font-medium">
         {{ $t("settings.dsp.configure_on", { name: playerName }) }}
       </h2>
@@ -44,7 +48,8 @@
             <Button
               variant="ghost"
               size="icon-xs"
-              :aria-label="$t('delete')"
+              :aria-label="`${$t('delete')}: ${preset.name}`"
+              :title="`${$t('delete')}: ${preset.name}`"
               @click.stop="removePreset(preset.preset_id)"
             >
               <Trash2 />
@@ -129,6 +134,8 @@
             <Switch
               v-if="typeof selectedStage === 'number'"
               v-model="dsp.filters[selectedStage].enabled"
+              :aria-label="selectedFilterToggleLabel"
+              :title="selectedFilterToggleLabel"
               class="mx-2"
             />
             <Button
@@ -692,6 +699,15 @@ watch(
 const playerName = computed(() =>
   getPlayerName(api.players[props.playerId!], 27),
 );
+// Stable names: the switch's checked state already conveys on/off, so the
+// accessible name identifies what the switch controls.
+const dspToggleLabel = computed(() => `DSP: ${playerName.value}`);
+const selectedFilterToggleLabel = computed(() => {
+  if (typeof selectedStage.value !== "number") {
+    return t("settings.enable");
+  }
+  return stageTitle(selectedStage.value);
+});
 
 watch(
   () => props.playerId,

@@ -47,7 +47,21 @@ export interface ButtonProps {
   stacked?: boolean;
   class?: string | string[] | Record<string, boolean>;
   style?: string | Record<string, string | number>;
+  ariaLabel?: string;
+  ariaLabelledby?: string;
   "aria-label"?: string;
+  "aria-labelledby"?: string;
+  "aria-expanded"?: boolean | "true" | "false";
+  "aria-haspopup"?:
+    | boolean
+    | "true"
+    | "false"
+    | "menu"
+    | "listbox"
+    | "tree"
+    | "grid"
+    | "dialog";
+  "aria-pressed"?: boolean | "true" | "false" | "mixed";
 }
 
 export interface ButtonEmits {
@@ -56,11 +70,20 @@ export interface ButtonEmits {
 
 export const useButton = (props: ButtonProps) => {
   const buttonProps = computed(() => {
-    const { variant, nav, ...vuetifyProps } = props;
+    const {
+      variant,
+      nav,
+      ariaLabel,
+      ariaLabelledby,
+      "aria-label": ariaLabelAttr,
+      "aria-labelledby": ariaLabelledbyAttr,
+      ...vuetifyProps
+    } = props;
 
     const baseProps = {
       ...vuetifyProps,
-      "aria-label": props.title || props["aria-label"],
+      "aria-label": props.title || ariaLabel || ariaLabelAttr,
+      "aria-labelledby": ariaLabelledby || ariaLabelledbyAttr,
     };
 
     return match(variant)

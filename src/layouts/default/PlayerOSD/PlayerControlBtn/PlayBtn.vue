@@ -4,6 +4,8 @@
     v-bind="{ ...icon, ...$attrs }"
     class="play-btn-icon"
     :disabled="!player || isLoading || isDisabled"
+    :aria-label="playButtonLabel"
+    :title="playButtonLabel"
     variant="button"
     @click="onClick"
   >
@@ -31,6 +33,7 @@
 </template>
 
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
@@ -104,6 +107,11 @@ const showStop = computed(() => {
 
 const isPlaying = computed(() => {
   return compProps.player?.playback_state == PlaybackState.PLAYING;
+});
+
+const playButtonLabel = computed(() => {
+  if (isPlaying.value && showStop.value) return $t("stop_playback");
+  return isPlaying.value ? $t("pause") : $t("play");
 });
 
 const isLoading = computed(() => {
