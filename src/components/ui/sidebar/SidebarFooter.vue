@@ -19,11 +19,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
     :class="
       cn(
         'flex w-full shrink-0 flex-col justify-center gap-2',
-        isMobile
-          ? 'p-2'
-          : isCollapsed
-            ? 'pl-[1px] pt-2 pb-2'
-            : 'px-3 pt-2 pb-2',
+        isMobile ? 'p-2' : isCollapsed ? 'pt-2 pb-2' : 'px-3 pt-2 pb-2',
         props.class,
       )
     "

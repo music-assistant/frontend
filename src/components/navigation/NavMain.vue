@@ -280,8 +280,9 @@ const draggedItem = computed(() =>
                 :tooltip="item.title"
                 :aria-label="item.title"
                 :disabled="item.disabled"
-                class="gap-4"
+                class="mr-1.5 group-data-[collapsible=icon]:mr-0"
                 :class="[
+                  'gap-4',
                   itemActive(item)
                     ? 'no-underline font-bold text-sm'
                     : 'no-underline font-medium text-sm',

@@ -294,7 +294,17 @@ onUnmounted(() => {
   </Sidebar>
 </template>
 
-<style scoped></style>
+<style scoped>
+[data-sidebar="menu-button"] {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+[data-collapsible="icon"] [data-sidebar="menu-button"] {
+  margin-left: calc((var(--sidebar-width-icon) - 100%) / 2) !important;
+  margin-right: 0 !important;
+}
+</style>
 
 <style>
 [data-mobile="true"] [data-sidebar="footer"] [data-sidebar="menu-button"] {

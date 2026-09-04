@@ -275,9 +275,13 @@ const accountSwitcherClass = (account: SavedAccount | User) =>
                 </AvatarFallback>
               </Avatar>
             </div>
-            <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
+            <div
+              class="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden"
+            >
               <span class="truncate font-medium">{{ displayName }}</span>
-              <span class="text-muted-foreground truncate text-xs leading-none">
+              <span
+                class="text-muted-foreground truncate text-xs leading-none group-data-[collapsible=icon]:hidden"
+              >
                 <span v-if="username">{{ username }}</span>
               </span>
             </div>

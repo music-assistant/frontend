@@ -121,6 +121,25 @@ const mobileSheetSide = useMobileSidebarSide();
   border-radius: 0 !important;
 }
 
+/* Keep the mobile sheet clear of browser-controlled screen insets. The width
+   grows with the outer-edge inset so the sidebar's usable content width stays
+   equal to --sidebar-width. */
+.sidebar-mobile-sheet--left {
+  padding-top: var(--device-inset-top, 0px) !important;
+  padding-right: 0 !important;
+  padding-bottom: var(--device-inset-bottom, 0px) !important;
+  padding-left: var(--device-inset-left, 0px) !important;
+  width: calc(var(--sidebar-width) + var(--device-inset-left, 0px)) !important;
+}
+
+.sidebar-mobile-sheet--right {
+  padding-top: var(--device-inset-top, 0px) !important;
+  padding-right: var(--device-inset-right, 0px) !important;
+  padding-bottom: var(--device-inset-bottom, 0px) !important;
+  padding-left: 0 !important;
+  width: calc(var(--sidebar-width) + var(--device-inset-right, 0px)) !important;
+}
+
 .sidebar-mobile-overlay {
   bottom: 0 !important;
 }

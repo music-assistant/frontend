@@ -298,6 +298,7 @@ const draggedItem = computed(() =>
                     :is-active="!editMode && isActive(url)"
                     :tooltip="getDisplayName(item)"
                     :aria-label="getDisplayName(item)"
+                    class="mr-1.5 group-data-[collapsible=icon]:mr-0"
                     :class="[
                       'gap-4',
                       isCollapsed

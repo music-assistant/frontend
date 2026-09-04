@@ -73,9 +73,13 @@ useHotkey(
   toggleSidebar,
 );
 
-// We add a state so that we can do data-state="expanded" or "collapsed".
-// This makes it easier to style the sidebar with Tailwind classes.
-const state = computed(() => (open.value ? "expanded" : "collapsed"));
+// The persisted `open` value belongs to the desktop sidebar. A desktop
+// collapsed state must not leak into the mobile sheet, where the navigation
+// is always full-width and labelled. Keep `open` unchanged so returning to a
+// desktop viewport restores the user's collapsed preference.
+const state = computed(() =>
+  isMobile.value || open.value ? "expanded" : "collapsed",
+);
 
 provideSidebarContext({
   state,

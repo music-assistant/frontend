@@ -20,7 +20,12 @@ const isCollapsed = computed(() => state.value === "collapsed");
 </script>
 
 <template>
-  <div :class="['flex w-full min-w-0 flex-col overflow-hidden', props.class]">
+  <div
+    :class="[
+      'trigger-container flex w-full min-w-0 flex-col overflow-hidden',
+      props.class,
+    ]"
+  >
     <Tooltip>
       <TooltipTrigger as-child>
         <Button
@@ -28,7 +33,10 @@ const isCollapsed = computed(() => state.value === "collapsed");
           data-slot="sidebar-trigger"
           variant="ghost"
           size="icon"
-          :class="['flex-shrink-0', isCollapsed ? 'mx-auto' : 'ml-auto']"
+          :class="[
+            'flex-shrink-0 group-data-[collapsible=icon]:size-8!',
+            isCollapsed ? 'mx-auto' : 'ml-auto',
+          ]"
           @click="toggleSidebar"
         >
           <PanelLeft />
@@ -46,12 +54,16 @@ const isCollapsed = computed(() => state.value === "collapsed");
 </template>
 
 <style scoped>
-.navuser-trigger :deep([data-sidebar="menu-button"]) {
+.trigger-container .navuser-trigger :deep([data-sidebar="menu-button"]) {
   margin-left: 0 !important;
   padding-right: 0;
 }
 
-.navuser-trigger :deep(ul[data-sidebar="menu"]) {
+.trigger-container .navuser-trigger :deep([data-slot="avatar"]) {
+  margin-left: calc((var(--sidebar-width-icon) - 100%) / 2 - 0px);
+}
+
+.trigger-container .navuser-trigger :deep(ul[data-sidebar="menu"]) {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }

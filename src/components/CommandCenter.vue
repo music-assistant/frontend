@@ -259,7 +259,7 @@ import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Check, History, Play, Search } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getMenuItems, type MenuItem } from "./navigation/utils/getMenuItems";
 
@@ -530,10 +530,17 @@ const statusNote = computed(() => {
   return "";
 });
 
-useHotkey("Mod+K", () => {
-  if (isOpen.value) close();
-  else if (!store.dialogActive) open();
-});
+useHotkey(
+  "Mod+K",
+  () => {
+    if (isOpen.value) close();
+    else if (!store.dialogActive) open();
+  },
+  {
+    conflictBehavior: "replace",
+    target: () => (typeof window === "undefined" ? null : window),
+  },
+);
 
 onUnmounted(() => {
   clearTimeout(debounceTimer);
