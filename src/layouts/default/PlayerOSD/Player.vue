@@ -421,8 +421,8 @@ watch(
      the middle of the bar rather than off its end.
 
      The budget, measured: the column offers 0.3 * (vw - 30) + 8 px, and the
-     three buttons rest at 64 + 72 + 96 = 232, so from 1100px up the row has
-     room to spare at every width. */
+     three buttons plus the paired gap rest at 64 + 72 + 96 + 4 = 236, so from
+     1100px up the row has room to spare at every width. */
   .mediacontrols-bottom-right > div {
     min-width: 0;
   }
@@ -431,10 +431,10 @@ watch(
     justify-content: flex-end;
   }
 
-  /* spacing the controls rather than the row keeps the popovers' own anchor
-     elements, which sit between them and take no space, out of the count */
-  .mediacontrols :deep(.player-bar-action-row > button ~ button) {
-    margin-inline-start: clamp(0px, 2vw - 25px, 16px);
+  /* The target and its group editor form one stable pair. The row gap separates
+     that pair from volume without depending on the popovers' anchor elements. */
+  .mediacontrols :deep(.player-bar-action-row) {
+    column-gap: clamp(0px, 2vw - 25px, 16px);
   }
 
   .mediacontrols :deep(.player-bar-group-button),
@@ -452,6 +452,10 @@ watch(
     min-width: 96px !important;
     max-width: clamp(96px, 10vw - 14px, 176px);
   }
+}
+
+.mediacontrols :deep(.player-bar-target-controls) {
+  gap: 4px;
 }
 
 @media screen and (min-width: 769px) and (max-width: 1099px) {
