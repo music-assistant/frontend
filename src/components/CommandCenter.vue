@@ -255,11 +255,11 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { useHotkey } from "@tanstack/vue-hotkeys";
+import { createHotkeyHandler } from "@tanstack/vue-hotkeys";
 import { Check, History, Play, Search } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
-import { computed, nextTick, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getMenuItems, type MenuItem } from "./navigation/utils/getMenuItems";
 
@@ -530,19 +530,35 @@ const statusNote = computed(() => {
   return "";
 });
 
-useHotkey(
+const toggleCommandCenter = () => {
+  if (isOpen.value) close();
+  else if (!store.dialogActive) open();
+};
+
+// Register both physical modifier conventions explicitly. `Mod` resolves to
+// Control on Linux/Windows and Meta on macOS, but the command center accepts
+// either shortcut regardless of the host platform. Both registrations use the
+// same logical key with different parsing platforms, so TanStack can dispatch
+// the matching modifier without competing warning registrations.
+const macCommandCenterHotkey = createHotkeyHandler(
   "Mod+K",
-  () => {
-    if (isOpen.value) close();
-    else if (!store.dialogActive) open();
-  },
-  {
-    conflictBehavior: "replace",
-    target: () => (typeof window === "undefined" ? null : window),
-  },
+  toggleCommandCenter,
+  { platform: "mac" },
+);
+const linuxCommandCenterHotkey = createHotkeyHandler(
+  "Mod+K",
+  toggleCommandCenter,
+  { platform: "linux" },
 );
 
+onMounted(() => {
+  window.addEventListener("keydown", macCommandCenterHotkey);
+  window.addEventListener("keydown", linuxCommandCenterHotkey);
+});
+
 onUnmounted(() => {
+  window.removeEventListener("keydown", macCommandCenterHotkey);
+  window.removeEventListener("keydown", linuxCommandCenterHotkey);
   clearTimeout(debounceTimer);
   if (isOpen.value) {
     store.dialogActive = false;
