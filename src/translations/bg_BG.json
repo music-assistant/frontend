@@ -274,7 +274,6 @@
         "about_description": "Информация за версията, кредити и още",
         "auto_refresh_log": "Автоматично опресняване",
         "log_truncated": "Показване на последните {0} реда. Изтеглете пълния журнал за цялостната история.",
-        "version_info": "Информация за версията",
         "library_stats": "Статистика на библиотеката",
         "links": "Връзки",
         "changelog": "Списък с промени",
@@ -468,9 +467,13 @@
             "search_placeholder": "Търсене по обект, устройство или област...",
             "no_results": "Няма съответстващи обекти",
             "no_device": "Няма устройство",
-            "no_area": "Няма област"
+            "no_area": "Няма област",
+            "role": {
+                "mute": "Без звук"
+            }
         },
         "known_issues": "Известни проблеми",
+        "provider_status_loading": "Зареждане",
         "provider_status_disabled": "Деактивиран",
         "provider_status_unknown": "Неизвестен",
         "delete_player_title": "Да се изтрие ли {0}?"
@@ -1105,6 +1108,8 @@
                 },
                 "host_placeholder": "Изберете хост",
                 "create_host_cta": "Създаване на хост",
+                "prompt_placeholder_copy_failed": "Копирането на {0} в буферната памет не е успешно",
+                "prompt_placeholder_copy_aria": "Копиране на {0}",
                 "option_key_placeholder": "напр. глас",
                 "option_value_placeholder": "напр. en_US-lessac-medium",
                 "add_option": "Добавяне на опция",
@@ -1389,12 +1394,26 @@
     "artist_all_audiobooks": "Всички аудиокниги",
     "lights": "Светлини",
     "player_select": {
-        "and_more": "...и още {0}"
+        "and_more": "...и още {0}",
+        "disable_player_title": "Деактивиране на {0}?",
+        "rename_player": "Преименуване на плейъра",
+        "rename_player_description": "Въведете ново име за този плейър."
+    },
+    "visualizer": {
+        "title": "MilkDrop",
+        "quality_options": {
+            "low": "Ниско (таблети \/ телевизори)",
+            "medium": "Средно",
+            "high": "Високо"
+        }
     },
     "ai_dj_off": "Изкл.",
     "ai_dj_show_on_air": "В ефир: {0}",
     "menu": "Меню",
     "play_announcement_message": "Съобщение",
+    "play_announcement_message_placeholder": "Вечерята е готова!",
+    "play_announcement_mic_denied": "Music Assistant няма право да използва микрофона.",
+    "play_announcement_mic_failed": "Микрофонът не можа да бъде стартиран.",
     "home_assistant_menu": "Home Assistant",
     "playback_speed_value": "{0}x",
     "offline_ready": "Приложението е готово за работа офлайн",
@@ -1422,5 +1441,7 @@
         "expand": "Разгъване на страничната лента",
         "collapse": "Свиване на страничната лента"
     },
-    "loading_short": "Зареждане"
+    "loading_short": "Зареждане",
+    "search_in": "Търсене в {0}...",
+    "pages": "Страници"
 }
