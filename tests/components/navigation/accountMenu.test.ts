@@ -44,6 +44,17 @@ describe("account menu helpers", () => {
     expect(navHeaderSource).toContain("settings.release_notes");
   });
 
+  it("closes mobile navigation when settings is selected", () => {
+    expect(navHeaderSource).toMatch(
+      /const handleSettings = \(\) => \{\s*setOpenMobile\(false\);\s*router\.push\(\{ name: "settings" \}\);/,
+    );
+  });
+
+  it("hides keyboard shortcuts from the mobile context menu", () => {
+    expect(navHeaderSource).toContain('<template v-if="!isMobile">');
+    expect(navHeaderSource).toContain("<NavKeyboardShortcuts />");
+  });
+
   it("copies only the current username from the account menu", () => {
     expect(navUserSource).toContain("copyToClipboard(username)");
     expect(navUserSource).not.toContain(
@@ -60,6 +71,12 @@ describe("account menu helpers", () => {
     expect(
       navUserSource.match(/currentAccountAccentClass/g)?.length,
     ).toBeGreaterThanOrEqual(5);
+  });
+
+  it("closes the mobile sidebar before opening the account switcher", () => {
+    expect(navUserSource).toMatch(
+      /const openAccountSwitcher = \(\) => \{\s*accountMenuOpen\.value = false;\s*if \(isMobile\.value\) \{\s*setOpenMobile\(false\);/,
+    );
   });
 
   it("renders scrobbling as a separate status signal around the avatar", () => {

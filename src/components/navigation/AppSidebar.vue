@@ -28,6 +28,7 @@ import { useRouter } from "vue-router";
 import NavHomeAssistant from "./NavHomeAssistant.vue";
 import NavHeaderMenu from "./NavHeaderMenu.vue";
 import NavUser from "./NavUser.vue";
+import AccountSwitcherDialog from "./AccountSwitcherDialog.vue";
 import {
   getMenuItems,
   resolveMenuConfig,
@@ -292,6 +293,7 @@ onUnmounted(() => {
       </div>
     </SidebarFooter>
   </Sidebar>
+  <AccountSwitcherDialog />
 </template>
 
 <style scoped>

@@ -65,7 +65,10 @@ const browserInfo =
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
-const handleSettings = () => router.push({ name: "settings" });
+const handleSettings = () => {
+  setOpenMobile(false);
+  router.push({ name: "settings" });
+};
 
 const openHelpLink = (url: string) => {
   setOpenMobile(false);
@@ -179,9 +182,11 @@ const copyVersion = async () => {
       <DropdownMenuSeparator />
       <NavThemeMenu />
       <NavLanguageMenu />
-      <DropdownMenuSeparator />
-      <NavKeyboardShortcuts />
-      <DropdownMenuSeparator />
+      <template v-if="!isMobile">
+        <DropdownMenuSeparator />
+        <NavKeyboardShortcuts />
+        <DropdownMenuSeparator />
+      </template>
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
           <LifeBuoy class="size-4" />
