@@ -18,14 +18,8 @@ const isCollapsed = computed(() => state.value === "collapsed");
     data-sidebar="footer"
     :class="
       cn(
-        'flex w-full flex-col gap-2',
-        isMobile
-          ? 'p-2'
-          : isCollapsed
-            ? // no side padding: collapsed rail items centre themselves, and
-              // any asymmetry here would push them off the rail axis
-              'pt-2 pb-26'
-            : 'px-3 pt-2 pb-26',
+        'flex w-full shrink-0 flex-col justify-center gap-2',
+        isMobile ? 'p-2' : isCollapsed ? 'pt-2 pb-2' : 'px-3 pt-2 pb-2',
         props.class,
       )
     "

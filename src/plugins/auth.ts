@@ -18,6 +18,14 @@ import { store } from "./store";
 
 const TOKEN_STORAGE_KEY = "ma_access_token";
 const TOKEN_CONNECTION_STORAGE_KEY = "ma_access_token_connection";
+const SAVED_ACCOUNTS_STORAGE_KEY = "ma_saved_accounts";
+
+export interface SavedAccount {
+  token: string;
+  username: string;
+  displayName?: string;
+  avatarUrl?: string | null;
+}
 
 /**
  * JWT claims from Music Assistant tokens, mirroring the server's token payload.
@@ -205,6 +213,41 @@ export class AuthManager {
    */
   setCurrentUser(user: User): void {
     store.currentUser = user;
+    this.rememberAccount(user);
+  }
+
+  getSavedAccounts(): SavedAccount[] {
+    try {
+      const accounts = JSON.parse(
+        localStorage.getItem(SAVED_ACCOUNTS_STORAGE_KEY) || "[]",
+      );
+      return Array.isArray(accounts) ? accounts : [];
+    } catch {
+      return [];
+    }
+  }
+
+  switchAccount(account: SavedAccount): void {
+    this.setToken(account.token);
+    store.currentUser = undefined;
+    window.location.reload();
+  }
+
+  private rememberAccount(user: User): void {
+    if (!this.token || this.isGuestAccessSession() || !user.username) return;
+    const accounts = this.getSavedAccounts().filter(
+      (account) => account.token !== this.token,
+    );
+    accounts.unshift({
+      token: this.token,
+      username: user.username,
+      displayName: user.display_name || undefined,
+      avatarUrl: user.avatar_url,
+    });
+    localStorage.setItem(
+      SAVED_ACCOUNTS_STORAGE_KEY,
+      JSON.stringify(accounts.slice(0, 8)),
+    );
   }
 
   /**

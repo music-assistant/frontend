@@ -132,9 +132,17 @@
 
 <script setup lang="ts">
 import { ImageColorPalette, paletteFromServer } from "@/helpers/utils";
+import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
+import api from "@/plugins/api";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
+import {
+  useHotkey,
+  useHotkeys,
+  type RegisterableHotkey,
+} from "@tanstack/vue-hotkeys";
 import { computed, ref, watch } from "vue";
 import PlayerBarGroupControl from "./PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
@@ -153,6 +161,98 @@ interface Props {
 }
 const props = defineProps<Props>();
 const showMobileVolumeControls = ref(false);
+
+const globalPlayerHotkeysEnabled = computed(
+  () => !store.dialogActive && !store.showPlayersMenu,
+);
+const activePlayerId = () => store.activePlayer?.player_id;
+const playerCommand = (command: (playerId: string) => unknown) => {
+  const playerId = activePlayerId();
+  if (playerId) command(playerId);
+};
+const seekBy = (offset: number) => {
+  const playerId = activePlayerId();
+  const elapsed = playerId ? resolveActiveElapsedTime(playerId) : undefined;
+  if (playerId && elapsed != null)
+    api.playerCommandSeek(playerId, Math.max(0, elapsed + offset));
+};
+
+useHotkeys(
+  [
+    {
+      hotkey: "Space",
+      callback: () => playerCommand(api.playerCommandPlayPause.bind(api)),
+    },
+    {
+      hotkey: "K",
+      callback: () => playerCommand(api.playerCommandPlayPause.bind(api)),
+    },
+    { hotkey: "ArrowLeft", callback: () => seekBy(-10) },
+    { hotkey: "ArrowRight", callback: () => seekBy(10) },
+    {
+      hotkey: "ArrowUp",
+      callback: () => playerCommand(api.playerCommandVolumeUp.bind(api)),
+    },
+    {
+      hotkey: "ArrowDown",
+      callback: () => playerCommand(api.playerCommandVolumeDown.bind(api)),
+    },
+    {
+      hotkey: "M",
+      callback: () => playerCommand(api.playerCommandMuteToggle.bind(api)),
+    },
+    {
+      hotkey: "Mod+Shift+ArrowLeft",
+      callback: () => playerCommand(api.playerCommandPrevious.bind(api)),
+    },
+    {
+      hotkey: "Mod+Shift+ArrowRight",
+      callback: () => playerCommand(api.playerCommandNext.bind(api)),
+    },
+    {
+      hotkey: "Mod+P",
+      callback: () => {
+        store.showPlayersMenu = true;
+      },
+    },
+    {
+      hotkey: "Mod+Shift+F",
+      callback: () => {
+        store.showFullscreenPlayer = true;
+      },
+    },
+    {
+      hotkey: "Mod+Shift+L",
+      callback: () => eventbus.emit("player-toggle-lyrics"),
+    },
+    {
+      hotkey: "Mod+Shift+M",
+      callback: () => playerCommand(api.playerCommandMuteToggle.bind(api)),
+    },
+  ].map((definition) => ({
+    ...definition,
+    hotkey: definition.hotkey as RegisterableHotkey,
+    options: {
+      enabled:
+        definition.hotkey === "Mod+Shift+F" || definition.hotkey === "Mod+P"
+          ? globalPlayerHotkeysEnabled
+          : globalPlayerHotkeysEnabled,
+    },
+  })),
+  { ignoreInputs: true },
+);
+
+useHotkey(
+  "Escape",
+  () => {
+    store.showFullscreenPlayer = false;
+  },
+  {
+    enabled: computed(
+      () => globalPlayerHotkeysEnabled.value && store.showFullscreenPlayer,
+    ),
+  },
+);
 
 // The controls beside the queue button reach into the room the actions to their
 // right leave free, so each waits for the width it fits in. Measured, that room

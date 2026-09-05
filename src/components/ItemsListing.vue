@@ -327,6 +327,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { useHotkeys, type RegisterableHotkey } from "@tanstack/vue-hotkeys";
 import {
   ArrowUpDown,
   CheckCheck,
@@ -1738,8 +1739,10 @@ const restoreSettings = async function () {
   }
 };
 
-// lifecycle hooks
-const keyListener = function (e: KeyboardEvent) {
+// Register listing search shortcuts through TanStack Hotkeys. The callback
+// deliberately keeps the target checks here: typing in a different control
+// (for example the player drawer search) must not steal its input.
+const handleSearchHotkey = function (e: KeyboardEvent) {
   if (store.dialogActive || store.showPlayersMenu) return;
   if (loading.value) return;
   if (e.key === "Escape") closeSearch();
@@ -1758,8 +1761,7 @@ const keyListener = function (e: KeyboardEvent) {
     return;
   }
 
-  if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
+  if (e.key.toLowerCase() === "a" && (e.ctrlKey || e.metaKey)) {
     selectAll();
   } else if (!searchHasFocus.value && e.key == "Backspace") {
     focusSearch();
@@ -1774,12 +1776,26 @@ const keyListener = function (e: KeyboardEvent) {
   }
 };
 
-if (props.allowKeyHooks) {
-  document.addEventListener("keydown", keyListener);
-  onBeforeUnmount(() => {
-    document.removeEventListener("keydown", keyListener);
-  });
-}
+const searchHotkeyKeys = [
+  ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+  "Backspace",
+  "Escape",
+] as RegisterableHotkey[];
+useHotkeys(
+  () => [
+    ...searchHotkeyKeys.map((hotkey) => ({
+      hotkey,
+      callback: handleSearchHotkey,
+    })),
+    { hotkey: "Mod+A", callback: handleSearchHotkey },
+  ],
+  {
+    enabled: () => props.allowKeyHooks,
+    preventDefault: false,
+    stopPropagation: false,
+    ignoreInputs: false,
+  },
+);
 
 if (props.restoreState) {
   // handle restore state
