@@ -1,10 +1,9 @@
 <template>
   <v-card
-    class="flex-fill rounded-lg player-card"
+    class="rounded-lg player-card"
     :class="{
       'player-disabled': !playerConfig.enabled,
-      'player-unavailable': !isAvailable,
-      'player-needs-setup': playerConfig.enabled && needsSetup,
+      'player-unavailable': isUnavailable,
     }"
     @click="handleClick"
   >
@@ -27,27 +26,10 @@
       </div>
 
       <!-- Player needs setup warning -->
-      <div
+      <PlayerSetupWarning
         v-if="playerConfig.enabled && needsSetup"
-        class="player-warning-card"
-      >
-        <div class="player-warning-inline">
-          <v-icon icon="mdi-alert-circle" size="16" color="warning" />
-          <span class="player-warning-text">{{
-            $t("settings.player_needs_setup")
-          }}</span>
-        </div>
-        <v-btn
-          size="small"
-          color="warning"
-          variant="flat"
-          block
-          class="mt-2"
-          @click.stop="handleSetup"
-        >
-          {{ $t("settings.start_setup") }}
-        </v-btn>
-      </div>
+        @setup="handleSetup"
+      />
 
       <div class="card-footer">
         <div class="protocol-chips">
@@ -66,14 +48,7 @@
             :title="$t('settings.player_disabled')"
           />
           <v-icon
-            v-else-if="needsSetup"
-            icon="mdi-alert-circle"
-            size="16"
-            color="warning"
-            :title="$t('settings.player_needs_setup')"
-          />
-          <v-icon
-            v-else-if="!isAvailable"
+            v-else-if="isUnavailable"
             icon="mdi-timer-sand"
             size="16"
             color="grey"
@@ -88,6 +63,8 @@
 <script setup lang="ts">
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
+import { isPlayerUnavailable } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -104,7 +81,7 @@ const emit = defineEmits<{
 }>();
 
 const player = computed(() => api.players[props.playerConfig.player_id]);
-const isAvailable = computed(() => player.value?.available ?? false);
+const isUnavailable = computed(() => isPlayerUnavailable(player.value));
 const needsSetup = computed(() => player.value?.needs_setup ?? false);
 const providerDomain = computed(
   () =>
@@ -169,35 +146,13 @@ const handleSetup = () => {
   opacity: 0.7;
 }
 
-.player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
-}
-
-.player-warning-card {
-  background: rgba(var(--v-theme-warning), 0.08);
-  border-radius: 8px;
-  margin: 8px 0 0 0;
-  padding: 8px 12px;
-}
-
-.player-warning-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgb(var(--v-theme-warning));
-}
-
-.player-warning-text {
-  font-size: 13px;
-  font-weight: 500;
-}
-
 .card-content {
   display: flex;
   flex-direction: column;
   padding: 16px;
   height: 100%;
   min-height: 120px;
+  gap: 8px;
 }
 
 .card-header {
@@ -251,7 +206,6 @@ const handleSetup = () => {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 12px;
 }
 
 .protocol-chips {

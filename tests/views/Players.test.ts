@@ -65,6 +65,10 @@ vi.mock("vue-router", () => ({
   }),
 }));
 
+vi.mock("@/plugins/router", () => ({
+  default: { push: vi.fn() },
+}));
+
 const playerConfig = {
   enabled: true,
   name: "Kitchen",

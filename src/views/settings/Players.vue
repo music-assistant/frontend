@@ -21,8 +21,8 @@
 
     <div class="pl-5 font-weight-medium">
       {{
-        $t("settings.players_total", getAllFilteredPlayers().length, {
-          named: { count: getAllFilteredPlayers().length },
+        $t("settings.players_total", filteredPlayers.length, {
+          named: { count: filteredPlayers.length },
         })
       }}
     </div>
@@ -32,15 +32,15 @@
     >
       <v-list v-if="viewMode === 'list'" class="players-list">
         <ListItem
-          v-for="item in getAllFilteredPlayers()"
+          v-for="item in filteredPlayers"
           :key="item.player_id"
           link
           :show-menu-btn="true"
           :class="{
             'player-disabled': !item.enabled,
-            'player-unavailable': !api.players[item.player_id]?.available,
-            'player-needs-setup':
-              item.enabled && api.players[item.player_id]?.needs_setup,
+            'player-unavailable': isPlayerUnavailable(
+              api.players[item.player_id],
+            ),
           }"
           @click="handlePlayerClick(item)"
           @menu="(evt) => onMenu(evt, item)"
@@ -64,24 +64,10 @@
           <template #subtitle>
             <div class="player-meta">
               <!-- Player needs setup warning -->
-              <div
+              <PlayerSetupWarning
                 v-if="item.enabled && api.players[item.player_id]?.needs_setup"
-                class="player-warning-inline"
-              >
-                <v-icon icon="mdi-alert-circle" size="16" color="warning" />
-                <span class="player-warning-text">{{
-                  $t("settings.player_needs_setup")
-                }}</span>
-                <v-btn
-                  size="x-small"
-                  color="warning"
-                  variant="flat"
-                  class="ml-2"
-                  @click.stop="startPlayerSetup(item.player_id)"
-                >
-                  {{ $t("settings.start_setup") }}
-                </v-btn>
-              </div>
+                @setup="startPlayerSetup(item.player_id)"
+              />
               <span v-else class="provider-name">
                 {{
                   api.players[item.player_id]?.device_info
@@ -109,15 +95,13 @@
                 color="grey"
                 :title="$t('settings.player_disabled')"
               />
-              <v-icon
+              <CircleAlert
                 v-else-if="api.players[item.player_id]?.needs_setup"
-                icon="mdi-alert-circle"
-                size="20"
-                color="warning"
+                class="size-5 text-warning"
                 :title="$t('settings.player_needs_setup')"
               />
               <v-icon
-                v-else-if="!api.players[item.player_id]?.available"
+                v-else-if="isPlayerUnavailable(api.players[item.player_id])"
                 icon="mdi-timer-sand"
                 size="20"
                 color="grey"
@@ -128,25 +112,18 @@
         </ListItem>
       </v-list>
 
-      <v-row v-else>
-        <v-col
-          v-for="item in getAllFilteredPlayers()"
+      <div v-else class="players-grid">
+        <SettingsPlayerCard
+          v-for="item in filteredPlayers"
           :key="item.player_id"
-          cols="12"
-          md="6"
-          lg="4"
-          class="d-flex"
-        >
-          <SettingsPlayerCard
-            :player-config="item"
-            @click="handlePlayerClick"
-            @menu="(evt, config) => onMenu(evt, config)"
-            @setup="(config) => startPlayerSetup(config.player_id)"
-          />
-        </v-col>
-      </v-row>
+          :player-config="item"
+          @click="handlePlayerClick"
+          @menu="(evt, config) => onMenu(evt, config)"
+          @setup="(config) => startPlayerSetup(config.player_id)"
+        />
+      </div>
 
-      <div v-if="getAllFilteredPlayers().length === 0" class="empty-state">
+      <div v-if="filteredPlayers.length === 0" class="empty-state">
         <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
         <div class="empty-title">{{ $t("no_content") }}</div>
         <div class="empty-message">
@@ -175,12 +152,14 @@ import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerSetupWarning from "@/components/PlayerSetupWarning.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import {
   getPlayerName,
   getPlayerSettingsMenuItems,
 } from "@/helpers/player_settings_actions";
+import { isPlayerUnavailable } from "@/helpers/players";
 import { isHiddenSendspinWebPlayer } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -190,7 +169,7 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { Plus } from "@lucide/vue";
+import { CircleAlert, Plus } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
@@ -291,7 +270,7 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   });
 };
 
-const getAllFilteredPlayers = function () {
+const filteredPlayers = computed(() => {
   let filtered = [...playerConfigs.value];
 
   if (searchQuery.value) {
@@ -364,7 +343,7 @@ const getAllFilteredPlayers = function () {
   return filtered.sort((a, b) =>
     getPlayerName(a).localeCompare(getPlayerName(b)),
   );
-};
+});
 
 // watchers
 watch(
@@ -520,28 +499,31 @@ watch(
   background: rgba(var(--v-theme-primary), 0.15);
 }
 
+.players-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: auto;
+  gap: 24px;
+}
+
+@media (min-width: 960px) {
+  .players-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1264px) {
+  .players-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .player-disabled {
   opacity: 0.6;
 }
 
 .player-unavailable {
   opacity: 0.7;
-}
-
-.player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
-}
-
-.player-warning-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgb(var(--v-theme-warning));
-}
-
-.player-warning-text {
-  font-size: 13px;
-  font-weight: 500;
 }
 
 .missing-players-hint {
