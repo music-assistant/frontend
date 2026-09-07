@@ -59,7 +59,8 @@
         "display": "Bildschirm",
         "visualizer": "Visualizer",
         "light": "Licht",
-        "unknown": "Unbekannt"
+        "unknown": "Unbekannt",
+        "source": "Audioeingang"
     },
     "players": "Wiedergabegeräte",
     "playlist": "Wiedergabeliste",
@@ -120,14 +121,12 @@
         "reload": "Aktualisieren",
         "save": "Speichern",
         "settings": "Einstellungen",
-        "setup_provider": "Anbieter einrichten: {0}",
         "sync": "Jetzt Änderungen synchronisieren",
         "sync_running": "Dieser Anbieter wird jetzt synchronisiert",
         "core_modules": "Kernmodule",
         "server_info": "Server-Informationen",
         "server_id": "Server-ID",
         "server_version": "Server-Version",
-        "server_base_url": "Basis-URL",
         "server_as_addon": "Home Assistant Add-on",
         "artists_in_library": "Interpreten in Bibliothek",
         "albums_in_library": "Alben in Bibliothek",
@@ -416,7 +415,6 @@
         "about_description": "Versionsinformationen, Mitwirkende und mehr",
         "auto_refresh_log": "Automatische Aktualisierung",
         "log_truncated": "Zeigt die letzten {0} Zeilen. Lade die vollständige Protokolldatei herunter, um den gesamten Verlauf zu sehen.",
-        "version_info": "Versionsinformationen",
         "library_stats": "Bibliotheksstatistiken",
         "links": "Links",
         "changelog": "Änderungshistorie",
@@ -543,8 +541,18 @@
             "description": "Die Wiedergabe auf diesem Gerät\/Browser soll über den integrierten Sendspin-Web-Player ermöglicht werden."
         },
         "enable_browser_controls": {
-            "label": "Aktivieren der Browser-Mediensteuerung",
-            "description": "Erlaube die Steuerung der Wiedergabe über die im Browser integrierten Mediensteuerungselemente (z.B. die Medientasten auf der Tastatur)."
+            "label": "Mediensteuerelemente des Browsers",
+            "description": "Die Wiedergabe über Music Assistant soll für die Mediensteuerung des Browsers und des Betriebssystems zugänglich sein, beispielsweise über Medientasten und Steuerelemente auf dem Sperrbildschirm. Geräteereignisse wie Telefonanrufe, der Ruhemodus oder das Schließen des Laptopdeckels können das gesteuerte Wiedergabegerät unterbrechen.",
+            "options": {
+                "active_player": "Jedes aktiv ausgewählte Wiedergabegerät",
+                "web_player": "Nur integrierter Web-Player",
+                "disabled": "Deaktiviert"
+            },
+            "option_descriptions": {
+                "active_player": "Steuere das aktuell in Music Assistant ausgewählte Wiedergabegerät, einschließlich der Lautsprecher an anderen Orten in deinem Zuhause.",
+                "web_player": "Steuere nur auf diesem Gerät die Audiowiedergabe über den integrierten Web-Player.",
+                "disabled": "Die Wiedergabe über Music Assistant darf nicht den Steuerelementen des Browsers oder des Betriebssystems unterliegen."
+            }
         },
         "settings_saved": "Einstellungen erfolgreich gespeichert",
         "protocol_disabled_message": "Aktiviere dieses Protokoll, um seine Einstellungen zu konfigurieren.",
@@ -707,7 +715,9 @@
             "external_default_text": "Es öffnet sich ein neues Browserfenster, in dem du dich anmelden und Music Assistant autorisieren kannst. Kehre anschließend hierher zurück – dieser Dialog wird automatisch fortgesetzt.",
             "external_host": "Öffnet {0}",
             "session_ended_title": "Setup-Sitzung beendet",
-            "session_ended_text": "Die Einrichtungssitzung ist beendet – möglicherweise ist sie bereits abgeschlossen. Überprüfe dies bitte bei deinen Anbietern oder Wiedergabegeräten."
+            "session_ended_text": "Die Einrichtungssitzung ist beendet – möglicherweise ist sie bereits abgeschlossen. Überprüfe dies bitte bei deinen Anbietern oder Wiedergabegeräten.",
+            "setup_title": "{0} einrichten",
+            "reconfigure_title": "{0} neu konfigurieren"
         },
         "options": "Optionen",
         "add_group_player_desc": "Erstelle eine permanente Wiedergabegeräte-Gruppe mit {0} Wiedergabegeräten. Wenn du in dieser Wiedergabegeräte-Gruppe abspielst, werden die Mitglieds-Wiedergabegeräte automatisch synchronisiert.",
@@ -749,7 +759,7 @@
         "visualizer": "Visualizer",
         "visualizer_enabled": {
             "label": "MilkDrop-Visualizer",
-            "description": "Im Hintergrund des Vollbildplayers wird ein MilkDrop-Visualisierer angezeigt, der live auf die Musik reagiert. Jedes Wiedergabegerät kann dies über sein Vollbildmenü deaktivieren. Die Wellenform wird aus dem Sendspin-Stream abgerufen und steht daher nur Wiedergabegeräten mit Sendspin-Ausgang zur Verfügung."
+            "description": "Im Hintergrund des Vollbildplayers wird ein MilkDrop-Visualizer angezeigt, der live auf die Musik reagiert. Jedes Wiedergabegerät kann dies über sein Vollbildmenü deaktivieren. Die Wellenform wird aus dem Sendspin-Stream abgerufen und steht daher nur Wiedergabegeräten mit Sendspin-Ausgang zur Verfügung."
         },
         "visualizer_blur": {
             "label": "Visualizer-Unschärfe",
@@ -785,7 +795,19 @@
         "audiobook_chapter_progress": {
             "label": "Fortschritt im Hörbuchkapitel anzeigen",
             "description": "Zeige die verstrichene und verbleibende Zeit für das aktuelle Hörbuchkapitel anstelle der Gesamtdauer des Hörbuchs an."
-        }
+        },
+        "provider_status_retired": "Nicht mehr verfügbar",
+        "player_status": {
+            "available": "Verfügbar",
+            "needs_setup": "Einrichtung erforderlich",
+            "unavailable": "Nicht verfügbar",
+            "disabled": "Deaktiviert"
+        },
+        "player_status_label": "Status",
+        "server_name": "Servername",
+        "server_internal_url": "Interne URL",
+        "server_external_url": "Externe URL",
+        "server_remote_access": "Fernzugriff"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -1191,7 +1213,7 @@
         "user_disable_failed": "Benutzer konnte nicht deaktiviert werden",
         "user_enabled": "Benutzer erfolgreich aktiviert",
         "user_enable_failed": "Benutzer konnte nicht aktiviert werden",
-        "password_optional_hint": "Lasse dieses Feld leer, um das aktuelle Passwort beizubehalten.",
+        "password_optional_hint": "Lass dieses Feld leer, um das aktuelle Passwort beizubehalten.",
         "confirm_disable_user": "Bist du sicher, dass du diesen Benutzer deaktivieren möchtest?",
         "confirm_delete_user": "Bist du sicher, dass du diesen Benutzer löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
         "delete_user": "Benutzer löschen",
@@ -1206,9 +1228,9 @@
         "token_copied": "Token in die Zwischenablage kopiert",
         "token_copy_failed": "Token konnte nicht in die Zwischenablage kopiert werden",
         "player_filter": "Wiedergabegeräte Filter.",
-        "player_filter_hint": "Beschränke den Zugriff dieses Benutzers auf die ausgewählten Wiedergabegeräte. Lasse dieses Feld leer, um vollen Zugriff auf alle Wiedergabegeräte zu gewähren.",
+        "player_filter_hint": "Beschränke den Zugriff dieses Benutzers auf die ausgewählten Wiedergabegeräte. Lass dieses Feld leer, um vollen Zugriff auf alle Wiedergabegeräte zu gewähren.",
         "provider_filter": "Musikanbieter-Filter",
-        "provider_filter_hint": "Beschränke den Zugriff dieses Benutzers auf die ausgewählten Musikanbieter. Lasse dieses Feld leer, um vollen Zugriff auf alle Musikanbieter zu gewähren.",
+        "provider_filter_hint": "Beschränke den Zugriff dieses Benutzers auf die ausgewählten Musikanbieter. Lass dieses Feld leer, um vollen Zugriff auf alle Musikanbieter zu gewähren.",
         "no_players_selected": "Alle Wiedergabegeräte (ohne Einschränkungen)",
         "no_providers_selected": "Alle Musikanbieter (ohne Einschränkungen)",
         "select_players": "Wähle Wiedergabegeräte",
@@ -1738,7 +1760,7 @@
             },
             "validation": {
                 "invalid_import_file": "Die Datei ist kein gültiger AI Radio-Export.",
-                "station_name_required": "Stationsname erforderlich",
+                "station_name_required": "Der Name der Station ist erforderlich",
                 "station_source_playlist_required": "Eine Wiedergabeliste der Senderquelle ist erforderlich",
                 "select_section": "Wähle mindestens einen Abschnitt aus.",
                 "section_order_required": "Die Reihenfolge der Abschnitte erfordert mindestens eine Regel.",
@@ -1859,7 +1881,7 @@
                 "prompt_placeholder_copy_aria": "Kopiere {0}",
                 "personality_title": "Persönlichkeit",
                 "tts_options_title": "Erweiterte TTS-Optionen",
-                "tts_options_help": "Fügen Sie nur Schlüssel hinzu, die von der von dir ausgewählten Engine unterstützt werden, da ein nicht unterstützter Schlüssel dazu führen kann, dass der gesamte Clip abgelehnt wird.",
+                "tts_options_help": "Füge nur Schlüssel hinzu, die von der von dir ausgewählten Engine unterstützt werden, da ein nicht unterstützter Schlüssel dazu führen kann, dass der gesamte Clip abgelehnt wird.",
                 "option_key": "Optionsschlüssel",
                 "option_key_placeholder": "z.B. Stimme",
                 "option_value": "Optionswert",
@@ -2335,7 +2357,7 @@
     "open_settings": "Einstellungen",
     "faceted_filter": {
         "clear": "Filter löschen",
-        "clear_all_for": "Alle {title} FIlter löschen",
+        "clear_all_for": "Alle {title} Filter löschen",
         "clear_for": "{title} Filter löschen",
         "remove_filter": "{label} Filter entfernen",
         "search_for": "Suche {title}",
@@ -2383,5 +2405,15 @@
     "command_center_open": "öffnen",
     "command_center_keep_typing": "Tippe weiter, um zu suchen...",
     "screens": "Bildschirme",
-    "play_from_here_to_latest": "Von hier bis zum neuesten Abschnitt abspielen"
+    "play_from_here_to_latest": "Von hier bis zum neuesten Abschnitt abspielen",
+    "players_need_setup": "Es wurde ein neues Gerät entdeckt, das eingerichtet werden muss | Es wurden {count} neue Geräte entdeckt, die eingerichtet werden müssen",
+    "review": "Rezension",
+    "import_playlist_search_providers_description": "Ausgewählte Anbieter dienen als Ausweichquellen, wenn die Originalquelle eines Titels nicht verfügbar ist.",
+    "import_playlist_match_policy_label": "Titel Übereinstimmung",
+    "import_playlist_match_policy_exact_title": "Genaue Veröffentlichung",
+    "import_playlist_match_policy_exact_description": "Es werden nur Titel mit genau derselben Veröffentlichung abgeglichen.",
+    "import_playlist_match_policy_same_recording_title": "Dieselbe Aufnahme (empfohlen)",
+    "import_playlist_match_policy_same_recording_description": "Bevorzuge eine exakte Übereinstimmung; andernfalls akzeptiere auch dieselbe Aufnahme aus einer anderen Veröffentlichung.",
+    "import_playlist_match_policy_best_effort_title": "Nach bestem Bemühen",
+    "import_playlist_match_policy_best_effort_description": "Bevorzuge eine exakte Übereinstimmung, dann dieselbe Aufnahme, andernfalls akzeptiere die nächstliegende verfügbare Übereinstimmung."
 }
