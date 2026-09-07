@@ -59,7 +59,8 @@
         "display": "Ekran",
         "visualizer": "Vizuelizator",
         "light": "Svetlo",
-        "unknown": "Nepoznato"
+        "unknown": "Nepoznato",
+        "source": "Audio ulaz"
     },
     "players": "Plejeri",
     "playlist": "Plejlista",
@@ -120,14 +121,12 @@
         "reload": "Ponovo učitajte",
         "save": "Sačuvajte",
         "settings": "Podešavanja",
-        "setup_provider": "Podestite integraciju: {0}",
         "sync": "Sinhronizujte odmah",
         "sync_running": "Ova integracija se trenutno sinhronizuje",
         "core_modules": "Sistemski moduli",
         "server_info": "Informacije o serveru",
         "server_id": "ID servera",
         "server_version": "Verzija servera",
-        "server_base_url": "Osnovna URL adresa",
         "server_as_addon": "Home Assistant dodatak",
         "artists_in_library": "Izvođači u biblioteci",
         "albums_in_library": "Albumi u biblioteci",
@@ -416,7 +415,6 @@
         "about_description": "Informacije o verziji, zasluge i ostali detalji",
         "auto_refresh_log": "Automatsko osvežavanje",
         "log_truncated": "Prikazuje se poslednjih {0} redova. Preuzmite kompletan dnevnik rada za celu istoriju",
-        "version_info": "Informacije o verziji",
         "library_stats": "Statistika biblioteke",
         "links": "Veb-veze",
         "changelog": "Istorija izmena",
@@ -717,7 +715,9 @@
             "external_default_text": "Otvoriće se novi prozor pregledača kako biste mogli da se prijavite i autorizujete Music Assistant. Vratite se ovde kada završite – ovaj dijalog se nastavlja automatski.",
             "external_host": "Otvara {0}",
             "session_ended_title": "Sesija podešavanja je istekla",
-            "session_ended_text": "Sesija podešavanja je istekla – moguće je da je proces završen. Proverite svoje servise ili plejere radi potvrde."
+            "session_ended_text": "Sesija podešavanja je istekla – moguće je da je proces završen. Proverite svoje servise ili plejere radi potvrde.",
+            "setup_title": "Podesi {0}",
+            "reconfigure_title": "Ponovo konfiguriši {0}"
         },
         "options": "Pogledajte podesavanja",
         "add_group_player_desc": "Kreirajte trajnu grupu plejera sa {0} plejera. Kada puštate muziku u ovoj grupi plejera, članovi grupe će se automatski sinhronizovati.",
@@ -795,7 +795,19 @@
         "audiobook_chapter_progress": {
             "label": "Prikaži napredak poglavlja audio-knjige",
             "description": "Prikažite proteklo i preostalo vreme za trenutno poglavlje audio-knjige umesto za celu audio-knjigu."
-        }
+        },
+        "provider_status_retired": "Povučeno",
+        "player_status": {
+            "available": "Dostupno",
+            "needs_setup": "Zahteva podešavanje",
+            "unavailable": "Nedostupno",
+            "disabled": "Onemogućeno"
+        },
+        "player_status_label": "Status",
+        "server_name": "Naziv servera",
+        "server_internal_url": "Unutrašnja URL adresa",
+        "server_external_url": "Spoljašnja URL adresa",
+        "server_remote_access": "Udaljeni pristup"
     },
     "show_info": "Prikažite informacije",
     "show_select_boxes": "Prikažite polja za potvrdu",
@@ -906,7 +918,7 @@
         "import_file": "Uvezite datoteku",
         "bpm": "Tempo (otkucaja u minuti)",
         "musical_key": "Muzički ključ",
-        "show_dashboard": "Strimuj kontrolnu tablu na uređaj",
+        "show_dashboard": "Strimujte kontrolnu tablu na uređaj",
         "collapse_collections": "Skupi kolekcije",
         "volume_down": "Smanji jačinu zvuka",
         "volume_up": "Pojačaj jačinu zvuka",
@@ -2169,7 +2181,7 @@
     "lyrics_show": "Prikažite tekst za ovu numeru",
     "lyrics_hide": "Sakrijte tekst za ovu numeru",
     "lyrics_loading": "Preuzimanje teksta numere...",
-    "show_audio_chain_details": "Prikaži detalje lanca audio obrade",
+    "show_audio_chain_details": "Prikažite detalje lanca audio obrade",
     "show_less": "Prikažite manje",
     "show_more": "Prikažite više",
     "autoplay_on_title": "Automatsko puštanje je omogućeno",
@@ -2393,5 +2405,15 @@
     "command_center_open": "otvori",
     "command_center_keep_typing": "Nastavite da kucate za pretragu...",
     "screens": "Ekrani",
-    "play_from_here_to_latest": "Pusti odavde do najnovije"
+    "play_from_here_to_latest": "Pusti odavde do najnovije",
+    "players_need_setup": "Otkriven je novi uređaj koji zahteva podešavanje | Otkriveni su novi uređaji koji zahtevaju podešavanje ({count})",
+    "review": "Pregled",
+    "import_playlist_search_providers_description": "Izabrani servisi se koriste kao rezervni izvori kada originalni izvor numere nije dostupan.",
+    "import_playlist_match_policy_label": "Uspoređivanje numera",
+    "import_playlist_match_policy_exact_title": "Tačno izdanje",
+    "import_playlist_match_policy_exact_description": "Upoređuj numere isključivo sa potpuno istim izdanjem.",
+    "import_playlist_match_policy_same_recording_title": "Isti snimak (preporučeno)",
+    "import_playlist_match_policy_same_recording_description": "Prednost se daje tačnom poklapanju, a u suprotnom se prihvata isti snimak sa drugog izdanja.",
+    "import_playlist_match_policy_best_effort_title": "Najbolje uklapanje",
+    "import_playlist_match_policy_best_effort_description": "Prednost se daje tačnom poklapanju, zatim istom snimku, a u suprotnom se prihvata najbliže dostupno poklapanje."
 }
