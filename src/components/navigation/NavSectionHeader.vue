@@ -65,7 +65,7 @@ const toggleLabelHidden = async () => {
     />
     <template v-else>
       <SidebarGroupLabel
-        class="nav-edit-label"
+        class="nav-edit-label mb-1 h-10 text-sm"
         :class="{ 'nav-edit-label-off': labelHidden }"
         @click="startRename"
       >
@@ -94,8 +94,8 @@ const toggleLabelHidden = async () => {
           "
           @click="toggleLabelHidden"
         >
-          <Eye v-if="!labelHidden" class="size-3.5" />
-          <EyeOff v-else class="size-3.5" />
+          <Eye v-if="!labelHidden" class="size-4" />
+          <EyeOff v-else class="size-4" />
         </Button>
       </div>
     </template>
@@ -111,7 +111,6 @@ const toggleLabelHidden = async () => {
   align-items: center;
   justify-content: space-between;
   gap: 0.25rem;
-  padding-right: 0.5rem;
 }
 
 .nav-edit-label {

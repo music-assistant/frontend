@@ -185,131 +185,158 @@ const draggedItem = computed(() =>
 
       <CollapsibleContent as-child>
         <SidebarGroupContent class="flex flex-col gap-0.5">
-          <!-- Edit mode: static rows with drag handle + visibility toggle -->
-          <div v-if="editMode" ref="listEl" class="relative">
-            <SidebarMenu>
-              <SidebarMenuItem
-                v-for="(item, index) in items"
-                :key="item.id ?? item.title"
-                :data-drag-index="index"
-                class="relative mr-1.5 select-none"
-                :class="{ 'opacity-35': draggingIndex === index }"
-                :style="{
-                  transform: `translateY(${rowOffset(index)}px)`,
-                  transition:
-                    isDragging && draggingIndex !== index
-                      ? 'transform 200ms ease-out'
-                      : 'none',
-                }"
-              >
-                <div
-                  class="flex min-h-10 items-center gap-1 text-sm font-medium"
+          <Transition name="sidebar-mode" mode="out-in">
+            <!-- Edit mode: static rows with drag handle + visibility toggle -->
+            <div v-if="editMode" key="edit" ref="listEl" class="relative">
+              <SidebarMenu>
+                <SidebarMenuItem
+                  v-for="(item, index) in items"
+                  :key="item.id ?? item.title"
+                  :data-drag-index="index"
+                  class="relative mr-1.5 select-none"
+                  :class="{ 'opacity-35': draggingIndex === index }"
+                  :style="{
+                    transform: `translateY(${rowOffset(index)}px)`,
+                    transition:
+                      isDragging && draggingIndex !== index
+                        ? 'transform 200ms ease-out'
+                        : 'none',
+                  }"
                 >
-                  <button
-                    class="inline-flex size-7 shrink-0 touch-none cursor-grab items-center justify-center border-0 bg-transparent text-inherit opacity-60 active:cursor-grabbing"
-                    :aria-label="t('queue_reorder')"
-                    @pointerdown.stop.prevent="startItemDrag($event, index)"
-                    @click.stop
-                  >
-                    <GripVertical class="size-4" />
-                  </button>
                   <div
-                    class="nav-edit-item flex min-w-0 flex-1 items-center gap-2 rounded-md border border-dashed border-sidebar-border px-2 py-1.5"
-                    :class="{ 'opacity-40': item.hidden }"
+                    class="flex min-h-10 items-center gap-1 text-sm font-medium"
+                  >
+                    <button
+                      class="inline-flex size-7 shrink-0 touch-none cursor-grab items-center justify-center border-0 bg-transparent text-inherit opacity-60 active:cursor-grabbing"
+                      :aria-label="t('queue_reorder')"
+                      @pointerdown.stop.prevent="startItemDrag($event, index)"
+                      @click.stop
+                    >
+                      <GripVertical class="size-4" />
+                    </button>
+                    <div
+                      class="nav-edit-item flex min-w-0 flex-1 items-center gap-2 rounded-md border border-dashed border-sidebar-border px-2 py-1.5"
+                      :class="{ 'opacity-40': item.hidden }"
+                    >
+                      <component
+                        :is="item.icon"
+                        v-if="item.icon"
+                        class="size-[18px] shrink-0"
+                      />
+                      <span class="min-w-0 flex-1 truncate">{{
+                        item.title
+                      }}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="h-7 w-7 shrink-0"
+                      :title="
+                        t(item.hidden ? 'menu_item_show' : 'menu_item_hide')
+                      "
+                      :aria-label="
+                        t(item.hidden ? 'menu_item_show' : 'menu_item_hide')
+                      "
+                      @click.stop="toggleItemHidden(item)"
+                    >
+                      <Eye v-if="!item.hidden" class="size-4" />
+                      <EyeOff v-else class="size-4" />
+                    </Button>
+                  </div>
+                </SidebarMenuItem>
+              </SidebarMenu>
+              <!-- Floating ghost that follows the pointer while dragging -->
+              <div
+                v-if="isDragging && draggedItem"
+                class="bg-sidebar-accent text-sidebar-accent-foreground pointer-events-none absolute right-1.5 left-1 z-50 flex cursor-grabbing items-center gap-1.5 rounded-lg px-2 py-0.5 text-sm font-medium opacity-95 shadow-[0_4px_14px_rgba(0,0,0,0.25)]"
+                :style="{ top: `${ghostY}px`, height: `${dragRowHeight}px` }"
+              >
+                <GripVertical class="size-4 opacity-60" />
+                <component
+                  :is="draggedItem.icon"
+                  v-if="draggedItem.icon"
+                  class="size-[18px] shrink-0"
+                />
+                <span class="min-w-0 flex-1 truncate">{{
+                  draggedItem.title
+                }}</span>
+              </div>
+            </div>
+
+            <!-- Normal mode: navigation links -->
+            <SidebarMenu v-else key="normal">
+              <SidebarMenuItem v-for="item in items" :key="item.title">
+                <SidebarMenuButton
+                  :as="
+                    item.disabled || item.openInNewTab || item.action
+                      ? 'button'
+                      : RouterLinkComponent
+                  "
+                  v-bind="
+                    item.disabled || item.openInNewTab || item.action
+                      ? {}
+                      : { to: item.url }
+                  "
+                  :ripple="true"
+                  :is-active="itemActive(item)"
+                  :tooltip="item.title"
+                  :aria-label="item.title"
+                  :disabled="item.disabled"
+                  class="mr-1.5 group-data-[collapsible=icon]:mr-0"
+                  :class="[
+                    'gap-4',
+                    itemActive(item)
+                      ? 'no-underline font-bold text-sm'
+                      : 'no-underline font-medium text-sm',
+                    item.disabled ? 'opacity-50 cursor-not-allowed' : '',
+                  ]"
+                  @click="(e: Event) => handleClick(item, e)"
+                >
+                  <div
+                    class="h-6 w-6 shrink-0 flex items-center justify-center"
                   >
                     <component
                       :is="item.icon"
                       v-if="item.icon"
-                      class="size-[18px] shrink-0"
+                      class="size-[18px] gap-3"
+                      :stroke-width="itemActive(item) ? 2.5 : 2"
                     />
-                    <span class="min-w-0 flex-1 truncate">{{
-                      item.title
-                    }}</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-7 w-7 shrink-0"
-                    :title="
-                      t(item.hidden ? 'menu_item_show' : 'menu_item_hide')
-                    "
-                    :aria-label="
-                      t(item.hidden ? 'menu_item_show' : 'menu_item_hide')
-                    "
-                    @click.stop="toggleItemHidden(item)"
+                  <span class="min-w-0 truncate">{{ item.title }}</span>
+                  <Kbd
+                    v-if="item.shortcut"
+                    class="ml-auto shrink-0 opacity-60 group-data-[collapsible=icon]:hidden"
                   >
-                    <Eye v-if="!item.hidden" class="size-4" />
-                    <EyeOff v-else class="size-4" />
-                  </Button>
-                </div>
+                    {{ item.shortcut }}
+                  </Kbd>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-            <!-- Floating ghost that follows the pointer while dragging -->
-            <div
-              v-if="isDragging && draggedItem"
-              class="bg-sidebar-accent text-sidebar-accent-foreground pointer-events-none absolute right-1.5 left-1 z-50 flex cursor-grabbing items-center gap-1.5 rounded-lg px-2 py-0.5 text-sm font-medium opacity-95 shadow-[0_4px_14px_rgba(0,0,0,0.25)]"
-              :style="{ top: `${ghostY}px`, height: `${dragRowHeight}px` }"
-            >
-              <GripVertical class="size-4 opacity-60" />
-              <component
-                :is="draggedItem.icon"
-                v-if="draggedItem.icon"
-                class="size-[18px] shrink-0"
-              />
-              <span class="min-w-0 flex-1 truncate">{{
-                draggedItem.title
-              }}</span>
-            </div>
-          </div>
-
-          <!-- Normal mode: navigation links -->
-          <SidebarMenu v-else>
-            <SidebarMenuItem v-for="item in items" :key="item.title">
-              <SidebarMenuButton
-                :as="
-                  item.disabled || item.openInNewTab || item.action
-                    ? 'button'
-                    : RouterLinkComponent
-                "
-                v-bind="
-                  item.disabled || item.openInNewTab || item.action
-                    ? {}
-                    : { to: item.url }
-                "
-                :is-active="itemActive(item)"
-                :tooltip="item.title"
-                :aria-label="item.title"
-                :disabled="item.disabled"
-                class="mr-1.5 group-data-[collapsible=icon]:mr-0"
-                :class="[
-                  'gap-4',
-                  itemActive(item)
-                    ? 'no-underline font-bold text-sm'
-                    : 'no-underline font-medium text-sm',
-                  item.disabled ? 'opacity-50 cursor-not-allowed' : '',
-                ]"
-                @click="(e: Event) => handleClick(item, e)"
-              >
-                <div class="h-6 w-6 shrink-0 flex items-center justify-center">
-                  <component
-                    :is="item.icon"
-                    v-if="item.icon"
-                    class="size-[18px] gap-3"
-                    :stroke-width="itemActive(item) ? 2.5 : 2"
-                  />
-                </div>
-                <span class="min-w-0 truncate">{{ item.title }}</span>
-                <Kbd
-                  v-if="item.shortcut"
-                  class="ml-auto shrink-0 opacity-60 group-data-[collapsible=icon]:hidden"
-                >
-                  {{ item.shortcut }}
-                </Kbd>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          </Transition>
         </SidebarGroupContent>
       </CollapsibleContent>
     </Collapsible>
   </SidebarGroup>
 </template>
+
+<style scoped>
+.sidebar-mode-enter-active,
+.sidebar-mode-leave-active {
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.sidebar-mode-enter-from,
+.sidebar-mode-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-mode-enter-active,
+  .sidebar-mode-leave-active {
+    transition: none;
+  }
+}
+</style>

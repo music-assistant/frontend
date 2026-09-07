@@ -114,6 +114,25 @@ describe("collapsed sidebar alignment", () => {
     expect(menuButton("").matches(anchor.selector)).toBe(false);
   });
 
+  it("enables the ripple explicitly for main navigation items", () => {
+    expect(navMainSource).toContain(':ripple="true"');
+    expect(navShortcutsSource).toContain(':ripple="true"');
+  });
+
+  it("transitions between normal and sidebar customization content", () => {
+    expect(navMainSource).toContain(
+      '<Transition name="sidebar-mode" mode="out-in">',
+    );
+    expect(navMainSource).toContain('v-if="editMode" key="edit"');
+    expect(navMainSource).toContain('v-else key="normal"');
+  });
+
+  it("uses a dashed outline for editable menu items", () => {
+    expect(navMainSource).toContain(
+      "border border-dashed border-sidebar-border",
+    );
+  });
+
   it("anchors off the rail width at the utilities' importance", () => {
     const anchor = cssRule(
       appSource,

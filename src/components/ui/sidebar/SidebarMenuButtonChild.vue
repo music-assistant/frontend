@@ -10,6 +10,7 @@ export interface SidebarMenuButtonProps extends PrimitiveProps {
   variant?: SidebarMenuButtonVariants["variant"];
   size?: SidebarMenuButtonVariants["size"];
   isActive?: boolean;
+  ripple?: boolean;
   class?: HTMLAttributes["class"];
 }
 
@@ -17,75 +18,51 @@ const props = withDefaults(defineProps<SidebarMenuButtonProps>(), {
   as: "button",
   variant: "default",
   size: "default",
+  ripple: true,
   class: undefined,
 });
 
-interface Ripple {
-  id: number;
-  size: number;
-  x: number;
-  y: number;
-}
+const PRESS_FEEDBACK_DURATION_MS = 650;
+const pressFeedbackActive = ref(false);
+let pressFeedbackTimer: ReturnType<typeof setTimeout> | undefined;
+let lastFeedbackAt = 0;
 
-const RIPPLE_DURATION_MS = 450;
-const RIPPLE_FALLBACK_CLEANUP_MS = RIPPLE_DURATION_MS * 3;
-const ripples = ref<Ripple[]>([]);
-const rippleTimers = new Map<number, ReturnType<typeof setTimeout>>();
-let nextRippleId = 0;
-
-function removeRipple(id: number) {
-  ripples.value = ripples.value.filter((ripple) => ripple.id !== id);
-
-  const timer = rippleTimers.get(id);
-  if (timer) clearTimeout(timer);
-  rippleTimers.delete(id);
-}
-
-function addRipple(element: HTMLElement, clientX?: number, clientY?: number) {
-  if (
-    (typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches) ||
-    element.matches(":disabled, [aria-disabled='true']")
-  ) {
+function activatePressFeedback(element: HTMLElement) {
+  if (!props.ripple || element.matches(":disabled, [aria-disabled='true']")) {
     return;
   }
 
-  const bounds = element.getBoundingClientRect();
-  const originX =
-    clientX === undefined ? bounds.width / 2 : clientX - bounds.left;
-  const originY =
-    clientY === undefined ? bounds.height / 2 : clientY - bounds.top;
-  const radius = Math.hypot(
-    Math.max(originX, bounds.width - originX),
-    Math.max(originY, bounds.height - originY),
-  );
-  const id = nextRippleId++;
+  pressFeedbackActive.value = true;
+  if (pressFeedbackTimer) clearTimeout(pressFeedbackTimer);
+  pressFeedbackTimer = setTimeout(() => {
+    pressFeedbackActive.value = false;
+    pressFeedbackTimer = undefined;
+  }, PRESS_FEEDBACK_DURATION_MS);
+}
 
-  ripples.value.push({
-    id,
-    size: radius * 2,
-    x: originX - radius,
-    y: originY - radius,
-  });
-
-  rippleTimers.set(
-    id,
-    setTimeout(() => removeRipple(id), RIPPLE_FALLBACK_CLEANUP_MS),
-  );
+function triggerPressFeedback(element: HTMLElement) {
+  const now = Date.now();
+  if (now - lastFeedbackAt < 100) return;
+  lastFeedbackAt = now;
+  activatePressFeedback(element);
 }
 
 function handlePointerDown(event: PointerEvent) {
   if (event.button !== 0) return;
-  addRipple(event.currentTarget as HTMLElement, event.clientX, event.clientY);
+  triggerPressFeedback(event.currentTarget as HTMLElement);
 }
 
 function handleKeyDown(event: KeyboardEvent) {
   if (event.repeat || (event.key !== "Enter" && event.key !== " ")) return;
-  addRipple(event.currentTarget as HTMLElement);
+  triggerPressFeedback(event.currentTarget as HTMLElement);
+}
+
+function handleClick(event: MouseEvent) {
+  triggerPressFeedback(event.currentTarget as HTMLElement);
 }
 
 onBeforeUnmount(() => {
-  rippleTimers.forEach((timer) => clearTimeout(timer));
+  if (pressFeedbackTimer) clearTimeout(pressFeedbackTimer);
 });
 </script>
 
@@ -95,26 +72,60 @@ onBeforeUnmount(() => {
     data-sidebar="menu-button"
     :data-size="size"
     :data-active="isActive"
-    :class="cn(sidebarMenuButtonVariants({ variant, size }), props.class)"
+    :class="[
+      cn(sidebarMenuButtonVariants({ variant, size }), props.class),
+      'sidebar-menu-button-feedback',
+      { 'sidebar-menu-button-feedback--active': pressFeedbackActive },
+    ]"
     :as="as"
     :as-child="asChild"
     v-bind="$attrs"
     @pointerdown="handlePointerDown"
     @keydown="handleKeyDown"
+    @click="handleClick"
   >
-    <span
-      v-for="ripple in ripples"
-      :key="ripple.id"
-      aria-hidden="true"
-      class="pointer-events-none absolute rounded-full bg-current will-change-transform animate-[sidebar-ripple_450ms_cubic-bezier(0.2,0,0,1)_forwards] motion-reduce:animate-none"
-      :style="{
-        width: `${ripple.size}px`,
-        height: `${ripple.size}px`,
-        left: `${ripple.x}px`,
-        top: `${ripple.y}px`,
-      }"
-      @animationend="removeRipple(ripple.id)"
-    ></span>
     <slot></slot>
   </Primitive>
 </template>
+
+<style scoped>
+.sidebar-menu-button-feedback::after {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--sidebar-active);
+  opacity: 0;
+  pointer-events: none;
+  content: "";
+}
+
+.sidebar-menu-button-feedback > :deep(*) {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-menu-button-feedback--active::after {
+  animation: sidebar-menu-button-feedback 650ms ease-out both;
+}
+
+@keyframes sidebar-menu-button-feedback {
+  0% {
+    opacity: 0;
+  }
+
+  24% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-menu-button-feedback--active::after {
+    animation: none;
+  }
+}
+</style>

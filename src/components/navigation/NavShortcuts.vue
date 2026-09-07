@@ -295,6 +295,7 @@ const draggedItem = computed(() =>
                   <SidebarMenuButton
                     :as="editMode ? 'div' : RouterLinkComponent"
                     v-bind="editMode ? {} : { to: url }"
+                    :ripple="true"
                     :is-active="!editMode && isActive(url)"
                     :tooltip="getDisplayName(item)"
                     :aria-label="getDisplayName(item)"
