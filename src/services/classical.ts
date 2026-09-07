@@ -194,6 +194,11 @@ export async function getWork(
   throw new Error("getWork: real backend not wired yet");
 }
 
+/**
+ * A work's recordings in chronological order, oldest first, optionally
+ * narrowed to those an artist appears on. Sorting is applied here rather than
+ * left to the data source, so the order holds whatever the backend returns.
+ */
 export async function getWorkRecordings(
   workId: string,
   filterByArtistId?: string,
@@ -202,13 +207,15 @@ export async function getWorkRecordings(
     const all = (recordingsFixture as ClassicalRecording[]).filter(
       (r) => r.work_id === workId,
     );
-    if (!filterByArtistId) return all;
-    return all.filter(
-      (r) =>
-        r.conductor_id === filterByArtistId ||
-        r.orchestra_id === filterByArtistId ||
-        r.performer_ids?.includes(filterByArtistId),
-    );
+    const matching = filterByArtistId
+      ? all.filter(
+          (r) =>
+            r.conductor_id === filterByArtistId ||
+            r.orchestra_id === filterByArtistId ||
+            r.performer_ids?.includes(filterByArtistId),
+        )
+      : all;
+    return [...matching].sort(compareRecordings);
   }
   throw new Error("getWorkRecordings: real backend not wired yet");
 }
@@ -485,6 +492,46 @@ export function makePerformerLookup(
   const out: Record<string, ClassicalPerformer> = {};
   for (const p of performers) out[p.item_id] = p;
   return out;
+}
+
+// Diacritic-blind, case-insensitive, natural ordering — matches the collator
+// the tab views sort with.
+const recordingCollator = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base",
+});
+
+const ENSEMBLE_ROLES: ReadonlySet<string> = new Set([
+  ArtistRole.ORCHESTRA,
+  ArtistRole.ENSEMBLE,
+  ArtistRole.CHOIR,
+]);
+
+// Reading a work's recordings oldest-first shows its interpretive history in
+// order. Undated recordings sort last so a page never opens on one.
+function compareRecordings(
+  a: ClassicalRecording,
+  b: ClassicalRecording,
+): number {
+  const byYear = (a.year ?? Infinity) - (b.year ?? Infinity);
+  if (byYear !== 0) return byYear;
+  const byConductor = recordingCollator.compare(
+    a.conductor ?? "",
+    b.conductor ?? "",
+  );
+  if (byConductor !== 0) return byConductor;
+  return recordingCollator.compare(ensembleLabel(a), ensembleLabel(b));
+}
+
+// The name the card shows for the performing body: the legacy orchestra field
+// when set, otherwise the first orchestra/ensemble/choir credit resolved to a
+// name.
+function ensembleLabel(recording: ClassicalRecording): string {
+  if (recording.orchestra) return recording.orchestra;
+  const credit = recording.credits?.find((c) => ENSEMBLE_ROLES.has(c.role));
+  if (!credit) return "";
+  const performers = performersFixture as ClassicalPerformer[];
+  return performers.find((p) => p.item_id === credit.artist_id)?.name ?? "";
 }
 
 function performerToMapping(p: { item_id: string; name: string }): ItemMapping {

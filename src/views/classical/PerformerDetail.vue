@@ -129,9 +129,8 @@ const onPlayWork = (_w: ClassicalWorkSummary) => {
 
 // A "Works performed" row really points at this performer's recording(s) of
 // the work, so reuse the recording menu rather than rolling a parallel work
-// menu. Pick the first matching recording when there are multiple — opening
-// the menu against a multi-recording row gives the user the standard menu
-// scoped to the most recent recording they have.
+// menu. Where the performer has several, the menu is scoped to their most
+// recent one.
 const onMenuWork = async (w: ClassicalWorkSummary, evt: Event) => {
   if (!performer.value) return;
   if (!composerCache[w.composer_id]) {
@@ -142,7 +141,10 @@ const onMenuWork = async (w: ClassicalWorkSummary, evt: Event) => {
     w.item_id,
     performer.value.item_id,
   );
-  const recording = recordings[0];
+  // getWorkRecordings returns oldest first with undated last, so the newest
+  // dated recording is the last one carrying a year.
+  const dated = recordings.filter((r) => r.year != null);
+  const recording = dated.at(-1) ?? recordings[0];
   if (!recording) return;
   openRecordingMenu(
     recording,
