@@ -33,7 +33,6 @@ import ProfileAvatarEditor from "@/components/profile/ProfileAvatarEditor.vue";
 import {
   accountAccentClass as getAccountAccentClass,
   accountAccentBackgroundClass as getAccountAccentBackgroundClass,
-  accountAccentButtonClass as getAccountAccentButtonClass,
   getConnectionStatusKey,
 } from "./accountMenu";
 
@@ -62,9 +61,6 @@ const serverName = computed(
 );
 const currentAccountAccentClass = computed(() =>
   store.currentUser ? getAccountAccentClass(username) : "",
-);
-const currentAccountButtonAccentClass = computed(() =>
-  store.currentUser ? getAccountAccentButtonClass(username) : "",
 );
 const currentAccountAccentBackgroundClass = computed(() =>
   store.currentUser ? getAccountAccentBackgroundClass(username) : "",
@@ -139,23 +135,23 @@ const accountAccentClass = (account: { username: string }) =>
         <DropdownMenuTrigger as-child>
           <SidebarMenuButton
             size="lg"
+            :ripple="true"
             :class="[
-              'w-full hover:bg-transparent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-[3px]!',
-              currentAccountButtonAccentClass,
+              'w-full overflow-visible hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-active data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-[3px]!',
             ]"
           >
-            <div
+            <span
               class="relative mr-1 size-[34px] shrink-0 group-data-[collapsible=icon]:mr-0"
             >
               <span
                 v-if="scrobblingStatus.configured"
-                class="scrobbling-avatar-glow-base pointer-events-none absolute -inset-1 rounded-full"
+                class="scrobbling-avatar-glow-base pointer-events-none absolute inset-0 rounded-full"
                 :class="currentAccountAccentBackgroundClass"
                 aria-hidden="true"
               ></span>
               <span
                 v-if="scrobblingStatus.configured && !accountMenuOpen"
-                class="scrobbling-avatar-glow pointer-events-none absolute -inset-1 rounded-full"
+                class="scrobbling-avatar-glow pointer-events-none absolute inset-0 rounded-full"
                 :class="[
                   currentAccountAccentBackgroundClass,
                   'scrobbling-avatar-glow--active',
@@ -178,8 +174,8 @@ const accountAccentClass = (account: { username: string }) =>
                   {{ initial }}
                 </AvatarFallback>
               </Avatar>
-            </div>
-            <div
+            </span>
+            <span
               class="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden"
             >
               <span class="truncate font-medium">{{ displayName }}</span>
@@ -188,7 +184,7 @@ const accountAccentClass = (account: { username: string }) =>
               >
                 <span v-if="username">{{ username }}</span>
               </span>
-            </div>
+            </span>
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -242,14 +238,14 @@ const accountAccentClass = (account: { username: string }) =>
                 </div>
                 <div class="grid min-w-0 pt-17 text-left leading-tight">
                   <span
-                    class="truncate text-lg font-semibold text-white leading-none"
+                    class="text-foreground truncate text-lg leading-none font-semibold"
                     >{{ displayName }}</span
                   >
                   <div class="flex min-w-0 flex-col items-start gap-2">
                     <button
                       v-if="username"
                       type="button"
-                      class="group flex min-w-0 items-center gap-1 self-start text-sm text-white hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      class="text-foreground group flex min-w-0 items-center gap-1 self-start text-sm hover:text-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       :aria-label="$t('auth.copy_username')"
                       :title="$t('auth.copy_username')"
                       @click.stop="copyUsername"

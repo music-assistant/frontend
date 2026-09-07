@@ -6,6 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Kbd } from "@/components/ui/kbd";
+import { isMacPlatform } from "@/composables/useCommandCenter";
 import { eventbus } from "@/plugins/eventbus";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { computed, onMounted, onUnmounted, ref } from "vue";
@@ -13,6 +15,8 @@ import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
 const open = ref(false);
+const modifierKey = isMacPlatform ? "⌘" : "Ctrl";
+const shiftKey = isMacPlatform ? "⇧" : "Shift";
 
 interface Shortcut {
   label: string;
@@ -31,24 +35,24 @@ const shortcutSections = computed(() => [
       { label: t("shortcut_mute"), keys: ["M"] },
       {
         label: t("open_fullscreen_player"),
-        keys: ["Ctrl/Cmd", "Shift", "F"],
+        keys: [modifierKey, shiftKey, "F"],
       },
-      { label: t("players"), keys: ["Ctrl/Cmd", "P"] },
-      { label: t("lyrics_show"), keys: ["Ctrl/Cmd", "Shift", "L"] },
-      { label: t("shortcut_mute"), keys: ["Ctrl/Cmd", "Shift", "M"] },
+      { label: t("players"), keys: [modifierKey, "P"] },
+      { label: t("lyrics_show"), keys: [modifierKey, shiftKey, "L"] },
+      { label: t("shortcut_mute"), keys: [modifierKey, shiftKey, "M"] },
       {
         label: t("previous_track"),
-        keys: ["Ctrl/Cmd", "Shift", "←"],
+        keys: [modifierKey, shiftKey, "←"],
       },
-      { label: t("next_track"), keys: ["Ctrl/Cmd", "Shift", "→"] },
+      { label: t("next_track"), keys: [modifierKey, shiftKey, "→"] },
     ] satisfies Shortcut[],
   },
   {
     label: t("keyboard_shortcuts_sections.general"),
     shortcuts: [
-      { label: t("command_center.title"), keys: ["Ctrl/Cmd", "K"] },
-      { label: t("sidebar.title"), keys: ["Ctrl/Cmd", "B"] },
-      { label: t("keyboard_shortcuts"), keys: ["Ctrl/Cmd", "Shift", "P"] },
+      { label: t("command_center.title"), keys: [modifierKey, "K"] },
+      { label: t("sidebar.title"), keys: [modifierKey, "B"] },
+      { label: t("keyboard_shortcuts"), keys: [modifierKey, shiftKey, "P"] },
     ] satisfies Shortcut[],
   },
 ]);
@@ -91,13 +95,9 @@ onUnmounted(() => eventbus.off("keyboardShortcutsDialog", openDialog));
           >
             <span class="text-sm">{{ shortcut.label }}</span>
             <span class="flex shrink-0 items-center gap-1">
-              <kbd
-                v-for="key in shortcut.keys"
-                :key="key"
-                class="bg-muted text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-xs"
-              >
+              <Kbd v-for="key in shortcut.keys" :key="key" class="font-mono">
                 {{ key }}
-              </kbd>
+              </Kbd>
             </span>
           </div>
         </section>

@@ -68,6 +68,8 @@ describe("account menu helpers", () => {
   it("uses the current account accent throughout the profile surface", () => {
     expect(navUserSource).toContain('class="h-20 rounded-t-md"');
     expect(navUserSource).toContain(':class="currentAccountAccentClass"');
+    expect(navUserSource).toContain("text-foreground truncate text-lg");
+    expect(navUserSource).not.toContain("text-lg font-semibold text-white");
     expect(
       navUserSource.match(/currentAccountAccentClass/g)?.length,
     ).toBeGreaterThanOrEqual(5);
@@ -93,6 +95,23 @@ describe("account menu helpers", () => {
     expect(navUserSource).toContain("scrobbling-avatar-glow-base");
     expect(navUserSource).toContain("scrobbling-avatar-glow--active");
     expect(navUserSource).toContain("prefers-reduced-motion: reduce");
+  });
+
+  it("lets the avatar glow extend beyond the menu button", () => {
+    expect(navUserSource).toContain("w-full overflow-visible");
+  });
+
+  it("uses the shared press feedback on the footer account menu button", () => {
+    expect(navUserSource).toContain(':ripple="true"');
+  });
+
+  it("uses the sidebar active colors for the account menu trigger", () => {
+    expect(navUserSource).toContain(
+      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+    );
+    expect(navUserSource).toContain(
+      "data-[state=open]:bg-sidebar-active data-[state=open]:text-sidebar-accent-foreground",
+    );
   });
 
   it("detects scrobbling independently of account credentials", () => {

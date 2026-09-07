@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import { isMacPlatform } from "@/composables/useCommandCenter";
 import {
   DropdownMenuItem,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Kbd } from "@/components/ui/kbd";
 import { useSidebar } from "@/components/ui/sidebar";
 import { store } from "@/plugins/store";
 import { PanelLeft, PanelLeftClose } from "@lucide/vue";
+
+const collapseSidebarHotkeyLabel = isMacPlatform ? "⌘ B" : "Ctrl B";
 
 const { isMobile, setOpen, setOpenMobile } = useSidebar();
 
@@ -37,6 +41,7 @@ const handleCollapseSidebar = () => {
       <DropdownMenuItem @click="handleCollapseSidebar">
         <PanelLeftClose class="size-[18px]" />
         {{ $t("collapse_sidebar") }}
+        <Kbd class="ml-auto">{{ collapseSidebarHotkeyLabel }}</Kbd>
       </DropdownMenuItem>
     </DropdownMenuSubContent>
   </DropdownMenuSub>
