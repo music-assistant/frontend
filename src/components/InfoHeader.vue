@@ -302,11 +302,9 @@
               v-if="'podcast' in item && item.podcast"
               class="title d-flex"
             >
-              <v-icon
-                color="primary"
+              <PodcastIcon
+                class="text-primary size-4 shrink-0"
                 style="margin-left: -3px; margin-right: 3px"
-                small
-                icon="mdi-podcast"
               />
               <MarqueeText :sync="marqueeSync">
                 <a @click="podcastClick(item.podcast)">{{
@@ -318,22 +316,18 @@
             <!-- publish date and length of an episode -->
             <v-card-subtitle v-if="episodeInfo" class="title d-flex">
               <template v-if="episodeInfo.date">
-                <v-icon
-                  color="primary"
+                <CalendarIcon
+                  class="text-primary size-4 shrink-0"
                   style="margin-left: -3px; margin-right: 3px"
-                  small
-                  icon="mdi-calendar"
                 />
                 {{ episodeInfo.date }}
               </template>
               <template v-if="episodeInfo.duration">
-                <v-icon
-                  color="primary"
+                <ClockIcon
+                  class="text-primary size-4 shrink-0"
                   :style="`margin-left: ${
                     episodeInfo.date ? '14px' : '-3px'
                   }; margin-right: 3px`"
-                  small
-                  icon="mdi-clock-outline"
                 />
                 {{ episodeInfo.duration }}
               </template>
@@ -597,7 +591,14 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
+import {
+  ArrowLeft,
+  CalendarIcon,
+  ClockIcon,
+  Merge,
+  PodcastIcon,
+  Trash2,
+} from "@lucide/vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
