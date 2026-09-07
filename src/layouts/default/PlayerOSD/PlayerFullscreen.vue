@@ -691,7 +691,14 @@ const isEpisode = computed(
 const isTrack = computed(
   () => store.curQueueItem?.media_item?.media_type === MediaType.TRACK,
 );
-const hasReadableText = computed(() => isTrack.value || isEpisode.value);
+// An episode the provider already marked as having no transcript is skipped
+// outright; null means the provider cannot tell, so we still ask.
+const hasReadableText = computed(
+  () =>
+    isTrack.value ||
+    (isEpisode.value &&
+      store.curQueueItem?.media_item?.metadata?.has_transcript !== false),
+);
 
 // Local reactive state for lyrics
 const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
