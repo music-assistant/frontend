@@ -1263,7 +1263,7 @@ const openQueueMenu = function (evt: Event) {
   // top of the overflow menu.
   if (showLyrics.value) {
     menuItems.unshift({
-      label: "lyrics_offset",
+      label: isEpisode.value ? "transcript_offset" : "lyrics_offset",
       // markRaw: the menu items land in a reactive array; a bare component
       // definition there would be needlessly made reactive.
       component: markRaw(LyricsOffsetMenuControl),
