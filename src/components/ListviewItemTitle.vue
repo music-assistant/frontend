@@ -20,7 +20,7 @@
     <span
       v-if="item.media_type == MediaType.TRACK && item.metadata?.release_date"
     >
-      ({{ new Date(item.metadata.release_date).getFullYear() }})
+      ({{ new Date(item.metadata.release_date).getUTCFullYear() }})
     </span>
   </span>
   <!-- explicit icon -->
