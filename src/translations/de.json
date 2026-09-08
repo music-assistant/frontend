@@ -287,10 +287,10 @@
                 "help": "Erhöht oder verringert den Pegel aller Signale, die diesen Punkt in der Pipeline passieren."
             },
             "balance": {
-                "help": "Verschiebt den Ton zum linken oder rechten Lautsprecher. Gilt nur für Stereo-Audio."
+                "help": "Verschiebt den Ton zum linken oder rechten Lautsprecher."
             },
             "stereo_width": {
-                "help": "Stellt die Breite des Stereobildes ein. Links von der Mitte verengt sich das Klangbild in Richtung Mono, rechts wird es breiter.",
+                "help": "Stellt die Breite des Stereobildes ein. Links von der Mitte verengt sich das Klangbild in Richtung Mono, rechts wird es breiter. Gilt nur für Stereo-Audio.",
                 "clip_hint": "Eine Einstellung, die über den Wert Original hinausgeht, kann Spitzenwerte erzeugen und zu Clipping führen. Erwäge nach diesem Filter einen Limiter einzubinden.",
                 "scale": {
                     "mono": "Mono",
@@ -299,7 +299,7 @@
                 }
             },
             "crossfeed": {
-                "help": "Sorgt für ein natürlicheres Hörerlebnis beim Hören über Kopfhörer, indem der linke und der rechte Kanal sanft miteinander verschmolzen werden – ähnlich wie beim Hören über Lautsprecher.",
+                "help": "Sorgt für ein natürlicheres Hörerlebnis beim Hören über Kopfhörer, indem der linke und der rechte Kanal sanft miteinander verschmolzen werden – ähnlich wie beim Hören über Lautsprecher. Gilt nur für Stereo-Audio.",
                 "presets": {
                     "low": "Niedrig",
                     "medium": "Mittel",
@@ -2415,5 +2415,30 @@
     "import_playlist_match_policy_same_recording_title": "Dieselbe Aufnahme (empfohlen)",
     "import_playlist_match_policy_same_recording_description": "Bevorzuge eine exakte Übereinstimmung; andernfalls akzeptiere auch dieselbe Aufnahme aus einer anderen Veröffentlichung.",
     "import_playlist_match_policy_best_effort_title": "Nach bestem Bemühen",
-    "import_playlist_match_policy_best_effort_description": "Bevorzuge eine exakte Übereinstimmung, dann dieselbe Aufnahme, andernfalls akzeptiere die nächstliegende verfügbare Übereinstimmung."
+    "import_playlist_match_policy_best_effort_description": "Bevorzuge eine exakte Übereinstimmung, dann dieselbe Aufnahme, andernfalls akzeptiere die nächstliegende verfügbare Übereinstimmung.",
+    "migrate_playlist": {
+        "action": "Wiedergabeliste migrieren",
+        "title": "Wiedergabeliste migrieren",
+        "description": "Kopiere „{0}“ zu einem anderen Anbieter und passe dabei die Titel entsprechend an.",
+        "destination_label": "Ziel",
+        "destination_placeholder": "Wähle ein Ziel",
+        "name_label": "Name der Wiedergabeliste",
+        "match_policy_label": "Titel Übereinstimmung",
+        "match_policy": {
+            "exact": {
+                "title": "Genaue Veröffentlichung",
+                "description": "Füge nur Titel hinzu, die exakt zur selben Veröffentlichung gehören. Titel, die auf diese Weise nicht zugeordnet werden können, werden übersprungen."
+            },
+            "same_recording": {
+                "title": "Selbe Aufnahme",
+                "description": "Bevorzuge eine exakte Übereinstimmung; andernfalls akzeptiere dieselbe Aufnahme aus einer anderen Veröffentlichung. Titel, die auf diese Weise nicht zugeordnet werden können, werden übersprungen."
+            },
+            "best_effort": {
+                "title": "Nach bestem Bemühen",
+                "description": "Bevorzuge eine exakte Übereinstimmung, dann dieselbe Aufnahme, andernfalls akzeptiere die nächstliegende verfügbare Übereinstimmung."
+            }
+        },
+        "submit": "Migrieren",
+        "no_destinations_error": "Für diese Wiedergabeliste ist kein geeigneter Zielanbieter verfügbar."
+    }
 }

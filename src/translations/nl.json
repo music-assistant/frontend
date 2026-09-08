@@ -2415,5 +2415,30 @@
     "import_playlist_match_policy_same_recording_title": "Dezelfde opname (aanbevolen)",
     "import_playlist_match_policy_same_recording_description": "Geef de voorkeur aan een exacte overeenkomst, als er geen exacte overeenkomst is, wordt een opname van een andere release ook geaccepteerd.",
     "import_playlist_match_policy_best_effort_title": "Zo goed mogelijk",
-    "import_playlist_match_policy_best_effort_description": "Geef de voorkeur aan een exacte overeenkomst, gevolgd door dezelfde opname, anders de meest vergelijkbare beschikbare overeenkomst accepteren."
+    "import_playlist_match_policy_best_effort_description": "Geef de voorkeur aan een exacte overeenkomst, gevolgd door dezelfde opname, anders de meest vergelijkbare beschikbare overeenkomst accepteren.",
+    "migrate_playlist": {
+        "action": "Afspeellijst migreren",
+        "title": "Afspeellijst migreren",
+        "description": "Kopieer \"{0}\" naar een andere provider en zorg ervoor dat de nummers tussen de providers overeenkomen.",
+        "destination_label": "Bestemming",
+        "destination_placeholder": "Kies een bestemming",
+        "name_label": "Naam van de afspeellijst",
+        "match_policy_label": "Nummer matching",
+        "match_policy": {
+            "exact": {
+                "title": "Exacte release",
+                "description": "Voeg alleen nummers toe die exact overeenkomen met exact dezelfde release. Nummers die niet gematcht kunnen worden, worden overgeslagen."
+            },
+            "same_recording": {
+                "title": "Dezelfde opname",
+                "description": "Geef de voorkeur aan een exacte match, anders mag dezelfde opname uit een andere uitgave ook. Nummers die op deze manier niet kunnen worden gematcht, worden overgeslagen."
+            },
+            "best_effort": {
+                "title": "Zo goed mogelijk",
+                "description": "Geef de voorkeur aan een exacte overeenkomst, gevolgd door dezelfde opname, anders de meest vergelijkbare beschikbare overeenkomst accepteren."
+            }
+        },
+        "submit": "Migreren",
+        "no_destinations_error": "Er is geen geschikte bestemming provider beschikbaar voor deze afspeellijst."
+    }
 }
