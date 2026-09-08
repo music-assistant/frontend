@@ -348,6 +348,17 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
           },
+          {
+            // the name must stay equal to MediaType.PODCAST_EPISODE: navigation
+            // to a details view pushes the media type as the route name
+            path: ":provider/episode/:itemId",
+            name: "podcast_episode",
+            component: () =>
+              import(
+                /* webpackChunkName: "podcast_episode" */ "@/views/PodcastEpisodeDetails.vue"
+              ),
+            props: true,
+          },
         ],
       },
       {

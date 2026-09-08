@@ -115,12 +115,6 @@ export const handleMediaItemClick = async function (
     return;
   }
 
-  // podcast episode has no details view so show play menu directly
-  // TODO: revisit this once we have a proper podcast episode details view
-  if (item.media_type == MediaType.PODCAST_EPISODE) {
-    return handlePlayBtnClick(item, posX, posY, parentItem, true);
-  }
-
   // audio sources (e.g. Spotify Connect, AirPlay) have no browse view: always play them
   if (item.media_type == MediaType.AUDIO_SOURCE) {
     return handlePlayBtnClick(item, posX, posY, parentItem);
