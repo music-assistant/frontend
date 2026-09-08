@@ -52,7 +52,7 @@ const toggleLabelHidden = async () => {
 </script>
 
 <template>
-  <div v-if="editMode" class="nav-edit-header">
+  <div v-if="editMode" class="nav-edit-header mb-1 md:mb-0">
     <input
       v-if="renaming"
       ref="renameInput"
@@ -65,7 +65,7 @@ const toggleLabelHidden = async () => {
     />
     <template v-else>
       <SidebarGroupLabel
-        class="nav-edit-label mb-1 h-10 text-sm"
+        class="nav-edit-label h-10 text-sm md:mb-1"
         :class="{ 'nav-edit-label-off': labelHidden }"
         @click="startRename"
       >

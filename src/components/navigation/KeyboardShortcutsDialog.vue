@@ -52,7 +52,7 @@ const shortcutSections = computed(() => [
     shortcuts: [
       { label: t("command_center.title"), keys: [modifierKey, "K"] },
       { label: t("sidebar.title"), keys: [modifierKey, "B"] },
-      { label: t("keyboard_shortcuts"), keys: [modifierKey, shiftKey, "P"] },
+      { label: t("keyboard_shortcuts"), keys: [modifierKey, "/"] },
     ] satisfies Shortcut[],
   },
 ]);
@@ -61,7 +61,7 @@ const openDialog = () => {
   open.value = true;
 };
 
-useHotkey("Mod+Shift+P", openDialog, { ignoreInputs: true });
+useHotkey("Mod+/", openDialog, { ignoreInputs: true });
 
 onMounted(() => eventbus.on("keyboardShortcutsDialog", openDialog));
 onUnmounted(() => eventbus.off("keyboardShortcutsDialog", openDialog));

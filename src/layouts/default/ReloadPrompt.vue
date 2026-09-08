@@ -1,18 +1,28 @@
 <script setup lang="ts">
 import { store } from "@/plugins/store";
-import { useRegisterSW } from "virtual:pwa-register/vue";
+import { computed, ref, watch } from "vue";
+import { usePwaUpdate } from "@/composables/usePwaUpdate";
 
-const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW();
+const { offlineReady, needRefresh, updateServiceWorker } = usePwaUpdate();
+const promptDismissed = ref(false);
+
+watch(needRefresh, (available) => {
+  if (available) promptDismissed.value = false;
+});
+
+const showUpdatePrompt = computed(
+  () => needRefresh.value && !promptDismissed.value,
+);
 
 const close = async () => {
   offlineReady.value = false;
-  needRefresh.value = false;
+  promptDismissed.value = true;
 };
 </script>
 
 <template>
   <div
-    v-if="offlineReady || needRefresh"
+    v-if="offlineReady || showUpdatePrompt"
     :class="['pwa-toast', { 'pwa-toast--frameless': store.frameless }]"
     role="alert"
   >

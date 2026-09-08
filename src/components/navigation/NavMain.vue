@@ -161,12 +161,12 @@ const draggedItem = computed(() =>
       />
       <CollapsibleTrigger
         v-else-if="label && !labelHidden"
-        class="group/heading flex w-full cursor-pointer items-center border-0 bg-transparent text-left text-inherit transition-colors duration-150 ease-out hover:text-sidebar-foreground"
+        class="group/heading mb-1 flex w-full cursor-pointer items-center border-0 bg-transparent text-left text-inherit transition-colors duration-150 ease-out hover:text-sidebar-foreground md:mb-0"
         :aria-label="`${label} collapse toggle`"
       >
         <SidebarGroupLabel
           as="span"
-          class="group-hover/heading:text-sidebar-foreground group-hover/heading:font-semibold inline-flex min-w-0 items-center gap-1 text-sm h-10 mb-1 transition-[color,font-weight] duration-150"
+          class="group-hover/heading:text-sidebar-foreground group-hover/heading:font-semibold inline-flex min-w-0 items-center gap-1 text-sm h-10 transition-[color,font-weight] duration-150 md:mb-1"
         >
           {{ label }}
           <span

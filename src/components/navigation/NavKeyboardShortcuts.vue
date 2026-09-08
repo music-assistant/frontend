@@ -5,7 +5,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { eventbus } from "@/plugins/eventbus";
 import { Keyboard } from "@lucide/vue";
 
-const keyboardShortcutsHotkeyLabel = isMacPlatform ? "⌘ ⇧ P" : "Ctrl Shift P";
+const keyboardShortcutsHotkeyLabel = isMacPlatform ? "⌘ /" : "Ctrl /";
 </script>
 
 <template>

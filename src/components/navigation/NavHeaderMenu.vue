@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { copyToClipboard, openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { usePwaUpdate } from "@/composables/usePwaUpdate";
 import { useSidebar } from "@/components/ui/sidebar";
 import { store } from "@/plugins/store";
 import {
@@ -47,7 +48,12 @@ import NavSidebarMenu from "./NavSidebarMenu.vue";
 import NavThemeMenu from "./NavThemeMenu.vue";
 
 const { t } = useI18n();
-const isEditMode = computed(() => store.navMenuEditMode);
+const { needRefresh, updateServiceWorker } = usePwaUpdate();
+const menuTriggerLabel = computed(() =>
+  needRefresh.value
+    ? `${t("settings.open_menu")}. ${t("update_available")}`
+    : t("settings.open_menu"),
+);
 const currentVersion = computed(
   () => store.serverInfo?.server_version || "0.0.0",
 );
@@ -109,6 +115,11 @@ const reloadApplication = () => {
   window.location.reload();
 };
 
+const applyUpdate = () => {
+  setOpenMobile(false);
+  void updateServiceWorker();
+};
+
 const copyVersion = async () => {
   if (!currentVersion.value) return;
   const copied = await copyToClipboard(currentVersion.value);
@@ -126,18 +137,20 @@ const copyVersion = async () => {
       <Button
         variant="ghost"
         size="icon-lg"
-        class="sidebar-header-menu data-[state=open]:bg-sidebar-active data-[state=open]:text-sidebar-accent-foreground mr-0 mt-0 mb-0"
-        :aria-label="$t('settings.open_menu')"
+        class="sidebar-header-menu relative data-[state=open]:bg-sidebar-active data-[state=open]:text-sidebar-accent-foreground mr-0 mt-0 mb-0"
+        :aria-label="menuTriggerLabel"
         @click.stop
       >
         <EllipsisVertical />
+        <span
+          v-if="needRefresh"
+          class="bg-primary absolute top-1.5 right-1.5 size-2 rounded-full border-2 border-sidebar"
+          aria-hidden="true"
+        ></span>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent
-      :class="[
-        'z-[100001] min-w-56 rounded-lg',
-        isEditMode ? 'min-w-64' : 'min-w-56',
-      ]"
+      class="z-[100001] min-w-56 max-w-[232px] rounded-lg"
       :side="isMobile ? 'bottom' : 'bottom'"
       :side-offset="isMobile ? 4 : 15"
       align="start"
@@ -169,10 +182,26 @@ const copyVersion = async () => {
             >
               {{ $t("settings.release_notes") }}
             </a>
+            <div
+              v-if="needRefresh"
+              class="mt-1 flex items-center gap-1.5 text-xs text-primary"
+              role="status"
+            >
+              <span
+                class="bg-primary size-1.5 shrink-0 rounded-full"
+                aria-hidden="true"
+              ></span>
+              <span>{{ $t("update_available") }}</span>
+            </div>
           </div>
         </div>
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
+      <DropdownMenuItem v-if="needRefresh" @click="applyUpdate">
+        <RefreshCw class="size-4" />
+        {{ $t("reload") }}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator v-if="needRefresh" />
       <DropdownMenuItem @click="handleSettings">
         <Settings class="size-4" />
         {{ $t("settings.settings") }}
