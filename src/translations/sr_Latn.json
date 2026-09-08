@@ -287,10 +287,10 @@
                 "help": "Povećava ili smanjuje nivo svega što prolazi kroz ovu tačku u lancu obrade."
             },
             "balance": {
-                "help": "Pomera zvuk prema levom ili desnom zvučniku. Primenjuje se samo na stereo audio."
+                "help": "Pomera zvuk prema levom ili desnom zvučniku."
             },
             "stereo_width": {
-                "help": "Prilagođava širinu stereo slike. Levo od centra sužava zvuk ka mono režimu, dok desno proširuje zvuk.",
+                "help": "Podešava širinu stereo slike. Levo od centra sužava zvuk ka mono prikazu, dok desno proširuje zvuk. Primenjuje se samo na stereo zvuk.",
                 "clip_hint": "Proširivanje iznad opcije „Originalno” može povećati vrhove signala i izazvati izobličenje. Razmislite o dodavanju limitera nakon ovog filtera.",
                 "scale": {
                     "mono": "Mono",
@@ -299,7 +299,7 @@
                 }
             },
             "crossfeed": {
-                "help": "Čini slušanje preko slušalica prirodnijim nežnim mešanjem levog i desnog kanala, slično slušanju preko zvučnika.",
+                "help": "Čini slušanje preko slušalica prirodnijim tako što nežno meša levi i desni kanal, slično slušanju preko zvučnika. Primenjuje se samo na stereo zvuk.",
                 "presets": {
                     "low": "Nizak",
                     "medium": "Srednji",
@@ -2415,5 +2415,30 @@
     "import_playlist_match_policy_same_recording_title": "Isti snimak (preporučeno)",
     "import_playlist_match_policy_same_recording_description": "Prednost se daje tačnom poklapanju, a u suprotnom se prihvata isti snimak sa drugog izdanja.",
     "import_playlist_match_policy_best_effort_title": "Najbolje uklapanje",
-    "import_playlist_match_policy_best_effort_description": "Prednost se daje tačnom poklapanju, zatim istom snimku, a u suprotnom se prihvata najbliže dostupno poklapanje."
+    "import_playlist_match_policy_best_effort_description": "Prednost se daje tačnom poklapanju, zatim istom snimku, a u suprotnom se prihvata najbliže dostupno poklapanje.",
+    "migrate_playlist": {
+        "action": "Migriraj plejlistu",
+        "title": "Migracija plejliste",
+        "description": "Kopirajte „{0}“ na drugi servis, uz usputno upoređivanje pesama.",
+        "destination_label": "Odredište",
+        "destination_placeholder": "Izaberite odredište",
+        "name_label": "Naziv plejliste",
+        "match_policy_label": "Upoređivanje pesama",
+        "match_policy": {
+            "exact": {
+                "title": "Tačno izdanje",
+                "description": "Dodaju se samo pesme koje se poklapaju sa potpuno istim izdanjem. Pesme koje ne mogu da se upare na ovaj način biće preskočene."
+            },
+            "same_recording": {
+                "title": "Isti audio zapis",
+                "description": "Prednost se daje tačnom poklapanju, u suprotnom se prihvata isti audio zapis sa drugog izdanja. Pesme koje ne mogu da se upare na ovaj način biće preskočene."
+            },
+            "best_effort": {
+                "title": "Najbolje uklapanje",
+                "description": "Prednost se daje tačnom poklapanju, zatim istom audio zapisu, a u suprotnom se prihvata najbliže dostupno poklapanje."
+            }
+        },
+        "submit": "Migriraj",
+        "no_destinations_error": "Nijedan odgovarajući odredišni servis nije dostupan za ovu plejlistu."
+    }
 }

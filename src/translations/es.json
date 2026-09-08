@@ -287,10 +287,10 @@
                 "help": "Aumenta o reduce el nivel de todo lo que pasa por este punto de la cadena."
             },
             "balance": {
-                "help": "Desplaza el sonido hacia el altavoz izquierdo o derecho. Solo se aplica al audio estéreo."
+                "help": "Desplaza el sonido hacia el altavoz izquierdo o derecho."
             },
             "stereo_width": {
-                "help": "Ajusta la amplitud de la imagen estéreo. A la izquierda del centro se estrecha hacia mono; a la derecha se amplía el sonido.",
+                "help": "Ajusta la amplitud de la imagen estéreo. A la izquierda del centro, la reduce hacia mono; a la derecha, amplía el sonido. Solo se aplica al audio estéreo.",
                 "clip_hint": "Ampliar más allá del valor original puede aumentar los picos y provocar saturación. Considera añadir un limitador después de este filtro.",
                 "scale": {
                     "mono": "Mono",
@@ -299,7 +299,7 @@
                 }
             },
             "crossfeed": {
-                "help": "Hace que la escucha con auriculares sea más natural al mezclar suavemente los canales izquierdo y derecho, de forma similar a escuchar con altavoces.",
+                "help": "Hace que la escucha con auriculares resulte más natural al mezclar suavemente los canales izquierdo y derecho, de forma similar a escuchar con altavoces. Solo se aplica al audio estéreo.",
                 "presets": {
                     "low": "Bajo",
                     "medium": "Medio",
@@ -2415,5 +2415,30 @@
     "import_playlist_match_policy_same_recording_title": "Misma grabación (recomendado)",
     "import_playlist_match_policy_same_recording_description": "Prefiere una coincidencia exacta; de lo contrario, acepta la misma grabación de otra edición.",
     "import_playlist_match_policy_best_effort_title": "Coincidencia más aproximada",
-    "import_playlist_match_policy_best_effort_description": "Prefiere una coincidencia exacta, después la misma grabación y, en caso contrario, acepta la coincidencia disponible más cercana."
+    "import_playlist_match_policy_best_effort_description": "Prefiere una coincidencia exacta, después la misma grabación y, en caso contrario, acepta la coincidencia disponible más cercana.",
+    "migrate_playlist": {
+        "action": "Migrar lista de reproducción",
+        "title": "Migrar lista de reproducción",
+        "description": "Copia «{0}» a otro proveedor, emparejando sus canciones durante el proceso.",
+        "destination_label": "Destino",
+        "destination_placeholder": "Elige un destino",
+        "name_label": "Nombre de la lista de reproducción",
+        "match_policy_label": "Coincidencia de canciones",
+        "match_policy": {
+            "exact": {
+                "title": "Edición exacta",
+                "description": "Añade únicamente las canciones que coincidan con la misma edición exacta. Las canciones que no se puedan emparejar de esta forma se omiten."
+            },
+            "same_recording": {
+                "title": "Misma grabación",
+                "description": "Prefiere una coincidencia exacta; de lo contrario, acepta la misma grabación de otra edición. Las canciones que no se puedan emparejar de esta forma se omiten."
+            },
+            "best_effort": {
+                "title": "Mejor coincidencia disponible",
+                "description": "Prefiere una coincidencia exacta, después la misma grabación y, en caso contrario, acepta la coincidencia disponible más cercana."
+            }
+        },
+        "submit": "Migrar",
+        "no_destinations_error": "No hay ningún proveedor de destino disponible para esta lista de reproducción."
+    }
 }
