@@ -135,7 +135,18 @@
                 <ChevronLeft :size="20" />
               </button>
 
-              <div ref="heroGrid" class="ed-hero-grid" @scroll="updateHeroNav">
+              <div
+                :ref="setHeroGridRef"
+                class="ed-hero-grid"
+                :class="{ 'ed-hero-grid--dragging': heroDragging }"
+                @scroll="updateHeroNav"
+                @pointerdown="onHeroPointerDown"
+                @pointermove="onHeroPointerMove"
+                @pointerup="onHeroPointerUp"
+                @pointercancel="onHeroPointerUp"
+                @click.capture="onHeroClickCapture"
+                @dragstart.prevent
+              >
                 <EditorialHeroCard
                   class="ed-hero-grid__lead"
                   :item="heroEntries[0].item"
@@ -393,6 +404,7 @@ import {
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
+import { useDragScroll } from "@/composables/useDragScroll";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import { panelViewItemResponsive } from "@/helpers/utils";
@@ -619,6 +631,11 @@ const heroColumns = computed<HeroEntry[][]>(() => {
 // Safari swallow the first tap as "hover" instead of a click.
 const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
 const heroGrid = ref<HTMLElement | null>(null);
+// a plain ref would come back as an array here, since the row is rendered
+// inside the v-for over the rows
+const setHeroGridRef = (el: unknown) => {
+  heroGrid.value = el instanceof HTMLElement ? el : null;
+};
 const heroHovering = ref(false);
 const heroCanLeft = ref(false);
 const heroCanRight = ref(false);
@@ -635,6 +652,14 @@ const scrollHero = (dir: number) => {
   if (!el) return;
   el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
 };
+
+const {
+  dragging: heroDragging,
+  onPointerDown: onHeroPointerDown,
+  onPointerMove: onHeroPointerMove,
+  onPointerUp: onHeroPointerUp,
+  onClickCapture: onHeroClickCapture,
+} = useDragScroll(heroGrid);
 
 let heroRo: ResizeObserver | undefined;
 let observedHeroGrid: HTMLElement | null = null;
@@ -655,6 +680,9 @@ const observeHero = () => {
   observedHeroGrid = el;
 };
 
+// the row mounts and unmounts as rows are hidden and shown, so watch the
+// element as well as the content in it
+watch(heroGrid, observeHero);
 watch(heroEntries, () => nextTick(observeHero), { deep: false });
 
 // Assign heroEntries only when the picks actually changed — cheap insurance
@@ -1245,6 +1273,13 @@ onBeforeUnmount(() => {
 }
 .ed-hero-grid::-webkit-scrollbar {
   display: none;
+}
+/* doubled up so it outranks the .ed-hero-grid rules in the media queries below */
+.ed-hero-grid.ed-hero-grid--dragging {
+  cursor: grabbing;
+  user-select: none;
+  /* snapping fights the drag while the pointer drives scrollLeft */
+  scroll-snap-type: none;
 }
 .ed-hero-grid__lead {
   flex: 1.5 0 520px;
