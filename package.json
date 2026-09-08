@@ -47,7 +47,7 @@
         "mobile-detect": "1.4.5",
         "qrcode": "^1.5.4",
         "reka-ui": "^2.10.3",
-        "swiper": "^14.1.0",
+        "swiper": "^14.2.0",
         "tailwind-merge": "^3.6.0",
         "tailwindcss": "^4.3.3",
         "ts-pattern": "^5.9.0",
