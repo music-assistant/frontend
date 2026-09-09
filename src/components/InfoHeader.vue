@@ -146,7 +146,7 @@
                 color="primary"
                 icon="mdi-calendar"
               />
-              {{ new Date(item.metadata.release_date).getFullYear() }}
+              {{ new Date(item.metadata.release_date).getUTCFullYear() }}
             </v-card-subtitle>
 
             <!-- item artists -->
