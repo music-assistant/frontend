@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
 import NavShortcuts from "@/components/navigation/NavShortcuts.vue";
-import AppLogo from "@/components/AppLogo.vue";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -159,10 +158,14 @@ onUnmounted(() => {
               class="relative flex min-w-0 cursor-pointer items-center gap-1.5 transition-opacity duration-300 ease-[ease]"
               @click="router.push('/')"
             >
-              <AppLogo />
+              <img
+                src="@/assets/icon.svg"
+                alt="Music Assistant"
+                class="size-[34px] shrink-0"
+              />
               <div
                 v-if="!collapsed"
-                class="mt-[3px] ml-2.5 overflow-hidden text-[1.2rem] font-bold whitespace-nowrap transition-opacity duration-200 ease-[ease]"
+                class="ml-2.5 overflow-hidden text-[1.2rem] font-bold whitespace-nowrap transition-opacity duration-200 ease-[ease]"
               >
                 Music Assistant
               </div>

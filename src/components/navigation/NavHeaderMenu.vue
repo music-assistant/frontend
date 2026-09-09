@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppLogo from "@/components/AppLogo.vue";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -157,7 +156,11 @@ const copyVersion = async () => {
     >
       <DropdownMenuLabel class="p-0 font-normal">
         <div class="flex items-center gap-3 px-2 py-2 text-left">
-          <AppLogo :size="32" />
+          <img
+            src="@/assets/icon.svg"
+            alt="Music Assistant"
+            class="size-8 shrink-0"
+          />
           <div class="min-w-0">
             <div class="truncate text-sm font-semibold">Music Assistant</div>
             <button

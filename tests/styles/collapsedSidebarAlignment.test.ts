@@ -119,17 +119,33 @@ describe("collapsed sidebar alignment", () => {
     expect(navShortcutsSource).toContain(':ripple="true"');
   });
 
-  it("transitions between normal and sidebar customization content", () => {
-    expect(navMainSource).toContain(
-      '<Transition name="sidebar-mode" mode="out-in">',
+  it("keeps the section menu mounted while switching customization modes", () => {
+    expect(navMainSource).toContain('ref="listEl"');
+    expect(navMainSource).toContain('class="relative"');
+    expect(navMainSource).toContain("<SidebarMenu>");
+    expect(navMainSource).toContain('<template v-if="editMode">');
+    expect(navMainSource).toContain("<template v-else>");
+    expect(navMainSource).toContain("sidebar-customization-surface--edit");
+    expect(navMainSource).toContain("sidebar-customization-surface--normal");
+    expect(navShortcutsSource).toContain("sidebar-customization-surface--edit");
+    expect(navShortcutsSource).toContain(
+      "sidebar-customization-surface--normal",
     );
-    expect(navMainSource).toContain('v-if="editMode" key="edit"');
-    expect(navMainSource).toContain('v-else key="normal"');
+    expect(navMainSource).not.toContain("sidebar-mode");
   });
 
   it("uses a dashed outline for editable menu items", () => {
     expect(navMainSource).toContain(
       "border border-dashed border-sidebar-border",
+    );
+  });
+
+  it("keeps edit-mode item icons in the normal navigation wrapper", () => {
+    expect(navMainSource).toContain(
+      "nav-edit-item flex min-w-0 flex-1 items-center gap-4",
+    );
+    expect(navMainSource).toContain(
+      'class="h-6 w-6 shrink-0 flex items-center justify-center"',
     );
   });
 

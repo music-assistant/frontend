@@ -105,6 +105,18 @@ describe("account menu helpers", () => {
     expect(navUserSource).toContain(':ripple="true"');
   });
 
+  it("keeps the collapsed account trigger avatar-sized and round", () => {
+    expect(navUserSource).toContain(
+      "group-data-[collapsible=icon]:h-[34px]! group-data-[collapsible=icon]:w-[34px]!",
+    );
+    expect(navUserSource).toContain(
+      "group-data-[collapsible=icon]:rounded-full! group-data-[collapsible=icon]:p-0!",
+    );
+    expect(navUserSource).toContain(
+      "group-data-[collapsible=icon]:justify-self-center",
+    );
+  });
+
   it("uses the sidebar active colors for the account menu trigger", () => {
     expect(navUserSource).toContain(
       "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

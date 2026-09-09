@@ -5,8 +5,6 @@ import {
   ChevronRight,
   Disc3,
   EllipsisVertical,
-  Eye,
-  EyeOff,
   GripVertical,
   ListMusic,
   Mic2,
@@ -65,18 +63,7 @@ const { isMobile, setOpenMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
 const open = ref(true);
 
-const {
-  pinnedItems,
-  isLoading,
-  pinnedCount,
-  visiblePinnedItems,
-  isShortcutHidden,
-  toggleShortcutHidden,
-} = useShortcuts();
-
-const displayedPinnedItems = computed(() =>
-  props.editMode ? pinnedItems.value : visiblePinnedItems.value,
-);
+const { pinnedItems, isLoading, pinnedCount } = useShortcuts();
 
 const sectionConfig = computed(() => getMenuSectionConfig("shortcuts"));
 const sectionLabel = computed(
@@ -147,7 +134,7 @@ const thumbMap = computed(() =>
 );
 
 const pinnedItemsWithUrls = computed(() =>
-  displayedPinnedItems.value.map((item) => ({ item, url: getItemUrl(item) })),
+  pinnedItems.value.map((item) => ({ item, url: getItemUrl(item) })),
 );
 
 const openContextMenu = async (event: Event, item: ShortcutItem) => {
@@ -207,7 +194,7 @@ const draggedItem = computed(() =>
 
 <template>
   <!-- <div ref="navEl" class="h-0"></div> -->
-  <template v-if="displayedPinnedItems.length > 0 || isLoading">
+  <template v-if="pinnedItems.length > 0 || isLoading">
     <SidebarGroup
       :class="{ 'shortcuts-group-collapsed': isCollapsed }"
       class="py-0 px-3"
@@ -246,7 +233,15 @@ const draggedItem = computed(() =>
         </CollapsibleTrigger>
         <CollapsibleContent as-child>
           <SidebarGroupContent class="flex flex-col gap-0.5">
-            <div ref="listEl" class="relative">
+            <div
+              ref="listEl"
+              class="relative"
+              :class="
+                editMode
+                  ? 'sidebar-customization-surface--edit'
+                  : 'sidebar-customization-surface--normal'
+              "
+            >
               <SidebarMenu>
                 <!-- Skeletons while the API calls are in flight -->
                 <template v-if="isLoading">
@@ -265,8 +260,6 @@ const draggedItem = computed(() =>
                   :class="{
                     'shortcut-item': editMode,
                     'shortcut-item-dragging': draggingIndex === index,
-                    'shortcut-item-hidden':
-                      editMode && isShortcutHidden(getShortcutUri(item)),
                   }"
                   :data-drag-index="editMode ? index : undefined"
                   :style="
@@ -340,34 +333,7 @@ const draggedItem = computed(() =>
                     </span>
                   </SidebarMenuButton>
                   <Button
-                    v-if="editMode && !isCollapsed"
-                    variant="ghost"
-                    size="icon"
-                    class="shortcut-visibility-btn absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    :title="
-                      t(
-                        isShortcutHidden(getShortcutUri(item))
-                          ? 'menu_item_show'
-                          : 'menu_item_hide',
-                      )
-                    "
-                    :aria-label="
-                      t(
-                        isShortcutHidden(getShortcutUri(item))
-                          ? 'menu_item_show'
-                          : 'menu_item_hide',
-                      )
-                    "
-                    @click.stop="toggleShortcutHidden(getShortcutUri(item))"
-                  >
-                    <EyeOff
-                      v-if="isShortcutHidden(getShortcutUri(item))"
-                      class="h-4 w-4"
-                    />
-                    <Eye v-else class="h-4 w-4" />
-                  </Button>
-                  <Button
-                    v-else-if="!isCollapsed"
+                    v-if="!isCollapsed"
                     variant="ghost"
                     size="icon"
                     class="shortcut-action-btn absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
@@ -578,16 +544,45 @@ const draggedItem = computed(() =>
 
 /* ---- edit mode ---- */
 
+.sidebar-customization-surface--edit {
+  animation: sidebar-customization-edit-in 260ms ease-out both;
+}
+
+.sidebar-customization-surface--normal {
+  animation: sidebar-customization-normal-in 260ms ease-out both;
+}
+
+@keyframes sidebar-customization-edit-in {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sidebar-customization-normal-in {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-customization-surface--edit,
+  .sidebar-customization-surface--normal {
+    animation: none;
+  }
+}
+
 .shortcut-item {
   user-select: none;
 }
 
 .shortcut-item-dragging {
   opacity: 0.35;
-}
-
-.shortcut-item-hidden {
-  opacity: 0.55;
 }
 
 .shortcut-drag-handle {

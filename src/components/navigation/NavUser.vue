@@ -137,7 +137,7 @@ const accountAccentClass = (account: { username: string }) =>
             size="lg"
             :ripple="true"
             :class="[
-              'w-full overflow-visible hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-active data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-[3px]!',
+              'w-full overflow-visible hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-active data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:h-[34px]! group-data-[collapsible=icon]:w-[34px]! group-data-[collapsible=icon]:rounded-full! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-self-center',
             ]"
           >
             <span
