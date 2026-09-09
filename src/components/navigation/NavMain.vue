@@ -25,8 +25,10 @@ import { useListDragReorder } from "@/composables/useListDragReorder";
 import { ChevronRight, Eye, EyeOff, GripVertical } from "@lucide/vue";
 import NavSectionHeader from "./NavSectionHeader.vue";
 import {
+  getMenuSectionConfig,
   setMenuItemHidden,
   setMenuItemsOrder,
+  updateMenuSectionConfig,
   type MenuSectionId,
 } from "./utils/getMenuItems";
 
@@ -58,7 +60,20 @@ const route = useRoute();
 const router = useRouter();
 const { isMobile, setOpenMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
-const open = ref(true);
+const localOpen = ref(true);
+const sectionConfig = computed(() =>
+  props.sectionId ? getMenuSectionConfig(props.sectionId) : {},
+);
+const open = computed({
+  get: () => sectionConfig.value.open ?? localOpen.value,
+  set: (value: boolean) => {
+    if (props.sectionId) {
+      void updateMenuSectionConfig(props.sectionId, { open: value });
+    } else {
+      localOpen.value = value;
+    }
+  },
+});
 const groupOpen = computed({
   get: () =>
     isCollapsed.value ||
@@ -344,6 +359,7 @@ const draggedItem = computed(() =>
   from {
     opacity: 0.35;
   }
+
   to {
     opacity: 1;
   }
@@ -353,6 +369,7 @@ const draggedItem = computed(() =>
   from {
     opacity: 0.35;
   }
+
   to {
     opacity: 1;
   }

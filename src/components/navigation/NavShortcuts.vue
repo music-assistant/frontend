@@ -50,7 +50,10 @@ import { getImageThumbForItem } from "@/helpers/utils";
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 import NavSectionHeader from "./NavSectionHeader.vue";
-import { getMenuSectionConfig } from "./utils/getMenuItems";
+import {
+  getMenuSectionConfig,
+  updateMenuSectionConfig,
+} from "./utils/getMenuItems";
 
 const props = defineProps<{
   editMode?: boolean;
@@ -61,7 +64,6 @@ const route = useRoute();
 const { t } = useI18n();
 const { isMobile, setOpenMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
-const open = ref(true);
 
 const { pinnedItems, isLoading, pinnedCount } = useShortcuts();
 
@@ -69,6 +71,12 @@ const sectionConfig = computed(() => getMenuSectionConfig("shortcuts"));
 const sectionLabel = computed(
   () => sectionConfig.value.label || t("shortcuts"),
 );
+const open = computed({
+  get: () => sectionConfig.value.open ?? true,
+  set: (value: boolean) => {
+    void updateMenuSectionConfig("shortcuts", { open: value });
+  },
+});
 const groupOpen = computed({
   get: () =>
     isCollapsed.value ||

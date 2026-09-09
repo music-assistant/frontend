@@ -228,6 +228,20 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     });
   });
 
+  it("persists section expanded state", async () => {
+    setPreferences({
+      [MENU_PREFERENCE_KEY]: {
+        sections: { library: { open: true } },
+      },
+    });
+
+    expect(resolveMenuConfig().sections.library?.open).toBe(true);
+
+    await updateMenuSectionConfig("library", { open: false });
+
+    expect(lastWrittenConfig().sections?.library).toEqual({ open: false });
+  });
+
   it("clears a section config when reset to defaults", async () => {
     setPreferences({
       [MENU_PREFERENCE_KEY]: {
