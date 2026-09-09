@@ -236,7 +236,7 @@
             },
             "parameter": {
                 "frequency": "Frekvens",
-                "gain": "Få",
+                "gain": "Förstärkning",
                 "q_factor": "Q Faktor",
                 "balance": "Balans"
             },
@@ -2415,5 +2415,30 @@
     "import_playlist_match_policy_same_recording_title": "Samma inspelning (rekommenderas)",
     "import_playlist_match_policy_same_recording_description": "Föredra en exakt matchning, annars acceptera samma inspelning från en annan utgåva.",
     "import_playlist_match_policy_best_effort_title": "Bästa insats",
-    "import_playlist_match_policy_best_effort_description": "Föredra en exakt matchning, sedan samma inspelning, annars acceptera den närmaste tillgängliga matchningen."
+    "import_playlist_match_policy_best_effort_description": "Föredra en exakt matchning, sedan samma inspelning, annars acceptera den närmaste tillgängliga matchningen.",
+    "migrate_playlist": {
+        "action": "Migrera spellista",
+        "title": "Migrera spellistan",
+        "description": "Kopiera \"{0}\" till en annan leverantör och matcha dess spår längs vägen.",
+        "destination_label": "Destination",
+        "destination_placeholder": "Välj en destination",
+        "name_label": "Spellistans namn",
+        "match_policy_label": "Spårmatchning",
+        "match_policy": {
+            "exact": {
+                "title": "Exakt utgåva",
+                "description": "Lägg bara till spår som matchar exakt samma utgåva. Spår som inte kan matchas på detta sätt hoppas över."
+            },
+            "same_recording": {
+                "title": "Samma inspelning",
+                "description": "Föredra en exakt matchning, annars acceptera samma inspelning från en annan utgåva. Spår som inte kan matchas på detta sätt hoppas över."
+            },
+            "best_effort": {
+                "title": "Bästa insats",
+                "description": "Föredra en exakt matchning, sedan samma inspelning, annars acceptera den närmaste tillgängliga matchningen."
+            }
+        },
+        "submit": "Migrera",
+        "no_destinations_error": "Ingen kvalificerad destinationsleverantör finns tillgänglig för den här spellistan."
+    }
 }
