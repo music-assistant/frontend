@@ -5,7 +5,7 @@
     :disabled="isDisabled"
     :color="getValueFromSources(icon?.color, [[shuffleActive, 'primary', '']])"
     :title="shuffleTitle"
-    :aria-label="shuffleTitle"
+    :aria-label="$t('shuffle')"
     :aria-pressed="shuffleActive ? 'true' : 'false'"
     :data-dynamic="isDynamic || undefined"
     variant="button"

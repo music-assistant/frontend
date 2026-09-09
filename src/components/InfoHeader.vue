@@ -371,7 +371,7 @@
               <button
                 type="button"
                 class="favorite-icon-button"
-                :aria-label="favoriteButtonLabel"
+                :aria-label="$t('tooltip.favorite')"
                 :aria-pressed="item.favorite ? 'true' : 'false'"
                 :title="favoriteButtonLabel"
                 @click="api.toggleFavorite(item)"

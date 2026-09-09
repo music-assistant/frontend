@@ -29,6 +29,7 @@ export interface IconProps {
   size?: string | number;
   title?: string;
   ariaLabel?: string;
+  ariaPressed?: boolean | "true" | "false" | "mixed";
   "aria-label"?: string;
   "aria-pressed"?: boolean | "true" | "false" | "mixed";
 
@@ -60,6 +61,7 @@ export const useIcon = (props: IconProps) => {
       title: _title,
       ariaLabel: _ariaLabel,
       "aria-label": _ariaLabelAttr,
+      ariaPressed: _ariaPressedCamel,
       "aria-pressed": _ariaPressed,
       style: _style,
       ...vuetifyProps
@@ -67,6 +69,7 @@ export const useIcon = (props: IconProps) => {
 
     const baseProps = {
       ...vuetifyProps,
+      "aria-pressed": props.ariaPressed ?? props["aria-pressed"],
       size:
         props.size ||
         (staticWidth ? staticWidth : undefined) ||

@@ -699,9 +699,12 @@ watch(
 const playerName = computed(() =>
   getPlayerName(api.players[props.playerId!], 27),
 );
+const fullPlayerName = computed(
+  () => api.players[props.playerId!]?.name || playerName.value,
+);
 // Stable names: the switch's checked state already conveys on/off, so the
 // accessible name identifies what the switch controls.
-const dspToggleLabel = computed(() => `DSP: ${playerName.value}`);
+const dspToggleLabel = computed(() => `DSP: ${fullPlayerName.value}`);
 const selectedFilterToggleLabel = computed(() => {
   if (typeof selectedStage.value !== "number") {
     return t("settings.enable");

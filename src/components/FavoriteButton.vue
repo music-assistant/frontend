@@ -30,7 +30,7 @@ const toggle = (e: Event) => {
     :fill="item?.favorite ? 'currentColor' : 'none'"
     role="button"
     tabindex="0"
-    :aria-label="favoriteButtonLabel"
+    :aria-label="$t('tooltip.favorite')"
     :aria-pressed="item?.favorite ? 'true' : 'false'"
     :title="favoriteButtonLabel"
     @click="toggle"

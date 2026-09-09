@@ -11,7 +11,8 @@
     :aria-pressed="ariaPressed"
     @click="handleClick"
     @keydown.enter.prevent="handleKeyboardClick"
-    @keydown.space.prevent="handleKeyboardClick"
+    @keydown.space="handleSpaceKeydown"
+    @keyup.space="handleSpaceKeyup"
   >
     <v-badge :model-value="badge === true" color="error" dot>
       <v-icon ref="iconElement" v-bind="iconProps" :class="iconClasses">
@@ -75,7 +76,15 @@ const isButtonVariant = computed(() => props.variant === "button");
 const accessibleLabel = computed(
   () => props.ariaLabel || props["aria-label"] || props.title,
 );
-const ariaPressed = computed(() => props["aria-pressed"]);
+const ariaPressed = computed(() => props.ariaPressed ?? props["aria-pressed"]);
+
+const handleSpaceKeydown = (event: KeyboardEvent) => {
+  if (isButtonVariant.value) event.preventDefault();
+};
+
+const handleSpaceKeyup = (event: KeyboardEvent) => {
+  handleKeyboardClick(event);
+};
 
 const handleClick = (event: MouseEvent) => {
   if (props.disabled) {
@@ -88,7 +97,7 @@ const handleClick = (event: MouseEvent) => {
 };
 
 const handleKeyboardClick = (event: KeyboardEvent) => {
-  if (!isButtonVariant.value) return;
+  if (!isButtonVariant.value || event.repeat) return;
   if (props.disabled) {
     event.preventDefault();
     event.stopPropagation();
