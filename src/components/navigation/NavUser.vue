@@ -33,6 +33,7 @@ import ProfileAvatarEditor from "@/components/profile/ProfileAvatarEditor.vue";
 import {
   accountAccentClass as getAccountAccentClass,
   accountAccentBackgroundClass as getAccountAccentBackgroundClass,
+  accountAccentButtonGlowClass as getAccountAccentButtonGlowClass,
   getConnectionStatusKey,
 } from "./accountMenu";
 
@@ -146,14 +147,14 @@ const accountAccentClass = (account: { username: string }) =>
               <span
                 v-if="scrobblingStatus.configured"
                 class="scrobbling-avatar-glow-base pointer-events-none absolute inset-0 rounded-full"
-                :class="currentAccountAccentBackgroundClass"
+                :class="getAccountAccentButtonGlowClass(username)"
                 aria-hidden="true"
               ></span>
               <span
                 v-if="scrobblingStatus.configured && !accountMenuOpen"
                 class="scrobbling-avatar-glow pointer-events-none absolute inset-0 rounded-full"
                 :class="[
-                  currentAccountAccentBackgroundClass,
+                  getAccountAccentButtonGlowClass(username),
                   'scrobbling-avatar-glow--active',
                 ]"
                 aria-hidden="true"
@@ -202,6 +203,10 @@ const accountAccentClass = (account: { username: string }) =>
               <div class="relative px-3 pb-2">
                 <div class="account-profile-avatar absolute -top-8 left-3">
                   <span
+                    class="account-profile-avatar-backdrop pointer-events-none absolute -inset-1 rounded-full bg-popover"
+                    aria-hidden="true"
+                  ></span>
+                  <span
                     v-if="scrobblingStatus.configured && accountMenuOpen"
                     class="scrobbling-avatar-glow scrobbling-avatar-glow--active pointer-events-none absolute -inset-1 rounded-full"
                     :class="currentAccountAccentBackgroundClass"
@@ -210,7 +215,7 @@ const accountAccentClass = (account: { username: string }) =>
                   <div class="relative z-10">
                     <ProfileAvatarEditor
                       :model-value="store.currentUser?.avatar_url"
-                      :avatar-class="`size-20 border-4 ${currentAccountAccentClass}`"
+                      avatar-class="size-20"
                       :disabled="store.isIngressSession || savingAvatar"
                       @update:model-value="handleAvatarUpdate"
                     />
@@ -346,12 +351,7 @@ const accountAccentClass = (account: { username: string }) =>
 </template>
 
 <style scoped>
-.account-profile-avatar :deep([data-slot="avatar"]) {
-  border-color: var(--sidebar) !important;
-}
-
 .scrobbling-avatar-glow {
-  filter: brightness(0.7);
   z-index: 1;
 }
 
@@ -360,7 +360,6 @@ const accountAccentClass = (account: { username: string }) =>
 }
 
 .scrobbling-avatar-glow-base {
-  filter: brightness(0.7);
   opacity: 0.3;
   z-index: 1;
 }

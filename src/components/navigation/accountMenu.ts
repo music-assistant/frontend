@@ -31,6 +31,17 @@ const ACCOUNT_GLOW_BACKGROUND_CLASSES = [
   "bg-pink-500/60",
 ] as const;
 
+const ACCOUNT_BUTTON_GLOW_BACKGROUND_CLASSES = [
+  "bg-primary/90",
+  "bg-emerald-500/90",
+  "bg-amber-500/90",
+  "bg-rose-500/90",
+  "bg-violet-500/90",
+  "bg-cyan-500/90",
+  "bg-orange-500/90",
+  "bg-pink-500/90",
+] as const;
+
 const ACCOUNT_BUTTON_ACCENT_CLASSES = [
   "data-[state=open]:bg-primary/10",
   "data-[state=open]:bg-emerald-500/10",
@@ -58,6 +69,12 @@ export function accountAccentClass(username: string): string {
 
 export function accountAccentBackgroundClass(username: string): string {
   return ACCOUNT_GLOW_BACKGROUND_CLASSES[accountAccentIndex(username)] ?? "";
+}
+
+export function accountAccentButtonGlowClass(username: string): string {
+  return (
+    ACCOUNT_BUTTON_GLOW_BACKGROUND_CLASSES[accountAccentIndex(username)] ?? ""
+  );
 }
 
 export function accountSwitcherAccentClass(username: string): string {

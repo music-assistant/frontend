@@ -3,6 +3,7 @@ import navSidebarMenuSource from "@/components/navigation/NavSidebarMenu.vue?raw
 import navUserSource from "@/components/navigation/NavUser.vue?raw";
 import {
   accountAccentButtonClass,
+  accountAccentButtonGlowClass,
   accountAccentBackgroundClass,
   accountAccentClass,
   getConnectionStatusKey,
@@ -22,6 +23,7 @@ describe("account menu helpers", () => {
     );
     expect(accountAccentButtonClass("Alice")).not.toMatch(/^bg-/);
     expect(accountAccentBackgroundClass("Alice")).toMatch(/^bg-.*\/60$/);
+    expect(accountAccentButtonGlowClass("Alice")).toMatch(/^bg-.*\/90$/);
   });
 
   it("maps transport states to user-facing connection states", () => {
@@ -88,6 +90,10 @@ describe("account menu helpers", () => {
   it("renders scrobbling as a separate status signal around the avatar", () => {
     expect(navUserSource).toContain("scrobblingStatus.configured");
     expect(navUserSource).toContain("scrobbling-avatar-glow");
+    expect(navUserSource).toContain("account-profile-avatar-backdrop");
+    expect(navUserSource).toContain("rounded-full bg-popover");
+    expect(navUserSource).toContain('avatar-class="size-20"');
+    expect(navUserSource).not.toContain("size-20 border-4");
     expect(navUserSource).toContain('role="status"');
     expect(navUserSource).toContain("auth.scrobbling");
   });
@@ -98,6 +104,7 @@ describe("account menu helpers", () => {
     expect(navUserSource).toContain("scrobbling-avatar-pulse");
     expect(navUserSource).toContain("scrobbling-avatar-glow-base");
     expect(navUserSource).toContain("scrobbling-avatar-glow--active");
+    expect(navUserSource).not.toContain("filter: brightness");
     expect(navUserSource).toContain("prefers-reduced-motion: reduce");
   });
 
