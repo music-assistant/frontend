@@ -41,7 +41,9 @@ const handleCollapseSidebar = () => {
       <DropdownMenuItem @click="handleCollapseSidebar">
         <PanelLeftClose class="size-[18px]" />
         {{ $t("collapse_sidebar") }}
-        <Kbd class="ml-auto">{{ collapseSidebarHotkeyLabel }}</Kbd>
+        <Kbd v-if="!isMobile" class="ml-auto">
+          {{ collapseSidebarHotkeyLabel }}
+        </Kbd>
       </DropdownMenuItem>
     </DropdownMenuSubContent>
   </DropdownMenuSub>

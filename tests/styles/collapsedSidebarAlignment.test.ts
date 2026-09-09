@@ -119,6 +119,12 @@ describe("collapsed sidebar alignment", () => {
     expect(navShortcutsSource).toContain(':ripple="true"');
   });
 
+  it("removes the search menu item on mobile", () => {
+    expect(appSidebarSource).toMatch(
+      /item\.group === "explore"[\s\S]*!isMobile\.value \|\| item\.id !== "search"/,
+    );
+  });
+
   it("keeps the section menu mounted while switching customization modes", () => {
     expect(navMainSource).toContain('ref="listEl"');
     expect(navMainSource).toContain('class="relative"');

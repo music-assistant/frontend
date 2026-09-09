@@ -37,6 +37,7 @@ import {
 const router = useRouter();
 const { t } = useI18n();
 const { open: openCommandCenter } = useCommandCenter();
+const { toggleSidebar, setOpen, state, isMobile, setOpenMobile } = useSidebar();
 
 const editMode = computed(() => store.navMenuEditMode);
 
@@ -64,7 +65,10 @@ const navItems = computed(() =>
 );
 
 const discoverItems = computed(() =>
-  navItems.value.filter((item) => item.group === "explore"),
+  navItems.value.filter(
+    (item) =>
+      item.group === "explore" && (!isMobile.value || item.id !== "search"),
+  ),
 );
 const libraryItems = computed(() =>
   navItems.value.filter((item) => item.group === "library"),
@@ -101,7 +105,6 @@ const sections = computed(() => {
   return resolved;
 });
 
-const { toggleSidebar, setOpen, state, isMobile, setOpenMobile } = useSidebar();
 const { isDarkTheme, setThemePreference } = useThemePreference();
 const collapsed = computed(() => state.value === "collapsed");
 const themeToggleLabel = computed(() =>

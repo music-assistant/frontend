@@ -1,4 +1,5 @@
 import navHeaderSource from "@/components/navigation/NavHeaderMenu.vue?raw";
+import navSidebarMenuSource from "@/components/navigation/NavSidebarMenu.vue?raw";
 import navUserSource from "@/components/navigation/NavUser.vue?raw";
 import {
   accountAccentButtonClass,
@@ -53,6 +54,9 @@ describe("account menu helpers", () => {
   it("hides keyboard shortcuts from the mobile context menu", () => {
     expect(navHeaderSource).toContain('<template v-if="!isMobile">');
     expect(navHeaderSource).toContain("<NavKeyboardShortcuts />");
+    expect(navSidebarMenuSource).toContain(
+      '<Kbd v-if="!isMobile" class="ml-auto">',
+    );
   });
 
   it("copies only the current username from the account menu", () => {
