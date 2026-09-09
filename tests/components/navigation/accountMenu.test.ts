@@ -1,6 +1,9 @@
 import navHeaderSource from "@/components/navigation/NavHeaderMenu.vue?raw";
 import navSidebarMenuSource from "@/components/navigation/NavSidebarMenu.vue?raw";
 import navUserSource from "@/components/navigation/NavUser.vue?raw";
+import accountSwitcherSource from "@/components/navigation/AccountSwitcherDialog.vue?raw";
+import profileAvatarEditorSource from "@/components/profile/ProfileAvatarEditor.vue?raw";
+import profileAvatarEditorDialogSource from "@/components/profile/ProfileAvatarEditorDialog.vue?raw";
 import {
   accountAccentButtonClass,
   accountAccentButtonGlowClass,
@@ -59,6 +62,24 @@ describe("account menu helpers", () => {
     expect(navSidebarMenuSource).toContain(
       '<Kbd v-if="!isMobile" class="ml-auto">',
     );
+  });
+
+  it("uses a full-screen sheet for account switching on mobile", () => {
+    expect(accountSwitcherSource).toContain(':is="isMobile ? Sheet : Dialog"');
+    expect(accountSwitcherSource).toContain("SheetContent");
+    expect(accountSwitcherSource).toContain(
+      "h-dvh max-h-dvh w-full max-w-none",
+    );
+  });
+
+  it("uses a full-screen avatar editor sheet on mobile", () => {
+    expect(profileAvatarEditorDialogSource).toContain(
+      ':is="isMobile ? Sheet : Dialog"',
+    );
+    expect(profileAvatarEditorDialogSource).toContain(
+      "h-dvh max-h-dvh w-full max-w-none",
+    );
+    expect(profileAvatarEditorSource).toContain("openAvatarEditor");
   });
 
   it("copies only the current username from the account menu", () => {

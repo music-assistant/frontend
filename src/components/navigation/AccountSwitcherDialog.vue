@@ -10,6 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useSidebar } from "@/components/ui/sidebar";
 import { useAccountSwitcher } from "@/composables/useAccountSwitcher";
 import { authManager } from "@/plugins/auth";
 import {
@@ -32,6 +40,7 @@ const {
   signInToAccount,
   switchAccountsOpen,
 } = useAccountSwitcher();
+const { isMobile } = useSidebar();
 
 const accountAccentClass = (account: { username: string }) =>
   getAccountAccentClass(account.username);
@@ -40,15 +49,28 @@ const accountSwitcherAccentClass = (account: { username: string }) =>
 </script>
 
 <template>
-  <Dialog v-model:open="switchAccountsOpen">
-    <DialogContent class="max-w-md">
-      <DialogHeader>
-        <DialogTitle>{{ $t("auth.switch_account") }}</DialogTitle>
-        <DialogDescription>{{
-          $t("auth.switch_account_description")
-        }}</DialogDescription>
-      </DialogHeader>
-      <div class="grid gap-2">
+  <component :is="isMobile ? Sheet : Dialog" v-model:open="switchAccountsOpen">
+    <component
+      :is="isMobile ? SheetContent : DialogContent"
+      :class="
+        isMobile
+          ? 'h-dvh max-h-dvh w-full max-w-none overflow-hidden rounded-t-xl p-4'
+          : 'max-w-md'
+      "
+      v-bind="isMobile ? { side: 'bottom' } : {}"
+    >
+      <component
+        :is="isMobile ? SheetHeader : DialogHeader"
+        :class="isMobile ? 'px-0 pt-0 pr-10' : undefined"
+      >
+        <component :is="isMobile ? SheetTitle : DialogTitle">
+          {{ $t("auth.switch_account") }}
+        </component>
+        <component :is="isMobile ? SheetDescription : DialogDescription">
+          {{ $t("auth.switch_account_description") }}
+        </component>
+      </component>
+      <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
         <button
           v-for="item in availableAccounts"
           :key="item.account?.token || item.user?.user_id"
@@ -104,8 +126,8 @@ const accountSwitcherAccentClass = (account: { username: string }) =>
           {{ $t("auth.add_account") }}
         </button>
       </div>
-    </DialogContent>
-  </Dialog>
+    </component>
+  </component>
 
   <Dialog v-model:open="loginDialogOpen">
     <DialogContent class="max-w-sm">

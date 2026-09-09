@@ -28,6 +28,7 @@ import NavHomeAssistant from "./NavHomeAssistant.vue";
 import NavHeaderMenu from "./NavHeaderMenu.vue";
 import NavUser from "./NavUser.vue";
 import AccountSwitcherDialog from "./AccountSwitcherDialog.vue";
+import ProfileAvatarEditorDialog from "@/components/profile/ProfileAvatarEditorDialog.vue";
 import {
   getMenuItems,
   resolveMenuConfig,
@@ -300,6 +301,7 @@ onUnmounted(() => {
     </SidebarFooter>
   </Sidebar>
   <AccountSwitcherDialog />
+  <ProfileAvatarEditorDialog />
 </template>
 
 <style scoped>
