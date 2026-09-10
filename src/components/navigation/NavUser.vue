@@ -23,6 +23,7 @@ import { api } from "@/plugins/api";
 import { copyToClipboard } from "@/helpers/utils";
 import { useAccountSwitcher } from "@/composables/useAccountSwitcher";
 import { useScrobblingStatus } from "@/composables/useScrobblingStatus";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Activity, Copy, LogOut, Pencil, Server, UserRound } from "@lucide/vue";
 import { computed, ref } from "vue";
@@ -75,6 +76,13 @@ const scrobblingProviderNames = computed(() =>
 const scrobblingLabel = computed(() =>
   t("auth.scrobbling_ready", { providers: scrobblingProviderNames.value }),
 );
+const isScrobblingPlaybackActive = computed(() => {
+  const playbackState = store.activePlayer?.playback_state;
+  return (
+    playbackState === PlaybackState.PLAYING ||
+    playbackState === PlaybackState.PAUSED
+  );
+});
 
 const handleProfile = () => {
   setOpenMobile(false);
@@ -145,13 +153,17 @@ const accountAccentClass = (account: { username: string }) =>
               class="relative mr-1 size-[34px] shrink-0 group-data-[collapsible=icon]:mr-0"
             >
               <span
-                v-if="scrobblingStatus.configured"
+                v-if="scrobblingStatus.configured && isScrobblingPlaybackActive"
                 class="scrobbling-avatar-glow-base pointer-events-none absolute inset-0 rounded-full"
                 :class="getAccountAccentButtonGlowClass(username)"
                 aria-hidden="true"
               ></span>
               <span
-                v-if="scrobblingStatus.configured && !accountMenuOpen"
+                v-if="
+                  scrobblingStatus.configured &&
+                  isScrobblingPlaybackActive &&
+                  !accountMenuOpen
+                "
                 class="scrobbling-avatar-glow pointer-events-none absolute inset-0 rounded-full"
                 :class="[
                   getAccountAccentButtonGlowClass(username),
@@ -207,7 +219,11 @@ const accountAccentClass = (account: { username: string }) =>
                     aria-hidden="true"
                   ></span>
                   <span
-                    v-if="scrobblingStatus.configured && accountMenuOpen"
+                    v-if="
+                      scrobblingStatus.configured &&
+                      isScrobblingPlaybackActive &&
+                      accountMenuOpen
+                    "
                     class="scrobbling-avatar-glow scrobbling-avatar-glow--active pointer-events-none absolute -inset-1 rounded-full"
                     :class="currentAccountAccentBackgroundClass"
                     aria-hidden="true"
@@ -222,7 +238,9 @@ const accountAccentClass = (account: { username: string }) =>
                   </div>
                 </div>
                 <div
-                  v-if="scrobblingStatus.configured"
+                  v-if="
+                    scrobblingStatus.configured && isScrobblingPlaybackActive
+                  "
                   class="absolute top-2 right-3 left-26 flex min-w-0 items-center gap-1.5 rounded-lg bg-muted/50 px-2 py-1.5"
                   role="status"
                   :aria-label="scrobblingLabel"
