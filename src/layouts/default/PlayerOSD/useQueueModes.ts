@@ -27,8 +27,11 @@ export function useQueueModes() {
   );
 
   // Repeat one/all temporarily suppresses autoplay without changing the saved
-  // preference the server keeps for the queue.
+  // preference the server keeps for the queue. Older servers keep autoplay
+  // running during repeat, so the lock UI only shows when the server actually
+  // enforces it.
   const repeatLocked = computed(() => {
+    if (!api.supportsRepeatAutoplayLock) return false;
     const repeatMode = queue.value?.repeat_mode;
     return repeatMode === RepeatMode.ONE || repeatMode === RepeatMode.ALL;
   });
