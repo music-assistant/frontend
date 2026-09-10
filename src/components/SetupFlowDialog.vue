@@ -98,12 +98,15 @@
             </Button>
             <div
               v-if="step.copy_text"
-              class="flex items-center gap-2 rounded-md border px-3 py-2"
+              class="flex w-full max-w-full items-center gap-2 rounded-md border px-3 py-2"
             >
-              <code class="font-mono text-sm">{{ step.copy_text }}</code>
+              <code class="min-w-0 flex-1 break-all font-mono text-sm">{{
+                step.copy_text
+              }}</code>
               <Button
                 variant="ghost"
                 size="icon"
+                class="shrink-0"
                 :aria-label="$t('copy')"
                 :title="$t('copy')"
                 @click="copyExternalText"
