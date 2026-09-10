@@ -107,8 +107,8 @@
                 variant="ghost"
                 size="icon"
                 class="shrink-0"
-                :aria-label="$t('copy')"
-                :title="$t('copy')"
+                :aria-label="$t('settings.setup_flow.copy')"
+                :title="$t('settings.setup_flow.copy')"
                 @click="copyExternalText"
               >
                 <Copy :size="16" />
