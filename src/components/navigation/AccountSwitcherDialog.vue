@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import PanelDragHandle from "@/components/PanelDragHandle.vue";
 import {
   Dialog,
   DialogContent,
@@ -54,14 +55,20 @@ const accountSwitcherAccentClass = (account: { username: string }) =>
       :is="isMobile ? SheetContent : DialogContent"
       :class="
         isMobile
-          ? 'h-dvh max-h-dvh w-full max-w-none overflow-hidden rounded-t-xl p-4'
+          ? 'account-switcher-mobile-panel h-dvh max-h-dvh w-full max-w-none gap-0 overflow-hidden rounded-none border-0 p-0'
           : 'max-w-md'
       "
-      v-bind="isMobile ? { side: 'bottom' } : {}"
+      :data-player-panel="isMobile ? '' : undefined"
+      v-bind="isMobile ? { side: 'bottom', showClose: false } : {}"
     >
+      <PanelDragHandle
+        v-if="isMobile"
+        swipe-anywhere
+        @dismiss="switchAccountsOpen = false"
+      />
       <component
         :is="isMobile ? SheetHeader : DialogHeader"
-        :class="isMobile ? 'px-0 pt-0 pr-10' : undefined"
+        :class="isMobile ? 'px-4 pb-3 pt-0' : undefined"
       >
         <component :is="isMobile ? SheetTitle : DialogTitle">
           {{ $t("auth.switch_account") }}
@@ -70,7 +77,7 @@ const accountSwitcherAccentClass = (account: { username: string }) =>
           {{ $t("auth.switch_account_description") }}
         </component>
       </component>
-      <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+      <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pb-4">
         <button
           v-for="item in availableAccounts"
           :key="item.account?.token || item.user?.user_id"
@@ -167,3 +174,11 @@ const accountSwitcherAccentClass = (account: { username: string }) =>
     </DialogContent>
   </Dialog>
 </template>
+
+<style scoped>
+.account-switcher-mobile-panel {
+  box-sizing: border-box;
+  padding: var(--device-inset-top) var(--device-inset-right)
+    var(--device-inset-bottom) var(--device-inset-left);
+}
+</style>

@@ -54,7 +54,9 @@ const save = () => saveAvatar(tempAvatarUrl.value);
           ? 'h-dvh max-h-dvh w-full max-w-none overflow-hidden rounded-t-xl p-4'
           : 'sm:max-w-md'
       "
-      v-bind="isMobile ? { side: 'bottom' } : {}"
+      :style="isMobile ? 'z-index: 100004 !important' : undefined"
+      v-bind="isMobile ? { side: 'bottom', overlayClass: '!z-[100003]' } : {}"
+      :overlay-style="isMobile ? 'z-index: 100003 !important' : undefined"
     >
       <component
         :is="isMobile ? SheetHeader : DialogHeader"
