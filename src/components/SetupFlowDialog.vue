@@ -92,10 +92,6 @@
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
-            <Button size="lg" @click="openExternal">
-              <ExternalLink :size="18" />
-              {{ $t("settings.setup_flow.open_external") }}
-            </Button>
             <div
               v-if="step.copy_text"
               class="flex w-full max-w-full items-center gap-2 rounded-md border px-3 py-2"
@@ -114,6 +110,10 @@
                 <Copy :size="16" />
               </Button>
             </div>
+            <Button size="lg" @click="openExternal">
+              <ExternalLink :size="18" />
+              {{ $t("settings.setup_flow.open_external") }}
+            </Button>
             <div
               v-if="externalHost"
               class="text-muted-foreground flex items-center gap-1.5 text-xs"
