@@ -726,7 +726,7 @@ async function copyExternalText() {
   const copyText = step.value?.copy_text;
   if (!copyText) return;
   if (await copyToClipboard(copyText)) {
-    toast.success($t("settings.setup_flow.copied"));
+    toast.success($t("settings.setup_flow.copy_success"));
   } else {
     toast.error($t("settings.setup_flow.copy_failed"));
   }
