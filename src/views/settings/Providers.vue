@@ -24,6 +24,7 @@
         :key="item.instance_id"
         link
         :show-menu-btn="true"
+        :menu-button-label="`${$t('more_options')}: ${getProviderName(item)}`"
         :class="{
           'provider-disabled': !item.enabled,
         }"
@@ -181,6 +182,8 @@
               icon="mdi-dots-vertical"
               size="small"
               variant="text"
+              :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
+              :title="`${$t('more_options')}: ${getProviderName(item)}`"
               @click.stop="onMenu($event, item)"
             />
           </template>
@@ -241,6 +244,22 @@
       </div>
     </div>
   </Container>
+
+  <!-- Audio analysis status hint -->
+  <div
+    v-if="showAudioAnalysisStatusHint"
+    class="border-primary/20 bg-primary/5 mx-5 mt-4 flex flex-wrap items-center gap-4 rounded-xl border px-4 py-3"
+  >
+    <Info class="text-primary size-5 shrink-0" />
+    <p class="text-muted-foreground m-0 flex-1 text-sm">
+      {{ $t("settings.audio_analysis_status_hint") }}
+    </p>
+    <Button as-child variant="outline" size="sm">
+      <RouterLink to="/settings/audio-analysis" class="no-underline">
+        {{ $t("settings.audio_analysis_status_link") }}
+      </RouterLink>
+    </Button>
+  </div>
   <AddProviderDialog v-model:show="showAddProviderDialog" />
 </template>
 
@@ -261,6 +280,7 @@ import {
 } from "@/helpers/provider_config";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { requireServerVersion } from "@/plugins/api/helpers";
 import {
   EventType,
   ProviderConfig,
@@ -271,10 +291,10 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Plus } from "@lucide/vue";
+import { Info, Plus } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
@@ -290,6 +310,13 @@ const providersViewMode = inject<{
 const viewMode = computed(() => providersViewMode.viewMode.value);
 
 const currentType = computed(() => route.query.types as string | undefined);
+
+// the status page only exists on servers that ship audio analysis
+const showAudioAnalysisStatusHint = computed(
+  () =>
+    currentType.value === ProviderType.AUDIO_ANALYSIS &&
+    requireServerVersion("2.9.0"),
+);
 
 const addProviderLabel = computed(() => {
   const type = currentType.value;

@@ -3,6 +3,10 @@
   <Icon
     v-bind="{ ...icon, ...$attrs }"
     :disabled="!player || !canPrevious || isLoading"
+    :aria-label="
+      previousChapter ? $t('previous_chapter') : $t('previous_track')
+    "
+    :title="previousChapter ? $t('previous_chapter') : $t('previous_track')"
     variant="button"
     @click="
       previousChapter

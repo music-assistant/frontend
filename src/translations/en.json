@@ -39,6 +39,8 @@
     "dark_mode": "Dark mode",
     "delete_db": "Delete item from database",
     "details": "Details",
+    "increase_value": "Increase value",
+    "decrease_value": "Decrease value",
     "enter_url": "Enter the URL you want to manually add to the database",
     "goto_album": "View album {0}",
     "goto_artist": "View artist {0}",
@@ -57,6 +59,10 @@
     "perform_action": "Perform action on {0} item(s)",
     "play": "Play",
     "play_album_from": "Play Album from here",
+    "previous_track": "Previous track",
+    "next_track": "Next track",
+    "previous_chapter": "Previous chapter",
+    "next_chapter": "Next chapter",
     "play_next": "Play Next",
     "play_now": "Play Now",
     "play_on": "Play on: {0}",
@@ -682,6 +688,8 @@
         "audio_analysis_providers": "Audio analysis",
         "audio_analysis_providers_description": "Manage providers that analyze your audio",
         "audio_analysis": "Audio analysis",
+        "audio_analysis_status_hint": "See how the analysis is progressing per provider, and any failures, on the status page.",
+        "audio_analysis_status_link": "Open audio analysis status",
         "sendspin_static_delay": {
             "label": "Static playback delay (ms)",
             "description": "Offset in milliseconds to keep this player in sync with other players. Increase if audio plays too late, for example to compensate for latency from an amp, active speakers, or the OS."
@@ -914,6 +922,8 @@
         "select_items": "Select multiple items",
         "sort_options": "Sort options",
         "toggle_view_mode": "Toggle view mode list\/thumbs",
+        "view_mode_current": "Current view: {0}. Change view mode",
+        "view_mode_switch": "Current view: {0}. Switch to {1}",
         "filter_favorites": "Only show favorites",
         "favorite": "Mark\/unmark as a favorite",
         "open_provider_link": "Open this item on the provider's website",
@@ -1009,6 +1019,7 @@
     "create_playlist_on": "Create new playlist on {0}",
     "view": {
         "list": "List view",
+        "card": "Card view",
         "panel": "Thumbs view",
         "panel_compact": "Compact thumbs view",
         "discovery": "Discovery"
@@ -2276,6 +2287,7 @@
     "autoplay_disable": "Disable Autoplay",
     "autoplay": "Autoplay",
     "autoplay_explanation": "When your queue runs out, additional tracks are added automatically so the music will not stop.",
+    "autoplay_repeat_disabled": "Autoplay has been automatically turned off because repeat is on",
     "autoplay_active": "Autoplay is on.",
     "genre_content_type": {
         "all": "All",

@@ -13,7 +13,9 @@
     <Button
       size="icon"
       :disabled="loading"
-      :aria-label="$t('tooltip.show_menu')"
+      :aria-label="menuButtonLabel || $t('tooltip.show_menu')"
+      :title="menuButtonLabel || $t('tooltip.show_menu')"
+      aria-haspopup="menu"
       @click="emit('menu')"
     >
       <ChevronDown class="size-5" />
@@ -33,11 +35,13 @@ import { ChevronDown, Play } from "@lucide/vue";
 // properties
 export interface Props {
   text?: string;
+  menuButtonLabel?: string;
   disabled?: boolean;
   loading?: boolean;
 }
 withDefaults(defineProps<Props>(), {
   text: undefined,
+  menuButtonLabel: undefined,
   disabled: false,
   loading: false,
 });
