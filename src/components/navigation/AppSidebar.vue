@@ -234,14 +234,14 @@ onUnmounted(() => {
       <NavShortcuts :edit-mode="editMode" />
     </SidebarContent>
     <SidebarFooter
-      class="h-16 pb-3 pr-5 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:pb-3 group-data-[collapsible=icon]:pr-0"
+      class="h-16 pb-3 pr-5 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:pb-4 group-data-[collapsible=icon]:pr-0"
     >
       <!-- Kiosk mode leaves no Home Assistant chrome on screen, so this is the
            only way back to it. -->
       <NavHomeAssistant v-if="haState.kioskModeEnabled" />
       <div
         v-else
-        class="flex w-full items-center pt-1 [&>button]:rounded-md"
+        class="flex w-full items-center [&>button]:rounded-md"
         :class="[
           collapsed ? 'flex-col' : 'flex-row',
           'group-data-[collapsible=icon]:gap-2',
