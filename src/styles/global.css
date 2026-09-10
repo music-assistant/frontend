@@ -139,8 +139,8 @@ html {
      100000  sheets
       100001  menus opened from a sheet or a player bar popout
       100002  submenus opened from a sheet or a player bar popout
-      100003  mobile sheet overlays that must clear account menus
-      100004  mobile sheets that must clear account menus
+      100003  mobile sheet/dialog overlays that must clear account menus/sheets
+      100004  mobile sheets/dialogs that must clear account menus/sheets
       999999  item context menu
 
    Values below this range mostly order elements inside a component's own

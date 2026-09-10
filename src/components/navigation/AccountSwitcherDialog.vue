@@ -137,7 +137,12 @@ const accountSwitcherAccentClass = (account: { username: string }) =>
   </component>
 
   <Dialog v-model:open="loginDialogOpen">
-    <DialogContent class="max-w-sm">
+    <DialogContent
+      class="max-w-sm"
+      :style="isMobile ? 'z-index: 100004 !important' : undefined"
+      :overlay-class="isMobile ? '!z-[100003]' : undefined"
+      :overlay-style="isMobile ? 'z-index: 100003 !important' : undefined"
+    >
       <DialogHeader>
         <DialogTitle>{{ $t("auth.login") }}</DialogTitle>
         <DialogDescription>{{ loginUser?.username }}</DialogDescription>

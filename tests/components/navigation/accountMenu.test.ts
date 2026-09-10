@@ -72,6 +72,12 @@ describe("account menu helpers", () => {
     );
   });
 
+  it("keeps the account sign-in dialog above the mobile account sheet", () => {
+    expect(accountSwitcherSource).toContain("z-index: 100004 !important");
+    expect(accountSwitcherSource).toContain("!z-[100003]");
+    expect(accountSwitcherSource).toContain("overlay-style");
+  });
+
   it("uses a full-screen avatar editor sheet on mobile", () => {
     expect(profileAvatarEditorDialogSource).toContain(
       ':is="isMobile ? Sheet : Dialog"',
