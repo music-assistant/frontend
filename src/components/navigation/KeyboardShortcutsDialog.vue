@@ -29,15 +29,18 @@ const shortcutSections = computed(() => [
     shortcuts: [
       {
         label: t("shortcut_play_pause"),
-        keys: [
-          [modifierKey, "Space"],
-          [modifierKey, "K"],
-        ],
+        keys: [["Space"]],
       },
       { label: t("shortcut_seek_back"), keys: [[modifierKey, "←"]] },
       { label: t("shortcut_seek_forward"), keys: [[modifierKey, "→"]] },
-      { label: t("shortcut_volume_up"), keys: [[modifierKey, "↑"]] },
-      { label: t("shortcut_volume_down"), keys: [[modifierKey, "↓"]] },
+      {
+        label: t("shortcut_volume_up"),
+        keys: [[modifierKey, shiftKey, "↑"]],
+      },
+      {
+        label: t("shortcut_volume_down"),
+        keys: [[modifierKey, shiftKey, "↓"]],
+      },
       { label: t("shortcut_mute"), keys: [[modifierKey, "M"]] },
       {
         label: t("open_fullscreen_player"),
