@@ -727,6 +727,8 @@ async function copyExternalText() {
   if (!copyText) return;
   if (await copyToClipboard(copyText)) {
     toast.success($t("settings.setup_flow.copied"));
+  } else {
+    toast.error($t("settings.setup_flow.copy_failed"));
   }
 }
 
