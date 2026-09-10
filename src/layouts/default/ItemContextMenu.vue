@@ -163,9 +163,10 @@ const showPlayMenuHeader = ref<boolean>(false);
 
 const visibleItems = computed(() => items.value.filter((x) => !x.hide));
 
-const reference = computed(() => ({
-  getBoundingClientRect: () => new DOMRect(posX.value, posY.value, 0, 0),
-}));
+const reference = computed(() => {
+  const rect = new DOMRect(posX.value, posY.value, 0, 0);
+  return { getBoundingClientRect: () => rect };
+});
 
 const MenuItemIcon = (props: { icon?: string | Component; size?: number }) => {
   if (!props.icon) return null;
