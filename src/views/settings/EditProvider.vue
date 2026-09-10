@@ -100,6 +100,7 @@
               <Button
                 variant="ghost"
                 size="icon-sm"
+                :aria-label="$t('settings.provider_name')"
                 :title="$t('settings.provider_name')"
                 @click="showRenameDialog = true"
               >
