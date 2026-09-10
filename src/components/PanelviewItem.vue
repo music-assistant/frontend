@@ -54,6 +54,7 @@
         <MAButton
           variant="list"
           icon="mdi-dots-vertical"
+          :aria-label="menuButtonLabel"
           @click.stop="onMenu"
         />
       </div>
@@ -69,6 +70,7 @@ import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
 import { ContentType, type MediaItemType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
@@ -101,6 +103,10 @@ const compProps = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: "select", item: MediaItemType, selected: boolean): void;
 }>();
+
+const menuButtonLabel = computed(
+  () => `${$t("more_options")}: ${compProps.item.name}`,
+);
 
 // computed: hi-res audio details (kHz/bit-depth) for lossless formats
 const HiResDetails = computed(() => {

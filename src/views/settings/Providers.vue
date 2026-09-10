@@ -24,6 +24,7 @@
         :key="item.instance_id"
         link
         :show-menu-btn="true"
+        :menu-button-label="`${$t('more_options')}: ${getProviderName(item)}`"
         :class="{
           'provider-disabled': !item.enabled,
         }"
@@ -181,6 +182,8 @@
               icon="mdi-dots-vertical"
               size="small"
               variant="text"
+              :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
+              :title="`${$t('more_options')}: ${getProviderName(item)}`"
               @click.stop="onMenu($event, item)"
             />
           </template>
