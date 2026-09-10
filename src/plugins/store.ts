@@ -47,6 +47,8 @@ interface Store {
   forceMobileLayout?: boolean;
   mobileLayout: boolean;
   currentUser?: User;
+  // the scopes granted to each user role, keyed by role id
+  roleScopes: Record<string, string[]>;
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
   isOnboarding: boolean;
@@ -96,6 +98,7 @@ export const store: Store = reactive({
       parseBool(store.forceMobileLayout),
   ),
   currentUser: undefined,
+  roleScopes: {},
   serverInfo: undefined,
   isIngressSession: computed(() =>
     isHomeAssistantIngressSession(api.serverInfo.value),

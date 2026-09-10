@@ -1,6 +1,9 @@
 import { createGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
+import { Scope, UserRole } from "@/plugins/api/interfaces";
 import { AuthManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { user } from "../fixtures/user";
 
 const { localStorageMock, sessionStorageMock } = vi.hoisted(() => {
   const createStorage = () => {
@@ -234,6 +237,47 @@ describe("AuthManager guest sessions", () => {
     expect(window.location.hash).toBe("#/discover");
 
     reloadSpy.mockRestore();
+  });
+});
+
+describe("AuthManager scopes", () => {
+  beforeEach(() => {
+    store.currentUser = undefined;
+    store.roleScopes = {};
+  });
+
+  it("grants a scope its role holds", () => {
+    store.currentUser = user({ role: UserRole.USER });
+    store.roleScopes = { user: [Scope.CONFIG_PROVIDERS_OWN] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(true);
+  });
+
+  it("grants every scope to a role holding the wildcard", () => {
+    store.currentUser = user({ role: UserRole.ADMIN });
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(true);
+  });
+
+  it("denies a scope its role does not hold", () => {
+    store.currentUser = user({ role: UserRole.USER });
+    store.roleScopes = { user: [Scope.LIBRARY_READ] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(false);
+  });
+
+  it("denies every scope to a role the server did not list", () => {
+    store.currentUser = user({ role: "power_user" as UserRole });
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.LIBRARY_READ)).toBe(false);
+  });
+
+  it("denies every scope when nobody is signed in", () => {
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.LIBRARY_READ)).toBe(false);
   });
 });
 

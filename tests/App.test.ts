@@ -59,6 +59,7 @@ const {
     getLibraryRadiosCount: vi.fn<MusicAssistantApi["getLibraryRadiosCount"]>(),
     getLibraryTracksCount: vi.fn<MusicAssistantApi["getLibraryTracksCount"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
+    getRoleScopes: vi.fn<MusicAssistantApi["getRoleScopes"]>(),
     initialize: vi.fn<MusicAssistantApi["initialize"]>(),
     isRemoteConnection: { value: false },
     requireAuthentication: vi.fn<MusicAssistantApi["requireAuthentication"]>(),
@@ -131,6 +132,7 @@ const {
       forceMobileLayout: false,
       isIngressSession: false,
       isOnboarding: false,
+      roleScopes: {} as Record<string, string[]>,
       serverInfo: undefined as unknown,
     },
     webPlayerMock: {
@@ -349,6 +351,7 @@ describe("App initialization", () => {
     mockProxyEnsureReady.mockResolvedValue(undefined);
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
+    apiMock.getRoleScopes.mockResolvedValue({});
     haStateMock.isSubscribed = false;
     haStateMock.kioskModeEnabled = false;
     mockGetKioskModePreference.mockReturnValue(true);

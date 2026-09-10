@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   afterEachHooks: [] as NavigationHookAfter[],
   apiState: { value: "initialized" },
   globalGuards: [] as NavigationGuardWithThis<undefined>[],
+  hasScope: vi.fn(() => false),
   isDashboardViewer: vi.fn(() => false),
   isGuestAccessSession: vi.fn(() => false),
   router: undefined as Router | undefined,
@@ -46,6 +47,7 @@ vi.mock("@/plugins/api", async () => {
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
+    hasScope: mocks.hasScope,
     isDashboardViewer: mocks.isDashboardViewer,
     isGuestAccessSession: mocks.isGuestAccessSession,
   },
@@ -122,6 +124,7 @@ const PLAYER_SETTINGS_ROUTES = [
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.apiState.value = ConnectionState.INITIALIZED;
+  mocks.hasScope.mockReturnValue(false);
   mocks.isDashboardViewer.mockReturnValue(false);
   mocks.isGuestAccessSession.mockReturnValue(false);
   mocks.store.currentUser = undefined;
@@ -422,6 +425,44 @@ describe("global navigation guard", () => {
       invokeGuard(
         globalGuard,
         resolveRoute("/settings/editplayer/player-1/options"),
+      ),
+    ).resolves.toBeUndefined();
+  });
+
+  it("lets a member with the scope open their own music sources", async () => {
+    mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockReturnValue(true);
+
+    await expect(
+      invokeGuard(globalGuard, resolveRoute("/settings/my-music-sources")),
+    ).resolves.toBeUndefined();
+    expect(mocks.hasScope).toHaveBeenCalledWith("config.providers.own");
+  });
+
+  it("redirects a member without the scope away from their own music sources", async () => {
+    mocks.store.currentUser = { role: "user", username: "listener" };
+
+    await expect(
+      invokeGuard(globalGuard, resolveRoute("/settings/my-music-sources")),
+    ).resolves.toEqual({ name: "discover" });
+  });
+
+  it("gates the provider options on the same scope", async () => {
+    mocks.store.currentUser = { role: "user", username: "listener" };
+
+    await expect(
+      invokeGuard(
+        globalGuard,
+        resolveRoute("/settings/editprovider/spotify--abc"),
+      ),
+    ).resolves.toEqual({ name: "discover" });
+
+    mocks.hasScope.mockReturnValue(true);
+
+    await expect(
+      invokeGuard(
+        globalGuard,
+        resolveRoute("/settings/editprovider/spotify--abc"),
       ),
     ).resolves.toBeUndefined();
   });

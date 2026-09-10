@@ -205,25 +205,6 @@
                 </Field>
               </template>
             </form.Field>
-
-            <form.Field name="providerFilter">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel>
-                    {{ $t("auth.provider_filter") }}
-                  </FieldLabel>
-                  <MultiSelect
-                    :model-value="field.state.value"
-                    :options="providerOptions"
-                    :placeholder="$t('auth.select_providers')"
-                    @update:model-value="field.handleChange"
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.provider_filter_hint") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
           </FieldGroup>
         </form>
       </div>
@@ -278,7 +259,7 @@ import {
 import { editUserSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
-import { ProviderType, UserRole } from "@/plugins/api/interfaces";
+import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import MultiSelect from "./MultiSelect.vue";
 
@@ -342,16 +323,6 @@ const playerOptions = computed(() => {
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 
-const providerOptions = computed(() => {
-  return Object.values(api.providers)
-    .filter((provider) => provider.type === ProviderType.MUSIC)
-    .map((provider) => ({
-      label: provider.name,
-      value: provider.instance_id,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
 const isCurrentUser = computed(() => {
   if (!props.user || !store.currentUser) return false;
   return props.user.user_id === store.currentUser.user_id;
@@ -366,7 +337,6 @@ const form = useForm({
     password: "",
     confirmPassword: "",
     playerFilter: props.user?.player_filter || [],
-    providerFilter: props.user?.provider_filter || [],
   },
   validators: {
     onSubmit: editUserSchema(t),
@@ -384,7 +354,6 @@ const form = useForm({
         role?: UserRole;
         password?: string;
         player_filter?: string[];
-        provider_filter?: string[];
       } = {};
 
       if (value.username !== props.user.username) {
@@ -409,14 +378,6 @@ const form = useForm({
         JSON.stringify([...currentPlayerFilter].sort())
       ) {
         updates.player_filter = value.playerFilter;
-      }
-
-      const currentProviderFilter = props.user.provider_filter;
-      if (
-        JSON.stringify([...value.providerFilter].sort()) !==
-        JSON.stringify([...currentProviderFilter].sort())
-      ) {
-        updates.provider_filter = value.providerFilter;
       }
 
       await api.updateUser(props.user.user_id, updates);
@@ -446,7 +407,6 @@ const resetForm = () => {
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
     form.setFieldValue("playerFilter", props.user.player_filter);
-    form.setFieldValue("providerFilter", props.user.provider_filter);
   }
 };
 
