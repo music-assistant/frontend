@@ -248,6 +248,26 @@ describe("SetupFlowDialog", () => {
     expect(toastMock.success).toHaveBeenCalledOnce();
   });
 
+  it("shows an error toast when copying an external step's copy text fails", async () => {
+    copyToClipboardMock.mockResolvedValue(false);
+    apiMock.setupPlayer.mockResolvedValue({
+      ...terminalStep(FlowStepType.EXTERNAL),
+      copy_text: "123456",
+    });
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({ kind: "player", playerId: "player-1" });
+    await wrapper.get('[aria-label="copy"]').trigger("click");
+
+    expect(copyToClipboardMock).toHaveBeenCalledExactlyOnceWith("123456");
+    expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
+      "settings.setup_flow.copy_failed",
+    );
+    expect(toastMock.success).not.toHaveBeenCalled();
+  });
+
   it("closes without an abort when a flow finishes silently", async () => {
     apiMock.setupPlayer.mockResolvedValue({
       ...terminalStep(FlowStepType.FINISH),
