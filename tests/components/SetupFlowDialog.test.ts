@@ -242,7 +242,9 @@ describe("SetupFlowDialog", () => {
     });
 
     await launchSetupFlow?.({ kind: "player", playerId: "player-1" });
-    await wrapper.get('[aria-label="copy"]').trigger("click");
+    await wrapper
+      .get('[aria-label="settings.setup_flow.copy"]')
+      .trigger("click");
 
     expect(copyToClipboardMock).toHaveBeenCalledExactlyOnceWith("123456");
     expect(toastMock.success).toHaveBeenCalledOnce();
@@ -259,7 +261,9 @@ describe("SetupFlowDialog", () => {
     });
 
     await launchSetupFlow?.({ kind: "player", playerId: "player-1" });
-    await wrapper.get('[aria-label="copy"]').trigger("click");
+    await wrapper
+      .get('[aria-label="settings.setup_flow.copy"]')
+      .trigger("click");
 
     expect(copyToClipboardMock).toHaveBeenCalledExactlyOnceWith("123456");
     expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(

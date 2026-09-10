@@ -770,6 +770,7 @@
             "external_host": "Opens {0}",
             "session_ended_title": "Setup session ended",
             "session_ended_text": "The setup session ended — it may have completed. Check your providers or players to confirm.",
+            "copy": "Copy",
             "copy_success": "Copied to clipboard",
             "copy_failed": "Failed to copy to clipboard"
         },
