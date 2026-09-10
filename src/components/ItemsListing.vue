@@ -1771,6 +1771,8 @@ const keyListener = function (e: KeyboardEvent) {
   } else if (
     !searchHasFocus.value &&
     e.key.length == 1 &&
+    // Space belongs to the play/pause shortcut, and no search starts with one
+    e.key != " " &&
     !e.ctrlKey &&
     !e.metaKey
   ) {
