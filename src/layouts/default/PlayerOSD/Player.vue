@@ -180,25 +180,25 @@ const seekBy = (offset: number) => {
 useHotkeys(
   [
     {
-      hotkey: "Space",
+      hotkey: "Mod+Space",
       callback: () => playerCommand(api.playerCommandPlayPause.bind(api)),
     },
     {
-      hotkey: "K",
+      hotkey: "Mod+K",
       callback: () => playerCommand(api.playerCommandPlayPause.bind(api)),
     },
-    { hotkey: "ArrowLeft", callback: () => seekBy(-10) },
-    { hotkey: "ArrowRight", callback: () => seekBy(10) },
+    { hotkey: "Mod+ArrowLeft", callback: () => seekBy(-10) },
+    { hotkey: "Mod+ArrowRight", callback: () => seekBy(10) },
     {
-      hotkey: "ArrowUp",
+      hotkey: "Mod+ArrowUp",
       callback: () => playerCommand(api.playerCommandVolumeUp.bind(api)),
     },
     {
-      hotkey: "ArrowDown",
+      hotkey: "Mod+ArrowDown",
       callback: () => playerCommand(api.playerCommandVolumeDown.bind(api)),
     },
     {
-      hotkey: "M",
+      hotkey: "Mod+M",
       callback: () => playerCommand(api.playerCommandMuteToggle.bind(api)),
     },
     {

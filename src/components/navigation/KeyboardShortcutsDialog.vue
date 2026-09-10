@@ -20,39 +20,45 @@ const shiftKey = isMacPlatform ? "⇧" : "Shift";
 
 interface Shortcut {
   label: string;
-  keys: string[];
+  keys: string[][];
 }
 
 const shortcutSections = computed(() => [
   {
     label: t("keyboard_shortcuts_sections.player"),
     shortcuts: [
-      { label: t("shortcut_play_pause"), keys: ["Space", "K"] },
-      { label: t("shortcut_seek_back"), keys: ["←"] },
-      { label: t("shortcut_seek_forward"), keys: ["→"] },
-      { label: t("shortcut_volume_up"), keys: ["↑"] },
-      { label: t("shortcut_volume_down"), keys: ["↓"] },
-      { label: t("shortcut_mute"), keys: ["M"] },
+      {
+        label: t("shortcut_play_pause"),
+        keys: [
+          [modifierKey, "Space"],
+          [modifierKey, "K"],
+        ],
+      },
+      { label: t("shortcut_seek_back"), keys: [[modifierKey, "←"]] },
+      { label: t("shortcut_seek_forward"), keys: [[modifierKey, "→"]] },
+      { label: t("shortcut_volume_up"), keys: [[modifierKey, "↑"]] },
+      { label: t("shortcut_volume_down"), keys: [[modifierKey, "↓"]] },
+      { label: t("shortcut_mute"), keys: [[modifierKey, "M"]] },
       {
         label: t("open_fullscreen_player"),
-        keys: [modifierKey, shiftKey, "F"],
+        keys: [[modifierKey, shiftKey, "F"]],
       },
-      { label: t("players"), keys: [modifierKey, "P"] },
-      { label: t("lyrics_show"), keys: [modifierKey, shiftKey, "L"] },
-      { label: t("shortcut_mute"), keys: [modifierKey, shiftKey, "M"] },
+      { label: t("players"), keys: [[modifierKey, "P"]] },
+      { label: t("lyrics_show"), keys: [[modifierKey, shiftKey, "L"]] },
+      { label: t("shortcut_mute"), keys: [[modifierKey, shiftKey, "M"]] },
       {
         label: t("previous_track"),
-        keys: [modifierKey, shiftKey, "←"],
+        keys: [[modifierKey, shiftKey, "←"]],
       },
-      { label: t("next_track"), keys: [modifierKey, shiftKey, "→"] },
+      { label: t("next_track"), keys: [[modifierKey, shiftKey, "→"]] },
     ] satisfies Shortcut[],
   },
   {
     label: t("keyboard_shortcuts_sections.general"),
     shortcuts: [
-      { label: t("command_center.title"), keys: [modifierKey, "K"] },
-      { label: t("sidebar.title"), keys: [modifierKey, "B"] },
-      { label: t("keyboard_shortcuts"), keys: [modifierKey, "/"] },
+      { label: t("command_center.title"), keys: [[modifierKey, "K"]] },
+      { label: t("sidebar.title"), keys: [[modifierKey, "B"]] },
+      { label: t("keyboard_shortcuts"), keys: [[modifierKey, "/"]] },
     ] satisfies Shortcut[],
   },
 ]);
@@ -94,10 +100,17 @@ onUnmounted(() => eventbus.off("keyboardShortcutsDialog", openDialog));
             class="flex items-center justify-between gap-4 rounded-md border px-3 py-2"
           >
             <span class="text-sm">{{ shortcut.label }}</span>
-            <span class="flex shrink-0 items-center gap-1">
-              <Kbd v-for="key in shortcut.keys" :key="key" class="font-mono">
-                {{ key }}
-              </Kbd>
+            <span class="flex shrink-0 items-center gap-2">
+              <span
+                v-for="(keys, index) in shortcut.keys"
+                :key="keys.join('-')"
+                class="flex items-center gap-1"
+              >
+                <span v-if="index > 0" class="text-muted-foreground">/</span>
+                <Kbd v-for="key in keys" :key="key" class="font-mono">
+                  {{ key }}
+                </Kbd>
+              </span>
             </span>
           </div>
         </section>
