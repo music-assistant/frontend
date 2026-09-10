@@ -390,10 +390,7 @@ export const getMediaItemImage = function (
   // handle QueueItem
   if ("media_item" in mediaItem && mediaItem.media_item) {
     // prefer image_url provided in queueItem's streamdetails
-    if (
-      "streamdetails" in mediaItem.media_item &&
-      mediaItem.streamdetails?.stream_metadata?.image_url
-    )
+    if (mediaItem.streamdetails?.stream_metadata?.image_url)
       return {
         type: ImageType.THUMB,
         path: mediaItem.streamdetails.stream_metadata.image_url,
@@ -467,6 +464,11 @@ export const getMediaItemImageUrl = function (
       return qs
         ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
         : `${api.baseUrl}/imageproxy/${img.proxy_id}`;
+    }
+    // Schema 31+ servers reject the legacy ?path= form with a 400, so an image
+    // with no proxy_id can only load from its own url, unresized.
+    if (serverSupportsOpaqueImageProxy() && img.remotely_accessible) {
+      return getMediaImageUrl(img.path);
     }
     // legacy form, for servers on schema < 31 or images without a proxy_id
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
