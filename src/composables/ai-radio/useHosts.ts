@@ -1,3 +1,4 @@
+import { shouldPrefetchAiRadio } from "@/helpers/ai_radio_prefetch";
 import { useShows } from "@/composables/ai-radio/useShows";
 import api from "@/plugins/api";
 import type { AIRadioHost, AIRadioSection } from "@/plugins/api/interfaces";
@@ -46,7 +47,10 @@ watch(
   aiRadioAvailable,
   (available) => {
     // Session-scoped sessions lack the config scopes this needs and never open the queue DJ menu.
-    if (available && authManager.guestSessionKind() === null)
+    if (
+      available &&
+      shouldPrefetchAiRadio(available, authManager.guestSessionKind())
+    )
       prefetchQueueDjState();
   },
   { immediate: true },
