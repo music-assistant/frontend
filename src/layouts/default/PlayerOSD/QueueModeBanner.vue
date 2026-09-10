@@ -152,15 +152,21 @@ const mode = computed<"dynamic" | "autoplay" | null>(() => {
   return null;
 });
 
+// Effective autoplay state: the repeat lock always presents autoplay as off,
+// even if a (older) server still reports the saved preference as enabled.
+const effectiveAutoplay = computed(
+  () => autoplayEnabled.value && !repeatLocked.value,
+);
+
 // Active (primary-tinted) vs muted appearance.
 const active = computed(
-  () => mode.value === "dynamic" || autoplayEnabled.value,
+  () => mode.value === "dynamic" || effectiveAutoplay.value,
 );
 
 const title = computed(() => {
   if (mode.value === "dynamic") return $t("autoplay_dynamic_title");
   if (mode.value === "autoplay")
-    return autoplayEnabled.value
+    return effectiveAutoplay.value
       ? $t("autoplay_on_title")
       : $t("autoplay_off_title");
   return "";
