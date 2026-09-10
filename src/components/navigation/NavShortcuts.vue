@@ -39,6 +39,7 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { useListDragReorder } from "@/composables/useListDragReorder";
+import { useSidebarPressFeedback } from "@/composables/useSidebarPressFeedback";
 import {
   getShortcutUri,
   reorderShortcutStandalone,
@@ -87,6 +88,12 @@ const groupOpen = computed({
     open.value = value;
   },
 });
+const {
+  pressFeedbackActive: sectionPressFeedbackActive,
+  handlePointerDown: handleSectionPointerDown,
+  handleKeyDown: handleSectionKeyDown,
+  handleClick: handleSectionClick,
+} = useSidebarPressFeedback(() => isMobile.value);
 
 const isActive = (url: string) =>
   route.path === url || route.path.startsWith(url + "/");
@@ -221,8 +228,19 @@ const draggedItem = computed(() =>
         />
         <CollapsibleTrigger
           v-else-if="!sectionConfig.hide_label"
-          class="group/heading mb-1 flex w-full cursor-pointer items-center border-0 bg-transparent text-left text-inherit transition-colors duration-150 ease-out hover:text-sidebar-foreground md:mb-0"
+          class="group/heading mb-1 flex w-full cursor-pointer items-center rounded-md border-0 bg-transparent text-left text-inherit transition-colors duration-150 ease-out hover:text-sidebar-foreground md:mb-0"
+          :class="[
+            isMobile
+              ? 'sidebar-menu-button-feedback relative overflow-hidden'
+              : '',
+            isMobile && sectionPressFeedbackActive
+              ? 'sidebar-menu-button-feedback--active'
+              : '',
+          ]"
           :aria-label="`${sectionLabel} collapse toggle`"
+          @pointerdown="handleSectionPointerDown"
+          @keydown="handleSectionKeyDown"
+          @click="handleSectionClick"
         >
           <SidebarGroupLabel
             as="span"

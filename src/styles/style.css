@@ -2,6 +2,46 @@
 @import "tailwindcss/utilities.css" important;
 @import "tw-animate-css";
 
+.sidebar-menu-button-feedback::after {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--sidebar-active);
+  opacity: 0;
+  pointer-events: none;
+  content: "";
+}
+
+.sidebar-menu-button-feedback > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-menu-button-feedback--active::after {
+  animation: sidebar-menu-button-feedback 650ms ease-out both;
+}
+
+@keyframes sidebar-menu-button-feedback {
+  0% {
+    opacity: 0;
+  }
+
+  24% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-menu-button-feedback--active::after {
+    animation: none;
+  }
+}
+
 @keyframes seek-waveform-enter {
   from {
     opacity: 0;

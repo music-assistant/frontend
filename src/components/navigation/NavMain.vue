@@ -22,6 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useListDragReorder } from "@/composables/useListDragReorder";
+import { useSidebarPressFeedback } from "@/composables/useSidebarPressFeedback";
 import { ChevronRight, Eye, EyeOff, GripVertical } from "@lucide/vue";
 import NavSectionHeader from "./NavSectionHeader.vue";
 import {
@@ -85,6 +86,12 @@ const groupOpen = computed({
     open.value = value;
   },
 });
+const {
+  pressFeedbackActive: sectionPressFeedbackActive,
+  handlePointerDown: handleSectionPointerDown,
+  handleKeyDown: handleSectionKeyDown,
+  handleClick: handleSectionClick,
+} = useSidebarPressFeedback(() => isMobile.value);
 const isActive = (url: string) => {
   if (url.includes("?")) {
     return route.fullPath === url;
@@ -176,8 +183,19 @@ const draggedItem = computed(() =>
       />
       <CollapsibleTrigger
         v-else-if="label && !labelHidden"
-        class="group/heading mb-1 flex w-full cursor-pointer items-center border-0 bg-transparent text-left text-inherit transition-colors duration-150 ease-out hover:text-sidebar-foreground md:mb-0"
+        class="group/heading mb-1 flex w-full cursor-pointer items-center rounded-md border-0 bg-transparent text-left text-inherit transition-colors duration-150 ease-out hover:text-sidebar-foreground md:mb-0"
+        :class="[
+          isMobile
+            ? 'sidebar-menu-button-feedback relative overflow-hidden'
+            : '',
+          isMobile && sectionPressFeedbackActive
+            ? 'sidebar-menu-button-feedback--active'
+            : '',
+        ]"
         :aria-label="`${label} collapse toggle`"
+        @pointerdown="handleSectionPointerDown"
+        @keydown="handleSectionKeyDown"
+        @click="handleSectionClick"
       >
         <SidebarGroupLabel
           as="span"
