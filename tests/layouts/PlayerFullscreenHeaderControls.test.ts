@@ -1,4 +1,5 @@
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
+import AutoplayRepeatLockButton from "@/layouts/default/PlayerOSD/AutoplayRepeatLockButton.vue";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { CrossfadeMode, type PlayerQueue } from "@/plugins/api/interfaces";
@@ -6,10 +7,13 @@ import { shallowMount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 
-// Only what the crossfade control reads is mocked; the rest of the header is
-// stubbed out by shallowMount.
+// Only what the crossfade and autoplay controls read is mocked; the rest of
+// the header is stubbed out by shallowMount.
 const queue = ref<Partial<PlayerQueue> | undefined>(undefined);
 const hasActiveAudioPath = ref(false);
+const autoplayApplicable = ref(false);
+const repeatLocked = ref(false);
+const setAutoplay = vi.fn();
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -31,8 +35,9 @@ vi.mock("@/layouts/default/PlayerOSD/useQueueModes", () => ({
     sources: ref([]),
     dynamicModeActive: ref(false),
     autoplayEnabled: ref(false),
-    autoplayApplicable: ref(false),
-    setAutoplay: vi.fn(),
+    autoplayApplicable,
+    repeatLocked,
+    setAutoplay,
   }),
 }));
 
@@ -71,10 +76,21 @@ function seedQueue(crossfadeMode: CrossfadeMode): void {
   } as unknown as Partial<PlayerQueue>;
 }
 
+// The autoplay toggle and the crossfade toggle share the Button stub, so the
+// autoplay one is picked out by its accessible name.
+function findAutoplayToggle(wrapper: ReturnType<typeof mountControls>) {
+  return wrapper
+    .findAll("button")
+    .find((button) => button.attributes("aria-label") === "Autoplay");
+}
+
 describe("PlayerFullscreenHeaderControls", () => {
   beforeEach(() => {
     queue.value = undefined;
     hasActiveAudioPath.value = false;
+    autoplayApplicable.value = false;
+    repeatLocked.value = false;
+    setAutoplay.mockClear();
   });
 
   it("does not animate a fade the source applied", () => {
@@ -126,5 +142,38 @@ describe("PlayerFullscreenHeaderControls", () => {
     expect(mountControls().findComponent(QualityDetailsBtn).exists()).toBe(
       false,
     );
+  });
+
+  it("replaces the autoplay toggle with the repeat-lock explanation while repeat is on", () => {
+    seedQueue(CrossfadeMode.SOURCE);
+    autoplayApplicable.value = true;
+    repeatLocked.value = true;
+
+    const wrapper = mountControls();
+    const lock = wrapper.findComponent(AutoplayRepeatLockButton);
+
+    expect(lock.exists()).toBe(true);
+    expect(lock.props("description")).toBe(
+      "Autoplay has been automatically turned off because repeat is on",
+    );
+    expect(findAutoplayToggle(wrapper)).toBeUndefined();
+    expect(setAutoplay).not.toHaveBeenCalled();
+  });
+
+  it("keeps the direct autoplay toggle while repeat is off", async () => {
+    seedQueue(CrossfadeMode.SOURCE);
+    autoplayApplicable.value = true;
+
+    const wrapper = mountControls();
+    const toggle = findAutoplayToggle(wrapper);
+
+    expect(wrapper.findComponent(AutoplayRepeatLockButton).exists()).toBe(
+      false,
+    );
+    expect(toggle).toBeDefined();
+
+    await toggle!.trigger("click");
+
+    expect(setAutoplay).toHaveBeenCalledExactlyOnceWith(true);
   });
 });
