@@ -87,6 +87,9 @@ const PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION = 51;
 // The player_id argument on music/browse landed in API schema 61.
 const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
 
+// Repeat one/all masking the effective autoplay flag landed in API schema 69.
+const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
+
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -2993,6 +2996,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       PLAY_MEDIA_SHUFFLE_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server masks autoplay while repeat one/all is on (schema >= 69). */
+  public get supportsRepeatAutoplayLock(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION
     );
   }
 
