@@ -2250,6 +2250,7 @@
     "autoplay_disable": "Disable Autoplay",
     "autoplay": "Autoplay",
     "autoplay_explanation": "When your queue runs out, additional tracks are added automatically so the music will not stop.",
+    "autoplay_repeat_disabled": "Autoplay has been automatically turned off because repeat is on",
     "autoplay_active": "Autoplay is on.",
     "genre_content_type": {
         "all": "All",

@@ -54,7 +54,7 @@
     </div>
 
     <Switch
-      v-if="mode === 'autoplay'"
+      v-if="mode === 'autoplay' && !repeatLocked"
       :model-value="autoplayEnabled"
       class="queue-mode-banner__switch"
       :aria-label="
@@ -62,6 +62,25 @@
       "
       @update:model-value="setAutoplay"
     />
+
+    <AutoplayRepeatLockButton
+      v-else-if="mode === 'autoplay'"
+      :aria-label="$t('autoplay')"
+      aria-checked="false"
+      aria-disabled="true"
+      role="switch"
+      class="queue-mode-banner__switch cursor-help opacity-50"
+      :description="$t('autoplay_repeat_disabled')"
+    >
+      <Switch
+        as="span"
+        :model-value="false"
+        disabled
+        aria-hidden="true"
+        tabindex="-1"
+        class="pointer-events-none"
+      />
+    </AutoplayRepeatLockButton>
 
     <TooltipProvider :delay-duration="200">
       <Tooltip>
@@ -96,6 +115,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import AutoplayRepeatLockButton from "@/layouts/default/PlayerOSD/AutoplayRepeatLockButton.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
 import type { ItemMapping } from "@/plugins/api/interfaces";
@@ -112,6 +132,7 @@ const {
   sources,
   dynamicModeActive,
   autoplayEnabled,
+  repeatLocked,
   autoplayApplicable,
   setAutoplay,
 } = useQueueModes();
@@ -152,6 +173,7 @@ const description = computed(() => {
   // fallback line shown only when there are no named sources.
   if (mode.value === "dynamic") return $t("autoplay_dynamic_desc");
   if (mode.value === "autoplay") {
+    if (repeatLocked.value) return $t("autoplay_repeat_disabled");
     if (autoplayEnabled.value)
       return seedNames.value
         ? $t("autoplay_on_desc_sources", [seedNames.value])
