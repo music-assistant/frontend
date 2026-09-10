@@ -97,6 +97,21 @@
               {{ $t("settings.setup_flow.open_external") }}
             </Button>
             <div
+              v-if="step.copy_text"
+              class="flex items-center gap-2 rounded-md border px-3 py-2"
+            >
+              <code class="font-mono text-sm">{{ step.copy_text }}</code>
+              <Button
+                variant="ghost"
+                size="icon"
+                :aria-label="$t('copy')"
+                :title="$t('copy')"
+                @click="copyExternalText"
+              >
+                <Copy :size="16" />
+              </Button>
+            </div>
+            <div
               v-if="externalHost"
               class="text-muted-foreground flex items-center gap-1.5 text-xs"
             >
@@ -306,6 +321,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
+import { copyToClipboard } from "@/helpers/utils";
 import {
   allRequiredValuesPresent,
   isEntryDisabled,
@@ -328,6 +344,7 @@ import { store } from "@/plugins/store";
 import {
   CircleCheck,
   Clock,
+  Copy,
   ExternalLink,
   Info,
   Settings2,
@@ -703,6 +720,14 @@ function openExternal() {
   a.setAttribute("target", "_blank");
   a.setAttribute("rel", "noopener");
   a.click();
+}
+
+async function copyExternalText() {
+  const copyText = step.value?.copy_text;
+  if (!copyText) return;
+  if (await copyToClipboard(copyText)) {
+    toast.success($t("settings.setup_flow.copied"));
+  }
 }
 
 function openLink(url: string) {
