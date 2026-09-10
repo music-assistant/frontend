@@ -299,7 +299,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { Settings } from "@lucide/vue";
@@ -491,6 +491,17 @@ const allSettingsSections = [
     adminOnly: true,
   },
   {
+    name: "my_music_sources",
+    label: "settings.my_music_sources",
+    description: "settings.my_music_sources_description",
+    icon: "mdi-music-box-multiple",
+    color: "blue",
+    route: { name: "mymusicsources" },
+    adminOnly: false,
+    membersOnly: true,
+    requiresScope: Scope.CONFIG_PROVIDERS_OWN,
+  },
+  {
     name: "player_providers",
     label: "settings.playerproviders",
     description: "settings.player_providers_description",
@@ -597,6 +608,9 @@ const settingsSections = computed(() => {
   return allSettingsSections.filter(
     (section) =>
       (!section.adminOnly || isAdmin) &&
+      // an admin manages every source from the full music sources page
+      (!section.membersOnly || !isAdmin) &&
+      (!section.requiresScope || authManager.hasScope(section.requiresScope)) &&
       (!section.minServerVersion ||
         requireServerVersion(section.minServerVersion)),
   );
@@ -669,6 +683,9 @@ const activeTab = computed(() => {
   if (name === "profile") {
     return "profile";
   }
+  if (name === "mymusicsources") {
+    return "my_music_sources";
+  }
   if (
     name.includes("player") ||
     name.includes("queue") ||
@@ -716,7 +733,9 @@ const activeTab = computed(() => {
     const providerType =
       api.getProvider(instanceId)?.type ||
       api.providerManifests[instanceId.split("--")[0]]?.type;
-    if (providerType === ProviderType.MUSIC) return "music_providers";
+    // a member reached the options of a source it owns from its own page
+    if (providerType === ProviderType.MUSIC)
+      return authManager.isAdmin() ? "music_providers" : "my_music_sources";
     if (providerType === ProviderType.PLAYER) return "player_providers";
     if (providerType === ProviderType.METADATA) return "metadata_providers";
     if (providerType === ProviderType.PLUGIN) return "plugin_providers";
@@ -789,6 +808,12 @@ const breadcrumbItems = computed(() => {
         title: t("settings.music_sources"),
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "music" } },
+      });
+    } else if (currentTab === "my_music_sources") {
+      items.push({
+        title: t("settings.my_music_sources"),
+        disabled: name === "mymusicsources",
+        to: { name: "mymusicsources" },
       });
     } else if (currentTab === "player_providers") {
       items.push({

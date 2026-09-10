@@ -74,6 +74,13 @@
             <span v-else class="provider-type-badge">
               {{ getProviderTypeTitle(item.type) }}
             </span>
+            <span
+              v-if="canConfigureAccess(item)"
+              class="provider-access-text"
+              data-testid="provider-access"
+            >
+              {{ accessSummary(item) }}
+            </span>
           </div>
         </template>
 
@@ -232,6 +239,14 @@
           >
             {{ api.providerManifests[item.domain].description }}
           </v-card-text>
+
+          <div
+            v-if="canConfigureAccess(item)"
+            class="provider-access-text px-4 pb-4"
+            data-testid="provider-access"
+          >
+            {{ accessSummary(item) }}
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -261,6 +276,12 @@
     </Button>
   </div>
   <AddProviderDialog v-model:show="showAddProviderDialog" />
+  <ProviderAccessDialog
+    v-model:open="showAccessDialog"
+    :config="accessDialogConfig"
+    :users="users"
+    @saved="loadItems"
+  />
 </template>
 
 <script setup lang="ts">
@@ -268,9 +289,16 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import { Button } from "@/components/ui/button";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  effectiveProviderAccess,
+  getProviderSharingTranslationKey,
+  hasConfigurableAccess,
+  userDisplayName,
+} from "@/helpers/provider_access";
 import {
   canReconfigureProvider,
   getProviderStageTranslationKey,
@@ -285,9 +313,11 @@ import {
   EventType,
   ProviderConfig,
   ProviderFeature,
+  ProviderSharing,
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  type User,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -337,8 +367,15 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const showAddProviderDialog = ref<boolean>(false);
 const addProviderInitialType = ref<string | undefined>(undefined);
+const showAccessDialog = ref<boolean>(false);
+const accessDialogConfig = ref<ProviderConfig | null>(null);
+const users = ref<User[]>([]);
 const { isProviderSyncing } = useBackgroundTasks();
 let unsubProvidersUpdated: (() => void) | undefined;
+
+const usersById = computed(
+  () => new Map(users.value.map((user) => [user.user_id, user])),
+);
 
 const openAddProviderWithType = (type: string) => {
   addProviderInitialType.value = type;
@@ -363,6 +400,14 @@ const loadItems = async function () {
   providerConfigs.value = await api.getProviderConfigs();
 };
 
+const loadUsers = async function () {
+  try {
+    users.value = await api.getAllUsers();
+  } catch {
+    toast.error($t("auth.users_load_failed"));
+  }
+};
+
 const removeProvider = function (providerInstanceId: string) {
   api.removeProviderConfig(providerInstanceId);
   providerConfigs.value = providerConfigs.value.filter(
@@ -372,6 +417,11 @@ const removeProvider = function (providerInstanceId: string) {
 
 const openProviderOptions = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
+};
+
+const openAccessDialog = function (config: ProviderConfig) {
+  accessDialogConfig.value = config;
+  showAccessDialog.value = true;
 };
 
 const reconfigureProvider = function (providerInstanceId: string) {
@@ -415,6 +465,7 @@ onMounted(() => {
   unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
     loadItems();
   });
+  loadUsers();
 });
 
 onBeforeUnmount(() => {
@@ -454,6 +505,15 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         openProviderOptions(item.instance_id);
       },
       icon: "mdi-cog",
+    },
+    {
+      label: "settings.source_access.action",
+      labelArgs: [],
+      action: () => {
+        openAccessDialog(item);
+      },
+      icon: "mdi-account-key",
+      hide: !canConfigureAccess(item),
     },
     {
       label: item.enabled ? "settings.disable" : "settings.enable",
@@ -644,6 +704,34 @@ const getErrorText = function (item: ProviderConfig) {
   return item.last_error?.message ?? "";
 };
 
+// only a music source carries an owner and sharing
+const canConfigureAccess = function (item: ProviderConfig) {
+  return hasConfigurableAccess(item, api.providerManifests[item.domain]);
+};
+
+// the access record in its compact form: "<owner> · <who it is shared with>"
+const accessSummary = function (item: ProviderConfig) {
+  const access = effectiveProviderAccess(item.access);
+  const owner =
+    access.owner === null
+      ? $t("settings.source_access.household")
+      : getUserName(access.owner);
+  const sharedCount = access.shared_users.length;
+  const sharing =
+    access.sharing === ProviderSharing.SELECTED
+      ? $t("settings.source_access.shared_with_count", sharedCount, {
+          named: { count: sharedCount },
+        })
+      : $t(getProviderSharingTranslationKey(access.sharing));
+  return `${owner} · ${sharing}`;
+};
+
+// a user that is no longer in the list is shown by its id
+const getUserName = function (userId: string) {
+  const user = usersById.value.get(userId);
+  return user ? userDisplayName(user) : userId;
+};
+
 const getProviderTypeTitle = function (type: ProviderType) {
   return match(type)
     .with(ProviderType.MUSIC, () => $t("settings.music"))
@@ -778,6 +866,12 @@ const getAllFilteredProviders = function () {
 .provider-description-text {
   font-size: 14px;
   color: rgba(var(--v-theme-on-surface), 0.7);
+  line-height: 1.4;
+}
+
+.provider-access-text {
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
   line-height: 1.4;
 }
 

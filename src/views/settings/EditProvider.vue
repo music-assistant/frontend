@@ -320,6 +320,7 @@ import {
   ProviderConfig,
   ProviderStatus,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import {
   BookOpen,
@@ -416,6 +417,13 @@ const documentationUrl = computed(() => {
   return getExternalLinkUrl(providerManifest.value?.documentation);
 });
 
+// a member manages its sources from its own page, the full list is admin-only
+const providersRoute = computed(() =>
+  authManager.isAdmin()
+    ? { name: "providersettings", query: { types: config.value?.type } }
+    : { name: "mymusicsources" },
+);
+
 // watchers
 watch(
   () => props.instanceId,
@@ -443,10 +451,7 @@ onBeforeUnmount(() => {
 
 // methods
 const backToProviders = function () {
-  router.push({
-    name: "providersettings",
-    query: { types: config.value?.type },
-  });
+  router.push(providersRoute.value);
 };
 
 const resetToDefaults = function () {
@@ -542,10 +547,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
       toast.success(t("settings.provider_saved"));
-      router.push({
-        name: "providersettings",
-        query: { types: config.value!.type },
-      });
+      router.push(providersRoute.value);
     })
     .catch((err) => {
       saveErrorMessage.value = String(err);
