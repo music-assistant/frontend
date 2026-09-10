@@ -113,6 +113,7 @@
               variant="ghost-icon"
               size="icon-sm"
               :aria-label="$t('tooltip.party_settings')"
+              :title="$t('tooltip.party_settings')"
               @click="goToSettings"
             >
               <Settings :size="13" />
@@ -122,6 +123,7 @@
               variant="ghost-icon"
               size="icon-sm"
               :aria-label="$t('tooltip.enter_fullscreen')"
+              :title="$t('tooltip.enter_fullscreen')"
               @click="goFullscreen(true)"
             >
               <Maximize2 :size="13" />
