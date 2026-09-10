@@ -1,5 +1,5 @@
 import api from "@/plugins/api";
-import { EventType, PlaybackState } from "@/plugins/api/interfaces";
+import { EventType, ImageType, PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import PartyDashboardView from "@/views/PartyDashboardView.vue";
 import { type VueWrapper, flushPromises, mount } from "@vue/test-utils";
@@ -42,18 +42,23 @@ const events = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/plugins/api", () => ({
-  default: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     baseUrl: "",
     players: {},
     providers: {},
     queues: {},
+    // schema 31 and up address images by opaque id, which decides how the
+    // background's artwork url gets built
+    serverInfo: { value: { schema_version: 31 } },
     sendCommand: vi.fn().mockResolvedValue(null),
     subscribe: vi.fn(events.subscribe),
     getPlayerQueueItems: vi.fn().mockResolvedValue([]),
     getTrackLyrics: vi.fn().mockResolvedValue([null, null]),
-  },
-}));
+  };
+  // the view imports the default export, @/helpers/utils the named one
+  return { default: api, api };
+});
 
 // Pulled in transitively via @/helpers/utils; mocked so their module-load side effects (AuthManager reading localStorage) don't leak into this test.
 vi.mock("@/plugins/router", () => ({ default: {} }));
@@ -75,17 +80,20 @@ vi.mock("@/composables/usePartyConfig", () => ({
   }),
 }));
 
-vi.mock("@/composables/visualizer/useVisualizer", () => ({
-  useVisualizer: () => ({
-    visualizerEnabledPref: { value: false },
-    visualizerPresetPref: { value: "" },
-    visualizerBlurPref: { value: 0 },
-    visualizerOpacityPref: { value: 1 },
-    visualizerAvailable: { value: false },
-    visualizerActive: { value: false },
-    toggleVisualizer: vi.fn(),
-  }),
-}));
+vi.mock("@/composables/visualizer/useVisualizer", async () => {
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  return {
+    useVisualizer: () => ({
+      visualizerEnabledPref: ref(false),
+      visualizerPresetPref: ref(""),
+      visualizerBlurPref: ref(0),
+      visualizerOpacityPref: ref(1),
+      visualizerAvailable: ref(false),
+      visualizerActive: ref(false),
+      toggleVisualizer: vi.fn(),
+    }),
+  };
+});
 
 vi.mock("@/composables/lyrics/useLyricsElapsedTime", () => ({
   useLyricsElapsedTime: () => ({ elapsedTime: { value: 0 } }),
@@ -471,5 +479,38 @@ describe("PartyDashboardView active player", () => {
     await flushPromises();
 
     expect(store.activePlayerId).toBe("the_users_own_pick");
+  });
+});
+
+describe("PartyDashboardView background artwork", () => {
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.curQueueItem = undefined;
+  });
+
+  it("blurs a radio stream's live artwork, not the station logo", async () => {
+    // the station's own logo sits on the queue item, while the artwork for the
+    // track actually on air arrives as live stream metadata
+    store.curQueueItem = {
+      queue_item_id: "item_1",
+      image: {
+        type: ImageType.THUMB,
+        path: "https://station.example/logo.png",
+        provider: "builtin",
+        remotely_accessible: true,
+        proxy_id: "abc123",
+      },
+      media_item: { name: "The Station", metadata: { images: [] } },
+      streamdetails: {
+        stream_metadata: { image_url: "https://stream.example/cover.jpg" },
+      },
+    } as never;
+
+    const view = await mountView();
+
+    expect(view.get(".background-image").attributes("style")).toContain(
+      "https://stream.example/cover.jpg",
+    );
   });
 });
