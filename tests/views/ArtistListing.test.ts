@@ -21,13 +21,6 @@ vi.mock("vue-router", () => ({
   useRouter: () => ({}),
 }));
 
-vi.mock("@/components/Toolbar.vue", () => ({
-  default: {
-    name: "Toolbar",
-    props: ["title", "subtitle"],
-    template: "<div />",
-  },
-}));
 // the stub renders path/itemtype so tests can read which preference key
 // (see userPreferences.ts's getItemsListingPreferences) the listing was given
 vi.mock("@/components/ItemsListing.vue", () => ({
