@@ -22,6 +22,9 @@ const vuetify = createVuetify({ components, directives });
 // the content section is nested in wrappers that carry no state of their own,
 // so they stand in as plain hosts while every other child is shallow-stubbed
 const host = { template: "<div><slot /></div>" };
+const sidebarProviderHost = {
+  template: '<div data-testid="sidebar-provider"><slot /></div>',
+};
 const blank = { template: "<div />" };
 
 // the app's own party route is guarded on a live server connection, so the
@@ -49,7 +52,11 @@ async function mountAt(path: string) {
     shallow: true,
     global: {
       plugins: [vuetify, router],
-      stubs: { VMain: host, SidebarProvider: host, SidebarInset: host },
+      stubs: {
+        VMain: host,
+        SidebarProvider: sidebarProviderHost,
+        SidebarInset: host,
+      },
     },
   });
   return { section: wrapper.get(".content-section"), router };
@@ -80,6 +87,14 @@ describe("View", () => {
     expect(section.classes()).not.toContain("party-view-active");
   });
 
+  it("allows the sidebar shell to shrink inside the space above the footer", async () => {
+    await mountAt("/");
+
+    expect(
+      wrapper!.get('[data-testid="sidebar-provider"]').classes(),
+    ).toContain("min-h-0");
+  });
+
   it("follows the route without being remounted", async () => {
     // navigating between the app's routes patches this instance in place, so
     // the mark has to track the route rather than settle at first render
@@ -107,5 +122,17 @@ describe("View", () => {
 
     expect(section.classes()).toContain(mod);
     expect(section.classes()).toContain("party-view-active");
+  });
+
+  it.each([
+    ["mobileLayout", "main-layout--mobile"],
+    ["frameless", "main-layout--frameless"],
+  ] as const)("marks the app shell when %s changes", async (flag, mod) => {
+    await mountAt("/");
+
+    store[flag] = true;
+    await nextTick();
+
+    expect(wrapper!.get(".main-layout").classes()).toContain(mod);
   });
 });

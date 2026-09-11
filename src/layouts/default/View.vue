@@ -1,9 +1,13 @@
 <template>
   <v-main
     id="cont"
-    :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
+    :class="[
+      'main-layout',
+      { 'main-layout--mobile': store.mobileLayout },
+      { 'main-layout--frameless': store.frameless },
+    ]"
   >
-    <SidebarProvider>
+    <SidebarProvider class="min-h-0">
       <AppSidebar v-if="!store.frameless" />
       <SidebarInset>
         <div
@@ -105,7 +109,18 @@ onMounted(() => {
   /* Reset Vuetify's automatic padding that accounts for drawers */
   padding-top: var(--device-inset-top) !important;
   padding-right: var(--device-inset-right) !important;
+  /* Vuetify measures the fixed footer. Its manual safe-area offset is not part
+     of that measurement, so reserve both before sizing the page scroller. */
+  padding-bottom: calc(
+    var(--v-layout-bottom, 0px) + var(--device-inset-bottom)
+  ) !important;
   padding-left: var(--device-inset-left) !important;
+}
+
+.main-layout--mobile,
+.main-layout--frameless {
+  /* Mobile chrome intentionally overlays the page; frameless has no chrome. */
+  padding-bottom: 0 !important;
 }
 
 .content-section {
@@ -113,7 +128,6 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  padding-bottom: calc(110px + var(--device-inset-bottom));
 }
 
 .content-section--mobile {
