@@ -1,6 +1,6 @@
 import LibraryAlbums from "@/views/LibraryAlbums.vue";
 import LibraryArtists from "@/views/LibraryArtists.vue";
-import { mount } from "@/../node_modules/@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("vue-i18n", () => ({
