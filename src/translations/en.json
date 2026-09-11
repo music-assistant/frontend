@@ -2259,7 +2259,7 @@
     "reorder_row": "Reorder row",
     "hide_row": "Hide row",
     "show_row": "Show row",
-    "edit_rows_hint": "Drag to reorder, hide what you don't want. \"Source\" picks what feeds a row — your library, one provider, or all of them.",
+    "edit_rows_hint": "Drag to reorder, hide what you don't want. \"Source\" picks what feeds a row (your library, one provider, or all of them).",
     "admin_only": "Admin only",
     "done": "Done",
     "on_provider": "On {0}",
