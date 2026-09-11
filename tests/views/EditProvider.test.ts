@@ -18,6 +18,7 @@ const {
   apiMock,
   authMock,
   eventbusMock,
+  i18nMock,
   routerMock,
   toastMock,
   unsubscribeMock,
@@ -49,6 +50,11 @@ const {
   },
   eventbusMock: {
     emit: vi.fn(),
+  },
+  // a spy that returns the key, so the interpolation arguments a message is
+  // given stay assertable
+  i18nMock: {
+    t: vi.fn((key: string) => key),
   },
   routerMock: {
     push: vi.fn(),
@@ -119,9 +125,7 @@ vi.mock("vue-i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-i18n")>();
   return {
     ...actual,
-    useI18n: () => ({
-      t: (key: string) => key,
-    }),
+    useI18n: () => i18nMock,
   };
 });
 
@@ -772,6 +776,54 @@ describe("EditProvider", () => {
 
     const link = wrapper.get("a[href='https://example.com/addon']");
     expect(link.text()).toBe("Local Audio add-on");
+  });
+
+  it("names the source in the removal confirmation and toast", async () => {
+    // a renamed provider must be removed under the name the user gave it, so
+    // the custom name has to win over the manifest's "Spotify"
+    const config = spotifyConfig(ProviderStatus.INCOMPATIBLE);
+    config.name = "My Spotify";
+    config.last_error = {
+      error_code: 1,
+      message: "This provider is retired.",
+    };
+    apiMock.getProviderConfig.mockResolvedValue(config);
+    apiMock.removeProviderConfig.mockResolvedValue(undefined);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    // the banner's only button is the destructive "remove" one
+    await wrapper.get("button-stub").trigger("click");
+
+    const removeCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    );
+    expect(removeCall?.[1].message).toBe("settings.remove_provider_confirm");
+    // the stubbed t returns the key, so the name is checked where it is passed
+    expect(i18nMock.t).toHaveBeenCalledWith(
+      "settings.remove_provider_confirm",
+      ["My Spotify"],
+    );
+
+    await removeCall?.[1].onConfirm();
+    await flushPromises();
+
+    expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
+    expect(toastMock.success).toHaveBeenCalledWith("settings.provider_removed");
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_removed", [
+      "My Spotify",
+    ]);
   });
 
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
