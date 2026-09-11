@@ -35,8 +35,8 @@
         :class="{ 'opacity-60': !item.enabled }"
         data-testid="provider-row"
         @click="openProvider(item)"
-        @keydown.enter.prevent="openProvider(item)"
-        @keydown.space.prevent="openProvider(item)"
+        @keydown.enter.self.prevent="openProvider(item)"
+        @keydown.space.self.prevent="openProvider(item)"
       >
         <ItemMedia>
           <ProviderIcon :domain="item.domain" :size="40" />
@@ -68,7 +68,7 @@
           >
             {{ getErrorText(item) }}
           </ItemDescription>
-          <ItemDescription v-if="api.providerManifests[item.domain]">
+          <ItemDescription v-else-if="api.providerManifests[item.domain]">
             {{ api.providerManifests[item.domain].description }}
           </ItemDescription>
           <ItemDescription
@@ -79,11 +79,12 @@
           </ItemDescription>
         </ItemContent>
         <ItemActions>
-          <RefreshCw
+          <span
             v-if="isProviderSyncing(item.instance_id)"
-            class="text-muted-foreground size-4 animate-spin"
             :title="$t('settings.sync_running')"
-          />
+          >
+            <RefreshCw class="text-muted-foreground size-4 animate-spin" />
+          </span>
           <Button
             v-if="isErrorStatus(item.status) && canReconfigure(item)"
             size="sm"
@@ -413,7 +414,6 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const loaded = ref(false);
 const searchQuery = ref<string>("");
 const showAddProviderDialog = ref<boolean>(false);
-const addProviderInitialType = ref<string | undefined>(undefined);
 const showAccessDialog = ref<boolean>(false);
 const accessDialogConfig = ref<ProviderConfig | null>(null);
 const users = ref<User[]>([]);
@@ -467,17 +467,6 @@ const showMusicEmptyState = computed(
     (currentType.value || ProviderType.MUSIC) === ProviderType.MUSIC,
 );
 
-const openAddProviderWithType = (type: string) => {
-  addProviderInitialType.value = type;
-  showAddProviderDialog.value = true;
-};
-
-watch(showAddProviderDialog, (isOpen) => {
-  if (!isOpen) {
-    addProviderInitialType.value = undefined;
-  }
-});
-
 const loadItems = async function () {
   // Only load provider configs if provider manifests are available
   // to avoid race conditions during initial connection
@@ -487,11 +476,15 @@ const loadItems = async function () {
     );
     return;
   }
-  // a member only ever lists music sources
-  providerConfigs.value = await api.getProviderConfigs(
-    managesAllSources.value ? undefined : ProviderType.MUSIC,
-  );
-  loaded.value = true;
+  try {
+    // a member only ever lists music sources
+    providerConfigs.value = await api.getProviderConfigs(
+      managesAllSources.value ? undefined : ProviderType.MUSIC,
+    );
+    loaded.value = true;
+  } catch (err) {
+    toast.error(String(err));
+  }
 };
 
 const loadUsers = async function () {
@@ -503,7 +496,9 @@ const loadUsers = async function () {
 };
 
 const removeProvider = function (providerInstanceId: string) {
-  api.removeProviderConfig(providerInstanceId);
+  api
+    .removeProviderConfig(providerInstanceId)
+    .catch((err) => toast.error(String(err)));
   providerConfigs.value = providerConfigs.value.filter(
     (x) => x.instance_id != providerInstanceId,
   );
@@ -569,13 +564,15 @@ onBeforeUnmount(() => {
 
 const toggleEnabled = function (config: ProviderConfig) {
   config.enabled = !config.enabled;
-  api.saveProviderConfig(
-    config.domain,
-    {
-      enabled: config.enabled,
-    },
-    config.instance_id,
-  );
+  api
+    .saveProviderConfig(
+      config.domain,
+      {
+        enabled: config.enabled,
+      },
+      config.instance_id,
+    )
+    .catch((err) => toast.error(String(err)));
 };
 
 const reloadProvider = function (providerInstanceId: string) {

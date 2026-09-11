@@ -429,6 +429,15 @@ describe("global navigation guard", () => {
     ).resolves.toBeUndefined();
   });
 
+  it("lets an admin into the music sources through the wildcard scope", async () => {
+    mocks.store.currentUser = { role: "admin", username: "owner" };
+    mocks.hasScope.mockReturnValue(true);
+
+    await expect(
+      invokeGuard(globalGuard, resolveRoute("/settings/providers?types=music")),
+    ).resolves.toBeUndefined();
+  });
+
   it("lets a member with the scope open the music sources", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
     mocks.hasScope.mockReturnValue(true);

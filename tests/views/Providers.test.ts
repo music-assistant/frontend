@@ -590,7 +590,62 @@ function playerProvider() {
   });
 }
 
+describe("Providers keyboard", () => {
+  it("opens a provider from its row with the keyboard", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    await wrapper.get('[data-testid="provider-row"]').trigger("keydown", {
+      key: "Enter",
+    });
+
+    expect(routerMock.push).toHaveBeenCalledWith(
+      "/settings/editprovider/spotify--test",
+    );
+  });
+
+  it("leaves Enter and Space on the row's buttons to the button", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    // the keydown bubbles up to the row, which must not treat it as its own
+    await wrapper.get('[data-testid="provider-menu"]').trigger("keydown", {
+      key: "Enter",
+    });
+    await wrapper.get('[data-testid="provider-menu"]').trigger("keydown", {
+      key: " ",
+    });
+
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
+});
+
 describe("Providers loading", () => {
+  it("narrows a member's load to the music sources", async () => {
+    authMock.isAdmin.mockReturnValue(false);
+
+    await mountWithConfigs([]);
+
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+  });
+
+  it("reports a failing load and shows no empty state", async () => {
+    const wrapper = await mountWithConfigs(
+      Promise.reject(new Error("offline")),
+    );
+
+    expect(toastMock.error).toHaveBeenCalledWith("Error: offline");
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("flags a source that needs attention with its status", async () => {
+    const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED);
+
+    expect(wrapper.get('[data-testid="provider-status"]').text()).toBe(
+      "settings.provider_status_auth_required",
+    );
+  });
+
   it("shows no empty state until the providers are loaded", async () => {
     const wrapper = await mountWithConfigs(new Promise(() => {}));
 
@@ -646,6 +701,11 @@ describe("Providers search", () => {
     expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
       true,
     );
+    // an empty search result is not an invitation to add a first source
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find(".empty-state").exists()).toBe(true);
   });
 });
 
