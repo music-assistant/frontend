@@ -139,9 +139,12 @@ const props = defineProps<{
   open: boolean;
   // the music source to set the access of
   config: ProviderConfig | null;
-  // the users to pick an owner and shared members from; null when the caller
-  // may only share a source it owns and can not list the users
+  // the users to pick shared members (and an owner) from; null when the
+  // caller can not list them
   users: User[] | null;
+  // whether the caller may hand the source to another owner (an admin), or
+  // only change the sharing of its own source
+  canChangeOwner: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -156,10 +159,12 @@ const sharing = ref(ProviderSharing.EVERYONE);
 const sharedUsers = ref<string[]>([]);
 const saving = ref(false);
 
-const canChangeOwner = computed(() => props.users !== null);
+const canChangeOwner = computed(
+  () => props.canChangeOwner && props.users !== null,
+);
 
 const canPickSharedUsers = computed(
-  () => canChangeOwner.value && sharing.value === ProviderSharing.SELECTED,
+  () => props.users !== null && sharing.value === ProviderSharing.SELECTED,
 );
 
 // a source that is not loaded is named by its config, like the list does
@@ -187,13 +192,13 @@ const shareOptions = computed(() =>
   })),
 );
 
-// an owner that can not list the users is not offered to share with selected
-// ones, but keeps that choice when an admin made it for its source
+// without a user list there is nobody to select, so that choice is only kept
+// when it is already the current one
 const sharingOptions = computed(() =>
   Object.values(ProviderSharing).filter(
     (option) =>
       option !== ProviderSharing.SELECTED ||
-      canChangeOwner.value ||
+      props.users !== null ||
       currentAccess.value.sharing === ProviderSharing.SELECTED,
   ),
 );

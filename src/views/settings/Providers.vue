@@ -297,6 +297,7 @@
     v-model:open="showAccessDialog"
     :config="accessDialogConfig"
     :users="managesAllSources ? users : null"
+    :can-change-owner="managesAllSources"
     @saved="loadItems"
   />
 </template>

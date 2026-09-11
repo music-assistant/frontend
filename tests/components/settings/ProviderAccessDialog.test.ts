@@ -196,6 +196,44 @@ describe("ProviderAccessDialog", () => {
     expect(wrapper.emitted("update:open")).toBeUndefined();
   });
 
+  describe("for an owner that can list the members", () => {
+    it("picks the members but keeps the owner", async () => {
+      const wrapper = await openDialog(ownedSource, users, false);
+
+      expect(ownerTrigger()).toBeNull();
+      expect(sharedUsersField()).not.toBeNull();
+
+      await submit(wrapper);
+
+      expect(apiMock.setProviderAccess).toHaveBeenCalledWith("spotify--owned", {
+        owner: "owner-id",
+        sharing: ProviderSharing.SELECTED,
+        shared_users: ["member-id"],
+      });
+    });
+
+    it("offers sharing with selected members", async () => {
+      await openDialog(
+        providerConfig({
+          domain: "spotify",
+          access: {
+            owner: "owner-id",
+            sharing: ProviderSharing.PRIVATE,
+            shared_users: [],
+          },
+        }),
+        users,
+        false,
+      );
+
+      await openSelect(sharingTrigger()!);
+
+      expect(optionLabels()).toContain(
+        "settings.source_access.options.selected",
+      );
+    });
+  });
+
   describe("for an owner that can not list the users", () => {
     it("hides the owner and shared members fields", async () => {
       await openDialog(ownedSource, null);
@@ -304,9 +342,10 @@ async function submit(wrapper: VueWrapper) {
 async function openDialog(
   config: ReturnType<typeof providerConfig>,
   dialogUsers: ReturnType<typeof user>[] | null,
+  canChangeOwner: boolean = dialogUsers !== null,
 ): Promise<VueWrapper> {
   const wrapper = mount(ProviderAccessDialog, {
-    props: { open: false, config, users: dialogUsers },
+    props: { open: false, config, users: dialogUsers, canChangeOwner },
     attachTo: document.body,
     global: {
       mocks: {

@@ -128,13 +128,14 @@ vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
 // rendered in place of the real dialog, exposing what it was handed
 const AccessDialogStub = vi.hoisted(() => ({
   name: "ProviderAccessDialog",
-  props: ["config", "open", "users"],
+  props: ["canChangeOwner", "config", "open", "users"],
   template: `
     <div
       data-testid="access-dialog"
       :data-open="String(open)"
       :data-config="config?.instance_id ?? ''"
       :data-users="users === null ? 'none' : String(users.length)"
+      :data-can-change-owner="String(canChangeOwner)"
     />
   `,
 }));
@@ -384,6 +385,7 @@ describe("Providers", () => {
     expect(dialog.attributes("data-open")).toBe("true");
     expect(dialog.attributes("data-config")).toBe("spotify--test");
     expect(dialog.attributes("data-users")).toBe("2");
+    expect(dialog.attributes("data-can-change-owner")).toBe("true");
   });
 
   it("hides the access action for a builtin provider", async () => {
@@ -523,6 +525,7 @@ describe("Providers for a member", () => {
     expect(dialog.attributes("data-open")).toBe("true");
     expect(dialog.attributes("data-config")).toBe("spotify--own");
     expect(dialog.attributes("data-users")).toBe("none");
+    expect(dialog.attributes("data-can-change-owner")).toBe("false");
   });
 
   it("does not list the users", async () => {
