@@ -124,7 +124,7 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
 );
 
 const showAddPill = function (item: Album | ItemMapping): boolean {
-  return props.showLibraryState && !isInLibrary(item);
+  return props.showLibraryState && !isInLibrary(item) && itemIsAvailable(item);
 };
 
 const subtitle = function (item: Album | ItemMapping): string {

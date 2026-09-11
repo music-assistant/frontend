@@ -153,7 +153,15 @@ describe("artistRows", () => {
           mappedTo("spotify--abc", "tidal--def"),
           true,
         ),
-      ).toEqual(["all", "spotify--abc"]);
+      ).toEqual(["spotify--abc"]);
+    });
+
+    it("never offers every provider while the user's own provider filter is active", () => {
+      setPreferences({}, ["spotify--abc"]);
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
+      expect(
+        artistRowSources("albums", mappedTo("spotify--abc"), true),
+      ).toEqual(["library", "spotify--abc"]);
     });
 
     it("offers nothing for a provider artist or a row without a picker", () => {
@@ -300,6 +308,17 @@ describe("artistRows", () => {
       );
       expect(effectiveArtistRowSource("similar_artists", artist(), false)).toBe(
         "all",
+      );
+    });
+
+    it("defaults to the library or the first capable provider while a provider filter is active", () => {
+      setPreferences({}, ["spotify--abc", "tidal--def"]);
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_TOPTRACKS]);
+      addProvider("tidal--def", [ProviderFeature.ARTIST_TOPTRACKS]);
+      const mapped = mappedTo("tidal--def", "spotify--abc");
+      expect(effectiveArtistRowSource("albums", mapped, true)).toBe("library");
+      expect(effectiveArtistRowSource("top_tracks", mapped, true)).toBe(
+        "spotify--abc",
       );
     });
 

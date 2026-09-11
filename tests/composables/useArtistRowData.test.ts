@@ -173,6 +173,17 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
   });
 
+  it("requests the albums source for the latest release when only top tracks shows", async () => {
+    const page = setupRowData({ rows: ["top_tracks"] });
+    saveRowSources({ albums: SPOTIFY });
+    mockLoadArtistReleases.mockResolvedValue(RELEASES);
+
+    await showArtist(page, libraryArtist());
+
+    expect(releaseSources()).toEqual(["all", SPOTIFY]);
+    expect(page.latestRelease.value?.item_id).toBe("album-1");
+  });
+
   it("drops a response that arrives after the artist changed", async () => {
     const page = setupRowData({ rows: ["albums"] });
     let resolveFirst: (albums: Album[]) => void = () => {};

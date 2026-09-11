@@ -55,6 +55,7 @@ vi.mock("@/components/artist/artistRows", () => ({
   availableArtistRowIds: mockAvailableArtistRowIds,
   resolveArtistRows: mockResolveArtistRows,
   effectiveArtistRowSource: () => "all",
+  artistRowSources: () => ["library", "all"],
 }));
 
 // the loaders are mocked, the pure helpers (sorting, single/EP and library

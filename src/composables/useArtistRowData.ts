@@ -9,6 +9,7 @@ import {
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
 import {
+  artistRowSources,
   effectiveArtistRowSource,
   type ArtistRowId,
   type ArtistRowSource,
@@ -176,15 +177,19 @@ export function useArtistRowData(
     const shown = artist.value;
     if (!shown) return;
     const rows = visibleRows.value;
-    // the hero's release chip needs the complete discography
+    // the hero's release chip needs the complete discography, where that is offered
     if (
-      shown.provider === "library" &&
       !isAudiobookArtist.value &&
-      api.supportsArtistDiscography
+      artistRowSources("albums", shown, api.supportsArtistDiscography).includes(
+        "all",
+      )
     ) {
       fetchReleases(shown, "all");
     }
-    if (rows.includes("albums")) fetchReleases(shown, albumsSource.value!);
+    // the top tracks row shows the latest release from the albums source
+    if (rows.includes("albums") || rows.includes("top_tracks")) {
+      fetchReleases(shown, albumsSource.value!);
+    }
     if (rows.includes("singles_eps"))
       fetchReleases(shown, singlesSource.value!);
     if (rows.includes("appears_on")) {

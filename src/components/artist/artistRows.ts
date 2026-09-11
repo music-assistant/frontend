@@ -175,29 +175,25 @@ export async function setArtistRowSource(
 /**
  * The sources a row of this artist can be fed from, in the order a picker lists them: the
  * library (release rows only), every provider at once (release rows only when the server can
- * merge the discography), then each provider able to supply the row. Empty for a row without
- * a source picker and for a provider artist, which stays on its own provider.
+ * merge the discography, and never while the user's own provider filter is active), then
+ * each provider able to supply the row. Empty for a row without a source picker and for a
+ * provider artist, which stays on its own provider.
  */
 export function artistRowSources(
   id: ArtistRowId,
   artist: Artist,
   supportsDiscography: boolean,
 ): ArtistRowSource[] {
-  if (artist.provider !== "library" || !ARTIST_ROWS_BY_ID[id].supportsSource) {
-    return [];
-  }
-  const sources: ArtistRowSource[] = [];
-  if (RELEASE_ROWS.includes(id)) sources.push("library");
-  if (!RELEASE_ROWS.includes(id) || supportsDiscography) sources.push("all");
-  return [...sources, ...rowSourceProviders(id, artist)];
+  if (!ARTIST_ROWS_BY_ID[id].supportsSource) return [];
+  return rowSourceCandidates(id, artist, supportsDiscography);
 }
 
 /**
  * The source that actually feeds a row for this artist: the saved one while it is still among
  * the row's sources, otherwise the default. Provider (non-library) artists always resolve to
- * their own provider. Default for the release rows (albums, singles, and the artist's own
- * releases that appearances are checked against) is "all" when the server supports the
- * discography command, else "library"; for top tracks / similar artists it is "all".
+ * their own provider. The default is every provider at once where that is offered, else the
+ * library for the release rows (albums, singles, and the artist's own releases that
+ * appearances are checked against) and the first capable provider for the aggregated rows.
  */
 export function effectiveArtistRowSource(
   id: ArtistRowId,
@@ -205,17 +201,11 @@ export function effectiveArtistRowSource(
   supportsDiscography: boolean,
 ): ArtistRowSource {
   if (artist.provider !== "library") return artist.provider;
+  const sources = rowSourceCandidates(id, artist, supportsDiscography);
   const saved = getArtistRowSource(id);
-  if (
-    saved &&
-    artistRowSources(id, artist, supportsDiscography).includes(saved)
-  ) {
-    return saved;
-  }
-  if (RELEASE_ROWS.includes(id)) {
-    return supportsDiscography ? "all" : "library";
-  }
-  return ALL_PROVIDER_ROWS.includes(id) ? "all" : "library";
+  if (saved && sources.includes(saved)) return saved;
+  if (sources.includes("all")) return "all";
+  return sources.includes("library") ? "library" : (sources[0] ?? "library");
 }
 
 const ARTIST_ROWS_BY_ID = Object.fromEntries(
@@ -242,6 +232,25 @@ function savedRowSources(): Partial<Record<ArtistRowId, ArtistRowSource>> {
     store.currentUser?.preferences?.[ARTIST_ROW_SOURCES_PREFERENCE_KEY];
   if (!pref || typeof pref !== "object") return {};
   return pref as Partial<Record<ArtistRowId, ArtistRowSource>>;
+}
+
+/** The sources a row of a library artist could be fed from, whether or not it has a picker. */
+function rowSourceCandidates(
+  id: ArtistRowId,
+  artist: Artist,
+  supportsDiscography: boolean,
+): ArtistRowSource[] {
+  if (artist.provider !== "library") return [];
+  const sources: ArtistRowSource[] = [];
+  if (RELEASE_ROWS.includes(id)) sources.push("library");
+  // merging every provider server-side would bypass the filter the user set for themselves
+  if (
+    (!RELEASE_ROWS.includes(id) || supportsDiscography) &&
+    !hasUserProviderFilter()
+  ) {
+    sources.push("all");
+  }
+  return [...sources, ...rowSourceProviders(id, artist)];
 }
 
 /**
@@ -287,8 +296,14 @@ function providerSupports(
   );
 }
 
+function hasUserProviderFilter(): boolean {
+  return (store.currentUser?.provider_filter ?? []).length > 0;
+}
+
 /** Whether the user's provider filter, when set, includes the provider. */
 function providerVisible(instanceId: string): boolean {
-  const filter = store.currentUser?.provider_filter ?? [];
-  return filter.length === 0 || filter.includes(instanceId);
+  return (
+    !hasUserProviderFilter() ||
+    store.currentUser!.provider_filter.includes(instanceId)
+  );
 }

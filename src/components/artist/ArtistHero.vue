@@ -89,6 +89,7 @@
           v-if="api.supportsPlayMediaShuffle"
           type="button"
           class="artist-hero__button"
+          :disabled="!store.activePlayer"
           :aria-label="$t('shuffle')"
           :title="$t('shuffle')"
           @click="api.playMedia(item, undefined, { shuffle: true })"

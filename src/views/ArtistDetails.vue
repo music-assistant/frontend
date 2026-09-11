@@ -211,11 +211,10 @@ const isAudiobookArtist = computed(() => {
   return artistType === ArtistType.AUTHOR || artistType === ArtistType.NARRATOR;
 });
 
-// appearances are derived from the library, so a provider-only artist has none
+// the rows the page can render for this artist; the editor lists the same set
 const availableRows = computed(() =>
   availableArtistRowIds(isAudiobookArtist.value, authManager.isAdmin()).filter(
-    (rowId) =>
-      rowId !== "appears_on" || itemDetails.value?.provider === "library",
+    rowApplies,
   ),
 );
 
@@ -304,6 +303,8 @@ const activeAudiobookProvider = computed(
 
 const loadItemDetails = async function () {
   const { itemId, provider } = props;
+  // the previous artist must not stay actionable under the new route
+  itemDetails.value = undefined;
   loading.value = true;
   const artist = await api.getArtist(itemId, provider);
   // a slower response for a previous artist must not replace the current one
@@ -393,6 +394,22 @@ const UpdateItemInDb = async function () {
     overwrite: true,
   });
 };
+
+/** Whether the artist can have the row at all: some rows are library-only. */
+function rowApplies(rowId: ArtistRowId): boolean {
+  const isLibraryItem = itemDetails.value?.provider === "library";
+  switch (rowId) {
+    case "appears_on":
+    case "audiobooks":
+      return isLibraryItem;
+    case "audiobooks_all":
+      return audiobookSourceProviderIds.value.length > 0;
+    case "artwork":
+      return isLibraryItem && !!itemDetails.value?.metadata?.images;
+    default:
+      return true;
+  }
+}
 
 /** A row is rendered while it loads and once it has something to show. */
 function showRow(items?: unknown[]): boolean {
