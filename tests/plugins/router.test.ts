@@ -524,8 +524,11 @@ describe("scroll reset on navigation", () => {
     setHistoryForward(null);
 
     runAfterEachHooks();
-    await nextTick();
 
+    // afterEach runs before Vue unmounts the page being left, so the reset
+    // has to wait a tick or that page can't save where it was scrolled to
+    expect(el.scrollTop).toBe(200);
+    await nextTick();
     expect(el.scrollTop).toBe(0);
   });
 
