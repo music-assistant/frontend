@@ -81,12 +81,12 @@ describe("pluralized settings messages", () => {
       i18n.global.t("settings.providers_total", 1, {
         named: { count: 1 },
       }),
-    ).toBe("1 total provider");
+    ).toBe("1 total");
     expect(
       i18n.global.t("settings.providers_total", 2, {
         named: { count: 2 },
       }),
-    ).toBe("2 total providers");
+    ).toBe("2 total");
   });
 
   it("pluralizes player totals in the en locale", () => {

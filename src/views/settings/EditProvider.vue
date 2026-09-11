@@ -18,7 +18,7 @@
             :loading="toggleLoading"
             @click="toggleEnabled"
           >
-            {{ $t("settings.enable_provider") }}
+            {{ $t("settings.enable") }}
           </v-btn>
         </div>
       </v-alert>
@@ -81,7 +81,7 @@
                 @click="onReload"
               >
                 <RefreshCw class="size-4" />
-                {{ $t("settings.reload_provider") }}
+                {{ $t("settings.reload") }}
               </Button>
             </template>
           </div>
@@ -517,12 +517,12 @@ const onRemove = function () {
   const instanceId = config.value.instance_id;
   eventbus.emit("deleteConfirmationDialog", {
     title: t("settings.remove_provider"),
-    message: t("settings.remove_provider_confirm"),
+    message: t("settings.remove_provider_confirm", [providerName.value]),
     confirmLabel: t("settings.remove_provider"),
     onConfirm: async () => {
       try {
         await api.removeProviderConfig(instanceId);
-        toast.success(t("settings.provider_removed"));
+        toast.success(t("settings.provider_removed", [providerName.value]));
         backToProviders();
       } catch (err) {
         toast.error(String(err));

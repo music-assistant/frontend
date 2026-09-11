@@ -274,7 +274,7 @@ describe("Providers", () => {
 
     const menuItems = await openMenu(wrapper);
     const reloadItem = menuItems.find(
-      (item: { label: string }) => item.label === "settings.reload_provider",
+      (item: { label: string }) => item.label === "settings.reload",
     );
     reloadItem.action();
 
@@ -501,8 +501,8 @@ describe("Providers for a member", () => {
       "settings.options",
       "settings.source_access.share_action",
       "settings.documentation",
-      "settings.delete",
-      "settings.reload_provider",
+      "settings.remove_provider",
+      "settings.reload",
     ]);
     expect(
       menuItems.map((item: { label: string }) => item.label),

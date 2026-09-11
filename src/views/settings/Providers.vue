@@ -410,7 +410,7 @@ const addProviderLabel = computed(() => {
     .with(ProviderType.AUDIO_ANALYSIS, () =>
       $t("settings.add_audio_analysis_provider"),
     )
-    .otherwise(() => $t("settings.add_provider"));
+    .otherwise(() => $t("settings.add_new"));
 });
 
 // local refs
@@ -647,7 +647,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         item.type != ProviderType.MUSIC,
     },
     {
-      label: "settings.delete",
+      label: "settings.remove_provider",
       labelArgs: [],
       action: () => {
         removeProvider(item.instance_id);
@@ -656,7 +656,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       hide: providerManifest.builtin,
     },
     {
-      label: "settings.reload_provider",
+      label: "settings.reload",
       labelArgs: [],
       action: () => {
         reloadProvider(item.instance_id);
