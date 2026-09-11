@@ -473,16 +473,27 @@ function providerAllowed(instanceId: string): boolean {
 .artist-admin :deep(.v-list) {
   padding: 0;
 }
-/* uniform square image tiles instead of percentage columns */
+/* uniform square image tiles instead of percentage columns, one row per image type */
 .artist-admin :deep(.v-row) {
-  margin: 0;
+  margin: 0 0 12px;
   gap: 12px;
+}
+.artist-admin :deep(.v-row:empty) {
+  display: none;
 }
 .artist-admin :deep(.v-col) {
   flex: 0 0 auto;
   width: 176px;
   max-width: 176px;
   padding: 0;
+}
+.artist-admin :deep(.panel-item) {
+  padding: 8px;
+  border-radius: 12px;
+}
+.artist-admin :deep(.panel-item:hover) {
+  background: rgba(var(--v-theme-on-surface), 0.08);
+  box-shadow: none;
 }
 .artist-admin :deep(.panel-item .v-img) {
   aspect-ratio: 1 / 1;

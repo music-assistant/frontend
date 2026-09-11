@@ -1,13 +1,11 @@
 <template>
   <section>
-    <Toolbar
-      :icon="ArrowLeft"
-      :icon-action="backToArtist"
-      :title="config ? $t(config.labelKey) : ''"
-      :subtitle="itemDetails?.name"
-    />
     <ItemsListing
       v-if="itemDetails && config"
+      :icon="ArrowLeft"
+      :icon-action="backToArtist"
+      :title="$t(config.labelKey)"
+      :subtitle="itemDetails.name"
       :itemtype="config.itemtype"
       :path="config.path"
       :parent-item="itemDetails"
@@ -39,7 +37,6 @@ import {
   effectiveArtistRowSource,
 } from "@/components/artist/artistRows";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
-import Toolbar from "@/components/Toolbar.vue";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import { type Artist, type MediaItemType } from "@/plugins/api/interfaces";
