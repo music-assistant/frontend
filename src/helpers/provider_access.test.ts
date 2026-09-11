@@ -108,23 +108,33 @@ describe("user candidates", () => {
     username: "guest",
     role: UserRole.GUEST,
   });
+  const service = user({
+    user_id: "service",
+    username: "service",
+    role: UserRole.SERVICE,
+  });
   const disabled = user({
     user_id: "disabled",
     username: "disabled",
     enabled: false,
   });
-  const users = [owner, member, guest, disabled];
+  const users = [owner, member, guest, service, disabled];
 
-  it("offers enabled non-guest users as owner", () => {
+  it("offers enabled members as owner, not guests or service accounts", () => {
     expect(ownerCandidates(users)).toEqual([owner, member]);
   });
 
   it("offers every enabled user but the owner to share with", () => {
-    expect(shareCandidates(users, "owner")).toEqual([member, guest]);
+    expect(shareCandidates(users, "owner")).toEqual([member, guest, service]);
   });
 
   it("offers every enabled user to share a household source with", () => {
-    expect(shareCandidates(users, null)).toEqual([owner, member, guest]);
+    expect(shareCandidates(users, null)).toEqual([
+      owner,
+      member,
+      guest,
+      service,
+    ]);
   });
 });
 

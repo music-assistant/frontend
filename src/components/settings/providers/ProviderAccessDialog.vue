@@ -207,6 +207,12 @@ watch(
   },
 );
 
+// the owner uses the source anyway, so it leaves the shared list once picked
+watch(selectedOwner, (ownerId) => {
+  if (ownerId === null) return;
+  sharedUsers.value = sharedUsers.value.filter((id) => id !== ownerId);
+});
+
 const save = async () => {
   if (!props.config) return;
   saving.value = true;

@@ -618,15 +618,20 @@ const settingsSections = computed(() => {
 
 const providerSectionNames = [
   "music_providers",
+  "my_music_sources",
   "player_providers",
   "metadata_providers",
   "plugin_providers",
   "audio_analysis_providers",
 ];
 
+// the music sources head the overview: the full list for an admin, the own
+// sources for a member
+const musicSectionNames = ["music_providers", "my_music_sources"];
+
 const musicSections = computed(() => {
-  return settingsSections.value.filter(
-    (section) => section.name === "music_providers",
+  return settingsSections.value.filter((section) =>
+    musicSectionNames.includes(section.name),
   );
 });
 
@@ -637,7 +642,7 @@ const playerSections = computed(() => {
 const regularSections = computed(() => {
   return settingsSections.value.filter(
     (section) =>
-      section.name !== "music_providers" && section.name !== "players",
+      !musicSectionNames.includes(section.name) && section.name !== "players",
   );
 });
 

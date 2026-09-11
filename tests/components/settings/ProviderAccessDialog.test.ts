@@ -142,6 +142,20 @@ describe("ProviderAccessDialog", () => {
     expect(wrapper.emitted("update:open")).toEqual([[false]]);
   });
 
+  it("drops the new owner from the shared members", async () => {
+    const wrapper = await openDialog(ownedSource, users);
+
+    await openSelect(ownerTrigger()!);
+    await pickOption("Member");
+    await submit(wrapper);
+
+    expect(apiMock.setProviderAccess).toHaveBeenCalledWith("spotify--owned", {
+      owner: "member-id",
+      sharing: ProviderSharing.SELECTED,
+      shared_users: [],
+    });
+  });
+
   it("saves a household source without an owner", async () => {
     const wrapper = await openDialog(ownedSource, users);
 

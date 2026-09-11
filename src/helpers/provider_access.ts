@@ -58,9 +58,14 @@ export const getProviderSharingHintTranslationKey = (
   sharing: ProviderSharing,
 ) => PROVIDER_SHARING_HINT_TRANSLATION_KEYS[sharing];
 
-/** The users that may own a music source: enabled users that are not guests. */
+/** The users that may own a music source: enabled members, so no guests or service accounts. */
 export const ownerCandidates = (users: User[]) =>
-  users.filter((user) => user.enabled && user.role !== UserRole.GUEST);
+  users.filter(
+    (user) =>
+      user.enabled &&
+      user.role !== UserRole.GUEST &&
+      user.role !== UserRole.SERVICE,
+  );
 
 /** The users a music source can be shared with: every enabled user but its owner. */
 export const shareCandidates = (users: User[], owner: string | null) =>

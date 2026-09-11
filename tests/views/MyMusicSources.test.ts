@@ -167,6 +167,15 @@ describe("MyMusicSources", () => {
     expect(names).toEqual(["Zulu", "Alpha"]);
   });
 
+  it("shows neither the list nor the empty state until the sources are loaded", async () => {
+    const wrapper = await mountPage(new Promise(() => {}));
+
+    expect(wrapper.find('[data-testid="music-source"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("shows the empty state when the user owns no source", async () => {
     const wrapper = await mountPage([
       providerConfig({ domain: "tidal", instance_id: "tidal--household" }),
@@ -324,8 +333,11 @@ function emittedPayload(event: string) {
   return call![1];
 }
 
-async function mountPage(configs: ProviderConfig[]): Promise<VueWrapper> {
-  apiMock.getProviderConfigs.mockResolvedValue(configs);
+// a pending promise keeps the page in its loading state
+async function mountPage(
+  configs: ProviderConfig[] | Promise<ProviderConfig[]>,
+): Promise<VueWrapper> {
+  apiMock.getProviderConfigs.mockReturnValue(Promise.resolve(configs));
   const wrapper = mount(MyMusicSources, {
     global: {
       mocks: {

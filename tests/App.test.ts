@@ -460,9 +460,12 @@ describe("App initialization", () => {
   });
 
   it("keeps full initialization and plugin discovery for regular users", async () => {
+    apiMock.getRoleScopes.mockResolvedValue({ user: ["library.read"] });
+
     wrapper = await mountApp();
 
     expect(mockSetPreference).toHaveBeenCalledWith("theme", "dark");
+    expect(storeMock.roleScopes).toEqual({ user: ["library.read"] });
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
     expect(apiMock.fetchProviders).not.toHaveBeenCalled();
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();

@@ -109,7 +109,7 @@
       </Item>
     </ItemGroup>
 
-    <Empty v-else class="border" data-testid="music-sources-empty">
+    <Empty v-else-if="loaded" class="border" data-testid="music-sources-empty">
       <EmptyMedia variant="icon">
         <Music />
       </EmptyMedia>
@@ -214,6 +214,8 @@ const ATTENTION_STATUSES = [
 const router = useRouter();
 
 const sources = ref<ProviderConfig[]>([]);
+// the empty state waits for the first load, so it never flashes before the list
+const loaded = ref(false);
 const showAddDialog = ref(false);
 const showAccessDialog = ref(false);
 const accessDialogConfig = ref<ProviderConfig | null>(null);
@@ -235,6 +237,7 @@ const loadItems = async function () {
     sources.value = configs.filter((config) =>
       isOwnMusicSource(config, store.currentUser?.user_id),
     );
+    loaded.value = true;
   } catch (err) {
     toast.error(String(err));
   }
