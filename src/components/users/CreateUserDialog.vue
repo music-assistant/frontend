@@ -308,6 +308,7 @@ const form = useForm({
         value.role,
         value.displayName || undefined,
         value.playerFilter.length > 0 ? value.playerFilter : undefined,
+        { suppressGlobalError: true },
       );
 
       if (user) {
@@ -319,7 +320,9 @@ const form = useForm({
         toast.error(t("auth.user_create_failed"));
       }
     } catch (error) {
-      toast.error(t("auth.user_create_failed"));
+      toast.error(
+        error instanceof Error ? error.message : t("auth.user_create_failed"),
+      );
     } finally {
       loading.value = false;
     }

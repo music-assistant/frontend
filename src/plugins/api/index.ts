@@ -3217,18 +3217,23 @@ export class MusicAssistantApi {
     role: UserRole,
     displayName?: string,
     playerFilter?: string[],
+    options?: CommandOptions,
   ): Promise<User> {
     // Create a new user (admin only)
     try {
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined
-      >("auth/user/create", {
-        username,
-        password,
-        role,
-        display_name: displayName,
-        player_filter: playerFilter,
-      });
+      >(
+        "auth/user/create",
+        {
+          username,
+          password,
+          role,
+          display_name: displayName,
+          player_filter: playerFilter,
+        },
+        options,
+      );
 
       if (result == null) {
         throw new Error("Failed to create user");
@@ -3272,6 +3277,7 @@ export class MusicAssistantApi {
       preferences?: Record<string, unknown>;
       player_filter?: string[];
     },
+    options?: CommandOptions,
   ): Promise<User> {
     // Update user using unified update command
     try {
@@ -3289,7 +3295,7 @@ export class MusicAssistantApi {
 
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined
-      >("auth/user/update", args);
+      >("auth/user/update", args, options);
 
       if (result == null) {
         throw new Error("Failed to update user");
@@ -3319,19 +3325,6 @@ export class MusicAssistantApi {
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;
-    }
-  }
-
-  public async updateUserRole(
-    userId: string,
-    role: UserRole,
-  ): Promise<boolean> {
-    // Update user role using unified update command
-    try {
-      await this.updateUser(userId, { role });
-      return true;
-    } catch (error) {
-      return false;
     }
   }
 

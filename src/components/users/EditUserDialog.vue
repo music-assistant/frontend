@@ -381,12 +381,16 @@ const form = useForm({
         updates.player_filter = value.playerFilter;
       }
 
-      await api.updateUser(props.user.user_id, updates);
+      await api.updateUser(props.user.user_id, updates, {
+        suppressGlobalError: true,
+      });
       toast.success(t("auth.user_updated"));
       emit("updated");
       emit("update:modelValue", false);
     } catch (error) {
-      toast.error(t("auth.user_update_failed"));
+      toast.error(
+        error instanceof Error ? error.message : t("auth.user_update_failed"),
+      );
     } finally {
       loading.value = false;
     }
