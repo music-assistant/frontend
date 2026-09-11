@@ -174,24 +174,35 @@ watch(
   { immediate: true },
 );
 
+// On desktop sendspin plays through Web Audio, which is not a media element.
+// Once that goes quiet on pause the browser drops the media session and the
+// OS gives the media keys to another app. The silent element keeps the
+// session alive there too. On mobile the sendspin audio element does that.
+const silentAudioBacksSession = computed(
+  () => metadataPlayerId.value === undefined || !isMobileOutput,
+);
+
 watch(
   [
     () => store.activePlayer?.playback_state,
+    () => api.players[props.playerId]?.playback_state,
     mediaSessionDisabled,
     metadataPlayerId,
+    silentAudioBacksSession,
     () => webPlayer.interacted,
   ],
-  ([state, disabled, targetPlayerId, interacted]) => {
+  ([activeState, ownState, disabled, targetPlayerId, backs, interacted]) => {
     if (silentAudioInterval) {
       clearInterval(silentAudioInterval);
       silentAudioInterval = undefined;
     }
-    if (disabled || targetPlayerId !== undefined || !interacted) {
+    if (disabled || !backs || !interacted) {
       silentAudioRef.value?.pause();
       return;
     }
     if (!silentAudioRef.value) return;
 
+    const state = targetPlayerId === undefined ? activeState : ownState;
     if (state === PlaybackState.PLAYING) {
       silentAudioRef.value.play().catch(() => {});
       // Reset to silent portion every 55 seconds to avoid audible tone on loop restart
@@ -215,11 +226,12 @@ watch(
     isPlaying,
     playerState,
     () => store.activePlayer?.playback_state,
+    () => api.players[props.playerId]?.playback_state,
     metadataPlayerId,
     () => webPlayer.interacted,
     mediaSessionDisabled,
   ],
-  ([, pState, , metaPlayerId, interacted, disabled]) => {
+  ([, pState, , ownState, metaPlayerId, interacted, disabled]) => {
     if (disabled) {
       resetMediaSession();
       return;
@@ -228,9 +240,14 @@ watch(
 
     let state: MediaSessionPlaybackState;
     if (metaPlayerId !== undefined) {
-      // Web player is the source - use isPlaying from library
-      // Show as paused if player has error
-      state = isPlaying.value && pState !== "error" ? "playing" : "paused";
+      // Web player is the source. Use the server's player state: the library's
+      // isPlaying only follows stream start/end, so it can stay true while
+      // paused and the OS would then send pause instead of play.
+      // Show as paused if player has error.
+      const playing = ownState
+        ? ownState === PlaybackState.PLAYING
+        : isPlaying.value;
+      state = playing && pState !== "error" ? "playing" : "paused";
     } else {
       // Active player is the source
       const activeState = store.activePlayer?.playback_state;
@@ -272,9 +289,9 @@ onMounted(() => {
 
   registerWebPlayerAudioUnlock(primeAudio);
 
-  // If already showing active player metadata, play silent audio now that silentAudioRef exists
+  // If the silent audio backs the session, play it now that silentAudioRef exists
   if (
-    metadataPlayerId.value === undefined &&
+    silentAudioBacksSession.value &&
     !mediaSessionDisabled.value &&
     webPlayer.interacted &&
     silentAudioRef.value
