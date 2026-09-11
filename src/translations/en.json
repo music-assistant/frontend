@@ -126,7 +126,7 @@
         "player_not_available": "This player is not (yet) available",
         "player_option_error": "Error while setting player option: {key} {value}",
         "server_logs_load_failed": "Failed to load server logs",
-        "player_provider": "Provider",
+        "player_provider": "Player provider",
         "player_settings": "Player settings",
         "player_status": {
             "available": "Available",
@@ -141,6 +141,7 @@
         "pluginproviders": "Plugin providers",
         "provider_disabled": "Currently disabled",
         "provider_name": "Custom name",
+        "set_custom_name": "Set a custom name",
         "providers": "Providers",
         "reload": "Reload",
         "save": "Save",
@@ -403,7 +404,7 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
         },
-        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
+        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",
         "metadata": "Metadata",
         "metadataprovider": "Metadata provider",
@@ -552,7 +553,7 @@
         "onboarding_player_title": "Players",
         "onboarding_player_desc": "Connect your speakers and devices like Sonos, Chromecast, or AirPlay.",
         "onboarding_add_player": "Add Players",
-        "onboarding_footer": "You can always add more later from this settings page.",
+        "onboarding_footer": "You can always add more music sources and players later from this settings page.",
         "remote_access_qr_code": "QR Code",
         "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
         "reset_to_defaults": "Reset to defaults",
@@ -681,7 +682,7 @@
             },
             "updated": "Access updated"
         },
-        "player_providers_description": "Configure providers for your audio output devices",
+        "player_providers_description": "Configure player providers for your audio output devices",
         "metadata_providers_description": "Manage metadata providers for artwork and additional info",
         "plugin_providers_description": "Manage plugins that extend Music Assistant functionality",
         "restore_genres": "Restore Genres",
@@ -725,7 +726,7 @@
         "provider_status_error": "Setup failed",
         "remove_provider": "Remove",
         "remove_provider_confirm": "Remove \"{0}\"? This cannot be undone.",
-        "save_failed": "Couldn't save the settings",
+        "save_failed": "Couldn't save your changes",
         "retry": "Retry",
         "abort_setup": "Abort setup",
         "provider_saved": "Settings saved",

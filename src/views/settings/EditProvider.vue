@@ -100,12 +100,14 @@
               <Button
                 variant="ghost"
                 size="icon-sm"
-                :aria-label="$t('settings.provider_name')"
-                :title="$t('settings.provider_name')"
+                :aria-label="$t('settings.set_custom_name')"
+                :title="$t('settings.set_custom_name')"
                 @click="showRenameDialog = true"
               >
                 <Pencil class="size-4" />
-                <span class="sr-only">{{ $t("settings.provider_name") }}</span>
+                <span class="sr-only">{{
+                  $t("settings.set_custom_name")
+                }}</span>
               </Button>
               <Badge
                 data-testid="provider-status"
