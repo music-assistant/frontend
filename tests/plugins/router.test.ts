@@ -13,6 +13,7 @@ import {
   type Router,
   type RouterOptions,
 } from "vue-router";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -497,6 +498,78 @@ describe("media details back button", () => {
   );
 });
 
+describe("scroll reset on navigation", () => {
+  function contentSection() {
+    const el = document.createElement("div");
+    el.className = "content-section";
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function setHistoryForward(forward: string | null) {
+    if (!mocks.router)
+      throw new Error("The router module did not create a router");
+    (mocks.router.options.history.state as { forward: string | null }).forward =
+      forward;
+  }
+
+  afterEach(() => {
+    document.querySelector(".content-section")?.remove();
+    setHistoryForward(null);
+  });
+
+  it("scrolls back to the top on a fresh navigation", async () => {
+    const el = contentSection();
+    el.scrollTop = 200;
+    setHistoryForward(null);
+
+    runAfterEachHooks();
+    await nextTick();
+
+    expect(el.scrollTop).toBe(0);
+  });
+
+  it("leaves the scroll position alone when returning via back navigation", async () => {
+    const el = contentSection();
+    el.scrollTop = 200;
+    setHistoryForward("/settings/about");
+
+    runAfterEachHooks();
+    await nextTick();
+
+    expect(el.scrollTop).toBe(200);
+  });
+
+  // filters and searches mirror their state into the query with
+  // router.replace, which must not move the page
+  it("stays put when only the query changed", async () => {
+    const el = contentSection();
+    el.scrollTop = 200;
+    setHistoryForward(null);
+
+    runAfterEachHooks(undefined, {
+      to: "/artists?genre_ids=1",
+      from: "/artists",
+    });
+    await nextTick();
+
+    expect(el.scrollTop).toBe(200);
+  });
+
+  it("does not touch the scroll position on a failed navigation", async () => {
+    const el = contentSection();
+    el.scrollTop = 200;
+    setHistoryForward(null);
+
+    runAfterEachHooks({
+      type: NavigationFailureType.aborted,
+    } as unknown as NavigationFailure);
+    await nextTick();
+
+    expect(el.scrollTop).toBe(200);
+  });
+});
+
 describe("chunk loading recovery", () => {
   let location = locationStub();
 
@@ -643,9 +716,12 @@ async function failNavigationWithChunkError(fullPath: string) {
 /**
  * Run the router's afterEach hooks the way a finished navigation does.
  */
-function runAfterEachHooks(failure?: NavigationFailure) {
-  const to = resolveRoute("/artists");
-  const from = resolveRoute("/discover");
+function runAfterEachHooks(
+  failure?: NavigationFailure,
+  paths: { to: string; from: string } = { to: "/artists", from: "/discover" },
+) {
+  const to = resolveRoute(paths.to);
+  const from = resolveRoute(paths.from);
   for (const hook of mocks.afterEachHooks) {
     hook.call(undefined, to, from, failure);
   }
