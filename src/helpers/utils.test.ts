@@ -4,7 +4,7 @@ import type {
   MediaItemType,
   QueueItem,
 } from "@/plugins/api/interfaces";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // `getProvider` decides whether an image is considered fetchable: an
 // unloaded/disabled provider is absent from the map entirely. `schema_version`
@@ -37,6 +37,8 @@ const albumWith = (images: MediaItemImage[]) =>
   ({ name: "Black to the Blind", metadata: { images } }) as MediaItemType;
 
 describe("getMediaItemImage", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("keeps a remote image whose provider is no longer loaded", () => {
     // artwork written by a metadata provider that has since been disabled: the
     // url is self-contained, so the server can still resolve and resize it
@@ -80,6 +82,26 @@ describe("getMediaItemImage", () => {
       provider: "builtin",
       remotely_accessible: true,
     });
+  });
+
+  it("keeps the station's image when the live artwork cannot be loaded", () => {
+    // an http url is blocked as mixed content on an https page, and the proxy
+    // has no route for a url it never issued an id for, so the station's own
+    // image beats live artwork that would only render broken
+    vi.spyOn(window.location, "protocol", "get").mockReturnValue("https:");
+    const stationImage = image(
+      "theaudiodb",
+      true,
+      "https://station.example/a.jpg",
+    );
+    const queueItem = {
+      media_item: albumWith([stationImage]),
+      streamdetails: {
+        stream_metadata: { image_url: "http://stream.example/cover.jpg" },
+      },
+    } as unknown as QueueItem;
+
+    expect(getMediaItemImage(queueItem)).toEqual(stationImage);
   });
 });
 

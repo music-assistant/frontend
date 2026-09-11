@@ -305,6 +305,9 @@ const normalizeImageProxySize = function (size?: number): number {
  * - If URL is HTTP but frontend is served over HTTPS, proxy through imageproxy
  * - If URL is already an imageproxy URL from another host, transform to use our baseUrl
  * - Otherwise return the URL as-is
+ *
+ * Returns an empty string when there is no url the browser can load, so callers
+ * can fall back to another image instead of rendering a broken one.
  */
 export const getMediaImageUrl = function (
   imageUrl: string | null | undefined,
@@ -343,8 +346,8 @@ export const getMediaImageUrl = function (
 
   if (urlProtocol === "http" && pageProtocol === "https") {
     // Proxy through imageproxy to avoid mixed content issues. The opaque-id
-    // form requires a server-issued proxy_id which we don't have here, so
-    // fall back to the legacy query-string form (still supported).
+    // form requires a server-issued proxy_id which we don't have here
+    if (serverSupportsOpaqueImageProxy()) return "";
     const encUrl = encodeURIComponent(encodeURIComponent(imageUrl));
     return `${api.baseUrl}/imageproxy?path=${encUrl}`;
   }
@@ -390,10 +393,11 @@ export const getMediaItemImage = function (
   // handle QueueItem
   if ("media_item" in mediaItem && mediaItem.media_item) {
     // prefer image_url provided in queueItem's streamdetails
-    if (mediaItem.streamdetails?.stream_metadata?.image_url)
+    const liveImageUrl = mediaItem.streamdetails?.stream_metadata?.image_url;
+    if (liveImageUrl && getMediaImageUrl(liveImageUrl))
       return {
         type: ImageType.THUMB,
-        path: mediaItem.streamdetails.stream_metadata.image_url,
+        path: liveImageUrl,
         provider: "builtin",
         remotely_accessible: true,
       };
@@ -456,21 +460,18 @@ export const getMediaItemImageUrl = function (
     // force imageproxy if image is not remotely accessible or we need a resized thumb
     // Note that we play it safe here and always enforce the proxy if the schema is different
     const normalizedSize = normalizeImageProxySize(size);
-    if (img.proxy_id && serverSupportsOpaqueImageProxy()) {
-      // canonical /imageproxy/<proxy_id>?size= form
-      const params = new URLSearchParams();
-      if (normalizedSize) params.set("size", String(normalizedSize));
-      const qs = params.toString();
-      return qs
-        ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
-        : `${api.baseUrl}/imageproxy/${img.proxy_id}`;
+    if (serverSupportsOpaqueImageProxy()) {
+      if (img.proxy_id) {
+        const params = new URLSearchParams();
+        if (normalizedSize) params.set("size", String(normalizedSize));
+        const qs = params.toString();
+        return qs
+          ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
+          : `${api.baseUrl}/imageproxy/${img.proxy_id}`;
+      }
+      return img.remotely_accessible ? getMediaImageUrl(img.path) : "";
     }
-    // Schema 31+ servers reject the legacy ?path= form with a 400, so an image
-    // with no proxy_id can only load from its own url, unresized.
-    if (serverSupportsOpaqueImageProxy() && img.remotely_accessible) {
-      return getMediaImageUrl(img.path);
-    }
-    // legacy form, for servers on schema < 31 or images without a proxy_id
+    // legacy form, for servers on schema < 31
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
     const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}`;
     if (normalizedSize) return imageUrl + `&size=${normalizedSize}`;
