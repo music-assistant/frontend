@@ -6,16 +6,19 @@ import {
   type VueWrapper,
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ProviderStage } from "@/plugins/api/interfaces";
+import { ProviderStage, ProviderType } from "@/plugins/api/interfaces";
 import { providerManifest } from "../fixtures/providerManifest";
 
-const { apiMock, storeMock } = vi.hoisted(() => ({
+const { apiMock, routeMock, storeMock } = vi.hoisted(() => ({
   apiMock: {
     providerManifests: {} as Record<string, unknown>,
     providers: {},
     getProviderConfigs: vi.fn(),
     getProvider: vi.fn(),
     getProviderName: vi.fn(),
+  },
+  routeMock: {
+    query: {} as Record<string, string>,
   },
   storeMock: {
     isTouchscreen: false,
@@ -26,7 +29,7 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-vi.mock("vue-router", () => ({ useRoute: () => ({ query: {} }) }));
+vi.mock("vue-router", () => ({ useRoute: () => routeMock }));
 
 // an open dialog keeps document-level focus trap listeners, so tear it down
 // even when an assertion fails
@@ -34,6 +37,7 @@ enableAutoUnmount(afterEach);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  routeMock.query = {};
   storeMock.isTouchscreen = false;
   storeMock.dialogActive = false;
   apiMock.getProviderConfigs.mockResolvedValue([]);
@@ -92,10 +96,7 @@ describe("AddProviderDialog", () => {
     await openDialog();
 
     // a retired provider can no longer be set up, so it must not be offered
-    const names = [...document.querySelectorAll(".provider-name")].map(
-      (el) => el.textContent,
-    );
-    expect(names).toEqual(["Spotify"]);
+    expect(providerNames()).toEqual(["Spotify"]);
   });
 
   it("omits the stage badge for a stable provider", async () => {
@@ -118,15 +119,60 @@ describe("AddProviderDialog", () => {
 
     expect(document.querySelector("[data-slot='badge']")).toBeNull();
   });
+
+  it("prefers the provider type prop over the route query", async () => {
+    routeMock.query = { types: ProviderType.PLAYER };
+    apiMock.providerManifests = {
+      sonos: providerManifest({
+        domain: "sonos",
+        name: "Sonos",
+        type: ProviderType.PLAYER,
+      }),
+      spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
+    };
+
+    await openDialog({ providerType: ProviderType.MUSIC });
+
+    expect(
+      document.querySelector("[data-slot='dialog-title']")?.textContent,
+    ).toBe("settings.add_music_provider");
+    expect(providerNames()).toEqual(["Spotify"]);
+  });
+
+  it("offers only multi-instance providers when restricted", async () => {
+    apiMock.providerManifests = {
+      filesystem_smb: providerManifest({
+        domain: "filesystem_smb",
+        name: "SMB share",
+      }),
+      spotify: providerManifest({
+        domain: "spotify",
+        name: "Spotify",
+        multi_instance: true,
+      }),
+    };
+
+    await openDialog({ multiInstanceOnly: true });
+
+    expect(providerNames()).toEqual(["Spotify"]);
+  });
 });
 
 function searchField() {
   return document.querySelector("[data-slot='input-group-control']");
 }
 
-async function openDialog(): Promise<VueWrapper> {
+function providerNames() {
+  return [...document.querySelectorAll(".provider-name")].map(
+    (el) => el.textContent,
+  );
+}
+
+async function openDialog(
+  props: { providerType?: ProviderType; multiInstanceOnly?: boolean } = {},
+): Promise<VueWrapper> {
   const wrapper = mount(AddProviderDialog, {
-    props: { show: false },
+    props: { ...props, show: false },
     attachTo: document.body,
     global: {
       mocks: { $t: (key: string) => key },

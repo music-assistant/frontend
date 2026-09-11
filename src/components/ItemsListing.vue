@@ -1128,17 +1128,6 @@ const musicProviders = computed(() => {
     return props.providerFilterOptions
       .map((instanceId) => api.providers[instanceId])
       .filter((provider) => provider !== undefined)
-      .filter(
-        // honour an admin's personal provider filter, like the default branch
-        // (but without the music-only type guard: these options are
-        // intentionally allowed to include any provider type).
-        (provider) =>
-          !(
-            store.currentUser &&
-            store.currentUser.provider_filter.length &&
-            !store.currentUser.provider_filter.includes(provider.instance_id)
-          ),
-      )
       .map((provider) => ({
         label: provider.name,
         value: provider.instance_id,
@@ -1193,15 +1182,6 @@ const musicProviders = computed(() => {
         return provider.available;
       }
       if (provider.type !== ProviderType.MUSIC) return false;
-      if (
-        store.currentUser &&
-        store.currentUser.provider_filter.length &&
-        !store.currentUser.provider_filter.includes(provider.instance_id)
-      ) {
-        // for non-admin users, the providerfilter is applied in the backend
-        // but for admin users we need to filter here as well
-        return false;
-      }
       // If we have required feature(s) for this itemtype, filter by them
       if (requiredFeatures) {
         return requiredFeatures.some((feature) =>

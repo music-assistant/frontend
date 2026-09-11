@@ -307,6 +307,7 @@ import {
   hasAdvancedEntries,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
+import { isOwnMusicSource } from "@/helpers/provider_access";
 import {
   canReconfigureProvider,
   getProviderStatusTranslationKey,
@@ -320,7 +321,9 @@ import {
   ProviderConfig,
   ProviderStatus,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import {
   BookOpen,
   CircleAlert,
@@ -631,6 +634,14 @@ async function loadConfig(instanceId: string) {
   try {
     const updatedConfig = await api.getProviderConfig(instanceId);
     if (requestId === configLoadRequestId && props.instanceId === instanceId) {
+      // a member only manages the music sources it owns, the rest is admin-only
+      if (!mayManage(updatedConfig)) {
+        router.replace({
+          name: "providersettings",
+          query: { types: updatedConfig.type },
+        });
+        return;
+      }
       config.value = updatedConfig;
     }
   } catch (err) {
@@ -684,6 +695,13 @@ function getProviderStatusBadgeClass(status?: ProviderStatus | null) {
 function isCurrentProvider(instanceId: string) {
   return (
     props.instanceId === instanceId && config.value?.instance_id === instanceId
+  );
+}
+
+function mayManage(providerConfig: ProviderConfig) {
+  return (
+    authManager.isAdmin() ||
+    isOwnMusicSource(providerConfig, store.currentUser?.user_id)
   );
 }
 </script>

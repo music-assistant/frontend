@@ -299,7 +299,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { Settings } from "@lucide/vue";
@@ -388,7 +388,7 @@ provide("playersViewMode", {
   toggleViewMode: togglePlayersViewMode,
 });
 
-const providersViewMode = ref<"list" | "card">("list");
+const providersViewMode = ref<"list" | "card">("card");
 const isProvidersPage = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
   return name.includes("providers");
@@ -396,7 +396,7 @@ const isProvidersPage = computed(() => {
 
 const savedProvidersViewMode = getPreference<"list" | "card">(
   "settings.providers.viewMode",
-  "list",
+  "card",
 );
 
 watch(
@@ -488,7 +488,9 @@ const allSettingsSections = [
     icon: "mdi-music",
     color: "blue",
     route: { name: "providersettings", query: { types: "music" } },
-    adminOnly: true,
+    // a member holding the scope manages the music sources it owns here
+    adminOnly: false,
+    requiresScope: Scope.CONFIG_PROVIDERS_OWN,
   },
   {
     name: "player_providers",
@@ -597,6 +599,7 @@ const settingsSections = computed(() => {
   return allSettingsSections.filter(
     (section) =>
       (!section.adminOnly || isAdmin) &&
+      (!section.requiresScope || authManager.hasScope(section.requiresScope)) &&
       (!section.minServerVersion ||
         requireServerVersion(section.minServerVersion)),
   );

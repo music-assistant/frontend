@@ -2,10 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { storeMock, mockSetUserPreference, providersMock } = vi.hoisted(() => ({
   storeMock: {
-    currentUser: null as {
-      preferences?: Record<string, unknown>;
-      provider_filter?: string[];
-    } | null,
+    currentUser: null as { preferences?: Record<string, unknown> } | null,
   },
   mockSetUserPreference: vi.fn(),
   providersMock: {} as Record<string, unknown>,
@@ -55,11 +52,8 @@ const MUSIC_ROWS: ArtistRowId[] = [
   "similar_artists",
 ];
 
-function setPreferences(
-  preferences: Record<string, unknown>,
-  providerFilter: string[] = [],
-) {
-  storeMock.currentUser = { preferences, provider_filter: providerFilter };
+function setPreferences(preferences: Record<string, unknown>) {
+  storeMock.currentUser = { preferences };
 }
 
 function mappedTo(...providerInstances: string[]) {
@@ -141,27 +135,6 @@ describe("artistRows", () => {
       expect(
         artistRowSources("similar_artists", mappedTo("spotify--abc"), false),
       ).toEqual(["all", "lastfm--ghi", "spotify--abc"]);
-    });
-
-    it("leaves out providers hidden by the user's provider filter", () => {
-      setPreferences({}, ["spotify--abc"]);
-      addProvider("spotify--abc", [ProviderFeature.ARTIST_TOPTRACKS]);
-      addProvider("tidal--def", [ProviderFeature.ARTIST_TOPTRACKS]);
-      expect(
-        artistRowSources(
-          "top_tracks",
-          mappedTo("spotify--abc", "tidal--def"),
-          true,
-        ),
-      ).toEqual(["spotify--abc"]);
-    });
-
-    it("never offers every provider while the user's own provider filter is active", () => {
-      setPreferences({}, ["spotify--abc"]);
-      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
-      expect(
-        artistRowSources("albums", mappedTo("spotify--abc"), true),
-      ).toEqual(["library", "spotify--abc"]);
     });
 
     it("offers nothing for a provider artist or a row without a picker", () => {
@@ -308,17 +281,6 @@ describe("artistRows", () => {
       );
       expect(effectiveArtistRowSource("similar_artists", artist(), false)).toBe(
         "all",
-      );
-    });
-
-    it("defaults to the library or the first capable provider while a provider filter is active", () => {
-      setPreferences({}, ["spotify--abc", "tidal--def"]);
-      addProvider("spotify--abc", [ProviderFeature.ARTIST_TOPTRACKS]);
-      addProvider("tidal--def", [ProviderFeature.ARTIST_TOPTRACKS]);
-      const mapped = mappedTo("tidal--def", "spotify--abc");
-      expect(effectiveArtistRowSource("albums", mapped, true)).toBe("library");
-      expect(effectiveArtistRowSource("top_tracks", mapped, true)).toBe(
-        "spotify--abc",
       );
     });
 

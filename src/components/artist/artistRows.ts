@@ -175,9 +175,8 @@ export async function setArtistRowSource(
 /**
  * The sources a row of this artist can be fed from, in the order a picker lists them: the
  * library (release rows only), every provider at once (release rows only when the server can
- * merge the discography, and never while the user's own provider filter is active), then
- * each provider able to supply the row. Empty for a row without a source picker and for a
- * provider artist, which stays on its own provider.
+ * merge the discography), then each provider able to supply the row. Empty for a row without
+ * a source picker and for a provider artist, which stays on its own provider.
  */
 export function artistRowSources(
   id: ArtistRowId,
@@ -192,8 +191,7 @@ export function artistRowSources(
  * The source that actually feeds a row for this artist: the saved one while it is still among
  * the row's sources, otherwise the default. Provider (non-library) artists always resolve to
  * their own provider. The default is every provider at once where that is offered, else the
- * library for the release rows (albums, singles, and the artist's own releases that
- * appearances are checked against) and the first capable provider for the aggregated rows.
+ * library (the release rows on a server without the discography command).
  */
 export function effectiveArtistRowSource(
   id: ArtistRowId,
@@ -204,8 +202,7 @@ export function effectiveArtistRowSource(
   const sources = rowSourceCandidates(id, artist, supportsDiscography);
   const saved = getArtistRowSource(id);
   if (saved && sources.includes(saved)) return saved;
-  if (sources.includes("all")) return "all";
-  return sources.includes("library") ? "library" : (sources[0] ?? "library");
+  return sources.includes("all") ? "all" : "library";
 }
 
 const ARTIST_ROWS_BY_ID = Object.fromEntries(
@@ -243,20 +240,14 @@ function rowSourceCandidates(
   if (artist.provider !== "library") return [];
   const sources: ArtistRowSource[] = [];
   if (RELEASE_ROWS.includes(id)) sources.push("library");
-  // merging every provider server-side would bypass the filter the user set for themselves
-  if (
-    (!RELEASE_ROWS.includes(id) || supportsDiscography) &&
-    !hasUserProviderFilter()
-  ) {
-    sources.push("all");
-  }
+  if (!RELEASE_ROWS.includes(id) || supportsDiscography) sources.push("all");
   return [...sources, ...rowSourceProviders(id, artist)];
 }
 
 /**
  * The providers able to supply a row, sorted by name: those the artist is mapped to that
  * support the row's feature and, for the rows the server aggregates, any metadata or plugin
- * provider that does. Providers hidden by the user's provider filter are left out.
+ * provider that does. The server only loads the sources the user may use.
  */
 function rowSourceProviders(id: ArtistRowId, artist: Artist): string[] {
   const feature = ROW_FEATURES[id];
@@ -280,11 +271,9 @@ function rowSourceProviders(id: ArtistRowId, artist: Artist): string[] {
       }
     }
   }
-  return [...ids]
-    .filter(providerVisible)
-    .sort((a, b) =>
-      (api.providers[a]?.name ?? a).localeCompare(api.providers[b]?.name ?? b),
-    );
+  return [...ids].sort((a, b) =>
+    (api.providers[a]?.name ?? a).localeCompare(api.providers[b]?.name ?? b),
+  );
 }
 
 function providerSupports(
@@ -293,17 +282,5 @@ function providerSupports(
 ): boolean {
   return (
     api.providers[instanceId]?.supported_features.includes(feature) ?? false
-  );
-}
-
-function hasUserProviderFilter(): boolean {
-  return (store.currentUser?.provider_filter ?? []).length > 0;
-}
-
-/** Whether the user's provider filter, when set, includes the provider. */
-function providerVisible(instanceId: string): boolean {
-  return (
-    !hasUserProviderFilter() ||
-    store.currentUser!.provider_filter.includes(instanceId)
   );
 }
