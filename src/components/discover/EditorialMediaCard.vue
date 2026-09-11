@@ -8,6 +8,8 @@
       'ed-card--unavailable': !isAvailable,
       'ed-card--fluid': fluid,
       'ed-card--disabled': disabled,
+      'ed-card--dimmed': dimmed,
+      'ed-card--round': round,
     }"
     @click="onClick"
     @keydown.enter.self="onClick"
@@ -46,6 +48,7 @@
         :show-badge="false"
         icon-style="position: absolute; right: 6px; bottom: 6px; z-index: 2"
       />
+      <slot name="art-overlay"></slot>
       <div
         v-if="showCheckboxes"
         class="ed-card__select"
@@ -131,6 +134,10 @@ interface Props {
   isPlaying?: boolean;
   disablePlayButton?: boolean;
   disabled?: boolean;
+  // fades the artwork, for an item that is not (yet) in the library
+  dimmed?: boolean;
+  // circular artwork, for artist cards
+  round?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
 }
@@ -143,6 +150,8 @@ const props = withDefaults(defineProps<Props>(), {
   isPlaying: false,
   disablePlayButton: false,
   disabled: false,
+  dimmed: false,
+  round: false,
   parentItem: undefined,
   sortBy: undefined,
 });
@@ -318,6 +327,12 @@ const onMenu = (e: MouseEvent) => {
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.ed-card--dimmed .ed-card__art {
+  opacity: 0.45;
+}
+.ed-card--round .ed-card__art {
+  border-radius: 999px;
 }
 .ed-card__initials {
   position: absolute;

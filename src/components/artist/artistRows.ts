@@ -1,0 +1,216 @@
+import { setUserPreference } from "@/composables/userPreferences";
+import {
+  readRowsConfig,
+  resolveRowsConfig,
+  withRowHidden,
+  withRowsOrder,
+  writeRowsConfig,
+} from "@/helpers/rowsConfig";
+import type { Artist } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+
+export type ArtistRowId =
+  | "bio"
+  | "top_tracks"
+  | "albums"
+  | "singles_eps"
+  | "appears_on"
+  | "similar_artists"
+  | "audiobooks"
+  | "audiobooks_all" // authors / narrators only
+  | "provider_mappings"
+  | "artwork"; // admins only
+
+// "library" = in-library items, "all" = library + every mapped provider, else a provider instance id
+export type ArtistRowSource = "library" | "all" | (string & {});
+
+export interface ArtistRowDefinition {
+  id: ArtistRowId;
+  labelKey: string;
+  // "music" = singers, "audiobook" = authors/narrators, "both" = either
+  audience: "music" | "audiobook" | "both";
+  adminOnly?: boolean;
+  // gets a "Source" picker in Edit rows
+  supportsSource?: boolean;
+}
+
+// Default order, shared by both audiences: filtering out the rows of the other
+// audience leaves that audience's default order.
+export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
+  { id: "bio", labelKey: "biography", audience: "both" },
+  {
+    id: "top_tracks",
+    labelKey: "artist_toptracks",
+    audience: "music",
+    supportsSource: true,
+  },
+  {
+    id: "albums",
+    labelKey: "albums",
+    audience: "music",
+    supportsSource: true,
+  },
+  {
+    id: "singles_eps",
+    labelKey: "singles_eps",
+    audience: "music",
+    supportsSource: true,
+  },
+  { id: "appears_on", labelKey: "appears_on", audience: "music" },
+  {
+    id: "similar_artists",
+    labelKey: "similar_artists",
+    audience: "music",
+    supportsSource: true,
+  },
+  { id: "audiobooks", labelKey: "audiobooks", audience: "audiobook" },
+  {
+    id: "audiobooks_all",
+    labelKey: "artist_all_audiobooks",
+    audience: "audiobook",
+  },
+  {
+    id: "provider_mappings",
+    labelKey: "mapped_providers",
+    audience: "both",
+    adminOnly: true,
+  },
+  { id: "artwork", labelKey: "images", audience: "both", adminOnly: true },
+];
+
+export const ARTIST_ROWS_PREFERENCE_KEY = "artist.rows";
+export const ARTIST_ROW_SOURCES_PREFERENCE_KEY = "artist.rowSources";
+
+/** Row ids applicable to the given artist type / user, in default order. */
+export function availableArtistRowIds(
+  isAudiobookArtist: boolean,
+  isAdmin: boolean,
+): ArtistRowId[] {
+  const audience = isAudiobookArtist ? "audiobook" : "music";
+  return ARTIST_ROWS.filter(
+    (row) =>
+      (row.audience === "both" || row.audience === audience) &&
+      (isAdmin || !row.adminOnly),
+  ).map((row) => row.id);
+}
+
+export function artistRowDefinition(id: ArtistRowId): ArtistRowDefinition {
+  return ARTIST_ROWS_BY_ID[id];
+}
+
+/**
+ * The user's row order and hidden rows, resolved against the rows available
+ * for this artist. Nothing is hidden by default.
+ */
+export function resolveArtistRows(availableIds: ArtistRowId[]): {
+  order: ArtistRowId[];
+  hidden: Set<ArtistRowId>;
+} {
+  const { order, hidden } = resolveRowsConfig(
+    readRowsConfig(ARTIST_ROWS_PREFERENCE_KEY),
+    availableIds,
+  );
+  return {
+    order: order as ArtistRowId[],
+    hidden: hidden as Set<ArtistRowId>,
+  };
+}
+
+/** Hide or unhide a single row on every artist page. */
+export async function setArtistRowHidden(
+  id: ArtistRowId,
+  hidden: boolean,
+): Promise<void> {
+  await writeRowsConfig(
+    ARTIST_ROWS_PREFERENCE_KEY,
+    withRowHidden(readRowsConfig(ARTIST_ROWS_PREFERENCE_KEY), id, hidden),
+  );
+}
+
+/**
+ * Reorder the rows available for this artist. The given ids are rearranged
+ * within the positions they already occupy in the full saved order, so rows
+ * that don't apply to this artist keep their slots.
+ */
+export async function setArtistRowsOrder(
+  orderedIds: ArtistRowId[],
+  availableIds: ArtistRowId[],
+): Promise<void> {
+  const cfg = withRowsOrder(
+    readRowsConfig(ARTIST_ROWS_PREFERENCE_KEY),
+    orderedIds,
+    availableIds,
+  );
+  if (!cfg) return;
+  await writeRowsConfig(ARTIST_ROWS_PREFERENCE_KEY, cfg);
+}
+
+/** Clears both preferences (order/visibility and sources). */
+export async function resetArtistRows(): Promise<void> {
+  await writeRowsConfig(ARTIST_ROWS_PREFERENCE_KEY, {});
+  await setUserPreference(ARTIST_ROW_SOURCES_PREFERENCE_KEY, {});
+}
+
+/** The user's saved source for a row, if any. */
+export function getArtistRowSource(
+  id: ArtistRowId,
+): ArtistRowSource | undefined {
+  const source = savedRowSources()[id];
+  return typeof source === "string" ? source : undefined;
+}
+
+export async function setArtistRowSource(
+  id: ArtistRowId,
+  source: ArtistRowSource | undefined,
+): Promise<void> {
+  const sources = { ...savedRowSources() };
+  if (source) {
+    sources[id] = source;
+  } else {
+    delete sources[id];
+  }
+  await setUserPreference(ARTIST_ROW_SOURCES_PREFERENCE_KEY, sources);
+}
+
+/**
+ * The source that actually feeds a row for this artist: the saved one when it applies (a provider
+ * the artist is mapped to, or "all"/"library"), otherwise the default. Provider (non-library) artists
+ * always resolve to their own provider. Default for albums/singles is "all" when the server supports
+ * the discography command, else "library"; for top tracks / similar artists it is "all".
+ */
+export function effectiveArtistRowSource(
+  id: ArtistRowId,
+  artist: Artist,
+  supportsDiscography: boolean,
+): ArtistRowSource {
+  if (artist.provider !== "library") return artist.provider;
+  const saved = getArtistRowSource(id);
+  if (saved && sourceApplies(saved, artist)) return saved;
+  if (id === "albums" || id === "singles_eps") {
+    return supportsDiscography ? "all" : "library";
+  }
+  return ALL_PROVIDER_ROWS.includes(id) ? "all" : "library";
+}
+
+const ARTIST_ROWS_BY_ID = Object.fromEntries(
+  ARTIST_ROWS.map((row) => [row.id, row]),
+) as Record<ArtistRowId, ArtistRowDefinition>;
+
+// rows the server aggregates over every provider by default
+const ALL_PROVIDER_ROWS: ArtistRowId[] = ["top_tracks", "similar_artists"];
+
+/** The saved `{ [rowId]: source }` object, empty when unset or invalid. */
+function savedRowSources(): Partial<Record<ArtistRowId, ArtistRowSource>> {
+  const pref =
+    store.currentUser?.preferences?.[ARTIST_ROW_SOURCES_PREFERENCE_KEY];
+  if (!pref || typeof pref !== "object") return {};
+  return pref as Partial<Record<ArtistRowId, ArtistRowSource>>;
+}
+
+/** Whether a saved source can still feed a row of the given artist. */
+function sourceApplies(source: ArtistRowSource, artist: Artist): boolean {
+  if (source === "library" || source === "all") return true;
+  return artist.provider_mappings.some(
+    (mapping) => mapping.provider_instance === source,
+  );
+}
