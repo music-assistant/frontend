@@ -383,6 +383,7 @@ const providerName = computed(
   () =>
     config.value?.name ||
     api.providers[config.value?.instance_id ?? ""]?.name ||
+    config.value?.default_name ||
     providerManifest.value?.name,
 );
 

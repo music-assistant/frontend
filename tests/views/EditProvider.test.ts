@@ -826,6 +826,40 @@ describe("EditProvider", () => {
     ]);
   });
 
+  it("falls back to the default name when the source has no custom name", async () => {
+    // an unloaded provider has no instance to read a name from, so the config's
+    // default name has to carry it rather than the generic manifest name
+    const config = spotifyConfig(ProviderStatus.INCOMPATIBLE);
+    config.name = null;
+    config.default_name = "Spotify (sam)";
+    config.last_error = {
+      error_code: 1,
+      message: "This provider is retired.",
+    };
+    apiMock.getProviderConfig.mockResolvedValue(config);
+    apiMock.removeProviderConfig.mockResolvedValue(undefined);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper.get("button-stub").trigger("click");
+
+    expect(i18nMock.t).toHaveBeenCalledWith(
+      "settings.remove_provider_confirm",
+      ["Spotify (sam)"],
+    );
+  });
+
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
       spotifyConfig(ProviderStatus.LOADED),
