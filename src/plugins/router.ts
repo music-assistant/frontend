@@ -2,7 +2,7 @@ import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { $t } from "@/plugins/i18n";
-import { watch } from "vue";
+import { nextTick, watch } from "vue";
 import {
   createRouter,
   createWebHashHistory,
@@ -785,6 +785,21 @@ router.afterEach((to, from) => {
   ) {
     store.isOnboarding = false;
   }
+});
+
+// Most views share the .content-section scroll container which stays mounted across route changes
+// Prevent the scroll position from staying the same when changing route
+router.afterEach((to, from, failure) => {
+  if (failure) return;
+  // Don't reset on same route
+  if (to.path === from.path) return;
+  if (router.options.history.state.forward != null) return;
+  // nextTick needed because afterEach fires before Vue unmounts the page
+  // Resetting here would wipe its scroll position before it's saved
+  nextTick(() => {
+    const contentSection = document.querySelector(".content-section");
+    if (contentSection) contentSection.scrollTop = 0;
+  });
 });
 
 export default router;
