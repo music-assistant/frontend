@@ -3,13 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigEntryType,
   EventType,
+  ProviderSharing,
   ProviderStatus,
   ProviderType,
   type ProviderConfig,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import { store } from "@/plugins/store";
 import EditProvider from "@/views/settings/EditProvider.vue";
 import { providerConfig } from "../fixtures/providerConfig";
+import { user } from "../fixtures/user";
 
 const {
   apiMock,
@@ -49,6 +52,7 @@ const {
   },
   routerMock: {
     push: vi.fn(),
+    replace: vi.fn(),
   },
   toastMock: {
     error: vi.fn(),
@@ -133,6 +137,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
   authMock.isAdmin.mockReturnValue(true);
+  store.currentUser = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
   apiMock.providerManifests.spotify.documentation =
     "https://example.com/spotify";
@@ -891,10 +896,69 @@ describe("EditProvider", () => {
   it("sends a member back to their own music sources after saving", async () => {
     // the full provider list is admin-only, so a member returns to its own page
     authMock.isAdmin.mockReturnValue(false);
+    store.currentUser = user({ user_id: "member-id" });
 
-    await mountSavedProvider();
+    await mountSavedProvider({
+      ...spotifyConfig(ProviderStatus.LOADED),
+      access: {
+        owner: "member-id",
+        sharing: ProviderSharing.PRIVATE,
+        shared_users: [],
+      },
+    });
 
     expect(routerMock.push).toHaveBeenCalledWith({ name: "mymusicsources" });
+  });
+
+  it("sends a member away from a source it does not own", async () => {
+    authMock.isAdmin.mockReturnValue(false);
+    store.currentUser = user({ user_id: "member-id" });
+    apiMock.getProviderConfig.mockResolvedValue({
+      ...spotifyConfig(ProviderStatus.LOADED),
+      access: {
+        owner: "someone-else",
+        sharing: ProviderSharing.MEMBERS,
+        shared_users: [],
+      },
+    });
+
+    const wrapper = shallowMount(EditProvider, {
+      props: { instanceId: "spotify--test" },
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    // the options are never shown; the member lands on their own page
+    expect(routerMock.replace).toHaveBeenCalledWith({ name: "mymusicsources" });
+    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(false);
+  });
+
+  it("lets a member open a source it owns", async () => {
+    authMock.isAdmin.mockReturnValue(false);
+    store.currentUser = user({ user_id: "member-id" });
+    apiMock.getProviderConfig.mockResolvedValue({
+      ...spotifyConfig(ProviderStatus.LOADED),
+      access: {
+        owner: "member-id",
+        sharing: ProviderSharing.PRIVATE,
+        shared_users: [],
+      },
+    });
+
+    const wrapper = shallowMount(EditProvider, {
+      props: { instanceId: "spotify--test" },
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(routerMock.replace).not.toHaveBeenCalled();
+    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
   });
 });
 
@@ -939,13 +1003,11 @@ function spotifyConfig(
  * Mounts the provider page and saves the form, so the redirect it performs
  * afterwards is assertable.
  */
-async function mountSavedProvider() {
-  apiMock.getProviderConfig.mockResolvedValue(
-    spotifyConfig(ProviderStatus.LOADED),
-  );
-  apiMock.saveProviderConfig.mockResolvedValue(
-    spotifyConfig(ProviderStatus.LOADED),
-  );
+async function mountSavedProvider(
+  config: ProviderConfig = spotifyConfig(ProviderStatus.LOADED),
+) {
+  apiMock.getProviderConfig.mockResolvedValue(config);
+  apiMock.saveProviderConfig.mockResolvedValue(config);
 
   const wrapper = shallowMount(EditProvider, {
     props: {
