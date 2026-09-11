@@ -7,50 +7,63 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  type User,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
 import { providerConfig } from "../fixtures/providerConfig";
 import { user } from "../fixtures/user";
 
-const { apiMock, eventbusMock, routeMock, routerMock, toastMock } = vi.hoisted(
-  () => ({
-    apiMock: {
-      getAllUsers: vi.fn<MusicAssistantApi["getAllUsers"]>(),
-      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
-      getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
-      providerManifests: {
-        spotify: {
-          allow_disable: true,
-          builtin: false,
-          description: "Spotify music provider",
-          documentation: "https://example.com",
-          has_setup_flow: true,
-          name: "Spotify",
-          stage: "stable",
-        },
+const {
+  apiMock,
+  authMock,
+  eventbusMock,
+  routeMock,
+  routerMock,
+  storeMock,
+  toastMock,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getAllUsers: vi.fn<MusicAssistantApi["getAllUsers"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
+    providerManifests: {
+      spotify: {
+        allow_disable: true,
+        builtin: false,
+        description: "Spotify music provider",
+        documentation: "https://example.com",
+        has_setup_flow: true,
+        name: "Spotify",
+        stage: "stable",
       },
-      providers: {},
-      reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
-      removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
-      saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
-      startSync: vi.fn<MusicAssistantApi["startSync"]>(),
-      subscribe: vi.fn(),
     },
-    eventbusMock: {
-      emit: vi.fn(),
-    },
-    routeMock: {
-      query: { types: "music" },
-    },
-    routerMock: {
-      push: vi.fn(),
-    },
-    toastMock: {
-      error: vi.fn(),
-    },
-  }),
-);
+    providers: {},
+    reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
+    removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
+    startSync: vi.fn<MusicAssistantApi["startSync"]>(),
+    subscribe: vi.fn(),
+  },
+  authMock: {
+    isAdmin: vi.fn<() => boolean>(),
+  },
+  eventbusMock: {
+    emit: vi.fn(),
+  },
+  routeMock: {
+    query: { types: "music" },
+  },
+  routerMock: {
+    push: vi.fn(),
+  },
+  storeMock: {
+    currentUser: undefined as User | undefined,
+  },
+  toastMock: {
+    error: vi.fn(),
+  },
+}));
 
 const owner = user({
   display_name: "Marcel",
@@ -63,6 +76,14 @@ const member = user({ user_id: "user-sam", username: "sam" });
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: authMock,
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: storeMock,
 }));
 
 vi.mock("@/plugins/eventbus", () => ({
@@ -87,10 +108,21 @@ vi.mock("@/helpers/utils", () => ({
   openLinkInNewTab: vi.fn(),
 }));
 
+// rendered in place of the real dialog, exposing what it was handed
+const AddDialogStub = vi.hoisted(() => ({
+  name: "AddProviderDialog",
+  props: ["show", "providerType", "multiInstanceOnly"],
+  template: `
+    <div
+      data-testid="add-dialog"
+      :data-provider-type="providerType ?? ''"
+      :data-multi-instance="String(multiInstanceOnly)"
+    />
+  `,
+}));
+
 vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
-  default: {
-    template: "<div />",
-  },
+  default: AddDialogStub,
 }));
 
 // rendered in place of the real dialog, exposing what it was handed
@@ -102,6 +134,7 @@ const AccessDialogStub = vi.hoisted(() => ({
       data-testid="access-dialog"
       :data-open="String(open)"
       :data-config="config?.instance_id ?? ''"
+      :data-users="users === null ? 'none' : String(users.length)"
     />
   `,
 }));
@@ -123,32 +156,19 @@ vi.mock("vue-router", async (importOriginal) => {
   };
 });
 
-const ListItemStub = {
-  name: "ListItem",
-  emits: ["click", "menu"],
-  template: `
-    <div data-testid="provider-row" @click="$emit('click')">
-      <slot name="subtitle" />
-      <slot name="append" />
-    </div>
-  `,
+const ItemStub = {
+  name: "Item",
+  emits: ["click"],
+  template: `<div @click="$emit('click')"><slot /></div>`,
 };
 
 const SlotStub = {
   template: "<div><slot /></div>",
 };
 
-const ChipStub = {
-  template: '<div data-testid="stage-badge"><slot /></div>',
-};
-
 const ButtonStub = {
   emits: ["click"],
-  template: `
-    <button data-testid="provider-action" @click="$emit('click', $event)">
-      <slot />
-    </button>
-  `,
+  template: `<button @click="$emit('click', $event)"><slot /></button>`,
 };
 
 beforeEach(() => {
@@ -156,10 +176,13 @@ beforeEach(() => {
   apiMock.getAllUsers.mockResolvedValue([owner, member]);
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.providerManifests.spotify.builtin = false;
+  apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
+  authMock.isAdmin.mockReturnValue(true);
   routeMock.query.types = "music";
+  storeMock.currentUser = owner;
 });
 
 describe("Providers", () => {
@@ -225,14 +248,9 @@ describe("Providers", () => {
 
   it("offers separate reconfigure and options menu actions", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
-    const menuEvent = new Event("click");
 
-    wrapper.findComponent(ListItemStub).vm.$emit("menu", menuEvent);
+    const menuItems = await openMenu(wrapper);
 
-    const contextMenuCall = eventbusMock.emit.mock.calls.find(
-      ([event]) => event === "contextmenu",
-    );
-    const menuItems = contextMenuCall?.[1].items;
     expect(
       menuItems.slice(0, 2).map((item: { label: string }) => item.label),
     ).toEqual(["settings.reconfigure", "settings.options"]);
@@ -253,12 +271,8 @@ describe("Providers", () => {
   it("reloads a provider through the shared API action", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
-
-    const contextMenuCall = eventbusMock.emit.mock.calls.find(
-      ([event]) => event === "contextmenu",
-    );
-    const reloadItem = contextMenuCall?.[1].items.find(
+    const menuItems = await openMenu(wrapper);
+    const reloadItem = menuItems.find(
       (item: { label: string }) => item.label === "settings.reload_provider",
     );
     reloadItem.action();
@@ -269,12 +283,8 @@ describe("Providers", () => {
   it("omits reconfigure from the menu when no setup flow exists", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED, false);
 
-    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
+    const menuItems = await openMenu(wrapper);
 
-    const contextMenuCall = eventbusMock.emit.mock.calls.find(
-      ([event]) => event === "contextmenu",
-    );
-    const menuItems = contextMenuCall?.[1].items;
     expect(
       menuItems.map((item: { label: string }) => item.label),
     ).not.toContain("settings.reconfigure");
@@ -284,12 +294,8 @@ describe("Providers", () => {
   it("omits reconfigure for disabled providers", async () => {
     const wrapper = await mountProviders(ProviderStatus.DISABLED, true, false);
 
-    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
+    const menuItems = await openMenu(wrapper);
 
-    const contextMenuCall = eventbusMock.emit.mock.calls.find(
-      ([event]) => event === "contextmenu",
-    );
-    const menuItems = contextMenuCall?.[1].items;
     expect(
       menuItems.map((item: { label: string }) => item.label),
     ).not.toContain("settings.reconfigure");
@@ -299,12 +305,8 @@ describe("Providers", () => {
   it("omits reconfigure for incompatible providers", async () => {
     const wrapper = await mountProviders(ProviderStatus.INCOMPATIBLE);
 
-    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
+    const menuItems = await openMenu(wrapper);
 
-    const contextMenuCall = eventbusMock.emit.mock.calls.find(
-      ([event]) => event === "contextmenu",
-    );
-    const menuItems = contextMenuCall?.[1].items;
     expect(
       menuItems.map((item: { label: string }) => item.label),
     ).not.toContain("settings.reconfigure");
@@ -365,12 +367,8 @@ describe("Providers", () => {
   it("opens the access dialog from the provider menu", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
+    const menuItems = await openMenu(wrapper);
 
-    const contextMenuCall = eventbusMock.emit.mock.calls.find(
-      ([event]) => event === "contextmenu",
-    );
-    const menuItems = contextMenuCall?.[1].items;
     expect(
       menuItems.slice(0, 3).map((item: { label: string }) => item.label),
     ).toEqual([
@@ -385,6 +383,7 @@ describe("Providers", () => {
     const dialog = wrapper.get('[data-testid="access-dialog"]');
     expect(dialog.attributes("data-open")).toBe("true");
     expect(dialog.attributes("data-config")).toBe("spotify--test");
+    expect(dialog.attributes("data-users")).toBe("2");
   });
 
   it("hides the access action for a builtin provider", async () => {
@@ -392,12 +391,8 @@ describe("Providers", () => {
 
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
-
-    const contextMenuCall = eventbusMock.emit.mock.calls.find(
-      ([event]) => event === "contextmenu",
-    );
-    const accessItem = contextMenuCall?.[1].items.find(
+    const menuItems = await openMenu(wrapper);
+    const accessItem = menuItems.find(
       (item: { label: string }) =>
         item.label === "settings.source_access.action",
     );
@@ -414,12 +409,8 @@ describe("Providers", () => {
       type: ProviderType.PLAYER,
     });
 
-    wrapper.findComponent(ListItemStub).vm.$emit("menu", new Event("click"));
-
-    const contextMenuCall = eventbusMock.emit.mock.calls.find(
-      ([event]) => event === "contextmenu",
-    );
-    const accessItem = contextMenuCall?.[1].items.find(
+    const menuItems = await openMenu(wrapper);
+    const accessItem = menuItems.find(
       (item: { label: string }) =>
         item.label === "settings.source_access.action",
     );
@@ -427,6 +418,26 @@ describe("Providers", () => {
     expect(wrapper.find('[data-testid="provider-access"]').exists()).toBe(
       false,
     );
+  });
+
+  it("leaves the offered provider types to the route for an admin", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const dialog = wrapper.get('[data-testid="add-dialog"]');
+    expect(dialog.attributes("data-provider-type")).toBe("");
+    expect(dialog.attributes("data-multi-instance")).toBe("false");
+  });
+
+  it("keeps the filter empty state for a provider type without any provider", async () => {
+    routeMock.query.types = "player";
+
+    const wrapper = await mountWithConfigs([]);
+
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.get(".empty-state").text()).toContain("no_content");
+    expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
   });
 
   it("reports a failing user lookup", async () => {
@@ -438,6 +449,147 @@ describe("Providers", () => {
   });
 });
 
+describe("Providers for a member", () => {
+  beforeEach(() => {
+    authMock.isAdmin.mockReturnValue(false);
+  });
+
+  it("lists only the music sources it owns, whatever type the route asks for", async () => {
+    routeMock.query.types = "player";
+
+    const wrapper = await mountWithConfigs([
+      ownSource(),
+      otherSource(),
+      playerProvider(),
+    ]);
+
+    const rows = wrapper.findAll('[data-testid="provider-row"]');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].text()).toContain("Own Spotify");
+  });
+
+  it("summarizes its own source by the sharing alone", async () => {
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+      "settings.source_access.options.private",
+    );
+  });
+
+  it("offers the member actions and hides the administrative ones", async () => {
+    apiMock.getProvider.mockReturnValue({
+      available: true,
+      domain: "spotify",
+      instance_id: "spotify--own",
+      is_streaming_provider: true,
+      name: "Own Spotify",
+      supported_features: [],
+      type: ProviderType.MUSIC,
+    });
+
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    const menuItems = await openMenu(wrapper);
+    expect(
+      menuItems
+        .filter((item: { hide?: boolean }) => !item.hide)
+        .map((item: { label: string }) => item.label),
+    ).toEqual([
+      "settings.reconfigure",
+      "settings.options",
+      "settings.source_access.share_action",
+      "settings.documentation",
+      "settings.delete",
+      "settings.reload_provider",
+    ]);
+    expect(
+      menuItems.map((item: { label: string }) => item.label),
+    ).not.toContain("settings.source_access.action");
+  });
+
+  it("opens the sharing dialog without a user list", async () => {
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    const menuItems = await openMenu(wrapper);
+    menuItems
+      .find(
+        (item: { label: string }) =>
+          item.label === "settings.source_access.share_action",
+      )
+      .action();
+    await flushPromises();
+
+    const dialog = wrapper.get('[data-testid="access-dialog"]');
+    expect(dialog.attributes("data-open")).toBe("true");
+    expect(dialog.attributes("data-config")).toBe("spotify--own");
+    expect(dialog.attributes("data-users")).toBe("none");
+  });
+
+  it("does not list the users", async () => {
+    await mountWithConfigs([ownSource()]);
+
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+  });
+
+  it("offers only music sources that allow another account", async () => {
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    const dialog = wrapper.get('[data-testid="add-dialog"]');
+    expect(dialog.attributes("data-provider-type")).toBe("music");
+    expect(dialog.attributes("data-multi-instance")).toBe("true");
+  });
+
+  it("invites a member without sources to add one", async () => {
+    const wrapper = await mountWithConfigs([otherSource()]);
+
+    expect(wrapper.get('[data-testid="music-sources-empty"]').text()).toContain(
+      "settings.music_sources_empty_title",
+    );
+    expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="add-provider-empty"]').exists()).toBe(
+      true,
+    );
+  });
+});
+
+function ownSource() {
+  return providerConfig({
+    access: {
+      owner: owner.user_id,
+      shared_users: [],
+      sharing: ProviderSharing.PRIVATE,
+    },
+    domain: "spotify",
+    instance_id: "spotify--own",
+    name: "Own Spotify",
+    status: ProviderStatus.LOADED,
+  });
+}
+
+function otherSource() {
+  return providerConfig({
+    access: {
+      owner: member.user_id,
+      shared_users: [],
+      sharing: ProviderSharing.PRIVATE,
+    },
+    domain: "spotify",
+    instance_id: "spotify--other",
+    name: "Shared Spotify",
+    status: ProviderStatus.LOADED,
+  });
+}
+
+function playerProvider() {
+  return providerConfig({
+    domain: "spotify",
+    instance_id: "spotify--player",
+    name: "Spotify Connect",
+    status: ProviderStatus.LOADED,
+    type: ProviderType.PLAYER,
+  });
+}
+
 async function mountProviders(
   status: ProviderStatus,
   hasSetupFlow: boolean = true,
@@ -445,7 +597,7 @@ async function mountProviders(
   configOverrides: Partial<ProviderConfig> = {},
 ) {
   apiMock.providerManifests.spotify.has_setup_flow = hasSetupFlow;
-  apiMock.getProviderConfigs.mockResolvedValue([
+  return mountWithConfigs([
     providerConfig({
       domain: "spotify",
       enabled,
@@ -459,6 +611,10 @@ async function mountProviders(
       ...configOverrides,
     }),
   ]);
+}
+
+async function mountWithConfigs(configs: ProviderConfig[]) {
+  apiMock.getProviderConfigs.mockResolvedValue(configs);
 
   const wrapper = shallowMount(Providers, {
     global: {
@@ -472,15 +628,35 @@ async function mountProviders(
         },
       },
       stubs: {
+        AddProviderDialog: AddDialogStub,
+        Badge: SlotStub,
         Container: SlotStub,
-        ListItem: ListItemStub,
+        Empty: SlotStub,
+        EmptyContent: SlotStub,
+        EmptyDescription: SlotStub,
+        EmptyMedia: SlotStub,
+        EmptyTitle: SlotStub,
+        Item: ItemStub,
+        ItemActions: SlotStub,
+        ItemContent: SlotStub,
+        ItemDescription: SlotStub,
+        ItemGroup: SlotStub,
+        ItemMedia: SlotStub,
+        ItemTitle: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
-        VBtn: ButtonStub,
-        VChip: ChipStub,
-        VList: SlotStub,
+        Button: ButtonStub,
       },
     },
   });
   await flushPromises();
   return wrapper;
+}
+
+// the menu button emits on the app-wide eventbus, which is what carries the items
+async function openMenu(wrapper: Awaited<ReturnType<typeof mountWithConfigs>>) {
+  await wrapper.get('[data-testid="provider-menu"]').trigger("click");
+  const contextMenuCall = eventbusMock.emit.mock.calls.find(
+    ([event]) => event === "contextmenu",
+  );
+  return contextMenuCall?.[1].items;
 }

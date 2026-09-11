@@ -465,16 +465,6 @@ export const routes: RouteRecordRaw[] = [
             props: true,
           },
           {
-            path: "my-music-sources",
-            name: "mymusicsources",
-            component: () =>
-              import(
-                /* webpackChunkName: "mymusicsources" */ "@/views/settings/MyMusicSources.vue"
-              ),
-            props: true,
-            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
-          },
-          {
             path: "providers",
             name: "providersettings",
             component: () =>
@@ -482,7 +472,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // a member manages the music sources it owns from the same page
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
             path: "players",

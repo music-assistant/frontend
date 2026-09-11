@@ -419,13 +419,6 @@ const documentationUrl = computed(() => {
   return getExternalLinkUrl(providerManifest.value?.documentation);
 });
 
-// a member manages its sources from its own page, the full list is admin-only
-const providersRoute = computed(() =>
-  authManager.isAdmin()
-    ? { name: "providersettings", query: { types: config.value?.type } }
-    : { name: "mymusicsources" },
-);
-
 // watchers
 watch(
   () => props.instanceId,
@@ -453,7 +446,10 @@ onBeforeUnmount(() => {
 
 // methods
 const backToProviders = function () {
-  router.push(providersRoute.value);
+  router.push({
+    name: "providersettings",
+    query: { types: config.value?.type },
+  });
 };
 
 const resetToDefaults = function () {
@@ -549,7 +545,10 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
       toast.success(t("settings.provider_saved"));
-      router.push(providersRoute.value);
+      router.push({
+        name: "providersettings",
+        query: { types: config.value!.type },
+      });
     })
     .catch((err) => {
       saveErrorMessage.value = String(err);
@@ -637,7 +636,10 @@ async function loadConfig(instanceId: string) {
     if (requestId === configLoadRequestId && props.instanceId === instanceId) {
       // a member only manages the music sources it owns, the rest is admin-only
       if (!mayManage(updatedConfig)) {
-        router.replace(providersRoute.value);
+        router.replace({
+          name: "providersettings",
+          query: { types: updatedConfig.type },
+        });
         return;
       }
       config.value = updatedConfig;

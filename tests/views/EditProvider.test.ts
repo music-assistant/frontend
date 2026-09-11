@@ -893,8 +893,7 @@ describe("EditProvider", () => {
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
   });
 
-  it("sends a member back to their own music sources after saving", async () => {
-    // the full provider list is admin-only, so a member returns to its own page
+  it("sends a member back to the music sources page after saving", async () => {
     authMock.isAdmin.mockReturnValue(false);
     store.currentUser = user({ user_id: "member-id" });
 
@@ -907,7 +906,10 @@ describe("EditProvider", () => {
       },
     });
 
-    expect(routerMock.push).toHaveBeenCalledWith({ name: "mymusicsources" });
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "providersettings",
+      query: { types: ProviderType.MUSIC },
+    });
   });
 
   it("sends a member away from a source it does not own", async () => {
@@ -931,8 +933,11 @@ describe("EditProvider", () => {
     });
     await flushPromises();
 
-    // the options are never shown; the member lands on their own page
-    expect(routerMock.replace).toHaveBeenCalledWith({ name: "mymusicsources" });
+    // the options are never shown; the member lands back on the list
+    expect(routerMock.replace).toHaveBeenCalledWith({
+      name: "providersettings",
+      query: { types: ProviderType.MUSIC },
+    });
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(false);
   });
 

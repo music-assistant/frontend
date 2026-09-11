@@ -655,10 +655,8 @@
         "music_sources": "Music sources",
         "plugins": "Plugins",
         "music_providers_description": "Manage your music streaming services and local libraries",
-        "my_music_sources": "My music sources",
-        "my_music_sources_description": "Connect and manage your own music service accounts",
-        "my_music_sources_empty_title": "No music sources of your own yet",
-        "my_music_sources_empty": "Connect your own account for a music service. Only you can use it, unless you share it with other household members.",
+        "music_sources_empty_title": "No music sources yet",
+        "music_sources_empty": "Connect a music service account or add a local library to start listening.",
         "source_access": {
             "action": "Access",
             "share_action": "Sharing",

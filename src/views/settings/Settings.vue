@@ -388,7 +388,7 @@ provide("playersViewMode", {
   toggleViewMode: togglePlayersViewMode,
 });
 
-const providersViewMode = ref<"list" | "card">("list");
+const providersViewMode = ref<"list" | "card">("card");
 const isProvidersPage = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
   return name.includes("providers");
@@ -396,7 +396,7 @@ const isProvidersPage = computed(() => {
 
 const savedProvidersViewMode = getPreference<"list" | "card">(
   "settings.providers.viewMode",
-  "list",
+  "card",
 );
 
 watch(
@@ -488,17 +488,8 @@ const allSettingsSections = [
     icon: "mdi-music",
     color: "blue",
     route: { name: "providersettings", query: { types: "music" } },
-    adminOnly: true,
-  },
-  {
-    name: "my_music_sources",
-    label: "settings.my_music_sources",
-    description: "settings.my_music_sources_description",
-    icon: "mdi-music-box-multiple",
-    color: "blue",
-    route: { name: "mymusicsources" },
+    // a member holding the scope manages the music sources it owns here
     adminOnly: false,
-    membersOnly: true,
     requiresScope: Scope.CONFIG_PROVIDERS_OWN,
   },
   {
@@ -608,8 +599,6 @@ const settingsSections = computed(() => {
   return allSettingsSections.filter(
     (section) =>
       (!section.adminOnly || isAdmin) &&
-      // an admin manages every source from the full music sources page
-      (!section.membersOnly || !isAdmin) &&
       (!section.requiresScope || authManager.hasScope(section.requiresScope)) &&
       (!section.minServerVersion ||
         requireServerVersion(section.minServerVersion)),
@@ -618,20 +607,15 @@ const settingsSections = computed(() => {
 
 const providerSectionNames = [
   "music_providers",
-  "my_music_sources",
   "player_providers",
   "metadata_providers",
   "plugin_providers",
   "audio_analysis_providers",
 ];
 
-// the music sources head the overview: the full list for an admin, the own
-// sources for a member
-const musicSectionNames = ["music_providers", "my_music_sources"];
-
 const musicSections = computed(() => {
-  return settingsSections.value.filter((section) =>
-    musicSectionNames.includes(section.name),
+  return settingsSections.value.filter(
+    (section) => section.name === "music_providers",
   );
 });
 
@@ -642,7 +626,7 @@ const playerSections = computed(() => {
 const regularSections = computed(() => {
   return settingsSections.value.filter(
     (section) =>
-      !musicSectionNames.includes(section.name) && section.name !== "players",
+      section.name !== "music_providers" && section.name !== "players",
   );
 });
 
@@ -687,9 +671,6 @@ const activeTab = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
   if (name === "profile") {
     return "profile";
-  }
-  if (name === "mymusicsources") {
-    return "my_music_sources";
   }
   if (
     name.includes("player") ||
@@ -738,9 +719,7 @@ const activeTab = computed(() => {
     const providerType =
       api.getProvider(instanceId)?.type ||
       api.providerManifests[instanceId.split("--")[0]]?.type;
-    // a member reached the options of a source it owns from its own page
-    if (providerType === ProviderType.MUSIC)
-      return authManager.isAdmin() ? "music_providers" : "my_music_sources";
+    if (providerType === ProviderType.MUSIC) return "music_providers";
     if (providerType === ProviderType.PLAYER) return "player_providers";
     if (providerType === ProviderType.METADATA) return "metadata_providers";
     if (providerType === ProviderType.PLUGIN) return "plugin_providers";
@@ -813,12 +792,6 @@ const breadcrumbItems = computed(() => {
         title: t("settings.music_sources"),
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "music" } },
-      });
-    } else if (currentTab === "my_music_sources") {
-      items.push({
-        title: t("settings.my_music_sources"),
-        disabled: name === "mymusicsources",
-        to: { name: "mymusicsources" },
       });
     } else if (currentTab === "player_providers") {
       items.push({

@@ -429,21 +429,21 @@ describe("global navigation guard", () => {
     ).resolves.toBeUndefined();
   });
 
-  it("lets a member with the scope open their own music sources", async () => {
+  it("lets a member with the scope open the music sources", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
     mocks.hasScope.mockReturnValue(true);
 
     await expect(
-      invokeGuard(globalGuard, resolveRoute("/settings/my-music-sources")),
+      invokeGuard(globalGuard, resolveRoute("/settings/providers?types=music")),
     ).resolves.toBeUndefined();
     expect(mocks.hasScope).toHaveBeenCalledWith("config.providers.own");
   });
 
-  it("redirects a member without the scope away from their own music sources", async () => {
+  it("redirects a member without the scope away from the music sources", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
 
     await expect(
-      invokeGuard(globalGuard, resolveRoute("/settings/my-music-sources")),
+      invokeGuard(globalGuard, resolveRoute("/settings/providers?types=music")),
     ).resolves.toEqual({ name: "discover" });
   });
 
