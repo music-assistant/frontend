@@ -73,8 +73,13 @@ const reset = () => {
   onConfirm = undefined;
 };
 
+// the confirmation can be asked on top of another dialog that stays open
+// behind it (such as the search popup), so closing it restores the flag
+// rather than clearing it for the dialog underneath
+let dialogActiveBeforeOpen = false;
+
 watch(open, (v) => {
-  store.dialogActive = v;
+  store.dialogActive = v || (dialogActiveBeforeOpen && store.dialogActive);
   if (!v) {
     // Reset after close animation
     setTimeout(reset, 200);
@@ -86,6 +91,7 @@ onMounted(() => {
     "deleteConfirmationDialog",
     (evt: DeleteConfirmationDialogEvent) => {
       reset();
+      if (!open.value) dialogActiveBeforeOpen = store.dialogActive;
       title.value = evt.title ?? t("delete");
       message.value = evt.message;
       confirmLabel.value = evt.confirmLabel ?? t("delete");

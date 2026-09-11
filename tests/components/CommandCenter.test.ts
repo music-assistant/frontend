@@ -14,7 +14,9 @@ const state = vi.hoisted(() => ({
   searchSpy: vi.fn(),
   setPreferenceSpy: vi.fn(),
   routerPush: vi.fn(),
+  route: { fullPath: "/" },
   playBtnSpy: vi.fn(),
+  menuBtnSpy: vi.fn(),
   loading: { value: false },
   storeMock: {
     isTouchscreen: false,
@@ -32,9 +34,14 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
-vi.mock("vue-router", () => ({
-  useRouter: () => ({ push: state.routerPush }),
-}));
+vi.mock("vue-router", async () => {
+  const { reactive } = await import("vue");
+  state.route = reactive(state.route);
+  return {
+    useRouter: () => ({ push: state.routerPush }),
+    useRoute: () => state.route,
+  };
+});
 
 vi.mock("@/plugins/api", () => {
   const apiMock = { players: {} };
@@ -43,6 +50,7 @@ vi.mock("@/plugins/api", () => {
 
 vi.mock("@/helpers/media_item_actions", () => ({
   handlePlayBtnClick: state.playBtnSpy,
+  handleMenuBtnClick: state.menuBtnSpy,
 }));
 
 vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
@@ -161,6 +169,9 @@ const CommandItemStub = {
 function mountPalette() {
   return mount(CommandCenter, {
     global: {
+      // the touch events plugin is not installed here; an empty definition
+      // keeps the long press binding from warning
+      directives: { hold: {} },
       stubs: {
         CommandCenterShell: CommandCenterShellStub,
         CommandList: { template: "<div><slot /></div>" },
@@ -217,6 +228,7 @@ function itemByText(wrapper: ReturnType<typeof mountPalette>, text: string) {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  state.route.fullPath = "/";
   state.resultsByType = {};
   state.players = [];
   state.prefs = {};
@@ -379,6 +391,45 @@ describe("CommandCenter", () => {
     expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.recent", [
       "bohemian",
     ]);
+    expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("opens the item menu on right click and keeps the palette up", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await typeQuery(wrapper, "bohemian");
+
+    await itemByText(wrapper, "Bohemian Rhapsody").trigger("contextmenu");
+
+    expect(state.menuBtnSpy).toHaveBeenCalledWith(
+      state.resultsByType[MediaType.TRACK][0],
+      expect.any(Number),
+      expect.any(Number),
+    );
+    // the menu opens on top of the palette, which stays where it is
+    expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(true);
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.recent", [
+      "bohemian",
+    ]);
+
+    wrapper.unmount();
+  });
+
+  it("closes when a menu action navigates away", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(true);
+
+    state.route.fullPath = "/artist/123";
+    await flushPromises();
+
     expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(false);
 
     wrapper.unmount();
