@@ -671,6 +671,8 @@
         "audio_analysis_providers": "Audio analysis",
         "audio_analysis_providers_description": "Manage providers that analyze your audio",
         "audio_analysis": "Audio analysis",
+        "audio_analysis_status_hint": "See how the analysis is progressing per provider, and any failures, on the status page.",
+        "audio_analysis_status_link": "Open audio analysis status",
         "sendspin_static_delay": {
             "label": "Static playback delay (ms)",
             "description": "Offset in milliseconds to keep this player in sync with other players. Increase if audio plays too late, for example to compensate for latency from an amp, active speakers, or the OS."
@@ -2339,6 +2341,7 @@
     "autoplay_disable": "Disable Autoplay",
     "autoplay": "Autoplay",
     "autoplay_explanation": "When your queue runs out, additional tracks are added automatically so the music will not stop.",
+    "autoplay_repeat_disabled": "Autoplay has been automatically turned off because repeat is on",
     "autoplay_active": "Autoplay is on.",
     "genre_content_type": {
         "all": "All",
