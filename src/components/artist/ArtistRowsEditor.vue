@@ -100,7 +100,8 @@
                     <ChevronDown :size="13" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <!-- above the dialog (9999) and the phone sheet (100000) it opens from -->
+                <DropdownMenuContent align="end" class="z-[100001]">
                   <DropdownMenuRadioGroup
                     :model-value="row.source"
                     @update:model-value="(value) => selectSource(row.id, value)"
