@@ -1,5 +1,6 @@
 <template>
-  <section v-if="isAdmin" style="margin-bottom: 10px">
+  <!-- the section only removes exclusions, so it has no purpose without any -->
+  <section v-if="isAdmin && exclusions.length" style="margin-bottom: 10px">
     <Toolbar
       :title="exclusionTitle"
       :menu-items="toolbarMenuItems"

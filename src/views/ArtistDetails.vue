@@ -461,6 +461,36 @@ function providerAllowed(instanceId: string): boolean {
 .artist-admin :deep(.v-divider) {
   display: none;
 }
+/* the lists and image tiles inside sit on the card instead of painting their own surface */
+.artist-admin :deep(.v-container) {
+  padding: 0 12px 12px;
+}
+.artist-admin :deep(.v-list),
+.artist-admin :deep(.panel-item) {
+  background: transparent;
+  box-shadow: none;
+}
+.artist-admin :deep(.v-list) {
+  padding: 0;
+}
+/* uniform square image tiles instead of percentage columns */
+.artist-admin :deep(.v-row) {
+  margin: 0;
+  gap: 12px;
+}
+.artist-admin :deep(.v-col) {
+  flex: 0 0 auto;
+  width: 176px;
+  max-width: 176px;
+  padding: 0;
+}
+.artist-admin :deep(.panel-item .v-img) {
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+}
+.artist-admin :deep(.panel-item .v-img__img) {
+  object-fit: cover;
+}
 
 @media (max-width: 768px) {
   .artist-admin :deep(section) {
