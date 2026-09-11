@@ -1,6 +1,10 @@
 import ArtistRowsEditor from "@/components/artist/ArtistRowsEditor.vue";
 import type { ArtistRowId } from "@/components/artist/artistRows";
-import type { Artist } from "@/plugins/api/interfaces";
+import {
+  ProviderFeature,
+  ProviderType,
+  type Artist,
+} from "@/plugins/api/interfaces";
 import { mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { artist } from "../../fixtures/artist";
@@ -19,7 +23,7 @@ const {
   passthrough: { template: "<div><slot /></div>" },
   buttonStub: { template: "<button><slot /></button>" },
   apiMock: {
-    providers: {} as Record<string, { name: string; domain: string }>,
+    providers: {} as Record<string, unknown>,
     supportsArtistDiscography: true,
   },
   mockEffectiveArtistRowSource: vi.fn(),
@@ -125,9 +129,9 @@ const ARTIST: Artist = artist({
   ],
 });
 
-function mountEditor(availableIds: ArtistRowId[]) {
+function mountEditor(availableIds: ArtistRowId[], item: Artist = ARTIST) {
   return mount(ArtistRowsEditor, {
-    props: { open: true, artist: ARTIST, availableIds },
+    props: { open: true, artist: item, availableIds },
     global: { mocks: { $t: (key: string) => key } },
   });
 }
@@ -143,8 +147,19 @@ function buttonWithText(wrapper: VueWrapper, text: string) {
 describe("ArtistRowsEditor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // the sources on offer come from the providers the artist is mapped to that
+    // can actually supply the row
     apiMock.providers = {
-      "spotify--1": { name: "Spotify", domain: "spotify" },
+      "spotify--1": {
+        instance_id: "spotify--1",
+        name: "Spotify",
+        domain: "spotify",
+        type: ProviderType.MUSIC,
+        supported_features: [
+          ProviderFeature.ARTIST_ALBUMS,
+          ProviderFeature.ARTIST_TOPTRACKS,
+        ],
+      },
     };
     apiMock.supportsArtistDiscography = true;
     mockIsPhoneSizedScreen.mockReturnValue(false);
@@ -225,14 +240,26 @@ describe("ArtistRowsEditor", () => {
     apiMock.supportsArtistDiscography = false;
     expect(sources(mountEditor(["albums", "top_tracks"]))).toEqual([
       ["library", "spotify--1"],
-      ["library", "all", "spotify--1"],
+      ["all", "spotify--1"],
     ]);
 
     apiMock.supportsArtistDiscography = true;
     expect(sources(mountEditor(["albums", "top_tracks"]))).toEqual([
       ["library", "all", "spotify--1"],
-      ["library", "all", "spotify--1"],
+      ["all", "spotify--1"],
     ]);
+  });
+
+  it("offers no source at all for a provider artist", () => {
+    const wrapper = mountEditor(
+      ["albums", "top_tracks"],
+      artist({
+        provider: "spotify--1",
+        provider_mappings: ARTIST.provider_mappings,
+      }),
+    );
+
+    expect(wrapper.findAll("[data-source]")).toHaveLength(0);
   });
 
   it("toggles a row from the switch on a phone", async () => {

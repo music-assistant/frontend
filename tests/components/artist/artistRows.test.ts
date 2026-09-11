@@ -1,14 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference } = vi.hoisted(() => ({
+const { storeMock, mockSetUserPreference, providersMock } = vi.hoisted(() => ({
   storeMock: {
-    currentUser: null as { preferences?: Record<string, unknown> } | null,
+    currentUser: null as {
+      preferences?: Record<string, unknown>;
+      provider_filter?: string[];
+    } | null,
   },
   mockSetUserPreference: vi.fn(),
+  providersMock: {} as Record<string, unknown>,
 }));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
+}));
+
+vi.mock("@/plugins/api", () => ({
+  api: { providers: providersMock },
 }));
 
 vi.mock("@/composables/userPreferences", () => ({
@@ -19,6 +27,7 @@ import {
   ARTIST_ROWS_PREFERENCE_KEY,
   ARTIST_ROW_SOURCES_PREFERENCE_KEY,
   artistRowDefinition,
+  artistRowSources,
   availableArtistRowIds,
   effectiveArtistRowSource,
   getArtistRowSource,
@@ -29,7 +38,12 @@ import {
   setArtistRowsOrder,
   type ArtistRowId,
 } from "@/components/artist/artistRows";
-import { ArtistType, type ProviderMapping } from "@/plugins/api/interfaces";
+import {
+  ArtistType,
+  ProviderFeature,
+  ProviderType,
+  type ProviderMapping,
+} from "@/plugins/api/interfaces";
 import { artist } from "../../fixtures/artist";
 
 const MUSIC_ROWS: ArtistRowId[] = [
@@ -41,40 +55,114 @@ const MUSIC_ROWS: ArtistRowId[] = [
   "similar_artists",
 ];
 
-function setPreferences(preferences: Record<string, unknown>) {
-  storeMock.currentUser = { preferences };
+function setPreferences(
+  preferences: Record<string, unknown>,
+  providerFilter: string[] = [],
+) {
+  storeMock.currentUser = { preferences, provider_filter: providerFilter };
 }
 
-function mappedTo(providerInstance: string) {
+function mappedTo(...providerInstances: string[]) {
   return artist({
-    provider_mappings: [
-      { provider_instance: providerInstance } as ProviderMapping,
-    ],
+    provider_mappings: providerInstances.map(
+      (provider_instance) => ({ provider_instance }) as ProviderMapping,
+    ),
   });
+}
+
+// registers a loaded provider instance with the given capabilities
+function addProvider(
+  instanceId: string,
+  features: ProviderFeature[],
+  type = ProviderType.MUSIC,
+) {
+  providersMock[instanceId] = {
+    instance_id: instanceId,
+    name: instanceId,
+    domain: instanceId.split("--")[0],
+    type,
+    supported_features: features,
+  };
 }
 
 describe("artistRows", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
     setPreferences({});
+    for (const key of Object.keys(providersMock)) delete providersMock[key];
   });
 
   describe("availableArtistRowIds", () => {
     it("offers the music rows to a singer and the audiobook rows to an author", () => {
-      expect(availableArtistRowIds(false, false)).toEqual(MUSIC_ROWS);
+      expect(availableArtistRowIds(false, false)).toEqual([
+        ...MUSIC_ROWS,
+        "provider_mappings",
+      ]);
       expect(availableArtistRowIds(true, false)).toEqual([
         "bio",
         "audiobooks",
         "audiobooks_all",
+        "provider_mappings",
       ]);
     });
 
-    it("adds the admin-only rows last for an admin", () => {
+    it("adds the artwork row last for an admin", () => {
       expect(availableArtistRowIds(false, true)).toEqual([
         ...MUSIC_ROWS,
         "provider_mappings",
         "artwork",
       ]);
+    });
+  });
+
+  describe("artistRowSources", () => {
+    it("lists the library, every provider and the capable providers for a release row", () => {
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
+      addProvider("tidal--def", []);
+      const libraryArtist = mappedTo("spotify--abc", "tidal--def");
+      expect(artistRowSources("albums", libraryArtist, true)).toEqual([
+        "library",
+        "all",
+        "spotify--abc",
+      ]);
+      expect(artistRowSources("albums", libraryArtist, false)).toEqual([
+        "library",
+        "spotify--abc",
+      ]);
+    });
+
+    it("adds capable metadata providers to the aggregated rows, without the library", () => {
+      addProvider("spotify--abc", [ProviderFeature.SIMILAR_ARTISTS]);
+      addProvider(
+        "lastfm--ghi",
+        [ProviderFeature.SIMILAR_ARTISTS],
+        ProviderType.METADATA,
+      );
+      expect(
+        artistRowSources("similar_artists", mappedTo("spotify--abc"), false),
+      ).toEqual(["all", "lastfm--ghi", "spotify--abc"]);
+    });
+
+    it("leaves out providers hidden by the user's provider filter", () => {
+      setPreferences({}, ["spotify--abc"]);
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_TOPTRACKS]);
+      addProvider("tidal--def", [ProviderFeature.ARTIST_TOPTRACKS]);
+      expect(
+        artistRowSources(
+          "top_tracks",
+          mappedTo("spotify--abc", "tidal--def"),
+          true,
+        ),
+      ).toEqual(["all", "spotify--abc"]);
+    });
+
+    it("offers nothing for a provider artist or a row without a picker", () => {
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
+      const providerArtist = artist({ provider: "spotify--abc" });
+      expect(artistRowSources("albums", providerArtist, true)).toEqual([]);
+      expect(
+        artistRowSources("appears_on", mappedTo("spotify--abc"), true),
+      ).toEqual([]);
     });
   });
 
@@ -215,13 +303,24 @@ describe("artistRows", () => {
       );
     });
 
-    it("uses the saved source when the artist is mapped to it", () => {
+    it("uses the saved source when a mapped provider can supply the row", () => {
       setPreferences({
         [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { albums: "spotify--abc" },
       });
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       expect(
         effectiveArtistRowSource("albums", mappedTo("spotify--abc"), true),
       ).toBe("spotify--abc");
+    });
+
+    it("falls back to the default when the saved provider lacks the row's feature", () => {
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { top_tracks: "spotify--abc" },
+      });
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
+      expect(
+        effectiveArtistRowSource("top_tracks", mappedTo("spotify--abc"), true),
+      ).toBe("all");
     });
 
     it("falls back to the default when the saved provider is gone", () => {

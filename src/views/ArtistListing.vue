@@ -21,6 +21,7 @@
       :show-refresh-button="false"
       :sort-keys="config.sortKeys"
       :load-items="config.loadItems"
+      :empty-message="config.emptyMessage"
       :restore-state="true"
     />
   </section>
@@ -42,6 +43,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
 import { type Artist, type MediaItemType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -64,6 +66,8 @@ interface ListingConfig {
   showFavoritesOnlyFilter: boolean;
   showProviderFilter: boolean;
   showTrackNumber: boolean;
+  // what the listing says when the artist has nothing to show there
+  emptyMessage?: string;
 }
 
 const ALBUM_SORT_KEYS = [
@@ -119,6 +123,7 @@ const config = computed<ListingConfig | undefined>(() => {
         labelKey: artistRowDefinition("albums").labelKey,
         path: "artistalbums",
         showAlbumTypeFilter: true,
+        emptyMessage: $t("artist_no_library_albums"),
         loadItems: async (params: LoadDataParams) =>
           (await loadReleases("albums", params)).filter(
             (album) => !isSingleOrEp(album),
@@ -143,6 +148,7 @@ const config = computed<ListingConfig | undefined>(() => {
         sortKeys: TRACK_SORT_KEYS,
         showProviderFilter: mappingProviderIds.value.length > 1,
         showTrackNumber: false,
+        emptyMessage: $t("artist_no_library_tracks"),
         loadItems: async (params: LoadDataParams) => {
           if (!itemDetails.value) return [];
           return await loadArtistLibraryTracks(

@@ -143,7 +143,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { $t } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, EllipsisVertical, Play } from "@lucide/vue";
 import { computed } from "vue";
@@ -197,11 +197,14 @@ const latestReleaseSubtitle = computed(() => {
   const released = releaseDate(release);
   if (released) {
     parts.push(
-      released.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
+      released.toLocaleDateString(
+        canonicalizeLocale(i18n.global.locale.value),
+        {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        },
+      ),
     );
   } else if (release.year) {
     parts.push(String(release.year));

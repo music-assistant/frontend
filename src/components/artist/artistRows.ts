@@ -6,7 +6,12 @@ import {
   withRowsOrder,
   writeRowsConfig,
 } from "@/helpers/rowsConfig";
-import type { Artist } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import {
+  ProviderFeature,
+  ProviderType,
+  type Artist,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 
 export type ArtistRowId =
@@ -69,12 +74,7 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     labelKey: "artist_all_audiobooks",
     audience: "audiobook",
   },
-  {
-    id: "provider_mappings",
-    labelKey: "mapped_providers",
-    audience: "both",
-    adminOnly: true,
-  },
+  { id: "provider_mappings", labelKey: "mapped_providers", audience: "both" },
   { id: "artwork", labelKey: "images", audience: "both", adminOnly: true },
 ];
 
@@ -173,11 +173,31 @@ export async function setArtistRowSource(
 }
 
 /**
- * The source that actually feeds a row for this artist: the saved one when it applies (a provider
- * the artist is mapped to, or "all"/"library"), otherwise the default. Provider (non-library) artists
- * always resolve to their own provider. Default for the release rows (albums, singles, and the
- * artist's own releases that appearances are checked against) is "all" when the server supports
- * the discography command, else "library"; for top tracks / similar artists it is "all".
+ * The sources a row of this artist can be fed from, in the order a picker lists them: the
+ * library (release rows only), every provider at once (release rows only when the server can
+ * merge the discography), then each provider able to supply the row. Empty for a row without
+ * a source picker and for a provider artist, which stays on its own provider.
+ */
+export function artistRowSources(
+  id: ArtistRowId,
+  artist: Artist,
+  supportsDiscography: boolean,
+): ArtistRowSource[] {
+  if (artist.provider !== "library" || !ARTIST_ROWS_BY_ID[id].supportsSource) {
+    return [];
+  }
+  const sources: ArtistRowSource[] = [];
+  if (RELEASE_ROWS.includes(id)) sources.push("library");
+  if (!RELEASE_ROWS.includes(id) || supportsDiscography) sources.push("all");
+  return [...sources, ...rowSourceProviders(id, artist)];
+}
+
+/**
+ * The source that actually feeds a row for this artist: the saved one while it is still among
+ * the row's sources, otherwise the default. Provider (non-library) artists always resolve to
+ * their own provider. Default for the release rows (albums, singles, and the artist's own
+ * releases that appearances are checked against) is "all" when the server supports the
+ * discography command, else "library"; for top tracks / similar artists it is "all".
  */
 export function effectiveArtistRowSource(
   id: ArtistRowId,
@@ -186,7 +206,10 @@ export function effectiveArtistRowSource(
 ): ArtistRowSource {
   if (artist.provider !== "library") return artist.provider;
   const saved = getArtistRowSource(id);
-  if (saved && sourceApplies(id, saved, artist, supportsDiscography)) {
+  if (
+    saved &&
+    artistRowSources(id, artist, supportsDiscography).includes(saved)
+  ) {
     return saved;
   }
   if (RELEASE_ROWS.includes(id)) {
@@ -205,6 +228,14 @@ const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps", "appears_on"];
 // rows the server aggregates over every provider by default
 const ALL_PROVIDER_ROWS: ArtistRowId[] = ["top_tracks", "similar_artists"];
 
+// the provider capability each row with a source picker depends on
+const ROW_FEATURES: Partial<Record<ArtistRowId, ProviderFeature>> = {
+  top_tracks: ProviderFeature.ARTIST_TOPTRACKS,
+  albums: ProviderFeature.ARTIST_ALBUMS,
+  singles_eps: ProviderFeature.ARTIST_ALBUMS,
+  similar_artists: ProviderFeature.SIMILAR_ARTISTS,
+};
+
 /** The saved `{ [rowId]: source }` object, empty when unset or invalid. */
 function savedRowSources(): Partial<Record<ArtistRowId, ArtistRowSource>> {
   const pref =
@@ -213,17 +244,51 @@ function savedRowSources(): Partial<Record<ArtistRowId, ArtistRowSource>> {
   return pref as Partial<Record<ArtistRowId, ArtistRowSource>>;
 }
 
-/** Whether a saved source can currently feed the given row of this artist. */
-function sourceApplies(
-  id: ArtistRowId,
-  source: ArtistRowSource,
-  artist: Artist,
-  supportsDiscography: boolean,
+/**
+ * The providers able to supply a row, sorted by name: those the artist is mapped to that
+ * support the row's feature and, for the rows the server aggregates, any metadata or plugin
+ * provider that does. Providers hidden by the user's provider filter are left out.
+ */
+function rowSourceProviders(id: ArtistRowId, artist: Artist): string[] {
+  const feature = ROW_FEATURES[id];
+  if (!feature) return [];
+  const ids = new Set<string>();
+  for (const mapping of artist.provider_mappings) {
+    if (providerSupports(mapping.provider_instance, feature)) {
+      ids.add(mapping.provider_instance);
+    }
+  }
+  if (ALL_PROVIDER_ROWS.includes(id)) {
+    for (const provider of Object.values(api.providers)) {
+      const isMetadataOrPlugin =
+        provider.type === ProviderType.METADATA ||
+        provider.type === ProviderType.PLUGIN;
+      if (
+        isMetadataOrPlugin &&
+        providerSupports(provider.instance_id, feature)
+      ) {
+        ids.add(provider.instance_id);
+      }
+    }
+  }
+  return [...ids]
+    .filter(providerVisible)
+    .sort((a, b) =>
+      (api.providers[a]?.name ?? a).localeCompare(api.providers[b]?.name ?? b),
+    );
+}
+
+function providerSupports(
+  instanceId: string,
+  feature: ProviderFeature,
 ): boolean {
-  if (source === "library") return true;
-  if (source === "all")
-    return supportsDiscography || !RELEASE_ROWS.includes(id);
-  return artist.provider_mappings.some(
-    (mapping) => mapping.provider_instance === source,
+  return (
+    api.providers[instanceId]?.supported_features.includes(feature) ?? false
   );
+}
+
+/** Whether the user's provider filter, when set, includes the provider. */
+function providerVisible(instanceId: string): boolean {
+  const filter = store.currentUser?.provider_filter ?? [];
+  return filter.length === 0 || filter.includes(instanceId);
 }

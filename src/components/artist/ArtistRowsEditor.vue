@@ -172,6 +172,7 @@
 <script setup lang="ts">
 import {
   artistRowDefinition,
+  artistRowSources,
   effectiveArtistRowSource,
   resolveArtistRows,
   setArtistRowHidden,
@@ -248,6 +249,23 @@ const listEl = ref<HTMLElement | null>(null);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
+// the dialog and the sheet only differ in how they are sized and dismissed
+const chrome = computed(() =>
+  isPhone.value
+    ? {
+        side: "bottom" as const,
+        showClose: false,
+        "data-player-panel": "",
+        class:
+          "max-h-[85dvh] gap-0 overflow-hidden rounded-t-2xl p-0 pb-[var(--device-inset-bottom,0px)]",
+      }
+    : {
+        showCloseButton: false,
+        class:
+          "flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]",
+      },
+);
+
 // reads the user's preferences from the store, so a toggle, a drop or a reset
 // re-renders the list from what was just saved
 const rows = computed<EditorRow[]>(() => {
@@ -310,21 +328,13 @@ function sourceLabel(source: ArtistRowSource): string {
 
 /** The sources offered for a row, in the order the picker lists them. */
 function sourceOptions(id: ArtistRowId): SourceOption[] {
-  const options: SourceOption[] = [];
-  if (props.artist.provider === "library") {
-    options.push({ value: "library", label: $t("source_library") });
-  }
-  if (aggregatesProviders(id)) {
-    options.push({ value: "all", label: $t("source_all") });
-  }
-  for (const instanceId of mappedProviderIds()) {
-    options.push({
-      value: instanceId,
-      label: api.providers[instanceId]?.name ?? instanceId,
-      domain: api.providers[instanceId]?.domain,
-    });
-  }
-  return options;
+  return artistRowSources(id, props.artist, api.supportsArtistDiscography).map(
+    (source) => ({
+      value: source,
+      label: sourceLabel(source),
+      domain: api.providers[source]?.domain,
+    }),
+  );
 }
 
 function selectSource(id: ArtistRowId, source: unknown) {
@@ -358,23 +368,6 @@ function slotStyle(index: number) {
   };
 }
 
-// the dialog and the sheet only differ in how they are sized and dismissed
-const chrome = computed(() =>
-  isPhone.value
-    ? {
-        side: "bottom" as const,
-        showClose: false,
-        "data-player-panel": "",
-        class:
-          "max-h-[85dvh] gap-0 overflow-hidden rounded-t-2xl p-0 pb-[var(--device-inset-bottom,0px)]",
-      }
-    : {
-        showCloseButton: false,
-        class:
-          "flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]",
-      },
-);
-
 /** What feeds a row, below its title. */
 function rowMetaText(id: ArtistRowId, source?: ArtistRowSource): string {
   if (artistRowDefinition(id).adminOnly) return $t("admin_only");
@@ -382,25 +375,6 @@ function rowMetaText(id: ArtistRowId, source?: ArtistRowSource): string {
   const meta = props.rowMeta?.[id];
   if (meta) parts.push(meta);
   return parts.join(" · ");
-}
-
-/** Whether a row can be fed by every provider at once. */
-function aggregatesProviders(id: ArtistRowId): boolean {
-  if (id === "albums" || id === "singles_eps") {
-    return api.supportsArtistDiscography;
-  }
-  return true;
-}
-
-/** The provider instances the artist is mapped to, without duplicates. */
-function mappedProviderIds(): string[] {
-  return [
-    ...new Set(
-      props.artist.provider_mappings.map(
-        (mapping) => mapping.provider_instance,
-      ),
-    ),
-  ];
 }
 </script>
 

@@ -18,7 +18,7 @@
           type="button"
           class="artist-hero__fav"
           :class="{ 'artist-hero__fav--on': item.favorite }"
-          :aria-label="$t('tooltip.favorite')"
+          :aria-label="favoriteButtonLabel"
           :aria-pressed="item.favorite ? 'true' : 'false'"
           :title="favoriteButtonLabel"
           @click="api.toggleFavorite(item)"
@@ -66,11 +66,13 @@
         <div v-if="genres.length" class="artist-hero__genres">
           <template v-for="(genre, index) in genres" :key="genre.item_id">
             <span v-if="index > 0">,&nbsp;</span>
-            <a
+            <button
+              type="button"
               class="artist-hero__genre"
               @click="(e: MouseEvent) => genreClick(e, genre)"
-              >{{ genre.name }}</a
             >
+              {{ genre.name }}
+            </button>
           </template>
         </div>
       </div>
@@ -233,14 +235,11 @@ watch(
       genres.value = [];
       return;
     }
-    try {
-      genres.value = await api.getGenresForMediaItem(
-        MediaType.ARTIST,
-        item.item_id,
-      );
-    } catch {
-      genres.value = [];
-    }
+    const loaded = await api
+      .getGenresForMediaItem(MediaType.ARTIST, item.item_id)
+      .catch(() => [] as Genre[]);
+    // a slower response for a previous artist must not replace the current one
+    if (isShown(item)) genres.value = loaded;
   },
   { immediate: true },
 );
@@ -276,10 +275,17 @@ async function buildMenu(item?: Artist) {
     menuItems.value = [];
     return;
   }
+  const items = await getContextMenuItems([item], item);
+  if (!isShown(item)) return;
   menuItems.value = [
-    ...(await getContextMenuItems([item], item)),
+    ...items,
     { label: "edit_rows", icon: Rows3, action: () => emit("edit-rows") },
   ];
+}
+
+/** Whether the artist a request was made for is still the one on screen. */
+function isShown(item: Artist): boolean {
+  return props.item?.uri === item.uri;
 }
 </script>
 
@@ -306,7 +312,7 @@ async function buildMenu(item?: Artist) {
   background:
     linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0) 90%,
+      rgba(0, 0, 0, 0) 96%,
       rgb(var(--v-theme-background)) 100%
     ),
     linear-gradient(
@@ -321,7 +327,7 @@ async function buildMenu(item?: Artist) {
   background:
     linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0) 90%,
+      rgba(0, 0, 0, 0) 96%,
       rgb(var(--v-theme-background)) 100%
     ),
     linear-gradient(
@@ -430,11 +436,24 @@ async function buildMenu(item?: Artist) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* the genres read as links in the line of text, so the button chrome goes */
 .artist-hero__genre {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  vertical-align: baseline;
   cursor: pointer;
 }
 .artist-hero__genre:hover {
   text-decoration: underline;
+}
+.artist-hero__genre:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .artist-hero__actions {
