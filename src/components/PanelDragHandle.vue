@@ -2,7 +2,7 @@
   <div
     ref="handle"
     data-panel-drag-region
-    class="panel-drag-handle relative flex h-8 shrink-0 touch-none cursor-grab items-center justify-center select-none active:cursor-grabbing"
+    class="panel-drag-handle relative flex h-6 shrink-0 touch-none cursor-grab items-center justify-center select-none active:cursor-grabbing"
     role="button"
     tabindex="0"
     :aria-label="$t('close')"

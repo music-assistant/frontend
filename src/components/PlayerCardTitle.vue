@@ -9,6 +9,27 @@
         <span class="player-card-name truncate text-sm leading-5 font-medium">
           {{ name }}
         </span>
+        <span
+          v-if="index === 0"
+          class="player-playback-indicator flex size-4 shrink-0 items-center justify-center"
+          :class="{
+            'text-primary': playing,
+            hidden: !playing,
+          }"
+          role="img"
+          :aria-label="playing ? $t('state.playing') : undefined"
+          :aria-hidden="!playing"
+        >
+          <AudioLines aria-hidden="true" class="size-4" />
+        </span>
+        <Badge
+          v-if="selected && index === 0"
+          as="span"
+          variant="default"
+          class="selected-player-indicator h-5 px-2 py-0 ml-1 text-[11px] leading-none shadow-none"
+        >
+          {{ $t("player_tip.selected") }}
+        </Badge>
         <slot v-if="index === 0"></slot>
       </div>
     </template>
@@ -16,6 +37,26 @@
       <span class="player-card-name truncate text-sm font-medium">
         {{ playerName }}
       </span>
+      <span
+        class="player-playback-indicator flex size-4 shrink-0 items-center justify-center"
+        :class="{
+          'text-primary': playing,
+          hidden: !playing,
+        }"
+        role="img"
+        :aria-label="playing ? $t('state.playing') : undefined"
+        :aria-hidden="!playing"
+      >
+        <AudioLines aria-hidden="true" class="size-4" />
+      </span>
+      <Badge
+        v-if="selected"
+        as="span"
+        variant="default"
+        class="selected-player-indicator h-5 px-2 py-0 ml-1 text-[11px] leading-none shadow-none"
+      >
+        {{ $t("player_tip.selected") }}
+      </Badge>
       <slot></slot>
     </div>
     <p
@@ -54,7 +95,10 @@
 </template>
 
 <script setup lang="ts">
+import { AudioLines } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+
+import { Badge } from "@/components/ui/badge";
 
 const props = withDefaults(
   defineProps<{
@@ -62,10 +106,14 @@ const props = withDefaults(
     memberNames: string[];
     memberLayout?: "subtitle" | "subtitle-list" | "title-list";
     memberLimit?: number;
+    playing?: boolean;
+    selected?: boolean;
   }>(),
   {
     memberLayout: "subtitle",
     memberLimit: 2,
+    playing: false,
+    selected: false,
   },
 );
 

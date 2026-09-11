@@ -1,19 +1,10 @@
-import {
-  isBuiltinPlayer,
-  isPlayerActive,
-  playerVisible,
-} from "@/helpers/players";
+import { playerVisible } from "@/helpers/players";
 import { api } from "@/plugins/api";
-import { PlaybackState, type Player } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
-import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import { computed } from "vue";
 
 interface OrderedPlayersOptions {
   allowNeedsSetup?: boolean;
   allowSources?: boolean;
-  selectedPlayerFirst?: MaybeRefOrGetter<boolean>;
-  activePlayersFirst?: MaybeRefOrGetter<boolean>;
-  includePausedAsActive?: boolean;
 }
 
 export function useOrderedPlayers(opts?: OrderedPlayersOptions) {
@@ -27,45 +18,10 @@ export function useOrderedPlayers(opts?: OrderedPlayersOptions) {
           opts?.allowSources ?? false,
         ),
       )
-      .sort((left, right) => comparePlayers(left, right, opts)),
+      .sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, {
+          sensitivity: "base",
+        }),
+      ),
   );
-}
-
-function comparePlayers(
-  left: Player,
-  right: Player,
-  opts?: OrderedPlayersOptions,
-) {
-  const priorityDifference =
-    getPlayerPriority(left, opts) - getPlayerPriority(right, opts);
-  if (priorityDifference !== 0) return priorityDifference;
-
-  return left.name.localeCompare(right.name, undefined, {
-    sensitivity: "base",
-  });
-}
-
-function getPlayerPriority(player: Player, opts?: OrderedPlayersOptions) {
-  if (
-    toValue(opts?.selectedPlayerFirst ?? true) &&
-    player.player_id === store.activePlayerId
-  ) {
-    return 0;
-  }
-  if (isBuiltinPlayer(player)) return 1;
-  if (
-    toValue(opts?.activePlayersFirst ?? true) &&
-    isPrioritizedActivePlayer(player, opts)
-  ) {
-    return 2;
-  }
-  return 3;
-}
-
-function isPrioritizedActivePlayer(
-  player: Player,
-  opts?: OrderedPlayersOptions,
-) {
-  if (opts?.includePausedAsActive) return isPlayerActive(player);
-  return player.playback_state === PlaybackState.PLAYING;
 }

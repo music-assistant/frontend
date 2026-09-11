@@ -30,6 +30,7 @@
             :gap="12"
             :nav-center="42"
             :dimmed="editMode && row.hidden"
+            style="--ed-card-pad: 0px"
           >
             <template #header>
               <div class="ed-players__head">
@@ -60,21 +61,26 @@
                 <EyeOff v-else />
               </Button>
             </template>
-            <div
-              v-for="player in players"
+            <template
+              v-for="(player, playerIndex) in discoverPlayers"
               :key="player.player_id"
-              class="ed-player-slot"
-              :data-player-id="player.player_id"
             >
-              <PlayerCard
-                :player="player"
-                :show-volume-control="false"
-                :show-menu-button="false"
-                :show-child-volumes="false"
-                :show-group-controls="false"
-                @click="playerClicked(player)"
-              />
-            </div>
+              <div
+                v-if="playerIndex === 1 && hasSelectedShelfPlayer"
+                class="ed-player-divider bg-border h-8 w-px shrink-0 self-center"
+                aria-hidden="true"
+              ></div>
+              <div class="ed-player-slot" :data-player-id="player.player_id">
+                <PlayerCard
+                  :player="player"
+                  :show-volume-control="false"
+                  :show-menu-button="false"
+                  :show-child-volumes="false"
+                  :show-group-controls="false"
+                  @click="playerClicked(player)"
+                />
+              </div>
+            </template>
           </EditorialShelf>
 
           <!-- Top picks row -->
@@ -383,6 +389,7 @@ import {
   isRecommendationRowVisible,
   rowIdsNeedingItems,
 } from "@/components/discover/utils/rowItems";
+import { prioritizeSelectedPlayer } from "@/components/discover/utils/playerShelf";
 import {
   eligibleFilterProviders,
   getRowHiddenProviders,
@@ -453,6 +460,12 @@ const skeletonTileCount = computed(() =>
 );
 
 const players = useOrderedPlayers();
+const discoverPlayers = computed(() =>
+  prioritizeSelectedPlayer(players.value, store.activePlayerId),
+);
+const hasSelectedShelfPlayer = computed(
+  () => discoverPlayers.value[0]?.player_id === store.activePlayerId,
+);
 
 const activeCount = computed(
   () =>
@@ -469,7 +482,7 @@ const setPlayersShelfRef = (el: unknown) => {
 };
 
 const playersOrderKey = computed(() =>
-  players.value.map((p) => p.player_id).join(","),
+  discoverPlayers.value.map((player) => player.player_id).join(","),
 );
 
 function alignPlayersShelf() {
@@ -487,7 +500,7 @@ const showPlayers = computed(() =>
   displayedRows.value.some((row) => row.kind === "players"),
 );
 
-watch(playersOrderKey, () => {
+watch([playersOrderKey, () => store.activePlayerId], () => {
   if (!showPlayers.value) return;
   nextTick(alignPlayersShelf);
 });
@@ -495,14 +508,6 @@ watch(playersOrderKey, () => {
 watch(loading, (isLoading) => {
   if (!isLoading) nextTick(alignPlayersShelf);
 });
-
-watch(
-  () => store.activePlayerId,
-  () => {
-    if (!showPlayers.value) return;
-    nextTick(alignPlayersShelf);
-  },
-);
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 

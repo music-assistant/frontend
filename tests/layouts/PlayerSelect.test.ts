@@ -378,7 +378,7 @@ describe("PlayerSelect", () => {
     webPlayer.player_id = null;
   });
 
-  it("orders the selected player, this device, then active players first", () => {
+  it("orders players alphabetically regardless of selection or playback", () => {
     const activePlayer = createPlayer("active", "Kitchen");
     api.players = {
       office: createPlayer("office", "Office"),
@@ -396,45 +396,7 @@ describe("PlayerSelect", () => {
       wrapper
         .findAll(".player-card")
         .map((card) => card.attributes("data-player-id")),
-    ).toEqual(["active", "builtin", "attic", "bedroom", "lounge", "office"]);
-  });
-
-  it("leaves the selected player in normal list order when pinning is disabled", () => {
-    setPlayerSelectPreference("playerSelect.showSelectedPlayerFirst", false);
-    setPlayerSelectPreference("playerSelect.showActivePlayersFirst", false);
-    const selectedPlayer = createPlayer("selected", "Office");
-    api.players = {
-      kitchen: createPlayer("kitchen", "Kitchen"),
-      selected: selectedPlayer,
-      attic: createPlayer("attic", "Attic"),
-    };
-    store.activePlayerId = selectedPlayer.player_id;
-
-    const wrapper = mountPlayerSelect();
-
-    expect(
-      wrapper
-        .findAll(".player-card")
-        .map((card) => card.attributes("data-player-id")),
-    ).toEqual(["attic", "kitchen", "selected"]);
-  });
-
-  it("leaves active players in normal list order when prioritizing is disabled", () => {
-    setPlayerSelectPreference("playerSelect.showSelectedPlayerFirst", false);
-    setPlayerSelectPreference("playerSelect.showActivePlayersFirst", false);
-    api.players = {
-      office: createPlayer("office", "Office", PlaybackState.PLAYING),
-      bedroom: createPlayer("bedroom", "Bedroom", PlaybackState.PAUSED),
-      attic: createPlayer("attic", "Attic"),
-    };
-
-    const wrapper = mountPlayerSelect();
-
-    expect(
-      wrapper
-        .findAll(".player-card")
-        .map((card) => card.attributes("data-player-id")),
-    ).toEqual(["attic", "bedroom", "office"]);
+    ).toEqual(["attic", "bedroom", "active", "lounge", "office", "builtin"]);
   });
 
   it("waits for a remembered player instead of selecting the web player", async () => {
@@ -613,7 +575,7 @@ describe("PlayerSelect", () => {
     expect(setPreference).not.toHaveBeenCalled();
   });
 
-  it("moves a newly active player to the front", async () => {
+  it("keeps the list order stable when selection and playback change", async () => {
     const kitchen = createPlayer("kitchen", "Kitchen");
     const office = createPlayer("office", "Office");
     api.players = {
@@ -623,13 +585,14 @@ describe("PlayerSelect", () => {
     const wrapper = mountPlayerSelect();
 
     store.activePlayerId = office.player_id;
+    kitchen.playback_state = PlaybackState.PLAYING;
     await nextTick();
 
     expect(
       wrapper
         .findAll(".player-card")
         .map((card) => card.attributes("data-player-id")),
-    ).toEqual(["office", "kitchen"]);
+    ).toEqual(["kitchen", "office"]);
   });
 
   it("shows search only when more than ten players are visible", () => {
@@ -837,17 +800,7 @@ describe("PlayerSelect", () => {
 
     await toggles[0].trigger("click");
     await toggles[1].trigger("click");
-    await toggles[2].trigger("click");
-    await toggles[3].trigger("click");
 
-    expect(setPreference).toHaveBeenCalledWith(
-      "playerSelect.showSelectedPlayerFirst",
-      false,
-    );
-    expect(setPreference).toHaveBeenCalledWith(
-      "playerSelect.showActivePlayersFirst",
-      false,
-    );
     expect(setPreference).toHaveBeenCalledWith(
       "playerSelect.showGroupMemberNames",
       false,
@@ -1086,7 +1039,7 @@ describe("PlayerSelect", () => {
     ).toBe("true");
   });
 
-  it("scrolls the selected player into view when it is not pinned", async () => {
+  it("scrolls the selected player into view in the alphabetical list", async () => {
     const originalScrollIntoView = Object.getOwnPropertyDescriptor(
       HTMLElement.prototype,
       "scrollIntoView",
@@ -1096,8 +1049,6 @@ describe("PlayerSelect", () => {
       configurable: true,
       value: scrollIntoView,
     });
-    setPlayerSelectPreference("playerSelect.showSelectedPlayerFirst", false);
-    setPlayerSelectPreference("playerSelect.showActivePlayersFirst", false);
     const selectedPlayer = createPlayer("selected", "Zulu");
     api.players = {
       attic: createPlayer("attic", "Attic"),
