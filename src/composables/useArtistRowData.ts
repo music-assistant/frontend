@@ -129,10 +129,10 @@ export function useArtistRowData(
     sourceProvider(similarArtistsSource.value),
   );
 
-  // a new artist starts from empty rows; anything else (a favorite toggle, a
-  // metadata update) keeps what is already loaded
+  // a new artist, or new provider mappings, start from empty rows; anything
+  // else (a favorite toggle, a metadata update) keeps what is already loaded
   watch(
-    () => artist.value?.uri,
+    () => artist.value && rowsIdentity(artist.value),
     () => {
       releases.value = new Map();
       topTracks.value = new Map();
@@ -238,8 +238,9 @@ export function useArtistRowData(
   async function fetchLibraryTracks(artist: Artist) {
     if (requested.has("library_tracks")) return;
     requested.add("library_tracks");
+    const identity = rowsIdentity(artist);
     const items = await orEmpty(loadArtistLibraryTracks(artist));
-    if (stillShown(artist.uri)) libraryTracks.value = items;
+    if (stillShown(identity)) libraryTracks.value = items;
   }
 
   /** One request per kind and source, kept for every row that shares it. */
@@ -253,13 +254,14 @@ export function useArtistRowData(
     const key = `${kind}:${source}`;
     if (requested.has(key)) return;
     requested.add(key);
+    const identity = rowsIdentity(artist);
     const items = await orEmpty(load(artist, source));
-    if (stillShown(artist.uri)) cache.set(source, items);
+    if (stillShown(identity)) cache.set(source, items);
   }
 
-  /** Whether a finished request still belongs to the artist on screen. */
-  function stillShown(uri: string): boolean {
-    return artist.value?.uri === uri;
+  /** Whether a finished request still belongs to the artist (and mappings) on screen. */
+  function stillShown(identity: string): boolean {
+    return !!artist.value && rowsIdentity(artist.value) === identity;
   }
 
   return {
@@ -276,6 +278,14 @@ export function useArtistRowData(
     similarArtistsProvider,
     refreshReleases,
   };
+}
+
+/** What the rows are loaded from: the artist and the providers it is mapped to. */
+function rowsIdentity(artist: Artist): string {
+  const mappings = artist.provider_mappings
+    .map((mapping) => `${mapping.provider_instance}:${mapping.item_id}`)
+    .sort();
+  return [artist.uri, ...mappings].join("|");
 }
 
 /** The cached items of a source, undefined while unknown or still loading. */

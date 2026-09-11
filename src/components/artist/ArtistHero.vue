@@ -59,9 +59,11 @@
           v-if="artistLogo"
           class="artist-hero__logo"
           :src="artistLogo"
-          :alt="item.name"
+          alt=""
         />
-        <h1 v-else class="artist-hero__name">{{ item.name }}</h1>
+        <h1 :class="artistLogo ? 'sr-only' : 'artist-hero__name'">
+          {{ item.name }}
+        </h1>
 
         <div v-if="genres.length" class="artist-hero__genres">
           <template v-for="(genre, index) in genres" :key="genre.item_id">

@@ -195,7 +195,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
@@ -278,7 +277,6 @@ const audiobookSourceMappings = computed(() => {
   const mappings: { provider_instance: string; item_id: string }[] = [];
   for (const mapping of itemDetails.value?.provider_mappings || []) {
     if (seen.has(mapping.provider_instance)) continue;
-    if (!providerAllowed(mapping.provider_instance)) continue;
     const provider = api.providers[mapping.provider_instance];
     if (!provider?.supported_features.includes(feature)) continue;
     seen.add(mapping.provider_instance);
@@ -430,16 +428,6 @@ function listingRoute(listing: string): RouteLocationRaw | undefined {
       listing,
     },
   };
-}
-
-// a user-level provider_filter, when set, restricts which providers are offered
-// (mirrors the listing's own provider selector).
-function providerAllowed(instanceId: string): boolean {
-  return !(
-    store.currentUser &&
-    store.currentUser.provider_filter.length > 0 &&
-    !store.currentUser.provider_filter.includes(instanceId)
-  );
 }
 </script>
 
