@@ -124,17 +124,12 @@ describe("user candidates", () => {
     expect(ownerCandidates(users)).toEqual([owner, member]);
   });
 
-  it("offers every enabled user but the owner to share with", () => {
-    expect(shareCandidates(users, "owner")).toEqual([member, guest, service]);
+  it("offers every enabled member but the owner to share with", () => {
+    expect(shareCandidates(users, "owner")).toEqual([member, service]);
   });
 
-  it("offers every enabled user to share a household source with", () => {
-    expect(shareCandidates(users, null)).toEqual([
-      owner,
-      member,
-      guest,
-      service,
-    ]);
+  it("offers every enabled member to share a household source with", () => {
+    expect(shareCandidates(users, null)).toEqual([owner, member, service]);
   });
 });
 

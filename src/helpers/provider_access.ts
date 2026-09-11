@@ -67,9 +67,15 @@ export const ownerCandidates = (users: User[]) =>
       user.role !== UserRole.SERVICE,
   );
 
-/** The users a music source can be shared with: every enabled user but its owner. */
+/**
+ * The users a music source can be shared with: every enabled member but its
+ * owner. A guest only ever gets the sources shared with everyone.
+ */
 export const shareCandidates = (users: User[], owner: string | null) =>
-  users.filter((user) => user.enabled && user.user_id !== owner);
+  users.filter(
+    (user) =>
+      user.enabled && user.role !== UserRole.GUEST && user.user_id !== owner,
+  );
 
 /** The name a user is shown by. */
 export const userDisplayName = (user: User) =>
