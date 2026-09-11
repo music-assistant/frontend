@@ -33,28 +33,28 @@
       <Skeleton class="h-12 w-80 max-w-[60%]" />
     </div>
     <div v-else class="artist-hero__body">
-      <div class="artist-hero__identity">
-        <div v-if="chipsShown" class="artist-hero__chips">
-          <span v-if="releaseCounts?.total" class="artist-hero__chip">
-            <LibraryBig :size="12" />
-            {{
-              $t("releases_in_library", releaseCounts.total, {
-                named: {
-                  count: releaseCounts.inLibrary,
-                  total: releaseCounts.total,
-                },
-              })
-            }}
-          </span>
-          <span v-if="providers.length" class="artist-hero__chip">
-            <template v-for="(provider, index) in providers" :key="provider.id">
-              <span v-if="index > 0" class="artist-hero__chip-sep">·</span>
-              <ProviderIcon :domain="provider.domain" :size="14" />
-              {{ provider.name }}
-            </template>
-          </span>
-        </div>
+      <div v-if="chipsShown" class="artist-hero__chips">
+        <span v-if="releaseCounts?.total" class="artist-hero__chip">
+          <LibraryBig :size="12" />
+          {{
+            $t("releases_in_library", releaseCounts.total, {
+              named: {
+                count: releaseCounts.inLibrary,
+                total: releaseCounts.total,
+              },
+            })
+          }}
+        </span>
+        <span v-if="providers.length" class="artist-hero__chip">
+          <template v-for="(provider, index) in providers" :key="provider.id">
+            <span v-if="index > 0" class="artist-hero__chip-sep">·</span>
+            <ProviderIcon :domain="provider.domain" :size="14" />
+            {{ provider.name }}
+          </template>
+        </span>
+      </div>
 
+      <div class="artist-hero__heading">
         <img
           v-if="artistLogo"
           class="artist-hero__logo"
@@ -389,14 +389,17 @@ function isShown(item: Artist): boolean {
   right: 28px;
   bottom: 24px;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-}
-.artist-hero__identity {
-  display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 14px;
+}
+/* the genres sit beside the name and drop below it when the line is full */
+.artist-hero__heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  max-width: 100%;
   min-width: 0;
 }
 .artist-hero__chips {
@@ -441,12 +444,10 @@ function isShown(item: Artist): boolean {
   overflow: hidden;
 }
 .artist-hero__genres {
+  min-width: 0;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 /* the genres read as links in the line of text, so the button chrome goes */
 .artist-hero__genre {
@@ -471,8 +472,8 @@ function isShown(item: Artist): boolean {
 .artist-hero__actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  flex: none;
 }
 .artist-hero__button {
   display: inline-flex;
@@ -502,11 +503,6 @@ function isShown(item: Artist): boolean {
   left: 16px;
   right: 16px;
   bottom: 16px;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 12px;
-}
-.artist-hero--phone .artist-hero__identity {
   gap: 12px;
 }
 .artist-hero--phone .artist-hero__name {
