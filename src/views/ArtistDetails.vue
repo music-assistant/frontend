@@ -489,7 +489,8 @@ function providerAllowed(instanceId: string): boolean {
 }
 .artist-admin :deep(.panel-item) {
   padding: 8px;
-  border-radius: 12px;
+  /* outweighs the equally-!important radius the card's tile utility carries */
+  border-radius: 12px !important;
 }
 .artist-admin :deep(.panel-item:hover) {
   background: rgba(var(--v-theme-on-surface), 0.08);
