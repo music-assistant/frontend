@@ -328,7 +328,8 @@ const onMenu = (e: MouseEvent) => {
     0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
-.ed-card--dimmed .ed-card__art {
+.ed-card--dimmed .ed-card__img,
+.ed-card--dimmed .ed-card__initials {
   opacity: 0.45;
 }
 .ed-card--round .ed-card__art {

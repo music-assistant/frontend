@@ -186,7 +186,9 @@ export function effectiveArtistRowSource(
 ): ArtistRowSource {
   if (artist.provider !== "library") return artist.provider;
   const saved = getArtistRowSource(id);
-  if (saved && sourceApplies(saved, artist)) return saved;
+  if (saved && sourceApplies(id, saved, artist, supportsDiscography)) {
+    return saved;
+  }
   if (RELEASE_ROWS.includes(id)) {
     return supportsDiscography ? "all" : "library";
   }
@@ -211,9 +213,16 @@ function savedRowSources(): Partial<Record<ArtistRowId, ArtistRowSource>> {
   return pref as Partial<Record<ArtistRowId, ArtistRowSource>>;
 }
 
-/** Whether a saved source can still feed a row of the given artist. */
-function sourceApplies(source: ArtistRowSource, artist: Artist): boolean {
-  if (source === "library" || source === "all") return true;
+/** Whether a saved source can currently feed the given row of this artist. */
+function sourceApplies(
+  id: ArtistRowId,
+  source: ArtistRowSource,
+  artist: Artist,
+  supportsDiscography: boolean,
+): boolean {
+  if (source === "library") return true;
+  if (source === "all")
+    return supportsDiscography || !RELEASE_ROWS.includes(id);
   return artist.provider_mappings.some(
     (mapping) => mapping.provider_instance === source,
   );

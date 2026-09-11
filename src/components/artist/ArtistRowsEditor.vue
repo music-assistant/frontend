@@ -71,8 +71,10 @@
               <button
                 type="button"
                 class="rows-editor__grip"
-                :aria-label="$t('queue_reorder')"
+                :aria-label="$t('reorder_row')"
                 @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                @keydown.up.prevent="moveRow(idx, idx - 1)"
+                @keydown.down.prevent="moveRow(idx, idx + 1)"
                 @click.stop
               >
                 <GripVertical :size="16" />
@@ -283,12 +285,7 @@ const {
 } = useListDragReorder({
   listEl,
   count: () => rows.value.length,
-  onCommit: (from, to) => {
-    const ids = rows.value.map((row) => row.id);
-    const [moved] = ids.splice(from, 1);
-    ids.splice(to, 0, moved);
-    setArtistRowsOrder(ids, props.availableIds);
-  },
+  onCommit: moveRow,
 });
 
 const draggedRow = computed(() =>
@@ -340,6 +337,15 @@ function setHidden(id: ArtistRowId, hidden: boolean) {
 
 function reset() {
   resetArtistRows();
+}
+
+/** Moves the row at `from` to position `to`, by drop or by arrow key. */
+function moveRow(from: number, to: number) {
+  if (to < 0 || to >= rows.value.length) return;
+  const ids = rows.value.map((row) => row.id);
+  const [moved] = ids.splice(from, 1);
+  ids.splice(to, 0, moved);
+  setArtistRowsOrder(ids, props.availableIds);
 }
 
 function slotStyle(index: number) {

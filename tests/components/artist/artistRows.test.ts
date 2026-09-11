@@ -233,6 +233,21 @@ describe("artistRows", () => {
       ).toBe("all");
     });
 
+    it("ignores a saved 'all' for release rows without discography support", () => {
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: {
+          albums: "all",
+          top_tracks: "all",
+        },
+      });
+      expect(effectiveArtistRowSource("albums", artist(), false)).toBe(
+        "library",
+      );
+      expect(effectiveArtistRowSource("top_tracks", artist(), false)).toBe(
+        "all",
+      );
+    });
+
     it("keeps a provider artist on its own provider", () => {
       setPreferences({
         [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { albums: "library" },

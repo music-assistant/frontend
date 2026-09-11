@@ -390,8 +390,12 @@ const activeAudiobookProvider = computed(
 );
 
 const loadItemDetails = async function () {
+  const { itemId, provider } = props;
   loading.value = true;
-  itemDetails.value = await api.getArtist(props.itemId, props.provider);
+  const artist = await api.getArtist(itemId, provider);
+  // a slower response for a previous artist must not replace the current one
+  if (itemId !== props.itemId || provider !== props.provider) return;
+  itemDetails.value = artist;
   loading.value = false;
 };
 
@@ -548,7 +552,11 @@ function loadRowData() {
   if (!artist) return;
   const rows = visibleRows.value;
   // the hero's release chip needs the complete discography
-  if (artist.provider === "library" && api.supportsArtistDiscography) {
+  if (
+    artist.provider === "library" &&
+    !isAudiobookArtist.value &&
+    api.supportsArtistDiscography
+  ) {
     fetchReleases(artist, "all");
   }
   if (rows.includes("albums")) fetchReleases(artist, albumsSource.value!);

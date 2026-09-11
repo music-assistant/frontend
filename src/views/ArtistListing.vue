@@ -90,9 +90,14 @@ const router = useRouter();
 const itemDetails = ref<Artist>();
 
 watch(
-  () => props.itemId,
-  async (val) => {
-    if (val) itemDetails.value = await api.getArtist(val, props.provider);
+  () => [props.itemId, props.provider],
+  async ([itemId, provider]) => {
+    // the listing remounts for the new artist instead of keeping the old items
+    itemDetails.value = undefined;
+    const artist = await api.getArtist(itemId, provider);
+    // a slower response for a previous artist must not replace the current one
+    if (itemId !== props.itemId || provider !== props.provider) return;
+    itemDetails.value = artist;
   },
   { immediate: true },
 );

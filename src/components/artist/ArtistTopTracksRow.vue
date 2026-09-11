@@ -65,6 +65,9 @@
             tabindex="0"
             @click="(e: MouseEvent) => onTrackClick(e, track)"
             @keydown.enter.self="(e: KeyboardEvent) => onTrackClick(e, track)"
+            @keydown.space.self.prevent="
+              (e: KeyboardEvent) => onTrackClick(e, track)
+            "
             @contextmenu.prevent="(e: MouseEvent) => onTrackMenu(e, track)"
             @touchstart.passive="onTrackTouchStart"
           >

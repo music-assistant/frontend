@@ -5,7 +5,6 @@
     :style="heroStyle"
   >
     <div class="artist-hero__scrim"></div>
-    <v-progress-linear v-if="!item" indeterminate />
     <Toolbar
       class="artist-hero__toolbar"
       :icon="ArrowLeft"
@@ -30,7 +29,10 @@
       </template>
     </Toolbar>
 
-    <div v-if="item" class="artist-hero__body">
+    <div v-if="!item" class="artist-hero__body">
+      <Skeleton class="h-12 w-80 max-w-[60%]" />
+    </div>
+    <div v-else class="artist-hero__body">
       <div class="artist-hero__identity">
         <div v-if="chipsShown" class="artist-hero__chips">
           <span v-if="releaseCounts?.total" class="artist-hero__chip">
@@ -113,6 +115,7 @@
 import MenuButton from "@/components/MenuButton.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
