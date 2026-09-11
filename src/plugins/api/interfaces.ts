@@ -1756,7 +1756,8 @@ export enum AuthProviderType {
 export interface User {
   user_id: string;
   username: string;
-  role: UserRole;
+  // role: the id of the role assigned to the user, one of UserRole for the builtin roles
+  role: string;
   enabled: boolean;
   created_at: string;
   display_name: string | null;

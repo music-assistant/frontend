@@ -29,21 +29,25 @@
         v-for="item in getAllFilteredProviders()"
         :key="item.instance_id"
         variant="outline"
-        role="button"
-        tabindex="0"
         class="cursor-pointer"
         :class="{ 'opacity-60': !item.enabled }"
         data-testid="provider-row"
         @click="openProvider(item)"
-        @keydown.enter.self.prevent="openProvider(item)"
-        @keydown.space.self.prevent="openProvider(item)"
       >
         <ItemMedia>
           <ProviderIcon :domain="item.domain" :size="40" />
         </ItemMedia>
         <ItemContent>
           <ItemTitle class="flex flex-wrap items-center gap-2">
-            <span>{{ getProviderName(item) }}</span>
+            <!-- the name is the focusable control; the row itself only follows the pointer -->
+            <button
+              type="button"
+              class="cursor-pointer text-left"
+              data-testid="provider-open"
+              @click.stop="openProvider(item)"
+            >
+              {{ getProviderName(item) }}
+            </button>
             <Badge
               v-if="statusVariant(item.status)"
               :variant="statusVariant(item.status)"

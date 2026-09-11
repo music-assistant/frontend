@@ -333,7 +333,8 @@ const form = useForm({
     username: props.user?.username || "",
     displayName: props.user?.display_name || "",
     avatarUrl: props.user?.avatar_url || "",
-    role: props.user?.role || ("user" as UserRole),
+    // the picker only offers the builtin roles, which the schema enforces on submit
+    role: (props.user?.role as UserRole) || UserRole.USER,
     password: "",
     confirmPassword: "",
     playerFilter: props.user?.player_filter || [],
@@ -403,7 +404,7 @@ const resetForm = () => {
     form.setFieldValue("username", props.user.username);
     form.setFieldValue("displayName", props.user.display_name || "");
     form.setFieldValue("avatarUrl", props.user.avatar_url || "");
-    form.setFieldValue("role", props.user.role);
+    form.setFieldValue("role", props.user.role as UserRole);
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
     form.setFieldValue("playerFilter", props.user.player_filter);

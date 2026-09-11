@@ -594,30 +594,20 @@ function playerProvider() {
 }
 
 describe("Providers keyboard", () => {
-  it("opens a provider from its row with the keyboard", async () => {
+  it("opens a provider from its name, the row's focusable control", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    await wrapper.get('[data-testid="provider-row"]').trigger("keydown", {
-      key: "Enter",
-    });
+    const name = wrapper.get('[data-testid="provider-open"]');
+    expect(name.element.tagName).toBe("BUTTON");
+    await name.trigger("click");
 
     expect(routerMock.push).toHaveBeenCalledWith(
       "/settings/editprovider/spotify--test",
     );
-  });
-
-  it("leaves Enter and Space on the row's buttons to the button", async () => {
-    const wrapper = await mountProviders(ProviderStatus.LOADED);
-
-    // the keydown bubbles up to the row, which must not treat it as its own
-    await wrapper.get('[data-testid="provider-menu"]').trigger("keydown", {
-      key: "Enter",
-    });
-    await wrapper.get('[data-testid="provider-menu"]').trigger("keydown", {
-      key: " ",
-    });
-
-    expect(routerMock.push).not.toHaveBeenCalled();
+    // the row only follows the pointer, so its buttons are not nested in a control
+    expect(wrapper.get('[data-testid="provider-row"]').attributes("role")).toBe(
+      undefined,
+    );
   });
 });
 

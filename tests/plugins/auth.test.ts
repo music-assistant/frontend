@@ -268,7 +268,7 @@ describe("AuthManager scopes", () => {
   });
 
   it("denies every scope to a role the server did not list", () => {
-    store.currentUser = user({ role: "power_user" as UserRole });
+    store.currentUser = user({ role: "power_user" });
     store.roleScopes = { admin: [Scope.ALL] };
 
     expect(new AuthManager().hasScope(Scope.LIBRARY_READ)).toBe(false);
