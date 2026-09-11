@@ -16,7 +16,7 @@ import {
   isMediaSessionDisabled,
   resetMediaSession,
 } from "@/helpers/mediaSession";
-import { getDeviceName } from "@/plugins/api/helpers";
+import { getDeviceName, resolvePlayerQueue } from "@/plugins/api/helpers";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
@@ -436,10 +436,16 @@ function getTargetPlayerId(): string | undefined {
   return store.activePlayerId;
 }
 
+function hasSomethingToPlay(playerId: string): boolean {
+  const queue = resolvePlayerQueue(api.players[playerId]);
+  return !queue || queue.items > 0;
+}
+
 function registerMediaSessionActionHandlers(): void {
   navigator.mediaSession.setActionHandler("play", () => {
     const targetId = getTargetPlayerId();
-    if (!targetId) return;
+    // The server rejects play on an empty queue
+    if (!targetId || !hasSomethingToPlay(targetId)) return;
     api.playerCommandPlay(targetId);
   });
 
