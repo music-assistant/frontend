@@ -1,6 +1,6 @@
 <template>
   <div class="providers-header w-100">
-    <ProviderFilters @update:search="searchQuery = $event" />
+    <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
     <!-- the empty state below carries the add button while there is nothing to list -->
     <Button
       v-if="!showMusicEmptyState"
@@ -260,7 +260,10 @@
       </EmptyContent>
     </Empty>
 
-    <div v-else-if="getAllFilteredProviders().length === 0" class="empty-state">
+    <div
+      v-else-if="loaded && getAllFilteredProviders().length === 0"
+      class="empty-state"
+    >
       <v-icon icon="mdi-puzzle-outline" size="64" class="empty-icon" />
       <div class="empty-title">{{ $t("no_content") }}</div>
       <div class="empty-message">
@@ -371,6 +374,9 @@ const providersViewMode = inject<{
 
 const viewMode = computed(() => providersViewMode.viewMode.value);
 
+// a handful of providers is scanned faster than it is searched
+const MIN_PROVIDERS_FOR_SEARCH = 10;
+
 // an admin manages every source, a member only the music sources it owns
 const managesAllSources = computed(() => authManager.isAdmin());
 
@@ -403,6 +409,8 @@ const addProviderLabel = computed(() => {
 
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
+// the empty states wait for the first load, so they never flash before the list
+const loaded = ref(false);
 const searchQuery = ref<string>("");
 const showAddProviderDialog = ref<boolean>(false);
 const addProviderInitialType = ref<string | undefined>(undefined);
@@ -416,10 +424,44 @@ const usersById = computed(
   () => new Map(users.value.map((user) => [user.user_id, user])),
 );
 
+// the providers of the current type (a member's own ones only), before the
+// search narrows them down
+const listedProviders = computed(() => {
+  let listed = providerConfigs.value;
+
+  const typesQuery = currentType.value;
+  if (typesQuery && typesQuery.trim().length > 0) {
+    const types = typesQuery.split(",");
+    listed = listed.filter((item) => types.includes(item.type));
+  } else {
+    // Default to showing only music providers when no types are specified
+    listed = listed.filter((item) => item.type === ProviderType.MUSIC);
+  }
+
+  // ownership is enforced server-side as well; this keeps the page honest
+  if (!managesAllSources.value) {
+    listed = listed.filter((item) =>
+      isOwnMusicSource(item, store.currentUser?.user_id),
+    );
+  }
+  return listed;
+});
+
+const showSearch = computed(
+  () => listedProviders.value.length >= MIN_PROVIDERS_FOR_SEARCH,
+);
+
+// a search typed before the list shrank below the threshold would keep
+// narrowing it down unseen
+watch(showSearch, (shown) => {
+  if (!shown) searchQuery.value = "";
+});
+
 // an empty music list invites a first source; any other empty list is the
 // result of the active search or type filter
 const showMusicEmptyState = computed(
   () =>
+    loaded.value &&
     getAllFilteredProviders().length === 0 &&
     !searchQuery.value &&
     (currentType.value || ProviderType.MUSIC) === ProviderType.MUSIC,
@@ -449,6 +491,7 @@ const loadItems = async function () {
   providerConfigs.value = await api.getProviderConfigs(
     managesAllSources.value ? undefined : ProviderType.MUSIC,
   );
+  loaded.value = true;
 };
 
 const loadUsers = async function () {
@@ -802,7 +845,7 @@ const getUserName = function (userId: string) {
 };
 
 const getAllFilteredProviders = function () {
-  let filtered = [...providerConfigs.value];
+  let filtered = listedProviders.value;
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
@@ -812,24 +855,8 @@ const getAllFilteredProviders = function () {
     });
   }
 
-  const typesQuery = currentType.value;
-  if (typesQuery && typesQuery.trim().length > 0) {
-    const types = typesQuery.split(",");
-    filtered = filtered.filter((item) => types.includes(item.type));
-  } else {
-    // Default to showing only music providers when no types are specified
-    filtered = filtered.filter((item) => item.type === ProviderType.MUSIC);
-  }
-
-  // ownership is enforced server-side as well; this keeps the page honest
-  if (!managesAllSources.value) {
-    filtered = filtered.filter((item) =>
-      isOwnMusicSource(item, store.currentUser?.user_id),
-    );
-  }
-
   // Sort: providers needing attention (error/auth/incompatible) first, then alphabetically
-  return filtered.sort((a, b) => {
+  return [...filtered].sort((a, b) => {
     const aHasError = isErrorStatus(a.status) ? 1 : 0;
     const bHasError = isErrorStatus(b.status) ? 1 : 0;
     if (aHasError !== bHasError) {
@@ -853,6 +880,7 @@ const getAllFilteredProviders = function () {
 .add-provider-btn {
   flex-shrink: 0;
   align-self: center;
+  margin-left: auto;
 }
 
 /* Mobile responsive */

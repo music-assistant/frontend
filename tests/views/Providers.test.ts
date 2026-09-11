@@ -590,6 +590,77 @@ function playerProvider() {
   });
 }
 
+describe("Providers loading", () => {
+  it("shows no empty state until the providers are loaded", async () => {
+    const wrapper = await mountWithConfigs(new Promise(() => {}));
+
+    expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find(".empty-state").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
+  });
+});
+
+describe("Providers search", () => {
+  it("offers the search from ten listed providers on", async () => {
+    const wrapper = await mountWithConfigs(spotifyConfigs(10));
+
+    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
+      true,
+    );
+  });
+
+  it("hides the search below ten listed providers", async () => {
+    const wrapper = await mountWithConfigs(spotifyConfigs(9));
+
+    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
+      false,
+    );
+  });
+
+  it("counts only the providers of the listed type", async () => {
+    const wrapper = await mountWithConfigs([
+      ...spotifyConfigs(9),
+      providerConfig({
+        domain: "sonos",
+        instance_id: "sonos--1",
+        type: ProviderType.PLAYER,
+      }),
+    ]);
+
+    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
+      false,
+    );
+  });
+
+  it("keeps the search while a query narrows the list down", async () => {
+    const wrapper = await mountWithConfigs(spotifyConfigs(10));
+
+    wrapper
+      .findComponent({ name: "ProviderFilters" })
+      .vm.$emit("update:search", "nothing matches this");
+    await flushPromises();
+
+    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(0);
+    expect(wrapper.findComponent({ name: "ProviderFilters" }).exists()).toBe(
+      true,
+    );
+  });
+});
+
+/** The given number of loaded spotify sources, each with its own name. */
+function spotifyConfigs(count: number): ProviderConfig[] {
+  return Array.from({ length: count }, (_, index) =>
+    providerConfig({
+      domain: "spotify",
+      instance_id: `spotify--${index}`,
+      name: `Spotify ${index}`,
+      status: ProviderStatus.LOADED,
+    }),
+  );
+}
+
 async function mountProviders(
   status: ProviderStatus,
   hasSetupFlow: boolean = true,
@@ -613,8 +684,11 @@ async function mountProviders(
   ]);
 }
 
-async function mountWithConfigs(configs: ProviderConfig[]) {
-  apiMock.getProviderConfigs.mockResolvedValue(configs);
+// a pending promise keeps the page in its loading state
+async function mountWithConfigs(
+  configs: ProviderConfig[] | Promise<ProviderConfig[]>,
+) {
+  apiMock.getProviderConfigs.mockReturnValue(Promise.resolve(configs));
 
   const wrapper = shallowMount(Providers, {
     global: {

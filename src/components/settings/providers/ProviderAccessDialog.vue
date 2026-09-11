@@ -162,11 +162,13 @@ const canPickSharedUsers = computed(
   () => canChangeOwner.value && sharing.value === ProviderSharing.SELECTED,
 );
 
+// a source that is not loaded is named by its config, like the list does
 const sourceName = computed(() => {
   if (!props.config) return "";
   return (
-    props.config.name ||
     api.providers[props.config.instance_id]?.name ||
+    props.config.name ||
+    props.config.default_name ||
     api.providerManifests[props.config.domain]?.name ||
     props.config.instance_id
   );

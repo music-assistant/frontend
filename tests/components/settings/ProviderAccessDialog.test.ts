@@ -85,6 +85,22 @@ describe("ProviderAccessDialog", () => {
     ).toContain("settings.source_access.title");
   });
 
+  it("names a source that is not loaded by its config", async () => {
+    await openDialog(
+      providerConfig({
+        domain: "spotify",
+        name: null,
+        default_name: "Spotify (sam)",
+      }),
+      users,
+    );
+
+    expect(
+      document.querySelector("[data-slot='dialog-title']")?.textContent,
+    ).toContain("settings.source_access.title");
+    expect(dialogText()).toContain("Spotify (sam)");
+  });
+
   it("starts from the current record", async () => {
     await openDialog(ownedSource, users);
 
@@ -292,7 +308,13 @@ async function openDialog(
   const wrapper = mount(ProviderAccessDialog, {
     props: { open: false, config, users: dialogUsers },
     attachTo: document.body,
-    global: { mocks: { $t: (key: string) => key } },
+    global: {
+      mocks: {
+        // the key, plus the source name the title interpolates
+        $t: (key: string, params?: { name?: string }) =>
+          params?.name ? `${key} ${params.name}` : key,
+      },
+    },
   });
   // the form is filled when the dialog opens, not when it mounts
   await wrapper.setProps({ open: true });
