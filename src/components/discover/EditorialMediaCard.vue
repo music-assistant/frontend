@@ -8,7 +8,6 @@
       'ed-card--unavailable': !isAvailable,
       'ed-card--fluid': fluid,
       'ed-card--disabled': disabled,
-      'ed-card--dimmed': dimmed,
       'ed-card--round': round,
     }"
     @click="onClick"
@@ -134,8 +133,6 @@ interface Props {
   isPlaying?: boolean;
   disablePlayButton?: boolean;
   disabled?: boolean;
-  // fades the artwork, for an item that is not (yet) in the library
-  dimmed?: boolean;
   // circular artwork, for artist cards
   round?: boolean;
   parentItem?: MediaItemType;
@@ -150,7 +147,6 @@ const props = withDefaults(defineProps<Props>(), {
   isPlaying: false,
   disablePlayButton: false,
   disabled: false,
-  dimmed: false,
   round: false,
   parentItem: undefined,
   sortBy: undefined,
@@ -328,10 +324,6 @@ const onMenu = (e: MouseEvent) => {
     0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
-.ed-card--dimmed .ed-card__img,
-.ed-card--dimmed .ed-card__initials {
-  opacity: 0.45;
-}
 .ed-card--round .ed-card__art {
   border-radius: 999px;
 }
@@ -433,6 +425,20 @@ const onMenu = (e: MouseEvent) => {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+/* a round card reveals its play button over the middle of the portrait */
+.ed-card--round .ed-card__meta {
+  position: static;
+}
+.ed-card--round .ed-card__play {
+  top: calc(var(--ed-card-pad) + var(--ed-art-size) / 2);
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  transform: translate(-50%, -50%) translateY(8px);
+}
+.ed-card--round:hover .ed-card__play {
+  transform: translate(-50%, -50%);
 }
 /* Touch devices: no hover-revealed play button — tap goes straight to the
    content and long-press opens the context menu instead. */

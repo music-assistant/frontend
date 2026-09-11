@@ -77,8 +77,9 @@
         </div>
       </div>
 
-      <div ref="actionsEl" class="artist-hero__actions">
+      <div class="artist-hero__actions">
         <MenuButton
+          ref="playButton"
           :text="playButtonText"
           :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
           :loading="playActionInProgress"
@@ -141,7 +142,13 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, LibraryBig, Radio, Rows3, Shuffle } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { computed, ref, useTemplateRef, watch } from "vue";
+import {
+  computed,
+  ref,
+  useTemplateRef,
+  watch,
+  type ComponentPublicInstance,
+} from "vue";
 import { useRouter } from "vue-router";
 
 export interface Props {
@@ -158,7 +165,7 @@ const emit = defineEmits<{
 const router = useRouter();
 const menuItems = ref<ContextMenuItem[]>([]);
 const genres = ref<Genre[]>([]);
-const actionsEl = useTemplateRef<HTMLElement>("actionsEl");
+const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
@@ -256,7 +263,10 @@ const backButtonClick = function () {
 
 const playButtonClick = function (forceMenu = false) {
   if (!props.item) return;
-  const rect = actionsEl.value?.getBoundingClientRect();
+  // the play menu hangs from the play button, like on the other detail pages
+  const rect = (
+    playButton.value?.$el as HTMLElement | undefined
+  )?.getBoundingClientRect();
   handlePlayBtnClick(
     props.item,
     rect?.right ?? 0,
@@ -352,6 +362,7 @@ function isShown(item: Artist): boolean {
   opacity: 1;
 }
 .artist-hero__fav {
+  margin-right: 8px;
   align-items: center;
   background: rgba(0, 0, 0, 0.35);
   border: 0;

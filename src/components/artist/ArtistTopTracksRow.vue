@@ -39,16 +39,17 @@
             {{ sourceLabel }}
           </span>
         </div>
-        <Button v-if="libraryTrackCount" variant="link" size="sm" as-child>
-          <RouterLink :to="allTracksRoute">
-            {{
-              $t("all_n_tracks", libraryTrackCount, {
-                named: { count: libraryTrackCount },
-              })
-            }}
-            <ChevronRight :size="16" />
-          </RouterLink>
-        </Button>
+        <RouterLink
+          v-if="libraryTrackCount"
+          :to="allTracksRoute"
+          class="artist-top-tracks__more"
+        >
+          {{
+            $t("all_n_tracks", libraryTrackCount, {
+              named: { count: libraryTrackCount },
+            })
+          }}
+        </RouterLink>
       </div>
 
       <div class="artist-top-tracks__grid">
@@ -122,7 +123,6 @@
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getEventPosition,
@@ -145,7 +145,7 @@ import {
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ChevronRight, EllipsisVertical, Play } from "@lucide/vue";
+import { EllipsisVertical, Play } from "@lucide/vue";
 import { computed } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
@@ -275,7 +275,7 @@ function releaseDate(album: Album): Date | undefined {
 
 <style scoped>
 .artist-top-tracks {
-  padding: 26px 28px 0;
+  padding: 26px 28px 28px;
   display: grid;
   gap: 28px;
   align-items: start;
@@ -285,6 +285,9 @@ function releaseDate(album: Album): Date | undefined {
 }
 .artist-top-tracks__latest {
   width: 184px;
+}
+.artist-top-tracks__latest > .artist-top-tracks__title {
+  margin-bottom: 14px;
 }
 /* the card fills the column instead of carrying the shelf's tile padding */
 .artist-top-tracks__latest :deep(.ed-card) {
@@ -333,6 +336,18 @@ function releaseDate(album: Album): Date | undefined {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.artist-top-tracks__more {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  white-space: nowrap;
+}
+.artist-top-tracks__more:hover,
+.artist-top-tracks__more:focus-visible {
+  text-decoration: underline;
 }
 .artist-top-tracks__source {
   display: inline-flex;
@@ -441,7 +456,7 @@ function releaseDate(album: Album): Date | undefined {
 
 @media (max-width: 768px) {
   .artist-top-tracks {
-    padding: 22px 16px 0;
+    padding: 22px 16px 20px;
     grid-template-columns: minmax(0, 1fr);
   }
   .artist-top-tracks__head {

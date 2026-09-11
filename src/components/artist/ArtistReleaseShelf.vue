@@ -12,17 +12,13 @@
       </div>
     </template>
     <template v-if="viewAllTo" #actions>
-      <Button
-        variant="link"
-        size="sm"
-        as-child
+      <RouterLink
+        :to="viewAllTo"
+        class="artist-shelf__more"
         :aria-label="$t('tooltip.view_all', { name: title })"
       >
-        <RouterLink :to="viewAllTo">
-          {{ $t("view_all") }}
-          <ChevronRight :size="16" />
-        </RouterLink>
-      </Button>
+        {{ $t("view_all") }}
+      </RouterLink>
     </template>
 
     <template v-if="items">
@@ -32,7 +28,6 @@
         :item="item"
         :parent-item="parentItem"
         :is-available="itemIsAvailable(item)"
-        :dimmed="showAddPill(item)"
       >
         <template #art-overlay>
           <span class="artist-shelf__art-scrim"></span>
@@ -66,7 +61,6 @@ import { isInLibrary } from "@/components/artist/artistData";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
-import { Button } from "@/components/ui/button";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -79,7 +73,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { ChevronRight, Plus } from "@lucide/vue";
+import { Plus } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 import { toast } from "vue-sonner";
@@ -184,6 +178,18 @@ function shelfTilesPerView(size: "lg" | "md"): number {
   font-size: 13px;
   color: rgba(var(--v-theme-on-surface), 0.6);
   white-space: nowrap;
+}
+.artist-shelf__more {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  white-space: nowrap;
+}
+.artist-shelf__more:hover,
+.artist-shelf__more:focus-visible {
+  text-decoration: underline;
 }
 .artist-shelf__art-scrim {
   position: absolute;

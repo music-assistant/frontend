@@ -137,21 +137,24 @@
         />
 
         <!-- provider mapping details -->
-        <ProviderDetails
-          v-else-if="rowId === 'provider_mappings'"
-          :item-details="itemDetails"
-        />
+        <div v-else-if="rowId === 'provider_mappings'" class="artist-admin">
+          <ProviderDetails :item-details="itemDetails" />
+        </div>
 
         <!-- media images -->
-        <MediaItemImages
+        <div
           v-else-if="
             rowId === 'artwork' &&
             itemDetails.provider == 'library' &&
             itemDetails.metadata?.images
           "
-          v-model="itemDetails.metadata.images"
-          @update:model-value="UpdateItemInDb"
-        />
+          class="artist-admin"
+        >
+          <MediaItemImages
+            v-model="itemDetails.metadata.images"
+            @update:model-value="UpdateItemInDb"
+          />
+        </div>
       </template>
     </template>
     <ArtistRowsEditor
@@ -439,3 +442,32 @@ function providerAllowed(instanceId: string): boolean {
   );
 }
 </script>
+
+<style scoped>
+/* the shared admin sections keep their own toolbar and content, but take the
+   page's row title and gutter and sit in a card each; their inline bottom margin
+   is the only spacing they set themselves, hence the override */
+.artist-admin :deep(section) {
+  margin: 16px 28px 0 !important;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  overflow: hidden;
+}
+.artist-admin :deep(.v-toolbar-title) {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+.artist-admin :deep(.v-divider) {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .artist-admin :deep(section) {
+    margin: 12px 16px 0 !important;
+  }
+  .artist-admin :deep(.v-toolbar-title) {
+    font-size: 19px;
+  }
+}
+</style>
