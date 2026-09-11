@@ -41,7 +41,11 @@
         </div>
         <Button v-if="libraryTrackCount" variant="link" size="sm" as-child>
           <RouterLink :to="allTracksRoute">
-            {{ $t("all_n_tracks", { count: libraryTrackCount }) }}
+            {{
+              $t("all_n_tracks", libraryTrackCount, {
+                named: { count: libraryTrackCount },
+              })
+            }}
             <ChevronRight :size="16" />
           </RouterLink>
         </Button>

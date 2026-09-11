@@ -156,7 +156,13 @@
         />
       </template>
     </template>
-    <!-- ArtistRowsEditor mounts here -->
+    <ArtistRowsEditor
+      v-if="itemDetails"
+      v-model:open="rowsEditorOpen"
+      :artist="itemDetails"
+      :available-ids="availableRows"
+      :row-meta="rowMeta"
+    />
     <br />
   </section>
 </template>
@@ -175,6 +181,7 @@ import {
 } from "@/components/artist/artistData";
 import ArtistHero from "@/components/artist/ArtistHero.vue";
 import ArtistReleaseShelf from "@/components/artist/ArtistReleaseShelf.vue";
+import ArtistRowsEditor from "@/components/artist/ArtistRowsEditor.vue";
 import {
   availableArtistRowIds,
   effectiveArtistRowSource,
@@ -255,6 +262,7 @@ const rowSource = function (rowId: ArtistRowId): ArtistRowSource | undefined {
 
 const albumsSource = computed(() => rowSource("albums"));
 const singlesSource = computed(() => rowSource("singles_eps"));
+const appearsOnSource = computed(() => rowSource("appears_on"));
 const topTracksSource = computed(() => rowSource("top_tracks"));
 const similarArtistsSource = computed(() => rowSource("similar_artists"));
 
@@ -283,13 +291,13 @@ const albumsMeta = computed(() =>
     : undefined,
 );
 
-// the in-library albums are the ones the artist is an album artist of, so
-// every other album their library tracks point at is an appearance
+// every album the artist's library tracks point at that is not one of their
+// own releases is an appearance
 const appearsOnItems = computed<Array<Album | ItemMapping> | undefined>(() => {
-  const ownAlbums = releases.value.get("library");
-  if (!itemDetails.value || !libraryTracks.value || !ownAlbums)
+  const ownReleases = sourceItems(releases.value, appearsOnSource.value);
+  if (!itemDetails.value || !libraryTracks.value || !ownReleases)
     return undefined;
-  return appearsOnAlbums(libraryTracks.value, itemDetails.value, ownAlbums);
+  return appearsOnAlbums(libraryTracks.value, itemDetails.value, ownReleases);
 });
 
 // the full discography is the only list that knows how much of it is missing
@@ -318,6 +326,21 @@ const topTracksProvider = computed(() => sourceProvider(topTracksSource.value));
 const similarArtistsProvider = computed(() =>
   sourceProvider(similarArtistsSource.value),
 );
+
+// how much each row currently holds, for the editor's per-row meta line (it
+// adds the source itself)
+const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
+  top_tracks: libraryTracks.value?.length
+    ? $t("all_n_tracks", libraryTracks.value.length, {
+        named: { count: libraryTracks.value.length },
+      })
+    : undefined,
+  albums: albumsMeta.value,
+  singles_eps: singleItems.value?.length
+    ? String(singleItems.value.length)
+    : undefined,
+  appears_on: $t("appears_on_hint"),
+}));
 
 // library audiobooks can be filtered to the providers the artist is mapped to
 const mappingProviderIds = computed(() => [
@@ -380,11 +403,12 @@ watch(
   { immediate: true },
 );
 
-// a new artist starts from empty rows; anything else (a favorite toggle, a
-// metadata update) keeps what is already loaded
+// a new artist starts from empty rows at the top of the page; anything else
+// (a favorite toggle, a metadata update) keeps what is already loaded
 watch(
   () => itemDetails.value?.uri,
   () => {
+    document.querySelector(".content-section")?.scrollTo({ top: 0 });
     releases.value = new Map();
     topTracks.value = new Map();
     similarArtists.value = new Map();
@@ -401,6 +425,7 @@ watch(
     visibleRows,
     albumsSource,
     singlesSource,
+    appearsOnSource,
     topTracksSource,
     similarArtistsSource,
   ],
@@ -529,7 +554,7 @@ function loadRowData() {
   if (rows.includes("albums")) fetchReleases(artist, albumsSource.value!);
   if (rows.includes("singles_eps")) fetchReleases(artist, singlesSource.value!);
   if (rows.includes("appears_on")) {
-    fetchReleases(artist, "library");
+    fetchReleases(artist, appearsOnSource.value!);
     fetchLibraryTracks(artist);
   }
   if (rows.includes("top_tracks")) {

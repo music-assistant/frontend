@@ -175,7 +175,8 @@ export async function setArtistRowSource(
 /**
  * The source that actually feeds a row for this artist: the saved one when it applies (a provider
  * the artist is mapped to, or "all"/"library"), otherwise the default. Provider (non-library) artists
- * always resolve to their own provider. Default for albums/singles is "all" when the server supports
+ * always resolve to their own provider. Default for the release rows (albums, singles, and the
+ * artist's own releases that appearances are checked against) is "all" when the server supports
  * the discography command, else "library"; for top tracks / similar artists it is "all".
  */
 export function effectiveArtistRowSource(
@@ -186,7 +187,7 @@ export function effectiveArtistRowSource(
   if (artist.provider !== "library") return artist.provider;
   const saved = getArtistRowSource(id);
   if (saved && sourceApplies(saved, artist)) return saved;
-  if (id === "albums" || id === "singles_eps") {
+  if (RELEASE_ROWS.includes(id)) {
     return supportsDiscography ? "all" : "library";
   }
   return ALL_PROVIDER_ROWS.includes(id) ? "all" : "library";
@@ -195,6 +196,9 @@ export function effectiveArtistRowSource(
 const ARTIST_ROWS_BY_ID = Object.fromEntries(
   ARTIST_ROWS.map((row) => [row.id, row]),
 ) as Record<ArtistRowId, ArtistRowDefinition>;
+
+// rows fed by the artist's releases, in or outside the library
+const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps", "appears_on"];
 
 // rows the server aggregates over every provider by default
 const ALL_PROVIDER_ROWS: ArtistRowId[] = ["top_tracks", "similar_artists"];

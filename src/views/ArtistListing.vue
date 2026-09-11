@@ -201,12 +201,23 @@ async function loadReleases(
 /** Albums the artist is credited on without being the album artist. */
 async function loadAppearsOn(): Promise<MediaItemType[]> {
   if (!itemDetails.value) return [];
-  // the in-library albums are the ones the artist is an album artist of, so
-  // every other album their library tracks point at is an appearance
-  const [tracks, albums] = await Promise.all([
+  // every album the artist's library tracks point at that is not one of their
+  // own releases is an appearance
+  const [tracks, releases] = await Promise.all([
     loadArtistLibraryTracks(itemDetails.value),
-    loadArtistReleases(itemDetails.value, "library"),
+    loadArtistReleases(
+      itemDetails.value,
+      effectiveArtistRowSource(
+        "appears_on",
+        itemDetails.value,
+        api.supportsArtistDiscography,
+      ),
+    ),
   ]);
-  return appearsOnAlbums(tracks, itemDetails.value, albums) as MediaItemType[];
+  return appearsOnAlbums(
+    tracks,
+    itemDetails.value,
+    releases,
+  ) as MediaItemType[];
 }
 </script>

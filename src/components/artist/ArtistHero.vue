@@ -36,9 +36,11 @@
           <span v-if="releaseCounts?.total" class="artist-hero__chip">
             <LibraryBig :size="12" />
             {{
-              $t("releases_in_library", {
-                count: releaseCounts.inLibrary,
-                total: releaseCounts.total,
+              $t("releases_in_library", releaseCounts.total, {
+                named: {
+                  count: releaseCounts.inLibrary,
+                  total: releaseCounts.total,
+                },
               })
             }}
           </span>
