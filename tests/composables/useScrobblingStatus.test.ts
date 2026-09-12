@@ -20,6 +20,7 @@ const provider = (overrides: Partial<ProviderConfig> = {}): ProviderConfig => ({
   name: null,
   default_name: "Last.fm",
   last_error: null,
+  access: null,
   status: ProviderStatus.LOADED,
   values: {},
   ...overrides,
