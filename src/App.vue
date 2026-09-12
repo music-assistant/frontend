@@ -350,6 +350,8 @@ const completeInitialization = async () => {
   authManager.setCurrentUser(userInfo);
   store.currentUser = userInfo;
   store.serverInfo = serverInfo;
+  // the scopes the role of the user grants, for the parts of the ui gated on one
+  store.roleScopes = await api.getRoleScopes();
 
   const isGuestAccessSession = authManager.isGuestAccessSession();
   const isDashboardViewer = authManager.isDashboardViewer();

@@ -11,9 +11,19 @@ import {
 } from "vue-router";
 import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
+import { Scope } from "./api/interfaces";
 import { authManager } from "./auth";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
+
+declare module "vue-router" {
+  interface RouteMeta {
+    // only the admin role may open the route
+    requiresAdmin?: boolean;
+    // only a role granting this scope may open the route
+    requiresScope?: Scope;
+  }
+}
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -470,7 +480,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // a member manages the music sources it owns from the same page
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
             path: "players",
@@ -577,7 +588,8 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "editprovider" */ "@/views/settings/EditProvider.vue"
               ),
             props: true,
-            meta: { requiresAdmin: true },
+            // members reach the options of the music sources they own from here too
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
             path: "editplayer/:playerId",
@@ -728,10 +740,12 @@ router.beforeEach(async (to) => {
     }
   }
 
-  // Check admin-only routes - check all matched routes for requiresAdmin meta
+  // Check gated routes - every matched route may require the admin role or a scope
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
+  const requiredScope = to.matched.find((record) => record.meta.requiresScope)
+    ?.meta.requiresScope;
 
-  if (requiresAdmin) {
+  if (requiresAdmin || requiredScope) {
     // Wait for API to be initialized before checking admin access
     // This ensures store.currentUser is set before we check permissions
     if (api.state.value !== ConnectionState.INITIALIZED) {
@@ -752,7 +766,7 @@ router.beforeEach(async (to) => {
 
     const currentUser = store.currentUser;
     console.debug(
-      "Admin route check:",
+      "Route access check:",
       to.path,
       "user:",
       currentUser?.username,
@@ -760,8 +774,12 @@ router.beforeEach(async (to) => {
       currentUser?.role,
     );
 
-    if (!currentUser || currentUser.role !== "admin") {
+    if (requiresAdmin && (!currentUser || currentUser.role !== "admin")) {
       console.warn("Admin access required for", to.path);
+      return { name: "discover" };
+    }
+    if (requiredScope && !authManager.hasScope(requiredScope)) {
+      console.warn(`The ${requiredScope} scope is required for`, to.path);
       return { name: "discover" };
     }
   }
