@@ -19,6 +19,7 @@ const {
   apiMock,
   authMock,
   eventbusMock,
+  i18nMock,
   routeMock,
   routerMock,
   storeMock,
@@ -53,6 +54,11 @@ const {
   },
   eventbusMock: {
     emit: vi.fn(),
+  },
+  // a spy that returns the key, so the interpolation arguments a message is
+  // given stay assertable
+  i18nMock: {
+    $t: vi.fn((key: string) => key),
   },
   routeMock: {
     query: { types: "music" },
@@ -103,9 +109,7 @@ vi.mock("@/plugins/eventbus", () => ({
   eventbus: eventbusMock,
 }));
 
-vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
-}));
+vi.mock("@/plugins/i18n", () => i18nMock);
 
 vi.mock("@/plugins/router", () => ({
   default: routerMock,
@@ -299,6 +303,41 @@ describe("Providers", () => {
     reloadItem.action();
 
     expect(apiMock.reloadProvider).toHaveBeenCalledWith("spotify--test");
+  });
+
+  it("asks for confirmation before removing a provider from the row menu", async () => {
+    // removing a source cannot be undone, so the row menu has to confirm it
+    // just like the provider detail page does
+    apiMock.removeProviderConfig.mockResolvedValue(undefined);
+    // a renamed source must be confirmed under the name the user gave it,
+    // so the custom name has to win over the manifest's "Spotify"
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      name: "My Spotify",
+    });
+
+    const menuItems = await openMenu(wrapper);
+    menuItems
+      .find(
+        (item: { label: string }) => item.label === "settings.remove_provider",
+      )
+      .action();
+
+    const removeCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    );
+    expect(removeCall?.[1].message).toBe("settings.remove_provider_confirm");
+    // the stubbed $t returns the key, so the name is checked where it is passed
+    expect(i18nMock.$t).toHaveBeenCalledWith(
+      "settings.remove_provider_confirm",
+      ["My Spotify"],
+    );
+    expect(apiMock.removeProviderConfig).not.toHaveBeenCalled();
+
+    await removeCall?.[1].onConfirm();
+    await flushPromises();
+
+    expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
+    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(0);
   });
 
   it("omits reconfigure from the menu when no setup flow exists", async () => {

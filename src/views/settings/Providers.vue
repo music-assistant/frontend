@@ -522,13 +522,21 @@ const loadShareCandidates = async function () {
   }
 };
 
-const removeProvider = function (providerInstanceId: string) {
-  api
-    .removeProviderConfig(providerInstanceId)
-    .catch((err) => toast.error(String(err)));
-  providerConfigs.value = providerConfigs.value.filter(
-    (x) => x.instance_id != providerInstanceId,
-  );
+const removeProvider = function (config: ProviderConfig) {
+  const instanceId = config.instance_id;
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("settings.remove_provider"),
+    message: $t("settings.remove_provider_confirm", [getProviderName(config)]),
+    confirmLabel: $t("settings.remove_provider"),
+    onConfirm: () => {
+      api
+        .removeProviderConfig(instanceId)
+        .catch((err) => toast.error(String(err)));
+      providerConfigs.value = providerConfigs.value.filter(
+        (x) => x.instance_id != instanceId,
+      );
+    },
+  });
 };
 
 const openProviderOptions = function (providerInstanceId: string) {
@@ -674,7 +682,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       label: "settings.remove_provider",
       labelArgs: [],
       action: () => {
-        removeProvider(item.instance_id);
+        removeProvider(item);
       },
       icon: "mdi-delete",
       hide: providerManifest.builtin,
