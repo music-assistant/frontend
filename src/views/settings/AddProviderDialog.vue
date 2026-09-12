@@ -89,6 +89,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
   getProviderStageTranslationKey,
   shouldShowStageBadge,
@@ -114,6 +115,8 @@ const props = defineProps<{
   providerType?: ProviderType;
   // only offer providers that allow more than one account
   multiInstanceOnly?: boolean;
+  // only offer providers that members may set up themselves
+  selfServiceOnly?: boolean;
 }>();
 
 const POPULAR_PROVIDERS = [
@@ -181,6 +184,10 @@ const availableProviders = computed(() => {
 
   if (props.multiInstanceOnly) {
     providers = providers.filter((x) => x.multi_instance);
+  }
+
+  if (props.selfServiceOnly) {
+    providers = providers.filter((x) => isSelfServiceProvider(x));
   }
 
   return providers

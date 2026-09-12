@@ -1,126 +1,143 @@
 <template>
-  <div class="space-y-6 p-6">
-    <div class="flex items-center justify-between gap-4 flex-wrap">
-      <div class="relative flex-1 min-w-[200px] max-w-[400px]">
-        <Input v-model="searchQuery" :placeholder="$t('search')" class="w-full">
-          <template #prepend>
-            <Search :size="16" class="text-muted-foreground" />
-          </template>
-        </Input>
-      </div>
-      <Button v-if="canManageUsers" @click="showCreateDialog = true">
-        <Plus :size="16" />
-        {{ $t("auth.create_user") }}
-      </Button>
-    </div>
-
-    <div
-      v-if="filteredUsers.length === 0"
-      class="flex flex-col items-center justify-center py-16 text-center"
-    >
-      <p class="text-muted-foreground">{{ $t("no_content") }}</p>
-    </div>
-
-    <div
-      v-else
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-    >
-      <Card
-        v-for="user in filteredUsers"
-        :key="user.user_id"
-        :class="{
-          'cursor-pointer hover:bg-accent/50 transition-colors': canManageUsers,
-        }"
-        @click="canManageUsers && editUser(user)"
-      >
-        <CardContent class="px-4 py-0">
-          <div class="flex items-center gap-4">
-            <Avatar class="size-12 shrink-0">
-              <AvatarImage v-if="user.avatar_url" :src="user.avatar_url" />
-              <AvatarFallback class="bg-muted">
-                <UserIcon :size="24" class="text-foreground" />
-              </AvatarFallback>
-            </Avatar>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-semibold text-sm truncate">
-                    {{ user.display_name || user.username }}
-                  </h3>
-                  <p class="text-xs text-muted-foreground truncate">
-                    {{ user.username }} • {{ $t(`auth.${user.role}_role`) }}
-                  </p>
-                </div>
-                <DropdownMenu v-if="canManageUsers">
-                  <DropdownMenuTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="size-8 shrink-0"
-                      :aria-label="`${$t('more_options')}: ${user.display_name || user.username}`"
-                      :title="`${$t('more_options')}: ${user.display_name || user.username}`"
-                      @click.stop
-                    >
-                      <MoreVertical :size="16" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click.stop="editUser(user)">
-                      <Pencil :size="16" />
-                      {{ $t("auth.edit_user") }}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem @click.stop="manageTokens(user)">
-                      <Key :size="16" />
-                      {{ $t("auth.manage_tokens") }}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
-                      @click.stop="
-                        user.enabled
-                          ? confirmDisableUser(user)
-                          : enableUser(user)
-                      "
-                    >
-                      <component
-                        :is="user.enabled ? MonitorOff : Monitor"
-                        :size="16"
-                      />
-                      {{
-                        user.enabled
-                          ? $t("auth.disable_user")
-                          : $t("auth.enable_user")
-                      }}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator
-                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
-                    />
-                    <DropdownMenuItem
-                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
-                      class="text-destructive focus:text-destructive"
-                      @click.stop="confirmDeleteUser(user)"
-                    >
-                      <Trash2 :size="16" />
-                      {{ $t("auth.delete_user") }}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div
-                v-if="!user.enabled || isSystemUser(user)"
-                class="flex flex-wrap gap-2 mt-2"
-              >
-                <Badge v-if="!user.enabled" variant="destructive">
-                  {{ $t("auth.disabled") }}
-                </Badge>
-                <Badge v-if="isSystemUser(user)" variant="secondary">
-                  {{ $t("auth.system_user") }}
-                </Badge>
-              </div>
-            </div>
+  <div class="p-6">
+    <Tabs v-model="activeTab" class="gap-6">
+      <TabsList v-if="api.supportsRoles">
+        <TabsTrigger value="users">{{ $t("auth.users") }}</TabsTrigger>
+        <TabsTrigger value="roles">{{ $t("auth.roles") }}</TabsTrigger>
+      </TabsList>
+      <TabsContent value="users" class="space-y-6">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <div class="relative flex-1 min-w-[200px] max-w-[400px]">
+            <Input
+              v-model="searchQuery"
+              :placeholder="$t('search')"
+              class="w-full"
+            >
+              <template #prepend>
+                <Search :size="16" class="text-muted-foreground" />
+              </template>
+            </Input>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <Button v-if="canManageUsers" @click="showCreateDialog = true">
+            <Plus :size="16" />
+            {{ $t("auth.create_user") }}
+          </Button>
+        </div>
+
+        <div
+          v-if="filteredUsers.length === 0"
+          class="flex flex-col items-center justify-center py-16 text-center"
+        >
+          <p class="text-muted-foreground">{{ $t("no_content") }}</p>
+        </div>
+
+        <div
+          v-else
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        >
+          <Card
+            v-for="user in filteredUsers"
+            :key="user.user_id"
+            :class="{
+              'cursor-pointer hover:bg-accent/50 transition-colors':
+                canManageUsers,
+            }"
+            @click="canManageUsers && editUser(user)"
+          >
+            <CardContent class="px-4 py-0">
+              <div class="flex items-center gap-4">
+                <Avatar class="size-12 shrink-0">
+                  <AvatarImage v-if="user.avatar_url" :src="user.avatar_url" />
+                  <AvatarFallback class="bg-muted">
+                    <UserIcon :size="24" class="text-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-semibold text-sm truncate">
+                        {{ user.display_name || user.username }}
+                      </h3>
+                      <p class="text-xs text-muted-foreground truncate">
+                        {{ user.username }} •
+                        {{ roleDisplayName(user.role, store.roles) }}
+                      </p>
+                    </div>
+                    <DropdownMenu v-if="canManageUsers">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          class="size-8 shrink-0"
+                          :aria-label="`${$t('more_options')}: ${user.display_name || user.username}`"
+                          :title="`${$t('more_options')}: ${user.display_name || user.username}`"
+                          @click.stop
+                        >
+                          <MoreVertical :size="16" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem @click.stop="editUser(user)">
+                          <Pencil :size="16" />
+                          {{ $t("auth.edit_user") }}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem @click.stop="manageTokens(user)">
+                          <Key :size="16" />
+                          {{ $t("auth.manage_tokens") }}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          v-if="!isCurrentUser(user) && !isSystemUser(user)"
+                          @click.stop="
+                            user.enabled
+                              ? confirmDisableUser(user)
+                              : enableUser(user)
+                          "
+                        >
+                          <component
+                            :is="user.enabled ? MonitorOff : Monitor"
+                            :size="16"
+                          />
+                          {{
+                            user.enabled
+                              ? $t("auth.disable_user")
+                              : $t("auth.enable_user")
+                          }}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator
+                          v-if="!isCurrentUser(user) && !isSystemUser(user)"
+                        />
+                        <DropdownMenuItem
+                          v-if="!isCurrentUser(user) && !isSystemUser(user)"
+                          class="text-destructive focus:text-destructive"
+                          @click.stop="confirmDeleteUser(user)"
+                        >
+                          <Trash2 :size="16" />
+                          {{ $t("auth.delete_user") }}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div
+                    v-if="!user.enabled || isSystemUser(user)"
+                    class="flex flex-wrap gap-2 mt-2"
+                  >
+                    <Badge v-if="!user.enabled" variant="destructive">
+                      {{ $t("auth.disabled") }}
+                    </Badge>
+                    <Badge v-if="isSystemUser(user)" variant="secondary">
+                      {{ $t("auth.system_user") }}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+      <TabsContent value="roles">
+        <RoleManagement :users="users" />
+      </TabsContent>
+    </Tabs>
 
     <CreateUserDialog v-model="showCreateDialog" @created="loadUsers" />
     <EditUserDialog
@@ -182,12 +199,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
 import DeleteUserDialog from "@/components/users/DeleteUserDialog.vue";
 import DisableUserDialog from "@/components/users/DisableUserDialog.vue";
 import EditUserDialog from "@/components/users/EditUserDialog.vue";
 import ManageTokensDialog from "@/components/users/ManageTokensDialog.vue";
 import RevokeTokenDialog from "@/components/users/RevokeTokenDialog.vue";
+import RoleManagement from "@/components/users/RoleManagement.vue";
+import { roleDisplayName } from "@/helpers/roles";
 import { isSystemUser } from "@/helpers/users";
 import { api } from "@/plugins/api";
 import { Scope, type AuthToken, type User } from "@/plugins/api/interfaces";
@@ -200,6 +220,7 @@ const router = useRouter();
 
 const users = ref<User[]>([]);
 const searchQuery = ref("");
+const activeTab = ref("users");
 const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
 const showDisableDialog = ref(false);

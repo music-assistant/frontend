@@ -1572,6 +1572,9 @@ export interface ProviderManifest {
   allow_disable: boolean;
   // has_setup_flow: whether setup can be run again to reconfigure the provider
   has_setup_flow: boolean;
+  // self_service: whether a member may set up (and reconfigure) a music source of
+  // this provider itself, instead of only a user who manages every music source
+  self_service: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon: string | null;
@@ -1725,7 +1728,8 @@ export interface ButtonProps {
 // Authentication interfaces
 
 export enum UserRole {
-  // The role ids of the builtin user roles; User.role is not limited to these.
+  // The ids of the builtin user roles; User.role may also hold the id of a
+  // custom role (see Role).
   ADMIN = "admin",
   USER = "user",
   GUEST = "guest",
@@ -1788,6 +1792,17 @@ export interface UserSummary {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+}
+
+export interface Role {
+  // A user role: a named set of scopes.
+  role_id: string;
+  // name: the English name of a builtin role (shown translated by its id), or
+  // the name an admin gave a custom role
+  name: string;
+  scopes: string[];
+  // builtin: a role that ships with Music Assistant and can not be changed or removed
+  builtin: boolean;
 }
 
 export interface AuthToken {
