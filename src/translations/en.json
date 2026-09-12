@@ -662,7 +662,7 @@
             "title": "Access to {name}",
             "description": "Who this music source belongs to and who else may use it.",
             "owner": "Owner",
-            "owner_hint": "Playback and listening history use the owner's account. A shared source has no owner and is managed by administrators.",
+            "owner_hint": "Playback and listening history use the owner's account. A source without an owner is managed by administrators.",
             "household": "Shared (no owner)",
             "sharing": "Sharing",
             "shared_users": "Shared with",
