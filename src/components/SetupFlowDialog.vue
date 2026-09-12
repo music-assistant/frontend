@@ -49,6 +49,26 @@
             <AlertDescription>{{ step.errors.base }}</AlertDescription>
           </Alert>
 
+          <div
+            v-if="step.copy_text"
+            class="mb-4 flex w-full max-w-full items-center gap-2 rounded-md border px-3 py-2"
+          >
+            <code class="min-w-0 flex-1 break-all font-mono text-sm">{{
+              step.copy_text
+            }}</code>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="shrink-0"
+              :aria-label="$t('settings.setup_flow.copy')"
+              :title="$t('settings.setup_flow.copy')"
+              @click="copyExternalText"
+            >
+              <Copy :size="16" />
+            </Button>
+          </div>
+
           <form ref="formRef" @submit.prevent="submit">
             <div
               v-for="entry in visibleFormEntries"
