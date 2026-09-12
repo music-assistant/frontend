@@ -42,23 +42,20 @@ vi.mock("@/components/ui/sidebar", () => {
   };
 });
 
-// These reach for the api plugin on import, which the vue-i18n mock cannot serve.
+// These reach for the router plugin on import, which the vue-router mock cannot serve.
 vi.mock("@/components/navigation/NavGettingStarted.vue", () => ({
-  default: { template: "<div />" },
-}));
-vi.mock("@/components/navigation/NavMain.vue", () => ({
   default: { template: "<div />" },
 }));
 vi.mock("@/components/navigation/NavShortcuts.vue", () => ({
   default: { template: "<div />" },
 }));
-vi.mock("@/components/navigation/NavMobile.vue", () => ({
-  default: { template: "<div />" },
-}));
 
 vi.mock("vue-router", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
-vi.mock("vue-i18n", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
+vi.mock("vue-i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-i18n")>()),
+  useI18n: () => ({ t: (key: string) => key }),
+}));
 
 enableAutoUnmount(afterEach);
 
