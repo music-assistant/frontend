@@ -2204,6 +2204,12 @@ const selectAll = async function () {
 defineExpose({
   sortBy: computed(() => params.value.sortBy),
   reload: () => loadData(true, true),
+  // whether the item is absent while every item of the unfiltered listing is
+  // loaded; a filter leaves items out on purpose
+  isMissing: (uri: string) =>
+    allItemsReceived.value &&
+    !hasActiveFilters.value &&
+    !pagedItems.value.some((i) => i.uri === uri),
 });
 </script>
 

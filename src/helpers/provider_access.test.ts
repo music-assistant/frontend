@@ -1,5 +1,6 @@
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
+  type ProviderAccess,
   ProviderSharing,
   ProviderType,
   UserRole,
@@ -9,6 +10,7 @@ import { providerConfig } from "../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import { user } from "../../tests/fixtures/user";
 import {
+  accessAllows,
   effectiveProviderAccess,
   getProviderSharingHintTranslationKey,
   getProviderSharingTranslationKey,
@@ -18,6 +20,52 @@ import {
   shareCandidates,
   userDisplayName,
 } from "./provider_access";
+
+describe("accessAllows", () => {
+  const member = user({ user_id: "member" });
+  const guest = user({ user_id: "guest", role: UserRole.GUEST });
+  const record = (overrides: Partial<ProviderAccess> = {}): ProviderAccess => ({
+    owner: "owner",
+    sharing: ProviderSharing.PRIVATE,
+    shared_users: [],
+    ...overrides,
+  });
+
+  it("allows everyone without a record", () => {
+    expect(accessAllows(null, guest)).toBe(true);
+  });
+
+  it("allows the owner whatever the sharing is", () => {
+    expect(accessAllows(record({ owner: "member" }), member)).toBe(true);
+  });
+
+  it("allows nobody else while private", () => {
+    expect(accessAllows(record(), member)).toBe(false);
+  });
+
+  it("allows the selected members only", () => {
+    const access = record({
+      sharing: ProviderSharing.SELECTED,
+      shared_users: ["member"],
+    });
+
+    expect(accessAllows(access, member)).toBe(true);
+    expect(accessAllows(access, user({ user_id: "other" }))).toBe(false);
+  });
+
+  it("allows members but not guests while shared with the members", () => {
+    const access = record({ sharing: ProviderSharing.MEMBERS });
+
+    expect(accessAllows(access, member)).toBe(true);
+    expect(accessAllows(access, guest)).toBe(false);
+  });
+
+  it("allows guests too while shared with everyone", () => {
+    expect(
+      accessAllows(record({ sharing: ProviderSharing.EVERYONE }), guest),
+    ).toBe(true);
+  });
+});
 
 describe("effectiveProviderAccess", () => {
   it("reads a missing record as a household source for everyone", () => {

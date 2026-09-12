@@ -2118,6 +2118,23 @@
     "import_playlist_match_policy_best_effort_description": "Prefer an exact match, then the same recording, otherwise accept the closest available match.",
     "party_mode": "Party",
     "edit_playlist": "Edit playlist",
+    "share_playlist": "Share playlist",
+    "playlist_access": {
+        "title": "Share {name}",
+        "description": "Who this playlist belongs to, who may see it and who may edit it.",
+        "owner_hint": "A playlist without an owner is managed by administrators.",
+        "personal": "Personal",
+        "shared": "Shared",
+        "collaborative": "Collaborative",
+        "collaborative_hint": "Everyone the playlist is shared with may also add and remove items.",
+        "hints": {
+            "private": "Only the owner can see this playlist.",
+            "selected": "The owner and the members selected below.",
+            "members": "Every signed-in member, guests excluded.",
+            "everyone": "Any user can see this playlist."
+        },
+        "updated": "Sharing updated"
+    },
     "edit_radio": "Edit radio station",
     "edit_track": "Edit track",
     "uri_read_only": "URI (read-only)",

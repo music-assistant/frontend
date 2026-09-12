@@ -276,6 +276,11 @@ import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { playerVisible } from "@/helpers/players";
 import {
+  canEditPlaylistItems,
+  canManagePlaylist,
+  canSharePlaylist,
+} from "@/helpers/playlist_access";
+import {
   gotoRadio,
   radioActionLabelKey,
   radioRelevant,
@@ -302,6 +307,7 @@ import {
   ProviderMapping,
   QueueOption,
   Radio,
+  Scope,
   Track,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -335,6 +341,7 @@ import {
   PlusCircle,
   RefreshCw,
   RotateCcw,
+  Share2,
   Shuffle,
   SkipForward,
   Sparkles,
@@ -493,6 +500,7 @@ export const getContextMenuItems = async function (
   }
 
   const firstItem = items[0];
+  const managesLibrary = authManager.hasScope(Scope.LIBRARY_MANAGE);
 
   // show info
   if (
@@ -688,9 +696,16 @@ export const getContextMenuItems = async function (
       icon: LibraryBig,
     });
   }
-  // remove from library
+  // remove from library (a personal playlist only by whoever manages it)
+  const managesSelectedPlaylists = items.every(
+    (item) =>
+      item.media_type !== MediaType.PLAYLIST ||
+      !("access" in item) ||
+      canManagePlaylist(item, store.currentUser, managesLibrary),
+  );
   if (
     isItemInLibrary(resolvedItem) &&
+    managesSelectedPlaylists &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -825,7 +840,7 @@ export const getContextMenuItems = async function (
         firstItem.media_type === MediaType.RADIO ||
         firstItem.media_type === MediaType.PODCAST_EPISODE ||
         firstItem.media_type === MediaType.AUDIOBOOK) &&
-      playlist.is_editable
+      canEditPlaylistItems(playlist, store.currentUser, managesLibrary)
     ) {
       contextMenuItems.push({
         label: "remove_playlist",
@@ -946,9 +961,11 @@ export const getContextMenuItems = async function (
       featureMap[item.media_type],
     );
     // For playlists, also check is_editable flag (builtin special playlists are not editable)
+    // and that the user manages the playlist (a personal one is only edited by its owner)
     const isEditablePlaylist =
       item.media_type !== MediaType.PLAYLIST ||
-      (item as Playlist).is_editable !== false;
+      ((item as Playlist).is_editable !== false &&
+        canManagePlaylist(item as Playlist, store.currentUser, managesLibrary));
     if (hasBuiltinProvider && supportsEdit && isEditablePlaylist) {
       contextMenuItems.push({
         label: labelMap[item.media_type],
@@ -1028,6 +1045,24 @@ export const getContextMenuItems = async function (
           eventbus.emit("migratePlaylistDialog", { playlist });
         },
         icon: ArrowRightLeft,
+      });
+    }
+  }
+  // share playlist (a Music Assistant playlist the user owns or manages)
+  if (
+    items.length === 1 &&
+    items[0].media_type === MediaType.PLAYLIST &&
+    "provider_mappings" in items[0]
+  ) {
+    const playlist = items[0] as Playlist;
+    if (canSharePlaylist(playlist, store.currentUser, managesLibrary)) {
+      contextMenuItems.push({
+        label: "share_playlist",
+        labelArgs: [],
+        action: () => {
+          eventbus.emit("playlistAccessDialog", { playlist });
+        },
+        icon: Share2,
       });
     }
   }
