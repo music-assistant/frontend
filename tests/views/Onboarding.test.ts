@@ -1,34 +1,37 @@
 import { ProviderType } from "@/plugins/api/interfaces";
-import Onboarding from "@/views/Onboarding.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, authMock, preferenceState, routerMock, routeState } =
-  vi.hoisted(() => ({
-    apiMock: {
-      players: {} as Record<string, unknown>,
-      providerManifests: {} as Record<string, { builtin: boolean }>,
-      providers: {} as Record<string, unknown>,
-      sendCommand: vi.fn(),
-      serverInfo: { value: { onboard_done: false } },
-    },
-    authMock: { isAdmin: vi.fn(() => true) },
-    // replaced with a real ref by the userPreferences mock factory below
-    preferenceState: { intent: { value: undefined } as { value?: string } },
-    // replaced with a reactive route by the vue-router mock factory below
-    routeState: { route: { query: {} as Record<string, string> } },
-    routerMock: { push: vi.fn(), replace: vi.fn() },
-  }));
+const {
+  apiMock,
+  authMock,
+  preferenceState,
+  providerConfigs,
+  routerMock,
+  routeState,
+} = vi.hoisted(() => ({
+  apiMock: {
+    players: {} as Record<string, unknown>,
+    providerManifests: {} as Record<string, { builtin: boolean }>,
+    getProviderConfigs: vi.fn(),
+    subscribe: vi.fn(() => vi.fn()),
+    sendCommand: vi.fn(),
+    serverInfo: { value: { onboard_done: false } },
+  },
+  authMock: { isAdmin: vi.fn(() => true) },
+  // replaced with a real ref by the userPreferences mock factory below
+  preferenceState: {
+    intent: { value: undefined } as { value?: string },
+    ready: false,
+  },
+  // what the server hands back as the provider configurations
+  providerConfigs: { list: [] as Record<string, unknown>[] },
+  // replaced with a reactive route by the vue-router mock factory below
+  routeState: { route: { query: {} as Record<string, string> }, ready: false },
+  routerMock: { push: vi.fn(), replace: vi.fn() },
+}));
 
-vi.mock("@/plugins/api", async () => {
-  // the real maps are reactive, and the wizard's context is a computed over
-  // them: plain objects would leave it stale between tests
-  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
-  apiMock.players = reactive({});
-  apiMock.providerManifests = reactive({});
-  apiMock.providers = reactive({});
-  return { api: apiMock, default: apiMock };
-});
+vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 
 vi.mock("@/plugins/auth", () => ({ authManager: authMock, default: authMock }));
 
@@ -36,11 +39,17 @@ vi.mock("@/plugins/router", () => ({ default: routerMock }));
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
+vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
+
 vi.mock("vue-router", async () => {
   // the wizard watches ?step=, so the route it reads has to be reactive for a
-  // deep link that arrives after the mount to be followed
+  // deep link that arrives after the mount to be followed; every test loads a
+  // fresh wizard, which runs this factory again, so hand out the same route
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
-  routeState.route = reactive({ query: {} as Record<string, string> });
+  if (!routeState.ready) {
+    routeState.route = reactive({ query: {} as Record<string, string> });
+    routeState.ready = true;
+  }
   return { useRoute: () => routeState.route, useRouter: () => routerMock };
 });
 
@@ -60,45 +69,75 @@ vi.mock("@/components/ProviderIcon.vue", () => ({
 
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
-  preferenceState.intent = ref<string | undefined>(undefined);
+  if (!preferenceState.ready) {
+    preferenceState.intent = ref<string | undefined>(undefined);
+    preferenceState.ready = true;
+  }
   return {
     setUserPreference: vi.fn(),
     useUserPreferences: () => ({ getPreference: () => preferenceState.intent }),
   };
 });
 
-function clear(map: Record<string, unknown>) {
-  for (const key of Object.keys(map)) delete map[key];
+/** A fresh wizard per test: the onboarding state lives for a whole session. */
+async function mountWizard() {
+  vi.resetModules();
+  const component = await import("@/views/Onboarding.vue");
+  return mount(component.default, {
+    global: { mocks: { $t: (key: string) => key } },
+  });
 }
 
-function mountWizard() {
-  return mount(Onboarding, { global: { mocks: { $t: (key: string) => key } } });
+function addProvider(
+  instanceId: string,
+  domain: string,
+  type: ProviderType,
+  name?: string,
+) {
+  providerConfigs.list.push({
+    instance_id: instanceId,
+    domain,
+    type,
+    name: name ?? null,
+    enabled: true,
+    last_error: null,
+  });
+  apiMock.providerManifests[domain] = { builtin: false };
 }
 
 function addMusicProvider() {
-  apiMock.providers["spotify--1"] = {
-    instance_id: "spotify--1",
-    domain: "spotify",
-    name: "Spotify",
-    type: ProviderType.MUSIC,
-    available: true,
-  };
-  apiMock.providerManifests.spotify = { builtin: false };
+  addProvider("spotify--1", "spotify", ProviderType.MUSIC, "Spotify");
+}
+
+/** Tell the wizard the server reported a provider change. */
+async function reportProvidersUpdated() {
+  const lastCall = apiMock.subscribe.mock.calls.at(-1) as unknown as [
+    string,
+    () => void,
+  ];
+  lastCall[1]();
+  await flushPromises();
 }
 
 describe("Onboarding wizard", () => {
   beforeEach(() => {
-    clear(apiMock.players);
-    clear(apiMock.providerManifests);
-    clear(apiMock.providers);
+    apiMock.players = {};
+    apiMock.providerManifests = {};
+    providerConfigs.list = [];
+    apiMock.getProviderConfigs.mockReset();
+    apiMock.getProviderConfigs.mockImplementation(async () => [
+      ...providerConfigs.list,
+    ]);
+    apiMock.subscribe.mockClear();
     authMock.isAdmin.mockReturnValue(true);
+    preferenceState.intent.value = undefined;
     routeState.route.query = {};
     routerMock.push.mockReset();
     routerMock.replace.mockReset();
   });
 
   it("opens on the first step still to do and puts it in the query", async () => {
-    const wrapper = mountWizard();
+    const wrapper = await mountWizard();
     await flushPromises();
 
     expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
@@ -113,10 +152,38 @@ describe("Onboarding wizard", () => {
     wrapper.unmount();
   });
 
+  it("shows no step until the provider configurations are in", async () => {
+    let handOverConfigs: (configs: unknown[]) => void = () => {};
+    apiMock.getProviderConfigs.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          handOverConfigs = resolve;
+        }),
+    );
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    // no heading, no "step 1 of 0" and no step to flash past
+    expect(wrapper.find("[data-testid=onboarding-view]").exists()).toBe(true);
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe("");
+    expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(false);
+    expect(routerMock.replace).not.toHaveBeenCalled();
+
+    handOverConfigs([]);
+    await flushPromises();
+
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.intent.title",
+    );
+
+    wrapper.unmount();
+  });
+
   it("follows a deep link and offers to skip an optional step", async () => {
     routeState.route.query = { step: "plugins" };
 
-    const wrapper = mountWizard();
+    const wrapper = await mountWizard();
     await flushPromises();
 
     expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
@@ -136,7 +203,7 @@ describe("Onboarding wizard", () => {
     routeState.route.query = { step: "finish" };
     addMusicProvider();
 
-    const wrapper = mountWizard();
+    const wrapper = await mountWizard();
     await flushPromises();
 
     expect(
@@ -163,7 +230,7 @@ describe("Onboarding wizard", () => {
   it("falls back to the first step still to do for a step it does not know", async () => {
     routeState.route.query = { step: "plugins" };
 
-    const wrapper = mountWizard();
+    const wrapper = await mountWizard();
     await flushPromises();
 
     routeState.route.query = { step: "nope" };
@@ -179,11 +246,11 @@ describe("Onboarding wizard", () => {
   it("stays on the step a provider turns up on", async () => {
     routeState.route.query = { step: "music_sources" };
 
-    const wrapper = mountWizard();
+    const wrapper = await mountWizard();
     await flushPromises();
 
     addMusicProvider();
-    await flushPromises();
+    await reportProvidersUpdated();
 
     // the step is page state: ticking it off must not move the wizard on
     expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
@@ -192,6 +259,47 @@ describe("Onboarding wizard", () => {
     expect(
       wrapper.findAll("[data-testid=onboarding-configured-provider]"),
     ).toHaveLength(1);
+
+    wrapper.unmount();
+  });
+
+  it("skips over what was already set up when it moves on", async () => {
+    addMusicProvider();
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper
+      .find("[data-testid=onboarding-intent-music_hub]")
+      .trigger("click");
+    await flushPromises();
+
+    // the music sources were set up before the wizard opened, so they are not
+    // put in front of the user again
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.players.title",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("moves straight to the summary once everything is set up", async () => {
+    addMusicProvider();
+    addProvider("sonos--1", "sonos", ProviderType.PLAYER);
+    addProvider("party--1", "party", ProviderType.PLUGIN);
+    routeState.route.query = { step: "intent" };
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper
+      .find("[data-testid=onboarding-intent-music_hub]")
+      .trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.finish.title",
+    );
 
     wrapper.unmount();
   });

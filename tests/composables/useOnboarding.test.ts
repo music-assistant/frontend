@@ -5,16 +5,16 @@ const {
   apiMock,
   authMock,
   preferenceState,
+  providerConfigs,
   routerMock,
   setUserPreferenceMock,
+  toastMock,
 } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, unknown>,
-    providerManifests: {} as Record<string, { builtin: boolean }>,
-    providers: {} as Record<
-      string,
-      { instance_id: string; domain: string; type: ProviderType }
-    >,
+    providerManifests: {} as Record<string, { builtin: boolean; name: string }>,
+    getProviderConfigs: vi.fn(),
+    subscribe: vi.fn(() => vi.fn()),
     sendCommand: vi.fn(),
     serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
   },
@@ -22,8 +22,11 @@ const {
   // replaced with a real ref by the userPreferences mock factory below, so
   // the composable's computed context follows what a test sets here
   preferenceState: { intent: { value: undefined } as { value?: string } },
+  // what the server hands back as the provider configurations
+  providerConfigs: { list: [] as Record<string, unknown>[] },
   routerMock: { replace: vi.fn(), push: vi.fn() },
   setUserPreferenceMock: vi.fn(),
+  toastMock: { error: vi.fn() },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -31,6 +34,10 @@ vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: authMock, default: authMock }));
 
 vi.mock("@/plugins/router", () => ({ default: routerMock }));
+
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
@@ -43,25 +50,40 @@ vi.mock("@/composables/userPreferences", async () => {
   };
 });
 
-type Onboarding = ReturnType<
-  typeof import("@/composables/useOnboarding").useOnboarding
->;
+type OnboardingModule = typeof import("@/composables/useOnboarding");
+type Onboarding = ReturnType<OnboardingModule["useOnboarding"]>;
 
 /** A fresh singleton per test: the dismissed flag lives for a whole session. */
-async function loadOnboarding(): Promise<Onboarding> {
+async function loadModule(): Promise<OnboardingModule> {
   vi.resetModules();
-  const module = await import("@/composables/useOnboarding");
-  return module.useOnboarding();
+  return await import("@/composables/useOnboarding");
+}
+
+/** The composable with the provider configurations already in. */
+async function loadOnboarding(): Promise<Onboarding> {
+  const onboarding = (await loadModule()).useOnboarding();
+  await onboarding.loadProviderConfigs();
+  return onboarding;
 }
 
 function addProvider(
   instanceId: string,
   domain: string,
   type: ProviderType,
-  builtin = false,
+  options: { builtin?: boolean; enabled?: boolean; lastError?: unknown } = {},
 ) {
-  apiMock.providers[instanceId] = { instance_id: instanceId, domain, type };
-  apiMock.providerManifests[domain] = { builtin };
+  providerConfigs.list.push({
+    instance_id: instanceId,
+    domain,
+    type,
+    name: null,
+    enabled: options.enabled ?? true,
+    last_error: options.lastError ?? null,
+  });
+  apiMock.providerManifests[domain] = {
+    builtin: options.builtin ?? false,
+    name: `${domain} manifest`,
+  };
 }
 
 /**
@@ -88,13 +110,19 @@ describe("useOnboarding", () => {
   beforeEach(() => {
     apiMock.players = {};
     apiMock.providerManifests = {};
-    apiMock.providers = {};
+    providerConfigs.list = [];
+    apiMock.getProviderConfigs.mockReset();
+    apiMock.getProviderConfigs.mockImplementation(async () => [
+      ...providerConfigs.list,
+    ]);
+    apiMock.subscribe.mockClear();
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
     apiMock.serverInfo.value = { onboard_done: false };
     authMock.isAdmin.mockReturnValue(true);
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
+    toastMock.error.mockReset();
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
@@ -103,17 +131,29 @@ describe("useOnboarding", () => {
     preferenceState.intent.value = undefined;
   });
 
-  it("reads the context from the configured providers", async () => {
+  it("reads the context from the provider configurations", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
-    addProvider("builtin--1", "builtin_player", ProviderType.PLAYER, true);
+    addProvider("builtin--1", "builtin_player", ProviderType.PLAYER, {
+      builtin: true,
+    });
     apiMock.players = { player_1: {}, player_2: {} };
 
     const { ctx, pending, hasPending } = await loadOnboarding();
 
     expect(ctx.value.playerCount).toBe(2);
     expect(ctx.value.providers).toEqual([
-      { type: ProviderType.MUSIC, domain: "spotify", builtin: false },
-      { type: ProviderType.PLAYER, domain: "builtin_player", builtin: true },
+      {
+        type: ProviderType.MUSIC,
+        domain: "spotify",
+        builtin: false,
+        enabled: true,
+      },
+      {
+        type: ProviderType.PLAYER,
+        domain: "builtin_player",
+        builtin: true,
+        enabled: true,
+      },
     ]);
     // the builtin player provider does not tick the players step off
     expect(pending.value.map((step) => step.id)).toEqual([
@@ -122,6 +162,124 @@ describe("useOnboarding", () => {
       "plugins",
     ]);
     expect(hasPending.value).toBe(true);
+  });
+
+  it("decides nothing before the configurations are in", async () => {
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
+
+    const { ctx, configsLoaded, loadProviderConfigs } = (
+      await loadModule()
+    ).useOnboarding();
+
+    expect(configsLoaded.value).toBe(false);
+    expect(ctx.value.providers).toEqual([]);
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+
+    await loadProviderConfigs();
+
+    expect(configsLoaded.value).toBe(true);
+    expect(ctx.value.providers).toHaveLength(1);
+  });
+
+  it("asks for the configurations once while a load is in flight", async () => {
+    let handOverConfigs: (configs: unknown[]) => void = () => {};
+    apiMock.getProviderConfigs.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          handOverConfigs = resolve;
+        }),
+    );
+
+    const { configsLoaded, loadProviderConfigs } = (
+      await loadModule()
+    ).useOnboarding();
+    const both = Promise.all([loadProviderConfigs(), loadProviderConfigs()]);
+
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledOnce();
+
+    handOverConfigs([]);
+    await both;
+
+    expect(configsLoaded.value).toBe(true);
+    // one session, one subscription, however many callers there are
+    expect(apiMock.subscribe).toHaveBeenCalledOnce();
+  });
+
+  it("follows the provider configurations the server reports", async () => {
+    const { ctx } = await loadOnboarding();
+    expect(ctx.value.providers).toEqual([]);
+
+    const [event, onProvidersUpdated] = apiMock.subscribe.mock
+      .calls[0] as unknown as [string, () => void];
+    expect(event).toBe("providers_updated");
+
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
+    onProvidersUpdated();
+    await vi.waitFor(() => expect(ctx.value.providers).toHaveLength(1));
+  });
+
+  it("keeps waiting when the configurations cannot be loaded", async () => {
+    apiMock.getProviderConfigs.mockRejectedValue(new Error("boom"));
+
+    const { ctx, configsLoaded } = await loadOnboarding();
+
+    // the api toasts its own failures; the wizard simply has nothing to show
+    expect(configsLoaded.value).toBe(false);
+    expect(ctx.value.providers).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it("lists a configuration that is set up but needs attention", async () => {
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC, {
+      enabled: false,
+    });
+    addProvider("subsonic--1", "subsonic", ProviderType.MUSIC, {
+      lastError: { error_code: 1, message: "no such server" },
+    });
+    addProvider("filesystem--1", "filesystem", ProviderType.MUSIC);
+    addProvider("builtin--1", "builtin_music", ProviderType.MUSIC, {
+      builtin: true,
+    });
+
+    const module = await loadModule();
+    const { ctx, pending, loadProviderConfigs } = module.useOnboarding();
+    await loadProviderConfigs();
+
+    // a switched off source is still a source: the step is done either way
+    expect(module.configuredProviders(ProviderType.MUSIC)).toEqual([
+      {
+        instance_id: "spotify--1",
+        name: "spotify manifest",
+        domain: "spotify",
+        needsAttention: true,
+      },
+      {
+        instance_id: "subsonic--1",
+        name: "subsonic manifest",
+        domain: "subsonic",
+        needsAttention: true,
+      },
+      {
+        instance_id: "filesystem--1",
+        name: "filesystem manifest",
+        domain: "filesystem",
+        needsAttention: false,
+      },
+    ]);
+    expect(pending.value.map((step) => step.id)).not.toContain("music_sources");
+    expect(ctx.value.providers).toHaveLength(4);
+  });
+
+  it("prefers the name the configuration carries", async () => {
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
+    providerConfigs.list[0].name = "The kitchen's Spotify";
+
+    const module = await loadModule();
+    await module.useOnboarding().loadProviderConfigs();
+
+    expect(module.configuredProviders(ProviderType.MUSIC)[0].name).toBe(
+      "The kitchen's Spotify",
+    );
   });
 
   it("persists the intent answer as a user preference", async () => {
@@ -185,7 +343,7 @@ describe("useOnboarding", () => {
   it("asks the server to complete onboarding without a global error toast", async () => {
     const { finish } = await loadOnboarding();
 
-    await finish();
+    await expect(finish()).resolves.toBe(true);
 
     expect(apiMock.sendCommand).toHaveBeenCalledWith(
       "config/onboard_complete",
@@ -200,10 +358,11 @@ describe("useOnboarding", () => {
       apiMock.serverInfo.value = serverInfo;
 
       const { finish } = await loadOnboarding();
-      await finish();
+      await expect(finish()).resolves.toBe(true);
 
       expect(apiMock.sendCommand).not.toHaveBeenCalled();
       expect(warnSpy).not.toHaveBeenCalled();
+      expect(toastMock.error).not.toHaveBeenCalled();
       expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
     },
   );
@@ -216,30 +375,35 @@ describe("useOnboarding", () => {
       await apiCommandError(code, "Onboarding already completed"),
     );
 
-    await finish();
+    await expect(finish()).resolves.toBe(true);
 
     expect(warnSpy).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
     expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
   });
 
-  it("warns about another error code but still leaves the wizard", async () => {
-    const { finish } = await loadOnboarding();
+  it("keeps the wizard open on another error code", async () => {
+    const { dismissed, finish } = await loadOnboarding();
     apiMock.sendCommand.mockRejectedValue(await apiCommandError(5));
 
-    await finish();
+    await expect(finish()).resolves.toBe(false);
 
-    expect(warnSpy).toHaveBeenCalledOnce();
-    expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+    expect(toastMock.error).toHaveBeenCalledOnce();
+    expect(toastMock.error).toHaveBeenCalledWith("onboarding.finish_failed");
+    // onboarding is still open on the server, so neither is it here
+    expect(dismissed.value).toBe(false);
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 
-  it("warns about a failure that is not an api error", async () => {
+  it("keeps the wizard open on a failure that is not an api error", async () => {
     apiMock.sendCommand.mockRejectedValue(new Error("boom"));
 
-    const { finish } = await loadOnboarding();
-    await finish();
+    const { dismissed, finish } = await loadOnboarding();
+    await expect(finish()).resolves.toBe(false);
 
-    expect(warnSpy).toHaveBeenCalledOnce();
-    expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+    expect(toastMock.error).toHaveBeenCalledOnce();
+    expect(dismissed.value).toBe(false);
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 
   it.each(["phone_apps", "music_hub"] as const)(

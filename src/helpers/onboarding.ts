@@ -18,11 +18,14 @@ export type OnboardingStepId =
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
 
-/** A configured provider instance, reduced to what the steps need. */
+/** A configured provider, reduced to what the steps need. */
 export interface OnboardingProvider {
   type: ProviderType;
   domain: string;
   builtin: boolean;
+  // switched off in its configuration: set up all the same, so it still ticks
+  // its step off, but the wizard flags it
+  enabled: boolean;
 }
 
 export interface OnboardingAnswers {

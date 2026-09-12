@@ -19,17 +19,17 @@
             <ItemTitle>{{ provider.name }}</ItemTitle>
           </ItemContent>
           <ItemActions>
-            <!-- a provider that is set up but not running is not a tick -->
+            <!-- a provider that is set up but switched off or broken is no tick -->
             <Check
-              v-if="provider.available"
+              v-if="!provider.needsAttention"
               class="text-primary size-4"
               aria-hidden="true"
             />
             <TriangleAlert
               v-else
               class="text-muted-foreground size-4"
-              :aria-label="$t('onboarding.unavailable')"
-              :title="$t('onboarding.unavailable')"
+              :aria-label="$t('onboarding.needs_attention')"
+              :title="$t('onboarding.needs_attention')"
             />
           </ItemActions>
         </Item>

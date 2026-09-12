@@ -42,6 +42,7 @@
 
     <component
       :is="stepView.component"
+      v-if="stepView"
       :key="currentId"
       v-bind="stepView.props"
       @advance="next"
@@ -81,7 +82,8 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
-const { ctx, steps, finish } = useOnboarding();
+const { ctx, steps, configsLoaded, loadProviderConfigs, finish } =
+  useOnboarding();
 
 const STEP_VIEWS: Record<
   OnboardingStepId,
@@ -109,10 +111,10 @@ const requestedId = computed(() => {
 });
 
 // The step being shown is page state: the wizard never moves by itself while
-// providers arrive, only when the user (or a deep link) says so.
-const currentId = ref<OnboardingStepId>(
-  firstStep(ctx.value, requestedId.value),
-);
+// providers arrive, only when the user (or a deep link) says so. It stays
+// unresolved until the provider configurations land, so the wizard never opens
+// on a step that turns out to be done already.
+const currentId = ref<OnboardingStepId | null>(null);
 const stepHeading = ref<HTMLHeadingElement | null>(null);
 const finishing = ref(false);
 
@@ -126,17 +128,17 @@ const progress = computed(() =>
   steps.value.length > 0 ? (stepNumber.value / steps.value.length) * 100 : 0,
 );
 const stepTitle = computed(() =>
-  $t(`onboarding.steps.${currentId.value}.title`),
+  currentId.value ? $t(`onboarding.steps.${currentId.value}.title`) : "",
 );
 
 const stepView = computed(() => {
-  const view = STEP_VIEWS[currentId.value];
+  const id = currentId.value;
+  if (!id) return null;
+  const view = STEP_VIEWS[id];
   return {
     component: view.component,
     props:
-      currentId.value === "finish"
-        ? { ...view.props, busy: finishing.value }
-        : view.props,
+      id === "finish" ? { ...view.props, busy: finishing.value } : view.props,
   };
 });
 
@@ -159,8 +161,13 @@ const back = function () {
   if (previous) goTo(previous.id);
 };
 
+// Forward skips whatever is already set up — the summary never is, so that is
+// where the wizard ends up once nothing is left. Back stays on the running
+// order, so a step that is done can still be revisited.
 const next = function () {
-  const following = steps.value[currentIndex.value + 1];
+  const following = steps.value
+    .slice(currentIndex.value + 1)
+    .find((step) => !step.isDone(ctx.value));
   if (following) goTo(following.id);
 };
 
@@ -175,17 +182,23 @@ const finishOnboarding = async function () {
 };
 
 // A deep link (or the getting-started checklist, which pushes onto this same
-// route) decides the step; anything that does not apply falls back.
-watch(requestedId, (id) => {
-  const resolved = firstStep(ctx.value, id);
-  if (resolved !== currentId.value) currentId.value = resolved;
-});
+// route) decides the step; anything that does not apply falls back. This also
+// settles the step the wizard opens on, as soon as the configurations are in.
+watch(
+  [configsLoaded, requestedId],
+  ([loaded, id]) => {
+    if (!loaded) return;
+    const resolved = firstStep(ctx.value, id);
+    if (resolved !== currentId.value) currentId.value = resolved;
+  },
+  { immediate: true },
+);
 
 // Keep the query pointing at the step on screen, so a reload stays put.
 watch(
   currentId,
   (id) => {
-    if (route.query.step === id) return;
+    if (id == null || route.query.step === id) return;
     router.replace({ query: { ...route.query, step: id } });
   },
   { immediate: true },
@@ -196,8 +209,13 @@ const focusStepHeading = async function () {
   stepHeading.value?.focus();
 };
 
-// Focus follows the step, and lands on the heading when the wizard opens too,
-// so arriving from the sidebar checklist puts the keyboard inside the wizard.
-onMounted(focusStepHeading);
+// The wizard decides everything off the provider configurations, so it asks for
+// them itself; a remount is worth the one call for a fresh answer. Focus lands
+// on the heading as the wizard opens, so arriving from the sidebar checklist
+// puts the keyboard inside it, and follows the step from there.
+onMounted(() => {
+  void loadProviderConfigs();
+  focusStepHeading();
+});
 watch(currentId, focusStepHeading);
 </script>

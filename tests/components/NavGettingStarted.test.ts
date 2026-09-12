@@ -1,32 +1,37 @@
 import { ProviderType } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, authMock, preferenceState, routerMock } = vi.hoisted(() => ({
-  apiMock: {
-    players: {} as Record<string, unknown>,
-    providerManifests: {} as Record<string, { builtin: boolean }>,
-    providers: {} as Record<
-      string,
-      { instance_id: string; domain: string; type: ProviderType }
-    >,
-    sendCommand: vi.fn(),
-    serverInfo: { value: { onboard_done: false } },
-  },
-  authMock: { isAdmin: vi.fn(() => true) },
-  // replaced with a real ref by the userPreferences mock factory below
-  preferenceState: {
-    intent: { value: undefined } as { value?: string },
-    ready: false,
-  },
-  routerMock: { push: vi.fn(), replace: vi.fn() },
-}));
+const { apiMock, authMock, preferenceState, providerConfigs, routerMock } =
+  vi.hoisted(() => ({
+    apiMock: {
+      players: {} as Record<string, unknown>,
+      providerManifests: {} as Record<string, { builtin: boolean }>,
+      getProviderConfigs: vi.fn(),
+      subscribe: vi.fn(() => vi.fn()),
+      sendCommand: vi.fn(),
+      serverInfo: { value: { onboard_done: false } },
+    },
+    authMock: { isAdmin: vi.fn(() => true) },
+    // replaced with a real ref by the userPreferences mock factory below
+    preferenceState: {
+      intent: { value: undefined } as { value?: string },
+      ready: false,
+    },
+    // what the server hands back as the provider configurations
+    providerConfigs: { list: [] as Record<string, unknown>[] },
+    routerMock: { push: vi.fn(), replace: vi.fn() },
+  }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 
 vi.mock("@/plugins/auth", () => ({ authManager: authMock, default: authMock }));
 
 vi.mock("@/plugins/router", () => ({ default: routerMock }));
+
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
 
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
@@ -82,18 +87,33 @@ async function mountChecklist() {
   vi.resetModules();
   const component =
     await import("@/components/navigation/NavGettingStarted.vue");
-  return mount(component.default);
+  const wrapper = mount(component.default);
+  // the checklist fetches the provider configurations as it comes up
+  await flushPromises();
+  return wrapper;
 }
 
 function addProvider(instanceId: string, domain: string, type: ProviderType) {
-  apiMock.providers[instanceId] = { instance_id: instanceId, domain, type };
+  providerConfigs.list.push({
+    instance_id: instanceId,
+    domain,
+    type,
+    name: null,
+    enabled: true,
+    last_error: null,
+  });
   apiMock.providerManifests[domain] = { builtin: false };
 }
 
 describe("NavGettingStarted", () => {
   beforeEach(() => {
     apiMock.providerManifests = {};
-    apiMock.providers = {};
+    providerConfigs.list = [];
+    apiMock.getProviderConfigs.mockReset();
+    apiMock.getProviderConfigs.mockImplementation(async () => [
+      ...providerConfigs.list,
+    ]);
+    apiMock.subscribe.mockClear();
     authMock.isAdmin.mockReturnValue(true);
     preferenceState.intent.value = undefined;
     routerMock.push.mockReset();
@@ -120,6 +140,32 @@ describe("NavGettingStarted", () => {
     expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
       false,
     );
+    // and never asks the server what a non-admin cannot act on anyway
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it("counts nothing until the provider configurations are in", async () => {
+    let handOverConfigs: (configs: unknown[]) => void = () => {};
+    apiMock.getProviderConfigs.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          handOverConfigs = resolve;
+        }),
+    );
+
+    const wrapper = await mountChecklist();
+
+    // an empty list is not the same as nothing being set up
+    expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
+      false,
+    );
+
+    handOverConfigs([]);
+    await flushPromises();
+
+    expect(wrapper.find("[data-slot=badge]").text()).toBe("3");
 
     wrapper.unmount();
   });

@@ -12,28 +12,94 @@ import {
 } from "@/helpers/onboarding";
 import { api } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
-import type { ProviderInstance, ProviderType } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  type ProviderConfig,
+  type ProviderType,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { computed, ref } from "vue";
+import { toast } from "vue-sonner";
 
 /** User preference holding the answer to the wizard's intent question. */
 export const ONBOARDING_INTENT_PREFERENCE = "onboarding.intent";
+
+/** A provider the wizard lists, built from its configuration. */
+export interface ConfiguredProvider {
+  instance_id: string;
+  name: string;
+  domain: string;
+  // set up, but not doing anything: switched off or failed to load
+  needsAttention: boolean;
+}
+
+/**
+ * The provider configurations, the same list the providers settings page works
+ * from: `api.providers` only holds the instances that loaded, so a provider
+ * that is switched off or failed to start is nowhere to be seen there.
+ * `null` until the first load lands, so nothing decides anything on an empty
+ * list it has not asked for yet.
+ */
+const providerConfigs = ref<ProviderConfig[] | null>(null);
+const configsLoaded = computed(() => providerConfigs.value !== null);
+
+// the load in flight, so a wizard and a checklist coming up together ask once
+let loadingConfigs: Promise<void> | null = null;
+// the session's subscription: this state has no component to outlive, so it is
+// taken out once, on the first call, and kept for as long as the app runs
+let unsubProvidersUpdated: (() => void) | undefined;
+
+async function fetchProviderConfigs(): Promise<void> {
+  try {
+    providerConfigs.value = await api.getProviderConfigs();
+  } catch (error) {
+    // the api already told the user; leaving the list unloaded keeps the wizard
+    // waiting instead of claiming nothing is set up
+    console.warn("Failed to load the provider configurations:", error);
+  }
+}
+
+/**
+ * Load the provider configurations and keep them up to date. Only whoever asks
+ * pays for it: a guest, a dashboard viewer or anyone who is not an admin never
+ * calls this, so the list is never fetched for them.
+ */
+async function loadProviderConfigs(): Promise<void> {
+  unsubProvidersUpdated ??= api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+    void fetchProviderConfigs();
+  });
+  loadingConfigs ??= fetchProviderConfigs().finally(() => {
+    loadingConfigs = null;
+  });
+  await loadingConfigs;
+}
 
 /**
  * A provider that ships with the server rather than one the user set up. The
  * manifest owns that flag, so a provider whose manifest is missing is not
  * claimed to be builtin.
  */
-function isBuiltinProvider(provider: ProviderInstance): boolean {
-  return api.providerManifests[provider.domain]?.builtin === true;
+function isBuiltinProvider(domain: string): boolean {
+  return api.providerManifests[domain]?.builtin === true;
 }
 
 /** The providers of one type the user configured themselves. */
-export function configuredProviders(type: ProviderType): ProviderInstance[] {
-  return Object.values(api.providers).filter(
-    (provider) => provider.type === type && !isBuiltinProvider(provider),
-  );
+export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
+  return (providerConfigs.value ?? [])
+    .filter(
+      (config) => config.type === type && !isBuiltinProvider(config.domain),
+    )
+    .map((config) => ({
+      instance_id: config.instance_id,
+      name:
+        config.name ||
+        api.providerManifests[config.domain]?.name ||
+        config.domain,
+      domain: config.domain,
+      needsAttention: config.enabled === false || config.last_error != null,
+    }));
 }
 
 const { getPreference } = useUserPreferences();
@@ -41,10 +107,11 @@ const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
 
 const ctx = computed<OnboardingContext>(() => ({
   isAdmin: authManager.isAdmin(),
-  providers: Object.values(api.providers).map((provider) => ({
-    type: provider.type,
-    domain: provider.domain,
-    builtin: isBuiltinProvider(provider),
+  providers: (providerConfigs.value ?? []).map((config) => ({
+    type: config.type,
+    domain: config.domain,
+    builtin: isBuiltinProvider(config.domain),
+    enabled: config.enabled,
   })),
   // only the summary's "2 players" label reads this; whether the players step
   // is done keys off a configured PLAYER provider, not off players turning up
@@ -94,12 +161,14 @@ function isAlreadyCompletedError(error: unknown): boolean {
 }
 
 /**
- * Close onboarding off and leave the wizard. The server completes onboarding by
- * itself as soon as the first provider is added, so the command is skipped once
- * it says so and its failures are expected rather than shown: finishing the
- * wizard must never end on an error toast.
+ * Close onboarding off and leave the wizard, and say whether that worked. The
+ * server completes onboarding by itself as soon as the first provider is added,
+ * so the command is skipped once it says so and an answer that only repeats
+ * that is not worth a word. Any other failure leaves onboarding open on the
+ * server, so the wizard stays put with the error on screen rather than handing
+ * the user back an app that will drop them in here again on the next reload.
  */
-async function finish(): Promise<void> {
+async function finish(): Promise<boolean> {
   if (api.serverInfo.value?.onboard_done === false) {
     try {
       await api.sendCommand("config/onboard_complete", undefined, {
@@ -108,12 +177,15 @@ async function finish(): Promise<void> {
     } catch (error) {
       if (!isAlreadyCompletedError(error)) {
         console.warn("Failed to complete onboarding:", error);
+        toast.error($t("onboarding.finish_failed"));
+        return false;
       }
     }
   }
   // the wizard has had its say; keep the checklist out of the way afterwards
   dismiss();
   await router.replace({ name: "discover" });
+  return true;
 }
 
 /**
@@ -132,6 +204,8 @@ export function useOnboarding() {
     dismiss,
     intent,
     setIntent,
+    configsLoaded,
+    loadProviderConfigs,
     finish,
   };
 }

@@ -23,8 +23,9 @@ function provider(
   type: ProviderType,
   domain: string,
   builtin = false,
+  enabled = true,
 ): OnboardingProvider {
-  return { type, domain, builtin };
+  return { type, domain, builtin, enabled };
 }
 
 function context(
@@ -117,6 +118,19 @@ describe("onboarding step completion", () => {
     ["plugins", ProviderType.PLUGIN],
   ])("marks %s done once one is configured", (id, type) => {
     const ctx = context({ providers: [provider(type, "some_domain")] });
+    expect(step(ctx, id).isDone(ctx)).toBe(true);
+  });
+
+  it.each([
+    ["music_sources", ProviderType.MUSIC],
+    ["players", ProviderType.PLAYER],
+    ["plugins", ProviderType.PLUGIN],
+  ])("counts %s as set up even while it is switched off", (id, type) => {
+    // a disabled provider is something the user set up and can switch back on,
+    // so the wizard flags it rather than asking for it again
+    const ctx = context({
+      providers: [provider(type, "some_domain", false, false)],
+    });
     expect(step(ctx, id).isDone(ctx)).toBe(true);
   });
 

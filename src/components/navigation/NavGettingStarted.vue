@@ -18,21 +18,34 @@ import { useOnboarding } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { authManager } from "@/plugins/auth";
 import { Circle, CircleCheck, ListChecks } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 const { t } = useI18n();
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
-const { ctx, steps, requiredPending, hasPending, dismissed, dismiss } =
-  useOnboarding();
+const {
+  ctx,
+  steps,
+  requiredPending,
+  hasPending,
+  dismissed,
+  dismiss,
+  configsLoaded,
+  loadProviderConfigs,
+} = useOnboarding();
 
 const open = ref(false);
 
-// Onboarding is an admin job; nobody else ever sees the checklist.
+// Onboarding is an admin job; nobody else ever sees the checklist, and nothing
+// is counted before the provider configurations say what is set up.
 const visible = computed(
-  () => authManager.isAdmin() && hasPending.value && !dismissed.value,
+  () =>
+    authManager.isAdmin() &&
+    configsLoaded.value &&
+    hasPending.value &&
+    !dismissed.value,
 );
 
 // The summary step is the wizard's own ending, not something to tick off.
@@ -50,6 +63,12 @@ const hideForNow = function () {
   open.value = false;
   dismiss();
 };
+
+// the checklist is the only reason the sidebar needs the provider
+// configurations, so nobody but an admin ever fetches them
+onMounted(() => {
+  if (authManager.isAdmin()) void loadProviderConfigs();
+});
 </script>
 
 <template>
