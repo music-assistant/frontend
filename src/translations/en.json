@@ -798,7 +798,10 @@
             "external_default_text": "A new browser window will open so you can sign in and authorize Music Assistant. Come back here once you're done — this dialog continues automatically.",
             "external_host": "Opens {0}",
             "session_ended_title": "Setup session ended",
-            "session_ended_text": "The setup session ended — it may have completed. Check your providers or players to confirm."
+            "session_ended_text": "The setup session ended — it may have completed. Check your providers or players to confirm.",
+            "copy": "Copy",
+            "copy_success": "Copied to clipboard",
+            "copy_failed": "Failed to copy to clipboard"
         },
         "options": "Options",
         "server_clock_offset": "Clock offset (server vs this device)",
