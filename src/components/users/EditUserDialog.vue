@@ -257,7 +257,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { editUserSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
 import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -381,12 +381,18 @@ const form = useForm({
         updates.player_filter = value.playerFilter;
       }
 
-      await api.updateUser(props.user.user_id, updates);
+      await api.updateUser(props.user.user_id, updates, {
+        suppressGlobalError: true,
+      });
       toast.success(t("auth.user_updated"));
       emit("updated");
       emit("update:modelValue", false);
     } catch (error) {
-      toast.error(t("auth.user_update_failed"));
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("auth.user_update_failed"),
+      );
     } finally {
       loading.value = false;
     }

@@ -10,6 +10,7 @@ import {
   type ServerInfoMessage,
   type SuccessResultMessage,
   TaskStatus,
+  UserRole,
 } from "@/plugins/api/interfaces";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -167,6 +168,51 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleDebug).not.toHaveBeenCalled();
   });
 
+  it("lets updateUser suppress the global error toast for the caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = api.updateUser(
+      "user-1",
+      { username: "renamed" },
+      { suppressGlobalError: true },
+    );
+
+    expect(transport.lastCommand.command).toBe("auth/user/update");
+    const rejection = expect(result).rejects.toMatchObject({
+      message: "Cannot rename user",
+    });
+
+    transport.receive(
+      createErrorResult(transport.lastCommand, "Cannot rename user"),
+    );
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("lets createUser suppress the global error toast for the caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = api.createUser(
+      "bob",
+      "hunter2",
+      UserRole.USER,
+      undefined,
+      undefined,
+      { suppressGlobalError: true },
+    );
+
+    expect(transport.lastCommand.command).toBe("auth/user/create");
+    const rejection = expect(result).rejects.toMatchObject({
+      message: "Cannot create user",
+    });
+
+    transport.receive(
+      createErrorResult(transport.lastCommand, "Cannot create user"),
+    );
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
   it("rejects with the server error code and renders as the plain message", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const command = api.sendCommand("test/coded");
@@ -178,6 +224,7 @@ describe("MusicAssistantApi error handling", () => {
     expect((err as ApiCommandError).error_code).toBe(999);
     expect(String(err)).toBe("Boom");
     expect(`${err}`).toBe("Boom");
+    expect((err as ApiCommandError).details).toBe("Boom");
   });
 
   it("falls back to the error code when the server sends no details", async () => {
