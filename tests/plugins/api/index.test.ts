@@ -309,6 +309,21 @@ describe("MusicAssistantApi error handling", () => {
     await expect(result).resolves.toEqual(candidates);
   });
 
+  it("leaves a failing share candidates lookup to its caller", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.getShareCandidates();
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
   it("lists the share candidates from schema 72 on", () => {
     api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
     expect(api.supportsShareCandidates).toBe(false);

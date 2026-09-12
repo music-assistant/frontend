@@ -2293,9 +2293,12 @@ export class MusicAssistantApi {
   }
 
   public getShareCandidates(): Promise<UserSummary[]> {
-    // Get every household member a music source can be shared with, the
-    // caller included; check supportsShareCandidates first.
-    return this.sendCommand("config/providers/share_candidates");
+    // Get the users a music source can be shared with, the caller included;
+    // check supportsShareCandidates first.
+    return this.sendCommand("config/providers/share_candidates", undefined, {
+      // callers show their own error toast; avoid a duplicate global one
+      suppressGlobalError: true,
+    });
   }
 
   // PlayerConfig related functions

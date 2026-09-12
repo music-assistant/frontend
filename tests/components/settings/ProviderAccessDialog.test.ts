@@ -177,6 +177,16 @@ describe("ProviderAccessDialog", () => {
     });
   });
 
+  it("offers the old owner, not the new one, to share with", async () => {
+    await openDialog(ownedSource, users);
+
+    await openSelect(ownerTrigger()!);
+    await pickOption("Member");
+    await openMemberPicker();
+
+    expect(memberOptionLabels()).toEqual(["Owner"]);
+  });
+
   it("saves a household source without an owner", async () => {
     const wrapper = await openDialog(ownedSource, users);
 

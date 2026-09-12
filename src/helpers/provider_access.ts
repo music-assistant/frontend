@@ -69,9 +69,9 @@ export const ownerCandidates = (users: User[]) =>
   );
 
 /**
- * The users a music source can be shared with: every enabled member, as the
- * server lists them to a member. A guest only ever gets the sources shared
- * with everyone.
+ * The users a music source can be shared with, as the server lists them to a
+ * member: every enabled user but the guests, who only ever get the sources
+ * shared with everyone.
  */
 export const shareCandidates = (users: User[]) =>
   users.filter((user) => user.enabled && user.role !== UserRole.GUEST);
