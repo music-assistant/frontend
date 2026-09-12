@@ -2962,6 +2962,7 @@ export class MusicAssistantApi {
         new ApiCommandError(
           msg.details || String(msg.error_code),
           msg.error_code,
+          msg.details || undefined,
         ),
       );
     } else {

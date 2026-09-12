@@ -257,7 +257,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { editUserSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
 import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -389,7 +389,9 @@ const form = useForm({
       emit("update:modelValue", false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : t("auth.user_update_failed"),
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("auth.user_update_failed"),
       );
     } finally {
       loading.value = false;
