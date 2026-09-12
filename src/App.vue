@@ -317,6 +317,20 @@ async function migrateLocalStorageToUserPreferences() {
 }
 
 const completeInitialization = async () => {
+  // Read the onboarding request before anything can return early: the server's
+  // setup flow appends ?onboard=true, and dropping it right away keeps a reload
+  // from sending the user back into the wizard.
+  const urlParams = new URLSearchParams(window.location.search);
+  const onboardRequested = urlParams.get("onboard") === "true";
+  if (onboardRequested) {
+    urlParams.delete("onboard");
+    const cleanUrl =
+      window.location.pathname +
+      (urlParams.toString() ? "?" + urlParams.toString() : "") +
+      window.location.hash;
+    window.history.replaceState({}, "", cleanUrl);
+  }
+
   // Guard against multiple initializations
   if (initializationCompleted) {
     return;
@@ -394,14 +408,11 @@ const completeInitialization = async () => {
     await api.fetchProviders();
   }
 
-  const urlParams = new URLSearchParams(window.location.search);
   if (
-    (urlParams.get("onboard") === "true" ||
-      serverInfo.onboard_done === false) &&
+    (onboardRequested || serverInfo.onboard_done === false) &&
     userInfo.role === "admin"
   ) {
-    store.isOnboarding = true;
-    router.push("/settings");
+    router.push({ name: "onboarding" });
   } else if (isGuestAccessSession) {
     router.push("/guest");
   } else if (isDashboardViewer) {

@@ -434,7 +434,6 @@
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",
         "provider_type": "Type",
-        "onboarding_title": "Welcome to Music Assistant!",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
@@ -546,14 +545,6 @@
             "dsp": "DSP",
             "audiobooks": "Audiobooks"
         },
-        "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
-        "onboarding_music_title": "Music",
-        "onboarding_music_desc": "Connect your streaming services like Spotify, Tidal, or your local music library.",
-        "onboarding_add_music": "Add Music",
-        "onboarding_player_title": "Players",
-        "onboarding_player_desc": "Connect your speakers and devices like Sonos, Chromecast, or AirPlay.",
-        "onboarding_add_player": "Add Players",
-        "onboarding_footer": "You can always add more music sources and players later from this settings page.",
         "remote_access_qr_code": "QR Code",
         "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
         "reset_to_defaults": "Reset to defaults",
@@ -2513,5 +2504,54 @@
     "command_center_navigate": "navigate",
     "command_center_open": "open",
     "command_center_keep_typing": "Keep typing to search...",
+    "onboarding": {
+        "title": "Set up Music Assistant",
+        "step_counter": "Step {current} of {total}",
+        "next": "Next",
+        "skip": "Skip for now",
+        "finish": "Finish",
+        "finish_failed": "Could not finish the setup. Please try again.",
+        "getting_started": "Getting started",
+        "getting_started_hint": "Finish setting up Music Assistant",
+        "hide_for_now": "Hide for now",
+        "nothing_configured": "Nothing set up yet",
+        "needs_attention": "Needs attention",
+        "set_up": "Set up",
+        "still_to_do": "Still to do",
+        "all_done": "Everything on the list is set up.",
+        "players_count": "{count} player | {count} players",
+        "steps_to_go": "{count} step to go | {count} steps to go",
+        "run_again": "Run the setup wizard again",
+        "steps": {
+            "intent": {
+                "title": "Choose how you listen",
+                "description": "This only decides what we suggest first. Everything stays available, whichever you pick.",
+                "phone_apps": {
+                    "label": "From the apps on my phone",
+                    "description": "Stream from Spotify, AirPlay and other apps to the speakers in your home."
+                },
+                "music_hub": {
+                    "label": "As my music hub",
+                    "description": "Bring your streaming services and local music together in one library."
+                }
+            },
+            "music_sources": {
+                "title": "Add your music sources",
+                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play."
+            },
+            "players": {
+                "title": "Add your player providers",
+                "description": "A player provider brings your speakers into Music Assistant, such as Sonos, Chromecast or AirPlay."
+            },
+            "plugins": {
+                "title": "Add plugins",
+                "description": "Plugins add extras on top of Music Assistant. You can always add them later."
+            },
+            "finish": {
+                "title": "Finish setup",
+                "description": "Here is where you got to. You can change any of this later from the settings."
+            }
+        }
+    },
     "screens": "Screens"
 }

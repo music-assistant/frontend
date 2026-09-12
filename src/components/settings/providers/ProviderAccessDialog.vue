@@ -128,6 +128,7 @@ import {
   ownerCandidates,
   userDisplayName,
 } from "@/helpers/provider_access";
+import { providerDisplayName } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
   type ProviderConfig,
@@ -184,11 +185,11 @@ const canPickSharedUsers = computed(
 const sourceName = computed(() => {
   if (!props.config) return "";
   return (
-    api.providers[props.config.instance_id]?.name ||
-    props.config.name ||
-    props.config.default_name ||
-    api.providerManifests[props.config.domain]?.name ||
-    props.config.instance_id
+    providerDisplayName(
+      props.config,
+      api.providers[props.config.instance_id],
+      api.providerManifests[props.config.domain],
+    ) || props.config.instance_id
   );
 });
 
