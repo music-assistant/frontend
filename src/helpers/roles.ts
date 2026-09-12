@@ -194,6 +194,25 @@ export const isImpliedScope = (
   scopes.some((held) => IMPLIED_SCOPES.get(held)?.includes(scope) ?? false);
 
 /**
+ * The translation key of the permission that needs the given scope and keeps it
+ * on, if another scope of the role needs it.
+ *
+ * @param scopes - The scopes the role holds.
+ * @param scope - The scope to check.
+ */
+export const neededByLabelKey = (
+  scopes: readonly string[],
+  scope: string,
+): string | undefined => {
+  const needing = scopes.find((held) =>
+    IMPLIED_SCOPES.get(held)?.includes(scope),
+  );
+  return ROLE_PERMISSION_GROUPS.flatMap((group) => group.permissions).find(
+    (permission) => permission.scope === needing,
+  )?.labelKey;
+};
+
+/**
  * The scopes of a custom role after turning one of them on or off. A scope
  * that another scope of the role needs stays on.
  *

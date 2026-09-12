@@ -207,6 +207,7 @@ import EditUserDialog from "@/components/users/EditUserDialog.vue";
 import ManageTokensDialog from "@/components/users/ManageTokensDialog.vue";
 import RevokeTokenDialog from "@/components/users/RevokeTokenDialog.vue";
 import RoleManagement from "@/components/users/RoleManagement.vue";
+import { loadRoles } from "@/composables/roles";
 import { roleDisplayName } from "@/helpers/roles";
 import { isSystemUser } from "@/helpers/users";
 import { api } from "@/plugins/api";
@@ -341,6 +342,11 @@ const enableUser = async (user: User) => {
 
 onMounted(() => {
   void loadUsers();
+  // a role created elsewhere since the app started needs its name here and a place in
+  // the pickers; the list loaded at startup stays when this fails
+  void loadRoles({ suppressGlobalError: true }).catch((error) =>
+    console.debug("Failed to refresh the roles:", error),
+  );
 });
 
 watch(

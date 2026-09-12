@@ -1335,9 +1335,11 @@
         "role_deleted": "Role deleted successfully",
         "role_delete_failed": "Failed to delete role",
         "roles_load_failed": "Failed to load roles",
+        "role_in_use_hint": "Give its users another role before you delete it",
         "permissions": {
             "always": "Always allowed",
             "also": "Also allowed",
+            "needed_for": "Needed for: {permission}",
             "browse_library": "Browse the library",
             "play_music": "Play music and control the players",
             "change_queue": "See and change the queue",
