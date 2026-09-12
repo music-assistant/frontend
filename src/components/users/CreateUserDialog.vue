@@ -133,7 +133,7 @@
                   <Select
                     :model-value="field.state.value"
                     @update:model-value="
-                      (value) => field.handleChange(value as UserRole)
+                      (value) => field.handleChange(value as string)
                     "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
@@ -222,9 +222,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { assignableRoles, roleDisplayName } from "@/helpers/roles";
 import { createUserSchema } from "@/lib/forms/profile";
 import { api, ApiCommandError } from "@/plugins/api";
 import { UserRole } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import MultiSelect from "./MultiSelect.vue";
 
 const { t } = useI18n();
@@ -271,11 +273,12 @@ const handleFormSubmit = async () => {
   }
 };
 
-const roleOptions = computed(() => [
-  { label: t("auth.admin_role"), value: "admin" },
-  { label: t("auth.user_role"), value: "user" },
-  { label: t("auth.guest_role"), value: "guest" },
-]);
+const roleOptions = computed(() =>
+  assignableRoles(store.roles).map((role) => ({
+    label: roleDisplayName(role.role_id, store.roles),
+    value: role.role_id,
+  })),
+);
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
@@ -292,7 +295,7 @@ const form = useForm({
     displayName: "",
     password: "",
     confirmPassword: "",
-    role: "user" as UserRole,
+    role: UserRole.USER as string,
     playerFilter: [] as string[],
   },
   validators: {

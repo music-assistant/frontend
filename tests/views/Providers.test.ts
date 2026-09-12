@@ -44,6 +44,7 @@ const {
         documentation: "https://example.com",
         has_setup_flow: true,
         name: "Spotify",
+        self_service: true,
         stage: "stable",
       },
     },
@@ -134,12 +135,13 @@ vi.mock("@/helpers/utils", () => ({
 // rendered in place of the real dialog, exposing what it was handed
 const AddDialogStub = vi.hoisted(() => ({
   name: "AddProviderDialog",
-  props: ["show", "providerType", "multiInstanceOnly"],
+  props: ["show", "providerType", "multiInstanceOnly", "selfServiceOnly"],
   template: `
     <div
       data-testid="add-dialog"
       :data-provider-type="providerType ?? ''"
       :data-multi-instance="String(multiInstanceOnly)"
+      :data-self-service="String(selfServiceOnly)"
     />
   `,
 }));
@@ -207,6 +209,7 @@ beforeEach(() => {
   apiMock.getShareCandidates.mockResolvedValue(shareCandidates);
   apiMock.providerManifests.spotify.builtin = false;
   apiMock.providerManifests.spotify.has_setup_flow = true;
+  apiMock.providerManifests.spotify.self_service = true;
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
@@ -594,6 +597,16 @@ describe("Providers", () => {
     const dialog = wrapper.get('[data-testid="add-dialog"]');
     expect(dialog.attributes("data-provider-type")).toBe("");
     expect(dialog.attributes("data-multi-instance")).toBe("false");
+    expect(dialog.attributes("data-self-service")).toBe("false");
+  });
+
+  it("offers reconfiguration of a provider that only an admin may set up", async () => {
+    apiMock.providerManifests.spotify.self_service = false;
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const menuItems = await openMenu(wrapper);
+    expect(menuItems[0].label).toBe("settings.reconfigure");
   });
 
   it("keeps the filter empty state for a provider type without any provider", async () => {
@@ -731,12 +744,39 @@ describe("Providers for a member", () => {
     ).toBe("none");
   });
 
-  it("offers only music sources that allow another account", async () => {
+  it("offers only music sources that allow another account and that members may set up", async () => {
     const wrapper = await mountWithConfigs([ownSource()]);
 
     const dialog = wrapper.get('[data-testid="add-dialog"]');
     expect(dialog.attributes("data-provider-type")).toBe("music");
     expect(dialog.attributes("data-multi-instance")).toBe("true");
+    expect(dialog.attributes("data-self-service")).toBe("true");
+  });
+
+  it("offers no reconfiguration of a provider that only an admin may set up", async () => {
+    apiMock.providerManifests.spotify.self_service = false;
+
+    const wrapper = await mountWithConfigs([
+      { ...ownSource(), status: ProviderStatus.AUTH_REQUIRED },
+    ]);
+
+    expect(wrapper.find('[data-testid="provider-action"]').exists()).toBe(
+      false,
+    );
+    const menuItems = await openMenu(wrapper);
+    expect(
+      menuItems.map((item: { label: string }) => item.label),
+    ).not.toContain("settings.reconfigure");
+
+    // the server would refuse the setup flow, so the source opens its options
+    await wrapper.get('[data-testid="provider-row"]').trigger("click");
+    expect(routerMock.push).toHaveBeenCalledWith(
+      "/settings/editprovider/spotify--own",
+    );
+    expect(eventbusMock.emit).not.toHaveBeenCalledWith(
+      "setupFlowDialog",
+      expect.anything(),
+    );
   });
 
   it("invites a member without sources to add one", async () => {

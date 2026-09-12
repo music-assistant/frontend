@@ -3,6 +3,7 @@ import {
   Player,
   PlayerQueue,
   QueueItem,
+  Role,
   ServerInfoMessage,
   User,
 } from "./api/interfaces";
@@ -47,6 +48,8 @@ interface Store {
   forceMobileLayout?: boolean;
   mobileLayout: boolean;
   currentUser?: User;
+  // the user roles, the builtin ones first (see loadRoles)
+  roles: Role[];
   // the scopes granted to each user role, keyed by role id
   roleScopes: Record<string, string[]>;
   serverInfo?: ServerInfoMessage;
@@ -97,6 +100,7 @@ export const store: Store = reactive({
       parseBool(store.forceMobileLayout),
   ),
   currentUser: undefined,
+  roles: [],
   roleScopes: {},
   serverInfo: undefined,
   isIngressSession: computed(() =>
