@@ -856,7 +856,7 @@ const accessSummary = function (item: ProviderConfig) {
       : $t(
           getProviderSharingTranslationKey(
             access.sharing,
-            access.owner === store.currentUser?.user_id,
+            isOwnMusicSource(item, store.currentUser?.user_id),
           ),
         );
   if (!managesAllSources.value) return sharing;

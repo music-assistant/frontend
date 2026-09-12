@@ -43,7 +43,13 @@
             </FieldLabel>
             <Select v-model="sharing">
               <SelectTrigger id="provider-access-sharing" class="w-full">
-                <SelectValue />
+                <!-- rendered from state, as the select keeps the label an
+                     option had when it mounted -->
+                <SelectValue>
+                  {{
+                    $t(getProviderSharingTranslationKey(sharing, ownedByViewer))
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem

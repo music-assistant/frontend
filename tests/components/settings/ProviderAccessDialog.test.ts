@@ -193,6 +193,9 @@ describe("ProviderAccessDialog", () => {
 
     await openSelect(ownerTrigger()!);
     await pickOption("Owner");
+    expect(sharingTrigger()?.textContent).toContain(
+      "settings.source_access.options.private",
+    );
 
     await openSelect(sharingTrigger()!);
     expect(optionLabels()).toContain("settings.source_access.options.private");
