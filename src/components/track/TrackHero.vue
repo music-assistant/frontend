@@ -23,7 +23,9 @@
             <span
               v-if="item.metadata?.explicit"
               class="track-hero__explicit"
+              role="img"
               :title="$t('tooltip.explicit')"
+              :aria-label="$t('tooltip.explicit')"
               >E</span
             >
           </h1>
@@ -128,6 +130,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   audioFormatLabel,
   bestAudioFormat,
+  trackReleaseYear,
 } from "@/components/track/trackData";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatDuration } from "@/helpers/utils";
@@ -158,14 +161,7 @@ const isPhone = computed(() => isPhoneSizedScreen());
 
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
-// the album's year, else the year the track itself was released
-const releaseYear = computed(() => {
-  const item = props.item;
-  if (!item) return undefined;
-  if (item.album?.year) return item.album.year;
-  const releaseDate = item.metadata?.release_date;
-  return releaseDate ? new Date(releaseDate).getUTCFullYear() : undefined;
-});
+const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
 
 const favoriteButtonLabel = computed(() =>
   props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
@@ -355,7 +351,7 @@ const gotoItem = function (
   .track-hero__actions {
     gap: 10px;
   }
-  .track-hero__actions :deep(.track-hero__play) {
+  .track-hero__actions .track-hero__play {
     flex: 1;
   }
   .track-hero__badge {

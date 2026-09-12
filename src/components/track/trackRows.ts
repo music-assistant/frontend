@@ -23,7 +23,6 @@ export const TRACK_ROWS: readonly RowDefinition<TrackRowId>[] = [
 ];
 
 export const TRACK_ROWS_PREFERENCE_KEY = "track.rows";
-export const TRACK_ROW_SOURCES_PREFERENCE_KEY = "track.rowSources";
 
 /**
  * Row ids the track page can show, in default order: similar tracks only
@@ -42,5 +41,4 @@ export function availableTrackRowIds(): TrackRowId[] {
 export const trackRows = createRowRegistry<TrackRowId, Track>({
   rows: TRACK_ROWS,
   preferenceKey: TRACK_ROWS_PREFERENCE_KEY,
-  sourcesPreferenceKey: TRACK_ROW_SOURCES_PREFERENCE_KEY,
 });

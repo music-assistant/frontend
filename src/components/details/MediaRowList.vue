@@ -333,10 +333,6 @@ function itemDuration(item: RowItem): number | undefined {
   font-weight: 500;
   white-space: nowrap;
 }
-/* a row the slot rendered no tag for shows no empty pill either */
-.media-rows__tag:empty {
-  display: none;
-}
 .media-rows__duration {
   width: 44px;
   flex: none;
@@ -391,6 +387,10 @@ function itemDuration(item: RowItem): number | undefined {
   }
   .media-rows__subtitle {
     font-size: 12px;
+  }
+  /* the tag, name and duration do not all fit a 390px row */
+  .media-rows__row:has(.media-rows__tag) .media-rows__duration {
+    display: none;
   }
 }
 </style>

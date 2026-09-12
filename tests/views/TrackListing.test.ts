@@ -31,7 +31,11 @@ vi.mock("@/components/ItemsListing.vue", () => ({
   },
 }));
 
-async function mountListing(listing: string, item: Track = track()) {
+async function mountListing(
+  listing: string,
+  item: Track = track(),
+  albumUri?: string,
+) {
   mockGetTrack.mockResolvedValue(item);
   const wrapper = mount(TrackListing, {
     // the route hands the view whatever string is in the url
@@ -39,6 +43,7 @@ async function mountListing(listing: string, item: Track = track()) {
       itemId: item.item_id,
       provider: item.provider,
       listing: listing as Props["listing"],
+      album: albumUri,
     },
     global: { mocks: { $t: (key: string) => key } },
   });
@@ -64,11 +69,24 @@ describe("TrackListing", () => {
       "similar",
       track({ item_id: "7", provider: "spotify--abc" }),
     );
-    expect(mockGetTrack).toHaveBeenCalledWith("7", "spotify--abc");
+    expect(mockGetTrack).toHaveBeenCalledWith("7", "spotify--abc", undefined);
     expect(listingAttributes(wrapper)).toEqual({
       path: "tracksimilar",
       itemtype: "similartracks",
     });
+  });
+
+  it("asks for the track on the album it was opened from", async () => {
+    await mountListing(
+      "similar",
+      track({ item_id: "7", provider: "spotify--abc" }),
+      "library://album/3",
+    );
+    expect(mockGetTrack).toHaveBeenCalledWith(
+      "7",
+      "spotify--abc",
+      "library://album/3",
+    );
   });
 
   it("renders nothing for an unknown listing", async () => {

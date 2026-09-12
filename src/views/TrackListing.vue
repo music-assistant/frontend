@@ -35,6 +35,8 @@ export interface Props {
   provider: string;
   // which of the track page's rows is shown in full
   listing: "similar";
+  // uri of the album the track was opened from, when it appears on several
+  album?: string;
 }
 const props = defineProps<Props>();
 
@@ -50,13 +52,19 @@ const router = useRouter();
 const itemDetails = ref<Track>();
 
 watch(
-  () => [props.itemId, props.provider],
-  async ([itemId, provider]) => {
+  () => [props.itemId, props.provider, props.album] as const,
+  async ([itemId, provider, album]) => {
     // the listing remounts for the new track instead of keeping the old items
     itemDetails.value = undefined;
-    const track = await api.getTrack(itemId, provider);
+    const track = await api.getTrack(itemId, provider, album);
     // a slower response for a previous track must not replace the current one
-    if (itemId !== props.itemId || provider !== props.provider) return;
+    if (
+      itemId !== props.itemId ||
+      provider !== props.provider ||
+      album !== props.album
+    ) {
+      return;
+    }
     itemDetails.value = track;
   },
   { immediate: true },
@@ -82,6 +90,7 @@ const backToTrack = function () {
   goBack(router, {
     name: "track",
     params: { provider: props.provider, itemId: props.itemId },
+    query: props.album ? { album: props.album } : undefined,
   });
 };
 </script>

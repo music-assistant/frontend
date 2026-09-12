@@ -7,11 +7,14 @@
       '--detail-hero-phone-height': `${phoneHeight}px`,
     }"
   >
-    <div
-      v-if="backdropStyle"
-      class="detail-hero__backdrop"
-      :style="backdropStyle"
-    ></div>
+    <Transition name="detail-hero-backdrop">
+      <div
+        v-if="backdropStyle"
+        :key="backdrop"
+        class="detail-hero__backdrop"
+        :style="backdropStyle"
+      ></div>
+    </Transition>
     <div class="detail-hero__scrim"></div>
     <Toolbar
       class="detail-hero__toolbar"
@@ -112,8 +115,7 @@ async function buildMenu(item?: MediaItemType) {
   position: relative;
   display: flex;
   flex-direction: column;
-  /* the design height; a hero whose text needs more room grows instead of
-     running under its toolbar */
+  /* the design height; taller content grows the hero */
   min-height: var(--detail-hero-height);
   overflow: hidden;
   background-color: rgb(var(--v-theme-background));
@@ -130,6 +132,16 @@ async function buildMenu(item?: MediaItemType) {
   background-position: center 30%;
   background-repeat: no-repeat;
   background-size: cover;
+}
+/* a new backdrop fades in over the one it replaces; both layers are
+   absolutely positioned, so they crossfade */
+.detail-hero-backdrop-enter-active,
+.detail-hero-backdrop-leave-active {
+  transition: opacity 400ms ease;
+}
+.detail-hero-backdrop-enter-from,
+.detail-hero-backdrop-leave-to {
+  opacity: 0;
 }
 /* two layers: the artwork is darkened so the hero's light-on-dark text reads in
    both themes, and only its very bottom blends into the page */
@@ -205,12 +217,6 @@ async function buildMenu(item?: MediaItemType) {
   min-width: 0;
   text-align: right;
 }
-/* an aside whose only child rendered nothing (Vue leaves a comment node there,
-   which :empty ignores) takes no gap of the body's either */
-.detail-hero__aside:empty {
-  display: none;
-}
-
 /* an aside whose only child rendered nothing (Vue leaves a comment node there,
    which :empty ignores) takes no gap of the body's either */
 .detail-hero__aside:empty {

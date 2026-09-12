@@ -30,6 +30,7 @@ import {
   plainLyrics,
   releaseSubtitle,
   trackBackdrop,
+  trackReleaseYear,
 } from "@/components/track/trackData";
 import {
   AlbumType,
@@ -136,9 +137,31 @@ describe("trackData", () => {
       );
     });
 
+    it("drops the ID tags in front of LRC lyrics", () => {
+      expect(
+        plainLyrics(
+          null,
+          "[ar: Vera Lund]\n[ti: One]\n[offset: 500]\n[00:12.50]First line",
+        ),
+      ).toBe("First line");
+    });
+
     it("is undefined when nothing is left", () => {
       expect(plainLyrics(null, null)).toBeUndefined();
       expect(plainLyrics("  ", "[00:01.00]\n")).toBeUndefined();
+    });
+  });
+
+  describe("trackReleaseYear", () => {
+    it("takes the album's year, else the year of the release date", () => {
+      const released = { release_date: "2019-05-01" };
+      expect(
+        trackReleaseYear(
+          track({ album: album({ year: 2021 }), metadata: released }),
+        ),
+      ).toBe(2021);
+      expect(trackReleaseYear(track({ metadata: released }))).toBe(2019);
+      expect(trackReleaseYear(track())).toBeUndefined();
     });
   });
 

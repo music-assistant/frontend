@@ -178,6 +178,35 @@ describe("MediaRowList", () => {
     );
   });
 
+  it("opens the item from the keyboard with Enter or Space", async () => {
+    const wrapper = mountList({ items: TRACKS, parentItem: PARENT });
+    const row = wrapper.findAll(".media-rows__row[role=button]")[0];
+    await row.trigger("keydown", { key: "Enter" });
+    await row.trigger("keydown", { key: " " });
+    expect(mockHandleMediaItemClick).toHaveBeenCalledTimes(2);
+    expect(mockHandleMediaItemClick).toHaveBeenLastCalledWith(
+      TRACKS[0],
+      0,
+      0,
+      PARENT,
+    );
+  });
+
+  it("opens the menu with the parent item from a right click", async () => {
+    const wrapper = mountList({ items: TRACKS, parentItem: PARENT });
+    await wrapper
+      .findAll(".media-rows__row[role=button]")[1]
+      .trigger("contextmenu");
+    expect(mockHandleMenuBtnClick).toHaveBeenCalledWith(
+      TRACKS[1],
+      0,
+      0,
+      PARENT,
+      true,
+    );
+    expect(mockHandleMediaItemClick).not.toHaveBeenCalled();
+  });
+
   it("links to the full listing only when given one", () => {
     const withLink = mountList({
       items: TRACKS,

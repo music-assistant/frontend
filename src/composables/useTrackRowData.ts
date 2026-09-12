@@ -5,15 +5,15 @@ import {
   loadTrackVersions,
 } from "@/components/track/trackData";
 import type { TrackRowId } from "@/components/track/trackRows";
-import { useRowRequests } from "@/composables/useRowRequests";
+import { mappingsIdentity, useRowRequests } from "@/composables/useRowRequests";
 import type { Album, Track } from "@/plugins/api/interfaces";
 import { ref, watch, type Ref } from "vue";
 
 /**
  * What every row of the track page shows, loaded as the visible rows need it.
  *
- * Each returned list is undefined while its row is still loading; the lyrics
- * are `[text]`, or `[]` when nobody has any. Each list is requested once per
+ * Each returned list is undefined while its row is still loading, as are the
+ * lyrics, which are null when nobody has any. Each is requested once per
  * track, and a response that arrives after the page moved on to another track
  * is dropped.
  */
@@ -21,14 +21,14 @@ export function useTrackRowData(
   track: Ref<Track | undefined>,
   visibleRows: Ref<TrackRowId[]>,
 ) {
-  const lyrics = ref<string[]>();
+  const lyrics = ref<string | null>();
   const appearsOnItems = ref<Album[]>();
   const versionItems = ref<Track[]>();
   const similarItems = ref<Track[]>();
 
   // a new track, or new provider mappings, start from empty rows; anything
   // else (a favorite toggle, a metadata update) keeps what is already loaded
-  const { fetchOnce } = useRowRequests(track, rowsIdentity, () => {
+  const { fetchOnce } = useRowRequests(track, mappingsIdentity, () => {
     lyrics.value = undefined;
     appearsOnItems.value = undefined;
     versionItems.value = undefined;
@@ -51,7 +51,7 @@ export function useTrackRowData(
           const text = await loadTrackLyrics(track);
           return text ? [text] : [];
         },
-        (items) => (lyrics.value = items),
+        (items) => (lyrics.value = items[0] ?? null),
       );
     }
     if (rows.includes("appears_on")) {
@@ -78,12 +78,4 @@ export function useTrackRowData(
   }
 
   return { lyrics, appearsOnItems, versionItems, similarItems };
-}
-
-/** What the rows are loaded from: the track and the providers it is mapped to. */
-function rowsIdentity(track: Track): string {
-  const mappings = track.provider_mappings
-    .map((mapping) => `${mapping.provider_instance}:${mapping.item_id}`)
-    .sort();
-  return [track.uri, ...mappings].join("|");
 }

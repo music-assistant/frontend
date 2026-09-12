@@ -61,6 +61,12 @@ vi.mock("@/plugins/i18n", async (importOriginal) => ({
   $t: (key: string) => key,
 }));
 
+// the desktop row shows 8 similar tracks before "View all"
+vi.mock("@/plugins/breakpoint", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/plugins/breakpoint")>()),
+  isPhoneSizedScreen: () => false,
+}));
+
 vi.mock("@/components/track/trackRows", () => ({
   availableTrackRowIds: mockAvailableTrackRowIds,
   trackRows: mockTrackRows,
@@ -84,13 +90,17 @@ vi.mock("@/components/track/TrackHero.vue", () => ({
   },
 }));
 vi.mock("@/components/track/TrackLyricsRow.vue", () => ({
-  default: { name: "TrackLyricsRow", template: '<div data-row="lyrics" />' },
+  default: {
+    name: "TrackLyricsRow",
+    props: ["lyrics"],
+    template: '<div data-row="lyrics" />',
+  },
 }));
 // one component backs three rows, so it reports which title it was given
 vi.mock("@/components/details/MediaRowList.vue", () => ({
   default: {
     name: "MediaRowList",
-    props: ["title"],
+    props: ["title", "viewAllTo"],
     template: '<div :data-row="title" />',
   },
 }));
@@ -143,6 +153,18 @@ function hero(wrapper: VueWrapper) {
   return wrapper.findComponent({ name: "TrackHero" });
 }
 
+function similarRow(wrapper: VueWrapper) {
+  return wrapper
+    .findAllComponents({ name: "MediaRowList" })
+    .find((row) => row.props("title") === "similar_tracks")!;
+}
+
+function similarTracks(count: number): Track[] {
+  return Array.from({ length: count }, (_, index) =>
+    track({ item_id: `similar-${index}` }),
+  );
+}
+
 describe("TrackDetails", () => {
   beforeEach(() => {
     mockGetTrack.mockReset();
@@ -191,6 +213,30 @@ describe("TrackDetails", () => {
       "similar_tracks",
       "provider_mappings",
     ]);
+  });
+
+  it("hands the lyrics row the text once it is loaded", async () => {
+    const wrapper = await mountDetails(track());
+
+    const lyricsRow = wrapper.findComponent({ name: "TrackLyricsRow" });
+    expect(lyricsRow.props("lyrics")).toBe("La la");
+  });
+
+  it('offers "View all" once the similar tracks outgrow the row', async () => {
+    mockLoadSimilarTracks.mockResolvedValue(similarTracks(9));
+    const nine = await mountDetails(
+      track({ item_id: "7", provider: "spotify--abc" }),
+      "library://album/3",
+    );
+    expect(similarRow(nine).props("viewAllTo")).toEqual({
+      name: "tracklisting",
+      params: { provider: "spotify--abc", itemId: "7", listing: "similar" },
+      query: { album: "library://album/3" },
+    });
+
+    mockLoadSimilarTracks.mockResolvedValue(similarTracks(8));
+    const eight = await mountDetails(track());
+    expect(similarRow(eight).props("viewAllTo")).toBeUndefined();
   });
 
   it("hands the editor the track page's registry and rows", async () => {
@@ -269,10 +315,9 @@ describe("TrackDetails", () => {
       }),
     );
 
-    // nothing is painted until the lookup settled, so the hero does not flash
-    // from the cover to the fanart
+    // the cover is painted while the lookup runs
     expect(mockGetArtist).toHaveBeenCalledWith("a1", "spotify--abc");
-    expect(hero(wrapper).props("backdrop")).toBeUndefined();
+    expect(hero(wrapper).props("backdrop")).toBe("data:image/png;base64,cover");
 
     resolveArtist(
       artist({
@@ -283,6 +328,42 @@ describe("TrackDetails", () => {
 
     expect(hero(wrapper).props("backdrop")).toBe(
       "data:image/png;base64,artist-fanart",
+    );
+  });
+
+  it("ignores an artist response that arrives after the track changed", async () => {
+    let resolveArtist: (item: Artist) => void = () => {};
+    mockGetArtist.mockImplementation(
+      () =>
+        new Promise<Artist>((resolve) => {
+          resolveArtist = resolve;
+        }),
+    );
+    const wrapper = await mountDetails(
+      track({
+        item_id: "1",
+        artists: [artist({ item_id: "a1" })],
+        metadata: { images: [image(ImageType.THUMB, "cover")] },
+      }),
+    );
+
+    mockGetTrack.mockResolvedValue(
+      track({
+        item_id: "2",
+        metadata: { images: [image(ImageType.THUMB, "cover-2")] },
+      }),
+    );
+    await wrapper.setProps({ itemId: "2" });
+    await flushPromises();
+    resolveArtist(
+      artist({
+        metadata: { images: [image(ImageType.FANART, "artist-fanart")] },
+      }),
+    );
+    await flushPromises();
+
+    expect(hero(wrapper).props("backdrop")).toBe(
+      "data:image/png;base64,cover-2",
     );
   });
 });

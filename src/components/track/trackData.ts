@@ -1,3 +1,4 @@
+import { parseLrcLine } from "@/helpers/lrcParser";
 import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -8,12 +9,13 @@ import {
   type Artist,
   type AudioFormat,
   type ItemMapping,
+  type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
-// the "[mm:ss.xx]" timestamps in front of LRC lines
-const LRC_TIMESTAMP = /\[\d+:\d+(?:[.:]\d+)?\]/g;
+// a line holding only an LRC ID tag, like "[ar: Artist]" or "[offset: 500]"
+const LRC_ID_TAG = /^\[[a-z]+:[^\]]*\]$/i;
 
 // the codecs the server counts as lossless (ContentType.is_lossless there)
 const LOSSLESS_CODECS = new Set<ContentType>([
@@ -76,7 +78,7 @@ export async function loadTrackLyrics(
 
 /**
  * Lyrics as plain text: the plain lyrics when there are any, else the LRC
- * lyrics without their timestamps. Undefined when nothing is left.
+ * lyrics without their ID tags and timestamps. Undefined when nothing is left.
  */
 export function plainLyrics(
   lyrics?: string | null,
@@ -85,7 +87,8 @@ export function plainLyrics(
   const source = lyrics?.trim() ? lyrics : lrc;
   const text = source
     ?.split("\n")
-    .map((line) => line.replace(LRC_TIMESTAMP, "").trim())
+    .filter((line) => !LRC_ID_TAG.test(line.trim()))
+    .map((line) => parseLrcLine(line).text.trim())
     .join("\n")
     .trim();
   return text || undefined;
@@ -124,16 +127,23 @@ export function audioFormatLabel(format: AudioFormat): string {
  * "Album · Vera Lund · 2025": the release's type, artists and year, whichever
  * of those it has.
  */
-export function releaseSubtitle(album: Album | ItemMapping): string {
+export function releaseSubtitle(item: MediaItemType | ItemMapping): string {
   const parts: string[] = [];
-  if ("album_type" in album && album.album_type !== AlbumType.UNKNOWN) {
-    parts.push($t(`album_type.${album.album_type}`));
+  if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
+    parts.push($t(`album_type.${item.album_type}`));
   }
-  if ("artists" in album && album.artists.length) {
-    parts.push(getArtistsString(album.artists));
+  if ("artists" in item && item.artists.length) {
+    parts.push(getArtistsString(item.artists));
   }
-  if (album.year) parts.push(String(album.year));
+  if ("year" in item && item.year) parts.push(String(item.year));
   return parts.join(" · ");
+}
+
+/** The year the track came out: its album's, else the one of its release date. */
+export function trackReleaseYear(track: Track): number | undefined {
+  if (track.album?.year) return track.album.year;
+  const releaseDate = track.metadata?.release_date;
+  return releaseDate ? new Date(releaseDate).getUTCFullYear() : undefined;
 }
 
 /**

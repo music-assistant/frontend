@@ -24,6 +24,13 @@ declare module "vue-router" {
   }
 }
 
+// the url's params and query together as the view's props, e.g. the album a
+// track was opened from
+const paramsAndQueryProps = (route: {
+  params: Record<string, string | string[]>;
+  query: Record<string, string | (string | null)[] | null | undefined>;
+}) => ({ ...route.params, ...route.query });
+
 export const routes: RouteRecordRaw[] = [
   {
     path: "/guest",
@@ -309,16 +316,7 @@ export const routes: RouteRecordRaw[] = [
               import(
                 /* webpackChunkName: "track" */ "@/views/TrackDetails.vue"
               ),
-            props: (route: {
-              params: Record<string, string | string[]>;
-              query: Record<
-                string,
-                string | (string | null)[] | null | undefined
-              >;
-            }) => ({
-              ...route.params,
-              ...route.query,
-            }),
+            props: paramsAndQueryProps,
           },
           {
             path: ":provider/:itemId/:listing",
@@ -327,7 +325,7 @@ export const routes: RouteRecordRaw[] = [
               import(
                 /* webpackChunkName: "tracklisting" */ "@/views/TrackListing.vue"
               ),
-            props: true,
+            props: paramsAndQueryProps,
           },
         ],
       },

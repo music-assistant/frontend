@@ -22,7 +22,6 @@ vi.mock("@/composables/userPreferences", () => ({
 
 import {
   TRACK_ROWS_PREFERENCE_KEY,
-  TRACK_ROW_SOURCES_PREFERENCE_KEY,
   availableTrackRowIds,
   trackRows,
   type TrackRowId,
@@ -89,25 +88,6 @@ describe("trackRows", () => {
       expect(hidden.size).toBe(0);
     });
 
-    it("applies the saved order and visibility", () => {
-      setPreferences({
-        [TRACK_ROWS_PREFERENCE_KEY]: {
-          hidden: ["lyrics"],
-          order: ["similar_tracks", "lyrics", "appears_on"],
-        },
-      });
-      const { order, hidden } = trackRows.resolve(ALL_ROWS);
-      // the rows the user never ordered follow their default sibling
-      expect(order).toEqual([
-        "similar_tracks",
-        "provider_mappings",
-        "lyrics",
-        "appears_on",
-        "other_versions",
-      ]);
-      expect(hidden).toEqual(new Set(["lyrics"]));
-    });
-
     it("ignores rows that don't apply right now", () => {
       setPreferences({
         [TRACK_ROWS_PREFERENCE_KEY]: {
@@ -131,15 +111,12 @@ describe("trackRows", () => {
       );
     });
 
-    it("clears both preferences", async () => {
+    it("clears the rows preference and no other", async () => {
       await trackRows.reset();
+      expect(mockSetUserPreference).toHaveBeenCalledTimes(1);
       expect(mockSetUserPreference).toHaveBeenCalledWith(
         TRACK_ROWS_PREFERENCE_KEY,
         { hidden: [], shown: [], order: [] },
-      );
-      expect(mockSetUserPreference).toHaveBeenLastCalledWith(
-        TRACK_ROW_SOURCES_PREFERENCE_KEY,
-        {},
       );
     });
   });

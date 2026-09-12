@@ -79,7 +79,7 @@ describe("useTrackRowData", () => {
 
     await showTrack(page, libraryTrack());
 
-    expect(page.lyrics.value).toEqual(["La la"]);
+    expect(page.lyrics.value).toBe("La la");
     expect(itemIds(page.versionItems.value)).toEqual(["version-1"]);
     expect(page.appearsOnItems.value).toBeUndefined();
     expect(page.similarItems.value).toBeUndefined();
@@ -140,11 +140,11 @@ describe("useTrackRowData", () => {
     expect(itemIds(page.appearsOnItems.value)).toEqual(["second"]);
   });
 
-  it("reports no lyrics as an empty row", async () => {
+  it("reports no lyrics as null", async () => {
     const page = setupRowData({ rows: ["lyrics"] });
 
     await showTrack(page, libraryTrack());
 
-    expect(page.lyrics.value).toEqual([]);
+    expect(page.lyrics.value).toBeNull();
   });
 });

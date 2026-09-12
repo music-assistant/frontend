@@ -10,9 +10,9 @@
       <template v-for="rowId in visibleRows" :key="rowId">
         <!-- lyrics -->
         <TrackLyricsRow
-          v-if="rowId === 'lyrics' && showRow(lyrics)"
+          v-if="rowId === 'lyrics' && lyrics !== null"
           :item="itemDetails"
-          :lyrics="lyrics?.[0]"
+          :lyrics="lyrics ?? undefined"
           @edit-rows="rowsEditorOpen = true"
         />
 
@@ -27,7 +27,7 @@
           @edit-rows="rowsEditorOpen = true"
         >
           <template #subtitle="{ item }">
-            {{ releaseSubtitle(item as Album) }}
+            {{ releaseSubtitle(item) }}
           </template>
         </MediaRowList>
 
@@ -85,7 +85,11 @@ import MediaRowList from "@/components/details/MediaRowList.vue";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { releaseSubtitle, trackBackdrop } from "@/components/track/trackData";
+import {
+  releaseSubtitle,
+  trackBackdrop,
+  trackReleaseYear,
+} from "@/components/track/trackData";
 import TrackHero from "@/components/track/TrackHero.vue";
 import TrackLyricsRow from "@/components/track/TrackLyricsRow.vue";
 import {
@@ -102,7 +106,6 @@ import {
   EventType,
   ImageType,
   MediaItemType,
-  type Album,
   type Artist,
   type ItemMapping,
   type Track,
@@ -143,14 +146,12 @@ const { lyrics, appearsOnItems, versionItems, similarItems } = useTrackRowData(
   visibleRows,
 );
 
-// stays undefined until the artist lookup settled, so the hero does not
-// flash from the cover to the fanart
-const backdrop = computed(() => {
-  if (!itemDetails.value || backdropArtist.value === undefined) {
-    return undefined;
-  }
-  return trackBackdrop(itemDetails.value, backdropArtist.value ?? undefined);
-});
+// the cover at first; the artist's fanart takes over once that lookup is done
+const backdrop = computed(() =>
+  itemDetails.value
+    ? trackBackdrop(itemDetails.value, backdropArtist.value ?? undefined)
+    : undefined,
+);
 
 const releasesMeta = computed(() => {
   const count = appearsOnItems.value?.length;
@@ -183,6 +184,7 @@ const similarListingRoute = computed<RouteLocationRaw | undefined>(() => {
       itemId: track.item_id,
       listing: "similar",
     },
+    query: props.album ? { album: props.album } : undefined,
   };
 });
 
@@ -283,7 +285,7 @@ function hasWideArt(track: Track): boolean {
 function versionSubtitle(item: MediaItemType | ItemMapping): string {
   if (!("album" in item) || !item.album) return "";
   const parts = [item.album.name];
-  const year = item.album.year ?? releaseYear(item);
+  const year = trackReleaseYear(item);
   if (year) parts.push(String(year));
   return parts.join(" · ");
 }
@@ -294,12 +296,6 @@ function similarSubtitle(item: MediaItemType | ItemMapping): string {
   const parts = [getArtistsString(item.artists)];
   if ("album" in item && item.album) parts.push(item.album.name);
   return parts.filter(Boolean).join(" · ");
-}
-
-/** The year a track was released, from its metadata. */
-function releaseYear(track: Track): number | undefined {
-  const releaseDate = track.metadata?.release_date;
-  return releaseDate ? new Date(releaseDate).getUTCFullYear() : undefined;
 }
 
 /** The name of the provider a version comes from, the library included. */
