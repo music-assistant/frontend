@@ -8,7 +8,7 @@ import { user } from "../fixtures/user";
 
 const { apiMock, hasScopeMock, routeMock, routerMock, storeMock } = vi.hoisted(
   () => ({
-    apiMock: { getAllUsers: vi.fn() },
+    apiMock: { getAllUsers: vi.fn(), supportsRoles: false },
     hasScopeMock: vi.fn<(scope: Scope) => boolean>(),
     routeMock: { query: {} as Record<string, string> },
     routerMock: { push: vi.fn(), replace: vi.fn() },
@@ -21,6 +21,10 @@ vi.mock("@/plugins/api", () => ({ api: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: hasScopeMock } }));
+
+vi.mock("@/composables/roles", () => ({
+  loadRoles: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock("vue-sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
@@ -55,6 +59,7 @@ async function mountView() {
       stubs: {
         // covered by their own tests; here they only add noise if mounted for real
         CreateUserDialog: true,
+        RoleManagement: true,
         EditUserDialog: true,
         DisableUserDialog: true,
         DeleteUserDialog: true,
@@ -77,6 +82,7 @@ async function mountView() {
 describe("UserManagement", () => {
   beforeEach(() => {
     hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    apiMock.supportsRoles = false;
   });
 
   it("shows the System badge only on the Home Assistant account's card", async () => {
@@ -111,5 +117,23 @@ describe("UserManagement", () => {
     expect(wrapper.text()).not.toContain("auth.create_user");
     expect(wrapper.text()).not.toContain("auth.edit_user");
     expect(wrapper.text()).not.toContain("auth.manage_tokens");
+  });
+
+  it("shows only the users on a server without roles", async () => {
+    const wrapper = await mountView();
+
+    expect(wrapper.findAll('[role="tab"]')).toHaveLength(0);
+    expect(wrapper.findAll('[data-slot="card"]')).toHaveLength(2);
+  });
+
+  it("puts the roles in a tab next to the users on a server with roles", async () => {
+    apiMock.supportsRoles = true;
+
+    const wrapper = await mountView();
+
+    expect(wrapper.findAll('[role="tab"]').map((tab) => tab.text())).toEqual([
+      "auth.users",
+      "auth.roles",
+    ]);
   });
 });

@@ -9,13 +9,21 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
   apiMock: { players: {}, updateUser: vi.fn() },
   storeMock: {
     currentUser: { user_id: "admin-1" },
-    // the builtin roles, as the server lists them
-    roles: ["admin", "user", "guest", "service"].map((role_id) => ({
-      role_id,
-      name: role_id,
-      scopes: [],
-      builtin: true,
-    })),
+    // the roles as the server lists them: the builtin ones and a custom one
+    roles: [
+      ...["admin", "user", "guest", "service"].map((role_id) => ({
+        role_id,
+        name: role_id,
+        scopes: [],
+        builtin: true,
+      })),
+      {
+        role_id: "household_member",
+        name: "Household member",
+        scopes: [],
+        builtin: false,
+      },
+    ],
   },
 }));
 
@@ -110,5 +118,15 @@ describe("EditUserDialog", () => {
       { displayName: "Home Assistant" },
       { suppressGlobalError: true },
     );
+  });
+
+  it("shows a custom role by the name the server lists for it", async () => {
+    const wrapper = mountDialog(
+      user({ username: "sam", role: "household_member" }),
+    );
+    // the select shows the chosen option's label once its items are registered
+    await flushPromises();
+
+    expect(wrapper.get("#role").text()).toContain("Household member");
   });
 });
