@@ -6,6 +6,7 @@ import {
   ProviderType,
   type User,
   UserRole,
+  type UserSummary,
 } from "@/plugins/api/interfaces";
 
 const PROVIDER_SHARING_TRANSLATION_KEYS: Record<ProviderSharing, string> = {
@@ -68,15 +69,13 @@ export const ownerCandidates = (users: User[]) =>
   );
 
 /**
- * The users a music source can be shared with: every enabled member but its
- * owner. A guest only ever gets the sources shared with everyone.
+ * The users a music source can be shared with, as the server lists them to a
+ * member: every enabled user but the guests, who only ever get the sources
+ * shared with everyone.
  */
-export const shareCandidates = (users: User[], owner: string | null) =>
-  users.filter(
-    (user) =>
-      user.enabled && user.role !== UserRole.GUEST && user.user_id !== owner,
-  );
+export const shareCandidates = (users: User[]) =>
+  users.filter((user) => user.enabled && user.role !== UserRole.GUEST);
 
 /** The name a user is shown by. */
-export const userDisplayName = (user: User) =>
+export const userDisplayName = (user: UserSummary) =>
   user.display_name || user.username;

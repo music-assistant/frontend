@@ -8,11 +8,12 @@ import {
   ProviderStatus,
   ProviderType,
   type User,
+  UserRole,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
 import { providerConfig } from "../fixtures/providerConfig";
-import { user } from "../fixtures/user";
+import { user, userSummary } from "../fixtures/user";
 
 const {
   apiMock,
@@ -27,6 +28,7 @@ const {
     getAllUsers: vi.fn<MusicAssistantApi["getAllUsers"]>(),
     getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
+    getShareCandidates: vi.fn<MusicAssistantApi["getShareCandidates"]>(),
     providerManifests: {
       spotify: {
         allow_disable: true,
@@ -44,6 +46,7 @@ const {
     saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
     startSync: vi.fn<MusicAssistantApi["startSync"]>(),
     subscribe: vi.fn(),
+    supportsShareCandidates: true,
   },
   authMock: {
     isAdmin: vi.fn<() => boolean>(),
@@ -72,6 +75,16 @@ const owner = user({
 });
 
 const member = user({ user_id: "user-sam", username: "sam" });
+
+// the share candidates the server lists: every enabled member, the owner included
+const shareCandidates = [
+  userSummary({
+    display_name: "Marcel",
+    user_id: "user-marcel",
+    username: "marcel",
+  }),
+  userSummary({ user_id: "user-sam", username: "sam" }),
+];
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -128,13 +141,18 @@ vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
 // rendered in place of the real dialog, exposing what it was handed
 const AccessDialogStub = vi.hoisted(() => ({
   name: "ProviderAccessDialog",
-  props: ["canChangeOwner", "config", "open", "users"],
+  props: ["canChangeOwner", "config", "open", "shareCandidates", "users"],
   template: `
     <div
       data-testid="access-dialog"
       :data-open="String(open)"
       :data-config="config?.instance_id ?? ''"
       :data-users="users === null ? 'none' : String(users.length)"
+      :data-share-candidates="
+        shareCandidates === null
+          ? 'none'
+          : shareCandidates.map((candidate) => candidate.user_id).join(',')
+      "
       :data-can-change-owner="String(canChangeOwner)"
     />
   `,
@@ -176,11 +194,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([owner, member]);
   apiMock.getProvider.mockReturnValue(undefined);
+  apiMock.getShareCandidates.mockResolvedValue(shareCandidates);
   apiMock.providerManifests.spotify.builtin = false;
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
+  apiMock.supportsShareCandidates = true;
   authMock.isAdmin.mockReturnValue(true);
   routeMock.query.types = "music";
   storeMock.currentUser = owner;
@@ -385,7 +405,28 @@ describe("Providers", () => {
     expect(dialog.attributes("data-open")).toBe("true");
     expect(dialog.attributes("data-config")).toBe("spotify--test");
     expect(dialog.attributes("data-users")).toBe("2");
+    expect(dialog.attributes("data-share-candidates")).toBe(
+      "user-marcel,user-sam",
+    );
     expect(dialog.attributes("data-can-change-owner")).toBe("true");
+  });
+
+  it("picks the members to share with from its user list", async () => {
+    apiMock.getAllUsers.mockResolvedValue([
+      owner,
+      member,
+      user({ user_id: "user-guest", username: "guest", role: UserRole.GUEST }),
+      user({ user_id: "user-off", username: "off", enabled: false }),
+    ]);
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(
+      wrapper
+        .get('[data-testid="access-dialog"]')
+        .attributes("data-share-candidates"),
+    ).toBe("user-marcel,user-sam");
+    expect(apiMock.getShareCandidates).not.toHaveBeenCalled();
   });
 
   it("hides the access action for a builtin provider", async () => {
@@ -509,7 +550,7 @@ describe("Providers for a member", () => {
     ).not.toContain("settings.source_access.action");
   });
 
-  it("opens the sharing dialog without a user list", async () => {
+  it("opens the sharing dialog with the members it may share with", async () => {
     const wrapper = await mountWithConfigs([ownSource()]);
 
     const menuItems = await openMenu(wrapper);
@@ -525,6 +566,9 @@ describe("Providers for a member", () => {
     expect(dialog.attributes("data-open")).toBe("true");
     expect(dialog.attributes("data-config")).toBe("spotify--own");
     expect(dialog.attributes("data-users")).toBe("none");
+    expect(dialog.attributes("data-share-candidates")).toBe(
+      "user-marcel,user-sam",
+    );
     expect(dialog.attributes("data-can-change-owner")).toBe("false");
   });
 
@@ -532,6 +576,32 @@ describe("Providers for a member", () => {
     await mountWithConfigs([ownSource()]);
 
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+  });
+
+  it("does not ask an older server who it may share with", async () => {
+    apiMock.supportsShareCandidates = false;
+
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    expect(apiMock.getShareCandidates).not.toHaveBeenCalled();
+    expect(
+      wrapper
+        .get('[data-testid="access-dialog"]')
+        .attributes("data-share-candidates"),
+    ).toBe("none");
+  });
+
+  it("reports a failing lookup of the members it may share with", async () => {
+    apiMock.getShareCandidates.mockRejectedValue(new Error("refused"));
+
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    expect(toastMock.error).toHaveBeenCalledWith("auth.users_load_failed");
+    expect(
+      wrapper
+        .get('[data-testid="access-dialog"]')
+        .attributes("data-share-candidates"),
+    ).toBe("none");
   });
 
   it("offers only music sources that allow another account", async () => {

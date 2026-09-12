@@ -1770,6 +1770,14 @@ export interface User {
   // Use authManager.isPartyGuest() to check for party sessions.
 }
 
+export interface UserSummary {
+  // The public face of a user account, safe to serve to every member.
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export interface AuthToken {
   token_id: string;
   name: string;
