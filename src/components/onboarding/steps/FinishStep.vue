@@ -52,7 +52,7 @@
             <ItemTitle>{{ $t(`onboarding.steps.${step.id}.title`) }}</ItemTitle>
           </ItemContent>
           <ItemActions>
-            <Badge v-if="step.optional" variant="outline">
+            <Badge v-if="step.optional || step.deferred" variant="outline">
               {{ $t("optional") }}
             </Badge>
           </ItemActions>

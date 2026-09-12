@@ -344,6 +344,7 @@ import {
   canReconfigureProvider,
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
+  providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
 } from "@/helpers/provider_config";
@@ -760,14 +761,11 @@ watch(
 );
 
 const getProviderName = function (config: ProviderConfig) {
-  // Try to get the name from the provider instance first
-  const providerInstance = api.getProvider(config.instance_id);
-  if (providerInstance && providerInstance.name) {
-    return providerInstance.name;
-  }
-  // fallback on configured name or manifest name
-  const manifest = api.providerManifests[config.domain];
-  return config.name || config.default_name || manifest?.name;
+  return providerDisplayName(
+    config,
+    api.getProvider(config.instance_id),
+    api.providerManifests[config.domain],
+  );
 };
 
 const isTextTruncated = function (text: string) {

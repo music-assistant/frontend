@@ -9,9 +9,11 @@ const {
   providerConfigs,
   routerMock,
   routeState,
+  setUserPreferenceMock,
 } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, unknown>,
+    providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<string, { builtin: boolean }>,
     getProviderConfigs: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
@@ -29,6 +31,7 @@ const {
   // replaced with a reactive route by the vue-router mock factory below
   routeState: { route: { query: {} as Record<string, string> }, ready: false },
   routerMock: { push: vi.fn(), replace: vi.fn() },
+  setUserPreferenceMock: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -74,7 +77,7 @@ vi.mock("@/composables/userPreferences", async () => {
     preferenceState.ready = true;
   }
   return {
-    setUserPreference: vi.fn(),
+    setUserPreference: setUserPreferenceMock,
     useUserPreferences: () => ({ getPreference: () => preferenceState.intent }),
   };
 });
@@ -122,6 +125,7 @@ async function reportProvidersUpdated() {
 describe("Onboarding wizard", () => {
   beforeEach(() => {
     apiMock.players = {};
+    apiMock.providers = {};
     apiMock.providerManifests = {};
     providerConfigs.list = [];
     apiMock.getProviderConfigs.mockReset();
@@ -134,6 +138,13 @@ describe("Onboarding wizard", () => {
     routeState.route.query = {};
     routerMock.push.mockReset();
     routerMock.replace.mockReset();
+    setUserPreferenceMock.mockReset();
+    // the real one updates the preference before it ever reaches the server
+    setUserPreferenceMock.mockImplementation(
+      async (key: string, value: string) => {
+        if (key === "onboarding.intent") preferenceState.intent.value = value;
+      },
+    );
   });
 
   it("opens on the first step still to do and puts it in the query", async () => {
@@ -194,6 +205,65 @@ describe("Onboarding wizard", () => {
     );
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
       "onboarding.skip",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("offers to skip the music sources once they are deferred", async () => {
+    preferenceState.intent.value = "phone_apps";
+    routeState.route.query = { step: "music_sources" };
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    // deferred is not optional, but it is not something to hold the wizard up
+    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+      "onboarding.skip",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("answers the intent question with the music hub when it is waved through", async () => {
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // the default answer is persisted, so neither the summary nor the
+    // checklist keeps the question open and a second run starts past it
+    expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+    expect(setUserPreferenceMock).toHaveBeenCalledWith(
+      "onboarding.intent",
+      "music_hub",
+    );
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.music_sources.title",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("leaves an answer the user gave alone", async () => {
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper
+      .find("[data-testid=onboarding-intent-phone_apps]")
+      .trigger("click");
+    await flushPromises();
+
+    // the step moves on through the same path, but the default never lands on
+    // top of the answer
+    expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+    expect(setUserPreferenceMock).toHaveBeenCalledWith(
+      "onboarding.intent",
+      "phone_apps",
+    );
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.players.title",
     );
 
     wrapper.unmount();

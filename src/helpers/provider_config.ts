@@ -1,4 +1,10 @@
-import { ProviderStage, ProviderStatus } from "@/plugins/api/interfaces";
+import {
+  type ProviderConfig,
+  type ProviderInstance,
+  type ProviderManifest,
+  ProviderStage,
+  ProviderStatus,
+} from "@/plugins/api/interfaces";
 
 const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
   [ProviderStatus.LOADED]: "settings.provider_status_loaded",
@@ -87,3 +93,16 @@ export const getProviderSupportIssuesUrl = (domain: string) => {
     `is:issue state:open label:"${label}"`,
   )}`;
 };
+
+/**
+ * The name a provider instance goes by: what the running instance calls itself,
+ * then the name its configuration carries, the default name the server gave it
+ * and finally the name from the manifest. Empty when none of those is known, so
+ * a caller can fall back on the domain or the instance id.
+ */
+export const providerDisplayName = (
+  config: ProviderConfig,
+  instance?: ProviderInstance,
+  manifest?: ProviderManifest,
+): string =>
+  instance?.name || config.name || config.default_name || manifest?.name || "";

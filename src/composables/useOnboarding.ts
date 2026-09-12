@@ -4,12 +4,14 @@ import {
 } from "@/composables/userPreferences";
 import {
   applicableSteps,
+  checklistPendingSteps,
+  checklistSteps,
   pendingSteps,
-  requiredPendingSteps,
   type OnboardingContext,
   type OnboardingIntent,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
+import { providerDisplayName } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
@@ -94,9 +96,11 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
     .map((config) => ({
       instance_id: config.instance_id,
       name:
-        config.name ||
-        api.providerManifests[config.domain]?.name ||
-        config.domain,
+        providerDisplayName(
+          config,
+          api.providers[config.instance_id],
+          api.providerManifests[config.domain],
+        ) || config.domain,
       domain: config.domain,
       needsAttention: config.enabled === false || config.last_error != null,
     }));
@@ -121,21 +125,23 @@ const ctx = computed<OnboardingContext>(() => ({
 
 const steps = computed(() => applicableSteps(ctx.value));
 const pending = computed(() => pendingSteps(ctx.value));
-// the checklist only ever asks for the steps that block finishing
-const requiredPending = computed(() => requiredPendingSteps(ctx.value));
-const hasPending = computed(() => requiredPending.value.length > 0);
+// what the getting started checklist shows, and the steps of it its badge
+// counts: the same list, so the count always matches what the popover lists
+const checklist = computed(() => checklistSteps(ctx.value));
+const checklistPending = computed(() => checklistPendingSteps(ctx.value));
+const hasPending = computed(() => checklistPending.value.length > 0);
 
-// The required steps as they were when the checklist was last dismissed; the
+// The counted steps as they were when the checklist was last dismissed; the
 // checklist stays hidden for the session until a step it did not list shows up.
 const dismissedPending = ref<OnboardingStepId[] | null>(null);
 const dismissed = computed(() => {
   const snapshot = dismissedPending.value;
   if (!snapshot) return false;
-  return requiredPending.value.every((step) => snapshot.includes(step.id));
+  return checklistPending.value.every((step) => snapshot.includes(step.id));
 });
 
 function dismiss(): void {
-  dismissedPending.value = requiredPending.value.map((step) => step.id);
+  dismissedPending.value = checklistPending.value.map((step) => step.id);
 }
 
 async function setIntent(value: OnboardingIntent): Promise<void> {
@@ -198,7 +204,8 @@ export function useOnboarding() {
     ctx,
     steps,
     pending,
-    requiredPending,
+    checklist,
+    checklistPending,
     hasPending,
     dismissed,
     dismiss,

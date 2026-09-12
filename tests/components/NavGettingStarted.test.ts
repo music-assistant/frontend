@@ -170,6 +170,52 @@ describe("NavGettingStarted", () => {
     wrapper.unmount();
   });
 
+  it("lists exactly the steps it counts as still to do", async () => {
+    addProvider("sonos--1", "sonos", ProviderType.PLAYER);
+
+    const wrapper = await mountChecklist();
+
+    // the always optional plugins are neither listed nor counted; the players
+    // are set up, so they are listed with a tick instead
+    expect(
+      wrapper
+        .findAll("[data-testid=getting-started-step]")
+        .map((step) => step.text()),
+    ).toEqual([
+      "onboarding.steps.intent.title",
+      "onboarding.steps.music_sources.title",
+      "onboarding.steps.players.title",
+    ]);
+    expect(
+      wrapper.findAll("[data-testid=getting-started-step] .lucide-circle-icon"),
+    ).toHaveLength(2);
+    expect(wrapper.find("[data-slot=badge]").text()).toBe("2");
+
+    wrapper.unmount();
+  });
+
+  it("keeps asking for a music source that was only deferred", async () => {
+    preferenceState.intent.value = "phone_apps";
+    addProvider("sonos--1", "sonos", ProviderType.PLAYER);
+
+    const wrapper = await mountChecklist();
+
+    // streaming from phone apps puts the music sources last, it does not take
+    // the nudge to add one away
+    expect(
+      wrapper
+        .findAll("[data-testid=getting-started-step]")
+        .map((step) => step.text()),
+    ).toEqual([
+      "onboarding.steps.intent.title",
+      "onboarding.steps.players.title",
+      "onboarding.steps.music_sources.title",
+    ]);
+    expect(wrapper.find("[data-slot=badge]").text()).toBe("1");
+
+    wrapper.unmount();
+  });
+
   it("stops asking once only optional steps are left", async () => {
     preferenceState.intent.value = "music_hub";
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
@@ -177,7 +223,7 @@ describe("NavGettingStarted", () => {
 
     const wrapper = await mountChecklist();
 
-    // the plugins are optional; nothing left blocks finishing
+    // the plugins are optional: nothing left is asked for
     expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
       false,
     );

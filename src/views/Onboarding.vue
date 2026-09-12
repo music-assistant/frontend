@@ -82,7 +82,7 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
-const { ctx, steps, configsLoaded, loadProviderConfigs, finish } =
+const { ctx, steps, configsLoaded, loadProviderConfigs, setIntent, finish } =
   useOnboarding();
 
 const STEP_VIEWS: Record<
@@ -146,9 +146,12 @@ const stepView = computed(() => {
 const showForwardAction = computed(
   () => currentStep.value != null && currentStep.value.kind !== "summary",
 );
+// a step that does not hold the wizard up is skipped rather than finished,
+// whether it is optional by nature or one the answers deferred
 const forwardLabel = computed(() => {
   const step = currentStep.value;
-  if (step?.optional && !step.isDone(ctx.value)) return $t("onboarding.skip");
+  if ((step?.optional || step?.deferred) && !step.isDone(ctx.value))
+    return $t("onboarding.skip");
   return $t("onboarding.next");
 });
 
@@ -163,8 +166,13 @@ const back = function () {
 
 // Forward skips whatever is already set up — the summary never is, so that is
 // where the wizard ends up once nothing is left. Back stays on the running
-// order, so a step that is done can still be revisited.
-const next = function () {
+// order, so a step that is done can still be revisited. Moving on from the
+// question unanswered is an answer of its own: the music hub is what the
+// wizard then runs as, instead of leaving the question to be asked again.
+const next = async function () {
+  if (currentStep.value?.id === "intent" && ctx.value.answers.intent == null) {
+    await setIntent("music_hub");
+  }
   const following = steps.value
     .slice(currentIndex.value + 1)
     .find((step) => !step.isDone(ctx.value));

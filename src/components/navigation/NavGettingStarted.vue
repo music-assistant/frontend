@@ -27,8 +27,8 @@ const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
 const {
   ctx,
-  steps,
-  requiredPending,
+  checklist,
+  checklistPending,
   hasPending,
   dismissed,
   dismiss,
@@ -46,11 +46,6 @@ const visible = computed(
     configsLoaded.value &&
     hasPending.value &&
     !dismissed.value,
-);
-
-// The summary step is the wizard's own ending, not something to tick off.
-const checklist = computed(() =>
-  steps.value.filter((step) => step.kind !== "summary"),
 );
 
 const openStep = function (step: OnboardingStepId) {
@@ -90,12 +85,12 @@ onMounted(() => {
                 <Badge
                   class="ml-auto shrink-0 group-data-[collapsible=icon]:hidden"
                   :aria-label="
-                    t('onboarding.steps_to_go', requiredPending.length, {
-                      named: { count: requiredPending.length },
+                    t('onboarding.steps_to_go', checklistPending.length, {
+                      named: { count: checklistPending.length },
                     })
                   "
                 >
-                  {{ requiredPending.length }}
+                  {{ checklistPending.length }}
                 </Badge>
               </SidebarMenuButton>
             </PopoverTrigger>
@@ -123,12 +118,6 @@ onMounted(() => {
                     />
                     <span class="min-w-0 truncate">
                       {{ t(`onboarding.steps.${step.id}.title`) }}
-                    </span>
-                    <span
-                      v-if="step.optional && !step.isDone(ctx)"
-                      class="text-muted-foreground ml-auto shrink-0 text-xs"
-                    >
-                      {{ t("optional") }}
                     </span>
                   </button>
                 </li>

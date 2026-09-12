@@ -1,10 +1,11 @@
 import {
   ONBOARDING_STEPS,
   applicableSteps,
+  checklistPendingSteps,
+  checklistSteps,
   firstStep,
   orderSteps,
   pendingSteps,
-  requiredPendingSteps,
   type OnboardingContext,
   type OnboardingProvider,
 } from "@/helpers/onboarding";
@@ -71,8 +72,10 @@ describe("onboarding step order", () => {
       "music_sources",
       "finish",
     ]);
-    // deferred, not dropped: it is still offered, just no longer blocking
-    expect(step(ctx, "music_sources").optional).toBe(true);
+    // deferred, not dropped: it is still offered and still asked for, it just
+    // no longer holds the wizard up, which is not the same as being optional
+    expect(step(ctx, "music_sources").deferred).toBe(true);
+    expect(step(ctx, "music_sources").optional).toBeFalsy();
   });
 
   it("changes order and emphasis only, never which steps are available", () => {
@@ -89,6 +92,7 @@ describe("onboarding step order", () => {
       (candidate) => candidate.id === "music_sources",
     );
     expect(registered?.optional).toBeUndefined();
+    expect(registered?.deferred).toBeUndefined();
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([...BASE_ORDER]);
   });
 
@@ -202,25 +206,65 @@ describe("pending onboarding steps", () => {
   });
 });
 
-describe("the pending onboarding steps that block finishing", () => {
-  it("leaves out the optional steps the checklist must not nag about", () => {
-    expect(stepIds(requiredPendingSteps(context()))).toEqual([
+describe("the getting started checklist", () => {
+  it("lists the core steps, done or not, and counts the ones still to do", () => {
+    const ctx = context({
+      answers: { intent: "music_hub" },
+      providers: [provider(ProviderType.PLAYER, "sonos")],
+    });
+
+    // what is listed and what is counted are the same steps, so the badge can
+    // never say something the list does not show
+    expect(stepIds(checklistSteps(ctx))).toEqual([
       "intent",
       "music_sources",
       "players",
     ]);
+    expect(stepIds(checklistPendingSteps(ctx))).toEqual(["music_sources"]);
   });
 
-  it("is empty once only optional steps are left", () => {
+  it.each([undefined, "music_hub", "phone_apps"] as const)(
+    "never lists the always optional plugins, whatever the answer (%s)",
+    (intent) => {
+      const ctx = context({ answers: intent ? { intent } : {} });
+      expect(stepIds(checklistSteps(ctx))).not.toContain("plugins");
+    },
+  );
+
+  it("keeps asking for a music source that was only deferred", () => {
     const ctx = context({
       answers: { intent: "phone_apps" },
       providers: [provider(ProviderType.PLAYER, "sonos")],
     });
 
-    // the music sources are deferred behind the plugins for this answer, so
-    // both of the steps still to do are optional ones
+    // the music sources moved behind the plugins for this answer; the plugins
+    // are the only thing left the checklist stays quiet about
     expect(stepIds(pendingSteps(ctx))).toEqual(["plugins", "music_sources"]);
-    expect(requiredPendingSteps(ctx)).toEqual([]);
+    expect(stepIds(checklistSteps(ctx))).toEqual([
+      "intent",
+      "players",
+      "music_sources",
+    ]);
+    expect(stepIds(checklistPendingSteps(ctx))).toEqual(["music_sources"]);
+  });
+
+  it("is empty once every step it lists is done", () => {
+    const ctx = context({
+      answers: { intent: "phone_apps" },
+      providers: [
+        provider(ProviderType.MUSIC, "spotify"),
+        provider(ProviderType.PLAYER, "sonos"),
+      ],
+    });
+
+    // the plugins are still to do, and still nothing the checklist asks for
+    expect(stepIds(pendingSteps(ctx))).toEqual(["plugins"]);
+    expect(checklistPendingSteps(ctx)).toEqual([]);
+  });
+
+  it("lists nothing for someone who is not an admin", () => {
+    expect(checklistSteps(context({ isAdmin: false }))).toEqual([]);
+    expect(checklistPendingSteps(context({ isAdmin: false }))).toEqual([]);
   });
 });
 

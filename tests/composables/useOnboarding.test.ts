@@ -12,6 +12,8 @@ const {
 } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, unknown>,
+    // the instances that loaded, which name a provider before its config does
+    providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<string, { builtin: boolean; name: string }>,
     getProviderConfigs: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
@@ -109,6 +111,7 @@ let warnSpy: ReturnType<typeof vi.spyOn>;
 describe("useOnboarding", () => {
   beforeEach(() => {
     apiMock.players = {};
+    apiMock.providers = {};
     apiMock.providerManifests = {};
     providerConfigs.list = [];
     apiMock.getProviderConfigs.mockReset();
@@ -270,7 +273,20 @@ describe("useOnboarding", () => {
     expect(ctx.value.providers).toHaveLength(4);
   });
 
-  it("prefers the name the configuration carries", async () => {
+  it("prefers the name the loaded instance goes by", async () => {
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
+    providerConfigs.list[0].name = "The kitchen's Spotify";
+    apiMock.providers["spotify--1"] = { name: "Spotify in the kitchen" };
+
+    const module = await loadModule();
+    await module.useOnboarding().loadProviderConfigs();
+
+    expect(module.configuredProviders(ProviderType.MUSIC)[0].name).toBe(
+      "Spotify in the kitchen",
+    );
+  });
+
+  it("falls back on the name the configuration carries", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
     providerConfigs.list[0].name = "The kitchen's Spotify";
 
@@ -315,29 +331,57 @@ describe("useOnboarding", () => {
     expect(dismissed.value).toBe(false);
   });
 
-  it("counts only the steps that block finishing", async () => {
+  it("keeps asking for a music source that was only deferred", async () => {
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
 
-    const { pending, requiredPending, hasPending } = await loadOnboarding();
+    const { pending, checklist, checklistPending, hasPending } =
+      await loadOnboarding();
     preferenceState.intent.value = "phone_apps";
 
-    // both steps left are optional for someone streaming from phone apps
+    // the plugins are optional and never asked for; the deferred music sources
+    // stay on the checklist, which is the point of deferring them
     expect(pending.value.map((step) => step.id)).toEqual([
       "plugins",
       "music_sources",
     ]);
-    expect(requiredPending.value).toEqual([]);
-    expect(hasPending.value).toBe(false);
+    expect(checklist.value.map((step) => step.id)).toEqual([
+      "intent",
+      "players",
+      "music_sources",
+    ]);
+    expect(checklistPending.value.map((step) => step.id)).toEqual([
+      "music_sources",
+    ]);
+    expect(hasPending.value).toBe(true);
   });
 
-  it("counts a step that does block finishing", async () => {
+  it("counts the steps of its list that are still to do", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
 
-    const { requiredPending, hasPending } = await loadOnboarding();
+    const { checklist, checklistPending, hasPending } = await loadOnboarding();
     preferenceState.intent.value = "music_hub";
 
-    expect(requiredPending.value.map((step) => step.id)).toEqual(["players"]);
+    // the music sources are done, so they are listed but not counted
+    expect(checklist.value.map((step) => step.id)).toEqual([
+      "intent",
+      "music_sources",
+      "players",
+    ]);
+    expect(checklistPending.value.map((step) => step.id)).toEqual(["players"]);
     expect(hasPending.value).toBe(true);
+  });
+
+  it("stops asking once everything it lists is done", async () => {
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
+    addProvider("sonos--1", "sonos", ProviderType.PLAYER);
+
+    const { pending, checklistPending, hasPending } = await loadOnboarding();
+    preferenceState.intent.value = "music_hub";
+
+    // the plugins are still to do, and still nothing to ask about
+    expect(pending.value.map((step) => step.id)).toEqual(["plugins"]);
+    expect(checklistPending.value).toEqual([]);
+    expect(hasPending.value).toBe(false);
   });
 
   it("asks the server to complete onboarding without a global error toast", async () => {
