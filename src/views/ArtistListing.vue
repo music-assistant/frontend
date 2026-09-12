@@ -32,10 +32,7 @@ import {
   loadArtistLibraryTracks,
   loadArtistReleases,
 } from "@/components/artist/artistData";
-import {
-  artistRowDefinition,
-  effectiveArtistRowSource,
-} from "@/components/artist/artistRows";
+import { artistRows } from "@/components/artist/artistRows";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { goBack } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
@@ -117,7 +114,7 @@ const config = computed<ListingConfig | undefined>(() => {
     case "albums":
       return {
         ...listingDefaults(),
-        labelKey: artistRowDefinition("albums").labelKey,
+        labelKey: artistRows.definition("albums").labelKey,
         path: "artistalbums",
         showAlbumTypeFilter: true,
         emptyMessage: $t("artist_no_library_albums"),
@@ -129,7 +126,7 @@ const config = computed<ListingConfig | undefined>(() => {
     case "singles":
       return {
         ...listingDefaults(),
-        labelKey: artistRowDefinition("singles_eps").labelKey,
+        labelKey: artistRows.definition("singles_eps").labelKey,
         path: "artistsingles",
         loadItems: async (params: LoadDataParams) =>
           (await loadReleases("singles_eps", params)).filter((album) =>
@@ -157,7 +154,7 @@ const config = computed<ListingConfig | undefined>(() => {
     case "appears_on":
       return {
         ...listingDefaults(),
-        labelKey: artistRowDefinition("appears_on").labelKey,
+        labelKey: artistRows.definition("appears_on").labelKey,
         path: "artistappearson",
         showFavoritesOnlyFilter: false,
         showProviderFilter: false,
@@ -197,7 +194,8 @@ async function loadReleases(
 ) {
   if (!itemDetails.value) return [];
   const source =
-    params.provider?.[0] ?? effectiveArtistRowSource(rowId, itemDetails.value);
+    params.provider?.[0] ??
+    artistRows.effectiveSource(rowId, itemDetails.value);
   return await loadArtistReleases(itemDetails.value, source);
 }
 
@@ -210,7 +208,7 @@ async function loadAppearsOn(): Promise<MediaItemType[]> {
     loadArtistLibraryTracks(itemDetails.value),
     loadArtistReleases(
       itemDetails.value,
-      effectiveArtistRowSource("appears_on", itemDetails.value),
+      artistRows.effectiveSource("appears_on", itemDetails.value),
     ),
   ]);
   return appearsOnAlbums(

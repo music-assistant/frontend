@@ -1,8 +1,8 @@
 import {
   ARTIST_ROW_SOURCES_PREFERENCE_KEY,
   type ArtistRowId,
-  type ArtistRowSource,
 } from "@/components/artist/artistRows";
+import type { RowSource } from "@/components/details/rowRegistry";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import {
   AlbumType,
@@ -35,12 +35,12 @@ const {
     providers: {} as Record<string, unknown>,
   },
   mockLoadArtistReleases:
-    vi.fn<(artist: Artist, source: ArtistRowSource) => Promise<Album[]>>(),
+    vi.fn<(artist: Artist, source: RowSource) => Promise<Album[]>>(),
   mockLoadArtistLibraryTracks: vi.fn<(artist: Artist) => Promise<Track[]>>(),
   mockLoadArtistTopTracks:
-    vi.fn<(artist: Artist, source: ArtistRowSource) => Promise<Track[]>>(),
+    vi.fn<(artist: Artist, source: RowSource) => Promise<Track[]>>(),
   mockLoadSimilarArtists:
-    vi.fn<(artist: Artist, source: ArtistRowSource) => Promise<Artist[]>>(),
+    vi.fn<(artist: Artist, source: RowSource) => Promise<Artist[]>>(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: mockApi, default: mockApi }));
@@ -93,16 +93,14 @@ async function showArtist(page: RowData, item: Artist) {
 }
 
 /** The user's saved per-row sources, which the editor writes and rows follow. */
-function saveRowSources(
-  sources: Partial<Record<ArtistRowId, ArtistRowSource>>,
-) {
+function saveRowSources(sources: Partial<Record<ArtistRowId, RowSource>>) {
   store.currentUser = user({
     preferences: { [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: sources },
   });
 }
 
 /** The source of every release request that was issued, in order. */
-function releaseSources(): ArtistRowSource[] {
+function releaseSources(): RowSource[] {
   return mockLoadArtistReleases.mock.calls.map(([, source]) => source);
 }
 

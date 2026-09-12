@@ -1,18 +1,14 @@
-import { setUserPreference } from "@/composables/userPreferences";
 import {
-  readRowsConfig,
-  resolveRowsConfig,
-  withRowHidden,
-  withRowsOrder,
-  writeRowsConfig,
-} from "@/helpers/rowsConfig";
+  createRowRegistry,
+  type RowDefinition,
+  type RowSource,
+} from "@/components/details/rowRegistry";
 import { api } from "@/plugins/api";
 import {
   ProviderFeature,
   ProviderType,
   type Artist,
 } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
 
 export type ArtistRowId =
   | "bio"
@@ -26,18 +22,9 @@ export type ArtistRowId =
   | "provider_mappings"
   | "artwork"; // admins only
 
-// "library" = in-library items, "all" = every provider at once, else a provider instance id
-export type ArtistRowSource = "library" | "all" | (string & {});
-
-export interface ArtistRowDefinition {
-  id: ArtistRowId;
-  labelKey: string;
+export interface ArtistRowDefinition extends RowDefinition<ArtistRowId> {
   // "music" = singers, "audiobook" = authors/narrators, "both" = either
   audience: "music" | "audiobook" | "both";
-  // shown only to a role that manages the library, which is the admin role
-  adminOnly?: boolean;
-  // gets a "Source" picker in Edit rows
-  supportsSource?: boolean;
 }
 
 // Default order, shared by both audiences: filtering out the rows of the other
@@ -95,118 +82,22 @@ export function availableArtistRowIds(
   ).map((row) => row.id);
 }
 
-export function artistRowDefinition(id: ArtistRowId): ArtistRowDefinition {
-  return ARTIST_ROWS_BY_ID[id];
-}
-
 /**
- * The user's row order and hidden rows, resolved against the rows available
- * for this artist. Nothing is hidden by default.
+ * The artist page's rows and the user's customization of them.
+ *
+ * A row's sources are the library for a release row and every provider at once
+ * for a row the server aggregates, then each provider able to supply the row;
+ * the first of them is the default. A provider (non-library) artist offers no
+ * choice and always stays on its own provider.
  */
-export function resolveArtistRows(availableIds: ArtistRowId[]): {
-  order: ArtistRowId[];
-  hidden: Set<ArtistRowId>;
-} {
-  const { order, hidden } = resolveRowsConfig(
-    readRowsConfig(ARTIST_ROWS_PREFERENCE_KEY),
-    availableIds,
-  );
-  return {
-    order: order as ArtistRowId[],
-    hidden: hidden as Set<ArtistRowId>,
-  };
-}
-
-/** Hide or unhide a single row on every artist page. */
-export async function setArtistRowHidden(
-  id: ArtistRowId,
-  hidden: boolean,
-): Promise<void> {
-  await writeRowsConfig(
-    ARTIST_ROWS_PREFERENCE_KEY,
-    withRowHidden(readRowsConfig(ARTIST_ROWS_PREFERENCE_KEY), id, hidden),
-  );
-}
-
-/**
- * Reorder the rows available for this artist. The given ids are rearranged
- * within the positions they already occupy in the full saved order, so rows
- * that don't apply to this artist keep their slots.
- */
-export async function setArtistRowsOrder(
-  orderedIds: ArtistRowId[],
-  availableIds: ArtistRowId[],
-): Promise<void> {
-  const cfg = withRowsOrder(
-    readRowsConfig(ARTIST_ROWS_PREFERENCE_KEY),
-    orderedIds,
-    availableIds,
-  );
-  if (!cfg) return;
-  await writeRowsConfig(ARTIST_ROWS_PREFERENCE_KEY, cfg);
-}
-
-/** Clears both preferences (order/visibility and sources). */
-export async function resetArtistRows(): Promise<void> {
-  await writeRowsConfig(ARTIST_ROWS_PREFERENCE_KEY, {});
-  await setUserPreference(ARTIST_ROW_SOURCES_PREFERENCE_KEY, {});
-}
-
-/** The user's saved source for a row, if any. */
-export function getArtistRowSource(
-  id: ArtistRowId,
-): ArtistRowSource | undefined {
-  const source = savedRowSources()[id];
-  return typeof source === "string" ? source : undefined;
-}
-
-export async function setArtistRowSource(
-  id: ArtistRowId,
-  source: ArtistRowSource | undefined,
-): Promise<void> {
-  const sources = { ...savedRowSources() };
-  if (source) {
-    sources[id] = source;
-  } else {
-    delete sources[id];
-  }
-  await setUserPreference(ARTIST_ROW_SOURCES_PREFERENCE_KEY, sources);
-}
-
-/**
- * The sources a row of this artist can be fed from, in the order a picker lists them: the
- * library for a release row and every provider at once for a row the server aggregates, then
- * each provider able to supply the row. Empty for a row without a source picker and for a
- * provider artist, which stays on its own provider.
- */
-export function artistRowSources(
-  id: ArtistRowId,
-  artist: Artist,
-): ArtistRowSource[] {
-  if (!ARTIST_ROWS_BY_ID[id].supportsSource) return [];
-  return rowSourceCandidates(id, artist);
-}
-
-/**
- * The source that actually feeds a row for this artist: the saved one while it is still among
- * the row's sources, otherwise the default. Provider (non-library) artists always resolve to
- * their own provider. The default is every provider at once where that is offered (the rows
- * the server aggregates), else the library.
- */
-export function effectiveArtistRowSource(
-  id: ArtistRowId,
-  artist: Artist,
-): ArtistRowSource {
-  if (artist.provider !== "library") return artist.provider;
-  const sources = rowSourceCandidates(id, artist);
-  const saved = getArtistRowSource(id);
-  if (saved && sources.includes(saved)) return saved;
-  return sources.includes("all") ? "all" : "library";
-}
-
-const ARTIST_ROWS_BY_ID = Object.fromEntries(
-  ARTIST_ROWS.map((row) => [row.id, row]),
-) as Record<ArtistRowId, ArtistRowDefinition>;
+export const artistRows = createRowRegistry<ArtistRowId, Artist>({
+  rows: ARTIST_ROWS,
+  preferenceKey: ARTIST_ROWS_PREFERENCE_KEY,
+  sourcesPreferenceKey: ARTIST_ROW_SOURCES_PREFERENCE_KEY,
+  sourceCandidates: rowSourceCandidates,
+  defaultSource: (_id, artist, candidates) =>
+    artist.provider === "library" ? candidates[0] : artist.provider,
+});
 
 // rows fed by the artist's releases, in or outside the library
 const RELEASE_ROWS: ArtistRowId[] = ["albums", "singles_eps", "appears_on"];
@@ -222,21 +113,10 @@ const ROW_FEATURES: Partial<Record<ArtistRowId, ProviderFeature>> = {
   similar_artists: ProviderFeature.SIMILAR_ARTISTS,
 };
 
-/** The saved `{ [rowId]: source }` object, empty when unset or invalid. */
-function savedRowSources(): Partial<Record<ArtistRowId, ArtistRowSource>> {
-  const pref =
-    store.currentUser?.preferences?.[ARTIST_ROW_SOURCES_PREFERENCE_KEY];
-  if (!pref || typeof pref !== "object") return {};
-  return pref as Partial<Record<ArtistRowId, ArtistRowSource>>;
-}
-
 /** The sources a row of a library artist could be fed from, whether or not it has a picker. */
-function rowSourceCandidates(
-  id: ArtistRowId,
-  artist: Artist,
-): ArtistRowSource[] {
+function rowSourceCandidates(id: ArtistRowId, artist: Artist): RowSource[] {
   if (artist.provider !== "library") return [];
-  const first: ArtistRowSource = RELEASE_ROWS.includes(id) ? "library" : "all";
+  const first: RowSource = RELEASE_ROWS.includes(id) ? "library" : "all";
   return [first, ...rowSourceProviders(id, artist)];
 }
 
