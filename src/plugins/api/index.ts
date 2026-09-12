@@ -71,6 +71,7 @@ import {
   RecommendationFolder,
   RemoteAccessInfo,
   RepeatMode,
+  Scope,
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
@@ -95,6 +96,9 @@ const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
 
 // The config/providers/share_candidates command landed in API schema 72.
 const SHARE_CANDIDATES_SCHEMA_VERSION = 72;
+
+// Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
+const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
 export interface CommandOptions {
   /**
@@ -2737,14 +2741,25 @@ export class MusicAssistantApi {
       return;
     }
 
-    toast.info($t("background_tasks.toast.added"), {
-      action: {
-        label: $t("background_tasks.open"),
-        onClick: () => {
-          void this._openBackgroundTasks();
-        },
-      },
-    });
+    // Imported dynamically for the same reason as the router below: auth.ts
+    // imports this module statically.
+    void import("../auth")
+      // the task list takes system.read
+      .then(({ authManager }) => authManager.hasScope(Scope.SYSTEM_READ))
+      // a chunk gone after a server update only costs the toast its action
+      .catch(() => false)
+      .then((mayOpenTasks) => {
+        toast.info($t("background_tasks.toast.added"), {
+          action: mayOpenTasks
+            ? {
+                label: $t("background_tasks.open"),
+                onClick: () => {
+                  void this._openBackgroundTasks();
+                },
+              }
+            : undefined,
+        });
+      });
   }
 
   private async _openBackgroundTasks(): Promise<void> {
@@ -3069,6 +3084,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       SHARE_CANDIDATES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server lets a role with queues.control play AI Radio stations (schema >= 75). */
+  public get supportsAIRadioPlaybackScopes(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
     );
   }
 

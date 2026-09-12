@@ -8,7 +8,7 @@
           </template>
         </Input>
       </div>
-      <Button @click="showCreateDialog = true">
+      <Button v-if="canManageUsers" @click="showCreateDialog = true">
         <Plus :size="16" />
         {{ $t("auth.create_user") }}
       </Button>
@@ -28,8 +28,10 @@
       <Card
         v-for="user in filteredUsers"
         :key="user.user_id"
-        class="cursor-pointer hover:bg-accent/50 transition-colors"
-        @click="editUser(user)"
+        :class="{
+          'cursor-pointer hover:bg-accent/50 transition-colors': canManageUsers,
+        }"
+        @click="canManageUsers && editUser(user)"
       >
         <CardContent class="px-4 py-0">
           <div class="flex items-center gap-4">
@@ -49,7 +51,7 @@
                     {{ user.username }} • {{ $t(`auth.${user.role}_role`) }}
                   </p>
                 </div>
-                <DropdownMenu>
+                <DropdownMenu v-if="canManageUsers">
                   <DropdownMenuTrigger as-child>
                     <Button
                       variant="ghost"
@@ -188,7 +190,8 @@ import ManageTokensDialog from "@/components/users/ManageTokensDialog.vue";
 import RevokeTokenDialog from "@/components/users/RevokeTokenDialog.vue";
 import { isSystemUser } from "@/helpers/users";
 import { api } from "@/plugins/api";
-import type { AuthToken, User } from "@/plugins/api/interfaces";
+import { Scope, type AuthToken, type User } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 
 const { t } = useI18n();
@@ -207,6 +210,8 @@ const userToModify = ref<User | null>(null);
 const userTokens = ref<AuthToken[]>([]);
 const tokenToRevoke = ref<AuthToken | null>(null);
 const lastOpenedQueryUserId = ref<string | null>(null);
+// reading the users takes users.read, changing them users.manage
+const canManageUsers = computed(() => authManager.hasScope(Scope.USERS_MANAGE));
 
 const filteredUsers = computed(() => {
   if (!searchQuery.value) {
@@ -247,7 +252,7 @@ const openUserFromRouteQuery = async () => {
   if (!user) {
     return;
   }
-  editUser(user);
+  if (canManageUsers.value) editUser(user);
   lastOpenedQueryUserId.value = queryUserId;
   await router.replace({ name: "usersettings", query: {} });
 };

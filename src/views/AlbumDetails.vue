@@ -44,7 +44,7 @@
       v-if="
         itemDetails?.provider == 'library' &&
         itemDetails?.metadata?.images &&
-        authManager.isAdmin()
+        authManager.hasScope(Scope.LIBRARY_MANAGE)
       "
       v-model="itemDetails.metadata.images"
       @update:model-value="UpdateItemInDb"
@@ -67,6 +67,7 @@ import {
   EventMessage,
   EventType,
   MediaItemType,
+  Scope,
   type Album,
 } from "@/plugins/api/interfaces";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";

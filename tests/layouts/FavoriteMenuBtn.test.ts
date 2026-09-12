@@ -5,9 +5,11 @@ import {
   type PlayableMediaItemType,
   type QueueItem,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { queueItem } from "../fixtures/queueItem";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import {
@@ -34,6 +36,15 @@ vi.mock("@/plugins/api", () => {
 });
 
 vi.mock("@/plugins/eventbus", () => ({ eventbus: { emit: vi.fn() } }));
+
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
 
 const addItemToFavorites = vi.mocked(api.addItemToFavorites);
 const removeItemFromFavorites = vi.mocked(api.removeItemFromFavorites);
@@ -138,6 +149,9 @@ enableAutoUnmount(afterEach);
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  vi.mocked(authManager.hasScope).mockImplementation(
+    scopeChecker(BUILTIN_ROLE_SCOPES.user),
+  );
   await setPlaying(track());
 });
 
@@ -158,6 +172,17 @@ describe("FavoriteMenuBtn", () => {
       expect(text).toContain("add_playlist");
     },
   );
+
+  it("is not offered to a role that may not change the library", () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+
+    const wrapper = mountButton();
+
+    expect(wrapper.find("button").exists()).toBe(false);
+    expect(wrapper.text()).not.toContain("favorites_add");
+  });
 
   it("adds the playing item to the favourites", async () => {
     const item = track();

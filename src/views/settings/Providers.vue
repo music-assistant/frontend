@@ -360,6 +360,7 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  Scope,
   type User,
   type UserSummary,
 } from "@/plugins/api/interfaces";
@@ -389,7 +390,9 @@ const viewMode = computed(() => providersViewMode.viewMode.value);
 const MIN_PROVIDERS_FOR_SEARCH = 10;
 
 // an admin manages every source, a member only the music sources it owns
-const managesAllSources = computed(() => authManager.isAdmin());
+const managesAllSources = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 const currentType = computed(() =>
   managesAllSources.value

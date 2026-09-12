@@ -1,8 +1,8 @@
 <template>
   <InfoHeader :item="itemDetails" :sort-by="listingRef?.sortBy">
-    <template v-if="smartRules || canShare" #append-actions>
+    <template v-if="(smartRules && canEditLibrary) || canShare" #append-actions>
       <Settings2
-        v-if="smartRules"
+        v-if="smartRules && canEditLibrary"
         :size="22"
         class="cursor-pointer"
         :title="$t('smart_playlist.edit_rules')"
@@ -128,10 +128,15 @@ const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
 const smartRules = ref<SmartPlaylistRules | null>(null);
 const showEditDialog = ref(false);
+// editing the rules of a smart playlist changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
 const canShare = computed(
   () =>
+    canEditLibrary.value &&
     itemDetails.value !== undefined &&
     canSharePlaylist(
       itemDetails.value,

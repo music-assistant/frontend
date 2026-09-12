@@ -61,7 +61,12 @@ import {
   resetMediaSession,
 } from "@/helpers/mediaSession";
 import { api, ConnectionState } from "@/plugins/api";
-import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
+import {
+  CoreState,
+  EventType,
+  ProviderType,
+  Scope,
+} from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
@@ -259,6 +264,8 @@ const handleLocalConnect = async (serverAddress: string) => {
 };
 
 let initializationCompleted = false;
+// the user's role and its sorted scopes at the last completed initialization
+let initializedAccess: string | undefined;
 
 const refreshPluginEnabledState = async (domain: string) => {
   try {
@@ -365,6 +372,17 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
   // the scopes the role of the user grants, for the parts of the ui gated on one
   store.roleScopes = await api.getRoleScopes();
+  // sharing tells a guest from a member by the role itself, so the role counts too
+  const userAccess = [
+    userInfo.role,
+    ...[...(store.roleScopes[userInfo.role] ?? [])].sort(),
+  ].join(" ");
+  if (initializedAccess !== undefined && userAccess !== initializedAccess) {
+    // Screens read what the role allows once, when they open, so a reconnect
+    // that brings another role or other scopes starts the app afresh.
+    window.location.reload();
+    return;
+  }
 
   const isGuestAccessSession = authManager.isGuestAccessSession();
   const isDashboardViewer = authManager.isDashboardViewer();
@@ -410,7 +428,8 @@ const completeInitialization = async () => {
 
   if (
     (onboardRequested || serverInfo.onboard_done === false) &&
-    userInfo.role === "admin"
+    // the wizard sets up every kind of provider
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {
     router.push({ name: "onboarding" });
   } else if (isGuestAccessSession) {
@@ -425,6 +444,7 @@ const completeInitialization = async () => {
   // from the URL hash. The router config already redirects "/" to "/discover"
   api.state.value = ConnectionState.INITIALIZED;
   initializationCompleted = true;
+  initializedAccess = userAccess;
   await initializeWebPlayerModeSync();
 
   // Initialize companion app integration

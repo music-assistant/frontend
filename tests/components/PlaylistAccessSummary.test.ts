@@ -2,6 +2,7 @@ import PlaylistAccessSummary from "@/components/PlaylistAccessSummary.vue";
 import {
   type PlaylistAccess,
   ProviderSharing,
+  type Scope,
   type User,
   type UserSummary,
 } from "@/plugins/api/interfaces";
@@ -9,6 +10,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
 import { providerMapping } from "../fixtures/providerMapping";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const { apiMock, authMock, storeMock } = vi.hoisted(() => ({
@@ -16,7 +18,7 @@ const { apiMock, authMock, storeMock } = vi.hoisted(() => ({
     getShareCandidates: vi.fn(),
   },
   authMock: {
-    hasScope: vi.fn<() => boolean>(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
   },
   storeMock: {
     currentUser: undefined as User | undefined,
@@ -60,7 +62,8 @@ const mountSummary = async (item: PlaylistAccess | null) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  authMock.hasScope.mockReturnValue(false);
+  // a member, who does not manage the library
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
   storeMock.currentUser = user({ user_id: "me" });
   apiMock.getShareCandidates.mockResolvedValue(members);
 });
@@ -85,7 +88,9 @@ describe("PlaylistAccessSummary", () => {
   });
 
   it("names another owner to a library manager", async () => {
-    authMock.hasScope.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     const wrapper = await mountSummary(
       access({
         owner: "other",

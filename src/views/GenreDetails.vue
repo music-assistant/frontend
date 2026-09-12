@@ -165,7 +165,7 @@
     </template>
 
     <GenreAliasManager
-      v-if="itemDetails && isAdmin"
+      v-if="itemDetails && canManageLibrary"
       :genre="itemDetails"
       :existing-genre-names="existingGenreNames"
       @reload="loadItemDetails"
@@ -192,6 +192,7 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -228,7 +229,9 @@ const existingGenreNames = ref<Set<string>>(new Set());
 const { t } = useI18n();
 const router = useRouter();
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
 
 type GenreViewMode = "discovery" | "list" | "panel" | "panel_compact";
 

@@ -7,11 +7,13 @@ import {
   ProviderStatus,
   ProviderType,
   type ProviderConfig,
+  type Scope,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import EditProvider from "@/views/settings/EditProvider.vue";
 import { providerConfig } from "../fixtures/providerConfig";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const {
@@ -46,7 +48,7 @@ const {
     subscribe: vi.fn(),
   },
   authMock: {
-    isAdmin: vi.fn(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
   },
   eventbusMock: {
     emit: vi.fn(),
@@ -140,7 +142,7 @@ vi.mock("vue-router", async (importOriginal) => {
 beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
-  authMock.isAdmin.mockReturnValue(true);
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
   apiMock.providerManifests.spotify.documentation =
@@ -980,7 +982,9 @@ describe("EditProvider", () => {
   });
 
   it("sends a member back to the music sources page after saving", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
     store.currentUser = user({ user_id: "member-id" });
 
     await mountSavedProvider({
@@ -999,7 +1003,9 @@ describe("EditProvider", () => {
   });
 
   it("sends a member away from a source it does not own", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
     store.currentUser = user({ user_id: "member-id" });
     apiMock.getProviderConfig.mockResolvedValue({
       ...spotifyConfig(ProviderStatus.LOADED),
@@ -1028,7 +1034,9 @@ describe("EditProvider", () => {
   });
 
   it("lets a member open a source it owns", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
     store.currentUser = user({ user_id: "member-id" });
     apiMock.getProviderConfig.mockResolvedValue({
       ...spotifyConfig(ProviderStatus.LOADED),

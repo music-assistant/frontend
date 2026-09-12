@@ -1,7 +1,7 @@
 <template>
   <!-- reka owns the open state; mirroring it here keeps the trigger's hover
        suppression in step with it -->
-  <DropdownMenu @update:open="menuOpen = $event">
+  <DropdownMenu v-if="canEditLibrary" @update:open="menuOpen = $event">
     <DropdownMenuTrigger as-child>
       <Button
         variant="ghost"
@@ -42,8 +42,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCurrentItemFavorite } from "@/composables/useCurrentItemFavorite";
 import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
+import { Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { Heart, PlusCircle } from "@lucide/vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 export interface Props {
   /** glyph size in px; the button box comes from the call site */
@@ -56,6 +58,10 @@ withDefaults(defineProps<Props>(), {
 
 const { currentItem, isFavorite, toggleFavorite, addToPlaylist } =
   useCurrentItemFavorite();
+// favouring and adding to a playlist both change the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 
 const menuOpen = ref(false);
 const { suppressHover, onPointerEnter } = usePopoutTriggerHover(

@@ -1,5 +1,9 @@
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
-import { ProviderType, type ProviderConfig } from "@/plugins/api/interfaces";
+import {
+  ProviderType,
+  type ProviderConfig,
+  type Scope,
+} from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -59,11 +63,17 @@ vi.mock("@/plugins/api", async () => {
 
 vi.mock("@/plugins/auth", async () => {
   const { ref } = await import("vue");
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
   const isAdmin = ref(false);
   mockAdminState.current = isAdmin;
   return {
     authManager: {
-      isAdmin: () => isAdmin.value,
+      // a member until a test hands out the admin role
+      hasScope: (scope: Scope) =>
+        scopeChecker(
+          isAdmin.value ? BUILTIN_ROLE_SCOPES.admin : BUILTIN_ROLE_SCOPES.user,
+        )(scope),
     },
   };
 });
