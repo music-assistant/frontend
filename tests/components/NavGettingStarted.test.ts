@@ -12,7 +12,7 @@ const { apiMock, authMock, preferenceState, providerConfigs, routerMock } =
       sendCommand: vi.fn(),
       serverInfo: { value: { onboard_done: false } },
     },
-    authMock: { isAdmin: vi.fn(() => true) },
+    authMock: { hasScope: vi.fn(() => true) },
     // replaced with a real ref by the userPreferences mock factory below
     preferenceState: {
       intent: { value: undefined } as { value?: string },
@@ -114,7 +114,7 @@ describe("NavGettingStarted", () => {
       ...providerConfigs.list,
     ]);
     apiMock.subscribe.mockClear();
-    authMock.isAdmin.mockReturnValue(true);
+    authMock.hasScope.mockReturnValue(true);
     preferenceState.intent.value = undefined;
     routerMock.push.mockReset();
   });
@@ -133,7 +133,7 @@ describe("NavGettingStarted", () => {
   });
 
   it("stays away from anyone who is not an admin", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockReturnValue(false);
 
     const wrapper = await mountChecklist();
 

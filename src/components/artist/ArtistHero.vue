@@ -15,7 +15,7 @@
     >
       <template #append>
         <button
-          v-if="item"
+          v-if="item && canEditLibrary"
           type="button"
           class="artist-hero__fav"
           :class="{ 'artist-hero__fav--on': item.favorite }"
@@ -132,9 +132,11 @@ import {
   ArtistType,
   ImageType,
   MediaType,
+  Scope,
   type Artist,
   type Genre,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -215,6 +217,10 @@ const artistKind = computed(() => {
 
 const favoriteButtonLabel = computed(() =>
   props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
+);
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
 );
 
 const playButtonText = computed(() =>

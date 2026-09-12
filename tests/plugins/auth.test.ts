@@ -279,6 +279,20 @@ describe("AuthManager scopes", () => {
 
     expect(new AuthManager().hasScope(Scope.LIBRARY_READ)).toBe(false);
   });
+
+  it("counts a role granting every scope as admin", () => {
+    store.currentUser = user({ role: UserRole.ADMIN });
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().isAdmin()).toBe(true);
+  });
+
+  it("tells an admin by the scopes of its role, not by the role's name", () => {
+    store.currentUser = user({ role: UserRole.ADMIN });
+    store.roleScopes = { admin: [Scope.USERS_MANAGE] };
+
+    expect(new AuthManager().isAdmin()).toBe(false);
+  });
 });
 
 function createToken(jti: string, username: string): string {

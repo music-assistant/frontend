@@ -1,6 +1,7 @@
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { ConnectionState } from "@/plugins/api";
+import { Scope } from "@/plugins/api/interfaces";
 import { routes } from "@/plugins/router";
 import {
   NavigationFailureType,
@@ -15,12 +16,17 @@ import {
 } from "vue-router";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  BUILTIN_ROLE_SCOPES,
+  OWN_SOURCES_ROLE_SCOPES,
+  scopeChecker,
+} from "../fixtures/scopes";
 
 const mocks = vi.hoisted(() => ({
   afterEachHooks: [] as NavigationHookAfter[],
   apiState: { value: "initialized" },
   globalGuards: [] as NavigationGuardWithThis<undefined>[],
-  hasScope: vi.fn(() => false),
+  hasScope: vi.fn<(scope: Scope) => boolean>(() => false),
   isDashboardViewer: vi.fn(() => false),
   isGuestAccessSession: vi.fn(() => false),
   router: undefined as Router | undefined,
@@ -383,8 +389,9 @@ describe("global navigation guard", () => {
     expect(mocks.store.frameless).toBe(true);
   });
 
-  it("redirects a non-admin away from the system settings", async () => {
+  it("redirects a member away from the system settings", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
     await expect(
       invokeGuard(globalGuard, resolveRoute("/settings/system")),
@@ -397,13 +404,32 @@ describe("global navigation guard", () => {
     ).resolves.toEqual({ name: "discover" });
   });
 
-  it("redirects a non-admin when a parent route carries the requirement", async () => {
+  it("redirects a member when a parent route carries the requirement", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
     const to = resolveRoute("/settings/frontend");
     // The requirement counts on every matched record, not just the leaf the
     // user opened, so mark the outermost one.
     to.matched = to.matched.map((record, index) =>
-      index === 0 ? { ...record, meta: { requiresAdmin: true } } : record,
+      index === 0
+        ? { ...record, meta: { requiresScope: Scope.CONFIG_CORE_WRITE } }
+        : record,
+    );
+
+    await expect(invokeGuard(globalGuard, to)).resolves.toEqual({
+      name: "discover",
+    });
+  });
+
+  it("checks the scope of every matched route, not just the first", async () => {
+    mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    // the outermost record asks a scope members hold, the leaf one they lack
+    const to = resolveRoute("/settings/system");
+    to.matched = to.matched.map((record, index) =>
+      index === 0
+        ? { ...record, meta: { requiresScope: Scope.LIBRARY_READ } }
+        : record,
     );
 
     await expect(invokeGuard(globalGuard, to)).resolves.toEqual({
@@ -413,14 +439,16 @@ describe("global navigation guard", () => {
 
   it("lets an admin into the system settings", async () => {
     mocks.store.currentUser = { role: "admin", username: "owner" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
 
     await expect(
       invokeGuard(globalGuard, resolveRoute("/settings/system")),
     ).resolves.toBeUndefined();
   });
 
-  it("lets a non-admin open the player options", async () => {
+  it("lets a member open the player options", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
     await expect(
       invokeGuard(
@@ -491,12 +519,13 @@ describe("global navigation guard", () => {
     // The user lands with the connection: a guard that read it too early would
     // have redirected already.
     mocks.store.currentUser = { role: "admin", username: "owner" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     mocks.apiState.value = ConnectionState.INITIALIZED;
 
     await expect(pending.result).resolves.toBeUndefined();
   });
 
-  it("does not wait for the server connection on routes without an admin requirement", async () => {
+  it("does not wait for the server connection on routes without a scope requirement", async () => {
     vi.useFakeTimers();
     mocks.apiState.value = ConnectionState.AUTHENTICATED;
     const pending = trackGuard(
@@ -508,6 +537,59 @@ describe("global navigation guard", () => {
     expect(pending.isSettled()).toBe(true);
     await expect(pending.result).resolves.toBeUndefined();
   });
+});
+
+describe("scope-gated routes", () => {
+  // the builtin roles, and a custom role that manages its own music sources
+  // on top of the guest scopes
+  const ROLE_SCOPES = {
+    ...BUILTIN_ROLE_SCOPES,
+    own_sources: OWN_SOURCES_ROLE_SCOPES,
+  };
+  type Role = keyof typeof ROLE_SCOPES;
+
+  const ROUTE_ACCESS: [path: string, roles: Role[]][] = [
+    ["/settings/providers?types=music", ["admin", "user", "own_sources"]],
+    ["/settings/editprovider/spotify--abc", ["admin", "user", "own_sources"]],
+    ["/settings/players", ["admin"]],
+    ["/settings/editplayer/player-1", ["admin"]],
+    ["/settings/editplayer/player-1/dsp", ["admin"]],
+    ["/settings/editqueue/player-1", ["admin"]],
+    ["/settings/addgroup/sonos--abc", ["admin"]],
+    [
+      "/settings/editplayer/player-1/options",
+      ["admin", "user", "guest", "own_sources"],
+    ],
+    ["/settings/system", ["admin"]],
+    ["/settings/editcore/webserver", ["admin"]],
+    ["/settings/audio-analysis", ["admin"]],
+    ["/settings/remote-access", ["admin"]],
+    ["/settings/diagnostics", ["admin"]],
+    ["/settings/genremanagement", ["admin"]],
+    ["/settings/users", ["admin"]],
+    ["/settings/tasks", ["admin", "user"]],
+    ["/music-quiz", ["admin", "user"]],
+    ["/onboarding", ["admin"]],
+    ["/settings/frontend", ["admin", "user", "guest", "own_sources"]],
+  ];
+
+  describe.each(Object.keys(ROLE_SCOPES) as Role[])(
+    "for the %s role",
+    (role) => {
+      beforeEach(() => {
+        mocks.store.currentUser = { role, username: role };
+        mocks.hasScope.mockImplementation(scopeChecker(ROLE_SCOPES[role]));
+      });
+
+      it.each(ROUTE_ACCESS)("gates %s", async (path, roles) => {
+        await expect(
+          invokeGuard(globalGuard, resolveRoute(path)),
+        ).resolves.toEqual(
+          roles.includes(role) ? undefined : { name: "discover" },
+        );
+      });
+    },
+  );
 });
 
 describe("media details back button", () => {

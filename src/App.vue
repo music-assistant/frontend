@@ -61,7 +61,12 @@ import {
   resetMediaSession,
 } from "@/helpers/mediaSession";
 import { api, ConnectionState } from "@/plugins/api";
-import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
+import {
+  CoreState,
+  EventType,
+  ProviderType,
+  Scope,
+} from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
@@ -410,7 +415,8 @@ const completeInitialization = async () => {
 
   if (
     (onboardRequested || serverInfo.onboard_done === false) &&
-    userInfo.role === "admin"
+    // the wizard sets up every kind of provider
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {
     router.push({ name: "onboarding" });
   } else if (isGuestAccessSession) {

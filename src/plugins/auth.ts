@@ -103,10 +103,10 @@ export class AuthManager {
   }
 
   /**
-   * Check if current user is admin
+   * Check if the role of the current user grants every scope, as the admin role does
    */
   isAdmin(): boolean {
-    return store.currentUser?.role === "admin";
+    return this.hasScope(Scope.ALL);
   }
 
   /**

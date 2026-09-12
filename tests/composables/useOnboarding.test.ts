@@ -20,7 +20,7 @@ const {
     sendCommand: vi.fn(),
     serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
   },
-  authMock: { isAdmin: vi.fn(() => true) },
+  authMock: { hasScope: vi.fn(() => true) },
   // replaced with a real ref by the userPreferences mock factory below, so
   // the composable's computed context follows what a test sets here
   preferenceState: { intent: { value: undefined } as { value?: string } },
@@ -122,7 +122,7 @@ describe("useOnboarding", () => {
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
     apiMock.serverInfo.value = { onboard_done: false };
-    authMock.isAdmin.mockReturnValue(true);
+    authMock.hasScope.mockReturnValue(true);
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
     toastMock.error.mockReset();

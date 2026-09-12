@@ -20,7 +20,7 @@ const {
     sendCommand: vi.fn(),
     serverInfo: { value: { onboard_done: false } },
   },
-  authMock: { isAdmin: vi.fn(() => true) },
+  authMock: { hasScope: vi.fn(() => true) },
   // replaced with a real ref by the userPreferences mock factory below
   preferenceState: {
     intent: { value: undefined } as { value?: string },
@@ -133,7 +133,7 @@ describe("Onboarding wizard", () => {
       ...providerConfigs.list,
     ]);
     apiMock.subscribe.mockClear();
-    authMock.isAdmin.mockReturnValue(true);
+    authMock.hasScope.mockReturnValue(true);
     preferenceState.intent.value = undefined;
     routeState.route.query = {};
     routerMock.push.mockReset();

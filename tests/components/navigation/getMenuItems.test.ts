@@ -19,6 +19,18 @@ vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
 }));
 
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
+import { authManager } from "@/plugins/auth";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
+
 import {
   DEFAULT_MENU_ITEMS,
   getMenuItems,
@@ -68,6 +80,9 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     storeMock.libraryAudiobooksCount = 1;
     storeMock.libraryPodcastsCount = 1;
     storeMock.currentUser = { preferences: {} };
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
   });
 
   it("shows everything in default order for users without any customization", () => {
@@ -177,6 +192,15 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     setPreferences({ [MENU_PREFERENCE_KEY]: {} });
 
     expect(getIds()).not.toContain("party");
+    expect(getIds()).not.toContain("music_quiz");
+  });
+
+  it("leaves out the Music Quiz for a role that may not host one", () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    storeMock.enabledPlugins = new Set(["music_quiz"]);
+
     expect(getIds()).not.toContain("music_quiz");
   });
 

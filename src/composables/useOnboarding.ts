@@ -16,6 +16,7 @@ import { api } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
+  Scope,
   type ProviderConfig,
   type ProviderType,
 } from "@/plugins/api/interfaces";
@@ -110,7 +111,8 @@ const { getPreference } = useUserPreferences();
 const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
 
 const ctx = computed<OnboardingContext>(() => ({
-  isAdmin: authManager.isAdmin(),
+  // the admin track sets up every kind of provider
+  isAdmin: authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
   providers: (providerConfigs.value ?? []).map((config) => ({
     type: config.type,
     domain: config.domain,

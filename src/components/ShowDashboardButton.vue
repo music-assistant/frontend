@@ -83,6 +83,7 @@ import {
   type DashboardType,
   type EventMessage,
   EventType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
@@ -115,9 +116,17 @@ const loading = ref(false);
 const dashboards = ref<DashboardDevice[]>([]);
 const sessions = ref<DashboardSession[]>([]);
 
+// casting a dashboard lets a device join, which is what users.invite grants
+const canShowDashboards = computed(() =>
+  authManager.hasScope(Scope.USERS_INVITE),
+);
+
 // A dashboard viewer can't cast a dashboard itself; only show once one is registered.
 const showButton = computed(
-  () => !authManager.isDashboardViewer?.() && dashboards.value.length > 0,
+  () =>
+    canShowDashboards.value &&
+    !authManager.isDashboardViewer?.() &&
+    dashboards.value.length > 0,
 );
 
 // Solid primary pill for the active state, matching the fullscreen player header's autoplay/crossfade toggles.
@@ -144,7 +153,7 @@ const unsubscribers: Array<() => void> = [];
 
 onMounted(async () => {
   await waitForApiInitialization();
-  if (unmounted) return;
+  if (unmounted || !canShowDashboards.value) return;
 
   fetchSessions();
   loadDashboards();

@@ -34,6 +34,7 @@ export interface ArtistRowDefinition {
   labelKey: string;
   // "music" = singers, "audiobook" = authors/narrators, "both" = either
   audience: "music" | "audiobook" | "both";
+  // shown only to a role that manages the library, which is the admin role
   adminOnly?: boolean;
   // gets a "Source" picker in Edit rows
   supportsSource?: boolean;
@@ -84,13 +85,13 @@ export const ARTIST_ROW_SOURCES_PREFERENCE_KEY = "artist.rowSources";
 /** Row ids applicable to the given artist type / user, in default order. */
 export function availableArtistRowIds(
   isAudiobookArtist: boolean,
-  isAdmin: boolean,
+  managesLibrary: boolean,
 ): ArtistRowId[] {
   const audience = isAudiobookArtist ? "audiobook" : "music";
   return ARTIST_ROWS.filter(
     (row) =>
       (row.audience === "both" || row.audience === audience) &&
-      (isAdmin || !row.adminOnly),
+      (managesLibrary || !row.adminOnly),
   ).map((row) => row.id);
 }
 

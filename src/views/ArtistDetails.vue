@@ -183,6 +183,7 @@ import {
   EventType,
   MediaItemType,
   ProviderFeature,
+  Scope,
   type Artist,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -207,9 +208,10 @@ const isAudiobookArtist = computed(() => {
 
 // the rows the page can render for this artist; the editor lists the same set
 const availableRows = computed(() =>
-  availableArtistRowIds(isAudiobookArtist.value, authManager.isAdmin()).filter(
-    rowApplies,
-  ),
+  availableArtistRowIds(
+    isAudiobookArtist.value,
+    authManager.hasScope(Scope.LIBRARY_MANAGE),
+  ).filter(rowApplies),
 );
 
 // reads the user's preferences from the store, so the page follows the editor

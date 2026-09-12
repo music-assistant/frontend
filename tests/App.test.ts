@@ -15,6 +15,7 @@ import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "vue-sonner";
 import { providerConfig } from "./fixtures/providerConfig";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "./fixtures/scopes";
 import { user } from "./fixtures/user";
 import { store } from "@/plugins/store";
 
@@ -81,6 +82,7 @@ const {
     endRejectedGuestSession: vi.fn(),
     getToken: vi.fn(),
     guestSessionKind: vi.fn(),
+    hasScope: vi.fn(),
     isDashboardViewer: vi.fn(),
     isGuestAccessSession: vi.fn(),
     isMusicQuizGuest: vi.fn(),
@@ -476,6 +478,9 @@ describe("App initialization", () => {
           user_id: "admin-id",
           username: "admin",
         }),
+      );
+      authManagerMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
       );
     };
 
