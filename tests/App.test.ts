@@ -131,7 +131,6 @@ const {
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
       isIngressSession: false,
-      isOnboarding: false,
       roleScopes: {} as Record<string, string[]>,
       serverInfo: undefined as unknown,
     },
@@ -359,7 +358,6 @@ describe("App initialization", () => {
     storeMock.activePlayer = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isIngressSession = false;
-    storeMock.isOnboarding = false;
     webPlayerMock.audioSource = "disabled";
     webPlayerMock.browserControlsMode = "active_player";
     webPlayerMock.interacted = false;
@@ -457,6 +455,64 @@ describe("App initialization", () => {
 
     saveDeviceSetting("force_mobile_layout", null);
     expect(storeMock.forceMobileLayout).toBe(false);
+  });
+
+  describe("onboarding", () => {
+    let originalUrl: string;
+
+    beforeEach(() => {
+      originalUrl = window.location.href;
+    });
+
+    // the trigger rewrites the address bar, so hand it back as it was found
+    afterEach(() => {
+      window.history.replaceState({}, "", originalUrl);
+    });
+
+    const asAdmin = () => {
+      apiMock.getCurrentUserInfo.mockResolvedValue(
+        user({
+          role: UserRole.ADMIN,
+          user_id: "admin-id",
+          username: "admin",
+        }),
+      );
+    };
+
+    it("opens the wizard for an admin on a server that has not been set up", async () => {
+      asAdmin();
+      apiMock.serverInfo.value.onboard_done = false;
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+    });
+
+    it("leaves a non-admin alone on a server that has not been set up", async () => {
+      apiMock.serverInfo.value.onboard_done = false;
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("stays out of the way once the server is set up", async () => {
+      asAdmin();
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("opens the wizard when the server's setup flow asks for it, and drops the parameter", async () => {
+      asAdmin();
+      window.history.replaceState({}, "", "/?onboard=true");
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
+      expect(window.location.search).not.toContain("onboard");
+    });
   });
 
   it("keeps full initialization and plugin discovery for regular users", async () => {

@@ -456,6 +456,15 @@ export const routes: RouteRecordRaw[] = [
           ),
       },
       {
+        path: "/onboarding",
+        name: "onboarding",
+        component: () =>
+          import(/* webpackChunkName: "onboarding" */ "@/views/Onboarding.vue"),
+        // requiresAdmin also makes the guard wait for INITIALIZED, so the first
+        // step is never picked from an empty provider map on a hard reload
+        meta: { requiresAdmin: true },
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -786,31 +795,9 @@ router.beforeEach(async (to) => {
   }
 });
 
-router.afterEach((to, from) => {
+router.afterEach((to) => {
   if (store.isIngressSession) {
     notifyHARouteChange(to.fullPath);
-  }
-
-  // Clean up onboard parameter from URL if present
-  if (store.isOnboarding && to.path === "/settings") {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("onboard")) {
-      urlParams.delete("onboard");
-      const cleanUrl =
-        window.location.pathname +
-        (urlParams.toString() ? "?" + urlParams.toString() : "") +
-        window.location.hash;
-      window.history.replaceState({}, "", cleanUrl);
-    }
-  }
-
-  // Reset onboarding flag when navigating away from settings
-  if (
-    store.isOnboarding &&
-    from.path === "/settings" &&
-    to.path !== "/settings"
-  ) {
-    store.isOnboarding = false;
   }
 });
 
