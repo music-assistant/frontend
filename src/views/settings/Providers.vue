@@ -337,6 +337,7 @@ import {
   getProviderSharingTranslationKey,
   hasConfigurableAccess,
   isOwnMusicSource,
+  servesNobody,
   shareCandidates,
   userDisplayName,
 } from "@/helpers/provider_access";
@@ -842,9 +843,11 @@ const canConfigureAccess = function (item: ProviderConfig) {
 };
 
 // the access record in its compact form: "<owner> · <who it is shared with>",
-// without the owner for a member, which only ever sees its own sources
+// without the owner for a member, which only ever sees its own sources; a
+// source nobody can use says so instead
 const accessSummary = function (item: ProviderConfig) {
   const access = effectiveProviderAccess(item.access);
+  if (servesNobody(access)) return $t("settings.source_access.nobody");
   const sharedCount = access.shared_users.length;
   const sharing =
     access.sharing === ProviderSharing.SELECTED

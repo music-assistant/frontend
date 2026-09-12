@@ -671,9 +671,12 @@
                 "private": "Only the owner can use this source.",
                 "selected": "The owner and the members selected below.",
                 "members": "Every signed-in member, guests excluded.",
-                "everyone": "Any user can use this source."
+                "everyone": "Any user can use this source.",
+                "selected_no_owner": "Only the members selected below.",
+                "nobody": "Nobody can use this source until it has an owner or is shared."
             },
-            "updated": "Access updated"
+            "updated": "Access updated",
+            "nobody": "Nobody can use this source"
         },
         "player_providers_description": "Configure player providers for your audio output devices",
         "metadata_providers_description": "Manage metadata providers for artwork and additional info",

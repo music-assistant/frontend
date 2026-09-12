@@ -371,6 +371,36 @@ describe("Providers", () => {
     );
   });
 
+  it("summarizes a music source without an owner shared with selected members", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      access: {
+        owner: null,
+        shared_users: ["user-sam"],
+        sharing: ProviderSharing.SELECTED,
+      },
+    });
+
+    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+      "settings.source_access.household · settings.source_access.shared_with_count",
+    );
+  });
+
+  it.each([
+    ["private", ProviderSharing.PRIVATE],
+    ["shared with nobody selected", ProviderSharing.SELECTED],
+  ])(
+    "says nobody can use a music source without an owner that is %s",
+    async (_label, sharing) => {
+      const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+        access: { owner: null, shared_users: [], sharing },
+      });
+
+      expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+        "settings.source_access.nobody",
+      );
+    },
+  );
+
   it("falls back to the raw id of an owner that is not a known user", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
       access: {
