@@ -827,6 +827,28 @@ export interface SetupFlowStep {
   reason?: string | null;
 }
 
+export enum ProviderSharing {
+  // Who, besides its owner, a music source is shared with.
+  // only the owner
+  PRIVATE = "private",
+  // the owner plus the users listed on the access record
+  SELECTED = "selected",
+  // every signed-in household member, guests excluded
+  MEMBERS = "members",
+  // every user, guests included
+  EVERYONE = "everyone",
+}
+
+export interface ProviderAccess {
+  // Who a music source serves: its owner and the users it is shared with.
+  // owner: user_id of the member the source belongs to; null = a household
+  // source managed by admins, and then sharing alone decides who may use it
+  owner: string | null;
+  sharing: ProviderSharing;
+  // shared_users: only consulted with ProviderSharing.SELECTED
+  shared_users: string[];
+}
+
 export interface ProviderConfig extends Config {
   // Provider(instance) Configuration.
   type: ProviderType;
@@ -840,6 +862,10 @@ export interface ProviderConfig extends Config {
   default_name: string | null;
   // last_error: structured error if the provider could not be setup with this config
   last_error: ProviderError | null;
+  // access: who this instance serves. null = no record: a legacy config, or a
+  // provider type where ownership is meaningless (player/metadata/...), which
+  // is treated as visible to everyone
+  access: ProviderAccess | null;
   // status: load/lifecycle status, derived server-side
   status: ProviderStatus | null;
 }
@@ -1687,9 +1713,39 @@ export interface ButtonProps {
 // Authentication interfaces
 
 export enum UserRole {
+  // The role ids of the builtin user roles; User.role is not limited to these.
   ADMIN = "admin",
   USER = "user",
   GUEST = "guest",
+  // service accounts, such as the Home Assistant integration
+  SERVICE = "service",
+}
+
+export enum Scope {
+  // Fine grained access to (parts of) the API, granted through the user's role.
+  ALL = "*",
+  LIBRARY_READ = "library.read",
+  LIBRARY_WRITE = "library.write",
+  LIBRARY_MANAGE = "library.manage",
+  PLAYERS_READ = "players.read",
+  PLAYERS_CONTROL = "players.control",
+  QUEUES_READ = "queues.read",
+  QUEUES_CONTROL = "queues.control",
+  PROVIDERS_READ = "providers.read",
+  CONFIG_PLAYERS_READ = "config.players.read",
+  CONFIG_PLAYERS_WRITE = "config.players.write",
+  CONFIG_PROVIDERS_READ = "config.providers.read",
+  CONFIG_PROVIDERS_WRITE = "config.providers.write",
+  // add and manage the music sources you own yourself
+  CONFIG_PROVIDERS_OWN = "config.providers.own",
+  CONFIG_CORE_READ = "config.core.read",
+  CONFIG_CORE_WRITE = "config.core.write",
+  USERS_READ = "users.read",
+  USERS_MANAGE = "users.manage",
+  USERS_IMPERSONATE = "users.impersonate",
+  USERS_INVITE = "users.invite",
+  SYSTEM_READ = "system.read",
+  SYSTEM_MANAGE = "system.manage",
 }
 
 export enum AuthProviderType {
@@ -1700,12 +1756,15 @@ export enum AuthProviderType {
 export interface User {
   user_id: string;
   username: string;
-  role: UserRole;
+  // role: the id of the role assigned to the user, one of UserRole for the builtin roles
+  role: string;
   enabled: boolean;
   created_at: string;
   display_name: string | null;
   avatar_url: string | null;
   preferences: Record<string, unknown>;
+  // provider_filter: the music sources the user may use, derived by the server
+  // from the access records of the sources (read-only)
   provider_filter: string[];
   player_filter: string[];
   // Use authManager.isPartyGuest() to check for party sessions.

@@ -60,7 +60,6 @@ export const createUserSchema = (t: (key: string) => string) =>
       confirmPassword: z.string(),
       role: z.enum(UserRole),
       playerFilter: z.array(z.string()),
-      providerFilter: z.array(z.string()),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: t("auth.passwords_must_match"),
@@ -86,7 +85,6 @@ export const editUserSchema = (t: (key: string) => string) =>
       password: z.string().max(128, "Password must be at most 128 characters."),
       confirmPassword: z.string(),
       playerFilter: z.array(z.string()),
-      providerFilter: z.array(z.string()),
     })
     .refine(
       (data) => !data.password || data.password === data.confirmPassword,

@@ -205,25 +205,6 @@
                 </Field>
               </template>
             </form.Field>
-
-            <form.Field name="providerFilter">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel>
-                    {{ $t("auth.provider_filter") }}
-                  </FieldLabel>
-                  <MultiSelect
-                    :model-value="field.state.value"
-                    :options="providerOptions"
-                    :placeholder="$t('auth.select_providers')"
-                    @update:model-value="field.handleChange"
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.provider_filter_hint") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
           </FieldGroup>
         </form>
       </div>
@@ -276,9 +257,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { editUserSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
-import { ProviderType, UserRole } from "@/plugins/api/interfaces";
+import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import MultiSelect from "./MultiSelect.vue";
 
@@ -342,16 +323,6 @@ const playerOptions = computed(() => {
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 
-const providerOptions = computed(() => {
-  return Object.values(api.providers)
-    .filter((provider) => provider.type === ProviderType.MUSIC)
-    .map((provider) => ({
-      label: provider.name,
-      value: provider.instance_id,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
 const isCurrentUser = computed(() => {
   if (!props.user || !store.currentUser) return false;
   return props.user.user_id === store.currentUser.user_id;
@@ -362,11 +333,11 @@ const form = useForm({
     username: props.user?.username || "",
     displayName: props.user?.display_name || "",
     avatarUrl: props.user?.avatar_url || "",
-    role: props.user?.role || ("user" as UserRole),
+    // the picker only offers the builtin roles, which the schema enforces on submit
+    role: (props.user?.role as UserRole) || UserRole.USER,
     password: "",
     confirmPassword: "",
     playerFilter: props.user?.player_filter || [],
-    providerFilter: props.user?.provider_filter || [],
   },
   validators: {
     onSubmit: editUserSchema(t),
@@ -384,7 +355,6 @@ const form = useForm({
         role?: UserRole;
         password?: string;
         player_filter?: string[];
-        provider_filter?: string[];
       } = {};
 
       if (value.username !== props.user.username) {
@@ -411,20 +381,18 @@ const form = useForm({
         updates.player_filter = value.playerFilter;
       }
 
-      const currentProviderFilter = props.user.provider_filter;
-      if (
-        JSON.stringify([...value.providerFilter].sort()) !==
-        JSON.stringify([...currentProviderFilter].sort())
-      ) {
-        updates.provider_filter = value.providerFilter;
-      }
-
-      await api.updateUser(props.user.user_id, updates);
+      await api.updateUser(props.user.user_id, updates, {
+        suppressGlobalError: true,
+      });
       toast.success(t("auth.user_updated"));
       emit("updated");
       emit("update:modelValue", false);
     } catch (error) {
-      toast.error(t("auth.user_update_failed"));
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("auth.user_update_failed"),
+      );
     } finally {
       loading.value = false;
     }
@@ -442,11 +410,10 @@ const resetForm = () => {
     form.setFieldValue("username", props.user.username);
     form.setFieldValue("displayName", props.user.display_name || "");
     form.setFieldValue("avatarUrl", props.user.avatar_url || "");
-    form.setFieldValue("role", props.user.role);
+    form.setFieldValue("role", props.user.role as UserRole);
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
     form.setFieldValue("playerFilter", props.user.player_filter);
-    form.setFieldValue("providerFilter", props.user.provider_filter);
   }
 };
 

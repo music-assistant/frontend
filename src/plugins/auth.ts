@@ -13,7 +13,7 @@ import {
 } from "@/helpers/guest_session";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
 import { api } from "./api";
-import type { User } from "./api/interfaces";
+import { Scope, type User } from "./api/interfaces";
 import { store } from "./store";
 
 const TOKEN_STORAGE_KEY = "ma_access_token";
@@ -115,6 +115,14 @@ export class AuthManager {
    */
   isAdmin(): boolean {
     return store.currentUser?.role === "admin";
+  }
+
+  /**
+   * Check if the role of the current user grants the given scope
+   */
+  hasScope(scope: Scope): boolean {
+    const scopes = store.roleScopes[store.currentUser?.role ?? ""] ?? [];
+    return scopes.includes(Scope.ALL) || scopes.includes(scope);
   }
 
   /**

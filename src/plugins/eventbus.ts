@@ -47,6 +47,9 @@ export type DeleteConfirmationDialogEvent = {
   message: string;
   title?: string;
   confirmLabel?: string;
+  // false for a confirmation that does not destroy anything: the confirm button
+  // is then the regular one instead of the red destructive one
+  destructive?: boolean;
   onConfirm: () => void | Promise<void>;
 };
 

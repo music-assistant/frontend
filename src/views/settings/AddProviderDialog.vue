@@ -110,6 +110,10 @@ import { useRoute } from "vue-router";
 
 const props = defineProps<{
   show?: boolean;
+  // the type to offer, for a caller whose route carries no types query
+  providerType?: ProviderType;
+  // only offer providers that allow more than one account
+  multiInstanceOnly?: boolean;
 }>();
 
 const POPULAR_PROVIDERS = [
@@ -132,7 +136,9 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderStages = ref<string[]>([]);
 
-const activeTypeFilter = computed(() => (route.query.types as string) || null);
+const activeTypeFilter = computed(
+  () => props.providerType ?? ((route.query.types as string) || null),
+);
 
 const dialogTitle = computed(() =>
   match(activeTypeFilter.value)
@@ -143,7 +149,7 @@ const dialogTitle = computed(() =>
     .with(ProviderType.AUDIO_ANALYSIS, () =>
       $t("settings.add_audio_analysis_provider"),
     )
-    .otherwise(() => $t("settings.add_provider")),
+    .otherwise(() => $t("settings.add_new")),
 );
 
 const providerStageOptions = computed(() => [
@@ -172,6 +178,10 @@ const availableProviders = computed(() => {
       x.type !== ("core" as ProviderType) &&
       x.stage !== ProviderStage.DEPRECATED,
   );
+
+  if (props.multiInstanceOnly) {
+    providers = providers.filter((x) => x.multi_instance);
+  }
 
   return providers
     .filter(

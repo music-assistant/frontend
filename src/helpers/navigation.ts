@@ -37,6 +37,7 @@ export function backFromMediaDetails(router: Router): void {
 const LISTING_ROUTES: Record<string, string | undefined> = {
   album: "albums",
   artist: "artists",
+  artistlisting: "artists",
   audiobook: "audiobooks",
   collection: "audiobooks",
   genre: "genres",
