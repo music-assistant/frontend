@@ -14,7 +14,10 @@ interface Props extends PrimitiveProps {
   // A declared prop, so a caller's :disabled="false" can't re-enable a
   // loading button the way a fallthrough attribute would.
   disabled?: boolean;
-  /** Shows a spinner before the content and disables the button. */
+  /**
+   * Disables the button and shows a spinner before its content. With as-child
+   * the child gets the busy state but no spinner.
+   */
   loading?: boolean;
 }
 
@@ -35,7 +38,8 @@ const props = withDefaults(defineProps<Props>(), {
     :disabled="disabled || loading || undefined"
     :aria-busy="loading || undefined"
   >
-    <Spinner v-if="loading" />
+    <!-- as-child hands the button's classes to the first child, so that can't be a spinner -->
+    <Spinner v-if="loading && !asChild" />
     <slot></slot>
   </Primitive>
 </template>
