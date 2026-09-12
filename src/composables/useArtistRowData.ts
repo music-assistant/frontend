@@ -1,6 +1,5 @@
 import {
   appearsOnAlbums,
-  isInLibrary,
   isSingleOrEp,
   loadArtistLibraryTracks,
   loadArtistReleases,
@@ -9,7 +8,6 @@ import {
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
 import {
-  artistRowSources,
   effectiveArtistRowSource,
   type ArtistRowId,
   type ArtistRowSource,
@@ -35,7 +33,6 @@ import { computed, ref, watch, type Ref } from "vue";
 export function useArtistRowData(
   artist: Ref<Artist | undefined>,
   visibleRows: Ref<ArtistRowId[]>,
-  isAudiobookArtist: Ref<boolean>,
 ) {
   // Row data per source: two rows fed by the same source share one request and
   // a source change in the editor loads the new one. Absent = still loading.
@@ -49,11 +46,7 @@ export function useArtistRowData(
 
   const rowSource = function (rowId: ArtistRowId): ArtistRowSource | undefined {
     if (!artist.value) return undefined;
-    return effectiveArtistRowSource(
-      rowId,
-      artist.value,
-      api.supportsArtistDiscography,
-    );
+    return effectiveArtistRowSource(rowId, artist.value);
   };
 
   const albumsSource = computed(() => rowSource("albums"));
@@ -99,16 +92,6 @@ export function useArtistRowData(
       return appearsOnAlbums(libraryTracks.value, artist.value, ownReleases);
     },
   );
-
-  // the full discography is the only list that knows how much of it is missing
-  const releaseCounts = computed(() => {
-    const all = releases.value.get("all");
-    if (!all?.length) return undefined;
-    return {
-      inLibrary: all.filter((album) => isInLibrary(album)).length,
-      total: all.length,
-    };
-  });
 
   // falls back to the newest library tracks when no provider supplies top tracks
   const topTracksItems = computed(() => {
@@ -157,35 +140,11 @@ export function useArtistRowData(
     () => loadRowData(),
   );
 
-  /** Reloads every release list on screen, so a library change made from a shelf shows everywhere. */
-  function refreshReleases() {
-    const shown = artist.value;
-    if (!shown) return;
-    for (const source of releases.value.keys()) {
-      requested.delete(`releases:${source}`);
-      fetchReleases(shown, source);
-    }
-    // the track count and the appearances are derived from the library tracks
-    if (libraryTracks.value) {
-      requested.delete("library_tracks");
-      fetchLibraryTracks(shown);
-    }
-  }
-
   /** Request what the visible rows need, skipping what is already on its way. */
   function loadRowData() {
     const shown = artist.value;
     if (!shown) return;
     const rows = visibleRows.value;
-    // the hero's release chip needs the complete discography, where that is offered
-    if (
-      !isAudiobookArtist.value &&
-      artistRowSources("albums", shown, api.supportsArtistDiscography).includes(
-        "all",
-      )
-    ) {
-      fetchReleases(shown, "all");
-    }
     // the top tracks row shows the latest release from the albums source
     if (rows.includes("albums") || rows.includes("top_tracks")) {
       fetchReleases(shown, albumsSource.value!);
@@ -273,10 +232,8 @@ export function useArtistRowData(
     similarArtistItems,
     latestRelease,
     albumsMeta,
-    releaseCounts,
     topTracksProvider,
     similarArtistsProvider,
-    refreshReleases,
   };
 }
 

@@ -91,9 +91,6 @@ const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
 // Repeat one/all masking the effective autoplay flag landed in API schema 69.
 const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
 
-// The music/artists/discography command landed in API schema 71.
-const ARTIST_DISCOGRAPHY_SCHEMA_VERSION = 71;
-
 export interface CommandOptions {
   /**
    * Skip the global console.error + error toast for an error result. Use for a
@@ -705,25 +702,6 @@ export class MusicAssistantApi {
     provider_filter?: string,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/artist_albums", {
-      item_id,
-      provider_instance_id_or_domain,
-      provider_filter,
-    });
-  }
-
-  /**
-   * Get every release of an artist: the in-library albums merged with the
-   * catalog of each provider the artist is mapped to, deduplicated.
-   *
-   * An album that is in the library is returned as the library item, every
-   * other one keeps its provider. Requires `supportsArtistDiscography`.
-   */
-  public getArtistDiscography(
-    item_id: string,
-    provider_instance_id_or_domain: string,
-    provider_filter?: string,
-  ): Promise<Album[]> {
-    return this.sendCommand("music/artists/discography", {
       item_id,
       provider_instance_id_or_domain,
       provider_filter,
@@ -3042,14 +3020,6 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION
-    );
-  }
-
-  /** Whether the connected server implements the artist discography command (schema >= 71). */
-  public get supportsArtistDiscography(): boolean {
-    return (
-      (this.serverInfo.value?.schema_version ?? 0) >=
-      ARTIST_DISCOGRAPHY_SCHEMA_VERSION
     );
   }
 

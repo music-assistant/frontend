@@ -110,19 +110,12 @@ describe("artistRows", () => {
   });
 
   describe("artistRowSources", () => {
-    it("lists the library, every provider and the capable providers for a release row", () => {
+    it("lists the library and the capable providers for a release row, never every provider at once", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       addProvider("tidal--def", []);
-      const libraryArtist = mappedTo("spotify--abc", "tidal--def");
-      expect(artistRowSources("albums", libraryArtist, true)).toEqual([
-        "library",
-        "all",
-        "spotify--abc",
-      ]);
-      expect(artistRowSources("albums", libraryArtist, false)).toEqual([
-        "library",
-        "spotify--abc",
-      ]);
+      expect(
+        artistRowSources("albums", mappedTo("spotify--abc", "tidal--def")),
+      ).toEqual(["library", "spotify--abc"]);
     });
 
     it("adds capable metadata providers to the aggregated rows, without the library", () => {
@@ -133,17 +126,17 @@ describe("artistRows", () => {
         ProviderType.METADATA,
       );
       expect(
-        artistRowSources("similar_artists", mappedTo("spotify--abc"), false),
+        artistRowSources("similar_artists", mappedTo("spotify--abc")),
       ).toEqual(["all", "lastfm--ghi", "spotify--abc"]);
     });
 
     it("offers nothing for a provider artist or a row without a picker", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       const providerArtist = artist({ provider: "spotify--abc" });
-      expect(artistRowSources("albums", providerArtist, true)).toEqual([]);
-      expect(
-        artistRowSources("appears_on", mappedTo("spotify--abc"), true),
-      ).toEqual([]);
+      expect(artistRowSources("albums", providerArtist)).toEqual([]);
+      expect(artistRowSources("appears_on", mappedTo("spotify--abc"))).toEqual(
+        [],
+      );
     });
   });
 
@@ -265,23 +258,17 @@ describe("artistRows", () => {
   });
 
   describe("effectiveArtistRowSource", () => {
-    it("defaults releases to every provider only when discography is supported", () => {
+    it("defaults the release rows to the library", () => {
       const libraryArtist = artist();
-      expect(effectiveArtistRowSource("albums", libraryArtist, true)).toBe(
-        "all",
+      expect(effectiveArtistRowSource("albums", libraryArtist)).toBe("library");
+      expect(effectiveArtistRowSource("singles_eps", libraryArtist)).toBe(
+        "library",
       );
-      expect(
-        effectiveArtistRowSource("singles_eps", libraryArtist, false),
-      ).toBe("library");
     });
 
     it("defaults the server-aggregated rows to every provider", () => {
-      expect(effectiveArtistRowSource("top_tracks", artist(), false)).toBe(
-        "all",
-      );
-      expect(effectiveArtistRowSource("similar_artists", artist(), false)).toBe(
-        "all",
-      );
+      expect(effectiveArtistRowSource("top_tracks", artist())).toBe("all");
+      expect(effectiveArtistRowSource("similar_artists", artist())).toBe("all");
     });
 
     it("uses the saved source when a mapped provider can supply the row", () => {
@@ -289,9 +276,9 @@ describe("artistRows", () => {
         [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { albums: "spotify--abc" },
       });
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
-      expect(
-        effectiveArtistRowSource("albums", mappedTo("spotify--abc"), true),
-      ).toBe("spotify--abc");
+      expect(effectiveArtistRowSource("albums", mappedTo("spotify--abc"))).toBe(
+        "spotify--abc",
+      );
     });
 
     it("falls back to the default when the saved provider lacks the row's feature", () => {
@@ -300,7 +287,7 @@ describe("artistRows", () => {
       });
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       expect(
-        effectiveArtistRowSource("top_tracks", mappedTo("spotify--abc"), true),
+        effectiveArtistRowSource("top_tracks", mappedTo("spotify--abc")),
       ).toBe("all");
     });
 
@@ -308,24 +295,20 @@ describe("artistRows", () => {
       setPreferences({
         [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { albums: "spotify--gone" },
       });
-      expect(
-        effectiveArtistRowSource("albums", mappedTo("spotify--abc"), true),
-      ).toBe("all");
+      expect(effectiveArtistRowSource("albums", mappedTo("spotify--abc"))).toBe(
+        "library",
+      );
     });
 
-    it("ignores a saved 'all' for release rows without discography support", () => {
+    it("ignores an 'all' saved for a release row while the discography existed", () => {
       setPreferences({
         [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: {
           albums: "all",
           top_tracks: "all",
         },
       });
-      expect(effectiveArtistRowSource("albums", artist(), false)).toBe(
-        "library",
-      );
-      expect(effectiveArtistRowSource("top_tracks", artist(), false)).toBe(
-        "all",
-      );
+      expect(effectiveArtistRowSource("albums", artist())).toBe("library");
+      expect(effectiveArtistRowSource("top_tracks", artist())).toBe("all");
     });
 
     it("keeps a provider artist on its own provider", () => {
@@ -336,7 +319,7 @@ describe("artistRows", () => {
         provider: "spotify--abc",
         artist_type: ArtistType.SINGER,
       });
-      expect(effectiveArtistRowSource("albums", providerArtist, true)).toBe(
+      expect(effectiveArtistRowSource("albums", providerArtist)).toBe(
         "spotify--abc",
       );
     });

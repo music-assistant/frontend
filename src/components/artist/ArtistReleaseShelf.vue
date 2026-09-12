@@ -34,18 +34,6 @@
           <span v-if="item.year" class="artist-shelf__year">{{
             item.year
           }}</span>
-          <button
-            v-if="showAddPill(item)"
-            type="button"
-            class="artist-shelf__add"
-            :disabled="pendingUris.has(item.uri)"
-            :title="$t('add_library')"
-            :aria-label="`${$t('add_library')}: ${item.name}`"
-            @click.stop="addToLibrary(item)"
-          >
-            <Plus :size="11" />
-            {{ $t("add") }}
-          </button>
         </template>
         <template #subtitle>{{ subtitle(item) }}</template>
       </EditorialMediaCard>
@@ -57,13 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import { isInLibrary } from "@/components/artist/artistData";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
@@ -73,10 +59,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
-import { Plus } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
-import { toast } from "vue-sonner";
 
 export interface Props {
   title: string;
@@ -87,8 +71,6 @@ export interface Props {
   viewAllTo?: RouteLocationRaw;
   // "lg" is the albums shelf, "md" the smaller singles / appearances ones
   size?: "lg" | "md";
-  // offers an "Add" pill on the releases that are not in the library yet
-  showLibraryState?: boolean;
   parentItem?: MediaItemType;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -96,20 +78,14 @@ const props = withDefaults(defineProps<Props>(), {
   items: undefined,
   viewAllTo: undefined,
   size: "md",
-  showLibraryState: false,
   parentItem: undefined,
 });
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
-  // a release was added to the library; the page reloads what it shows
-  (e: "library-changed"): void;
 }>();
 
 const SKELETONS = 6;
-
-// releases whose add-to-library request is still running
-const pendingUris = ref(new Set<string>());
 
 const tilesPerView = computed(() => shelfTilesPerView(props.size));
 
@@ -117,33 +93,13 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   emit("edit-rows"),
 );
 
-const showAddPill = function (item: Album | ItemMapping): boolean {
-  return props.showLibraryState && !isInLibrary(item) && itemIsAvailable(item);
-};
-
 const subtitle = function (item: Album | ItemMapping): string {
   const parts: string[] = [];
   if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
     parts.push($t(`album_type.${item.album_type}`));
   }
   if (item.year) parts.push(String(item.year));
-  if (props.showLibraryState && !isInLibrary(item)) {
-    parts.push($t("not_in_library"));
-  }
   return parts.join(" · ");
-};
-
-const addToLibrary = async function (item: Album | ItemMapping) {
-  pendingUris.value.add(item.uri);
-  try {
-    await api.addItemToLibrary(item);
-    toast.success($t("added_to_library", [item.name]));
-    emit("library-changed");
-  } catch (err) {
-    console.error("[ArtistReleaseShelf] add to library failed", err);
-  } finally {
-    pendingUris.value.delete(item.uri);
-  }
 };
 
 /**
@@ -208,28 +164,6 @@ function shelfTilesPerView(size: "lg" | "md"): number {
   font-size: 12px;
   font-weight: 500;
   color: #fff;
-}
-.artist-shelf__add:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-.artist-shelf__add {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 20px;
-  padding: 0 7px;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
 }
 
 @media (max-width: 768px) {

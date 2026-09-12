@@ -13,7 +13,6 @@ vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
     providers: {},
-    supportsArtistDiscography: true,
   },
 }));
 

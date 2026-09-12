@@ -2,9 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
-    supportsArtistDiscography: true,
     getArtistAlbums: vi.fn().mockResolvedValue([]),
-    getArtistDiscography: vi.fn().mockResolvedValue([]),
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
@@ -17,7 +15,6 @@ vi.mock("@/plugins/api", () => ({
 
 import {
   appearsOnAlbums,
-  isInLibrary,
   isSingleOrEp,
   loadArtistLibraryTracks,
   loadArtistReleases,
@@ -28,9 +25,18 @@ import {
 import { AlbumType, type ItemMapping } from "@/plugins/api/interfaces";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
+import { providerMapping } from "../../fixtures/providerMapping";
 import { track } from "../../fixtures/track";
 
-const LIBRARY_ARTIST = artist({ item_id: "1", provider: "library" });
+// the artist's own id on Spotify differs from its library id, so the provider
+// source can only be queried through the mapping
+const LIBRARY_ARTIST = artist({
+  item_id: "1",
+  provider: "library",
+  provider_mappings: [
+    providerMapping({ item_id: "sp1", provider_instance: "spotify--abc" }),
+  ],
+});
 const PROVIDER_ARTIST = artist({ item_id: "sp1", provider: "spotify--abc" });
 
 function albumMapping(overrides: Partial<ItemMapping> = {}): ItemMapping {
@@ -50,54 +56,37 @@ function albumMapping(overrides: Partial<ItemMapping> = {}): ItemMapping {
 
 describe("artistData", () => {
   beforeEach(() => {
-    apiMock.supportsArtistDiscography = true;
     apiMock.getArtistAlbums.mockClear();
-    apiMock.getArtistDiscography.mockClear();
     apiMock.getArtistTopTracks.mockClear();
     apiMock.getSimilarArtists.mockClear();
     apiMock.getArtistTracks.mockClear();
   });
 
   describe("loadArtistReleases", () => {
-    it("asks for the discography, filtered to a provider source", async () => {
-      await loadArtistReleases(LIBRARY_ARTIST, "all");
-      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
-        "1",
-        "library",
-        undefined,
-      );
-
-      await loadArtistReleases(LIBRARY_ARTIST, "spotify--abc");
-      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
-        "1",
-        "library",
-        "spotify--abc",
-      );
-    });
-
-    it("asks for the library albums for the library source", async () => {
+    it("asks the library for the library source", async () => {
       await loadArtistReleases(LIBRARY_ARTIST, "library");
-      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
-        "1",
-        "library",
-        undefined,
-      );
-      expect(apiMock.getArtistDiscography).not.toHaveBeenCalled();
+      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith("1", "library");
     });
 
-    it("falls back to the albums listing on a server without discography", async () => {
-      apiMock.supportsArtistDiscography = false;
-      await loadArtistReleases(LIBRARY_ARTIST, "all");
-      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
-        "1",
-        "library",
-        undefined,
-      );
-
-      await loadArtistReleases(PROVIDER_ARTIST, "spotify--abc");
+    it("asks a provider source for its own catalog, by the artist's id there", async () => {
+      await loadArtistReleases(LIBRARY_ARTIST, "spotify--abc");
       expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
         "sp1",
         "spotify--abc",
+      );
+    });
+
+    it("returns nothing for a provider the artist is not mapped to", async () => {
+      expect(await loadArtistReleases(LIBRARY_ARTIST, "tidal--def")).toEqual(
+        [],
+      );
+      expect(apiMock.getArtistAlbums).not.toHaveBeenCalled();
+    });
+
+    it("asks a provider artist's own provider", async () => {
+      await loadArtistReleases(PROVIDER_ARTIST, "spotify--abc");
+      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
+        "sp1",
         "spotify--abc",
       );
     });
@@ -141,17 +130,12 @@ describe("artistData", () => {
     });
   });
 
-  describe("isSingleOrEp / isInLibrary", () => {
+  describe("isSingleOrEp", () => {
     it("recognizes singles and EPs", () => {
       expect(isSingleOrEp(album({ album_type: AlbumType.SINGLE }))).toBe(true);
       expect(isSingleOrEp(album({ album_type: AlbumType.EP }))).toBe(true);
       expect(isSingleOrEp(album({ album_type: AlbumType.ALBUM }))).toBe(false);
       expect(isSingleOrEp(albumMapping())).toBe(false);
-    });
-
-    it("recognizes library items", () => {
-      expect(isInLibrary(album())).toBe(true);
-      expect(isInLibrary(album({ provider: "spotify--abc" }))).toBe(false);
     });
   });
 

@@ -31,7 +31,6 @@ const {
   mockLoadSimilarArtists,
 } = vi.hoisted(() => ({
   mockApi: {
-    supportsArtistDiscography: true,
     getProvider: vi.fn(),
     providers: {} as Record<string, unknown>,
   },
@@ -76,18 +75,12 @@ function libraryArtist(overrides: Partial<Artist> = {}): Artist {
 }
 
 /** The composable, with the rows the page shows and no artist loaded yet. */
-function setupRowData(options: {
-  rows: ArtistRowId[];
-  isAudiobookArtist?: boolean;
-}) {
+function setupRowData(options: { rows: ArtistRowId[] }) {
   const artistRef = ref<Artist>();
   const visibleRows = ref<ArtistRowId[]>(options.rows);
-  const isAudiobookArtist = ref(options.isAudiobookArtist ?? false);
   const scope = effectScope();
   scopes.push(scope);
-  const rowData = scope.run(() =>
-    useArtistRowData(artistRef, visibleRows, isAudiobookArtist),
-  )!;
+  const rowData = scope.run(() => useArtistRowData(artistRef, visibleRows))!;
   return { artist: artistRef, visibleRows, ...rowData };
 }
 
@@ -119,7 +112,6 @@ function itemIds(items?: Array<{ item_id: string }>): string[] | undefined {
 
 describe("useArtistRowData", () => {
   beforeEach(() => {
-    mockApi.supportsArtistDiscography = true;
     // a row only offers a provider that can supply it, so the saved album
     // source below is one the artist can actually be fed from
     mockApi.providers = {
@@ -149,7 +141,7 @@ describe("useArtistRowData", () => {
 
     await showArtist(page, libraryArtist());
 
-    expect(releaseSources()).toEqual(["all"]);
+    expect(releaseSources()).toEqual(["library"]);
     expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
     expect(itemIds(page.singleItems.value)).toEqual(["single-1"]);
   });
@@ -163,13 +155,13 @@ describe("useArtistRowData", () => {
     saveRowSources({ albums: SPOTIFY });
     await flushPromises();
 
-    expect(releaseSources()).toEqual(["all", SPOTIFY]);
+    expect(releaseSources()).toEqual(["library", SPOTIFY]);
     expect(itemIds(page.albumItems.value)).toEqual(["album-2"]);
 
     saveRowSources({});
     await flushPromises();
 
-    expect(releaseSources()).toEqual(["all", SPOTIFY]);
+    expect(releaseSources()).toEqual(["library", SPOTIFY]);
     expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
   });
 
@@ -180,7 +172,7 @@ describe("useArtistRowData", () => {
 
     await showArtist(page, libraryArtist());
 
-    expect(releaseSources()).toEqual(["all", SPOTIFY]);
+    expect(releaseSources()).toEqual([SPOTIFY]);
     expect(page.latestRelease.value?.item_id).toBe("album-1");
   });
 
@@ -218,27 +210,18 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.topTracksItems.value)).toEqual(["newer", "older"]);
   });
 
-  it("re-requests every loaded release source and the library tracks on refresh", async () => {
+  it("shares one request between the rows fed by the library and the appearances", async () => {
     const page = setupRowData({ rows: ["albums", "appears_on"] });
-    saveRowSources({ albums: SPOTIFY });
     mockLoadArtistReleases.mockResolvedValue(RELEASES);
     mockLoadArtistLibraryTracks.mockResolvedValue([track()]);
+
     await showArtist(page, libraryArtist());
 
-    expect(releaseSources()).toEqual(["all", SPOTIFY]);
+    expect(releaseSources()).toEqual(["library"]);
     expect(mockLoadArtistLibraryTracks).toHaveBeenCalledTimes(1);
-
-    page.refreshReleases();
-    await flushPromises();
-
-    expect(releaseSources()).toHaveLength(4);
-    expect(releaseSources().slice(2)).toEqual(
-      expect.arrayContaining(["all", SPOTIFY]),
-    );
-    expect(mockLoadArtistLibraryTracks).toHaveBeenCalledTimes(2);
   });
 
-  it("never requests the full discography for a provider artist", async () => {
+  it("feeds a provider artist's rows from its own provider", async () => {
     const page = setupRowData({ rows: ["albums", "singles_eps"] });
 
     await showArtist(
@@ -253,11 +236,8 @@ describe("useArtistRowData", () => {
     expect(releaseSources()).toEqual([SPOTIFY]);
   });
 
-  it("never requests a discography for an audiobook artist", async () => {
-    const page = setupRowData({
-      rows: ["audiobooks", "audiobooks_all"],
-      isAudiobookArtist: true,
-    });
+  it("requests nothing for the rows of an audiobook artist", async () => {
+    const page = setupRowData({ rows: ["audiobooks", "audiobooks_all"] });
 
     await showArtist(page, libraryArtist({ artist_type: ArtistType.AUTHOR }));
 

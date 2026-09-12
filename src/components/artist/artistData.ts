@@ -4,37 +4,31 @@ import {
   type Album,
   type Artist,
   type ItemMapping,
-  type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
 import type { ArtistRowSource } from "./artistRows";
 
 /**
- * Every release of an artist: the discography (library + providers) when the
- * server supports it, else the library albums (library artist) or the provider
- * catalog (provider artist).
+ * The artist's releases, from the library or from a single provider's own
+ * catalog.
  *
- * `source` follows effectiveArtistRowSource: "library" stays in the library,
- * "all" spans every mapped provider and a provider instance id limits the
- * result to that provider.
+ * `source` follows effectiveArtistRowSource: "library" returns the in-library
+ * albums, a provider instance id queries that provider with the artist's id
+ * there, so an artist not mapped to it has no releases to show. A provider
+ * (non-library) artist always comes from its own provider.
  */
 export async function loadArtistReleases(
   artist: Artist,
   source: ArtistRowSource,
 ): Promise<Album[]> {
-  const providerFilter = providerFilterFor(source);
-  if (source !== "library" && api.supportsArtistDiscography) {
-    return await api.getArtistDiscography(
-      artist.item_id,
-      artist.provider,
-      providerFilter,
-    );
+  if (source === "library" || artist.provider !== "library") {
+    return await api.getArtistAlbums(artist.item_id, artist.provider);
   }
-  return await api.getArtistAlbums(
-    artist.item_id,
-    artist.provider,
-    providerFilter,
+  const mapping = artist.provider_mappings.find(
+    (candidate) => candidate.provider_instance === source,
   );
+  if (!mapping) return [];
+  return await api.getArtistAlbums(mapping.item_id, mapping.provider_instance);
 }
 
 /** The artist's in-library tracks, optionally limited to a single provider. */
@@ -90,10 +84,6 @@ export function sortReleasesNewestFirst<T extends Album>(albums: T[]): T[] {
     const released = releaseTime(b) - releaseTime(a);
     return released !== 0 ? released : a.name.localeCompare(b.name);
   });
-}
-
-export function isInLibrary(item: MediaItemType | ItemMapping): boolean {
-  return item.provider === "library";
 }
 
 /**

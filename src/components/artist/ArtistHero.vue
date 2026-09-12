@@ -34,18 +34,7 @@
     </div>
     <div v-else class="artist-hero__body">
       <div v-if="chipsShown" class="artist-hero__chips">
-        <span v-if="releaseCounts?.total" class="artist-hero__chip">
-          <LibraryBig :size="12" />
-          {{
-            $t("releases_in_library", releaseCounts.total, {
-              named: {
-                count: releaseCounts.inLibrary,
-                total: releaseCounts.total,
-              },
-            })
-          }}
-        </span>
-        <span v-if="providers.length" class="artist-hero__chip">
+        <span class="artist-hero__chip">
           <template v-for="(provider, index) in providers" :key="provider.id">
             <span v-if="index > 0" class="artist-hero__chip-sep">·</span>
             <ProviderIcon :domain="provider.domain" :size="14" />
@@ -142,7 +131,7 @@ import {
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, LibraryBig, Radio, Rows3, Shuffle } from "@lucide/vue";
+import { ArrowLeft, Radio, Rows3, Shuffle } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import {
   computed,
@@ -155,8 +144,6 @@ import { useRouter } from "vue-router";
 
 export interface Props {
   item?: Artist;
-  // the "N of M releases in your library" chip; omitted when unknown
-  releaseCounts?: { inLibrary: number; total: number };
 }
 const props = defineProps<Props>();
 
@@ -209,9 +196,7 @@ const providers = computed(() => {
   return entries;
 });
 
-const chipsShown = computed(
-  () => !!props.releaseCounts?.total || providers.value.length > 0,
-);
+const chipsShown = computed(() => providers.value.length > 0);
 
 const favoriteButtonLabel = computed(() =>
   props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),

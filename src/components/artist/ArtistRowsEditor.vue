@@ -273,11 +273,7 @@ const rows = computed<EditorRow[]>(() => {
   const { order, hidden } = resolveArtistRows(props.availableIds);
   return order.map((id) => {
     const source = artistRowDefinition(id).supportsSource
-      ? effectiveArtistRowSource(
-          id,
-          props.artist,
-          api.supportsArtistDiscography,
-        )
+      ? effectiveArtistRowSource(id, props.artist)
       : undefined;
     return {
       id,
@@ -329,13 +325,11 @@ function sourceLabel(source: ArtistRowSource): string {
 
 /** The sources offered for a row, in the order the picker lists them. */
 function sourceOptions(id: ArtistRowId): SourceOption[] {
-  return artistRowSources(id, props.artist, api.supportsArtistDiscography).map(
-    (source) => ({
-      value: source,
-      label: sourceLabel(source),
-      domain: api.providers[source]?.domain,
-    }),
-  );
+  return artistRowSources(id, props.artist).map((source) => ({
+    value: source,
+    label: sourceLabel(source),
+    domain: api.providers[source]?.domain,
+  }));
 }
 
 function selectSource(id: ArtistRowId, source: unknown) {

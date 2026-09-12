@@ -24,7 +24,6 @@ const {
   buttonStub: { template: "<button><slot /></button>" },
   apiMock: {
     providers: {} as Record<string, unknown>,
-    supportsArtistDiscography: true,
   },
   mockEffectiveArtistRowSource: vi.fn(),
   mockIsPhoneSizedScreen: vi.fn(),
@@ -161,7 +160,6 @@ describe("ArtistRowsEditor", () => {
         ],
       },
     };
-    apiMock.supportsArtistDiscography = true;
     mockIsPhoneSizedScreen.mockReturnValue(false);
     mockEffectiveArtistRowSource.mockReturnValue("all");
     mockResolveArtistRows.mockImplementation((availableIds: ArtistRowId[]) => ({
@@ -229,7 +227,7 @@ describe("ArtistRowsEditor", () => {
     expect(mockSetArtistRowSource).toHaveBeenCalledWith("albums", "spotify--1");
   });
 
-  it("offers every provider at once for album rows only when the server can", () => {
+  it("offers the library to a release row and every provider at once to an aggregated one", () => {
     const sources = (wrapper: VueWrapper) =>
       rows(wrapper).map((row) =>
         row
@@ -237,15 +235,8 @@ describe("ArtistRowsEditor", () => {
           .map((item) => item.attributes("data-source")),
       );
 
-    apiMock.supportsArtistDiscography = false;
     expect(sources(mountEditor(["albums", "top_tracks"]))).toEqual([
       ["library", "spotify--1"],
-      ["all", "spotify--1"],
-    ]);
-
-    apiMock.supportsArtistDiscography = true;
-    expect(sources(mountEditor(["albums", "top_tracks"]))).toEqual([
-      ["library", "all", "spotify--1"],
       ["all", "spotify--1"],
     ]);
   });

@@ -40,7 +40,6 @@ vi.mock("@/plugins/api", () => ({
     subscribe: mockSubscribe,
     providers: {},
     getProvider: () => undefined,
-    supportsArtistDiscography: true,
   },
 }));
 
@@ -72,9 +71,8 @@ vi.mock("@/components/artist/artistData", async (importOriginal) => ({
 vi.mock("@/components/artist/ArtistHero.vue", () => ({
   default: {
     name: "ArtistHero",
-    props: ["item", "releaseCounts"],
-    template:
-      "<div data-hero :data-counts=\"releaseCounts ? `${releaseCounts.inLibrary}/${releaseCounts.total}` : ''\" />",
+    props: ["item"],
+    template: "<div data-hero />",
   },
 }));
 vi.mock("@/components/artist/ArtistBioRow.vue", () => ({
@@ -203,12 +201,6 @@ describe("ArtistDetails", () => {
 
     expect(renderedRows(wrapper)).not.toContain("albums");
     expect(renderedRows(wrapper)).toContain("singles_eps");
-  });
-
-  it("hands the hero how much of the discography is in the library", async () => {
-    const wrapper = await mountDetails(artist());
-
-    expect(wrapper.find("[data-hero]").attributes("data-counts")).toBe("1/2");
   });
 
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {

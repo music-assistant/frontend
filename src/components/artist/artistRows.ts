@@ -26,7 +26,7 @@ export type ArtistRowId =
   | "provider_mappings"
   | "artwork"; // admins only
 
-// "library" = in-library items, "all" = library + every mapped provider, else a provider instance id
+// "library" = in-library items, "all" = every provider at once, else a provider instance id
 export type ArtistRowSource = "library" | "all" | (string & {});
 
 export interface ArtistRowDefinition {
@@ -174,32 +174,30 @@ export async function setArtistRowSource(
 
 /**
  * The sources a row of this artist can be fed from, in the order a picker lists them: the
- * library (release rows only), every provider at once (release rows only when the server can
- * merge the discography), then each provider able to supply the row. Empty for a row without
- * a source picker and for a provider artist, which stays on its own provider.
+ * library for a release row and every provider at once for a row the server aggregates, then
+ * each provider able to supply the row. Empty for a row without a source picker and for a
+ * provider artist, which stays on its own provider.
  */
 export function artistRowSources(
   id: ArtistRowId,
   artist: Artist,
-  supportsDiscography: boolean,
 ): ArtistRowSource[] {
   if (!ARTIST_ROWS_BY_ID[id].supportsSource) return [];
-  return rowSourceCandidates(id, artist, supportsDiscography);
+  return rowSourceCandidates(id, artist);
 }
 
 /**
  * The source that actually feeds a row for this artist: the saved one while it is still among
  * the row's sources, otherwise the default. Provider (non-library) artists always resolve to
- * their own provider. The default is every provider at once where that is offered, else the
- * library (the release rows on a server without the discography command).
+ * their own provider. The default is every provider at once where that is offered (the rows
+ * the server aggregates), else the library.
  */
 export function effectiveArtistRowSource(
   id: ArtistRowId,
   artist: Artist,
-  supportsDiscography: boolean,
 ): ArtistRowSource {
   if (artist.provider !== "library") return artist.provider;
-  const sources = rowSourceCandidates(id, artist, supportsDiscography);
+  const sources = rowSourceCandidates(id, artist);
   const saved = getArtistRowSource(id);
   if (saved && sources.includes(saved)) return saved;
   return sources.includes("all") ? "all" : "library";
@@ -235,13 +233,10 @@ function savedRowSources(): Partial<Record<ArtistRowId, ArtistRowSource>> {
 function rowSourceCandidates(
   id: ArtistRowId,
   artist: Artist,
-  supportsDiscography: boolean,
 ): ArtistRowSource[] {
   if (artist.provider !== "library") return [];
-  const sources: ArtistRowSource[] = [];
-  if (RELEASE_ROWS.includes(id)) sources.push("library");
-  if (!RELEASE_ROWS.includes(id) || supportsDiscography) sources.push("all");
-  return [...sources, ...rowSourceProviders(id, artist)];
+  const first: ArtistRowSource = RELEASE_ROWS.includes(id) ? "library" : "all";
+  return [first, ...rowSourceProviders(id, artist)];
 }
 
 /**

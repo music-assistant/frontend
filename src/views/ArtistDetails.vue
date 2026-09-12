@@ -1,10 +1,6 @@
 <template>
   <section class="artist-details">
-    <ArtistHero
-      :item="itemDetails"
-      :release-counts="releaseCounts"
-      @edit-rows="rowsEditorOpen = true"
-    />
+    <ArtistHero :item="itemDetails" @edit-rows="rowsEditorOpen = true" />
 
     <template v-if="itemDetails">
       <template v-for="rowId in visibleRows" :key="rowId">
@@ -35,10 +31,8 @@
           :items="albumItems"
           :view-all-to="listingRoute('albums')"
           size="lg"
-          :show-library-state="true"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
-          @library-changed="refreshReleases"
         />
 
         <!-- singles & EPs -->
@@ -48,10 +42,8 @@
           :meta="singleItems?.length ? String(singleItems.length) : undefined"
           :items="singleItems"
           :view-all-to="listingRoute('singles')"
-          :show-library-state="true"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
-          @library-changed="refreshReleases"
         />
 
         <!-- appears on -->
@@ -235,11 +227,9 @@ const {
   similarArtistItems,
   latestRelease,
   albumsMeta,
-  releaseCounts,
   topTracksProvider,
   similarArtistsProvider,
-  refreshReleases,
-} = useArtistRowData(itemDetails, visibleRows, isAudiobookArtist);
+} = useArtistRowData(itemDetails, visibleRows);
 
 // how much each row currently holds, for the editor's per-row meta line (it
 // adds the source itself)

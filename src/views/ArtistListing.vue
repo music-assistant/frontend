@@ -197,12 +197,7 @@ async function loadReleases(
 ) {
   if (!itemDetails.value) return [];
   const source =
-    params.provider?.[0] ??
-    effectiveArtistRowSource(
-      rowId,
-      itemDetails.value,
-      api.supportsArtistDiscography,
-    );
+    params.provider?.[0] ?? effectiveArtistRowSource(rowId, itemDetails.value);
   return await loadArtistReleases(itemDetails.value, source);
 }
 
@@ -215,11 +210,7 @@ async function loadAppearsOn(): Promise<MediaItemType[]> {
     loadArtistLibraryTracks(itemDetails.value),
     loadArtistReleases(
       itemDetails.value,
-      effectiveArtistRowSource(
-        "appears_on",
-        itemDetails.value,
-        api.supportsArtistDiscography,
-      ),
+      effectiveArtistRowSource("appears_on", itemDetails.value),
     ),
   ]);
   return appearsOnAlbums(
