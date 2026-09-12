@@ -18,7 +18,7 @@
                     :name="field.name"
                     :model-value="field.state.value"
                     :aria-invalid="isInvalid(field)"
-                    :disabled="isSystemUser"
+                    :disabled="isSystemAccount"
                     autocomplete="username"
                     @blur="field.handleBlur"
                     @input="
@@ -29,7 +29,7 @@
                       }
                     "
                   />
-                  <FieldDescription v-if="isSystemUser">
+                  <FieldDescription v-if="isSystemAccount">
                     {{ $t("auth.system_user_hint") }}
                   </FieldDescription>
                   <FieldError
@@ -106,7 +106,7 @@
                   </FieldLabel>
                   <Select
                     :model-value="field.state.value"
-                    :disabled="isCurrentUser || isSystemUser"
+                    :disabled="isCurrentUser || isSystemAccount"
                     @update:model-value="
                       (value) => field.handleChange(value as UserRole)
                     "
@@ -128,7 +128,7 @@
               </template>
             </form.Field>
 
-            <form.Field v-if="!isSystemUser" name="password">
+            <form.Field v-if="!isSystemAccount" name="password">
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
                   <FieldLabel :for="field.name">
@@ -162,7 +162,7 @@
             </form.Field>
 
             <form.Field
-              v-if="!isSystemUser && passwordValue"
+              v-if="!isSystemAccount && passwordValue"
               name="confirmPassword"
             >
               <template #default="{ field }">
@@ -263,7 +263,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { isSystemUser as resolveIsSystemUser } from "@/helpers/users";
+import { isSystemUser } from "@/helpers/users";
 import { editUserSchema } from "@/lib/forms/profile";
 import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
@@ -344,9 +344,9 @@ const isCurrentUser = computed(() => {
   return props.user.user_id === store.currentUser.user_id;
 });
 
-const isSystemUser = computed(() => {
+const isSystemAccount = computed(() => {
   if (!props.user) return false;
-  return resolveIsSystemUser(props.user);
+  return isSystemUser(props.user);
 });
 
 const form = useForm({
@@ -387,11 +387,7 @@ const form = useForm({
       if (value.avatarUrl !== (props.user.avatar_url || "")) {
         updates.avatarUrl = value.avatarUrl;
       }
-      if (
-        value.role !== props.user.role &&
-        !isCurrentUser.value &&
-        !isSystemUser.value
-      ) {
+      if (value.role !== props.user.role && !isCurrentUser.value) {
         updates.role = value.role;
       }
       if (value.password) {

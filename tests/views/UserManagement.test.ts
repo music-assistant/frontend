@@ -31,8 +31,19 @@ vi.mock("vue-i18n", async (importOriginal) => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
-function mountView() {
-  return mount(UserManagement, {
+const passthrough = { template: "<div><slot /></div>" };
+
+async function mountView() {
+  apiMock.getAllUsers.mockResolvedValue([
+    user({
+      user_id: "ha",
+      username: HOMEASSISTANT_SYSTEM_USER,
+      role: UserRole.SERVICE,
+      display_name: "Home Assistant Integration",
+    }),
+    user({ user_id: "marcel", username: "marcel", display_name: "Marcel" }),
+  ]);
+  const wrapper = mount(UserManagement, {
     global: {
       mocks: { $t: (key: string) => key },
       stubs: {
@@ -43,36 +54,39 @@ function mountView() {
         DeleteUserDialog: true,
         ManageTokensDialog: true,
         RevokeTokenDialog: true,
-        // the menu is opened with pointer interaction jsdom can't drive, and
-        // this test never needs it open
-        DropdownMenu: true,
-        DropdownMenuContent: true,
-        DropdownMenuItem: true,
+        // the test DOM can't open the menu with a pointer, so its content
+        // renders inline and the offered actions can be read from each card
+        DropdownMenu: passthrough,
+        DropdownMenuContent: passthrough,
+        DropdownMenuItem: passthrough,
         DropdownMenuSeparator: true,
-        DropdownMenuTrigger: true,
+        DropdownMenuTrigger: passthrough,
       },
     },
   });
+  await flushPromises();
+  return wrapper;
 }
 
 describe("UserManagement", () => {
   it("shows the System badge only on the Home Assistant account's card", async () => {
-    apiMock.getAllUsers.mockResolvedValue([
-      user({
-        user_id: "ha",
-        username: HOMEASSISTANT_SYSTEM_USER,
-        role: UserRole.SERVICE,
-        display_name: "Home Assistant Integration",
-      }),
-      user({ user_id: "marcel", username: "marcel", display_name: "Marcel" }),
-    ]);
-
-    const wrapper = mountView();
-    await flushPromises();
+    const wrapper = await mountView();
 
     const cards = wrapper.findAll('[data-slot="card"]');
     expect(cards).toHaveLength(2);
     expect(cards[0].text()).toContain("auth.system_user");
     expect(cards[1].text()).not.toContain("auth.system_user");
+  });
+
+  it("offers no disable or delete action for the Home Assistant account", async () => {
+    const wrapper = await mountView();
+
+    const [systemCard, memberCard] = wrapper.findAll('[data-slot="card"]');
+    expect(systemCard.text()).toContain("auth.edit_user");
+    expect(systemCard.text()).toContain("auth.manage_tokens");
+    expect(systemCard.text()).not.toContain("auth.disable_user");
+    expect(systemCard.text()).not.toContain("auth.delete_user");
+    expect(memberCard.text()).toContain("auth.disable_user");
+    expect(memberCard.text()).toContain("auth.delete_user");
   });
 });
