@@ -499,6 +499,18 @@ describe("getPlayerMenuItems ai dj", () => {
     expect(menuItems.map((item) => item.label)).not.toContain("ai_dj");
   });
 
+  it("omits the ai_dj entry for a role that may not load the hosts", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+    aiRadioAvailableRef.value = true;
+    hostsRef.value = [makeHost()];
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+
+    expect(menuItems.map((item) => item.label)).not.toContain("ai_dj");
+  });
+
   it("lists one entry per host plus an off entry when ai_radio is available", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [

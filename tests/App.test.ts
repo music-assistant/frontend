@@ -970,6 +970,14 @@ describe("App initialization", () => {
         role: UserRole.USER,
         roleScopes: { ...ROLE_SCOPES, user: [...BUILTIN_ROLE_SCOPES.guest] },
       },
+      {
+        change: "the user got another role with the same scopes",
+        role: "household_member",
+        roleScopes: {
+          ...ROLE_SCOPES,
+          household_member: [...BUILTIN_ROLE_SCOPES.user],
+        },
+      },
     ])(
       "reloads the app when a reconnect finds $change",
       async ({ role, roleScopes }) => {

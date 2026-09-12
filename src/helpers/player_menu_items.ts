@@ -31,6 +31,7 @@ import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { errorMessage } from "@/helpers/ai_radio";
+import { canUseQueueDj } from "@/helpers/ai_radio_access";
 import { toast } from "vue-sonner";
 
 export const getPlayerSetupMenuItem = (
@@ -306,7 +307,7 @@ export const getPlayerMenuItems = (
     loadQueueDjStatus,
   } = useHosts();
   const { sessions, shows, loadStatus } = useShows();
-  if (isQueue && playerQueue && aiRadioAvailable.value) {
+  if (isQueue && playerQueue && aiRadioAvailable.value && canUseQueueDj()) {
     const queueId = playerQueue.queue_id;
     const runningSession = sessions.value.find(
       (session) => session.status === "running" && session.queue_id === queueId,
