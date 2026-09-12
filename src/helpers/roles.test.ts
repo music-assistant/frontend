@@ -8,6 +8,7 @@ import {
   GRANTABLE_SCOPES,
   GUEST_SCOPES,
   isImpliedScope,
+  neededByLabelKey,
   roleDisplayName,
   roleScopesById,
   roleTemplateScopes,
@@ -257,5 +258,18 @@ describe("extraPermissions", () => {
 
   it("lists nothing for a custom role", () => {
     expect(extraPermissions(customRoleScopes([Scope.USERS_READ]))).toEqual([]);
+  });
+});
+
+describe("neededByLabelKey", () => {
+  it("names the permission that keeps a scope on", () => {
+    const scopes = customRoleScopes([Scope.CONFIG_PROVIDERS_OWN]);
+
+    expect(neededByLabelKey(scopes, Scope.CONFIG_PROVIDERS_READ)).toBe(
+      "auth.permissions.config_providers_own",
+    );
+    expect(
+      neededByLabelKey(scopes, Scope.CONFIG_PROVIDERS_OWN),
+    ).toBeUndefined();
   });
 });

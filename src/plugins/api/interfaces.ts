@@ -1573,8 +1573,9 @@ export interface ProviderManifest {
   // has_setup_flow: whether setup can be run again to reconfigure the provider
   has_setup_flow: boolean;
   // self_service: whether a member may set up (and reconfigure) a music source of
-  // this provider itself, instead of only a user who manages every music source
-  self_service: boolean;
+  // this provider itself, instead of only a user who manages every music source;
+  // an older server does not send it and lets a member set up any provider
+  self_service?: boolean;
   stage: ProviderStage;
   // icon: material design icon
   icon: string | null;

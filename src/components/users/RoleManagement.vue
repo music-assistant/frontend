@@ -89,7 +89,11 @@
               class="text-destructive hover:text-destructive"
               :disabled="userCount(role) > 0"
               :aria-label="`${$t('auth.delete_role')}: ${role.name}`"
-              :title="`${$t('auth.delete_role')}: ${role.name}`"
+              :title="
+                userCount(role) > 0
+                  ? $t('auth.role_in_use_hint')
+                  : `${$t('auth.delete_role')}: ${role.name}`
+              "
               data-testid="delete-role"
               @click="confirmDelete(role)"
             >
@@ -102,10 +106,12 @@
         </Item>
       </ItemGroup>
       <Empty v-else class="border" data-testid="no-custom-roles">
-        <EmptyTitle>{{ $t("auth.no_custom_roles") }}</EmptyTitle>
-        <EmptyDescription v-if="canManageRoles">
-          {{ $t("auth.no_custom_roles_hint") }}
-        </EmptyDescription>
+        <EmptyHeader>
+          <EmptyTitle>{{ $t("auth.no_custom_roles") }}</EmptyTitle>
+          <EmptyDescription v-if="canManageRoles">
+            {{ $t("auth.no_custom_roles_hint") }}
+          </EmptyDescription>
+        </EmptyHeader>
       </Empty>
     </section>
 
@@ -152,7 +158,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   Item,
   ItemActions,
