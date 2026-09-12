@@ -553,7 +553,7 @@
         "stay": "Stay",
         "discard": "Discard changes",
         "provider_requires_attention": "Needs attention",
-        "provider_requires_attention_detail": "Something in your settings needs attention.",
+        "provider_requires_attention_detail": "One or more of your music sources, players or plugins aren't working.",
         "reconfigure": "Reconfigure",
         "fix_now": "Fix now",
         "web_player_enabled": {
@@ -2479,7 +2479,7 @@
         "toggle": "Toggle the MilkDrop visualizer",
         "preset_random_favorites": "Random from favorites",
         "toggle_favorite": "Favorite this preset",
-        "provider_missing": "The MilkDrop Visualizer plugin is not installed or unavailable. Add it under Settings → Plugins to use the visualizer.",
+        "provider_missing": "The MilkDrop Visualizer plugin isn't available. Check it under Settings → Plugins to use the visualizer.",
         "section_general": "Appearance",
         "section_presets": "Presets",
         "quality": "Render quality",
