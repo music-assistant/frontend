@@ -1,9 +1,10 @@
 <template>
-  <header
-    class="artist-hero"
-    :class="{ 'artist-hero--phone': isPhone }"
-    :style="heroStyle"
-  >
+  <header class="artist-hero" :class="{ 'artist-hero--phone': isPhone }">
+    <div
+      v-if="backdropStyle"
+      class="artist-hero__backdrop"
+      :style="backdropStyle"
+    ></div>
     <div class="artist-hero__scrim"></div>
     <Toolbar
       class="artist-hero__toolbar"
@@ -33,17 +34,7 @@
       <Skeleton class="h-12 w-80 max-w-[60%]" />
     </div>
     <div v-else class="artist-hero__body">
-      <div v-if="chipsShown" class="artist-hero__chips">
-        <span class="artist-hero__chip">
-          <template v-for="(provider, index) in providers" :key="provider.id">
-            <span v-if="index > 0" class="artist-hero__chip-sep">·</span>
-            <ProviderIcon :domain="provider.domain" :size="14" />
-            {{ provider.name }}
-          </template>
-        </span>
-      </div>
-
-      <div class="artist-hero__heading">
+      <div class="artist-hero__main">
         <img
           v-if="artistLogo"
           class="artist-hero__logo"
@@ -54,6 +45,55 @@
           {{ item.name }}
         </h1>
 
+        <div class="artist-hero__actions">
+          <MenuButton
+            ref="playButton"
+            :text="playButtonText"
+            :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
+            :loading="playActionInProgress"
+            @click="playButtonClick()"
+            @menu="playButtonClick(true)"
+          />
+          <button
+            v-if="api.supportsPlayMediaShuffle"
+            type="button"
+            class="artist-hero__button"
+            :disabled="!store.activePlayer"
+            :aria-label="$t('shuffle')"
+            :title="$t('shuffle')"
+            @click="api.playMedia(item, undefined, { shuffle: true })"
+          >
+            <Shuffle :size="isPhone ? 18 : 16" />
+            <span v-if="!isPhone">{{ $t("shuffle") }}</span>
+          </button>
+          <button
+            v-if="radioRelevant(item)"
+            type="button"
+            class="artist-hero__button"
+            :disabled="!radioSupported(item)"
+            :aria-label="$t('artist_radio')"
+            :title="$t('artist_radio')"
+            @click="gotoRadio(item)"
+          >
+            <Radio :size="isPhone ? 18 : 16" />
+            <span v-if="!isPhone">{{ $t("artist_radio") }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        v-if="chipsShown || genres.length || artistKind"
+        class="artist-hero__aside"
+      >
+        <div v-if="chipsShown" class="artist-hero__chips">
+          <span class="artist-hero__chip">
+            <template v-for="(provider, index) in providers" :key="provider.id">
+              <span v-if="index > 0" class="artist-hero__chip-sep">·</span>
+              <ProviderIcon :domain="provider.domain" :size="14" />
+              {{ provider.name }}
+            </template>
+          </span>
+        </div>
         <div v-if="genres.length" class="artist-hero__genres">
           <template v-for="(genre, index) in genres" :key="genre.item_id">
             <span v-if="index > 0">,&nbsp;</span>
@@ -66,41 +106,7 @@
             </button>
           </template>
         </div>
-      </div>
-
-      <div class="artist-hero__actions">
-        <MenuButton
-          ref="playButton"
-          :text="playButtonText"
-          :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
-          :loading="playActionInProgress"
-          @click="playButtonClick()"
-          @menu="playButtonClick(true)"
-        />
-        <button
-          v-if="api.supportsPlayMediaShuffle"
-          type="button"
-          class="artist-hero__button"
-          :disabled="!store.activePlayer"
-          :aria-label="$t('shuffle')"
-          :title="$t('shuffle')"
-          @click="api.playMedia(item, undefined, { shuffle: true })"
-        >
-          <Shuffle :size="isPhone ? 18 : 16" />
-          <span v-if="!isPhone">{{ $t("shuffle") }}</span>
-        </button>
-        <button
-          v-if="radioRelevant(item)"
-          type="button"
-          class="artist-hero__button"
-          :disabled="!radioSupported(item)"
-          :aria-label="$t('artist_radio')"
-          :title="$t('artist_radio')"
-          @click="gotoRadio(item)"
-        >
-          <Radio :size="isPhone ? 18 : 16" />
-          <span v-if="!isPhone">{{ $t("artist_radio") }}</span>
-        </button>
+        <div v-if="artistKind" class="artist-hero__kind">{{ artistKind }}</div>
       </div>
     </div>
   </header>
@@ -123,6 +129,7 @@ import { getImageThumbForItem, getPlayerName } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import {
+  ArtistType,
   ImageType,
   MediaType,
   type Artist,
@@ -158,20 +165,16 @@ const playButton = useTemplateRef<ComponentPublicInstance>("playButton");
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-const fanartImage = computed(() => {
+// wide art (fanart, then landscape) suits the hero; a square thumb is the
+// last resort. No size is passed, so the server serves the original image.
+const backdropStyle = computed(() => {
   if (!props.item) return undefined;
-  return (
+  const image =
     getImageThumbForItem(props.item, ImageType.FANART) ||
     getImageThumbForItem(props.item, ImageType.LANDSCAPE) ||
-    getImageThumbForItem(props.item, ImageType.THUMB)
-  );
+    getImageThumbForItem(props.item, ImageType.THUMB);
+  return image ? { backgroundImage: `url("${image}")` } : undefined;
 });
-
-const heroStyle = computed(() =>
-  fanartImage.value
-    ? { backgroundImage: `url("${fanartImage.value}")` }
-    : undefined,
-);
 
 const artistLogo = computed(() =>
   props.item ? getImageThumbForItem(props.item, ImageType.LOGO) : undefined,
@@ -197,6 +200,18 @@ const providers = computed(() => {
 });
 
 const chipsShown = computed(() => providers.value.length > 0);
+
+// what kind of artist this is: the MusicBrainz entity type when known, else
+// the role of an audiobook artist
+const artistKind = computed(() => {
+  const item = props.item;
+  if (!item) return "";
+  const entityType = item.metadata?.artist_entity_type;
+  if (entityType) return $t(`artist_entity_type.${entityType.toLowerCase()}`);
+  if (item.artist_type === ArtistType.AUTHOR) return $t("author");
+  if (item.artist_type === ArtistType.NARRATOR) return $t("narrator");
+  return "";
+});
 
 const favoriteButtonLabel = computed(() =>
   props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
@@ -291,16 +306,21 @@ function isShown(item: Artist): boolean {
 .artist-hero {
   position: relative;
   height: 440px;
+  overflow: hidden;
   background-color: rgb(var(--v-theme-background));
-  background-position: center 30%;
-  background-repeat: no-repeat;
-  background-size: cover;
   /* the artwork is darkened, so the hero keeps its light-on-dark text in both
      themes */
   color: #fff;
 }
 .artist-hero--phone {
   height: 340px;
+}
+.artist-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 /* two layers: the artwork is darkened so the hero's light-on-dark text reads in
    both themes, and only its very bottom blends into the page */
@@ -376,22 +396,32 @@ function isShown(item: Artist): boolean {
   right: 28px;
   bottom: 24px;
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.artist-hero__main {
+  display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   align-items: flex-start;
   gap: 14px;
-}
-/* the genres sit beside the name and drop below it when the line is full */
-.artist-hero__heading {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-  max-width: 100%;
   min-width: 0;
+}
+/* the facts about the artist line up on the right, bottom-aligned with the buttons */
+.artist-hero__aside {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+  text-align: right;
 }
 .artist-hero__chips {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -434,6 +464,11 @@ function isShown(item: Artist): boolean {
   min-width: 0;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+.artist-hero__kind {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 /* the genres read as links in the line of text, so the button chrome goes */
@@ -490,7 +525,16 @@ function isShown(item: Artist): boolean {
   left: 16px;
   right: 16px;
   bottom: 16px;
+  flex-direction: column;
+  align-items: stretch;
   gap: 12px;
+}
+.artist-hero--phone .artist-hero__aside {
+  align-items: flex-start;
+  text-align: left;
+}
+.artist-hero--phone .artist-hero__chips {
+  justify-content: flex-start;
 }
 .artist-hero--phone .artist-hero__name {
   font-size: 34px;

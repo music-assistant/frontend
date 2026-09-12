@@ -2262,6 +2262,16 @@
     "artist_all_albums": "All albums",
     "artist_all_tracks": "All tracks",
     "biography": "Biography",
+    "author": "Author",
+    "narrator": "Narrator",
+    "artist_entity_type": {
+        "person": "Person",
+        "group": "Group",
+        "orchestra": "Orchestra",
+        "choir": "Choir",
+        "character": "Character",
+        "other": "Other"
+    },
     "singles_eps": "Singles & EPs",
     "latest_release": "Latest release",
     "view_all": "View all",
