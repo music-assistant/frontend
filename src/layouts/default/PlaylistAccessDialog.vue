@@ -69,7 +69,7 @@
               </SelectContent>
             </Select>
             <FieldDescription>
-              {{ $t(getPlaylistSharingHintTranslationKey(sharing)) }}
+              {{ $t(getPlaylistSharingHintTranslationKey(formAccess)) }}
             </FieldDescription>
           </Field>
 
@@ -111,7 +111,7 @@
         <Button
           type="submit"
           form="form-playlist-access"
-          :disabled="saving || !canSave"
+          :disabled="saving || servesNobody(formAccess)"
           :loading="saving"
         >
           {{ $t("settings.save") }}
@@ -150,6 +150,7 @@ import MultiSelect from "@/components/users/MultiSelect.vue";
 import { getPlaylistSharingHintTranslationKey } from "@/helpers/playlist_access";
 import {
   getProviderSharingTranslationKey,
+  servesNobody,
   userDisplayName,
 } from "@/helpers/provider_access";
 import { api } from "@/plugins/api";
@@ -235,16 +236,17 @@ const recordOwner = computed(() =>
   canChangeOwner.value ? selectedOwner.value : currentAccess.value.owner,
 );
 
+// the access record the form describes, as it is saved
+const formAccess = computed<PlaylistAccess>(() => ({
+  owner: recordOwner.value,
+  sharing: sharing.value,
+  shared_users:
+    sharing.value === ProviderSharing.SELECTED ? sharedUsers.value : [],
+  collaborative: collaborative.value,
+}));
+
 const ownedByViewer = computed(
   () => recordOwner.value === store.currentUser?.user_id,
-);
-
-// a playlist without an owner has to be shared with somebody
-const canSave = computed(
-  () =>
-    selectedOwner.value !== null ||
-    sharing.value !== ProviderSharing.SELECTED ||
-    sharedUsers.value.length > 0,
 );
 
 watch(showDialog, (open) => {
@@ -279,13 +281,7 @@ const save = async () => {
   if (!playlist.value) return;
   saving.value = true;
   try {
-    await api.setPlaylistAccess(playlist.value.item_id, {
-      owner: recordOwner.value,
-      sharing: sharing.value,
-      shared_users:
-        sharing.value === ProviderSharing.SELECTED ? sharedUsers.value : [],
-      collaborative: collaborative.value,
-    });
+    await api.setPlaylistAccess(playlist.value.item_id, formAccess.value);
     toast.success(t("playlist_access.updated"));
     showDialog.value = false;
   } catch (err) {

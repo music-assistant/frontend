@@ -11,6 +11,7 @@ import {
   canEditPlaylistItems,
   canManagePlaylist,
   canSharePlaylist,
+  getPlaylistSharingHintTranslationKey,
   isMusicAssistantPlaylist,
 } from "./playlist_access";
 
@@ -39,6 +40,41 @@ const spotifyPlaylist = (overrides = {}) =>
     provider_mappings: [providerMapping({ provider_domain: "spotify" })],
     ...overrides,
   });
+
+describe("getPlaylistSharingHintTranslationKey", () => {
+  it.each(Object.values(ProviderSharing))(
+    "explains sharing %s for a playlist with an owner",
+    (sharing) => {
+      expect(getPlaylistSharingHintTranslationKey(access({ sharing }))).toBe(
+        `playlist_access.hints.${sharing}`,
+      );
+    },
+  );
+
+  it("explains that only the selected members can see a playlist without an owner", () => {
+    expect(
+      getPlaylistSharingHintTranslationKey(
+        access({
+          owner: null,
+          sharing: ProviderSharing.SELECTED,
+          shared_users: ["member"],
+        }),
+      ),
+    ).toBe("playlist_access.hints.selected_no_owner");
+  });
+
+  it("explains that nobody can see a playlist without an owner shared with nobody selected", () => {
+    expect(
+      getPlaylistSharingHintTranslationKey(
+        access({
+          owner: null,
+          sharing: ProviderSharing.SELECTED,
+          shared_users: [],
+        }),
+      ),
+    ).toBe("playlist_access.hints.nobody");
+  });
+});
 
 describe("isMusicAssistantPlaylist", () => {
   it("is true for a playlist of the builtin provider", () => {
