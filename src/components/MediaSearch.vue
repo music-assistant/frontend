@@ -78,7 +78,7 @@
     >
       <FacetedFilter
         v-model="selectedProviders"
-        :title="$t('settings.providers')"
+        :title="$t('settings.music_sources')"
         :options="providerOptions"
       />
     </div>
