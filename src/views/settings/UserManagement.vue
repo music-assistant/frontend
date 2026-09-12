@@ -72,7 +72,7 @@
                       {{ $t("auth.manage_tokens") }}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      v-if="!isCurrentUser(user)"
+                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
                       @click.stop="
                         user.enabled
                           ? confirmDisableUser(user)
@@ -89,9 +89,11 @@
                           : $t("auth.enable_user")
                       }}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator v-if="!isCurrentUser(user)" />
+                    <DropdownMenuSeparator
+                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
+                    />
                     <DropdownMenuItem
-                      v-if="!isCurrentUser(user)"
+                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
                       class="text-destructive focus:text-destructive"
                       @click.stop="confirmDeleteUser(user)"
                     >
@@ -101,9 +103,17 @@
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <Badge v-if="!user.enabled" variant="destructive" class="mt-2">
-                {{ $t("auth.disabled") }}
-              </Badge>
+              <div
+                v-if="!user.enabled || isSystemUser(user)"
+                class="flex flex-wrap gap-2 mt-2"
+              >
+                <Badge v-if="!user.enabled" variant="destructive">
+                  {{ $t("auth.disabled") }}
+                </Badge>
+                <Badge v-if="isSystemUser(user)" variant="secondary">
+                  {{ $t("auth.system_user") }}
+                </Badge>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -176,6 +186,7 @@ import DisableUserDialog from "@/components/users/DisableUserDialog.vue";
 import EditUserDialog from "@/components/users/EditUserDialog.vue";
 import ManageTokensDialog from "@/components/users/ManageTokensDialog.vue";
 import RevokeTokenDialog from "@/components/users/RevokeTokenDialog.vue";
+import { isSystemUser } from "@/helpers/users";
 import { api } from "@/plugins/api";
 import type { AuthToken, User } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";

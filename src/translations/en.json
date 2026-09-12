@@ -1312,6 +1312,8 @@
         "update_password": "Update password",
         "guest_role": "Guest",
         "service_role": "Service",
+        "system_user": "System",
+        "system_user_hint": "Home Assistant signs in with this account, so its username, role and password can not be changed.",
         "tokens_load_failed": "Failed to load access tokens",
         "users_load_failed": "Failed to load users"
     },

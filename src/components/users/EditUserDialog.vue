@@ -18,6 +18,7 @@
                     :name="field.name"
                     :model-value="field.state.value"
                     :aria-invalid="isInvalid(field)"
+                    :disabled="isSystemUser"
                     autocomplete="username"
                     @blur="field.handleBlur"
                     @input="
@@ -28,6 +29,9 @@
                       }
                     "
                   />
+                  <FieldDescription v-if="isSystemUser">
+                    {{ $t("auth.system_user_hint") }}
+                  </FieldDescription>
                   <FieldError
                     v-if="isInvalid(field)"
                     :errors="field.state.meta.errors"
@@ -102,7 +106,7 @@
                   </FieldLabel>
                   <Select
                     :model-value="field.state.value"
-                    :disabled="isCurrentUser"
+                    :disabled="isCurrentUser || isSystemUser"
                     @update:model-value="
                       (value) => field.handleChange(value as UserRole)
                     "
@@ -124,7 +128,7 @@
               </template>
             </form.Field>
 
-            <form.Field name="password">
+            <form.Field v-if="!isSystemUser" name="password">
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
                   <FieldLabel :for="field.name">
@@ -157,7 +161,10 @@
               </template>
             </form.Field>
 
-            <form.Field v-if="passwordValue" name="confirmPassword">
+            <form.Field
+              v-if="!isSystemUser && passwordValue"
+              name="confirmPassword"
+            >
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
                   <FieldLabel :for="field.name">
@@ -256,6 +263,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { isSystemUser as resolveIsSystemUser } from "@/helpers/users";
 import { editUserSchema } from "@/lib/forms/profile";
 import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
@@ -308,11 +316,19 @@ const handleFormSubmit = async () => {
   }
 };
 
-const roleOptions = computed(() => [
-  { label: t("auth.admin_role"), value: "admin" },
-  { label: t("auth.user_role"), value: "user" },
-  { label: t("auth.guest_role"), value: "guest" },
-]);
+const roleOptions = computed(() => {
+  const options = [
+    { label: t("auth.admin_role"), value: "admin" },
+    { label: t("auth.user_role"), value: "user" },
+    { label: t("auth.guest_role"), value: "guest" },
+  ];
+  // service is not offered as a choice, only listed to show it for an
+  // account that holds it
+  if (props.user?.role === UserRole.SERVICE) {
+    options.push({ label: t("auth.service_role"), value: "service" });
+  }
+  return options;
+});
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
@@ -326,6 +342,11 @@ const playerOptions = computed(() => {
 const isCurrentUser = computed(() => {
   if (!props.user || !store.currentUser) return false;
   return props.user.user_id === store.currentUser.user_id;
+});
+
+const isSystemUser = computed(() => {
+  if (!props.user) return false;
+  return resolveIsSystemUser(props.user);
 });
 
 const form = useForm({
@@ -366,7 +387,11 @@ const form = useForm({
       if (value.avatarUrl !== (props.user.avatar_url || "")) {
         updates.avatarUrl = value.avatarUrl;
       }
-      if (value.role !== props.user.role && !isCurrentUser.value) {
+      if (
+        value.role !== props.user.role &&
+        !isCurrentUser.value &&
+        !isSystemUser.value
+      ) {
         updates.role = value.role;
       }
       if (value.password) {
