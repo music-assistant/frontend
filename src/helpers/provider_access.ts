@@ -53,8 +53,17 @@ export const isOwnMusicSource = (
   userId: string | undefined,
 ) => userId !== undefined && config.access?.owner === userId;
 
-export const getProviderSharingTranslationKey = (sharing: ProviderSharing) =>
-  PROVIDER_SHARING_TRANSLATION_KEYS[sharing];
+/**
+ * The translation key naming a sharing choice. Private sharing is named from
+ * the viewer's side: as their own for the owner, as not shared for others.
+ */
+export const getProviderSharingTranslationKey = (
+  sharing: ProviderSharing,
+  ownedByViewer: boolean,
+) =>
+  sharing === ProviderSharing.PRIVATE && !ownedByViewer
+    ? "settings.source_access.options.not_shared"
+    : PROVIDER_SHARING_TRANSLATION_KEYS[sharing];
 
 export const getProviderSharingHintTranslationKey = (
   sharing: ProviderSharing,

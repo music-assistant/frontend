@@ -3,7 +3,7 @@
     <DialogContent class="sm:max-w-[480px]">
       <DialogHeader>
         <DialogTitle>
-          {{ $t("settings.source_access.title", { name: sourceName }) }}
+          {{ $t(titleKey, { name: sourceName }) }}
         </DialogTitle>
         <DialogDescription>
           {{ $t("settings.source_access.description") }}
@@ -51,7 +51,9 @@
                   :key="option"
                   :value="option"
                 >
-                  {{ $t(getProviderSharingTranslationKey(option)) }}
+                  {{
+                    $t(getProviderSharingTranslationKey(option, ownedByViewer))
+                  }}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -127,6 +129,7 @@ import {
   type User,
   type UserSummary,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -183,6 +186,14 @@ const sourceName = computed(() => {
   );
 });
 
+// titled like the menu entry that opens it: Access for an admin, Sharing for
+// a member
+const titleKey = computed(() =>
+  props.canChangeOwner
+    ? "settings.source_access.title"
+    : "settings.source_access.share_title",
+);
+
 const selectedOwner = computed(() =>
   owner.value === HOUSEHOLD_OWNER ? null : owner.value,
 );
@@ -211,6 +222,15 @@ const currentAccess = computed(() =>
   effectiveProviderAccess(props.config?.access ?? null),
 );
 
+// an owner may not change the owner, so the record keeps its own
+const recordOwner = computed(() =>
+  canChangeOwner.value ? selectedOwner.value : currentAccess.value.owner,
+);
+
+const ownedByViewer = computed(
+  () => recordOwner.value === store.currentUser?.user_id,
+);
+
 watch(
   () => props.open,
   (open) => {
@@ -229,10 +249,7 @@ const save = async () => {
   saving.value = true;
   try {
     const updated = await api.setProviderAccess(props.config.instance_id, {
-      // an owner may not change the owner, so the record keeps its own
-      owner: canChangeOwner.value
-        ? selectedOwner.value
-        : currentAccess.value.owner,
+      owner: recordOwner.value,
       sharing: sharing.value,
       shared_users:
         sharing.value === ProviderSharing.SELECTED ? sharedUsers.value : [],

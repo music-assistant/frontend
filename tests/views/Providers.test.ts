@@ -381,7 +381,35 @@ describe("Providers", () => {
     });
 
     expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
-      "user-gone · settings.source_access.options.private",
+      "user-gone · settings.source_access.options.not_shared",
+    );
+  });
+
+  it("names the viewing admin's own private source as only theirs", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      access: {
+        owner: "user-marcel",
+        shared_users: [],
+        sharing: ProviderSharing.PRIVATE,
+      },
+    });
+
+    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+      "Marcel · settings.source_access.options.private",
+    );
+  });
+
+  it("names another member's private source as not shared to the viewing admin", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      access: {
+        owner: "user-sam",
+        shared_users: [],
+        sharing: ProviderSharing.PRIVATE,
+      },
+    });
+
+    expect(wrapper.get('[data-testid="provider-access"]').text()).toBe(
+      "sam · settings.source_access.options.not_shared",
     );
   });
 

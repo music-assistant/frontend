@@ -2,6 +2,7 @@ import ProviderAccessDialog from "@/components/settings/providers/ProviderAccess
 import { shareCandidates } from "@/helpers/provider_access";
 import {
   ProviderSharing,
+  type User,
   UserRole,
   type UserSummary,
 } from "@/plugins/api/interfaces";
@@ -22,6 +23,7 @@ const { apiMock, storeMock, toastMock } = vi.hoisted(() => ({
     setProviderAccess: vi.fn(),
   },
   storeMock: {
+    currentUser: undefined as User | undefined,
     isTouchscreen: false,
   },
   toastMock: {
@@ -71,6 +73,7 @@ enableAutoUnmount(afterEach);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  storeMock.currentUser = owner;
   storeMock.isTouchscreen = false;
   apiMock.providerManifests = { spotify: { name: "Spotify" } };
   apiMock.providers = {};
@@ -106,6 +109,22 @@ describe("ProviderAccessDialog", () => {
     expect(dialogText()).toContain("Spotify (sam)");
   });
 
+  it("titles the dialog for sharing when a member opens it", async () => {
+    await openDialog(ownedSource, null);
+
+    expect(
+      document.querySelector("[data-slot='dialog-title']")?.textContent,
+    ).toContain("settings.source_access.share_title");
+  });
+
+  it("keeps the access title for an admin without the user list", async () => {
+    await openDialog(ownedSource, null, true);
+
+    expect(
+      document.querySelector("[data-slot='dialog-title']")?.textContent,
+    ).toContain("settings.source_access.title");
+  });
+
   it("starts from the current record", async () => {
     await openDialog(ownedSource, users);
 
@@ -127,6 +146,59 @@ describe("ProviderAccessDialog", () => {
       "settings.source_access.options.everyone",
     );
     expect(sharedUsersField()).toBeNull();
+  });
+
+  it("names private sharing as not shared to a viewer that is not the owner", async () => {
+    storeMock.currentUser = member;
+    await openDialog(
+      providerConfig({
+        domain: "spotify",
+        access: {
+          owner: "owner-id",
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      }),
+      users,
+    );
+
+    await openSelect(sharingTrigger()!);
+
+    expect(optionLabels()).toContain(
+      "settings.source_access.options.not_shared",
+    );
+    expect(optionLabels()).not.toContain(
+      "settings.source_access.options.private",
+    );
+  });
+
+  it("follows the picked owner when naming private sharing", async () => {
+    await openDialog(
+      providerConfig({
+        domain: "spotify",
+        access: {
+          owner: "member-id",
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      }),
+      users,
+    );
+
+    await openSelect(sharingTrigger()!);
+    expect(optionLabels()).toContain(
+      "settings.source_access.options.not_shared",
+    );
+    await pickOption("settings.source_access.options.not_shared");
+
+    await openSelect(ownerTrigger()!);
+    await pickOption("Owner");
+
+    await openSelect(sharingTrigger()!);
+    expect(optionLabels()).toContain("settings.source_access.options.private");
+    expect(optionLabels()).not.toContain(
+      "settings.source_access.options.not_shared",
+    );
   });
 
   it("offers only enabled non-guest users as owner", async () => {

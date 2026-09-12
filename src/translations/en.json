@@ -660,6 +660,7 @@
             "action": "Access",
             "share_action": "Sharing",
             "title": "Access to {name}",
+            "share_title": "Share {name}",
             "description": "Who this music source belongs to and who else may use it.",
             "owner": "Owner",
             "owner_hint": "Playback and listening history use the owner's account. A source without an owner is managed by administrators.",
