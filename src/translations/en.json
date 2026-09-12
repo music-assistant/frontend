@@ -553,7 +553,7 @@
         "stay": "Stay",
         "discard": "Discard changes",
         "provider_requires_attention": "Needs attention",
-        "provider_requires_attention_detail": "One or more providers require attention. Please check the provider settings.",
+        "provider_requires_attention_detail": "Something in your settings needs attention.",
         "reconfigure": "Reconfigure",
         "fix_now": "Fix now",
         "web_player_enabled": {
@@ -2103,7 +2103,7 @@
         }
     },
     "not_found_headline": "Oops, this page is off the setlist.",
-    "not_found_subtext": "The track you're looking for got lost between providers. Head back or find something new.",
+    "not_found_subtext": "The track you're looking for got lost between music sources. Head back or find something new.",
     "restore_genre": "Restore",
     "genre_name": "Genre name",
     "export_playlist": "Export playlist",
@@ -2479,7 +2479,7 @@
         "toggle": "Toggle the MilkDrop visualizer",
         "preset_random_favorites": "Random from favorites",
         "toggle_favorite": "Favorite this preset",
-        "provider_missing": "The MilkDrop Visualizer plugin is not installed or unavailable. Add it under Settings > Providers to use the visualizer.",
+        "provider_missing": "The MilkDrop Visualizer plugin is not installed or unavailable. Add it under Settings → Plugins to use the visualizer.",
         "section_general": "Appearance",
         "section_presets": "Presets",
         "quality": "Render quality",
