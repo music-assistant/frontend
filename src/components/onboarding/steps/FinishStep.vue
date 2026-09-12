@@ -107,10 +107,9 @@ const emit = defineEmits<{
 
 const { ctx, steps, pending } = useOnboarding();
 
+// a review is nothing to set up and nothing to do, so it is on neither list
 const done = computed(() =>
-  steps.value.filter(
-    (step) => step.kind !== "summary" && step.isDone(ctx.value),
-  ),
+  steps.value.filter((step) => step.kind === "step" && step.isDone(ctx.value)),
 );
 const playerCount = computed(() => ctx.value.playerCount);
 </script>

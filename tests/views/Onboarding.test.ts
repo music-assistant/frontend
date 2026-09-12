@@ -1,6 +1,7 @@
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ConfigEntryType, ProviderType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { user } from "../fixtures/user";
 
 const {
   apiMock,
@@ -10,11 +11,14 @@ const {
   routerMock,
   routeState,
   setUserPreferenceMock,
+  users,
 } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, unknown>,
     providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<string, { builtin: boolean }>,
+    getAllUsers: vi.fn(),
+    getCoreConfig: vi.fn(),
     getProviderConfigs: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
     sendCommand: vi.fn(),
@@ -32,6 +36,8 @@ const {
   routeState: { route: { query: {} as Record<string, string> }, ready: false },
   routerMock: { push: vi.fn(), replace: vi.fn() },
   setUserPreferenceMock: vi.fn(),
+  // what the server hands back as the user accounts
+  users: { list: [] as ReturnType<typeof user>[] },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -56,9 +62,21 @@ vi.mock("vue-router", async () => {
   return { useRoute: () => routeState.route, useRouter: () => routerMock };
 });
 
-// the dialog is covered where it lives; here it only has to be reachable
+// the dialogs and the config form are covered where they live; here they only
+// have to be reachable
 vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
   default: { template: "<div />" },
+}));
+
+vi.mock("@/components/users/CreateUserDialog.vue", () => ({
+  default: { props: ["modelValue"], template: "<div />" },
+}));
+
+vi.mock("@/views/settings/EditConfig.vue", () => ({
+  default: {
+    props: ["configEntries", "disabled", "showAdvancedSettings"],
+    template: "<div data-testid='onboarding-core-config' />",
+  },
 }));
 
 // the icon reaches for a Vuetify theme this bare mount does not set up
@@ -112,6 +130,17 @@ function addMusicProvider() {
   addProvider("spotify--1", "spotify", ProviderType.MUSIC, "Spotify");
 }
 
+/** Everything the wizard asks for bar the household. */
+function addEveryProvider() {
+  addMusicProvider();
+  addProvider("sonos--1", "sonos", ProviderType.PLAYER);
+  addProvider("party--1", "party", ProviderType.PLUGIN);
+}
+
+function addMember(userId: string) {
+  users.list.push(user({ user_id: userId, username: userId }));
+}
+
 /** Tell the wizard the server reported a provider change. */
 async function reportProvidersUpdated() {
   const lastCall = apiMock.subscribe.mock.calls.at(-1) as unknown as [
@@ -128,10 +157,30 @@ describe("Onboarding wizard", () => {
     apiMock.providers = {};
     apiMock.providerManifests = {};
     providerConfigs.list = [];
+    users.list = [user({ user_id: "admin-1", username: "admin" })];
     apiMock.getProviderConfigs.mockReset();
     apiMock.getProviderConfigs.mockImplementation(async () => [
       ...providerConfigs.list,
     ]);
+    apiMock.getAllUsers.mockReset();
+    apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
+    apiMock.getCoreConfig.mockReset();
+    apiMock.getCoreConfig.mockResolvedValue({
+      domain: "webserver",
+      last_error: null,
+      values: {
+        server_name: {
+          category: "generic",
+          default_value: null,
+          key: "server_name",
+          label: "Server name",
+          options: [],
+          required: false,
+          type: ConfigEntryType.STRING,
+          value: "Music Assistant",
+        },
+      },
+    });
     apiMock.subscribe.mockClear();
     authMock.isAdmin.mockReturnValue(true);
     preferenceState.intent.value = undefined;
@@ -281,7 +330,10 @@ describe("Onboarding wizard", () => {
     ).toHaveLength(1);
     expect(
       wrapper.findAll("[data-testid=onboarding-summary-pending]"),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
+    // the server settings are only there to be looked over, so they are on
+    // neither list: nothing about them is set up or still to do
+    expect(wrapper.text()).not.toContain("onboarding.steps.core_settings");
     expect(wrapper.find("[data-testid=onboarding-finish]").exists()).toBe(true);
     // the summary carries its own finish button instead of the step footer
     expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(false);
@@ -353,10 +405,9 @@ describe("Onboarding wizard", () => {
     wrapper.unmount();
   });
 
-  it("moves straight to the summary once everything is set up", async () => {
-    addMusicProvider();
-    addProvider("sonos--1", "sonos", ProviderType.PLAYER);
-    addProvider("party--1", "party", ProviderType.PLUGIN);
+  it("walks past the server settings on its way to the summary", async () => {
+    addEveryProvider();
+    addMember("sam-1");
     routeState.route.query = { step: "intent" };
 
     const wrapper = await mountWizard();
@@ -367,9 +418,94 @@ describe("Onboarding wizard", () => {
       .trigger("click");
     await flushPromises();
 
+    // everything is set up, but a review is nothing to set up: it is shown
+    // rather than skipped, and moving on from it is all the footer offers
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.core_settings.title",
+    );
+    expect(wrapper.find("[data-testid=onboarding-core-config]").exists()).toBe(
+      true,
+    );
+    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+      "onboarding.next",
+    );
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
     expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
       "onboarding.steps.finish.title",
     );
+
+    wrapper.unmount();
+  });
+
+  it("moves on from the plugins to the server settings", async () => {
+    addMusicProvider();
+    addProvider("sonos--1", "sonos", ProviderType.PLAYER);
+    preferenceState.intent.value = "music_hub";
+    routeState.route.query = { step: "plugins" };
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.core_settings.title",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("offers to skip the household, which is optional", async () => {
+    addEveryProvider();
+    preferenceState.intent.value = "music_hub";
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    // the only thing left to do is the one thing the wizard never insists on
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.invite_members.title",
+    );
+    expect(wrapper.find("[data-testid=onboarding-add-member]").exists()).toBe(
+      true,
+    );
+    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+      "onboarding.skip",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("never opens on the server settings by itself", async () => {
+    addEveryProvider();
+    addMember("sam-1");
+    preferenceState.intent.value = "music_hub";
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    // nothing is left to do, and a review is not something to be dropped in
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.finish.title",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("follows a deep link to the server settings", async () => {
+    routeState.route.query = { step: "core_settings" };
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.core_settings.title",
+    );
+    expect(apiMock.getCoreConfig).toHaveBeenCalledWith("webserver");
 
     wrapper.unmount();
   });

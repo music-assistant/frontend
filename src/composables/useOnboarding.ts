@@ -11,13 +11,17 @@ import {
   type OnboardingIntent,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
+import { userDisplayName } from "@/helpers/provider_access";
 import { providerDisplayName } from "@/helpers/provider_config";
+import { isSystemUser } from "@/helpers/users";
 import { api } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
+  UserRole,
   type ProviderConfig,
   type ProviderType,
+  type User,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
@@ -37,6 +41,13 @@ export interface ConfiguredProvider {
   needsAttention: boolean;
 }
 
+/** A household member the wizard lists, built from their user account. */
+export interface HouseholdMember {
+  user_id: string;
+  name: string;
+  role: string;
+}
+
 /**
  * The provider configurations, the same list the providers settings page works
  * from: `api.providers` only holds the instances that loaded, so a provider
@@ -47,8 +58,20 @@ export interface ConfiguredProvider {
 const providerConfigs = ref<ProviderConfig[] | null>(null);
 const configsLoaded = computed(() => providerConfigs.value !== null);
 
+/**
+ * The user accounts, `null` until the server lists them — and after a load that
+ * failed, which leaves the household unknown rather than empty.
+ */
+const users = ref<User[] | null>(null);
+// whether the users have been asked for and answered, however that turned out:
+// the wizard waits for an answer, not for an answer it likes
+const usersAnswered = ref(false);
+
+/** Whether everything the steps decide from has answered. */
+const dataLoaded = computed(() => configsLoaded.value && usersAnswered.value);
+
 // the load in flight, so a wizard and a checklist coming up together ask once
-let loadingConfigs: Promise<void> | null = null;
+let loadingData: Promise<void> | null = null;
 // the session's subscription: this state has no component to outlive, so it is
 // taken out once, on the first call, and kept for as long as the app runs
 let unsubProvidersUpdated: (() => void) | undefined;
@@ -64,18 +87,41 @@ async function fetchProviderConfigs(): Promise<void> {
 }
 
 /**
- * Load the provider configurations and keep them up to date. Only whoever asks
- * pays for it: a guest, a dashboard viewer or anyone who is not an admin never
- * calls this, so the list is never fetched for them.
+ * Load the user accounts. Listing them is an admin command, and the household
+ * is only ever asked about on the admin track, so nobody else fetches them.
  */
-async function loadProviderConfigs(): Promise<void> {
+async function fetchUsers(): Promise<void> {
+  if (!authManager.isAdmin()) {
+    usersAnswered.value = true;
+    return;
+  }
+  try {
+    users.value = await api.getAllUsers();
+  } catch (error) {
+    // the api already told the user; without an answer the invite step is
+    // simply not done, and being optional it holds nothing up
+    console.warn("Failed to load the users:", error);
+  } finally {
+    usersAnswered.value = true;
+  }
+}
+
+/**
+ * Load what the steps decide from — the provider configurations and the users —
+ * and keep the configurations up to date. Only whoever asks pays for it: a
+ * guest, a dashboard viewer or anyone who is not an admin never calls this, so
+ * nothing is fetched for them.
+ */
+async function loadOnboardingData(): Promise<void> {
   unsubProvidersUpdated ??= api.subscribe(EventType.PROVIDERS_UPDATED, () => {
     void fetchProviderConfigs();
   });
-  loadingConfigs ??= fetchProviderConfigs().finally(() => {
-    loadingConfigs = null;
-  });
-  await loadingConfigs;
+  loadingData ??= Promise.all([fetchProviderConfigs(), fetchUsers()])
+    .then(() => undefined)
+    .finally(() => {
+      loadingData = null;
+    });
+  await loadingData;
 }
 
 /**
@@ -106,6 +152,28 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
     }));
 }
 
+/**
+ * Someone who lives here, as opposed to an account that is not a person: the
+ * Home Assistant integration's, a service account or a guest, who is only ever
+ * passing through.
+ */
+function isHouseholdMember(user: User): boolean {
+  return (
+    !isSystemUser(user) &&
+    user.role !== UserRole.GUEST &&
+    user.role !== UserRole.SERVICE
+  );
+}
+
+/** The household members, in the order the server lists them. */
+export function householdMembers(): HouseholdMember[] {
+  return (users.value ?? []).filter(isHouseholdMember).map((user) => ({
+    user_id: user.user_id,
+    name: userDisplayName(user),
+    role: user.role,
+  }));
+}
+
 const { getPreference } = useUserPreferences();
 const intent = getPreference<OnboardingIntent>(ONBOARDING_INTENT_PREFERENCE);
 
@@ -120,6 +188,9 @@ const ctx = computed<OnboardingContext>(() => ({
   // only the summary's "2 players" label reads this; whether the players step
   // is done keys off a configured PLAYER provider, not off players turning up
   playerCount: Object.keys(api.players).length,
+  // `null` while the users are unknown, which is not the same as an empty
+  // household: the invite step is then simply not done
+  memberCount: users.value == null ? null : householdMembers().length,
   answers: { intent: intent.value },
 }));
 
@@ -211,8 +282,10 @@ export function useOnboarding() {
     dismiss,
     intent,
     setIntent,
-    configsLoaded,
-    loadProviderConfigs,
+    dataLoaded,
+    loadOnboardingData,
+    // what a step that has just added a member asks for the users again with
+    reloadUsers: fetchUsers,
     finish,
   };
 }

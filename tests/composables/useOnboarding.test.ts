@@ -1,5 +1,7 @@
-import { ProviderType } from "@/plugins/api/interfaces";
+import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
+import { ProviderType, UserRole } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { user } from "../fixtures/user";
 
 const {
   apiMock,
@@ -9,12 +11,14 @@ const {
   routerMock,
   setUserPreferenceMock,
   toastMock,
+  users,
 } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, unknown>,
     // the instances that loaded, which name a provider before its config does
     providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<string, { builtin: boolean; name: string }>,
+    getAllUsers: vi.fn(),
     getProviderConfigs: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
     sendCommand: vi.fn(),
@@ -29,6 +33,8 @@ const {
   routerMock: { replace: vi.fn(), push: vi.fn() },
   setUserPreferenceMock: vi.fn(),
   toastMock: { error: vi.fn() },
+  // what the server hands back as the user accounts
+  users: { list: [] as ReturnType<typeof user>[] },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -61,10 +67,10 @@ async function loadModule(): Promise<OnboardingModule> {
   return await import("@/composables/useOnboarding");
 }
 
-/** The composable with the provider configurations already in. */
+/** The composable with the provider configurations and the users already in. */
 async function loadOnboarding(): Promise<Onboarding> {
   const onboarding = (await loadModule()).useOnboarding();
-  await onboarding.loadProviderConfigs();
+  await onboarding.loadOnboardingData();
   return onboarding;
 }
 
@@ -114,10 +120,13 @@ describe("useOnboarding", () => {
     apiMock.providers = {};
     apiMock.providerManifests = {};
     providerConfigs.list = [];
+    users.list = [user({ user_id: "admin-1", username: "admin" })];
     apiMock.getProviderConfigs.mockReset();
     apiMock.getProviderConfigs.mockImplementation(async () => [
       ...providerConfigs.list,
     ]);
+    apiMock.getAllUsers.mockReset();
+    apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
     apiMock.subscribe.mockClear();
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
@@ -163,6 +172,7 @@ describe("useOnboarding", () => {
       "intent",
       "players",
       "plugins",
+      "invite_members",
     ]);
     expect(hasPending.value).toBe(true);
   });
@@ -170,18 +180,21 @@ describe("useOnboarding", () => {
   it("decides nothing before the configurations are in", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
 
-    const { ctx, configsLoaded, loadProviderConfigs } = (
+    const { ctx, dataLoaded, loadOnboardingData } = (
       await loadModule()
     ).useOnboarding();
 
-    expect(configsLoaded.value).toBe(false);
+    expect(dataLoaded.value).toBe(false);
     expect(ctx.value.providers).toEqual([]);
+    expect(ctx.value.memberCount).toBeNull();
     expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
 
-    await loadProviderConfigs();
+    await loadOnboardingData();
 
-    expect(configsLoaded.value).toBe(true);
+    expect(dataLoaded.value).toBe(true);
     expect(ctx.value.providers).toHaveLength(1);
+    expect(ctx.value.memberCount).toBe(1);
   });
 
   it("asks for the configurations once while a load is in flight", async () => {
@@ -193,17 +206,18 @@ describe("useOnboarding", () => {
         }),
     );
 
-    const { configsLoaded, loadProviderConfigs } = (
+    const { dataLoaded, loadOnboardingData } = (
       await loadModule()
     ).useOnboarding();
-    const both = Promise.all([loadProviderConfigs(), loadProviderConfigs()]);
+    const both = Promise.all([loadOnboardingData(), loadOnboardingData()]);
 
     expect(apiMock.getProviderConfigs).toHaveBeenCalledOnce();
+    expect(apiMock.getAllUsers).toHaveBeenCalledOnce();
 
     handOverConfigs([]);
     await both;
 
-    expect(configsLoaded.value).toBe(true);
+    expect(dataLoaded.value).toBe(true);
     // one session, one subscription, however many callers there are
     expect(apiMock.subscribe).toHaveBeenCalledOnce();
   });
@@ -224,12 +238,84 @@ describe("useOnboarding", () => {
   it("keeps waiting when the configurations cannot be loaded", async () => {
     apiMock.getProviderConfigs.mockRejectedValue(new Error("boom"));
 
-    const { ctx, configsLoaded } = await loadOnboarding();
+    const { ctx, dataLoaded } = await loadOnboarding();
 
     // the api toasts its own failures; the wizard simply has nothing to show
-    expect(configsLoaded.value).toBe(false);
+    expect(dataLoaded.value).toBe(false);
     expect(ctx.value.providers).toEqual([]);
     expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it("counts the household members, and nobody else", async () => {
+    users.list = [
+      user({ user_id: "admin-1", username: "admin", display_name: "Marcel" }),
+      user({ user_id: "partner-1", username: "sam", display_name: "Sam" }),
+      user({
+        user_id: "ha-1",
+        username: HOMEASSISTANT_SYSTEM_USER,
+        role: UserRole.SERVICE,
+      }),
+      user({ user_id: "guest-1", username: "guest", role: UserRole.GUEST }),
+      user({ user_id: "service-1", username: "bot", role: UserRole.SERVICE }),
+    ];
+
+    const module = await loadModule();
+    const { ctx, pending } = module.useOnboarding();
+    await module.useOnboarding().loadOnboardingData();
+
+    // the Home Assistant account, the guests and the service accounts are not
+    // people who live here
+    expect(ctx.value.memberCount).toBe(2);
+    expect(module.householdMembers()).toEqual([
+      { user_id: "admin-1", name: "Marcel", role: "user" },
+      { user_id: "partner-1", name: "Sam", role: "user" },
+    ]);
+    expect(pending.value.map((step) => step.id)).not.toContain(
+      "invite_members",
+    );
+  });
+
+  it("never asks the server for the users on behalf of someone who is not an admin", async () => {
+    authMock.isAdmin.mockReturnValue(false);
+
+    const { ctx, dataLoaded } = await loadOnboarding();
+
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+    // nothing to wait for, and nothing claimed about a household nobody asked
+    // about
+    expect(dataLoaded.value).toBe(true);
+    expect(ctx.value.memberCount).toBeNull();
+  });
+
+  it("takes the household as unknown when the users cannot be loaded", async () => {
+    apiMock.getAllUsers.mockRejectedValue(new Error("boom"));
+
+    const module = await loadModule();
+    const { ctx, dataLoaded, steps } = module.useOnboarding();
+    await module.useOnboarding().loadOnboardingData();
+
+    // the api toasts its own failures; the step is then simply not done and,
+    // being optional, holds nothing up
+    expect(dataLoaded.value).toBe(true);
+    expect(ctx.value.memberCount).toBeNull();
+    expect(module.householdMembers()).toEqual([]);
+    const invite = steps.value.find((step) => step.id === "invite_members")!;
+    expect(invite.isDone(ctx.value)).toBe(false);
+    expect(invite.optional).toBe(true);
+    expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it("takes the household the server lists again once a member was added", async () => {
+    const module = await loadModule();
+    const { ctx, reloadUsers } = module.useOnboarding();
+    await module.useOnboarding().loadOnboardingData();
+    expect(ctx.value.memberCount).toBe(1);
+
+    users.list.push(user({ user_id: "partner-1", username: "sam" }));
+    await reloadUsers();
+
+    expect(apiMock.getAllUsers).toHaveBeenCalledTimes(2);
+    expect(ctx.value.memberCount).toBe(2);
   });
 
   it("lists a configuration that is set up but needs attention", async () => {
@@ -245,8 +331,8 @@ describe("useOnboarding", () => {
     });
 
     const module = await loadModule();
-    const { ctx, pending, loadProviderConfigs } = module.useOnboarding();
-    await loadProviderConfigs();
+    const { ctx, pending, loadOnboardingData } = module.useOnboarding();
+    await loadOnboardingData();
 
     // a switched off source is still a source: the step is done either way
     expect(module.configuredProviders(ProviderType.MUSIC)).toEqual([
@@ -279,7 +365,7 @@ describe("useOnboarding", () => {
     apiMock.providers["spotify--1"] = { name: "Spotify in the kitchen" };
 
     const module = await loadModule();
-    await module.useOnboarding().loadProviderConfigs();
+    await module.useOnboarding().loadOnboardingData();
 
     expect(module.configuredProviders(ProviderType.MUSIC)[0].name).toBe(
       "Spotify in the kitchen",
@@ -291,7 +377,7 @@ describe("useOnboarding", () => {
     providerConfigs.list[0].name = "The kitchen's Spotify";
 
     const module = await loadModule();
-    await module.useOnboarding().loadProviderConfigs();
+    await module.useOnboarding().loadOnboardingData();
 
     expect(module.configuredProviders(ProviderType.MUSIC)[0].name).toBe(
       "The kitchen's Spotify",
@@ -317,6 +403,7 @@ describe("useOnboarding", () => {
     expect(pending.value.map((step) => step.id)).toEqual([
       "players",
       "plugins",
+      "invite_members",
     ]);
 
     dismiss();
@@ -343,6 +430,7 @@ describe("useOnboarding", () => {
     expect(pending.value.map((step) => step.id)).toEqual([
       "plugins",
       "music_sources",
+      "invite_members",
     ]);
     expect(checklist.value.map((step) => step.id)).toEqual([
       "intent",
@@ -378,8 +466,12 @@ describe("useOnboarding", () => {
     const { pending, checklistPending, hasPending } = await loadOnboarding();
     preferenceState.intent.value = "music_hub";
 
-    // the plugins are still to do, and still nothing to ask about
-    expect(pending.value.map((step) => step.id)).toEqual(["plugins"]);
+    // the plugins and the household are still to do, and still nothing to ask
+    // about
+    expect(pending.value.map((step) => step.id)).toEqual([
+      "plugins",
+      "invite_members",
+    ]);
     expect(checklistPending.value).toEqual([]);
     expect(hasPending.value).toBe(false);
   });

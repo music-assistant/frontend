@@ -32,18 +32,18 @@ const {
   hasPending,
   dismissed,
   dismiss,
-  configsLoaded,
-  loadProviderConfigs,
+  dataLoaded,
+  loadOnboardingData,
 } = useOnboarding();
 
 const open = ref(false);
 
 // Onboarding is an admin job; nobody else ever sees the checklist, and nothing
-// is counted before the provider configurations say what is set up.
+// is counted before the server says what is set up.
 const visible = computed(
   () =>
     authManager.isAdmin() &&
-    configsLoaded.value &&
+    dataLoaded.value &&
     hasPending.value &&
     !dismissed.value,
 );
@@ -59,10 +59,10 @@ const hideForNow = function () {
   dismiss();
 };
 
-// the checklist is the only reason the sidebar needs the provider
-// configurations, so nobody but an admin ever fetches them
+// the checklist is the only reason the sidebar needs the onboarding data, so
+// nobody but an admin ever fetches it
 onMounted(() => {
-  if (authManager.isAdmin()) void loadProviderConfigs();
+  if (authManager.isAdmin()) void loadOnboardingData();
 });
 </script>
 

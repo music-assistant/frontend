@@ -59,8 +59,10 @@
 </template>
 
 <script setup lang="ts">
+import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
 import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
+import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -82,7 +84,7 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
-const { ctx, steps, configsLoaded, loadProviderConfigs, setIntent, finish } =
+const { ctx, steps, dataLoaded, loadOnboardingData, setIntent, finish } =
   useOnboarding();
 
 const STEP_VIEWS: Record<
@@ -102,6 +104,8 @@ const STEP_VIEWS: Record<
     component: markRaw(ProvidersStep),
     props: { providerType: ProviderType.PLUGIN },
   },
+  core_settings: { component: markRaw(CoreSettingsStep) },
+  invite_members: { component: markRaw(InviteMembersStep) },
   finish: { component: markRaw(FinishStep) },
 };
 
@@ -112,8 +116,8 @@ const requestedId = computed(() => {
 
 // The step being shown is page state: the wizard never moves by itself while
 // providers arrive, only when the user (or a deep link) says so. It stays
-// unresolved until the provider configurations land, so the wizard never opens
-// on a step that turns out to be done already.
+// unresolved until the onboarding data lands, so the wizard never opens on a
+// step that turns out to be done already.
 const currentId = ref<OnboardingStepId | null>(null);
 const stepHeading = ref<HTMLHeadingElement | null>(null);
 const finishing = ref(false);
@@ -191,9 +195,9 @@ const finishOnboarding = async function () {
 
 // A deep link (or the getting-started checklist, which pushes onto this same
 // route) decides the step; anything that does not apply falls back. This also
-// settles the step the wizard opens on, as soon as the configurations are in.
+// settles the step the wizard opens on, as soon as the data is in.
 watch(
-  [configsLoaded, requestedId],
+  [dataLoaded, requestedId],
   ([loaded, id]) => {
     if (!loaded) return;
     const resolved = firstStep(ctx.value, id);
@@ -217,12 +221,13 @@ const focusStepHeading = async function () {
   stepHeading.value?.focus();
 };
 
-// The wizard decides everything off the provider configurations, so it asks for
-// them itself; a remount is worth the one call for a fresh answer. Focus lands
-// on the heading as the wizard opens, so arriving from the sidebar checklist
-// puts the keyboard inside it, and follows the step from there.
+// The wizard decides everything off the provider configurations and the users,
+// so it asks for them itself; a remount is worth the one call for a fresh
+// answer. Focus lands on the heading as the wizard opens, so arriving from the
+// sidebar checklist puts the keyboard inside it, and follows the step from
+// there.
 onMounted(() => {
-  void loadProviderConfigs();
+  void loadOnboardingData();
   focusStepHeading();
 });
 watch(currentId, focusStepHeading);

@@ -17,6 +17,8 @@ const BASE_ORDER = [
   "music_sources",
   "players",
   "plugins",
+  "core_settings",
+  "invite_members",
   "finish",
 ] as const;
 
@@ -36,6 +38,7 @@ function context(
     isAdmin: true,
     providers: [],
     playerCount: 0,
+    memberCount: null,
     answers: {},
     ...overrides,
   };
@@ -65,11 +68,15 @@ describe("onboarding step order", () => {
   it("defers the music sources for someone streaming from phone apps", () => {
     const ctx = context({ answers: { intent: "phone_apps" } });
 
+    // behind the plugins and ahead of the review, which is no place to leave
+    // something that is still to do
     expect(stepIds(applicableSteps(ctx))).toEqual([
       "intent",
       "players",
       "plugins",
       "music_sources",
+      "core_settings",
+      "invite_members",
       "finish",
     ]);
     // deferred, not dropped: it is still offered and still asked for, it just
@@ -158,6 +165,35 @@ describe("onboarding step completion", () => {
     expect(step(ctx, "plugins").isDone(ctx)).toBe(false);
   });
 
+  it("never marks the review of the server settings done", () => {
+    // nothing is missing from settings the server ships working values for, so
+    // the wizard walks the user past it instead of skipping over it
+    for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
+      const ctx = context({ answers: intent ? { intent } : {} });
+      expect(step(ctx, "core_settings").kind).toBe("review");
+      expect(step(ctx, "core_settings").isDone(ctx)).toBe(false);
+    }
+  });
+
+  it.each([
+    [null, false],
+    [0, false],
+    [1, false],
+    [2, true],
+  ])("marks the household of %o members done: %o", (memberCount, done) => {
+    // one member is the admin running the wizard; not knowing who is in the
+    // household is not the same as nobody else being in it
+    const ctx = context({ memberCount });
+    expect(step(ctx, "invite_members").isDone(ctx)).toBe(done);
+  });
+
+  it("keeps the household optional, whatever the answer", () => {
+    for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
+      const ctx = context({ answers: intent ? { intent } : {} });
+      expect(step(ctx, "invite_members").optional).toBe(true);
+    }
+  });
+
   it("never marks the summary done", () => {
     const ctx = context({
       answers: { intent: "music_hub" },
@@ -172,12 +208,13 @@ describe("onboarding step completion", () => {
 });
 
 describe("pending onboarding steps", () => {
-  it("lists everything still to do, summary excluded", () => {
+  it("lists everything still to do, review and summary excluded", () => {
     expect(stepIds(pendingSteps(context()))).toEqual([
       "intent",
       "music_sources",
       "players",
       "plugins",
+      "invite_members",
     ]);
   });
 
@@ -185,6 +222,7 @@ describe("pending onboarding steps", () => {
     const ctx = context({
       answers: { intent: "music_hub" },
       providers: [provider(ProviderType.PLAYER, "sonos")],
+      memberCount: 2,
     });
     expect(stepIds(pendingSteps(ctx))).toEqual(["music_sources", "plugins"]);
   });
@@ -197,6 +235,7 @@ describe("pending onboarding steps", () => {
         provider(ProviderType.PLAYER, "sonos"),
         provider(ProviderType.PLUGIN, "party"),
       ],
+      memberCount: 2,
     });
     expect(pendingSteps(ctx)).toEqual([]);
   });
@@ -224,10 +263,15 @@ describe("the getting started checklist", () => {
   });
 
   it.each([undefined, "music_hub", "phone_apps"] as const)(
-    "never lists the always optional plugins, whatever the answer (%s)",
+    "never asks for what it is not there to ask for, whatever the answer (%s)",
     (intent) => {
       const ctx = context({ answers: intent ? { intent } : {} });
-      expect(stepIds(checklistSteps(ctx))).not.toContain("plugins");
+      const listed = stepIds(checklistSteps(ctx));
+      // the plugins and the household are optional by nature, the server
+      // settings are only there to be looked over
+      expect(listed).not.toContain("plugins");
+      expect(listed).not.toContain("invite_members");
+      expect(listed).not.toContain("core_settings");
     },
   );
 
@@ -238,8 +282,12 @@ describe("the getting started checklist", () => {
     });
 
     // the music sources moved behind the plugins for this answer; the plugins
-    // are the only thing left the checklist stays quiet about
-    expect(stepIds(pendingSteps(ctx))).toEqual(["plugins", "music_sources"]);
+    // and the household are what the checklist stays quiet about
+    expect(stepIds(pendingSteps(ctx))).toEqual([
+      "plugins",
+      "music_sources",
+      "invite_members",
+    ]);
     expect(stepIds(checklistSteps(ctx))).toEqual([
       "intent",
       "players",
@@ -257,8 +305,9 @@ describe("the getting started checklist", () => {
       ],
     });
 
-    // the plugins are still to do, and still nothing the checklist asks for
-    expect(stepIds(pendingSteps(ctx))).toEqual(["plugins"]);
+    // the plugins and the household are still to do, and still nothing the
+    // checklist asks for
+    expect(stepIds(pendingSteps(ctx))).toEqual(["plugins", "invite_members"]);
     expect(checklistPendingSteps(ctx)).toEqual([]);
   });
 
@@ -283,12 +332,30 @@ describe("the step the wizard opens on", () => {
     expect(firstStep(ctx, "intent")).toBe("intent");
   });
 
-  it.each(["", "nope", "core_settings"])(
+  it.each(["", "nope", "household"])(
     "falls back to the first pending step for the unknown id %o",
     (requested) => {
       expect(firstStep(context(), requested)).toBe("intent");
     },
   );
+
+  it("honours a deep link to a step that is only there to be looked over", () => {
+    expect(firstStep(context(), "core_settings")).toBe("core_settings");
+  });
+
+  it("never opens on the server settings by itself", () => {
+    // a review is nothing to do, so it is never what is left to do
+    const ctx = context({
+      answers: { intent: "music_hub" },
+      providers: [
+        provider(ProviderType.MUSIC, "spotify"),
+        provider(ProviderType.PLAYER, "sonos"),
+        provider(ProviderType.PLUGIN, "party"),
+      ],
+    });
+    expect(firstStep(ctx)).toBe("invite_members");
+    expect(firstStep({ ...ctx, memberCount: 2 })).toBe("finish");
+  });
 
   it("falls back for a step that does not apply", () => {
     expect(firstStep(context({ isAdmin: false }), "players")).toBe("finish");
@@ -302,6 +369,7 @@ describe("the step the wizard opens on", () => {
         provider(ProviderType.PLAYER, "sonos"),
         provider(ProviderType.PLUGIN, "party"),
       ],
+      memberCount: 2,
     });
     expect(firstStep(ctx)).toBe("finish");
   });
