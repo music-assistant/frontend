@@ -342,6 +342,7 @@ import {
 } from "@/helpers/provider_access";
 import {
   canReconfigureProvider,
+  getProviderName,
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   providerRequiresReconfiguration,
@@ -758,17 +759,6 @@ watch(
     }
   },
 );
-
-const getProviderName = function (config: ProviderConfig) {
-  // Try to get the name from the provider instance first
-  const providerInstance = api.getProvider(config.instance_id);
-  if (providerInstance && providerInstance.name) {
-    return providerInstance.name;
-  }
-  // fallback on configured name or manifest name
-  const manifest = api.providerManifests[config.domain];
-  return config.name || config.default_name || manifest?.name;
-};
 
 const isTextTruncated = function (text: string) {
   return text && text.length > 150;

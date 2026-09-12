@@ -128,6 +128,7 @@ import {
   ownerCandidates,
   userDisplayName,
 } from "@/helpers/provider_access";
+import { getProviderName } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
   type ProviderConfig,
@@ -180,17 +181,9 @@ const canPickSharedUsers = computed(
     sharing.value === ProviderSharing.SELECTED,
 );
 
-// a source that is not loaded is named by its config, like the list does
-const sourceName = computed(() => {
-  if (!props.config) return "";
-  return (
-    api.providers[props.config.instance_id]?.name ||
-    props.config.name ||
-    props.config.default_name ||
-    api.providerManifests[props.config.domain]?.name ||
-    props.config.instance_id
-  );
-});
+const sourceName = computed(() =>
+  props.config ? getProviderName(props.config) : "",
+);
 
 // titled like the menu entry that opens it: Access for an admin, Sharing for
 // a member

@@ -1,13 +1,24 @@
 import { ProviderStage, ProviderStatus } from "@/plugins/api/interfaces";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { providerConfig } from "../../tests/fixtures/providerConfig";
 import {
   canReconfigureProvider,
+  getProviderName,
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
 } from "./provider_config";
+
+const { apiMock } = vi.hoisted(() => ({
+  apiMock: {
+    providerManifests: {} as Record<string, { name: string }>,
+    providers: {} as Record<string, { name: string }>,
+  },
+}));
+
+vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 
 describe("provider configuration state", () => {
   it.each([
@@ -119,5 +130,67 @@ describe("provider configuration state", () => {
         `is:issue state:open label:"${label}"`,
       )}`,
     );
+  });
+});
+
+describe("provider display name", () => {
+  beforeEach(() => {
+    apiMock.providers = {};
+    apiMock.providerManifests = {};
+  });
+
+  it("prefers the custom name from the config over the live instance name", () => {
+    const config = providerConfig({
+      domain: "spotify",
+      name: "Kitchen Spotify",
+      default_name: "Spotify",
+    });
+    apiMock.providers[config.instance_id] = { name: "Spotify" };
+    apiMock.providerManifests[config.domain] = { name: "Spotify" };
+
+    expect(getProviderName(config)).toBe("Kitchen Spotify");
+  });
+
+  it("uses the live instance name when the config has no custom name", () => {
+    const config = providerConfig({
+      domain: "spotify",
+      default_name: "Spotify",
+    });
+    apiMock.providers[config.instance_id] = { name: "Spotify (bob)" };
+    apiMock.providerManifests[config.domain] = { name: "Spotify" };
+
+    expect(getProviderName(config)).toBe("Spotify (bob)");
+  });
+
+  it("falls back to the default name for an unloaded provider", () => {
+    // an unloaded provider has no instance to read a name from
+    const config = providerConfig({
+      domain: "spotify",
+      name: null,
+      default_name: "Spotify (bob)",
+    });
+    apiMock.providerManifests[config.domain] = { name: "Spotify" };
+
+    expect(getProviderName(config)).toBe("Spotify (bob)");
+  });
+
+  it("falls back to the manifest name without a custom or default name", () => {
+    const config = providerConfig({ domain: "spotify" });
+    apiMock.providerManifests[config.domain] = { name: "Spotify" };
+
+    expect(getProviderName(config)).toBe("Spotify");
+  });
+
+  it("falls back to the instance id when nothing else is known", () => {
+    const config = providerConfig({ domain: "spotify" });
+
+    expect(getProviderName(config)).toBe(config.instance_id);
+  });
+
+  it("falls through an empty custom name rather than rendering blank", () => {
+    const config = providerConfig({ domain: "spotify", name: "" });
+    apiMock.providerManifests[config.domain] = { name: "Spotify" };
+
+    expect(getProviderName(config)).toBe("Spotify");
   });
 });

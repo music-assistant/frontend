@@ -312,6 +312,7 @@ import {
 import { isOwnMusicSource } from "@/helpers/provider_access";
 import {
   canReconfigureProvider,
+  getProviderName,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
 } from "@/helpers/provider_config";
@@ -379,12 +380,8 @@ const providerManifest = computed(() => {
   return api.providerManifests[config.value.domain];
 });
 
-const providerName = computed(
-  () =>
-    config.value?.name ||
-    api.providers[config.value?.instance_id ?? ""]?.name ||
-    config.value?.default_name ||
-    providerManifest.value?.name,
+const providerName = computed(() =>
+  config.value ? getProviderName(config.value) : "",
 );
 
 const canReconfigure = computed(() =>

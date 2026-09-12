@@ -1,4 +1,9 @@
-import { ProviderStage, ProviderStatus } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import {
+  type ProviderConfig,
+  ProviderStage,
+  ProviderStatus,
+} from "@/plugins/api/interfaces";
 
 const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
   [ProviderStatus.LOADED]: "settings.provider_status_loaded",
@@ -87,3 +92,16 @@ export const getProviderSupportIssuesUrl = (domain: string) => {
     `is:issue state:open label:"${label}"`,
   )}`;
 };
+
+/**
+ * The name shown for a provider, which may only be configured and not loaded yet.
+ * A custom name set on the config wins over the name the server reports for the
+ * running instance; an unloaded provider falls back to its configured default
+ * name, then to the generic manifest name.
+ */
+export const getProviderName = (config: ProviderConfig): string =>
+  config.name ||
+  api.providers[config.instance_id]?.name ||
+  config.default_name ||
+  api.providerManifests[config.domain]?.name ||
+  config.instance_id;
