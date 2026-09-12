@@ -344,6 +344,7 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import {
   ImageColorPalette,
+  getMediaItemImage,
   getMediaItemImageUrl,
   paletteFromServer,
 } from "@/helpers/utils";
@@ -700,10 +701,12 @@ const fetchQueueItems = async (force = false) => {
   }
 };
 
-// Album art URL for the blurred background element
+// Album art URL for the blurred background element. Resolved the same way as
+// the track cards, so a radio stream blurs its live artwork rather than the
+// station logo sitting on the queue item.
 const albumArtUrl = computed(() => {
-  if (!store.curQueueItem?.image) return "";
-  return getMediaItemImageUrl(store.curQueueItem.image) || "";
+  const img = getMediaItemImage(store.curQueueItem);
+  return img ? getMediaItemImageUrl(img) || "" : "";
 });
 
 // Gradient background style (used when album art is disabled, or as fallback)
