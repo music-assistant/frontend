@@ -1,5 +1,6 @@
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderType, type Scope } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const {
   apiMock,
@@ -20,7 +21,7 @@ const {
     sendCommand: vi.fn(),
     serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
   },
-  authMock: { hasScope: vi.fn(() => true) },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // replaced with a real ref by the userPreferences mock factory below, so
   // the composable's computed context follows what a test sets here
   preferenceState: { intent: { value: undefined } as { value?: string } },
@@ -122,7 +123,9 @@ describe("useOnboarding", () => {
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
     apiMock.serverInfo.value = { onboard_done: false };
-    authMock.hasScope.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     routerMock.replace.mockReset();
     setUserPreferenceMock.mockReset();
     toastMock.error.mockReset();
@@ -165,6 +168,19 @@ describe("useOnboarding", () => {
       "plugins",
     ]);
     expect(hasPending.value).toBe(true);
+  });
+
+  it.each([
+    ["a member", BUILTIN_ROLE_SCOPES.user],
+    ["a guest", BUILTIN_ROLE_SCOPES.guest],
+  ])("asks nothing of %s, who is not an admin", async (_role, scopes) => {
+    authMock.hasScope.mockImplementation(scopeChecker(scopes));
+    addProvider("spotify--1", "spotify", ProviderType.MUSIC);
+
+    const { steps, hasPending } = await loadOnboarding();
+
+    expect(steps.value).toEqual([]);
+    expect(hasPending.value).toBe(false);
   });
 
   it("decides nothing before the configurations are in", async () => {

@@ -568,6 +568,9 @@ const getProviderName = (instanceId: string) => {
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
+  // without config.players.write only the player options open, so the crumbs
+  // leading to the players and their settings are plain text
+  const canConfigurePlayers = authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE);
 
   // "Settings" heads the toolbar on its own line, so the trail starts below it
   const items: ToolbarHeadingItem[] = [];
@@ -584,7 +587,7 @@ const breadcrumbItems = computed(() => {
       items.push({
         title: t("settings.players"),
         disabled: name === "playersettings",
-        to: { name: "playersettings" },
+        to: canConfigurePlayers ? { name: "playersettings" } : undefined,
       });
     } else if (currentTab === "system") {
       if (
@@ -679,7 +682,9 @@ const breadcrumbItems = computed(() => {
           // a disabled player is never registered, so it has no name to show
           title: api.players[playerId]?.name || t("settings.player_settings"),
           disabled: name === "editplayer",
-          to: { name: "editplayer", params: { playerId } },
+          to: canConfigurePlayers
+            ? { name: "editplayer", params: { playerId } }
+            : undefined,
         });
         const section = match(name)
           .with("editplayerdsp", () => t("settings.category.dsp"))

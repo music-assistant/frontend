@@ -4,6 +4,7 @@ import {
   PlayerType,
   ProviderFeature,
   ProviderType,
+  Scope,
   type Player,
   type PlayerConfig,
   type PlayerOption,
@@ -11,32 +12,45 @@ import {
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerManifest } from "../fixtures/providerManifest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emitEvent, routerPush, setPreference, storeMock, toastMock } =
-  vi.hoisted(() => ({
-    apiMock: {
-      getProvider: vi.fn(),
-      getProviderManifest: vi.fn(),
-      players: {} as Record<string, unknown>,
-      queues: {} as Record<string, unknown>,
-      removePlayer: vi.fn(),
-      savePlayerConfig: vi.fn(),
-    },
-    emitEvent: vi.fn(),
-    routerPush: vi.fn(),
-    setPreference: vi.fn(),
-    storeMock: {
-      activePlayerId: undefined as string | undefined,
-    },
-    toastMock: {
-      error: vi.fn(),
-      success: vi.fn(),
-    },
-  }));
+const {
+  apiMock,
+  emitEvent,
+  hasScope,
+  routerPush,
+  setPreference,
+  storeMock,
+  toastMock,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getProvider: vi.fn(),
+    getProviderManifest: vi.fn(),
+    players: {} as Record<string, unknown>,
+    queues: {} as Record<string, unknown>,
+    removePlayer: vi.fn(),
+    savePlayerConfig: vi.fn(),
+  },
+  emitEvent: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
+  routerPush: vi.fn(),
+  setPreference: vi.fn(),
+  storeMock: {
+    activePlayerId: undefined as string | undefined,
+  },
+  toastMock: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
 }));
 
 vi.mock("@/plugins/eventbus", () => ({
@@ -82,6 +96,11 @@ const SECTION_LABELS = [
   "open_dsp_settings",
   "player_options.open",
 ];
+
+// an admin unless a test says otherwise
+beforeEach(() => {
+  hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+});
 
 describe("getPlayerSettingsMenuItems sections", () => {
   beforeEach(() => {
@@ -283,6 +302,40 @@ describe("getPlayerSettingsMenuItems actions", () => {
     // it was not the player that left, so nothing about the selection changes
     expect(setPreference).not.toHaveBeenCalled();
   });
+});
+
+describe("getPlayerSettingsMenuItems provider settings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  const offersProviderSettings = () =>
+    visibleLabels(getPlayerSettingsMenuItems(playerConfig())).includes(
+      "settings.provider_settings",
+    );
+
+  it("links an admin to the settings of the player provider", () => {
+    expect(offersProviderSettings()).toBe(true);
+  });
+
+  it.each([
+    { role: "a member", scopes: BUILTIN_ROLE_SCOPES.user },
+    { role: "a guest", scopes: BUILTIN_ROLE_SCOPES.guest },
+    {
+      role: "a role that only changes player settings",
+      scopes: [...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PLAYERS_WRITE],
+    },
+  ])(
+    "keeps $role away from the settings of the player provider",
+    ({ scopes }) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+
+      expect(offersProviderSettings()).toBe(false);
+    },
+  );
 });
 
 /**

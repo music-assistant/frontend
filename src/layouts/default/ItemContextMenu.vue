@@ -538,10 +538,12 @@ export const getContextMenuItems = async function (
     });
   }
 
+  // creates an AI Radio show from the playlist, which takes config.providers.write
   if (
     items.length === 1 &&
     firstItem.media_type === MediaType.PLAYLIST &&
-    store.enabledPlugins.has("ai_radio")
+    store.enabledPlugins.has("ai_radio") &&
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {
     contextMenuItems.push({
       label: "providers.ai_radio.context.run_with",
@@ -929,6 +931,7 @@ export const getContextMenuItems = async function (
 
   // update metadata
   if (
+    managesLibrary &&
     items.length === 1 &&
     items[0] == parentItem &&
     items[0].media_type !== MediaType.COLLECTION
@@ -974,12 +977,14 @@ export const getContextMenuItems = async function (
       featureMap[item.media_type],
     );
     // For playlists, also check is_editable flag (builtin special playlists are not editable)
-    // and that the user manages the playlist (a personal one is only edited by its owner)
-    const isEditablePlaylist =
-      item.media_type !== MediaType.PLAYLIST ||
-      ((item as Playlist).is_editable !== false &&
-        canManagePlaylist(item as Playlist, store.currentUser, managesLibrary));
-    if (hasBuiltinProvider && supportsEdit && isEditablePlaylist) {
+    // and that the user manages the playlist (a personal one is only edited by its owner);
+    // radios and tracks are edited by a library manager
+    const canEditItem =
+      item.media_type === MediaType.PLAYLIST
+        ? (item as Playlist).is_editable !== false &&
+          canManagePlaylist(item as Playlist, store.currentUser, managesLibrary)
+        : managesLibrary;
+    if (hasBuiltinProvider && supportsEdit && canEditItem) {
       contextMenuItems.push({
         label: labelMap[item.media_type],
         labelArgs: [],
@@ -992,6 +997,7 @@ export const getContextMenuItems = async function (
   }
   // refresh item
   if (
+    managesLibrary &&
     items.length === 1 &&
     items[0].media_type !== MediaType.COLLECTION &&
     (items[0] == parentItem || !itemIsAvailable(items[0]))
@@ -1125,6 +1131,7 @@ export const getContextMenuItems = async function (
   }
   // map to main item (add provider mapping)
   if (
+    managesLibrary &&
     items.length === 1 &&
     parentItem &&
     parentItem.provider == "library" &&
@@ -1160,6 +1167,7 @@ export const getContextMenuItems = async function (
   }
   // link to genre (library items only, non-genre)
   if (
+    managesLibrary &&
     items.every(
       (i) =>
         i.media_type !== MediaType.GENRE &&

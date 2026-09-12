@@ -71,6 +71,7 @@ import {
   RecommendationFolder,
   RemoteAccessInfo,
   RepeatMode,
+  Scope,
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
@@ -2737,13 +2738,20 @@ export class MusicAssistantApi {
       return;
     }
 
-    toast.info($t("background_tasks.toast.added"), {
-      action: {
-        label: $t("background_tasks.open"),
-        onClick: () => {
-          void this._openBackgroundTasks();
-        },
-      },
+    // Imported dynamically for the same reason as the router below: auth.ts
+    // imports this module statically.
+    void import("../auth").then(({ authManager }) => {
+      toast.info($t("background_tasks.toast.added"), {
+        // the task list takes system.read
+        action: authManager.hasScope(Scope.SYSTEM_READ)
+          ? {
+              label: $t("background_tasks.open"),
+              onClick: () => {
+                void this._openBackgroundTasks();
+              },
+            }
+          : undefined,
+      });
     });
   }
 

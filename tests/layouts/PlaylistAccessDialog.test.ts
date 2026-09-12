@@ -2,6 +2,7 @@ import PlaylistAccessDialog from "@/layouts/default/PlaylistAccessDialog.vue";
 import {
   type PlaylistAccess,
   ProviderSharing,
+  type Scope,
   type UserSummary,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -15,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
 import { providerMapping } from "../fixtures/providerMapping";
 import { selectOptions } from "../fixtures/rekaSelect";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const { apiMock, authMock, storeMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -22,7 +24,7 @@ const { apiMock, authMock, storeMock, toastMock } = vi.hoisted(() => ({
     setPlaylistAccess: vi.fn(),
   },
   authMock: {
-    hasScope: vi.fn<() => boolean>(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
   },
   storeMock: {
     currentUser: undefined,
@@ -83,7 +85,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   storeMock.dialogActive = false;
   storeMock.isTouchscreen = false;
-  authMock.hasScope.mockReturnValue(true);
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   apiMock.getShareCandidates.mockResolvedValue(members);
   apiMock.setPlaylistAccess.mockResolvedValue(maPlaylist(sharedWithMember));
   document.body.innerHTML = "";
@@ -105,7 +107,9 @@ describe("PlaylistAccessDialog", () => {
   });
 
   it("hides the owner from a member", async () => {
-    authMock.hasScope.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
 
     await openDialog(maPlaylist(sharedWithMember));
 

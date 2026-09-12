@@ -493,13 +493,20 @@ describe("App initialization", () => {
       expect(mockRouterPush).toHaveBeenCalledWith({ name: "onboarding" });
     });
 
-    it("leaves a non-admin alone on a server that has not been set up", async () => {
-      apiMock.serverInfo.value.onboard_done = false;
+    it.each([
+      ["a member", BUILTIN_ROLE_SCOPES.user],
+      ["a guest", BUILTIN_ROLE_SCOPES.guest],
+    ])(
+      "leaves %s alone on a server that has not been set up",
+      async (_role, scopes) => {
+        authManagerMock.hasScope.mockImplementation(scopeChecker(scopes));
+        apiMock.serverInfo.value.onboard_done = false;
 
-      wrapper = await mountApp();
+        wrapper = await mountApp();
 
-      expect(mockRouterPush).not.toHaveBeenCalled();
-    });
+        expect(mockRouterPush).not.toHaveBeenCalled();
+      },
+    );
 
     it("stays out of the way once the server is set up", async () => {
       asAdmin();
