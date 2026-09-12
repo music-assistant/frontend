@@ -23,6 +23,7 @@
           <create-smart-playlist-dialog />
           <import-playlist-dialog />
           <migrate-playlist-dialog />
+          <playlist-access-dialog />
           <play-announcement-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
@@ -76,6 +77,7 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 import MigratePlaylistDialog from "./MigratePlaylistDialog.vue";
 import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
 import PlayerSelect from "./PlayerSelect.vue";
+import PlaylistAccessDialog from "./PlaylistAccessDialog.vue";
 
 const route = useRoute();
 

@@ -263,7 +263,9 @@
                 icon="mdi-account-music"
               />
               <MarqueeText :sync="marqueeSync">
-                <a style="color: primary">{{ item.owner }}</a>
+                <slot name="owner"
+                  ><a style="color: primary">{{ item.owner }}</a></slot
+                >
               </MarqueeText>
             </v-card-subtitle>
 

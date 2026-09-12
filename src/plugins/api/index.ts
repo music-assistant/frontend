@@ -31,6 +31,7 @@ import {
   type PlayerOptionValueType,
   type PlayerQueue,
   type Playlist,
+  type PlaylistAccess,
   type ProviderInstance,
   type QueueItem,
   type Radio,
@@ -861,6 +862,27 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
     });
+  }
+
+  public setPlaylistAccess(
+    item_id: string,
+    access: PlaylistAccess,
+  ): Promise<Playlist> {
+    // Set who owns a Music Assistant playlist, who may see it and who may edit it.
+    // A library manager may set this for any playlist, an owner may only
+    // change the sharing of a playlist it owns. The dialog reports a refused
+    // change itself, so opt out of the global error toast.
+    return this.sendCommand(
+      "music/playlists/set_access",
+      {
+        item_id,
+        owner: access.owner,
+        sharing: access.sharing,
+        shared_users: access.shared_users,
+        collaborative: access.collaborative,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public getPlaylistTracks(
@@ -2283,18 +2305,23 @@ export class MusicAssistantApi {
   ): Promise<ProviderConfig> {
     // Set who owns a music source and who else may use it.
     // An admin may set this for any music source, an owner may
-    // only change the sharing of a source it owns.
-    return this.sendCommand("config/providers/set_access", {
-      instance_id,
-      owner: access.owner,
-      sharing: access.sharing,
-      shared_users: access.shared_users,
-    });
+    // only change the sharing of a source it owns. The dialog reports a
+    // refused change itself, so opt out of the global error toast.
+    return this.sendCommand(
+      "config/providers/set_access",
+      {
+        instance_id,
+        owner: access.owner,
+        sharing: access.sharing,
+        shared_users: access.shared_users,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public getShareCandidates(): Promise<UserSummary[]> {
-    // Get the users a music source can be shared with, the caller included;
-    // check supportsShareCandidates first.
+    // Get the users a music source or playlist can be shared with, the caller
+    // included; check supportsShareCandidates first.
     return this.sendCommand("config/providers/share_candidates", undefined, {
       // callers show their own error toast; avoid a duplicate global one
       suppressGlobalError: true,

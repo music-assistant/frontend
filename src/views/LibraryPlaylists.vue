@@ -32,6 +32,7 @@ import {
   EventMessage,
   EventType,
   MediaType,
+  type Playlist,
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -165,6 +166,15 @@ onMounted(() => {
         evt.event === EventType.MEDIA_ITEM_ADDED ||
         evt.event === EventType.MEDIA_ITEM_DELETED
       ) {
+        listingRef.value?.reload?.();
+      } else if (
+        (evt.data as Playlist).access !== null &&
+        listingRef.value?.isMissing((evt.data as Playlist).uri)
+      ) {
+        // the server only announces a playlist to the users who may see it, so
+        // a personal playlist a fully loaded, unfiltered listing lacks was just
+        // shared with the user; one the user may no longer see is not announced
+        // and stays until the next reload
         listingRef.value?.reload?.();
       } else {
         updateAvailable.value = true;

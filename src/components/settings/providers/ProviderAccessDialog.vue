@@ -64,7 +64,7 @@
               </SelectContent>
             </Select>
             <FieldDescription>
-              {{ $t(getProviderSharingHintTranslationKey(sharing)) }}
+              {{ $t(getProviderSharingHintTranslationKey(formAccess)) }}
             </FieldDescription>
           </Field>
 
@@ -87,7 +87,7 @@
         <Button
           type="submit"
           form="form-provider-access"
-          :disabled="saving"
+          :disabled="saving || servesNobody(formAccess)"
           :loading="saving"
         >
           {{ $t("settings.save") }}
@@ -126,11 +126,13 @@ import {
   getProviderSharingHintTranslationKey,
   getProviderSharingTranslationKey,
   ownerCandidates,
+  servesNobody,
   userDisplayName,
 } from "@/helpers/provider_access";
 import { providerDisplayName } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
+  type ProviderAccess,
   type ProviderConfig,
   ProviderSharing,
   type User,
@@ -214,15 +216,25 @@ const shareOptions = computed(() =>
     .map((user) => ({ label: userDisplayName(user), value: user.user_id })),
 );
 
-// without the members to pick from there is nobody to select, so that choice
-// is only kept when it is already the current one
 const sharingOptions = computed(() =>
-  Object.values(ProviderSharing).filter(
-    (option) =>
-      option !== ProviderSharing.SELECTED ||
-      props.shareCandidates !== null ||
-      currentAccess.value.sharing === ProviderSharing.SELECTED,
-  ),
+  Object.values(ProviderSharing).filter((option) => {
+    // without the members to pick from there is nobody to select, so that
+    // choice is only kept when it is already the current one
+    if (option === ProviderSharing.SELECTED)
+      return (
+        props.shareCandidates !== null ||
+        currentAccess.value.sharing === ProviderSharing.SELECTED
+      );
+    // a source without an owner has to be shared with somebody, so private
+    // sharing is only kept for one that is stored that way already
+    if (option === ProviderSharing.PRIVATE)
+      return (
+        recordOwner.value !== null ||
+        (currentAccess.value.owner === null &&
+          currentAccess.value.sharing === ProviderSharing.PRIVATE)
+      );
+    return true;
+  }),
 );
 
 const currentAccess = computed(() =>
@@ -233,6 +245,14 @@ const currentAccess = computed(() =>
 const recordOwner = computed(() =>
   canChangeOwner.value ? selectedOwner.value : currentAccess.value.owner,
 );
+
+// the access record the form describes, as it is saved
+const formAccess = computed<ProviderAccess>(() => ({
+  owner: recordOwner.value,
+  sharing: sharing.value,
+  shared_users:
+    sharing.value === ProviderSharing.SELECTED ? sharedUsers.value : [],
+}));
 
 const ownedByViewer = computed(
   () => recordOwner.value === store.currentUser?.user_id,
@@ -245,9 +265,15 @@ watch(
   },
 );
 
-// the owner uses the source anyway, so it leaves the shared list once picked
 watch(selectedOwner, (ownerId) => {
-  if (ownerId === null) return;
+  if (ownerId === null) {
+    // private sharing needs an owner, so the source is shared with all members
+    // instead, unless it is stored private without one already
+    if (!sharingOptions.value.includes(sharing.value))
+      sharing.value = ProviderSharing.MEMBERS;
+    return;
+  }
+  // the owner uses the source anyway, so it leaves the shared list once picked
   sharedUsers.value = sharedUsers.value.filter((id) => id !== ownerId);
 });
 
@@ -255,12 +281,10 @@ const save = async () => {
   if (!props.config) return;
   saving.value = true;
   try {
-    const updated = await api.setProviderAccess(props.config.instance_id, {
-      owner: recordOwner.value,
-      sharing: sharing.value,
-      shared_users:
-        sharing.value === ProviderSharing.SELECTED ? sharedUsers.value : [],
-    });
+    const updated = await api.setProviderAccess(
+      props.config.instance_id,
+      formAccess.value,
+    );
     toast.success(t("settings.source_access.updated"));
     emit("saved", updated);
     emit("update:open", false);
