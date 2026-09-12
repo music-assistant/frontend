@@ -8,6 +8,7 @@ import { nextTick } from "vue";
 import {
   afterAll,
   afterEach,
+  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -48,6 +49,7 @@ interface MockQueue {
   queue_id: string;
   state?: PlaybackState;
   active?: boolean;
+  items?: number;
   current_item?: { extra_attributes?: { playback_speed?: number } };
 }
 
@@ -115,6 +117,12 @@ const {
     sendspinState: {
       pairingToken: null as string | null,
       lastOptions: null as {
+        onStateChange?: (state: {
+          isPlaying: boolean;
+          volume: number;
+          muted: boolean;
+          playerState: "synchronized" | "error";
+        }) => void;
         reconnect?: { onReconnected?: () => void };
       } | null,
     },
@@ -277,7 +285,7 @@ describe("SendspinPlayer MediaSession", () => {
         group_members: [],
       },
     };
-    apiMock.queues = { queue: { queue_id: "queue", active: true } };
+    apiMock.queues = { queue: { queue_id: "queue", active: true, items: 1 } };
     apiMock.queueElapsedTime = { queue: { elapsed_time: 30 } };
     storeMock.activePlayer = {
       player_id: "active-player",
@@ -574,6 +582,19 @@ describe("SendspinPlayer MediaSession", () => {
     expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
   });
 
+  it("ignores play while the web player's queue is empty", () => {
+    apiMock.players["web-player"].playback_state = PlaybackState.IDLE;
+    apiMock.queues.queue.items = 0;
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    invokeAction("play");
+
+    expect(mockPlayerCommandPlay).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
   it("limits built-in-only controls to the web player", () => {
     webPlayer.browserControlsMode = BrowserMediaControlsMode.WEB_PLAYER;
     apiMock.players["web-player"].playback_state = PlaybackState.PAUSED;
@@ -585,6 +606,29 @@ describe("SendspinPlayer MediaSession", () => {
 
     expect(mockUseMediaBrowserMetaData).toHaveBeenCalledWith("web-player");
     expect(mockPlayerCommandPlay).toHaveBeenCalledWith("web-player");
+    wrapper.unmount();
+  });
+
+  it("reports the web player paused while its stream is still open", async () => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    webPlayer.interacted = true;
+    apiMock.players["web-player"].playback_state = PlaybackState.PAUSED;
+
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+    // The library only drops isPlaying on stream/end, which a pause does not send.
+    sendspinState.lastOptions?.onStateChange?.({
+      isPlaying: true,
+      volume: 100,
+      muted: false,
+      playerState: "synchronized",
+    });
+    await nextTick();
+
+    expect(mediaSession.playbackState).toBe("paused");
     wrapper.unmount();
   });
 
@@ -838,6 +882,7 @@ function seedPlayingQueue(timing: {
     queue_id: "queue",
     state: PlaybackState.PLAYING,
     active: true,
+    items: 1,
     current_item: {
       extra_attributes: { playback_speed: timing.playback_speed },
     },
@@ -871,6 +916,72 @@ function invokeAction(
 function invokeAllActions(): void {
   for (const action of actions) invokeAction(action);
 }
+
+// isMobileOutput is read once at import, so the desktop variant of the
+// component needs a fresh import under a desktop user agent.
+describe("SendspinPlayer silent audio on desktop", () => {
+  let DesktopSendspinPlayer: typeof SendspinPlayer;
+  let desktopWebPlayer: typeof webPlayer;
+
+  beforeAll(async () => {
+    Object.defineProperty(navigator, "userAgent", {
+      configurable: true,
+      value: "Macintosh",
+    });
+    vi.resetModules();
+    DesktopSendspinPlayer = (await import("@/components/SendspinPlayer.vue"))
+      .default;
+    desktopWebPlayer = (await import("@/plugins/web_player")).webPlayer;
+  });
+
+  afterAll(() => {
+    Object.defineProperty(navigator, "userAgent", {
+      configurable: true,
+      value: "iPhone",
+    });
+  });
+
+  beforeEach(() => {
+    authState.guest = null;
+    mockPrepareSendspinSession.mockReset();
+    mockPrepareSendspinSession.mockReturnValue(new Promise(() => {}));
+    mockUseMediaBrowserMetaData.mockClear();
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: mediaSession,
+    });
+    vi.stubGlobal("localStorage", createStorage());
+    apiMock.players = {
+      "web-player": {
+        player_id: "web-player",
+        playback_state: PlaybackState.PLAYING,
+        active_source: "queue",
+        group_members: [],
+      },
+    };
+    apiMock.queues = { queue: { queue_id: "queue", active: true, items: 1 } };
+    desktopWebPlayer.interacted = true;
+    desktopWebPlayer.browserControlsMode = BrowserMediaControlsMode.WEB_PLAYER;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("backs the web player's media session with the silent audio", () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
+
+    const wrapper = mount(DesktopSendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    expect(playSpy).toHaveBeenCalled();
+    wrapper.unmount();
+  });
+});
 
 function expectPlayerCommandsNotCalled(): void {
   expect(mockPlayerCommandPlay).not.toHaveBeenCalled();
