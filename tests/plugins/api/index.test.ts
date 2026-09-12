@@ -15,6 +15,7 @@ import {
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
+import { userSummary } from "../../fixtures/user";
 
 const { mockToastError, mockToastInfo } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
@@ -289,6 +290,31 @@ describe("MusicAssistantApi error handling", () => {
       repeat_mode: RepeatMode.ALL,
       source_id: "player-1",
     });
+  });
+
+  it("lists the members a music source can be shared with", async () => {
+    const candidates = [userSummary({ user_id: "user-sam", username: "sam" })];
+    const result = api.getShareCandidates();
+
+    expect(transport.lastCommand.command).toBe(
+      "config/providers/share_candidates",
+    );
+    expect(transport.lastCommand.args).toBeUndefined();
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: candidates,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(candidates);
+  });
+
+  it("lists the share candidates from schema 72 on", () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 71 };
+    expect(api.supportsShareCandidates).toBe(false);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 72 };
+    expect(api.supportsShareCandidates).toBe(true);
   });
 
   describe("a refused ordering command", () => {

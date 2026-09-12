@@ -1,4 +1,8 @@
-import { type User, UserRole } from "@/plugins/api/interfaces";
+import {
+  type User,
+  UserRole,
+  type UserSummary,
+} from "@/plugins/api/interfaces";
 
 /**
  * A complete user, for tests that only care about a few of its fields but
@@ -16,6 +20,17 @@ export function user(overrides: Partial<User> = {}): User {
     preferences: {},
     provider_filter: [],
     player_filter: [],
+    ...overrides,
+  };
+}
+
+/** A user as the server lists the members a music source can be shared with. */
+export function userSummary(overrides: Partial<UserSummary> = {}): UserSummary {
+  return {
+    user_id: "user-id",
+    username: "user",
+    display_name: null,
+    avatar_url: null,
     ...overrides,
   };
 }

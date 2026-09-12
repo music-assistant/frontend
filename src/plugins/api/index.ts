@@ -40,6 +40,7 @@ import {
   type TaskSchedule,
   type Track,
   type User,
+  type UserSummary,
   AlbumType,
   Audiobook,
   AuthProvider,
@@ -90,6 +91,9 @@ const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
 
 // Repeat one/all masking the effective autoplay flag landed in API schema 69.
 const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
+
+// The config/providers/share_candidates command landed in API schema 72.
+const SHARE_CANDIDATES_SCHEMA_VERSION = 72;
 
 export interface CommandOptions {
   /**
@@ -2288,6 +2292,12 @@ export class MusicAssistantApi {
     });
   }
 
+  public getShareCandidates(): Promise<UserSummary[]> {
+    // Get every household member a music source can be shared with, the
+    // caller included; check supportsShareCandidates first.
+    return this.sendCommand("config/providers/share_candidates");
+  }
+
   // PlayerConfig related functions
 
   public async getPlayerConfigs(
@@ -3021,6 +3031,14 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server lists who a music source can be shared with (schema >= 72). */
+  public get supportsShareCandidates(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      SHARE_CANDIDATES_SCHEMA_VERSION
     );
   }
 
