@@ -92,13 +92,32 @@ describe("isOwnMusicSource", () => {
 
 describe("sharing translation keys", () => {
   it.each(Object.values(ProviderSharing))("names sharing %s", (sharing) => {
-    expect(getProviderSharingTranslationKey(sharing)).toBe(
+    expect(getProviderSharingTranslationKey(sharing, true)).toBe(
       `settings.source_access.options.${sharing}`,
     );
     expect(getProviderSharingHintTranslationKey(sharing)).toBe(
       `settings.source_access.hints.${sharing}`,
     );
   });
+
+  it("names private sharing as not shared for a viewer that does not own the source", () => {
+    expect(
+      getProviderSharingTranslationKey(ProviderSharing.PRIVATE, false),
+    ).toBe("settings.source_access.options.not_shared");
+  });
+
+  it.each([
+    ProviderSharing.SELECTED,
+    ProviderSharing.MEMBERS,
+    ProviderSharing.EVERYONE,
+  ])(
+    "still names sharing %s for a viewer that does not own the source",
+    (sharing) => {
+      expect(getProviderSharingTranslationKey(sharing, false)).toBe(
+        `settings.source_access.options.${sharing}`,
+      );
+    },
+  );
 });
 
 describe("user candidates", () => {

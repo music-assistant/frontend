@@ -853,7 +853,12 @@ const accessSummary = function (item: ProviderConfig) {
       ? $t("settings.source_access.shared_with_count", sharedCount, {
           named: { count: sharedCount },
         })
-      : $t(getProviderSharingTranslationKey(access.sharing));
+      : $t(
+          getProviderSharingTranslationKey(
+            access.sharing,
+            isOwnMusicSource(item, store.currentUser?.user_id),
+          ),
+        );
   if (!managesAllSources.value) return sharing;
   const owner =
     access.owner === null
