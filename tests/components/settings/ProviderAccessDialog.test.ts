@@ -275,6 +275,139 @@ describe("ProviderAccessDialog", () => {
     );
   });
 
+  it("does not offer private sharing for a source without an owner", async () => {
+    await openDialog(
+      providerConfig({
+        domain: "spotify",
+        access: {
+          owner: null,
+          sharing: ProviderSharing.EVERYONE,
+          shared_users: [],
+        },
+      }),
+      users,
+    );
+
+    await openSelect(sharingTrigger()!);
+
+    expect(optionLabels()).toEqual([
+      "settings.source_access.options.selected",
+      "settings.source_access.options.members",
+      "settings.source_access.options.everyone",
+    ]);
+  });
+
+  it("keeps private sharing for a source stored private without an owner, and explains why it can not be saved", async () => {
+    await openDialog(
+      providerConfig({
+        domain: "spotify",
+        access: {
+          owner: null,
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      }),
+      users,
+    );
+
+    expect(dialogText()).toContain("settings.source_access.hints.nobody");
+    expect(saveButton()?.disabled).toBe(true);
+
+    await openSelect(sharingTrigger()!);
+    expect(optionLabels()).toContain(
+      "settings.source_access.options.not_shared",
+    );
+  });
+
+  it("shares a private source with all members once it has no owner", async () => {
+    const wrapper = await openDialog(
+      providerConfig({
+        domain: "spotify",
+        instance_id: "spotify--owned",
+        access: {
+          owner: "owner-id",
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      }),
+      users,
+    );
+
+    await openSelect(ownerTrigger()!);
+    await pickOption("settings.source_access.household");
+
+    expect(sharingTrigger()?.textContent).toContain(
+      "settings.source_access.options.members",
+    );
+
+    await submit(wrapper);
+
+    expect(apiMock.setProviderAccess).toHaveBeenCalledWith("spotify--owned", {
+      owner: null,
+      sharing: ProviderSharing.MEMBERS,
+      shared_users: [],
+    });
+  });
+
+  it("leaves a private source without an owner as it is when the dialog opens on it", async () => {
+    // the page reuses one dialog for every source, so the form resets from the
+    // source it showed before
+    const wrapper = await openDialog(
+      providerConfig({
+        domain: "spotify",
+        access: {
+          owner: "owner-id",
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      }),
+      users,
+    );
+    await wrapper.setProps({ open: false });
+    await wrapper.setProps({
+      config: providerConfig({
+        domain: "spotify",
+        access: {
+          owner: null,
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      }),
+      open: true,
+    });
+    await flushPromises();
+
+    expect(sharingTrigger()?.textContent).toContain(
+      "settings.source_access.options.not_shared",
+    );
+    expect(sharedUsersField()).toBeNull();
+  });
+
+  it("can not save a source without an owner until a member is selected to share it with", async () => {
+    await openDialog(
+      providerConfig({
+        domain: "spotify",
+        access: {
+          owner: null,
+          sharing: ProviderSharing.SELECTED,
+          shared_users: [],
+        },
+      }),
+      users,
+    );
+
+    expect(dialogText()).toContain("settings.source_access.hints.nobody");
+    expect(saveButton()?.disabled).toBe(true);
+
+    await openMemberPicker();
+    await pickMember("Member");
+
+    expect(dialogText()).toContain(
+      "settings.source_access.hints.selected_no_owner",
+    );
+    expect(saveButton()?.disabled).toBe(false);
+  });
+
   it("reports a refused change and stays open", async () => {
     apiMock.setProviderAccess.mockRejectedValue(new Error("refused"));
     const wrapper = await openDialog(ownedSource, users);
@@ -445,6 +578,12 @@ function sharingTrigger() {
 function sharedUsersField() {
   return document.querySelector(
     "input[placeholder='settings.source_access.select_members']",
+  );
+}
+
+function saveButton() {
+  return document.querySelector<HTMLButtonElement>(
+    "button[form='form-provider-access']",
   );
 }
 

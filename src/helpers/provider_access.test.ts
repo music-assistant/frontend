@@ -17,6 +17,7 @@ import {
   hasConfigurableAccess,
   isOwnMusicSource,
   ownerCandidates,
+  servesNobody,
   shareCandidates,
   userDisplayName,
 } from "./provider_access";
@@ -138,14 +139,56 @@ describe("isOwnMusicSource", () => {
   });
 });
 
+describe("servesNobody", () => {
+  it.each([
+    ["private", ProviderSharing.PRIVATE],
+    ["shared with nobody selected", ProviderSharing.SELECTED],
+  ])("is true for a source without an owner that is %s", (_label, sharing) => {
+    expect(servesNobody({ owner: null, sharing, shared_users: [] })).toBe(true);
+  });
+
+  it.each([
+    [
+      "a source without an owner shared with a selected member",
+      {
+        owner: null,
+        sharing: ProviderSharing.SELECTED,
+        shared_users: ["user-2"],
+      },
+    ],
+    [
+      "a source without an owner shared with all members",
+      { owner: null, sharing: ProviderSharing.MEMBERS, shared_users: [] },
+    ],
+    [
+      "a source without an owner shared with everyone",
+      { owner: null, sharing: ProviderSharing.EVERYONE, shared_users: [] },
+    ],
+    [
+      "a private source with an owner",
+      { owner: "user-1", sharing: ProviderSharing.PRIVATE, shared_users: [] },
+    ],
+    [
+      "a source with an owner shared with nobody selected",
+      { owner: "user-1", sharing: ProviderSharing.SELECTED, shared_users: [] },
+    ],
+  ])("is false for %s", (_label, access) => {
+    expect(servesNobody(access)).toBe(false);
+  });
+});
+
 describe("sharing translation keys", () => {
   it.each(Object.values(ProviderSharing))("names sharing %s", (sharing) => {
     expect(getProviderSharingTranslationKey(sharing, true)).toBe(
       `settings.source_access.options.${sharing}`,
     );
-    expect(getProviderSharingHintTranslationKey(sharing)).toBe(
-      `settings.source_access.hints.${sharing}`,
-    );
+    expect(
+      getProviderSharingHintTranslationKey({
+        owner: "user-1",
+        sharing,
+        shared_users: [],
+      }),
+    ).toBe(`settings.source_access.hints.${sharing}`);
   });
 
   it("names private sharing as not shared for a viewer that does not own the source", () => {
@@ -164,6 +207,45 @@ describe("sharing translation keys", () => {
       expect(getProviderSharingTranslationKey(sharing, false)).toBe(
         `settings.source_access.options.${sharing}`,
       );
+    },
+  );
+
+  it("explains that only the selected members can use a source without an owner", () => {
+    expect(
+      getProviderSharingHintTranslationKey({
+        owner: null,
+        sharing: ProviderSharing.SELECTED,
+        shared_users: ["user-2"],
+      }),
+    ).toBe("settings.source_access.hints.selected_no_owner");
+  });
+
+  it.each([
+    ["private", ProviderSharing.PRIVATE],
+    ["shared with nobody selected", ProviderSharing.SELECTED],
+  ])(
+    "explains that nobody can use a source without an owner that is %s",
+    (_label, sharing) => {
+      expect(
+        getProviderSharingHintTranslationKey({
+          owner: null,
+          sharing,
+          shared_users: [],
+        }),
+      ).toBe("settings.source_access.hints.nobody");
+    },
+  );
+
+  it.each([ProviderSharing.MEMBERS, ProviderSharing.EVERYONE])(
+    "still explains sharing %s for a source without an owner",
+    (sharing) => {
+      expect(
+        getProviderSharingHintTranslationKey({
+          owner: null,
+          sharing,
+          shared_users: [],
+        }),
+      ).toBe(`settings.source_access.hints.${sharing}`);
     },
   );
 });

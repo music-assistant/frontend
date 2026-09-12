@@ -69,6 +69,17 @@ export const isOwnMusicSource = (
 ) => userId !== undefined && config.access?.owner === userId;
 
 /**
+ * Whether nobody can use a music source with this access: one without an
+ * owner that is private, or shared with selected members while nobody is
+ * picked.
+ */
+export const servesNobody = (access: ProviderAccess) =>
+  access.owner === null &&
+  (access.sharing === ProviderSharing.PRIVATE ||
+    (access.sharing === ProviderSharing.SELECTED &&
+      access.shared_users.length === 0));
+
+/**
  * The translation key naming a sharing choice. Private sharing is named from
  * the viewer's side: as their own for the owner, as not shared for others.
  */
@@ -80,9 +91,17 @@ export const getProviderSharingTranslationKey = (
     ? "settings.source_access.options.not_shared"
     : PROVIDER_SHARING_TRANSLATION_KEYS[sharing];
 
+/**
+ * The translation key explaining who can use a music source with this access.
+ */
 export const getProviderSharingHintTranslationKey = (
-  sharing: ProviderSharing,
-) => PROVIDER_SHARING_HINT_TRANSLATION_KEYS[sharing];
+  access: ProviderAccess,
+) => {
+  if (servesNobody(access)) return "settings.source_access.hints.nobody";
+  if (access.owner === null && access.sharing === ProviderSharing.SELECTED)
+    return "settings.source_access.hints.selected_no_owner";
+  return PROVIDER_SHARING_HINT_TRANSLATION_KEYS[access.sharing];
+};
 
 /**
  * The users that may own a music source: every enabled member, so neither the
