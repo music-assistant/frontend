@@ -320,6 +320,15 @@ export const routes: RouteRecordRaw[] = [
               ...route.query,
             }),
           },
+          {
+            path: ":provider/:itemId/:listing",
+            name: "tracklisting",
+            component: () =>
+              import(
+                /* webpackChunkName: "tracklisting" */ "@/views/TrackListing.vue"
+              ),
+            props: true,
+          },
         ],
       },
       {
