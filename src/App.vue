@@ -264,6 +264,8 @@ const handleLocalConnect = async (serverAddress: string) => {
 };
 
 let initializationCompleted = false;
+// the sorted scopes of the user's role at the last completed initialization
+let initializedRoleScopes: string[] | undefined;
 
 const refreshPluginEnabledState = async (domain: string) => {
   try {
@@ -370,6 +372,16 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
   // the scopes the role of the user grants, for the parts of the ui gated on one
   store.roleScopes = await api.getRoleScopes();
+  const userRoleScopes = [...(store.roleScopes[userInfo.role] ?? [])].sort();
+  if (
+    initializedRoleScopes &&
+    userRoleScopes.join() !== initializedRoleScopes.join()
+  ) {
+    // Screens read what the role allows once, when they open, so a reconnect
+    // that brings other scopes starts the app afresh.
+    window.location.reload();
+    return;
+  }
 
   const isGuestAccessSession = authManager.isGuestAccessSession();
   const isDashboardViewer = authManager.isDashboardViewer();
@@ -431,6 +443,7 @@ const completeInitialization = async () => {
   // from the URL hash. The router config already redirects "/" to "/discover"
   api.state.value = ConnectionState.INITIALIZED;
   initializationCompleted = true;
+  initializedRoleScopes = userRoleScopes;
   await initializeWebPlayerModeSync();
 
   // Initialize companion app integration
