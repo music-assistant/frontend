@@ -45,6 +45,8 @@ export interface MenuSectionConfig {
   label?: string;
   // Hide the section header row (items remain visible).
   hide_label?: boolean;
+  // Whether the section's items are expanded in the sidebar.
+  open?: boolean;
 }
 
 // Per-user menu customization, stored as a single preference object.
@@ -325,6 +327,7 @@ export async function updateMenuSectionConfig(
   const label = merged.label?.trim();
   if (label) clean.label = label;
   if (merged.hide_label) clean.hide_label = true;
+  if (merged.open !== undefined) clean.open = merged.open;
   const sections = { ...cfg.sections };
   if (Object.keys(clean).length > 0) sections[section] = clean;
   else delete sections[section];

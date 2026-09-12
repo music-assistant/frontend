@@ -9,7 +9,7 @@ export const isMacPlatform =
   typeof navigator !== "undefined" &&
   /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
 
-export const commandCenterHotkeyLabel = isMacPlatform ? "⌘K" : "Ctrl K";
+export const commandCenterHotkeyLabel = isMacPlatform ? "⌘ K" : "Ctrl K";
 
 export interface CommandCenterOpenOptions {
   query?: string;

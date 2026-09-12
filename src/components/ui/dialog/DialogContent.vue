@@ -10,7 +10,7 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui";
-import type { HTMLAttributes } from "vue";
+import type { HTMLAttributes, StyleValue } from "vue";
 import DialogOverlay from "./DialogOverlay.vue";
 
 defineOptions({
@@ -21,24 +21,33 @@ const props = withDefaults(
   defineProps<
     DialogContentProps & {
       class?: HTMLAttributes["class"];
+      overlayClass?: HTMLAttributes["class"];
+      overlayStyle?: StyleValue;
       showCloseButton?: boolean;
     }
   >(),
   {
     showCloseButton: true,
     class: undefined,
+    overlayClass: undefined,
+    overlayStyle: undefined,
   },
 );
 const emits = defineEmits<DialogContentEmits>();
 
-const delegatedProps = reactiveOmit(props, "class");
+const delegatedProps = reactiveOmit(
+  props,
+  "class",
+  "overlayClass",
+  "overlayStyle",
+);
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>
   <DialogPortal>
-    <DialogOverlay />
+    <DialogOverlay :class="overlayClass" :style="overlayStyle" />
     <DialogContent
       data-slot="dialog-content"
       v-bind="{ ...$attrs, ...forwarded }"

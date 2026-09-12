@@ -44,6 +44,14 @@ const commitRename = async () => {
   await updateMenuSectionConfig(props.sectionId, { label });
 };
 
+const toggleRename = () => {
+  if (renaming.value) {
+    void commitRename();
+    return;
+  }
+  startRename();
+};
+
 const toggleLabelHidden = async () => {
   await updateMenuSectionConfig(props.sectionId, {
     hide_label: !props.labelHidden,
@@ -52,53 +60,50 @@ const toggleLabelHidden = async () => {
 </script>
 
 <template>
-  <div v-if="editMode" class="nav-edit-header">
+  <div v-if="editMode" class="nav-edit-header mb-1 md:mb-0">
     <input
       v-if="renaming"
       ref="renameInput"
       v-model="renameValue"
-      class="nav-edit-rename-input"
+      class="nav-edit-rename-input md:mb-1"
       :placeholder="defaultLabel"
       @keydown.enter.prevent="commitRename"
       @keydown.esc="cancelRename"
       @blur="commitRename"
     />
-    <template v-else>
-      <SidebarGroupLabel
-        class="nav-edit-label"
-        :class="{ 'nav-edit-label-off': labelHidden }"
-        @click="startRename"
+    <SidebarGroupLabel
+      v-else
+      class="nav-edit-label inline-flex min-w-0 items-center gap-1 text-sidebar-foreground h-10 text-sm transition-[color,font-weight] duration-150 md:mb-1"
+      :class="{ 'nav-edit-label-off': labelHidden }"
+      @click="startRename"
+    >
+      {{ label }}
+    </SidebarGroupLabel>
+    <div class="nav-edit-header-actions">
+      <Button
+        variant="ghost"
+        size="icon"
+        class="h-6 w-6 hover:text-primary"
+        :class="renaming ? 'text-primary' : 'text-sidebar-foreground/70'"
+        :title="t('menu_section_rename')"
+        @mousedown.prevent
+        @click="toggleRename"
       >
-        {{ label }}
-      </SidebarGroupLabel>
-      <div class="nav-edit-header-actions">
-        <Button
-          variant="ghost"
-          size="icon"
-          class="h-6 w-6"
-          :title="t('menu_section_rename')"
-          @click="startRename"
-        >
-          <Pencil class="size-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="h-6 w-6"
-          :title="
-            t(
-              labelHidden
-                ? 'menu_section_show_label'
-                : 'menu_section_hide_label',
-            )
-          "
-          @click="toggleLabelHidden"
-        >
-          <Eye v-if="!labelHidden" class="size-3.5" />
-          <EyeOff v-else class="size-3.5" />
-        </Button>
-      </div>
-    </template>
+        <Pencil class="size-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        class="h-6 w-6"
+        :title="
+          t(labelHidden ? 'menu_section_show_label' : 'menu_section_hide_label')
+        "
+        @click="toggleLabelHidden"
+      >
+        <Eye v-if="!labelHidden" class="size-4" />
+        <EyeOff v-else class="size-4" />
+      </Button>
+    </div>
   </div>
   <SidebarGroupLabel v-else-if="label && !labelHidden">
     {{ label }}
@@ -111,7 +116,6 @@ const toggleLabelHidden = async () => {
   align-items: center;
   justify-content: space-between;
   gap: 0.25rem;
-  padding-right: 0.5rem;
 }
 
 .nav-edit-label {
@@ -128,15 +132,15 @@ const toggleLabelHidden = async () => {
 .nav-edit-header-actions {
   display: flex;
   align-items: center;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 .nav-edit-rename-input {
   flex: 1;
   min-width: 0;
-  margin-left: 1rem;
-  height: 1.75rem;
-  padding: 0 0.25rem;
+  margin-left: 0;
+  height: 40px;
+  padding: 0 0.5rem;
   font-size: 0.875rem;
   background: transparent;
   border: none;

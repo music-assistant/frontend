@@ -255,6 +255,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { createHotkeyHandler } from "@tanstack/vue-hotkeys";
 import { Check, History, Play, Search } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
@@ -529,29 +530,35 @@ const statusNote = computed(() => {
   return "";
 });
 
-const onKeydown = function (event: KeyboardEvent) {
-  if (
-    (event.metaKey || event.ctrlKey) &&
-    !event.altKey &&
-    !event.shiftKey &&
-    !event.repeat &&
-    event.key.toLowerCase() === "k"
-  ) {
-    event.preventDefault();
-    if (isOpen.value) {
-      close();
-    } else if (!store.dialogActive) {
-      open();
-    }
-  }
+const toggleCommandCenter = () => {
+  if (isOpen.value) close();
+  else if (!store.dialogActive) open();
 };
 
+// Register both physical modifier conventions explicitly. `Mod` resolves to
+// Control on Linux/Windows and Meta on macOS, but the command center accepts
+// either shortcut regardless of the host platform. Both registrations use the
+// same logical key with different parsing platforms, so TanStack can dispatch
+// the matching modifier without competing warning registrations.
+const macCommandCenterHotkey = createHotkeyHandler(
+  "Mod+K",
+  toggleCommandCenter,
+  { platform: "mac" },
+);
+const linuxCommandCenterHotkey = createHotkeyHandler(
+  "Mod+K",
+  toggleCommandCenter,
+  { platform: "linux" },
+);
+
 onMounted(() => {
-  window.addEventListener("keydown", onKeydown);
+  window.addEventListener("keydown", macCommandCenterHotkey);
+  window.addEventListener("keydown", linuxCommandCenterHotkey);
 });
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", onKeydown);
+  window.removeEventListener("keydown", macCommandCenterHotkey);
+  window.removeEventListener("keydown", linuxCommandCenterHotkey);
   clearTimeout(debounceTimer);
   if (isOpen.value) {
     store.dialogActive = false;

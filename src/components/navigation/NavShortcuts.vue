@@ -2,6 +2,7 @@
 import type { LucideIcon } from "@lucide/vue";
 import {
   BookAudio,
+  ChevronRight,
   Disc3,
   EllipsisVertical,
   GripVertical,
@@ -17,9 +18,16 @@ import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute } from "vue-router";
 
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -31,8 +39,9 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { useListDragReorder } from "@/composables/useListDragReorder";
+import { useSidebarPressFeedback } from "@/composables/useSidebarPressFeedback";
 import {
-  findPinnedUriForItem,
+  getShortcutUri,
   reorderShortcutStandalone,
   useShortcuts,
   type ShortcutItem,
@@ -42,7 +51,10 @@ import { getImageThumbForItem } from "@/helpers/utils";
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 import NavSectionHeader from "./NavSectionHeader.vue";
-import { getMenuSectionConfig } from "./utils/getMenuItems";
+import {
+  getMenuSectionConfig,
+  updateMenuSectionConfig,
+} from "./utils/getMenuItems";
 
 const props = defineProps<{
   editMode?: boolean;
@@ -60,6 +72,28 @@ const sectionConfig = computed(() => getMenuSectionConfig("shortcuts"));
 const sectionLabel = computed(
   () => sectionConfig.value.label || t("shortcuts"),
 );
+const open = computed({
+  get: () => sectionConfig.value.open ?? true,
+  set: (value: boolean) => {
+    void updateMenuSectionConfig("shortcuts", { open: value });
+  },
+});
+const groupOpen = computed({
+  get: () =>
+    isCollapsed.value ||
+    !!props.editMode ||
+    !!sectionConfig.value.hide_label ||
+    open.value,
+  set: (value) => {
+    open.value = value;
+  },
+});
+const {
+  pressFeedbackActive: sectionPressFeedbackActive,
+  handlePointerDown: handleSectionPointerDown,
+  handleKeyDown: handleSectionKeyDown,
+  handleClick: handleSectionClick,
+} = useSidebarPressFeedback(() => isMobile.value);
 
 const isActive = (url: string) =>
   route.path === url || route.path.startsWith(url + "/");
@@ -164,10 +198,7 @@ const {
     const source = pinnedItems.value[from];
     const target = pinnedItems.value[to];
     if (!source || !target) return;
-    const sourceUri = findPinnedUriForItem(source);
-    const targetUri = findPinnedUriForItem(target);
-    if (!sourceUri || !targetUri) return;
-    reorderShortcutStandalone(sourceUri, targetUri);
+    reorderShortcutStandalone(getShortcutUri(source), getShortcutUri(target));
   },
 });
 
@@ -177,146 +208,253 @@ const draggedItem = computed(() =>
 </script>
 
 <template>
-  <div ref="navEl"></div>
+  <!-- <div ref="navEl" class="h-0"></div> -->
   <template v-if="pinnedItems.length > 0 || isLoading">
-    <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
-      <NavSectionHeader
-        section-id="shortcuts"
-        :label="sectionLabel"
-        :default-label="t('shortcuts')"
-        :label-hidden="sectionConfig.hide_label"
-        :edit-mode="editMode"
-      />
-      <SidebarGroupContent class="flex flex-col gap-0.5">
-        <div ref="listEl" class="relative">
-          <SidebarMenu>
-            <!-- Skeletons while the API calls are in flight -->
-            <template v-if="isLoading">
-              <SidebarMenuItem v-for="i in pinnedCount" :key="`skeleton-${i}`">
-                <SidebarMenuSkeleton :show-icon="true" />
-              </SidebarMenuItem>
-            </template>
-            <!-- Pinned shortcuts. The row gutter would skew the centred icon
-                 rail, so it lifts when collapsed. -->
-            <SidebarMenuItem
-              v-for="({ item, url }, index) in pinnedItemsWithUrls"
-              :key="item.uri"
-              v-hold="(e: Event) => onHold(e, item)"
-              class="mr-1.5 group-data-[collapsible=icon]:mr-0"
-              :class="{
-                'shortcut-item': editMode,
-                'shortcut-item-dragging': draggingIndex === index,
-              }"
-              :data-drag-index="editMode ? index : undefined"
-              :style="
-                editMode
-                  ? {
-                      transform: `translateY(${rowOffset(index)}px)`,
-                      transition:
-                        isDragging && draggingIndex !== index
-                          ? 'transform 200ms ease-out'
-                          : 'none',
-                    }
-                  : undefined
-              "
-              @click.capture="swallowClickAfterHold"
-              @touchstart.passive="onTouchStart"
+    <SidebarGroup
+      :class="{ 'shortcuts-group-collapsed': isCollapsed }"
+      class="py-0 px-3"
+    >
+      <div class="-mx-3 px-4">
+        <Separator class="my-3" />
+      </div>
+      <Collapsible v-model:open="groupOpen" class="group/collapsible">
+        <NavSectionHeader
+          v-if="editMode"
+          section-id="shortcuts"
+          :label="sectionLabel"
+          :default-label="t('shortcuts')"
+          :label-hidden="sectionConfig.hide_label"
+          :edit-mode="editMode"
+        />
+        <CollapsibleTrigger
+          v-else-if="!sectionConfig.hide_label"
+          class="group/heading mb-1 flex w-full cursor-pointer items-center rounded-md border-0 bg-transparent text-left text-inherit transition-colors duration-150 ease-out hover:text-sidebar-foreground md:mb-0"
+          :class="[
+            isMobile
+              ? 'sidebar-menu-button-feedback relative overflow-hidden'
+              : '',
+            isMobile && sectionPressFeedbackActive
+              ? 'sidebar-menu-button-feedback--active'
+              : '',
+          ]"
+          :aria-label="`${sectionLabel} collapse toggle`"
+          @pointerdown="handleSectionPointerDown"
+          @keydown="handleSectionKeyDown"
+          @click="handleSectionClick"
+        >
+          <SidebarGroupLabel
+            as="span"
+            class="group-hover/heading:text-sidebar-foreground group-hover/heading:font-semibold inline-flex min-w-0 items-center gap-1 text-sm h-10 transition-[color,font-weight] duration-150 md:mb-1"
+          >
+            {{ sectionLabel }}
+            <span
+              class="text-sidebar-foreground/70 group-hover/heading:text-sidebar-foreground inline-flex size-5 items-center justify-center rounded-sm transition-colors duration-150 ease-out"
             >
-              <button
-                v-if="editMode && !isCollapsed"
-                class="shortcut-drag-handle"
-                :aria-label="t('queue_reorder')"
-                @pointerdown.stop.prevent="startItemDrag($event, index)"
-                @click.stop
+              <ChevronRight
+                class="size-3.5 basis-auto shrink-0 grow-0 transition-transform duration-150 ease-[ease]"
+                :class="{ 'rotate-90': open }"
+              />
+            </span>
+          </SidebarGroupLabel>
+        </CollapsibleTrigger>
+        <CollapsibleContent as-child>
+          <SidebarGroupContent class="flex flex-col gap-0.5">
+            <div
+              ref="listEl"
+              class="relative"
+              :class="
+                editMode
+                  ? 'sidebar-customization-surface--edit'
+                  : 'sidebar-customization-surface--normal'
+              "
+            >
+              <SidebarMenu>
+                <!-- Skeletons while the API calls are in flight -->
+                <template v-if="isLoading">
+                  <SidebarMenuItem
+                    v-for="i in pinnedCount"
+                    :key="`skeleton-${i}`"
+                  >
+                    <SidebarMenuSkeleton :show-icon="true" />
+                  </SidebarMenuItem>
+                </template>
+                <!-- Pinned shortcuts -->
+                <SidebarMenuItem
+                  v-for="({ item, url }, index) in pinnedItemsWithUrls"
+                  :key="item.uri"
+                  v-hold="(e: Event) => onHold(e, item)"
+                  :class="{
+                    'shortcut-item': editMode,
+                    'shortcut-item-dragging': draggingIndex === index,
+                  }"
+                  :data-drag-index="editMode ? index : undefined"
+                  :style="
+                    editMode
+                      ? {
+                          transform: `translateY(${rowOffset(index)}px)`,
+                          transition:
+                            isDragging && draggingIndex !== index
+                              ? 'transform 200ms ease-out'
+                              : 'none',
+                        }
+                      : undefined
+                  "
+                  @click.capture="swallowClickAfterHold"
+                  @touchstart.passive="onTouchStart"
+                >
+                  <button
+                    v-if="editMode && !isCollapsed"
+                    class="shortcut-drag-handle"
+                    :aria-label="t('queue_reorder')"
+                    @pointerdown.stop.prevent="startItemDrag($event, index)"
+                    @click.stop
+                  >
+                    <GripVertical class="size-4" />
+                  </button>
+                  <SidebarMenuButton
+                    :as="editMode ? 'div' : RouterLinkComponent"
+                    v-bind="editMode ? {} : { to: url }"
+                    :ripple="true"
+                    :is-active="!editMode && isActive(url)"
+                    :tooltip="getDisplayName(item)"
+                    :aria-label="getDisplayName(item)"
+                    class="mr-1.5 group-data-[collapsible=icon]:mr-0"
+                    :class="[
+                      'gap-4',
+                      isCollapsed
+                        ? 'shortcut-button-collapsed'
+                        : 'shortcut-button',
+                      editMode ? 'shortcut-button-editing' : '',
+                      isActive(url) && !editMode
+                        ? 'no-underline font-bold'
+                        : 'no-underline font-medium',
+                    ]"
+                    @click="!editMode && handleClick()"
+                    @contextmenu.prevent="openContextMenu($event, item)"
+                  >
+                    <img
+                      v-if="thumbMap[item.uri]"
+                      :src="thumbMap[item.uri]"
+                      :class="[
+                        'shortcut-thumb',
+                        isCollapsed ? 'shortcut-thumb--collapsed' : '',
+                      ]"
+                      :alt="getDisplayName(item)"
+                    />
+                    <component
+                      :is="getFallbackIcon(item)"
+                      v-else
+                      :class="[
+                        'shortcut-thumb',
+                        isCollapsed ? 'shortcut-thumb--collapsed' : '',
+                      ]"
+                    />
+                    <span v-if="!isCollapsed" class="shortcut-label">
+                      <span class="shortcut-name">{{
+                        getDisplayName(item)
+                      }}</span>
+                      <span class="shortcut-type">{{
+                        t(item.media_type)
+                      }}</span>
+                    </span>
+                  </SidebarMenuButton>
+                  <Button
+                    v-if="!isCollapsed"
+                    variant="ghost"
+                    size="icon"
+                    class="shortcut-action-btn absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                    :class="
+                      editMode
+                        ? 'opacity-70'
+                        : 'opacity-0 group-hover/menu-item:opacity-100'
+                    "
+                    :title="t('more_options')"
+                    @click.stop="openContextMenu($event, item)"
+                  >
+                    <EllipsisVertical class="h-4 w-4" />
+                  </Button>
+                </SidebarMenuItem>
+              </SidebarMenu>
+              <!-- Floating ghost that follows the pointer while dragging -->
+              <div
+                v-if="isDragging && draggedItem"
+                class="shortcut-ghost bg-sidebar-accent text-sidebar-accent-foreground"
+                :style="{ top: `${ghostY}px`, height: `${dragRowHeight}px` }"
               >
-                <GripVertical class="size-4" />
-              </button>
-              <SidebarMenuButton
-                :as="editMode ? 'div' : RouterLinkComponent"
-                v-bind="editMode ? {} : { to: url }"
-                :is-active="!editMode && isActive(url)"
-                :tooltip="getDisplayName(item)"
-                :class="[
-                  isCollapsed ? 'shortcut-button-collapsed' : 'shortcut-button',
-                  editMode ? 'shortcut-button-editing' : '',
-                  isActive(url) && !editMode
-                    ? 'no-underline font-bold'
-                    : 'no-underline font-medium',
-                ]"
-                @click="!editMode && handleClick()"
-                @contextmenu.prevent="openContextMenu($event, item)"
-              >
+                <GripVertical class="size-4 opacity-60 shrink-0" />
                 <img
-                  v-if="thumbMap[item.uri]"
-                  :src="thumbMap[item.uri]"
-                  :class="[
-                    'shortcut-thumb',
-                    isCollapsed ? 'shortcut-thumb--collapsed' : '',
-                  ]"
-                  :alt="getDisplayName(item)"
+                  v-if="thumbMap[draggedItem.uri]"
+                  :src="thumbMap[draggedItem.uri]"
+                  class="shortcut-thumb"
+                  :alt="getDisplayName(draggedItem)"
                 />
                 <component
-                  :is="getFallbackIcon(item)"
+                  :is="getFallbackIcon(draggedItem)"
                   v-else
-                  :class="[
-                    'shortcut-thumb',
-                    isCollapsed ? 'shortcut-thumb--collapsed' : '',
-                  ]"
+                  class="shortcut-thumb"
                 />
-                <span v-if="!isCollapsed" class="shortcut-label">
-                  <span class="shortcut-name">{{ getDisplayName(item) }}</span>
-                  <span class="shortcut-type">{{ t(item.media_type) }}</span>
+                <span class="shortcut-label">
+                  <span class="shortcut-name">{{
+                    getDisplayName(draggedItem)
+                  }}</span>
+                  <span class="shortcut-type">{{
+                    t(draggedItem.media_type)
+                  }}</span>
                 </span>
-              </SidebarMenuButton>
-              <Button
-                v-if="!isCollapsed"
-                variant="ghost"
-                size="icon"
-                class="shortcut-action-btn absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-                :class="
-                  editMode
-                    ? 'opacity-70'
-                    : 'opacity-0 group-hover/menu-item:opacity-100'
-                "
-                :title="t('more_options')"
-                @click.stop="openContextMenu($event, item)"
-              >
-                <EllipsisVertical class="h-4 w-4" />
-              </Button>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <!-- Floating ghost that follows the pointer while dragging -->
-          <div
-            v-if="isDragging && draggedItem"
-            class="shortcut-ghost bg-sidebar-accent text-sidebar-accent-foreground"
-            :style="{ top: `${ghostY}px`, height: `${dragRowHeight}px` }"
-          >
-            <GripVertical class="size-4 opacity-60 shrink-0" />
-            <img
-              v-if="thumbMap[draggedItem.uri]"
-              :src="thumbMap[draggedItem.uri]"
-              class="shortcut-thumb"
-              :alt="getDisplayName(draggedItem)"
-            />
-            <component
-              :is="getFallbackIcon(draggedItem)"
-              v-else
-              class="shortcut-thumb"
-            />
-            <span class="shortcut-label">
-              <span class="shortcut-name">{{
-                getDisplayName(draggedItem)
-              }}</span>
-              <span class="shortcut-type">{{ t(draggedItem.media_type) }}</span>
-            </span>
-          </div>
-        </div>
-      </SidebarGroupContent>
+              </div>
+            </div>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </Collapsible>
     </SidebarGroup>
   </template>
 </template>
 
 <style scoped>
+.shortcuts-group-heading {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.shortcuts-group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.shortcuts-group-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-sm);
+  color: hsl(var(--sidebar-foreground) / 0.7);
+}
+
+.shortcuts-group-heading:hover .shortcuts-group-icon {
+  color: hsl(var(--sidebar-foreground));
+  background: hsl(var(--sidebar-accent));
+}
+
+.shortcuts-group-chevron {
+  flex: 0 0 auto;
+  width: 0.875rem;
+  height: 0.875rem;
+  transition: transform 0.15s ease;
+}
+
+.shortcuts-group-chevron--open {
+  transform: rotate(90deg);
+}
+
 :deep(.shortcuts-group-collapsed[data-sidebar="group"]) {
   padding-left: 0 !important;
   padding-right: 0 !important;
@@ -334,41 +472,43 @@ const draggedItem = computed(() =>
 
 /* Override AppSidebar global padding for image-based items */
 :deep([data-sidebar="menu-button"].shortcut-button) {
-  /* explicit height (not auto) so transition-[height] can animate */
+  /* Use p-3 spacing; keep the extra right
+     padding for the shortcut context-action button. */
   height: 3rem !important;
-  padding: 0.3rem 2.25rem 0.3rem 0.5rem !important;
+  padding: 0.75rem 2.25rem 0.75rem 0.75rem !important;
   align-items: center !important;
 }
 
 /* Make room for the drag handle on the left while editing */
 :deep([data-sidebar="menu-button"].shortcut-button-editing) {
   margin-left: 1.5rem !important;
+  margin-right: 1.5rem !important;
+  height: 2.5rem !important;
+  border: 1px dashed hsl(var(--sidebar-border)) !important;
+  border-radius: 0.375rem !important;
   cursor: default;
 }
 
-/* padding 0.125rem makes content area exactly 1.75rem = icon width → centered */
+/* Keep collapsed shortcut buttons aligned with the account menu button. */
 :deep([data-sidebar="menu-button"].shortcut-button-collapsed) {
-  padding: 0.125rem !important;
+  padding: 3px !important;
   align-items: center !important;
 }
 
 .shortcut-thumb {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 34px;
+  height: 34px;
   border-radius: 4px;
   object-fit: cover;
   flex-shrink: 0;
-  margin-right: 0.5rem;
   transition:
     width 400ms ease-linear,
-    height 400ms ease-linear,
-    margin-right 400ms ease-linear;
+    height 400ms ease-linear;
 }
 
 .shortcut-thumb--collapsed {
-  width: 1.75rem;
-  height: 1.75rem;
-  margin-right: 0;
+  width: 34px;
+  height: 34px;
 }
 
 /* The fallback icon renders as a direct-child <svg>, which AppSidebar's global
@@ -378,15 +518,13 @@ const draggedItem = computed(() =>
    the extra .shortcut-thumb class (higher specificity) is required to beat that
    global rule across its height breakpoints. */
 :deep([data-sidebar="menu-button"] > svg.shortcut-thumb) {
-  width: 2rem !important;
-  height: 2rem !important;
+  width: 34px !important;
+  height: 34px !important;
   margin-left: 0.25rem !important;
-  margin-right: 0.75rem !important;
 }
 :deep([data-sidebar="menu-button"] > svg.shortcut-thumb--collapsed) {
-  width: 1.75rem !important;
-  height: 1.75rem !important;
-  margin-right: 0 !important;
+  width: 34px !important;
+  height: 34px !important;
 }
 
 .shortcut-label {
@@ -431,6 +569,39 @@ const draggedItem = computed(() =>
 }
 
 /* ---- edit mode ---- */
+
+.sidebar-customization-surface--edit {
+  animation: sidebar-customization-edit-in 260ms ease-out both;
+}
+
+.sidebar-customization-surface--normal {
+  animation: sidebar-customization-normal-in 260ms ease-out both;
+}
+
+@keyframes sidebar-customization-edit-in {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sidebar-customization-normal-in {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-customization-surface--edit,
+  .sidebar-customization-surface--normal {
+    animation: none;
+  }
+}
 
 .shortcut-item {
   user-select: none;

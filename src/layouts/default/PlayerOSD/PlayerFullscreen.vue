@@ -719,6 +719,15 @@ const toggleLyrics = () => {
   showLyrics.value = !showLyrics.value;
 };
 
+const handleToggleLyricsHotkey = () => {
+  if (!store.showFullscreenPlayer) store.showFullscreenPlayer = true;
+  toggleLyrics();
+};
+eventbus.on("player-toggle-lyrics", handleToggleLyricsHotkey);
+onBeforeUnmount(() =>
+  eventbus.off("player-toggle-lyrics", handleToggleLyricsHotkey),
+);
+
 // This component stays mounted while the dialog is closed and the lyrics panel
 // keeps its state across open/close, so both are checked: the ~60fps loop only
 // runs while the lyrics viewer it feeds is actually on screen.
@@ -1211,24 +1220,6 @@ const openQueueMenu = function (evt: Event) {
     posY: (evt as PointerEvent).clientY,
   });
 };
-
-// Handle Escape key to close fullscreen player (since persistent disables default behavior)
-const onKeydown = (e: KeyboardEvent) => {
-  if (
-    e.key === "Escape" &&
-    store.showFullscreenPlayer &&
-    !store.dialogActive &&
-    !store.showPlayersMenu
-  ) {
-    store.showFullscreenPlayer = false;
-  }
-};
-onMounted(() => {
-  window.addEventListener("keydown", onKeydown);
-  onBeforeUnmount(() => {
-    window.removeEventListener("keydown", onKeydown);
-  });
-});
 
 const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);

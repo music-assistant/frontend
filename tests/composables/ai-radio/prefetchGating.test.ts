@@ -1,7 +1,16 @@
-import { reactive } from "vue";
-import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProviderInstance } from "@/plugins/api/interfaces";
 import { ProviderType } from "@/plugins/api/interfaces";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const { mocks } = vi.hoisted(() => ({
+  mocks: {
+    guestSessionKind: null as string | null,
+    sendCommand: vi.fn(),
+    setProvider: undefined as
+      | ((provider: ProviderInstance | undefined) => void)
+      | undefined,
+  },
+}));
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
@@ -23,26 +32,40 @@ const aiRadioProvider: ProviderInstance = {
   is_streaming_provider: null,
 };
 
-/** Mocks @/plugins/api and @/plugins/auth for a fresh module import, returning the sendCommand spy. */
-async function mockApiAndAuth(guestSessionKind: string | null) {
-  const providers = reactive<Record<string, ProviderInstance>>({
-    ai_radio: aiRadioProvider,
+vi.mock("@/plugins/api", async () => {
+  const { reactive } = await vi.importActual<typeof import("vue")>("vue");
+  const providers = reactive<Record<string, ProviderInstance>>({});
+
+  mocks.setProvider = (provider) => {
+    if (provider) providers.ai_radio = provider;
+    else delete providers.ai_radio;
+  };
+  mocks.sendCommand.mockImplementation((command: string) => {
+    if (command === "ai_radio/status") return Promise.resolve({ sessions: [] });
+    return Promise.resolve([]);
   });
-  const sendCommand = vi.fn().mockResolvedValue({});
 
-  vi.doMock("@/plugins/api", () => ({
-    api: { providers, sendCommand },
-    default: { providers, sendCommand },
-  }));
-  vi.doMock("@/plugins/auth", () => ({
-    authManager: { guestSessionKind: () => guestSessionKind },
-    default: { guestSessionKind: () => guestSessionKind },
-  }));
+  return {
+    api: { providers, sendCommand: mocks.sendCommand },
+    default: { providers, sendCommand: mocks.sendCommand },
+  };
+});
 
-  return sendCommand;
-}
+vi.mock("@/plugins/auth", () => ({
+  authManager: {
+    guestSessionKind: () => mocks.guestSessionKind,
+  },
+  default: {
+    guestSessionKind: () => mocks.guestSessionKind,
+  },
+}));
 
-/** Lets the module-level watcher's synchronous callback finish its async prefetch work. */
+// Import once. Re-importing these modules after vi.resetModules leaves the
+// module-level provider watchers from the previous test alive and can stall
+// the next dynamic import.
+import "@/composables/ai-radio/useShows";
+import "@/composables/ai-radio/useHosts";
+
 async function flushMicrotasks() {
   await Promise.resolve();
   await Promise.resolve();
@@ -51,32 +74,25 @@ async function flushMicrotasks() {
 
 describe("ai_radio prefetch gating for session-scoped sessions", () => {
   afterEach(() => {
-    vi.resetModules();
-    vi.doUnmock("@/plugins/api");
-    vi.doUnmock("@/plugins/auth");
-    vi.doUnmock("@/plugins/i18n");
+    mocks.setProvider?.(undefined);
+    mocks.guestSessionKind = null;
+    mocks.sendCommand.mockClear();
   });
 
   it("sends no ai_radio commands for a session-scoped session", async () => {
-    vi.resetModules();
-    const sendCommand = await mockApiAndAuth("dashboard");
-
-    await import("@/composables/ai-radio/useShows");
-    await import("@/composables/ai-radio/useHosts");
+    mocks.guestSessionKind = "dashboard";
+    mocks.setProvider?.(aiRadioProvider);
     await flushMicrotasks();
 
-    expect(sendCommand).not.toHaveBeenCalled();
+    expect(mocks.sendCommand).not.toHaveBeenCalled();
   });
 
   it("prefetches ai_radio state for a regular session", async () => {
-    vi.resetModules();
-    const sendCommand = await mockApiAndAuth(null);
-
-    await import("@/composables/ai-radio/useShows");
-    await import("@/composables/ai-radio/useHosts");
+    mocks.guestSessionKind = null;
+    mocks.setProvider?.(aiRadioProvider);
     await flushMicrotasks();
 
-    const calledCommands = sendCommand.mock.calls.map((call) => call[0]);
+    const calledCommands = mocks.sendCommand.mock.calls.map((call) => call[0]);
     expect(calledCommands).toEqual(
       expect.arrayContaining([
         "ai_radio/stations/list",
