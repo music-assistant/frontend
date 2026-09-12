@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 function mountButton(props: InstanceType<typeof Button>["$props"] = {}) {
   return mount(Button, {
     props,
-    slots: { default: "Save" },
+    slots: { default: "<span>Save</span>" },
   });
 }
 
@@ -16,7 +16,7 @@ describe("Button", () => {
     expect(button.element.firstElementChild?.getAttribute("role")).toBe(
       "status",
     );
-    expect(button.text()).toBe("Save");
+    expect(button.element.lastElementChild?.textContent).toBe("Save");
     expect(button.attributes("disabled")).toBeDefined();
     expect(button.attributes("aria-busy")).toBe("true");
     expect(button.attributes("loading")).toBeUndefined();
@@ -53,5 +53,17 @@ describe("Button", () => {
     expect(link.classes()).toContain("inline-flex");
     expect(link.attributes("disabled")).toBeUndefined();
     expect(link.attributes("aria-busy")).toBeUndefined();
+  });
+
+  it("leaves the spinner out with as-child", () => {
+    const wrapper = mount(Button, {
+      props: { asChild: true, loading: true },
+      slots: { default: '<a href="/settings">Settings</a>' },
+    });
+    const link = wrapper.get("a");
+
+    expect(link.classes()).toContain("inline-flex");
+    expect(link.attributes("aria-busy")).toBe("true");
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
   });
 });
