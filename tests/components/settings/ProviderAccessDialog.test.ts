@@ -336,7 +336,6 @@ describe("ProviderAccessDialog", () => {
     await openSelect(ownerTrigger()!);
     await pickOption("settings.source_access.household");
 
-    // read before any select opens again, which would mask a stale label
     expect(sharingTrigger()?.textContent).toContain(
       "settings.source_access.options.members",
     );

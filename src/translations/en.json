@@ -673,7 +673,7 @@
                 "members": "Every signed-in member, guests excluded.",
                 "everyone": "Any user can use this source.",
                 "selected_no_owner": "Only the members selected below.",
-                "nobody": "Nobody can use this source until it has an owner or is shared."
+                "nobody": "Nobody can use this source until it has an owner or is shared with someone."
             },
             "updated": "Access updated",
             "nobody": "Nobody can use this source"
