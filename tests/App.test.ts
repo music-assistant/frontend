@@ -7,6 +7,7 @@ import {
   ProviderType,
   UserRole,
   type ProviderConfig,
+  type Role,
 } from "@/plugins/api/interfaces";
 import { saveDeviceSetting } from "@/helpers/device_settings";
 import type { MusicAssistantApi } from "@/plugins/api";
@@ -15,6 +16,7 @@ import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "vue-sonner";
 import { providerConfig } from "./fixtures/providerConfig";
+import { role } from "./fixtures/role";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "./fixtures/scopes";
 import { user } from "./fixtures/user";
 import { store } from "@/plugins/store";
@@ -60,7 +62,7 @@ const {
     getLibraryRadiosCount: vi.fn<MusicAssistantApi["getLibraryRadiosCount"]>(),
     getLibraryTracksCount: vi.fn<MusicAssistantApi["getLibraryTracksCount"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
-    getRoleScopes: vi.fn<MusicAssistantApi["getRoleScopes"]>(),
+    getRoles: vi.fn<MusicAssistantApi["getRoles"]>(),
     initialize: vi.fn<MusicAssistantApi["initialize"]>(),
     isRemoteConnection: { value: false },
     requireAuthentication: vi.fn<MusicAssistantApi["requireAuthentication"]>(),
@@ -133,6 +135,7 @@ const {
       enabledPlugins: new Set<string>(),
       forceMobileLayout: false,
       isIngressSession: false,
+      roles: [] as Role[],
       roleScopes: {} as Record<string, string[]>,
       serverInfo: undefined as unknown,
     },
@@ -352,7 +355,7 @@ describe("App initialization", () => {
     mockProxyEnsureReady.mockResolvedValue(undefined);
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
-    apiMock.getRoleScopes.mockResolvedValue({});
+    apiMock.getRoles.mockResolvedValue([]);
     haStateMock.isSubscribed = false;
     haStateMock.kioskModeEnabled = false;
     mockGetKioskModePreference.mockReturnValue(true);
@@ -528,11 +531,18 @@ describe("App initialization", () => {
   });
 
   it("keeps full initialization and plugin discovery for regular users", async () => {
-    apiMock.getRoleScopes.mockResolvedValue({ user: ["library.read"] });
+    const userRole = role({
+      role_id: "user",
+      name: "User",
+      scopes: ["library.read"],
+      builtin: true,
+    });
+    apiMock.getRoles.mockResolvedValue([userRole]);
 
     wrapper = await mountApp();
 
     expect(mockSetPreference).toHaveBeenCalledWith("theme", "dark");
+    expect(storeMock.roles).toEqual([userRole]);
     expect(storeMock.roleScopes).toEqual({ user: ["library.read"] });
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
     expect(apiMock.fetchProviders).not.toHaveBeenCalled();
@@ -944,11 +954,16 @@ describe("App initialization", () => {
       admin: [...BUILTIN_ROLE_SCOPES.admin],
       user: [...BUILTIN_ROLE_SCOPES.user],
     };
+    // the roles as the server lists them, by the scopes each one grants
+    const listedRoles = (roleScopes: Record<string, string[]>) =>
+      Object.entries(roleScopes).map(([role_id, scopes]) =>
+        role({ role_id, scopes }),
+      );
     let reload: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
       reload = vi.spyOn(window.location, "reload").mockImplementation(() => {});
-      apiMock.getRoleScopes.mockResolvedValue(ROLE_SCOPES);
+      apiMock.getRoles.mockResolvedValue(listedRoles(ROLE_SCOPES));
       // like the real one, which a reconnect calls before initializing again
       authManagerMock.setCurrentUser.mockImplementation((currentUser) => {
         storeMock.currentUser = currentUser;
@@ -990,7 +1005,7 @@ describe("App initialization", () => {
         });
         apiMock.authenticateWithToken.mockResolvedValue({ user: changedUser });
         apiMock.getCurrentUserInfo.mockResolvedValue(changedUser);
-        apiMock.getRoleScopes.mockResolvedValue(roleScopes);
+        apiMock.getRoles.mockResolvedValue(listedRoles(roleScopes));
 
         await reconnectAndInitialize();
 
@@ -1004,10 +1019,12 @@ describe("App initialization", () => {
       wrapper = await mountApp();
       apiMock.fetchState.mockClear();
       // the same scopes, listed in another order
-      apiMock.getRoleScopes.mockResolvedValue({
-        ...ROLE_SCOPES,
-        user: [...BUILTIN_ROLE_SCOPES.user].reverse(),
-      });
+      apiMock.getRoles.mockResolvedValue(
+        listedRoles({
+          ...ROLE_SCOPES,
+          user: [...BUILTIN_ROLE_SCOPES.user].reverse(),
+        }),
+      );
 
       await reconnectAndInitialize();
 

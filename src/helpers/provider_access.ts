@@ -62,6 +62,16 @@ export const hasConfigurableAccess = (
   manifest?: ProviderManifest,
 ) => config.type === ProviderType.MUSIC && manifest?.builtin === false;
 
+/**
+ * Whether a member may set up (and reconfigure) a music source of the provider
+ * itself; a user who manages every music source may set up any provider.
+ *
+ * @param manifest - The manifest of the provider.
+ */
+export const isSelfServiceProvider = (manifest?: ProviderManifest) =>
+  // an older server sends no flag and lets a member set up any provider
+  manifest?.self_service !== false;
+
 /** Whether the music source belongs to the given user. */
 export const isOwnMusicSource = (
   config: ProviderConfig,

@@ -39,6 +39,7 @@ const {
         documentation: "https://example.com/spotify",
         has_setup_flow: true,
         name: "Spotify",
+        self_service: true,
       },
     },
     providers: {},
@@ -148,6 +149,7 @@ beforeEach(() => {
   apiMock.providerManifests.spotify.documentation =
     "https://example.com/spotify";
   apiMock.providerManifests.spotify.has_setup_flow = true;
+  apiMock.providerManifests.spotify.self_service = true;
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockImplementation(
     (event: EventType, callback: () => void) => {
@@ -1059,6 +1061,41 @@ describe("EditProvider", () => {
     expect(routerMock.replace).not.toHaveBeenCalled();
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
   });
+
+  it.each([
+    [true, true],
+    [false, false],
+  ])(
+    "offers a member reconfiguration of its own source only when members may set up the provider (self service: %s)",
+    async (selfService, offered) => {
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+      store.currentUser = user({ user_id: "member-id" });
+      apiMock.providerManifests.spotify.self_service = selfService;
+      apiMock.getProviderConfig.mockResolvedValue({
+        ...spotifyConfig(ProviderStatus.LOADED),
+        access: {
+          owner: "member-id",
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      });
+
+      const wrapper = shallowMount(EditProvider, {
+        props: { instanceId: "spotify--test" },
+        global: {
+          mocks: { $t: (key: string) => key },
+          stubs: providerDetailsStubs,
+        },
+      });
+      await flushPromises();
+
+      expect(
+        wrapper.find('[data-testid="provider-reconfigure"]').exists(),
+      ).toBe(offered);
+    },
+  );
 });
 
 /**

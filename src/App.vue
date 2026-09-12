@@ -39,6 +39,7 @@
 <script setup lang="ts">
 import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import { Toaster } from "@/components/ui/sonner";
+import { loadRoles } from "@/composables/roles";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
@@ -370,8 +371,8 @@ const completeInitialization = async () => {
   authManager.setCurrentUser(userInfo);
   store.currentUser = userInfo;
   store.serverInfo = serverInfo;
-  // the scopes the role of the user grants, for the parts of the ui gated on one
-  store.roleScopes = await api.getRoleScopes();
+  // the roles, with the scopes each grants for the parts of the ui gated on one
+  await loadRoles();
   // sharing tells a guest from a member by the role itself, so the role counts too
   const userAccess = [
     userInfo.role,

@@ -156,6 +156,26 @@ describe("AddProviderDialog", () => {
 
     expect(providerNames()).toEqual(["Spotify"]);
   });
+
+  it("offers only providers that members may set up when restricted", async () => {
+    apiMock.providerManifests = {
+      filesystem_local: providerManifest({
+        domain: "filesystem_local",
+        name: "Local disk",
+        multi_instance: true,
+        self_service: false,
+      }),
+      spotify: providerManifest({
+        domain: "spotify",
+        name: "Spotify",
+        multi_instance: true,
+      }),
+    };
+
+    await openDialog({ multiInstanceOnly: true, selfServiceOnly: true });
+
+    expect(providerNames()).toEqual(["Spotify"]);
+  });
 });
 
 function searchField() {
@@ -169,7 +189,11 @@ function providerNames() {
 }
 
 async function openDialog(
-  props: { providerType?: ProviderType; multiInstanceOnly?: boolean } = {},
+  props: {
+    providerType?: ProviderType;
+    multiInstanceOnly?: boolean;
+    selfServiceOnly?: boolean;
+  } = {},
 ): Promise<VueWrapper> {
   const wrapper = mount(AddProviderDialog, {
     props: { ...props, show: false },

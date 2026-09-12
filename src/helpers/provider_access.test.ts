@@ -16,6 +16,7 @@ import {
   getProviderSharingTranslationKey,
   hasConfigurableAccess,
   isOwnMusicSource,
+  isSelfServiceProvider,
   ownerCandidates,
   servesNobody,
   shareCandidates,
@@ -292,5 +293,23 @@ describe("userDisplayName", () => {
   it("prefers the display name over the username", () => {
     expect(userDisplayName(user({ display_name: "Marcel" }))).toBe("Marcel");
     expect(userDisplayName(user({ username: "marcel" }))).toBe("marcel");
+  });
+});
+
+describe("isSelfServiceProvider", () => {
+  it("is true for a provider that members may set up themselves", () => {
+    expect(isSelfServiceProvider(providerManifest())).toBe(true);
+  });
+
+  it("is false for a provider that only an admin may set up", () => {
+    expect(
+      isSelfServiceProvider(providerManifest({ self_service: false })),
+    ).toBe(false);
+  });
+
+  it("is true for a manifest without the flag, as an older server sends it", () => {
+    expect(
+      isSelfServiceProvider(providerManifest({ self_service: undefined })),
+    ).toBe(true);
   });
 });
