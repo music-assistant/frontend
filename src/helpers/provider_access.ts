@@ -69,9 +69,8 @@ export const isOwnMusicSource = (
 ) => userId !== undefined && config.access?.owner === userId;
 
 /**
- * Whether nobody can use a music source with this access: one without an
- * owner that is private, or shared with selected members while nobody is
- * picked.
+ * Whether nobody can use what this access record guards: it has no owner and
+ * is private, or is shared with selected members while nobody is picked.
  */
 export const servesNobody = (access: ProviderAccess) =>
   access.owner === null &&

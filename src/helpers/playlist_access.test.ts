@@ -74,6 +74,15 @@ describe("getPlaylistSharingHintTranslationKey", () => {
       ),
     ).toBe("playlist_access.hints.nobody");
   });
+
+  it.each([ProviderSharing.MEMBERS, ProviderSharing.EVERYONE])(
+    "still explains sharing %s for a playlist without an owner",
+    (sharing) => {
+      expect(
+        getPlaylistSharingHintTranslationKey(access({ owner: null, sharing })),
+      ).toBe(`playlist_access.hints.${sharing}`);
+    },
+  );
 });
 
 describe("isMusicAssistantPlaylist", () => {
