@@ -672,13 +672,14 @@
                 "private": "Only me",
                 "selected": "Selected members",
                 "members": "All members",
-                "everyone": "Everyone, including guests"
+                "everyone": "Everyone, including guests",
+                "not_shared": "Not shared"
             },
             "hints": {
                 "private": "Only the owner can use this source.",
                 "selected": "The owner and the members selected below.",
                 "members": "Every signed-in member, guests excluded.",
-                "everyone": "Every user, guests included."
+                "everyone": "Any user can use this source."
             },
             "updated": "Access updated"
         },
