@@ -4,6 +4,7 @@ import { role } from "../../tests/fixtures/role";
 import {
   assignableRoles,
   customRoleScopes,
+  extraPermissions,
   GRANTABLE_SCOPES,
   GUEST_SCOPES,
   isImpliedScope,
@@ -90,7 +91,6 @@ describe("GRANTABLE_SCOPES", () => {
     expect([...GRANTABLE_SCOPES].sort()).toEqual(
       [
         Scope.LIBRARY_WRITE,
-        Scope.LIBRARY_MANAGE,
         Scope.CONFIG_PLAYERS_WRITE,
         Scope.CONFIG_PROVIDERS_READ,
         Scope.CONFIG_PROVIDERS_OWN,
@@ -106,6 +106,7 @@ describe("GRANTABLE_SCOPES", () => {
     Scope.ALL,
     Scope.USERS_MANAGE,
     Scope.USERS_IMPERSONATE,
+    Scope.LIBRARY_MANAGE,
     Scope.CONFIG_PROVIDERS_WRITE,
     Scope.CONFIG_CORE_WRITE,
     Scope.SYSTEM_MANAGE,
@@ -126,7 +127,6 @@ describe("customRoleScopes", () => {
   });
 
   it.each([
-    [Scope.LIBRARY_MANAGE, Scope.LIBRARY_WRITE],
     [Scope.CONFIG_PLAYERS_WRITE, Scope.CONFIG_PLAYERS_READ],
     [Scope.CONFIG_PROVIDERS_OWN, Scope.CONFIG_PROVIDERS_READ],
   ])("holds the scope %s needs", (granted, implied) => {
@@ -153,10 +153,13 @@ describe("toggleScope", () => {
   const guestScopes = customRoleScopes([]);
 
   it("turns a scope on along with the scope it needs", () => {
-    const scopes = toggleScope(guestScopes, Scope.LIBRARY_MANAGE, true);
+    const scopes = toggleScope(guestScopes, Scope.CONFIG_PROVIDERS_OWN, true);
 
     expect(scopes).toEqual(
-      customRoleScopes([Scope.LIBRARY_MANAGE, Scope.LIBRARY_WRITE]),
+      customRoleScopes([
+        Scope.CONFIG_PROVIDERS_OWN,
+        Scope.CONFIG_PROVIDERS_READ,
+      ]),
     );
   });
 
@@ -177,13 +180,13 @@ describe("toggleScope", () => {
 
   it("leaves the needed scope on, and free, when the scope needing it goes", () => {
     const scopes = toggleScope(
-      toggleScope(guestScopes, Scope.LIBRARY_MANAGE, true),
-      Scope.LIBRARY_MANAGE,
+      toggleScope(guestScopes, Scope.CONFIG_PROVIDERS_OWN, true),
+      Scope.CONFIG_PROVIDERS_OWN,
       false,
     );
 
-    expect(scopes).toEqual(customRoleScopes([Scope.LIBRARY_WRITE]));
-    expect(isImpliedScope(scopes, Scope.LIBRARY_WRITE)).toBe(false);
+    expect(scopes).toEqual(customRoleScopes([Scope.CONFIG_PROVIDERS_READ]));
+    expect(isImpliedScope(scopes, Scope.CONFIG_PROVIDERS_READ)).toBe(false);
   });
 
   it("never turns a guest scope off", () => {
@@ -232,5 +235,27 @@ describe("sameScopes", () => {
     [[Scope.LIBRARY_READ], [Scope.LIBRARY_READ, Scope.USERS_READ]],
   ])("is false for different scopes", (a, b) => {
     expect(sameScopes(a, b)).toBe(false);
+  });
+});
+
+describe("extraPermissions", () => {
+  it("lists what a builtin role holds beyond what a custom role can get", () => {
+    expect(
+      extraPermissions([
+        ...GUEST_SCOPES,
+        Scope.CONFIG_PLAYERS_WRITE,
+        Scope.USERS_READ,
+        Scope.USERS_IMPERSONATE,
+      ]),
+    ).toEqual([
+      {
+        scope: Scope.USERS_IMPERSONATE,
+        labelKey: "auth.permissions.users_impersonate",
+      },
+    ]);
+  });
+
+  it("lists nothing for a custom role", () => {
+    expect(extraPermissions(customRoleScopes([Scope.USERS_READ]))).toEqual([]);
   });
 });

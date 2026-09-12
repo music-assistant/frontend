@@ -43,6 +43,22 @@
         />
       </Field>
     </FieldSet>
+
+    <FieldSet v-if="readonly && extras.length > 0" class="gap-3">
+      <FieldLegend variant="label" class="mb-0">
+        {{ $t("auth.permissions.also") }}
+      </FieldLegend>
+      <ul class="flex flex-col gap-3 text-sm">
+        <li
+          v-for="extra in extras"
+          :key="extra.scope"
+          class="flex items-center justify-between gap-4"
+        >
+          {{ extra.labelKey ? $t(extra.labelKey) : extra.scope }}
+          <Check class="text-primary size-4 shrink-0" aria-hidden="true" />
+        </li>
+      </ul>
+    </FieldSet>
   </div>
 </template>
 
@@ -56,13 +72,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import {
   ALWAYS_ALLOWED_PERMISSION_KEYS,
+  extraPermissions,
   isImpliedScope,
   ROLE_PERMISSION_GROUPS,
 } from "@/helpers/roles";
 import { Check } from "@lucide/vue";
-import { useId } from "vue";
+import { computed, useId } from "vue";
 
-defineProps<{
+const props = defineProps<{
   // every scope the role holds
   scopes: readonly string[];
   // show what the role may do without letting it be changed
@@ -74,6 +91,9 @@ const emit = defineEmits<{
 }>();
 
 const idPrefix = useId();
+
+// what a builtin role may do beyond the permissions a custom role can get
+const extras = computed(() => extraPermissions(props.scopes));
 
 const switchId = (scope: string) => `${idPrefix}-${scope.replaceAll(".", "-")}`;
 </script>

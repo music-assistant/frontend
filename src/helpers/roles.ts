@@ -11,6 +11,13 @@ export interface RolePermissionGroup {
   permissions: RolePermission[];
 }
 
+/** A permission a builtin role holds beyond what a custom role can get. */
+export interface ExtraPermission {
+  scope: string;
+  // the translation key of its description, when there is one
+  labelKey?: string;
+}
+
 /** The longest name a role can have. */
 export const ROLE_NAME_MAX_LENGTH = 50;
 
@@ -41,8 +48,9 @@ export const ALWAYS_ALLOWED_PERMISSION_KEYS: readonly string[] = [
 
 /**
  * The scopes an admin may grant a custom role, by area. The scopes that reach
- * into the accounts or the server itself (managing users, all music sources,
- * the server settings and system maintenance) stay with the admin role.
+ * into accounts, the private things of other members or the server itself
+ * (managing users, the whole library, all music sources, the server settings
+ * and system maintenance) stay with the admin role.
  */
 export const ROLE_PERMISSION_GROUPS: readonly RolePermissionGroup[] = [
   {
@@ -51,10 +59,6 @@ export const ROLE_PERMISSION_GROUPS: readonly RolePermissionGroup[] = [
       {
         scope: Scope.LIBRARY_WRITE,
         labelKey: "auth.permissions.library_write",
-      },
-      {
-        scope: Scope.LIBRARY_MANAGE,
-        labelKey: "auth.permissions.library_manage",
       },
     ],
   },
@@ -114,7 +118,6 @@ const BUILTIN_ROLE_TRANSLATION_KEYS = new Map<string, string>([
 
 // a custom role holds these along with the scope that is of no use without them
 const IMPLIED_SCOPES = new Map<string, readonly string[]>([
-  [Scope.LIBRARY_MANAGE, [Scope.LIBRARY_WRITE]],
   [Scope.CONFIG_PLAYERS_WRITE, [Scope.CONFIG_PLAYERS_READ]],
   [Scope.CONFIG_PROVIDERS_OWN, [Scope.CONFIG_PROVIDERS_READ]],
 ]);
@@ -232,3 +235,24 @@ export const sameScopes = (
   const held = new Set(a);
   return held.size === new Set(b).size && b.every((scope) => held.has(scope));
 };
+
+// the permissions of a builtin role that no custom role can get, in plain words
+const EXTRA_PERMISSION_KEYS = new Map<string, string>([
+  [Scope.USERS_IMPERSONATE, "auth.permissions.users_impersonate"],
+]);
+
+/**
+ * The permissions a role holds beyond the guest scopes and those a custom role
+ * can get, which only a builtin role has.
+ *
+ * @param scopes - The scopes the role holds.
+ */
+export const extraPermissions = (
+  scopes: readonly string[],
+): ExtraPermission[] =>
+  scopes
+    .filter(
+      (scope) =>
+        !GUEST_SCOPES.includes(scope) && !GRANTABLE_SCOPES.includes(scope),
+    )
+    .map((scope) => ({ scope, labelKey: EXTRA_PERMISSION_KEYS.get(scope) }));
