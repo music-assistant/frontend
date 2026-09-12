@@ -1,5 +1,10 @@
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
-import { ProviderSharing, UserRole } from "@/plugins/api/interfaces";
+import { shareCandidates } from "@/helpers/provider_access";
+import {
+  ProviderSharing,
+  UserRole,
+  type UserSummary,
+} from "@/plugins/api/interfaces";
 import {
   enableAutoUnmount,
   flushPromises,
@@ -8,7 +13,7 @@ import {
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { providerConfig } from "../../fixtures/providerConfig";
-import { user } from "../../fixtures/user";
+import { user, userSummary } from "../../fixtures/user";
 
 const { apiMock, storeMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -172,6 +177,16 @@ describe("ProviderAccessDialog", () => {
     });
   });
 
+  it("offers the old owner, not the new one, to share with", async () => {
+    await openDialog(ownedSource, users);
+
+    await openSelect(ownerTrigger()!);
+    await pickOption("Member");
+    await openMemberPicker();
+
+    expect(memberOptionLabels()).toEqual(["Owner"]);
+  });
+
   it("saves a household source without an owner", async () => {
     const wrapper = await openDialog(ownedSource, users);
 
@@ -196,9 +211,24 @@ describe("ProviderAccessDialog", () => {
     expect(wrapper.emitted("update:open")).toBeUndefined();
   });
 
-  describe("for an owner that can list the members", () => {
+  describe("for an owner that picks from the share candidates", () => {
+    // the server lists every enabled member, the owner included
+    const candidates = [
+      userSummary({
+        user_id: "owner-id",
+        username: "owner",
+        display_name: "Owner",
+      }),
+      userSummary({
+        user_id: "member-id",
+        username: "member",
+        display_name: "Member",
+      }),
+      userSummary({ user_id: "other-id", username: "other" }),
+    ];
+
     it("picks the members but keeps the owner", async () => {
-      const wrapper = await openDialog(ownedSource, users, false);
+      const wrapper = await openDialog(ownedSource, null, false, candidates);
 
       expect(ownerTrigger()).toBeNull();
       expect(sharedUsersField()).not.toBeNull();
@@ -222,8 +252,9 @@ describe("ProviderAccessDialog", () => {
             shared_users: [],
           },
         }),
-        users,
+        null,
         false,
+        candidates,
       );
 
       await openSelect(sharingTrigger()!);
@@ -231,6 +262,56 @@ describe("ProviderAccessDialog", () => {
       expect(optionLabels()).toContain(
         "settings.source_access.options.selected",
       );
+    });
+
+    it("offers every member but the owner, by name", async () => {
+      await openDialog(ownedSource, null, false, candidates);
+
+      await openMemberPicker();
+
+      expect(memberOptionLabels()).toEqual(["Member", "other"]);
+    });
+
+    it("shares with a picked member", async () => {
+      const wrapper = await openDialog(ownedSource, null, false, candidates);
+
+      await openMemberPicker();
+      await pickMember("other");
+      await submit(wrapper);
+
+      expect(apiMock.setProviderAccess).toHaveBeenCalledWith("spotify--owned", {
+        owner: "owner-id",
+        sharing: ProviderSharing.SELECTED,
+        shared_users: ["member-id", "other-id"],
+      });
+    });
+
+    it("keeps the members on record that are not offered", async () => {
+      // a disabled account is not listed, but keeps its place on the list
+      const wrapper = await openDialog(
+        providerConfig({
+          domain: "spotify",
+          instance_id: "spotify--owned",
+          access: {
+            owner: "owner-id",
+            sharing: ProviderSharing.SELECTED,
+            shared_users: ["member-id", "disabled-id"],
+          },
+        }),
+        null,
+        false,
+        candidates,
+      );
+
+      await openMemberPicker();
+      await pickMember("other");
+      await submit(wrapper);
+
+      expect(apiMock.setProviderAccess).toHaveBeenCalledWith("spotify--owned", {
+        owner: "owner-id",
+        sharing: ProviderSharing.SELECTED,
+        shared_users: ["member-id", "disabled-id", "other-id"],
+      });
     });
   });
 
@@ -292,6 +373,31 @@ function sharedUsersField() {
   );
 }
 
+function memberOptionLabels() {
+  return Array.from(
+    document.querySelectorAll("[data-slot='command-item']"),
+    (item) => item.textContent?.trim(),
+  );
+}
+
+async function openMemberPicker() {
+  document
+    .querySelector<HTMLElement>(
+      "button[aria-label='settings.source_access.select_members']",
+    )!
+    .click();
+  await settle();
+}
+
+async function pickMember(label: string) {
+  const option = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-slot='command-item']"),
+  ).find((item) => item.textContent?.trim() === label);
+  if (!option) throw new Error(`no member "${label}": ${memberOptionLabels()}`);
+  option.click();
+  await settle();
+}
+
 function dialogText() {
   return document.querySelector("[data-slot='dialog-content']")?.textContent;
 }
@@ -343,9 +449,18 @@ async function openDialog(
   config: ReturnType<typeof providerConfig>,
   dialogUsers: ReturnType<typeof user>[] | null,
   canChangeOwner: boolean = dialogUsers !== null,
+  // an admin picks the members to share with from its user list, like the page
+  candidates: UserSummary[] | null = dialogUsers &&
+    shareCandidates(dialogUsers),
 ): Promise<VueWrapper> {
   const wrapper = mount(ProviderAccessDialog, {
-    props: { open: false, config, users: dialogUsers, canChangeOwner },
+    props: {
+      open: false,
+      config,
+      users: dialogUsers,
+      shareCandidates: candidates,
+      canChangeOwner,
+    },
     attachTo: document.body,
     global: {
       mocks: {

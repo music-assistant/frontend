@@ -118,7 +118,6 @@ import {
   getProviderSharingHintTranslationKey,
   getProviderSharingTranslationKey,
   ownerCandidates,
-  shareCandidates,
   userDisplayName,
 } from "@/helpers/provider_access";
 import { api } from "@/plugins/api";
@@ -126,6 +125,7 @@ import {
   type ProviderConfig,
   ProviderSharing,
   type User,
+  type UserSummary,
 } from "@/plugins/api/interfaces";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -139,9 +139,11 @@ const props = defineProps<{
   open: boolean;
   // the music source to set the access of
   config: ProviderConfig | null;
-  // the users to pick shared members (and an owner) from; null when the
-  // caller can not list them
+  // the users to pick an owner from; null when the caller can not list them
   users: User[] | null;
+  // the members the source can be shared with, the dialog leaves its owner
+  // out; null when the caller can not list them
+  shareCandidates: UserSummary[] | null;
   // whether the caller may hand the source to another owner (an admin), or
   // only change the sharing of its own source
   canChangeOwner: boolean;
@@ -164,7 +166,9 @@ const canChangeOwner = computed(
 );
 
 const canPickSharedUsers = computed(
-  () => props.users !== null && sharing.value === ProviderSharing.SELECTED,
+  () =>
+    props.shareCandidates !== null &&
+    sharing.value === ProviderSharing.SELECTED,
 );
 
 // a source that is not loaded is named by its config, like the list does
@@ -185,20 +189,20 @@ const selectedOwner = computed(() =>
 
 const owners = computed(() => ownerCandidates(props.users ?? []));
 
+// the owner uses the source anyway, so it is not offered
 const shareOptions = computed(() =>
-  shareCandidates(props.users ?? [], selectedOwner.value).map((user) => ({
-    label: userDisplayName(user),
-    value: user.user_id,
-  })),
+  (props.shareCandidates ?? [])
+    .filter((user) => user.user_id !== selectedOwner.value)
+    .map((user) => ({ label: userDisplayName(user), value: user.user_id })),
 );
 
-// without a user list there is nobody to select, so that choice is only kept
-// when it is already the current one
+// without the members to pick from there is nobody to select, so that choice
+// is only kept when it is already the current one
 const sharingOptions = computed(() =>
   Object.values(ProviderSharing).filter(
     (option) =>
       option !== ProviderSharing.SELECTED ||
-      props.users !== null ||
+      props.shareCandidates !== null ||
       currentAccess.value.sharing === ProviderSharing.SELECTED,
   ),
 );

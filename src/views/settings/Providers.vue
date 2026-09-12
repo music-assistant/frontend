@@ -301,6 +301,7 @@
     v-model:open="showAccessDialog"
     :config="accessDialogConfig"
     :users="managesAllSources ? users : null"
+    :share-candidates="accessShareCandidates"
     :can-change-owner="managesAllSources"
     @saved="loadItems"
   />
@@ -336,6 +337,7 @@ import {
   getProviderSharingTranslationKey,
   hasConfigurableAccess,
   isOwnMusicSource,
+  shareCandidates,
   userDisplayName,
 } from "@/helpers/provider_access";
 import {
@@ -357,6 +359,7 @@ import {
   ProviderStatus,
   ProviderType,
   type User,
+  type UserSummary,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -422,11 +425,20 @@ const showAddProviderDialog = ref<boolean>(false);
 const showAccessDialog = ref<boolean>(false);
 const accessDialogConfig = ref<ProviderConfig | null>(null);
 const users = ref<User[]>([]);
+// the members a member may share its sources with, null until listed
+const memberShareCandidates = ref<UserSummary[] | null>(null);
 const { isProviderSyncing } = useBackgroundTasks();
 let unsubProvidersUpdated: (() => void) | undefined;
 
 const usersById = computed(
   () => new Map(users.value.map((user) => [user.user_id, user])),
+);
+
+// an admin picks the members to share with from its own user list
+const accessShareCandidates = computed(() =>
+  managesAllSources.value
+    ? shareCandidates(users.value)
+    : memberShareCandidates.value,
 );
 
 // the providers of the current type (a member's own ones only), before the
@@ -500,6 +512,14 @@ const loadUsers = async function () {
   }
 };
 
+const loadShareCandidates = async function () {
+  try {
+    memberShareCandidates.value = await api.getShareCandidates();
+  } catch {
+    toast.error($t("auth.users_load_failed"));
+  }
+};
+
 const removeProvider = function (providerInstanceId: string) {
   api
     .removeProviderConfig(providerInstanceId)
@@ -559,8 +579,10 @@ onMounted(() => {
   unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
     loadItems();
   });
-  // listing the users is an admin call; a member only shares its own sources
+  // listing the users is an admin call, so a member picks from the share
+  // candidates, which older servers do not list
   if (managesAllSources.value) loadUsers();
+  else if (api.supportsShareCandidates) loadShareCandidates();
 });
 
 onBeforeUnmount(() => {
