@@ -166,7 +166,7 @@ describe("PlaylistAccessDialog", () => {
     );
   });
 
-  it("does not save a playlist without an owner shared with nobody", async () => {
+  it("can not save a playlist without an owner until a member is selected to share it with", async () => {
     await openDialog(
       maPlaylist({
         owner: null,
@@ -176,7 +176,53 @@ describe("PlaylistAccessDialog", () => {
       }),
     );
 
+    expect(sharingHint()).toBe("playlist_access.hints.nobody");
     expect(saveButton()!.disabled).toBe(true);
+
+    await openMemberPicker();
+    await pickMember("Member");
+
+    expect(sharingHint()).toBe("playlist_access.hints.selected_no_owner");
+    expect(saveButton()!.disabled).toBe(false);
+  });
+
+  it("explains that only the selected members see a playlist once it has no owner", async () => {
+    await openDialog(maPlaylist(sharedWithMember));
+
+    expect(sharingHint()).toBe("playlist_access.hints.selected");
+
+    await openSelect(ownerTrigger()!);
+    await pickOption("settings.source_access.household");
+
+    expect(sharingHint()).toBe("playlist_access.hints.selected_no_owner");
+    expect(saveButton()!.disabled).toBe(false);
+  });
+
+  it("shares a private playlist with all members once it has no owner", async () => {
+    const wrapper = await openDialog(
+      maPlaylist({
+        owner: "owner-id",
+        sharing: ProviderSharing.PRIVATE,
+        shared_users: [],
+        collaborative: false,
+      }),
+    );
+
+    await openSelect(ownerTrigger()!);
+    await pickOption("settings.source_access.household");
+
+    expect(sharingTrigger()!.textContent).toContain(
+      "settings.source_access.options.members",
+    );
+
+    await submit(wrapper);
+
+    expect(apiMock.setPlaylistAccess).toHaveBeenCalledWith("42", {
+      owner: null,
+      sharing: ProviderSharing.MEMBERS,
+      shared_users: [],
+      collaborative: false,
+    });
   });
 
   it("saves the owner, sharing, members and collaborative flag", async () => {
@@ -241,6 +287,15 @@ function sharingTrigger() {
   return document.querySelector<HTMLElement>("#playlist-access-sharing");
 }
 
+// the sharing field's own hint, not the dialog's full text: a prefix match
+// there would let "hints.selected" pass for "hints.selected_no_owner"
+function sharingHint() {
+  return sharingTrigger()
+    ?.closest("[data-slot='field']")
+    ?.querySelector("[data-slot='field-description']")
+    ?.textContent?.trim();
+}
+
 function saveButton() {
   return document.querySelector<HTMLButtonElement>(
     "button[form='form-playlist-access']",
@@ -263,6 +318,31 @@ function dialogText() {
 
 function optionLabels() {
   return selectOptions().map((item) => item.textContent?.trim());
+}
+
+function memberOptionLabels() {
+  return Array.from(
+    document.querySelectorAll("[data-slot='command-item']"),
+    (item) => item.textContent?.trim(),
+  );
+}
+
+async function openMemberPicker() {
+  document
+    .querySelector<HTMLElement>(
+      "button[aria-label='settings.source_access.select_members']",
+    )!
+    .click();
+  await settle();
+}
+
+async function pickMember(label: string) {
+  const option = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-slot='command-item']"),
+  ).find((item) => item.textContent?.trim() === label);
+  if (!option) throw new Error(`no member "${label}": ${memberOptionLabels()}`);
+  option.click();
+  await settle();
 }
 
 // reka settles the listbox focus on a timer, so a plain flush is not enough

@@ -2134,7 +2134,9 @@
             "private": "Only the owner can see this playlist.",
             "selected": "The owner and the members selected below.",
             "members": "Every signed-in member, guests excluded.",
-            "everyone": "Any user can see this playlist."
+            "everyone": "Any user can see this playlist.",
+            "selected_no_owner": "Only the members selected below.",
+            "nobody": "Nobody can see this playlist until it has an owner or is shared with someone."
         },
         "updated": "Sharing updated"
     },
