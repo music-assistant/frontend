@@ -16,7 +16,7 @@ interface Props extends PrimitiveProps {
   disabled?: boolean;
   /**
    * Disables the button and shows a spinner before its content. With as-child
-   * the child gets the busy state but no spinner.
+   * the child only gets the `disabled` and `aria-busy` attributes.
    */
   loading?: boolean;
 }
