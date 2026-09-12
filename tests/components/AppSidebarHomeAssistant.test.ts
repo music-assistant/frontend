@@ -42,17 +42,11 @@ vi.mock("@/components/ui/sidebar", () => {
   };
 });
 
-// These reach for the api plugin on import, which the mocks here cannot serve.
+// These reach for the router plugin on import, which the vue-router mock cannot serve.
 vi.mock("@/components/navigation/NavGettingStarted.vue", () => ({
   default: { template: "<div />" },
 }));
-vi.mock("@/components/navigation/NavMain.vue", () => ({
-  default: { template: "<div />" },
-}));
 vi.mock("@/components/navigation/NavShortcuts.vue", () => ({
-  default: { template: "<div />" },
-}));
-vi.mock("@/components/navigation/NavMobile.vue", () => ({
   default: { template: "<div />" },
 }));
 
