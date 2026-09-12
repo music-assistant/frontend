@@ -110,7 +110,11 @@ async function buildMenu(item?: MediaItemType) {
 <style scoped>
 .detail-hero {
   position: relative;
-  height: var(--detail-hero-height);
+  display: flex;
+  flex-direction: column;
+  /* the design height; a hero whose text needs more room grows instead of
+     running under its toolbar */
+  min-height: var(--detail-hero-height);
   overflow: hidden;
   background-color: rgb(var(--v-theme-background));
   /* the artwork is darkened, so the hero keeps its light-on-dark text in both
@@ -118,7 +122,7 @@ async function buildMenu(item?: MediaItemType) {
   color: #fff;
 }
 .detail-hero--phone {
-  height: var(--detail-hero-phone-height);
+  min-height: var(--detail-hero-phone-height);
 }
 .detail-hero__backdrop {
   position: absolute;
@@ -174,11 +178,10 @@ async function buildMenu(item?: MediaItemType) {
   opacity: 1;
 }
 
+/* sits at the bottom of the hero, above the artwork layers */
 .detail-hero__body {
-  position: absolute;
-  left: 28px;
-  right: 28px;
-  bottom: 24px;
+  position: relative;
+  margin: auto 28px 24px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -215,9 +218,7 @@ async function buildMenu(item?: MediaItemType) {
 }
 
 .detail-hero--phone .detail-hero__body {
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
+  margin: auto 16px 16px;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;
