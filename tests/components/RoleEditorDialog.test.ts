@@ -100,16 +100,16 @@ describe("RoleEditorDialog", () => {
   it("turns on and locks the permission another one needs", async () => {
     await openEditor();
 
-    await click(`[data-scope="${Scope.LIBRARY_MANAGE}"]`);
+    await click(`[data-scope="${Scope.CONFIG_PROVIDERS_OWN}"]`);
 
-    expect(isOn(Scope.LIBRARY_WRITE)).toBe(true);
-    expect(permissionSwitch(Scope.LIBRARY_WRITE).disabled).toBe(true);
+    expect(isOn(Scope.CONFIG_PROVIDERS_READ)).toBe(true);
+    expect(permissionSwitch(Scope.CONFIG_PROVIDERS_READ).disabled).toBe(true);
 
-    await click(`[data-scope="${Scope.LIBRARY_MANAGE}"]`);
+    await click(`[data-scope="${Scope.CONFIG_PROVIDERS_OWN}"]`);
 
     // it stays on, but can be turned off on its own again
-    expect(isOn(Scope.LIBRARY_WRITE)).toBe(true);
-    expect(permissionSwitch(Scope.LIBRARY_WRITE).disabled).toBe(false);
+    expect(isOn(Scope.CONFIG_PROVIDERS_READ)).toBe(true);
+    expect(permissionSwitch(Scope.CONFIG_PROVIDERS_READ).disabled).toBe(false);
   });
 
   it("asks for a name before creating the role", async () => {

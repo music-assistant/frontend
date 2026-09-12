@@ -7,7 +7,16 @@ import { user } from "../../fixtures/user";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
   apiMock: { players: {}, updateUser: vi.fn() },
-  storeMock: { currentUser: { user_id: "admin-1" } },
+  storeMock: {
+    currentUser: { user_id: "admin-1" },
+    // the builtin roles, as the server lists them
+    roles: ["admin", "user", "guest", "service"].map((role_id) => ({
+      role_id,
+      name: role_id,
+      scopes: [],
+      builtin: true,
+    })),
+  },
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -16,6 +25,12 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
+
+// role names come translated through the app's i18n, keep them as their keys
+vi.mock("@/plugins/i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/plugins/i18n")>()),
+  $t: (key: string) => key,
+}));
 
 vi.mock("vue-sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
