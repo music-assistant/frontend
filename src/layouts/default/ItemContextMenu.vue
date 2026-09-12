@@ -1316,6 +1316,7 @@ export const getPlaybackContextMenuItems = async function (
   }
   // Default/configured enqueue option at the top (if play from here is not applicable)
   else if (
+    defaultEnqueueOption === undefined ||
     [QueueOption.PLAY, QueueOption.REPLACE].includes(defaultEnqueueOption)
   ) {
     playMenuItems.push({
@@ -1430,19 +1431,19 @@ export const getPlaybackContextMenuItems = async function (
 const LIVE_SOURCE_MEDIA_TYPES = [MediaType.RADIO, MediaType.AUDIO_SOURCE];
 
 /**
- * The configured default enqueue option for the given item's media type.
+ * The configured default enqueue option for the given item's media type, or
+ * undefined for a role that may not read it: a play command without an option
+ * gets the same default from the server.
  *
- * Only "play" and "replace" are configurable, so the result always starts
- * playback right away.
+ * Only "play" and "replace" are configurable, so either way the item starts
+ * playing right away.
  */
 const getDefaultEnqueueOption = async function (
   item: MediaItemTypeOrItemMapping,
-): Promise<QueueOption> {
+): Promise<QueueOption | undefined> {
   // the server's own defaults apply to a role that may not read the core settings
   if (!authManager.hasScope(Scope.CONFIG_CORE_READ)) {
-    return item.media_type === MediaType.TRACK
-      ? QueueOption.PLAY
-      : QueueOption.REPLACE;
+    return undefined;
   }
   const configKey = LIVE_SOURCE_MEDIA_TYPES.includes(item.media_type)
     ? "default_enqueue_option_live_sources"
@@ -1455,11 +1456,11 @@ const getDefaultEnqueueOption = async function (
 
 /**
  * Menu entries for every way the given items can be started or queued, with the
- * configured default marked as selected.
+ * configured default, when known, marked as selected.
  */
 const buildEnqueueMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
-  defaultEnqueueOption: QueueOption,
+  defaultEnqueueOption: QueueOption | undefined,
 ): ContextMenuItem[] {
   return [
     QueueOption.PLAY,
@@ -1492,7 +1493,7 @@ const buildEnqueueMenuItems = function (
  */
 const startAudioSourceMenuItem = function (
   items: MediaItemTypeOrItemMapping[],
-  defaultEnqueueOption: QueueOption,
+  defaultEnqueueOption: QueueOption | undefined,
 ): ContextMenuItem {
   return {
     label: "play_now",

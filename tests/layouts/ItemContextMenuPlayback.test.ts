@@ -135,24 +135,31 @@ describe("the play menu for a role that may not read the core settings", () => {
     items[0].action?.();
 
     expect(apiMock.getCoreConfigValue).not.toHaveBeenCalled();
-    expect(apiMock.playMedia).toHaveBeenCalledWith(
-      [source.uri],
-      QueueOption.REPLACE,
-    );
+    expect(apiMock.playMedia).toHaveBeenCalledWith([source.uri], undefined);
   });
 
-  // the enqueue options are listed as play, next, add, replace, replace next
+  it("plays a track now the server's default way without asking it", async () => {
+    const item = track({ provider_mappings: mappings });
+
+    const items = await getPlaybackContextMenuItems([item]);
+    items.find((x) => x.label == "play_now")?.action?.();
+
+    expect(apiMock.getCoreConfigValue).not.toHaveBeenCalled();
+    expect(apiMock.playMedia).toHaveBeenCalledWith([item.uri], undefined);
+  });
+
   it.each([
-    { item: track({ provider_mappings: mappings }), selected: 0 },
-    { item: radio({ provider_mappings: mappings }), selected: 3 },
+    { item: track({ provider_mappings: mappings }) },
+    { item: radio({ provider_mappings: mappings }) },
   ])(
-    "marks the server's default for a $item.media_type without asking it",
-    async ({ item, selected }) => {
+    "marks none of the enqueue options for a $item.media_type",
+    async ({ item }) => {
       const items = await getPlaybackContextMenuItems([item]);
       const options = items.find((x) => x.label == "enqueue")?.subItems ?? [];
 
       expect(apiMock.getCoreConfigValue).not.toHaveBeenCalled();
-      expect(options.findIndex((x) => x.selected)).toBe(selected);
+      expect(options).toHaveLength(5);
+      expect(options.some((x) => x.selected)).toBe(false);
     },
   );
 });

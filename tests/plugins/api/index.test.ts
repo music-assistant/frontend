@@ -340,6 +340,14 @@ describe("MusicAssistantApi error handling", () => {
     expect(api.supportsShareCandidates).toBe(true);
   });
 
+  it("lets a role with queues.control play AI Radio from schema 75 on", () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
+    expect(api.supportsAIRadioPlaybackScopes).toBe(false);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 75 };
+    expect(api.supportsAIRadioPlaybackScopes).toBe(true);
+  });
+
   describe("a refused ordering command", () => {
     // the server refuses every one of these with the same code and the same
     // localized "the command failed", so the player's own state is what tells
@@ -591,6 +599,24 @@ describe("MusicAssistantApi error handling", () => {
     const toast = await runTaskToast(api, transport);
 
     expect(toast.action).toBeUndefined();
+  });
+
+  describe("with the auth module gone after a server update", () => {
+    beforeEach(() => {
+      vi.doMock("@/plugins/auth", () => {
+        throw new TypeError("Failed to fetch dynamically imported module");
+      });
+    });
+
+    afterEach(() => {
+      vi.doMock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+    });
+
+    it("still shows the task toast, without the task list", async () => {
+      const toast = await runTaskToast(api, transport);
+
+      expect(toast.action).toBeUndefined();
+    });
   });
 
   it("rejects a failed migration without the global error toast", async () => {

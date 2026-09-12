@@ -1,3 +1,4 @@
+import { canOpenAIRadio } from "@/helpers/ai_radio_access";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
@@ -187,7 +188,7 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          if (!store.enabledPlugins.has("ai_radio")) {
+          if (!store.enabledPlugins.has("ai_radio") || !canOpenAIRadio()) {
             toast.error($t("providers.ai_radio.toast.unavailable"));
             return { name: "discover" };
           }
