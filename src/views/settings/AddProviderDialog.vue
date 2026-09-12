@@ -149,7 +149,7 @@ const dialogTitle = computed(() =>
     .with(ProviderType.AUDIO_ANALYSIS, () =>
       $t("settings.add_audio_analysis_provider"),
     )
-    .otherwise(() => $t("settings.add_provider")),
+    .otherwise(() => $t("settings.add_new")),
 );
 
 const providerStageOptions = computed(() => [
