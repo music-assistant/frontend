@@ -340,6 +340,28 @@ describe("Providers", () => {
     expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(0);
   });
 
+  it("keeps the provider listed when removing it fails", async () => {
+    // the server still has the source, so the list must not pretend otherwise
+    apiMock.removeProviderConfig.mockRejectedValue(new Error("nope"));
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const menuItems = await openMenu(wrapper);
+    menuItems
+      .find(
+        (item: { label: string }) => item.label === "settings.remove_provider",
+      )
+      .action();
+
+    const removeCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    );
+    await removeCall?.[1].onConfirm();
+    await flushPromises();
+
+    expect(toastMock.error).toHaveBeenCalledWith("Error: nope");
+    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(1);
+  });
+
   it("omits reconfigure from the menu when no setup flow exists", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED, false);
 

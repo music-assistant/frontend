@@ -528,13 +528,15 @@ const removeProvider = function (config: ProviderConfig) {
     title: $t("settings.remove_provider"),
     message: $t("settings.remove_provider_confirm", [getProviderName(config)]),
     confirmLabel: $t("settings.remove_provider"),
-    onConfirm: () => {
-      api
-        .removeProviderConfig(instanceId)
-        .catch((err) => toast.error(String(err)));
-      providerConfigs.value = providerConfigs.value.filter(
-        (x) => x.instance_id != instanceId,
-      );
+    onConfirm: async () => {
+      try {
+        await api.removeProviderConfig(instanceId);
+        providerConfigs.value = providerConfigs.value.filter(
+          (x) => x.instance_id != instanceId,
+        );
+      } catch (err) {
+        toast.error(String(err));
+      }
     },
   });
 };
