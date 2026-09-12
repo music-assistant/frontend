@@ -257,6 +257,15 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
           },
+          {
+            path: ":provider/:itemId/:listing",
+            name: "artistlisting",
+            component: () =>
+              import(
+                /* webpackChunkName: "artistlisting" */ "@/views/ArtistListing.vue"
+              ),
+            props: true,
+          },
         ],
       },
       {
