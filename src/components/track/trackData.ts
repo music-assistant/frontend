@@ -1,9 +1,11 @@
-import { getArtistsString } from "@/helpers/utils";
+import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   AlbumType,
   ContentType,
+  ImageType,
   type Album,
+  type Artist,
   type AudioFormat,
   type ItemMapping,
   type Track,
@@ -132,6 +134,24 @@ export function releaseSubtitle(album: Album | ItemMapping): string {
   }
   if (album.year) parts.push(String(album.year));
   return parts.join(" · ");
+}
+
+/**
+ * The artwork behind the track hero: wide art (fanart, then landscape) of the
+ * track or its album, else of the given artist, else the track's cover. No
+ * size is passed, so the server serves the original image.
+ */
+export function trackBackdrop(
+  track: Track,
+  artist?: Artist,
+): string | undefined {
+  return (
+    getImageThumbForItem(track, ImageType.FANART) ||
+    getImageThumbForItem(track, ImageType.LANDSCAPE) ||
+    getImageThumbForItem(artist, ImageType.FANART) ||
+    getImageThumbForItem(artist, ImageType.LANDSCAPE) ||
+    getImageThumbForItem(track, ImageType.THUMB)
+  );
 }
 
 /** Whether the two tracks share a provider mapping, i.e. are the same recording. */

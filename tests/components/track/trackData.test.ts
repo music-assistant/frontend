@@ -29,11 +29,14 @@ import {
   loadTrackVersions,
   plainLyrics,
   releaseSubtitle,
+  trackBackdrop,
 } from "@/components/track/trackData";
 import {
   AlbumType,
   ContentType,
+  ImageType,
   type ItemMapping,
+  type MediaItemImage,
 } from "@/plugins/api/interfaces";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
@@ -270,6 +273,46 @@ describe("trackData", () => {
       };
       expect(releaseSubtitle(mapping)).toBe("");
       expect(releaseSubtitle({ ...mapping, year: 1999 })).toBe("1999");
+    });
+  });
+
+  describe("trackBackdrop", () => {
+    // data urls are served as they are, so the choice can be read off the result
+    function image(type: ImageType, name: string): MediaItemImage {
+      return {
+        type,
+        path: `data:image/png;base64,${name}`,
+        provider: "library",
+        remotely_accessible: true,
+      };
+    }
+    const cover = image(ImageType.THUMB, "cover");
+
+    it("prefers the wide art of the track or its album, fanart first", () => {
+      const withAlbum = track({
+        metadata: { images: [cover, image(ImageType.FANART, "fanart")] },
+        album: album({
+          metadata: { images: [image(ImageType.LANDSCAPE, "album-wide")] },
+        }),
+      });
+      expect(trackBackdrop(withAlbum)).toBe("data:image/png;base64,fanart");
+      expect(
+        trackBackdrop({ ...withAlbum, metadata: { images: [cover] } }),
+      ).toBe("data:image/png;base64,album-wide");
+    });
+
+    it("falls back to the artist's wide art, then the track's cover", () => {
+      const plain = track({ metadata: { images: [cover] } });
+      const withFanart = artist({
+        metadata: { images: [image(ImageType.FANART, "artist-fanart")] },
+      });
+      expect(trackBackdrop(plain, withFanart)).toBe(
+        "data:image/png;base64,artist-fanart",
+      );
+      expect(trackBackdrop(plain, artist())).toBe(
+        "data:image/png;base64,cover",
+      );
+      expect(trackBackdrop(track())).toBeUndefined();
     });
   });
 });

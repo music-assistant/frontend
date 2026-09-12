@@ -202,6 +202,11 @@ async function buildMenu(item?: MediaItemType) {
   min-width: 0;
   text-align: right;
 }
+/* an aside whose only child rendered nothing (Vue leaves a comment node there,
+   which :empty ignores) takes no gap of the body's either */
+.detail-hero__aside:empty {
+  display: none;
+}
 
 /* an aside whose only child rendered nothing (Vue leaves a comment node there,
    which :empty ignores) takes no gap of the body's either */
