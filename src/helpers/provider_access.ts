@@ -1,3 +1,4 @@
+import { isSystemUser } from "@/helpers/users";
 import {
   type ProviderAccess,
   type ProviderConfig,
@@ -59,13 +60,14 @@ export const getProviderSharingHintTranslationKey = (
   sharing: ProviderSharing,
 ) => PROVIDER_SHARING_HINT_TRANSLATION_KEYS[sharing];
 
-/** The users that may own a music source: enabled members, so no guests or service accounts. */
+/**
+ * The users that may own a music source: every enabled member, so neither the
+ * guests nor the Home Assistant system account.
+ */
 export const ownerCandidates = (users: User[]) =>
   users.filter(
     (user) =>
-      user.enabled &&
-      user.role !== UserRole.GUEST &&
-      user.role !== UserRole.SERVICE,
+      user.enabled && user.role !== UserRole.GUEST && !isSystemUser(user),
   );
 
 /**

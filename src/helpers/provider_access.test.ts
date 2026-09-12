@@ -1,3 +1,4 @@
+import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
   ProviderSharing,
   ProviderType,
@@ -108,9 +109,9 @@ describe("user candidates", () => {
     username: "guest",
     role: UserRole.GUEST,
   });
-  const service = user({
-    user_id: "service",
-    username: "service",
+  const systemAccount = user({
+    user_id: "ha",
+    username: HOMEASSISTANT_SYSTEM_USER,
     role: UserRole.SERVICE,
   });
   const disabled = user({
@@ -118,14 +119,23 @@ describe("user candidates", () => {
     username: "disabled",
     enabled: false,
   });
-  const users = [owner, member, guest, service, disabled];
+  const users = [owner, member, guest, systemAccount, disabled];
 
-  it("offers enabled members as owner, not guests or service accounts", () => {
+  it("offers enabled members as owner, not guests or the Home Assistant account", () => {
     expect(ownerCandidates(users)).toEqual([owner, member]);
   });
 
+  it("offers another service account as owner", () => {
+    const service = user({
+      user_id: "service",
+      username: "service",
+      role: UserRole.SERVICE,
+    });
+    expect(ownerCandidates([service])).toEqual([service]);
+  });
+
   it("offers every enabled member to share with, not guests", () => {
-    expect(shareCandidates(users)).toEqual([owner, member, service]);
+    expect(shareCandidates(users)).toEqual([owner, member, systemAccount]);
   });
 });
 
