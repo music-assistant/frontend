@@ -662,22 +662,22 @@
             "title": "Access to {name}",
             "description": "Who this music source belongs to and who else may use it.",
             "owner": "Owner",
-            "owner_hint": "Playback and listening history use the owner's account. A household source has no owner and is managed by administrators.",
-            "household": "Household",
+            "owner_hint": "Playback and listening history use the owner's account. A shared source has no owner and is managed by administrators.",
+            "household": "Shared (no owner)",
             "sharing": "Sharing",
             "shared_users": "Shared with",
             "select_members": "Select members",
             "shared_with_count": "Shared with {count} member | Shared with {count} members",
             "options": {
-                "private": "Private",
+                "private": "Only me",
                 "selected": "Selected members",
                 "members": "All members",
-                "everyone": "Everyone"
+                "everyone": "Everyone, including guests"
             },
             "hints": {
                 "private": "Only the owner can use this source.",
                 "selected": "The owner and the members selected below.",
-                "members": "Every signed-in household member, guests excluded.",
+                "members": "Every signed-in member, guests excluded.",
                 "everyone": "Every user, guests included."
             },
             "updated": "Access updated"
