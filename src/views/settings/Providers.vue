@@ -1,7 +1,13 @@
 <template>
   <div class="providers-header w-100">
-    <ProviderFilters @update:search="searchQuery = $event" />
-    <Button class="add-provider-btn" @click="showAddProviderDialog = true">
+    <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
+    <!-- the empty state below carries the add button while there is nothing to list -->
+    <Button
+      v-if="!showMusicEmptyState"
+      class="add-provider-btn"
+      data-testid="add-provider"
+      @click="showAddProviderDialog = true"
+    >
       <Plus class="size-4" />
       {{ addProviderLabel }}
     </Button>
@@ -18,100 +24,92 @@
     :variant="viewMode === 'list' ? 'default' : 'panel'"
     class="mt-4 px-5"
   >
-    <v-list v-if="viewMode === 'list'" class="providers-list">
-      <ListItem
+    <ItemGroup v-if="viewMode === 'list'" class="gap-2">
+      <Item
         v-for="item in getAllFilteredProviders()"
         :key="item.instance_id"
-        link
-        :show-menu-btn="true"
-        :menu-button-label="`${$t('more_options')}: ${getProviderName(item)}`"
-        :class="{
-          'provider-disabled': !item.enabled,
-        }"
+        variant="outline"
+        class="cursor-pointer"
+        :class="{ 'opacity-60': !item.enabled }"
+        data-testid="provider-row"
         @click="openProvider(item)"
-        @menu="(evt) => onMenu(evt, item)"
       >
-        <template #prepend>
+        <ItemMedia>
           <ProviderIcon :domain="item.domain" :size="40" />
-        </template>
-
-        <template #title>
-          <div class="provider-name-title">
-            {{ getProviderName(item) }}
-          </div>
-        </template>
-
-        <template #subtitle>
-          <div class="provider-meta">
-            <!-- Provider error / attention -->
-            <div
-              v-if="isErrorStatus(item.status)"
-              class="provider-error-inline"
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle class="flex flex-wrap items-center gap-2">
+            <!-- the name is the focusable control; the row itself only follows the pointer -->
+            <button
+              type="button"
+              class="cursor-pointer text-left"
+              data-testid="provider-open"
+              @click.stop="openProvider(item)"
             >
-              <v-icon
-                :icon="statusIcon(item.status)"
-                size="16"
-                :color="statusColor(item.status)"
-              />
-              <span class="provider-error-text">{{ getErrorText(item) }}</span>
-              <v-btn
-                v-if="canReconfigure(item)"
-                size="x-small"
-                color="error"
-                variant="tonal"
-                class="ml-2"
-                @click.stop="reconfigureProvider(item.instance_id)"
-              >
-                {{ $t("settings.reconfigure") }}
-              </v-btn>
-            </div>
-            <span
-              v-else-if="api.providerManifests[item.domain]"
-              class="provider-description-text"
+              {{ getProviderName(item) }}
+            </button>
+            <Badge
+              v-if="statusVariant(item.status)"
+              :variant="statusVariant(item.status)"
+              data-testid="provider-status"
             >
-              {{ api.providerManifests[item.domain].description }}
-            </span>
-            <span v-else class="provider-type-badge">
-              {{ getProviderTypeTitle(item.type) }}
-            </span>
-          </div>
-        </template>
-
-        <template #append>
-          <div class="provider-status-icons">
-            <v-icon
-              v-if="isProviderSyncing(item.instance_id)"
-              icon="mdi-sync"
-              size="20"
-              color="grey"
-              :title="$t('settings.sync_running')"
-            />
-            <v-icon
-              v-if="statusIcon(item.status)"
-              :icon="statusIcon(item.status)"
-              size="20"
-              :color="statusColor(item.status)"
-              :title="
-                isErrorStatus(item.status)
-                  ? getErrorText(item)
-                  : statusLabel(item)
-              "
-            />
-            <v-chip
+              {{ statusLabel(item) }}
+            </Badge>
+            <Badge
               v-if="
                 shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
               "
-              size="x-small"
-              variant="flat"
-              class="mx-1 text-uppercase"
-              :color="getStageColor(api.providerManifests[item.domain]?.stage)"
+              variant="outline"
+              class="uppercase"
+              data-testid="stage-badge"
             >
               {{ getStageLabel(api.providerManifests[item.domain]?.stage) }}
-            </v-chip>
-          </div>
-        </template>
-      </ListItem>
-    </v-list>
+            </Badge>
+          </ItemTitle>
+          <ItemDescription
+            v-if="isErrorStatus(item.status)"
+            class="text-destructive"
+          >
+            {{ getErrorText(item) }}
+          </ItemDescription>
+          <ItemDescription v-else-if="api.providerManifests[item.domain]">
+            {{ api.providerManifests[item.domain].description }}
+          </ItemDescription>
+          <ItemDescription
+            v-if="canConfigureAccess(item)"
+            data-testid="provider-access"
+          >
+            {{ accessSummary(item) }}
+          </ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <span
+            v-if="isProviderSyncing(item.instance_id)"
+            :title="$t('settings.sync_running')"
+          >
+            <RefreshCw class="text-muted-foreground size-4 animate-spin" />
+          </span>
+          <Button
+            v-if="isErrorStatus(item.status) && canReconfigure(item)"
+            size="sm"
+            variant="destructive"
+            data-testid="provider-action"
+            @click.stop="reconfigureProvider(item.instance_id)"
+          >
+            {{ $t("settings.reconfigure") }}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            data-testid="provider-menu"
+            :aria-label="`${$t('more_options')}: ${getProviderName(item)}`"
+            @click.stop="onMenu($event, item)"
+          >
+            <MoreVertical class="size-4" />
+          </Button>
+        </ItemActions>
+      </Item>
+    </ItemGroup>
 
     <v-row v-else>
       <v-col
@@ -232,11 +230,45 @@
           >
             {{ api.providerManifests[item.domain].description }}
           </v-card-text>
+
+          <div
+            v-if="canConfigureAccess(item)"
+            class="provider-access-text px-4 pb-4"
+            data-testid="provider-access"
+          >
+            {{ accessSummary(item) }}
+          </div>
         </v-card>
       </v-col>
     </v-row>
 
-    <div v-if="getAllFilteredProviders().length === 0" class="empty-state">
+    <Empty
+      v-if="showMusicEmptyState"
+      class="border"
+      data-testid="music-sources-empty"
+    >
+      <EmptyMedia variant="icon">
+        <Music />
+      </EmptyMedia>
+      <EmptyTitle>{{ $t("settings.music_sources_empty_title") }}</EmptyTitle>
+      <EmptyDescription>
+        {{ $t("settings.music_sources_empty") }}
+      </EmptyDescription>
+      <EmptyContent>
+        <Button
+          data-testid="add-provider-empty"
+          @click="showAddProviderDialog = true"
+        >
+          <Plus class="size-4" />
+          {{ $t("settings.add_music_provider") }}
+        </Button>
+      </EmptyContent>
+    </Empty>
+
+    <div
+      v-else-if="loaded && getAllFilteredProviders().length === 0"
+      class="empty-state"
+    >
       <v-icon icon="mdi-puzzle-outline" size="64" class="empty-icon" />
       <div class="empty-title">{{ $t("no_content") }}</div>
       <div class="empty-message">
@@ -244,17 +276,68 @@
       </div>
     </div>
   </Container>
-  <AddProviderDialog v-model:show="showAddProviderDialog" />
+
+  <!-- Audio analysis status hint -->
+  <div
+    v-if="showAudioAnalysisStatusHint"
+    class="border-primary/20 bg-primary/5 mx-5 mt-4 flex flex-wrap items-center gap-4 rounded-xl border px-4 py-3"
+  >
+    <Info class="text-primary size-5 shrink-0" />
+    <p class="text-muted-foreground m-0 flex-1 text-sm">
+      {{ $t("settings.audio_analysis_status_hint") }}
+    </p>
+    <Button as-child variant="outline" size="sm">
+      <RouterLink to="/settings/audio-analysis" class="no-underline">
+        {{ $t("settings.audio_analysis_status_link") }}
+      </RouterLink>
+    </Button>
+  </div>
+  <AddProviderDialog
+    v-model:show="showAddProviderDialog"
+    :provider-type="managesAllSources ? undefined : ProviderType.MUSIC"
+    :multi-instance-only="!managesAllSources"
+  />
+  <ProviderAccessDialog
+    v-model:open="showAccessDialog"
+    :config="accessDialogConfig"
+    :users="managesAllSources ? users : null"
+    :can-change-owner="managesAllSources"
+    @saved="loadItems"
+  />
 </template>
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
-import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import {
+  effectiveProviderAccess,
+  getProviderSharingTranslationKey,
+  hasConfigurableAccess,
+  isOwnMusicSource,
+  userDisplayName,
+} from "@/helpers/provider_access";
 import {
   canReconfigureProvider,
   getProviderStageTranslationKey,
@@ -264,20 +347,25 @@ import {
 } from "@/helpers/provider_config";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { requireServerVersion } from "@/plugins/api/helpers";
 import {
   EventType,
   ProviderConfig,
   ProviderFeature,
+  ProviderSharing,
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  type User,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Plus } from "@lucide/vue";
+import { store } from "@/plugins/store";
+import { Info, MoreVertical, Music, Plus, RefreshCw } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
@@ -292,7 +380,24 @@ const providersViewMode = inject<{
 
 const viewMode = computed(() => providersViewMode.viewMode.value);
 
-const currentType = computed(() => route.query.types as string | undefined);
+// a handful of providers is scanned faster than it is searched
+const MIN_PROVIDERS_FOR_SEARCH = 10;
+
+// an admin manages every source, a member only the music sources it owns
+const managesAllSources = computed(() => authManager.isAdmin());
+
+const currentType = computed(() =>
+  managesAllSources.value
+    ? (route.query.types as string | undefined)
+    : ProviderType.MUSIC,
+);
+
+// the status page only exists on servers that ship audio analysis
+const showAudioAnalysisStatusHint = computed(
+  () =>
+    currentType.value === ProviderType.AUDIO_ANALYSIS &&
+    requireServerVersion("2.9.0"),
+);
 
 const addProviderLabel = computed(() => {
   const type = currentType.value;
@@ -310,22 +415,62 @@ const addProviderLabel = computed(() => {
 
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
+// the empty states wait for the first load, so they never flash before the list
+const loaded = ref(false);
 const searchQuery = ref<string>("");
 const showAddProviderDialog = ref<boolean>(false);
-const addProviderInitialType = ref<string | undefined>(undefined);
+const showAccessDialog = ref<boolean>(false);
+const accessDialogConfig = ref<ProviderConfig | null>(null);
+const users = ref<User[]>([]);
 const { isProviderSyncing } = useBackgroundTasks();
 let unsubProvidersUpdated: (() => void) | undefined;
 
-const openAddProviderWithType = (type: string) => {
-  addProviderInitialType.value = type;
-  showAddProviderDialog.value = true;
-};
+const usersById = computed(
+  () => new Map(users.value.map((user) => [user.user_id, user])),
+);
 
-watch(showAddProviderDialog, (isOpen) => {
-  if (!isOpen) {
-    addProviderInitialType.value = undefined;
+// the providers of the current type (a member's own ones only), before the
+// search narrows them down
+const listedProviders = computed(() => {
+  let listed = providerConfigs.value;
+
+  const typesQuery = currentType.value;
+  if (typesQuery && typesQuery.trim().length > 0) {
+    const types = typesQuery.split(",");
+    listed = listed.filter((item) => types.includes(item.type));
+  } else {
+    // Default to showing only music providers when no types are specified
+    listed = listed.filter((item) => item.type === ProviderType.MUSIC);
   }
+
+  // ownership is enforced server-side as well; this keeps the page honest
+  if (!managesAllSources.value) {
+    listed = listed.filter((item) =>
+      isOwnMusicSource(item, store.currentUser?.user_id),
+    );
+  }
+  return listed;
 });
+
+const showSearch = computed(
+  () => listedProviders.value.length >= MIN_PROVIDERS_FOR_SEARCH,
+);
+
+// a search typed before the list shrank below the threshold would keep
+// narrowing it down unseen
+watch(showSearch, (shown) => {
+  if (!shown) searchQuery.value = "";
+});
+
+// an empty music list invites a first source; any other empty list is the
+// result of the active search or type filter
+const showMusicEmptyState = computed(
+  () =>
+    loaded.value &&
+    getAllFilteredProviders().length === 0 &&
+    !searchQuery.value &&
+    (currentType.value || ProviderType.MUSIC) === ProviderType.MUSIC,
+);
 
 const loadItems = async function () {
   // Only load provider configs if provider manifests are available
@@ -336,11 +481,29 @@ const loadItems = async function () {
     );
     return;
   }
-  providerConfigs.value = await api.getProviderConfigs();
+  try {
+    // a member only ever lists music sources
+    providerConfigs.value = await api.getProviderConfigs(
+      managesAllSources.value ? undefined : ProviderType.MUSIC,
+    );
+    loaded.value = true;
+  } catch (err) {
+    toast.error(String(err));
+  }
+};
+
+const loadUsers = async function () {
+  try {
+    users.value = await api.getAllUsers();
+  } catch {
+    toast.error($t("auth.users_load_failed"));
+  }
 };
 
 const removeProvider = function (providerInstanceId: string) {
-  api.removeProviderConfig(providerInstanceId);
+  api
+    .removeProviderConfig(providerInstanceId)
+    .catch((err) => toast.error(String(err)));
   providerConfigs.value = providerConfigs.value.filter(
     (x) => x.instance_id != providerInstanceId,
   );
@@ -348,6 +511,11 @@ const removeProvider = function (providerInstanceId: string) {
 
 const openProviderOptions = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
+};
+
+const openAccessDialog = function (config: ProviderConfig) {
+  accessDialogConfig.value = config;
+  showAccessDialog.value = true;
 };
 
 const reconfigureProvider = function (providerInstanceId: string) {
@@ -391,6 +559,8 @@ onMounted(() => {
   unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
     loadItems();
   });
+  // listing the users is an admin call; a member only shares its own sources
+  if (managesAllSources.value) loadUsers();
 });
 
 onBeforeUnmount(() => {
@@ -399,13 +569,15 @@ onBeforeUnmount(() => {
 
 const toggleEnabled = function (config: ProviderConfig) {
   config.enabled = !config.enabled;
-  api.saveProviderConfig(
-    config.domain,
-    {
-      enabled: config.enabled,
-    },
-    config.instance_id,
-  );
+  api
+    .saveProviderConfig(
+      config.domain,
+      {
+        enabled: config.enabled,
+      },
+      config.instance_id,
+    )
+    .catch((err) => toast.error(String(err)));
 };
 
 const reloadProvider = function (providerInstanceId: string) {
@@ -432,6 +604,18 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       icon: "mdi-cog",
     },
     {
+      // an admin sets owner and sharing, a member only shares its own source
+      label: managesAllSources.value
+        ? "settings.source_access.action"
+        : "settings.source_access.share_action",
+      labelArgs: [],
+      action: () => {
+        openAccessDialog(item);
+      },
+      icon: "mdi-account-key",
+      hide: !canConfigureAccess(item),
+    },
+    {
       label: item.enabled ? "settings.disable" : "settings.enable",
       labelArgs: [],
       action: () => {
@@ -439,6 +623,7 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
       },
       icon: "mdi-cancel",
       disabled: !providerManifest.allow_disable,
+      hide: !managesAllSources.value,
     },
     {
       label: "settings.documentation",
@@ -456,7 +641,10 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         api.startSync(undefined, [item.instance_id]);
       },
       icon: "mdi-sync",
-      hide: !providerInstance?.available || item.type != ProviderType.MUSIC,
+      hide:
+        !managesAllSources.value ||
+        !providerInstance?.available ||
+        item.type != ProviderType.MUSIC,
     },
     {
       label: "settings.delete",
@@ -597,6 +785,14 @@ const statusColor = function (status?: ProviderStatus | null) {
     .otherwise(() => "grey");
 };
 
+// a healthy provider carries no badge, so only the states worth flagging map to one
+const statusVariant = function (status?: ProviderStatus | null) {
+  if (isErrorStatus(status)) return "destructive" as const;
+  if (status === ProviderStatus.DISABLED || status === ProviderStatus.LOADING)
+    return "secondary" as const;
+  return undefined;
+};
+
 const statusLabel = function (item: ProviderConfig) {
   return $t(
     getProviderStatusTranslationKey(
@@ -620,18 +816,38 @@ const getErrorText = function (item: ProviderConfig) {
   return item.last_error?.message ?? "";
 };
 
-const getProviderTypeTitle = function (type: ProviderType) {
-  return match(type)
-    .with(ProviderType.MUSIC, () => $t("settings.music"))
-    .with(ProviderType.PLAYER, () => $t("settings.player"))
-    .with(ProviderType.METADATA, () => $t("settings.metadata"))
-    .with(ProviderType.PLUGIN, () => $t("settings.plugin"))
-    .with(ProviderType.AUDIO_ANALYSIS, () => $t("settings.audio_analysis"))
-    .otherwise(() => $t("settings.player"));
+// only a music source carries an owner and sharing
+const canConfigureAccess = function (item: ProviderConfig) {
+  return hasConfigurableAccess(item, api.providerManifests[item.domain]);
+};
+
+// the access record in its compact form: "<owner> · <who it is shared with>",
+// without the owner for a member, which only ever sees its own sources
+const accessSummary = function (item: ProviderConfig) {
+  const access = effectiveProviderAccess(item.access);
+  const sharedCount = access.shared_users.length;
+  const sharing =
+    access.sharing === ProviderSharing.SELECTED
+      ? $t("settings.source_access.shared_with_count", sharedCount, {
+          named: { count: sharedCount },
+        })
+      : $t(getProviderSharingTranslationKey(access.sharing));
+  if (!managesAllSources.value) return sharing;
+  const owner =
+    access.owner === null
+      ? $t("settings.source_access.household")
+      : getUserName(access.owner);
+  return `${owner} · ${sharing}`;
+};
+
+// a user that is no longer in the list is shown by its id
+const getUserName = function (userId: string) {
+  const user = usersById.value.get(userId);
+  return user ? userDisplayName(user) : userId;
 };
 
 const getAllFilteredProviders = function () {
-  let filtered = [...providerConfigs.value];
+  let filtered = listedProviders.value;
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
@@ -641,17 +857,8 @@ const getAllFilteredProviders = function () {
     });
   }
 
-  const typesQuery = route.query.types as string | undefined;
-  if (typesQuery && typesQuery.trim().length > 0) {
-    const types = typesQuery.split(",");
-    filtered = filtered.filter((item) => types.includes(item.type));
-  } else {
-    // Default to showing only music providers when no types are specified
-    filtered = filtered.filter((item) => item.type === ProviderType.MUSIC);
-  }
-
   // Sort: providers needing attention (error/auth/incompatible) first, then alphabetically
-  return filtered.sort((a, b) => {
+  return [...filtered].sort((a, b) => {
     const aHasError = isErrorStatus(a.status) ? 1 : 0;
     const bHasError = isErrorStatus(b.status) ? 1 : 0;
     if (aHasError !== bHasError) {
@@ -675,6 +882,7 @@ const getAllFilteredProviders = function () {
 .add-provider-btn {
   flex-shrink: 0;
   align-self: center;
+  margin-left: auto;
 }
 
 /* Mobile responsive */
@@ -720,76 +928,10 @@ const getAllFilteredProviders = function () {
   cursor: pointer;
 }
 
-.providers-list {
-  background: transparent;
-}
-
-.providers-list :deep(.v-list-item__prepend) {
-  padding-inline-end: 6px;
-}
-
-.providers-list :deep(.v-list-item__content > div) {
-  padding-left: 0;
-}
-
-@media (max-width: 960px) {
-  .providers-list :deep(.list-item-main) {
-    padding-left: 0 !important;
-  }
-}
-
-.provider-name-title {
-  font-weight: 500;
-  font-size: 16px;
-}
-
-.provider-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  flex-wrap: wrap;
-}
-
-.provider-description-text {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+.provider-access-text {
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
   line-height: 1.4;
-}
-
-.provider-type-badge {
-  font-size: 11px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-}
-
-.provider-status-icons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-}
-
-@media (max-width: 960px) {
-  .provider-description-text {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .provider-status-icons {
-    gap: 4px;
-    min-width: 0;
-  }
-}
-
-.provider-disabled {
-  opacity: 0.6;
 }
 
 .provider-error-inline {

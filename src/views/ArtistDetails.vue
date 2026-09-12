@@ -252,7 +252,6 @@ import {
   type Artist,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 export interface Props {
@@ -319,15 +318,6 @@ const mappingProviderIds = computed(() => [
   ),
 ]);
 
-// a user-level provider_filter, when set, restricts which providers are offered
-// (mirrors the listing's own provider selector).
-const providerAllowed = (instanceId: string) =>
-  !(
-    store.currentUser &&
-    store.currentUser.provider_filter.length > 0 &&
-    !store.currentUser.provider_filter.includes(instanceId)
-  );
-
 // unique providers the artist is mapped to that can supply the full per-provider
 // listing for a feature. each entry keeps the artist's id on that provider so
 // the backend can be queried directly for that provider's complete catalog.
@@ -337,7 +327,6 @@ const sourceMappingsForFeature = (feature: ProviderFeature) =>
     const mappings: { provider_instance: string; item_id: string }[] = [];
     for (const mapping of itemDetails.value?.provider_mappings || []) {
       if (seen.has(mapping.provider_instance)) continue;
-      if (!providerAllowed(mapping.provider_instance)) continue;
       const provider = api.providers[mapping.provider_instance];
       if (!provider?.supported_features.includes(feature)) continue;
       seen.add(mapping.provider_instance);
@@ -472,7 +461,6 @@ const aggregatedProviderIdsForFeature = (feature: ProviderFeature) =>
     if (!itemDetails.value) return [];
     const ids = new Set<string>();
     for (const mapping of itemDetails.value.provider_mappings) {
-      if (!providerAllowed(mapping.provider_instance)) continue;
       if (
         api.providers[mapping.provider_instance]?.supported_features.includes(
           feature,
@@ -483,7 +471,6 @@ const aggregatedProviderIdsForFeature = (feature: ProviderFeature) =>
     }
     if (itemDetails.value.provider === "library") {
       for (const provider of Object.values(api.providers)) {
-        if (!providerAllowed(provider.instance_id)) continue;
         const isMetadataOrPlugin =
           provider.type === ProviderType.METADATA ||
           provider.type === ProviderType.PLUGIN;

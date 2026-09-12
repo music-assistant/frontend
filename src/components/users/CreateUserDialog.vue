@@ -171,25 +171,6 @@
                 </Field>
               </template>
             </form.Field>
-
-            <form.Field name="providerFilter">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel>
-                    {{ $t("auth.provider_filter") }}
-                  </FieldLabel>
-                  <MultiSelect
-                    :model-value="field.state.value"
-                    :options="providerOptions"
-                    :placeholder="$t('auth.select_providers')"
-                    @update:model-value="field.handleChange"
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.provider_filter_hint") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
           </FieldGroup>
         </form>
       </div>
@@ -243,7 +224,7 @@ import {
 } from "@/components/ui/select";
 import { createUserSchema } from "@/lib/forms/profile";
 import { api } from "@/plugins/api";
-import { ProviderType, UserRole } from "@/plugins/api/interfaces";
+import { UserRole } from "@/plugins/api/interfaces";
 import MultiSelect from "./MultiSelect.vue";
 
 const { t } = useI18n();
@@ -305,16 +286,6 @@ const playerOptions = computed(() => {
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 
-const providerOptions = computed(() => {
-  return Object.values(api.providers)
-    .filter((provider) => provider.type === ProviderType.MUSIC)
-    .map((provider) => ({
-      label: provider.name,
-      value: provider.instance_id,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
 const form = useForm({
   defaultValues: {
     username: "",
@@ -323,7 +294,6 @@ const form = useForm({
     confirmPassword: "",
     role: "user" as UserRole,
     playerFilter: [] as string[],
-    providerFilter: [] as string[],
   },
   validators: {
     onSubmit: createUserSchema(t),
@@ -338,7 +308,6 @@ const form = useForm({
         value.role,
         value.displayName || undefined,
         value.playerFilter.length > 0 ? value.playerFilter : undefined,
-        value.providerFilter.length > 0 ? value.providerFilter : undefined,
       );
 
       if (user) {
