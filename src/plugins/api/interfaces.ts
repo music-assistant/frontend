@@ -849,6 +849,13 @@ export interface ProviderAccess {
   shared_users: string[];
 }
 
+export interface PlaylistAccess extends ProviderAccess {
+  // Who a Music Assistant playlist serves: its owner, who may see it and who may edit it.
+  // collaborative: everyone the playlist is shared with may also add and remove its
+  // items; otherwise only the owner may
+  collaborative: boolean;
+}
+
 export interface ProviderConfig extends Config {
   // Provider(instance) Configuration.
   type: ProviderType;
@@ -1036,6 +1043,11 @@ export interface Playlist extends MediaItem {
   is_editable: boolean;
   supported_mediatypes: MediaType[];
   is_dynamic: boolean;
+  // access: only Music Assistant's own (builtin) playlists carry a record. null
+  // means everyone: a playlist without a record, or a playlist of a music
+  // source, which follows the access of that source. Its owner is a user id,
+  // unrelated to the display name in owner
+  access: PlaylistAccess | null;
 }
 
 // track matching tier accepted when matching playlist tracks against a

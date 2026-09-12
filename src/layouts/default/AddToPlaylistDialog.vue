@@ -90,13 +90,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { canEditPlaylistItems } from "@/helpers/playlist_access";
 import api from "@/plugins/api";
 import type {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   Playlist,
 } from "@/plugins/api/interfaces";
-import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
+import { MediaType, ProviderFeature, Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -154,8 +156,15 @@ const fetchPlaylists = async function () {
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
-    // skip non-editable playlists
-    if (!playlist.is_editable) continue;
+    // skip playlists the user may not add to
+    if (
+      !canEditPlaylistItems(
+        playlist,
+        store.currentUser,
+        authManager.hasScope(Scope.LIBRARY_MANAGE),
+      )
+    )
+      continue;
     // skip playlist that is currently opened (=parentItem)
     if (
       parentItem.value &&

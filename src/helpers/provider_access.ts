@@ -25,6 +25,21 @@ const PROVIDER_SHARING_HINT_TRANSLATION_KEYS: Record<ProviderSharing, string> =
     [ProviderSharing.EVERYONE]: "settings.source_access.hints.everyone",
   };
 
+/** Whether the given user may use what the access record guards, read the way the server does. */
+export const accessAllows = (
+  access: ProviderAccess | null,
+  user: User,
+): boolean => {
+  if (access === null) return true;
+  if (access.owner === user.user_id) return true;
+  if (access.sharing === ProviderSharing.EVERYONE) return true;
+  if (access.sharing === ProviderSharing.MEMBERS)
+    return user.role !== UserRole.GUEST;
+  if (access.sharing === ProviderSharing.SELECTED)
+    return access.shared_users.includes(user.user_id);
+  return false;
+};
+
 /**
  * The access a music source has, with a missing record read the way the
  * server does: a household source available to everyone.

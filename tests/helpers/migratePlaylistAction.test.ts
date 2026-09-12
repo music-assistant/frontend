@@ -31,6 +31,9 @@ const { apiMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope: () => false },
+}));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/eventbus", () => ({
   eventbus: {
