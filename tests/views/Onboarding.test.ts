@@ -297,6 +297,8 @@ describe("Onboarding wizard", () => {
       async (values: Record<string, string>) => {
         const answer = values["onboarding.persona"];
         if (answer) preferenceState.persona.value = answer;
+        // the real one says whether the server took it
+        return true;
       },
     );
   });
@@ -763,16 +765,20 @@ describe("Onboarding wizard", () => {
       wrapper.unmount();
     });
 
-    it("remembers that the member has been welcomed", async () => {
+    it("remembers that the member has been welcomed on the way out", async () => {
       const wrapper = await mountWizard();
       await flushPromises();
 
-      // showing it is what counts: the member is never dropped in here again,
-      // however they leave it
-      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
-      expect(setUserPreferenceMock.mock.calls[0][0]).toBe("onboarding.welcome");
+      // the question is still open while they are being asked it
+      expect(setUserPreferenceMock).not.toHaveBeenCalled();
 
       wrapper.unmount();
+      await flushPromises();
+
+      // leaving is what counts: the member is never dropped in here again,
+      // whether they answered, walked past it or closed the page
+      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+      expect(setUserPreferenceMock.mock.calls[0][0]).toBe("onboarding.welcome");
     });
 
     it("leaves the mark of an earlier welcome where it is", async () => {
@@ -780,10 +786,10 @@ describe("Onboarding wizard", () => {
 
       const wrapper = await mountWizard();
       await flushPromises();
+      wrapper.unmount();
+      await flushPromises();
 
       expect(setUserPreferenceMock).not.toHaveBeenCalled();
-
-      wrapper.unmount();
     });
 
     it("walks the member from the question to the way out", async () => {
@@ -839,6 +845,53 @@ describe("Onboarding wizard", () => {
 
       // nothing left to ask, and the setup's summary is not theirs to land on
       expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+
+      wrapper.unmount();
+    });
+
+    it("opens on the summary for a member who was welcomed before", async () => {
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // being shown it is enough to be done with it; the settings link opens
+      // the welcome itself again for whoever wants it
+      expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+
+      wrapper.unmount();
+    });
+
+    it("lets a member who never answered finish all the same", async () => {
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      // walking past the question instead of answering it
+      for (const title of [
+        "onboarding.steps.whats_here.title",
+        "onboarding.steps.tour.title",
+        "onboarding.steps.all_set.title",
+      ]) {
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe(title);
+      }
+
+      // the question is theirs to leave: the summary keeps it in reach rather
+      // than in the way, and nothing was answered on their behalf
+      expect(wrapper.text()).toContain("onboarding.still_to_do");
+      expect(
+        wrapper.findAll("[data-testid=onboarding-summary-pending]"),
+      ).toHaveLength(1);
+      expect(wrapper.text()).toContain("onboarding.steps.welcome.title");
+      expect(setUserPreferencesMock).not.toHaveBeenCalled();
+
+      await wrapper.find("[data-testid=onboarding-finish]").trigger("click");
+      await flushPromises();
+
+      expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+      expect(setUserPreferenceMock.mock.calls[0][0]).toBe("onboarding.welcome");
 
       wrapper.unmount();
     });

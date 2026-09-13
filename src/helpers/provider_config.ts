@@ -95,6 +95,14 @@ export const getProviderSupportIssuesUrl = (domain: string) => {
 };
 
 /**
+ * A provider that ships with the server rather than one the user set up. The
+ * manifest owns that flag, so a provider whose manifest is missing is not
+ * claimed to be builtin.
+ */
+export const isBuiltinProvider = (manifest?: ProviderManifest): boolean =>
+  manifest?.builtin === true;
+
+/**
  * The name a provider instance goes by: what the running instance calls itself,
  * then the name its configuration carries, the default name the server gave it
  * and finally the name from the manifest. Empty when none of those is known, so

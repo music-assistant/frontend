@@ -12,7 +12,7 @@ import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { user } from "../fixtures/user";
 
-const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
+const { apiMock, routerMock, storeMock, webPlayerMock } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, Player>,
     providers: {} as Record<string, ProviderInstance>,
@@ -23,6 +23,8 @@ const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
     currentUser: undefined as User | undefined,
     companionPlayerId: undefined,
   },
+  // the player this browser streams to, which every picker puts up front
+  webPlayerMock: { player_id: null as string | null },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -30,7 +32,7 @@ vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 vi.mock("@/plugins/web_player", () => ({
-  webPlayer: { player_id: null },
+  webPlayer: webPlayerMock,
   WebPlayerMode: {},
 }));
 
@@ -104,6 +106,7 @@ describe("WhatsHereStep", () => {
     apiMock.providers = {};
     apiMock.providerManifests = {};
     storeMock.currentUser = user({ user_id: "sam-1", username: "sam" });
+    webPlayerMock.player_id = null;
     routerMock.push.mockReset();
   });
 
@@ -122,6 +125,33 @@ describe("WhatsHereStep", () => {
     expect(wrapper.find("[data-testid=onboarding-more-sources]").exists()).toBe(
       false,
     );
+
+    wrapper.unmount();
+  });
+
+  it("leaves out a source that is not there to listen to right now", () => {
+    addSource("spotify--1", "Spotify");
+    addSource("subsonic--1", "Subsonic");
+    apiMock.providers["subsonic--1"].available = false;
+
+    const wrapper = mountStep();
+
+    // a source that failed to load plays nothing; the admin hears about it on
+    // the settings page, and the member is not sent to something broken
+    expect(texts(wrapper, "onboarding-music-source")).toEqual(["Spotify"]);
+
+    wrapper.unmount();
+  });
+
+  it("leaves the source icons to the names beside them", () => {
+    addSource("spotify--1", "Spotify");
+
+    const wrapper = mountStep();
+
+    // the row already says which source it is
+    expect(
+      wrapper.findComponent({ name: "ProviderIcon" }).attributes("aria-hidden"),
+    ).toBe("true");
 
     wrapper.unmount();
   });
@@ -182,6 +212,25 @@ describe("WhatsHereStep", () => {
     expect(wrapper.text()).toContain(
       "onboarding.steps.whats_here.players.hint",
     );
+
+    wrapper.unmount();
+  });
+
+  it("lists the players in the order every picker lists them", () => {
+    addPlayer("zebra", { name: "Zebra" });
+    addPlayer("alpha", { name: "Alpha" });
+    addPlayer("this-browser", { name: "This browser" });
+    webPlayerMock.player_id = "this-browser";
+
+    const wrapper = mountStep();
+
+    // the player this browser streams to comes first wherever players are
+    // listed, and the rest by name: the welcome is no exception
+    expect(texts(wrapper, "onboarding-player")).toEqual([
+      "This browser",
+      "Alpha",
+      "Zebra",
+    ]);
 
     wrapper.unmount();
   });

@@ -16,9 +16,6 @@ import {
 } from "@/components/ui/sidebar";
 import { useOnboarding } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
-import { hasOnboardingTrack } from "@/helpers/onboarding_access";
-import { Scope } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { Circle, CircleCheck, ListChecks } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -45,8 +42,7 @@ const open = ref(false);
 // the track's own data is in, which for a member is nothing to wait for.
 const visible = computed(
   () =>
-    hasOnboardingTrack() &&
-    (ctx.value.isMember || configsLoaded.value) &&
+    (ctx.value.isMember || (ctx.value.isAdmin && configsLoaded.value)) &&
     hasPending.value &&
     !dismissed.value,
 );
@@ -73,9 +69,7 @@ const hideForNow = function () {
 // configurations, and only the setup is counted off them, so nobody but an
 // admin ever fetches them
 onMounted(() => {
-  if (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)) {
-    void loadProviderConfigs();
-  }
+  if (ctx.value.isAdmin) void loadProviderConfigs();
 });
 </script>
 

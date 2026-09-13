@@ -7,17 +7,18 @@ import { UserRole, type Scope } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
 import { mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
-const { apiMock, hasScope, routeState } = vi.hoisted(() => ({
+const { apiMock, hasScope, routerPush, routeState } = vi.hoisted(() => ({
   apiMock: {
     players: { kitchen: { name: "Kitchen" } },
     providerManifests: {},
     getProvider: vi.fn(),
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
+  routerPush: vi.fn(),
   // which settings page is open: the overview is the one carrying the link
   // back into onboarding
   routeState: { name: "editplayeroptions" },
@@ -48,7 +49,7 @@ vi.mock("vue-router", async (importOriginal) => ({
         query: {},
       },
     },
-    push: vi.fn(),
+    push: routerPush,
   }),
 }));
 vi.mock("vue-i18n", async (importOriginal) => ({
@@ -149,35 +150,50 @@ function mountOverview() {
 }
 
 describe("the link back into onboarding", () => {
+  beforeEach(() => {
+    routerPush.mockReset();
+  });
+
   afterEach(() => {
     routeState.name = "editplayeroptions";
     store.currentUser = undefined;
   });
 
-  it("offers an admin the setup wizard again", () => {
+  it("offers an admin the setup wizard again", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     store.currentUser = user({ username: "admin", role: UserRole.ADMIN });
 
     const wrapper = mountOverview();
+    const link = wrapper.find("[data-testid=run-onboarding]");
+    expect(link.text()).toBe("onboarding.run_again");
 
-    expect(wrapper.find("[data-testid=run-onboarding]").text()).toBe(
-      "onboarding.run_again",
-    );
+    await link.trigger("click");
+
+    // the setup opens on whatever is left to set up
+    expect(routerPush).toHaveBeenCalledWith({ name: "onboarding" });
 
     wrapper.unmount();
   });
 
-  it("offers a member the welcome, which is theirs to run again", () => {
+  it("offers a member the welcome, which is theirs to run again", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
     store.currentUser = user({ username: "sam", role: UserRole.USER });
 
     const wrapper = mountOverview();
+    const link = wrapper.find("[data-testid=run-onboarding]");
 
     // there is no setup for a member to run again, and the same route hands
     // them what onboarding is for them
-    expect(wrapper.find("[data-testid=run-onboarding]").text()).toBe(
-      "onboarding.welcome_again",
-    );
+    expect(link.text()).toBe("onboarding.welcome_again");
+
+    await link.trigger("click");
+
+    // showing the welcome again means showing it from the top: by the time
+    // this link is any use, nothing on it is left to do
+    expect(routerPush).toHaveBeenCalledWith({
+      name: "onboarding",
+      query: { step: "welcome" },
+    });
 
     wrapper.unmount();
   });

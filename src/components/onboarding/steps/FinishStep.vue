@@ -66,7 +66,7 @@
 
     <!-- the member track sets nothing up, so it has no list to be at the end
          of and nothing to say is done -->
-    <p v-else-if="!isWelcome" class="text-muted-foreground text-sm">
+    <p v-else-if="!isMemberSummary" class="text-muted-foreground text-sm">
       {{ $t("onboarding.all_done") }}
     </p>
 
@@ -121,10 +121,10 @@ const done = computed(() =>
 );
 const playerCount = computed(() => ctx.value.playerCount);
 
-const isWelcome = computed(() => props.stepId === "all_set");
+const isMemberSummary = computed(() => props.stepId === "all_set");
 // a member set nothing up: what their summary looks back at is the answer they
 // gave, so it is not headed as a list of things that are now in place
 const doneHeadingKey = computed(() =>
-  isWelcome.value ? "onboarding.what_you_picked" : "onboarding.set_up",
+  isMemberSummary.value ? "onboarding.what_you_picked" : "onboarding.set_up",
 );
 </script>

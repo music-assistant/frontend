@@ -1,3 +1,4 @@
+import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import { UserRole, type Scope, type User } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +12,7 @@ import {
   hasOnboardingTrack,
   isAdminTrack,
   isMemberTrack,
+  isNewAccount,
   ONBOARDING_WELCOME_PREFERENCE,
   shouldOpenWelcome,
 } from "./onboarding_access";
@@ -95,6 +97,14 @@ describe("the onboarding track a session is on", () => {
     expect(hasOnboardingTrack()).toBe(false);
   });
 
+  it("leaves the Home Assistant system account out", () => {
+    // it signs in like anyone else, and is nobody to welcome into a household
+    signInAs({ username: HOMEASSISTANT_SYSTEM_USER });
+
+    expect(isMemberTrack()).toBe(false);
+    expect(hasOnboardingTrack()).toBe(false);
+  });
+
   it("never puts an admin on both tracks at once", () => {
     signInAs({ role: UserRole.ADMIN }, BUILTIN_ROLE_SCOPES.admin);
 
@@ -146,4 +156,29 @@ describe("opening the welcome by itself", () => {
   it("opens nothing while nobody is signed in", () => {
     expect(shouldOpenWelcome()).toBe(false);
   });
+});
+
+describe("a new account", () => {
+  const NOW = Date.parse("2024-03-10T12:00:00Z");
+
+  it.each([
+    ["the moment it was created", "2024-03-10T12:00:00Z", true],
+    ["a day old", "2024-03-09T12:00:00Z", true],
+    ["just inside the week", "2024-03-03T12:00:01Z", true],
+    ["exactly a week old", "2024-03-03T12:00:00Z", true],
+    ["just over a week old", "2024-03-03T11:59:59Z", false],
+    ["months old", "2023-11-01T00:00:00Z", false],
+    // a browser clock running behind the server's is no reason to keep
+    // someone out of their own welcome
+    ["created in the future", "2024-03-11T12:00:00Z", true],
+  ])("counts an account created %s: %s", (_case, createdAt, isNew) => {
+    expect(isNewAccount(createdAt, NOW)).toBe(isNew);
+  });
+
+  it.each(["", "not a date", "2024-13-45"])(
+    "never counts %o as a date worth interrupting someone over",
+    (createdAt) => {
+      expect(isNewAccount(createdAt, NOW)).toBe(false);
+    },
+  );
 });

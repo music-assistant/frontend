@@ -1,5 +1,11 @@
 <template>
-  <div class="grid auto-rows-fr gap-3 sm:grid-cols-2">
+  <!-- the cards answer one question, and the step's own description is what
+       asks it: a screen reader reads that before it reads the options -->
+  <div
+    role="group"
+    :aria-labelledby="labelledBy"
+    class="grid auto-rows-fr gap-3 sm:grid-cols-2"
+  >
     <button
       v-for="option in options"
       :key="option.value"
@@ -14,7 +20,7 @@
       <span
         class="bg-primary/10 text-primary grid size-12 shrink-0 place-items-center rounded-md"
       >
-        <component :is="option.icon" class="size-6" />
+        <component :is="option.icon" class="size-6" aria-hidden="true" />
       </span>
       <span class="flex min-w-0 flex-col gap-1">
         <span class="font-semibold">{{ $t(option.labelKey) }}</span>
@@ -30,7 +36,7 @@
 import type { Component } from "vue";
 
 /** One card: the answer it stands for, and how it is put to the user. */
-interface ChoiceCardOption {
+export interface ChoiceCardOption<T extends string> {
   value: T;
   icon: Component;
   labelKey: string;
@@ -38,11 +44,13 @@ interface ChoiceCardOption {
 }
 
 defineProps<{
-  options: ChoiceCardOption[];
+  options: ChoiceCardOption<T>[];
   // the answer already on the account, so coming back to the step shows it
   selected?: T;
   // the step is persisting an answer: the cards stay inert until it lands
   busy?: boolean;
+  // the element that asks what these cards answer
+  labelledBy: string;
   testIdPrefix: string;
 }>();
 

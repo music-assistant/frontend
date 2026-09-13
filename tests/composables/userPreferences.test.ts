@@ -150,7 +150,12 @@ describe("writing preferences", () => {
   });
 
   it("writes the keys of one answer in a single update", async () => {
-    await setUserPreferences({ show_waveform: true, visualizer_enabled: true });
+    const saved = await setUserPreferences({
+      show_waveform: true,
+      visualizer_enabled: true,
+    });
+
+    expect(saved).toBe(true);
 
     // one update, so the account never holds half of an answer
     expect(mockUpdateUser).toHaveBeenCalledOnce();
@@ -172,11 +177,26 @@ describe("writing preferences", () => {
     storeMock.currentUser = null;
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    await setUserPreferences({ show_waveform: true });
+    await expect(setUserPreferences({ show_waveform: true })).resolves.toBe(
+      false,
+    );
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(warnSpy).toHaveBeenCalledOnce();
     warnSpy.mockRestore();
+  });
+
+  it("says so when the server would not take them", async () => {
+    mockUpdateUser.mockRejectedValue(new Error("boom"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // whoever asked gets to tell the user; the write itself stays quiet
+    await expect(setUserPreferences({ show_waveform: true })).resolves.toBe(
+      false,
+    );
+
+    expect(errorSpy).toHaveBeenCalledOnce();
+    errorSpy.mockRestore();
   });
 });
 

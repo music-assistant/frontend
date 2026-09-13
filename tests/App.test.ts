@@ -11,6 +11,7 @@ import {
   type User,
 } from "@/plugins/api/interfaces";
 import { saveDeviceSetting } from "@/helpers/device_settings";
+import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -37,6 +38,7 @@ const {
   mockPruneStaleProviderFilters,
   mockRememberCurrentRemoteConnection,
   mockRouterPush,
+  mockRouterReplace,
   mockSetPreference,
   proxyState,
   routeState,
@@ -116,6 +118,7 @@ const {
     mockPruneStaleProviderFilters: vi.fn(),
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRouterPush: vi.fn(),
+    mockRouterReplace: vi.fn(),
     mockSetPreference: vi.fn(),
     proxyState: { isReady: { value: true } },
     routeState: {
@@ -273,6 +276,7 @@ vi.mock("vue-router", async () => {
     useRoute: () => routeState.current,
     useRouter: () => ({
       push: mockRouterPush,
+      replace: mockRouterReplace,
     }),
   };
 });
@@ -583,6 +587,30 @@ describe("App initialization", () => {
 
       wrapper = await mountApp();
 
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("leaves a guest session on its own screen", async () => {
+      // the account behind a party session would be welcomed on a session of
+      // its own; a guest session is not that session
+      asNewMember();
+      guestType.value = "party";
+
+      wrapper = await mountApp();
+
+      expect(mockRouterPush).toHaveBeenCalledWith("/guest");
+      expect(mockRouterPush).not.toHaveBeenCalledWith({ name: "onboarding" });
+    });
+
+    it("leaves a dashboard viewer pinned to its own screen", async () => {
+      asNewMember();
+      authManagerMock.isDashboardViewer.mockReturnValue(true);
+      sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, "/now-playing");
+
+      wrapper = await mountApp();
+
+      // a wall-mounted tablet has nobody in front of it to welcome
+      expect(mockRouterReplace).toHaveBeenCalledWith("/now-playing");
       expect(mockRouterPush).not.toHaveBeenCalled();
     });
   });

@@ -31,6 +31,7 @@ const {
   preferenceState: {
     intent: { value: undefined } as { value?: string },
     persona: { value: undefined } as { value?: string },
+    welcomedAt: { value: undefined } as { value?: string },
     ready: false,
   },
   // what the server hands back as the provider configurations
@@ -70,11 +71,13 @@ vi.mock("@/composables/userPreferences", async () => {
   if (!preferenceState.ready) {
     preferenceState.intent = ref<string | undefined>(undefined);
     preferenceState.persona = ref<string | undefined>(undefined);
+    preferenceState.welcomedAt = ref<string | undefined>(undefined);
     preferenceState.ready = true;
   }
   const preferences: Record<string, { value?: string }> = {
     "onboarding.intent": preferenceState.intent,
     "onboarding.persona": preferenceState.persona,
+    "onboarding.welcome": preferenceState.welcomedAt,
   };
   return {
     setUserPreference: vi.fn(),
@@ -161,6 +164,7 @@ describe("NavGettingStarted", () => {
     });
     preferenceState.intent.value = undefined;
     preferenceState.persona.value = undefined;
+    preferenceState.welcomedAt.value = undefined;
     routerMock.push.mockReset();
   });
 
@@ -223,6 +227,28 @@ describe("NavGettingStarted", () => {
     // waits on them and never fetches them
     expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain("onboarding.welcome_hint");
+
+    wrapper.unmount();
+  });
+
+  it("stops asking a member who has already been welcomed", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    storeState.store.currentUser = user({
+      user_id: "sam-1",
+      username: "sam",
+      role: UserRole.USER,
+    });
+    preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+    const wrapper = await mountChecklist();
+
+    // they have seen the welcome and left the question alone, which is an
+    // answer of its own: the sidebar does not keep bringing it up
+    expect(wrapper.find("[data-testid=nav-getting-started]").exists()).toBe(
+      false,
+    );
 
     wrapper.unmount();
   });

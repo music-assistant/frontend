@@ -11,6 +11,7 @@ import {
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isBuiltinProvider,
   providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
@@ -174,5 +175,16 @@ describe("the name a provider goes by", () => {
     expect(
       providerDisplayName({ ...config, name: null, default_name: null }),
     ).toBe("");
+  });
+});
+
+describe("a provider that ships with the server", () => {
+  it("reads the flag off the manifest", () => {
+    expect(isBuiltinProvider(providerManifest({ builtin: true }))).toBe(true);
+    expect(isBuiltinProvider(providerManifest({ builtin: false }))).toBe(false);
+  });
+
+  it("claims nothing about a provider whose manifest is missing", () => {
+    expect(isBuiltinProvider(undefined)).toBe(false);
   });
 });

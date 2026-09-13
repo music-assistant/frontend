@@ -206,7 +206,7 @@
           variant="link"
           class="text-muted-foreground"
           data-testid="run-onboarding"
-          @click="router.push({ name: 'onboarding' })"
+          @click="router.push(onboardingRoute)"
         >
           {{ t(onboardingLinkKey) }}
         </Button>
@@ -425,6 +425,15 @@ provide("systemViewMode", {
 const canOpenOnboarding = computed(() => hasOnboardingTrack());
 const onboardingLinkKey = computed(() =>
   isAdminTrack() ? "onboarding.run_again" : "onboarding.welcome_again",
+);
+// The setup wizard opens on whatever is left to set up. The welcome has been
+// shown by the time this link is any use, so nothing is left to do on it and
+// it would otherwise open on its own summary: showing it again means showing
+// it from the top.
+const onboardingRoute = computed(() =>
+  isAdminTrack()
+    ? { name: "onboarding" }
+    : { name: "onboarding", query: { step: "welcome" } },
 );
 
 const settingsSections = computed(() =>

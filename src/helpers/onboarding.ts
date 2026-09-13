@@ -45,25 +45,6 @@ export const PERSONA_DEFAULTS: Readonly<
   regular: { show_waveform: false, visualizer_enabled: false },
 };
 
-/**
- * How long an account counts as new. The welcome is for someone who was just
- * given an account; anyone older has been using the app for a while and is
- * better served by finding it in the settings themselves.
- */
-const NEW_ACCOUNT_DAYS = 7;
-const NEW_ACCOUNT_MAX_AGE_MS = NEW_ACCOUNT_DAYS * 24 * 60 * 60 * 1000;
-
-/**
- * Whether an account was created recently enough to still be welcomed. A date
- * that cannot be read is not an invitation to interrupt someone, so it counts
- * as an account that has been around.
- */
-export function isNewAccount(createdAt: string, now = Date.now()): boolean {
-  const created = Date.parse(createdAt);
-  if (Number.isNaN(created)) return false;
-  return now - created <= NEW_ACCOUNT_MAX_AGE_MS;
-}
-
 /** A configured provider, reduced to what the steps need. */
 export interface OnboardingProvider {
   type: ProviderType;
@@ -85,6 +66,8 @@ export interface OnboardingContext {
   // member who is not on the admin track. Never both, so the two tracks never
   // run into each other
   isMember: boolean;
+  // the welcome has been shown to this member before, whatever they made of it
+  welcomed: boolean;
   providers: OnboardingProvider[];
   playerCount: number;
   // the household members: everyone with an account of their own, so neither
@@ -130,8 +113,8 @@ function hasConfiguredProvider(
 
 // Which track a step belongs to. Every step is on exactly one of them, and a
 // context is only ever on one, so the two never mix in a single run.
-const isAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin;
-const isMemberTrack = (ctx: OnboardingContext) => ctx.isMember;
+const onAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin;
+const onMemberTrack = (ctx: OnboardingContext) => ctx.isMember;
 
 /**
  * A step that can be ticked off. The review steps and the summary are there to
@@ -145,32 +128,32 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   {
     id: "intent",
     kind: "step",
-    appliesTo: isAdminTrack,
+    appliesTo: onAdminTrack,
     isDone: (ctx) => ctx.answers.intent != null,
   },
   {
     id: "music_sources",
     kind: "step",
-    appliesTo: isAdminTrack,
+    appliesTo: onAdminTrack,
     isDone: (ctx) => hasConfiguredProvider(ctx, ProviderType.MUSIC),
   },
   {
     id: "players",
     kind: "step",
-    appliesTo: isAdminTrack,
+    appliesTo: onAdminTrack,
     isDone: (ctx) => hasConfiguredProvider(ctx, ProviderType.PLAYER),
   },
   {
     id: "plugins",
     kind: "step",
     optional: true,
-    appliesTo: isAdminTrack,
+    appliesTo: onAdminTrack,
     isDone: (ctx) => hasConfiguredProvider(ctx, ProviderType.PLUGIN),
   },
   {
     id: "core_settings",
     kind: "review",
-    appliesTo: isAdminTrack,
+    appliesTo: onAdminTrack,
     // nothing to tick off: the server ships with settings that work, so there
     // is never anything missing here. What keeps the wizard from walking past
     // this step is its kind, not this answer.
@@ -180,7 +163,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     id: "invite_members",
     kind: "step",
     optional: true,
-    appliesTo: isAdminTrack,
+    appliesTo: onAdminTrack,
     // done once the household is more than the admin setting it up; not
     // knowing who is in it is not the same as nobody else being in it
     isDone: (ctx) => ctx.memberCount != null && ctx.memberCount > 1,
@@ -189,33 +172,35 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     id: "finish",
     kind: "summary",
     // the summary is the end of the track, never something to tick off
-    appliesTo: isAdminTrack,
+    appliesTo: onAdminTrack,
     isDone: () => false,
   },
   {
     id: "welcome",
     kind: "step",
-    appliesTo: isMemberTrack,
+    appliesTo: onMemberTrack,
     // the one thing the welcome asks for: how much of the player they want to
-    // see. Everything after it is there to be looked at, not filled in
-    isDone: (ctx) => ctx.answers.persona != null,
+    // see. Everything after it is there to be looked at, not filled in.
+    // Having been shown it is enough: nobody is asked to answer a question
+    // they have already been put in front of and walked away from.
+    isDone: (ctx) => ctx.answers.persona != null || ctx.welcomed,
   },
   {
     id: "whats_here",
     kind: "review",
-    appliesTo: isMemberTrack,
+    appliesTo: onMemberTrack,
     isDone: () => false,
   },
   {
     id: "tour",
     kind: "review",
-    appliesTo: isMemberTrack,
+    appliesTo: onMemberTrack,
     isDone: () => false,
   },
   {
     id: "all_set",
     kind: "summary",
-    appliesTo: isMemberTrack,
+    appliesTo: onMemberTrack,
     isDone: () => false,
   },
 ];
@@ -294,7 +279,7 @@ export function checklistPendingSteps(
  * applies, an already done step included, and anything else falls back to the
  * first step still to do, which a review never is: the wizard walks the user
  * into one, it does not drop them in it. With nothing left to do it opens on
- * the end of the track, which is the summary of whichever track applies.
+ * the last step of the track, which is that track's summary.
  */
 export function firstStep(
   ctx: OnboardingContext,

@@ -1,6 +1,6 @@
 <template>
   <section class="flex flex-col gap-4">
-    <p class="text-muted-foreground text-sm">
+    <p :id="DESCRIPTION_ID" class="text-muted-foreground text-sm">
       {{ $t("onboarding.steps.intent.description") }}
     </p>
 
@@ -8,6 +8,7 @@
       :options="options"
       :selected="intent"
       :busy="busy"
+      :labelled-by="DESCRIPTION_ID"
       test-id-prefix="onboarding-intent"
       @select="select"
     />
@@ -15,11 +16,16 @@
 </template>
 
 <script setup lang="ts">
-import ChoiceCards from "@/components/onboarding/ChoiceCards.vue";
+import ChoiceCards, {
+  type ChoiceCardOption,
+} from "@/components/onboarding/ChoiceCards.vue";
 import type { OnboardingIntent, OnboardingStepId } from "@/helpers/onboarding";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { Library, Smartphone } from "@lucide/vue";
 import { markRaw, ref } from "vue";
+
+// what the cards answer, for the screen readers that read it out first
+const DESCRIPTION_ID = "onboarding-intent-description";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
@@ -33,18 +39,18 @@ const { intent, setIntent } = useOnboarding();
 
 const options = [
   {
-    value: "phone_apps" as OnboardingIntent,
+    value: "phone_apps",
     icon: markRaw(Smartphone),
     labelKey: "onboarding.steps.intent.phone_apps.label",
     descriptionKey: "onboarding.steps.intent.phone_apps.description",
   },
   {
-    value: "music_hub" as OnboardingIntent,
+    value: "music_hub",
     icon: markRaw(Library),
     labelKey: "onboarding.steps.intent.music_hub.label",
     descriptionKey: "onboarding.steps.intent.music_hub.description",
   },
-];
+] satisfies ChoiceCardOption<OnboardingIntent>[];
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);

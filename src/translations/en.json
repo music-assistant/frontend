@@ -2578,13 +2578,14 @@
                 "description": "Hi {name}, this is where your household's music lives. Pick how much you would like to see while something is playing.",
                 "enthusiast": {
                     "label": "All the details",
-                    "description": "Waveform progress, a background visualizer and the quality of what is playing at hand."
+                    "description": "Waveform progress and a background visualizer while music plays."
                 },
                 "regular": {
                     "label": "Just play music",
                     "description": "A clean player, with nothing extra on it."
                 },
-                "defaults_hint": "This only sets a few defaults. Every setting stays yours to change."
+                "defaults_hint": "This only sets a few defaults. Every setting stays yours to change.",
+                "save_failed": "Your choice could not be saved. Please try again."
             },
             "whats_here": {
                 "title": "What's here for you",
@@ -2592,7 +2593,7 @@
                 "more_count": "+{count} more",
                 "listen": {
                     "title": "What you can listen to",
-                    "empty": "Nothing to listen to yet — ask your admin to add a music source.",
+                    "empty": "No music sources have been shared with you yet.",
                     "browse": "Browse your music"
                 },
                 "players": {
@@ -2603,7 +2604,7 @@
             },
             "tour": {
                 "title": "A quick tour",
-                "description": "The four places you will use most.",
+                "description": "The places you will use most.",
                 "open": "Open",
                 "library": {
                     "title": "Your library",

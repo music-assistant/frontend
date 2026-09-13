@@ -68,15 +68,17 @@ defineEmits<{
 const router = useRouter();
 
 interface TourCard {
-  id: string;
+  id: "library" | "search" | "player_bar" | "profile";
   icon: Component;
   // the named route the card opens, for the areas that are a page of their own
   route?: string;
 }
 
-// The four corners of the app a member uses, each with the icon it is known by
-// in the sidebar. The library has no page of its own: the artists are the first
-// of its listings, which is where the sidebar's library starts too.
+// The four corners of the app a member uses. Only the search carries the icon
+// the sidebar knows it by; the rest stand for a group of pages or for the bar
+// at the bottom, neither of which has a sidebar icon of its own. The library
+// has no page of its own either: the artists are the first of its listings,
+// which is where the sidebar's library starts too.
 const cards: TourCard[] = [
   { id: "library", icon: markRaw(Library), route: "artists" },
   { id: "search", icon: markRaw(Search) },

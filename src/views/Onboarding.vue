@@ -80,6 +80,7 @@ import {
   computed,
   markRaw,
   nextTick,
+  onBeforeUnmount,
   onMounted,
   ref,
   watch,
@@ -287,14 +288,17 @@ const focusStepHeading = async function () {
 onMounted(async () => {
   focusStepHeading();
   // the member track reads the providers and players that are running, neither
-  // of which it has to ask for, so the welcome waits for nothing — and showing
-  // it is the whole of what the account remembers about it afterwards
-  if (ctx.value.isMember) {
-    void markWelcomed();
-  } else {
-    await loadOnboardingData();
-  }
+  // of which it has to ask for, so the welcome waits for nothing
+  if (!ctx.value.isMember) await loadOnboardingData();
   ready.value = true;
 });
 watch(currentId, focusStepHeading);
+
+// Leaving the welcome is what counts as having been welcomed, whether the
+// member answered the question, walked past it or simply closed the page:
+// nobody is welcomed into the same app twice. Finishing writes this itself,
+// and the marker is only ever written once, so the two never collide.
+onBeforeUnmount(() => {
+  if (ctx.value.isMember) void markWelcomed();
+});
 </script>

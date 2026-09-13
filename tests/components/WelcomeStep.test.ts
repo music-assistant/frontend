@@ -10,6 +10,7 @@ const {
   preferenceState,
   setUserPreferencesMock,
   storeMock,
+  toastMock,
 } = vi.hoisted(() => ({
   apiMock: {
     players: {} as Record<string, unknown>,
@@ -29,6 +30,7 @@ const {
   },
   setUserPreferencesMock: vi.fn(),
   storeMock: { currentUser: undefined as User | undefined },
+  toastMock: { error: vi.fn(), success: vi.fn() },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -41,9 +43,14 @@ vi.mock("@/plugins/router", () => ({
 
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+// the step reaches for the same translator its template does; echo the name
+// back, so a test can tell it reached the greeting
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, params?: Record<string, unknown>) =>
+    params?.name ? `${key}:${params.name}` : key,
+}));
 
-vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
 vi.mock("@/composables/userPreferences", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
@@ -98,6 +105,9 @@ describe("WelcomeStep", () => {
     });
     preferenceState.persona.value = undefined;
     setUserPreferencesMock.mockReset();
+    // the real one says whether the server took the answer
+    setUserPreferencesMock.mockResolvedValue(true);
+    toastMock.error.mockReset();
   });
 
   it("greets the member by the name they go by", async () => {
@@ -153,6 +163,35 @@ describe("WelcomeStep", () => {
     wrapper.unmount();
   });
 
+  it("stays put when the answer could not be saved", async () => {
+    setUserPreferencesMock.mockResolvedValue(false);
+
+    const wrapper = await mountStep();
+    await card(wrapper, "enthusiast").trigger("click");
+    await flushPromises();
+
+    // walking on would leave them with a player the account never agreed to
+    expect(toastMock.error).toHaveBeenCalledWith(
+      "onboarding.steps.welcome.save_failed",
+    );
+    expect(wrapper.emitted("advance")).toBeUndefined();
+    // and the cards are theirs to try again with
+    expect(card(wrapper, "enthusiast").attributes("disabled")).toBeUndefined();
+
+    wrapper.unmount();
+  });
+
+  it("asks the question the cards answer, for whoever cannot see them", async () => {
+    const wrapper = await mountStep();
+
+    const group = wrapper.find("[role=group]");
+    expect(group.attributes("aria-labelledby")).toBe(
+      wrapper.find("[data-testid=onboarding-greeting]").attributes("id"),
+    );
+
+    wrapper.unmount();
+  });
+
   it("shows the answer the member already gave", async () => {
     preferenceState.persona.value = "regular";
 
@@ -172,8 +211,8 @@ describe("WelcomeStep", () => {
     let landAnswer: () => void = () => {};
     setUserPreferencesMock.mockImplementation(
       () =>
-        new Promise<void>((resolve) => {
-          landAnswer = () => resolve();
+        new Promise<boolean>((resolve) => {
+          landAnswer = () => resolve(true);
         }),
     );
 

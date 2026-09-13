@@ -5,7 +5,6 @@ import {
   checklistPendingSteps,
   checklistSteps,
   firstStep,
-  isNewAccount,
   orderSteps,
   pendingSteps,
   type OnboardingContext,
@@ -41,6 +40,7 @@ function context(
   return {
     isAdmin: true,
     isMember: false,
+    welcomed: false,
     providers: [],
     playerCount: 0,
     memberCount: null,
@@ -455,6 +455,25 @@ describe("the member track", () => {
     expect(pendingSteps(ctx)).toEqual([]);
   });
 
+  it("is done with a member who has been welcomed before", () => {
+    // having been shown the welcome is enough: nobody is asked again to answer
+    // a question they were put in front of and walked away from
+    const ctx = memberContext({ welcomed: true });
+
+    expect(step(ctx, "welcome").isDone(ctx)).toBe(true);
+    expect(pendingSteps(ctx)).toEqual([]);
+    expect(checklistPendingSteps(ctx)).toEqual([]);
+  });
+
+  it("still asks the member being welcomed right now", () => {
+    // the marker is written on the way out, so during the run itself the
+    // question is still open — and the summary still lists it
+    const ctx = memberContext();
+
+    expect(step(ctx, "welcome").isDone(ctx)).toBe(false);
+    expect(stepIds(pendingSteps(ctx))).toEqual(["welcome"]);
+  });
+
   it("asks on the checklist for the one thing it asks for", () => {
     const pending = memberContext();
     expect(stepIds(checklistSteps(pending))).toEqual(["welcome"]);
@@ -470,6 +489,7 @@ describe("the member track", () => {
     expect(firstStep(memberContext({ answers: { persona: "regular" } }))).toBe(
       "all_set",
     );
+    expect(firstStep(memberContext({ welcomed: true }))).toBe("all_set");
   });
 
   it("never falls back onto the other track's summary", () => {
@@ -490,7 +510,7 @@ describe("the persona defaults", () => {
     (persona) => {
       // both answers write the same settings, so choosing again always lands
       // on a complete set rather than on half of the last one
-      expect(Object.keys(PERSONA_DEFAULTS[persona])).toEqual([
+      expect(Object.keys(PERSONA_DEFAULTS[persona]).sort()).toEqual([
         "show_waveform",
         "visualizer_enabled",
       ]);
@@ -507,26 +527,4 @@ describe("the persona defaults", () => {
       visualizer_enabled: false,
     });
   });
-});
-
-describe("a new account", () => {
-  const NOW = Date.parse("2024-03-10T12:00:00Z");
-
-  it.each([
-    ["the moment it was created", "2024-03-10T12:00:00Z", true],
-    ["a day old", "2024-03-09T12:00:00Z", true],
-    ["just inside the week", "2024-03-03T12:00:01Z", true],
-    ["exactly a week old", "2024-03-03T12:00:00Z", true],
-    ["just over a week old", "2024-03-03T11:59:59Z", false],
-    ["months old", "2023-11-01T00:00:00Z", false],
-  ])("counts an account created %s: %s", (_case, createdAt, isNew) => {
-    expect(isNewAccount(createdAt, NOW)).toBe(isNew);
-  });
-
-  it.each(["", "not a date", "2024-13-45"])(
-    "never counts %o as a date worth interrupting someone over",
-    (createdAt) => {
-      expect(isNewAccount(createdAt, NOW)).toBe(false);
-    },
-  );
 });

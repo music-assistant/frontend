@@ -194,8 +194,11 @@ describe("useOnboarding", () => {
     );
     signIn({ user_id: "admin-1", username: "admin", role: UserRole.ADMIN });
     routerMock.replace.mockReset();
+    // both answer as the real ones do: a promise, and whether it landed
     setUserPreferenceMock.mockReset();
+    setUserPreferenceMock.mockResolvedValue(undefined);
     setUserPreferencesMock.mockReset();
+    setUserPreferencesMock.mockResolvedValue(true);
     toastMock.error.mockReset();
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
   });
@@ -753,7 +756,7 @@ describe("useOnboarding", () => {
       signInAs();
 
       const { setPersona } = await loadOnboarding();
-      await setPersona("enthusiast");
+      await expect(setPersona("enthusiast")).resolves.toBe(true);
 
       // one update: the account never holds the answer without the settings
       // that answer was given for
@@ -805,6 +808,64 @@ describe("useOnboarding", () => {
       // when they were welcomed, not when they last looked it over again
       expect(setUserPreferenceMock).not.toHaveBeenCalled();
       expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+    });
+
+    it("hands a failed answer back to whoever asked the question", async () => {
+      signInAs();
+      setUserPreferencesMock.mockResolvedValue(false);
+
+      const { setPersona } = await loadOnboarding();
+
+      // the step has something to tell the user; this only says what happened
+      await expect(setPersona("regular")).resolves.toBe(false);
+    });
+
+    it("marks the welcome once, however often it is asked to", async () => {
+      signInAs();
+      let landWrite: () => void = () => {};
+      setUserPreferenceMock.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            landWrite = () => resolve();
+          }),
+      );
+
+      const { markWelcomed } = await loadOnboarding();
+      // the wizard finishing and the page it leaves behind, in that order and
+      // with neither waiting for the other
+      const both = Promise.all([markWelcomed(), markWelcomed()]);
+      landWrite();
+      await both;
+
+      // every write sends the whole set of preferences, so a second one in
+      // flight would undo the first
+      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+    });
+
+    it("counts a member who was welcomed before as answered enough", async () => {
+      signInAs();
+      preferenceState.welcomedAt.value = "2024-01-02T03:04:05Z";
+
+      const { ctx, checklistPending, hasPending } = await loadOnboarding();
+
+      // the checklist stops asking: they have seen it, whatever they made of it
+      expect(ctx.value.welcomed).toBe(true);
+      expect(checklistPending.value).toEqual([]);
+      expect(hasPending.value).toBe(false);
+    });
+
+    it("keeps asking the member who is being welcomed right now", async () => {
+      signInAs();
+
+      const { ctx, pending, checklistPending } = await loadOnboarding();
+
+      // the marker is written on the way out, so the question is open for the
+      // whole of this run — and the summary says so
+      expect(ctx.value.welcomed).toBe(false);
+      expect(pending.value.map((step) => step.id)).toEqual(["welcome"]);
+      expect(checklistPending.value.map((step) => step.id)).toEqual([
+        "welcome",
+      ]);
     });
   });
 });

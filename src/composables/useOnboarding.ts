@@ -22,7 +22,10 @@ import {
   ONBOARDING_WELCOME_PREFERENCE,
 } from "@/helpers/onboarding_access";
 import { userDisplayName } from "@/helpers/provider_access";
-import { providerDisplayName } from "@/helpers/provider_config";
+import {
+  isBuiltinProvider,
+  providerDisplayName,
+} from "@/helpers/provider_config";
 import { isSystemUser } from "@/helpers/users";
 import { api } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
@@ -160,20 +163,13 @@ async function loadOnboardingData(): Promise<void> {
   await Promise.all([loadProviderConfigs(), loadUsers()]);
 }
 
-/**
- * A provider that ships with the server rather than one the user set up. The
- * manifest owns that flag, so a provider whose manifest is missing is not
- * claimed to be builtin.
- */
-function isBuiltinProvider(domain: string): boolean {
-  return api.providerManifests[domain]?.builtin === true;
-}
-
 /** The providers of one type the user configured themselves. */
 export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
   return (providerConfigs.value ?? [])
     .filter(
-      (config) => config.type === type && !isBuiltinProvider(config.domain),
+      (config) =>
+        config.type === type &&
+        !isBuiltinProvider(api.providerManifests[config.domain]),
     )
     .map((config) => ({
       instance_id: config.instance_id,
@@ -221,10 +217,13 @@ const ctx = computed<OnboardingContext>(() => ({
   // which track this session is on, which is what decides the steps below
   isAdmin: isAdminTrack(),
   isMember: isMemberTrack(),
+  // the welcome has been shown before, which is all the marker on the account
+  // says — and all the welcome needs it to say
+  welcomed: welcomedAt.value != null,
   providers: (providerConfigs.value ?? []).map((config) => ({
     type: config.type,
     domain: config.domain,
-    builtin: isBuiltinProvider(config.domain),
+    builtin: isBuiltinProvider(api.providerManifests[config.domain]),
     enabled: config.enabled,
   })),
   // only the summary's "2 players" label reads this; whether the players step
@@ -266,25 +265,39 @@ async function setIntent(value: OnboardingIntent): Promise<void> {
  * stands for. Both go out in one update, so the account never holds the answer
  * without what it was given for — and answering again simply seeds them again.
  * Nothing reads the persona itself afterwards: every one of those settings
- * stays the member's to change.
+ * stays the member's to change. Says whether the answer landed, because a
+ * question that quietly did not save is worse than one asked again.
  */
-async function setPersona(value: OnboardingPersona): Promise<void> {
-  await setUserPreferences({
+async function setPersona(value: OnboardingPersona): Promise<boolean> {
+  return await setUserPreferences({
     [ONBOARDING_PERSONA_PREFERENCE]: value,
     ...PERSONA_DEFAULTS[value],
   });
 }
 
+// the write in flight, so the two ways out of the welcome — finishing it and
+// leaving the page behind — never turn into two updates
+let writingWelcomed: Promise<void> | null = null;
+
 /**
  * Remember that the member has been welcomed. Only the first time counts: the
  * marker says the welcome has been shown, not when it was last opened.
+ *
+ * Every preference write sends the whole set the account holds, so two of them
+ * in flight at once would have the later one undo the earlier. Nothing chains
+ * this behind the persona answer because nothing has to: the question holds the
+ * step until its own write lands, and this one is only ever written on the way
+ * out.
  */
 async function markWelcomed(): Promise<void> {
   if (welcomedAt.value != null) return;
-  await setUserPreference(
+  writingWelcomed ??= setUserPreference(
     ONBOARDING_WELCOME_PREFERENCE,
     new Date().toISOString(),
-  );
+  ).finally(() => {
+    writingWelcomed = null;
+  });
+  await writingWelcomed;
 }
 
 // InvalidDataError: the server is still registering the command but has already
@@ -320,7 +333,7 @@ function isAlreadyCompletedError(error: unknown): boolean {
  * again on the next reload.
  */
 async function finish(): Promise<boolean> {
-  if (isMemberTrack()) {
+  if (ctx.value.isMember) {
     await markWelcomed();
     dismiss();
     await router.replace({ name: "discover" });
@@ -364,7 +377,7 @@ export function useOnboarding() {
     setIntent,
     persona,
     setPersona,
-    // what the wizard marks the welcome with as it shows it
+    // what the wizard marks the welcome with on the way out of it
     markWelcomed,
     dataLoaded,
     loadOnboardingData,

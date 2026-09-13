@@ -34,14 +34,15 @@ export async function setUserPreference(
 /**
  * The same for several keys at once, in a single update: settings that belong
  * to one answer are written together, so the account never ends up holding half
- * of it.
+ * of it. Says whether the server took them, for the callers that have something
+ * to tell the user when it did not.
  */
 export async function setUserPreferences(
   values: Record<string, unknown>,
-): Promise<void> {
+): Promise<boolean> {
   if (!store.currentUser) {
     console.warn("Cannot set preference: no user logged in");
-    return;
+    return false;
   }
 
   if (!store.currentUser.preferences) {
@@ -61,8 +62,10 @@ export async function setUserPreferences(
     await api.updateUser(store.currentUser.user_id, {
       preferences: updatedPreferences,
     });
+    return true;
   } catch (error) {
     console.error("Failed to update user preferences:", error);
+    return false;
   }
 }
 
