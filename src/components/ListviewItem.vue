@@ -276,6 +276,7 @@
           getBreakpointValue('bp3') &&
           'favorite' in item &&
           showFavorite &&
+          canEditLibrary &&
           item.media_type != MediaType.COLLECTION &&
           !$vuetify.display.mobile
         "
@@ -324,9 +325,11 @@ import {
   AlbumType,
   ContentType,
   MediaType,
+  Scope,
   type MediaCollection,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { useMediaQuery } from "@vueuse/core";
@@ -391,6 +394,10 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 // computed properties
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 const collabArtists = computed(() => {
   if (!("artists" in compProps.item) || !compProps.item.artists) return "";
   const albumArtists =

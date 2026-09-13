@@ -2,9 +2,19 @@
  * @vitest-environment jsdom
  */
 import BackgroundTaskDetailsDialog from "@/components/settings/background-tasks/BackgroundTaskDetailsDialog.vue";
-import { type BackgroundTask, TaskStatus } from "@/plugins/api/interfaces";
+import {
+  type BackgroundTask,
+  type Scope,
+  TaskScheduleType,
+  TaskStatus,
+} from "@/plugins/api/interfaces";
 import { mount, type VueWrapper } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+
+const { hasScope } = vi.hoisted(() => ({
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
+}));
 
 vi.mock("@/plugins/api", () => ({ api: {} }));
 
@@ -20,6 +30,8 @@ vi.mock("@/plugins/store", () => ({
   store: { currentUser: null },
 }));
 
+vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+
 vi.mock("vue-i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-i18n")>();
   return {
@@ -34,6 +46,10 @@ vi.mock("vue-i18n", async (importOriginal) => {
 const passthrough = { template: "<div><slot /></div>" };
 
 describe("BackgroundTaskDetailsDialog", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+  });
+
   it.each([
     TaskStatus.SUCCESS,
     TaskStatus.PARTIAL_SUCCESS,
@@ -66,7 +82,40 @@ describe("BackgroundTaskDetailsDialog", () => {
     expect(wrapper.find(".task-report").exists()).toBe(false);
     expect(wrapper.text()).not.toContain("background_tasks.report_title");
   });
+
+  it("links the users and offers editing the schedule to an admin", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+
+    const wrapper = mountDialog(scheduledTask());
+
+    expect(wrapper.findAll(".detail-link")).toHaveLength(2);
+    expect(
+      wrapper.find('[title="background_tasks.edit_schedule"]').exists(),
+    ).toBe(true);
+  });
+
+  it("offers a member neither the user links nor editing the schedule", () => {
+    const wrapper = mountDialog(scheduledTask());
+
+    expect(wrapper.find(".detail-link").exists()).toBe(false);
+    expect(
+      wrapper.find('[title="background_tasks.edit_schedule"]').exists(),
+    ).toBe(false);
+  });
 });
+
+function scheduledTask(): BackgroundTask {
+  return makeTask({
+    schedule: {
+      type: TaskScheduleType.DAILY,
+      enabled: true,
+      hour: 3,
+      minute: 0,
+    },
+    user_id: "user-1",
+    last_run_user_id: "user-2",
+  });
+}
 
 function mountDialog(task: BackgroundTask): VueWrapper {
   return mount(BackgroundTaskDetailsDialog, {

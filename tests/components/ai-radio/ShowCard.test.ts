@@ -1,10 +1,24 @@
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
+import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useShows } from "@/composables/ai-radio/useShows";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { i18n } from "@/plugins/i18n";
-import type { AIRadioSession, AIRadioStation } from "@/plugins/api/interfaces";
+import type {
+  AIRadioSession,
+  AIRadioStation,
+  Scope,
+} from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
+
+const { hasScope } = vi.hoisted(() => ({
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { guestSessionKind: () => null, hasScope },
+}));
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -71,5 +85,39 @@ describe("ShowCard status chip", () => {
     const wrapper = renderCard("en_GB", "running");
 
     expect(wrapper.find(".show-card__status-chip").exists()).toBe(false);
+  });
+});
+
+describe("ShowCard editing rights", () => {
+  // the stubs render their slots, so the menu entries show up as well
+  const mountCard = () =>
+    mount(ShowCard, {
+      props: { show },
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+  it("lets an admin customize, duplicate and delete the show", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    const wrapper = mountCard();
+
+    expect(wrapper.findAllComponents(DropdownMenuItem)).toHaveLength(3);
+    expect(wrapper.attributes("role")).toBe("button");
+    await wrapper.trigger("click");
+    expect(wrapper.emitted("customize")).toEqual([[show.id]]);
+  });
+
+  it.each([
+    ["a member", BUILTIN_ROLE_SCOPES.user],
+    ["a guest", BUILTIN_ROLE_SCOPES.guest],
+  ])("leaves %s only the play button", async (_role, scopes) => {
+    hasScope.mockImplementation(scopeChecker(scopes));
+    const wrapper = mountCard();
+
+    expect(wrapper.findComponent(DropdownMenu).exists()).toBe(false);
+    expect(wrapper.attributes("role")).toBeUndefined();
+    await wrapper.trigger("click");
+    expect(wrapper.emitted("customize")).toBeUndefined();
+    expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
   });
 });

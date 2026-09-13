@@ -4,7 +4,7 @@
       <BackgroundTaskFilters @update:search="searchQuery = $event" />
 
       <Button
-        v-if="isAdmin"
+        v-if="canManageTasks"
         class="clear-finished-btn"
         variant="outline"
         @click="clearFinishedTasks"
@@ -113,11 +113,11 @@ import {
   type BackgroundTask,
   type TaskSchedule,
   type User,
+  Scope,
   TaskStatus,
-  UserRole,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
 import { Trash2 } from "@lucide/vue";
 import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -141,7 +141,9 @@ const usersLoaded = ref(false);
 
 const { t } = useI18n();
 const viewMode = computed(() => tasksViewMode.viewMode.value);
-const isAdmin = computed(() => store.currentUser?.role === UserRole.ADMIN);
+const canManageTasks = computed(() =>
+  authManager.hasScope(Scope.SYSTEM_MANAGE),
+);
 const {
   loading,
   refreshTasks: refreshTasksState,
@@ -377,11 +379,7 @@ const removeTask = async (task: BackgroundTask) => {
 };
 
 const ensureUserLabelsLoaded = async () => {
-  if (
-    usersLoaded.value ||
-    !store.currentUser ||
-    store.currentUser.role !== UserRole.ADMIN
-  ) {
+  if (usersLoaded.value || !authManager.hasScope(Scope.USERS_READ)) {
     return;
   }
   try {
@@ -494,7 +492,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         openScheduleDialog(task);
       },
       icon: "mdi-timer-edit-outline",
-      hide: !isAdmin.value || !canEditTaskSchedule(task),
+      hide: !canManageTasks.value || !canEditTaskSchedule(task),
     },
     {
       label: "background_tasks.run_now",
@@ -502,7 +500,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void runTask(task);
       },
       icon: "mdi-play",
-      hide: !isAdmin.value || !canRunTaskManually(task),
+      hide: !canManageTasks.value || !canRunTaskManually(task),
     },
     {
       label: task.schedule?.enabled
@@ -514,7 +512,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       icon: task.schedule?.enabled
         ? "mdi-calendar-remove"
         : "mdi-calendar-check",
-      hide: !isAdmin.value || !isScheduledTask(task),
+      hide: !canManageTasks.value || !isScheduledTask(task),
     },
     {
       label: "background_tasks.retry",
@@ -522,7 +520,8 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void retryTask(task);
       },
       icon: "mdi-refresh",
-      hide: !isAdmin.value || !(task.allow_retry && isRetryableTask(task)),
+      hide:
+        !canManageTasks.value || !(task.allow_retry && isRetryableTask(task)),
     },
     {
       label: "background_tasks.cancel",
@@ -530,7 +529,8 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void cancelTask(task);
       },
       icon: "mdi-cancel",
-      hide: !isAdmin.value || !(task.allow_cancel && isCancelableTask(task)),
+      hide:
+        !canManageTasks.value || !(task.allow_cancel && isCancelableTask(task)),
     },
     {
       label: "background_tasks.remove_history",
@@ -539,7 +539,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       },
       icon: "mdi-delete",
       color: "error",
-      hide: !isAdmin.value || !canRemoveTask(task),
+      hide: !canManageTasks.value || !canRemoveTask(task),
     },
   ];
 

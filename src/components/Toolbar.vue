@@ -122,6 +122,7 @@
 
 <script setup lang="ts">
 import { $t } from "@/plugins/i18n";
+import { ACTIVE_DOT_CLASS } from "@/constants";
 import MenuItemIcon from "@/components/MenuItemIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -169,9 +170,6 @@ const props = withDefaults(defineProps<Props>(), {
   iconAction: undefined,
   iconLabel: undefined,
 });
-
-const ACTIVE_DOT_CLASS =
-  "bg-primary absolute -top-0.5 -right-0.5 size-1.5 rounded-full";
 
 const overflowMenuOpen = ref(false);
 

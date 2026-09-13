@@ -4,7 +4,7 @@
     <Card>
       <CardHeader>
         <CardTitle>{{ $t("settings.server_info") }}</CardTitle>
-        <CardAction v-if="isAdmin">
+        <CardAction v-if="canEditServerConfig">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -421,6 +421,7 @@ import {
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 import { useServerTime } from "@/composables/useServerTime";
 import { api } from "@/plugins/api";
+import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { Pencil } from "@lucide/vue";
@@ -436,7 +437,9 @@ const router = useRouter();
 
 const { offsetSeconds: clockOffsetSeconds } = useServerTime();
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canEditServerConfig = computed(() =>
+  authManager.hasScope(Scope.CONFIG_CORE_WRITE),
+);
 
 // older servers only report the (now deprecated) base_url
 const internalUrl = computed(

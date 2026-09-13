@@ -1,5 +1,7 @@
 import { computed, ComputedRef } from "vue";
 import { api } from "@/plugins/api";
+import { Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 
 export interface ItemsListingPreferences {
@@ -143,6 +145,8 @@ export function useUserPreferences() {
  */
 export async function pruneStaleProviderFilters(): Promise<void> {
   if (!store.currentUser?.preferences) return;
+  // listing the configured providers takes a scope not every role holds
+  if (!authManager.hasScope(Scope.CONFIG_PROVIDERS_READ)) return;
 
   let configuredIds: Set<string>;
   try {

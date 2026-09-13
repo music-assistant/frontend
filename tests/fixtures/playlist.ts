@@ -21,6 +21,7 @@ export function playlist(overrides: Partial<Playlist> = {}): Playlist {
     is_editable: false,
     supported_mediatypes: [MediaType.TRACK],
     is_dynamic: false,
+    access: null,
     ...overrides,
   });
 }

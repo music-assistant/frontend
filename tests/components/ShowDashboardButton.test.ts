@@ -3,15 +3,18 @@ import {
   EventType,
   type DashboardType,
   type EventMessage,
+  type Scope,
 } from "@/plugins/api/interfaces";
 import { Check } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const {
   apiMock,
   mockWaitForApiInitialization,
   isDashboardViewerMock,
+  hasScopeMock,
   toastMock,
   copyToClipboardMock,
 } = vi.hoisted(() => ({
@@ -21,6 +24,7 @@ const {
   },
   mockWaitForApiInitialization: vi.fn(),
   isDashboardViewerMock: vi.fn(() => false),
+  hasScopeMock: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { success: vi.fn(), error: vi.fn() },
   copyToClipboardMock: vi.fn(),
 }));
@@ -35,6 +39,7 @@ vi.mock("@/plugins/api/helpers", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
+    hasScope: hasScopeMock,
     isDashboardViewer: isDashboardViewerMock,
   },
 }));
@@ -135,6 +140,7 @@ describe("ShowDashboardButton", () => {
     mockCommands();
     isDashboardViewerMock.mockReset();
     isDashboardViewerMock.mockReturnValue(false);
+    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
     toastMock.success.mockReset();
     toastMock.error.mockReset();
     copyToClipboardMock.mockReset();
@@ -164,6 +170,17 @@ describe("ShowDashboardButton", () => {
     await flushAsync();
 
     expect(wrapper.find("button").exists()).toBe(false);
+  });
+
+  it("renders nothing and asks for no dashboards for a role that may not invite", async () => {
+    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+
+    const wrapper = mountButton();
+    await flushAsync();
+
+    expect(wrapper.find("button").exists()).toBe(false);
+    expect(apiMock.sendCommand).not.toHaveBeenCalled();
+    expect(apiMock.subscribe).not.toHaveBeenCalled();
   });
 
   it("defers fetching until the API connection is initialized", async () => {

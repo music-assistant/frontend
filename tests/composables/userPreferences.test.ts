@@ -27,6 +27,18 @@ vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
+import { authManager } from "@/plugins/auth";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+
 import {
   pruneStaleProviderFilters,
   useUserPreferences,
@@ -128,6 +140,9 @@ describe("pruneStaleProviderFilters", () => {
     mockGetProviderConfigs.mockResolvedValue([
       { instance_id: "spotify1" } as ProviderConfig,
     ]);
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
   });
 
   it("drops deconfigured provider ids from both itemsListing and discover row filters", async () => {
@@ -174,5 +189,22 @@ describe("pruneStaleProviderFilters", () => {
     await pruneStaleProviderFilters();
 
     expect(storeMock.currentUser.preferences).toEqual({});
+  });
+
+  it("leaves the filters alone for a role that may not list the providers", async () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    storeMock.currentUser = {
+      user_id: "u1",
+      preferences: {
+        "discover.hiddenProviders.recently_played": ["removed1"],
+      },
+    };
+
+    await pruneStaleProviderFilters();
+
+    expect(mockGetProviderConfigs).not.toHaveBeenCalled();
+    expect(mockUpdateUser).not.toHaveBeenCalled();
   });
 });
