@@ -81,14 +81,22 @@
     <!-- the sheet above sits at z-100000, so the name dialog has to clear it -->
     <DialogContent class="sm:max-w-[420px] z-[100001]">
       <DialogHeader>
-        <DialogTitle>{{ $t("new_playlist_name") }}</DialogTitle>
+        <DialogTitle>{{ $t("new_playlist") }}</DialogTitle>
       </DialogHeader>
       <form
         id="new-playlist-name-form"
         class="py-2"
         @submit.prevent="confirmNewPlaylist"
       >
-        <Input v-model="newPlaylistName" autocomplete="off" autofocus />
+        <label for="new-playlist-name" class="mb-2 block text-sm font-medium">{{
+          $t("new_playlist_name")
+        }}</label>
+        <Input
+          id="new-playlist-name"
+          v-model="newPlaylistName"
+          autocomplete="off"
+          autofocus
+        />
       </form>
       <DialogFooter>
         <Button
