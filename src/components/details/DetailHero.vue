@@ -12,6 +12,7 @@
         v-if="backdropStyle"
         :key="backdrop"
         class="detail-hero__backdrop"
+        :class="{ 'detail-hero__backdrop--blurred': blurBackdrop }"
         :style="backdropStyle"
       ></div>
     </Transition>
@@ -60,12 +61,16 @@ export interface Props {
   item?: MediaItemType;
   // the artwork painted behind the text, as an image url
   backdrop?: string;
+  // for a backdrop that only stands in for missing wide art, so it reads as
+  // colour rather than a picture
+  blurBackdrop?: boolean;
   height?: number;
   phoneHeight?: number;
 }
 const props = withDefaults(defineProps<Props>(), {
   item: undefined,
   backdrop: undefined,
+  blurBackdrop: false,
   height: 440,
   phoneHeight: 340,
 });
@@ -133,6 +138,12 @@ async function buildMenu(item?: MediaItemType) {
   background-repeat: no-repeat;
   background-size: cover;
 }
+/* scaled up so the blur has artwork to bleed from instead of the page behind it */
+.detail-hero__backdrop--blurred {
+  filter: blur(44px) saturate(1.35);
+  transform: scale(1.2);
+}
+
 /* a new backdrop fades in over the one it replaces; both layers are
    absolutely positioned, so they crossfade */
 .detail-hero-backdrop-enter-active,

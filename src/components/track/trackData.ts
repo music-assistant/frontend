@@ -149,22 +149,27 @@ export function trackReleaseYear(track: Track): number | undefined {
   return releaseDate ? new Date(releaseDate).getUTCFullYear() : undefined;
 }
 
+export interface TrackBackdrop {
+  // undefined when the track has no artwork at all
+  url?: string;
+  // the cover standing in for missing wide art, which the hero blurs so it
+  // reads as colour instead of a second copy of the artwork beside it
+  blurred: boolean;
+}
+
 /**
  * The artwork behind the track hero: wide art (fanart, then landscape) of the
- * track or its album, else of the given artist. Undefined when there is none,
- * since the cover already sits in the hero and repeating it adds nothing. No
+ * track or its album, else of the given artist, else the cover to blur. No
  * size is passed, so the server serves the original image.
  */
-export function trackBackdrop(
-  track: Track,
-  artist?: Artist,
-): string | undefined {
-  return (
+export function trackBackdrop(track: Track, artist?: Artist): TrackBackdrop {
+  const wide =
     getImageThumbForItem(track, ImageType.FANART) ||
     getImageThumbForItem(track, ImageType.LANDSCAPE) ||
     getImageThumbForItem(artist, ImageType.FANART) ||
-    getImageThumbForItem(artist, ImageType.LANDSCAPE)
-  );
+    getImageThumbForItem(artist, ImageType.LANDSCAPE);
+  if (wide) return { url: wide, blurred: false };
+  return { url: getImageThumbForItem(track, ImageType.THUMB), blurred: true };
 }
 
 /** Whether the two tracks share a provider mapping, i.e. are the same recording. */

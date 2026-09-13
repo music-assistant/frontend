@@ -85,7 +85,7 @@ vi.mock("@/components/track/trackData", async (importOriginal) => ({
 vi.mock("@/components/track/TrackHero.vue", () => ({
   default: {
     name: "TrackHero",
-    props: ["item", "backdrop"],
+    props: ["item", "backdrop", "blurBackdrop"],
     template: "<div data-hero />",
   },
 }));
@@ -315,9 +315,10 @@ describe("TrackDetails", () => {
       }),
     );
 
-    // nothing is painted while the lookup runs: the cover already sits in the hero
+    // the blurred cover stands in while the lookup runs
     expect(mockGetArtist).toHaveBeenCalledWith("a1", "spotify--abc");
-    expect(hero(wrapper).props("backdrop")).toBeUndefined();
+    expect(hero(wrapper).props("backdrop")).toBe("data:image/png;base64,cover");
+    expect(hero(wrapper).props("blurBackdrop")).toBe(true);
 
     resolveArtist(
       artist({
@@ -329,6 +330,7 @@ describe("TrackDetails", () => {
     expect(hero(wrapper).props("backdrop")).toBe(
       "data:image/png;base64,artist-fanart",
     );
+    expect(hero(wrapper).props("blurBackdrop")).toBe(false);
   });
 
   it("ignores an artist response that arrives after the track changed", async () => {
@@ -364,6 +366,9 @@ describe("TrackDetails", () => {
 
     // the second track has no wide art of its own, so the late fanart of the
     // first track's artist must not end up behind it
-    expect(hero(wrapper).props("backdrop")).toBeUndefined();
+    expect(hero(wrapper).props("backdrop")).toBe(
+      "data:image/png;base64,cover-2",
+    );
+    expect(hero(wrapper).props("blurBackdrop")).toBe(true);
   });
 });

@@ -2,7 +2,8 @@
   <section class="track-details">
     <TrackHero
       :item="itemDetails"
-      :backdrop="backdrop"
+      :backdrop="backdrop.url"
+      :blur-backdrop="backdrop.blurred"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -150,7 +151,7 @@ const { lyrics, appearsOnItems, versionItems, similarItems } = useTrackRowData(
 const backdrop = computed(() =>
   itemDetails.value
     ? trackBackdrop(itemDetails.value, backdropArtist.value ?? undefined)
-    : undefined,
+    : { blurred: false },
 );
 
 const releasesMeta = computed(() => {

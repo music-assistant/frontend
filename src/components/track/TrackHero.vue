@@ -4,6 +4,7 @@
     :class="{ 'track-hero--phone': isPhone }"
     :item="item"
     :backdrop="backdrop"
+    :blur-backdrop="blurBackdrop"
     :height="400"
     :phone-height="360"
     @edit-rows="emit('edit-rows')"
@@ -150,6 +151,8 @@ export interface Props {
   item?: Track;
   // the artwork painted behind the text, as an image url
   backdrop?: string;
+  // whether that artwork is the cover standing in for missing wide art
+  blurBackdrop?: boolean;
 }
 const props = defineProps<Props>();
 

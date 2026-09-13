@@ -330,10 +330,13 @@ describe("trackData", () => {
           metadata: { images: [image(ImageType.LANDSCAPE, "album-wide")] },
         }),
       });
-      expect(trackBackdrop(withAlbum)).toBe("data:image/png;base64,fanart");
+      expect(trackBackdrop(withAlbum)).toEqual({
+        url: "data:image/png;base64,fanart",
+        blurred: false,
+      });
       expect(
         trackBackdrop({ ...withAlbum, metadata: { images: [cover] } }),
-      ).toBe("data:image/png;base64,album-wide");
+      ).toEqual({ url: "data:image/png;base64,album-wide", blurred: false });
     });
 
     it("falls back to the artist's wide art", () => {
@@ -341,15 +344,22 @@ describe("trackData", () => {
       const withFanart = artist({
         metadata: { images: [image(ImageType.FANART, "artist-fanart")] },
       });
-      expect(trackBackdrop(plain, withFanart)).toBe(
-        "data:image/png;base64,artist-fanart",
-      );
+      expect(trackBackdrop(plain, withFanart)).toEqual({
+        url: "data:image/png;base64,artist-fanart",
+        blurred: false,
+      });
     });
 
-    it("has no backdrop when only the cover exists", () => {
+    it("blurs the cover when there is no wide art to show", () => {
       const plain = track({ metadata: { images: [cover] } });
-      expect(trackBackdrop(plain, artist())).toBeUndefined();
-      expect(trackBackdrop(track())).toBeUndefined();
+      expect(trackBackdrop(plain, artist())).toEqual({
+        url: "data:image/png;base64,cover",
+        blurred: true,
+      });
+      expect(trackBackdrop(track())).toEqual({
+        url: undefined,
+        blurred: true,
+      });
     });
   });
 });
