@@ -296,6 +296,7 @@
     v-model:show="showAddProviderDialog"
     :provider-type="managesAllSources ? undefined : ProviderType.MUSIC"
     :multi-instance-only="!managesAllSources"
+    :self-service-only="!managesAllSources"
   />
   <ProviderAccessDialog
     v-model:open="showAccessDialog"
@@ -337,6 +338,7 @@ import {
   getProviderSharingTranslationKey,
   hasConfigurableAccess,
   isOwnMusicSource,
+  isSelfServiceProvider,
   servesNobody,
   shareCandidates,
   userDisplayName,
@@ -565,6 +567,7 @@ const reconfigureProvider = function (providerInstanceId: string) {
 
 const openProvider = function (provider: ProviderConfig) {
   if (
+    maySetUp(provider) &&
     providerRequiresReconfiguration(
       provider.status,
       api.providerManifests[provider.domain]?.has_setup_flow,
@@ -578,10 +581,22 @@ const openProvider = function (provider: ProviderConfig) {
 };
 
 const canReconfigure = function (provider: ProviderConfig) {
-  return canReconfigureProvider(
-    provider.status,
-    api.providerManifests[provider.domain]?.has_setup_flow,
-    provider.enabled,
+  return (
+    maySetUp(provider) &&
+    canReconfigureProvider(
+      provider.status,
+      api.providerManifests[provider.domain]?.has_setup_flow,
+      provider.enabled,
+    )
+  );
+};
+
+// reconfiguring a source sets it up again, which a member may only do for a
+// provider it may set up itself
+const maySetUp = function (provider: ProviderConfig) {
+  return (
+    managesAllSources.value ||
+    isSelfServiceProvider(api.providerManifests[provider.domain])
   );
 };
 

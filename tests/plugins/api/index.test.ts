@@ -340,6 +340,110 @@ describe("MusicAssistantApi error handling", () => {
     expect(api.supportsShareCandidates).toBe(true);
   });
 
+  it("lists the roles from schema 74 on", () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
+    expect(api.supportsRoles).toBe(false);
+
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
+    expect(api.supportsRoles).toBe(true);
+  });
+
+  it("loads the roles the server lists", async () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
+    const roles = [
+      {
+        role_id: UserRole.ADMIN,
+        name: "Administrator",
+        scopes: ["*"],
+        builtin: true,
+      },
+      { role_id: "kids-id", name: "Kids", scopes: [], builtin: false },
+    ];
+    const result = api.getRoles();
+
+    expect(transport.lastCommand.command).toBe("auth/roles");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: roles,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(roles);
+  });
+
+  it("builds the builtin roles from their scopes on an older server", async () => {
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 73 };
+    const result = api.getRoles();
+
+    expect(transport.lastCommand.command).toBe("auth/scopes");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: { [UserRole.ADMIN]: ["*"], [UserRole.GUEST]: ["library.read"] },
+      partial: false,
+    });
+    await expect(result).resolves.toEqual([
+      {
+        role_id: UserRole.ADMIN,
+        name: UserRole.ADMIN,
+        scopes: ["*"],
+        builtin: true,
+      },
+      {
+        role_id: UserRole.GUEST,
+        name: UserRole.GUEST,
+        scopes: ["library.read"],
+        builtin: true,
+      },
+    ]);
+  });
+
+  it("sends the role commands and leaves their errors to the caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const kids = {
+      role_id: "kids-id",
+      name: "Teens",
+      scopes: [],
+      builtin: false,
+    };
+
+    const created = api.createRole("Kids", ["library.write"]);
+    expect(transport.lastCommand.command).toBe("auth/role/create");
+    expect(transport.lastCommand.args).toEqual({
+      name: "Kids",
+      scopes: ["library.write"],
+    });
+    const rejection = expect(created).rejects.toMatchObject({
+      message: "Taken",
+    });
+    transport.receive(createErrorResult(transport.lastCommand, "Taken"));
+    await rejection;
+
+    const updated = api.updateRole("kids-id", { name: "Teens" });
+    expect(transport.lastCommand.command).toBe("auth/role/update");
+    expect(transport.lastCommand.args).toEqual({
+      role_id: "kids-id",
+      name: "Teens",
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: kids,
+      partial: false,
+    });
+    await expect(updated).resolves.toEqual(kids);
+
+    const deleted = api.deleteRole("kids-id");
+    expect(transport.lastCommand.command).toBe("auth/role/delete");
+    expect(transport.lastCommand.args).toEqual({ role_id: "kids-id" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: null,
+      partial: false,
+    });
+    await deleted;
+
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
   it("lets a role with queues.control play AI Radio from schema 75 on", () => {
     api.serverInfo.value = { ...SERVER_INFO, schema_version: 74 };
     expect(api.supportsAIRadioPlaybackScopes).toBe(false);
