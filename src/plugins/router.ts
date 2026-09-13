@@ -467,6 +467,14 @@ export const routes: RouteRecordRaw[] = [
         meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
       },
       {
+        path: "/library-automations",
+        name: "library-automations",
+        component: () =>
+          import(
+            /* webpackChunkName: "library-automations" */ "@/views/LibraryAutomationsView.vue"
+          ),
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>
