@@ -101,9 +101,42 @@ describe("ProfileSettings", () => {
     turn.resolve();
     await flushPromises();
 
+    // request and replacement both happen in that turn, so no write can start
+    // between them and be taken back off by an older reply
     expect(apiMock.updateUser).toHaveBeenCalledOnce();
     expect(storeMock.currentUser).toBe(renamed);
     expect(toastMock.success).toHaveBeenCalledOnce();
+
+    wrapper.unmount();
+  });
+
+  it("leaves an account that was signed in since the save alone", async () => {
+    const renamed = user({
+      user_id: "sam-1",
+      username: "sam-renamed",
+      display_name: "Sam",
+    });
+    let landSave: () => void = () => {};
+    apiMock.updateUser.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          landSave = () => resolve(renamed);
+        }),
+    );
+
+    const wrapper = mountSettings();
+    await wrapper.find("#username").setValue("sam-renamed");
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+
+    // somebody else is signed in before the save comes back
+    const alex = user({ user_id: "alex-1", username: "alex" });
+    storeMock.currentUser = alex;
+    landSave();
+    await flushPromises();
+
+    // the reply is about an account nobody is looking at any more
+    expect(storeMock.currentUser).toBe(alex);
 
     wrapper.unmount();
   });

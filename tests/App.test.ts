@@ -728,6 +728,48 @@ describe("App initialization", () => {
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
   });
 
+  it("leaves an account that was signed in since the event alone", async () => {
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    mockPruneStaleProviderFilters.mockClear();
+    const turn = createDeferred();
+    mockRunAfterPreferenceWrites.mockImplementationOnce(
+      async (task: () => Promise<unknown>) => {
+        await turn.promise;
+        return await task();
+      },
+    );
+
+    const updated = signalProvidersUpdated();
+    // somebody else is signed in before the refresh gets its turn
+    const alex = user({ user_id: "alex-id", username: "alex" });
+    storeMock.currentUser = alex;
+    turn.resolve();
+    await updated;
+
+    // the event was about an account nobody is signed in as any more
+    expect(apiMock.getCurrentUserInfo).not.toHaveBeenCalled();
+    expect(storeMock.currentUser).toBe(alex);
+    expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
+  });
+
+  it("leaves a copy of the user that came back for another account alone", async () => {
+    wrapper = await mountApp();
+    mockPruneStaleProviderFilters.mockClear();
+    authManagerMock.setCurrentUser.mockClear();
+    const signedIn = storeMock.currentUser;
+    apiMock.getCurrentUserInfo.mockResolvedValue(
+      user({ user_id: "alex-id", username: "alex" }),
+    );
+
+    await signalProvidersUpdated();
+
+    // a copy the server sent for somebody else is nobody's to be handed here
+    expect(storeMock.currentUser).toBe(signedIn);
+    expect(authManagerMock.setCurrentUser).not.toHaveBeenCalled();
+    expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
+  });
+
   it("leaves preferences alone when the user cannot be fetched", async () => {
     wrapper = await mountApp();
     mockPruneStaleProviderFilters.mockClear();

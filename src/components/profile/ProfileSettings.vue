@@ -283,18 +283,24 @@ const form = useForm({
       }
 
       // The reply carries the whole account, preferences and all, and it is
-      // what the store is handed below: a save that overtook a preference
-      // write on its way out would put the set back as it was before it, for
-      // the next write to send on. Taking a turn among them keeps this request
-      // behind whatever is already going out, so what comes back has it.
+      // what the store is handed: a save that overtook a preference write on
+      // its way out would put the set back as it was before it, and one that
+      // handed the store its reply after the next write had started would take
+      // that write off again. So both the request and the replacement happen
+      // in the one turn — and on the account that asked for them, which is not
+      // always the one signed in by the time the reply is in.
       const userId = user.value.user_id;
-      const updatedUser = await runAfterPreferenceWrites(() =>
-        api.updateUser(userId, updates, { suppressGlobalError: true }),
-      );
+      const updatedUser = await runAfterPreferenceWrites(async () => {
+        const saved = await api.updateUser(userId, updates, {
+          suppressGlobalError: true,
+        });
+        if (saved && store.currentUser?.user_id === userId) {
+          store.currentUser = saved;
+        }
+        return saved;
+      });
 
       if (updatedUser) {
-        store.currentUser = updatedUser;
-
         if (updates.username) {
           currentUsername.value = updatedUser.username || "";
         }

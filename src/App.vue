@@ -673,10 +673,23 @@ onMounted(async () => {
     // The refresh takes its turn among the preference writes: it waits for the ones on
     // their way out and holds up the ones after it until it is in, so nothing is pruned
     // or written from a snapshot older than the last write.
+    // It is about the account the event arrived for, as the prune below is about the one
+    // that started it: a copy fetched for a session that has since been signed out of
+    // must not land on whoever is signed in now.
     // Without a fresh user there is nothing safe to prune against, so leave it for next time.
+    const userId = store.currentUser?.user_id;
     const refreshed = await runAfterPreferenceWrites(async () => {
+      if (store.currentUser?.user_id !== userId) {
+        return false;
+      }
       const userInfo = await api.getCurrentUserInfo();
       if (!userInfo) {
+        return false;
+      }
+      if (
+        store.currentUser?.user_id !== userId ||
+        userInfo.user_id !== userId
+      ) {
         return false;
       }
       authManager.setCurrentUser(userInfo);
