@@ -225,6 +225,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { runAfterPreferenceWrites } from "@/composables/userPreferences";
 import { roleDisplayName } from "@/helpers/roles";
 import { profileSettingsSchema } from "@/lib/forms/profile";
 import { api, ApiCommandError } from "@/plugins/api";
@@ -281,9 +282,15 @@ const form = useForm({
         return;
       }
 
-      const updatedUser = await api.updateUser(user.value.user_id, updates, {
-        suppressGlobalError: true,
-      });
+      // The reply carries the whole account, preferences and all, and it is
+      // what the store is handed below: a save that overtook a preference
+      // write on its way out would put the set back as it was before it, for
+      // the next write to send on. Taking a turn among them keeps this request
+      // behind whatever is already going out, so what comes back has it.
+      const userId = user.value.user_id;
+      const updatedUser = await runAfterPreferenceWrites(() =>
+        api.updateUser(userId, updates, { suppressGlobalError: true }),
+      );
 
       if (updatedUser) {
         store.currentUser = updatedUser;
