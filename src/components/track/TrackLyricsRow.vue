@@ -77,7 +77,7 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
 
 <style scoped>
 .track-lyrics {
-  padding: 26px 28px 0;
+  padding: 20px 28px 8px;
   max-width: 900px;
 }
 .track-lyrics__titles {
@@ -85,7 +85,7 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   align-items: baseline;
   gap: 10px;
   min-width: 0;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .track-lyrics__title {
   margin: 0;
@@ -105,8 +105,8 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
   white-space: pre-wrap;
   cursor: pointer;
   display: -webkit-box;
-  -webkit-line-clamp: 6;
-  line-clamp: 6;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -147,15 +147,15 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
 
 @media (max-width: 768px) {
   .track-lyrics {
-    padding: 20px 16px 0;
+    padding: 16px 16px 4px;
   }
   .track-lyrics__title {
     font-size: 19px;
   }
   .track-lyrics__text {
     font-size: 14px;
-    -webkit-line-clamp: 4;
-    line-clamp: 4;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
   .track-lyrics__more {
     margin-top: 2px;
