@@ -1,7 +1,7 @@
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import { UserRole } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { user } from "../fixtures/user";
 
 const { apiMock, authMock, preferenceState, users } = vi.hoisted(() => ({
@@ -30,7 +30,13 @@ vi.mock("@/plugins/router", () => ({
   default: { push: vi.fn(), replace: vi.fn() },
 }));
 
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/plugins/i18n", () => ({
+  // the real one hands back the key it was given when it knows none, which is
+  // what the role label leans on
+  $t: (key: string) =>
+    ({ "auth.admin_role": "Administrator", "auth.user_role": "User" })[key] ??
+    key,
+}));
 
 vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
@@ -73,6 +79,8 @@ function members(wrapper: Awaited<ReturnType<typeof mountStep>>) {
   return wrapper.findAll("[data-testid=onboarding-household-member]");
 }
 
+let warnSpy: ReturnType<typeof vi.spyOn>;
+
 beforeEach(() => {
   users.list = [
     user({ user_id: "admin-1", username: "admin", display_name: "Marcel" }),
@@ -80,6 +88,11 @@ beforeEach(() => {
   apiMock.getAllUsers.mockReset();
   apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
   authMock.isAdmin.mockReturnValue(true);
+  warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  warnSpy.mockRestore();
 });
 
 describe("InviteMembersStep", () => {
@@ -93,6 +106,8 @@ describe("InviteMembersStep", () => {
         role: UserRole.SERVICE,
       }),
       user({ user_id: "guest-1", username: "guest", role: UserRole.GUEST }),
+      // an account nobody can sign in with is nobody who lives here
+      user({ user_id: "old-1", username: "moved-out", enabled: false }),
     ];
 
     const wrapper = await mountStep();
@@ -100,12 +115,43 @@ describe("InviteMembersStep", () => {
     const listed = members(wrapper);
     expect(listed).toHaveLength(2);
     expect(listed[0].text()).toContain("Marcel");
-    expect(listed[0].text()).toContain("auth.user_role");
+    expect(listed[0].text()).toContain("User");
     // no display name of their own: the username stands in for it
     expect(listed[1].text()).toContain("sam");
-    expect(listed[1].text()).toContain("auth.admin_role");
+    expect(listed[1].text()).toContain("Administrator");
     expect(wrapper.text()).not.toContain(HOMEASSISTANT_SYSTEM_USER);
-    expect(wrapper.text()).not.toContain("auth.guest_role");
+    expect(wrapper.text()).not.toContain("guest");
+    expect(wrapper.text()).not.toContain("moved-out");
+
+    wrapper.unmount();
+  });
+
+  it("says so when the household could not be loaded", async () => {
+    apiMock.getAllUsers.mockRejectedValue(new Error("boom"));
+
+    const wrapper = await mountStep();
+
+    // the api toasts its own failures; an unknown household is not an empty one
+    expect(members(wrapper)).toHaveLength(0);
+    expect(wrapper.find("[data-testid=onboarding-only-you]").exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).toContain(
+      "onboarding.steps.invite_members.load_failed",
+    );
+    // and there is still a way to add someone
+    expect(addButton(wrapper).exists()).toBe(true);
+    expect(warnSpy).toHaveBeenCalledOnce();
+
+    wrapper.unmount();
+  });
+
+  it("announces the household as it fills up", async () => {
+    const wrapper = await mountStep();
+
+    // a member added from here lands in a list that is already on screen, so
+    // the row only reaches a screen reader if the list is a live region
+    expect(wrapper.find("[aria-live=polite]").exists()).toBe(true);
 
     wrapper.unmount();
   });

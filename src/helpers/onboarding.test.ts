@@ -103,6 +103,25 @@ describe("onboarding step order", () => {
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([...BASE_ORDER]);
   });
 
+  it("still keeps a deferred step out of the tail without the plugins", () => {
+    // nothing to sit behind: the deferred music sources land ahead of the
+    // review, which is no place to leave something that is still to do
+    const withoutPlugins = ONBOARDING_STEPS.filter(
+      (candidate) => candidate.id !== "plugins",
+    );
+
+    expect(
+      stepIds(orderSteps(withoutPlugins, { intent: "phone_apps" })),
+    ).toEqual([
+      "intent",
+      "players",
+      "music_sources",
+      "core_settings",
+      "invite_members",
+      "finish",
+    ]);
+  });
+
   it("keeps the plugins optional in every order", () => {
     for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
       const ctx = context({ answers: intent ? { intent } : {} });

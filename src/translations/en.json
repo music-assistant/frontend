@@ -2571,11 +2571,13 @@
             },
             "core_settings": {
                 "title": "Check your server settings",
-                "description": "The name this server goes by, the address it is reached on at home, and the address to use from outside your home."
+                "description": "The name this server goes by, the address it is reached on at home, and the address to use from outside your home.",
+                "load_failed": "The server settings could not be loaded. You can change them later from the settings."
             },
             "invite_members": {
                 "title": "Add your household",
-                "description": "Everyone you live with gets an account of their own, with the players and music sources you give them access to."
+                "description": "Everyone you live with gets an account of their own, with the players and music sources you give them access to.",
+                "load_failed": "Your household could not be loaded. You can add members later from the settings."
             },
             "finish": {
                 "title": "Finish setup",

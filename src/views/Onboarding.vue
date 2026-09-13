@@ -44,6 +44,7 @@
       :is="stepView.component"
       v-if="stepView"
       :key="currentId"
+      ref="stepRef"
       v-bind="stepView.props"
       @advance="next"
       @navigate="goTo"
@@ -67,7 +68,7 @@ import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useOnboarding } from "@/composables/useOnboarding";
-import { firstStep, type OnboardingStepId } from "@/helpers/onboarding";
+import { firstStep, isTodo, type OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
@@ -122,6 +123,18 @@ const currentId = ref<OnboardingStepId | null>(null);
 const stepHeading = ref<HTMLHeadingElement | null>(null);
 const finishing = ref(false);
 
+/** What a step exposes to the wizard, which every step may leave to default. */
+interface StepInstance {
+  beforeLeave?: () => Promise<boolean>;
+}
+
+const stepRef = ref<StepInstance | null>(null);
+
+// The step on screen gets a say before the wizard moves off it, so a step with
+// something to save is not walked away from. A step that has nothing to hold on
+// to exposes nothing and the wizard simply moves on.
+const leaveStep = async () => (await stepRef.value?.beforeLeave?.()) ?? true;
+
 const currentIndex = computed(() =>
   steps.value.findIndex((step) => step.id === currentId.value),
 );
@@ -163,23 +176,26 @@ const goTo = function (id: OnboardingStepId) {
   currentId.value = id;
 };
 
-const back = function () {
+const back = async function () {
+  if (!(await leaveStep())) return;
   const previous = steps.value[currentIndex.value - 1];
   if (previous) goTo(previous.id);
 };
 
-// Forward skips whatever is already set up — the summary never is, so that is
-// where the wizard ends up once nothing is left. Back stays on the running
-// order, so a step that is done can still be revisited. Moving on from the
-// question unanswered is an answer of its own: the music hub is what the
-// wizard then runs as, instead of leaving the question to be asked again.
+// Forward skips whatever is already set up, bar the steps that are nothing to
+// do: a review is walked past rather than skipped, and the summary is where the
+// wizard ends up once nothing is left. Back stays on the running order, so a
+// step that is done can still be revisited. Moving on from the question
+// unanswered is an answer of its own: the music hub is what the wizard then
+// runs as, instead of leaving the question to be asked again.
 const next = async function () {
+  if (!(await leaveStep())) return;
   if (currentStep.value?.id === "intent" && ctx.value.answers.intent == null) {
     await setIntent("music_hub");
   }
   const following = steps.value
     .slice(currentIndex.value + 1)
-    .find((step) => !step.isDone(ctx.value));
+    .find((step) => !isTodo(step) || !step.isDone(ctx.value));
   if (following) goTo(following.id);
 };
 

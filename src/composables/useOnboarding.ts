@@ -71,7 +71,9 @@ const usersAnswered = ref(false);
 const dataLoaded = computed(() => configsLoaded.value && usersAnswered.value);
 
 // the load in flight, so a wizard and a checklist coming up together ask once
-let loadingData: Promise<void> | null = null;
+let loadingConfigs: Promise<void> | null = null;
+// the same for the users, which only the wizard ever asks for
+let loadingUsers: Promise<void> | null = null;
 // the session's subscription: this state has no component to outlive, so it is
 // taken out once, on the first call, and kept for as long as the app runs
 let unsubProvidersUpdated: (() => void) | undefined;
@@ -87,9 +89,20 @@ async function fetchProviderConfigs(): Promise<void> {
 }
 
 /**
- * Load the user accounts. Listing them is an admin command, and the household
- * is only ever asked about on the admin track, so nobody else fetches them.
+ * Load the provider configurations and keep them up to date. Only whoever asks
+ * pays for it: a guest, a dashboard viewer or anyone who is not an admin never
+ * calls this, so the list is never fetched for them.
  */
+async function loadProviderConfigs(): Promise<void> {
+  unsubProvidersUpdated ??= api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+    void fetchProviderConfigs();
+  });
+  loadingConfigs ??= fetchProviderConfigs().finally(() => {
+    loadingConfigs = null;
+  });
+  await loadingConfigs;
+}
+
 async function fetchUsers(): Promise<void> {
   if (!authManager.isAdmin()) {
     usersAnswered.value = true;
@@ -98,8 +111,10 @@ async function fetchUsers(): Promise<void> {
   try {
     users.value = await api.getAllUsers();
   } catch (error) {
-    // the api already told the user; without an answer the invite step is
-    // simply not done, and being optional it holds nothing up
+    // the api already told the user; a refresh that did not land leaves the
+    // household unknown rather than stale, and the invite step is then simply
+    // not done, which being optional holds nothing up
+    users.value = null;
     console.warn("Failed to load the users:", error);
   } finally {
     usersAnswered.value = true;
@@ -107,21 +122,25 @@ async function fetchUsers(): Promise<void> {
 }
 
 /**
- * Load what the steps decide from — the provider configurations and the users —
- * and keep the configurations up to date. Only whoever asks pays for it: a
- * guest, a dashboard viewer or anyone who is not an admin never calls this, so
- * nothing is fetched for them.
+ * Load the user accounts. Listing them is an admin command, and the household
+ * is only ever asked about on the admin track, so nobody else fetches them: a
+ * non-admin is answered without a request going out at all.
+ */
+async function loadUsers(): Promise<void> {
+  loadingUsers ??= fetchUsers().finally(() => {
+    loadingUsers = null;
+  });
+  await loadingUsers;
+}
+
+/**
+ * Load everything the wizard decides from. The sidebar checklist asks for the
+ * provider configurations on their own: it lists neither the household nor the
+ * server settings, so it has no reason to make every admin session wait on the
+ * users as well.
  */
 async function loadOnboardingData(): Promise<void> {
-  unsubProvidersUpdated ??= api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-    void fetchProviderConfigs();
-  });
-  loadingData ??= Promise.all([fetchProviderConfigs(), fetchUsers()])
-    .then(() => undefined)
-    .finally(() => {
-      loadingData = null;
-    });
-  await loadingData;
+  await Promise.all([loadProviderConfigs(), loadUsers()]);
 }
 
 /**
@@ -155,10 +174,12 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
 /**
  * Someone who lives here, as opposed to an account that is not a person: the
  * Home Assistant integration's, a service account or a guest, who is only ever
- * passing through.
+ * passing through. A disabled account is nobody who lives here either: it is
+ * an account that cannot be used until an admin switches it back on.
  */
 function isHouseholdMember(user: User): boolean {
   return (
+    user.enabled &&
     !isSystemUser(user) &&
     user.role !== UserRole.GUEST &&
     user.role !== UserRole.SERVICE
@@ -284,8 +305,12 @@ export function useOnboarding() {
     setIntent,
     dataLoaded,
     loadOnboardingData,
+    // the checklist's own pair: it decides off the provider configurations
+    // alone, so it waits for nothing else
+    configsLoaded,
+    loadProviderConfigs,
     // what a step that has just added a member asks for the users again with
-    reloadUsers: fetchUsers,
+    loadUsers,
     finish,
   };
 }

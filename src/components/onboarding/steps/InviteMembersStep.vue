@@ -4,8 +4,9 @@
       {{ $t("onboarding.steps.invite_members.description") }}
     </p>
 
-    <!-- fixed minimum height so the step does not jump once the users load -->
-    <div class="flex min-h-24 flex-col gap-2">
+    <!-- fixed minimum height so the step does not jump once the users load, and
+         a live region so a member who was just added is announced -->
+    <div class="flex min-h-24 flex-col gap-2" aria-live="polite">
       <ItemGroup v-if="members.length > 0" class="gap-2">
         <Item
           v-for="member in members"
@@ -19,9 +20,7 @@
           </ItemMedia>
           <ItemContent>
             <ItemTitle>{{ member.name }}</ItemTitle>
-            <ItemDescription>
-              {{ $t(`auth.${member.role}_role`) }}
-            </ItemDescription>
+            <ItemDescription>{{ roleLabel(member.role) }}</ItemDescription>
           </ItemContent>
         </Item>
       </ItemGroup>
@@ -34,11 +33,29 @@
       >
         {{ $t("onboarding.just_you_so_far") }}
       </p>
+
+      <!-- the household stayed unknown: the step says so rather than passing a
+           load that failed off as an empty house -->
+      <Empty
+        v-if="loadFailed"
+        class="border-border rounded-md border border-dashed py-6"
+      >
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <UserRound />
+          </EmptyMedia>
+          <EmptyTitle>
+            {{ $t("onboarding.steps.invite_members.load_failed") }}
+          </EmptyTitle>
+        </EmptyHeader>
+      </Empty>
     </div>
 
     <div>
       <Button
-        :variant="members.length > 1 ? 'secondary' : 'default'"
+        :variant="
+          memberCount != null && memberCount > 1 ? 'secondary' : 'default'
+        "
         data-testid="onboarding-add-member"
         @click="showCreateUserDialog = true"
       >
@@ -47,12 +64,18 @@
       </Button>
     </div>
 
-    <CreateUserDialog v-model="showCreateUserDialog" @created="reloadUsers" />
+    <CreateUserDialog v-model="showCreateUserDialog" @created="loadUsers" />
   </section>
 </template>
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   Item,
   ItemContent,
@@ -64,6 +87,7 @@ import {
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
 import { householdMembers, useOnboarding } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
+import { roleLabel } from "@/helpers/users";
 import { UserPlus, UserRound } from "@lucide/vue";
 import { computed, ref } from "vue";
 
@@ -75,14 +99,22 @@ defineEmits<{
   (e: "finish"): void;
 }>();
 
-const { ctx, reloadUsers } = useOnboarding();
+const { ctx, dataLoaded, loadUsers } = useOnboarding();
 
 const showCreateUserDialog = ref(false);
 
+// the household as the wizard counts it, which is what this step reads: the
+// list below is the same people, spelled out
+const memberCount = computed(() => ctx.value.memberCount);
 const members = computed(() => householdMembers());
 // the admin running the wizard is a household member themselves, so a
 // household of one is the admin on their own
 const onlyYou = computed(
-  () => ctx.value.memberCount != null && members.value.length <= 1,
+  () => memberCount.value != null && memberCount.value <= 1,
+);
+// the users answered, but with nothing to go on: the wizard only ever opens
+// this step once they have, so anything else is a load that did not land
+const loadFailed = computed(
+  () => dataLoaded.value && memberCount.value == null,
 );
 </script>

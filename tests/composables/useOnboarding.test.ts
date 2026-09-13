@@ -177,7 +177,7 @@ describe("useOnboarding", () => {
     expect(hasPending.value).toBe(true);
   });
 
-  it("decides nothing before the configurations are in", async () => {
+  it("decides nothing before the onboarding data is in", async () => {
     addProvider("spotify--1", "spotify", ProviderType.MUSIC);
 
     const { ctx, dataLoaded, loadOnboardingData } = (
@@ -197,7 +197,23 @@ describe("useOnboarding", () => {
     expect(ctx.value.memberCount).toBe(1);
   });
 
-  it("asks for the configurations once while a load is in flight", async () => {
+  it("leaves the users alone for a checklist that never lists them", async () => {
+    const { configsLoaded, dataLoaded, loadProviderConfigs } = (
+      await loadModule()
+    ).useOnboarding();
+
+    await loadProviderConfigs();
+
+    // the sidebar checklist decides off the provider configurations alone, so
+    // an admin session pays for those and nothing else
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledOnce();
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+    expect(configsLoaded.value).toBe(true);
+    // and the wizard, which does ask about the household, is still waiting
+    expect(dataLoaded.value).toBe(false);
+  });
+
+  it("asks for everything it needs once while a load is in flight", async () => {
     let handOverConfigs: (configs: unknown[]) => void = () => {};
     apiMock.getProviderConfigs.mockImplementation(
       () =>
@@ -257,14 +273,15 @@ describe("useOnboarding", () => {
       }),
       user({ user_id: "guest-1", username: "guest", role: UserRole.GUEST }),
       user({ user_id: "service-1", username: "bot", role: UserRole.SERVICE }),
+      user({ user_id: "old-1", username: "moved-out", enabled: false }),
     ];
 
     const module = await loadModule();
     const { ctx, pending } = module.useOnboarding();
     await module.useOnboarding().loadOnboardingData();
 
-    // the Home Assistant account, the guests and the service accounts are not
-    // people who live here
+    // the Home Assistant account, the guests, the service accounts and an
+    // account nobody can sign in with are not people who live here
     expect(ctx.value.memberCount).toBe(2);
     expect(module.householdMembers()).toEqual([
       { user_id: "admin-1", name: "Marcel", role: "user" },
@@ -307,15 +324,31 @@ describe("useOnboarding", () => {
 
   it("takes the household the server lists again once a member was added", async () => {
     const module = await loadModule();
-    const { ctx, reloadUsers } = module.useOnboarding();
+    const { ctx, loadUsers } = module.useOnboarding();
     await module.useOnboarding().loadOnboardingData();
     expect(ctx.value.memberCount).toBe(1);
 
     users.list.push(user({ user_id: "partner-1", username: "sam" }));
-    await reloadUsers();
+    await loadUsers();
 
     expect(apiMock.getAllUsers).toHaveBeenCalledTimes(2);
     expect(ctx.value.memberCount).toBe(2);
+  });
+
+  it("takes the household as unknown again when a refresh does not land", async () => {
+    const module = await loadModule();
+    const { ctx, loadUsers } = module.useOnboarding();
+    await module.useOnboarding().loadOnboardingData();
+    expect(ctx.value.memberCount).toBe(1);
+
+    apiMock.getAllUsers.mockRejectedValue(new Error("boom"));
+    await loadUsers();
+
+    // a household that could not be listed again is unknown, not the one the
+    // server last happened to say
+    expect(ctx.value.memberCount).toBeNull();
+    expect(module.householdMembers()).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledOnce();
   });
 
   it("lists a configuration that is set up but needs attention", async () => {

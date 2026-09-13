@@ -84,9 +84,10 @@ const isAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin;
 
 /**
  * A step that can be ticked off. The review steps and the summary are there to
- * be walked past, so they are never pending, never counted and never asked for.
+ * be walked past, so they are never pending, never counted and never asked for
+ * — and never skipped over either, which is what the wizard reads this for.
  */
-const isTodo = (step: OnboardingStep) => step.kind === "step";
+export const isTodo = (step: OnboardingStep): boolean => step.kind === "step";
 
 /** The admin track, in its base order. */
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
@@ -119,8 +120,9 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     id: "core_settings",
     kind: "review",
     appliesTo: isAdminTrack,
-    // there to be looked over: the server ships with settings that work, so
-    // nothing here is ever missing
+    // nothing to tick off: the server ships with settings that work, so there
+    // is never anything missing here. What keeps the wizard from walking past
+    // this step is its kind, not this answer.
     isDone: () => false,
   },
   {
@@ -169,8 +171,8 @@ export function orderSteps(
 function deferredIndex(steps: OnboardingStep[]): number {
   const pluginsIndex = steps.findIndex((step) => step.id === "plugins");
   if (pluginsIndex !== -1) return pluginsIndex + 1;
-  // nothing to sit behind: stay ahead of the steps that only round the wizard
-  // off, which are no place to leave something still to do
+  // nothing to sit behind: stay ahead of the first step that is nothing to do,
+  // which is no place to leave something that still is
   const tailIndex = steps.findIndex((step) => !isTodo(step));
   if (tailIndex !== -1) return tailIndex;
   return steps.length;
@@ -211,10 +213,9 @@ export function checklistPendingSteps(
 
 /**
  * The step the wizard opens on. A requested id (`?step=`) wins as long as it
- * applies — including an already done step, or a review, so the checklist can
- * link back to one — and anything else falls back to the first step still to
- * do, which a review never is: the wizard walks the user into one, it does not
- * drop them in it.
+ * applies, an already done step included, and anything else falls back to the
+ * first step still to do, which a review never is: the wizard walks the user
+ * into one, it does not drop them in it.
  */
 export function firstStep(
   ctx: OnboardingContext,

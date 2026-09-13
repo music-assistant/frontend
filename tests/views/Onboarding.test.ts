@@ -6,6 +6,7 @@ import { user } from "../fixtures/user";
 const {
   apiMock,
   authMock,
+  coreForm,
   preferenceState,
   providerConfigs,
   routerMock,
@@ -20,11 +21,20 @@ const {
     getAllUsers: vi.fn(),
     getCoreConfig: vi.fn(),
     getProviderConfigs: vi.fn(),
+    saveCoreConfig: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
     sendCommand: vi.fn(),
     serverInfo: { value: { onboard_done: false } },
   },
   authMock: { isAdmin: vi.fn(() => true) },
+  // the settings form as the server settings step drives it: what it is holding
+  // on to when it comes up, whether those values validate, and what the user
+  // typed, as the form hands it over
+  coreForm: {
+    hasUnsavedChanges: false,
+    valuesValidate: true,
+    values: { server_name: "Living room" },
+  },
   // replaced with a real ref by the userPreferences mock factory below
   preferenceState: {
     intent: { value: undefined } as { value?: string },
@@ -48,7 +58,7 @@ vi.mock("@/plugins/router", () => ({ default: routerMock }));
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
-vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
+vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock("vue-router", async () => {
   // the wizard watches ?step=, so the route it reads has to be reactive for a
@@ -75,6 +85,22 @@ vi.mock("@/components/users/CreateUserDialog.vue", () => ({
 vi.mock("@/views/settings/EditConfig.vue", () => ({
   default: {
     props: ["configEntries", "disabled", "showAdvancedSettings"],
+    emits: ["submit"],
+    setup(
+      _props: unknown,
+      {
+        emit,
+      }: { emit: (event: "submit", values: Record<string, string>) => void },
+    ) {
+      return {
+        hasUnsavedChanges: coreForm.hasUnsavedChanges,
+        saveFailed: () => {},
+        saveSucceeded: () => {},
+        submit: async () => {
+          if (coreForm.valuesValidate) emit("submit", coreForm.values);
+        },
+      };
+    },
     template: "<div data-testid='onboarding-core-config' />",
   },
 }));
@@ -181,8 +207,12 @@ describe("Onboarding wizard", () => {
         },
       },
     });
+    apiMock.saveCoreConfig.mockReset();
+    apiMock.saveCoreConfig.mockResolvedValue(undefined);
     apiMock.subscribe.mockClear();
     authMock.isAdmin.mockReturnValue(true);
+    coreForm.hasUnsavedChanges = false;
+    coreForm.valuesValidate = true;
     preferenceState.intent.value = undefined;
     routeState.route.query = {};
     routerMock.push.mockReset();
@@ -506,6 +536,82 @@ describe("Onboarding wizard", () => {
       "onboarding.steps.core_settings.title",
     );
     expect(apiMock.getCoreConfig).toHaveBeenCalledWith("webserver");
+
+    wrapper.unmount();
+  });
+
+  it("saves the server settings before it moves on", async () => {
+    routeState.route.query = { step: "core_settings" };
+    coreForm.hasUnsavedChanges = true;
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // Next is the only thing that moves the wizard, and it takes the settings
+    // the user typed with it instead of leaving them behind
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "webserver",
+      coreForm.values,
+    );
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.invite_members.title",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("stays on a step that is not done with the user yet", async () => {
+    routeState.route.query = { step: "core_settings" };
+    coreForm.hasUnsavedChanges = true;
+    coreForm.valuesValidate = false;
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+
+    // the form is showing the user what is wrong with what they typed, so
+    // there is nothing to save and neither way out of the step moves
+    expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.core_settings.title",
+    );
+
+    await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.core_settings.title",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("walks back through the steps it came past", async () => {
+    addEveryProvider();
+    addMember("sam-1");
+    preferenceState.intent.value = "music_hub";
+    routeState.route.query = { step: "finish" };
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    // back stays on the running order, so a step that is done — or one there
+    // was nothing to do on — can still be revisited
+    for (const title of [
+      "onboarding.steps.invite_members.title",
+      "onboarding.steps.core_settings.title",
+    ]) {
+      await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+      await flushPromises();
+      expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+        title,
+      );
+    }
 
     wrapper.unmount();
   });
