@@ -264,6 +264,18 @@ describe("trackData", () => {
         ),
       ).toBe("OGG 160");
     });
+
+    it("names nothing when the codec and the container are both unknown", () => {
+      expect(
+        audioFormatLabel(
+          audioFormat({
+            content_type: ContentType.UNKNOWN,
+            codec_type: ContentType.UNKNOWN,
+            bit_rate: 160,
+          }),
+        ),
+      ).toBeUndefined();
+    });
   });
 
   describe("releaseSubtitle", () => {
@@ -324,7 +336,7 @@ describe("trackData", () => {
       ).toBe("data:image/png;base64,album-wide");
     });
 
-    it("falls back to the artist's wide art, then the track's cover", () => {
+    it("falls back to the artist's wide art", () => {
       const plain = track({ metadata: { images: [cover] } });
       const withFanart = artist({
         metadata: { images: [image(ImageType.FANART, "artist-fanart")] },
@@ -332,9 +344,11 @@ describe("trackData", () => {
       expect(trackBackdrop(plain, withFanart)).toBe(
         "data:image/png;base64,artist-fanart",
       );
-      expect(trackBackdrop(plain, artist())).toBe(
-        "data:image/png;base64,cover",
-      );
+    });
+
+    it("has no backdrop when only the cover exists", () => {
+      const plain = track({ metadata: { images: [cover] } });
+      expect(trackBackdrop(plain, artist())).toBeUndefined();
       expect(trackBackdrop(track())).toBeUndefined();
     });
   });

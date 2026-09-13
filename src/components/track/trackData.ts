@@ -112,9 +112,12 @@ export function bestAudioFormat(track: Track): AudioFormat | undefined {
 /**
  * A short label for an audio format: "FLAC 24/96" (bit depth / sample rate in
  * kHz) for a lossless codec, "MP3 320" (bit rate in kbps) for a lossy one.
+ * Undefined for a format whose codec and container are both unknown, which
+ * has nothing worth naming.
  */
-export function audioFormatLabel(format: AudioFormat): string {
+export function audioFormatLabel(format: AudioFormat): string | undefined {
   const codec = codecOf(format);
+  if (codec === ContentType.UNKNOWN) return undefined;
   const name = codec.toUpperCase();
   if (LOSSLESS_CODECS.has(codec)) {
     if (!format.bit_depth || !format.sample_rate) return name;
@@ -148,7 +151,8 @@ export function trackReleaseYear(track: Track): number | undefined {
 
 /**
  * The artwork behind the track hero: wide art (fanart, then landscape) of the
- * track or its album, else of the given artist, else the track's cover. No
+ * track or its album, else of the given artist. Undefined when there is none,
+ * since the cover already sits in the hero and repeating it adds nothing. No
  * size is passed, so the server serves the original image.
  */
 export function trackBackdrop(
@@ -159,8 +163,7 @@ export function trackBackdrop(
     getImageThumbForItem(track, ImageType.FANART) ||
     getImageThumbForItem(track, ImageType.LANDSCAPE) ||
     getImageThumbForItem(artist, ImageType.FANART) ||
-    getImageThumbForItem(artist, ImageType.LANDSCAPE) ||
-    getImageThumbForItem(track, ImageType.THUMB)
+    getImageThumbForItem(artist, ImageType.LANDSCAPE)
   );
 }
 

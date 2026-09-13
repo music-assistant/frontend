@@ -315,9 +315,9 @@ describe("TrackDetails", () => {
       }),
     );
 
-    // the cover is painted while the lookup runs
+    // nothing is painted while the lookup runs: the cover already sits in the hero
     expect(mockGetArtist).toHaveBeenCalledWith("a1", "spotify--abc");
-    expect(hero(wrapper).props("backdrop")).toBe("data:image/png;base64,cover");
+    expect(hero(wrapper).props("backdrop")).toBeUndefined();
 
     resolveArtist(
       artist({
@@ -362,8 +362,8 @@ describe("TrackDetails", () => {
     );
     await flushPromises();
 
-    expect(hero(wrapper).props("backdrop")).toBe(
-      "data:image/png;base64,cover-2",
-    );
+    // the second track has no wide art of its own, so the late fanart of the
+    // first track's artist must not end up behind it
+    expect(hero(wrapper).props("backdrop")).toBeUndefined();
   });
 });
