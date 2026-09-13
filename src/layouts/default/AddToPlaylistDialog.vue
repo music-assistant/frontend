@@ -76,11 +76,50 @@
       </ScrollArea>
     </SheetContent>
   </Sheet>
+
+  <Dialog v-model:open="showNameDialog">
+    <!-- the sheet above sits at z-100000, so the name dialog has to clear it -->
+    <DialogContent class="sm:max-w-[420px] z-[100001]">
+      <DialogHeader>
+        <DialogTitle>{{ $t("new_playlist_name") }}</DialogTitle>
+      </DialogHeader>
+      <form
+        id="new-playlist-name-form"
+        class="py-2"
+        @submit.prevent="confirmNewPlaylist"
+      >
+        <Input v-model="newPlaylistName" autocomplete="off" autofocus />
+      </form>
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          @click="showNameDialog = false"
+          >{{ $t("cancel") }}</Button
+        >
+        <Button
+          type="submit"
+          form="new-playlist-name-form"
+          :disabled="!newPlaylistName.trim()"
+          >{{ $t("create") }}</Button
+        >
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -96,6 +135,7 @@ import type {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   Playlist,
+  ProviderInstance,
 } from "@/plugins/api/interfaces";
 import { MediaType, ProviderFeature, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -110,6 +150,9 @@ const playlists = ref<Playlist[]>([]);
 const createPlaylistProviders = ref<string[]>([]);
 const parentItem = ref<MediaItemType>();
 const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
+const showNameDialog = ref(false);
+const newPlaylistName = ref("");
+const newPlaylistProvider = ref<ProviderInstance>();
 
 watch(show, (open) => {
   store.dialogActive = open;
@@ -256,16 +299,33 @@ const addToPlaylist = async function (value: MediaItemType) {
   );
   close();
 };
-const newPlaylist = async function (provId: string) {
+const newPlaylist = function (provId: string) {
   const refItem = selectedItems.value.length
     ? selectedItems.value[0]
     : undefined;
   if (!refItem) return;
   const provider = api.getProvider(provId);
   if (!provider) return;
-  const name = prompt($t("new_playlist_name"));
-  if (!name) return;
+  newPlaylistProvider.value = provider;
+  newPlaylistName.value = "";
+  showNameDialog.value = true;
+};
 
+const confirmNewPlaylist = async function () {
+  const name = newPlaylistName.value.trim();
+  const provider = newPlaylistProvider.value;
+  if (!name || !provider) return;
+  showNameDialog.value = false;
+  await createNamedPlaylist(name, provider);
+};
+
+const close = function () {
+  show.value = false;
+};
+
+/** Creates the playlist on the provider and adds the selected item(s) to it. */
+async function createNamedPlaylist(name: string, provider: ProviderInstance) {
+  const refItem = selectedItems.value[0];
   let supportedMediaTypes: MediaType[] = [];
   if (
     provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE_MIXED)
@@ -301,17 +361,13 @@ const newPlaylist = async function (provId: string) {
     // otherwise the playlist must support the mediatype of the selected item
     supportedMediaTypes = [refItem.media_type];
   }
-  const newPlaylist = await api.createPlaylist(
+  const playlist = await api.createPlaylist(
     name,
-    provId,
+    provider.instance_id,
     supportedMediaTypes,
   );
-  addToPlaylist(newPlaylist);
-};
-
-const close = function () {
-  show.value = false;
-};
+  addToPlaylist(playlist);
+}
 </script>
 
 <style scoped>
