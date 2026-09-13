@@ -1,14 +1,19 @@
 import CommandCenter from "@/components/CommandCenter.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import type { SearchTarget } from "@/composables/useProgressiveSearch";
 import { MediaType, type Player } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Ref } from "vue";
 
 const state = vi.hoisted(() => ({
   resultsByType: {} as Record<string, unknown[]>,
   // real search results arrive through reactive state; tests emulate that by
   // bumping this after mutating resultsByType outside a query change
   bumpResults: () => {},
+  // the source selection the palette hands to the search composable
+  providersRef: undefined as Ref<string[]> | undefined,
+  providerTargets: { value: [] as SearchTarget[] },
   players: [] as unknown[],
   prefs: {} as Record<string, unknown>,
   searchSpy: vi.fn(),
@@ -53,16 +58,22 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
   state.bumpResults = () => {
     resultsVersion.value += 1;
   };
+  const providerTargets = ref<SearchTarget[]>([]);
+  state.providerTargets = providerTargets;
   return {
     ...actual,
-    useProgressiveSearch: () => ({
-      loading: computed(() => state.loading.value),
-      search: state.searchSpy,
-      filteredItems: (mediaType: string) => {
-        void resultsVersion.value;
-        return state.resultsByType[mediaType] ?? [];
-      },
-    }),
+    useProgressiveSearch: (options: { providers?: Ref<string[]> }) => {
+      state.providersRef = options.providers;
+      return {
+        loading: computed(() => state.loading.value),
+        search: state.searchSpy,
+        providerTargets,
+        filteredItems: (mediaType: string) => {
+          void resultsVersion.value;
+          return state.resultsByType[mediaType] ?? [];
+        },
+      };
+    },
   };
 });
 
@@ -74,11 +85,21 @@ vi.mock("@/composables/useOrderedPlayers", async () => {
 });
 
 vi.mock("@/composables/userPreferences", async () => {
-  const { computed } = await import("vue");
+  const { computed, ref } = await import("vue");
+  // the real composable applies a write on the client right away, so every
+  // getPreference computed sees it; the version bump stands in for that
+  const prefsVersion = ref(0);
+  state.setPreferenceSpy.mockImplementation((key: string, value: unknown) => {
+    state.prefs[key] = value;
+    prefsVersion.value += 1;
+  });
   return {
     useUserPreferences: () => ({
       getPreference: (key: string, defaultValue: unknown) =>
-        computed(() => state.prefs[key] ?? defaultValue),
+        computed(() => {
+          void prefsVersion.value;
+          return state.prefs[key] ?? defaultValue;
+        }),
       setPreference: state.setPreferenceSpy,
     }),
   };
@@ -117,6 +138,17 @@ vi.mock("@/components/navigation/utils/getMenuItems", () => ({
     },
   ],
 }));
+
+const SPOTIFY_TARGET: SearchTarget = {
+  id: "spotify",
+  name: "Spotify",
+  iconDomain: "spotify",
+};
+const FILES_TARGET: SearchTarget = {
+  id: "filesystem_local--1",
+  name: "Music files",
+  iconDomain: "filesystem_local",
+};
 
 function makePlayer(id: string, name: string): Player {
   return {
@@ -195,6 +227,19 @@ function pagesChip(wrapper: ReturnType<typeof mountPalette>) {
     .find((chip) => chip.text() === "pages")!;
 }
 
+/** The chips of the source row; only they carry a pressed state. */
+function sourceChips(wrapper: ReturnType<typeof mountPalette>) {
+  return wrapper.findAll("button.command-center-chip[aria-pressed]");
+}
+
+function sourceChip(wrapper: ReturnType<typeof mountPalette>, text: string) {
+  const chip = sourceChips(wrapper).find(
+    (candidate) => candidate.text() === text,
+  );
+  expect(chip, `source chip "${text}"`).toBeDefined();
+  return chip!;
+}
+
 /** Headings of the result groups currently rendered. */
 function groupHeadings(wrapper: ReturnType<typeof mountPalette>) {
   return wrapper.findAll("section h3").map((heading) => heading.text());
@@ -218,6 +263,8 @@ function itemByText(wrapper: ReturnType<typeof mountPalette>, text: string) {
 beforeEach(() => {
   vi.useFakeTimers();
   state.resultsByType = {};
+  state.providersRef = undefined;
+  state.providerTargets.value = [SPOTIFY_TARGET, FILES_TARGET];
   state.players = [];
   state.prefs = {};
   state.loading.value = false;
@@ -646,6 +693,135 @@ describe("CommandCenter", () => {
 
     await itemByText(wrapper, "settings.settings").trigger("click");
     expect(state.routerPush).toHaveBeenCalledWith("/settings");
+
+    wrapper.unmount();
+  });
+
+  it("offers the library and each service as source chips", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    expect(sourceChips(wrapper).map((chip) => chip.text())).toEqual([
+      "searchtype_all",
+      "library",
+      "Spotify",
+      "Music files",
+    ]);
+    // nothing picked yet: everything is searched
+    expect(
+      sourceChip(wrapper, "searchtype_all").attributes("data-active"),
+    ).toBe("true");
+    expect(sourceChip(wrapper, "Spotify").attributes("data-active")).toBe(
+      "false",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("leaves the source row out when there is nothing to pick from", async () => {
+    state.providerTargets.value = [];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    expect(sourceChips(wrapper)).toHaveLength(0);
+
+    wrapper.unmount();
+  });
+
+  it("narrows the search to a clicked source and remembers it", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await sourceChip(wrapper, "Spotify").trigger("click");
+
+    expect(state.providersRef?.value).toEqual(["spotify"]);
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.sources", [
+      "spotify",
+    ]);
+    expect(sourceChip(wrapper, "Spotify").attributes("data-active")).toBe(
+      "true",
+    );
+    expect(sourceChip(wrapper, "Spotify").attributes("aria-pressed")).toBe(
+      "true",
+    );
+    expect(
+      sourceChip(wrapper, "searchtype_all").attributes("data-active"),
+    ).toBe("false");
+
+    wrapper.unmount();
+  });
+
+  it("starts from the remembered sources", async () => {
+    state.prefs["search.sources"] = ["library"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    expect(state.providersRef?.value).toEqual(["library"]);
+    expect(sourceChip(wrapper, "library").attributes("data-active")).toBe(
+      "true",
+    );
+    expect(
+      sourceChip(wrapper, "searchtype_all").attributes("data-active"),
+    ).toBe("false");
+
+    wrapper.unmount();
+  });
+
+  it("goes back to every source from the All chip", async () => {
+    state.prefs["search.sources"] = ["spotify"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await sourceChip(wrapper, "searchtype_all").trigger("click");
+
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.sources", []);
+    expect(state.providersRef?.value).toEqual([]);
+    expect(
+      sourceChip(wrapper, "searchtype_all").attributes("data-active"),
+    ).toBe("true");
+    expect(sourceChip(wrapper, "Spotify").attributes("data-active")).toBe(
+      "false",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("shows a pick of every source as All", async () => {
+    state.prefs["search.sources"] = ["library", "spotify"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await sourceChip(wrapper, "Music files").trigger("click");
+
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.sources", []);
+    expect(
+      sourceChip(wrapper, "searchtype_all").attributes("data-active"),
+    ).toBe("true");
+    expect(sourceChip(wrapper, "Music files").attributes("data-active")).toBe(
+      "false",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("hides the source row while scoped to pages", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    expect(sourceChips(wrapper)).toHaveLength(4);
+
+    // pages come from the menu, not from a source
+    await pagesChip(wrapper).trigger("click");
+    expect(sourceChips(wrapper)).toHaveLength(0);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(sourceChips(wrapper)).toHaveLength(4);
 
     wrapper.unmount();
   });
