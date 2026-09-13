@@ -113,11 +113,6 @@
         "enabled": "Enable",
         "invalid_input": "The input is invalid",
         "metadataproviders": "Metadata providers",
-        "musicproviders": "Music providers",
-        "need_help_setup_provider": "Need help setting up this provider ?",
-        "no_providers": "No Music Providers configured",
-        "no_providers_detail": "Start your Music Assistant experience by adding your Music providers below.",
-        "not_loaded": "The provider is not (yet) loaded",
         "player_address": "Address",
         "player_disabled": "This player is disabled",
         "player_id": "Player ID",
@@ -138,7 +133,6 @@
         "player_type_label": "Player type",
         "playerproviders": "Player providers",
         "players": "Players",
-        "pluginproviders": "Plugin providers",
         "provider_disabled": "Currently disabled",
         "provider_name": "Custom name",
         "set_custom_name": "Set a custom name",
@@ -164,7 +158,6 @@
         "radio_in_library": "Radio in library",
         "download_log": "Download logfile",
         "edit_group_members": "Edit group members",
-        "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
         "group_members": "Group members",
         "default": "default",
@@ -210,10 +203,6 @@
                 "bg_BG": "Bulgarian"
             }
         },
-        "no_music_providers": "No Music Providers configured",
-        "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
-        "no_player_providers": "No Player Providers configured",
-        "no_player_providers_detail": "Configure player providers to select devices where Music Assistant can output your music.",
         "dynamic_members": {
             "label": "Dynamic group members",
             "description": "Allow members to (temporarily) join\/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
@@ -405,15 +394,11 @@
             "label": "This group type does not support DSP when playing to multiple devices."
         },
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
-        "edit_provider": "Edit provider: {0}",
         "metadata": "Metadata",
-        "metadataprovider": "Metadata provider",
         "music": "Music",
-        "musicprovider": "Music provider",
         "player": "Player",
         "playerprovider": "Player provider",
         "plugin": "Plugin",
-        "pluginprovider": "Plugin provider",
         "providers_total": "{count} total | {count} total",
         "stage": {
             "label": "Stage",
@@ -430,10 +415,8 @@
             "label": "Force mobile layout",
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
-        "providers_description": "Manage your music sources, player providers and plugins",
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",
-        "provider_type": "Type",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
