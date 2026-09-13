@@ -9,6 +9,10 @@
     :phone-height="360"
     @edit-rows="emit('edit-rows')"
   >
+    <template #toolbar-append>
+      <DetailHeroFavorite v-if="item" :item="item" />
+    </template>
+
     <template v-if="item" #main>
       <div class="track-hero__main">
         <div class="track-hero__cover">
@@ -88,14 +92,6 @@
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
-            <DetailHeroButton
-              v-if="canEditLibrary"
-              :icon="item.favorite ? IconHeartFilled : IconHeart"
-              :label="favoriteButtonLabel"
-              icon-only
-              :pressed="item.favorite"
-              @click="api.toggleFavorite(item)"
-            />
             <span class="track-hero__badge" :title="providerBadgeTitle">
               <ProviderIcon :domain="providerDomain" :size="20" />
             </span>
@@ -125,6 +121,7 @@
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
+import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
@@ -138,12 +135,10 @@ import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
-import { Scope, type Track } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
+import type { Track } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { Disc, Music, Radio } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -171,11 +166,6 @@ const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
 const favoriteButtonLabel = computed(() =>
   props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
 );
-// favouring an item changes the library
-const canEditLibrary = computed(() =>
-  authManager.hasScope(Scope.LIBRARY_WRITE),
-);
-
 const providerDomain = computed(() =>
   props.item ? getProviderIconDomain(props.item) : "",
 );
