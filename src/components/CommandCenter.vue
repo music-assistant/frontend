@@ -69,6 +69,49 @@
       </button>
     </div>
 
+    <div
+      v-if="providerTargets.length && !pagesOnly"
+      class="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b px-4 py-2.5"
+    >
+      <button
+        type="button"
+        tabindex="-1"
+        class="command-center-chip inline-flex items-center gap-1.5"
+        :data-active="!selectedSources.length"
+        :aria-pressed="!selectedSources.length"
+        @mousedown.prevent
+        @click="selectedSources = []"
+      >
+        {{ $t("searchtype_all") }}
+      </button>
+      <button
+        type="button"
+        tabindex="-1"
+        class="command-center-chip inline-flex items-center gap-1.5"
+        :data-active="selectedSources.includes(LIBRARY_SEARCH_TARGET)"
+        :aria-pressed="selectedSources.includes(LIBRARY_SEARCH_TARGET)"
+        @mousedown.prevent
+        @click="toggleSource(LIBRARY_SEARCH_TARGET)"
+      >
+        <ProviderIcon domain="library" :size="14" />
+        {{ $t("library") }}
+      </button>
+      <button
+        v-for="target in providerTargets"
+        :key="target.id"
+        type="button"
+        tabindex="-1"
+        class="command-center-chip inline-flex items-center gap-1.5"
+        :data-active="selectedSources.includes(target.id)"
+        :aria-pressed="selectedSources.includes(target.id)"
+        @mousedown.prevent
+        @click="toggleSource(target.id)"
+      >
+        <ProviderIcon :domain="target.iconDomain" :size="14" />
+        {{ target.name }}
+      </button>
+    </div>
+
     <CommandList
       ref="listRef"
       :class="
@@ -241,6 +284,7 @@ import {
 } from "@/composables/useCommandCenter";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import {
+  LIBRARY_SEARCH_TARGET,
   SEARCHABLE_MEDIA_TYPES,
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
@@ -270,6 +314,7 @@ const FETCH_PER_TYPE = 15;
 const FETCH_SINGLE_TYPE = 50;
 const MAX_RECENT_SEARCHES = 5;
 const RECENT_SEARCHES_PREF_KEY = "search.recent";
+const SOURCES_PREF_KEY = "search.sources";
 
 const router = useRouter();
 const { isOpen, initialQuery, initialMediaTypes, open, close } =
@@ -290,10 +335,22 @@ const revealedSingle = ref(RESULTS_SINGLE_PAGE);
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-const { loading, search, filteredItems } = useProgressiveSearch({
-  mediaTypes: selectedMediaTypes,
-  limits: { single: FETCH_SINGLE_TYPE, multi: FETCH_PER_TYPE },
+// the sources to search, remembered per user; empty = the library and every
+// provider (the composable drops ids of providers that no longer exist)
+const savedSources = getPreference<string[]>(SOURCES_PREF_KEY, []);
+const selectedSources = computed({
+  get: () => savedSources.value,
+  set: (ids: string[]) => {
+    setPreference(SOURCES_PREF_KEY, ids);
+  },
 });
+
+const { loading, search, filteredItems, providerTargets } =
+  useProgressiveSearch({
+    mediaTypes: selectedMediaTypes,
+    providers: selectedSources,
+    limits: { single: FETCH_SINGLE_TYPE, multi: FETCH_PER_TYPE },
+  });
 
 const queryActive = computed(
   () => query.value.trim().length >= MIN_QUERY_LENGTH,
@@ -323,6 +380,22 @@ const selectAllScope = function () {
 const togglePagesOnly = function () {
   pagesOnly.value = !pagesOnly.value;
   if (pagesOnly.value) selectedMediaTypes.value = [];
+};
+
+const toggleSource = function (id: string) {
+  const current = selectedSources.value;
+  const next = current.includes(id)
+    ? current.filter((existing) => existing !== id)
+    : [...current, id];
+  // every source picked one by one is the same as no filter, so it is stored
+  // as the empty selection and only ever shown as the "All" chip
+  const allIds = [
+    LIBRARY_SEARCH_TARGET,
+    ...providerTargets.value.map((target) => target.id),
+  ];
+  selectedSources.value = allIds.every((sourceId) => next.includes(sourceId))
+    ? []
+    : next;
 };
 
 const clearQuery = function () {
