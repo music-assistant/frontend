@@ -129,32 +129,34 @@
         />
 
         <!-- provider mapping details -->
-        <div v-else-if="rowId === 'provider_mappings'" class="artist-admin">
+        <DetailAdminCard v-else-if="rowId === 'provider_mappings'">
           <ProviderDetails :item-details="itemDetails" />
-        </div>
+        </DetailAdminCard>
 
         <!-- media images -->
-        <div
+        <DetailAdminCard
           v-else-if="
             rowId === 'artwork' &&
             itemDetails.provider == 'library' &&
             itemDetails.metadata?.images
           "
-          class="artist-admin"
         >
           <MediaItemImages
             v-model="itemDetails.metadata.images"
             @update:model-value="UpdateItemInDb"
           />
-        </div>
+        </DetailAdminCard>
       </template>
     </template>
-    <ArtistRowsEditor
+    <RowsEditor
       v-if="itemDetails"
       v-model:open="rowsEditorOpen"
-      :artist="itemDetails"
+      :item="itemDetails"
+      :registry="artistRows"
       :available-ids="availableRows"
       :row-meta="rowMeta"
+      :subtitle="$t('edit_rows_subtitle')"
+      round-avatar
     />
     <br />
   </section>
@@ -164,14 +166,15 @@
 import ArtistBioRow from "@/components/artist/ArtistBioRow.vue";
 import ArtistHero from "@/components/artist/ArtistHero.vue";
 import ArtistReleaseShelf from "@/components/artist/ArtistReleaseShelf.vue";
-import ArtistRowsEditor from "@/components/artist/ArtistRowsEditor.vue";
 import {
+  artistRows,
   availableArtistRowIds,
-  resolveArtistRows,
   type ArtistRowId,
 } from "@/components/artist/artistRows";
 import ArtistSimilarShelf from "@/components/artist/ArtistSimilarShelf.vue";
 import ArtistTopTracksRow from "@/components/artist/ArtistTopTracksRow.vue";
+import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
+import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
@@ -216,7 +219,7 @@ const availableRows = computed(() =>
 
 // reads the user's preferences from the store, so the page follows the editor
 const visibleRows = computed(() => {
-  const { order, hidden } = resolveArtistRows(availableRows.value);
+  const { order, hidden } = artistRows.resolve(availableRows.value);
   return order.filter((rowId) => !hidden.has(rowId));
 });
 
@@ -422,74 +425,3 @@ function listingRoute(listing: string): RouteLocationRaw | undefined {
   };
 }
 </script>
-
-<style scoped>
-/* the shared admin sections keep their own toolbar and content, but take the
-   page's row title and gutter and sit in a card each; their inline bottom margin
-   is the only spacing they set themselves, hence the override */
-.artist-admin :deep(section) {
-  margin: 16px 28px 0 !important;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  overflow: hidden;
-}
-.artist-admin :deep(.v-toolbar-title) {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-}
-.artist-admin :deep(.v-divider) {
-  display: none;
-}
-/* the lists and image tiles inside sit on the card instead of painting their own surface */
-.artist-admin :deep(.v-container) {
-  padding: 0 12px 12px;
-}
-.artist-admin :deep(.v-list),
-.artist-admin :deep(.panel-item) {
-  background: transparent;
-  box-shadow: none;
-}
-.artist-admin :deep(.v-list) {
-  padding: 0;
-}
-/* uniform square image tiles instead of percentage columns, one row per image type */
-.artist-admin :deep(.v-row) {
-  margin: 0 0 12px;
-  gap: 12px;
-}
-.artist-admin :deep(.v-row:empty) {
-  display: none;
-}
-.artist-admin :deep(.v-col) {
-  flex: 0 0 auto;
-  width: 176px;
-  max-width: 176px;
-  padding: 0;
-}
-.artist-admin :deep(.panel-item) {
-  padding: 8px;
-  /* outweighs the equally-!important radius the card's tile utility carries */
-  border-radius: 12px !important;
-}
-.artist-admin :deep(.panel-item:hover) {
-  background: rgba(var(--v-theme-on-surface), 0.08);
-  box-shadow: none;
-}
-.artist-admin :deep(.panel-item .v-img) {
-  aspect-ratio: 1 / 1;
-  border-radius: 8px;
-}
-.artist-admin :deep(.panel-item .v-img__img) {
-  object-fit: cover;
-}
-
-@media (max-width: 768px) {
-  .artist-admin :deep(section) {
-    margin: 12px 16px 0 !important;
-  }
-  .artist-admin :deep(.v-toolbar-title) {
-    font-size: 19px;
-  }
-}
-</style>
