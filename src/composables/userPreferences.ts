@@ -52,19 +52,31 @@ export async function setUserPreferences(
   values: Record<string, unknown>,
   options?: CommandOptions,
 ): Promise<boolean> {
-  const write = pendingWrite.then(() => writeUserPreferences(values, options));
+  // whose answer this is, read before it queues: what it is written onto has
+  // to be the account that gave it
+  const userId = store.currentUser?.user_id;
+  const write = pendingWrite.then(() =>
+    writeUserPreferences(userId, values, options),
+  );
   // a write that went wrong is nothing for the next one to wait on forever
   pendingWrite = write.catch(() => {});
   return await write;
 }
 
 async function writeUserPreferences(
+  userId: string | undefined,
   values: Record<string, unknown>,
   options?: CommandOptions,
 ): Promise<boolean> {
   const currentUser = store.currentUser;
   if (!currentUser) {
     console.warn("Cannot set preference: no user logged in");
+    return false;
+  }
+  // signing out and back in, or switching accounts, while this waited its turn
+  // leaves it nothing to write onto: it belongs to the account that gave it
+  if (currentUser.user_id !== userId) {
+    console.warn("Cannot set preference: the account changed since it was set");
     return false;
   }
 

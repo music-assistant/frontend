@@ -848,6 +848,37 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       wrapper.unmount();
     });
 
+    it("waits for the answer before Next moves the member on", async () => {
+      let landAnswer: (saved: boolean) => void = () => {};
+      setUserPreferencesMock.mockImplementation(
+        () =>
+          new Promise<boolean>((resolve) => {
+            landAnswer = resolve;
+          }),
+      );
+
+      const wrapper = await mountWizard();
+      await flushPromises();
+
+      await wrapper
+        .find("[data-testid=onboarding-persona-regular]")
+        .trigger("click");
+      // an impatient Next while the answer is still on its way out
+      void wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+
+      expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
+
+      landAnswer(false);
+      await flushPromises();
+
+      // the account never took the answer, so the welcome is where the member
+      // stays — and where they were told about it
+      expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
+
+      wrapper.unmount();
+    });
+
     it("opens on the summary once the member has answered", async () => {
       preferenceState.persona.value = "regular";
 

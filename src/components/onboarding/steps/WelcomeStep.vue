@@ -72,22 +72,39 @@ const options = [
 
 // the answer is persisted on the server, so the cards stay inert until it lands
 const busy = ref(false);
+// the answer on its way to the server, which the wizard waits for before it
+// moves off this step
+let pendingSave: Promise<boolean> | null = null;
+
+const save = async function (value: OnboardingPersona): Promise<boolean> {
+  busy.value = true;
+  try {
+    const saved = await setPersona(value);
+    // an answer that did not reach the server is not an answer: say so here,
+    // where it was given, rather than wherever the member has got to by then
+    if (!saved) toast.error($t("onboarding.steps.welcome.save_failed"));
+    return saved;
+  } finally {
+    busy.value = false;
+    pendingSave = null;
+  }
+};
 
 const select = async function (value: OnboardingPersona) {
   if (busy.value) return;
-  busy.value = true;
-  let saved = false;
-  try {
-    saved = await setPersona(value);
-  } finally {
-    busy.value = false;
-  }
-  // an answer that did not reach the server is not an answer: the step says so
-  // and stays put, rather than walking on as if the account had taken it
-  if (!saved) {
-    toast.error($t("onboarding.steps.welcome.save_failed"));
-    return;
-  }
-  emit("advance");
+  pendingSave = save(value);
+  if (await pendingSave) emit("advance");
 };
+
+/**
+ * The wizard asking whether it may move on. Next while the answer is still on
+ * its way waits for it here, so the member is not walked onto the next step by
+ * an answer the account never took — and is told about it on the step that
+ * asked. Nothing on its way is nothing to hold the wizard up.
+ */
+const beforeLeave = async function (): Promise<boolean> {
+  return (await pendingSave) ?? true;
+};
+
+defineExpose({ beforeLeave });
 </script>

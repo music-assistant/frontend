@@ -211,6 +211,61 @@ describe("WelcomeStep", () => {
     wrapper.unmount();
   });
 
+  it("holds the wizard until the answer has landed", async () => {
+    let landAnswer: (saved: boolean) => void = () => {};
+    setUserPreferencesMock.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          landAnswer = resolve;
+        }),
+    );
+
+    const wrapper = await mountStep();
+    await card(wrapper, "regular").trigger("click");
+
+    // Next while the answer is still on its way waits for it here, instead of
+    // walking the member on and telling them about it from the next step
+    const leaving = wrapper.vm.beforeLeave();
+    landAnswer(true);
+
+    await expect(leaving).resolves.toBe(true);
+    expect(toastMock.error).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it("keeps the wizard here when the answer did not land", async () => {
+    let landAnswer: (saved: boolean) => void = () => {};
+    setUserPreferencesMock.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          landAnswer = resolve;
+        }),
+    );
+
+    const wrapper = await mountStep();
+    await card(wrapper, "regular").trigger("click");
+
+    const leaving = wrapper.vm.beforeLeave();
+    landAnswer(false);
+
+    await expect(leaving).resolves.toBe(false);
+    // told on the step that asked, and still standing on it
+    expect(toastMock.error).toHaveBeenCalledOnce();
+    expect(wrapper.emitted("advance")).toBeUndefined();
+
+    wrapper.unmount();
+  });
+
+  it("holds the wizard up over nothing", async () => {
+    const wrapper = await mountStep();
+
+    // the question is theirs to walk past
+    await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+
+    wrapper.unmount();
+  });
+
   it("takes one answer however often it is clicked", async () => {
     let landAnswer: () => void = () => {};
     setUserPreferencesMock.mockImplementation(

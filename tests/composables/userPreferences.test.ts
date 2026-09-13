@@ -269,6 +269,34 @@ describe("writing preferences", () => {
     });
   });
 
+  it("drops a write for an account that is no longer the one signed in", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    let landFirst: () => void = () => {};
+    mockUpdateUser.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          landFirst = () => resolve(user());
+        }),
+    );
+
+    const first = setUserPreferences({ theme: "light" });
+    const queued = setUserPreferences({ show_waveform: true });
+    await untilSent(1);
+    // whoever was signed in when the second was asked for is not who is signed
+    // in by the time it comes up
+    storeMock.currentUser = { user_id: "u2", preferences: {} };
+    landFirst();
+
+    await expect(first).resolves.toBe(true);
+    await expect(queued).resolves.toBe(false);
+
+    // one account's answer must never land on another's
+    expect(mockUpdateUser).toHaveBeenCalledOnce();
+    expect(storeMock.currentUser?.preferences).toEqual({});
+    expect(warnSpy).toHaveBeenCalledOnce();
+    warnSpy.mockRestore();
+  });
+
   it("hands the command options it was given to the server call", async () => {
     // what a caller with a message of its own keeps the api's toast away with
     await setUserPreferences(
