@@ -8,6 +8,7 @@ import {
   PlayerQueue,
   PlayerType,
   RepeatMode,
+  Scope,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { isSelectablePlayer } from "@/helpers/players";
@@ -30,6 +31,7 @@ import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { errorMessage } from "@/helpers/ai_radio";
+import { canUseQueueDj } from "@/helpers/ai_radio_access";
 import { toast } from "vue-sonner";
 
 export const getPlayerSetupMenuItem = (
@@ -249,7 +251,12 @@ export const getPlayerMenuItems = (
   }
 
   // save queue as playlist (queue menu only)
-  if (isQueue && playerQueue?.items && playerQueue.items > 0) {
+  if (
+    isQueue &&
+    playerQueue?.items &&
+    playerQueue.items > 0 &&
+    authManager.hasScope(Scope.LIBRARY_WRITE)
+  ) {
     menuItems.push({
       label: "save_queue_as_playlist",
       labelArgs: [],
@@ -300,7 +307,7 @@ export const getPlayerMenuItems = (
     loadQueueDjStatus,
   } = useHosts();
   const { sessions, shows, loadStatus } = useShows();
-  if (isQueue && playerQueue && aiRadioAvailable.value) {
+  if (isQueue && playerQueue && aiRadioAvailable.value && canUseQueueDj()) {
     const queueId = playerQueue.queue_id;
     const runningSession = sessions.value.find(
       (session) => session.status === "running" && session.queue_id === queueId,
@@ -390,8 +397,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // open the settings (both menus, admin only)
-  if (authManager.isAdmin()) {
+  // open the settings (both menus, for a role that changes player settings)
+  if (authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) {
     const openSettings = (path: string) => () => {
       store.showFullscreenPlayer = false;
       store.showPlayersMenu = false;

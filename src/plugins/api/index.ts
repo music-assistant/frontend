@@ -31,6 +31,7 @@ import {
   type PlayerOptionValueType,
   type PlayerQueue,
   type Playlist,
+  type PlaylistAccess,
   type ProviderInstance,
   type QueueItem,
   type Radio,
@@ -40,6 +41,7 @@ import {
   type TaskSchedule,
   type Track,
   type User,
+  type UserSummary,
   AlbumType,
   Audiobook,
   AuthProvider,
@@ -69,6 +71,7 @@ import {
   RecommendationFolder,
   RemoteAccessInfo,
   RepeatMode,
+  Scope,
   SearchResults,
   SmartPlaylistRules,
   SoundEffect,
@@ -90,6 +93,12 @@ const BROWSE_PLAYER_ID_SCHEMA_VERSION = 61;
 
 // Repeat one/all masking the effective autoplay flag landed in API schema 69.
 const REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION = 69;
+
+// The config/providers/share_candidates command landed in API schema 72.
+const SHARE_CANDIDATES_SCHEMA_VERSION = 72;
+
+// Playing AI Radio stations with queues.control instead of config.providers.write landed in API schema 75.
+const AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION = 75;
 
 export interface CommandOptions {
   /**
@@ -857,6 +866,27 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
     });
+  }
+
+  public setPlaylistAccess(
+    item_id: string,
+    access: PlaylistAccess,
+  ): Promise<Playlist> {
+    // Set who owns a Music Assistant playlist, who may see it and who may edit it.
+    // A library manager may set this for any playlist, an owner may only
+    // change the sharing of a playlist it owns. The dialog reports a refused
+    // change itself, so opt out of the global error toast.
+    return this.sendCommand(
+      "music/playlists/set_access",
+      {
+        item_id,
+        owner: access.owner,
+        sharing: access.sharing,
+        shared_users: access.shared_users,
+        collaborative: access.collaborative,
+      },
+      { suppressGlobalError: true },
+    );
   }
 
   public getPlaylistTracks(
@@ -2279,12 +2309,26 @@ export class MusicAssistantApi {
   ): Promise<ProviderConfig> {
     // Set who owns a music source and who else may use it.
     // An admin may set this for any music source, an owner may
-    // only change the sharing of a source it owns.
-    return this.sendCommand("config/providers/set_access", {
-      instance_id,
-      owner: access.owner,
-      sharing: access.sharing,
-      shared_users: access.shared_users,
+    // only change the sharing of a source it owns. The dialog reports a
+    // refused change itself, so opt out of the global error toast.
+    return this.sendCommand(
+      "config/providers/set_access",
+      {
+        instance_id,
+        owner: access.owner,
+        sharing: access.sharing,
+        shared_users: access.shared_users,
+      },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public getShareCandidates(): Promise<UserSummary[]> {
+    // Get the users a music source or playlist can be shared with, the caller
+    // included; check supportsShareCandidates first.
+    return this.sendCommand("config/providers/share_candidates", undefined, {
+      // callers show their own error toast; avoid a duplicate global one
+      suppressGlobalError: true,
     });
   }
 
@@ -2697,14 +2741,25 @@ export class MusicAssistantApi {
       return;
     }
 
-    toast.info($t("background_tasks.toast.added"), {
-      action: {
-        label: $t("background_tasks.open"),
-        onClick: () => {
-          void this._openBackgroundTasks();
-        },
-      },
-    });
+    // Imported dynamically for the same reason as the router below: auth.ts
+    // imports this module statically.
+    void import("../auth")
+      // the task list takes system.read
+      .then(({ authManager }) => authManager.hasScope(Scope.SYSTEM_READ))
+      // a chunk gone after a server update only costs the toast its action
+      .catch(() => false)
+      .then((mayOpenTasks) => {
+        toast.info($t("background_tasks.toast.added"), {
+          action: mayOpenTasks
+            ? {
+                label: $t("background_tasks.open"),
+                onClick: () => {
+                  void this._openBackgroundTasks();
+                },
+              }
+            : undefined,
+        });
+      });
   }
 
   private async _openBackgroundTasks(): Promise<void> {
@@ -2962,6 +3017,7 @@ export class MusicAssistantApi {
         new ApiCommandError(
           msg.details || String(msg.error_code),
           msg.error_code,
+          msg.details || undefined,
         ),
       );
     } else {
@@ -3020,6 +3076,22 @@ export class MusicAssistantApi {
     return (
       (this.serverInfo.value?.schema_version ?? 0) >=
       REPEAT_AUTOPLAY_LOCK_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server lists who a music source can be shared with (schema >= 72). */
+  public get supportsShareCandidates(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      SHARE_CANDIDATES_SCHEMA_VERSION
+    );
+  }
+
+  /** Whether the connected server lets a role with queues.control play AI Radio stations (schema >= 75). */
+  public get supportsAIRadioPlaybackScopes(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      AI_RADIO_PLAYBACK_SCOPES_SCHEMA_VERSION
     );
   }
 
@@ -3217,18 +3289,23 @@ export class MusicAssistantApi {
     role: UserRole,
     displayName?: string,
     playerFilter?: string[],
+    options?: CommandOptions,
   ): Promise<User> {
     // Create a new user (admin only)
     try {
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined
-      >("auth/user/create", {
-        username,
-        password,
-        role,
-        display_name: displayName,
-        player_filter: playerFilter,
-      });
+      >(
+        "auth/user/create",
+        {
+          username,
+          password,
+          role,
+          display_name: displayName,
+          player_filter: playerFilter,
+        },
+        options,
+      );
 
       if (result == null) {
         throw new Error("Failed to create user");
@@ -3272,6 +3349,7 @@ export class MusicAssistantApi {
       preferences?: Record<string, unknown>;
       player_filter?: string[];
     },
+    options?: CommandOptions,
   ): Promise<User> {
     // Update user using unified update command
     try {
@@ -3289,7 +3367,7 @@ export class MusicAssistantApi {
 
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined
-      >("auth/user/update", args);
+      >("auth/user/update", args, options);
 
       if (result == null) {
         throw new Error("Failed to update user");
@@ -3319,19 +3397,6 @@ export class MusicAssistantApi {
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;
-    }
-  }
-
-  public async updateUserRole(
-    userId: string,
-    role: UserRole,
-  ): Promise<boolean> {
-    // Update user role using unified update command
-    try {
-      await this.updateUser(userId, { role });
-      return true;
-    } catch (error) {
-      return false;
     }
   }
 

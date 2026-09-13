@@ -1,6 +1,7 @@
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { ConnectionState } from "@/plugins/api";
+import { Scope } from "@/plugins/api/interfaces";
 import { routes } from "@/plugins/router";
 import {
   NavigationFailureType,
@@ -13,13 +14,19 @@ import {
   type Router,
   type RouterOptions,
 } from "vue-router";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  BUILTIN_ROLE_SCOPES,
+  OWN_SOURCES_ROLE_SCOPES,
+  scopeChecker,
+} from "../fixtures/scopes";
 
 const mocks = vi.hoisted(() => ({
   afterEachHooks: [] as NavigationHookAfter[],
   apiState: { value: "initialized" },
   globalGuards: [] as NavigationGuardWithThis<undefined>[],
-  hasScope: vi.fn(() => false),
+  hasScope: vi.fn<(scope: Scope) => boolean>(() => false),
   isDashboardViewer: vi.fn(() => false),
   isGuestAccessSession: vi.fn(() => false),
   router: undefined as Router | undefined,
@@ -28,6 +35,7 @@ const mocks = vi.hoisted(() => ({
     enabledPlugins: new Set<string>(),
     frameless: false,
   },
+  supportsAIRadioPlaybackScopes: true,
   toastError: vi.fn(),
 }));
 
@@ -37,7 +45,12 @@ vi.mock("@/plugins/api", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   mocks.apiState = ref(mocks.apiState.value);
   return {
-    api: { state: mocks.apiState },
+    api: {
+      state: mocks.apiState,
+      get supportsAIRadioPlaybackScopes() {
+        return mocks.supportsAIRadioPlaybackScopes;
+      },
+    },
     ConnectionState: {
       AUTHENTICATED: "authenticated",
       INITIALIZED: "initialized",
@@ -130,6 +143,7 @@ beforeEach(() => {
   mocks.store.currentUser = undefined;
   mocks.store.enabledPlugins = new Set<string>();
   mocks.store.frameless = false;
+  mocks.supportsAIRadioPlaybackScopes = true;
   sessionStorage.clear();
 });
 
@@ -261,6 +275,46 @@ describe("AI Radio guard", () => {
     expect(mocks.toastError).not.toHaveBeenCalled();
   });
 
+  it("keeps a member on API schema 74, where only admins play AI Radio, out with a toast", async () => {
+    mocks.store.enabledPlugins = new Set(["ai_radio"]);
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    mocks.supportsAIRadioPlaybackScopes = false;
+
+    await expect(
+      invokeGuard(aiRadioGuard, resolveRoute("/ai-radio")),
+    ).resolves.toEqual({ name: "discover" });
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "providers.ai_radio.toast.unavailable",
+    );
+  });
+
+  it.each([
+    {
+      role: "a member",
+      scopes: BUILTIN_ROLE_SCOPES.user,
+      schema: 75,
+      playbackScopes: true,
+    },
+    {
+      role: "an admin",
+      scopes: BUILTIN_ROLE_SCOPES.admin,
+      schema: 74,
+      playbackScopes: false,
+    },
+  ])(
+    "lets $role on API schema $schema into AI Radio",
+    async ({ scopes, playbackScopes }) => {
+      mocks.store.enabledPlugins = new Set(["ai_radio"]);
+      mocks.hasScope.mockImplementation(scopeChecker(scopes));
+      mocks.supportsAIRadioPlaybackScopes = playbackScopes;
+
+      await expect(
+        invokeGuard(aiRadioGuard, resolveRoute("/ai-radio")),
+      ).resolves.toBeUndefined();
+      expect(mocks.toastError).not.toHaveBeenCalled();
+    },
+  );
+
   it("drops the fallback timeout once the server connection is ready", async () => {
     vi.useFakeTimers();
     mocks.apiState.value = ConnectionState.AUTHENTICATED;
@@ -382,8 +436,9 @@ describe("global navigation guard", () => {
     expect(mocks.store.frameless).toBe(true);
   });
 
-  it("redirects a non-admin away from the system settings", async () => {
+  it("redirects a member away from the system settings", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
     await expect(
       invokeGuard(globalGuard, resolveRoute("/settings/system")),
@@ -396,13 +451,32 @@ describe("global navigation guard", () => {
     ).resolves.toEqual({ name: "discover" });
   });
 
-  it("redirects a non-admin when a parent route carries the requirement", async () => {
+  it("redirects a member when a parent route carries the requirement", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
     const to = resolveRoute("/settings/frontend");
     // The requirement counts on every matched record, not just the leaf the
     // user opened, so mark the outermost one.
     to.matched = to.matched.map((record, index) =>
-      index === 0 ? { ...record, meta: { requiresAdmin: true } } : record,
+      index === 0
+        ? { ...record, meta: { requiresScope: Scope.CONFIG_CORE_WRITE } }
+        : record,
+    );
+
+    await expect(invokeGuard(globalGuard, to)).resolves.toEqual({
+      name: "discover",
+    });
+  });
+
+  it("checks the scope of every matched route, not just the first", async () => {
+    mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    // the outermost record asks a scope members hold, the leaf one they lack
+    const to = resolveRoute("/settings/system");
+    to.matched = to.matched.map((record, index) =>
+      index === 0
+        ? { ...record, meta: { requiresScope: Scope.LIBRARY_READ } }
+        : record,
     );
 
     await expect(invokeGuard(globalGuard, to)).resolves.toEqual({
@@ -412,14 +486,16 @@ describe("global navigation guard", () => {
 
   it("lets an admin into the system settings", async () => {
     mocks.store.currentUser = { role: "admin", username: "owner" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
 
     await expect(
       invokeGuard(globalGuard, resolveRoute("/settings/system")),
     ).resolves.toBeUndefined();
   });
 
-  it("lets a non-admin open the player options", async () => {
+  it("lets a member open the player options", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
     await expect(
       invokeGuard(
@@ -490,12 +566,13 @@ describe("global navigation guard", () => {
     // The user lands with the connection: a guard that read it too early would
     // have redirected already.
     mocks.store.currentUser = { role: "admin", username: "owner" };
+    mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     mocks.apiState.value = ConnectionState.INITIALIZED;
 
     await expect(pending.result).resolves.toBeUndefined();
   });
 
-  it("does not wait for the server connection on routes without an admin requirement", async () => {
+  it("does not wait for the server connection on routes without a scope requirement", async () => {
     vi.useFakeTimers();
     mocks.apiState.value = ConnectionState.AUTHENTICATED;
     const pending = trackGuard(
@@ -507,6 +584,59 @@ describe("global navigation guard", () => {
     expect(pending.isSettled()).toBe(true);
     await expect(pending.result).resolves.toBeUndefined();
   });
+});
+
+describe("scope-gated routes", () => {
+  // the builtin roles, and a custom role that manages its own music sources
+  // on top of the guest scopes
+  const ROLE_SCOPES = {
+    ...BUILTIN_ROLE_SCOPES,
+    own_sources: OWN_SOURCES_ROLE_SCOPES,
+  };
+  type Role = keyof typeof ROLE_SCOPES;
+
+  const ROUTE_ACCESS: [path: string, roles: Role[]][] = [
+    ["/settings/providers?types=music", ["admin", "user", "own_sources"]],
+    ["/settings/editprovider/spotify--abc", ["admin", "user", "own_sources"]],
+    ["/settings/players", ["admin"]],
+    ["/settings/editplayer/player-1", ["admin"]],
+    ["/settings/editplayer/player-1/dsp", ["admin"]],
+    ["/settings/editqueue/player-1", ["admin"]],
+    ["/settings/addgroup/sonos--abc", ["admin"]],
+    [
+      "/settings/editplayer/player-1/options",
+      ["admin", "user", "guest", "own_sources"],
+    ],
+    ["/settings/system", ["admin"]],
+    ["/settings/editcore/webserver", ["admin"]],
+    ["/settings/audio-analysis", ["admin"]],
+    ["/settings/remote-access", ["admin"]],
+    ["/settings/diagnostics", ["admin"]],
+    ["/settings/genremanagement", ["admin"]],
+    ["/settings/users", ["admin"]],
+    ["/settings/tasks", ["admin", "user"]],
+    ["/music-quiz", ["admin", "user"]],
+    ["/onboarding", ["admin"]],
+    ["/settings/frontend", ["admin", "user", "guest", "own_sources"]],
+  ];
+
+  describe.each(Object.keys(ROLE_SCOPES) as Role[])(
+    "for the %s role",
+    (role) => {
+      beforeEach(() => {
+        mocks.store.currentUser = { role, username: role };
+        mocks.hasScope.mockImplementation(scopeChecker(ROLE_SCOPES[role]));
+      });
+
+      it.each(ROUTE_ACCESS)("gates %s", async (path, roles) => {
+        await expect(
+          invokeGuard(globalGuard, resolveRoute(path)),
+        ).resolves.toEqual(
+          roles.includes(role) ? undefined : { name: "discover" },
+        );
+      });
+    },
+  );
 });
 
 describe("media details back button", () => {
@@ -545,6 +675,81 @@ describe("media details back button", () => {
       expect(push).toHaveBeenCalledWith({ name: listing });
     },
   );
+});
+
+describe("scroll reset on navigation", () => {
+  function contentSection() {
+    const el = document.createElement("div");
+    el.className = "content-section";
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function setHistoryForward(forward: string | null) {
+    if (!mocks.router)
+      throw new Error("The router module did not create a router");
+    (mocks.router.options.history.state as { forward: string | null }).forward =
+      forward;
+  }
+
+  afterEach(() => {
+    document.querySelector(".content-section")?.remove();
+    setHistoryForward(null);
+  });
+
+  it("scrolls back to the top on a fresh navigation", async () => {
+    const el = contentSection();
+    el.scrollTop = 200;
+    setHistoryForward(null);
+
+    runAfterEachHooks();
+
+    // afterEach runs before Vue unmounts the page being left, so the reset
+    // has to wait a tick or that page can't save where it was scrolled to
+    expect(el.scrollTop).toBe(200);
+    await nextTick();
+    expect(el.scrollTop).toBe(0);
+  });
+
+  it("leaves the scroll position alone when returning via back navigation", async () => {
+    const el = contentSection();
+    el.scrollTop = 200;
+    setHistoryForward("/settings/about");
+
+    runAfterEachHooks();
+    await nextTick();
+
+    expect(el.scrollTop).toBe(200);
+  });
+
+  // filters and searches mirror their state into the query with
+  // router.replace, which must not move the page
+  it("stays put when only the query changed", async () => {
+    const el = contentSection();
+    el.scrollTop = 200;
+    setHistoryForward(null);
+
+    runAfterEachHooks(undefined, {
+      to: "/artists?genre_ids=1",
+      from: "/artists",
+    });
+    await nextTick();
+
+    expect(el.scrollTop).toBe(200);
+  });
+
+  it("does not touch the scroll position on a failed navigation", async () => {
+    const el = contentSection();
+    el.scrollTop = 200;
+    setHistoryForward(null);
+
+    runAfterEachHooks({
+      type: NavigationFailureType.aborted,
+    } as unknown as NavigationFailure);
+    await nextTick();
+
+    expect(el.scrollTop).toBe(200);
+  });
 });
 
 describe("chunk loading recovery", () => {
@@ -693,9 +898,12 @@ async function failNavigationWithChunkError(fullPath: string) {
 /**
  * Run the router's afterEach hooks the way a finished navigation does.
  */
-function runAfterEachHooks(failure?: NavigationFailure) {
-  const to = resolveRoute("/artists");
-  const from = resolveRoute("/discover");
+function runAfterEachHooks(
+  failure?: NavigationFailure,
+  paths: { to: string; from: string } = { to: "/artists", from: "/discover" },
+) {
+  const to = resolveRoute(paths.to);
+  const from = resolveRoute(paths.from);
   for (const hook of mocks.afterEachHooks) {
     hook.call(undefined, to, from, failure);
   }

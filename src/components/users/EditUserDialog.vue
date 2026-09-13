@@ -18,6 +18,7 @@
                     :name="field.name"
                     :model-value="field.state.value"
                     :aria-invalid="isInvalid(field)"
+                    :disabled="isSystemAccount"
                     autocomplete="username"
                     @blur="field.handleBlur"
                     @input="
@@ -28,6 +29,9 @@
                       }
                     "
                   />
+                  <FieldDescription v-if="isSystemAccount">
+                    {{ $t("auth.system_user_hint") }}
+                  </FieldDescription>
                   <FieldError
                     v-if="isInvalid(field)"
                     :errors="field.state.meta.errors"
@@ -102,7 +106,7 @@
                   </FieldLabel>
                   <Select
                     :model-value="field.state.value"
-                    :disabled="isCurrentUser"
+                    :disabled="isCurrentUser || isSystemAccount"
                     @update:model-value="
                       (value) => field.handleChange(value as UserRole)
                     "
@@ -124,7 +128,7 @@
               </template>
             </form.Field>
 
-            <form.Field name="password">
+            <form.Field v-if="!isSystemAccount" name="password">
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
                   <FieldLabel :for="field.name">
@@ -157,7 +161,10 @@
               </template>
             </form.Field>
 
-            <form.Field v-if="passwordValue" name="confirmPassword">
+            <form.Field
+              v-if="!isSystemAccount && passwordValue"
+              name="confirmPassword"
+            >
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
                   <FieldLabel :for="field.name">
@@ -256,8 +263,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { isSystemUser } from "@/helpers/users";
 import { editUserSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
 import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -308,11 +316,19 @@ const handleFormSubmit = async () => {
   }
 };
 
-const roleOptions = computed(() => [
-  { label: t("auth.admin_role"), value: "admin" },
-  { label: t("auth.user_role"), value: "user" },
-  { label: t("auth.guest_role"), value: "guest" },
-]);
+const roleOptions = computed(() => {
+  const options = [
+    { label: t("auth.admin_role"), value: "admin" },
+    { label: t("auth.user_role"), value: "user" },
+    { label: t("auth.guest_role"), value: "guest" },
+  ];
+  // service is not offered as a choice, only listed to show it for an
+  // account that holds it
+  if (props.user?.role === UserRole.SERVICE) {
+    options.push({ label: t("auth.service_role"), value: "service" });
+  }
+  return options;
+});
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
@@ -326,6 +342,11 @@ const playerOptions = computed(() => {
 const isCurrentUser = computed(() => {
   if (!props.user || !store.currentUser) return false;
   return props.user.user_id === store.currentUser.user_id;
+});
+
+const isSystemAccount = computed(() => {
+  if (!props.user) return false;
+  return isSystemUser(props.user);
 });
 
 const form = useForm({
@@ -381,12 +402,18 @@ const form = useForm({
         updates.player_filter = value.playerFilter;
       }
 
-      await api.updateUser(props.user.user_id, updates);
+      await api.updateUser(props.user.user_id, updates, {
+        suppressGlobalError: true,
+      });
       toast.success(t("auth.user_updated"));
       emit("updated");
       emit("update:modelValue", false);
     } catch (error) {
-      toast.error(t("auth.user_update_failed"));
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("auth.user_update_failed"),
+      );
     } finally {
       loading.value = false;
     }

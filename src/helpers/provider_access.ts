@@ -1,3 +1,4 @@
+import { isSystemUser } from "@/helpers/users";
 import {
   type ProviderAccess,
   type ProviderConfig,
@@ -6,6 +7,7 @@ import {
   ProviderType,
   type User,
   UserRole,
+  type UserSummary,
 } from "@/plugins/api/interfaces";
 
 const PROVIDER_SHARING_TRANSLATION_KEYS: Record<ProviderSharing, string> = {
@@ -22,6 +24,21 @@ const PROVIDER_SHARING_HINT_TRANSLATION_KEYS: Record<ProviderSharing, string> =
     [ProviderSharing.MEMBERS]: "settings.source_access.hints.members",
     [ProviderSharing.EVERYONE]: "settings.source_access.hints.everyone",
   };
+
+/** Whether the given user may use what the access record guards, read the way the server does. */
+export const accessAllows = (
+  access: ProviderAccess | null,
+  user: User,
+): boolean => {
+  if (access === null) return true;
+  if (access.owner === user.user_id) return true;
+  if (access.sharing === ProviderSharing.EVERYONE) return true;
+  if (access.sharing === ProviderSharing.MEMBERS)
+    return user.role !== UserRole.GUEST;
+  if (access.sharing === ProviderSharing.SELECTED)
+    return access.shared_users.includes(user.user_id);
+  return false;
+};
 
 /**
  * The access a music source has, with a missing record read the way the
@@ -51,32 +68,58 @@ export const isOwnMusicSource = (
   userId: string | undefined,
 ) => userId !== undefined && config.access?.owner === userId;
 
-export const getProviderSharingTranslationKey = (sharing: ProviderSharing) =>
-  PROVIDER_SHARING_TRANSLATION_KEYS[sharing];
+/**
+ * Whether nobody can use what this access record guards: it has no owner and
+ * is private, or is shared with selected members while nobody is picked.
+ */
+export const servesNobody = (access: ProviderAccess) =>
+  access.owner === null &&
+  (access.sharing === ProviderSharing.PRIVATE ||
+    (access.sharing === ProviderSharing.SELECTED &&
+      access.shared_users.length === 0));
 
-export const getProviderSharingHintTranslationKey = (
+/**
+ * The translation key naming a sharing choice. Private sharing is named from
+ * the viewer's side: as their own for the owner, as not shared for others.
+ */
+export const getProviderSharingTranslationKey = (
   sharing: ProviderSharing,
-) => PROVIDER_SHARING_HINT_TRANSLATION_KEYS[sharing];
+  ownedByViewer: boolean,
+) =>
+  sharing === ProviderSharing.PRIVATE && !ownedByViewer
+    ? "settings.source_access.options.not_shared"
+    : PROVIDER_SHARING_TRANSLATION_KEYS[sharing];
 
-/** The users that may own a music source: enabled members, so no guests or service accounts. */
+/**
+ * The translation key explaining who can use a music source with this access.
+ */
+export const getProviderSharingHintTranslationKey = (
+  access: ProviderAccess,
+) => {
+  if (servesNobody(access)) return "settings.source_access.hints.nobody";
+  if (access.owner === null && access.sharing === ProviderSharing.SELECTED)
+    return "settings.source_access.hints.selected_no_owner";
+  return PROVIDER_SHARING_HINT_TRANSLATION_KEYS[access.sharing];
+};
+
+/**
+ * The users that may own a music source: every enabled member, so neither the
+ * guests nor the Home Assistant system account.
+ */
 export const ownerCandidates = (users: User[]) =>
   users.filter(
     (user) =>
-      user.enabled &&
-      user.role !== UserRole.GUEST &&
-      user.role !== UserRole.SERVICE,
+      user.enabled && user.role !== UserRole.GUEST && !isSystemUser(user),
   );
 
 /**
- * The users a music source can be shared with: every enabled member but its
- * owner. A guest only ever gets the sources shared with everyone.
+ * The users a music source can be shared with, as the server lists them to a
+ * member: every enabled user but the guests, who only ever get the sources
+ * shared with everyone.
  */
-export const shareCandidates = (users: User[], owner: string | null) =>
-  users.filter(
-    (user) =>
-      user.enabled && user.role !== UserRole.GUEST && user.user_id !== owner,
-  );
+export const shareCandidates = (users: User[]) =>
+  users.filter((user) => user.enabled && user.role !== UserRole.GUEST);
 
 /** The name a user is shown by. */
-export const userDisplayName = (user: User) =>
+export const userDisplayName = (user: UserSummary) =>
   user.display_name || user.username;

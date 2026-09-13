@@ -263,7 +263,9 @@
                 icon="mdi-account-music"
               />
               <MarqueeText :sync="marqueeSync">
-                <a style="color: primary">{{ item.owner }}</a>
+                <slot name="owner"
+                  ><a style="color: primary">{{ item.owner }}</a></slot
+                >
               </MarqueeText>
             </v-card-subtitle>
 
@@ -369,6 +371,7 @@
             >
               <!-- favorite (heart) icon -->
               <button
+                v-if="canEditLibrary"
                 type="button"
                 class="favorite-icon-button"
                 :aria-label="$t('tooltip.favorite')"
@@ -394,7 +397,7 @@
                 v-if="
                   item.media_type === MediaType.GENRE &&
                   item.provider === 'library' &&
-                  isAdmin
+                  canManageLibrary
                 "
                 :size="22"
                 class="cursor-pointer"
@@ -406,7 +409,7 @@
                 v-if="
                   item.media_type === MediaType.GENRE &&
                   item.provider === 'library' &&
-                  isAdmin
+                  canManageLibrary
                 "
                 :size="22"
                 class="cursor-pointer ml-2"
@@ -537,6 +540,7 @@ import {
   ImageType,
   MediaCollection,
   MediaType,
+  Scope,
   Track,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -625,7 +629,7 @@ watch(shortcutsPreference, async () => {
 const showGenreChipContextMenu = (evt: Event, genre: Genre) => {
   if (
     !compProps.item ||
-    !isAdmin.value ||
+    !canManageLibrary.value ||
     compProps.item.provider !== "library"
   )
     return;
@@ -753,7 +757,12 @@ const artistLogo = computed(() => {
   return getImageThumbForItem(compProps.item, ImageType.LOGO);
 });
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 const favoriteButtonLabel = computed(() =>
   compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
 );

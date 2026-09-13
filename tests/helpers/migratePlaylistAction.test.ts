@@ -14,8 +14,10 @@ import {
   ProviderFeature,
   ProviderType,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const { apiMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
   apiMock: {
@@ -40,6 +42,14 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
 
 const builtinProvider = () => ({
   type: ProviderType.MUSIC,
@@ -62,6 +72,9 @@ beforeEach(() => {
   apiMock.providers = { builtin: builtinProvider() };
   apiMock.getProvider.mockImplementation((id: string) => apiMock.providers[id]);
   storeMock.enabledPlugins = new Set();
+  vi.mocked(authManager.hasScope).mockImplementation(
+    scopeChecker(BUILTIN_ROLE_SCOPES.user),
+  );
 });
 
 describe("migrate playlist context menu action", () => {
@@ -115,5 +128,14 @@ describe("migrate playlist context menu action", () => {
     expect(mockEventbusEmit).toHaveBeenCalledWith("migratePlaylistDialog", {
       playlist: item,
     });
+  });
+
+  it("is not offered to a role that may not change the library", async () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    const item = playlist();
+    const items = await getContextMenuItems([item], item);
+    expect(migrateAction(items)).toBeUndefined();
   });
 });

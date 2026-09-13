@@ -118,7 +118,7 @@ import {
 import AutoplayRepeatLockButton from "@/layouts/default/PlayerOSD/AutoplayRepeatLockButton.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
-import type { ItemMapping } from "@/plugins/api/interfaces";
+import { Scope, type ItemMapping } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -191,8 +191,10 @@ const description = computed(() => {
   return "";
 });
 
-// The full queue settings page is an admin-only shortcut (matches the menu).
-const canConfigure = computed(() => authManager.isAdmin());
+// The full queue settings page needs the scope to change player settings (matches the menu).
+const canConfigure = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+);
 
 // Collapsed state is remembered per user (server-side preference, so it syncs
 // across devices). Default expanded so new users get the full explanation; once

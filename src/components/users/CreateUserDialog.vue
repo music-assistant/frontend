@@ -223,7 +223,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createUserSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import { UserRole } from "@/plugins/api/interfaces";
 import MultiSelect from "./MultiSelect.vue";
 
@@ -302,24 +302,25 @@ const form = useForm({
     loading.value = true;
 
     try {
-      const user = await api.createUser(
+      await api.createUser(
         value.username,
         value.password,
         value.role,
         value.displayName || undefined,
         value.playerFilter.length > 0 ? value.playerFilter : undefined,
+        { suppressGlobalError: true },
       );
 
-      if (user) {
-        toast.success(t("auth.user_created"));
-        form.reset();
-        emit("created");
-        emit("update:modelValue", false);
-      } else {
-        toast.error(t("auth.user_create_failed"));
-      }
+      toast.success(t("auth.user_created"));
+      form.reset();
+      emit("created");
+      emit("update:modelValue", false);
     } catch (error) {
-      toast.error(t("auth.user_create_failed"));
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("auth.user_create_failed"),
+      );
     } finally {
       loading.value = false;
     }

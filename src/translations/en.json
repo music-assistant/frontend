@@ -101,7 +101,6 @@
     "search": "Search",
     "settings": {
         "add_new": "Add new",
-        "add_provider": "Add a new provider",
         "advanced_settings": "Advanced settings",
         "check_docs": "Check out the documentation",
         "config_player": "Configure player: {0}",
@@ -111,7 +110,6 @@
         "documentation": "Documentation",
         "enable": "Enable",
         "enable_player": "Enable this player",
-        "enable_provider": "Enable this provider entry",
         "enabled": "Enable",
         "invalid_input": "The input is invalid",
         "metadataproviders": "Metadata providers",
@@ -128,7 +126,7 @@
         "player_not_available": "This player is not (yet) available",
         "player_option_error": "Error while setting player option: {key} {value}",
         "server_logs_load_failed": "Failed to load server logs",
-        "player_provider": "Provider",
+        "player_provider": "Player provider",
         "player_settings": "Player settings",
         "player_status": {
             "available": "Available",
@@ -141,14 +139,15 @@
         "playerproviders": "Player providers",
         "players": "Players",
         "pluginproviders": "Plugin providers",
-        "provider_disabled": "This provider entry is disabled",
-        "provider_name": "Custom name for this provider entry",
+        "provider_disabled": "Currently disabled",
+        "provider_name": "Custom name",
+        "set_custom_name": "Set a custom name",
         "providers": "Providers",
         "reload": "Reload",
         "save": "Save",
         "settings": "Settings",
         "sync": "Synchronize now",
-        "sync_running": "This provider is now being synchronized",
+        "sync_running": "This music source is now being synchronized",
         "core_modules": "Core modules",
         "server_info": "Server information",
         "server_id": "Server ID",
@@ -169,7 +168,7 @@
         "add_group_player": "Add group player",
         "group_members": "Group members",
         "default": "default",
-        "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
+        "provider_depends_on_confirm": "Before you can set up {0}, you need to have {1} configured, do you want to do that now?",
         "theme": {
             "label": "Theme",
             "options": {
@@ -405,7 +404,7 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
         },
-        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
+        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",
         "metadata": "Metadata",
         "metadataprovider": "Metadata provider",
@@ -415,7 +414,7 @@
         "playerprovider": "Player provider",
         "plugin": "Plugin",
         "pluginprovider": "Plugin provider",
-        "providers_total": "{count} total provider | {count} total providers",
+        "providers_total": "{count} total | {count} total",
         "stage": {
             "label": "Stage",
             "options": {
@@ -435,7 +434,6 @@
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",
         "provider_type": "Type",
-        "onboarding_title": "Welcome to Music Assistant!",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
@@ -534,8 +532,8 @@
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
-        "no_group_providers": "You currently do not have any providers that support creating groups",
-        "provider_codeowners": "This provider is contributed\/maintained by",
+        "no_group_providers": "You currently do not have any player providers that support creating groups",
+        "provider_codeowners": "Contributed\/maintained by",
         "provider_credits": "Made possible by",
         "category": {
             "web_player": "Web Player",
@@ -547,14 +545,6 @@
             "dsp": "DSP",
             "audiobooks": "Audiobooks"
         },
-        "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
-        "onboarding_music_title": "Music",
-        "onboarding_music_desc": "Connect your streaming services like Spotify, Tidal, or your local music library.",
-        "onboarding_add_music": "Add Music",
-        "onboarding_player_title": "Players",
-        "onboarding_player_desc": "Connect your speakers and devices like Sonos, Chromecast, or AirPlay.",
-        "onboarding_add_player": "Add Players",
-        "onboarding_footer": "You can always add more providers later from this settings page.",
         "remote_access_qr_code": "QR Code",
         "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
         "reset_to_defaults": "Reset to defaults",
@@ -562,8 +552,8 @@
         "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
         "stay": "Stay",
         "discard": "Discard changes",
-        "provider_requires_attention": "This provider requires attention",
-        "provider_requires_attention_detail": "One or more providers require attention. Please check the provider settings.",
+        "provider_requires_attention": "Needs attention",
+        "provider_requires_attention_detail": "One or more of your music sources, players or plugins aren't working.",
         "reconfigure": "Reconfigure",
         "fix_now": "Fix now",
         "web_player_enabled": {
@@ -661,29 +651,34 @@
             "action": "Access",
             "share_action": "Sharing",
             "title": "Access to {name}",
+            "share_title": "Share {name}",
             "description": "Who this music source belongs to and who else may use it.",
             "owner": "Owner",
-            "owner_hint": "Playback and listening history use the owner's account. A household source has no owner and is managed by administrators.",
-            "household": "Household",
+            "owner_hint": "Playback and listening history use the owner's account. A source without an owner is managed by administrators.",
+            "household": "Shared (no owner)",
             "sharing": "Sharing",
             "shared_users": "Shared with",
             "select_members": "Select members",
             "shared_with_count": "Shared with {count} member | Shared with {count} members",
             "options": {
-                "private": "Private",
+                "private": "Only me",
                 "selected": "Selected members",
                 "members": "All members",
-                "everyone": "Everyone"
+                "everyone": "Everyone, including guests",
+                "not_shared": "Not shared"
             },
             "hints": {
                 "private": "Only the owner can use this source.",
                 "selected": "The owner and the members selected below.",
-                "members": "Every signed-in household member, guests excluded.",
-                "everyone": "Every user, guests included."
+                "members": "Every signed-in member, guests excluded.",
+                "everyone": "Any user can use this source.",
+                "selected_no_owner": "Only the members selected below.",
+                "nobody": "Nobody can use this source until it has an owner or is shared with someone."
             },
-            "updated": "Access updated"
+            "updated": "Access updated",
+            "nobody": "Nobody can use this source"
         },
-        "player_providers_description": "Configure providers for your audio output devices",
+        "player_providers_description": "Configure player providers for your audio output devices",
         "metadata_providers_description": "Manage metadata providers for artwork and additional info",
         "plugin_providers_description": "Manage plugins that extend Music Assistant functionality",
         "restore_genres": "Restore Genres",
@@ -725,14 +720,14 @@
         "provider_status_incompatible": "Not supported on this system",
         "provider_status_retired": "Retired",
         "provider_status_error": "Setup failed",
-        "remove_provider": "Remove provider",
-        "remove_provider_confirm": "Remove this provider? This cannot be undone.",
-        "save_failed": "Couldn't save the provider settings",
+        "remove_provider": "Remove",
+        "remove_provider_confirm": "Remove \"{0}\"? This cannot be undone.",
+        "save_failed": "Couldn't save your changes",
         "retry": "Retry",
         "abort_setup": "Abort setup",
-        "provider_saved": "Provider settings saved",
-        "provider_reloading": "Reloading provider…",
-        "provider_removed": "Provider removed",
+        "provider_saved": "Settings saved",
+        "provider_reloading": "Reloading…",
+        "provider_removed": "\"{0}\" removed",
         "queue_settings": "Queue settings",
         "audio_analysis_failures": {
             "title": "Audio Analysis Failures",
@@ -757,7 +752,7 @@
         },
         "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
         "queue_global_settings_link": "Open global queue settings",
-        "protocol_provider_unavailable": "The provider for this output protocol is currently unavailable.",
+        "protocol_provider_unavailable": "The player provider for this output protocol is currently unavailable.",
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
         "protocol_enable_label": "Enable output protocols",
         "protocol_configure_title": "Configure {name}",
@@ -833,8 +828,7 @@
         "provider_status_disabled": "Disabled",
         "provider_status_unknown": "Unknown",
         "player_saved": "Player settings saved",
-        "provider_settings": "{name} provider settings",
-        "reload_provider": "Reload provider",
+        "provider_settings": "{name} settings",
         "protocol_native_badge": "Native",
         "visualizer_description": "Quality, presets and favorites for the MilkDrop music visualizer",
         "visualizer": "Visualizer",
@@ -1314,6 +1308,8 @@
         "update_password": "Update password",
         "guest_role": "Guest",
         "service_role": "Service",
+        "system_user": "System",
+        "system_user_hint": "Home Assistant signs in with this account, so its username, role and password cannot be changed.",
         "tokens_load_failed": "Failed to load access tokens",
         "users_load_failed": "Failed to load users"
     },
@@ -2196,7 +2192,7 @@
         }
     },
     "not_found_headline": "Oops, this page is off the setlist.",
-    "not_found_subtext": "The track you're looking for got lost between providers. Head back or find something new.",
+    "not_found_subtext": "The track you're looking for got lost between music sources. Head back or find something new.",
     "restore_genre": "Restore",
     "genre_name": "Genre name",
     "export_playlist": "Export playlist",
@@ -2214,6 +2210,25 @@
     "import_playlist_match_policy_best_effort_description": "Prefer an exact match, then the same recording, otherwise accept the closest available match.",
     "party_mode": "Party",
     "edit_playlist": "Edit playlist",
+    "share_playlist": "Share playlist",
+    "playlist_access": {
+        "title": "Share {name}",
+        "description": "Who this playlist belongs to, who may see it and who may edit it.",
+        "owner_hint": "A playlist without an owner is managed by administrators.",
+        "personal": "Personal",
+        "shared": "Shared",
+        "collaborative": "Collaborative",
+        "collaborative_hint": "Everyone the playlist is shared with may also add and remove items.",
+        "hints": {
+            "private": "Only the owner can see this playlist.",
+            "selected": "The owner and the members selected below.",
+            "members": "Every signed-in member, guests excluded.",
+            "everyone": "Any user can see this playlist.",
+            "selected_no_owner": "Only the members selected below.",
+            "nobody": "Nobody can see this playlist until it has an owner or is shared with someone."
+        },
+        "updated": "Sharing updated"
+    },
     "edit_radio": "Edit radio station",
     "edit_track": "Edit track",
     "uri_read_only": "URI (read-only)",
@@ -2350,6 +2365,40 @@
     "artist_no_library_tracks": "You don't have any tracks in your library for this artist.",
     "artist_all_albums": "All albums",
     "artist_all_tracks": "All tracks",
+    "biography": "Biography",
+    "author": "Author",
+    "narrator": "Narrator",
+    "artist_entity_type": {
+        "person": "Person",
+        "group": "Group",
+        "orchestra": "Orchestra",
+        "choir": "Choir",
+        "character": "Character",
+        "other": "Other"
+    },
+    "singles_eps": "Singles & EPs",
+    "latest_release": "Latest release",
+    "view_all": "View all",
+    "all_n_tracks": "All {count} track | All {count} tracks",
+    "play_on_player": "Play on {player}",
+    "artist_radio": "Artist radio",
+    "newest_first": "newest first",
+    "via_provider": "via {provider}",
+    "appears_on_hint": "Credited on a track, not as the album artist",
+    "edit_rows": "Edit rows",
+    "edit_rows_subtitle": "Applies to every artist page",
+    "reset_to_default": "Reset to default",
+    "rows_shown": "{shown} of {total} rows shown",
+    "row_source": "Source",
+    "source_library": "Your library",
+    "source_all": "All providers",
+    "row_hidden": "Hidden",
+    "reorder_row": "Reorder row",
+    "hide_row": "Hide row",
+    "show_row": "Show row",
+    "edit_rows_hint": "Drag to reorder, hide what you don't want. \"Source\" picks what feeds a row (your library, one provider, or all of them).",
+    "admin_only": "Admin only",
+    "done": "Done",
     "on_provider": "On {0}",
     "open_queue_settings": "Open queue settings",
     "crossfade_enable": "Enable crossfade",
@@ -2521,7 +2570,7 @@
         "toggle": "Toggle the MilkDrop visualizer",
         "preset_random_favorites": "Random from favorites",
         "toggle_favorite": "Favorite this preset",
-        "provider_missing": "The MilkDrop Visualizer plugin is not installed or unavailable. Add it under Settings > Providers to use the visualizer.",
+        "provider_missing": "The MilkDrop Visualizer plugin isn't available. Check it under Settings → Plugins to use the visualizer.",
         "section_general": "Appearance",
         "section_presets": "Presets",
         "quality": "Render quality",
@@ -2566,5 +2615,54 @@
     "command_center_navigate": "navigate",
     "command_center_open": "open",
     "command_center_keep_typing": "Keep typing to search...",
+    "onboarding": {
+        "title": "Set up Music Assistant",
+        "step_counter": "Step {current} of {total}",
+        "next": "Next",
+        "skip": "Skip for now",
+        "finish": "Finish",
+        "finish_failed": "Could not finish the setup. Please try again.",
+        "getting_started": "Getting started",
+        "getting_started_hint": "Finish setting up Music Assistant",
+        "hide_for_now": "Hide for now",
+        "nothing_configured": "Nothing set up yet",
+        "needs_attention": "Needs attention",
+        "set_up": "Set up",
+        "still_to_do": "Still to do",
+        "all_done": "Everything on the list is set up.",
+        "players_count": "{count} player | {count} players",
+        "steps_to_go": "{count} step to go | {count} steps to go",
+        "run_again": "Run the setup wizard again",
+        "steps": {
+            "intent": {
+                "title": "Choose how you listen",
+                "description": "This only decides what we suggest first. Everything stays available, whichever you pick.",
+                "phone_apps": {
+                    "label": "From the apps on my phone",
+                    "description": "Stream from Spotify, AirPlay and other apps to the speakers in your home."
+                },
+                "music_hub": {
+                    "label": "As my music hub",
+                    "description": "Bring your streaming services and local music together in one library."
+                }
+            },
+            "music_sources": {
+                "title": "Add your music sources",
+                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play."
+            },
+            "players": {
+                "title": "Add your player providers",
+                "description": "A player provider brings your speakers into Music Assistant, such as Sonos, Chromecast or AirPlay."
+            },
+            "plugins": {
+                "title": "Add plugins",
+                "description": "Plugins add extras on top of Music Assistant. You can always add them later."
+            },
+            "finish": {
+                "title": "Finish setup",
+                "description": "Here is where you got to. You can change any of this later from the settings."
+            }
+        }
+    },
     "screens": "Screens"
 }

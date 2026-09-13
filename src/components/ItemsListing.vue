@@ -4,6 +4,7 @@
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
       :icon="icon"
+      :icon-action="iconAction"
       :title="title"
       :subtitle="subtitle"
       :count="params.search ? pagedItems.length : total || allItems.length"
@@ -441,6 +442,8 @@ export interface Props {
   infiniteScroll?: boolean;
   path?: string;
   icon?: string | Component;
+  // makes the toolbar icon a button, e.g. a back arrow for a full-page listing
+  iconAction?: () => void;
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
@@ -483,6 +486,7 @@ const props = withDefaults(defineProps<Props>(), {
   loadItems: undefined,
   path: undefined,
   icon: undefined,
+  iconAction: undefined,
   restoreState: false,
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
@@ -2200,6 +2204,12 @@ const selectAll = async function () {
 defineExpose({
   sortBy: computed(() => params.value.sortBy),
   reload: () => loadData(true, true),
+  // whether the item is absent while every item of the unfiltered listing is
+  // loaded; a filter leaves items out on purpose
+  isMissing: (uri: string) =>
+    allItemsReceived.value &&
+    !hasActiveFilters.value &&
+    !pagedItems.value.some((i) => i.uri === uri),
 });
 </script>
 

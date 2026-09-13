@@ -8,7 +8,7 @@
           </template>
         </Input>
       </div>
-      <Button @click="showCreateDialog = true">
+      <Button v-if="canManageUsers" @click="showCreateDialog = true">
         <Plus :size="16" />
         {{ $t("auth.create_user") }}
       </Button>
@@ -28,8 +28,10 @@
       <Card
         v-for="user in filteredUsers"
         :key="user.user_id"
-        class="cursor-pointer hover:bg-accent/50 transition-colors"
-        @click="editUser(user)"
+        :class="{
+          'cursor-pointer hover:bg-accent/50 transition-colors': canManageUsers,
+        }"
+        @click="canManageUsers && editUser(user)"
       >
         <CardContent class="px-4 py-0">
           <div class="flex items-center gap-4">
@@ -49,7 +51,7 @@
                     {{ user.username }} • {{ $t(`auth.${user.role}_role`) }}
                   </p>
                 </div>
-                <DropdownMenu>
+                <DropdownMenu v-if="canManageUsers">
                   <DropdownMenuTrigger as-child>
                     <Button
                       variant="ghost"
@@ -72,7 +74,7 @@
                       {{ $t("auth.manage_tokens") }}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      v-if="!isCurrentUser(user)"
+                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
                       @click.stop="
                         user.enabled
                           ? confirmDisableUser(user)
@@ -89,9 +91,11 @@
                           : $t("auth.enable_user")
                       }}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator v-if="!isCurrentUser(user)" />
+                    <DropdownMenuSeparator
+                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
+                    />
                     <DropdownMenuItem
-                      v-if="!isCurrentUser(user)"
+                      v-if="!isCurrentUser(user) && !isSystemUser(user)"
                       class="text-destructive focus:text-destructive"
                       @click.stop="confirmDeleteUser(user)"
                     >
@@ -101,9 +105,17 @@
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <Badge v-if="!user.enabled" variant="destructive" class="mt-2">
-                {{ $t("auth.disabled") }}
-              </Badge>
+              <div
+                v-if="!user.enabled || isSystemUser(user)"
+                class="flex flex-wrap gap-2 mt-2"
+              >
+                <Badge v-if="!user.enabled" variant="destructive">
+                  {{ $t("auth.disabled") }}
+                </Badge>
+                <Badge v-if="isSystemUser(user)" variant="secondary">
+                  {{ $t("auth.system_user") }}
+                </Badge>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -176,8 +188,10 @@ import DisableUserDialog from "@/components/users/DisableUserDialog.vue";
 import EditUserDialog from "@/components/users/EditUserDialog.vue";
 import ManageTokensDialog from "@/components/users/ManageTokensDialog.vue";
 import RevokeTokenDialog from "@/components/users/RevokeTokenDialog.vue";
+import { isSystemUser } from "@/helpers/users";
 import { api } from "@/plugins/api";
-import type { AuthToken, User } from "@/plugins/api/interfaces";
+import { Scope, type AuthToken, type User } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 
 const { t } = useI18n();
@@ -196,6 +210,8 @@ const userToModify = ref<User | null>(null);
 const userTokens = ref<AuthToken[]>([]);
 const tokenToRevoke = ref<AuthToken | null>(null);
 const lastOpenedQueryUserId = ref<string | null>(null);
+// reading the users takes users.read, changing them users.manage
+const canManageUsers = computed(() => authManager.hasScope(Scope.USERS_MANAGE));
 
 const filteredUsers = computed(() => {
   if (!searchQuery.value) {
@@ -236,7 +252,7 @@ const openUserFromRouteQuery = async () => {
   if (!user) {
     return;
   }
-  editUser(user);
+  if (canManageUsers.value) editUser(user);
   lastOpenedQueryUserId.value = queryUserId;
   await router.replace({ name: "usersettings", query: {} });
 };

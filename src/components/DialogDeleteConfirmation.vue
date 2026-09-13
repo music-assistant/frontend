@@ -15,7 +15,7 @@
         </Button>
         <Button
           type="button"
-          variant="destructive"
+          :variant="destructive ? 'destructive' : 'default'"
           :disabled="loading"
           @click="handleConfirm"
         >
@@ -50,6 +50,7 @@ const loading = ref(false);
 const title = ref("");
 const message = ref("");
 const confirmLabel = ref("");
+const destructive = ref(true);
 let onConfirm: (() => void | Promise<void>) | undefined;
 
 const handleConfirm = async () => {
@@ -69,6 +70,7 @@ const reset = () => {
   title.value = "";
   message.value = "";
   confirmLabel.value = "";
+  destructive.value = true;
   loading.value = false;
   onConfirm = undefined;
 };
@@ -89,6 +91,7 @@ onMounted(() => {
       title.value = evt.title ?? t("delete");
       message.value = evt.message;
       confirmLabel.value = evt.confirmLabel ?? t("delete");
+      destructive.value = evt.destructive ?? true;
       onConfirm = evt.onConfirm;
       open.value = true;
     },

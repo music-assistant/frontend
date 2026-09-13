@@ -61,7 +61,12 @@ import {
   resetMediaSession,
 } from "@/helpers/mediaSession";
 import { api, ConnectionState } from "@/plugins/api";
-import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
+import {
+  CoreState,
+  EventType,
+  ProviderType,
+  Scope,
+} from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
@@ -259,6 +264,8 @@ const handleLocalConnect = async (serverAddress: string) => {
 };
 
 let initializationCompleted = false;
+// the user's role and its sorted scopes at the last completed initialization
+let initializedAccess: string | undefined;
 
 const refreshPluginEnabledState = async (domain: string) => {
   try {
@@ -318,6 +325,20 @@ async function migrateLocalStorageToUserPreferences() {
 }
 
 const completeInitialization = async () => {
+  // Read the onboarding request before anything can return early: the server's
+  // setup flow appends ?onboard=true, and dropping it right away keeps a reload
+  // from sending the user back into the wizard.
+  const urlParams = new URLSearchParams(window.location.search);
+  const onboardRequested = urlParams.get("onboard") === "true";
+  if (onboardRequested) {
+    urlParams.delete("onboard");
+    const cleanUrl =
+      window.location.pathname +
+      (urlParams.toString() ? "?" + urlParams.toString() : "") +
+      window.location.hash;
+    window.history.replaceState({}, "", cleanUrl);
+  }
+
   // Guard against multiple initializations
   if (initializationCompleted) {
     return;
@@ -352,6 +373,17 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
   // the scopes the role of the user grants, for the parts of the ui gated on one
   store.roleScopes = await api.getRoleScopes();
+  // sharing tells a guest from a member by the role itself, so the role counts too
+  const userAccess = [
+    userInfo.role,
+    ...[...(store.roleScopes[userInfo.role] ?? [])].sort(),
+  ].join(" ");
+  if (initializedAccess !== undefined && userAccess !== initializedAccess) {
+    // Screens read what the role allows once, when they open, so a reconnect
+    // that brings another role or other scopes starts the app afresh.
+    window.location.reload();
+    return;
+  }
 
   const isGuestAccessSession = authManager.isGuestAccessSession();
   const isDashboardViewer = authManager.isDashboardViewer();
@@ -395,14 +427,12 @@ const completeInitialization = async () => {
     await api.fetchProviders();
   }
 
-  const urlParams = new URLSearchParams(window.location.search);
   if (
-    (urlParams.get("onboard") === "true" ||
-      serverInfo.onboard_done === false) &&
-    userInfo.role === "admin"
+    (onboardRequested || serverInfo.onboard_done === false) &&
+    // the wizard sets up every kind of provider
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
   ) {
-    store.isOnboarding = true;
-    router.push("/settings");
+    router.push({ name: "onboarding" });
   } else if (isGuestAccessSession) {
     router.push("/guest");
   } else if (isDashboardViewer) {
@@ -415,6 +445,7 @@ const completeInitialization = async () => {
   // from the URL hash. The router config already redirects "/" to "/discover"
   api.state.value = ConnectionState.INITIALIZED;
   initializationCompleted = true;
+  initializedAccess = userAccess;
   await initializeWebPlayerModeSync();
 
   // Initialize companion app integration

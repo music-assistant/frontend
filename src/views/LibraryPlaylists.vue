@@ -32,8 +32,11 @@ import {
   EventMessage,
   EventType,
   MediaType,
+  type Playlist,
   ProviderFeature,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -96,6 +99,8 @@ const setTotals = async function (params: LoadDataParams) {
 };
 
 onMounted(() => {
+  // creating and importing playlists changes the library
+  const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);
   const playListCreateItems: ToolBarMenuItem[] = [];
   for (const prov of Object.values(api.providers).filter(
     (x) =>
@@ -135,7 +140,7 @@ onMounted(() => {
       overflowAllowed: true,
     });
   }
-  if (playListCreateItems.length) {
+  if (canEditLibrary && playListCreateItems.length) {
     extraMenuItems.value.push({
       label: "create_playlist_on",
       icon: ListPlus,
@@ -144,14 +149,16 @@ onMounted(() => {
     });
   }
   // import playlist from file
-  extraMenuItems.value.push({
-    label: "import_playlist",
-    action: () => {
-      triggerFileImport();
-    },
-    icon: Import,
-    overflowAllowed: true,
-  });
+  if (canEditLibrary) {
+    extraMenuItems.value.push({
+      label: "import_playlist",
+      action: () => {
+        triggerFileImport();
+      },
+      icon: Import,
+      overflowAllowed: true,
+    });
+  }
   // signal if/when items get added/updated/removed within this library
   const unsub = api.subscribe_multi(
     [
@@ -165,6 +172,15 @@ onMounted(() => {
         evt.event === EventType.MEDIA_ITEM_ADDED ||
         evt.event === EventType.MEDIA_ITEM_DELETED
       ) {
+        listingRef.value?.reload?.();
+      } else if (
+        (evt.data as Playlist).access !== null &&
+        listingRef.value?.isMissing((evt.data as Playlist).uri)
+      ) {
+        // the server only announces a playlist to the users who may see it, so
+        // a personal playlist a fully loaded, unfiltered listing lacks was just
+        // shared with the user; one the user may no longer see is not announced
+        // and stays until the next reload
         listingRef.value?.reload?.();
       } else {
         updateAvailable.value = true;

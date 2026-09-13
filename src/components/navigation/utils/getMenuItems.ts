@@ -1,6 +1,9 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { setUserPreference } from "@/composables/userPreferences";
+import { canOpenAIRadio } from "@/helpers/ai_radio_access";
+import { Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import {
   BookAudio,
@@ -189,7 +192,10 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     path: "/music-quiz",
     isLibraryNode: false,
     group: "plugins",
-    available: () => store.enabledPlugins.has("music_quiz"),
+    // the menu opens the host panel, which takes users.invite
+    available: () =>
+      store.enabledPlugins.has("music_quiz") &&
+      authManager.hasScope(Scope.USERS_INVITE),
   },
   {
     id: "ai_radio",
@@ -198,7 +204,7 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     path: "/ai-radio",
     isLibraryNode: false,
     group: "plugins",
-    available: () => store.enabledPlugins.has("ai_radio"),
+    available: () => store.enabledPlugins.has("ai_radio") && canOpenAIRadio(),
   },
   {
     id: "library_automations",

@@ -43,6 +43,9 @@ vi.mock("@/components/ui/sidebar", () => {
 });
 
 // These reach for the api plugin on import, which the vue-i18n mock cannot serve.
+vi.mock("@/components/navigation/NavGettingStarted.vue", () => ({
+  default: { template: "<div />" },
+}));
 vi.mock("@/components/navigation/NavMain.vue", () => ({
   default: { template: "<div />" },
 }));

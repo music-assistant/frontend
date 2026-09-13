@@ -51,7 +51,6 @@ interface Store {
   roleScopes: Record<string, string[]>;
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
-  isOnboarding: boolean;
   enabledPlugins: Set<string>;
   isPartyGuest: boolean;
   companionPlayerId?: string;
@@ -103,7 +102,6 @@ export const store: Store = reactive({
   isIngressSession: computed(() =>
     isHomeAssistantIngressSession(api.serverInfo.value),
   ),
-  isOnboarding: false,
   enabledPlugins: new Set(),
   isPartyGuest: false,
   navMenuEditMode: false,

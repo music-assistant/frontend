@@ -301,6 +301,7 @@
     v-model:open="showAccessDialog"
     :config="accessDialogConfig"
     :users="managesAllSources ? users : null"
+    :share-candidates="accessShareCandidates"
     :can-change-owner="managesAllSources"
     @saved="loadItems"
   />
@@ -336,12 +337,15 @@ import {
   getProviderSharingTranslationKey,
   hasConfigurableAccess,
   isOwnMusicSource,
+  servesNobody,
+  shareCandidates,
   userDisplayName,
 } from "@/helpers/provider_access";
 import {
   canReconfigureProvider,
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
+  providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
 } from "@/helpers/provider_config";
@@ -356,7 +360,9 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  Scope,
   type User,
+  type UserSummary,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -384,7 +390,9 @@ const viewMode = computed(() => providersViewMode.viewMode.value);
 const MIN_PROVIDERS_FOR_SEARCH = 10;
 
 // an admin manages every source, a member only the music sources it owns
-const managesAllSources = computed(() => authManager.isAdmin());
+const managesAllSources = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 const currentType = computed(() =>
   managesAllSources.value
@@ -410,7 +418,7 @@ const addProviderLabel = computed(() => {
     .with(ProviderType.AUDIO_ANALYSIS, () =>
       $t("settings.add_audio_analysis_provider"),
     )
-    .otherwise(() => $t("settings.add_provider"));
+    .otherwise(() => $t("settings.add_new"));
 });
 
 // local refs
@@ -422,11 +430,20 @@ const showAddProviderDialog = ref<boolean>(false);
 const showAccessDialog = ref<boolean>(false);
 const accessDialogConfig = ref<ProviderConfig | null>(null);
 const users = ref<User[]>([]);
+// the members a member may share its sources with, null until listed
+const memberShareCandidates = ref<UserSummary[] | null>(null);
 const { isProviderSyncing } = useBackgroundTasks();
 let unsubProvidersUpdated: (() => void) | undefined;
 
 const usersById = computed(
   () => new Map(users.value.map((user) => [user.user_id, user])),
+);
+
+// an admin picks the members to share with from its own user list
+const accessShareCandidates = computed(() =>
+  managesAllSources.value
+    ? shareCandidates(users.value)
+    : memberShareCandidates.value,
 );
 
 // the providers of the current type (a member's own ones only), before the
@@ -500,13 +517,31 @@ const loadUsers = async function () {
   }
 };
 
-const removeProvider = function (providerInstanceId: string) {
-  api
-    .removeProviderConfig(providerInstanceId)
-    .catch((err) => toast.error(String(err)));
-  providerConfigs.value = providerConfigs.value.filter(
-    (x) => x.instance_id != providerInstanceId,
-  );
+const loadShareCandidates = async function () {
+  try {
+    memberShareCandidates.value = await api.getShareCandidates();
+  } catch {
+    toast.error($t("auth.users_load_failed"));
+  }
+};
+
+const removeProvider = function (config: ProviderConfig) {
+  const instanceId = config.instance_id;
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("settings.remove_provider"),
+    message: $t("settings.remove_provider_confirm", [getProviderName(config)]),
+    confirmLabel: $t("settings.remove_provider"),
+    onConfirm: async () => {
+      try {
+        await api.removeProviderConfig(instanceId);
+        providerConfigs.value = providerConfigs.value.filter(
+          (x) => x.instance_id != instanceId,
+        );
+      } catch (err) {
+        toast.error(String(err));
+      }
+    },
+  });
 };
 
 const openProviderOptions = function (providerInstanceId: string) {
@@ -559,8 +594,10 @@ onMounted(() => {
   unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
     loadItems();
   });
-  // listing the users is an admin call; a member only shares its own sources
+  // listing the users is an admin call, so a member picks from the share
+  // candidates, which older servers do not list
   if (managesAllSources.value) loadUsers();
+  else if (api.supportsShareCandidates) loadShareCandidates();
 });
 
 onBeforeUnmount(() => {
@@ -647,16 +684,16 @@ const onMenu = function (evt: Event, item: ProviderConfig) {
         item.type != ProviderType.MUSIC,
     },
     {
-      label: "settings.delete",
+      label: "settings.remove_provider",
       labelArgs: [],
       action: () => {
-        removeProvider(item.instance_id);
+        removeProvider(item);
       },
       icon: "mdi-delete",
       hide: providerManifest.builtin,
     },
     {
-      label: "settings.reload_provider",
+      label: "settings.reload",
       labelArgs: [],
       action: () => {
         reloadProvider(item.instance_id);
@@ -738,14 +775,11 @@ watch(
 );
 
 const getProviderName = function (config: ProviderConfig) {
-  // Try to get the name from the provider instance first
-  const providerInstance = api.getProvider(config.instance_id);
-  if (providerInstance && providerInstance.name) {
-    return providerInstance.name;
-  }
-  // fallback on configured name or manifest name
-  const manifest = api.providerManifests[config.domain];
-  return config.name || config.default_name || manifest?.name;
+  return providerDisplayName(
+    config,
+    api.getProvider(config.instance_id),
+    api.providerManifests[config.domain],
+  );
 };
 
 const isTextTruncated = function (text: string) {
@@ -822,16 +856,23 @@ const canConfigureAccess = function (item: ProviderConfig) {
 };
 
 // the access record in its compact form: "<owner> · <who it is shared with>",
-// without the owner for a member, which only ever sees its own sources
+// without the owner for a member, which only ever sees its own sources; a
+// source nobody can use says so instead
 const accessSummary = function (item: ProviderConfig) {
   const access = effectiveProviderAccess(item.access);
+  if (servesNobody(access)) return $t("settings.source_access.nobody");
   const sharedCount = access.shared_users.length;
   const sharing =
     access.sharing === ProviderSharing.SELECTED
       ? $t("settings.source_access.shared_with_count", sharedCount, {
           named: { count: sharedCount },
         })
-      : $t(getProviderSharingTranslationKey(access.sharing));
+      : $t(
+          getProviderSharingTranslationKey(
+            access.sharing,
+            isOwnMusicSource(item, store.currentUser?.user_id),
+          ),
+        );
   if (!managesAllSources.value) return sharing;
   const owner =
     access.owner === null

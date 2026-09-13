@@ -1,4 +1,6 @@
+import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
+  type ProviderAccess,
   ProviderSharing,
   ProviderType,
   UserRole,
@@ -8,15 +10,63 @@ import { providerConfig } from "../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import { user } from "../../tests/fixtures/user";
 import {
+  accessAllows,
   effectiveProviderAccess,
   getProviderSharingHintTranslationKey,
   getProviderSharingTranslationKey,
   hasConfigurableAccess,
   isOwnMusicSource,
   ownerCandidates,
+  servesNobody,
   shareCandidates,
   userDisplayName,
 } from "./provider_access";
+
+describe("accessAllows", () => {
+  const member = user({ user_id: "member" });
+  const guest = user({ user_id: "guest", role: UserRole.GUEST });
+  const record = (overrides: Partial<ProviderAccess> = {}): ProviderAccess => ({
+    owner: "owner",
+    sharing: ProviderSharing.PRIVATE,
+    shared_users: [],
+    ...overrides,
+  });
+
+  it("allows everyone without a record", () => {
+    expect(accessAllows(null, guest)).toBe(true);
+  });
+
+  it("allows the owner whatever the sharing is", () => {
+    expect(accessAllows(record({ owner: "member" }), member)).toBe(true);
+  });
+
+  it("allows nobody else while private", () => {
+    expect(accessAllows(record(), member)).toBe(false);
+  });
+
+  it("allows the selected members only", () => {
+    const access = record({
+      sharing: ProviderSharing.SELECTED,
+      shared_users: ["member"],
+    });
+
+    expect(accessAllows(access, member)).toBe(true);
+    expect(accessAllows(access, user({ user_id: "other" }))).toBe(false);
+  });
+
+  it("allows members but not guests while shared with the members", () => {
+    const access = record({ sharing: ProviderSharing.MEMBERS });
+
+    expect(accessAllows(access, member)).toBe(true);
+    expect(accessAllows(access, guest)).toBe(false);
+  });
+
+  it("allows guests too while shared with everyone", () => {
+    expect(
+      accessAllows(record({ sharing: ProviderSharing.EVERYONE }), guest),
+    ).toBe(true);
+  });
+});
 
 describe("effectiveProviderAccess", () => {
   it("reads a missing record as a household source for everyone", () => {
@@ -89,15 +139,115 @@ describe("isOwnMusicSource", () => {
   });
 });
 
+describe("servesNobody", () => {
+  it.each([
+    ["private", ProviderSharing.PRIVATE],
+    ["shared with nobody selected", ProviderSharing.SELECTED],
+  ])("is true for a source without an owner that is %s", (_label, sharing) => {
+    expect(servesNobody({ owner: null, sharing, shared_users: [] })).toBe(true);
+  });
+
+  it.each([
+    [
+      "a source without an owner shared with a selected member",
+      {
+        owner: null,
+        sharing: ProviderSharing.SELECTED,
+        shared_users: ["user-2"],
+      },
+    ],
+    [
+      "a source without an owner shared with all members",
+      { owner: null, sharing: ProviderSharing.MEMBERS, shared_users: [] },
+    ],
+    [
+      "a source without an owner shared with everyone",
+      { owner: null, sharing: ProviderSharing.EVERYONE, shared_users: [] },
+    ],
+    [
+      "a private source with an owner",
+      { owner: "user-1", sharing: ProviderSharing.PRIVATE, shared_users: [] },
+    ],
+    [
+      "a source with an owner shared with nobody selected",
+      { owner: "user-1", sharing: ProviderSharing.SELECTED, shared_users: [] },
+    ],
+  ])("is false for %s", (_label, access) => {
+    expect(servesNobody(access)).toBe(false);
+  });
+});
+
 describe("sharing translation keys", () => {
   it.each(Object.values(ProviderSharing))("names sharing %s", (sharing) => {
-    expect(getProviderSharingTranslationKey(sharing)).toBe(
+    expect(getProviderSharingTranslationKey(sharing, true)).toBe(
       `settings.source_access.options.${sharing}`,
     );
-    expect(getProviderSharingHintTranslationKey(sharing)).toBe(
-      `settings.source_access.hints.${sharing}`,
-    );
+    expect(
+      getProviderSharingHintTranslationKey({
+        owner: "user-1",
+        sharing,
+        shared_users: [],
+      }),
+    ).toBe(`settings.source_access.hints.${sharing}`);
   });
+
+  it("names private sharing as not shared for a viewer that does not own the source", () => {
+    expect(
+      getProviderSharingTranslationKey(ProviderSharing.PRIVATE, false),
+    ).toBe("settings.source_access.options.not_shared");
+  });
+
+  it.each([
+    ProviderSharing.SELECTED,
+    ProviderSharing.MEMBERS,
+    ProviderSharing.EVERYONE,
+  ])(
+    "still names sharing %s for a viewer that does not own the source",
+    (sharing) => {
+      expect(getProviderSharingTranslationKey(sharing, false)).toBe(
+        `settings.source_access.options.${sharing}`,
+      );
+    },
+  );
+
+  it("explains that only the selected members can use a source without an owner", () => {
+    expect(
+      getProviderSharingHintTranslationKey({
+        owner: null,
+        sharing: ProviderSharing.SELECTED,
+        shared_users: ["user-2"],
+      }),
+    ).toBe("settings.source_access.hints.selected_no_owner");
+  });
+
+  it.each([
+    ["private", ProviderSharing.PRIVATE],
+    ["shared with nobody selected", ProviderSharing.SELECTED],
+  ])(
+    "explains that nobody can use a source without an owner that is %s",
+    (_label, sharing) => {
+      expect(
+        getProviderSharingHintTranslationKey({
+          owner: null,
+          sharing,
+          shared_users: [],
+        }),
+      ).toBe("settings.source_access.hints.nobody");
+    },
+  );
+
+  it.each([ProviderSharing.MEMBERS, ProviderSharing.EVERYONE])(
+    "still explains sharing %s for a source without an owner",
+    (sharing) => {
+      expect(
+        getProviderSharingHintTranslationKey({
+          owner: null,
+          sharing,
+          shared_users: [],
+        }),
+      ).toBe(`settings.source_access.hints.${sharing}`);
+    },
+  );
 });
 
 describe("user candidates", () => {
@@ -108,9 +258,9 @@ describe("user candidates", () => {
     username: "guest",
     role: UserRole.GUEST,
   });
-  const service = user({
-    user_id: "service",
-    username: "service",
+  const systemAccount = user({
+    user_id: "ha",
+    username: HOMEASSISTANT_SYSTEM_USER,
     role: UserRole.SERVICE,
   });
   const disabled = user({
@@ -118,18 +268,23 @@ describe("user candidates", () => {
     username: "disabled",
     enabled: false,
   });
-  const users = [owner, member, guest, service, disabled];
+  const users = [owner, member, guest, systemAccount, disabled];
 
-  it("offers enabled members as owner, not guests or service accounts", () => {
+  it("offers enabled members as owner, not guests or the Home Assistant account", () => {
     expect(ownerCandidates(users)).toEqual([owner, member]);
   });
 
-  it("offers every enabled member but the owner to share with", () => {
-    expect(shareCandidates(users, "owner")).toEqual([member, service]);
+  it("offers another service account as owner", () => {
+    const service = user({
+      user_id: "service",
+      username: "service",
+      role: UserRole.SERVICE,
+    });
+    expect(ownerCandidates([service])).toEqual([service]);
   });
 
-  it("offers every enabled member to share a household source with", () => {
-    expect(shareCandidates(users, null)).toEqual([owner, member, service]);
+  it("offers every enabled member to share with, not guests", () => {
+    expect(shareCandidates(users)).toEqual([owner, member, systemAccount]);
   });
 });
 

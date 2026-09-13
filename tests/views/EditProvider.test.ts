@@ -7,17 +7,20 @@ import {
   ProviderStatus,
   ProviderType,
   type ProviderConfig,
+  type Scope,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import EditProvider from "@/views/settings/EditProvider.vue";
 import { providerConfig } from "../fixtures/providerConfig";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
 const {
   apiMock,
   authMock,
   eventbusMock,
+  i18nMock,
   routerMock,
   toastMock,
   unsubscribeMock,
@@ -45,10 +48,15 @@ const {
     subscribe: vi.fn(),
   },
   authMock: {
-    isAdmin: vi.fn(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
   },
   eventbusMock: {
     emit: vi.fn(),
+  },
+  // a spy that returns the key, so the interpolation arguments a message is
+  // given stay assertable
+  i18nMock: {
+    t: vi.fn((key: string) => key),
   },
   routerMock: {
     push: vi.fn(),
@@ -119,9 +127,7 @@ vi.mock("vue-i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-i18n")>();
   return {
     ...actual,
-    useI18n: () => ({
-      t: (key: string) => key,
-    }),
+    useI18n: () => i18nMock,
   };
 });
 
@@ -136,7 +142,7 @@ vi.mock("vue-router", async (importOriginal) => {
 beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
-  authMock.isAdmin.mockReturnValue(true);
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
   apiMock.providerManifests.spotify.documentation =
@@ -774,6 +780,88 @@ describe("EditProvider", () => {
     expect(link.text()).toBe("Local Audio add-on");
   });
 
+  it("names the source in the removal confirmation and toast", async () => {
+    // a renamed provider must be removed under the name the user gave it, so
+    // the custom name has to win over the manifest's "Spotify"
+    const config = spotifyConfig(ProviderStatus.INCOMPATIBLE);
+    config.name = "My Spotify";
+    config.last_error = {
+      error_code: 1,
+      message: "This provider is retired.",
+    };
+    apiMock.getProviderConfig.mockResolvedValue(config);
+    apiMock.removeProviderConfig.mockResolvedValue(undefined);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    // the banner's only button is the destructive "remove" one
+    await wrapper.get("button-stub").trigger("click");
+
+    const removeCall = eventbusMock.emit.mock.calls.find(
+      ([event]) => event === "deleteConfirmationDialog",
+    );
+    expect(removeCall?.[1].message).toBe("settings.remove_provider_confirm");
+    // the stubbed t returns the key, so the name is checked where it is passed
+    expect(i18nMock.t).toHaveBeenCalledWith(
+      "settings.remove_provider_confirm",
+      ["My Spotify"],
+    );
+
+    await removeCall?.[1].onConfirm();
+    await flushPromises();
+
+    expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
+    expect(toastMock.success).toHaveBeenCalledWith("settings.provider_removed");
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_removed", [
+      "My Spotify",
+    ]);
+  });
+
+  it("falls back to the default name when the source has no custom name", async () => {
+    // an unloaded provider has no instance to read a name from, so the config's
+    // default name has to carry it rather than the generic manifest name
+    const config = spotifyConfig(ProviderStatus.INCOMPATIBLE);
+    config.name = null;
+    config.default_name = "Spotify (sam)";
+    config.last_error = {
+      error_code: 1,
+      message: "This provider is retired.",
+    };
+    apiMock.getProviderConfig.mockResolvedValue(config);
+    apiMock.removeProviderConfig.mockResolvedValue(undefined);
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    await wrapper.get("button-stub").trigger("click");
+
+    expect(i18nMock.t).toHaveBeenCalledWith(
+      "settings.remove_provider_confirm",
+      ["Spotify (sam)"],
+    );
+  });
+
   it("keeps a pending local edit and shows a toast when an action returns no entries", async () => {
     apiMock.getProviderConfig.mockResolvedValueOnce(
       spotifyConfig(ProviderStatus.LOADED),
@@ -894,7 +982,9 @@ describe("EditProvider", () => {
   });
 
   it("sends a member back to the music sources page after saving", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
     store.currentUser = user({ user_id: "member-id" });
 
     await mountSavedProvider({
@@ -913,7 +1003,9 @@ describe("EditProvider", () => {
   });
 
   it("sends a member away from a source it does not own", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
     store.currentUser = user({ user_id: "member-id" });
     apiMock.getProviderConfig.mockResolvedValue({
       ...spotifyConfig(ProviderStatus.LOADED),
@@ -942,7 +1034,9 @@ describe("EditProvider", () => {
   });
 
   it("lets a member open a source it owns", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
     store.currentUser = user({ user_id: "member-id" });
     apiMock.getProviderConfig.mockResolvedValue({
       ...spotifyConfig(ProviderStatus.LOADED),
