@@ -89,7 +89,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { useOnboarding } from "@/composables/useOnboarding";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import { isTodo, type OnboardingStepId } from "@/helpers/onboarding";
 import { Circle, CircleCheck } from "@lucide/vue";
 import { computed } from "vue";
 
@@ -107,10 +107,9 @@ const emit = defineEmits<{
 
 const { ctx, steps, pending } = useOnboarding();
 
+// a review is nothing to set up and nothing to do, so it is on neither list
 const done = computed(() =>
-  steps.value.filter(
-    (step) => step.kind !== "summary" && step.isDone(ctx.value),
-  ),
+  steps.value.filter((step) => isTodo(step) && step.isDone(ctx.value)),
 );
 const playerCount = computed(() => ctx.value.playerCount);
 </script>

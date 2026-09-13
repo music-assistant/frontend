@@ -582,8 +582,12 @@ const table = useVueTable({
           </Select>
         </div>
         <div class="flex w-fit items-center justify-center text-sm font-medium">
-          Page {{ table.getState().pagination.pageIndex + 1 }} of
-          {{ table.getPageCount() }}
+          {{
+            $t("settings.genre_table_page_of", [
+              table.getState().pagination.pageIndex + 1,
+              table.getPageCount(),
+            ])
+          }}
         </div>
         <div class="ml-auto flex items-center gap-2 lg:ml-0">
           <Button

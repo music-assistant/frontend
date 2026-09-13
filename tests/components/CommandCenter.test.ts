@@ -1,14 +1,19 @@
 import CommandCenter from "@/components/CommandCenter.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import type { SearchTarget } from "@/composables/useProgressiveSearch";
 import { MediaType, type Player } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Ref } from "vue";
 
 const state = vi.hoisted(() => ({
   resultsByType: {} as Record<string, unknown[]>,
   // real search results arrive through reactive state; tests emulate that by
   // bumping this after mutating resultsByType outside a query change
   bumpResults: () => {},
+  // the source selection the palette hands to the search composable
+  providersRef: undefined as Ref<string[]> | undefined,
+  providerTargets: { value: [] as SearchTarget[] },
   players: [] as unknown[],
   prefs: {} as Record<string, unknown>,
   searchSpy: vi.fn(),
@@ -53,16 +58,30 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
   state.bumpResults = () => {
     resultsVersion.value += 1;
   };
+  const providerTargets = ref<SearchTarget[]>([]);
+  state.providerTargets = providerTargets;
   return {
     ...actual,
-    useProgressiveSearch: () => ({
-      loading: computed(() => state.loading.value),
-      search: state.searchSpy,
-      filteredItems: (mediaType: string) => {
-        void resultsVersion.value;
-        return state.resultsByType[mediaType] ?? [];
-      },
-    }),
+    useProgressiveSearch: (options: { providers?: Ref<string[]> }) => {
+      state.providersRef = options.providers;
+      return {
+        loading: computed(() => state.loading.value),
+        search: state.searchSpy,
+        providerTargets,
+        // the real composable drops the ids of providers that are no target
+        selectedProviders: computed(() =>
+          (options.providers?.value ?? []).filter(
+            (id) =>
+              id === actual.LIBRARY_SEARCH_TARGET ||
+              providerTargets.value.some((target) => target.id === id),
+          ),
+        ),
+        filteredItems: (mediaType: string) => {
+          void resultsVersion.value;
+          return state.resultsByType[mediaType] ?? [];
+        },
+      };
+    },
   };
 });
 
@@ -74,11 +93,25 @@ vi.mock("@/composables/useOrderedPlayers", async () => {
 });
 
 vi.mock("@/composables/userPreferences", async () => {
-  const { computed } = await import("vue");
+  const { computed, ref } = await import("vue");
+  // the real composable applies a write on the client right away, so every
+  // getPreference computed sees it; the version bump stands in for that
+  const prefsVersion = ref(0);
+  state.setPreferenceSpy.mockImplementation((key: string, value: unknown) => {
+    state.prefs[key] = value;
+    prefsVersion.value += 1;
+  });
   return {
     useUserPreferences: () => ({
       getPreference: (key: string, defaultValue: unknown) =>
-        computed(() => state.prefs[key] ?? defaultValue),
+        computed(() => {
+          void prefsVersion.value;
+          // like the real one, only a missing key falls back: a stored null
+          // reaches the palette as is
+          return state.prefs[key] !== undefined
+            ? state.prefs[key]
+            : defaultValue;
+        }),
       setPreference: state.setPreferenceSpy,
     }),
   };
@@ -117,6 +150,17 @@ vi.mock("@/components/navigation/utils/getMenuItems", () => ({
     },
   ],
 }));
+
+const SPOTIFY_TARGET: SearchTarget = {
+  id: "spotify",
+  name: "Spotify",
+  iconDomain: "spotify",
+};
+const FILES_TARGET: SearchTarget = {
+  id: "filesystem_local--1",
+  name: "Music files",
+  iconDomain: "filesystem_local",
+};
 
 function makePlayer(id: string, name: string): Player {
   return {
@@ -158,8 +202,41 @@ const CommandItemStub = {
     '<button data-testid="palette-item" @click="$emit(\'select\')"><slot /></button>',
 };
 
-function mountPalette() {
+// reka renders the sources menu into a portal; these stubs keep it inline and
+// open it from its trigger, so its items read and click like any other button
+const DropdownMenuStub = {
+  data: () => ({ open: false }),
+  provide() {
+    const menu = this as unknown as { open: boolean };
+    return {
+      toggleSourcesMenu: () => {
+        menu.open = !menu.open;
+      },
+      sourcesMenuOpen: () => menu.open,
+    };
+  },
+  template: "<div><slot /></div>",
+};
+const DropdownMenuTriggerStub = {
+  inject: ["toggleSourcesMenu"],
+  template: '<div @click="toggleSourcesMenu"><slot /></div>',
+};
+const DropdownMenuContentStub = {
+  inject: ["sourcesMenuOpen"],
+  emits: ["closeAutoFocus"],
+  template:
+    '<div v-if="sourcesMenuOpen()" data-testid="sources-menu"><slot /></div>',
+};
+const DropdownMenuCheckboxItemStub = {
+  props: ["modelValue"],
+  emits: ["update:modelValue", "select"],
+  template: `<button role="menuitemcheckbox" :aria-checked="modelValue"
+    @click="$emit('select', $event); $emit('update:modelValue', !modelValue)"><slot /></button>`,
+};
+
+function mountPalette(attachTo?: Element) {
   return mount(CommandCenter, {
+    attachTo,
     global: {
       stubs: {
         CommandCenterShell: CommandCenterShellStub,
@@ -169,10 +246,19 @@ function mountPalette() {
           template: "<section><h3>{{ heading }}</h3><slot /></section>",
         },
         CommandItem: CommandItemStub,
+        DropdownMenu: DropdownMenuStub,
+        DropdownMenuTrigger: DropdownMenuTriggerStub,
+        DropdownMenuContent: DropdownMenuContentStub,
+        DropdownMenuLabel: { template: "<div><slot /></div>" },
+        DropdownMenuSeparator: { template: "<hr />" },
+        DropdownMenuCheckboxItem: DropdownMenuCheckboxItemStub,
         ListboxFilter: ListboxFilterStub,
         MediaItemThumb: IconStub,
         PlayerIcon: IconStub,
-        ProviderIcon: { template: '<i data-testid="provider-icon" />' },
+        ProviderIcon: {
+          props: ["domain"],
+          template: '<i data-testid="provider-icon" :data-domain="domain" />',
+        },
         Spinner: { template: '<i data-testid="palette-spinner" />' },
       },
     },
@@ -193,6 +279,35 @@ function pagesChip(wrapper: ReturnType<typeof mountPalette>) {
   return wrapper
     .findAll("button.command-center-chip")
     .find((chip) => chip.text() === "pages")!;
+}
+
+/** The button at the end of the field that opens the sources menu. */
+function sourcesTrigger(wrapper: ReturnType<typeof mountPalette>) {
+  return wrapper.find('button[aria-label^="search_sources"]');
+}
+
+/** The items of the sources menu, "All sources" first, once it is open. */
+function sourceItems(wrapper: ReturnType<typeof mountPalette>) {
+  return wrapper.findAll('[role="menuitemcheckbox"]');
+}
+
+async function openSources(wrapper: ReturnType<typeof mountPalette>) {
+  await sourcesTrigger(wrapper).trigger("click");
+  return sourceItems(wrapper);
+}
+
+function sourceItem(wrapper: ReturnType<typeof mountPalette>, text: string) {
+  const item = sourceItems(wrapper).find(
+    (candidate) => candidate.text() === text,
+  );
+  expect(item, `source item "${text}"`).toBeDefined();
+  return item!;
+}
+
+function checkedSources(wrapper: ReturnType<typeof mountPalette>) {
+  return sourceItems(wrapper)
+    .filter((item) => item.attributes("aria-checked") === "true")
+    .map((item) => item.text());
 }
 
 /** Headings of the result groups currently rendered. */
@@ -218,6 +333,8 @@ function itemByText(wrapper: ReturnType<typeof mountPalette>, text: string) {
 beforeEach(() => {
   vi.useFakeTimers();
   state.resultsByType = {};
+  state.providersRef = undefined;
+  state.providerTargets.value = [SPOTIFY_TARGET, FILES_TARGET];
   state.players = [];
   state.prefs = {};
   state.loading.value = false;
@@ -646,6 +763,181 @@ describe("CommandCenter", () => {
 
     await itemByText(wrapper, "settings.settings").trigger("click");
     expect(state.routerPush).toHaveBeenCalledWith("/settings");
+
+    wrapper.unmount();
+  });
+
+  it("lists the library and each service in the sources menu", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // closed until asked for, and nothing picked yet: everything is searched
+    expect(wrapper.find('[data-testid="sources-menu"]').exists()).toBe(false);
+    expect(sourcesTrigger(wrapper).attributes("title")).toBe("search_sources");
+    expect(sourcesTrigger(wrapper).text()).toBe("search_sources");
+
+    const items = await openSources(wrapper);
+    expect(items.map((item) => item.text())).toEqual([
+      "all_sources",
+      "library",
+      "Spotify",
+      "Music files",
+    ]);
+    expect(
+      items
+        .slice(1)
+        .map((item) =>
+          item.get('[data-testid="provider-icon"]').attributes("data-domain"),
+        ),
+    ).toEqual(["library", "spotify", "filesystem_local"]);
+    expect(checkedSources(wrapper)).toEqual(["all_sources"]);
+
+    wrapper.unmount();
+  });
+
+  it("leaves the sources menu out when there is nothing to pick from", async () => {
+    state.providerTargets.value = [];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    expect(sourcesTrigger(wrapper).exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("hides the sources menu while scoped to pages or to genres", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    expect(sourcesTrigger(wrapper).exists()).toBe(true);
+
+    // pages come from the menu, not from a source
+    await pagesChip(wrapper).trigger("click");
+    expect(sourcesTrigger(wrapper).exists()).toBe(false);
+    await pagesChip(wrapper).trigger("click");
+    expect(sourcesTrigger(wrapper).exists()).toBe(true);
+
+    // and genres only from the library
+    const genresChip = wrapper
+      .findAll("button.command-center-chip")
+      .find((chip) => chip.text() === "genres")!;
+    await genresChip.trigger("click");
+    expect(sourcesTrigger(wrapper).exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("narrows the search to the ticked sources and remembers them", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await openSources(wrapper);
+    await sourceItem(wrapper, "Spotify").trigger("click");
+
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.sources", [
+      "spotify",
+    ]);
+    expect(state.providersRef?.value).toEqual(["spotify"]);
+    // the menu stays open for the next tick
+    expect(checkedSources(wrapper)).toEqual(["Spotify"]);
+    expect(sourcesTrigger(wrapper).attributes("title")).toBe(
+      "search_sources: Spotify",
+    );
+    expect(sourcesTrigger(wrapper).get("svg").classes()).toContain(
+      "text-primary",
+    );
+
+    await sourceItem(wrapper, "library").trigger("click");
+    expect(state.setPreferenceSpy).toHaveBeenLastCalledWith("search.sources", [
+      "spotify",
+      "library",
+    ]);
+    expect(checkedSources(wrapper)).toEqual(["library", "Spotify"]);
+    expect(sourcesTrigger(wrapper).attributes("title")).toBe(
+      "search_sources: library, Spotify",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("ignores a remembered service that is gone and drops it on the next write", async () => {
+    state.prefs["search.sources"] = ["tidal"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    expect(sourcesTrigger(wrapper).attributes("title")).toBe("search_sources");
+    expect(sourcesTrigger(wrapper).get("svg").classes()).not.toContain(
+      "text-primary",
+    );
+    await openSources(wrapper);
+    expect(checkedSources(wrapper)).toEqual(["all_sources"]);
+
+    await sourceItem(wrapper, "Spotify").trigger("click");
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.sources", [
+      "spotify",
+    ]);
+
+    wrapper.unmount();
+  });
+
+  it("goes back to every source from All sources without rewriting an empty pick", async () => {
+    state.prefs["search.sources"] = ["spotify"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await openSources(wrapper);
+    await sourceItem(wrapper, "all_sources").trigger("click");
+
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.sources", []);
+    expect(state.providersRef?.value).toEqual([]);
+    expect(checkedSources(wrapper)).toEqual(["all_sources"]);
+
+    state.setPreferenceSpy.mockClear();
+    await sourceItem(wrapper, "all_sources").trigger("click");
+    expect(state.setPreferenceSpy).not.toHaveBeenCalled();
+    expect(checkedSources(wrapper)).toEqual(["all_sources"]);
+
+    wrapper.unmount();
+  });
+
+  it("copes with a stored null selection", async () => {
+    state.prefs["search.sources"] = null;
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    expect(state.providersRef?.value).toEqual([]);
+    await openSources(wrapper);
+    expect(checkedSources(wrapper)).toEqual(["all_sources"]);
+
+    wrapper.unmount();
+  });
+
+  it("hands focus back to the field when the sources menu closes", async () => {
+    const wrapper = mountPalette(document.body);
+    useCommandCenter().open();
+    await flushPromises();
+
+    await openSources(wrapper);
+    const input = wrapper.get('[data-testid="palette-input"]')
+      .element as HTMLInputElement;
+    expect(document.activeElement).not.toBe(input);
+
+    // reka's own default would put focus on the trigger button instead
+    const closing = new Event("focusScope.autoFocusOnUnmount", {
+      cancelable: true,
+    });
+    wrapper
+      .findComponent(DropdownMenuContentStub)
+      .vm.$emit("closeAutoFocus", closing);
+
+    expect(closing.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(input);
 
     wrapper.unmount();
   });

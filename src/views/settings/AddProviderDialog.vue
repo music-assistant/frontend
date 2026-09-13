@@ -89,6 +89,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
   getProviderStageTranslationKey,
   shouldShowStageBadge,
@@ -114,6 +115,8 @@ const props = defineProps<{
   providerType?: ProviderType;
   // only offer providers that allow more than one account
   multiInstanceOnly?: boolean;
+  // only offer providers that members may set up themselves
+  selfServiceOnly?: boolean;
 }>();
 
 const POPULAR_PROVIDERS = [
@@ -183,6 +186,10 @@ const availableProviders = computed(() => {
     providers = providers.filter((x) => x.multi_instance);
   }
 
+  if (props.selfServiceOnly) {
+    providers = providers.filter((x) => isSelfServiceProvider(x));
+  }
+
   return providers
     .filter(
       (x) =>
@@ -248,25 +255,28 @@ const loadItems = async function () {
 };
 
 const addProvider = function (provider: ProviderManifest) {
-  if (provider.depends_on) {
-    if (!api.getProvider(provider.depends_on)) {
-      const depProvName = api.getProviderName(provider.depends_on);
-      if (
-        confirm(
-          $t("settings.provider_depends_on_confirm", [
-            provider.name,
-            depProvName,
-          ]),
-        )
-      ) {
+  const dependsOn = provider.depends_on;
+  if (dependsOn && !api.getProvider(dependsOn)) {
+    // the provider it depends on has to be set up first, so offer that flow
+    // instead of this one
+    const depProvName = api.getProviderName(dependsOn);
+    eventbus.emit("deleteConfirmationDialog", {
+      title: $t("settings.setup_flow.setup_title", [depProvName]),
+      message: $t("settings.provider_depends_on_confirm", [
+        provider.name,
+        depProvName,
+      ]),
+      confirmLabel: $t("settings.start_setup"),
+      destructive: false,
+      onConfirm: () => {
         close();
         eventbus.emit("setupFlowDialog", {
           kind: "provider",
-          domain: provider.depends_on,
+          domain: dependsOn,
         });
-      }
-      return;
-    }
+      },
+    });
+    return;
   }
   close();
   eventbus.emit("setupFlowDialog", {

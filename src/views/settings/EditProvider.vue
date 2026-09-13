@@ -309,7 +309,10 @@ import {
   hasAdvancedEntries,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
-import { isOwnMusicSource } from "@/helpers/provider_access";
+import {
+  isOwnMusicSource,
+  isSelfServiceProvider,
+} from "@/helpers/provider_access";
 import {
   canReconfigureProvider,
   getProviderStatusTranslationKey,
@@ -388,12 +391,17 @@ const providerName = computed(
     providerManifest.value?.name,
 );
 
-const canReconfigure = computed(() =>
-  canReconfigureProvider(
-    config.value?.status,
-    providerManifest.value?.has_setup_flow,
-    config.value?.enabled,
-  ),
+// reconfiguring a source sets it up again, which a member may only do for a
+// provider it may set up itself
+const canReconfigure = computed(
+  () =>
+    (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) ||
+      isSelfServiceProvider(providerManifest.value)) &&
+    canReconfigureProvider(
+      config.value?.status,
+      providerManifest.value?.has_setup_flow,
+      config.value?.enabled,
+    ),
 );
 
 const canToggleEnabled = computed(

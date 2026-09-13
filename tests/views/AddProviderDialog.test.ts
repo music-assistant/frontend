@@ -7,6 +7,10 @@ import {
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProviderStage, ProviderType } from "@/plugins/api/interfaces";
+import {
+  eventbus,
+  type DeleteConfirmationDialogEvent,
+} from "@/plugins/eventbus";
 import { providerManifest } from "../fixtures/providerManifest";
 
 const { apiMock, routeMock, storeMock } = vi.hoisted(() => ({
@@ -156,6 +160,76 @@ describe("AddProviderDialog", () => {
 
     expect(providerNames()).toEqual(["Spotify"]);
   });
+
+  it("offers only providers that members may set up when restricted", async () => {
+    apiMock.providerManifests = {
+      filesystem_local: providerManifest({
+        domain: "filesystem_local",
+        name: "Local disk",
+        multi_instance: true,
+        self_service: false,
+      }),
+      spotify: providerManifest({
+        domain: "spotify",
+        name: "Spotify",
+        multi_instance: true,
+      }),
+    };
+
+    await openDialog({ multiInstanceOnly: true, selfServiceOnly: true });
+
+    expect(providerNames()).toEqual(["Spotify"]);
+  });
+});
+
+describe("AddProviderDialog provider dependencies", () => {
+  const nativeConfirm = vi.fn();
+
+  beforeEach(() => {
+    apiMock.providerManifests = {
+      spotify_connect: providerManifest({
+        domain: "spotify_connect",
+        name: "Spotify Connect",
+        depends_on: "spotify",
+      }),
+    };
+    apiMock.getProvider.mockReturnValue(undefined);
+    apiMock.getProviderName.mockReturnValue("Spotify");
+    nativeConfirm.mockReset();
+    // the test environment has no window.confirm, so a native popup would throw
+    // here; the stub turns that into a readable assertion instead
+    vi.stubGlobal("confirm", nativeConfirm);
+    vi.spyOn(eventbus, "emit");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(eventbus.emit).mockRestore();
+  });
+
+  it("offers the setup flow of the provider this one needs", async () => {
+    const wrapper = await openDialog();
+
+    document.querySelector<HTMLElement>(".provider-item")?.click();
+    await flushPromises();
+    const request = emitted("deleteConfirmationDialog") as
+      | DeleteConfirmationDialogEvent
+      | undefined;
+
+    expect(nativeConfirm).not.toHaveBeenCalled();
+    expect(request?.message).toBe("settings.provider_depends_on_confirm");
+    // setting up another provider destroys nothing
+    expect(request?.destructive).toBe(false);
+    expect(emitted("setupFlowDialog")).toBeUndefined();
+
+    request?.onConfirm();
+
+    expect(emitted("setupFlowDialog")).toEqual({
+      kind: "provider",
+      domain: "spotify",
+    });
+    expect(wrapper.emitted("update:show")?.at(-1)).toEqual([false]);
+  });
 });
 
 function searchField() {
@@ -169,7 +243,11 @@ function providerNames() {
 }
 
 async function openDialog(
-  props: { providerType?: ProviderType; multiInstanceOnly?: boolean } = {},
+  props: {
+    providerType?: ProviderType;
+    multiInstanceOnly?: boolean;
+    selfServiceOnly?: boolean;
+  } = {},
 ): Promise<VueWrapper> {
   const wrapper = mount(AddProviderDialog, {
     props: { ...props, show: false },
@@ -185,4 +263,13 @@ async function openDialog(
   await wrapper.setProps({ show: true });
   await flushPromises();
   return wrapper;
+}
+
+function emitted(event: string) {
+  // the emitter types its payload per event, which a call list cannot express
+  const calls = vi.mocked(eventbus.emit).mock.calls as unknown as [
+    string,
+    unknown,
+  ][];
+  return calls.find(([name]) => name === event)?.[1];
 }
