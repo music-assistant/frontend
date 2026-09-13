@@ -115,6 +115,13 @@ describe("pluralized settings messages", () => {
         named: { selected: 3, total: 57 },
       }),
     ).toBe("3 of 57 rows selected.");
+    // A single row out of a single row: still singular, so the form cannot be
+    // coming from the total.
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 1, {
+        named: { selected: 1, total: 1 },
+      }),
+    ).toBe("1 of 1 row selected.");
   });
 });
 
