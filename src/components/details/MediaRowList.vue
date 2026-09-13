@@ -62,7 +62,7 @@
             formatDuration(itemDuration(item)!)
           }}</span>
           <button
-            v-if="showFavorite && 'favorite' in item"
+            v-if="showFavorite && 'favorite' in item && canEditLibrary"
             type="button"
             class="media-rows__button"
             :class="{ 'media-rows__button--favorite': item.favorite }"
@@ -115,9 +115,11 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
   PlaybackState,
+  Scope,
   type ItemMapping,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { EllipsisVertical } from "@lucide/vue";
@@ -161,6 +163,11 @@ defineSlots<{
 const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
+
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
+);
 
 const shownItems = computed(() =>
   props.limit ? props.items?.slice(0, props.limit) : props.items,

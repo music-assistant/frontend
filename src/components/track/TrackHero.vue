@@ -88,6 +88,7 @@
               @click="gotoRadio(item)"
             />
             <DetailHeroButton
+              v-if="canEditLibrary"
               :icon="item.favorite ? IconHeartFilled : IconHeart"
               :label="favoriteButtonLabel"
               icon-only
@@ -136,7 +137,8 @@ import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
-import type { Track } from "@/plugins/api/interfaces";
+import { Scope, type Track } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { Disc, Music, Radio } from "@lucide/vue";
@@ -165,6 +167,10 @@ const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
 
 const favoriteButtonLabel = computed(() =>
   props.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
+);
+// favouring an item changes the library
+const canEditLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_WRITE),
 );
 
 const providerDomain = computed(() =>

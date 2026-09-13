@@ -13,9 +13,11 @@ const {
   mockHandleMediaItemClick,
   mockHandleMenuBtnClick,
   mockItemIsAvailable,
+  mockHasScope,
   storeMock,
 } = vi.hoisted(() => ({
   mockToggleFavorite: vi.fn(),
+  mockHasScope: vi.fn(() => true),
   mockHandleMediaItemClick: vi.fn(),
   mockHandleMenuBtnClick: vi.fn(),
   mockItemIsAvailable: vi.fn<(item: { item_id: string }) => boolean>(
@@ -42,6 +44,10 @@ vi.mock("@/helpers/media_item_actions", () => ({
 }));
 
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope: mockHasScope },
+}));
 
 // the subtitle and labels are translated in the component, so the keys are
 // what the assertions read and they stay independent of en.json
@@ -150,6 +156,15 @@ describe("MediaRowList", () => {
     expect(wrapper.findAll("button[aria-label='tooltip.favorite']")).toEqual(
       [],
     );
+  });
+
+  it("hides the hearts from a role that cannot change the library", () => {
+    mockHasScope.mockReturnValue(false);
+    const wrapper = mountList({ items: TRACKS, showFavorite: true });
+    expect(wrapper.findAll("button[aria-label='tooltip.favorite']")).toEqual(
+      [],
+    );
+    mockHasScope.mockReturnValue(true);
   });
 
   it("opens the menu with the parent item from the menu button", async () => {
