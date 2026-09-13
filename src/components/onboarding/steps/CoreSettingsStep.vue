@@ -98,9 +98,9 @@ const onSubmit = function (values: Record<string, ConfigValueType>) {
   const save = api
     .saveCoreConfig(DOMAIN, values)
     .then(() => {
-      // the form stays on screen here, so it is told what is stored now:
-      // otherwise it keeps offering to save what it already saved
-      editConfig.value?.saveSucceeded();
+      // the form stays on screen here, so it is told which values are stored
+      // now: otherwise it keeps offering to save what it already saved
+      editConfig.value?.saveSucceeded(values);
       toast.success($t("settings.settings_saved"));
       return true;
     })

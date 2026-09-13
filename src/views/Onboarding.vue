@@ -11,6 +11,7 @@
           variant="ghost"
           size="icon"
           class="-ml-2 shrink-0"
+          :disabled="moving"
           :aria-label="$t('back')"
           :title="$t('back')"
           data-testid="onboarding-back"
@@ -52,7 +53,7 @@
     />
 
     <footer v-if="showForwardAction" class="flex items-center gap-2">
-      <Button data-testid="onboarding-next" @click="next">
+      <Button :disabled="moving" data-testid="onboarding-next" @click="next">
         {{ forwardLabel }}
       </Button>
     </footer>
@@ -85,8 +86,7 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
-const { ctx, steps, dataLoaded, loadOnboardingData, setIntent, finish } =
-  useOnboarding();
+const { ctx, steps, loadOnboardingData, setIntent, finish } = useOnboarding();
 
 const STEP_VIEWS: Record<
   OnboardingStepId,
@@ -122,6 +122,14 @@ const requestedId = computed(() => {
 const currentId = ref<OnboardingStepId | null>(null);
 const stepHeading = ref<HTMLHeadingElement | null>(null);
 const finishing = ref(false);
+// whether this visit's own answer is in: the onboarding state is shared with
+// the sidebar and outlives the page, so what it holds on arrival is what some
+// earlier visit was told
+const ready = ref(false);
+// a step can take a moment to let go of the user — the server settings save on
+// their way out — and a second click must not set off from where the first one
+// has already arrived
+const moving = ref(false);
 
 /** What a step exposes to the wizard, which every step may leave to default. */
 interface StepInstance {
@@ -177,9 +185,15 @@ const goTo = function (id: OnboardingStepId) {
 };
 
 const back = async function () {
-  if (!(await leaveStep())) return;
-  const previous = steps.value[currentIndex.value - 1];
-  if (previous) goTo(previous.id);
+  if (moving.value) return;
+  moving.value = true;
+  try {
+    if (!(await leaveStep())) return;
+    const previous = steps.value[currentIndex.value - 1];
+    if (previous) goTo(previous.id);
+  } finally {
+    moving.value = false;
+  }
 };
 
 // Forward skips whatever is already set up, bar the steps that are nothing to
@@ -189,14 +203,23 @@ const back = async function () {
 // unanswered is an answer of its own: the music hub is what the wizard then
 // runs as, instead of leaving the question to be asked again.
 const next = async function () {
-  if (!(await leaveStep())) return;
-  if (currentStep.value?.id === "intent" && ctx.value.answers.intent == null) {
-    await setIntent("music_hub");
+  if (moving.value) return;
+  moving.value = true;
+  try {
+    if (!(await leaveStep())) return;
+    if (
+      currentStep.value?.id === "intent" &&
+      ctx.value.answers.intent == null
+    ) {
+      await setIntent("music_hub");
+    }
+    const following = steps.value
+      .slice(currentIndex.value + 1)
+      .find((step) => !isTodo(step) || !step.isDone(ctx.value));
+    if (following) goTo(following.id);
+  } finally {
+    moving.value = false;
   }
-  const following = steps.value
-    .slice(currentIndex.value + 1)
-    .find((step) => !isTodo(step) || !step.isDone(ctx.value));
-  if (following) goTo(following.id);
 };
 
 const finishOnboarding = async function () {
@@ -213,7 +236,7 @@ const finishOnboarding = async function () {
 // route) decides the step; anything that does not apply falls back. This also
 // settles the step the wizard opens on, as soon as the data is in.
 watch(
-  [dataLoaded, requestedId],
+  [ready, requestedId],
   ([loaded, id]) => {
     if (!loaded) return;
     const resolved = firstStep(ctx.value, id);
@@ -239,12 +262,14 @@ const focusStepHeading = async function () {
 
 // The wizard decides everything off the provider configurations and the users,
 // so it asks for them itself; a remount is worth the one call for a fresh
-// answer. Focus lands on the heading as the wizard opens, so arriving from the
-// sidebar checklist puts the keyboard inside it, and follows the step from
-// there.
-onMounted(() => {
-  void loadOnboardingData();
+// answer, and the step this visit opens on is settled from that answer rather
+// than from whatever an earlier one left behind. Focus lands on the heading as
+// the wizard opens, so arriving from the sidebar checklist puts the keyboard
+// inside it, and follows the step from there.
+onMounted(async () => {
   focusStepHeading();
+  await loadOnboardingData();
+  ready.value = true;
 });
 watch(currentId, focusStepHeading);
 </script>

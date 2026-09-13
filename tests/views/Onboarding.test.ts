@@ -126,9 +126,12 @@ vi.mock("@/composables/userPreferences", async () => {
   };
 });
 
-/** A fresh wizard per test: the onboarding state lives for a whole session. */
-async function mountWizard() {
-  vi.resetModules();
+/**
+ * A fresh wizard per test: the onboarding state lives for a whole session.
+ * `fresh: false` opens the wizard again on the state a first visit left.
+ */
+async function mountWizard({ fresh = true } = {}) {
+  if (fresh) vi.resetModules();
   const component = await import("@/views/Onboarding.vue");
   return mount(component.default, {
     global: { mocks: { $t: (key: string) => key } },
@@ -589,6 +592,71 @@ describe("Onboarding wizard", () => {
     );
 
     wrapper.unmount();
+  });
+
+  it("moves one step however often Next is clicked", async () => {
+    routeState.route.query = { step: "core_settings" };
+    coreForm.hasUnsavedChanges = true;
+    let landSave: () => void = () => {};
+    apiMock.saveCoreConfig.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          landSave = () => resolve();
+        }),
+    );
+
+    const wrapper = await mountWizard();
+    await flushPromises();
+
+    // an impatient second click, landing before the button can even grey out
+    const next = wrapper.find("[data-testid=onboarding-next]");
+    void next.trigger("click");
+    await next.trigger("click");
+    await flushPromises();
+
+    // the settings are still on their way out, and the footer says so
+    expect(next.attributes("disabled")).toBeDefined();
+    expect(
+      wrapper.find("[data-testid=onboarding-back]").attributes("disabled"),
+    ).toBeDefined();
+
+    landSave();
+    await flushPromises();
+
+    // one save, and one step: an impatient second click is not a second move
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
+    expect(wrapper.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.invite_members.title",
+    );
+
+    wrapper.unmount();
+  });
+
+  it("settles the step it opens on from this visit's own answer", async () => {
+    addEveryProvider();
+    preferenceState.intent.value = "music_hub";
+
+    const first = await mountWizard();
+    await flushPromises();
+
+    // the household is still only the admin, so that is what is left to do
+    expect(first.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.invite_members.title",
+    );
+    first.unmount();
+
+    // someone was added from the user management screen since
+    addMember("sam-1");
+    const second = await mountWizard({ fresh: false });
+    await flushPromises();
+
+    // the wizard asks again rather than opening on what the last visit was told
+    expect(apiMock.getAllUsers).toHaveBeenCalledTimes(2);
+    expect(second.find("[data-testid=onboarding-heading]").text()).toBe(
+      "onboarding.steps.finish.title",
+    );
+
+    second.unmount();
   });
 
   it("walks back through the steps it came past", async () => {

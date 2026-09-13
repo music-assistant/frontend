@@ -429,17 +429,18 @@ const saveFailed = function () {
 };
 
 /**
- * Reports a save that landed, for a form that stays on screen afterwards: what
- * is on it now is what is stored, so nothing on it counts as unsaved any more.
+ * Reports a save that landed, for a form that stays on screen afterwards: the
+ * values that went to the server are what is stored now, so they stop counting
+ * as unsaved. Only those — the form stays open while a save is on its way, so
+ * anything typed in the meantime is still an edit nobody saved. Leaving guards
+ * the values again as well: `submit` let the save through, and the next edit
+ * has to be asked about like any other.
  */
-const saveSucceeded = function () {
-  if (!entries.value) return;
-  for (const entry of entries.value) {
-    // an entry carrying no value of its own is nothing to take over: there is
-    // nothing on the form to compare it against later either
-    if (entry.value === undefined) continue;
-    oldValues.value[entry.key] = snapshot(entry.value);
+const saveSucceeded = function (values: Record<string, ConfigValueType>) {
+  for (const [key, value] of Object.entries(values)) {
+    oldValues.value[key] = snapshot(value);
   }
+  allowNavigation.value = false;
 };
 
 /**

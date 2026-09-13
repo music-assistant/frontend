@@ -35,9 +35,9 @@ const valuesValidate = ref(true);
 
 // the form guards its pending edits again when a save does not land
 const saveFailed = vi.fn();
-// and takes the saved values over as its baseline when one does, so what is on
-// it stops counting as unsaved
-const saveSucceeded = vi.fn(() => {
+// and takes the values that were saved over as its baseline when one does, so
+// they stop counting as unsaved
+const saveSucceeded = vi.fn((_values: typeof EDITED_VALUES) => {
   hasUnsavedChanges.value = false;
 });
 
@@ -201,9 +201,9 @@ describe("CoreSettingsStep", () => {
     expect(toastMock.success).toHaveBeenCalledWith("settings.settings_saved");
     expect(toastMock.error).not.toHaveBeenCalled();
     expect(saveFailed).not.toHaveBeenCalled();
-    // the step stays on screen, so the form is told the settings on it are the
-    // ones the server now has
-    expect(saveSucceeded).toHaveBeenCalledOnce();
+    // the step stays on screen, so the form is told which values the server
+    // now has — and only those
+    expect(saveSucceeded).toHaveBeenCalledWith(EDITED_VALUES);
 
     wrapper.unmount();
   });
