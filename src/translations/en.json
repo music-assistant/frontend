@@ -2593,6 +2593,8 @@
         "players_count": "{count} player | {count} players",
         "steps_to_go": "{count} step to go | {count} steps to go",
         "run_again": "Run the setup wizard again",
+        "add_member": "Add a household member",
+        "just_you_so_far": "Just you so far.",
         "steps": {
             "intent": {
                 "title": "Choose how you listen",
@@ -2617,6 +2619,16 @@
             "plugins": {
                 "title": "Add plugins",
                 "description": "Plugins add extras on top of Music Assistant. You can always add them later."
+            },
+            "core_settings": {
+                "title": "Check your server settings",
+                "description": "The name this server goes by, the address it is reached on at home, and the address to use from outside your home.",
+                "load_failed": "The server settings could not be loaded. You can change them later from the settings."
+            },
+            "invite_members": {
+                "title": "Add your household",
+                "description": "Everyone you live with gets an account of their own, with the players and music sources you give them access to.",
+                "load_failed": "Your household could not be loaded. You can add members later from the settings."
             },
             "finish": {
                 "title": "Finish setup",

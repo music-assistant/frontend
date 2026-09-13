@@ -8,6 +8,7 @@ const { apiMock, authMock, preferenceState, providerConfigs, routerMock } =
     apiMock: {
       players: {} as Record<string, unknown>,
       providerManifests: {} as Record<string, { builtin: boolean }>,
+      getAllUsers: vi.fn(),
       getProviderConfigs: vi.fn(),
       subscribe: vi.fn(() => vi.fn()),
       sendCommand: vi.fn(),
@@ -110,6 +111,7 @@ describe("NavGettingStarted", () => {
   beforeEach(() => {
     apiMock.providerManifests = {};
     providerConfigs.list = [];
+    apiMock.getAllUsers.mockClear();
     apiMock.getProviderConfigs.mockReset();
     apiMock.getProviderConfigs.mockImplementation(async () => [
       ...providerConfigs.list,
@@ -131,6 +133,9 @@ describe("NavGettingStarted", () => {
     const badge = wrapper.find("[data-slot=badge]");
     expect(badge.text()).toBe("3");
     expect(badge.attributes("aria-label")).toBe("onboarding.steps_to_go:3");
+    // the checklist lists neither the household nor the server settings, so it
+    // never makes an admin session wait on the users either
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });

@@ -11,7 +11,11 @@ import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
-import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
+import {
+  ConfigEntryType,
+  type ConfigEntry,
+  type ConfigValueType,
+} from "@/plugins/api/interfaces";
 import EditConfig from "@/views/settings/EditConfig.vue";
 
 const { apiMock, routerMock, storeMock } = vi.hoisted(() => ({
@@ -310,6 +314,43 @@ describe("EditConfig", () => {
     expect(saveDisabled(wrapper)).toBe(false);
   });
 
+  it("stops offering to save the values the server took", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    dirty(wrapper);
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(false);
+
+    wrapper.vm.saveSucceeded({ server: "localhost" });
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(true);
+
+    // and offers again for whatever is typed next
+    edit(wrapper, 0, "elsewhere");
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
+
+  it("keeps offering an edit the save did not carry", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "token", type: ConfigEntryType.STRING }),
+    ]);
+
+    dirty(wrapper);
+    await nextTick();
+
+    // the form stays open while a save is on its way, so what lands covers the
+    // values that were sent and nothing the user typed in the meantime
+    edit(wrapper, 1, "secret");
+    wrapper.vm.saveSucceeded({ server: "localhost" });
+    await nextTick();
+
+    expect(saveDisabled(wrapper)).toBe(false);
+  });
+
   it("hides the save action on a disabled form", () => {
     const wrapper = mountEntries(
       [entry({ key: "server", type: ConfigEntryType.STRING })],
@@ -432,6 +473,43 @@ describe("EditConfig unsaved changes", () => {
     expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
   });
 
+  it("lets the form go once what is on it has been saved", async () => {
+    const { router, wrapper } = await mountInRouter();
+    const form = wrapper.findComponent(EditConfig);
+    dirty(wrapper);
+    await nextTick();
+
+    await form.get('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+    form.vm.saveSucceeded({ server: "localhost" });
+
+    await router.push({ name: "music-quiz" });
+
+    expect(router.currentRoute.value.name).toBe("music-quiz");
+    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(false);
+  });
+
+  // a save lets the screen navigate away without asking, and that permission is
+  // spent on the values it carried: what is typed afterwards is guarded again
+  it("asks again about an edit made after a save", async () => {
+    const { router, wrapper } = await mountInRouter();
+    const form = wrapper.findComponent(EditConfig);
+    dirty(wrapper);
+    await nextTick();
+
+    await form.get('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+    form.vm.saveSucceeded({ server: "localhost" });
+    edit(wrapper, 0, "elsewhere");
+    await nextTick();
+
+    router.push({ name: "music-quiz" });
+    await flushPromises();
+
+    expect(router.currentRoute.value.name).toBe("editprovider");
+    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
+  });
+
   it("lets an unchanged form go without asking", async () => {
     const { router, wrapper } = await mountInRouter();
 
@@ -481,10 +559,14 @@ function renderedKeys(wrapper: VueWrapper) {
 
 // edits the first entry in place, which is what typing into its field does
 function dirty(wrapper: VueWrapper) {
-  const first = wrapper
-    .findAllComponents({ name: "ConfigEntryRow" })[0]
-    .props("confEntry") as ConfigEntry;
-  first.value = "localhost";
+  edit(wrapper, 0, "localhost");
+}
+
+function edit(wrapper: VueWrapper, index: number, value: ConfigValueType) {
+  const target = wrapper
+    .findAllComponents({ name: "ConfigEntryRow" })
+    [index].props("confEntry") as ConfigEntry;
+  target.value = value;
 }
 
 function saveDisabled(wrapper: VueWrapper) {
