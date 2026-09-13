@@ -394,11 +394,7 @@
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
               <Button
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  canManageLibrary
-                "
+                v-if="canManageGenre"
                 type="button"
                 variant="ghost-icon"
                 size="icon-xs"
@@ -410,11 +406,7 @@
               </Button>
               <!-- delete genre button (admin only) -->
               <Button
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  canManageLibrary
-                "
+                v-if="canManageGenre"
                 type="button"
                 variant="ghost-icon"
                 size="icon-xs"
@@ -771,6 +763,13 @@ const canManageLibrary = computed(() =>
 );
 const canEditLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_WRITE),
+);
+// merging and deleting a genre is limited to library genres and library managers
+const canManageGenre = computed(
+  () =>
+    compProps.item?.media_type === MediaType.GENRE &&
+    compProps.item.provider === "library" &&
+    canManageLibrary.value,
 );
 const favoriteButtonLabel = computed(() =>
   compProps.item?.favorite ? $t("favorites_remove") : $t("favorites_add"),
