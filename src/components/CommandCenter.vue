@@ -30,6 +30,47 @@
       >
         {{ $t("clear") }}
       </button>
+      <DropdownMenu v-if="sourcesPickable">
+        <DropdownMenuTrigger as-child>
+          <Button
+            variant="ghost"
+            size="sm"
+            :aria-label="sourcesLabel"
+            :title="sourcesLabel"
+          >
+            <SlidersHorizontal
+              :class="{ 'text-primary': selectedProviders.length }"
+            />
+            {{ $t("search_sources") }}
+          </Button>
+        </DropdownMenuTrigger>
+        <!-- above the desktop dialog (9999) and the mobile sheet (998) it opens from -->
+        <DropdownMenuContent
+          align="end"
+          class="z-[10000] min-w-56"
+          @close-auto-focus="focusInputOnClose"
+        >
+          <DropdownMenuLabel>{{ $t("search_sources") }}</DropdownMenuLabel>
+          <DropdownMenuCheckboxItem
+            :model-value="!selectedProviders.length"
+            @select="(event) => event.preventDefault()"
+            @update:model-value="setSources([])"
+          >
+            {{ $t("all_sources") }}
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuCheckboxItem
+            v-for="target in sourceTargets"
+            :key="target.id"
+            :model-value="selectedProviders.includes(target.id)"
+            @select="(event) => event.preventDefault()"
+            @update:model-value="toggleSource(target.id)"
+          >
+            <ProviderIcon :domain="target.iconDomain" :size="16" />
+            {{ target.name }}
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
 
     <div
@@ -228,11 +269,20 @@ import CommandCenterShell from "@/components/CommandCenterShell.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
 import {
   CommandGroup,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -241,6 +291,7 @@ import {
 } from "@/composables/useCommandCenter";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import {
+  LIBRARY_SEARCH_TARGET,
   SEARCHABLE_MEDIA_TYPES,
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
@@ -255,7 +306,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Check, History, Play, Search } from "@lucide/vue";
+import { Check, History, Play, Search, SlidersHorizontal } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { ListboxFilter } from "reka-ui";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
@@ -270,6 +321,7 @@ const FETCH_PER_TYPE = 15;
 const FETCH_SINGLE_TYPE = 50;
 const MAX_RECENT_SEARCHES = 5;
 const RECENT_SEARCHES_PREF_KEY = "search.recent";
+const SOURCES_PREF_KEY = "search.sources";
 
 const router = useRouter();
 const { isOpen, initialQuery, initialMediaTypes, open, close } =
@@ -290,10 +342,18 @@ const revealedSingle = ref(RESULTS_SINGLE_PAGE);
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-const { loading, search, filteredItems } = useProgressiveSearch({
-  mediaTypes: selectedMediaTypes,
-  limits: { single: FETCH_SINGLE_TYPE, multi: FETCH_PER_TYPE },
-});
+// the sources to search, remembered per user; empty = the library and every
+// provider (the composable drops ids of providers that no longer exist)
+const savedSources = getPreference<string[]>(SOURCES_PREF_KEY, []);
+
+const { loading, search, filteredItems, providerTargets, selectedProviders } =
+  useProgressiveSearch({
+    mediaTypes: selectedMediaTypes,
+    providers: computed(() =>
+      Array.isArray(savedSources.value) ? savedSources.value : [],
+    ),
+    limits: { single: FETCH_SINGLE_TYPE, multi: FETCH_PER_TYPE },
+  });
 
 const queryActive = computed(
   () => query.value.trim().length >= MIN_QUERY_LENGTH,
@@ -325,6 +385,44 @@ const togglePagesOnly = function () {
   if (pagesOnly.value) selectedMediaTypes.value = [];
 };
 
+// the sources on offer, the library first
+const sourceTargets = computed(() => [
+  { id: LIBRARY_SEARCH_TARGET, name: $t("library"), iconDomain: "library" },
+  ...providerTargets.value,
+]);
+
+// pages come from the menu and genres from the library alone, so neither
+// search has sources to pick from
+const sourcesPickable = computed(
+  () =>
+    providerTargets.value.length > 0 &&
+    !pagesOnly.value &&
+    singleType.value !== MediaType.GENRE,
+);
+
+const sourcesLabel = computed(() => {
+  const names = sourceTargets.value
+    .filter((target) => selectedProviders.value.includes(target.id))
+    .map((target) => target.name);
+  return names.length
+    ? `${$t("search_sources")}: ${names.join(", ")}`
+    : $t("search_sources");
+});
+
+const setSources = function (ids: string[]) {
+  if (ids.join(",") === selectedProviders.value.join(",")) return;
+  setPreference(SOURCES_PREF_KEY, ids);
+};
+
+const toggleSource = function (id: string) {
+  const current = selectedProviders.value;
+  setSources(
+    current.includes(id)
+      ? current.filter((existing) => existing !== id)
+      : [...current, id],
+  );
+};
+
 const clearQuery = function () {
   query.value = "";
   focusInput();
@@ -333,6 +431,12 @@ const clearQuery = function () {
 const focusInput = function () {
   const inputEl = filterRef.value?.$el as HTMLElement | undefined;
   inputEl?.focus();
+};
+
+// the menu would otherwise hand focus back to its trigger button
+const focusInputOnClose = function (event: Event) {
+  event.preventDefault();
+  focusInput();
 };
 
 // on the mobile sheet on a touch screen the on-screen keyboard drives the
@@ -576,7 +680,12 @@ watch(isOpen, (opened) => {
 
 watch(
   () =>
-    `${query.value}|${selectedMediaTypes.value.join(",")}|${pagesOnly.value}`,
+    [
+      query.value,
+      selectedMediaTypes.value.join(","),
+      pagesOnly.value,
+      selectedProviders.value.join(","),
+    ].join("|"),
   () => {
     revealedPerType.value = {};
     revealedSingle.value = RESULTS_SINGLE_PAGE;
