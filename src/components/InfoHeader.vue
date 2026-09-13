@@ -390,32 +390,41 @@
                 v-if="item.media_type == MediaType.TRACK"
                 :audio-metadata="(item as Track).audio_metadata"
               />
-              <!-- slot for extra action icons (e.g. smart playlist edit) -->
+              <!-- slot for extra action buttons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
-              <Merge
+              <Button
                 v-if="
                   item.media_type === MediaType.GENRE &&
                   item.provider === 'library' &&
                   canManageLibrary
                 "
-                :size="22"
-                class="cursor-pointer"
+                type="button"
+                variant="ghost-icon"
+                size="icon-xs"
+                :aria-label="$t('merge_into')"
                 :title="$t('merge_into')"
                 @click="mergeGenre"
-              />
+              >
+                <Merge class="size-5.5" />
+              </Button>
               <!-- delete genre button (admin only) -->
-              <Trash2
+              <Button
                 v-if="
                   item.media_type === MediaType.GENRE &&
                   item.provider === 'library' &&
                   canManageLibrary
                 "
-                :size="22"
-                class="cursor-pointer ml-2"
+                type="button"
+                variant="ghost-icon"
+                size="icon-xs"
+                class="ml-2"
+                :aria-label="$t('delete_genre')"
                 :title="$t('delete_genre')"
                 @click="deleteGenre"
-              />
+              >
+                <Trash2 class="size-5.5" />
+              </Button>
             </div>
           </div>
           <div
