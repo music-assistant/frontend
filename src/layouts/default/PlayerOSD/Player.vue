@@ -394,6 +394,42 @@ watch(
   justify-content: center;
 }
 
+/* A purely visual link between the two controls. It straddles the player's
+   leading edge without taking flex space or receiving pointer events. */
+.mediacontrols :deep(.player-bar-player-button) {
+  position: relative;
+}
+
+.mediacontrols :deep(.player-bar-player-button::before) {
+  position: absolute;
+  top: 30px;
+  inset-inline-start: 0;
+  width: 10px;
+  height: 1px;
+  margin-inline-start: -5px;
+  pointer-events: none;
+  content: "";
+  background: var(--muted-foreground);
+  border-radius: 999px;
+  opacity: 0.45;
+  transform: rotate(90deg);
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mediacontrols
+  :deep(
+    .player-bar-group-button[data-grouped="true"]
+      ~ .player-bar-player-button::before
+  ) {
+  transform: rotate(0deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mediacontrols :deep(.player-bar-player-button::before) {
+    transition: none;
+  }
+}
+
 .mediacontrols[data-compact="true"] :deep(.player-bar-action) {
   transform: translateY(10px);
 }
@@ -421,7 +457,7 @@ watch(
      the middle of the bar rather than off its end.
 
      The budget, measured: the column offers 0.3 * (vw - 30) + 8 px, and the
-     three buttons rest at 64 + 72 + 96 = 232, so from 1100px up the row has
+     three buttons rest at 64 + 72 + 80 = 216, so from 1100px up the row has
      room to spare at every width. */
   .mediacontrols-bottom-right > div {
     min-width: 0;
@@ -437,6 +473,12 @@ watch(
     margin-inline-start: clamp(0px, 2vw - 25px, 16px);
   }
 
+  /* Group and Player describe the same target, so they stay together while
+     the volume-to-target gap is free to breathe with the viewport. */
+  .mediacontrols :deep(.player-bar-group-button ~ .player-bar-player-button) {
+    margin-inline-start: 0;
+  }
+
   .mediacontrols :deep(.player-bar-group-button),
   .mediacontrols :deep(.player-bar-player-button) {
     width: auto !important;
@@ -449,8 +491,8 @@ watch(
   }
 
   .mediacontrols :deep(.player-bar-player-button) {
-    min-width: 96px !important;
-    max-width: clamp(96px, 10vw - 14px, 176px);
+    min-width: 80px !important;
+    max-width: clamp(80px, 8vw - 8px, 144px);
   }
 }
 
@@ -474,7 +516,7 @@ watch(
   }
 
   .mediacontrols :deep(.player-bar-player-button) {
-    width: 68px !important;
+    width: 64px !important;
     height: 72px !important;
   }
 }
