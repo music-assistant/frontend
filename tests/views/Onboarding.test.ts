@@ -243,7 +243,9 @@ async function reportProvidersUpdated() {
   await flushPromises();
 }
 
-describe("Onboarding wizard", () => {
+// every test mounts the wizard on a fresh module registry, which is its whole
+// step graph evaluated again and can take seconds under load
+describe("Onboarding wizard", { timeout: 20_000 }, () => {
   beforeEach(() => {
     apiMock.players = {};
     apiMock.providers = {};

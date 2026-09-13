@@ -152,7 +152,9 @@ function addProvider(instanceId: string, domain: string, type: ProviderType) {
   apiMock.providerManifests[domain] = { builtin: false };
 }
 
-describe("NavGettingStarted", () => {
+// every test mounts the checklist on a fresh module registry, which brings the
+// onboarding state up again and can take seconds under load
+describe("NavGettingStarted", { timeout: 20_000 }, () => {
   beforeEach(() => {
     apiMock.providerManifests = {};
     providerConfigs.list = [];

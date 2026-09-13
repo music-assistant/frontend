@@ -172,7 +172,9 @@ const SERVERS_THAT_NEED_NO_COMMAND: [
 
 let warnSpy: ReturnType<typeof vi.spyOn>;
 
-describe("useOnboarding", () => {
+// every test loads the composable anew after resetting the module registry,
+// which can take seconds under load
+describe("useOnboarding", { timeout: 20_000 }, () => {
   beforeEach(() => {
     apiMock.players = {};
     apiMock.providers = {};
