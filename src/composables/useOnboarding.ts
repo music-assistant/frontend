@@ -281,27 +281,22 @@ async function setPersona(value: OnboardingPersona): Promise<boolean> {
 
 // the write in flight, so the two ways out of the welcome — finishing it and
 // leaving the page behind — never turn into two updates
-let writingWelcomed: Promise<void> | null = null;
+let writingWelcomed: Promise<boolean> | null = null;
 
 /**
- * Remember that the member has been welcomed. Only the first time counts: the
- * marker says the welcome has been shown, not when it was last opened.
- *
- * Every preference write sends the whole set the account holds, so two of them
- * in flight at once would have the later one undo the earlier. Nothing chains
- * this behind the persona answer because nothing has to: the question holds the
- * step until its own write lands, and this one is only ever written on the way
- * out.
+ * Remember that the member has been welcomed, and say whether the account took
+ * it. Only the first time counts: the marker says the welcome has been shown,
+ * not when it was last opened, so a marker that is already there is an answer
+ * of its own.
  */
-async function markWelcomed(): Promise<void> {
-  if (welcomedAt.value != null) return;
-  writingWelcomed ??= setUserPreference(
-    ONBOARDING_WELCOME_PREFERENCE,
-    new Date().toISOString(),
-  ).finally(() => {
+async function markWelcomed(): Promise<boolean> {
+  if (welcomedAt.value != null) return true;
+  writingWelcomed ??= setUserPreferences({
+    [ONBOARDING_WELCOME_PREFERENCE]: new Date().toISOString(),
+  }).finally(() => {
     writingWelcomed = null;
   });
-  await writingWelcomed;
+  return await writingWelcomed;
 }
 
 // InvalidDataError: the server is still registering the command but has already
@@ -338,7 +333,12 @@ function isAlreadyCompletedError(error: unknown): boolean {
  */
 async function finish(): Promise<boolean> {
   if (ctx.value.isMember) {
-    await markWelcomed();
+    // the marker is the whole of what the welcome leaves behind: a member
+    // handed back to the app without it would be welcomed all over again
+    if (!(await markWelcomed())) {
+      toast.error($t("onboarding.finish_failed"));
+      return false;
+    }
     dismiss();
     await router.replace({ name: "discover" });
     return true;

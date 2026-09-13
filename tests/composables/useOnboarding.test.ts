@@ -800,11 +800,25 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       // nothing is closed off on the server: the setup is the admin's, and
       // the member's own account is all the welcome leaves a mark on
       expect(apiMock.sendCommand).not.toHaveBeenCalled();
-      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
-      const [key, value] = setUserPreferenceMock.mock.calls[0];
-      expect(key).toBe("onboarding.welcome");
-      expect(Date.parse(value as string)).not.toBeNaN();
+      expect(setUserPreferencesMock).toHaveBeenCalledOnce();
+      const [values] = setUserPreferencesMock.mock.calls[0];
+      const marker = (values as Record<string, string>)["onboarding.welcome"];
+      expect(Date.parse(marker)).not.toBeNaN();
       expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
+    });
+
+    it("keeps the member here when the mark could not be made", async () => {
+      signInAs();
+      setUserPreferencesMock.mockResolvedValue(false);
+
+      const { dismissed, finish } = await loadOnboarding();
+      await expect(finish()).resolves.toBe(false);
+
+      // handing them back to the app now would only welcome them again on the
+      // next reload, so the wizard stays put and says so
+      expect(toastMock.error).toHaveBeenCalledWith("onboarding.finish_failed");
+      expect(dismissed.value).toBe(false);
+      expect(routerMock.replace).not.toHaveBeenCalled();
     });
 
     it("leaves the mark of the first welcome where it is", async () => {
@@ -815,7 +829,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       await expect(finish()).resolves.toBe(true);
 
       // when they were welcomed, not when they last looked it over again
-      expect(setUserPreferenceMock).not.toHaveBeenCalled();
+      expect(setUserPreferencesMock).not.toHaveBeenCalled();
       expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
     });
 
@@ -832,10 +846,10 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     it("marks the welcome once, however often it is asked to", async () => {
       signInAs();
       let landWrite: () => void = () => {};
-      setUserPreferenceMock.mockImplementation(
+      setUserPreferencesMock.mockImplementation(
         () =>
-          new Promise<void>((resolve) => {
-            landWrite = () => resolve();
+          new Promise<boolean>((resolve) => {
+            landWrite = () => resolve(true);
           }),
       );
 
@@ -844,11 +858,10 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       // with neither waiting for the other
       const both = Promise.all([markWelcomed(), markWelcomed()]);
       landWrite();
-      await both;
+      await expect(both).resolves.toEqual([true, true]);
 
-      // every write sends the whole set of preferences, so a second one in
-      // flight would undo the first
-      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+      // one mark, one write: the account is told once that it has been made
+      expect(setUserPreferencesMock).toHaveBeenCalledOnce();
     });
 
     it("counts a member who was welcomed before as answered enough", async () => {

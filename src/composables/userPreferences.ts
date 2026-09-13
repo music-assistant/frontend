@@ -52,11 +52,28 @@ export async function setUserPreferences(
   values: Record<string, unknown>,
   options?: CommandOptions,
 ): Promise<boolean> {
-  // whose answer this is, read before it queues: what it is written onto has
-  // to be the account that gave it
+  const plainValues = JSON.parse(JSON.stringify(values));
+  return await updateUserPreferences(
+    (current) => ({ ...current, ...plainValues }),
+    options,
+  );
+}
+
+/**
+ * Change the signed-in user's preferences and persist them — the one way they
+ * are written. `change` is handed the preferences as they stand when its turn
+ * comes, and answers with what they should become, or `null` when there is
+ * nothing to write after all. Says whether the server took them.
+ */
+export async function updateUserPreferences(
+  change: (current: Record<string, unknown>) => Record<string, unknown> | null,
+  options?: CommandOptions,
+): Promise<boolean> {
+  // whose preferences these are, read before the write queues: what it is
+  // written onto has to be the account it was asked for
   const userId = store.currentUser?.user_id;
   const write = pendingWrite.then(() =>
-    writeUserPreferences(userId, values, options),
+    writeUserPreferences(userId, change, options),
   );
   // a write that went wrong is nothing for the next one to wait on forever
   pendingWrite = write.catch(() => {});
@@ -65,7 +82,7 @@ export async function setUserPreferences(
 
 async function writeUserPreferences(
   userId: string | undefined,
-  values: Record<string, unknown>,
+  change: (current: Record<string, unknown>) => Record<string, unknown> | null,
   options?: CommandOptions,
 ): Promise<boolean> {
   const currentUser = store.currentUser;
@@ -74,19 +91,16 @@ async function writeUserPreferences(
     return false;
   }
   // signing out and back in, or switching accounts, while this waited its turn
-  // leaves it nothing to write onto: it belongs to the account that gave it
+  // leaves it nothing to write onto: it belongs to the account that asked
   if (currentUser.user_id !== userId) {
     console.warn("Cannot set preference: the account changed since it was set");
     return false;
   }
 
   const previousPreferences = currentUser.preferences ?? {};
-  const plainValues = JSON.parse(JSON.stringify(values));
-
-  const updatedPreferences = {
-    ...previousPreferences,
-    ...plainValues,
-  };
+  const updatedPreferences = change(previousPreferences);
+  // the change looked at what is there and found nothing to do
+  if (!updatedPreferences) return true;
 
   currentUser.preferences = updatedPreferences;
 
@@ -214,13 +228,27 @@ export async function pruneStaleProviderFilters(): Promise<void> {
   // No configs yet (server not ready): never wipe filters.
   if (configuredIds.size === 0) return;
 
-  const prefs = store.currentUser.preferences;
-  const updatedPrefs: Record<string, unknown> = { ...prefs };
+  // through the queue like every other write: a prune that went out on its own
+  // would land on top of whatever the user was just told had been saved
+  await updateUserPreferences((current) =>
+    pruneProviderFilters(current, configuredIds),
+  );
+}
+
+/**
+ * The preferences with every filter naming a provider that no longer has a
+ * configuration dropped, or `null` when none of them does.
+ */
+function pruneProviderFilters(
+  preferences: Record<string, unknown>,
+  configuredIds: Set<string>,
+): Record<string, unknown> | null {
+  const updatedPrefs: Record<string, unknown> = { ...preferences };
   let changed = false;
 
-  for (const key of Object.keys(prefs)) {
+  for (const key of Object.keys(preferences)) {
     if (key.startsWith("itemsListing.")) {
-      const value = prefs[key] as ItemsListingPreferences | undefined;
+      const value = preferences[key] as ItemsListingPreferences | undefined;
       if (!value || !Array.isArray(value.providerFilter)) continue;
       const pruned = value.providerFilter.filter((id) => configuredIds.has(id));
       if (pruned.length === value.providerFilter.length) continue;
@@ -234,7 +262,7 @@ export async function pruneStaleProviderFilters(): Promise<void> {
       updatedPrefs[key] = next;
     } else if (key.startsWith("discover.hiddenProviders.")) {
       // matches rowHiddenProvidersKey's prefix in components/discover/utils/rowProviderFilter.ts
-      const value = prefs[key];
+      const value = preferences[key];
       if (!Array.isArray(value)) continue;
       const pruned = (value as string[]).filter((id) => configuredIds.has(id));
       if (pruned.length === value.length) continue;
@@ -247,14 +275,5 @@ export async function pruneStaleProviderFilters(): Promise<void> {
     }
   }
 
-  if (!changed) return;
-
-  store.currentUser.preferences = updatedPrefs;
-  try {
-    await api.updateUser(store.currentUser.user_id, {
-      preferences: updatedPrefs,
-    });
-  } catch (error) {
-    console.error("Failed to prune stale provider filters:", error);
-  }
+  return changed ? updatedPrefs : null;
 }

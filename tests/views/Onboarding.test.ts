@@ -300,14 +300,14 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     setUserPreferenceMock.mockImplementation(
       async (key: string, value: string) => {
         if (key === "onboarding.intent") preferenceState.intent.value = value;
-        if (key === "onboarding.welcome")
-          preferenceState.welcomedAt.value = value;
       },
     );
     setUserPreferencesMock.mockImplementation(
       async (values: Record<string, string>) => {
         const answer = values["onboarding.persona"];
         if (answer) preferenceState.persona.value = answer;
+        const welcomed = values["onboarding.welcome"];
+        if (welcomed) preferenceState.welcomedAt.value = welcomed;
         // the real one says whether the server took it
         return true;
       },
@@ -781,15 +781,17 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       // the question is still open while they are being asked it
-      expect(setUserPreferenceMock).not.toHaveBeenCalled();
+      expect(setUserPreferencesMock).not.toHaveBeenCalled();
 
       wrapper.unmount();
       await flushPromises();
 
       // leaving is what counts: the member is never dropped in here again,
-      // whether they answered, walked past it or closed the page
-      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
-      expect(setUserPreferenceMock.mock.calls[0][0]).toBe("onboarding.welcome");
+      // whether they answered, walked past it or went somewhere else
+      expect(setUserPreferencesMock).toHaveBeenCalledOnce();
+      expect(setUserPreferencesMock.mock.calls[0][0]).toHaveProperty(
+        "onboarding.welcome",
+      );
     });
 
     it("leaves the mark of an earlier welcome where it is", async () => {
@@ -800,7 +802,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       wrapper.unmount();
       await flushPromises();
 
-      expect(setUserPreferenceMock).not.toHaveBeenCalled();
+      expect(setUserPreferencesMock).not.toHaveBeenCalled();
     });
 
     it("walks the member from the question to the way out", async () => {
@@ -932,8 +934,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       expect(routerMock.replace).toHaveBeenCalledWith({ name: "discover" });
-      expect(setUserPreferenceMock).toHaveBeenCalledOnce();
-      expect(setUserPreferenceMock.mock.calls[0][0]).toBe("onboarding.welcome");
+      expect(setUserPreferencesMock).toHaveBeenCalledOnce();
+      expect(setUserPreferencesMock.mock.calls[0][0]).toHaveProperty(
+        "onboarding.welcome",
+      );
 
       wrapper.unmount();
     });

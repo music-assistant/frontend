@@ -43,6 +43,7 @@ import {
   pruneStaleProviderFilters,
   setUserPreference,
   setUserPreferences,
+  updateUserPreferences,
   useUserPreferences,
 } from "@/composables/userPreferences";
 
@@ -297,6 +298,13 @@ describe("writing preferences", () => {
     warnSpy.mockRestore();
   });
 
+  it("sends nothing when the change finds nothing to do", async () => {
+    // the caller looked at what is there and answered with no change
+    await expect(updateUserPreferences(() => null)).resolves.toBe(true);
+
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
   it("hands the command options it was given to the server call", async () => {
     // what a caller with a message of its own keeps the api's toast away with
     await setUserPreferences(
@@ -367,6 +375,36 @@ describe("pruneStaleProviderFilters", () => {
     await pruneStaleProviderFilters();
 
     expect(storeMock.currentUser.preferences).toEqual({});
+  });
+
+  it("takes the answer that was still being written with it", async () => {
+    storeMock.currentUser = {
+      user_id: "u1",
+      preferences: {
+        "discover.hiddenProviders.recently_played": ["spotify1", "removed1"],
+      },
+    };
+    let landAnswer: () => void = () => {};
+    mockUpdateUser.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          landAnswer = () => resolve(user());
+        }),
+    );
+
+    const answer = setUserPreferences({ "onboarding.persona": "regular" });
+    const pruning = pruneStaleProviderFilters();
+    await untilSent(1);
+    landAnswer();
+    await Promise.all([answer, pruning]);
+
+    // the prune waits its turn like everything else and reads the preferences
+    // as they are by then, so the answer it queued behind is still there
+    expect(storeMock.currentUser?.preferences).toEqual({
+      "onboarding.persona": "regular",
+      "discover.hiddenProviders.recently_played": ["spotify1"],
+    });
+    expect(mockUpdateUser).toHaveBeenCalledTimes(2);
   });
 
   it("leaves the filters alone for a role that may not list the providers", async () => {

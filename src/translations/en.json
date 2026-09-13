@@ -2516,7 +2516,7 @@
         "next": "Next",
         "skip": "Skip for now",
         "finish": "Finish",
-        "finish_failed": "Could not finish the setup. Please try again.",
+        "finish_failed": "Could not finish. Please try again.",
         "getting_started": "Getting started",
         "getting_started_hint": "Finish setting up Music Assistant",
         "hide_for_now": "Hide for now",
