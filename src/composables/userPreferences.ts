@@ -32,14 +32,30 @@ export async function setUserPreference(
 }
 
 /**
- * The write in flight, whichever it is. Every write sends the whole
- * preferences object, so two of them on their way at once would have the one
- * that lands last overwrite whatever the other added — a member answering the
- * welcome and walking off to another page as it saves is exactly that. Each
- * write waits here for the one before it to settle, and only then reads the
- * preferences it merges into.
+ * What is in flight, whichever it is. Every write sends the whole preferences
+ * object, so two of them on their way at once would have the one that lands
+ * last overwrite whatever the other added — a member answering the welcome and
+ * walking off to another page as it saves is exactly that. Everything that
+ * reads and replaces the preferences waits here for what is ahead of it, and
+ * only then reads what it is about to change.
  */
 let pendingWrite: Promise<unknown> = Promise.resolve();
+
+/**
+ * Take a turn in that queue for something other than a write: refreshing the
+ * signed-in user replaces their preferences wholesale, and a refresh that
+ * overtook a write on its way out would put them back as they were before it —
+ * for the next write to send on. Waits for what is already on its way, and
+ * holds up what comes after until it is done.
+ */
+export async function runAfterPreferenceWrites<T>(
+  task: () => Promise<T>,
+): Promise<T> {
+  const queued = pendingWrite.then(task);
+  // something that went wrong is nothing for the next one to wait on forever
+  pendingWrite = queued.catch(() => {});
+  return await queued;
+}
 
 /**
  * The same for several keys at once, in a single update: settings that belong
@@ -72,12 +88,9 @@ export async function updateUserPreferences(
   // whose preferences these are, read before the write queues: what it is
   // written onto has to be the account it was asked for
   const userId = store.currentUser?.user_id;
-  const write = pendingWrite.then(() =>
+  return await runAfterPreferenceWrites(() =>
     writeUserPreferences(userId, change, options),
   );
-  // a write that went wrong is nothing for the next one to wait on forever
-  pendingWrite = write.catch(() => {});
-  return await write;
 }
 
 async function writeUserPreferences(

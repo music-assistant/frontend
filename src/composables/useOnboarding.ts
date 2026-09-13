@@ -27,7 +27,7 @@ import {
   providerDisplayName,
 } from "@/helpers/provider_config";
 import { isSystemUser } from "@/helpers/users";
-import { api } from "@/plugins/api";
+import { api, type CommandOptions } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
@@ -287,13 +287,15 @@ let writingWelcomed: Promise<boolean> | null = null;
  * Remember that the member has been welcomed, and say whether the account took
  * it. Only the first time counts: the marker says the welcome has been shown,
  * not when it was last opened, so a marker that is already there is an answer
- * of its own.
+ * of its own. A second caller joins the write already on its way rather than
+ * sending the marker twice, which is the one the options belong to.
  */
-async function markWelcomed(): Promise<boolean> {
+async function markWelcomed(options?: CommandOptions): Promise<boolean> {
   if (welcomedAt.value != null) return true;
-  writingWelcomed ??= setUserPreferences({
-    [ONBOARDING_WELCOME_PREFERENCE]: new Date().toISOString(),
-  }).finally(() => {
+  writingWelcomed ??= setUserPreferences(
+    { [ONBOARDING_WELCOME_PREFERENCE]: new Date().toISOString() },
+    options,
+  ).finally(() => {
     writingWelcomed = null;
   });
   return await writingWelcomed;
@@ -334,8 +336,9 @@ function isAlreadyCompletedError(error: unknown): boolean {
 async function finish(): Promise<boolean> {
   if (ctx.value.isMember) {
     // the marker is the whole of what the welcome leaves behind: a member
-    // handed back to the app without it would be welcomed all over again
-    if (!(await markWelcomed())) {
+    // handed back to the app without it would be welcomed all over again, and
+    // the wizard saying so is the only message they need about it
+    if (!(await markWelcomed({ suppressGlobalError: true }))) {
       toast.error($t("onboarding.finish_failed"));
       return false;
     }

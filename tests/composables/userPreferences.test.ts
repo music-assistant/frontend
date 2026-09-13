@@ -41,6 +41,7 @@ import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 import {
   pruneStaleProviderFilters,
+  runAfterPreferenceWrites,
   setUserPreference,
   setUserPreferences,
   updateUserPreferences,
@@ -303,6 +304,54 @@ describe("writing preferences", () => {
     await expect(updateUserPreferences(() => null)).resolves.toBe(true);
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
+  it("takes a turn for whoever else reads and replaces the preferences", async () => {
+    let landWrite: () => void = () => {};
+    mockUpdateUser.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          landWrite = () => resolve(user());
+        }),
+    );
+
+    const order: string[] = [];
+    const write = setUserPreferences({ theme: "light" });
+    const refresh = runAfterPreferenceWrites(async () => {
+      order.push("refreshed");
+    });
+    await untilSent(1);
+
+    // a refresh that overtook the write would put the preferences back as they
+    // were before it, for the next write to send on
+    expect(order).toEqual([]);
+
+    landWrite();
+    await Promise.all([write, refresh]);
+
+    expect(order).toEqual(["refreshed"]);
+  });
+
+  it("holds a write up until the turn before it is done", async () => {
+    let landTask: () => void = () => {};
+    const task = runAfterPreferenceWrites(
+      () =>
+        new Promise<void>((resolve) => {
+          landTask = resolve;
+        }),
+    );
+
+    const write = setUserPreferences({ theme: "light" });
+    await Promise.resolve();
+
+    // the write reads the preferences when its turn comes, which is after
+    // whatever is replacing them right now
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+
+    landTask();
+    await Promise.all([task, write]);
+
+    expect(mockUpdateUser).toHaveBeenCalledOnce();
   });
 
   it("hands the command options it was given to the server call", async () => {

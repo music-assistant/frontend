@@ -815,10 +815,29 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       await expect(finish()).resolves.toBe(false);
 
       // handing them back to the app now would only welcome them again on the
-      // next reload, so the wizard stays put and says so
+      // next reload, so the wizard stays put and says so — once: the api keeps
+      // its own message to itself here
+      expect(setUserPreferencesMock).toHaveBeenCalledWith(expect.anything(), {
+        suppressGlobalError: true,
+      });
+      expect(toastMock.error).toHaveBeenCalledOnce();
       expect(toastMock.error).toHaveBeenCalledWith("onboarding.finish_failed");
       expect(dismissed.value).toBe(false);
       expect(routerMock.replace).not.toHaveBeenCalled();
+    });
+
+    it("leaves the api to say so when the mark is made on the way out", async () => {
+      signInAs();
+
+      const { markWelcomed } = await loadOnboarding();
+      await expect(markWelcomed()).resolves.toBe(true);
+
+      // nobody is being held up here: the page is already going, so a failure
+      // is the api's to report as it would any other
+      expect(setUserPreferencesMock).toHaveBeenCalledWith(
+        expect.anything(),
+        undefined,
+      );
     });
 
     it("leaves the mark of the first welcome where it is", async () => {

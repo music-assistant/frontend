@@ -37,6 +37,7 @@ const {
   mockProxySetTransport,
   mockPruneStaleProviderFilters,
   mockRememberCurrentRemoteConnection,
+  mockRunAfterPreferenceWrites,
   mockRouterPush,
   mockRouterReplace,
   mockSetPreference,
@@ -117,6 +118,7 @@ const {
     mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
     mockRememberCurrentRemoteConnection: vi.fn(),
+    mockRunAfterPreferenceWrites: vi.fn(),
     mockRouterPush: vi.fn(),
     mockRouterReplace: vi.fn(),
     mockSetPreference: vi.fn(),
@@ -190,6 +192,7 @@ vi.mock("@/helpers/connection_identity", () => ({
 
 vi.mock("@/composables/userPreferences", () => ({
   pruneStaleProviderFilters: mockPruneStaleProviderFilters,
+  runAfterPreferenceWrites: mockRunAfterPreferenceWrites,
   useUserPreferences: () => ({
     setPreference: mockSetPreference,
   }),
@@ -361,6 +364,11 @@ describe("App initialization", () => {
     mockProxyEnsureReady.mockResolvedValue(undefined);
     mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
+    // the real one gives whatever it is handed its turn among the preference
+    // writes; here there are none to wait for
+    mockRunAfterPreferenceWrites.mockImplementation(
+      async (task: () => Promise<unknown>) => await task(),
+    );
     apiMock.getRoles.mockResolvedValue([]);
     haStateMock.isSubscribed = false;
     haStateMock.kioskModeEnabled = false;
@@ -688,6 +696,36 @@ describe("App initialization", () => {
     expect(store.currentUser).toBe(cleaned);
     // the refetch has to land first, or the prune writes the old shortcuts back
     expect(prunedShortcuts).toEqual(["library://album/1"]);
+  });
+
+  it("refreshes the user in its turn among the preference writes", async () => {
+    wrapper = await mountApp();
+    apiMock.getCurrentUserInfo.mockClear();
+    mockPruneStaleProviderFilters.mockClear();
+    mockRunAfterPreferenceWrites.mockClear();
+    const turn = createDeferred();
+    mockRunAfterPreferenceWrites.mockImplementationOnce(
+      async (task: () => Promise<unknown>) => {
+        await turn.promise;
+        return await task();
+      },
+    );
+
+    const updated = signalProvidersUpdated();
+    await flushPromises();
+
+    // a refresh that overtook a write on its way out would put the preferences
+    // back as they were before it, and the prune would send that on
+    expect(apiMock.getCurrentUserInfo).not.toHaveBeenCalled();
+    expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
+
+    turn.resolve();
+    await updated;
+
+    expect(mockRunAfterPreferenceWrites).toHaveBeenCalledOnce();
+    expect(apiMock.getCurrentUserInfo).toHaveBeenCalledOnce();
+    // and the prune takes a turn of its own, after the refresh is in
+    expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
   });
 
   it("leaves preferences alone when the user cannot be fetched", async () => {

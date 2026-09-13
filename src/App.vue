@@ -79,7 +79,10 @@ import { useRoute, useRouter } from "vue-router";
 import "vue-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
-import { pruneStaleProviderFilters } from "./composables/userPreferences";
+import {
+  pruneStaleProviderFilters,
+  runAfterPreferenceWrites,
+} from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
 import {
   getKioskModePreference,
@@ -667,13 +670,23 @@ onMounted(async () => {
     }
     // The server rewrites the sidebar shortcuts held on the user when a provider is removed.
     // Refresh before pruning, which saves preferences and would write the old set back.
+    // The refresh takes its turn among the preference writes: it waits for the ones on
+    // their way out and holds up the ones after it until it is in, so nothing is pruned
+    // or written from a snapshot older than the last write.
     // Without a fresh user there is nothing safe to prune against, so leave it for next time.
-    const userInfo = await api.getCurrentUserInfo();
-    if (!userInfo) {
+    const refreshed = await runAfterPreferenceWrites(async () => {
+      const userInfo = await api.getCurrentUserInfo();
+      if (!userInfo) {
+        return false;
+      }
+      authManager.setCurrentUser(userInfo);
+      store.currentUser = userInfo;
+      return true;
+    });
+    if (!refreshed) {
       return;
     }
-    authManager.setCurrentUser(userInfo);
-    store.currentUser = userInfo;
+    // the prune takes a turn of its own, so it is never started from inside one
     await pruneStaleProviderFilters();
   });
 });
