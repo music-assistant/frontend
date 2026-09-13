@@ -295,9 +295,9 @@ onMounted(async () => {
 watch(currentId, focusStepHeading);
 
 // Leaving the welcome is what counts as having been welcomed, whether the
-// member answered the question, walked past it or simply closed the page:
-// nobody is welcomed into the same app twice. Finishing writes this itself,
-// and the marker is only ever written once, so the two never collide.
+// member answered the question, walked past it or went somewhere else in the
+// app: nobody is welcomed into the same app twice. Finishing writes this
+// itself, and the marker is only ever written once, so the two never collide.
 onBeforeUnmount(() => {
   if (ctx.value.isMember) void markWelcomed();
 });

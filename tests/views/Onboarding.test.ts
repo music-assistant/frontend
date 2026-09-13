@@ -6,7 +6,7 @@ import {
   type User,
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
@@ -163,6 +163,15 @@ vi.mock("@/composables/userPreferences", async () => {
       getPreference: (key: string) => preferences[key],
     }),
   };
+});
+
+// The wizard pulls its whole step graph in behind it: the provider listings,
+// the welcome's cards, the players of what is here and the tour. Every test
+// mounts it on a fresh module registry, so the transform of all that is paid
+// here, once and outside any test's clock, instead of by whichever test happens
+// to mount first.
+beforeAll(async () => {
+  await import("@/views/Onboarding.vue");
 });
 
 /**
