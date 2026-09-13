@@ -16,17 +16,19 @@ import {
   type PlayerQueue,
   type PlayerSource,
   RepeatMode,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const {
   aiRadioAvailableRef,
   announcementAvailableRef,
   emitEvent,
+  hasScope,
   hostsRef,
-  isAdmin,
   loadHosts,
   loadQueueDjStatus,
   loadStatus,
@@ -42,8 +44,8 @@ const {
   aiRadioAvailableRef: { value: false },
   announcementAvailableRef: { value: false },
   emitEvent: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
   hostsRef: { value: [] as AIRadioHost[] },
-  isAdmin: vi.fn(),
   loadHosts: vi.fn().mockResolvedValue(undefined),
   loadQueueDjStatus: vi.fn().mockResolvedValue(undefined),
   loadStatus: vi.fn().mockResolvedValue(undefined),
@@ -73,7 +75,7 @@ vi.mock("@/plugins/api", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
-    isAdmin,
+    hasScope,
   },
 }));
 
@@ -140,6 +142,11 @@ vi.mock("vue-sonner", () => ({
     error: vi.fn(),
   },
 }));
+
+// a member unless a test says otherwise
+beforeEach(() => {
+  hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+});
 
 function makePlayer(overrides: Partial<Player> = {}): Player {
   return {
@@ -281,7 +288,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    isAdmin.mockReturnValue(true);
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     storeMock.showFullscreenPlayer = true;
     storeMock.showPlayersMenu = true;
   });
@@ -367,14 +374,47 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     ).toEqual(["settings.player_settings", "settings.category.dsp"]);
   });
 
-  it("keeps the settings out of a non-admin's menu", () => {
-    isAdmin.mockReturnValue(false);
+  it("keeps the settings out of a member's menu", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "player",
     });
 
     expect(menuItems.map((item) => item.label)).not.toContain("open_settings");
+  });
+
+  it("offers the settings to any role that may change player settings", () => {
+    hasScope.mockImplementation(
+      scopeChecker([...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PLAYERS_WRITE]),
+    );
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "player",
+    });
+
+    expect(openSettingsItem(menuItems)).toBeDefined();
+  });
+});
+
+describe("getPlayerMenuItems save queue as playlist", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const labels = () =>
+    getPlayerMenuItems(makePlayer(), makeQueue({ items: 3 }), {
+      context: "queue",
+    }).map((item) => item.label);
+
+  it("offers saving the queue to a member", () => {
+    expect(labels()).toContain("save_queue_as_playlist");
+  });
+
+  it("keeps saving the queue from a role that may not change the library", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+
+    expect(labels()).not.toContain("save_queue_as_playlist");
   });
 });
 
@@ -450,6 +490,18 @@ describe("getPlayerMenuItems ai dj", () => {
   });
 
   it("omits the ai_dj entry without an available ai_radio provider", () => {
+    hostsRef.value = [makeHost()];
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+
+    expect(menuItems.map((item) => item.label)).not.toContain("ai_dj");
+  });
+
+  it("omits the ai_dj entry for a role that may not load the hosts", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+    aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost()];
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {

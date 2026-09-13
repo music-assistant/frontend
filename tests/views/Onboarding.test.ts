@@ -1,6 +1,7 @@
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderType, type Scope } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const {
   apiMock,
@@ -20,7 +21,7 @@ const {
     sendCommand: vi.fn(),
     serverInfo: { value: { onboard_done: false } },
   },
-  authMock: { isAdmin: vi.fn(() => true) },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // replaced with a real ref by the userPreferences mock factory below
   preferenceState: {
     intent: { value: undefined } as { value?: string },
@@ -133,7 +134,9 @@ describe("Onboarding wizard", () => {
       ...providerConfigs.list,
     ]);
     apiMock.subscribe.mockClear();
-    authMock.isAdmin.mockReturnValue(true);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+    );
     preferenceState.intent.value = undefined;
     routeState.route.query = {};
     routerMock.push.mockReset();

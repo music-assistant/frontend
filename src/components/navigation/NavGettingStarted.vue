@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useOnboarding } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
+import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { Circle, CircleCheck, ListChecks } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
@@ -42,7 +43,7 @@ const open = ref(false);
 // is counted before the provider configurations say what is set up.
 const visible = computed(
   () =>
-    authManager.isAdmin() &&
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) &&
     configsLoaded.value &&
     hasPending.value &&
     !dismissed.value,
@@ -62,7 +63,9 @@ const hideForNow = function () {
 // the checklist is the only reason the sidebar needs the provider
 // configurations, so nobody but an admin ever fetches them
 onMounted(() => {
-  if (authManager.isAdmin()) void loadProviderConfigs();
+  if (authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)) {
+    void loadProviderConfigs();
+  }
 });
 </script>
 

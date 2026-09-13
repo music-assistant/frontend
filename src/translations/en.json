@@ -2117,7 +2117,9 @@
             "private": "Only the owner can see this playlist.",
             "selected": "The owner and the members selected below.",
             "members": "Every signed-in member, guests excluded.",
-            "everyone": "Any user can see this playlist."
+            "everyone": "Any user can see this playlist.",
+            "selected_no_owner": "Only the members selected below.",
+            "nobody": "Nobody can see this playlist until it has an owner or is shared with someone."
         },
         "updated": "Sharing updated"
     },
@@ -2271,9 +2273,9 @@
     "singles_eps": "Singles & EPs",
     "latest_release": "Latest release",
     "view_all": "View all",
-    "all_n_tracks": "All {count} track | All {count} tracks",
+    "n_in_library": "{count} in library",
     "play_on_player": "Play on {player}",
-    "artist_radio": "Artist radio",
+    "artist_radio": "Artist endless mix",
     "newest_first": "newest first",
     "via_provider": "via {provider}",
     "appears_on_hint": "Credited on a track, not as the album artist",

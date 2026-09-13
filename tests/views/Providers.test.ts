@@ -7,12 +7,18 @@ import {
   ProviderStage,
   ProviderStatus,
   ProviderType,
+  type Scope,
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import Providers from "@/views/settings/Providers.vue";
 import { providerConfig } from "../fixtures/providerConfig";
+import {
+  BUILTIN_ROLE_SCOPES,
+  OWN_SOURCES_ROLE_SCOPES,
+  scopeChecker,
+} from "../fixtures/scopes";
 import { user, userSummary } from "../fixtures/user";
 
 const {
@@ -50,7 +56,7 @@ const {
     supportsShareCandidates: true,
   },
   authMock: {
-    isAdmin: vi.fn<() => boolean>(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
   },
   eventbusMock: {
     emit: vi.fn(),
@@ -205,7 +211,7 @@ beforeEach(() => {
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
   apiMock.supportsShareCandidates = true;
-  authMock.isAdmin.mockReturnValue(true);
+  authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   routeMock.query.types = "music";
   storeMock.currentUser = owner;
 });
@@ -613,7 +619,9 @@ describe("Providers", () => {
 
 describe("Providers for a member", () => {
   beforeEach(() => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
   });
 
   it("lists only the music sources it owns, whatever type the route asks for", async () => {
@@ -802,11 +810,23 @@ describe("Providers keyboard", () => {
 
 describe("Providers loading", () => {
   it("narrows a member's load to the music sources", async () => {
-    authMock.isAdmin.mockReturnValue(false);
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
 
     await mountWithConfigs([]);
 
     expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+  });
+
+  it("gives a role that manages only its own music sources the member view", async () => {
+    authMock.hasScope.mockImplementation(scopeChecker(OWN_SOURCES_ROLE_SCOPES));
+
+    await mountWithConfigs([]);
+
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+    expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+    expect(apiMock.getShareCandidates).toHaveBeenCalled();
   });
 
   it("reports a failing load and shows no empty state", async () => {

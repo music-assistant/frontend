@@ -1,3 +1,4 @@
+import type { RowSource } from "@/components/details/rowRegistry";
 import { api } from "@/plugins/api";
 import {
   AlbumType,
@@ -6,20 +7,19 @@ import {
   type ItemMapping,
   type Track,
 } from "@/plugins/api/interfaces";
-import type { ArtistRowSource } from "./artistRows";
 
 /**
  * The artist's releases, from the library or from a single provider's own
  * catalog.
  *
- * `source` follows effectiveArtistRowSource: "library" returns the in-library
+ * `source` follows artistRows.effectiveSource: "library" returns the in-library
  * albums, a provider instance id queries that provider with the artist's id
  * there, so an artist not mapped to it has no releases to show. A provider
  * (non-library) artist always comes from its own provider.
  */
 export async function loadArtistReleases(
   artist: Artist,
-  source: ArtistRowSource,
+  source: RowSource,
 ): Promise<Album[]> {
   if (source === "library" || artist.provider !== "library") {
     return await api.getArtistAlbums(artist.item_id, artist.provider);
@@ -46,7 +46,7 @@ export async function loadArtistLibraryTracks(
 /** The artist's most popular tracks, as reported by `source`. */
 export async function loadArtistTopTracks(
   artist: Artist,
-  source: ArtistRowSource,
+  source: RowSource,
 ): Promise<Track[]> {
   return await api.getArtistTopTracks(
     artist.item_id,
@@ -58,7 +58,7 @@ export async function loadArtistTopTracks(
 /** Artists similar to this one, as reported by `source`. */
 export async function loadSimilarArtists(
   artist: Artist,
-  source: ArtistRowSource,
+  source: RowSource,
 ): Promise<Artist[]> {
   return await api.getSimilarArtists(
     artist.item_id,
@@ -110,7 +110,7 @@ export function appearsOnAlbums(
 }
 
 /** The provider_filter argument for a source, or undefined for "library"/"all". */
-function providerFilterFor(source: ArtistRowSource): string | undefined {
+function providerFilterFor(source: RowSource): string | undefined {
   return source === "library" || source === "all" ? undefined : source;
 }
 
@@ -121,7 +121,7 @@ function providerFilterFor(source: ArtistRowSource): string | undefined {
  */
 function aggregatedProviderFilter(
   artist: Artist,
-  source: ArtistRowSource,
+  source: RowSource,
 ): string | undefined {
   return artist.provider === "library" ? providerFilterFor(source) : undefined;
 }

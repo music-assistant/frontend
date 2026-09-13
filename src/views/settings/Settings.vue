@@ -235,6 +235,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { availableSettingsSections } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { requireServerVersion } from "@/plugins/api/helpers";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
@@ -417,134 +418,17 @@ provide("systemViewMode", {
   toggleViewMode: toggleSystemViewMode,
 });
 
-const allSettingsSections = [
-  {
-    name: "music_providers",
-    label: "settings.music_sources",
-    description: "settings.music_providers_description",
-    icon: "mdi-music",
-    color: "blue",
-    route: { name: "providersettings", query: { types: "music" } },
-    // a member holding the scope manages the music sources it owns here
-    adminOnly: false,
-    requiresScope: Scope.CONFIG_PROVIDERS_OWN,
-  },
-  {
-    name: "player_providers",
-    label: "settings.playerproviders",
-    description: "settings.player_providers_description",
-    icon: "mdi-speaker-multiple",
-    color: "green",
-    route: { name: "providersettings", query: { types: "player" } },
-    adminOnly: true,
-  },
-  {
-    name: "metadata_providers",
-    label: "settings.metadataproviders",
-    description: "settings.metadata_providers_description",
-    icon: "mdi-file-code",
-    color: "indigo",
-    route: { name: "providersettings", query: { types: "metadata" } },
-    adminOnly: true,
-  },
-  {
-    name: "plugin_providers",
-    label: "settings.plugins",
-    description: "settings.plugin_providers_description",
-    icon: "mdi-puzzle",
-    color: "deep-purple",
-    route: { name: "providersettings", query: { types: "plugin" } },
-    adminOnly: true,
-  },
-  {
-    name: "players",
-    label: "settings.players",
-    description: "settings.players_description",
-    icon: "mdi-tune",
-    color: "teal",
-    route: { name: "playersettings" },
-    adminOnly: true,
-  },
-  {
-    name: "audio_analysis_providers",
-    label: "settings.audio_analysis_providers",
-    description: "settings.audio_analysis_providers_description",
-    icon: "mdi-waveform",
-    color: "blue",
-    route: { name: "providersettings", query: { types: "audio_analysis" } },
-    adminOnly: true,
-    minServerVersion: "2.9.0",
-  },
-  {
-    name: "profile",
-    label: "auth.profile",
-    description: "settings.profile_description",
-    icon: "mdi-account-cog",
-    color: "indigo",
-    route: { name: "profile" },
-    adminOnly: false,
-  },
-  {
-    name: "frontend",
-    label: "settings.frontend",
-    description: "settings.frontend_description",
-    icon: "mdi-palette",
-    color: "orange",
-    route: { name: "frontendsettings" },
-    adminOnly: false,
-  },
-  {
-    name: "users",
-    label: "auth.user_management",
-    description: "settings.users_description",
-    icon: "mdi-account-multiple",
-    color: "teal",
-    route: { name: "usersettings" },
-    adminOnly: true,
-  },
-  {
-    name: "remote_access",
-    label: "settings.remote_access",
-    description: "settings.remote_access_description",
-    icon: "mdi-cloud-lock",
-    color: "deep-purple",
-    route: { name: "remoteaccesssettings" },
-    adminOnly: true,
-  },
-  {
-    name: "system",
-    label: "settings.system",
-    description: "settings.system_description",
-    icon: "mdi-server",
-    color: "purple",
-    route: { name: "systemsettings" },
-    adminOnly: true,
-  },
-  {
-    name: "about",
-    label: "settings.about",
-    description: "settings.about_description",
-    icon: "mdi-information-outline",
-    color: "grey-darken-1",
-    route: { name: "aboutsettings" },
-    adminOnly: false,
-  },
-];
+// the setup wizard sets up every kind of provider, and is reachable again from here
+const canRunOnboarding = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
-const isAdmin = computed(() => authManager.isAdmin());
-
-// the setup wizard is admin-only, and reachable again from here
-const canRunOnboarding = isAdmin;
-
-const settingsSections = computed(() => {
-  return allSettingsSections.filter(
-    (section) =>
-      (!section.adminOnly || isAdmin.value) &&
-      (!section.requiresScope || authManager.hasScope(section.requiresScope)) &&
-      (!section.minServerVersion ||
-        requireServerVersion(section.minServerVersion)),
-  );
-});
+const settingsSections = computed(() =>
+  availableSettingsSections(
+    (scope) => authManager.hasScope(scope),
+    requireServerVersion,
+  ),
+);
 
 const providerSectionNames = [
   "music_providers",
@@ -684,6 +568,9 @@ const getProviderName = (instanceId: string) => {
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
+  // without config.players.write only the player options open, so the crumbs
+  // leading to the players and their settings are plain text
+  const canConfigurePlayers = authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE);
 
   // "Settings" heads the toolbar on its own line, so the trail starts below it
   const items: ToolbarHeadingItem[] = [];
@@ -700,10 +587,15 @@ const breadcrumbItems = computed(() => {
       items.push({
         title: t("settings.players"),
         disabled: name === "playersettings",
-        to: { name: "playersettings" },
+        to: canConfigurePlayers ? { name: "playersettings" } : undefined,
       });
     } else if (currentTab === "system") {
-      if (!(name === "backgroundtasks" && !authManager.isAdmin())) {
+      if (
+        !(
+          name === "backgroundtasks" &&
+          !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
+        )
+      ) {
         items.push({
           title: t("settings.system"),
           disabled: name === "systemsettings",
@@ -790,7 +682,9 @@ const breadcrumbItems = computed(() => {
           // a disabled player is never registered, so it has no name to show
           title: api.players[playerId]?.name || t("settings.player_settings"),
           disabled: name === "editplayer",
-          to: { name: "editplayer", params: { playerId } },
+          to: canConfigurePlayers
+            ? { name: "editplayer", params: { playerId } }
+            : undefined,
         });
         const section = match(name)
           .with("editplayerdsp", () => t("settings.category.dsp"))

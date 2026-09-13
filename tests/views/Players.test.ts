@@ -1,13 +1,18 @@
 import Players from "@/views/settings/Players.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
-import { ProviderType, type PlayerConfig } from "@/plugins/api/interfaces";
+import {
+  ProviderType,
+  Scope,
+  type PlayerConfig,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerManifest } from "../fixtures/providerManifest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emitEvent, getPlayerSettingsMenuItems, routerPush } =
+const { apiMock, emitEvent, getPlayerSettingsMenuItems, hasScope, routerPush } =
   vi.hoisted(() => ({
     apiMock: {
       getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
@@ -28,12 +33,17 @@ const { apiMock, emitEvent, getPlayerSettingsMenuItems, routerPush } =
     },
     emitEvent: vi.fn(),
     getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
     routerPush: vi.fn(),
   }));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
 }));
 
 vi.mock("@/plugins/eventbus", () => ({
@@ -103,6 +113,7 @@ const passthroughStub = {
 describe("Players", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     playerConfig.enabled = true;
     apiMock.players = {
       kitchen: {
@@ -124,6 +135,26 @@ describe("Players", () => {
     apiMock.getProviderManifest.mockReturnValue(providerManifest());
     apiMock.subscribe_multi.mockReturnValue(vi.fn());
     getPlayerSettingsMenuItems.mockReturnValue([{ label: "settings.delete" }]);
+  });
+
+  it("points an admin to the player providers", async () => {
+    const wrapper = await mountPlayers("list");
+
+    expect(wrapper.find(".missing-players-hint").exists()).toBe(true);
+  });
+
+  it.each([
+    { role: "a member", scopes: BUILTIN_ROLE_SCOPES.user },
+    { role: "a guest", scopes: BUILTIN_ROLE_SCOPES.guest },
+    {
+      role: "a role that only changes player settings",
+      scopes: [...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PLAYERS_WRITE],
+    },
+  ])("leaves the player providers out for $role", async ({ scopes }) => {
+    hasScope.mockImplementation(scopeChecker(scopes));
+    const wrapper = await mountPlayers("list");
+
+    expect(wrapper.find(".missing-players-hint").exists()).toBe(false);
   });
 
   it.each([

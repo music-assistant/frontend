@@ -1,25 +1,31 @@
+import CreateShowDialog from "@/components/ai-radio/CreateShowDialog.vue";
 import CustomizeHost from "@/components/ai-radio/CustomizeHost.vue";
 import CustomizeShow from "@/components/ai-radio/CustomizeShow.vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
-import type { AIRadioHost, AIRadioStation } from "@/plugins/api/interfaces";
+import type {
+  AIRadioHost,
+  AIRadioStation,
+  Scope,
+} from "@/plugins/api/interfaces";
 import AIRadioView from "@/views/AIRadioView.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 type SendCommand = (
   command: string,
   args?: Record<string, unknown>,
 ) => Promise<unknown>;
 
-const { sendCommand, getLibraryPlaylists, routeMock, routerMock } = vi.hoisted(
-  () => ({
+const { sendCommand, getLibraryPlaylists, hasScope, routeMock, routerMock } =
+  vi.hoisted(() => ({
     sendCommand: vi.fn<SendCommand>(async () => []),
     getLibraryPlaylists: vi.fn(async () => []),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
     routeMock: { query: { station_id: "show-1" } as Record<string, string> },
     routerMock: { push: vi.fn(), replace: vi.fn() },
-  }),
-);
+  }));
 
 vi.mock("@/plugins/api", () => {
   const mockApi = {
@@ -35,6 +41,10 @@ vi.mock("@/plugins/api", () => {
 
 vi.mock("@/plugins/store", () => ({
   store: { activePlayerId: undefined },
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { guestSessionKind: () => null, hasScope },
 }));
 
 vi.mock("vue-router", async (importOriginal) => ({
@@ -177,9 +187,15 @@ async function mountView() {
   return wrapper;
 }
 
+// an admin unless a test says otherwise: only an admin edits shows and hosts
+beforeEach(() => {
+  hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+});
+
 afterEach(() => {
   vi.clearAllMocks();
   onConfirm = undefined;
+  useShows().dismissNoAiProviderAlert();
   routeMock.query = { station_id: STATION_ID };
   useHosts().hosts.value = [];
   useShows().shows.value = [];
@@ -317,4 +333,124 @@ describe("AIRadioView status polling lifecycle", () => {
     // by now the query belongs to whatever route replaced this one
     expect(routerMock.replace).not.toHaveBeenCalled();
   });
+});
+
+describe("AIRadioView editing rights", () => {
+  // A view left mounted keeps following the composables' module state after the
+  // cleanup below clears the page, and trips over its teleported menus.
+  const views: VueWrapper[] = [];
+  const openView = async () => {
+    const view = await mountView();
+    views.push(view);
+    return view;
+  };
+
+  afterEach(() => {
+    for (const view of views.splice(0)) view.unmount();
+  });
+
+  const NON_EDITORS = [
+    ["a member", BUILTIN_ROLE_SCOPES.user],
+    ["a guest", BUILTIN_ROLE_SCOPES.guest],
+  ] as const;
+
+  const requested = (command: string) =>
+    sendCommand.mock.calls.some(([sent]) => sent === command);
+  const headings = (wrapper: VueWrapper) =>
+    wrapper.findAll("h2").map((heading) => heading.text());
+
+  it("lets an admin add hosts and shows and change a show", async () => {
+    routeMock.query = {};
+    setupSendCommand([]);
+    useShows().noAiProviderAlert.value = true;
+    const wrapper = await openView();
+
+    expect(headings(wrapper)).toEqual(["Hosts", "Shows"]);
+    expect(findButtonByText(wrapper, "Add host")).toBeTruthy();
+    expect(findButtonByText(wrapper, "Add show")).toBeTruthy();
+    expect(findButtonByText(wrapper, "Go to Settings → Plugins")).toBeTruthy();
+    expect(wrapper.find('[aria-label="More options"]').exists()).toBe(true);
+    expect(requested("ai_radio/hosts/list")).toBe(true);
+    expect(requested("ai_radio/hosts/presets/list")).toBe(true);
+
+    await wrapper.find(".show-card").trigger("click");
+    await flushPromises();
+    expect(wrapper.findComponent(CustomizeShow).exists()).toBe(true);
+  });
+
+  it.each(NON_EDITORS)(
+    "lets %s play the shows and nothing more",
+    async (_role, scopes) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      routeMock.query = {};
+      setupSendCommand([]);
+      useShows().noAiProviderAlert.value = true;
+      const wrapper = await openView();
+
+      expect(headings(wrapper)).toEqual(["Shows"]);
+      expect(findButtonByText(wrapper, "Add show")).toBeUndefined();
+      expect(
+        findButtonByText(wrapper, "Go to Settings → Plugins"),
+      ).toBeUndefined();
+      expect(wrapper.find('[aria-label="More options"]').exists()).toBe(false);
+      expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
+      expect(requested("ai_radio/hosts/list")).toBe(false);
+      expect(requested("ai_radio/hosts/presets/list")).toBe(false);
+
+      await wrapper.find(".show-card").trigger("click");
+      await flushPromises();
+      expect(wrapper.findComponent(CustomizeShow).exists()).toBe(false);
+    },
+  );
+
+  it.each([
+    { role: "an admin", scopes: BUILTIN_ROLE_SCOPES.admin, offered: true },
+    { role: "a member", scopes: BUILTIN_ROLE_SCOPES.user, offered: false },
+    { role: "a guest", scopes: BUILTIN_ROLE_SCOPES.guest, offered: false },
+  ])(
+    "offers $role to create the first show: $offered",
+    async ({ scopes, offered }) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      routeMock.query = {};
+      // no shows yet
+      sendCommand.mockImplementation(async () => []);
+      const wrapper = await openView();
+
+      expect(!!findButtonByText(wrapper, "Create show")).toBe(offered);
+    },
+  );
+
+  it("opens the create dialog for an admin following a playlist link", async () => {
+    routeMock.query = {
+      source_playlist_id: "42",
+      source_playlist_provider: "library",
+      source_playlist_name: "Road trip",
+    };
+    setupSendCommand([]);
+    const wrapper = await openView();
+
+    expect(wrapper.getComponent(CreateShowDialog).props("open")).toBe(true);
+  });
+
+  it.each(NON_EDITORS)(
+    "opens no editor for %s following a link",
+    async (_role, scopes) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      setupSendCommand([]);
+
+      routeMock.query = { station_id: STATION_ID };
+      const showLink = await openView();
+      expect(showLink.findComponent(CustomizeShow).exists()).toBe(false);
+      expect(getShowFetchCount()).toBe(0);
+
+      routeMock.query = {
+        source_playlist_id: "42",
+        source_playlist_provider: "library",
+      };
+      const playlistLink = await openView();
+      expect(playlistLink.getComponent(CreateShowDialog).props("open")).toBe(
+        false,
+      );
+    },
+  );
 });

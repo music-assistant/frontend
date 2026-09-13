@@ -60,7 +60,7 @@
             }}
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent v-if="isPlaylist">
+        <EmptyContent v-if="isPlaylist && canEditRules">
           <Button variant="outline" size="sm" @click="emit('edit-rules')">
             <SlidersHorizontal class="h-3.5 w-3.5 mr-1.5" />
             {{ $t("smart_playlist.edit_rules") }}
@@ -89,6 +89,7 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   MediaType,
   PlaybackState,
+  Scope,
   type Audiobook,
   type MediaItemType,
   type Playlist,
@@ -96,6 +97,7 @@ import {
   type Radio,
   type Track,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { Music2, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -110,6 +112,8 @@ const emit = defineEmits<{ (e: "edit-rules"): void }>();
 const isPlaylist = computed(
   () => props.itemDetails.media_type === MediaType.PLAYLIST,
 );
+// editing the rules of a smart playlist changes the library
+const canEditRules = computed(() => authManager.hasScope(Scope.LIBRARY_WRITE));
 
 const loading = ref(true);
 const tracks = ref<(Track | Radio | PodcastEpisode | Audiobook)[]>([]);

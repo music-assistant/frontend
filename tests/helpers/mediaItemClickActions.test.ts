@@ -36,6 +36,15 @@ vi.mock("@/plugins/store", () => ({
   },
 }));
 
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
 }));
@@ -70,12 +79,14 @@ import {
   handleMediaItemClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { authManager } from "@/plugins/auth";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { audioSource } from "../fixtures/audioSource";
 import { genre } from "../fixtures/genre";
 import { playlist } from "../fixtures/playlist";
 import { radio } from "../fixtures/radio";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
 
 const playedTrack = track({ item_id: "track1", name: "Track 1" });
@@ -87,6 +98,9 @@ beforeEach(() => {
   mockPlayMedia.mockResolvedValue(undefined);
   mockGetCoreConfigValue.mockReset();
   mockRouterPush.mockReset();
+  vi.mocked(authManager.hasScope).mockImplementation(
+    scopeChecker(BUILTIN_ROLE_SCOPES.user),
+  );
 });
 
 describe("handlePlayBtnClick honours default_play_action_*_track", () => {
@@ -259,5 +273,35 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
       },
     });
     expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+});
+
+describe("click behaviour for a role that may not read the core settings", () => {
+  beforeEach(() => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+  });
+
+  it("plays the playlist from the track without asking the server", async () => {
+    await handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
+
+    expect(mockGetCoreConfigValue).not.toHaveBeenCalled();
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: undefined,
+    });
+  });
+
+  it("opens the details view without asking the server", async () => {
+    const item = album({ item_id: "a1" });
+
+    await handleMediaItemClick(item, 0, 0);
+
+    expect(mockGetCoreConfigValue).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: item.media_type,
+      params: { itemId: item.item_id, provider: item.provider },
+    });
   });
 });

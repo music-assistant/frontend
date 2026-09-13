@@ -322,6 +322,7 @@ import {
   EventType,
   ProviderConfig,
   ProviderStatus,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -703,7 +704,7 @@ function isCurrentProvider(instanceId: string) {
 
 function mayManage(providerConfig: ProviderConfig) {
   return (
-    authManager.isAdmin() ||
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE) ||
     isOwnMusicSource(providerConfig, store.currentUser?.user_id)
   );
 }
