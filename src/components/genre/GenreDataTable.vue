@@ -547,8 +547,18 @@ const table = useVueTable({
     <div class="flex items-center justify-between px-4 lg:px-6">
       <div class="text-muted-foreground hidden flex-1 text-sm lg:flex">
         <template v-if="table.getFilteredSelectedRowModel().rows.length > 0">
-          {{ table.getFilteredSelectedRowModel().rows.length }} of
-          {{ table.getFilteredRowModel().rows.length }} row(s) selected.
+          {{
+            $t(
+              "settings.genre_table_rows_selected",
+              table.getFilteredSelectedRowModel().rows.length,
+              {
+                named: {
+                  selected: table.getFilteredSelectedRowModel().rows.length,
+                  total: table.getFilteredRowModel().rows.length,
+                },
+              },
+            )
+          }}
         </template>
       </div>
       <div class="flex w-full items-center gap-8 lg:w-fit">
